@@ -1,0 +1,3765 @@
+---
+- id: 0
+  item_level: 1
+  materials:
+    - amount: 2
+      item_id: 998
+  product_id: 1101
+  skill_id: 99
+  skill_level: 1
+- id: 1
+  item_level: 1
+  materials:
+    - amount: 30
+      item_id: 998
+  product_id: 1104
+  skill_id: 99
+  skill_level: 1
+- id: 2
+  item_level: 1
+  materials:
+    - amount: 45
+      item_id: 998
+    - amount: 25
+      item_id: 913
+  product_id: 1107
+  skill_id: 99
+  skill_level: 1
+- id: 3
+  item_level: 2
+  materials:
+    - amount: 20
+      item_id: 999
+  product_id: 1110
+  skill_id: 99
+  skill_level: 2
+- id: 4
+  item_level: 2
+  materials:
+    - amount: 35
+      item_id: 999
+  product_id: 1113
+  skill_id: 99
+  skill_level: 2
+- id: 5
+  item_level: 2
+  materials:
+    - amount: 40
+      item_id: 999
+    - amount: 50
+      item_id: 920
+  product_id: 1122
+  skill_id: 99
+  skill_level: 2
+- id: 6
+  item_level: 3
+  materials:
+    - amount: 5
+      item_id: 999
+    - amount: 8
+      item_id: 984
+    - amount: 1
+      item_id: 727
+  product_id: 1126
+  skill_id: 99
+  skill_level: 3
+- id: 7
+  item_level: 3
+  materials:
+    - amount: 8
+      item_id: 984
+    - amount: 10
+      item_id: 999
+    - amount: 1
+      item_id: 728
+  product_id: 1123
+  skill_id: 99
+  skill_level: 3
+- id: 8
+  item_level: 3
+  materials:
+    - amount: 8
+      item_id: 984
+    - amount: 15
+      item_id: 999
+    - amount: 1
+      item_id: 718
+  product_id: 1119
+  skill_id: 99
+  skill_level: 3
+- id: 9
+  item_level: 3
+  materials:
+    - amount: 16
+      item_id: 984
+    - amount: 1
+      item_id: 724
+  product_id: 1129
+  skill_id: 99
+  skill_level: 3
+- id: 10
+  item_level: 1
+  materials:
+    - amount: 1
+      item_id: 998
+    - amount: 10
+      item_id: 909
+  product_id: 1201
+  skill_id: 98
+  skill_level: 1
+- id: 11
+  item_level: 1
+  materials:
+    - amount: 25
+      item_id: 998
+  product_id: 1204
+  skill_id: 98
+  skill_level: 1
+- id: 12
+  item_level: 1
+  materials:
+    - amount: 50
+      item_id: 998
+  product_id: 1207
+  skill_id: 98
+  skill_level: 1
+- id: 13
+  item_level: 2
+  materials:
+    - amount: 17
+      item_id: 999
+  product_id: 1210
+  skill_id: 98
+  skill_level: 2
+- id: 14
+  item_level: 2
+  materials:
+    - amount: 30
+      item_id: 999
+  product_id: 1213
+  skill_id: 98
+  skill_level: 2
+- id: 15
+  item_level: 2
+  materials:
+    - amount: 40
+      item_id: 999
+  product_id: 1216
+  skill_id: 98
+  skill_level: 2
+- id: 16
+  item_level: 3
+  materials:
+    - amount: 4
+      item_id: 984
+    - amount: 40
+      item_id: 999
+    - amount: 1
+      item_id: 726
+  product_id: 1219
+  skill_id: 98
+  skill_level: 3
+- id: 17
+  item_level: 3
+  materials:
+    - amount: 4
+      item_id: 984
+    - amount: 60
+      item_id: 999
+    - amount: 1
+      item_id: 729
+  product_id: 1222
+  skill_id: 98
+  skill_level: 3
+- id: 18
+  item_level: 1
+  materials:
+    - amount: 35
+      item_id: 998
+    - amount: 15
+      item_id: 958
+  product_id: 1116
+  skill_id: 100
+  skill_level: 1
+- id: 19
+  item_level: 2
+  materials:
+    - amount: 25
+      item_id: 999
+    - amount: 20
+      item_id: 957
+  product_id: 1151
+  skill_id: 100
+  skill_level: 2
+- id: 20
+  item_level: 2
+  materials:
+    - amount: 45
+      item_id: 999
+  product_id: 1154
+  skill_id: 100
+  skill_level: 2
+- id: 21
+  item_level: 3
+  materials:
+    - amount: 12
+      item_id: 984
+    - amount: 10
+      item_id: 999
+  product_id: 1157
+  skill_id: 100
+  skill_level: 3
+- id: 22
+  item_level: 3
+  materials:
+    - amount: 12
+      item_id: 984
+    - amount: 20
+      item_id: 999
+  product_id: 1160
+  skill_id: 100
+  skill_level: 3
+- id: 23
+  item_level: 3
+  materials:
+    - amount: 16
+      item_id: 984
+    - amount: 20
+      item_id: 999
+    - amount: 1
+      item_id: 733
+  product_id: 1163
+  skill_id: 100
+  skill_level: 3
+- id: 24
+  item_level: 1
+  materials:
+    - amount: 10
+      item_id: 998
+  product_id: 1301
+  skill_id: 101
+  skill_level: 1
+- id: 25
+  item_level: 1
+  materials:
+    - amount: 110
+      item_id: 998
+  product_id: 1351
+  skill_id: 101
+  skill_level: 1
+- id: 26
+  item_level: 2
+  materials:
+    - amount: 30
+      item_id: 999
+  product_id: 1354
+  skill_id: 101
+  skill_level: 2
+- id: 27
+  item_level: 3
+  materials:
+    - amount: 4
+      item_id: 984
+    - amount: 20
+      item_id: 999
+    - amount: 30
+      item_id: 922
+  product_id: 1357
+  skill_id: 101
+  skill_level: 3
+- id: 28
+  item_level: 3
+  materials:
+    - amount: 8
+      item_id: 984
+    - amount: 10
+      item_id: 999
+    - amount: 1
+      item_id: 719
+  product_id: 1360
+  skill_id: 101
+  skill_level: 3
+- id: 29
+  item_level: 1
+  materials:
+    - amount: 3
+      item_id: 998
+  product_id: 1501
+  skill_id: 102
+  skill_level: 1
+- id: 30
+  item_level: 1
+  materials:
+    - amount: 30
+      item_id: 998
+  product_id: 1504
+  skill_id: 102
+  skill_level: 1
+- id: 31
+  item_level: 2
+  materials:
+    - amount: 20
+      item_id: 999
+  product_id: 1507
+  skill_id: 102
+  skill_level: 2
+- id: 32
+  item_level: 2
+  materials:
+    - amount: 33
+      item_id: 999
+  product_id: 1510
+  skill_id: 102
+  skill_level: 2
+- id: 33
+  item_level: 2
+  materials:
+    - amount: 45
+      item_id: 999
+  product_id: 1519
+  skill_id: 102
+  skill_level: 2
+- id: 34
+  item_level: 3
+  materials:
+    - amount: 85
+      item_id: 999
+    - amount: 1
+      item_id: 730
+  product_id: 1513
+  skill_id: 102
+  skill_level: 3
+- id: 35
+  item_level: 3
+  materials:
+    - amount: 100
+      item_id: 999
+    - amount: 20
+      item_id: 963
+  product_id: 1516
+  skill_id: 102
+  skill_level: 3
+- id: 36
+  item_level: 3
+  materials:
+    - amount: 120
+      item_id: 999
+    - amount: 1
+      item_id: 968
+  product_id: 1522
+  skill_id: 102
+  skill_level: 3
+- id: 37
+  item_level: 1
+  materials:
+    - amount: 160
+      item_id: 998
+    - amount: 1
+      item_id: 722
+  product_id: 1801
+  skill_id: 103
+  skill_level: 1
+- id: 38
+  item_level: 2
+  materials:
+    - amount: 50
+      item_id: 999
+  product_id: 1803
+  skill_id: 103
+  skill_level: 2
+- id: 39
+  item_level: 2
+  materials:
+    - amount: 65
+      item_id: 999
+  product_id: 1805
+  skill_id: 103
+  skill_level: 2
+- id: 40
+  item_level: 3
+  materials:
+    - amount: 4
+      item_id: 984
+    - amount: 10
+      item_id: 723
+  product_id: 1807
+  skill_id: 103
+  skill_level: 3
+- id: 41
+  item_level: 3
+  materials:
+    - amount: 8
+      item_id: 984
+    - amount: 10
+      item_id: 728
+  product_id: 1809
+  skill_id: 103
+  skill_level: 3
+- id: 42
+  item_level: 3
+  materials:
+    - amount: 4
+      item_id: 984
+    - amount: 10
+      item_id: 727
+  product_id: 1811
+  skill_id: 103
+  skill_level: 3
+- id: 43
+  item_level: 1
+  materials:
+    - amount: 3
+      item_id: 998
+  product_id: 1401
+  skill_id: 104
+  skill_level: 1
+- id: 44
+  item_level: 1
+  materials:
+    - amount: 35
+      item_id: 998
+  product_id: 1404
+  skill_id: 104
+  skill_level: 1
+- id: 45
+  item_level: 1
+  materials:
+    - amount: 70
+      item_id: 998
+  product_id: 1407
+  skill_id: 104
+  skill_level: 1
+- id: 46
+  item_level: 2
+  materials:
+    - amount: 25
+      item_id: 999
+  product_id: 1451
+  skill_id: 104
+  skill_level: 2
+- id: 47
+  item_level: 2
+  materials:
+    - amount: 40
+      item_id: 999
+  product_id: 1454
+  skill_id: 104
+  skill_level: 2
+- id: 48
+  item_level: 2
+  materials:
+    - amount: 55
+      item_id: 999
+  product_id: 1457
+  skill_id: 104
+  skill_level: 2
+- id: 49
+  item_level: 3
+  materials:
+    - amount: 8
+      item_id: 984
+    - amount: 10
+      item_id: 999
+    - amount: 5
+      item_id: 720
+  product_id: 1460
+  skill_id: 104
+  skill_level: 3
+- id: 50
+  item_level: 3
+  materials:
+    - amount: 12
+      item_id: 984
+    - amount: 10
+      item_id: 999
+  product_id: 1463
+  skill_id: 104
+  skill_level: 3
+- id: 51
+  item_level: 3
+  materials:
+    - amount: 12
+      item_id: 984
+    - amount: 3
+      item_id: 723
+    - amount: 2
+      item_id: 923
+  product_id: 1410
+  skill_id: 104
+  skill_level: 3
+- id: 52
+  item_level: 11
+  materials:
+    - amount: 0
+      item_id: 7472
+    - amount: 5
+      item_id: 940
+    - amount: 1
+      item_id: 7031
+    - amount: 1
+      item_id: 7457
+  product_id: 12041
+  skill_id: 0
+  skill_level: 0
+- id: 53
+  item_level: 11
+  materials:
+    - amount: 0
+      item_id: 7472
+    - amount: 3
+      item_id: 514
+    - amount: 2
+      item_id: 501
+  product_id: 12046
+  skill_id: 0
+  skill_level: 0
+- id: 54
+  item_level: 11
+  materials:
+    - amount: 0
+      item_id: 7472
+    - amount: 10
+      item_id: 960
+    - amount: 10
+      item_id: 511
+    - amount: 1
+      item_id: 503
+  product_id: 12051
+  skill_id: 0
+  skill_level: 0
+- id: 55
+  item_level: 11
+  materials:
+    - amount: 0
+      item_id: 7472
+    - amount: 1
+      item_id: 577
+    - amount: 10
+      item_id: 908
+    - amount: 1
+      item_id: 1024
+  product_id: 12056
+  skill_id: 0
+  skill_level: 0
+- id: 56
+  item_level: 11
+  materials:
+    - amount: 0
+      item_id: 7472
+    - amount: 1
+      item_id: 518
+    - amount: 2
+      item_id: 514
+    - amount: 1
+      item_id: 501
+  product_id: 12061
+  skill_id: 0
+  skill_level: 0
+- id: 57
+  item_level: 11
+  materials:
+    - amount: 0
+      item_id: 7472
+    - amount: 5
+      item_id: 942
+    - amount: 1
+      item_id: 7031
+    - amount: 1
+      item_id: 7457
+  product_id: 12066
+  skill_id: 0
+  skill_level: 0
+- id: 58
+  item_level: 12
+  materials:
+    - amount: 0
+      item_id: 7473
+    - amount: 20
+      item_id: 918
+    - amount: 10
+      item_id: 511
+    - amount: 10
+      item_id: 508
+    - amount: 1
+      item_id: 7454
+  product_id: 12042
+  skill_id: 0
+  skill_level: 0
+- id: 59
+  item_level: 12
+  materials:
+    - amount: 0
+      item_id: 7473
+    - amount: 10
+      item_id: 966
+    - amount: 5
+      item_id: 956
+    - amount: 5
+      item_id: 951
+    - amount: 1
+      item_id: 579
+  product_id: 12052
+  skill_id: 0
+  skill_level: 0
+- id: 60
+  item_level: 12
+  materials:
+    - amount: 0
+      item_id: 7473
+    - amount: 5
+      item_id: 510
+    - amount: 10
+      item_id: 507
+    - amount: 10
+      item_id: 508
+  product_id: 12047
+  skill_id: 0
+  skill_level: 0
+- id: 61
+  item_level: 12
+  materials:
+    - amount: 0
+      item_id: 7473
+    - amount: 1
+      item_id: 577
+    - amount: 1
+      item_id: 7454
+    - amount: 5
+      item_id: 1062
+    - amount: 3
+      item_id: 515
+  product_id: 12057
+  skill_id: 0
+  skill_level: 0
+- id: 62
+  item_level: 12
+  materials:
+    - amount: 0
+      item_id: 7473
+    - amount: 10
+      item_id: 7182
+    - amount: 1
+      item_id: 539
+    - amount: 1
+      item_id: 519
+    - amount: 1
+      item_id: 736
+  product_id: 12062
+  skill_id: 0
+  skill_level: 0
+- id: 63
+  item_level: 12
+  materials:
+    - amount: 0
+      item_id: 7473
+    - amount: 3
+      item_id: 531
+    - amount: 2
+      item_id: 534
+    - amount: 1
+      item_id: 533
+    - amount: 2
+      item_id: 620
+  product_id: 12067
+  skill_id: 0
+  skill_level: 0
+- id: 64
+  item_level: 13
+  materials:
+    - amount: 0
+      item_id: 7474
+    - amount: 5
+      item_id: 512
+    - amount: 5
+      item_id: 513
+    - amount: 5
+      item_id: 582
+    - amount: 5
+      item_id: 578
+    - amount: 1
+      item_id: 7452
+  product_id: 12063
+  skill_id: 0
+  skill_level: 0
+- id: 65
+  item_level: 13
+  materials:
+    - amount: 0
+      item_id: 7474
+    - amount: 2
+      item_id: 518
+    - amount: 10
+      item_id: 509
+    - amount: 1
+      item_id: 7452
+  product_id: 12048
+  skill_id: 0
+  skill_level: 0
+- id: 66
+  item_level: 13
+  materials:
+    - amount: 0
+      item_id: 7474
+    - amount: 4
+      item_id: 517
+    - amount: 1
+      item_id: 7031
+    - amount: 10
+      item_id: 511
+    - amount: 5
+      item_id: 7286
+    - amount: 1
+      item_id: 7455
+  product_id: 12043
+  skill_id: 0
+  skill_level: 0
+- id: 67
+  item_level: 13
+  materials:
+    - amount: 0
+      item_id: 7474
+    - amount: 20
+      item_id: 966
+    - amount: 10
+      item_id: 961
+    - amount: 1
+      item_id: 518
+    - amount: 1
+      item_id: 7453
+  product_id: 12053
+  skill_id: 0
+  skill_level: 0
+- id: 68
+  item_level: 13
+  materials:
+    - amount: 0
+      item_id: 7474
+    - amount: 10
+      item_id: 962
+    - amount: 10
+      item_id: 548
+    - amount: 5
+      item_id: 549
+    - amount: 1
+      item_id: 7453
+  product_id: 12058
+  skill_id: 0
+  skill_level: 0
+- id: 69
+  item_level: 13
+  materials:
+    - amount: 0
+      item_id: 7474
+    - amount: 10
+      item_id: 516
+    - amount: 10
+      item_id: 549
+    - amount: 1
+      item_id: 633
+    - amount: 1
+      item_id: 7453
+  product_id: 12068
+  skill_id: 0
+  skill_level: 0
+- id: 70
+  item_level: 14
+  materials:
+    - amount: 0
+      item_id: 7475
+    - amount: 10
+      item_id: 578
+    - amount: 4
+      item_id: 568
+    - amount: 10
+      item_id: 582
+    - amount: 2
+      item_id: 970
+    - amount: 5
+      item_id: 514
+  product_id: 12049
+  skill_id: 0
+  skill_level: 0
+- id: 71
+  item_level: 14
+  materials:
+    - amount: 0
+      item_id: 7475
+    - amount: 30
+      item_id: 962
+    - amount: 10
+      item_id: 509
+    - amount: 10
+      item_id: 7194
+    - amount: 1
+      item_id: 7031
+    - amount: 20
+      item_id: 1024
+  product_id: 12054
+  skill_id: 0
+  skill_level: 0
+- id: 72
+  item_level: 14
+  materials:
+    - amount: 0
+      item_id: 7475
+    - amount: 5
+      item_id: 517
+    - amount: 3
+      item_id: 507
+    - amount: 2
+      item_id: 508
+    - amount: 3
+      item_id: 511
+    - amount: 1
+      item_id: 7453
+    - amount: 1
+      item_id: 568
+  product_id: 12044
+  skill_id: 0
+  skill_level: 0
+- id: 73
+  item_level: 14
+  materials:
+    - amount: 0
+      item_id: 7475
+    - amount: 5
+      item_id: 580
+    - amount: 15
+      item_id: 519
+    - amount: 10
+      item_id: 548
+    - amount: 10
+      item_id: 508
+    - amount: 1
+      item_id: 517
+    - amount: 1
+      item_id: 7453
+  product_id: 12064
+  skill_id: 0
+  skill_level: 0
+- id: 74
+  item_level: 14
+  materials:
+    - amount: 0
+      item_id: 7475
+    - amount: 3
+      item_id: 577
+    - amount: 1
+      item_id: 7455
+    - amount: 10
+      item_id: 7066
+    - amount: 10
+      item_id: 515
+    - amount: 10
+      item_id: 1062
+  product_id: 12059
+  skill_id: 0
+  skill_level: 0
+- id: 75
+  item_level: 14
+  materials:
+    - amount: 0
+      item_id: 7475
+    - amount: 10
+      item_id: 1054
+    - amount: 10
+      item_id: 945
+    - amount: 10
+      item_id: 509
+    - amount: 5
+      item_id: 579
+    - amount: 2
+      item_id: 7453
+  product_id: 12069
+  skill_id: 0
+  skill_level: 0
+- id: 76
+  item_level: 15
+  materials:
+    - amount: 0
+      item_id: 7476
+    - amount: 4
+      item_id: 522
+    - amount: 1
+      item_id: 505
+    - amount: 2
+      item_id: 970
+    - amount: 2
+      item_id: 568
+    - amount: 1
+      item_id: 7452
+  product_id: 12050
+  skill_id: 0
+  skill_level: 0
+- id: 77
+  item_level: 15
+  materials:
+    - amount: 0
+      item_id: 7476
+    - amount: 10
+      item_id: 516
+    - amount: 2
+      item_id: 518
+    - amount: 1
+      item_id: 7457
+    - amount: 3
+      item_id: 515
+    - amount: 1
+      item_id: 577
+  product_id: 12045
+  skill_id: 0
+  skill_level: 0
+- id: 78
+  item_level: 15
+  materials:
+    - amount: 0
+      item_id: 7476
+    - amount: 2
+      item_id: 520
+    - amount: 3
+      item_id: 521
+    - amount: 10
+      item_id: 7100
+    - amount: 6
+      item_id: 7198
+    - amount: 1
+      item_id: 7453
+    - amount: 1
+      item_id: 7452
+  product_id: 12065
+  skill_id: 0
+  skill_level: 0
+- id: 79
+  item_level: 15
+  materials:
+    - amount: 0
+      item_id: 7476
+    - amount: 20
+      item_id: 7006
+    - amount: 20
+      item_id: 1062
+    - amount: 1
+      item_id: 7482
+    - amount: 10
+      item_id: 520
+    - amount: 10
+      item_id: 507
+  product_id: 12060
+  skill_id: 0
+  skill_level: 0
+- id: 80
+  item_level: 15
+  materials:
+    - amount: 0
+      item_id: 7476
+    - amount: 20
+      item_id: 553
+    - amount: 10
+      item_id: 508
+    - amount: 1
+      item_id: 7455
+    - amount: 1
+      item_id: 7456
+    - amount: 20
+      item_id: 511
+  product_id: 12055
+  skill_id: 0
+  skill_level: 0
+- id: 81
+  item_level: 15
+  materials:
+    - amount: 0
+      item_id: 7476
+    - amount: 20
+      item_id: 904
+    - amount: 10
+      item_id: 1042
+    - amount: 10
+      item_id: 7198
+    - amount: 2
+      item_id: 7031
+    - amount: 1
+      item_id: 7457
+  product_id: 12070
+  skill_id: 0
+  skill_level: 0
+- id: 82
+  item_level: 16
+  materials:
+    - amount: 0
+      item_id: 7477
+    - amount: 10
+      item_id: 517
+    - amount: 2
+      item_id: 518
+    - amount: 1
+      item_id: 508
+    - amount: 1
+      item_id: 522
+    - amount: 20
+      item_id: 954
+  product_id: 12071
+  skill_id: 0
+  skill_level: 0
+- id: 83
+  item_level: 16
+  materials:
+    - amount: 0
+      item_id: 7477
+    - amount: 3
+      item_id: 581
+    - amount: 3
+      item_id: 533
+    - amount: 20
+      item_id: 921
+    - amount: 1
+      item_id: 970
+    - amount: 1
+      item_id: 7456
+  product_id: 12076
+  skill_id: 0
+  skill_level: 0
+- id: 84
+  item_level: 16
+  materials:
+    - amount: 0
+      item_id: 7477
+    - amount: 20
+      item_id: 7164
+    - amount: 10
+      item_id: 539
+    - amount: 10
+      item_id: 548
+    - amount: 10
+      item_id: 519
+    - amount: 5
+      item_id: 620
+    - amount: 1
+      item_id: 7453
+  product_id: 12091
+  skill_id: 0
+  skill_level: 0
+- id: 85
+  item_level: 16
+  materials:
+    - amount: 0
+      item_id: 7477
+    - amount: 20
+      item_id: 7286
+    - amount: 20
+      item_id: 567
+    - amount: 1
+      item_id: 7453
+    - amount: 20
+      item_id: 568
+  product_id: 12086
+  skill_id: 0
+  skill_level: 0
+- id: 86
+  item_level: 16
+  materials:
+    - amount: 0
+      item_id: 7477
+    - amount: 20
+      item_id: 7188
+    - amount: 10
+      item_id: 1033
+    - amount: 20
+      item_id: 921
+    - amount: 1
+      item_id: 581
+    - amount: 2
+      item_id: 518
+  product_id: 12081
+  skill_id: 0
+  skill_level: 0
+- id: 87
+  item_level: 16
+  materials:
+    - amount: 0
+      item_id: 7477
+    - amount: 5
+      item_id: 903
+    - amount: 5
+      item_id: 1015
+    - amount: 10
+      item_id: 705
+    - amount: 10
+      item_id: 1061
+    - amount: 1
+      item_id: 704
+  product_id: 12096
+  skill_id: 0
+  skill_level: 0
+- id: 88
+  item_level: 17
+  materials:
+    - amount: 0
+      item_id: 7478
+    - amount: 10
+      item_id: 517
+    - amount: 1
+      item_id: 7098
+    - amount: 2
+      item_id: 1003
+    - amount: 1
+      item_id: 7455
+    - amount: 15
+      item_id: 1019
+    - amount: 10
+      item_id: 509
+  product_id: 12072
+  skill_id: 0
+  skill_level: 0
+- id: 89
+  item_level: 17
+  materials:
+    - amount: 0
+      item_id: 7478
+    - amount: 4
+      item_id: 526
+    - amount: 2
+      item_id: 518
+    - amount: 5
+      item_id: 509
+    - amount: 10
+      item_id: 520
+    - amount: 1
+      item_id: 7452
+  product_id: 12077
+  skill_id: 0
+  skill_level: 0
+- id: 90
+  item_level: 17
+  materials:
+    - amount: 0
+      item_id: 7478
+    - amount: 10
+      item_id: 580
+    - amount: 5
+      item_id: 522
+    - amount: 1
+      item_id: 7453
+    - amount: 5
+      item_id: 708
+    - amount: 5
+      item_id: 609
+    - amount: 2
+      item_id: 619
+  product_id: 12092
+  skill_id: 0
+  skill_level: 0
+- id: 91
+  item_level: 17
+  materials:
+    - amount: 0
+      item_id: 7478
+    - amount: 10
+      item_id: 7003
+    - amount: 10
+      item_id: 1062
+    - amount: 10
+      item_id: 515
+    - amount: 10
+      item_id: 521
+    - amount: 10
+      item_id: 508
+    - amount: 1
+      item_id: 7452
+  product_id: 12087
+  skill_id: 0
+  skill_level: 0
+- id: 92
+  item_level: 17
+  materials:
+    - amount: 0
+      item_id: 7478
+    - amount: 10
+      item_id: 1023
+    - amount: 5
+      item_id: 521
+    - amount: 10
+      item_id: 1028
+    - amount: 2
+      item_id: 579
+    - amount: 10
+      item_id: 537
+    - amount: 1
+      item_id: 7453
+  product_id: 12082
+  skill_id: 0
+  skill_level: 0
+- id: 93
+  item_level: 17
+  materials:
+    - amount: 0
+      item_id: 7478
+    - amount: 10
+      item_id: 936
+    - amount: 5
+      item_id: 956
+    - amount: 10
+      item_id: 7194
+    - amount: 5
+      item_id: 517
+    - amount: 10
+      item_id: 581
+    - amount: 10
+      item_id: 966
+  product_id: 12097
+  skill_id: 0
+  skill_level: 0
+- id: 94
+  item_level: 18
+  materials:
+    - amount: 0
+      item_id: 7479
+    - amount: 20
+      item_id: 948
+    - amount: 10
+      item_id: 515
+    - amount: 10
+      item_id: 1062
+    - amount: 2
+      item_id: 521
+    - amount: 1
+      item_id: 520
+    - amount: 1
+      item_id: 7454
+  product_id: 12073
+  skill_id: 0
+  skill_level: 0
+- id: 95
+  item_level: 18
+  materials:
+    - amount: 0
+      item_id: 7479
+    - amount: 4
+      item_id: 576
+    - amount: 10
+      item_id: 520
+    - amount: 3
+      item_id: 610
+    - amount: 10
+      item_id: 521
+    - amount: 6
+      item_id: 526
+    - amount: 1
+      item_id: 7452
+  product_id: 12078
+  skill_id: 0
+  skill_level: 0
+- id: 96
+  item_level: 18
+  materials:
+    - amount: 0
+      item_id: 7479
+    - amount: 10
+      item_id: 580
+    - amount: 2
+      item_id: 526
+    - amount: 5
+      item_id: 517
+    - amount: 10
+      item_id: 578
+    - amount: 1
+      item_id: 7455
+    - amount: 10
+      item_id: 548
+    - amount: 1
+      item_id: 7453
+  product_id: 12093
+  skill_id: 0
+  skill_level: 0
+- id: 97
+  item_level: 18
+  materials:
+    - amount: 0
+      item_id: 7479
+    - amount: 1
+      item_id: 606
+    - amount: 1
+      item_id: 7455
+    - amount: 10
+      item_id: 517
+    - amount: 10
+      item_id: 520
+    - amount: 10
+      item_id: 1062
+    - amount: 10
+      item_id: 515
+  product_id: 12088
+  skill_id: 0
+  skill_level: 0
+- id: 98
+  item_level: 18
+  materials:
+    - amount: 0
+      item_id: 7479
+    - amount: 20
+      item_id: 7298
+    - amount: 20
+      item_id: 517
+    - amount: 5
+      item_id: 622
+    - amount: 10
+      item_id: 1062
+    - amount: 1
+      item_id: 7454
+    - amount: 2
+      item_id: 577
+  product_id: 12083
+  skill_id: 0
+  skill_level: 0
+- id: 99
+  item_level: 18
+  materials:
+    - amount: 0
+      item_id: 7479
+    - amount: 10
+      item_id: 578
+    - amount: 5
+      item_id: 577
+    - amount: 10
+      item_id: 7298
+    - amount: 1
+      item_id: 7452
+    - amount: 2
+      item_id: 7456
+    - amount: 1
+      item_id: 7454
+  product_id: 12098
+  skill_id: 0
+  skill_level: 0
+- id: 100
+  item_level: 19
+  materials:
+    - amount: 0
+      item_id: 7480
+    - amount: 40
+      item_id: 1050
+    - amount: 1
+      item_id: 7482
+    - amount: 10
+      item_id: 548
+    - amount: 1
+      item_id: 7455
+    - amount: 2
+      item_id: 1003
+    - amount: 30
+      item_id: 511
+    - amount: 10
+      item_id: 1024
+  product_id: 12074
+  skill_id: 0
+  skill_level: 0
+- id: 101
+  item_level: 19
+  materials:
+    - amount: 0
+      item_id: 7480
+    - amount: 10
+      item_id: 610
+    - amount: 10
+      item_id: 582
+    - amount: 5
+      item_id: 970
+    - amount: 4
+      item_id: 526
+    - amount: 2
+      item_id: 505
+    - amount: 1
+      item_id: 7452
+    - amount: 10
+      item_id: 521
+  product_id: 12079
+  skill_id: 0
+  skill_level: 0
+- id: 102
+  item_level: 19
+  materials:
+    - amount: 0
+      item_id: 7480
+    - amount: 5
+      item_id: 619
+    - amount: 10
+      item_id: 582
+    - amount: 10
+      item_id: 578
+    - amount: 1
+      item_id: 7456
+    - amount: 1
+      item_id: 634
+    - amount: 5
+      item_id: 533
+    - amount: 2
+      item_id: 970
+  product_id: 12094
+  skill_id: 0
+  skill_level: 0
+- id: 103
+  item_level: 19
+  materials:
+    - amount: 0
+      item_id: 7480
+    - amount: 10
+      item_id: 517
+    - amount: 5
+      item_id: 526
+    - amount: 20
+      item_id: 711
+    - amount: 4
+      item_id: 7454
+    - amount: 5
+      item_id: 508
+    - amount: 10
+      item_id: 509
+    - amount: 5
+      item_id: 507
+  product_id: 12089
+  skill_id: 0
+  skill_level: 0
+- id: 104
+  item_level: 19
+  materials:
+    - amount: 0
+      item_id: 7480
+    - amount: 10
+      item_id: 7123
+    - amount: 20
+      item_id: 1037
+    - amount: 3
+      item_id: 610
+    - amount: 6
+      item_id: 526
+    - amount: 1
+      item_id: 7455
+    - amount: 1
+      item_id: 7456
+    - amount: 1
+      item_id: 632
+  product_id: 12084
+  skill_id: 0
+  skill_level: 0
+- id: 105
+  item_level: 19
+  materials:
+    - amount: 0
+      item_id: 7480
+    - amount: 1
+      item_id: 702
+    - amount: 2
+      item_id: 605
+    - amount: 2
+      item_id: 606
+    - amount: 2
+      item_id: 970
+    - amount: 6
+      item_id: 526
+    - amount: 1
+      item_id: 7456
+    - amount: 10
+      item_id: 531
+  product_id: 12099
+  skill_id: 0
+  skill_level: 0
+- id: 106
+  item_level: 20
+  materials:
+    - amount: 0
+      item_id: 7481
+    - amount: 20
+      item_id: 1015
+    - amount: 1
+      item_id: 7482
+    - amount: 1
+      item_id: 970
+    - amount: 2
+      item_id: 606
+    - amount: 1
+      item_id: 7455
+    - amount: 5
+      item_id: 526
+    - amount: 10
+      item_id: 610
+    - amount: 2
+      item_id: 505
+  product_id: 12075
+  skill_id: 0
+  skill_level: 0
+- id: 107
+  item_level: 20
+  materials:
+    - amount: 0
+      item_id: 7481
+    - amount: 10
+      item_id: 1033
+    - amount: 1
+      item_id: 707
+    - amount: 5
+      item_id: 521
+    - amount: 5
+      item_id: 526
+    - amount: 5
+      item_id: 568
+    - amount: 5
+      item_id: 576
+    - amount: 1
+      item_id: 607
+    - amount: 10
+      item_id: 510
+  product_id: 12080
+  skill_id: 0
+  skill_level: 0
+- id: 108
+  item_level: 20
+  materials:
+    - amount: 0
+      item_id: 7481
+    - amount: 1
+      item_id: 607
+    - amount: 10
+      item_id: 7066
+    - amount: 10
+      item_id: 7119
+    - amount: 4
+      item_id: 526
+    - amount: 3
+      item_id: 645
+    - amount: 5
+      item_id: 970
+    - amount: 2
+      item_id: 576
+    - amount: 1
+      item_id: 710
+  product_id: 12095
+  skill_id: 0
+  skill_level: 0
+- id: 109
+  item_level: 20
+  materials:
+    - amount: 0
+      item_id: 7481
+    - amount: 20
+      item_id: 904
+    - amount: 20
+      item_id: 7125
+    - amount: 2
+      item_id: 606
+    - amount: 3
+      item_id: 610
+    - amount: 3
+      item_id: 621
+    - amount: 10
+      item_id: 526
+    - amount: 1
+      item_id: 7455
+    - amount: 1
+      item_id: 7482
+  product_id: 12090
+  skill_id: 0
+  skill_level: 0
+- id: 110
+  item_level: 20
+  materials:
+    - amount: 0
+      item_id: 7481
+    - amount: 20
+      item_id: 929
+    - amount: 10
+      item_id: 934
+    - amount: 1
+      item_id: 608
+    - amount: 2
+      item_id: 605
+    - amount: 10
+      item_id: 950
+    - amount: 2
+      item_id: 7455
+    - amount: 10
+      item_id: 609
+    - amount: 2
+      item_id: 621
+  product_id: 12085
+  skill_id: 0
+  skill_level: 0
+- id: 111
+  item_level: 20
+  materials:
+    - amount: 0
+      item_id: 7481
+    - amount: 10
+      item_id: 1022
+    - amount: 2
+      item_id: 706
+    - amount: 10
+      item_id: 1033
+    - amount: 10
+      item_id: 7100
+    - amount: 4
+      item_id: 610
+    - amount: 1
+      item_id: 7454
+    - amount: 1
+      item_id: 7452
+    - amount: 2
+      item_id: 709
+  product_id: 12100
+  skill_id: 0
+  skill_level: 0
+- id: 112
+  item_level: 21
+  materials:
+    - amount: 1
+      item_id: 1002
+  product_id: 998
+  skill_id: 94
+  skill_level: 1
+- id: 113
+  item_level: 21
+  materials:
+    - amount: 5
+      item_id: 998
+    - amount: 1
+      item_id: 1003
+  product_id: 999
+  skill_id: 95
+  skill_level: 1
+- id: 114
+  item_level: 21
+  materials:
+    - amount: 10
+      item_id: 1001
+  product_id: 1000
+  skill_id: 96
+  skill_level: 1
+- id: 115
+  item_level: 21
+  materials:
+    - amount: 10
+      item_id: 990
+  product_id: 994
+  skill_id: 96
+  skill_level: 1
+- id: 116
+  item_level: 21
+  materials:
+    - amount: 10
+      item_id: 991
+  product_id: 995
+  skill_id: 96
+  skill_level: 1
+- id: 117
+  item_level: 21
+  materials:
+    - amount: 10
+      item_id: 992
+  product_id: 996
+  skill_id: 96
+  skill_level: 1
+- id: 118
+  item_level: 21
+  materials:
+    - amount: 10
+      item_id: 993
+  product_id: 997
+  skill_id: 96
+  skill_level: 1
+- id: 119
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 507
+    - amount: 1
+      item_id: 1093
+  product_id: 501
+  skill_id: 228
+  skill_level: 1
+- id: 120
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 508
+    - amount: 1
+      item_id: 1093
+  product_id: 503
+  skill_id: 228
+  skill_level: 1
+- id: 121
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 509
+    - amount: 1
+      item_id: 1093
+  product_id: 504
+  skill_id: 228
+  skill_level: 1
+- id: 122
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 510
+    - amount: 1
+      item_id: 911
+    - amount: 1
+      item_id: 1093
+  product_id: 505
+  skill_id: 228
+  skill_level: 1
+- id: 123
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7133
+    - amount: 1
+      item_id: 501
+    - amount: 1
+      item_id: 1092
+    - amount: 1
+      item_id: 952
+  product_id: 545
+  skill_id: 228
+  skill_level: 1
+- id: 124
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7133
+    - amount: 1
+      item_id: 503
+    - amount: 1
+      item_id: 1092
+    - amount: 1
+      item_id: 1017
+  product_id: 546
+  skill_id: 228
+  skill_level: 1
+- id: 125
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7133
+    - amount: 1
+      item_id: 504
+    - amount: 1
+      item_id: 1092
+    - amount: 1
+      item_id: 1061
+  product_id: 547
+  skill_id: 228
+  skill_level: 1
+- id: 126
+  item_level: 22
+  materials:
+    - amount: 1
+      item_id: 713
+  product_id: 523
+  skill_id: 31
+  skill_level: 1
+- id: 127
+  item_level: 22
+  materials:
+    - amount: 1
+      item_id: 937
+    - amount: 1
+      item_id: 952
+    - amount: 1
+      item_id: 939
+    - amount: 1
+      item_id: 7033
+    - amount: 1
+      item_id: 972
+    - amount: 1
+      item_id: 657
+    - amount: 1
+      item_id: 713
+  product_id: 678
+  skill_id: 407
+  skill_level: 1
+- id: 128
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7128
+    - amount: 1
+      item_id: 970
+    - amount: 1
+      item_id: 1059
+    - amount: 1
+      item_id: 713
+  product_id: 7135
+  skill_id: 228
+  skill_level: 1
+- id: 129
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7129
+    - amount: 1
+      item_id: 713
+    - amount: 1
+      item_id: 929
+  product_id: 7136
+  skill_id: 228
+  skill_level: 1
+- id: 130
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7130
+    - amount: 1
+      item_id: 713
+    - amount: 2
+      item_id: 1032
+  product_id: 7137
+  skill_id: 228
+  skill_level: 1
+- id: 131
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7131
+    - amount: 1
+      item_id: 713
+    - amount: 1
+      item_id: 1050
+    - amount: 1
+      item_id: 1051
+  product_id: 7138
+  skill_id: 228
+  skill_level: 1
+- id: 132
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7132
+    - amount: 1
+      item_id: 970
+    - amount: 1
+      item_id: 950
+    - amount: 1
+      item_id: 1044
+    - amount: 1
+      item_id: 713
+  product_id: 7139
+  skill_id: 228
+  skill_level: 1
+- id: 133
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7434
+    - amount: 2
+      item_id: 1012
+    - amount: 1
+      item_id: 716
+    - amount: 1
+      item_id: 1093
+  product_id: 12118
+  skill_id: 228
+  skill_level: 1
+- id: 134
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7434
+    - amount: 3
+      item_id: 950
+    - amount: 1
+      item_id: 717
+    - amount: 1
+      item_id: 1093
+  product_id: 12119
+  skill_id: 228
+  skill_level: 1
+- id: 135
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7434
+    - amount: 2
+      item_id: 7126
+    - amount: 1
+      item_id: 715
+    - amount: 1
+      item_id: 1093
+  product_id: 12120
+  skill_id: 228
+  skill_level: 1
+- id: 136
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7434
+    - amount: 3
+      item_id: 1057
+    - amount: 1
+      item_id: 717
+    - amount: 1
+      item_id: 1093
+  product_id: 12121
+  skill_id: 228
+  skill_level: 1
+- id: 137
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 708
+    - amount: 1
+      item_id: 970
+    - amount: 1
+      item_id: 713
+  product_id: 605
+  skill_id: 228
+  skill_level: 1
+- id: 138
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 704
+    - amount: 1
+      item_id: 518
+    - amount: 1
+      item_id: 713
+  product_id: 606
+  skill_id: 228
+  skill_level: 1
+- id: 139
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7127
+    - amount: 1
+      item_id: 713
+    - amount: 5
+      item_id: 7033
+    - amount: 5
+      item_id: 905
+    - amount: 1
+      item_id: 1092
+  product_id: 970
+  skill_id: 228
+  skill_level: 1
+- id: 140
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 7140
+    - amount: 1
+      item_id: 7141
+    - amount: 1
+      item_id: 7143
+  product_id: 7142
+  skill_id: 228
+  skill_level: 1
+- id: 141
+  item_level: 22
+  materials:
+    - amount: 0
+      item_id: 7144
+    - amount: 1
+      item_id: 7140
+    - amount: 1
+      item_id: 508
+    - amount: 1
+      item_id: 713
+  product_id: 100371
+  skill_id: 228
+  skill_level: 1
+- id: 142
+  item_level: 23
+  materials:
+    - amount: 1
+      item_id: 7433
+    - amount: 1
+      item_id: 990
+  product_id: 12114
+  skill_id: 1007
+  skill_level: 1
+- id: 143
+  item_level: 23
+  materials:
+    - amount: 1
+      item_id: 7433
+    - amount: 1
+      item_id: 991
+  product_id: 12115
+  skill_id: 1007
+  skill_level: 1
+- id: 144
+  item_level: 23
+  materials:
+    - amount: 1
+      item_id: 7433
+    - amount: 1
+      item_id: 993
+  product_id: 12116
+  skill_id: 1007
+  skill_level: 1
+- id: 145
+  item_level: 23
+  materials:
+    - amount: 1
+      item_id: 7433
+    - amount: 1
+      item_id: 992
+  product_id: 12117
+  skill_id: 1007
+  skill_level: 1
+- id: 146
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 717
+  product_id: 12333
+  skill_id: 2039
+  skill_level: 1
+- id: 147
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 7069
+    - amount: 1
+      item_id: 7099
+    - amount: 1
+      item_id: 7938
+    - amount: 1
+      item_id: 7939
+  product_id: 12725
+  skill_id: 2010
+  skill_level: 8
+- id: 148
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 716
+    - amount: 1
+      item_id: 7938
+    - amount: 1
+      item_id: 7939
+  product_id: 12726
+  skill_id: 2010
+  skill_level: 7
+- id: 149
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 7210
+    - amount: 1
+      item_id: 7939
+  product_id: 12727
+  skill_id: 2010
+  skill_level: 9
+- id: 150
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 7097
+    - amount: 1
+      item_id: 7939
+  product_id: 12728
+  skill_id: 2010
+  skill_level: 2
+- id: 151
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 7002
+    - amount: 1
+      item_id: 7938
+    - amount: 1
+      item_id: 7939
+  product_id: 12729
+  skill_id: 2010
+  skill_level: 5
+- id: 152
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 518
+    - amount: 1
+      item_id: 1048
+    - amount: 1
+      item_id: 7939
+  product_id: 12730
+  skill_id: 2010
+  skill_level: 6
+- id: 153
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 1034
+    - amount: 1
+      item_id: 7030
+    - amount: 1
+      item_id: 7939
+  product_id: 12731
+  skill_id: 2010
+  skill_level: 1
+- id: 154
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 1035
+    - amount: 1
+      item_id: 7221
+    - amount: 1
+      item_id: 7938
+    - amount: 1
+      item_id: 7939
+  product_id: 12732
+  skill_id: 2010
+  skill_level: 3
+- id: 155
+  item_level: 24
+  materials:
+    - amount: 1
+      item_id: 1096
+    - amount: 1
+      item_id: 7123
+    - amount: 1
+      item_id: 7939
+  product_id: 12733
+  skill_id: 2010
+  skill_level: 4
+- id: 156
+  item_level: 24
+  materials:
+    - amount: 3
+      item_id: 969
+    - amount: 3
+      item_id: 7938
+  product_id: 22540
+  skill_id: 2010
+  skill_level: 10
+- id: 157
+  item_level: 25
+  materials:
+    - amount: 1
+      item_id: 509
+    - amount: 1
+      item_id: 510
+    - amount: 2
+      item_id: 511
+  product_id: 6128
+  skill_id: 2024
+  skill_level: 5
+- id: 158
+  item_level: 25
+  materials:
+    - amount: 1
+      item_id: 7134
+    - amount: 20
+      item_id: 7155
+    - amount: 1
+      item_id: 7931
+    - amount: 1
+      item_id: 7937
+  product_id: 12717
+  skill_id: 2024
+  skill_level: 1
+- id: 159
+  item_level: 25
+  materials:
+    - amount: 1
+      item_id: 7134
+    - amount: 1
+      item_id: 7931
+    - amount: 1
+      item_id: 7932
+    - amount: 1
+      item_id: 7936
+  product_id: 12718
+  skill_id: 2024
+  skill_level: 4
+- id: 160
+  item_level: 25
+  materials:
+    - amount: 1
+      item_id: 709
+    - amount: 10
+      item_id: 950
+    - amount: 1
+      item_id: 7134
+    - amount: 1
+      item_id: 7931
+  product_id: 12719
+  skill_id: 2024
+  skill_level: 9
+- id: 161
+  item_level: 25
+  materials:
+    - amount: 25
+      item_id: 957
+    - amount: 1
+      item_id: 7134
+    - amount: 1
+      item_id: 7931
+    - amount: 1
+      item_id: 7935
+  product_id: 12720
+  skill_id: 2024
+  skill_level: 3
+- id: 162
+  item_level: 25
+  materials:
+    - amount: 1
+      item_id: 7134
+    - amount: 10
+      item_id: 7565
+    - amount: 1
+      item_id: 7931
+    - amount: 1
+      item_id: 7932
+  product_id: 12721
+  skill_id: 2024
+  skill_level: 8
+- id: 163
+  item_level: 25
+  materials:
+    - amount: 20
+      item_id: 7003
+    - amount: 1
+      item_id: 7134
+    - amount: 1
+      item_id: 7931
+    - amount: 1
+      item_id: 7933
+  product_id: 12722
+  skill_id: 2024
+  skill_level: 2
+- id: 164
+  item_level: 25
+  materials:
+    - amount: 10
+      item_id: 7033
+    - amount: 1
+      item_id: 7134
+    - amount: 1
+      item_id: 7931
+    - amount: 1
+      item_id: 7934
+  product_id: 12723
+  skill_id: 2024
+  skill_level: 7
+- id: 165
+  item_level: 25
+  materials:
+    - amount: 1
+      item_id: 709
+    - amount: 1
+      item_id: 7134
+    - amount: 10
+      item_id: 7565
+    - amount: 1
+      item_id: 7931
+  product_id: 12724
+  skill_id: 2024
+  skill_level: 6
+- id: 166
+  item_level: 26
+  materials:
+    - amount: 45
+      item_id: 940
+    - amount: 35
+      item_id: 942
+  product_id: 1045
+  skill_id: 2494
+  skill_level: 1
+- id: 167
+  item_level: 26
+  materials:
+    - amount: 40
+      item_id: 738
+    - amount: 5
+      item_id: 1029
+  product_id: 1020
+  skill_id: 2494
+  skill_level: 1
+- id: 168
+  item_level: 26
+  materials:
+    - amount: 45
+      item_id: 908
+    - amount: 40
+      item_id: 746
+  product_id: 1010
+  skill_id: 2494
+  skill_level: 1
+- id: 169
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 943
+    - amount: 20
+      item_id: 1032
+  product_id: 1041
+  skill_id: 2494
+  skill_level: 1
+- id: 170
+  item_level: 26
+  materials:
+    - amount: 30
+      item_id: 952
+    - amount: 10
+      item_id: 946
+  product_id: 1026
+  skill_id: 2494
+  skill_level: 1
+- id: 171
+  item_level: 26
+  materials:
+    - amount: 25
+      item_id: 754
+    - amount: 35
+      item_id: 1057
+  product_id: 1008
+  skill_id: 2494
+  skill_level: 1
+- id: 172
+  item_level: 26
+  materials:
+    - amount: 45
+      item_id: 905
+    - amount: 45
+      item_id: 1036
+  product_id: 958
+  skill_id: 2494
+  skill_level: 1
+- id: 173
+  item_level: 26
+  materials:
+    - amount: 40
+      item_id: 915
+    - amount: 10
+      item_id: 966
+  product_id: 971
+  skill_id: 2494
+  skill_level: 1
+- id: 174
+  item_level: 26
+  materials:
+    - amount: 45
+      item_id: 941
+    - amount: 25
+      item_id: 916
+  product_id: 1051
+  skill_id: 2494
+  skill_level: 1
+- id: 175
+  item_level: 26
+  materials:
+    - amount: 40
+      item_id: 955
+    - amount: 5
+      item_id: 753
+  product_id: 1046
+  skill_id: 2494
+  skill_level: 1
+- id: 176
+  item_level: 26
+  materials:
+    - amount: 5
+      item_id: 953
+    - amount: 10
+      item_id: 907
+  product_id: 1038
+  skill_id: 2494
+  skill_level: 1
+- id: 177
+  item_level: 26
+  materials:
+    - amount: 25
+      item_id: 917
+    - amount: 20
+      item_id: 1044
+  product_id: 1033
+  skill_id: 2494
+  skill_level: 1
+- id: 178
+  item_level: 26
+  materials:
+    - amount: 5
+      item_id: 956
+    - amount: 25
+      item_id: 929
+  product_id: 961
+  skill_id: 2494
+  skill_level: 1
+- id: 179
+  item_level: 26
+  materials:
+    - amount: 20
+      item_id: 935
+    - amount: 50
+      item_id: 1015
+  product_id: 959
+  skill_id: 2494
+  skill_level: 1
+- id: 180
+  item_level: 26
+  materials:
+    - amount: 35
+      item_id: 939
+    - amount: 45
+      item_id: 1039
+  product_id: 1040
+  skill_id: 2494
+  skill_level: 1
+- id: 181
+  item_level: 26
+  materials:
+    - amount: 20
+      item_id: 926
+    - amount: 15
+      item_id: 972
+  product_id: 1012
+  skill_id: 2494
+  skill_level: 1
+- id: 182
+  item_level: 26
+  materials:
+    - amount: 5
+      item_id: 950
+    - amount: 40
+      item_id: 752
+  product_id: 1011
+  skill_id: 2494
+  skill_level: 1
+- id: 183
+  item_level: 26
+  materials:
+    - amount: 20
+      item_id: 948
+    - amount: 25
+      item_id: 737
+  product_id: 1024
+  skill_id: 2494
+  skill_level: 1
+- id: 184
+  item_level: 26
+  materials:
+    - amount: 50
+      item_id: 951
+    - amount: 35
+      item_id: 1048
+  product_id: 1025
+  skill_id: 2494
+  skill_level: 1
+- id: 185
+  item_level: 26
+  materials:
+    - amount: 30
+      item_id: 742
+    - amount: 50
+      item_id: 740
+  product_id: 1064
+  skill_id: 2494
+  skill_level: 1
+- id: 186
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 930
+    - amount: 10
+      item_id: 1052
+  product_id: 1019
+  skill_id: 2494
+  skill_level: 1
+- id: 187
+  item_level: 26
+  materials:
+    - amount: 40
+      item_id: 957
+    - amount: 5
+      item_id: 1028
+  product_id: 962
+  skill_id: 2494
+  skill_level: 1
+- id: 188
+  item_level: 26
+  materials:
+    - amount: 15
+      item_id: 937
+    - amount: 30
+      item_id: 924
+  product_id: 974
+  skill_id: 2494
+  skill_level: 1
+- id: 189
+  item_level: 26
+  materials:
+    - amount: 50
+      item_id: 947
+    - amount: 45
+      item_id: 912
+  product_id: 1013
+  skill_id: 2494
+  skill_level: 1
+- id: 190
+  item_level: 26
+  materials:
+    - amount: 20
+      item_id: 749
+    - amount: 30
+      item_id: 903
+  product_id: 1058
+  skill_id: 2494
+  skill_level: 1
+- id: 191
+  item_level: 26
+  materials:
+    - amount: 25
+      item_id: 938
+    - amount: 40
+      item_id: 1055
+  product_id: 960
+  skill_id: 2494
+  skill_level: 1
+- id: 192
+  item_level: 26
+  materials:
+    - amount: 5
+      item_id: 914
+    - amount: 40
+      item_id: 741
+  product_id: 967
+  skill_id: 2494
+  skill_level: 1
+- id: 193
+  item_level: 26
+  materials:
+    - amount: 50
+      item_id: 945
+    - amount: 10
+      item_id: 910
+  product_id: 1043
+  skill_id: 2494
+  skill_level: 1
+- id: 194
+  item_level: 26
+  materials:
+    - amount: 50
+      item_id: 751
+    - amount: 35
+      item_id: 918
+  product_id: 1035
+  skill_id: 2494
+  skill_level: 1
+- id: 195
+  item_level: 26
+  materials:
+    - amount: 30
+      item_id: 936
+    - amount: 35
+      item_id: 1047
+  product_id: 1049
+  skill_id: 2494
+  skill_level: 1
+- id: 196
+  item_level: 26
+  materials:
+    - amount: 25
+      item_id: 913
+    - amount: 35
+      item_id: 1063
+  product_id: 1037
+  skill_id: 2494
+  skill_level: 1
+- id: 197
+  item_level: 26
+  materials:
+    - amount: 15
+      item_id: 954
+    - amount: 25
+      item_id: 1054
+  product_id: 1021
+  skill_id: 2494
+  skill_level: 1
+- id: 198
+  item_level: 26
+  materials:
+    - amount: 35
+      item_id: 747
+    - amount: 50
+      item_id: 1031
+  product_id: 1056
+  skill_id: 2494
+  skill_level: 1
+- id: 199
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 944
+    - amount: 20
+      item_id: 965
+  product_id: 963
+  skill_id: 2494
+  skill_level: 1
+- id: 200
+  item_level: 26
+  materials:
+    - amount: 20
+      item_id: 920
+    - amount: 45
+      item_id: 911
+  product_id: 1042
+  skill_id: 2494
+  skill_level: 1
+- id: 201
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 928
+    - amount: 15
+      item_id: 735
+  product_id: 1061
+  skill_id: 2494
+  skill_level: 1
+- id: 202
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 919
+    - amount: 15
+      item_id: 739
+  product_id: 1022
+  skill_id: 2494
+  skill_level: 1
+- id: 203
+  item_level: 26
+  materials:
+    - amount: 45
+      item_id: 909
+    - amount: 20
+      item_id: 745
+  product_id: 1034
+  skill_id: 2494
+  skill_level: 1
+- id: 204
+  item_level: 26
+  materials:
+    - amount: 20
+      item_id: 743
+    - amount: 20
+      item_id: 748
+  product_id: 1014
+  skill_id: 2494
+  skill_level: 1
+- id: 205
+  item_level: 26
+  materials:
+    - amount: 5
+      item_id: 902
+    - amount: 45
+      item_id: 1018
+  product_id: 968
+  skill_id: 2494
+  skill_level: 1
+- id: 206
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 904
+    - amount: 30
+      item_id: 1062
+  product_id: 1009
+  skill_id: 2494
+  skill_level: 1
+- id: 207
+  item_level: 26
+  materials:
+    - amount: 50
+      item_id: 931
+    - amount: 40
+      item_id: 932
+  product_id: 970
+  skill_id: 2494
+  skill_level: 1
+- id: 208
+  item_level: 26
+  materials:
+    - amount: 50
+      item_id: 750
+    - amount: 30
+      item_id: 1023
+  product_id: 964
+  skill_id: 2494
+  skill_level: 1
+- id: 209
+  item_level: 26
+  materials:
+    - amount: 25
+      item_id: 922
+    - amount: 5
+      item_id: 949
+  product_id: 1050
+  skill_id: 2494
+  skill_level: 1
+- id: 210
+  item_level: 26
+  materials:
+    - amount: 5
+      item_id: 906
+    - amount: 20
+      item_id: 736
+  product_id: 1030
+  skill_id: 2494
+  skill_level: 1
+- id: 211
+  item_level: 26
+  materials:
+    - amount: 45
+      item_id: 744
+    - amount: 40
+      item_id: 1017
+  product_id: 703
+  skill_id: 2494
+  skill_level: 1
+- id: 212
+  item_level: 26
+  materials:
+    - amount: 15
+      item_id: 923
+    - amount: 30
+      item_id: 934
+  product_id: 973
+  skill_id: 2494
+  skill_level: 1
+- id: 213
+  item_level: 26
+  materials:
+    - amount: 35
+      item_id: 925
+    - amount: 30
+      item_id: 1059
+  product_id: 1053
+  skill_id: 2494
+  skill_level: 1
+- id: 214
+  item_level: 26
+  materials:
+    - amount: 35
+      item_id: 921
+    - amount: 40
+      item_id: 1060
+  product_id: 1016
+  skill_id: 2494
+  skill_level: 1
+- id: 215
+  item_level: 26
+  materials:
+    - amount: 1
+      item_id: 2101
+  product_id: 1003
+  skill_id: 2494
+  skill_level: 1
+- id: 216
+  item_level: 26
+  materials:
+    - amount: 1
+      item_id: 1119
+  product_id: 999
+  skill_id: 2494
+  skill_level: 1
+- id: 217
+  item_level: 26
+  materials:
+    - amount: 1
+      item_id: 1304
+  product_id: 2267
+  skill_id: 2494
+  skill_level: 1
+- id: 218
+  item_level: 26
+  materials:
+    - amount: 100
+      item_id: 7752
+    - amount: 100
+      item_id: 7753
+  product_id: 1615
+  skill_id: 2494
+  skill_level: 1
+- id: 219
+  item_level: 26
+  materials:
+    - amount: 1
+      item_id: 1304
+    - amount: 100
+      item_id: 931
+  product_id: 2267
+  skill_id: 2494
+  skill_level: 1
+- id: 220
+  item_level: 26
+  materials:
+    - amount: 100
+      item_id: 1057
+    - amount: 100
+      item_id: 911
+  product_id: 1061
+  skill_id: 2494
+  skill_level: 1
+- id: 221
+  item_level: 26
+  materials:
+    - amount: 30
+      item_id: 949
+    - amount: 30
+      item_id: 916
+  product_id: 7063
+  skill_id: 2494
+  skill_level: 1
+- id: 222
+  item_level: 26
+  materials:
+    - amount: 100
+      item_id: 7066
+  product_id: 992
+  skill_id: 2494
+  skill_level: 1
+- id: 223
+  item_level: 26
+  materials:
+    - amount: 100
+      item_id: 920
+  product_id: 991
+  skill_id: 2494
+  skill_level: 1
+- id: 224
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1059
+  product_id: 7166
+  skill_id: 2494
+  skill_level: 1
+- id: 225
+  item_level: 26
+  materials:
+    - amount: 2
+      item_id: 7166
+  product_id: 1059
+  skill_id: 2494
+  skill_level: 1
+- id: 226
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1093
+    - amount: 10
+      item_id: 12417
+    - amount: 10
+      item_id: 7200
+  product_id: 13269
+  skill_id: 2494
+  skill_level: 1
+- id: 227
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1093
+    - amount: 10
+      item_id: 12418
+    - amount: 10
+      item_id: 7200
+  product_id: 13270
+  skill_id: 2494
+  skill_level: 1
+- id: 228
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1093
+    - amount: 10
+      item_id: 12419
+    - amount: 10
+      item_id: 7200
+  product_id: 13271
+  skill_id: 2494
+  skill_level: 1
+- id: 229
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1093
+    - amount: 10
+      item_id: 12475
+    - amount: 10
+      item_id: 7200
+  product_id: 13272
+  skill_id: 2494
+  skill_level: 1
+- id: 230
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1093
+    - amount: 10
+      item_id: 12420
+    - amount: 10
+      item_id: 7200
+  product_id: 13273
+  skill_id: 2494
+  skill_level: 1
+- id: 231
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 1093
+    - amount: 10
+      item_id: 12421
+    - amount: 10
+      item_id: 7200
+  product_id: 13274
+  skill_id: 2494
+  skill_level: 1
+- id: 232
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12422
+  product_id: 13275
+  skill_id: 2494
+  skill_level: 1
+- id: 233
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12423
+  product_id: 13276
+  skill_id: 2494
+  skill_level: 1
+- id: 234
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12424
+  product_id: 13277
+  skill_id: 2494
+  skill_level: 1
+- id: 235
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12425
+  product_id: 13278
+  skill_id: 2494
+  skill_level: 1
+- id: 236
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12426
+  product_id: 13279
+  skill_id: 2494
+  skill_level: 1
+- id: 237
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12427
+  product_id: 13280
+  skill_id: 2494
+  skill_level: 1
+- id: 238
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12428
+  product_id: 13281
+  skill_id: 2494
+  skill_level: 1
+- id: 239
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12436
+  product_id: 13282
+  skill_id: 2494
+  skill_level: 1
+- id: 240
+  item_level: 26
+  materials:
+    - amount: 10
+      item_id: 6297
+    - amount: 10
+      item_id: 12437
+  product_id: 13283
+  skill_id: 2494
+  skill_level: 1
+- id: 241
+  item_level: 27
+  materials:
+    - amount: 0
+      item_id: 11022
+    - amount: 1
+      item_id: 6248
+    - amount: 1
+      item_id: 6249
+    - amount: 1
+      item_id: 6250
+    - amount: 1
+      item_id: 6251
+  product_id: 12429
+  skill_id: 2495
+  skill_level: 1
+- id: 242
+  item_level: 27
+  materials:
+    - amount: 0
+      item_id: 11022
+    - amount: 1
+      item_id: 6248
+    - amount: 3
+      item_id: 6252
+    - amount: 2
+      item_id: 6253
+  product_id: 12430
+  skill_id: 2495
+  skill_level: 1
+- id: 243
+  item_level: 27
+  materials:
+    - amount: 0
+      item_id: 11022
+    - amount: 1
+      item_id: 6248
+    - amount: 2
+      item_id: 6254
+    - amount: 1
+      item_id: 6255
+  product_id: 12431
+  skill_id: 2495
+  skill_level: 1
+- id: 244
+  item_level: 27
+  materials:
+    - amount: 0
+      item_id: 11022
+    - amount: 1
+      item_id: 6248
+    - amount: 3
+      item_id: 6256
+    - amount: 2
+      item_id: 6257
+    - amount: 1
+      item_id: 6258
+  product_id: 12432
+  skill_id: 2495
+  skill_level: 1
+- id: 245
+  item_level: 27
+  materials:
+    - amount: 0
+      item_id: 11022
+    - amount: 3
+      item_id: 507
+    - amount: 3
+      item_id: 509
+    - amount: 3
+      item_id: 510
+    - amount: 1
+      item_id: 6248
+    - amount: 1
+      item_id: 6255
+    - amount: 3
+      item_id: 6259
+  product_id: 12433
+  skill_id: 2495
+  skill_level: 1
+- id: 246
+  item_level: 27
+  materials:
+    - amount: 0
+      item_id: 11022
+    - amount: 1
+      item_id: 6248
+    - amount: 2
+      item_id: 6260
+    - amount: 1
+      item_id: 6261
+    - amount: 1
+      item_id: 6262
+  product_id: 12434
+  skill_id: 2495
+  skill_level: 1
+- id: 252
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6284
+    - amount: 10
+      item_id: 576
+  product_id: 6210
+  skill_id: 2497
+  skill_level: 1
+- id: 253
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6284
+    - amount: 10
+      item_id: 1033
+  product_id: 6211
+  skill_id: 2497
+  skill_level: 1
+- id: 254
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6284
+    - amount: 10
+      item_id: 921
+    - amount: 2
+      item_id: 6244
+    - amount: 5
+      item_id: 7033
+  product_id: 6212
+  skill_id: 2497
+  skill_level: 1
+- id: 255
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 11023
+    - amount: 10
+      item_id: 509
+    - amount: 5
+      item_id: 528
+    - amount: 10
+      item_id: 713
+    - amount: 1
+      item_id: 7455
+  product_id: 12422
+  skill_id: 2497
+  skill_level: 1
+- id: 256
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 11023
+    - amount: 10
+      item_id: 508
+    - amount: 10
+      item_id: 509
+    - amount: 10
+      item_id: 713
+    - amount: 1
+      item_id: 7455
+  product_id: 12423
+  skill_id: 2497
+  skill_level: 1
+- id: 257
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 11023
+    - amount: 15
+      item_id: 509
+    - amount: 3
+      item_id: 522
+    - amount: 1
+      item_id: 523
+    - amount: 10
+      item_id: 713
+    - amount: 1
+      item_id: 7455
+  product_id: 12424
+  skill_id: 2497
+  skill_level: 1
+- id: 258
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 11024
+    - amount: 10
+      item_id: 514
+    - amount: 10
+      item_id: 568
+    - amount: 10
+      item_id: 713
+    - amount: 1
+      item_id: 7453
+  product_id: 12425
+  skill_id: 2497
+  skill_level: 1
+- id: 259
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 11024
+    - amount: 10
+      item_id: 510
+    - amount: 10
+      item_id: 518
+    - amount: 10
+      item_id: 713
+    - amount: 1
+      item_id: 7453
+  product_id: 12426
+  skill_id: 2497
+  skill_level: 1
+- id: 260
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 11024
+    - amount: 15
+      item_id: 510
+    - amount: 10
+      item_id: 526
+    - amount: 10
+      item_id: 713
+    - amount: 1
+      item_id: 7453
+  product_id: 12427
+  skill_id: 2497
+  skill_level: 1
+- id: 261
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6285
+    - amount: 20
+      item_id: 504
+    - amount: 10
+      item_id: 509
+    - amount: 1
+      item_id: 970
+    - amount: 10
+      item_id: 1092
+  product_id: 12428
+  skill_id: 2497
+  skill_level: 1
+- id: 262
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6285
+    - amount: 10
+      item_id: 510
+    - amount: 10
+      item_id: 514
+    - amount: 10
+      item_id: 518
+    - amount: 10
+      item_id: 1092
+  product_id: 12436
+  skill_id: 2497
+  skill_level: 1
+- id: 263
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6285
+    - amount: 5
+      item_id: 645
+    - amount: 5
+      item_id: 656
+    - amount: 10
+      item_id: 1092
+    - amount: 5
+      item_id: 7455
+  product_id: 12437
+  skill_id: 2497
+  skill_level: 1
+- id: 264
+  item_level: 29
+  materials:
+    - amount: 0
+      item_id: 6285
+    - amount: 20
+      item_id: 511
+    - amount: 1
+      item_id: 522
+    - amount: 5
+      item_id: 525
+    - amount: 1
+      item_id: 610
+    - amount: 10
+      item_id: 1092
+  product_id: 12475
+  skill_id: 2497
+  skill_level: 1
+- id: 265
+  item_level: 29
+  materials:
+    - amount: 10
+      item_id: 1092
+    - amount: 10
+      item_id: 607
+    - amount: 5
+      item_id: 969
+  product_id: 100231
+  skill_id: 2497
+  skill_level: 1
+- id: 266
+  item_level: 29
+  materials:
+    - amount: 10
+      item_id: 1092
+    - amount: 45
+      item_id: 507
+    - amount: 5
+      item_id: 608
+  product_id: 100232
+  skill_id: 2497
+  skill_level: 1
+- id: 267
+  item_level: 29
+  materials:
+    - amount: 10
+      item_id: 1092
+    - amount: 15
+      item_id: 510
+    - amount: 5
+      item_id: 608
+  product_id: 100233
+  skill_id: 2497
+  skill_level: 1
+- id: 268
+  item_level: 29
+  materials:
+    - amount: 10
+      item_id: 1092
+    - amount: 5
+      item_id: 1093
+    - amount: 15
+      item_id: 11621
+  product_id: 1100003
+  skill_id: 2497
+  skill_level: 1
+- id: 269
+  item_level: 29
+  materials:
+    - amount: 10
+      item_id: 1092
+    - amount: 5
+      item_id: 1093
+    - amount: 15
+      item_id: 11624
+  product_id: 1100004
+  skill_id: 2497
+  skill_level: 1
+- id: 270
+  item_level: 29
+  materials:
+    - amount: 10
+      item_id: 1092
+    - amount: 5
+      item_id: 1093
+    - amount: 10
+      item_id: 11623
+    - amount: 10
+      item_id: 11622
+  product_id: 1100005
+  skill_id: 2497
+  skill_level: 1
+- id: 271
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 2
+      item_id: 507
+    - amount: 1
+      item_id: 512
+  product_id: 569
+  skill_id: 0
+  skill_level: 0
+- id: 272
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 3
+      item_id: 1066
+    - amount: 1
+      item_id: 909
+  product_id: 12325
+  skill_id: 0
+  skill_level: 0
+- id: 273
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 2
+      item_id: 914
+    - amount: 2
+      item_id: 949
+    - amount: 2
+      item_id: 909
+  product_id: 12323
+  skill_id: 0
+  skill_level: 0
+- id: 274
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 10
+      item_id: 935
+    - amount: 10
+      item_id: 955
+    - amount: 1
+      item_id: 1010
+  product_id: 13040
+  skill_id: 0
+  skill_level: 0
+- id: 275
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 1
+      item_id: 512
+    - amount: 1
+      item_id: 511
+  product_id: 12846
+  skill_id: 0
+  skill_level: 0
+- id: 276
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 200
+      item_id: 705
+    - amount: 200
+      item_id: 938
+  product_id: 706
+  skill_id: 0
+  skill_level: 0
+- id: 277
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 1
+      item_id: 513
+    - amount: 1
+      item_id: 519
+  product_id: 532
+  skill_id: 0
+  skill_level: 0
+- id: 278
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 1
+      item_id: 512
+    - amount: 1
+      item_id: 519
+  product_id: 531
+  skill_id: 0
+  skill_level: 0
+- id: 279
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 1
+      item_id: 515
+    - amount: 1
+      item_id: 519
+  product_id: 534
+  skill_id: 0
+  skill_level: 0
+- id: 280
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 1
+      item_id: 514
+    - amount: 1
+      item_id: 519
+  product_id: 533
+  skill_id: 0
+  skill_level: 0
+- id: 281
+  item_level: 30
+  materials:
+    - amount: 0
+      item_id: 11058
+    - amount: 10
+      item_id: 938
+    - amount: 20
+      item_id: 511
+    - amount: 10
+      item_id: 512
+  product_id: 619
+  skill_id: 0
+  skill_level: 0
+- id: 282
+  item_level: 31
+  materials:
+    - amount: 0
+      item_id: 1000352
+    - amount: 5
+      item_id: 612
+    - amount: 5
+      item_id: 615
+    - amount: 50
+      item_id: 6146
+  product_id: 1000289
+  skill_id: 5297
+  skill_level: 1
+- id: 283
+  item_level: 31
+  materials:
+    - amount: 0
+      item_id: 1000352
+    - amount: 5
+      item_id: 612
+    - amount: 5
+      item_id: 615
+    - amount: 75
+      item_id: 6146
+  product_id: 1000290
+  skill_id: 5297
+  skill_level: 1
+- id: 284
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 1
+      item_id: 7135
+    - amount: 1
+      item_id: 7136
+    - amount: 2
+      item_id: 6360
+  product_id: 1000276
+  skill_id: 5336
+  skill_level: 1
+- id: 285
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 1
+      item_id: 7135
+    - amount: 1
+      item_id: 7136
+    - amount: 2
+      item_id: 6363
+  product_id: 1000277
+  skill_id: 5336
+  skill_level: 1
+- id: 286
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 1
+      item_id: 7135
+    - amount: 1
+      item_id: 7136
+    - amount: 2
+      item_id: 6362
+  product_id: 1000278
+  skill_id: 5336
+  skill_level: 1
+- id: 287
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 1
+      item_id: 7135
+    - amount: 1
+      item_id: 7136
+    - amount: 2
+      item_id: 6361
+  product_id: 1000279
+  skill_id: 5336
+  skill_level: 1
+- id: 288
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 5
+      item_id: 713
+    - amount: 10
+      item_id: 7139
+  product_id: 1000280
+  skill_id: 5336
+  skill_level: 1
+- id: 289
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 2
+      item_id: 6210
+    - amount: 2
+      item_id: 6211
+    - amount: 5
+      item_id: 6217
+    - amount: 10
+      item_id: 7137
+  product_id: 1000281
+  skill_id: 5336
+  skill_level: 1
+- id: 290
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 5
+      item_id: 523
+    - amount: 3
+      item_id: 509
+    - amount: 3
+      item_id: 511
+  product_id: 100516
+  skill_id: 5336
+  skill_level: 1
+- id: 291
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 5
+      item_id: 523
+    - amount: 2
+      item_id: 510
+    - amount: 3
+      item_id: 511
+  product_id: 100517
+  skill_id: 5336
+  skill_level: 1
+- id: 292
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 5
+      item_id: 523
+    - amount: 2
+      item_id: 607
+    - amount: 3
+      item_id: 526
+  product_id: 100518
+  skill_id: 5336
+  skill_level: 1
+- id: 293
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 5
+      item_id: 523
+    - amount: 5
+      item_id: 991
+    - amount: 3
+      item_id: 998
+  product_id: 100519
+  skill_id: 5336
+  skill_level: 1
+- id: 294
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 5
+      item_id: 523
+    - amount: 10
+      item_id: 705
+    - amount: 3
+      item_id: 511
+  product_id: 100520
+  skill_id: 5336
+  skill_level: 1
+- id: 295
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 5
+      item_id: 523
+    - amount: 3
+      item_id: 678
+    - amount: 10
+      item_id: 511
+  product_id: 100521
+  skill_id: 5336
+  skill_level: 1
+- id: 296
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 3
+      item_id: 7182
+    - amount: 3
+      item_id: 526
+    - amount: 5
+      item_id: 608
+  product_id: 100522
+  skill_id: 5336
+  skill_level: 1
+- id: 297
+  item_level: 32
+  materials:
+    - amount: 1
+      item_id: 1000275
+    - amount: 10
+      item_id: 713
+    - amount: 10
+      item_id: 523
+    - amount: 3
+      item_id: 526
+  product_id: 100523
+  skill_id: 5336
+  skill_level: 1
