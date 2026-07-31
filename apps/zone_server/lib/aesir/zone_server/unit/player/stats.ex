@@ -45,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -749,7 +750,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     base_atk = apply_rate(calculate_base_atk(stats), get_equipment_modifier(stats, :atk_rate))
     base_matk = calculate_base_matk(stats)
     base_def = calculate_base_def(stats)
-    passive_atk = Passives.atk_bonus(stats)
+    skill_passive_atk = Passives.atk_bonus(stats)
+    passive_atk = skill_passive_atk + forged_star_damage(stats.worn_items)
     passive_critical = Passives.critical_bonus(stats)
     passive_critical_display = div(passive_critical, 10)
 
@@ -785,7 +787,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
-          passive_atk,
+          skill_passive_atk,
       matk_min: matk_min,
       matk_max: matk_max,
       matk: matk_max,
@@ -806,6 +808,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     }
 
     %{stats | combat_stats: combat_stats}
+  end
+
+  @spec forged_star_damage([map()]) :: non_neg_integer()
+  defp forged_star_damage(worn_items) do
+    Enum.reduce(worn_items, 0, fn item, damage ->
+      with true <- :right_hand in EquipLocation.bitmask_to_location_atoms(item.equip),
+           {:ok, %{star_damage: star_damage}} <- ForgeStamp.decode(item) do
+        damage + star_damage
+      else
+        _unforged_or_other_slot -> damage
+      end
+    end)
   end
 
   defp calculate_base_critical(%__MODULE__{} = stats) do

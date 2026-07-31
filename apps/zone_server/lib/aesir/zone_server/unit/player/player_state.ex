@@ -13,7 +13,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -1017,14 +1019,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp defense_element(_stats), do: {:neutral, 1}
 
   # Ammo element wins, then the equipped weapon's own `attack_element`, then the
-  # equipment-script `:atk_ele` (`bonus bAtkEle`), then the neutral default. The
-  # weapon and script sources both derive from the item's `bonus bAtkEle` — the
-  # former survives an item whose script failed to transpile as a whole — so they
-  # never disagree. A status endow outranks all of them, applied by the damage
-  # calculators through the `:attack_element` modifier.
+  # equipment-script `:atk_ele` (`bonus bAtkEle`), then its forged element and
+  # the neutral default. A status endow outranks all of them, applied by the
+  # damage calculators through the `:attack_element` modifier.
   defp weapon_element(%PlayerStats{} = stats) do
     item_element(stats.equipment.ammo) || item_element(stats.equipment.right_hand) ||
-      equip_atk_element(stats) || :neutral
+      equip_atk_element(stats) || forged_weapon_element(stats.worn_items) || :neutral
+  end
+
+  @spec forged_weapon_element([map()]) :: atom() | nil
+  defp forged_weapon_element(worn_items) do
+    Enum.find_value(worn_items, fn item ->
+      with true <- :right_hand in EquipLocation.bitmask_to_location_atoms(item.equip),
+           {:ok, %{element: element}} when element != :neutral <- ForgeStamp.decode(item) do
+        element
+      else
+        _unforged_neutral_or_other_slot -> nil
+      end
+    end)
   end
 
   defp item_element(nil), do: nil
