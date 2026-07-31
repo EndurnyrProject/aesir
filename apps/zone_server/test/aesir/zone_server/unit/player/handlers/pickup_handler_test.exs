@@ -23,7 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
   @nameid 501
   @item_def %{id: @nameid, weight: 10}
 
-  defp ground_item(id, x, y) do
+  defp ground_item(id, x, y, identified \\ true) do
     %GroundItem{
       id: id,
       nameid: @nameid,
@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
       y: y,
       sub_x: 3,
       sub_y: 3,
-      identified: true,
+      identified: identified,
       dropped_at: 0
     }
   end
@@ -82,7 +82,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
       {:ok, ground_item(@ground_id, 101, 100)}
     end)
 
-    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st -> {:ok, st} end)
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true -> {:ok, st} end)
+
+    assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
+  end
+
+  test "picking up an unidentified item gives it as unidentified" do
+    unidentified = ground_item(@ground_id, 101, 100, false)
+
+    stub(GroundItemStore, :query_in_range, fn _, _, _, _ -> [unidentified] end)
+    stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+    stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
+    stub(Coordinator, :claim_item, fn _, _, _ -> {:ok, unidentified} end)
+
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, false -> {:ok, st} end)
 
     assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
 
@@ -98,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
     stub(Coordinator, :claim_item, fn _, _, _ -> {:ok, claimed} end)
 
-    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st ->
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true ->
       {:error, :db_error, st}
     end)
 
@@ -168,7 +181,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
       {:ok, ground_item(@ground_id, 100, 100)}
     end)
 
-    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st -> {:ok, st} end)
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true -> {:ok, st} end)
 
     assert {:noreply, new_state} = PickupHandler.handle_reached_item(session)
 

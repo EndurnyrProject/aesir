@@ -72,11 +72,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
 
   @spec do_pickup(pos_integer(), map()) :: {:noreply, map()}
   defp do_pickup(ground_id, %{game_state: gs} = state) do
-    with {:ok, %GroundItem{nameid: nameid, amount: amount}} <- find_in_range(gs, ground_id),
+    with {:ok, %GroundItem{nameid: nameid, amount: amount, identified: identified}} <-
+           find_in_range(gs, ground_id),
          {:ok, item_def} <- ItemManagement.get_item_by_id(nameid),
          :ok <- InventoryOps.can_add(gs.inventory, gs.stats, item_def, amount),
          {:ok, claimed} <- Coordinator.claim_item(gs.map_name, ground_id, gs.character_id) do
-      give_claimed(item_def, amount, claimed, ground_id, state)
+      give_claimed(item_def, amount, identified, claimed, ground_id, state)
     else
       {:error, reason} ->
         reply(state, ground_id, pickup_code(reason))
@@ -122,16 +123,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   # The claim succeeded (item is off the ground), so a give failure here would
   # otherwise lose the item: re-place it (a fresh ground id, new ItemOnGround) so
   # the player can retry, and answer FAILED rather than a wrong OK.
-  @spec give_claimed(ItemDefinition.t(), pos_integer(), GroundItem.t(), pos_integer(), map()) ::
-          {:noreply, map()}
+  @spec give_claimed(
+          ItemDefinition.t(),
+          pos_integer(),
+          boolean(),
+          GroundItem.t(),
+          pos_integer(),
+          map()
+        ) :: {:noreply, map()}
   defp give_claimed(
          item_def,
          amount,
+         identified,
          %GroundItem{} = claimed,
          ground_id,
          %{game_state: gs} = state
        ) do
-    case InventoryManager.handle_give_item(item_def, amount, state) do
+    case InventoryManager.handle_give_item(item_def, amount, state, identified) do
       {:ok, new_state} ->
         reply(new_state, ground_id, :OK)
         {:noreply, new_state}

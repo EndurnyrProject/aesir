@@ -107,9 +107,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       inv = %{}
 
       assert {:ok, persisted, {:added, 0, _}} = InventoryOps.add(char.id, inv, stats, def_, 5)
-      assert %{0 => %InventoryItem{nameid: @potion, amount: 5}} = persisted
+      assert %{0 => %InventoryItem{nameid: @potion, amount: 5, identify: 1}} = persisted
 
-      assert [%InventoryItem{nameid: @potion, amount: 5}] =
+      assert [%InventoryItem{nameid: @potion, amount: 5, identify: 1}] =
+               Persistence.load_inventory(char.id)
+    end
+
+    test "persists an unidentified item through reload", %{character: char, stats: stats} do
+      def_ = def!(@sword)
+
+      assert {:ok, %{0 => %InventoryItem{identify: 0}}, {:added, 0, _}} =
+               InventoryOps.add(char.id, %{}, stats, def_, 1, %{identify: 0})
+
+      assert [%InventoryItem{nameid: @sword, identify: 0}] =
                Persistence.load_inventory(char.id)
     end
 

@@ -56,13 +56,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   """
   @spec handle_give_item(ItemDefinition.t(), pos_integer(), SessionState.t()) ::
           {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
-  def handle_give_item(%ItemDefinition{} = item_def, amount, %{game_state: game_state} = state) do
+  def handle_give_item(item_def, amount, state),
+    do: handle_give_item(item_def, amount, state, true)
+
+  @spec handle_give_item(ItemDefinition.t(), pos_integer(), SessionState.t(), boolean()) ::
+          {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
+  def handle_give_item(
+        %ItemDefinition{} = item_def,
+        amount,
+        %{game_state: game_state} = state,
+        identified
+      ) do
     case InventoryOps.add(
            game_state.character_id,
            game_state.inventory,
            game_state.stats,
            item_def,
-           amount
+           amount,
+           %{identify: if(identified, do: 1, else: 0)}
          ) do
       {:ok, persisted, change} ->
         notify_added(state.connection_pid, persisted, change)
