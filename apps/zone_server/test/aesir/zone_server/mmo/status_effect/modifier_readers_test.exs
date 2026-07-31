@@ -83,7 +83,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :received_heal_rate,
                :no_death_penalty,
                :sp_cost_rate,
-               :varcast_rate
+               :varcast_rate,
+               :ailment_resist_rate
              ])
 
   # Tuple-shaped keys read by the damage calculators.

@@ -102,7 +102,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
          {:ok, duration} <-
-           roll_resistance(status_id, definition, entity_info, duration_override, status_params) do
+           roll_resistance(
+             unit_type,
+             unit_id,
+             status_id,
+             definition,
+             entity_info,
+             duration_override,
+             status_params
+           ) do
       create_and_store(unit_type, unit_id, status_id, status_params, definition, duration)
     end
   end
@@ -624,14 +632,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     Enum.any?(status_ids, &StatusStorage.has_status?(unit_type, unit_id, &1))
   end
 
-  defp roll_resistance(_status_id, %{permanent: true}, _entity_info, _duration_override, _params),
-    do: {:ok, nil}
+  defp roll_resistance(
+         _unit_type,
+         _unit_id,
+         _status_id,
+         %{permanent: true},
+         _entity_info,
+         _duration_override,
+         _params
+       ),
+       do: {:ok, nil}
 
-  defp roll_resistance(status_id, definition, entity_info, duration_override, status_params) do
+  defp roll_resistance(
+         unit_type,
+         unit_id,
+         status_id,
+         definition,
+         entity_info,
+         duration_override,
+         status_params
+       ) do
     if Keyword.get(status_params, :bypass_resistance, false) do
       {:ok, duration_override || definition.duration || 10_000}
     else
       roll_resistance_with_adjustment(
+        unit_type,
+        unit_id,
         definition,
         entity_info,
         status_id,
@@ -642,6 +668,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp roll_resistance_with_adjustment(
+         unit_type,
+         unit_id,
          definition,
          entity_info,
          status_id,
@@ -665,6 +693,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       end
 
     success_rate = apply_res_eff_tolerance(success_rate, entity_info, status_id, status_params)
+    success_rate = apply_ailment_resistance(success_rate, unit_type, unit_id, status_id)
 
     if resistance_roll.(success_rate) do
       {:ok, adjusted_duration}
@@ -690,6 +719,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
         |> Map.get({:res_eff, status_id}, 0)
 
       max(success_rate - tolerance / 100, 0)
+    end
+  end
+
+  defp apply_ailment_resistance(success_rate, unit_type, unit_id, status_id) do
+    if PropertyChecker.debuff?(status_id) do
+      resistance =
+        unit_type
+        |> ModifierCalculator.get_all_modifiers(unit_id)
+        |> Map.get(:ailment_resist_rate, 0)
+
+      max(success_rate - resistance, 0)
+    else
+      success_rate
     end
   end
 

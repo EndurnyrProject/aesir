@@ -22,6 +22,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       permanent: true
   end
 
+  defmodule AilmentResistanceStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_ailment_resistance,
+      no_dispel: false,
+      properties: [:buff]
+
+    @impl true
+    def modifiers(instance, _context), do: %{ailment_resist_rate: instance.val1}
+  end
+
   defmodule FiniteDeathSurvivor do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_finite_death_survivor,
@@ -348,8 +358,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       setup_player_mock(target_id)
       Registry.register_module(PermanentStatus)
+      apply_ailment_resistance(target_id, 100)
 
-      assert :ok = Interpreter.apply_status(:player, target_id, :sc_test_permanent)
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_test_permanent,
+                 resistance_roll: fn _rate -> flunk("permanent status must not roll") end
+               )
+
       assert %{expires_at: nil} = StatusStorage.get_status(:player, target_id, :sc_test_permanent)
     end
 
@@ -421,6 +436,71 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                StatusStorage.get_status(:player, target_id, :sc_test_permanent)
     end
 
+    test "ailment resistance lowers a debuff's final infliction rate" do
+      target_id = 24
+      test_pid = self()
+
+      setup_player_mock(target_id, stats: %{mdef: 0})
+      apply_ailment_resistance(target_id, 40)
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        final_rate >= 80
+      end
+
+      assert {:error, :resisted} =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 success_rate: 100,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, 60.0}
+      refute StatusStorage.has_status?(:player, target_id, :sc_freeze)
+    end
+
+    test "ailment resistance leaves a buff's final infliction rate unchanged" do
+      target_id = 25
+      test_pid = self()
+
+      setup_player_mock(target_id)
+      apply_ailment_resistance(target_id, 40)
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        final_rate >= 63
+      end
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_hiding,
+                 success_rate: 63,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, 63.0}
+      assert StatusStorage.has_status?(:player, target_id, :sc_hiding)
+    end
+
+    test "ailment resistance floors the final infliction rate at zero" do
+      target_id = 26
+      test_pid = self()
+
+      setup_player_mock(target_id, stats: %{mdef: 20})
+      apply_ailment_resistance(target_id, 100)
+
+      resistance_roll = fn final_rate ->
+        send(test_pid, {:final_rate, final_rate})
+        false
+      end
+
+      assert {:error, :resisted} =
+               Interpreter.apply_status(:player, target_id, :sc_freeze,
+                 success_rate: 100,
+                 resistance_roll: resistance_roll
+               )
+
+      assert_received {:final_rate, 0}
+    end
+
     test "Freeze rolls its final skill chance once and stores its MDEF-adjusted duration" do
       target_id = 13
       test_pid = self()
@@ -460,6 +540,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
         equip_modifiers: %{{:res_eff, :sc_freeze} => 10_000}
       )
 
+      apply_ailment_resistance(target_id, 100)
       before_ms = System.monotonic_time(:millisecond)
 
       assert :ok =
@@ -626,6 +707,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
       target_id = 20
 
       setup_player_mock(target_id)
+      apply_ailment_resistance(target_id, 100)
       stub(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, :roll_success, fn _ -> false end)
 
       assert {:error, :resisted} =
@@ -637,7 +719,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
                Interpreter.apply_status(:player, target_id, :sc_provoke,
                  val1: 10,
                  duration: 12_000,
-                 loaded: true
+                 loaded: true,
+                 resistance_roll: fn _rate -> flunk("loaded status must not roll") end
                )
 
       assert %{expires_at: expires_at} =
@@ -1195,6 +1278,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     Mimic.allow(UnitRegistry, self(), task_pid)
     Mimic.allow(Aesir.ZoneServer.Mmo.StatusEffect.Resistance, self(), task_pid)
     Mimic.allow(StatusDisplay, self(), task_pid)
+  end
+
+  defp apply_ailment_resistance(target_id, rate) do
+    Registry.register_module(AilmentResistanceStatus)
+
+    StatusStorage.apply_status(:player, target_id, :sc_test_ailment_resistance, val1: rate)
   end
 
   # Helper to set up player mock with stats
