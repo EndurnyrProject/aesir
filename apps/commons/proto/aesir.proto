@@ -1772,6 +1772,8 @@ enum SkillCastFailureReason {
   SKILL_CAST_FAILURE_REASON_NOT_LEARNED = 7;
   SKILL_CAST_FAILURE_REASON_OUT_OF_RANGE = 8;
   SKILL_CAST_FAILURE_REASON_BUSY = 9;
+  SKILL_CAST_FAILURE_REASON_WRONG_WEAPON = 10;
+  SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY = 11;
 }
 
 // Server -> client, caster-only feedback when an attempted skill cast is rejected.

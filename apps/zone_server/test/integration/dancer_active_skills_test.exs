@@ -58,7 +58,14 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     initial_sp = player_sp(no_whip.pid)
 
     cast(no_whip, @throw_arrow, target.unit_id)
-    assert_failure(@throw_arrow)
+
+    assert_receive {:packet_sent,
+                    %SkillCastFailed{
+                      skill_id: @throw_arrow,
+                      reason: :SKILL_CAST_FAILURE_REASON_WRONG_WEAPON
+                    }, _},
+                   1_000
+
     assert equipped_arrow_amount(no_whip.pid) == 3
     assert persisted_arrow_amount(no_whip.character.id) == 3
     assert player_sp(no_whip.pid) == initial_sp
@@ -109,7 +116,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     assert_receive {:packet_sent,
                     %SkillCastFailed{
                       skill_id: @hip_shaker,
-                      reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
+                      reason: :SKILL_CAST_FAILURE_REASON_VERSUS_MAP_ONLY
                     }, _},
                    1_000
 
@@ -310,10 +317,6 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
       level: level,
       target_id: target_id
     })
-  end
-
-  defp assert_failure(skill_id) do
-    assert_receive {:packet_sent, %SkillCastFailed{skill_id: ^skill_id}, _}, 1_000
   end
 
   defp equipped_arrow_amount(pid) do

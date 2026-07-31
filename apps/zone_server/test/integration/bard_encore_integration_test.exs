@@ -201,7 +201,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
     assert_receive {:packet_sent,
                     %SkillCastFailed{
                       skill_id: @encore,
-                      reason: :SKILL_CAST_FAILURE_REASON_UNSPECIFIED
+                      reason: :SKILL_CAST_FAILURE_REASON_WRONG_WEAPON
                     }, _},
                    2_000
 
