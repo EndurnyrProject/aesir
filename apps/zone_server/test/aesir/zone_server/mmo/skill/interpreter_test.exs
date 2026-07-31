@@ -1731,6 +1731,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       gs = %{resurrection_game_state() | inventory: %{}}
 
       :ok = StatusStorage.apply_status(:player, 1000, :sc_intoabyss)
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: %{}}} end)
       stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), corpse, :player} end)
       stub(Combat, :resolve_target_position, fn 2_000 -> {:ok, :player, {14, 10, "prontera"}} end)
       stub(PlayerSession, :resurrect, fn _pid, 1_000, 10 -> :ok end)
@@ -1751,6 +1752,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         |> Map.merge(%{inventory: %{}, pending_inventory_persist: []})
         |> then(&struct(PlayerState, &1))
 
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: %{}}} end)
+
       assert {:error, :missing_catalyst} =
                Interpreter.complete_cast(without_trap, 117, 1, {:ground, 11, 10})
 
@@ -1767,6 +1770,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     test "catalyst check and consume resolve the same effective list across item costs" do
       stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: %{}}} end)
 
       for gemstone_id <- [715, 716, 717], trap? <- [false, true], waiver? <- [false, true] do
         item_cost =
