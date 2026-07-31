@@ -97,25 +97,6 @@ defmodule Aesir.ZoneServer.EntityHelpers do
   end
 
   @doc """
-  Moves a unit to a new position.
-
-  ## Examples
-
-      move_unit(:player, player_id, 160, 170)
-  """
-  def move_unit(unit_type, unit_id, x, y) do
-    # Get current map first
-    case SpatialIndex.get_unit_position(unit_type, unit_id) do
-      {:ok, {_old_x, _old_y, map_name}} ->
-        # Update position in SpatialIndex
-        SpatialIndex.update_unit_position(unit_type, unit_id, x, y, map_name)
-
-      _ ->
-        {:error, :unit_not_found}
-    end
-  end
-
-  @doc """
   Removes a unit from the game world.
 
   ## Examples
