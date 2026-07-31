@@ -75,6 +75,19 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
       assert {:error, :insufficient_stock} = Vending.validate_open(c, [{0, 5, 100}], 12)
     end
 
+    test "rejects an unidentified cart item" do
+      c = cart([item(nameid: @sword, identify: 0)])
+
+      assert {:error, :item_unidentified} = Vending.validate_open(c, [{0, 1, 50_000}], 12)
+    end
+
+    test "rejects the entire shop when one selected cart item is unidentified" do
+      c = cart([item(nameid: @red_potion, amount: 5), item(nameid: @sword, identify: 0)])
+
+      assert {:error, :item_unidentified} =
+               Vending.validate_open(c, [{0, 5, 100}, {1, 1, 50_000}], 12)
+    end
+
     test "rejects a line referencing an empty cart slot" do
       c = cart([item(nameid: @red_potion, amount: 3)])
 

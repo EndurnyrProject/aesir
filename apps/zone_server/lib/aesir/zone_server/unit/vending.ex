@@ -79,7 +79,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
              | :invalid_amount
              | :invalid_price
              | :item_not_in_cart
-             | :insufficient_stock}
+             | :insufficient_stock
+             | :item_unidentified}
   def validate_open(cart, entries, max_slots)
       when is_map(cart) and is_list(entries) and is_integer(max_slots) do
     if length(entries) > max_slots do
@@ -160,7 +161,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
   defp validate_entry(cart, {cart_index, amount, price}) do
     with :ok <- check_amount(amount),
          :ok <- check_price(price),
-         {:ok, item} <- fetch_slot(cart, cart_index, amount) do
+         {:ok, item} <- fetch_slot(cart, cart_index, amount),
+         :ok <- check_identified(item) do
       {:ok, %ShopItem{cart_index: cart_index, nameid: item.nameid, amount: amount, price: price}}
     end
   end
@@ -179,6 +181,10 @@ defmodule Aesir.ZoneServer.Unit.Vending do
       %InventoryItem{} -> {:error, :insufficient_stock}
       nil -> {:error, :item_not_in_cart}
     end
+  end
+
+  defp check_identified(item) do
+    if InventoryItem.identified?(item), do: :ok, else: {:error, :item_unidentified}
   end
 
   defp snapshot_row(%ShopItem{} = shop, %InventoryItem{} = item) do

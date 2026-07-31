@@ -71,13 +71,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
     }
   end
 
-  defp item(nameid, amount) do
+  defp item(nameid, amount, opts \\ []) do
     %InventoryItem{
       id: 11,
       char_id: @char_id,
       nameid: nameid,
       amount: amount,
-      identify: 1,
+      identify: Keyword.get(opts, :identify, 1),
       random_options: %{}
     }
   end
@@ -128,6 +128,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       assert :error = Registry.get(@char_id)
       refute_received {:board, _}
     end
+
+    test "rejects an unidentified selected cart item without opening the shop" do
+      mount_cart()
+
+      base =
+        state(
+          learned_skills: learned(@vending_level),
+          cart_map: %{0 => item(1101, 1, identify: 0)}
+        )
+
+      assert {:error, :item_unidentified} = VendingHandler.open_shop(base, "Shop", [{0, 1, 100}])
+
+      assert :error = Registry.get(@char_id)
+      refute_received {:board, _}
+    end
   end
 
   describe "handle_open/3" do
@@ -160,6 +175,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
 
       assert_received {:send, :gameplay,
                        {:vending_open_result, %Aesir.Net.VendingOpenResult{result: :VEND_NO_CART}}}
+    end
+
+    test "tells the vendor when an unidentified cart item is selected" do
+      mount_cart()
+
+      base =
+        state(
+          learned_skills: learned(@vending_level),
+          cart_map: %{0 => item(1101, 1, identify: 0)}
+        )
+
+      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result,
+                        %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
     end
 
     test "rejects opening more lines than max_slots for the learned level" do

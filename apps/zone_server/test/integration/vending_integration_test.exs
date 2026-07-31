@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
   alias Aesir.Net.VendingList
   alias Aesir.Net.VendingListRequest
   alias Aesir.Net.VendingOpenRequest
+  alias Aesir.Net.VendingOpenResult
   alias Aesir.Net.VendingPurchaseRequest
   alias Aesir.Net.VendingSaleReport
   alias Aesir.Repo
@@ -166,6 +167,23 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
                InventoryPersistence.load_inventory(buyer.character.id)
     end
 
+    test "an unidentified cart item rejects the shop open and notifies its vendor" do
+      seller = start_seller(zeny: 1_000, cart_stock: 1, identify: 0)
+      seller_id = seller.character.id
+      cart_index = only_cart_index(seller.pid)
+
+      assert [%CartItem{identify: 0}] = CartPersistence.load_cart(seller_id)
+
+      simulate_incoming_message(seller.pid, %VendingOpenRequest{
+        title: "Unknown Item",
+        entries: [%VendingEntry{cart_index: cart_index, amount: 1, price: @price}]
+      })
+
+      assert_receive {:packet_sent, %VendingOpenResult{result: :VEND_INVALID_STATE}, _}, 1_000
+      assert :error = VendingRegistry.get(seller_id)
+      assert get_player_state(seller.pid).action_state == :idle
+    end
+
     test "disconnecting a vendor closes the shop and leaves the unsold stock in the cart" do
       seller = start_seller(zeny: 1_000, cart_stock: 10)
       seller_id = seller.character.id
@@ -221,6 +239,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
   defp start_seller(opts) do
     zeny = Keyword.fetch!(opts, :zeny)
     cart_stock = Keyword.fetch!(opts, :cart_stock)
+    identify = Keyword.get(opts, :identify, 1)
 
     character = insert_character("Merchy", class: @merchant_class, zeny: zeny, skill_point: 20)
 
@@ -228,7 +247,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
       InventoryPersistence.insert_item(character.id, %{
         nameid: @potion,
         amount: cart_stock,
-        identify: 1
+        identify: identify
       })
 
     session =

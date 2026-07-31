@@ -97,6 +97,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
              | :invalid_price
              | :item_not_in_cart
              | :insufficient_stock
+             | :item_unidentified
              | :invalid_transition}
   def open_shop(%{game_state: gs} = state, title, entries) do
     char_id = gs.character_id
