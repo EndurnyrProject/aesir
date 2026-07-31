@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -47,7 +48,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         def: 0,
         hit: Keyword.get(opts, :hit, 200),
         flee: Keyword.get(opts, :flee, 0),
-        perfect_dodge: 0
+        perfect_dodge: 0,
+        hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0)
       },
       progression: %{base_level: 1, job_level: 1},
       element: {:neutral, 1},
@@ -77,6 +79,29 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
     stub(MobState, :to_combatant, fn ^state -> combatant end)
     state
+  end
+
+  describe "execute_attack/3 persistent hit-rate bonus" do
+    test "normal attacks publish the attacker's multiplicative hit-rate bonus" do
+      Mimic.copy(HitCalculations)
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+      without_bonus = combatant(1001, :player)
+      with_bonus = combatant(1002, :player, hit_rate_bonus_pct: 20)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      expect(HitCalculations, :calculate_hit_result, 2, fn attacker_stats, _defender_stats ->
+        send(self(), {:hit_rate_bonus_pct, attacker_stats.hit_rate_bonus_pct})
+        :miss
+      end)
+
+      assert :ok = Combat.execute_attack(without_bonus, %FakeUnit{combatant: without_bonus}, 2001)
+      assert :ok = Combat.execute_attack(with_bonus, %FakeUnit{combatant: with_bonus}, 2001)
+      assert_received {:hit_rate_bonus_pct, 0}
+      assert_received {:hit_rate_bonus_pct, 20}
+    end
   end
 
   describe "execute_attack/3 multi-hit procs" do
@@ -784,6 +809,28 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       :ok
+    end
+
+    test "a skill accuracy bonus composes with the attacker's persistent bonus" do
+      Mimic.copy(HitCalculations)
+      attacker = combatant(1001, :player, hit_rate_bonus_pct: 20)
+      target = combatant(2001, :mob)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+
+      expect(HitCalculations, :calculate_hit_result, fn attacker_stats, _defender_stats ->
+        assert attacker_stats.hit_rate_bonus_pct == 55
+        :miss
+      end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 55,
+                 skill_level: 7,
+                 hit_rate_bonus_pct: 35
+               )
     end
 
     test "a relative bonus cannot rescue a hit rate already clamped to 0" do

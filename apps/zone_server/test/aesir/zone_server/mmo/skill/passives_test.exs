@@ -183,6 +183,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     end
   end
 
+  describe "BS_WEAPONRESEARCH" do
+    test "contributes mastery ATK and multiplicative hit rate" do
+      player = build_player(%{107 => 5}, :one_handed_sword)
+      calculated = Stats.calculate_combat_stats(player.stats)
+
+      assert Passives.atk_bonus(player) == 10
+      assert Passives.hit_rate_bonus_pct(player) == 10
+      assert calculated.combat_stats.passive_atk == 10
+      assert calculated.combat_stats.hit_rate_bonus_pct == 10
+    end
+
+    test "contributes no flat HIT, only the multiplicative hit rate" do
+      # Renewal grants Weapon Research a hidden multiplicative bonus on the
+      # already-clamped hit rate and NO flat HIT. Flat HIT is the pre-renewal
+      # formula, so a non-zero `hit_bonus` here would silently ship pre-renewal
+      # accuracy that still looks plausible in a stat window.
+      #
+      # This asserts the contribution, not whether the callback is exported:
+      # every skill inherits a zero-returning default for all bonus channels,
+      # so exporting it is meaningless — returning non-zero is the bug.
+      player = build_player(%{107 => 10}, :one_handed_sword)
+
+      assert Passives.hit_bonus(player) == 0
+      assert Passives.hit_rate_bonus_pct(player) == 20
+    end
+
+    test "passives without a multiplicative hit-rate callback are unaffected" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.hit_rate_bonus_pct(player) == 0
+    end
+  end
+
   describe "critical_bonus/1" do
     test "PR_MACEMASTERY level 5 with a mace grants 50 critical" do
       player = build_player(%{65 => 5}, :mace)

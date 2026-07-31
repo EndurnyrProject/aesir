@@ -9,4 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponresearch do
     display_name: "Weaponry Research",
     max_level: 10,
     target_type: :passive
+
+  alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+  @behaviour Passive
+
+  @impl Passive
+  def atk_bonus(level, _ctx), do: 2 * level
+
+  @impl Passive
+  def hit_rate_bonus_pct(level, _ctx), do: 2 * level
 end

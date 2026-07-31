@@ -795,6 +795,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
       soft_mdef: calculate_soft_mdef(stats),
       passive_atk: passive_atk,
+      hit_rate_bonus_pct: Passives.hit_rate_bonus_pct(stats),
       patk: combat_modifier(stats, :patk, div(pow_eff, 3) + div(con_eff, 5)),
       smatk: combat_modifier(stats, :smatk, div(spl_eff, 3) + div(con_eff, 5)),
       res: combat_modifier(stats, :res, sta_eff + div(sta_eff, 3) * 5),

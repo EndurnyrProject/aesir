@@ -96,6 +96,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the multiplicative hit-rate bonus percentage contributed by every learned passive.
+  """
+  @spec hit_rate_bonus_pct(PlayerState.t() | PlayerStats.t()) :: integer()
+  def hit_rate_bonus_pct(%PlayerState{stats: nil}), do: 0
+  def hit_rate_bonus_pct(%PlayerState{stats: stats}), do: hit_rate_bonus_pct(stats)
+
+  def hit_rate_bonus_pct(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      if function_exported?(module, :hit_rate_bonus_pct, 2) do
+        acc + module.hit_rate_bonus_pct(level, ctx)
+      else
+        acc
+      end
+    end)
+  end
+
+  @doc """
   Sums the rAthena-tenths critical bonus contributed by every learned passive for
   the player.
   """

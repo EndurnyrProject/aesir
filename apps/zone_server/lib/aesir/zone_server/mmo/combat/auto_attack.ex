@@ -777,7 +777,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     attacker_stats = %{
       hit: attacker_combatant.combat_stats.hit,
       char_id: attacker_combatant.unit_id,
-      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker_combatant)
+      perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker_combatant),
+      hit_rate_bonus_pct: Map.get(attacker_combatant.combat_stats, :hit_rate_bonus_pct, 0)
     }
 
     defender_stats = %{

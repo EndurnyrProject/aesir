@@ -632,7 +632,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       hit: attacker.combat_stats.hit,
       char_id: attacker.unit_id,
       perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker),
-      hit_rate_bonus_pct: hit_rate_bonus_pct
+      hit_rate_bonus_pct:
+        hit_rate_bonus_pct + Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0)
     }
   end
 
