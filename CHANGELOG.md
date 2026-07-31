@@ -1,5 +1,67 @@
 # Changelog
 
+## [0.11.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.10.0...aesir-v0.11.0) (2026-07-31)
+
+
+### Features
+
+* **bard:** add finite song snapshots ([c6e2b5c](https://github.com/EndurnyrProject/aesir/commit/c6e2b5c501cbe762c7c7852d6ed935de523d95fc))
+* **bard:** implement adaptation cost rules ([61a47ae](https://github.com/EndurnyrProject/aesir/commit/61a47aef9983308ddf275f9b2f354dd74671f42d))
+* **bard:** implement bragi and idun ([724cb9b](https://github.com/EndurnyrProject/aesir/commit/724cb9b2c898a118578af49b45025364ef1edd41))
+* **bard:** implement dissonance ([f6ce59f](https://github.com/EndurnyrProject/aesir/commit/f6ce59f39a67830b0f78cc2a37a4937259dd9759))
+* **bard:** implement encore replay ([24daff3](https://github.com/EndurnyrProject/aesir/commit/24daff345021b870b65cbcd1e3ca64f38ae17b31))
+* **bard:** implement frost joker ([61a0978](https://github.com/EndurnyrProject/aesir/commit/61a0978e60562ceee221e8d7feacc93f29b6624d))
+* **bard:** implement musical lesson ([4c60433](https://github.com/EndurnyrProject/aesir/commit/4c60433a3a0af0344790785832a7bf7e2559c7bc))
+* **bard:** implement musical strike ([c3ea992](https://github.com/EndurnyrProject/aesir/commit/c3ea99294b30b0b03ebf72c3353f93a7dda5fae9))
+* **bard:** implement pang voice ([bf0b133](https://github.com/EndurnyrProject/aesir/commit/bf0b133c01f480174eb2223deb30d9016cc67b55))
+* **bard:** implement whistle and sunset ([6586ed1](https://github.com/EndurnyrProject/aesir/commit/6586ed11906c2ef76f4c851f66807ae3a85511e3))
+* **bard:** publish renewal skill tree and mob policy ([34023f1](https://github.com/EndurnyrProject/aesir/commit/34023f11b1e9cc8b9f25c753906187e626a0291a))
+* **combat:** add per-element damage-taken status channels ([40d2308](https://github.com/EndurnyrProject/aesir/commit/40d2308a85e7d4d6f2109c4963a2b1c7d1cdee50))
+* **dancer:** implement dancing lesson ([100d76b](https://github.com/EndurnyrProject/aesir/commit/100d76baee8b04368f9f7e900306ae0f4d4bf747))
+* **dancer:** implement dazzler ([e3ace44](https://github.com/EndurnyrProject/aesir/commit/e3ace44f65e59ce8f03c9ba61ba10accf3818584))
+* **dancer:** implement focus ballet ([18b8c1e](https://github.com/EndurnyrProject/aesir/commit/18b8c1e6304570fd50a0749dd4969907ace603a5))
+* **dancer:** implement gypsy's kiss ([9c0e3e2](https://github.com/EndurnyrProject/aesir/commit/9c0e3e24f08fc11ab428bbb8f42416dbeff9e145))
+* **dancer:** implement hip shaker ([d86a9f1](https://github.com/EndurnyrProject/aesir/commit/d86a9f10b1c19ad944f4246251950a5cea108543))
+* **dancer:** implement lady luck ([70bbb27](https://github.com/EndurnyrProject/aesir/commit/70bbb272a8b4faf752ae6c0f4a41f60a3875492b))
+* **dancer:** implement slow grace with enemy snapshot scope ([b295c36](https://github.com/EndurnyrProject/aesir/commit/b295c361901e5171fd2c43b2318aeb5e12a6d37d))
+* **dancer:** implement throw arrow ([011c774](https://github.com/EndurnyrProject/aesir/commit/011c774569f16dd5f1903cae388e8f4ecebce48a))
+* **dancer:** implement wink of charm ([3997813](https://github.com/EndurnyrProject/aesir/commit/3997813e7bfaebf879955e652873df88ec513cc8))
+* **dancer:** publish the dancer skill tree ([a40094b](https://github.com/EndurnyrProject/aesir/commit/a40094bacc79dda46a076fcff48433f65e87e9ca))
+* **ensemble:** implement a lullaby ([09ff05c](https://github.com/EndurnyrProject/aesir/commit/09ff05cddbeba8efbdbb2cdc1f5fe1c243f65ef3))
+* **ensemble:** implement drum of the battlefield ([639d518](https://github.com/EndurnyrProject/aesir/commit/639d5183c0c068059a6b121b9da6dacdbdca18ab))
+* **ensemble:** implement eternal chaos ([7d91876](https://github.com/EndurnyrProject/aesir/commit/7d91876b8cea88c473f60f78ee597732dd3b6fd5))
+* **ensemble:** implement into the abyss ([e12f924](https://github.com/EndurnyrProject/aesir/commit/e12f924cfe6f97d11fad54f9923a49f3119ea890))
+* **ensemble:** implement mr kim a rich man ([22e37c2](https://github.com/EndurnyrProject/aesir/commit/22e37c2021e59138dcd147766670e226284ae4ca))
+* **ensemble:** implement ring of nibelungen ([69e0f16](https://github.com/EndurnyrProject/aesir/commit/69e0f16ab7689aba7abe68e534c2d5383e1628af))
+* **ensemble:** implement rokis weil ([9da54e7](https://github.com/EndurnyrProject/aesir/commit/9da54e76d48327e74568279c1914a270baf3b082))
+* **ensemble:** implement siegfried ([0f37c1c](https://github.com/EndurnyrProject/aesir/commit/0f37c1c9d9cfadde906f744655bdd8215092446b))
+* **ensemble:** publish ensemble skill tree entries ([365690c](https://github.com/EndurnyrProject/aesir/commit/365690c60dfe7e1fbe07ed3df275543de62ca73f))
+* **jobs:** restore bard gender gate ([e8d0f06](https://github.com/EndurnyrProject/aesir/commit/e8d0f0612c67243e7a812417e73d1f492e9af48b))
+* **mob-skill:** denylist player-only dancer skills ([749c3e5](https://github.com/EndurnyrProject/aesir/commit/749c3e59df34af8cc88a0fb4d549b10bcd5d66d1))
+* **mob-skill:** denylist the bard dancer ensembles ([5a211b3](https://github.com/EndurnyrProject/aesir/commit/5a211b33955aa1dac3f07ac52e848e45ee7428cc))
+* **progression:** gate the dancer job to female characters ([6b4af73](https://github.com/EndurnyrProject/aesir/commit/6b4af73e5bc54199d2d8dc3b820168e0124fa1cb))
+* **protocol:** surface wrong-weapon and versus-map cast failures ([278b1d6](https://github.com/EndurnyrProject/aesir/commit/278b1d6d295c5d249823076760cebefb30202fca))
+* **skill:** add ensemble partner lookup and level averaging ([f8eb413](https://github.com/EndurnyrProject/aesir/commit/f8eb413bd467610372d562781910de15f53d8ce6))
+* **skill:** add performance capability behaviour and catalog index ([2ca8402](https://github.com/EndurnyrProject/aesir/commit/2ca84024849fc0f5eeee81d71b75b4c77e10dff2))
+* **skill:** add the ensemble capability and replayable predicate ([434a93d](https://github.com/EndurnyrProject/aesir/commit/434a93df9dfb47abc3f7f93eb671c68f0f78176a))
+* **skill:** add the ensemble perform orchestrator ([644cd36](https://github.com/EndurnyrProject/aesir/commit/644cd36a9442a9959643555d35d4d57ae65b1b36))
+* **skill:** add versus-map targeting seam ([66b866e](https://github.com/EndurnyrProject/aesir/commit/66b866edd752b3a9ea3979d00b082433cf205387))
+* **skill:** resolve item costs through a waivable seam ([0ab5d64](https://github.com/EndurnyrProject/aesir/commit/0ab5d645b024c32333f65ba5d0cc98d775871d90))
+* **skills:** invalidate deferred effects on lifecycle changes ([761e3ab](https://github.com/EndurnyrProject/aesir/commit/761e3ab1048abc17e2a113bb24cf45a1d328bc9e))
+* **skills:** restore weapon requirements ([58b9f65](https://github.com/EndurnyrProject/aesir/commit/58b9f6586541df49543257e13680e02cbd5f30ec))
+* **skills:** separate sp requirements from consumption ([210c6c0](https://github.com/EndurnyrProject/aesir/commit/210c6c05a0b187ce5ba25441656eddd2e25caceb))
+* **status:** add a generic ailment resistance channel ([6cdbb01](https://github.com/EndurnyrProject/aesir/commit/6cdbb01326dd368b8332c89cf3a30497d94a0f0f))
+* **status:** add the ensemble fatigue status ([ea6e3d3](https://github.com/EndurnyrProject/aesir/commit/ea6e3d3af0682b66bac86f0c41028456c7969116))
+* **status:** add the four dancer dance statuses ([0103499](https://github.com/EndurnyrProject/aesir/commit/0103499b4cdaec8089008602d634a373e27132c3))
+* **status:** add wink of charm status and mob targeting predicate ([82a7a8e](https://github.com/EndurnyrProject/aesir/commit/82a7a8ef0c2ec79a0b8bf1407a769960439bef63))
+
+
+### Bug Fixes
+
+* **skill-units:** allocate large ground footprints safely ([1a49106](https://github.com/EndurnyrProject/aesir/commit/1a49106072442251865f2806408c1a8a49189e8e))
+* **skill:** keep adaptation's discount off encored ensembles ([a18a5fd](https://github.com/EndurnyrProject/aesir/commit/a18a5fd6dcbc0b7868972267f7a337aacd434a23))
+* **status:** enforce finite persisted lifecycles ([053ca7d](https://github.com/EndurnyrProject/aesir/commit/053ca7d4a3367e522deec4d8691f59731a7483c2))
+
 ## [0.10.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.9.0...aesir-v0.10.0) (2026-07-26)
 
 
