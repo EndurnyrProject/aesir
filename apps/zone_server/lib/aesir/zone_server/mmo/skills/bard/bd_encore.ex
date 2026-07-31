@@ -44,9 +44,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
     {:ok, remembered_definition} = Catalog.by_id(skill_id)
     raw_base = remembered_definition.sp_cost |> Enum.fetch!(level - 1) |> div(2)
 
-    %Cost{sp_requirement: requirement, sp: sp} =
-      cost = PerformanceCost.resolve(caster, remembered_definition, level, raw_base)
+    cost =
+      if Catalog.performance?(skill_id) do
+        PerformanceCost.resolve(caster, remembered_definition, level, raw_base)
+      else
+        sp = Cost.resolve_sp(caster, remembered_definition, level, raw_base)
+        Cost.from_definition(caster, remembered_definition, level, sp: sp)
+      end
 
+    %Cost{sp_requirement: requirement, sp: sp} = cost
     %{cost | sp_requirement: max(1, max(requirement, sp))}
   end
 

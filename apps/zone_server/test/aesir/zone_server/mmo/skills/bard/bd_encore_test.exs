@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -119,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
              Interpreter.cast(%{caster | act_delay_until: future}, @encore_id, 1, :self)
   end
 
-  test "half base cost receives ordinary modifiers and Adaptation last" do
+  test "an encored song costs half its base with ordinary modifiers and Adaptation last" do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
 
     modifiers = %{
@@ -140,18 +141,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
              Interpreter.begin_cast(put_sp(caster, 14), @encore_id, 1, :self)
   end
 
-  test "a zero transformed consumption still requires one available SP" do
-    modifiers = %{sp_cost_rate: -100}
-    caster = player(%{skill_id: 319, level: 1}, nil, 1, modifiers)
+  test "an encored ensemble receives no Adaptation discount" do
+    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
+    assert EnsembleSkill.definition().sp_cost == [50]
+    caster = player(%{skill_id: EnsembleSkill.definition().id, level: 1})
 
-    assert %Cost{sp_requirement: 1, sp: 0} =
+    assert %Cost{sp_requirement: 25, sp: 25} =
              BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
 
-    assert {:error, :insufficient_sp} =
-             Interpreter.begin_cast(put_sp(caster, 0), @encore_id, 1, :self)
+    assert {:ok, replayed} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert replayed.stats.current_state.sp == 75
+  end
 
-    assert {:casting, _caster, _info} =
-             Interpreter.begin_cast(caster, @encore_id, 1, :self)
+  test "an encored ensemble costs half its base without Adaptation" do
+    caster = player(%{skill_id: EnsembleSkill.definition().id, level: 1})
+
+    assert {:ok, replayed} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert replayed.stats.current_state.sp == 75
+  end
+
+  test "zero transformed consumption still requires one SP for songs and ensembles" do
+    modifiers = %{sp_cost_rate: -100}
+
+    for skill_id <- [319, EnsembleSkill.definition().id] do
+      caster = player(%{skill_id: skill_id, level: 1}, nil, 1, modifiers)
+
+      assert %Cost{sp_requirement: 1, sp: 0} =
+               BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
+
+      assert {:error, :insufficient_sp} =
+               Interpreter.begin_cast(put_sp(caster, 0), @encore_id, 1, :self)
+
+      result = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+      assert elem(result, 0) in [:casting, :instant]
+    end
   end
 
   test "all five remembered skills supply their own timing and keep one outer 300 ms delay" do

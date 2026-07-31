@@ -16,10 +16,11 @@ defmodule Aesir.ZoneServer.TestSupport.EnsembleSkill do
     name: :ensemble_skill_fixture,
     display_name: "Ensemble Skill Fixture",
     max_level: 1,
-    target_type: :self
+    target_type: :self,
+    sp_cost: [50]
 
   use Aesir.ZoneServer.Mmo.Skill.Ensemble
 
   @impl Aesir.ZoneServer.Mmo.Skill.Active
-  def cast(_caster, _target, _level, _definition), do: :ok
+  def cast(caster, _target, _level, _definition), do: {:ok, caster}
 end
