@@ -63,9 +63,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
     %{account: account, character: character, stats: Stats.from_character(character)}
   end
 
+  # Seeded rows default to identified, matching every production acquisition
+  # path. The Ecto schema default is 0 (unidentified), which no real item ever
+  # has unless it was deliberately dropped that way, and which the equip gate
+  # rejects. Pass `identify: 0` explicitly to exercise that case.
   defp seed_item(char_id, nameid, amount, attrs \\ %{}) do
     {:ok, item} =
-      Persistence.insert_item(char_id, Map.merge(%{nameid: nameid, amount: amount}, attrs))
+      Persistence.insert_item(
+        char_id,
+        Map.merge(%{nameid: nameid, amount: amount, identify: 1}, attrs)
+      )
 
     item
   end

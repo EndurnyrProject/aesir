@@ -106,8 +106,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   @doc """
   Equips the item at `index` into the client-requested `position` bitmask.
 
-  Validates that the item exists, is equipment, the job and level requirements
-  are met, the item is not broken, and that `position` is one of the slots the
+  Validates that the item exists, is equipment, identified, the job and level
+  requirements are met, the item is not broken, and that `position` is one of the slots the
   item's `locations` allow. The worn mask is derived from the item's allowed
   locations: an accessory that allows both accessory slots is narrowed to a
   single slot honouring `position` (or, when ambiguous, the first free slot);
@@ -124,6 +124,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
          :ok <- validate_equippable(item_def),
          :ok <- validate_requirements(item_def, ctx),
          :ok <- validate_not_broken(item),
+         :ok <- validate_identified(item),
          {:ok, worn_mask} <- resolve_worn_mask(inventory, item_def, position) do
       {inventory, unequipped} = unequip_conflicts(inventory, index, worn_mask)
       equipped = %{item | equip: worn_mask}
@@ -247,6 +248,10 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   defp validate_not_broken(%InventoryItem{attribute: 1}), do: {:error, :item_broken}
   defp validate_not_broken(%InventoryItem{}), do: :ok
+
+  defp validate_identified(%InventoryItem{} = item) do
+    if InventoryItem.identified?(item), do: :ok, else: {:error, :item_unidentified}
+  end
 
   defp unequip_conflicts(inventory, equipping_index, location) do
     Enum.reduce(inventory, {inventory, []}, fn

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.EquipResult
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -21,6 +22,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
     :ok
+  end
+
+  test "sends an equip failure for an unidentified item" do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 0}
+    state = %{connection_pid: self(), game_state: %{game_state | inventory: %{0 => item}}}
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
   end
 
   test "removes weapon-unequip statuses only after a successful weapon unequip" do

@@ -304,10 +304,26 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       assert {:error, :requirement_unmet} = Inventory.equip(inv, 0, @right_hand, ctx)
     end
 
+    test "returns :item_unidentified without mutating the inventory", %{ctx: ctx} do
+      inv = inventory([item(nameid: @sword, amount: 1, identify: 0)])
+
+      assert {:error, :item_unidentified} = Inventory.equip(inv, 0, @right_hand, ctx)
+      assert %{0 => %InventoryItem{identify: 0, equip: 0}} = inv
+    end
+
+    test "equips an item after it is identified", %{ctx: ctx} do
+      inv = inventory([item(nameid: @sword, amount: 1, identify: 0)])
+      identified = put_in(inv, [0, Access.key!(:identify)], 1)
+
+      assert {:ok, %{0 => %InventoryItem{equip: @right_hand}}, {:equipped, 0, @right_hand, []}} =
+               Inventory.equip(identified, 0, @right_hand, ctx)
+    end
+
     test "returns :item_broken for a broken item", %{ctx: ctx} do
       inv = inventory([item(nameid: @sword, amount: 1, attribute: 1)])
 
       assert {:error, :item_broken} = Inventory.equip(inv, 0, @right_hand, ctx)
+      assert %{0 => %InventoryItem{attribute: 1, equip: 0}} = inv
     end
 
     test "equips an item with empty jobs list (all jobs allowed)", %{ctx: ctx} do
