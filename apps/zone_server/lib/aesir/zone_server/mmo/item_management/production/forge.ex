@@ -1,0 +1,158 @@
+defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
+  @moduledoc """
+  Orchestrates a production attempt inside the caster's player session.
+
+  Capacity and possession are checked before materials are consumed. A failed
+  production attempt still consumes its materials and catalysts.
+  """
+
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Anvil
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Catalysts
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  @weapon_skill_ids 98..104
+  @weapon_research_id 107
+  @oridecon_research_id 97
+
+  @doc """
+  Runs one production attempt and stages its inventory and result changes.
+  """
+  @spec run(PlayerState.t(), Recipe.t(), [non_neg_integer()]) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def run(%PlayerState{} = caster, %Recipe{} = recipe, chosen_catalyst_ids) do
+    {crumb_count, element, catalyst_ids} = Catalysts.resolve(chosen_catalyst_ids)
+
+    with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
+         :ok <- InventoryOps.can_add(caster.inventory, caster.stats, item_def, 1),
+         :ok <- check_materials(caster.inventory, recipe.materials, catalyst_ids) do
+      consumed = consume_all(caster, recipe.materials, catalyst_ids)
+      chance = success_chance(consumed, recipe, crumb_count, element)
+      success? = :rand.uniform(10_000) <= chance
+
+      finish(consumed, recipe, item_def, success?, crumb_count, element)
+    end
+  end
+
+  defp check_materials(inventory, materials, catalyst_ids) do
+    consumed =
+      materials
+      |> Enum.reject(&(&1.amount == 0))
+      |> Enum.map(&{&1.item_id, &1.amount})
+      |> Kernel.++(Enum.map(catalyst_ids, &{&1, 1}))
+      |> Enum.reduce(%{}, fn {id, amount}, counts ->
+        Map.update(counts, id, amount, &(&1 + amount))
+      end)
+
+    possession_only? =
+      Enum.all?(materials, fn material ->
+        required = if material.amount == 0, do: 1, else: Map.fetch!(consumed, material.item_id)
+        ItemContainer.held_amount(inventory, material.item_id) >= required
+      end)
+
+    catalysts? =
+      Enum.all?(consumed, fn {id, amount} ->
+        ItemContainer.held_amount(inventory, id) >= amount
+      end)
+
+    if possession_only? and catalysts?, do: :ok, else: {:error, :no_materials}
+  end
+
+  defp consume_all(caster, materials, catalyst_ids) do
+    ids =
+      materials
+      |> Enum.reject(&(&1.amount == 0))
+      |> Enum.flat_map(fn material -> List.duplicate(material.item_id, material.amount) end)
+      |> Kernel.++(catalyst_ids)
+
+    ids
+    |> Enum.frequencies()
+    |> Enum.reduce(caster, fn {id, amount}, state -> consume(state, id, amount) end)
+  end
+
+  defp consume(caster, id, amount) do
+    index = ItemContainer.stackable_index(caster.inventory, id)
+    {:ok, inventory, change} = ItemContainer.remove(caster.inventory, index, amount)
+
+    %{
+      caster
+      | inventory: inventory,
+        pending_inventory_persist:
+          caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
+    }
+  end
+
+  defp success_chance(caster, %Recipe{skill_id: skill_id} = recipe, crumbs, element)
+       when skill_id in @weapon_skill_ids do
+    learned = caster.stats.progression.learned_skills
+
+    SuccessRate.weapon(%{
+      job_level: caster.stats.progression.job_level,
+      dex: caster.stats.base_stats.dex,
+      luk: caster.stats.base_stats.luk,
+      random_term: 10 * :rand.uniform(100),
+      tier: recipe.item_level,
+      family_skill_level: Learned.learned_level(learned, skill_id),
+      weapon_research_level: Learned.learned_level(learned, @weapon_research_id),
+      oridecon_research_level: Learned.learned_level(learned, @oridecon_research_id),
+      crumb_count: crumbs,
+      elemental_stone?: not is_nil(element),
+      anvil_bonus: Anvil.best(caster.inventory)
+    })
+  end
+
+  defp success_chance(caster, recipe, _crumbs, _element) do
+    learned = caster.stats.progression.learned_skills
+
+    SuccessRate.mineral(mineral_kind(recipe), %{
+      job_level: caster.stats.progression.job_level,
+      dex: caster.stats.base_stats.dex,
+      luk: caster.stats.base_stats.luk,
+      random_term: 10 * :rand.uniform(100),
+      skill_level: Learned.learned_level(learned, recipe.skill_id)
+    })
+  end
+
+  defp mineral_kind(%Recipe{skill_id: 94}), do: :iron
+  defp mineral_kind(%Recipe{skill_id: 95}), do: :steel
+  defp mineral_kind(%Recipe{skill_id: 96, product_id: 1000}), do: :star_crumb
+  defp mineral_kind(%Recipe{skill_id: 96}), do: :elemental_stone
+
+  defp finish(caster, recipe, _item_def, false, _crumbs, _element) do
+    {:ok, stage_result(caster, recipe.product_id, false)}
+  end
+
+  defp finish(caster, recipe, item_def, true, crumbs, element) do
+    opts =
+      if recipe.skill_id in @weapon_skill_ids do
+        forged_element = if is_nil(element), do: :neutral, else: element
+        ForgeStamp.encode(forged_element, crumbs, caster.character_id)
+      else
+        %{identify: 1}
+      end
+
+    case InventoryOps.add(caster.character_id, caster.inventory, caster.stats, item_def, 1, opts) do
+      {:ok, inventory, change} ->
+        forged = %{
+          caster
+          | inventory: inventory,
+            pending_inventory_notify: caster.pending_inventory_notify ++ [change]
+        }
+
+        {:ok, stage_result(forged, recipe.product_id, true)}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp stage_result(caster, item_id, success?) do
+    %{caster | pending_production_result: %{success: success?, item_id: item_id}}
+  end
+end
