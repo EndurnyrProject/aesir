@@ -138,6 +138,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
     update_at(old_inventory, new_inventory, index, %{amount: left})
   end
 
+  defp persist(_char_id, old_inventory, new_inventory, {:identified, index}) do
+    update_at(old_inventory, new_inventory, index, %{identify: 1})
+  end
+
   defp persist(_char_id, old_inventory, new_inventory, {:equipped, index, worn_mask, unequipped}) do
     with {:ok, inventory} <- update_at(old_inventory, new_inventory, index, %{equip: worn_mask}) do
       unequip_rows(old_inventory, inventory, unequipped)

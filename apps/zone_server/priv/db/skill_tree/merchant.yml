@@ -5,6 +5,8 @@
   tree:
     - name: MC_PUSHCART
       max_level: 10
+    - name: MC_IDENTIFY
+      max_level: 1
     - name: MC_CHANGECART
       max_level: 1
       # rAthena gates Change Cart via `State: Cart` (must have a cart equipped),

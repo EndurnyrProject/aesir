@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
           | {:split, [{non_neg_integer(), pos_integer()}]}
           | {:removed, non_neg_integer()}
           | {:reduced, non_neg_integer(), pos_integer()}
+          | {:identified, non_neg_integer()}
 
   @typedoc "Successful operation result: the new container plus the change."
   @type op_result :: {:ok, t(), change()} | {:error, atom()}
@@ -84,6 +85,23 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
         left = held - amount
         updated = %{item | amount: left}
         {:ok, put_item(container, index, updated), {:reduced, index, left}}
+    end
+  end
+
+  @doc """
+  Identifies the item at `index`.
+  """
+  @spec identify(t(), non_neg_integer()) :: op_result()
+  def identify(container, index) when is_map(container) do
+    case Map.get(container, index) do
+      nil ->
+        {:error, :not_found}
+
+      %InventoryItem{identify: 1} ->
+        {:error, :already_identified}
+
+      %InventoryItem{} = item ->
+        {:ok, put_item(container, index, %{item | identify: 1}), {:identified, index}}
     end
   end
 
