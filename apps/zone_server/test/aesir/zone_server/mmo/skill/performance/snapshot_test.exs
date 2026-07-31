@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State, as: PartyState
+  alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -38,6 +39,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
              Song.snapshot(caster, BaWhistle.definition(), 1, :sc_whistle, [val2: 20], [])
 
     assert result.last_song == %{skill_id: 319, level: 1}
+  end
+
+  test "remembers an ensemble for Encore replay" do
+    caster = player(1)
+
+    assert Song.remember(caster, EnsembleSkill.definition().id, 1).last_song == %{
+             skill_id: EnsembleSkill.definition().id,
+             level: 1
+           }
   end
 
   test "selects only living online same-map party members inside Chebyshev radius 15" do

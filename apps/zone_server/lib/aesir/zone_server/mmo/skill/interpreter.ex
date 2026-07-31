@@ -610,7 +610,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     level = Map.get(memory, :level)
 
     cond do
-      not Catalog.performance?(skill_id) ->
+      not Catalog.replayable?(skill_id) ->
         {:error, :skill_not_replayable}
 
       not (is_integer(level) and level > 0) ->

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -2411,6 +2412,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:error, :skill_not_replayable} =
                Interpreter.complete_encore_replay(game_state(100, %{}), memory, :self)
+    end
+
+    test "preflight accepts a remembered ensemble" do
+      skill_id = EnsembleSkill.definition().id
+
+      assert :ok =
+               Interpreter.encore_replay_preflight(
+                 game_state(100, %{skill_id => 1}),
+                 %{skill_id: skill_id, level: 1},
+                 :self
+               )
     end
 
     test "preflight and timing use the remembered current definition and level" do

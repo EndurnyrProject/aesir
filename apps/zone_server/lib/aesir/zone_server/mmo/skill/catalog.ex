@@ -35,7 +35,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
            passive: %{atom() => module()},
            menu: %{atom() => module()},
            performance: %{atom() => module()},
-           performance_ids: MapSet.t(integer())
+           performance_ids: MapSet.t(integer()),
+           ensemble: %{atom() => module()},
+           ensemble_ids: MapSet.t(integer())
          }
 
   @spec all() :: [Definition.t()]
@@ -71,6 +73,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   @spec performance_ids() :: MapSet.t(integer())
   def performance_ids, do: index().performance_ids
 
+  @spec ensemble?(integer()) :: boolean()
+  def ensemble?(id), do: MapSet.member?(index().ensemble_ids, id)
+
+  @spec replayable?(integer()) :: boolean()
+  def replayable?(id), do: performance?(id) or ensemble?(id)
+
   @doc """
   Rebuilds the cached index after adding or editing skills in a running session.
   """
@@ -98,10 +106,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
     modules = discover()
     definitions = modules |> Enum.map(& &1.definition()) |> Enum.sort_by(& &1.id)
     performance = modules_with_capability(modules, :performance)
+    ensemble = modules_with_capability(modules, :ensemble)
 
     performance_ids =
       for definition <- definitions,
           Map.has_key?(performance, definition.name),
+          into: MapSet.new(),
+          do: definition.id
+
+    ensemble_ids =
+      for definition <- definitions,
+          Map.has_key?(ensemble, definition.name),
           into: MapSet.new(),
           do: definition.id
 
@@ -114,7 +129,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
       passive: modules_with_capability(modules, :passive),
       menu: modules_with_capability(modules, :menu),
       performance: performance,
-      performance_ids: performance_ids
+      performance_ids: performance_ids,
+      ensemble: ensemble,
+      ensemble_ids: ensemble_ids
     }
   end
 

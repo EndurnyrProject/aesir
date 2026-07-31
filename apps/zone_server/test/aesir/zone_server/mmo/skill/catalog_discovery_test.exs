@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest.StubSkill
+  alias Aesir.ZoneServer.TestSupport.EnsembleSkill
 
   @frozen_ids [
     1,
@@ -145,6 +146,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       assert :error = Catalog.by_name(:stub_skill)
       assert :error = Catalog.active_module_for(:stub_skill)
       assert :error = Catalog.performance_module_for(:stub_skill)
+    end
+  end
+
+  describe "ensemble capability" do
+    test "Ensemble implies Active without injecting a dynamic cost" do
+      assert :active in EnsembleSkill.__skill_capabilities__()
+      assert :ensemble in EnsembleSkill.__skill_capabilities__()
+      refute function_exported?(EnsembleSkill, :dynamic_cost, 4)
+    end
+
+    test "catalog distinguishes ensembles and exposes both replayable capabilities" do
+      assert Catalog.ensemble?(EnsembleSkill.definition().id)
+      refute Catalog.ensemble?(319)
+
+      assert Catalog.replayable?(EnsembleSkill.definition().id)
+      assert Catalog.replayable?(319)
+      refute Catalog.replayable?(1)
     end
   end
 

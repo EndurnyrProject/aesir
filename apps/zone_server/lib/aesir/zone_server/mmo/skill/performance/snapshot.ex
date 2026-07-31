@@ -55,10 +55,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot do
   @doc "Stores the skill id and level of a completed Encore-eligible performance."
   @spec remember(PlayerState.t(), integer(), pos_integer()) :: PlayerState.t()
   def remember(%PlayerState{} = caster, skill_id, level) when is_integer(level) and level > 0 do
-    if Catalog.performance?(skill_id) do
+    if Catalog.replayable?(skill_id) do
       %{caster | last_song: %{skill_id: skill_id, level: level}}
     else
-      raise ArgumentError, "skill #{skill_id} is not a performance"
+      raise ArgumentError, "skill #{skill_id} is not replayable"
     end
   end
 
