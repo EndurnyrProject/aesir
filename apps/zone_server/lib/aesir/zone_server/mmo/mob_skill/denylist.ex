@@ -46,6 +46,22 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
     305 =>
       "BD_ENCORE reads PlayerState last_song and re-enters player learned-skill, equipment, " <>
         "cost, and cooldown validation; mobs have none of that replay state",
+    306 =>
+      "BD_LULLABY requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    307 =>
+      "BD_RICHMANKIM requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    308 =>
+      "BD_ETERNALCHAOS requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    309 =>
+      "BD_DRUMBATTLEFIELD requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    310 =>
+      "BD_RINGNIBELUNGEN requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    311 =>
+      "BD_ROKISWEIL requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    312 =>
+      "BD_INTOABYSS requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+    313 =>
+      "BD_SIEGFRIED requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
     319 => "BA_WHISTLE requires a PlayerState party snapshot; there is no mob-caster clause",
     320 =>
       "BA_ASSASSINCROSS requires a PlayerState party snapshot; there is no mob-caster clause",

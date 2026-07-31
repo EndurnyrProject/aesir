@@ -54,6 +54,34 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DenylistTest do
     end
   end
 
+  test "ensembles state their PlayerState snapshot and partner lookup dependency" do
+    expected_reasons = %{
+      306 =>
+        "BD_LULLABY requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      307 =>
+        "BD_RICHMANKIM requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      308 =>
+        "BD_ETERNALCHAOS requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      309 =>
+        "BD_DRUMBATTLEFIELD requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      310 =>
+        "BD_RINGNIBELUNGEN requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      311 =>
+        "BD_ROKISWEIL requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      312 =>
+        "BD_INTOABYSS requires a PlayerState snapshot and partner lookup; there is no mob-caster clause",
+      313 =>
+        "BD_SIEGFRIED requires a PlayerState snapshot and partner lookup; there is no mob-caster clause"
+    }
+
+    for {skill_id, expected_reason} <- expected_reasons do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert {:ok, _module} = Catalog.active_module_for(definition.name)
+      assert Denylist.denied?(skill_id)
+      assert Denylist.reason_for(skill_id) == expected_reason
+    end
+  end
+
   test "caster-generic Bard skills remain mob-available" do
     for skill_id <- [316, 317, 318, 1010] do
       assert {:ok, definition} = Catalog.by_id(skill_id)
