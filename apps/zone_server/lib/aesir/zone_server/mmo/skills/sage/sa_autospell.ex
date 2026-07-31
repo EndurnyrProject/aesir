@@ -25,9 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
   @behaviour Active
   @behaviour Menu
 
-  # The renewal auto-spell list (rAthena `clif_autospell`, clif.cpp:8415-8425):
-  # each bolt paired with the autospell level it needs to be *exceeded* -
-  # `skill_lv > required` (clif.cpp:8446), never `>=`. Order is rAthena's.
+  # Each bolt is paired with the auto-spell level that must be strictly exceeded.
+  # The displayed order follows the canonical Renewal menu.
   @bolt_tiers [
     {19, 0},
     {14, 0},
@@ -41,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
   ]
 
   @doc """
-  The bolt skill ids offered at `autospell_level`, in rAthena's menu order.
+  The bolt skill ids offered at `autospell_level`, in canonical menu order.
 
   A bolt is offered only when the caster has learned it and the autospell level
   strictly exceeds the bolt's tier requirement.
@@ -55,19 +54,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
   end
 
   @doc """
-  The highest level the armed bolt can proc at: half the autospell level, capped
-  by how far the caster has actually learned that bolt (rAthena `skill_autospell`,
-  skill.cpp:10740-10751).
+  The highest level the armed bolt can proc at: half the auto-spell level, capped
+  by how far the caster has actually learned that bolt.
 
-  rAthena's Soul Linker branch (`maxlv = 10` for the three basic bolts under
-  SC_SPIRIT/SL_SAGE) is skipped - Aesir has no Soul Linker.
-
-  NOTE: the floor of 1 has no rAthena counterpart. There, autospell level 1 makes
-  `maxlv = 1/2 = 0`, and the proc then reads `sp_cost[-1]` through `skill_get_lv`
-  - an out-of-bounds read (skill.cpp:165). C leaves that undefined; Elixir's
-  `Enum.at/2` would quietly return the *level 10* cost instead. A level-0 bolt is
-  not a castable thing either way, so the level is floored at 1, which is also
-  what rAthena's own `uint16 maxlv = 1` initialiser intends.
+  The Soul Linker branch for the three basic bolts is skipped because Aesir has
+  no Soul Linker. The result is floored at 1 because a level-zero bolt is not
+  castable and would otherwise select an invalid SP cost.
   """
   @spec max_level(non_neg_integer(), pos_integer()) :: pos_integer()
   def max_level(learned_level, autospell_level) do
@@ -101,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
   @impl Menu
   def on_menu_reply(
         %{character_id: character_id, stats: %{progression: %{learned_skills: learned}}} = caster,
-        selected_id,
+        %{id: selected_id, extras: _extras},
         level
       ) do
     {:ok, %{name: skill}} = Catalog.by_id(selected_id)
@@ -123,6 +115,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
     end
   end
 
-  # skill_db.yml Duration1 for SA_AUTOSPELL: 120s at level 1 rising 30s a level.
+  # Duration starts at 120 seconds and rises by 30 seconds per level.
   defp duration(level), do: (90 + 30 * level) * 1_000
 end

@@ -102,6 +102,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Net.PickupItemRequest
   alias Aesir.Net.PickupResult
+  alias Aesir.Net.ProductionResult
   alias Aesir.Net.Respawn
   alias Aesir.Net.Resurrect
   alias Aesir.Net.SelectChar
@@ -2734,8 +2735,12 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert_round_trip(:estimation_result, result)
   end
 
-  test "skill_menu round-trips both kinds and its entry ids through envelope oneof" do
-    for {kind, entry_ids} <- [{:SKILLS, [11, 17, 21]}, {:ITEMS, [12_115, 12_116]}] do
+  test "skill_menu round-trips every kind and its entry ids through envelope oneof" do
+    for {kind, entry_ids} <- [
+          {:SKILLS, [11, 17, 21]},
+          {:ITEMS, [12_115, 12_116]},
+          {:INVENTORY_SLOTS, [2, 5, 8]}
+        ] do
       menu = %SkillMenu{src_skill_id: 380, kind: kind, entry_ids: entry_ids}
 
       decoded = assert_round_trip(:skill_menu, menu)
@@ -2748,9 +2753,26 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert_round_trip(:skill_menu, %SkillMenu{src_skill_id: 380, kind: :SKILLS, entry_ids: []})
   end
 
-  test "skill_menu_reply round-trips a selection and the cancel sentinel" do
-    assert_round_trip(:skill_menu_reply, %SkillMenuReply{src_skill_id: 380, selected_id: 21})
-    assert_round_trip(:skill_menu_reply, %SkillMenuReply{src_skill_id: 380, selected_id: 0})
+  test "skill_menu_reply round-trips catalyst ids and an empty catalyst list" do
+    with_catalysts = %SkillMenuReply{
+      src_skill_id: 380,
+      selected_id: 21,
+      extra_ids: [994, 1_000, 1_000]
+    }
+
+    decoded = assert_round_trip(:skill_menu_reply, with_catalysts)
+    assert decoded.extra_ids == [994, 1_000, 1_000]
+
+    without_catalysts = %SkillMenuReply{src_skill_id: 380, selected_id: 21, extra_ids: []}
+    decoded = assert_round_trip(:skill_menu_reply, without_catalysts)
+    assert decoded.extra_ids == []
+  end
+
+  test "production_result round-trips successful and failed craft outcomes" do
+    for success <- [true, false] do
+      result = %ProductionResult{success: success, item_id: 1_105}
+      assert assert_round_trip(:production_result, result) == result
+    end
   end
 
   test "mount_request round-trips through envelope oneof" do

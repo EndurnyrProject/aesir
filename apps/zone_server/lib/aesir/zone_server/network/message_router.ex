@@ -103,6 +103,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.SkillUnitDespawn{}), do: {:world, :skill_unit_despawn}
   def route(%Aesir.Net.EstimationResult{}), do: {:world, :estimation_result}
   def route(%Aesir.Net.SkillMenu{}), do: {:world, :skill_menu}
+  def route(%Aesir.Net.ProductionResult{}), do: {:world, :production_result}
   def route(%Aesir.Net.SkillTextInputRequest{}), do: {:world, :skill_text_input_request}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}

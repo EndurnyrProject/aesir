@@ -123,7 +123,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           storage: nil | %{non_neg_integer() => InventoryItem.t()},
           pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil,
           pending_interaction: module() | nil,
-          pending_menu_offer: map() | nil
+          pending_menu_offer: map() | nil,
+          pending_production_result: %{success: boolean(), item_id: non_neg_integer()} | nil
         }
 
   @client_index_offset 2
@@ -269,6 +270,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # cast - which only ever sees this state - stages the offer here and the
     # handler opens it after the cast commits, then clears this field.
     pending_menu_offer: nil,
+    # Production outcome staged by a menu skill for SkillMenuHandler to send.
+    pending_production_result: nil,
     # In-flight timed-cast descriptor (mirrors MobState.casting). Written by
     # transition_to/3 on entering :casting and cleared on leaving it; nil when
     # no cast is in flight. Cast handlers key off this field, not state_context.

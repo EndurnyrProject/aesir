@@ -17,12 +17,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Menu do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @doc """
-  Acts on the id the client picked from this skill's menu.
+  Acts on the selection the client made from this skill's menu.
 
-  `level` is the level of the cast that opened the menu, carried through the
-  offer. The reply has already been validated as one of the offered ids, so an
-  implementation may trust `selected_id`; a cancel never reaches here.
+  `selection.id` is already validated as one of the offered ids, and
+  `selection.extras` carries any additional item ids chosen by the client.
+  `level` is the level of the cast that opened the menu. A cancel never reaches
+  here.
   """
-  @callback on_menu_reply(PlayerState.t(), non_neg_integer(), pos_integer()) ::
-              {:ok, PlayerState.t()} | {:error, atom()}
+  @callback on_menu_reply(
+              PlayerState.t(),
+              %{id: non_neg_integer(), extras: [non_neg_integer()]},
+              pos_integer()
+            ) :: {:ok, PlayerState.t()} | {:error, atom()}
 end

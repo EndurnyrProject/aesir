@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
     test "consumes both materials and grants 1 converter" do
       state = caster([{@blank_scroll, 1}, {@red_blood, 1}])
 
-      assert {:ok, brewed} = SaCreatecon.on_menu_reply(state, @fire_converter, 1)
+      assert {:ok, brewed} = reply(state, @fire_converter, 1)
 
       assert held(brewed, @blank_scroll) == 0
       assert held(brewed, @red_blood) == 0
@@ -147,13 +147,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
 
       drained = %{staged | inventory: %{}}
 
-      assert {:error, :no_materials} = SaCreatecon.on_menu_reply(drained, @fire_converter, 1)
+      assert {:error, :no_materials} = reply(drained, @fire_converter, 1)
     end
 
     test "brews nothing when only one half of the recipe survives" do
       state = caster([{@blank_scroll, 1}])
 
-      assert {:error, :no_materials} = SaCreatecon.on_menu_reply(state, @fire_converter, 1)
+      assert {:error, :no_materials} = reply(state, @fire_converter, 1)
       assert held(state, @fire_converter) == 0
     end
 
@@ -161,7 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
     test "consumes no material when the recipe cannot be completed" do
       state = caster([{@blank_scroll, 1}])
 
-      assert {:error, :no_materials} = SaCreatecon.on_menu_reply(state, @fire_converter, 1)
+      assert {:error, :no_materials} = reply(state, @fire_converter, 1)
       assert held(state, @blank_scroll) == 1
     end
 
@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
           {@wind_of_verdure, 1}
         ])
 
-      assert {:ok, brewed} = SaCreatecon.on_menu_reply(state, @earth_converter, 1)
+      assert {:ok, brewed} = reply(state, @earth_converter, 1)
 
       assert held(brewed, @green_live) == 0
       assert held(brewed, @earth_converter) == 1
@@ -193,7 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
           ] do
         state = caster([{@blank_scroll, 1}, {material, 1}])
 
-        assert {:ok, brewed} = SaCreatecon.on_menu_reply(state, converter, 1)
+        assert {:ok, brewed} = reply(state, converter, 1)
         assert held(brewed, converter) == 1
         assert held(brewed, material) == 0
       end
@@ -203,11 +203,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreateconTest do
     test "consumes exactly one of each material, leaving the rest of the stack" do
       state = caster([{@blank_scroll, 5}, {@red_blood, 3}])
 
-      assert {:ok, brewed} = SaCreatecon.on_menu_reply(state, @fire_converter, 1)
+      assert {:ok, brewed} = reply(state, @fire_converter, 1)
 
       assert held(brewed, @blank_scroll) == 4
       assert held(brewed, @red_blood) == 2
     end
+  end
+
+  defp reply(state, selected_id, level) do
+    SaCreatecon.on_menu_reply(state, %{id: selected_id, extras: []}, level)
   end
 
   defp held(state, nameid), do: ItemContainer.held_amount(state.inventory, nameid)

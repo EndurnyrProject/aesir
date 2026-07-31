@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
       stats: %{progression: %{learned_skills: learned}}
     }
 
-    SaAutospell.on_menu_reply(game_state, selected_id, level)
+    SaAutospell.on_menu_reply(game_state, %{id: selected_id, extras: []}, level)
   end
 
   defp cast(learned, level) do

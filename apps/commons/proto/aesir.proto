@@ -195,6 +195,8 @@ message Envelope {
     // 166-167: staged skill text input
     SkillTextInputRequest skill_text_input_request = 166;
     SkillTextInputReply skill_text_input_reply = 167;
+    // 168: server-authoritative production outcome
+    ProductionResult production_result = 168;
   }
 }
 
@@ -1746,6 +1748,7 @@ message SkillMenu {
   enum Kind {
     SKILLS = 0;
     ITEMS = 1;
+    INVENTORY_SLOTS = 2; // entry_ids identify inventory slots rather than items.
   }
 
   uint32 src_skill_id = 1;
@@ -1759,6 +1762,15 @@ message SkillMenu {
 message SkillMenuReply {
   uint32 src_skill_id = 1;
   uint32 selected_id = 2;
+  repeated uint32 extra_ids = 3; // Up to three additional catalyst item ids.
+}
+
+// Server -> client, the outcome of an item-production attempt.
+message ProductionResult {
+  // Whether the attempt produced the item.
+  bool success = 1;
+  // The recipe's product item id, on either outcome.
+  uint32 item_id = 2;
 }
 
 enum SkillCastFailureReason {

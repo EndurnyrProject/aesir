@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.ProductionResult
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -168,6 +169,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
       assert new_state.game_state.pending_inventory_persist == []
       assert new_state.game_state.pending_inventory_notify == []
+    end
+  end
+
+  describe "handle_reply/2 drains a staged production result" do
+    test "sends and clears a staged result after accepting the selection" do
+      state = pending_state()
+      result = %{success: false, item_id: 1_105}
+      game_state = %{state.game_state | pending_production_result: result}
+      state = %{state | game_state: game_state}
+
+      expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, _params -> :ok end)
+
+      assert {:noreply, new_state} =
+               SkillMenuHandler.handle_reply(
+                 %SkillMenuReply{
+                   src_skill_id: @src_skill,
+                   selected_id: 14,
+                   extra_ids: [994, 1_000, 1_000]
+                 },
+                 state
+               )
+
+      assert_receive {:send, :world,
+                      {:production_result, %ProductionResult{success: false, item_id: 1_105}}}
+
+      assert new_state.game_state.pending_production_result == nil
+    end
+
+    test "sends nothing when no production result was staged" do
+      expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, _params -> :ok end)
+
+      assert {:noreply, new_state} =
+               SkillMenuHandler.handle_reply(
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 14},
+                 pending_state()
+               )
+
+      refute_receive {:send, :world, {:production_result, _}}
+      assert new_state.game_state.pending_production_result == nil
     end
   end
 

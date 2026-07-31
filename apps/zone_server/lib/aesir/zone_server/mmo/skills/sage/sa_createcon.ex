@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
   Create Elemental Converter (SA_CREATECON). Offers the caster a menu of the
   elemental converters it holds the materials for and brews the chosen one.
 
-  rAthena (`db/re/skill_db.yml` id 1007): self-targeted, no damage, instant,
-  SP 30, MaxLevel 1, quest skill.
+  This level-one quest skill is self-targeted, instant, deals no damage, and
+  costs 30 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1007,
@@ -26,9 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
   @behaviour Active
   @behaviour Menu
 
-  # produce_db.txt:392-398 (produce item-level 23, trigger skill 1007). Each
-  # converter costs 1 Blank Scroll plus 1 elemental material, in rAthena's order.
-  # Materials are keyed by numeric id: three of these items' aegis names differ
+  # Each converter costs one Blank Scroll plus one elemental material, in the
+  # canonical menu order. Materials are keyed by numeric id because three items'
+  # internal names differ
   # from their display names (990 `Boody_Red` "Red Blood", 993 `Yellow_Live`
   # "Green Live", 7433 `Scroll` "Blank Scroll"), so the ids are the only stable
   # handle.
@@ -63,19 +63,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
 
   The materials are re-checked here rather than trusted from the offer: the menu
   only proves the caster held them when it opened, and it may have traded, dropped
-  or spent them while deciding. rAthena re-runs `skill_can_produce_mix` on the
-  reply for the same reason (`skill.cpp:12861`).
+  or spent them while deciding.
 
-  Success is unconditional at 100% (`skill.cpp:13013-13015`) and the yield is
-  always 1: `clif.cpp:13472` passes `qty = 1`, and `skill.cpp:13243` hardcodes
-  `tmp_item.amount = 1` regardless. So there is no failure roll and no quantity to
-  scale by level.
+  Success is unconditional and the yield is always one, so there is no failure
+  roll and no quantity to scale by level.
 
   `selected_id` was validated against the offer this skill built, so it always
   names one of the four recipes; a miss is a broken invariant and crashes.
   """
   @impl Menu
-  def on_menu_reply(caster, selected_id, _level) do
+  def on_menu_reply(caster, %{id: selected_id, extras: _extras}, _level) do
     {^selected_id, materials} = List.keyfind(@recipes, selected_id, 0)
 
     if holds?(caster, materials) do
@@ -85,12 +82,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
     end
   end
 
-  # The converter is added before the materials are taken: the add is the only
-  # step that can still fail (overweight, no free slot), and failing it after the
-  # consume would destroy the materials for nothing. rAthena instead consumes
-  # first and drops the converter on the floor when it will not fit
-  # (`skill.cpp:13393-13396`); Aesir has no ground items for this path, so it
-  # refuses the brew intact rather than eating the materials.
+  # The converter is added before the materials are taken because the add is the
+  # only step that can still fail. Aesir has no ground-item fallback for this
+  # path, so it refuses the brew intact rather than consuming the materials.
   defp brew(caster, converter_id, materials) do
     with {:ok, item_def} <- ItemManagement.get_item_by_id(converter_id),
          {:ok, persisted, change} <-

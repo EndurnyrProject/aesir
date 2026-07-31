@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
   require Logger
 
+  alias Aesir.Net.ProductionResult
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -116,7 +117,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
         %{pending_skill_menu: %{entry_ids: entry_ids}} = state
       ) do
     if selected_id in entry_ids do
-      {:noreply, accept(state, selected_id)}
+      selection = %{id: selected_id, extras: reply.extra_ids}
+      {:noreply, accept(state, selection)}
     else
       debug_drop(state, "#{selected_id} was not offered", reply)
       {:noreply, state}
@@ -131,12 +133,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   # bug, not client input, and fails loudly. Only `on_menu_reply/3` returning an
   # error is a real runtime outcome (the selection stopped being valid while the
   # client was deciding); it leaves the session untouched beyond the clear.
-  defp accept(%{pending_skill_menu: %{skill_id: skill_id, level: level}} = state, selected_id) do
+  defp accept(
+         %{pending_skill_menu: %{skill_id: skill_id, level: level}} = state,
+         %{id: selected_id} = selection
+       ) do
     cleared = clear(state)
 
-    case menu_module(skill_id).on_menu_reply(state.game_state, selected_id, level) do
+    case menu_module(skill_id).on_menu_reply(state.game_state, selection, level) do
       {:ok, game_state} ->
-        %{cleared | game_state: InventoryStaging.drain(state.connection_pid, game_state)}
+        game_state = InventoryStaging.drain(state.connection_pid, game_state)
+        %{cleared | game_state: drain_production_result(state.connection_pid, game_state)}
 
       {:error, reason} ->
         Logger.debug(
@@ -146,6 +152,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
         cleared
     end
+  end
+
+  defp drain_production_result(_connection_pid, %{pending_production_result: nil} = game_state),
+    do: game_state
+
+  defp drain_production_result(
+         connection_pid,
+         %{pending_production_result: %{success: success, item_id: item_id}} = game_state
+       ) do
+    MessageRouter.send_to(connection_pid, %ProductionResult{success: success, item_id: item_id})
+    %{game_state | pending_production_result: nil}
   end
 
   defp menu_module(skill_id) do
