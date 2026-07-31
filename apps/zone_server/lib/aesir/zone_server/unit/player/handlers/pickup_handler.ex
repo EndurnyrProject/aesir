@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
       {:error, _reason, unchanged_state} ->
         Coordinator.drop_items(
           gs.map_name,
-          [{claimed.nameid, claimed.amount, claimed.x, claimed.y}],
+          [{claimed.nameid, claimed.amount, claimed.x, claimed.y, claimed.identified}],
           claimed.x,
           claimed.y
         )

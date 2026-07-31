@@ -94,13 +94,15 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @doc """
   Places rolled drops on the ground around `{x, y}`.
 
-  Each entry is `{nameid, amount, item_x, item_y}` as produced by
+  Each entry is `{nameid, amount, item_x, item_y, identified}` as produced by
   `DropCalculator` (scatter already resolved). The coordinator is the single
   writer of the ground-item store, so placement routes through here.
   """
   @spec drop_items(
           String.t(),
-          [{non_neg_integer(), pos_integer(), non_neg_integer(), non_neg_integer()}],
+          [
+            {non_neg_integer(), pos_integer(), non_neg_integer(), non_neg_integer(), boolean()}
+          ],
           integer(),
           integer()
         ) ::
@@ -235,8 +237,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   @impl true
   def handle_cast({:drop_items, items, _x, _y}, state) do
-    Enum.each(items, fn {nameid, amount, item_x, item_y} ->
-      item = GroundItem.new(nameid, amount, item_x, item_y)
+    Enum.each(items, fn {nameid, amount, item_x, item_y, identified} ->
+      item = GroundItem.new(nameid, amount, item_x, item_y, identified)
       GroundItemStore.put(state.map_name, item)
 
       Broadcast.to_in_range(

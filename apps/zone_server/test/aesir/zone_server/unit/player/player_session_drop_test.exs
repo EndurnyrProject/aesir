@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
 
   test "places rolled drops via the coordinator" do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
-    rolled = [{501, 1, 200, 90}]
+    rolled = [{501, 1, 200, 90, true}]
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
     expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)

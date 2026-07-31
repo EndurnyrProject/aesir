@@ -83,7 +83,11 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
     setup do
       stub(LevelPenalty, :drop, fn _mob_level, _killer_level -> 100 end)
       stub(MapCache, :walkable?, fn _map, _x, _y -> true end)
-      stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" -> {:ok, %{id: 501}} end)
+
+      stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" ->
+        {:ok, %{id: 501, type: :healing}}
+      end)
+
       :ok
     end
 
@@ -116,7 +120,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
       boosted = DropCalculator.roll(drops, 0, 1, 1, drop_bonus, "prontera", 150, 150)
 
       assert unbuffed == []
-      assert [{501, 1, _x, _y}] = boosted
+      assert [{501, 1, _x, _y, true}] = boosted
     end
   end
 

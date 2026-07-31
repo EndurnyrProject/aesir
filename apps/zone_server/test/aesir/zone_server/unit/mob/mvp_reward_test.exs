@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       MvpReward.grant(%{1 => 100}, mob(mvp_drops: [drop("FIRST")]), "gld_dun03", 42, 77)
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77}], 42, 77}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77}
     end
 
     test "scatters the item when the winner's session died before delivery" do
@@ -219,7 +219,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       MvpReward.grant(%{1 => 100}, mob(mvp_drops: [drop("FIRST")]), "gld_dun03", 42, 77)
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77}], 42, 77}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77}
     end
 
     test "grants exp and announces when no drop entry succeeds its roll" do
@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         77
       )
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77}], 42, 77}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77}
     end
 
     test "an empty aggro list produces no reward and no announcement" do

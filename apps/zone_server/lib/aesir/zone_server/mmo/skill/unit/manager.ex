@@ -1359,7 +1359,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
        when is_integer(item_id) and item_id > 0 do
     if unit_available?.(:player, caster_id, group.map_name) do
       {x, y} = group.center
-      Coordinator.drop_items(group.map_name, [{item_id, 1, x, y}], x, y)
+      Coordinator.drop_items(group.map_name, [{item_id, 1, x, y, true}], x, y)
     end
   end
 

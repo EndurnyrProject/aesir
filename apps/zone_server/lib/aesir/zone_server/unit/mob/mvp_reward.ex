@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   @spec scatter(non_neg_integer(), String.t(), integer(), integer()) :: :ok
   defp scatter(nameid, map_name, x, y) do
-    Coordinator.drop_items(map_name, [{nameid, 1, x, y}], x, y)
+    Coordinator.drop_items(map_name, [{nameid, 1, x, y, true}], x, y)
   end
 
   @spec base_level(winner() | nil, integer()) :: integer()

@@ -29,7 +29,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
 
   @scatter_offsets [{1, -1}, {-1, 0}, {0, 1}]
 
-  @type drop :: {nameid :: integer(), amount :: integer(), x :: integer(), y :: integer()}
+  @type drop ::
+          {nameid :: integer(), amount :: integer(), x :: integer(), y :: integer(),
+           identified :: boolean()}
 
   @doc """
   Rolls a mob's drop table and returns the items that dropped, each scattered to
@@ -68,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @spec roll_slot(MobDrop.t(), integer(), integer(), integer(), integer()) ::
-          [{integer(), integer()}]
+          [{integer(), integer(), boolean()}]
   defp roll_slot(
          %MobDrop{item: aegis, rate: base},
          killer_luk,
@@ -77,9 +79,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
          drop_bonus
        ) do
     case ItemManagement.get_item_by_aegis(aegis) do
-      {:ok, %{id: nameid}} ->
+      {:ok, %{id: nameid, type: type}} ->
         rate = drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus)
-        if :rand.uniform(@max_rate) <= rate, do: [{nameid, 1}], else: []
+        identified = type not in [:weapon, :armor]
+        if :rand.uniform(@max_rate) <= rate, do: [{nameid, 1, identified}], else: []
 
       {:error, _reason} ->
         []
@@ -105,13 +108,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   @spec clamp_rate(integer()) :: integer()
   defp clamp_rate(rate), do: rate |> max(1) |> min(@max_rate)
 
-  @spec scatter([{integer(), integer()}], String.t(), integer(), integer()) :: [drop()]
+  @spec scatter([{integer(), integer(), boolean()}], String.t(), integer(), integer()) :: [drop()]
   defp scatter(items, map_name, x, y) do
     items
     |> Enum.with_index()
-    |> Enum.map(fn {{nameid, amount}, index} ->
+    |> Enum.map(fn {{nameid, amount, identified}, index} ->
       {cx, cy} = resolve_cell(index, map_name, x, y)
-      {nameid, amount, cx, cy}
+      {nameid, amount, cx, cy, identified}
     end)
   end
 

@@ -84,14 +84,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
 
       stub(ItemManagement, :get_item_by_aegis, fn "Red_Potion" ->
-        {:ok, %{id: 501}}
+        {:ok, %{id: 501, type: :healing}}
       end)
 
       :ok
     end
 
     test "a guaranteed slot always yields its item at the death cell" do
-      assert [{501, 1, 150, 150}] =
+      assert [{501, 1, 150, 150, true}] =
                DropCalculator.roll([drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
     end
 
@@ -106,16 +106,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
 
       result = DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
 
-      assert [{501, 1, x0, y0}, {501, 1, x1, y1}] = result
+      assert [{501, 1, x0, y0, true}, {501, 1, x1, y1, true}] = result
       assert {x0, y0} == {150, 150}
-      assert Enum.all?(result, fn {_, _, x, y} -> Cell.traversable?("prontera", x, y) end)
+      assert Enum.all?(result, fn {_, _, x, y, _} -> Cell.traversable?("prontera", x, y) end)
       refute {x1, y1} == {x0, y0}
     end
 
     test "avoids active movement blockers when scattering drops" do
       :ok = Cell.put("prontera", 151, 149, :test_blocker, 1, blocks_movement: true)
 
-      assert [{501, 1, 150, 150}, {501, 1, x, y}] =
+      assert [{501, 1, 150, 150, true}, {501, 1, x, y, true}] =
                DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
 
       refute {x, y} == {151, 149}
@@ -127,8 +127,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
         :ok = Cell.put("prontera", x, y, :test_blocker, x * 1_000 + y + 1, blocks_movement: true)
       end
 
-      assert [{501, 1, 150, 150}, {501, 1, 150, 150}] =
+      assert [{501, 1, 150, 150, true}, {501, 1, 150, 150, true}] =
                DropCalculator.roll([drop(10_000), drop(10_000)], 0, 1, 1, 0, "prontera", 150, 150)
+    end
+
+    test "marks dropped weapons and armor unidentified while other items stay identified" do
+      stub(ItemManagement, :get_item_by_aegis, fn
+        "Knife" -> {:ok, %{id: 1201, type: :weapon}}
+        "Cotton_Shirt" -> {:ok, %{id: 2301, type: :armor}}
+        "Red_Potion" -> {:ok, %{id: 501, type: :healing}}
+      end)
+
+      drops = [
+        %MobDrop{item: "Knife", rate: 10_000},
+        %MobDrop{item: "Cotton_Shirt", rate: 10_000},
+        drop(10_000)
+      ]
+
+      assert [
+               {1201, 1, _, _, false},
+               {2301, 1, _, _, false},
+               {501, 1, _, _, true}
+             ] = DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
     end
   end
 end

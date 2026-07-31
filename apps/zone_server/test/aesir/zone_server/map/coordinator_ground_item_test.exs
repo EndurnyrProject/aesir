@@ -41,22 +41,32 @@ defmodule Aesir.ZoneServer.Map.CoordinatorGroundItemTest do
 
       assert {:noreply, _state} =
                Coordinator.handle_cast(
-                 {:drop_items, [{501, 3, 50, 50}], 50, 50},
+                 {:drop_items, [{501, 3, 50, 50, false}], 50, 50},
                  coordinator_state()
                )
 
-      assert [%GroundItem{nameid: 501, amount: 3, x: 50, y: 50}] =
+      assert [%GroundItem{nameid: 501, amount: 3, x: 50, y: 50, identified: false}] =
                GroundItemStore.query_in_range(@map_name, 50, 50, 0)
 
       assert_receive {:"$gen_cast",
                       {:send_packet,
-                       %ItemOnGround{nameid: 501, amount: 3, x: 50, y: 50, is_falling: true}}}
+                       %ItemOnGround{
+                         nameid: 501,
+                         amount: 3,
+                         x: 50,
+                         y: 50,
+                         identified: false,
+                         is_falling: true
+                       }}}
     end
 
     test "does not broadcast to players out of range" do
       register_observer(1001, 50, 50)
 
-      Coordinator.handle_cast({:drop_items, [{501, 1, 200, 200}], 200, 200}, coordinator_state())
+      Coordinator.handle_cast(
+        {:drop_items, [{501, 1, 200, 200, true}], 200, 200},
+        coordinator_state()
+      )
 
       refute_receive {:"$gen_cast", {:send_packet, %ItemOnGround{}}}
     end

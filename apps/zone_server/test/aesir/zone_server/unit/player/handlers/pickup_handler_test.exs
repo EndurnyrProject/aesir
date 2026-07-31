@@ -102,7 +102,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
       {:error, :db_error, st}
     end)
 
-    expect(Coordinator, :drop_items, fn "prontera", [{@nameid, 1, 101, 100}], 101, 100 -> :ok end)
+    expect(Coordinator, :drop_items, fn "prontera", [{@nameid, 1, 101, 100, true}], 101, 100 ->
+      :ok
+    end)
 
     assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
 

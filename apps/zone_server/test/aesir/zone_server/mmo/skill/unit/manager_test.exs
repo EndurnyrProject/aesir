@@ -404,7 +404,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                )
 
       assert :ok = Manager.tick(manager, 10_000)
-      assert_received {:dropped, "prontera", [{1065, 1, 100, 100}], 100, 100}
+      assert_received {:dropped, "prontera", [{1065, 1, 100, 100, true}], 100, 100}
       assert nil == Storage.get(1)
     end
 
