@@ -106,8 +106,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     @typedoc """
     Worn equipment derived from the equipped inventory items, keyed by equip
-    location. Each populated field holds the equipped item's `nameid`; an empty
-    slot is `nil`. This is rebuilt from the inventory whenever equipment changes.
+    location. Each populated field holds the item id worn at that location; an
+    empty slot is `nil`. This is rebuilt from the inventory whenever equipment
+    changes.
+
+    This structure answers "what is worn where" for look and weapon-type
+    resolution only. Per-item metadata (refine, cards, forged data) deliberately
+    lives on `worn_items` instead, which is the stat and bonus reduction.
     """
     @type t() :: %__MODULE__{
             head_top: non_neg_integer() | nil,
@@ -136,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     equipment: nil,
     modifiers: %Modifiers{},
 
-    # Minimal identity of the worn items ({nameid, refine} pairs), cached by
+    # Minimal identity of the worn items ({nameid, refine, card slots}), cached by
     # `apply_equipment_modifiers/2` so a recompute without an equipped-items
     # list can still re-evaluate the on_equip programs - their level inputs
     # (BaseLevel/JobLevel) change without any equipment change.
@@ -168,7 +173,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           progression: PlayerProgression.t() | nil,
           equipment: Equipment.t() | nil,
           modifiers: Modifiers.t(),
-          worn_items: [%{nameid: integer(), refine: integer()}],
+          worn_items: [
+            %{
+              nameid: integer(),
+              refine: integer(),
+              equip: integer(),
+              card0: integer(),
+              card1: integer(),
+              card2: integer(),
+              card3: integer()
+            }
+          ],
           riding: boolean()
         }
 
@@ -362,7 +377,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   When `equipped_items` is a list of `InventoryItem`s, this rebuilds the worn
   `Equipment` struct (so weapon-type/shield-dependent calculations such as
-  ASPD see the correct gear), caches the `{nameid, refine}` pairs in
+  ASPD see the correct gear), caches the `{nameid, refine, card slots}` maps in
   `worn_items`, and folds the flat `item_db` bonuses plus each item's
   `on_equip` program into `modifiers.equipment`. When `nil`, the fold reruns
   from the cached `worn_items` instead - equipment cannot have changed, but the
@@ -386,7 +401,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     worn_items =
       equipped_items
       |> normalize_items()
-      |> Enum.map(&%{nameid: &1.nameid, refine: &1.refine})
+      |> Enum.map(
+        &%{
+          nameid: &1.nameid,
+          refine: &1.refine,
+          equip: &1.equip,
+          card0: &1.card0,
+          card1: &1.card1,
+          card2: &1.card2,
+          card3: &1.card3
+        }
+      )
 
     equipment_bonuses = calculate_equipment_bonuses(worn_items, stats.progression)
 
@@ -403,9 +428,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   inventory items.
 
   Each item's `equip` bitmask is decoded into location atoms via
-  `EquipLocation.bitmask_to_location_atoms/1` and the item's `nameid` is placed
-  at each resulting location. A two-handed weapon (right + left hand) lands in
-  both hand slots so weapon-type resolution reads it from `right_hand`.
+  `EquipLocation.bitmask_to_location_atoms/1` and a map carrying its `nameid`
+  and card slots is placed at each resulting location. A two-handed weapon
+  (right + left hand) lands in both hand slots so weapon-type resolution reads
+  it from `right_hand`.
   """
   @spec equipment_from_inventory([InventoryItem.t()] | %{optional(any()) => InventoryItem.t()}) ::
           Equipment.t()
@@ -481,6 +507,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec shield_stats(Equipment.t(), Enumerable.t()) ::
           {non_neg_integer(), non_neg_integer()} | nil
+  def shield_stats(%Equipment{left_hand: nil}, _inventory), do: nil
+
   def shield_stats(%Equipment{left_hand: nameid} = equipment, inventory) do
     if shield?(equipment) do
       {shield_weight(nameid), left_hand_refine(inventory)}
@@ -506,6 +534,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   Returns the client view (sprite) id of the equipped weapon, or `0` when bare-handed.
   """
   @spec weapon_view(Equipment.t()) :: non_neg_integer()
+  def weapon_view(%Equipment{right_hand: nil}), do: 0
+
   def weapon_view(%Equipment{right_hand: nameid} = equipment) do
     # A weapon's sprite is its weapon-class view (dagger, one-handed sword, ...),
     # derived from the item subtype. Item DBs only set an explicit `view` for
@@ -522,32 +552,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   or when the left-hand item is itself a weapon (two-hander occupying both hands).
   """
   @spec shield_view(Equipment.t()) :: non_neg_integer()
-  def shield_view(%Equipment{} = equipment) do
-    if shield?(equipment), do: view_of(equipment.left_hand), else: 0
+  def shield_view(%Equipment{left_hand: left_hand} = equipment) do
+    if shield?(equipment), do: view_of(left_hand), else: 0
   end
 
   @doc """
   Returns the client view (sprite) id of the equipped head-top item, or `0` when none.
   """
   @spec head_top_view(Equipment.t()) :: non_neg_integer()
+  def head_top_view(%Equipment{head_top: nil}), do: 0
   def head_top_view(%Equipment{head_top: nameid}), do: view_of(nameid)
 
   @doc """
   Returns the client view (sprite) id of the equipped head-mid item, or `0` when none.
   """
   @spec head_mid_view(Equipment.t()) :: non_neg_integer()
+  def head_mid_view(%Equipment{head_mid: nil}), do: 0
   def head_mid_view(%Equipment{head_mid: nameid}), do: view_of(nameid)
 
   @doc """
   Returns the client view (sprite) id of the equipped head-low (head-bottom) item, or `0` when none.
   """
   @spec head_bottom_view(Equipment.t()) :: non_neg_integer()
+  def head_bottom_view(%Equipment{head_low: nil}), do: 0
   def head_bottom_view(%Equipment{head_low: nameid}), do: view_of(nameid)
 
   @doc """
   Returns the client view (sprite) id of the equipped garment (robe), or `0` when none.
   """
   @spec robe_view(Equipment.t()) :: non_neg_integer()
+  def robe_view(%Equipment{garment: nil}), do: 0
   def robe_view(%Equipment{garment: nameid}), do: view_of(nameid)
 
   defp normalize_items(items) when is_list(items), do: items

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
@@ -1020,6 +1021,64 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "equipment reductions" do
+    test "worn items carry card slots and the equip location bitmask" do
+      character = %Character{
+        id: 1,
+        name: "Forger",
+        account_id: 1,
+        last_map: "prontera",
+        last_x: 100,
+        last_y: 100,
+        class: 0,
+        base_level: 1,
+        job_level: 1,
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        hp: 40,
+        sp: 11
+      }
+
+      item = %InventoryItem{
+        nameid: @sword,
+        amount: 1,
+        equip: @right_hand,
+        identify: 1,
+        refine: 7,
+        card0: 255,
+        card1: 1_282,
+        card2: 3,
+        card3: 4
+      }
+
+      player = PlayerState.new(character)
+      stats = Stats.apply_equipment_modifiers(player.stats, [item])
+
+      # Forged metadata lives on `worn_items`, the stat/bonus reduction. `equip`
+      # is carried alongside so a consumer can tell which slot an entry came
+      # from without a second reduction.
+      assert [
+               %{
+                 nameid: @sword,
+                 refine: 7,
+                 equip: @right_hand,
+                 card0: 255,
+                 card1: 1_282,
+                 card2: 3,
+                 card3: 4
+               }
+             ] = stats.worn_items
+
+      # `Equipment` stays a bare nameid-per-location lookup: it resolves looks
+      # and weapon type, and deliberately carries no item metadata.
+      assert stats.equipment.right_hand == @sword
+    end
+  end
+
   describe "equipment_from_inventory/1" do
     test "places each equipped item's nameid at its worn location" do
       equipment =
@@ -1029,7 +1088,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
           equipped(@cotton_shirt, @armor_pos)
         ])
 
-      assert %Equipment{right_hand: @sword, left_hand: @guard, armor: @cotton_shirt} = equipment
+      assert %Equipment{
+               right_hand: @sword,
+               left_hand: @guard,
+               armor: @cotton_shirt
+             } = equipment
     end
 
     test "a two-handed weapon occupies both hand slots" do
