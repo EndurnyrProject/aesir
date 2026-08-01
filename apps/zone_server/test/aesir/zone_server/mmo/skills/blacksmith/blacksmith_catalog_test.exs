@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BlacksmithCatalogTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSkintemper
 
   @blacksmith_skills [
@@ -49,6 +50,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BlacksmithCatalogTest do
     assert {:error, :passive_skill} = Interpreter.cast(game_state, 105, 1, :self)
     assert {:ok, _module} = Catalog.passive_module_for(:bs_unfairlytrick)
     assert {:ok, _module} = Catalog.active_module_for(:bs_adrenaline)
+  end
+
+  test "Greed is an active skill" do
+    assert {:ok, BsGreed} = Catalog.active_module_for(:bs_greed)
   end
 
   test "Skin Temper is a passive skill and cannot be cast" do

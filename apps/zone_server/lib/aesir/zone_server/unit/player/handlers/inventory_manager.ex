@@ -47,20 +47,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   Runs the persist-first add through `InventoryOps`, advances
   `game_state.inventory`, and notifies the client with an `ItemAdded` for each
-  affected slot. On `{:error, :overweight}` (or any DB error) the state is left
-  untouched and nothing is sent.
+  affected slot. A skill operating on `PlayerState` stages the same notification
+  for the session commit. On `{:error, :overweight}` (or any DB error) the state
+  is left untouched and nothing is sent.
 
   Returns `{:ok, new_state}` on success and `{:error, reason, state}` (original
   state) on failure so callers can react to a lost add (e.g. re-place a claimed
   ground item).
   """
-  @spec handle_give_item(ItemDefinition.t(), pos_integer(), SessionState.t()) ::
-          {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
+  @spec handle_give_item(ItemDefinition.t(), pos_integer(), SessionState.t() | PlayerState.t()) ::
+          {:ok, SessionState.t() | PlayerState.t()}
+          | {:error, term(), SessionState.t() | PlayerState.t()}
   def handle_give_item(item_def, amount, state),
     do: handle_give_item(item_def, amount, state, true)
 
-  @spec handle_give_item(ItemDefinition.t(), pos_integer(), SessionState.t(), boolean()) ::
-          {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
+  @spec handle_give_item(
+          ItemDefinition.t(),
+          pos_integer(),
+          SessionState.t() | PlayerState.t(),
+          boolean()
+        ) ::
+          {:ok, SessionState.t() | PlayerState.t()}
+          | {:error, term(), SessionState.t() | PlayerState.t()}
   def handle_give_item(
         %ItemDefinition{} = item_def,
         amount,
@@ -81,10 +89,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
         {:ok, %{state | game_state: %{game_state | inventory: persisted}}}
 
       {:error, reason} ->
-        Logger.warning(
-          "give_item failed for #{game_state.character_id} (#{item_def.id} x#{amount}): #{inspect(reason)}"
-        )
+        log_give_failure(game_state.character_id, item_def.id, amount, reason)
+        {:error, reason, state}
+    end
+  end
 
+  def handle_give_item(%ItemDefinition{} = item_def, amount, %PlayerState{} = state, identified) do
+    case InventoryOps.add(
+           state.character_id,
+           state.inventory,
+           state.stats,
+           item_def,
+           amount,
+           %{identify: if(identified, do: 1, else: 0)}
+         ) do
+      {:ok, persisted, change} ->
+        {:ok,
+         %{
+           state
+           | inventory: persisted,
+             pending_inventory_notify: state.pending_inventory_notify ++ [change]
+         }}
+
+      {:error, reason} ->
+        log_give_failure(state.character_id, item_def.id, amount, reason)
         {:error, reason, state}
     end
   end
@@ -191,6 +219,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   def affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
     do: [topped_index, new_index]
+
+  defp log_give_failure(character_id, item_id, amount, reason) do
+    Logger.warning(
+      "give_item failed for #{character_id} (#{item_id} x#{amount}): #{inspect(reason)}"
+    )
+  end
 
   defp announce_break(character_id, %InventoryItem{nameid: nameid}) do
     {:ok, definition} = Items.by_id(nameid)
