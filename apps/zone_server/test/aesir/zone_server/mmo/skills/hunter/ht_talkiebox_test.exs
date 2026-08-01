@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       next_tick_at: 0,
       expires_at: 0,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: state
     }
 
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       assert {:ok, placement} = HtTalkiebox.on_place(group(%{}))
 
       assert placement.cells == [{50, 50}]
-      assert placement.visibility == :none
+      assert placement.visibility == :party_only
       assert placement.duration == 600_000
       assert placement.interval == 1_000
 

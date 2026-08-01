@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: state
     }
   end

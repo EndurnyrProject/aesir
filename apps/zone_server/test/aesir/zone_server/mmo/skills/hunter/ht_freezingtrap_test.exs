@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     assert definition.unit_duration == [150_000, 120_000, 90_000, 60_000, 30_000]
 
     assert {:ok, placement} = HtFreezingtrap.on_place(group())
-    assert placement.visibility == :none
+    assert placement.visibility == :party_only
     assert placement.cells == [{50, 50}]
 
     assert %TrapState{phase: :armed, natural_expiry: :drop_item, claymore_spendable?: true} =

@@ -90,14 +90,14 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
 
     assert :ok = Manager.trigger(20_001, {:player, bystander.character.id}, :on_touch)
 
-    assert %Group{visibility: :none, state: %{trap: %TrapState{phase: :armed}}} =
+    assert %Group{visibility: :party_only, state: %{trap: %TrapState{phase: :armed}}} =
              Storage.get(20_001)
 
     assert get_player_state(bystander.pid).stats.current_state.hp == 500
 
     assert :ok = Manager.trigger(20_001, {:mob, mob.unit_id}, :on_touch)
 
-    assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
+    assert %Group{visibility: :party_only, state: %{trap: %TrapState{phase: :used}}} =
              Storage.get(20_001)
 
     assert eventually(fn -> get_mob_state(mob.pid).hp < 10_000 end)
@@ -278,7 +278,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: Map.merge(%{base_damage: 500, trap: trap_state(skill_name)}, state)
     }
   end

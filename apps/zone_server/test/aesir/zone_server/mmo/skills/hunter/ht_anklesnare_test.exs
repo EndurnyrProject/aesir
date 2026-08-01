@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
 
       assert {:ok, placement} = HtAnklesnare.on_place(placed)
       assert placement.cells == [{50, 50}]
-      assert placement.visibility == :none
+      assert placement.visibility == :party_only
       assert placement.duration == 150_000
       assert placement.state.ignore_land_protector
 
@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
       next_tick_at: 0,
       expires_at: 250_000,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: %{trap: %TrapState{reclaim_item_id: 1065}}
     }
   end

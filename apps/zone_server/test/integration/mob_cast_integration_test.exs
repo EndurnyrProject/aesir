@@ -427,7 +427,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       assert StatusStorage.has_status?(:player, player.character.id, :sc_stop)
 
-      assert %Group{visibility: :public, state: %{trap: %{phase: :used}}} =
+      assert %Group{visibility: :party_only, state: %{trap: %{phase: :used}}} =
                Storage.get(group.group_id)
     end
   end

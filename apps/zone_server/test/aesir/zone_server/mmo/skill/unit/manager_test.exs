@@ -301,8 +301,170 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   defp trap_state(attrs \\ []),
     do: struct(TrapState, Keyword.merge([reclaim_item_id: 1065], attrs))
 
+  defp register_player(player_id, party_id) do
+    state = %PlayerState{character_id: player_id, party_id: party_id}
+    :ok = UnitRegistry.register_unit(:player, player_id, PlayerState, state, self())
+    :ok = SpatialIndex.add_unit(:player, player_id, 100, 100, "prontera")
+  end
+
   describe "Hunter trap transitions" do
-    test "serializes the first armed trigger into a visible inert used phase" do
+    test "delivers a party-only trap only to its caster and party members" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn player_id, %Aesir.Net.SkillUnitSpawn{} ->
+        send(test_pid, {:spawn, player_id})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      register_player(1, 10)
+      register_player(2, 10)
+      register_player(3, 20)
+
+      assert :ok =
+               Manager.register(manager, trap_group(1, visibility: :party_only, party_id: 10))
+
+      assert_receive {:spawn, 1}
+      assert_receive {:spawn, 2}
+      refute_receive {:spawn, 3}
+    end
+
+    test "despawns a party-only trap for an observer who has since left the party" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn player_id, packet ->
+        send(test_pid, {:published, player_id, packet})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      register_player(1, 10)
+      register_player(2, 10)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1,
+                   visibility: :party_only,
+                   party_id: 10,
+                   next_tick_at: 11_000,
+                   expires_at: 11_000
+                 )
+               )
+
+      assert_receive {:published, 1, %Aesir.Net.SkillUnitSpawn{}}
+      assert_receive {:published, 2, %Aesir.Net.SkillUnitSpawn{}}
+      assert MapSet.new([1]) == Storage.get_observer_groups(2)
+
+      register_player(2, 0)
+      assert :ok = Manager.tick(manager, 11_500)
+
+      assert_receive {:published, 1,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_EXPIRED
+                      }}
+
+      assert_receive {:published, 2,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_EXPIRED
+                      }}
+
+      assert MapSet.new() == Storage.get_observer_groups(2)
+    end
+
+    test "keeps Blast Mine and Claymore Trap on the public area seam" do
+      test_pid = self()
+
+      stub(Broadcast, :to_in_range, fn _map,
+                                       _x,
+                                       _y,
+                                       _range,
+                                       %Aesir.Net.SkillUnitSpawn{group: %{skill_id: skill_id}} ->
+        send(test_pid, {:public_spawn, skill_id})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      register_player(3, 20)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1,
+                   skill_id: 121,
+                   skill_name: :ht_blastmine,
+                   handler: FakeUnit,
+                   visibility: :public
+                 )
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(2,
+                   skill_id: 123,
+                   skill_name: :ht_claymoretrap,
+                   handler: FakeUnit,
+                   visibility: :public
+                 )
+               )
+
+      assert_receive {:public_spawn, 121}
+      assert_receive {:public_spawn, 123}
+    end
+
+    test "filters party-only groups from observer snapshots" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn
+        player_id, %Aesir.Net.SkillUnitSnapshot{} = snapshot ->
+          send(test_pid, {:snapshot, player_id, snapshot})
+          :ok
+
+        _player_id, %Aesir.Net.SkillUnitSpawn{} ->
+          :ok
+      end)
+
+      manager = start_manager(10_000)
+      register_player(2, 10)
+      register_player(3, 20)
+
+      assert :ok =
+               Manager.register(manager, trap_group(1, visibility: :party_only, party_id: 10))
+
+      assert MapSet.new([1]) == Manager.snapshot_for(manager, 2, "prontera", 100, 100, 0)
+      assert_receive {:snapshot, 2, %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1}]}}
+
+      assert MapSet.new() == Manager.snapshot_for(manager, 3, "prontera", 100, 100, 0)
+      assert_receive {:snapshot, 3, %Aesir.Net.SkillUnitSnapshot{groups: []}}
+    end
+
+    test "Detecting reveals a party-only trap without duplicating a tracked spawn" do
+      test_pid = self()
+
+      stub(Broadcast, :to_player, fn player_id, %Aesir.Net.SkillUnitSpawn{} ->
+        send(test_pid, {:spawn, player_id})
+        :ok
+      end)
+
+      manager = start_manager(10_000)
+      register_player(3, 20)
+
+      assert :ok =
+               Manager.register(manager, trap_group(1, visibility: :party_only, party_id: 10))
+
+      refute_receive {:spawn, 3}
+      assert {:ok, [1]} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
+      assert_receive {:spawn, 3}
+      assert MapSet.new([1]) == Storage.get_observer_groups(3)
+
+      assert {:ok, []} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
+      refute_receive {:spawn, 3}
+    end
+
+    test "preserves party-only visibility through the first armed trigger" do
       test_pid = self()
 
       stub(Broadcast, :to_player, fn player_id, packet ->
@@ -318,6 +480,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  manager,
                  trap_group(1,
                    skill_name: :trap_unit,
+                   visibility: :party_only,
                    state: %{base_damage: 100, test_pid: self(), trap: trap_state()}
                  )
                )
@@ -329,17 +492,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       refute_received {:trap_triggered, {:mob, 21}}
 
       assert %Group{
-               visibility: :public,
+               visibility: :party_only,
                expires_at: 11_500,
                state: %{trap: %TrapState{phase: :used}}
              } = Storage.get(1)
 
       assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
-
-      assert_receive {:published, 99,
-                      %Aesir.Net.SkillUnitSpawn{
-                        group: %{group_id: 1, phase: :SKILL_UNIT_PHASE_USED}
-                      }}
+      refute_receive {:published, 99, %Aesir.Net.SkillUnitSpawn{}}
     end
 
     test "persists captured indexes and releases only a matching link" do
@@ -649,6 +808,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         :ok
       end)
 
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:area, packet})
+        :ok
+      end)
+
       manager = start_manager(10_000)
       :ok = SpatialIndex.add_unit(:player, 99, 100, 100, "prontera")
       assert :ok = Manager.register(manager, trap_group(1))
@@ -670,7 +834,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:ok, %{group_id: 1}} =
                Manager.reclaim_trap(manager, {:player, 1}, "prontera", 100, 100)
 
-      assert_receive {:observer, 99,
+      assert_receive {:area,
                       %Aesir.Net.SkillUnitDespawn{
                         group_id: 1,
                         reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
@@ -718,51 +882,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                |> Enum.sort_by(& &1.group_id)
     end
 
-    test "rolls back earlier groups when a later reveal in the same area cannot materialize" do
-      test_pid = self()
-
-      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
-        send(test_pid, {:published, packet})
-        :ok
-      end)
-
+    test "reveals several materialized party-only traps atomically" do
       manager = start_manager(10_000)
 
-      blocker =
-        group(9,
-          visibility: :public,
-          cells: [{100, 100}],
-          state: %{
-            exclusive_terrain: true,
-            cell_attrs: %{
-              {100, 100} => %{flags: [:blocks_movement], state: %{exclusive_terrain: true}}
-            }
-          }
-        )
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(1, visibility: :party_only, cells: [{99, 100}])
+               )
 
-      blocked =
-        trap_group(2,
-          cells: [{100, 100}],
-          state: %{
-            base_damage: 100,
-            trap: trap_state(),
-            exclusive_terrain: true
-          }
-        )
+      assert :ok =
+               Manager.register(
+                 manager,
+                 trap_group(2, visibility: :party_only, cells: [{100, 100}])
+               )
 
-      assert :ok = Manager.register(manager, blocker)
-      assert_receive {:published, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 9}}}
-      assert :ok = Manager.register(manager, trap_group(1, cells: [{99, 100}]))
-      assert :ok = Manager.register(manager, blocked)
+      assert {:ok, [1, 2]} = Manager.reveal_traps(manager, "prontera", 100, 100, 1)
 
-      assert {:error, :exclusive_terrain_overlap} =
-               Manager.reveal_traps(manager, "prontera", 100, 100, 1)
-
-      assert %Group{visibility: :none} = Storage.get(1)
-      assert %Group{visibility: :none} = Storage.get(2)
-      assert [] == Storage.get_cells_by_group(1)
-      assert [] == Storage.get_cells_by_group(2)
-      refute_receive {:published, %Aesir.Net.SkillUnitSpawn{}}
+      for group_id <- [1, 2] do
+        assert %Group{visibility: :public} = Storage.get(group_id)
+        assert [%Cell{group_id: ^group_id}] = Storage.get_cells_by_group(group_id)
+      end
     end
 
     test "rejects an invalid trap state before revealing any group in the area" do
@@ -893,6 +1033,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         :ok
       end)
 
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:published_in_range, packet})
+        :ok
+      end)
+
       manager = start_manager(10_000)
       assert :ok = Manager.register(manager, trap_group(1))
       :ok = SpatialIndex.add_unit(:player, 99, 100, 100, "prontera")
@@ -907,7 +1052,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
              } = Storage.get(1)
 
       assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
-      assert_receive {:published, 99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+      assert_receive {:published_in_range, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
+
       refute_receive {:published, 99, %Aesir.Net.SkillUnitSpawn{}}
       assert MapSet.new([1]) == Storage.get_observer_groups(99)
 
@@ -963,6 +1109,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         :ok
       end)
 
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:area, packet})
+        :ok
+      end)
+
       manager = start_manager(10_000)
       assert :ok = Manager.register(manager, trap_group(1, visibility: :public))
       assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
@@ -972,18 +1123,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok = SpatialIndex.add_unit(:player, 100, 100, 100, "prontera")
       assert {:ok, %{group_id: 1}} = Manager.spring_trap(manager, "prontera", 100, 100)
 
+      assert_receive {:area,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED
+                      }}
+
+      assert_receive {:area,
+                      %Aesir.Net.SkillUnitSpawn{
+                        group: %{group_id: 1, phase: :SKILL_UNIT_PHASE_SPRUNG}
+                      }}
+
       for observer_id <- [99, 100] do
-        assert_receive {:observer, ^observer_id,
-                        %Aesir.Net.SkillUnitDespawn{
-                          group_id: 1,
-                          reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED
-                        }}
-
-        assert_receive {:observer, ^observer_id,
-                        %Aesir.Net.SkillUnitSpawn{
-                          group: %{group_id: 1, phase: :SKILL_UNIT_PHASE_SPRUNG}
-                        }}
-
         assert MapSet.new([1]) == Storage.get_observer_groups(observer_id)
       end
 
@@ -993,13 +1144,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok = SpatialIndex.update_unit_position(:player, 100, 1_000, 1_000, "prontera")
       assert :ok = Manager.tick(manager, 11_500)
 
-      for observer_id <- [99, 100] do
-        assert_receive {:observer, ^observer_id,
-                        %Aesir.Net.SkillUnitDespawn{
-                          group_id: 1,
-                          reason: :SKILL_UNIT_DESPAWN_REASON_EXPIRED
-                        }}
-      end
+      assert_receive {:area,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_EXPIRED
+                      }}
+
+      assert_receive {:observer, 100,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_EXPIRED
+                      }}
 
       refute_receive {:observer, _, %Aesir.Net.SkillUnitDespawn{group_id: 1}}
       assert MapSet.new() == Storage.get_observer_groups(99)
@@ -1135,18 +1290,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         )
 
       eligible =
-        for {group_id, skill_name, {x, y}} <- [
-              {2, :ht_landmine, {98, 98}},
-              {3, :ht_blastmine, {102, 98}},
-              {4, :ht_shockwave, {98, 102}},
-              {5, :ht_sandman, {102, 102}},
-              {6, :ht_flasher, {100, 98}},
-              {7, :ht_freezingtrap, {98, 100}},
-              {8, :ht_claymoretrap, {102, 100}}
+        for {group_id, skill_name, visibility, {x, y}} <- [
+              {2, :ht_landmine, :party_only, {98, 98}},
+              {3, :ht_blastmine, :public, {102, 98}},
+              {4, :ht_shockwave, :party_only, {98, 102}},
+              {5, :ht_sandman, :party_only, {102, 102}},
+              {6, :ht_flasher, :party_only, {100, 98}},
+              {7, :ht_freezingtrap, :party_only, {98, 100}},
+              {8, :ht_claymoretrap, :public, {102, 100}}
             ] do
           trap_group(group_id,
             skill_name: skill_name,
             handler: TrapUnit,
+            visibility: visibility,
             center: {x, y},
             cells: [{x, y}],
             state: %{
@@ -1203,7 +1359,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                state: %{trap: %TrapState{phase: :used}}
              } = Storage.get(1)
 
-      for group_id <- 2..8 do
+      for group_id <- [2, 4, 5, 6, 7] do
+        assert %Group{
+                 visibility: :party_only,
+                 expires_at: 11_500,
+                 state: %{trap: %TrapState{phase: :used}}
+               } = Storage.get(group_id)
+      end
+
+      for group_id <- [3, 8] do
         assert %Group{
                  visibility: :public,
                  expires_at: 11_500,
@@ -2429,11 +2593,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                     }}
   end
 
-  test "despawns an early-torn-down group for a view-range player that never registered as observer" do
+  test "despawns an early-torn-down public group through the area seam" do
     test_pid = self()
 
-    stub(Broadcast, :to_player, fn observer_id, packet ->
-      send(test_pid, {observer_id, packet})
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(test_pid, {:area, packet})
+      :ok
     end)
 
     manager = start_manager(10_000)
@@ -2450,7 +2615,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     assert :ok = Manager.destroy(manager, 1)
 
-    assert_receive {42,
+    assert_receive {:area,
                     %Aesir.Net.SkillUnitDespawn{
                       group_id: 1,
                       reason: :SKILL_UNIT_DESPAWN_REASON_CANCELED
@@ -2636,11 +2801,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     test "despawns only the removed coordinates and keeps the surviving cells live" do
       test_pid = self()
 
-      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+      stub(SpatialIndex, :get_players_in_range, fn _map_name, _x, _y, _range -> [42] end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
         send(test_pid, {:in_range, packet})
       end)
 
       manager = start_manager(10_000)
+      allow(SpatialIndex, test_pid, manager)
+      allow(Broadcast, test_pid, manager)
 
       :ok =
         Manager.register(

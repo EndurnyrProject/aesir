@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: %{trap: %TrapState{reclaim_item_id: 1065, claymore_spendable?: true}}
     }
 
@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
     assert :ok = Manager.trigger(group.group_id, {:mob, boss.unit_id}, :on_touch)
     refute StatusStorage.has_status?(:mob, boss.unit_id, :sc_sleep)
 
-    assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
+    assert %Group{visibility: :party_only, state: %{trap: %TrapState{phase: :used}}} =
              Storage.get(group.group_id)
   end
 
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
     move_to(player, {150, 150})
 
     assert %Group{
-             visibility: :public,
+             visibility: :party_only,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(trap.group_id)
 
@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
       next_tick_at: expires_at,
       expires_at: expires_at,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: %{trap: %TrapState{reclaim_item_id: 1065, claymore_spendable?: true}}
     }
   end

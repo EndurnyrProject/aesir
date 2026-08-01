@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       next_tick_at: System.monotonic_time(:millisecond) + 60_000,
       expires_at: System.monotonic_time(:millisecond) + 60_000,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: %{base_damage: 250, trap: struct(TrapState, reclaim_item_id: 1065)}
     )
   end
@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     assert :ok = Executor.execute(mob, row)
 
-    assert [%{__struct__: Group, group_id: group_id, caster_type: :mob, visibility: :none}] =
+    assert [%{__struct__: Group, group_id: group_id, caster_type: :mob, visibility: :party_only}] =
              Storage.all()
 
     assert :ok = Manager.trigger(group_id, {:player, @caster_id}, :on_touch)
@@ -460,7 +460,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
       :ok = Storage.insert(group)
       assert :ok = Manager.trigger(manager(), group_id, {:mob, mob_id}, :on_touch)
-      assert %Group{visibility: :none, state: %{trap: %{phase: :armed}}} = Storage.get(group_id)
+
+      assert %Group{visibility: :party_only, state: %{trap: %{phase: :armed}}} =
+               Storage.get(group_id)
+
       refute StatusStorage.has_status?(:mob, mob_id, :sc_stop)
       assert %{x: 50, y: 50} = MobSession.get_state(mob_pid)
     end
@@ -484,7 +487,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     :ok = Storage.insert(landmine_group())
 
-    assert [%{__struct__: Group, group_id: 999, visibility: :none}] =
+    assert [%{__struct__: Group, group_id: 999, visibility: :party_only}] =
              Storage.get_groups_at_cell(@map, 50, 50)
 
     assert [] = Storage.get_cells_by_group(999)
@@ -540,7 +543,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       next_tick_at: System.monotonic_time(:millisecond) + 60_000,
       expires_at: System.monotonic_time(:millisecond) + 60_000,
       interval: 1_000,
-      visibility: :none,
+      visibility: :party_only,
       state: %{trap: struct(TrapState, reclaim_item_id: 1065)},
       handler: HtAnklesnare
     )

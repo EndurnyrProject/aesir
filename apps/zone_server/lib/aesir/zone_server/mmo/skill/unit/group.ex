@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
             level: nil,
             caster_id: nil,
             caster_type: nil,
+            party_id: nil,
             target_id: nil,
             target_type: nil,
             map_name: nil,
@@ -58,6 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
           level: non_neg_integer() | nil,
           caster_id: integer() | nil,
           caster_type: Unit.unit_type() | nil,
+          party_id: integer() | nil,
           target_id: integer() | nil,
           target_type: Unit.unit_type() | nil,
           map_name: String.t() | nil,
@@ -84,6 +86,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   @spec public?(t()) :: boolean()
   def public?(%__MODULE__{visibility: :public}), do: true
   def public?(%__MODULE__{}), do: false
+
+  @doc "Whether this group is visible to an observer and their current party."
+  @spec visible_to?(t(), integer(), integer() | nil) :: boolean()
+  def visible_to?(%__MODULE__{visibility: :public}, _observer_id, _observer_party_id), do: true
+  def visible_to?(%__MODULE__{visibility: :none}, _observer_id, _observer_party_id), do: false
+
+  def visible_to?(
+        %__MODULE__{visibility: :party_only, caster_type: :player, caster_id: caster_id},
+        observer_id,
+        _observer_party_id
+      )
+      when observer_id == caster_id,
+      do: true
+
+  def visible_to?(
+        %__MODULE__{visibility: :party_only, party_id: party_id},
+        _observer_id,
+        observer_party_id
+      )
+      when is_integer(party_id) and party_id > 0 and party_id == observer_party_id,
+      do: true
+
+  def visible_to?(%__MODULE__{}, _observer_id, _observer_party_id), do: false
 
   @doc "Whether this group is a Land Protector field (suppresses other ground units)."
   @spec land_protector?(t()) :: boolean()

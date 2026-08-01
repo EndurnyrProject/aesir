@@ -342,7 +342,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:snapshot_for, observer_id, map_name, x, y, range}, _from, state) do
-    groups = Storage.get_visible_groups_in_range(map_name, x, y, range)
+    groups =
+      map_name
+      |> Storage.get_visible_groups_in_range(x, y, range)
+      |> Enum.filter(&(eligible_recipients(&1, [observer_id]) != []))
 
     snapshot =
       groups
@@ -991,55 +994,52 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     :ok = remove_target(cell)
   end
 
-  defp publish_spawn(%Group{} = group) do
-    if Group.public?(group) do
-      packet = %SkillUnitSpawn{
-        group: View.group(group, Storage.get_cells_by_group(group.group_id))
-      }
+  defp publish_spawn(%Group{visibility: :none}), do: :ok
 
-      publish(group.map_name, elem(group.center, 0), elem(group.center, 1), packet)
-    else
-      :ok
-    end
-  end
-
-  defp publish_tracked_spawn(%Group{} = group) do
+  defp publish_spawn(%Group{visibility: :public} = group) do
     packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
     {x, y} = group.center
+    publish(group.map_name, x, y, packet)
+  end
 
-    group.map_name
-    |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
-    |> Enum.uniq()
-    |> Enum.each(fn player_id ->
-      Broadcast.to_player(player_id, packet)
-      Storage.add_observer_group(player_id, group.group_id)
-    end)
+  defp publish_spawn(%Group{visibility: :party_only} = group) do
+    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
+    publish_to_eligible_players(group, packet, true)
+  end
 
+  defp publish_tracked_spawn(%Group{visibility: :none}), do: :ok
+
+  defp publish_tracked_spawn(%Group{visibility: :public} = group) do
+    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
+    {x, y} = group.center
+    :ok = publish(group.map_name, x, y, packet)
+    Enum.each(players_in_range(group), &Storage.add_observer_group(&1, group.group_id))
     :ok
+  end
+
+  defp publish_tracked_spawn(%Group{visibility: :party_only} = group) do
+    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
+    publish_to_eligible_players(group, packet, true)
   end
 
   defp publish_update(%Cell{} = cell, hp_delta, source, reason) do
     case Storage.get(cell.group_id) do
       %Group{} = group ->
-        if Group.public?(group) do
-          {source_type, source_id} = source_fields(source)
+        {source_type, source_id} = source_fields(source)
 
-          packet = %SkillUnitUpdate{
-            group_id: group.group_id,
-            cell_id: cell.cell_id,
-            hp: cell.hp,
-            max_hp: cell.max_hp,
-            hp_delta: hp_delta,
-            source_type: source_type,
-            source_id: source_id,
-            reason: update_reason(reason),
-            server_tick: ServerTick.now()
-          }
+        packet = %SkillUnitUpdate{
+          group_id: group.group_id,
+          cell_id: cell.cell_id,
+          hp: cell.hp,
+          max_hp: cell.max_hp,
+          hp_delta: hp_delta,
+          source_type: source_type,
+          source_id: source_id,
+          reason: update_reason(reason),
+          server_tick: ServerTick.now()
+        }
 
-          publish(cell.map_name, cell.x, cell.y, packet)
-        else
-          :ok
-        end
+        publish_by_visibility(group, cell.x, cell.y, packet)
 
       _ ->
         :ok
@@ -1049,16 +1049,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp publish_despawn(%Cell{} = cell, reason) do
     case Storage.get(cell.group_id) do
       %Group{} = group ->
-        if Group.public?(group) do
-          publish(cell.map_name, cell.x, cell.y, %SkillUnitDespawn{
-            group_id: cell.group_id,
-            cell_ids: [cell.cell_id],
-            reason: reason,
-            server_tick: ServerTick.now()
-          })
-        else
-          :ok
-        end
+        packet = %SkillUnitDespawn{
+          group_id: cell.group_id,
+          cell_ids: [cell.cell_id],
+          reason: reason,
+          server_tick: ServerTick.now()
+        }
+
+        publish_by_visibility(group, cell.x, cell.y, packet)
 
       _ ->
         :ok
@@ -1066,7 +1064,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp publish_cells_despawn(%Group{} = group, cell_ids) do
-    if Group.public?(group) and cell_ids != [] do
+    if cell_ids != [] do
       packet = %SkillUnitDespawn{
         group_id: group.group_id,
         cell_ids: Enum.sort(cell_ids),
@@ -1074,33 +1072,46 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         server_tick: ServerTick.now()
       }
 
-      {cx, cy} = group.center
-      publish(group.map_name, cx, cy, packet)
-    else
-      :ok
+      {x, y} = group.center
+      publish_by_visibility(group, x, y, packet)
     end
+
+    :ok
   end
 
   defp publish_group_despawn(%Group{} = group, cell_ids, reason) do
-    if Group.public?(group) do
-      packet = %SkillUnitDespawn{
-        group_id: group.group_id,
-        cell_ids: Enum.sort(cell_ids),
-        reason: reason,
-        server_tick: ServerTick.now()
-      }
+    packet = %SkillUnitDespawn{
+      group_id: group.group_id,
+      cell_ids: Enum.sort(cell_ids),
+      reason: reason,
+      server_tick: ServerTick.now()
+    }
 
-      {cx, cy} = group.center
-      observers = Storage.take_group_observers(group.group_id)
-      in_range = SpatialIndex.get_players_in_range(group.map_name, cx, cy, Config.view_range())
+    observers = Storage.take_group_observers(group.group_id)
+    in_range = players_in_range(group)
 
-      observers
-      |> Enum.concat(in_range)
-      |> Enum.uniq()
-      |> Enum.each(&Broadcast.to_player(&1, packet))
-    else
-      :ok
+    case group.visibility do
+      :none ->
+        :ok
+
+      :public ->
+        {x, y} = group.center
+        :ok = publish(group.map_name, x, y, packet)
+
+        observers
+        |> Enum.uniq()
+        |> Kernel.--(in_range)
+        |> Enum.each(&Broadcast.to_player(&1, packet))
+
+      :party_only ->
+        group
+        |> eligible_recipients(in_range)
+        |> Enum.concat(observers)
+        |> Enum.uniq()
+        |> Enum.each(&Broadcast.to_player(&1, packet))
     end
+
+    :ok
   end
 
   defp publish(map_name, x, y, packet),
@@ -1133,12 +1144,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp enter_observer_view(observer_id, group_id) do
     case Storage.get(group_id) do
       %Group{} = group ->
-        if Group.public?(group) do
+        if eligible_recipients(group, [observer_id]) != [] do
           packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
           Broadcast.to_player(observer_id, packet)
           Storage.add_observer_group(observer_id, group_id)
-        else
-          :ok
         end
 
       _ ->
@@ -1149,7 +1158,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp leave_observer_view(observer_id, group_id) do
     case Storage.get(group_id) do
       %Group{} = group ->
-        if Group.public?(group) do
+        if Group.materialized?(group) do
           cell_ids =
             group_id
             |> Storage.get_cells_by_group()
@@ -1169,6 +1178,51 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
 
     Storage.remove_observer_group(observer_id, group_id)
+  end
+
+  defp publish_by_visibility(%Group{visibility: :none}, _x, _y, _packet), do: :ok
+
+  defp publish_by_visibility(%Group{visibility: :public} = group, x, y, packet),
+    do: publish(group.map_name, x, y, packet)
+
+  defp publish_by_visibility(%Group{visibility: :party_only} = group, x, y, packet) do
+    group.map_name
+    |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
+    |> then(&eligible_recipients(group, &1))
+    |> Enum.each(&Broadcast.to_player(&1, packet))
+  end
+
+  defp publish_to_eligible_players(%Group{} = group, packet, track?) do
+    group
+    |> players_in_range()
+    |> then(&eligible_recipients(group, &1))
+    |> Enum.each(fn player_id ->
+      Broadcast.to_player(player_id, packet)
+      if track?, do: Storage.add_observer_group(player_id, group.group_id)
+    end)
+
+    :ok
+  end
+
+  defp players_in_range(%Group{map_name: map_name, center: {x, y}}) do
+    SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
+  end
+
+  defp eligible_recipients(%Group{visibility: :public}, player_ids), do: player_ids
+  defp eligible_recipients(%Group{visibility: :none}, _player_ids), do: []
+
+  defp eligible_recipients(%Group{visibility: :party_only} = group, player_ids) do
+    player_ids
+    |> Enum.uniq()
+    |> Enum.filter(fn player_id ->
+      observer_party_id =
+        case UnitRegistry.get_unit(:player, player_id) do
+          {:ok, {_module, %PlayerState{party_id: party_id}, _pid}} -> party_id
+          {:error, :not_found} -> nil
+        end
+
+      Group.visible_to?(group, player_id, observer_party_id)
+    end)
   end
 
   defp source_fields({:player, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_PLAYER, source_id}
@@ -1291,25 +1345,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     observers = Storage.take_group_observers(group.group_id)
     in_range = SpatialIndex.get_players_in_range(group.map_name, x, y, Config.view_range())
 
-    observers
-    |> Enum.concat(in_range)
-    |> Enum.uniq()
-    |> Enum.each(fn player_id ->
-      Broadcast.to_player(player_id, despawn)
-      Broadcast.to_player(player_id, spawn)
-      Storage.add_observer_group(player_id, group.group_id)
-    end)
+    case group.visibility do
+      :none ->
+        :ok
+
+      :public ->
+        :ok = publish(group.map_name, x, y, despawn)
+        :ok = publish(group.map_name, x, y, spawn)
+
+        observers
+        |> Enum.uniq()
+        |> Kernel.--(in_range)
+        |> Enum.each(fn player_id ->
+          Broadcast.to_player(player_id, despawn)
+          Broadcast.to_player(player_id, spawn)
+        end)
+
+        Enum.each(in_range, &Storage.add_observer_group(&1, group.group_id))
+
+      :party_only ->
+        eligible = eligible_recipients(group, in_range)
+
+        observers
+        |> Enum.reject(&(&1 in eligible))
+        |> Enum.uniq()
+        |> Enum.each(&Broadcast.to_player(&1, despawn))
+
+        Enum.each(eligible, fn player_id ->
+          Broadcast.to_player(player_id, despawn)
+          Broadcast.to_player(player_id, spawn)
+          Storage.add_observer_group(player_id, group.group_id)
+        end)
+    end
 
     :ok
   end
 
   defp transition_trap(%Group{state: %{trap: %TrapState{} = trap}} = group, phase, expires_at) do
-    %{
-      group
-      | visibility: :public,
-        expires_at: expires_at,
-        state: %{group.state | trap: %{trap | phase: phase}}
-    }
+    %{group | expires_at: expires_at, state: %{group.state | trap: %{trap | phase: phase}}}
   end
 
   defp expire_naturally(%Group{} = group, now, unit_available?) do
@@ -1393,7 +1466,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     case select_trap(groups, &spring_eligibility/1) do
       {:ok, %Group{} = group} ->
         expires_at = now + @sprung_trap_lifetime
-        sprung = transition_trap(group, :sprung, expires_at)
+        sprung = group |> transition_trap(:sprung, expires_at) |> Map.put(:visibility, :public)
 
         case persist_trap_update(group, sprung) do
           :ok -> {:ok, %{group_id: group.group_id, expires_at: expires_at}}
@@ -1448,7 +1521,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp rollback_revealed_traps(transitions) do
     Enum.each(transitions, fn {original, _visible} ->
-      rollback_trap_materialization(original)
+      if Group.materialized?(original) do
+        Storage.update(original)
+      else
+        rollback_trap_materialization(original)
+      end
     end)
   end
 
@@ -1456,7 +1533,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     map_name
     |> groups_in_area(x, y, range)
     |> Enum.reduce_while({:ok, []}, fn group, {:ok, groups} = result ->
-      if Group.materialized?(group),
+      if Group.public?(group),
         do: {:cont, result},
         else: classify_hidden_trap(group, groups)
     end)
@@ -1487,9 +1564,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp reveal_trap(%Group{} = group) do
+    visible = %{group | visibility: :public}
+
     case Storage.get_cells_by_group(group.group_id) do
       [] ->
-        visible = %{group | visibility: :public}
         :ok = Storage.update(visible)
 
         case materialize_visible_cells(visible, []) do
@@ -1502,12 +1580,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         end
 
       [_cell | _cells] ->
-        {:error, :already_materialized}
+        :ok = Storage.update(visible)
+        {:ok, visible}
     end
   end
 
-  defp publish_revealed_trap(%Group{} = group),
-    do: group |> reconcile_group() |> publish_tracked_spawn()
+  defp publish_revealed_trap(%Group{} = group) do
+    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
+
+    tracked = fn player_id ->
+      MapSet.member?(Storage.get_observer_groups(player_id), group.group_id)
+    end
+
+    group
+    |> reconcile_group()
+    |> players_in_range()
+    |> then(&eligible_recipients(group, &1))
+    |> Enum.reject(tracked)
+    |> Enum.each(fn player_id ->
+      Broadcast.to_player(player_id, packet)
+      Storage.add_observer_group(player_id, group.group_id)
+    end)
+
+    :ok
+  end
 
   defp rollback_trap_materialization(%Group{} = original) do
     original.group_id

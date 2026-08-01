@@ -794,7 +794,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   defp update_skill_unit_visibility(game_state) do
     visible_groups =
       game_state.map_name
-      |> SkillUnit.in_range(game_state.x, game_state.y, game_state.view_range)
+      |> SkillUnit.in_range(
+        game_state.x,
+        game_state.y,
+        game_state.view_range,
+        game_state.character_id,
+        game_state.party_id
+      )
       |> MapSet.new(& &1.group_id)
 
     enter_ids = visible_groups |> MapSet.difference(game_state.visible_skill_units) |> Enum.sort()

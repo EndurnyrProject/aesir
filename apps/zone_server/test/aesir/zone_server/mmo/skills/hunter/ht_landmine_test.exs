@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
       assert {:ok, placement} = HtLandmine.on_place(group(%{}))
 
       assert placement.cells == [{50, 50}]
-      assert placement.visibility == :none
+      assert placement.visibility == :party_only
       assert placement.duration == 120_000
       assert placement.state.ignore_land_protector
       refute Map.has_key?(placement.state, :armed_at)

@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
 
     assert {:ok, placement} = HtSandman.on_place(group())
     assert placement.cells == [{50, 50}]
-    assert placement.visibility == :none
+    assert placement.visibility == :party_only
     assert placement.duration == 90_000
 
     assert %TrapState{

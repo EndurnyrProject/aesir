@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
-    stub(SkillUnit, :in_range, fn _map, _x, _y, _range -> [] end)
+    stub(SkillUnit, :in_range, fn _map, _x, _y, _range, _observer_id, _party_id -> [] end)
     stub(Storage, :get_groups_at_cell, fn _map, _x, _y -> [] end)
     stub(FieldSupport, :sources_for_unit, fn _type, _id -> [] end)
 
@@ -306,7 +306,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
         {:ok, self()}
       end)
 
-      stub(SkillUnit, :in_range, fn _, _, _, _ -> [group] end)
+      stub(SkillUnit, :in_range, fn _, _, _, _, _, _ -> [group] end)
 
       stub(SkillUnitManager, :sync_view, fn observer_id, enter_ids, leave_ids ->
         send(test_pid, {:sync_view, observer_id, enter_ids, leave_ids})
@@ -599,7 +599,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
       stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
 
-      stub(SkillUnit, :in_range, fn _map, x, _y, _range ->
+      stub(SkillUnit, :in_range, fn _map, x, _y, _range, _observer_id, _party_id ->
         if x == 50, do: groups, else: []
       end)
 
@@ -661,7 +661,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
       stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
       stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
-      stub(SkillUnit, :in_range, fn _, _, _, _ -> [group] end)
+      stub(SkillUnit, :in_range, fn _, _, _, _, _, _ -> [group] end)
       stub(SkillUnitManager, :sync_view, fn _observer_id, [77], [] -> MapSet.new() end)
 
       updated = MovementHandler.handle_visibility_update(idle_state().game_state)

@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
     assert [
              %Group{
                group_id: group_id,
-               visibility: :none,
+               visibility: :party_only,
                state: %{trap: %TrapState{phase: :armed}}
              }
            ] =
@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Integration.HunterFlasherIntegrationTest do
     assert_in_delta blind.expires_at - blind.started_at, 18_000, 100
 
     assert %Group{
-             visibility: :public,
+             visibility: :party_only,
              expires_at: used_expires_at,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(group_id)

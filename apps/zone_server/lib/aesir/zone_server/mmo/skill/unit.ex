@@ -137,10 +137,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
     View.snapshot(groups, ServerTick.now())
   end
 
-  @doc "Returns visible groups whose footprints intersect a square range."
+  @doc "Returns materialized groups whose footprints intersect a square range."
   @spec in_range(String.t(), integer(), integer(), non_neg_integer()) :: [Group.t()]
   def in_range(map_name, x, y, range),
     do: Storage.get_visible_groups_in_range(map_name, x, y, range)
+
+  @doc "Returns groups visible to an observer whose footprints intersect a square range."
+  @spec in_range(String.t(), integer(), integer(), non_neg_integer(), integer(), integer() | nil) ::
+          [
+            Group.t()
+          ]
+  def in_range(map_name, x, y, range, observer_id, observer_party_id) do
+    map_name
+    |> Storage.get_visible_groups_in_range(x, y, range)
+    |> Enum.filter(&Group.visible_to?(&1, observer_id, observer_party_id))
+  end
 
   defp module_for(skill_name) do
     case Catalog.ground_module_for(skill_name) do
@@ -157,7 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   end
 
   defp build_group(caster_state, skill_id, skill_name, level, {x, y}, initial_state) do
-    {caster_id, caster_type} = caster_identity(caster_state)
+    {caster_id, caster_type, party_id} = caster_identity(caster_state)
 
     %Group{
       group_id: System.unique_integer([:monotonic, :positive]),
@@ -166,14 +177,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
       level: level,
       caster_id: caster_id,
       caster_type: caster_type,
+      party_id: party_id,
       map_name: caster_state.map_name,
       center: {x, y},
       state: initial_state
     }
   end
 
-  defp caster_identity(%PlayerState{character_id: character_id}), do: {character_id, :player}
-  defp caster_identity(%MobState{instance_id: instance_id}), do: {instance_id, :mob}
+  defp caster_identity(%PlayerState{character_id: character_id, party_id: party_id}),
+    do: {character_id, :player, party_id}
+
+  defp caster_identity(%MobState{instance_id: instance_id}), do: {instance_id, :mob, nil}
 
   defp accepted_cells(map_name, cells, origin, path_check?) do
     case MapCache.get(map_name) do

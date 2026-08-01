@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
        state: Trap.place_state(level, %{dex: 0, int: 0, base_level: 0}, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visibility: :none
+       visibility: :party_only
      }}
   end
 
