@@ -126,6 +126,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   end
 
   @doc """
+  Repairs one broken row and reports whether this session actually changed it.
+  """
+  @spec handle_repair_item(non_neg_integer(), SessionState.t()) ::
+          {:reply, :ok | {:error, term()}, SessionState.t()}
+  def handle_repair_item(index, %{game_state: game_state} = state) do
+    case BreakOps.repair(game_state, index) do
+      {:ok, ^game_state} ->
+        {:reply, {:error, :repair_failed}, state}
+
+      {:ok, new_game_state} ->
+        push_repaired_items(state.connection_pid, new_game_state, [index])
+        {:reply, :ok, StateCommit.commit(state, new_game_state)}
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  @doc """
   Clears every broken item on this session and re-syncs the affected rows to
   the client. The GM `@repairall` command casts this to the resolved target
   session; the DSL `repairall` op reaches repair via the script-apply seam.

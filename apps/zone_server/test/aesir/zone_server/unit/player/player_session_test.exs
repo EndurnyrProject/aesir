@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -1509,6 +1510,76 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       {:ok, pid} = ExitingSession.start()
 
       assert {:error, :target_unavailable} = PlayerSession.resurrect(pid, 2_001, 30)
+    end
+  end
+
+  describe "cross-session inventory commands" do
+    test "Repair Weapon repairs another player's row and charges the caster afterwards", %{
+      character: character
+    } do
+      broken = %InventoryItem{
+        id: 10,
+        char_id: character.id,
+        nameid: 1101,
+        amount: 1,
+        attribute: 1
+      }
+
+      stub(Persistence, :load_inventory, fn _char_id -> [broken] end)
+      stub(Persistence, :transaction, fn operation -> operation.() end)
+
+      expect(Persistence, :update_item, fn ^broken, %{attribute: 0} ->
+        {:ok, %{broken | attribute: 0}}
+      end)
+
+      {:ok, target_pid} =
+        PlayerSession.start_link(%{character: character, connection_pid: self()})
+
+      material = %InventoryItem{nameid: 1_002, amount: 1, attribute: 0, equip: 0}
+
+      caster = %PlayerState{
+        character_id: 2,
+        target_id: character.id,
+        inventory: %{3 => material},
+        pending_inventory_persist: [],
+        map_name: "prontera",
+        x: 50,
+        y: 50
+      }
+
+      assert {:ok, repaired_caster} =
+               BsRepairweapon.on_menu_reply(caster, %{id: 0, extras: []}, 1)
+
+      assert repaired_caster.inventory == %{}
+      assert PlayerSession.get_state(target_pid).game_state.inventory[0].attribute == 0
+
+      assert {:error, :repair_failed} =
+               BsRepairweapon.on_menu_reply(caster, %{id: 0, extras: []}, 1)
+
+      assert caster.inventory == %{3 => material}
+    end
+
+    test "repair_item repairs once and rejects a stale repeat", %{character: character} do
+      broken = %InventoryItem{
+        id: 10,
+        char_id: character.id,
+        nameid: 1101,
+        amount: 1,
+        attribute: 1
+      }
+
+      stub(Persistence, :load_inventory, fn _char_id -> [broken] end)
+      stub(Persistence, :transaction, fn operation -> operation.() end)
+
+      expect(Persistence, :update_item, fn ^broken, %{attribute: 0} ->
+        {:ok, %{broken | attribute: 0}}
+      end)
+
+      {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
+
+      assert :ok = PlayerSession.repair_item(pid, 0)
+      assert PlayerSession.get_state(pid).game_state.inventory[0].attribute == 0
+      assert {:error, :repair_failed} = PlayerSession.repair_item(pid, 0)
     end
   end
 

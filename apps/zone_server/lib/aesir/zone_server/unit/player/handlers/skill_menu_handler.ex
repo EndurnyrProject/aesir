@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @typedoc "The offer parked on the session while the client is deciding."
@@ -150,6 +151,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
             "#{state.game_state.character_id}: #{inspect(reason)}"
         )
 
+        SkillHandler.report_cast_failure(skill_id, state.game_state.character_id, reason)
         cleared
     end
   end

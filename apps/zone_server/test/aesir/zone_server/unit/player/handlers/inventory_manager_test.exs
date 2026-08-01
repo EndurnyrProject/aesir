@@ -75,6 +75,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
     assert [%InventoryItem{nameid: @sword, identify: 1}] = Persistence.load_inventory(char.id)
   end
 
+  test "repairs one row and rejects a stale repeat", %{character: char, stats: stats} do
+    broken =
+      %InventoryItem{}
+      |> InventoryItem.changeset(%{
+        char_id: char.id,
+        nameid: @sword,
+        amount: 1,
+        attribute: 1,
+        equip: 0
+      })
+      |> Repo.insert!()
+
+    session = state(char.id, stats)
+    session = %{session | game_state: %{session.game_state | inventory: %{4 => broken}}}
+
+    assert {:reply, :ok, repaired_session} =
+             InventoryManager.handle_repair_item(4, session)
+
+    assert repaired_session.game_state.inventory[4].attribute == 0
+    assert Repo.get!(InventoryItem, broken.id).attribute == 0
+
+    assert {:reply, {:error, :repair_failed}, ^repaired_session} =
+             InventoryManager.handle_repair_item(4, repaired_session)
+  end
+
   defp state(character_id, stats) do
     %SessionState{
       connection_pid: self(),

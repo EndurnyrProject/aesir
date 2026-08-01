@@ -360,6 +360,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:inventory, {:break_equip, slot}})
   end
 
+  @doc "Repairs one broken inventory row through its owning player session."
+  @spec repair_item(pid(), non_neg_integer()) :: :ok | {:error, term()}
+  def repair_item(pid, index) do
+    call_session(pid, {:inventory, {:repair_item, index}})
+  end
+
   @doc "Repairs every broken item in this player's inventory at no cost."
   @spec repair_all(pid()) :: :ok
   def repair_all(pid) do
@@ -973,6 +979,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  # Inventory: synchronous single-row mutations.
+  @impl true
+  def handle_call({:inventory, {:repair_item, index}}, _from, state) do
+    InventoryManager.handle_repair_item(index, state)
   end
 
   # Unit: vitals calls (SP debit, resurrect).
