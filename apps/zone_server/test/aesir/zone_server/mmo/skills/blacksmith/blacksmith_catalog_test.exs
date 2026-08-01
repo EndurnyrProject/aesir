@@ -42,10 +42,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BlacksmithCatalogTest do
     end
   end
 
-  test "casting inert phase-2 skills safely returns capability errors" do
-    game_state = %{stats: %{progression: %{learned_skills: %{105 => 1, 111 => 1}}}}
+  test "passive phase-2 skills remain uncastable while Adrenaline Rush is active" do
+    game_state = %{stats: %{progression: %{learned_skills: %{105 => 1}}}}
 
     assert {:error, :passive_skill} = Interpreter.cast(game_state, 105, 1, :self)
-    assert {:error, :no_behavior} = Interpreter.cast(game_state, 111, 1, :self)
+    assert {:ok, _module} = Catalog.active_module_for(:bs_adrenaline)
   end
 end
