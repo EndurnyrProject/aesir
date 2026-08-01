@@ -664,6 +664,27 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.critical == 0
       assert result.combat_stats.atk == 0
       assert result.combat_stats.def == 0
+      refute result.combat_stats.ignore_size_penalty
+      refute result.combat_stats.max_weapon_damage
+    end
+
+    test "folds physical damage flags from status modifiers" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: %{},
+          status_effects: %{ignore_size_penalty: true, max_weapon_damage: true},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.ignore_size_penalty
+      assert result.combat_stats.max_weapon_damage
     end
 
     test "applies status effect modifiers to combat stats" do

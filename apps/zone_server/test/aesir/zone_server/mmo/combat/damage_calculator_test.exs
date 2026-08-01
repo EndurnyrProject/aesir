@@ -25,6 +25,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     wind: :subele_wind
   ]
 
+  @weapon_types [
+    :fist,
+    :dagger,
+    :one_handed_sword,
+    :two_handed_sword,
+    :one_handed_spear,
+    :two_handed_spear,
+    :one_handed_axe,
+    :two_handed_axe,
+    :mace,
+    :two_handed_mace,
+    :staff,
+    :two_handed_staff,
+    :bow,
+    :musical,
+    :whip,
+    :book,
+    :katar,
+    :knuckle,
+    :revolver,
+    :rifle,
+    :gatling,
+    :shotgun,
+    :grenade,
+    :huuma
+  ]
+
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
@@ -999,6 +1026,107 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         )
 
       assert plain.damage == boosted.damage
+    end
+  end
+
+  describe "physical damage suppression flags" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      :ok
+    end
+
+    for unit_type <- [:player, :mob],
+        weapon_type <- @weapon_types,
+        size <- [:small, :medium, :large] do
+      test "#{unit_type} #{weapon_type} against #{size} retains the size modifier by default" do
+        attacker =
+          case unquote(unit_type) do
+            :player -> CombatTestHelper.create_player_combatant()
+            :mob -> CombatTestHelper.create_mob_combatant()
+          end
+          |> Map.put(:weapon, %{type: unquote(weapon_type), element: :neutral, size: :all})
+
+        defender = CombatTestHelper.create_mob_combatant(size: unquote(size))
+        base_damage = 1_200
+
+        assert {:ok, damage} =
+                 DamageCalculator.apply_modifier_pipeline(base_damage, attacker, defender)
+
+        expected =
+          base_damage * SizeModifiers.get_modifier(unquote(weapon_type), unquote(size), false) /
+            100
+
+        assert damage == expected
+      end
+    end
+
+    test "ignore_size_penalty bypasses a dagger's large-target penalty" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :dagger)
+
+      attacker = %{
+        attacker
+        | combat_stats: Map.put(attacker.combat_stats, :ignore_size_penalty, true)
+      }
+
+      defender = CombatTestHelper.create_mob_combatant(size: :large)
+
+      assert {:ok, 1_200.0} =
+               DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
+    end
+
+    test "max_weapon_damage always uses the true upper endpoint" do
+      attacker = CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
+      attacker = %{attacker | combat_stats: %{attacker.combat_stats | atk: 100}}
+
+      attacker = %{
+        attacker
+        | combat_stats: Map.put(attacker.combat_stats, :max_weapon_damage, true)
+      }
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      assert Enum.all?(1..100, fn _ ->
+               DamageCalculator.calculate_base_attack(attacker) == {:ok, 120}
+             end)
+    end
+
+    test "normal weapon damage retains its exclusive upper endpoint" do
+      attacker = CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
+      attacker = %{attacker | combat_stats: %{attacker.combat_stats | atk: 100}}
+
+      :rand.seed(:exsss, {1, 2, 3})
+
+      assert Enum.all?(1..100, fn _ ->
+               {:ok, damage} = DamageCalculator.calculate_base_attack(attacker)
+               damage in 80..119
+             end)
+    end
+
+    test "max weapon damage retains overrefine and the minimum-one floor" do
+      attacker = CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
+
+      maximized = %{
+        attacker
+        | combat_stats:
+            attacker.combat_stats
+            |> Map.put(:atk, 100)
+            |> Map.put(:max_weapon_damage, true)
+            |> Map.put(:overrefine_band, 9)
+      }
+
+      {:ok, overrefined} = DamageCalculator.calculate_base_attack(maximized)
+      assert overrefined in 121..129
+
+      floored = %{
+        attacker
+        | combat_stats:
+            attacker.combat_stats
+            |> Map.put(:atk, 0)
+            |> Map.put(:max_weapon_damage, true)
+      }
+
+      assert DamageCalculator.calculate_base_attack(floored) == {:ok, 1}
     end
   end
 

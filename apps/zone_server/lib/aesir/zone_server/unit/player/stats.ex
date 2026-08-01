@@ -804,7 +804,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       mres: combat_modifier(stats, :mres, wis_eff + div(wis_eff, 3) * 5),
       hplus: combat_modifier(stats, :hplus, crt_eff),
       crate: combat_modifier(stats, :crate, div(crt_eff, 3)),
-      overrefine_band: get_equipment_modifier(stats, :overrefine_band)
+      overrefine_band: get_equipment_modifier(stats, :overrefine_band),
+      ignore_size_penalty: get_status_modifier(stats, :ignore_size_penalty) == true,
+      max_weapon_damage: get_status_modifier(stats, :max_weapon_damage) == true
     }
 
     %{stats | combat_stats: combat_stats}

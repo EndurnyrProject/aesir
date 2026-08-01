@@ -384,10 +384,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     atk_max = div(atk * 120, 100)
 
     weapon_attack =
-      if atk_max > atk_min do
-        atk_min + :rand.uniform(atk_max - atk_min) - 1
-      else
-        atk_min
+      cond do
+        Map.get(attacker.combat_stats, :max_weapon_damage, false) ->
+          atk_max
+
+        atk_max > atk_min ->
+          atk_min + :rand.uniform(atk_max - atk_min) - 1
+
+        true ->
+          atk_min
       end
 
     # Overrefine (rAthena battle.cpp:2413-2420): a per-hit rnd()%band + 1 extra.
@@ -515,6 +520,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       Map.get(attacker.weapon, :element, :neutral)
     end)
   end
+
+  defp apply_size_modifier(damage, %{combat_stats: %{ignore_size_penalty: true}}, _defender),
+    do: damage
 
   defp apply_size_modifier(damage, attacker, defender) do
     modifier = SizeModifiers.get_modifier(attacker.weapon.type, defender.size, attacker.riding)

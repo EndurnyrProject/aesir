@@ -79,7 +79,9 @@ defmodule Aesir.ZoneServer.Unit.Stats do
               mres: 0,
               hplus: 0,
               crate: 0,
-              overrefine_band: 0
+              overrefine_band: 0,
+              ignore_size_penalty: false,
+              max_weapon_damage: false
 
     @typedoc "Battle-related statistics"
     @type t() :: %__MODULE__{
@@ -104,7 +106,9 @@ defmodule Aesir.ZoneServer.Unit.Stats do
             mres: non_neg_integer(),
             hplus: non_neg_integer(),
             crate: non_neg_integer(),
-            overrefine_band: non_neg_integer()
+            overrefine_band: non_neg_integer(),
+            ignore_size_penalty: boolean(),
+            max_weapon_damage: boolean()
           }
   end
 

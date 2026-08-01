@@ -331,7 +331,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         matk_min: mob_matk + modifier(modifiers, :matk),
         matk_max: mob_matk + modifier(modifiers, :matk),
         mdef: MobCombatCalc.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef),
-        soft_mdef: MobCombatCalc.calculate_soft_mdef(mob_data)
+        soft_mdef: MobCombatCalc.calculate_soft_mdef(mob_data),
+        ignore_size_penalty: false,
+        max_weapon_damage: false
       },
       progression: %{
         base_level: mob_data.level,
