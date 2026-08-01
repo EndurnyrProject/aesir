@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :element_override,
                :magic_damage_reduction,
                :matk_rate,
+               :max_weapon_damage,
                :mdef_rate,
                :phys_damage_reduction,
                :vit_bonus,

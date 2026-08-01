@@ -7,7 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePower
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
@@ -19,23 +21,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
     :ok
   end
 
-  test "forged star damage stays constant while weapon variance changes" do
+  test "forged star damage stays constant while weapon variance changes or is maximized" do
     forged = combatant(forged_weapon(1101, :neutral, 3))
     plain = combatant(weapon(1101))
+    entry = %StatusEntry{type: :sc_maximizepower, state: %{}}
+    maximize = MaximizePower.modifiers(entry, %{})
+    maximized_forged = combatant(forged_weapon(1101, :neutral, 3), %{}, maximize)
+    maximized_plain = combatant(weapon(1101), %{}, maximize)
 
-    {plain_rolls, star_contributions} =
-      Enum.unzip(
-        for seed <- 1..20 do
+    {plain_rolls, star_contributions, maximized_rolls, maximized_star_contributions} =
+      for seed <- 1..20, reduce: {[], [], [], []} do
+        {plain_rolls, star_contributions, maximized_rolls, maximized_star_contributions} ->
           :rand.seed(:exsss, {seed, seed + 1, seed + 2})
           {:ok, plain_damage} = DamageCalculator.calculate_base_attack(plain)
           :rand.seed(:exsss, {seed, seed + 1, seed + 2})
           {:ok, forged_damage} = DamageCalculator.calculate_base_attack(forged)
-          {plain_damage, forged_damage - plain_damage}
-        end
-      )
+          {:ok, maximized_plain_damage} = DamageCalculator.calculate_base_attack(maximized_plain)
+
+          {:ok, maximized_forged_damage} =
+            DamageCalculator.calculate_base_attack(maximized_forged)
+
+          {
+            [plain_damage | plain_rolls],
+            [forged_damage - plain_damage | star_contributions],
+            [maximized_plain_damage | maximized_rolls],
+            [maximized_forged_damage - maximized_plain_damage | maximized_star_contributions]
+          }
+      end
 
     assert length(Enum.uniq(plain_rolls)) > 1
     assert Enum.uniq(star_contributions) == [40]
+
+    status_atk =
+      maximized_plain.base_stats.str * 2 +
+        div(maximized_plain.base_stats.dex, 5) +
+        div(maximized_plain.base_stats.luk, 3) +
+        div(maximized_plain.progression.base_level, 4) +
+        5 * maximized_plain.base_stats.pow
+
+    expected_max =
+      status_atk +
+        div(maximized_plain.combat_stats.atk * 120, 100) +
+        maximized_plain.combat_stats.passive_atk
+
+    assert Enum.uniq(maximized_rolls) == [expected_max]
+    assert Enum.uniq(maximized_star_contributions) == [40]
   end
 
   test "three star crumbs contribute 40 mastery attack" do
@@ -83,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
     assert combatant.weapon.element == :neutral
   end
 
-  defp combatant(item, equipment_modifiers \\ %{}) do
+  defp combatant(item, equipment_modifiers \\ %{}, status_modifiers \\ %{}) do
     character = %Character{
       id: 91_013,
       account_id: 1,
@@ -114,6 +144,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
       |> update_in(
         [Access.key(:modifiers), Access.key(:equipment)],
         &Map.merge(&1, equipment_modifiers)
+      )
+      |> update_in(
+        [Access.key(:modifiers), Access.key(:status_effects)],
+        &Map.merge(&1, status_modifiers)
       )
       |> Stats.calculate_combat_stats()
 
