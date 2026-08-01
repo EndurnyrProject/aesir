@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrust do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
-    duration = Enum.at(definition.duration, level - 1)
+    duration = PartyBuff.duration_for_caster(caster, Enum.at(definition.duration, level - 1))
 
     recipient_params = [
       val1: div(level + 1, 2) * 5,

@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline2 do
     params = [
       val1: level,
       caster_id: caster_id,
-      duration: Enum.at(definition.duration, level - 1)
+      duration: PartyBuff.duration_for_caster(caster, Enum.at(definition.duration, level - 1))
     ]
 
     case PartyBuff.apply(caster, :sc_adrenaline2, params, definition.splash_radius, fn member ->
