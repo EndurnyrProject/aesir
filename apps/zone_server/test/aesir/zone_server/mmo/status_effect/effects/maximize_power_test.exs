@@ -144,4 +144,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePowerTest do
 
     assert next_tick_at in (now + 5_000)..(System.monotonic_time(:millisecond) + 5_000)
   end
+
+  test "never expires on a timer, because it is toggled off rather than timed out" do
+    player_id = 82_411
+
+    :ok = Interpreter.apply_status(:player, player_id, :sc_maximizepower, tick: 3_000)
+
+    assert %StatusEntry{expires_at: nil, next_tick_at: next_tick_at} =
+             StatusStorage.get_status(:player, player_id, :sc_maximizepower)
+
+    refute is_nil(next_tick_at)
+  end
 end
