@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -641,7 +642,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp prepare_cast(game_state, module, target, level, definition) do
     with {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
          {:ok, commitment} <- Cost.prepare(game_state, cost),
-         zeny = Enum.at(definition.zeny_cost, level - 1, 0),
+         zeny = effective_zeny_cost(game_state, Enum.at(definition.zeny_cost, level - 1, 0)),
          :ok <- check_zeny(game_state, zeny),
          :ok <- check_catalysts(game_state, definition),
          :ok <- check_ammo(game_state, definition) do
@@ -988,6 +989,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         |> Map.get(:equipment, %{})
         |> Map.get(key, 0)
     end
+  end
+
+  defp effective_zeny_cost(_game_state, 0), do: 0
+
+  defp effective_zeny_cost(game_state, cost) do
+    # Passive reductions sum, so clamp to 0..100: an unclamped total above 100
+    # would yield a negative cost, which the affordability check trivially
+    # passes and the deduction would then credit to the caster on every cast.
+    reduction = game_state |> Passives.zeny_cost_reduction() |> min(100) |> max(0)
+
+    div(cost * (100 - reduction), 100)
   end
 
   # A zero cost is always allowed without reading game_state.zeny: every skill

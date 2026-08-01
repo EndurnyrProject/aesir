@@ -263,6 +263,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert Passives.dex_bonus(player) == 0
       assert Passives.hit_bonus(player) == 0
       assert Passives.range_bonus(player) == 0
+      assert Passives.zeny_cost_reduction(player) == 0
+      assert Passives.zeny_cost_reduction(player.stats) == 0
     end
 
     test "return 0 when no skills are learned" do
@@ -273,6 +275,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert Passives.dex_bonus(player) == 0
       assert Passives.hit_bonus(player) == 0
       assert Passives.range_bonus(player) == 0
+      assert Passives.zeny_cost_reduction(player) == 0
+      assert Passives.zeny_cost_reduction(player.stats) == 0
     end
   end
 

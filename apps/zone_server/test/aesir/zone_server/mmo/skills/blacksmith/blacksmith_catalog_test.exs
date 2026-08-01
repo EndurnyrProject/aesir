@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BlacksmithCatalogTest do
     game_state = %{stats: %{progression: %{learned_skills: %{105 => 1}}}}
 
     assert {:error, :passive_skill} = Interpreter.cast(game_state, 105, 1, :self)
+    assert {:ok, _module} = Catalog.passive_module_for(:bs_unfairlytrick)
     assert {:ok, _module} = Catalog.active_module_for(:bs_adrenaline)
   end
 

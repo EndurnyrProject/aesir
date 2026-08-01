@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsUnfairlytrick do
   @moduledoc """
-  Unfair Trick (BS_UNFAIRLYTRICK). Provides a special chance-based utility effect. Its behaviour is not implemented yet.
+  Unfair Trick (BS_UNFAIRLYTRICK). Reduces the zeny cost of zeny-consuming
+  skills by 20%.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -8,7 +9,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsUnfairlytrick do
     name: :bs_unfairlytrick,
     display_name: "Unfair Trick",
     max_level: 1,
-    target_type: :self,
+    target_type: :passive,
     quest_skill: true,
     quest_owner_job: :blacksmith
+
+  alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+  @behaviour Passive
+
+  @impl Passive
+  def zeny_cost_reduction(_level, _ctx), do: 20
 end

@@ -1,10 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammonite do
   @moduledoc """
-  Mammonite (MC_MAMMONITE). Single-target physical strike on an enemy, paid for
-  in zeny as well as SP.
-
-  rAthena: base 100% + 50% per level weapon damage, no crit
-  (`mammonite.cpp:9`: `base_skillratio += 50 * skill_lv`).
+  Mammonite (MC_MAMMONITE). A single-target physical strike paid for in zeny
+  and SP. It deals 100% base weapon damage plus 50% per skill level and cannot
+  critically hit.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 42,

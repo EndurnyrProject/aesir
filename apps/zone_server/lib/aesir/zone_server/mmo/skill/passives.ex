@@ -294,6 +294,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the zeny cost reduction percentage contributed by every learned passive.
+  """
+  @spec zeny_cost_reduction(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()
+  def zeny_cost_reduction(%PlayerState{stats: stats}), do: zeny_cost_reduction(stats)
+
+  def zeny_cost_reduction(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.zeny_cost_reduction(level, ctx)
+    end)
+  end
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance`
