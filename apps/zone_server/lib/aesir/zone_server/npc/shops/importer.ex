@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   @moduledoc """
-  Parses rAthena shop script lines into our shop YAML maps.
+  Parses shop script lines into our shop YAML maps.
 
-  A rAthena shop line is four tab-separated columns:
+  A shop line is four tab-separated columns:
 
       <map>,<x>,<y>,<facing>	shop	<NPC Name>	<sprite>{,<discount>},<itemid>:<price>{,...}
 
@@ -14,10 +14,10 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
 
   The fourth column begins with the sprite (numeric class id used as-is, or a
   string constant such as `HIDDEN_NPC` which falls back to a default merchant
-  sprite). An optional bare `yes`/`no` discount token may follow the sprite; it
-  is parsed and discarded (Discount/Overcharge is deferred). The remaining
-  `itemid:price` pairs become buy-list items, with `price == -1` mapped to `nil`
-  (fall back to `ItemDefinition.buy`).
+  sprite). An optional bare `yes`/`no` discount token may follow the sprite and
+  controls whether Merchant Discount applies; omitting it enables Discount. The
+  remaining `itemid:price` pairs become buy-list items, with `price == -1`
+  mapped to `nil` (fall back to `ItemDefinition.buy`).
 
   A `duplicate(<label>)` line carries no items of its own; it yields
   `{:duplicate, label, partial_map}` so the import task can fill its items from
@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   @type shop_map :: %{String.t() => String.t() | non_neg_integer() | [map()]}
 
   @doc """
-  Parses one line of a rAthena shop script.
+  Parses one shop script line.
 
     * `{:ok, shop_map}` - a valid placed plain shop, keyed as our YAML schema
     * `{:duplicate, label, shop_map}` - a `duplicate(<label>)` placement (no items)
@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   defp build_shop(position, name, params) do
     with {:ok, {map, x, y, dir}} <- parse_position(position),
          [sprite_token | rest] <- String.split(params, ","),
-         {:ok, items} <- parse_items(rest) do
+         {:ok, discount, items} <- parse_items(rest) do
       {:ok,
        %{
          "id" => name,
@@ -88,7 +88,8 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
          "y" => y,
          "dir" => dir,
          "sprite" => sprite(sprite_token),
-         "items" => items
+         "items" => items,
+         "discount" => discount
        }}
     else
       :skip -> :skip
@@ -133,10 +134,11 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
     end
   end
 
-  @spec parse_items([String.t()]) :: {:ok, [map()]} | :error
+  @spec parse_items([String.t()]) :: {:ok, boolean(), [map()]} | :error
   defp parse_items(tokens) do
+    {discount, tokens} = parse_discount(tokens)
+
     tokens
-    |> drop_discount()
     |> Enum.reduce_while({:ok, []}, fn token, {:ok, acc} ->
       case parse_item(token) do
         {:ok, item} -> {:cont, {:ok, [item | acc]}}
@@ -144,15 +146,15 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
       end
     end)
     |> case do
-      {:ok, items} -> {:ok, Enum.reverse(items)}
+      {:ok, items} -> {:ok, discount, Enum.reverse(items)}
       :error -> :error
     end
   end
 
-  @spec drop_discount([String.t()]) :: [String.t()]
-  defp drop_discount(["yes" | rest]), do: rest
-  defp drop_discount(["no" | rest]), do: rest
-  defp drop_discount(tokens), do: tokens
+  @spec parse_discount([String.t()]) :: {boolean(), [String.t()]}
+  defp parse_discount(["yes" | rest]), do: {true, rest}
+  defp parse_discount(["no" | rest]), do: {false, rest}
+  defp parse_discount(tokens), do: {true, tokens}
 
   @spec parse_item(String.t()) :: {:ok, map()} | :error
   defp parse_item(token) do

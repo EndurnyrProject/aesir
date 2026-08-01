@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Weapon Dealer
   items:
     - id: 1207
@@ -28,6 +29,7 @@
   x: 218
   'y': 164
 - dir: 6
+  discount: true
   id: Tool Dealer
   items:
     - id: 611
@@ -62,6 +64,7 @@
   x: 182
   'y': 164
 - dir: 6
+  discount: true
   id: Fruit Gardener
   items:
     - id: 512
@@ -80,6 +83,7 @@
   x: 145
   'y': 267
 - dir: 6
+  discount: true
   id: Armor Dealer
   items:
     - id: 2211

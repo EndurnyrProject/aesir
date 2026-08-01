@@ -1,5 +1,31 @@
 ---
 - dir: 2
+  discount: true
+  id: Tool Dealer#prt
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+  map: prt_fild05
+  name: Tool Dealer
+  sprite: 83
+  x: 290
+  'y': 221
+- dir: 2
+  discount: true
   id: Tool Dealer#Extended_Prt
   items:
     - id: 611

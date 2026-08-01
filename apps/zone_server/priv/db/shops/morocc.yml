@@ -1,5 +1,6 @@
 ---
 - dir: 6
+  discount: true
   id: Tool Dealer#Extended_Moc3
   items:
     - id: 611
@@ -42,6 +43,7 @@
   x: 146
   'y': 103
 - dir: 4
+  discount: true
   id: Tool Dealer#Extended_Moc4
   items:
     - id: 611
@@ -84,6 +86,7 @@
   x: 151
   'y': 241
 - dir: 4
+  discount: true
   id: Butcher#moc1
   items:
     - id: 517
@@ -93,7 +96,82 @@
   sprite: 58
   x: 156
   'y': 76
+- dir: 6
+  discount: true
+  id: Tool Dealer#moc3
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: morocc
+  name: Tool Dealer
+  sprite: 99
+  x: 146
+  'y': 103
 - dir: 4
+  discount: true
+  id: Tool Dealer#moc4
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: morocc
+  name: Tool Dealer
+  sprite: 93
+  x: 151
+  'y': 241
+- dir: 4
+  discount: true
   id: Item Collector#moc3
   items:
     - id: 911
@@ -110,6 +188,7 @@
   x: 171
   'y': 103
 - dir: 2
+  discount: true
   id: Item Collector#moc4
   items:
     - id: 911
@@ -126,6 +205,7 @@
   x: 205
   'y': 247
 - dir: 6
+  discount: true
   id: Trader#moc6
   items:
     - id: 513
@@ -146,6 +226,7 @@
   x: 140
   'y': 90
 - dir: 2
+  discount: true
   id: Jeweler#moc4
   items:
     - id: 721
@@ -176,6 +257,7 @@
   x: 166
   'y': 54
 - dir: 0
+  discount: true
   id: Trader#moc7
   items:
     - id: 748
@@ -186,6 +268,7 @@
   x: 34
   'y': 68
 - dir: 4
+  discount: true
   id: Trader#moc8
   items:
     - id: 2609
@@ -200,6 +283,7 @@
   x: 269
   'y': 193
 - dir: 5
+  discount: true
   id: Trader#moc9
   items:
     - id: 2612
@@ -210,6 +294,7 @@
   x: 256
   'y': 191
 - dir: 7
+  discount: true
   id: Advanced Potion Merchant#moc1
   items:
     - id: 11621
@@ -226,6 +311,7 @@
   x: 149
   'y': 245
 - dir: 1
+  discount: true
   id: Advanced Potion Merchant#moc2
   items:
     - id: 11621

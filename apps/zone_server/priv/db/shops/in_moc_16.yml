@@ -1,5 +1,6 @@
 ---
 - dir: 7
+  discount: true
   id: Sepulchral Merchant#moc
   items:
     - id: 1771

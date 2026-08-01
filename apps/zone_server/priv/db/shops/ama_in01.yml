@@ -1,5 +1,6 @@
 ---
 - dir: 5
+  discount: true
   id: Armor Dealer#ama
   items:
     - id: 2211
@@ -32,6 +33,7 @@
   x: 89
   'y': 28
 - dir: 3
+  discount: true
   id: Weapon Dealer#ama
   items:
     - id: 1207

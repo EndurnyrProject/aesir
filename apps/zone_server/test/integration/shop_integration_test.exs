@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
 
   The shop and the buy item are selected dynamically from the loaded `prontera`
   corpus (first affordable buy-priced item), so the test never hard-codes
-  rAthena content that an importer re-run could change. The sell item is a real
+  upstream content that an importer re-run could change. The sell item is a real
   item-DB entry with a positive `sell` value (the corpus buy items ship none),
   so the sell path runs un-stubbed too.
   """
@@ -46,7 +46,6 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
-  alias Aesir.ZoneServer.Unit.Shop, as: ShopCore
 
   @map "prontera"
   @zeny_param StatusParams.zeny()
@@ -167,13 +166,20 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
         item =
           Enum.find(shop.items, fn it ->
             match?({:ok, _}, ItemManagement.get_item_by_id(it.nameid)) and
-              ShopCore.effective_buy_price(shop, it.nameid) > 0
+              base_buy_price(it) > 0
           end)
 
         item && {shop, item}
       end)
 
-    %{shop: shop, nameid: item.nameid, price: ShopCore.effective_buy_price(shop, item.nameid)}
+    %{shop: shop, nameid: item.nameid, price: base_buy_price(item)}
+  end
+
+  defp base_buy_price(%{price: price}) when is_integer(price), do: price
+
+  defp base_buy_price(%{nameid: nameid}) do
+    {:ok, item} = ItemManagement.get_item_by_id(nameid)
+    item.buy
   end
 
   # Any real item-DB entry with a positive sell price, distinct from the buy item

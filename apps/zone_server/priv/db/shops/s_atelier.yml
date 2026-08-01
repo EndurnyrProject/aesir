@@ -1,5 +1,6 @@
 ---
 - dir: 1
+  discount: true
   id: Part-Timer#sc_yuno
   items:
     - id: 6123
@@ -12,6 +13,7 @@
   x: 114
   'y': 117
 - dir: 5
+  discount: true
   id: Part-Timer#sc_lgt
   items:
     - id: 6123
@@ -24,6 +26,7 @@
   x: 15
   'y': 65
 - dir: 1
+  discount: true
   id: Part-Timer#sc_prt
   items:
     - id: 6123
@@ -36,6 +39,7 @@
   x: 17
   'y': 110
 - dir: 3
+  discount: true
   id: Part-Timer#sc_ra
   items:
     - id: 6123

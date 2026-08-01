@@ -1,5 +1,6 @@
 ---
 - dir: 0
+  discount: true
   id: Vendor from Milk Ranch#p
   items:
     - id: 519
@@ -10,6 +11,7 @@
   x: 73
   'y': 134
 - dir: 0
+  discount: true
   id: Fruit Gardener#prt
   items:
     - id: 512
@@ -22,6 +24,7 @@
   x: 104
   'y': 49
 - dir: 0
+  discount: true
   id: Butcher#prt
   items:
     - id: 517
@@ -34,6 +37,7 @@
   x: 64
   'y': 125
 - dir: 0
+  discount: true
   id: Flower Girl#prt
   items:
     - id: 712
@@ -46,6 +50,7 @@
   x: 58
   'y': 182
 - dir: 0
+  discount: true
   id: Flower Lady#prt
   items:
     - id: 712
@@ -58,6 +63,7 @@
   x: 113
   'y': 42
 - dir: 0
+  discount: true
   id: Gift Merchant#prt
   items:
     - id: 734
@@ -76,6 +82,7 @@
   x: 105
   'y': 87
 - dir: 0
+  discount: true
   id: Doll Supplier#prt
   items:
     - id: 740
@@ -90,6 +97,7 @@
   x: 248
   'y': 153
 - dir: 0
+  discount: true
   id: Vegetable Gardener#prt
   items:
     - id: 515
@@ -104,6 +112,7 @@
   x: 48
   'y': 58
 - dir: 3
+  discount: true
   id: Amatsu Trader#nin
   items:
     - id: 13250
@@ -148,6 +157,7 @@
   x: 178
   'y': 244
 - dir: 4
+  discount: true
   id: Rebellion Accessories
   items:
     - id: 25187
@@ -194,6 +204,7 @@
   x: 96
   'y': 209
 - dir: 4
+  discount: true
   id: Rebellion Weapons
   items:
     - id: 13120
@@ -224,6 +235,7 @@
   x: 92
   'y': 209
 - dir: 1
+  discount: true
   id: Chef Assistant#prt
   items:
     - id: 12849

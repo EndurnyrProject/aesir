@@ -1,5 +1,37 @@
 ---
+- dir: 5
+  discount: true
+  id: Tool Dealer#xmas
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 610
+      price:
+  map: xmas_in
+  name: Tool Dealer
+  sprite: 83
+  x: 40
+  'y': 38
 - dir: 4
+  discount: true
   id: Armor Dealer#xmas
   items:
     - id: 2228
@@ -28,6 +60,7 @@
   x: 168
   'y': 104
 - dir: 2
+  discount: true
   id: Weapon Dealer#xmas
   items:
     - id: 1201
@@ -52,6 +85,7 @@
   x: 174
   'y': 98
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Xmas
   items:
     - id: 611

@@ -1,5 +1,6 @@
 ---
 - dir: 5
+  discount: true
   id: Chef Assistant#nif
   items:
     - id: 581

@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Weapon Dealer#ma
   items:
     - id: 1207
@@ -28,6 +29,7 @@
   x: 73
   'y': 22
 - dir: 3
+  discount: true
   id: Tool Dealer#ma
   items:
     - id: 611
@@ -60,6 +62,7 @@
   x: 22
   'y': 23
 - dir: 5
+  discount: true
   id: Armor Dealer#ma
   items:
     - id: 2211

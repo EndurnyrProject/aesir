@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Fruit Gardener#ma
   items:
     - id: 512

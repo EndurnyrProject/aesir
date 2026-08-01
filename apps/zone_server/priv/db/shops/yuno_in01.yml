@@ -1,5 +1,37 @@
 ---
+- dir: 5
+  discount: true
+  id: Tool Dealer#yuno2
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+  map: yuno_in01
+  name: Tool Dealer
+  sprite: 83
+  x: 25
+  'y': 34
 - dir: 2
+  discount: true
   id: Weapon Dealer#yuno
   items:
     - id: 1750
@@ -36,6 +68,7 @@
   x: 103
   'y': 35
 - dir: 4
+  discount: true
   id: Armor Dealer#yuno
   items:
     - id: 2628
@@ -66,6 +99,7 @@
   x: 112
   'y': 26
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Yuno2
   items:
     - id: 611

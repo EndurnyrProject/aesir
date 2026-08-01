@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Chivas Lugal
   items:
     - id: 13150
@@ -24,6 +25,7 @@
   x: 179
   'y': 91
 - dir: 3
+  discount: true
   id: Johnny Waiker
   items:
     - id: 13200

@@ -36,6 +36,16 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
   end
 
   describe "catalog registration" do
+    test "Discount and Overcharge resolve and expose the passive capability" do
+      for {name, id} <- [mc_discount: 37, mc_overcharge: 38] do
+        assert {:ok, definition} = Catalog.by_name(name)
+        assert definition.id == id
+        assert {:ok, ^definition} = Catalog.by_id(id)
+        assert {:ok, module} = Catalog.passive_module_for(name)
+        assert :passive in module.__skill_capabilities__()
+      end
+    end
+
     test "Pushcart resolves by name and by id 39" do
       assert {:ok, definition} = Catalog.by_name(:mc_pushcart)
       assert definition.id == 39
@@ -113,6 +123,16 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
   end
 
   describe "prerequisite gating" do
+    test "Discount and Overcharge are learnable with no prerequisites" do
+      for name <- [:mc_discount, :mc_overcharge] do
+        assert :ok =
+                 SkillTree.can_learn(
+                   merchant_progression(learned_skills: %{}),
+                   catalog_id(name)
+                 )
+      end
+    end
+
     test "Pushcart is learnable with no prerequisites" do
       assert :ok =
                SkillTree.can_learn(

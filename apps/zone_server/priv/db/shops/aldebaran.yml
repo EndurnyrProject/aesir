@@ -1,5 +1,6 @@
 ---
 - dir: 2
+  discount: true
   id: Chef Assistant#alde
   items:
     - id: 7456

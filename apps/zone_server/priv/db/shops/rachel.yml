@@ -1,5 +1,6 @@
 ---
 - dir: 1
+  discount: true
   id: Vegetable Gardener#ra
   items:
     - id: 515

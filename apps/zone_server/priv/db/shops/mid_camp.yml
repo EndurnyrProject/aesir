@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Trap Specialist#mid
   items:
     - id: 7940
@@ -12,6 +13,7 @@
   x: 129
   'y': 284
 - dir: 4
+  discount: true
   id: Black Marketeer#mid
   items:
     - id: 2139

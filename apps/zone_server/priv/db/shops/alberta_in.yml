@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Weapon Dealer#alb2
   items:
     - id: 1146
@@ -12,6 +13,7 @@
   x: 175
   'y': 97
 - dir: 3
+  discount: true
   id: Trading Merchant#alb
   items:
     - id: 13200
@@ -42,6 +44,7 @@
   x: 176
   'y': 81
 - dir: 5
+  discount: true
   id: Advanced Potion Merchant#alb
   items:
     - id: 11621

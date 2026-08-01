@@ -1,5 +1,41 @@
 ---
+- dir: 1
+  discount: true
+  id: Tool Dealer#ayo
+  items:
+    - id: 1750
+      price:
+    - id: 1770
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: ayo_in01
+  name: Tool Dealer
+  sprite: 840
+  x: 18
+  'y': 182
 - dir: 3
+  discount: true
   id: Weapon Dealer#ayo
   items:
     - id: 1207
@@ -28,6 +64,7 @@
   x: 90
   'y': 192
 - dir: 1
+  discount: true
   id: Armor Dealer#ayo
   items:
     - id: 2211
@@ -60,6 +97,7 @@
   x: 90
   'y': 160
 - dir: 1
+  discount: true
   id: Tool Dealer#Extended_Ayo
   items:
     - id: 611

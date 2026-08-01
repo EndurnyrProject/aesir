@@ -1,5 +1,33 @@
 ---
+- dir: 5
+  discount: true
+  id: Tool Dealer#lhz2
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+    - id: 611
+      price:
+  map: lhz_in03
+  name: Tool Dealer
+  sprite: 850
+  x: 239
+  'y': 106
 - dir: 3
+  discount: true
   id: Arrow Merchant#lhz
   items:
     - id: 1750
@@ -16,6 +44,7 @@
   x: 258
   'y': 101
 - dir: 4
+  discount: true
   id: Merchant#lhz
   items:
     - id: 911
@@ -32,6 +61,7 @@
   x: 249
   'y': 24
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Lhz2
   items:
     - id: 611
@@ -74,6 +104,7 @@
   x: 239
   'y': 106
 - dir: 4
+  discount: true
   id: Black Marketeer#lhz
   items:
     - id: 2139

@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Tool Dealer#rockridge00
   items:
     - id: 611

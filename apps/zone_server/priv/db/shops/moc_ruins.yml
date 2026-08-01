@@ -1,5 +1,6 @@
 ---
 - dir: 2
+  discount: true
   id: Item Collector#moc1
   items:
     - id: 911
@@ -16,6 +17,7 @@
   x: 93
   'y': 53
 - dir: 0
+  discount: true
   id: Item Collector#moc2
   items:
     - id: 911
@@ -32,6 +34,7 @@
   x: 81
   'y': 113
 - dir: 4
+  discount: true
   id: Trader#moc1
   items:
     - id: 747
@@ -42,6 +45,7 @@
   x: 113
   'y': 126
 - dir: 0
+  discount: true
   id: Trader#moc2
   items:
     - id: 748
@@ -52,6 +56,7 @@
   x: 131
   'y': 138
 - dir: 5
+  discount: true
   id: Trader#moc3
   items:
     - id: 2612
@@ -62,6 +67,7 @@
   x: 71
   'y': 139
 - dir: 6
+  discount: true
   id: Trader#moc4
   items:
     - id: 2609
@@ -76,6 +82,7 @@
   x: 125
   'y': 135
 - dir: 0
+  discount: true
   id: Butcher#moc
   items:
     - id: 517
@@ -86,6 +93,7 @@
   x: 87
   'y': 109
 - dir: 6
+  discount: true
   id: Trader#moc5
   items:
     - id: 513
@@ -106,6 +114,7 @@
   x: 90
   'y': 149
 - dir: 4
+  discount: true
   id: Tool Dealer#Extended_Moc1
   items:
     - id: 611
@@ -148,6 +157,7 @@
   x: 91
   'y': 128
 - dir: 6
+  discount: true
   id: Tool Dealer#Extended_Moc2
   items:
     - id: 611
@@ -189,7 +199,82 @@
   sprite: 99
   x: 114
   'y': 63
+- dir: 4
+  discount: true
+  id: Tool Dealer#moc1
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 713
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: moc_ruins
+  name: Tool Dealer
+  sprite: 93
+  x: 91
+  'y': 128
+- dir: 6
+  discount: true
+  id: Tool Dealer#moc2
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 23280
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 23288
+      price:
+    - id: 1065
+      price:
+  map: moc_ruins
+  name: Tool Dealer
+  sprite: 99
+  x: 114
+  'y': 63
 - dir: 2
+  discount: true
   id: Jeweler#moc1
   items:
     - id: 721
@@ -220,6 +305,7 @@
   x: 110
   'y': 105
 - dir: 6
+  discount: true
   id: Jeweler#moc2
   items:
     - id: 721
@@ -250,6 +336,7 @@
   x: 52
   'y': 85
 - dir: 5
+  discount: true
   id: Chef Assistant#moc
   items:
     - id: 12849

@@ -1,5 +1,6 @@
 ---
 - dir: 5
+  discount: true
   id: Fruit Gardener#lhz
   items:
     - id: 512
@@ -12,6 +13,7 @@
   x: 69
   'y': 75
 - dir: 0
+  discount: true
   id: Flower Girl#lhz
   items:
     - id: 712
@@ -26,6 +28,7 @@
   x: 112
   'y': 44
 - dir: 0
+  discount: true
   id: Vegetable Gardener#lhz
   items:
     - id: 515
@@ -40,6 +43,7 @@
   x: 124
   'y': 129
 - dir: 3
+  discount: true
   id: Vendor from Milk Ranch#l
   items:
     - id: 519
@@ -50,6 +54,7 @@
   x: 220
   'y': 122
 - dir: 3
+  discount: true
   id: Chef Assistant#lhz
   items:
     - id: 7456
@@ -62,6 +67,7 @@
   x: 126
   'y': 126
 - dir: 4
+  discount: true
   id: Trap Specialist#lhz
   items:
     - id: 7940

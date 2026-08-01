@@ -50,15 +50,23 @@ defmodule Aesir.ZoneServer.Npc.Shops.ImporterTest do
                Importer.parse_line(line)
     end
 
-    test "skips an optional yes/no discount token after the sprite" do
+    test "records the optional yes/no discount token after the sprite" do
       string_sprite = "prontera,150,60,4\tshop\tRunes Seller\tHIDDEN_NPC,no,12737:1000"
       numeric_sprite = "prontera,150,60,4\tshop\tFoo\t99,yes,501:50"
+      implicit = "prontera,150,60,4\tshop\tBar\t99,501:50"
 
-      assert {:ok, %{"sprite" => 83, "items" => [%{"id" => 12_737, "price" => 1000}]}} =
-               Importer.parse_line(string_sprite)
+      assert {:ok,
+              %{
+                "sprite" => 83,
+                "discount" => false,
+                "items" => [%{"id" => 12_737, "price" => 1000}]
+              }} = Importer.parse_line(string_sprite)
 
-      assert {:ok, %{"sprite" => 99, "items" => [%{"id" => 501, "price" => 50}]}} =
+      assert {:ok,
+              %{"sprite" => 99, "discount" => true, "items" => [%{"id" => 501, "price" => 50}]}} =
                Importer.parse_line(numeric_sprite)
+
+      assert {:ok, %{"discount" => true}} = Importer.parse_line(implicit)
     end
 
     test "returns {:duplicate, label, partial_map} for a duplicate line, with no items" do

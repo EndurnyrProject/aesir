@@ -8,10 +8,9 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   sell into persisted changes and packets is the handler's job.
 
   Buying is restricted to the shop's item list; selling accepts any sellable
-  inventory item (`sell > 0`, not bound or favorite), mirroring rAthena's plain
-  `shop`. Prices flow through `effective_buy_price/2` and `effective_sell_price/1`
-  — the single choke point where Discount/Overcharge modifiers will later slot in
-  (v1 resolves the base price only).
+  inventory item (`sell > 0`, not bound or favorite). Prices flow through
+  `effective_buy_price/3` and `effective_sell_price/2`, keeping displayed and
+  transaction prices identical.
 
   Stacking, free-slot and weight accounting reuse the inventory core
   (`Unit.Inventory`, `Unit.Inventory.Weight`) so a shop never re-derives them.
@@ -21,11 +20,14 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
+  @discount_skill_id 37
+  @overcharge_skill_id 38
   @max_zeny 1_000_000_000
 
   @typedoc "A buy-window row, shaped for `Aesir.Net.NpcShopBuyItem`."
@@ -62,13 +64,13 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   Builds the open-window lists: the shop's buy list and the player's sellable
   inventory, both with resolved prices.
 
-  The buy list is the shop's items at `effective_buy_price/2`; the sell list is
+  The buy list is the shop's items at `effective_buy_price/3`; the sell list is
   every sellable inventory slot (ordered by session index) at
-  `effective_sell_price/1`. Item types are resolved to the client numeric code.
+  `effective_sell_price/2`. Item types are resolved to the client numeric code.
   """
   @spec build_open(ShopData.t(), PlayerState.t()) :: {[buy_item()], [sell_item()]}
-  def build_open(%ShopData{} = shop, %PlayerState{inventory: inventory}) do
-    {build_buy_items(shop), build_sell_items(inventory)}
+  def build_open(%ShopData{} = shop, %PlayerState{inventory: inventory} = player_state) do
+    {build_buy_items(shop, player_state), build_sell_items(inventory, player_state)}
   end
 
   @doc """
@@ -83,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
           | {:error, :item_not_in_shop | :not_enough_zeny | :overweight | :no_slots}
   def compute_buy(%ShopData{} = shop, requests, %PlayerState{} = player_state)
       when is_list(requests) do
-    with {:ok, lines} <- resolve_buy_lines(shop, requests),
+    with {:ok, lines} <- resolve_buy_lines(shop, requests, player_state),
          total_cost = total_cost(lines),
          :ok <- ensure_zeny(player_state.zeny, total_cost),
          :ok <- ensure_weight(player_state.inventory, player_state.stats, lines),
@@ -107,8 +109,10 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   """
   @spec compute_sell([sell_request()], PlayerState.t()) ::
           {:ok, sale()} | {:error, :invalid_item | :insufficient_amount | :unsellable}
-  def compute_sell(requests, %PlayerState{inventory: inventory}) when is_list(requests) do
-    with {:ok, total_credit, removals} <- resolve_sell_lines(inventory, requests) do
+  def compute_sell(requests, %PlayerState{inventory: inventory} = player_state)
+      when is_list(requests) do
+    with {:ok, total_credit, removals} <-
+           resolve_sell_lines(inventory, requests, player_state) do
       {:ok, %{total_credit: min(total_credit, @max_zeny), removals: removals}}
     end
   end
@@ -117,24 +121,32 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   The buy price for `nameid` at this shop: the per-item override when present,
   otherwise `ItemDefinition.buy`. The Discount choke point.
   """
-  @spec effective_buy_price(ShopData.t(), pos_integer()) :: non_neg_integer()
-  def effective_buy_price(%ShopData{items: items}, nameid) do
-    case Enum.find(items, &(&1.nameid == nameid)) do
-      %{price: price} when is_integer(price) -> price
-      _ -> base_buy(nameid)
-    end
+  @spec effective_buy_price(ShopData.t(), pos_integer(), PlayerState.t()) :: non_neg_integer()
+  def effective_buy_price(%ShopData{items: items, discount: discount}, nameid, player_state) do
+    base_price =
+      case Enum.find(items, &(&1.nameid == nameid)) do
+        %{price: price} when is_integer(price) -> price
+        _ -> base_buy(nameid)
+      end
+
+    if discount,
+      do: apply_rate(base_price, -skill_rate(player_state, @discount_skill_id)),
+      else: base_price
   end
 
   @doc """
-  The sell price for `nameid`: `ItemDefinition.sell_price/1` (rAthena's `Buy / 2`
-  fallback when `sell` is unset). The Overcharge choke point.
+  The sell price for `nameid`, including the standard buy-price fallback when
+  the explicit sell value is unset, adjusted by Overcharge.
   """
-  @spec effective_sell_price(pos_integer()) :: non_neg_integer()
-  def effective_sell_price(nameid) do
-    case ItemManagement.get_item_by_id(nameid) do
-      {:ok, %ItemDefinition{} = def} -> ItemDefinition.sell_price(def)
-      {:error, _} -> 0
-    end
+  @spec effective_sell_price(pos_integer(), PlayerState.t()) :: non_neg_integer()
+  def effective_sell_price(nameid, player_state) do
+    base_price =
+      case ItemManagement.get_item_by_id(nameid) do
+        {:ok, %ItemDefinition{} = def} -> ItemDefinition.sell_price(def)
+        {:error, _} -> 0
+      end
+
+    apply_rate(base_price, skill_rate(player_state, @overcharge_skill_id))
   end
 
   defp base_buy(nameid) do
@@ -144,7 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end
   end
 
-  defp build_buy_items(%ShopData{items: items} = shop) do
+  defp build_buy_items(%ShopData{items: items} = shop, player_state) do
     Enum.flat_map(items, fn %{nameid: nameid} ->
       case ItemManagement.get_item_by_id(nameid) do
         {:ok, %ItemDefinition{type: type}} ->
@@ -152,7 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
             %{
               nameid: nameid,
               type: ClientItemType.to_client_type(type),
-              price: effective_buy_price(shop, nameid)
+              price: effective_buy_price(shop, nameid, player_state)
             }
           ]
 
@@ -162,7 +174,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end)
   end
 
-  defp build_sell_items(inventory) do
+  defp build_sell_items(inventory, player_state) do
     inventory
     |> Enum.sort_by(fn {index, _item} -> index end)
     |> Enum.flat_map(fn {index, %InventoryItem{} = item} ->
@@ -174,7 +186,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
               nameid: item.nameid,
               type: ClientItemType.to_client_type(type),
               amount: item.amount,
-              sell_price: effective_sell_price(item.nameid)
+              sell_price: effective_sell_price(item.nameid, player_state)
             }
           ]
 
@@ -184,10 +196,10 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end)
   end
 
-  defp resolve_buy_lines(shop, requests) do
+  defp resolve_buy_lines(shop, requests, player_state) do
     requests
     |> Enum.reduce_while({:ok, []}, fn request, {:ok, acc} ->
-      case resolve_buy_line(shop, request) do
+      case resolve_buy_line(shop, request, player_state) do
         {:ok, line} -> {:cont, {:ok, [line | acc]}}
         {:error, _} = error -> {:halt, error}
       end
@@ -198,17 +210,17 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end
   end
 
-  defp resolve_buy_line(%ShopData{} = shop, {nameid, amount})
+  defp resolve_buy_line(%ShopData{} = shop, {nameid, amount}, player_state)
        when is_integer(amount) and amount > 0 do
     with true <- in_shop?(shop, nameid),
          {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid) do
-      {:ok, {def, amount, effective_buy_price(shop, nameid)}}
+      {:ok, {def, amount, effective_buy_price(shop, nameid, player_state)}}
     else
       _ -> {:error, :item_not_in_shop}
     end
   end
 
-  defp resolve_buy_line(_shop, _request), do: {:error, :item_not_in_shop}
+  defp resolve_buy_line(_shop, _request, _player_state), do: {:error, :item_not_in_shop}
 
   defp in_shop?(%ShopData{items: items}, nameid), do: Enum.any?(items, &(&1.nameid == nameid))
 
@@ -244,10 +256,10 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end
   end
 
-  defp resolve_sell_lines(inventory, requests) do
+  defp resolve_sell_lines(inventory, requests, player_state) do
     requests
     |> Enum.reduce_while({:ok, 0, []}, fn request, {:ok, total, removals} ->
-      case resolve_sell_line(inventory, request) do
+      case resolve_sell_line(inventory, request, player_state) do
         {:ok, credit, removal} -> {:cont, {:ok, total + credit, [removal | removals]}}
         {:error, _} = error -> {:halt, error}
       end
@@ -258,14 +270,15 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end
   end
 
-  defp resolve_sell_line(inventory, {index, amount}) when is_integer(amount) and amount > 0 do
+  defp resolve_sell_line(inventory, {index, amount}, player_state)
+       when is_integer(amount) and amount > 0 do
     with %InventoryItem{} = item <- fetch_owned(inventory, index, amount),
          {:ok, %ItemDefinition{}} <- sellable(item) do
-      {:ok, effective_sell_price(item.nameid) * amount, {index, amount}}
+      {:ok, effective_sell_price(item.nameid, player_state) * amount, {index, amount}}
     end
   end
 
-  defp resolve_sell_line(_inventory, _request), do: {:error, :invalid_item}
+  defp resolve_sell_line(_inventory, _request, _player_state), do: {:error, :invalid_item}
 
   defp fetch_owned(inventory, index, amount) do
     case PlayerState.get_by_index(inventory, index) do
@@ -285,6 +298,19 @@ defmodule Aesir.ZoneServer.Unit.Shop do
       {:ok, def}
     else
       _ -> {:error, :unsellable}
+    end
+  end
+
+  defp apply_rate(price, rate), do: div(price * (100 + rate), 100)
+
+  defp skill_rate(%PlayerState{stats: %{progression: %{learned_skills: learned}}}, skill_id) do
+    case Learned.learned_level(learned, skill_id) do
+      0 ->
+        0
+
+      level ->
+        rate = 5 + 2 * level - if(level == 10, do: 1, else: 0)
+        rate |> min(100) |> max(0)
     end
   end
 end

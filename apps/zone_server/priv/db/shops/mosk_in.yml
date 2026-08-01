@@ -1,5 +1,39 @@
 ---
+- dir: 5
+  discount: true
+  id: Tool Dealer#mosk
+  items:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+    - id: 1750
+      price:
+  map: mosk_in
+  name: Tool Dealer
+  sprite: 968
+  x: 21
+  'y': 254
 - dir: 3
+  discount: true
   id: Weapon Dealer#mosk
   items:
     - id: 1207
@@ -28,6 +62,7 @@
   x: 31
   'y': 180
 - dir: 1
+  discount: true
   id: Armor Dealer#mosk
   items:
     - id: 2211
@@ -60,6 +95,7 @@
   x: 79
   'y': 178
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Mosk
   items:
     - id: 611

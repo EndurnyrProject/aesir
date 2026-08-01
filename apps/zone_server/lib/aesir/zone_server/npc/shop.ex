@@ -8,13 +8,22 @@ defmodule Aesir.ZoneServer.Npc.Shop do
 
   `items` is the buy list: each entry pairs an item `nameid` with an optional
   per-shop buy-price override (`price: nil` falls back to `ItemDefinition.buy`).
+  `discount` controls whether Merchant Discount applies to purchases.
   """
 
   @typedoc "A buy-list entry: an item id with an optional buy-price override."
   @type item :: %{nameid: pos_integer(), price: non_neg_integer() | nil}
 
   @enforce_keys [:id, :map, :x, :y, :dir, :sprite]
-  defstruct id: nil, map: nil, x: nil, y: nil, dir: nil, sprite: nil, name: "", items: []
+  defstruct id: nil,
+            map: nil,
+            x: nil,
+            y: nil,
+            dir: nil,
+            sprite: nil,
+            name: "",
+            items: [],
+            discount: true
 
   @type t() :: %__MODULE__{
           id: String.t(),
@@ -24,7 +33,8 @@ defmodule Aesir.ZoneServer.Npc.Shop do
           dir: non_neg_integer(),
           sprite: non_neg_integer(),
           name: String.t(),
-          items: [item()]
+          items: [item()],
+          discount: boolean()
         }
 end
 

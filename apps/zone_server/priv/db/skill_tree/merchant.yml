@@ -3,30 +3,29 @@
   inherit:
     - novice
   tree:
+    - name: MC_DISCOUNT
+      max_level: 10
+    - name: MC_OVERCHARGE
+      max_level: 10
     - name: MC_PUSHCART
       max_level: 10
     - name: MC_IDENTIFY
       max_level: 1
     - name: MC_CHANGECART
       max_level: 1
-      # rAthena gates Change Cart via `State: Cart` (must have a cart equipped),
-      # not a skill prereq; we model that as the tree prerequisite MC_PUSHCART.
+      # Change Cart requires a mounted cart, represented by the Pushcart prerequisite.
       requires:
         - name: MC_PUSHCART
           level: 1
     - name: MC_CARTREVOLUTION
       max_level: 1
-      # rAthena's re skill_tree gives Cart Revolution no skill prereq; it is gated
-      # in-game by `State: Cart` (a cart must be mounted). We model that mounted-cart
-      # requirement as the tree prerequisite MC_PUSHCART, at the design's lv5 gate.
+      # Cart Revolution requires a mounted cart, represented by the level 5 Pushcart gate.
       requires:
         - name: MC_PUSHCART
           level: 5
     - name: MC_VENDING
       max_level: 10
-      # rAthena gates vending functionally via `State: Cart` (must have a cart
-      # mounted), not a skill prereq; we model that mounted-cart requirement as
-      # the tree prerequisite MC_PUSHCART, mirroring the other cart skills.
+      # Vending requires a mounted cart, represented by the Pushcart prerequisite.
       requires:
         - name: MC_PUSHCART
           level: 1

@@ -1,5 +1,52 @@
 ---
+- dir: 5
+  discount: true
+  id: Tool Dealer#yuno
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+  map: yuno
+  name: Tool Dealer
+  sprite: 84
+  x: 218
+  'y': 97
+- dir: 5
+  discount: true
+  id: Tool Dealer#yuno1
+  items:
+    - id: 911
+      price:
+    - id: 910
+      price:
+    - id: 912
+      price:
+  map: yuno
+  name: Tool Dealer
+  sprite: 83
+  x: 226
+  'y': 107
 - dir: 4
+  discount: true
   id: Mr. King's Shop#yuno
   items:
     - id: 2340
@@ -20,6 +67,7 @@
   x: 205
   'y': 103
 - dir: 5
+  discount: true
   id: Magical Item Seller#yuno
   items:
     - id: 717
@@ -44,6 +92,7 @@
   x: 163
   'y': 187
 - dir: 3
+  discount: true
   id: Chef Assistant#yuno
   items:
     - id: 7457
@@ -56,6 +105,7 @@
   x: 130
   'y': 173
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Yuno
   items:
     - id: 611
@@ -98,6 +148,7 @@
   x: 218
   'y': 97
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Yuno1
   items:
     - id: 611

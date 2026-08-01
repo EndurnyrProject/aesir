@@ -1,5 +1,6 @@
 ---
 - dir: 0
+  discount: true
   id: Weapon Dealer#moc1
   items:
     - id: 1750
@@ -38,6 +39,7 @@
   x: 141
   'y': 67
 - dir: 0
+  discount: true
   id: Armor Dealer#moc
   items:
     - id: 2101
@@ -82,6 +84,7 @@
   x: 141
   'y': 60
 - dir: 0
+  discount: true
   id: Weapon Dealer#moc2
   items:
     - id: 1146

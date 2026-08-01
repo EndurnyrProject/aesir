@@ -1,5 +1,6 @@
 ---
 - dir: 5
+  discount: true
   id: Vendor from Milk Ranch#h
   items:
     - id: 519
@@ -10,6 +11,7 @@
   x: 105
   'y': 169
 - dir: 3
+  discount: true
   id: Vegetable Gardener#hu
   items:
     - id: 522

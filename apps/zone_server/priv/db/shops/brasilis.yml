@@ -1,5 +1,29 @@
 ---
 - dir: 3
+  discount: true
+  id: Tool Dealer#bra
+  items:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+    - id: 610
+      price:
+  map: brasilis
+  name: Tool Dealer
+  sprite: 478
+  x: 252
+  'y': 257
+- dir: 3
+  discount: true
   id: Weapon Dealer#bra
   items:
     - id: 1407
@@ -18,6 +42,7 @@
   x: 244
   'y': 243
 - dir: 3
+  discount: true
   id: Fruit Gardener#bra
   items:
     - id: 11515
@@ -32,6 +57,7 @@
   x: 221
   'y': 128
 - dir: 3
+  discount: true
   id: Tool Dealer#Extended_Bra
   items:
     - id: 611

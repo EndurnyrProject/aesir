@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: One Hand Weapon Dealer
   items:
     - id: 1101
@@ -80,6 +81,7 @@
   x: 106
   'y': 27
 - dir: 4
+  discount: true
   id: Two Hand Weapon Dealer
   items:
     - id: 1116
@@ -124,6 +126,7 @@
   x: 109
   'y': 27
 - dir: 4
+  discount: true
   id: Weapon Dealer#ein
   items:
     - id: 1247
@@ -140,6 +143,44 @@
   x: 119
   'y': 26
 - dir: 1
+  discount: true
+  id: Tool Dealer#ein
+  items:
+    - id: 1750
+      price:
+    - id: 1752
+      price:
+    - id: 1751
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: ein_in01
+  name: Tool Dealer
+  sprite: 850
+  x: 189
+  'y': 15
+- dir: 1
+  discount: true
   id: Tool Dealer#Extended_Ein
   items:
     - id: 611

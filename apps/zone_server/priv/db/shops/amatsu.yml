@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Chef Assistant#ama
   items:
     - id: 7453

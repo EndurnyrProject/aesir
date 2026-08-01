@@ -37,7 +37,8 @@ defmodule Aesir.ZoneServer.Npc.Shops.Loader do
       dir: Map.fetch!(entry, "dir"),
       sprite: Map.fetch!(entry, "sprite"),
       name: Map.get(entry, "name", ""),
-      items: entry |> Map.get("items", []) |> Enum.map(&to_item!/1)
+      items: entry |> Map.get("items", []) |> Enum.map(&to_item!/1),
+      discount: Map.get(entry, "discount", true)
     }
   end
 

@@ -1,5 +1,41 @@
 ---
+- dir: 5
+  discount: true
+  id: Tool Dealer#gon
+  items:
+    - id: 1750
+      price:
+    - id: 1770
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: gonryun
+  name: Tool Dealer
+  sprite: 777
+  x: 147
+  'y': 84
 - dir: 3
+  discount: true
   id: Weapon Dealer#gon
   items:
     - id: 1207
@@ -28,6 +64,7 @@
   x: 174
   'y': 101
 - dir: 3
+  discount: true
   id: Armor Dealer#gon
   items:
     - id: 2211
@@ -60,6 +97,7 @@
   x: 173
   'y': 84
 - dir: 5
+  discount: true
   id: Chef Assistant#gon
   items:
     - id: 7452
@@ -72,6 +110,7 @@
   x: 147
   'y': 101
 - dir: 5
+  discount: true
   id: Tool Dealer#Extended_Gon
   items:
     - id: 611

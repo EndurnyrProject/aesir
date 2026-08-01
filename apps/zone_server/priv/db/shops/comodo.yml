@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Souvenir Vendor#cmd
   items:
     - id: 965
@@ -12,6 +13,7 @@
   x: 296
   'y': 125
 - dir: 3
+  discount: true
   id: Chef Assistant#cmd
   items:
     - id: 7455
@@ -28,6 +30,7 @@
   x: 225
   'y': 164
 - dir: 5
+  discount: true
   id: Tropic Fruit Dealer
   items:
     - id: 6258
@@ -38,6 +41,7 @@
   x: 106
   'y': 213
 - dir: 3
+  discount: true
   id: Harive#candy
   items:
     - id: 11513

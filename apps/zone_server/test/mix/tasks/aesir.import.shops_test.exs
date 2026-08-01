@@ -11,15 +11,23 @@ defmodule Mix.Tasks.Aesir.Import.ShopsTest do
   alias Mix.Tasks.Aesir.Import.Shops, as: Task
 
   describe "resolve_duplicates/2" do
-    test "fills a duplicate's items from the placed shop whose id matches the label" do
-      shops = [shop_map("Tool Dealer#alb", [%{"id" => 501, "price" => nil}])]
+    test "fills a duplicate's items and discount flag from its source shop" do
+      shop =
+        "Tool Dealer#alb"
+        |> shop_map([%{"id" => 501, "price" => nil}])
+        |> Map.put("discount", false)
+
       duplicates = [{"Tool Dealer#alb", partial_map("Tool Dealer#alb2")}]
 
-      assert {resolved, 0} = Task.resolve_duplicates(shops, duplicates)
+      assert {resolved, 0} = Task.resolve_duplicates([shop], duplicates)
 
       assert [
                %{"id" => "Tool Dealer#alb"},
-               %{"id" => "Tool Dealer#alb2", "items" => [%{"id" => 501, "price" => nil}]}
+               %{
+                 "id" => "Tool Dealer#alb2",
+                 "items" => [%{"id" => 501, "price" => nil}],
+                 "discount" => false
+               }
              ] = resolved
     end
 

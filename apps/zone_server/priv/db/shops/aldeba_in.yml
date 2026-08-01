@@ -1,5 +1,6 @@
 ---
 - dir: 0
+  discount: true
   id: Armor Dealer#alde
   items:
     - id: 2228
@@ -32,6 +33,7 @@
   x: 20
   'y': 60
 - dir: 0
+  discount: true
   id: Weapon Dealer#alde
   items:
     - id: 1201
@@ -56,6 +58,7 @@
   x: 28
   'y': 54
 - dir: 4
+  discount: true
   id: Weapon Dealer#alde2
   items:
     - id: 1146
@@ -68,6 +71,38 @@
   x: 22
   'y': 47
 - dir: 5
+  discount: true
+  id: Tool Dealer#alde
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 610
+      price:
+  map: aldeba_in
+  name: Tool Dealer
+  sprite: 83
+  x: 94
+  'y': 56
+- dir: 5
+  discount: true
   id: Tool Dealer#Extended_Alde
   items:
     - id: 611
@@ -110,6 +145,7 @@
   x: 94
   'y': 56
 - dir: 5
+  discount: true
   id: Advanced Potion Merchant#alde
   items:
     - id: 11621

@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Armor Dealer#ra
   items:
     - id: 2101
@@ -28,6 +29,40 @@
   x: 175
   'y': 364
 - dir: 3
+  discount: true
+  id: Tool Dealer#ra
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+    - id: 610
+      price:
+  map: ra_in01
+  name: Tool Dealer
+  sprite: 919
+  x: 257
+  'y': 269
+- dir: 3
+  discount: true
   id: Fruit Gardener#ra
   items:
     - id: 512
@@ -40,6 +75,7 @@
   x: 254
   'y': 300
 - dir: 3
+  discount: true
   id: Tool Dealer#Extended_Ra
   items:
     - id: 611
@@ -82,6 +118,7 @@
   x: 257
   'y': 269
 - dir: 4
+  discount: true
   id: Trap Specialist#ra
   items:
     - id: 7940
@@ -94,6 +131,7 @@
   x: 263
   'y': 281
 - dir: 4
+  discount: true
   id: Black Marketeer#ra
   items:
     - id: 2139

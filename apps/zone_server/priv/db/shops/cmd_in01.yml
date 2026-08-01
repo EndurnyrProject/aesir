@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Armor Dealer#cmd
   items:
     - id: 2226
@@ -38,6 +39,7 @@
   x: 117
   'y': 165
 - dir: 2
+  discount: true
   id: Weapon Dealer#cmd
   items:
     - id: 1901
@@ -70,6 +72,40 @@
   x: 128
   'y': 165
 - dir: 5
+  discount: true
+  id: Tool Dealer#cmd
+  items:
+    - id: 1770
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 657
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+  map: cmd_in01
+  name: Tool Dealer
+  sprite: 83
+  x: 79
+  'y': 182
+- dir: 5
+  discount: true
   id: Tool Dealer#Extended_Cmd
   items:
     - id: 611

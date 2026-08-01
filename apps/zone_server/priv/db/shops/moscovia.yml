@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Fruit Gardener#mosk
   items:
     - id: 512
@@ -16,6 +17,7 @@
   x: 152
   'y': 71
 - dir: 3
+  discount: true
   id: Vendor from Milk Ranch#m
   items:
     - id: 519

@@ -1,5 +1,6 @@
 ---
 - dir: 5
+  discount: true
   id: Tool Dealer Myo
   items:
     - id: 611

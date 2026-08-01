@@ -1,5 +1,6 @@
 ---
 - dir: 5
+  discount: true
   id: Chef Assistant#lou
   items:
     - id: 7454

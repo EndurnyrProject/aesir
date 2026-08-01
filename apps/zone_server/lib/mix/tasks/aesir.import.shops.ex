@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Aesir.Import.Shops do
-  @shortdoc "Imports rAthena merchant shops into priv/db/shops/*.yml"
+  @shortdoc "Imports merchant shops into priv/db/shops/*.yml"
   @moduledoc """
-  One-time importer: converts the renewal rAthena merchant shop scripts under
+  One-time importer: converts the upstream renewal merchant shop scripts under
   `npc/merchants/` and `npc/re/merchants/` into our own-schema YAML under
   `apps/zone_server/priv/db/shops/`, one file per source map.
 
@@ -28,7 +28,7 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
   the fallback for string-constant sprites, so a defaulted sprite is
   indistinguishable from a real `83` at this layer. The run prints how many shops
   were written, skipped by reason, and how many phantom items were dropped. Run
-  only when syncing rAthena.
+  only when syncing upstream data.
   """
   use Mix.Task
 
@@ -109,13 +109,13 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
   """
   @spec resolve_duplicates([shop_map()], [duplicate()]) :: {[shop_map()], non_neg_integer()}
   def resolve_duplicates(shops, duplicates) do
-    id_map = Map.new(shops, fn shop -> {shop["id"], shop["items"]} end)
+    id_map = Map.new(shops, fn shop -> {shop["id"], Map.take(shop, ["items", "discount"])} end)
 
     {resolved, unknown} =
       Enum.split_with(duplicates, fn {label, _partial} -> Map.has_key?(id_map, label) end)
 
     resolved_shops =
-      Enum.map(resolved, fn {label, partial} -> Map.put(partial, "items", id_map[label]) end)
+      Enum.map(resolved, fn {label, partial} -> Map.merge(partial, id_map[label]) end)
 
     {shops ++ resolved_shops, length(unknown)}
   end

@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Material Seller#alche
   items:
     - id: 7143

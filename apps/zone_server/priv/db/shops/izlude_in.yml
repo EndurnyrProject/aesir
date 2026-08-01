@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Weapon Dealer#iz
   items:
     - id: 1750
@@ -40,6 +41,7 @@
   x: 60
   'y': 127
 - dir: 4
+  discount: true
   id: Armor Dealer#iz
   items:
     - id: 2103
@@ -82,6 +84,7 @@
   x: 70
   'y': 127
 - dir: 0
+  discount: true
   id: Tool Dealer#iz
   items:
     - id: 611
@@ -114,6 +117,7 @@
   x: 57
   'y': 110
 - dir: 3
+  discount: true
   id: Trading Merchant#iz
   items:
     - id: 13200
@@ -144,6 +148,7 @@
   x: 72
   'y': 102
 - dir: 5
+  discount: true
   id: Advanced Potion Merchant#iz
   items:
     - id: 11621

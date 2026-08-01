@@ -1,5 +1,6 @@
 ---
 - dir: 3
+  discount: true
   id: Chef Assistant#gef
   items:
     - id: 12849

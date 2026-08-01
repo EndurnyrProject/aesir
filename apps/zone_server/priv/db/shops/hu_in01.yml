@@ -1,5 +1,6 @@
 ---
 - dir: 2
+  discount: true
   id: Tool Dealer#hu
   items:
     - id: 1750
@@ -32,6 +33,24 @@
   x: 241
   'y': 368
 - dir: 3
+  discount: true
+  id: Tool Dealer#hu2
+  items:
+    - id: 717
+      price:
+    - id: 2201
+      price:
+    - id: 910
+      price:
+    - id: 528
+      price:
+  map: hu_in01
+  name: Tool Dealer
+  sprite: 90
+  x: 252
+  'y': 368
+- dir: 3
+  discount: true
   id: Bow Dealer#hu
   items:
     - id: 1701
@@ -48,6 +67,7 @@
   x: 100
   'y': 390
 - dir: 3
+  discount: true
   id: Weapon Dealer#hu
   items:
     - id: 1116
@@ -64,6 +84,7 @@
   x: 94
   'y': 390
 - dir: 3
+  discount: true
   id: Armor Dealer#hu
   items:
     - id: 2224
@@ -90,6 +111,7 @@
   x: 94
   'y': 313
 - dir: 3
+  discount: true
   id: Tool Dealer#Extended_Hu2
   items:
     - id: 611

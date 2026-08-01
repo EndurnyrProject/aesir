@@ -89,8 +89,10 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
   end
 
   defp player(attrs) do
-    base = %{zeny: 1_000_000, inventory: %{}, stats: stats(1)}
-    struct(PlayerState, Map.merge(base, Map.new(attrs)))
+    {learned_skills, attrs} = attrs |> Map.new() |> Map.pop(:learned_skills, %{})
+    stats = put_in(stats(1).progression.learned_skills, learned_skills)
+    base = %{zeny: 1_000_000, inventory: %{}, stats: stats}
+    struct(PlayerState, Map.merge(base, attrs))
   end
 
   # Tool Dealer: 501 has a per-shop override (50), 502 and the sword fall back to
@@ -114,15 +116,42 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
 
   describe "effective prices" do
     test "buy uses the per-item override when present" do
-      assert Shop.effective_buy_price(shop(), @red_potion) == 50
+      assert Shop.effective_buy_price(shop(), @red_potion, player(%{})) == 50
     end
 
     test "buy falls back to ItemDefinition.buy when no override" do
-      assert Shop.effective_buy_price(shop(), @orange_potion) == 100
+      assert Shop.effective_buy_price(shop(), @orange_potion, player(%{})) == 100
     end
 
     test "sell resolves ItemDefinition.sell" do
-      assert Shop.effective_sell_price(@red_potion) == 25
+      assert Shop.effective_sell_price(@red_potion, player(%{})) == 25
+    end
+
+    test "a shop can disable Discount without disabling Overcharge" do
+      player = player(%{learned_skills: %{37 => 10, 38 => 10}})
+
+      assert Shop.effective_buy_price(%{shop() | discount: false}, @red_potion, player) == 50
+      assert Shop.effective_sell_price(@red_potion, player) == 31
+    end
+
+    test "displayed and charged prices share the Discount and Overcharge curves" do
+      inventory = inventory([item(nameid: @red_potion, amount: 1)])
+
+      for {level, rate} <- Enum.zip(1..10, [7, 9, 11, 13, 15, 17, 19, 21, 23, 24]) do
+        player = player(%{inventory: inventory, learned_skills: %{37 => level, 38 => level}})
+
+        {[%{price: displayed_buy} | _], [%{sell_price: displayed_sell}]} =
+          Shop.build_open(shop(), player)
+
+        assert {:ok, %{total_cost: charged_buy}} =
+                 Shop.compute_buy(shop(), [{@red_potion, 1}], player)
+
+        assert {:ok, %{total_credit: charged_sell}} = Shop.compute_sell([{0, 1}], player)
+        assert displayed_buy == charged_buy
+        assert displayed_buy == div(50 * (100 - rate), 100)
+        assert displayed_sell == charged_sell
+        assert displayed_sell == div(25 * (100 + rate), 100)
+      end
     end
   end
 

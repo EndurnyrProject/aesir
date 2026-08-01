@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Fruit Gardener#iz_b
   items:
     - id: 512
@@ -16,6 +17,7 @@
   x: 124
   'y': 165
 - dir: 0
+  discount: true
   id: Butcher#iz_b
   items:
     - id: 517
@@ -26,6 +28,7 @@
   x: 160
   'y': 186
 - dir: 7
+  discount: true
   id: Vendor from Milk Ranch#b
   items:
     - id: 519

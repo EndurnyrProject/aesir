@@ -1,5 +1,6 @@
 ---
 - dir: 4
+  discount: true
   id: Nun#prt
   items:
     - id: 2608
