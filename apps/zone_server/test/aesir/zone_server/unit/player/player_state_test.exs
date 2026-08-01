@@ -566,6 +566,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.demon_bane_level == 0
       assert combatant.beast_bane_level == 0
       assert combatant.dragonology_level == 0
+      assert combatant.skin_temper_level == 0
+    end
+
+    test "carries Skin Temper level from learned skills onto the combatant", %{state: state} do
+      state = put_in(state.stats.progression.learned_skills, %{109 => 5})
+
+      assert PlayerState.to_combatant(state).skin_temper_level == 5
     end
 
     test "carries AL_DP, AL_DEMONBANE and HT_BEASTBANE levels from learned skills onto the combatant",

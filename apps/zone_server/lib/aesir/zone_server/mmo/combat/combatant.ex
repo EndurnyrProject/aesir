@@ -97,6 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     beast_bane_level: 0,
     dragonology_level: 0,
     faith_level: 0,
+    skin_temper_level: 0,
 
     # Mob-class axis for bAddClass/bSubClass-style equipment bonuses. Players
     # are always :normal; mobs are :boss when tagged with the :boss mode.
@@ -157,6 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           beast_bane_level: integer(),
           dragonology_level: integer(),
           faith_level: integer(),
+          skin_temper_level: integer(),
           class: :normal | :boss,
           riding: boolean(),
           equip_modifiers: map()

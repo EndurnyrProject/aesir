@@ -70,7 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       element:
         read(defender, :subele, attack_element) +
           status_subele(status_modifiers, attack_element) +
-          faith_resist_rate(defender, attack_element),
+          faith_resist_rate(defender, attack_element) +
+          skin_temper_resist_rate(defender, attack_element),
       size: read(defender, :subsize, attacker.size)
     }
   end
@@ -231,6 +232,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @spec faith_resist_rate(Combatant.t(), atom()) :: rate()
   defp faith_resist_rate(%Combatant{faith_level: level}, :holy) when level > 0, do: level * 5
   defp faith_resist_rate(_defender, _attack_element), do: 0
+
+  @spec skin_temper_resist_rate(Combatant.t(), atom()) :: rate()
+  defp skin_temper_resist_rate(%Combatant{skin_temper_level: level}, :fire) when level > 0,
+    do: level * 5
+
+  defp skin_temper_resist_rate(%Combatant{skin_temper_level: level}, :neutral) when level > 0,
+    do: level
+
+  defp skin_temper_resist_rate(_defender, _attack_element), do: 0
 
   @spec status_subrace(map(), atom()) :: rate()
   defp status_subrace(status_modifiers, :demon), do: Map.get(status_modifiers, :subrace_demon, 0)

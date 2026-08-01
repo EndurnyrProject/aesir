@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   end
 
   describe "to_combatant/1 passive skill levels" do
-    test "mob combatant has divine_protection_level, demon_bane_level and dragonology_level of 0" do
+    test "mob combatant passive skill levels are 0" do
       state = build_mob_state()
 
       combatant = MobState.to_combatant(state)
@@ -259,6 +259,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.divine_protection_level == 0
       assert combatant.demon_bane_level == 0
       assert combatant.dragonology_level == 0
+      assert combatant.skin_temper_level == 0
     end
   end
 

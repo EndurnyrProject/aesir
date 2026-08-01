@@ -118,6 +118,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              }
     end
 
+    test "Skin Temper adds fire and neutral resistance only" do
+      defender = %{CombatTestHelper.create_player_combatant() | skin_temper_level: 5}
+      attacker = CombatTestHelper.create_mob_combatant()
+
+      assert %{element: 25} = EquipmentBonuses.damage_taken_rates(defender, attacker, :fire)
+      assert %{element: 5} = EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral)
+
+      for element <- [:holy, :water, :earth, :wind, :poison, :shadow, :ghost, :undead] do
+        assert %{element: 0} = EquipmentBonuses.damage_taken_rates(defender, attacker, element)
+      end
+    end
+
     test "sums status subele_holy/subrace_demon into equipment element/race families" do
       defender =
         CombatTestHelper.create_mob_combatant()
