@@ -127,8 +127,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
 
   test "slow grace strips registered speed buffs and skips unimplemented entries" do
     unimplemented = [
-      :sc_adrenaline,
-      :sc_adrenaline2,
       :sc_onehand,
       :sc_acceleration,
       :sc_merc_quicken
@@ -138,7 +136,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
       assert Registry.get_definition(status) == nil
     end
 
-    for status <- [:sc_increaseagi, :sc_spearquicken, :sc_twohandquicken] do
+    for status <- [
+          :sc_increaseagi,
+          :sc_spearquicken,
+          :sc_twohandquicken,
+          :sc_adrenaline,
+          :sc_adrenaline2
+        ] do
       assert :ok = apply_status(status)
     end
 

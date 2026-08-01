@@ -21,8 +21,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
   @unimplemented [
     :sc_acceleration,
     :sc_adoramus,
-    :sc_adrenaline,
-    :sc_adrenaline2,
     :sc_cartboost,
     :sc_closeconfine,
     :sc_closeconfine2,
