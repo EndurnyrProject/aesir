@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       next_tick_at: 0,
       expires_at: 0,
       interval: 1_000,
-      visible?: false,
+      visibility: :none,
       state: state
     }
 
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       assert {:ok, placement} = HtTalkiebox.on_place(group(%{}))
 
       assert placement.cells == [{50, 50}]
-      assert placement.visible? == false
+      assert placement.visibility == :none
       assert placement.duration == 600_000
       assert placement.interval == 1_000
 
@@ -166,7 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
       assert {:ok, %Group{} = updated} =
                HtTalkiebox.on_touch(group(%{trap: trap(), message: "hi"}), {:player, 2000})
 
-      assert updated.visible? == true
+      assert updated.visibility == :public
       assert updated.state.trap.phase == :used
       assert updated.expires_at >= before + 5_000
       assert updated.expires_at <= System.monotonic_time(:millisecond) + 5_000
@@ -184,14 +184,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
     end
 
     test "an already-used trap ignores further touches" do
-      used = group(%{trap: trap(:used), message: nil}, visible?: true)
+      used = group(%{trap: trap(:used), message: nil}, visibility: :public)
       assert {:ok, ^used} = HtTalkiebox.on_touch(used, {:player, 2000})
     end
   end
 
   describe "on_interval/2" do
     test "once activated and materialized, announces the message on the cell's id" do
-      used_group = group(%{trap: trap(:used), message: "hello there"}, visible?: true)
+      used_group = group(%{trap: trap(:used), message: "hello there"}, visibility: :public)
 
       stub(Storage, :get_cells_by_group, fn 1 ->
         [%Cell{cell_id: 777, group_id: 1, map_name: "prontera", x: 50, y: 50}]
@@ -207,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
     end
 
     test "defers the announcement until the used cell is materialized" do
-      used_group = group(%{trap: trap(:used), message: "hello there"}, visible?: true)
+      used_group = group(%{trap: trap(:used), message: "hello there"}, visibility: :public)
 
       stub(Storage, :get_cells_by_group, fn 1 -> [] end)
       reject(&Broadcast.to_in_range/5)
@@ -224,7 +224,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkieboxTest do
     end
 
     test "a used trap with no pending message is a no-op tick" do
-      used_group = group(%{trap: trap(:used), message: nil}, visible?: true)
+      used_group = group(%{trap: trap(:used), message: nil}, visibility: :public)
       reject(&Storage.get_cells_by_group/1)
       reject(&Broadcast.to_in_range/5)
 

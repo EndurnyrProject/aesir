@@ -256,7 +256,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
              PrSanctuary.cast(caster_state, {:ground, 120, 120}, 1, PrSanctuary.definition())
 
     sanctuary = Enum.find(SkillUnitStorage.all(), &(&1.skill_name == :pr_sanctuary))
-    assert sanctuary.visible?
+    assert sanctuary.visibility == :public
     assert :ok = SkillUnitManager.tick(manager, sanctuary.next_tick_at)
     assert_eventually(fn -> get_player_state(caster.pid).stats.current_state.hp > wounded_hp end)
 

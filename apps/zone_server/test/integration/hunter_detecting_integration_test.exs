@@ -150,13 +150,13 @@ defmodule Aesir.ZoneServer.Integration.HunterDetectingIntegrationTest do
   defp hidden_trap?(skill_id, x, y) do
     @map
     |> Storage.get_groups_at_cell(x, y)
-    |> Enum.any?(&match?(%Group{skill_id: ^skill_id, visible?: false}, &1))
+    |> Enum.any?(&match?(%Group{skill_id: ^skill_id, visibility: :none}, &1))
   end
 
   defp visible_trap?(skill_id, x, y) do
     @map
     |> Storage.get_groups_at_cell(x, y)
-    |> Enum.any?(&match?(%Group{skill_id: ^skill_id, visible?: true}, &1))
+    |> Enum.any?(&match?(%Group{skill_id: ^skill_id, visibility: :public}, &1))
   end
 
   defp start_hunter(id, position, opts \\ []) do

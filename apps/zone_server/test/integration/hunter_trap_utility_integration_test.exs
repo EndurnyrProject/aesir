@@ -138,7 +138,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
     assert Inventory.held_amount(second_state.inventory, @trap_item) == 0
 
     assert %Group{
-             visible?: true,
+             visibility: :public,
              expires_at: expires_at,
              state: %{trap: %TrapState{phase: :sprung}}
            } = Storage.get(30)
@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapUtilityIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
-      visible?: false,
+      visibility: :none,
       state: state
     }
   end

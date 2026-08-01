@@ -96,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     assert_receive {:packet, 1_001, %SkillUnitSnapshot{groups: [%{group_id: ^meteor_id}]}}
 
     meteor = Storage.get(meteor_id)
-    assert meteor.visible?
+    assert meteor.visibility == :public
 
     assert :ok = Manager.tick(manager, meteor.expires_at)
     assert Storage.get(meteor_id) == nil
@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
 
     [sequence] = Storage.all()
 
-    refute sequence.visible?
+    assert sequence.visibility == :none
     [sequence_cell | _] = Storage.get_cells_by_group(sequence.group_id)
     assert %SkillUnitSnapshot{groups: []} = SkillUnit.snapshot(@map)
 
@@ -208,7 +208,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     [wall] = Storage.all()
     [cell | _] = Storage.get_cells_by_group(wall.group_id)
 
-    assert wall.visible?
+    assert wall.visibility == :public
     assert length(Storage.get_cells_by_group(wall.group_id)) == 5
     assert {:ok, ^cell} = Manager.targetable_cell(manager, cell.cell_id)
     refute MapCell.traversable?(@map, cell.x, cell.y)

@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
         center: @center,
         cells: [],
         interval: 1_250,
+        visibility: :none,
         state: %{}
       },
       attrs

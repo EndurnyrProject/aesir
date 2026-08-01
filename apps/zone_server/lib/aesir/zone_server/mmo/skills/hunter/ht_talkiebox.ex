@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1),
-       visible?: false
+       visibility: :none
      }}
   end
 
@@ -123,7 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   defp activate(%Group{state: %{trap: trap} = state} = group) do
     %{
       group
-      | visible?: true,
+      | visibility: :public,
         expires_at: System.monotonic_time(:millisecond) + @used_duration,
         state: %{state | trap: %{trap | phase: :used}}
     }

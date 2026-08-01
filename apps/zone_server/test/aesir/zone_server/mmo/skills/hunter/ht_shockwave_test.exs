@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwaveTest do
            } =
              HtShockwave.definition()
 
-    assert {:ok, %{cells: [{50, 50}], visible?: false, state: state}} =
+    assert {:ok, %{cells: [{50, 50}], visibility: :none, state: state}} =
              HtShockwave.on_place(group(1))
 
     assert %TrapState{

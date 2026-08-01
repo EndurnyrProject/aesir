@@ -171,7 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     }
 
     assert {:ok, placed} = Unit.place(caster, :pr_sanctuary, 1, {150, 150})
-    assert placed.visible?
+    assert placed.visibility == :public
     assert placed.expires_at - placed.created_at == 3_900
     assert length(placed.cells) == 21
     assert_receive :observer_broadcast
@@ -240,7 +240,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
               pending_inventory_persist: [_catalyst_change]
             }} = Enum.find(results, &match?({:ok, %PlayerState{}}, &1))
 
-    assert [%Group{skill_id: 70, visible?: true}] = Storage.all()
+    assert [%Group{skill_id: 70, visibility: :public}] = Storage.all()
   end
 
   test "heals living injured mobs every second without spending offensive quota" do

@@ -90,14 +90,16 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
 
     assert :ok = Manager.trigger(20_001, {:player, bystander.character.id}, :on_touch)
 
-    assert %Group{visible?: false, state: %{trap: %TrapState{phase: :armed}}} =
+    assert %Group{visibility: :none, state: %{trap: %TrapState{phase: :armed}}} =
              Storage.get(20_001)
 
     assert get_player_state(bystander.pid).stats.current_state.hp == 500
 
     assert :ok = Manager.trigger(20_001, {:mob, mob.unit_id}, :on_touch)
 
-    assert %Group{visible?: true, state: %{trap: %TrapState{phase: :used}}} = Storage.get(20_001)
+    assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
+             Storage.get(20_001)
+
     assert eventually(fn -> get_mob_state(mob.pid).hp < 10_000 end)
   end
 
@@ -200,7 +202,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     assert :ok = Manager.tick(manager, blast.expires_at)
 
     for group_id <- [20_005, 20_006] do
-      assert %Group{visible?: true, state: %{trap: %TrapState{phase: :used}}} =
+      assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :used}}} =
                Storage.get(group_id)
     end
 
@@ -276,7 +278,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
       next_tick_at: now + 60_000,
       expires_at: now + 60_000,
       interval: 1_000,
-      visible?: false,
+      visibility: :none,
       state: Map.merge(%{base_damage: 500, trap: trap_state(skill_name)}, state)
     }
   end
@@ -287,7 +289,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
 
     %{
       group
-      | visible?: true,
+      | visibility: :public,
         expires_at: now + 100,
         state: %{
           group.state

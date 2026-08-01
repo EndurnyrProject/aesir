@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
     assert StatusStorage.has_status?(:player, @player_id, :sc_stun)
 
     assert %Group{
-             visible?: true,
+             visibility: :public,
              expires_at: expires_at,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(mine.group_id)

@@ -26,6 +26,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   @typedoc "Extensible skill state; Hunter traps embed typed lifecycle metadata at `:trap`."
   @type skill_state :: %{optional(:trap) => TrapState.t(), optional(term()) => term()}
 
+  @typedoc "Controls whether a group is materialized and which observers receive it."
+  @type visibility :: :public | :party_only | :none
+
   @enforce_keys [:group_id, :skill_name]
   defstruct group_id: nil,
             skill_id: nil,
@@ -44,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
             expires_at: nil,
             interval: nil,
             lifecycle_policy: %LifecyclePolicy{},
-            visible?: false,
+            visibility: :public,
             state: %{},
             handler: nil
 
@@ -66,10 +69,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
           expires_at: integer() | nil,
           interval: pos_integer() | nil,
           lifecycle_policy: LifecyclePolicy.t(),
-          visible?: boolean(),
+          visibility: visibility(),
           state: skill_state(),
           handler: module() | nil
         }
+
+  @doc "Whether this group owns real cells and appears in the map index."
+  @spec materialized?(t()) :: boolean()
+  def materialized?(%__MODULE__{visibility: :public}), do: true
+  def materialized?(%__MODULE__{visibility: :party_only}), do: true
+  def materialized?(%__MODULE__{visibility: :none}), do: false
+
+  @doc "Whether this group is delivered to every observer in range."
+  @spec public?(t()) :: boolean()
+  def public?(%__MODULE__{visibility: :public}), do: true
+  def public?(%__MODULE__{}), do: false
 
   @doc "Whether this group is a Land Protector field (suppresses other ground units)."
   @spec land_protector?(t()) :: boolean()

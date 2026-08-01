@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 10,
       items: 1,
       durations: [300_000, 240_000, 180_000, 120_000, 60_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 0,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 10,
       items: 1,
       durations: [200_000, 160_000, 120_000, 80_000, 40_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 0,
       cast: @timed_cast,
       natural_expiry: :drop_item,
@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 12,
       items: 1,
       durations: [250_000, 200_000, 150_000, 100_000, 50_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 0,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 45,
       items: 2,
       durations: [200_000, 160_000, 120_000, 80_000, 40_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 0,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 12,
       items: 1,
       durations: [150_000, 120_000, 90_000, 60_000, 30_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 2,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 12,
       items: 2,
       durations: [150_000, 120_000, 90_000, 60_000, 30_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 0,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 10,
       items: 2,
       durations: [150_000, 120_000, 90_000, 60_000, 30_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 1,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -149,7 +149,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 10,
       items: 2,
       durations: [25_000, 20_000, 15_000, 10_000, 5_000],
-      visible?: true,
+      visibility: :public,
       splash_radius: 1,
       cast: @timed_cast,
       natural_expiry: :become_used,
@@ -163,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 15,
       items: 2,
       durations: [20_000, 40_000, 60_000, 80_000, 100_000],
-      visible?: true,
+      visibility: :public,
       splash_radius: 2,
       cast: @timed_cast,
       natural_expiry: :become_used,
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
       sp: 1,
       items: 1,
       durations: [600_000],
-      visible?: false,
+      visibility: :none,
       splash_radius: 0,
       cast: @instant_cast,
       natural_expiry: :drop_item,
@@ -242,7 +242,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
           assert {:ok, placement} = @trap.module.on_place(group(@trap.name, level))
 
           assert placement.cells == [@center]
-          assert placement.visible? == @trap.visible?
+          assert placement.visibility == @trap.visibility
           assert placement.interval == 1_000
           assert placement.duration == Enum.at(@trap.durations, level - 1)
           assert placement.state.ignore_land_protector == true

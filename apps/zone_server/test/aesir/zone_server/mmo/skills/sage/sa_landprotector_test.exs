@@ -165,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
       group
       | cells: placement.cells,
         created_at: @now,
-        visible?: true,
+        visibility: :public,
         state: placement_state(placement),
         interval: placement.interval,
         lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),

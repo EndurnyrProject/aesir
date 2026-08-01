@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         {:ok,
          %{
            group
-           | visible?: true,
+           | visibility: :public,
              target_type: elem(mover, 0),
              target_id: elem(mover, 1),
              state: %{group.state | trap: trap}
@@ -290,7 +290,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         [
           skill_id: 116,
           skill_name: :ht_landmine,
-          visible?: false,
+          visibility: :none,
           state: %{base_damage: 100, trap: %TrapState{reclaim_item_id: 1065}}
         ],
         attrs
@@ -329,7 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       refute_received {:trap_triggered, {:mob, 21}}
 
       assert %Group{
-               visible?: true,
+               visibility: :public,
                expires_at: 11_500,
                state: %{trap: %TrapState{phase: :used}}
              } = Storage.get(1)
@@ -362,7 +362,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert :ok = Manager.trigger(manager, 1, {:mob, 20}, :on_touch)
 
       assert %Group{
-               visible?: true,
+               visibility: :public,
                target_type: :mob,
                target_id: 20,
                state: %{trap: %TrapState{phase: :captured, link_id: 7}}
@@ -446,7 +446,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  manager,
                  trap_group(1,
                    skill_name: :natural_expiry_unit,
-                   visible?: true,
+                   visibility: :public,
                    expires_at: 10_000,
                    state: %{
                      base_damage: 100,
@@ -461,7 +461,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert_received {:detonated, :natural, 1, :armed, 10_000}
 
       assert %Group{
-               visible?: true,
+               visibility: :public,
                expires_at: 11_500,
                state: %{trap: %TrapState{phase: :used}}
              } = Storage.get(1)
@@ -483,7 +483,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  manager,
                  trap_group(1,
                    skill_name: :natural_expiry_unit,
-                   visible?: true,
+                   visibility: :public,
                    expires_at: 10_000,
                    state: %{
                      base_damage: 100,
@@ -514,7 +514,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  manager,
                  trap_group(1,
                    skill_name: :natural_expiry_unit,
-                   visible?: true,
+                   visibility: :public,
                    expires_at: 10_000,
                    state: %{
                      base_damage: 100,
@@ -544,7 +544,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  manager,
                  trap_group(1,
                    skill_name: :natural_expiry_unit,
-                   visible?: true,
+                   visibility: :public,
                    expires_at: 10_000,
                    state: %{
                      base_damage: 100,
@@ -575,7 +575,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                    manager,
                    trap_group(group_id,
                      skill_name: :natural_expiry_unit,
-                     visible?: true,
+                     visibility: :public,
                      expires_at: 10_000,
                      state: %{
                        base_damage: 100,
@@ -610,7 +610,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert [] == Storage.get_cells_by_group(1)
 
       assert {:ok, [1]} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
-      assert %Group{visible?: true} = Storage.get(1)
+      assert %Group{visibility: :public} = Storage.get(1)
       assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
 
       assert {:ok, []} = Manager.reveal_traps(manager, "prontera", 100, 100, 0)
@@ -630,11 +630,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert :ok = Manager.register(manager, trap_group(2, cells: [{99, 100}, {100, 100}]))
       assert :ok = Manager.register(manager, trap_group(1, cells: [{101, 101}]))
       assert :ok = Manager.register(manager, trap_group(3, cells: [{102, 100}]))
-      assert :ok = Manager.register(manager, group(4, visible?: false, cells: [{100, 100}]))
+      assert :ok = Manager.register(manager, group(4, visibility: :none, cells: [{100, 100}]))
 
       assert {:ok, [1, 2]} = Manager.reveal_traps(manager, "prontera", 100, 100, 1)
-      assert %Group{visible?: false} = Storage.get(3)
-      assert %Group{visible?: false} = Storage.get(4)
+      assert %Group{visibility: :none} = Storage.get(3)
+      assert %Group{visibility: :none} = Storage.get(4)
 
       assert_receive {:published, 99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1}}}
       assert_receive {:published, 99, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 2}}}
@@ -684,7 +684,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       blocker =
         group(9,
-          visible?: true,
+          visibility: :public,
           state: %{
             exclusive_terrain: true,
             cell_attrs: %{
@@ -730,7 +730,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       blocker =
         group(9,
-          visible?: true,
+          visibility: :public,
           cells: [{100, 100}],
           state: %{
             exclusive_terrain: true,
@@ -758,8 +758,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :exclusive_terrain_overlap} =
                Manager.reveal_traps(manager, "prontera", 100, 100, 1)
 
-      assert %Group{visible?: false} = Storage.get(1)
-      assert %Group{visible?: false} = Storage.get(2)
+      assert %Group{visibility: :none} = Storage.get(1)
+      assert %Group{visibility: :none} = Storage.get(2)
       assert [] == Storage.get_cells_by_group(1)
       assert [] == Storage.get_cells_by_group(2)
       refute_receive {:published, %Aesir.Net.SkillUnitSpawn{}}
@@ -781,8 +781,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :invalid_trap_state} =
                Manager.reveal_traps(manager, "prontera", 100, 100, 1)
 
-      assert %Group{visible?: false} = Storage.get(1)
-      assert %Group{visible?: false} = Storage.get(2)
+      assert %Group{visibility: :none} = Storage.get(1)
+      assert %Group{visibility: :none} = Storage.get(2)
       assert [] == Storage.get_cells_by_group(1)
       assert [] == Storage.get_cells_by_group(2)
     end
@@ -839,7 +839,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  )
                )
 
-      assert :ok = Manager.register(manager, group(4, visible?: false, cells: [{103, 100}]))
+      assert :ok = Manager.register(manager, group(4, visibility: :none, cells: [{103, 100}]))
 
       assert :ok =
                Manager.register(
@@ -901,7 +901,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                Manager.spring_trap(manager, "prontera", 100, 100)
 
       assert %Group{
-               visible?: true,
+               visibility: :public,
                expires_at: 11_500,
                state: %{trap: %TrapState{phase: :sprung}}
              } = Storage.get(1)
@@ -943,14 +943,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     test "springs an already visible trap without replacing or duplicating its cells" do
       manager = start_manager(10_000)
-      assert :ok = Manager.register(manager, trap_group(1, visible?: true))
+      assert :ok = Manager.register(manager, trap_group(1, visibility: :public))
       [original_cell] = Storage.get_cells_by_group(1)
 
       assert {:ok, %{group_id: 1, expires_at: 11_500}} =
                Manager.spring_trap(manager, "prontera", 100, 100)
 
       assert [^original_cell] = Storage.get_cells_by_group(1)
-      assert %Group{visible?: true, state: %{trap: %TrapState{phase: :sprung}}} = Storage.get(1)
+
+      assert %Group{visibility: :public, state: %{trap: %TrapState{phase: :sprung}}} =
+               Storage.get(1)
     end
 
     test "tracks old and newly in-range replacement recipients through expiry cleanup" do
@@ -962,7 +964,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       end)
 
       manager = start_manager(10_000)
-      assert :ok = Manager.register(manager, trap_group(1, visible?: true))
+      assert :ok = Manager.register(manager, trap_group(1, visibility: :public))
       assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
       assert_receive {:observer, 99, %Aesir.Net.SkillUnitSnapshot{}}
 
@@ -1009,7 +1011,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       blocker =
         group(9,
-          visible?: true,
+          visibility: :public,
           state: %{
             exclusive_terrain: true,
             cell_attrs: %{
@@ -1101,7 +1103,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                  )
                )
 
-      assert :ok = Manager.register(manager, group(3, visible?: false, cells: [{102, 100}]))
+      assert :ok = Manager.register(manager, group(3, visibility: :none, cells: [{102, 100}]))
       before = Map.new(1..3, &{&1, Storage.get(&1)})
 
       assert {:error, :already_spent} = Manager.spring_trap(manager, "prontera", 100, 100)
@@ -1122,7 +1124,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
           skill_id: 123,
           skill_name: :ht_claymoretrap,
           handler: ClaymoreUnit,
-          visible?: true,
+          visibility: :public,
           center: {100, 100},
           cells: [{100, 100}],
           state: %{
@@ -1179,7 +1181,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         end
 
       unrelated =
-        group(16, skill_name: :fake_unit, center: {99, 101}, cells: [{99, 101}], visible?: true)
+        group(16,
+          skill_name: :fake_unit,
+          center: {99, 101},
+          cells: [{99, 101}],
+          visibility: :public
+        )
 
       for g <- [claymore | eligible ++ excluded ++ [unrelated]] do
         assert :ok = Manager.register(manager, g)
@@ -1191,14 +1198,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       refute_received {:trap_triggered, _}
 
       assert %Group{
-               visible?: true,
+               visibility: :public,
                expires_at: 11_500,
                state: %{trap: %TrapState{phase: :used}}
              } = Storage.get(1)
 
       for group_id <- 2..8 do
         assert %Group{
-                 visible?: true,
+                 visibility: :public,
                  expires_at: 11_500,
                  state: %{trap: %TrapState{phase: :used}}
                } = Storage.get(group_id)
@@ -1228,7 +1235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         :erlang.trace_pattern({Id, :allocate, 1}, false, [:local])
       end)
 
-      assert :ok = Manager.register(manager, group(1, visible?: true, cells: cells))
+      assert :ok = Manager.register(manager, group(1, visibility: :public, cells: cells))
 
       :erlang.trace(manager, false, [:call])
       :erlang.trace_pattern({Id, :allocate, 1}, false, [:local])
@@ -1245,8 +1252,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       manager = start_manager(10_000)
       first = Id.first()
 
-      assert :ok = Manager.register(manager, group(1, visible?: true))
-      assert :ok = Manager.register(manager, group(2, visible?: true, cells: [{101, 100}]))
+      assert :ok = Manager.register(manager, group(1, visibility: :public))
+      assert :ok = Manager.register(manager, group(2, visibility: :public, cells: [{101, 100}]))
 
       assert [%Cell{cell_id: ^first, group_id: 1}] = Storage.get_cells_by_group(1)
       assert [%Cell{cell_id: second, group_id: 2}] = Storage.get_cells_by_group(2)
@@ -1256,7 +1263,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     test "keeps visible group membership only in storage" do
       manager = start_manager(10_000)
 
-      assert :ok = Manager.register(manager, group(1, visible?: true))
+      assert :ok = Manager.register(manager, group(1, visibility: :public))
 
       refute Map.has_key?(Storage.get(1), :cell_ids)
       assert [%Cell{group_id: 1}] = Storage.get_cells_by_group(1)
@@ -1270,7 +1277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             next_tick_at: now,
             interval: 1_000,
             state: %{
@@ -1302,7 +1309,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             cells: [{100, 101}],
             state: %{cell_attrs: %{{100, 101} => %{hp: 20, max_hp: 20, flags: [:targetable]}}}
           )
@@ -1333,7 +1340,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             cells: [{100, 101}],
             state: %{cell_attrs: %{{100, 101} => %{hp: 20, max_hp: 20, flags: [:targetable]}}}
           )
@@ -1354,7 +1361,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             cells: [{100, 101}, {100, 102}],
             state: %{
               cell_attrs: %{
@@ -1381,7 +1388,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             cells: [{100, 101}],
             state: %{cell_attrs: %{{100, 101} => %{hp: 20, max_hp: 20, flags: []}}}
           )
@@ -1401,7 +1408,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       exclusive =
         group(1,
-          visible?: true,
+          visibility: :public,
           state: %{
             exclusive_terrain: true,
             cell_attrs: %{
@@ -1416,7 +1423,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       other_exclusive =
         group(2,
           skill_name: :other_exclusive_unit,
-          visible?: true,
+          visibility: :public,
           state: %{
             exclusive_terrain: true,
             cell_attrs: %{
@@ -1431,7 +1438,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       nonexclusive =
         group(3,
           skill_name: :barrier_unit,
-          visible?: true,
+          visibility: :public,
           state: %{cell_attrs: %{{100, 100} => %{flags: [:blocks_projectiles]}}}
         )
 
@@ -1483,7 +1490,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         group(1,
           skill_id: 79,
           skill_name: :pr_magnus,
-          visible?: true,
+          visibility: :public,
           created_at: 10_000,
           next_tick_at: 20_000,
           expires_at: 10_001
@@ -1567,7 +1574,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       second_source =
         group(1,
-          visible?: true,
+          visibility: :public,
           cells: [{101, 100}],
           next_tick_at: 20_000,
           state: %{cell_attrs: %{{101, 100} => %{flags: [:consumable_water]}}}
@@ -1575,7 +1582,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       first_source =
         group(2,
-          visible?: true,
+          visibility: :public,
           cells: [{100, 100}],
           next_tick_at: 20_000,
           state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
@@ -1587,7 +1594,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       sequence =
         group(3,
           skill_name: :water_ball_sequence,
-          visible?: false,
+          visibility: :none,
           cells: [],
           next_tick_at: 10_000,
           state: %{water_ball_sequence: true, test_pid: self()}
@@ -1607,7 +1614,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
           )
         )
@@ -1615,7 +1622,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       sequence =
         group(2,
           skill_name: :water_ball_sequence,
-          visible?: false,
+          visibility: :none,
           cells: [],
           next_tick_at: 10_000,
           state: %{water_ball_sequence: true, test_pid: self()}
@@ -1643,7 +1650,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
           )
         )
@@ -1651,7 +1658,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       sequence =
         group(2,
           skill_name: :blocked_water_ball,
-          visible?: false,
+          visibility: :none,
           cells: [],
           interval: 150,
           next_tick_at: 10_000,
@@ -1676,7 +1683,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             state: %{cell_attrs: %{{100, 100} => %{flags: [:consumable_water]}}}
           )
         )
@@ -1688,7 +1695,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
             manager,
             group(group_id,
               skill_name: :water_ball_sequence,
-              visible?: false,
+              visibility: :none,
               cells: [],
               state: %{water_ball_sequence: true}
             ),
@@ -2236,9 +2243,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
   test "materializes visible groups and excludes invisible groups from the range index" do
     manager = start_manager(10_000)
-    visible = group(1, visible?: true, cells: [{100, 100}], created_at: 10_000)
-    later_visible = group(3, visible?: true, cells: [{100, 100}], created_at: 10_000)
-    invisible = group(2, visible?: false, cells: [{100, 100}])
+    visible = group(1, visibility: :public, cells: [{100, 100}], created_at: 10_000)
+    later_visible = group(3, visibility: :public, cells: [{100, 100}], created_at: 10_000)
+    invisible = group(2, visibility: :none, cells: [{100, 100}])
     Enum.each([later_visible, visible, invisible], &Manager.register(manager, &1))
 
     assert [%Group{group_id: 1}, %Group{group_id: 3}] =
@@ -2258,14 +2265,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       Manager.register(
         manager,
         group(1,
-          visible?: true,
+          visibility: :public,
           cells: [{100, 100}, {101, 100}],
           created_at: 10_000,
           state: %{cell_attrs: %{{100, 100} => %{hp: 60, max_hp: 100}}}
         )
       )
 
-    :ok = Manager.register(manager, group(2, visible?: false, cells: [{100, 100}]))
+    :ok = Manager.register(manager, group(2, visibility: :none, cells: [{100, 100}]))
     [damaged | _] = Storage.get_cells_by_group(1)
 
     assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 1)
@@ -2331,7 +2338,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                manager,
                group(1,
                  skill_name: :field_unit,
-                 visible?: true,
+                 visibility: :public,
                  cells: [{100, 100}],
                  created_at: 10_000
                )
@@ -2351,8 +2358,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     manager = start_manager(10_000)
 
-    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
-    assert :ok = Manager.register(manager, group(2, visible?: true, created_at: 10_000))
+    assert :ok = Manager.register(manager, group(1, visibility: :public, created_at: 10_000))
+    assert :ok = Manager.register(manager, group(2, visibility: :public, created_at: 10_000))
 
     assert MapSet.new([1, 2]) == Manager.sync_view(manager, 99, [2, 1, 2], [])
 
@@ -2384,7 +2391,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
   test "returns current visibility when an entered group expires before sync" do
     manager = start_manager(10_000)
-    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+    assert :ok = Manager.register(manager, group(1, visibility: :public, created_at: 10_000))
     assert :ok = Manager.destroy(manager, 1)
 
     assert MapSet.new() == Manager.sync_view(manager, 99, [1], [])
@@ -2403,7 +2410,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
              Manager.register(
                manager,
                group(1,
-                 visible?: true,
+                 visibility: :public,
                  center: {100, 100},
                  cells: [{100, 100}, {115, 100}],
                  created_at: 10_000
@@ -2436,7 +2443,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok =
              Manager.register(
                manager,
-               group(1, visible?: true, center: {100, 100}, created_at: 10_000)
+               group(1, visibility: :public, center: {100, 100}, created_at: 10_000)
              )
 
     assert MapSet.new() == Storage.get_observer_groups(42)
@@ -2458,7 +2465,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end)
 
     manager = start_manager(10_000)
-    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+    assert :ok = Manager.register(manager, group(1, visibility: :public, created_at: 10_000))
     [initial] = Storage.get_cells_by_group(1)
 
     post_registration = %Cell{
@@ -2496,7 +2503,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end)
 
     manager = start_manager(10_000)
-    assert :ok = Manager.register(manager, group(1, visible?: true, created_at: 10_000))
+    assert :ok = Manager.register(manager, group(1, visibility: :public, created_at: 10_000))
 
     assert MapSet.new([1]) == Manager.snapshot_for(manager, 99, "prontera", 100, 100, 0)
     assert_receive {99, %Aesir.Net.SkillUnitSnapshot{groups: [%{group_id: 1}]}}
@@ -2512,7 +2519,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
   test "leaves explicitly invisible group-only fields unmaterialized" do
     manager = start_manager(10_000)
-    invisible = group(1, visible?: false, cells: [{100, 100}], created_at: 10_000)
+    invisible = group(1, visibility: :none, cells: [{100, 100}], created_at: 10_000)
 
     assert :ok = Manager.register(manager, invisible)
     assert [] == Storage.get_cells_by_group(1)
@@ -2524,14 +2531,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
     original =
       group(1,
-        visible?: true,
+        visibility: :public,
         cells: [{100, 100}, {101, 100}],
         created_at: 10_000
       )
 
     replacement =
       group(1,
-        visible?: true,
+        visibility: :public,
         cells: [{102, 100}],
         created_at: 10_000
       )
@@ -2544,8 +2551,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
   test "re-registering releases field support owned by the replaced group" do
     manager = start_manager(10_000)
-    original = group(1, visible?: false, cells: [{100, 100}])
-    replacement = group(1, visible?: false, cells: [{101, 100}])
+    original = group(1, visibility: :none, cells: [{100, 100}])
+    replacement = group(1, visibility: :none, cells: [{101, 100}])
 
     assert :ok = Manager.register(manager, original)
 
@@ -2567,7 +2574,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       Manager.register(
         manager,
         group(1,
-          visible?: true,
+          visibility: :public,
           cells: [{100, 100}],
           state: %{cell_attrs: %{{100, 100} => %{flags: [:blocks_movement, :blocks_projectiles]}}}
         )
@@ -2584,7 +2591,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       Manager.register(
         manager,
         group(2,
-          visible?: true,
+          visibility: :public,
           cells: [{101, 100}],
           state: %{cell_attrs: %{{101, 100} => %{flags: [:consumable_water]}}}
         )
@@ -2638,7 +2645,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok =
         Manager.register(
           manager,
-          group(1, visible?: true, cells: [{100, 100}, {101, 100}], next_tick_at: 10_000)
+          group(1, visibility: :public, cells: [{100, 100}, {101, 100}], next_tick_at: 10_000)
         )
 
       removed = Enum.find(Storage.get_cells_by_group(1), &(&1.x == 101))
@@ -2679,7 +2686,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok =
         Manager.register(
           manager,
-          group(1, visible?: true, cells: [{100, 100}], state: %{test_pid: test_pid})
+          group(1, visibility: :public, cells: [{100, 100}], state: %{test_pid: test_pid})
         )
 
       :ok = Storage.add_observer_group(99, 1)
@@ -2755,7 +2762,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       end)
 
       manager = start_manager(10_000)
-      :ok = Manager.register(manager, group(1, visible?: true, cells: [{100, 100}]))
+      :ok = Manager.register(manager, group(1, visibility: :public, cells: [{100, 100}]))
       cells = Storage.get_cells_by_group(1)
 
       assert :ok = Manager.remove_cells(manager, 1, [{101, 100}])
@@ -2773,13 +2780,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     test "placement destroys overlapping foreign cells per cell, not per group" do
       manager = start_manager(10_000)
 
-      :ok = Manager.register(manager, group(1, visible?: true, cells: [{100, 100}, {101, 100}]))
+      :ok =
+        Manager.register(manager, group(1, visibility: :public, cells: [{100, 100}, {101, 100}]))
 
       :ok =
         Manager.register(
           manager,
           group(2,
-            visible?: true,
+            visibility: :public,
             cells: [{101, 100}, {102, 100}],
             state: %{land_protector: true}
           )
@@ -2798,7 +2806,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             cells: [{100, 100}, {101, 100}],
             state: %{land_protector: true}
           )
@@ -2808,7 +2816,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(2,
-            visible?: true,
+            visibility: :public,
             cells: [{101, 100}, {102, 100}],
             state: %{land_protector: true}
           )
@@ -2825,13 +2833,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok =
         Manager.register(
           manager,
-          group(1, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+          group(1, visibility: :public, cells: [{100, 100}], state: %{land_protector: true})
         )
 
       assert {:error, :land_protector} =
                Manager.register(
                  manager,
-                 group(2, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+                 group(2,
+                   visibility: :public,
+                   cells: [{100, 100}],
+                   state: %{land_protector: true}
+                 )
                )
 
       assert nil == Storage.get(1)
@@ -2845,10 +2857,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok =
         Manager.register(
           manager,
-          group(1, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+          group(1, visibility: :public, cells: [{100, 100}], state: %{land_protector: true})
         )
 
-      :ok = Manager.register(manager, group(2, visible?: true, cells: [{100, 100}, {101, 100}]))
+      :ok =
+        Manager.register(manager, group(2, visibility: :public, cells: [{100, 100}, {101, 100}]))
 
       assert %Group{cells: [{101, 100}]} = Storage.get(2)
       assert [%Cell{x: 101}] = Storage.get_cells_by_group(2)
@@ -2862,7 +2875,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
         Manager.register(
           manager,
           group(1,
-            visible?: true,
+            visibility: :public,
             cells: [{100, 100}, {101, 100}],
             state: %{land_protector: true}
           )
@@ -2871,7 +2884,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       assert {:error, :land_protector} =
                Manager.register(
                  manager,
-                 group(2, visible?: true, cells: [{100, 100}, {101, 100}])
+                 group(2, visibility: :public, cells: [{100, 100}, {101, 100}])
                )
 
       assert nil == Storage.get(2)
@@ -2884,19 +2897,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok =
         Manager.register(
           manager,
-          group(1, visible?: true, cells: [{100, 100}], state: %{ignore_land_protector: true})
+          group(1,
+            visibility: :public,
+            cells: [{100, 100}],
+            state: %{ignore_land_protector: true}
+          )
         )
 
       :ok =
         Manager.register(
           manager,
-          group(2, visible?: true, cells: [{100, 100}], state: %{land_protector: true})
+          group(2, visibility: :public, cells: [{100, 100}], state: %{land_protector: true})
         )
 
       :ok =
         Manager.register(
           manager,
-          group(3, visible?: true, cells: [{100, 100}], state: %{ignore_land_protector: true})
+          group(3,
+            visibility: :public,
+            cells: [{100, 100}],
+            state: %{ignore_land_protector: true}
+          )
         )
 
       assert %Group{cells: [{100, 100}]} = Storage.get(1)
@@ -2910,27 +2931,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :ok =
         Manager.register(
           manager,
-          group(1, visible?: true, cells: for(x <- 100..102, do: {x, 100}))
+          group(1, visibility: :public, cells: for(x <- 100..102, do: {x, 100}))
         )
 
       :ok =
         Manager.register(
           manager,
           group(2,
-            visible?: true,
+            visibility: :public,
             cells: for(x <- 101..103, do: {x, 100}),
             state: %{land_protector: true}
           )
         )
 
-      _ = Manager.register(manager, group(3, visible?: true, cells: [{102, 100}, {104, 100}]))
-      _ = Manager.register(manager, group(4, visible?: true, cells: [{103, 100}]))
+      _ =
+        Manager.register(manager, group(3, visibility: :public, cells: [{102, 100}, {104, 100}]))
+
+      _ = Manager.register(manager, group(4, visibility: :public, cells: [{103, 100}]))
 
       :ok =
         Manager.register(
           manager,
           group(5,
-            visible?: true,
+            visibility: :public,
             cells: for(x <- 103..105, do: {x, 100}),
             state: %{land_protector: true}
           )

@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
       Manager.register(
         manager,
         group(
-          visible?: true,
+          visibility: :public,
           cells: [{10, 10}],
           state: %{cell_attrs: %{{10, 10} => targetable_cell_attrs()}}
         )
@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
       Manager.register(
         manager,
         group(
-          visible?: true,
+          visibility: :public,
           cells: [{10, 10}],
           state: %{cell_attrs: %{{10, 10} => targetable_cell_attrs()}}
         )
@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTargetTest do
       next_tick_at: 0,
       expires_at: 1_000_000,
       interval: 1_000,
-      visible?: false,
+      visibility: :none,
       state: %{}
     }
   end

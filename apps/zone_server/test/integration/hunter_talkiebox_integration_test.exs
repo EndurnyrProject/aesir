@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
              ) == 9
 
       trap = Enum.find(Storage.all(), &(&1.skill_name == :ht_talkiebox))
-      assert %{visible?: false, state: %{trap: %{phase: :armed}}} = trap
+      assert %{visibility: :none, state: %{trap: %{phase: :armed}}} = trap
       refute_received {:packet_sent, %ChatMessage{}, _}
 
       move_to(walker, {151, 150})
@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       assert_receive {:packet_sent, %ChatMessage{gid: cell_id, message: "hello there"}, _}, 1_500
       assert cell_id == cell.cell_id
 
-      assert %{visible?: true, state: %{trap: %{phase: :used}}} = Storage.get(group_id)
+      assert %{visibility: :public, state: %{trap: %{phase: :used}}} = Storage.get(group_id)
 
       assert :ok = Manager.tick(Manager, System.monotonic_time(:millisecond) + 6_000)
       assert Storage.get(group_id) == nil
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTalkieboxIntegrationTest do
       move_to(caster, {151, 150})
       Process.sleep(1_100)
 
-      assert %{visible?: false, state: %{trap: %{phase: :armed}}} = Storage.get(trap.group_id)
+      assert %{visibility: :none, state: %{trap: %{phase: :armed}}} = Storage.get(trap.group_id)
       refute_received {:packet_sent, %ChatMessage{}, _}
     end
 

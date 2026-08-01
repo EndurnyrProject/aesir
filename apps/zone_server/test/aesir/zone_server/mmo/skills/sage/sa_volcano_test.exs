@@ -229,7 +229,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
             cells: [{30, 40}],
             center: {30, 40},
             expires_at: 166_000,
-            visible?: true,
+            visibility: :public,
             lifecycle_policy: ElementField.policy()
           )
         )
@@ -262,7 +262,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
         [
           cells: [{10, 20}],
           expires_at: 61_000,
-          visible?: true,
+          visibility: :public,
           lifecycle_policy: ElementField.policy(true)
         ],
         attrs

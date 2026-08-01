@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
 
     assert {:ok, placement} = HtSkidtrap.on_place(group())
     assert placement.cells == [{50, 50}]
-    assert placement.visible? == false
+    assert placement.visibility == :none
     assert placement.duration == 180_000
     assert placement.state.trap.phase == :armed
   end

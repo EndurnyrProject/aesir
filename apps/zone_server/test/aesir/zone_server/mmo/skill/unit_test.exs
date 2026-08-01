@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
          state: %{seeded: true},
          interval: 450,
          duration: 5_000,
-         visible?: false
+         visibility: :none
        }}
     end
 
@@ -199,6 +199,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
     }
   end
 
+  describe "group visibility" do
+    test "distinguishes materialized groups from public groups" do
+      public = %Group{group_id: 1, skill_name: :fake, visibility: :public}
+      party_only = %{public | visibility: :party_only}
+      none = %{public | visibility: :none}
+
+      assert Group.materialized?(public)
+      assert Group.public?(public)
+      assert Group.materialized?(party_only)
+      refute Group.public?(party_only)
+      refute Group.materialized?(none)
+      refute Group.public?(none)
+    end
+  end
+
   describe "place/4" do
     test "inserts a group with lazy timestamps and seeded placement state" do
       stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
@@ -265,7 +280,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: group_id, cells: [spawn_cell]}}
       assert group_id == group.group_id
-      assert %Group{visible?: true} = Storage.get(group.group_id)
+      assert %Group{visibility: :public} = Storage.get(group.group_id)
       [%{cell_id: cell_id}] = Storage.get_cells_by_group(group.group_id)
       assert spawn_cell.cell_id == cell_id
 
@@ -277,14 +292,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
       assert snapshot_cell.cell_id == cell_id
     end
 
-    test "a placement omitting visible? registers and publishes as visible" do
+    test "a placement omitting visibility registers and publishes as visible" do
       test_pid = self()
       stub(Broadcast, :to_in_range, fn _, _, _, _, packet -> send(test_pid, packet) end)
 
       {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
 
-      assert group.visible?
-      assert %Group{visible?: true} = Storage.get(group.group_id)
+      assert group.visibility == :public
+      assert %Group{visibility: :public} = Storage.get(group.group_id)
       assert_receive %Aesir.Net.SkillUnitSpawn{group: %{group_id: group_id}}
       assert group_id == group.group_id
     end
@@ -296,8 +311,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
 
       {:ok, group} = Unit.place(caster(), @skill_name, 7, {100, 120})
 
-      assert group.visible? == false
-      assert %Group{visible?: false} = Storage.get(group.group_id)
+      assert group.visibility == :none
+      assert %Group{visibility: :none} = Storage.get(group.group_id)
       assert [] == Storage.get_cells_by_group(group.group_id)
 
       assert [%Group{group_id: group_id}] = Storage.get_groups_at_cell("prontera", 100, 120)
@@ -450,10 +465,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.UnitTest do
         map_name: "prontera",
         center: {100, 100},
         cells: [{100, 100}],
-        visible?: true
+        visibility: :public
       }
 
-      invisible = %{visible | group_id: 2, visible?: false}
+      invisible = %{visible | group_id: 2, visibility: :none}
       :ok = Storage.insert(visible)
       :ok = Storage.insert(invisible)
 

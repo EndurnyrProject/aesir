@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   def snapshot(map_name) do
     groups =
       Storage.all()
-      |> Enum.filter(&(&1.map_name == map_name and &1.visible?))
+      |> Enum.filter(&(&1.map_name == map_name and Group.public?(&1)))
       |> Enum.map(&{&1, Storage.get_cells_by_group(&1.group_id)})
 
     View.snapshot(groups, ServerTick.now())
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
           group
           | cells: cells,
             created_at: now,
-            visible?: Map.get(placement, :visible?, true),
+            visibility: Map.get(placement, :visibility, :public),
             state: state,
             interval: placement.interval,
             lifecycle_policy: Map.get(placement, :lifecycle_policy, group.lifecycle_policy),

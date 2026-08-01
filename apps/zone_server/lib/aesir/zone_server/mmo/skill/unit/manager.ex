@@ -991,11 +991,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     :ok = remove_target(cell)
   end
 
-  defp publish_spawn(%Group{visible?: false}), do: :ok
-
   defp publish_spawn(%Group{} = group) do
-    packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group.group_id))}
-    publish(group.map_name, elem(group.center, 0), elem(group.center, 1), packet)
+    if Group.public?(group) do
+      packet = %SkillUnitSpawn{
+        group: View.group(group, Storage.get_cells_by_group(group.group_id))
+      }
+
+      publish(group.map_name, elem(group.center, 0), elem(group.center, 1), packet)
+    else
+      :ok
+    end
   end
 
   defp publish_tracked_spawn(%Group{} = group) do
@@ -1015,22 +1020,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp publish_update(%Cell{} = cell, hp_delta, source, reason) do
     case Storage.get(cell.group_id) do
-      %Group{visible?: true} = group ->
-        {source_type, source_id} = source_fields(source)
+      %Group{} = group ->
+        if Group.public?(group) do
+          {source_type, source_id} = source_fields(source)
 
-        packet = %SkillUnitUpdate{
-          group_id: group.group_id,
-          cell_id: cell.cell_id,
-          hp: cell.hp,
-          max_hp: cell.max_hp,
-          hp_delta: hp_delta,
-          source_type: source_type,
-          source_id: source_id,
-          reason: update_reason(reason),
-          server_tick: ServerTick.now()
-        }
+          packet = %SkillUnitUpdate{
+            group_id: group.group_id,
+            cell_id: cell.cell_id,
+            hp: cell.hp,
+            max_hp: cell.max_hp,
+            hp_delta: hp_delta,
+            source_type: source_type,
+            source_id: source_id,
+            reason: update_reason(reason),
+            server_tick: ServerTick.now()
+          }
 
-        publish(cell.map_name, cell.x, cell.y, packet)
+          publish(cell.map_name, cell.x, cell.y, packet)
+        else
+          :ok
+        end
 
       _ ->
         :ok
@@ -1039,52 +1048,59 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp publish_despawn(%Cell{} = cell, reason) do
     case Storage.get(cell.group_id) do
-      %Group{visible?: true} ->
-        publish(cell.map_name, cell.x, cell.y, %SkillUnitDespawn{
-          group_id: cell.group_id,
-          cell_ids: [cell.cell_id],
-          reason: reason,
-          server_tick: ServerTick.now()
-        })
+      %Group{} = group ->
+        if Group.public?(group) do
+          publish(cell.map_name, cell.x, cell.y, %SkillUnitDespawn{
+            group_id: cell.group_id,
+            cell_ids: [cell.cell_id],
+            reason: reason,
+            server_tick: ServerTick.now()
+          })
+        else
+          :ok
+        end
 
       _ ->
         :ok
     end
   end
 
-  defp publish_cells_despawn(%Group{visible?: false}, _cell_ids), do: :ok
-  defp publish_cells_despawn(%Group{}, []), do: :ok
-
   defp publish_cells_despawn(%Group{} = group, cell_ids) do
-    packet = %SkillUnitDespawn{
-      group_id: group.group_id,
-      cell_ids: Enum.sort(cell_ids),
-      reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
-      server_tick: ServerTick.now()
-    }
+    if Group.public?(group) and cell_ids != [] do
+      packet = %SkillUnitDespawn{
+        group_id: group.group_id,
+        cell_ids: Enum.sort(cell_ids),
+        reason: :SKILL_UNIT_DESPAWN_REASON_DESTROYED,
+        server_tick: ServerTick.now()
+      }
 
-    {cx, cy} = group.center
-    publish(group.map_name, cx, cy, packet)
+      {cx, cy} = group.center
+      publish(group.map_name, cx, cy, packet)
+    else
+      :ok
+    end
   end
 
-  defp publish_group_despawn(%Group{visible?: false}, _cell_ids, _reason), do: :ok
-
   defp publish_group_despawn(%Group{} = group, cell_ids, reason) do
-    packet = %SkillUnitDespawn{
-      group_id: group.group_id,
-      cell_ids: Enum.sort(cell_ids),
-      reason: reason,
-      server_tick: ServerTick.now()
-    }
+    if Group.public?(group) do
+      packet = %SkillUnitDespawn{
+        group_id: group.group_id,
+        cell_ids: Enum.sort(cell_ids),
+        reason: reason,
+        server_tick: ServerTick.now()
+      }
 
-    {cx, cy} = group.center
-    observers = Storage.take_group_observers(group.group_id)
-    in_range = SpatialIndex.get_players_in_range(group.map_name, cx, cy, Config.view_range())
+      {cx, cy} = group.center
+      observers = Storage.take_group_observers(group.group_id)
+      in_range = SpatialIndex.get_players_in_range(group.map_name, cx, cy, Config.view_range())
 
-    observers
-    |> Enum.concat(in_range)
-    |> Enum.uniq()
-    |> Enum.each(&Broadcast.to_player(&1, packet))
+      observers
+      |> Enum.concat(in_range)
+      |> Enum.uniq()
+      |> Enum.each(&Broadcast.to_player(&1, packet))
+    else
+      :ok
+    end
   end
 
   defp publish(map_name, x, y, packet),
@@ -1116,10 +1132,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp enter_observer_view(observer_id, group_id) do
     case Storage.get(group_id) do
-      %Group{visible?: true} = group ->
-        packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
-        Broadcast.to_player(observer_id, packet)
-        Storage.add_observer_group(observer_id, group_id)
+      %Group{} = group ->
+        if Group.public?(group) do
+          packet = %SkillUnitSpawn{group: View.group(group, Storage.get_cells_by_group(group_id))}
+          Broadcast.to_player(observer_id, packet)
+          Storage.add_observer_group(observer_id, group_id)
+        else
+          :ok
+        end
 
       _ ->
         :ok
@@ -1128,19 +1148,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp leave_observer_view(observer_id, group_id) do
     case Storage.get(group_id) do
-      %Group{visible?: true} ->
-        cell_ids =
-          group_id
-          |> Storage.get_cells_by_group()
-          |> Enum.map(& &1.cell_id)
-          |> Enum.sort()
+      %Group{} = group ->
+        if Group.public?(group) do
+          cell_ids =
+            group_id
+            |> Storage.get_cells_by_group()
+            |> Enum.map(& &1.cell_id)
+            |> Enum.sort()
 
-        Broadcast.to_player(observer_id, %SkillUnitDespawn{
-          group_id: group_id,
-          cell_ids: cell_ids,
-          reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
-          server_tick: ServerTick.now()
-        })
+          Broadcast.to_player(observer_id, %SkillUnitDespawn{
+            group_id: group_id,
+            cell_ids: cell_ids,
+            reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
+            server_tick: ServerTick.now()
+          })
+        end
 
       _ ->
         :ok
@@ -1198,7 +1220,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp persist_trap_update(%Group{} = original, %Group{} = updated) do
     with {:ok, %TrapState{}} <- trap_state(updated) do
-      case {original.visible?, updated.visible?} do
+      case {Group.materialized?(original), Group.materialized?(updated)} do
         {false, false} ->
           Storage.update(updated)
 
@@ -1284,7 +1306,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp transition_trap(%Group{state: %{trap: %TrapState{} = trap}} = group, phase, expires_at) do
     %{
       group
-      | visible?: true,
+      | visibility: :public,
         expires_at: expires_at,
         state: %{group.state | trap: %{trap | phase: phase}}
     }
@@ -1433,21 +1455,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp hidden_supported_traps(map_name, x, y, range) do
     map_name
     |> groups_in_area(x, y, range)
-    |> Enum.reduce_while({:ok, []}, fn
-      %Group{visible?: true}, result ->
-        {:cont, result}
-
-      %Group{} = group, {:ok, groups} ->
-        case trap_state(group) do
-          {:ok, %TrapState{phase: :armed}} -> {:cont, {:ok, [group | groups]}}
-          {:ok, %TrapState{}} -> {:cont, {:ok, groups}}
-          {:error, :unsupported_trap} -> {:cont, {:ok, groups}}
-          {:error, :invalid_trap_state} = error -> {:halt, error}
-        end
+    |> Enum.reduce_while({:ok, []}, fn group, {:ok, groups} = result ->
+      if Group.materialized?(group),
+        do: {:cont, result},
+        else: classify_hidden_trap(group, groups)
     end)
     |> case do
       {:ok, groups} -> {:ok, Enum.reverse(groups)}
       error -> error
+    end
+  end
+
+  defp classify_hidden_trap(group, groups) do
+    case trap_state(group) do
+      {:ok, %TrapState{phase: :armed}} -> {:cont, {:ok, [group | groups]}}
+      {:ok, %TrapState{}} -> {:cont, {:ok, groups}}
+      {:error, :unsupported_trap} -> {:cont, {:ok, groups}}
+      {:error, :invalid_trap_state} = error -> {:halt, error}
     end
   end
 
@@ -1465,7 +1489,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp reveal_trap(%Group{} = group) do
     case Storage.get_cells_by_group(group.group_id) do
       [] ->
-        visible = %{group | visible?: true}
+        visible = %{group | visibility: :public}
         :ok = Storage.update(visible)
 
         case materialize_visible_cells(visible, []) do
@@ -1557,7 +1581,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     {:ok, group}
   end
 
-  defp register_water_ball_sequence_now(%Group{visible?: false} = group, cells) do
+  defp register_water_ball_sequence_now(%Group{visibility: :none} = group, cells) do
     with {:ok, _group} <- register_invisible_group(group),
          {:ok, cell_count} <- materialize_water_ball_cells(group, cells),
          true <- cell_count > 0 do
@@ -1644,8 +1668,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   defp water_ball_sequence_index(%Cell{state: %{water_ball_sequence_index: sequence_index}}),
     do: sequence_index
 
-  defp register_group(%Group{visible?: false} = group), do: register_invisible_group(group)
-  defp register_group(%Group{} = group), do: register_visible_group(group)
+  defp register_group(%Group{} = group) do
+    if Group.materialized?(group),
+      do: register_visible_group(group),
+      else: register_invisible_group(group)
+  end
 
   defp enforce_instance_limit(%Group{
          lifecycle_policy: %{max_instances_per_caster: nil}
@@ -1750,15 +1777,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       nil ->
         :ok
 
-      %Group{} = live when updated.visible? ->
-        if Storage.get_cells_by_group(live.group_id) == [] do
+      %Group{} = live ->
+        if Group.materialized?(updated) and Storage.get_cells_by_group(live.group_id) == [] do
           cleanup(live, module, :SKILL_UNIT_DESPAWN_REASON_DESTROYED)
         else
           Storage.update(updated)
         end
-
-      %Group{} ->
-        Storage.update(updated)
     end
   end
 

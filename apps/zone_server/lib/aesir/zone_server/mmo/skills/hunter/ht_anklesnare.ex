@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare do
        state: Trap.place_state(level, stats, group),
        interval: definition.hit_interval,
        duration: Enum.fetch!(definition.unit_duration, level - 1),
-       visible?: false
+       visibility: :none
      }}
   end
 
@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare do
        ) do
     %{
       group
-      | visible?: true,
+      | visibility: :public,
         target_type: type,
         target_id: id,
         expires_at: System.monotonic_time(:millisecond) + duration,

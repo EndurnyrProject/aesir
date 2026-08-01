@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
 
       assert {:ok, placement} = HtAnklesnare.on_place(placed)
       assert placement.cells == [{50, 50}]
-      refute placement.visible?
+      assert placement.visibility == :none
       assert placement.duration == 150_000
       assert placement.state.ignore_land_protector
 
@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
 
       assert %{
                __struct__: Group,
-               visible?: true,
+               visibility: :public,
                target_type: :mob,
                target_id: @mob_id,
                state: %{trap: %{__struct__: TrapState, phase: :captured, link_id: link_id}}
@@ -127,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnareTest do
       next_tick_at: 0,
       expires_at: 250_000,
       interval: 1_000,
-      visible?: false,
+      visibility: :none,
       state: %{trap: %TrapState{reclaim_item_id: 1065}}
     }
   end

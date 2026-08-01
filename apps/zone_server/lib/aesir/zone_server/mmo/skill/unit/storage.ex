@@ -277,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Storage do
       )
     end)
 
-    if group.visible? do
+    if Group.materialized?(group) do
       Enum.each(group.cells, fn {x, y} ->
         :ets.insert(
           table_for(:skill_unit_map_index),

@@ -166,7 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           next_tick_at: 0,
           expires_at: 1_000_000,
           interval: 1_000,
-          visible?: true,
+          visibility: :public,
           state: %{cell_attrs: %{cell_position => cell_attrs}}
         }
       )

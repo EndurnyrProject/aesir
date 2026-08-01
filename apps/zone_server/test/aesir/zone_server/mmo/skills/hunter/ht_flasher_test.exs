@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
   test "places a hidden armed trap with typed natural-reclaim lifecycle" do
     assert {:ok, placement} = HtFlasher.on_place(group())
     assert placement.cells == [{50, 50}]
-    refute placement.visible?
+    assert placement.visibility == :none
 
     assert %TrapState{
              phase: :armed,

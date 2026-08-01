@@ -341,7 +341,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
       Manager.register(manager, %{
         group
         | cells: placement.cells,
-          visible?: true,
+          visibility: :public,
           state: placement.state,
           next_tick_at: nil
       })
@@ -413,7 +413,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
       Manager.register(manager, %{
         group
         | cells: placement.cells,
-          visible?: true,
+          visibility: :public,
           state: Map.put(placement.state, :cell_attrs, placement.cell_attrs),
           lifecycle_policy: placement.lifecycle_policy,
           next_tick_at: nil

@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AnkleSnareTest do
       next_tick_at: nil,
       expires_at: System.monotonic_time(:millisecond) + 10_000,
       interval: 1_000,
-      visible?: true,
+      visibility: :public,
       state: %{
         trap: %TrapState{phase: :captured, reclaim_item_id: 1065, link_id: link_id}
       },

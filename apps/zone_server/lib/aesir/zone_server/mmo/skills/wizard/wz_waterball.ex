@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
                interval: @interval,
                expires_at: System.monotonic_time(:millisecond) + @duration,
                next_tick_at: System.monotonic_time(:millisecond),
-               visible?: false,
+               visibility: :none,
                state: %{water_ball_sequence: true}
              },
              unprotected_sources(map_name, {x, y}, level)
