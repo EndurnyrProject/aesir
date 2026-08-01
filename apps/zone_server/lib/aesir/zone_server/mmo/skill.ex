@@ -219,6 +219,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     {:critical_bonus, 2, quote(do: def(critical_bonus(_level, _ctx), do: 0))},
     {:flee_bonus, 2, quote(do: def(flee_bonus(_level, _ctx), do: 0))},
     {:dex_bonus, 2, quote(do: def(dex_bonus(_level, _ctx), do: 0))},
+    {:str_bonus, 2, quote(do: def(str_bonus(_level, _ctx), do: 0))},
     {:range_bonus, 2, quote(do: def(range_bonus(_level, _ctx), do: 0))},
     {:max_weight_bonus, 2, quote(do: def(max_weight_bonus(_level, _ctx), do: 0))},
     {:aspd_bonus, 2, quote(do: def(aspd_bonus(_level, _ctx), do: 0))},

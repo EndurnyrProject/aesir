@@ -166,6 +166,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Sums the STR bonus contributed by every learned passive for the player.
+  """
+  @spec str_bonus(PlayerState.t() | PlayerStats.t()) :: integer()
+  def str_bonus(%PlayerState{stats: stats}), do: str_bonus(stats)
+
+  def str_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      acc + module.str_bonus(level, ctx)
+    end)
+  end
+
+  @doc """
   Sums the HIT bonus contributed by every learned passive for the player.
   """
   @spec hit_bonus(PlayerState.t() | PlayerStats.t()) :: integer()

@@ -314,16 +314,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
-  Aggregates the DEX/INT/HIT/range bonuses from learned passive skills into
+  Aggregates the STR/DEX/INT/HIT/range bonuses from learned passive skills into
   `modifiers.passive`.
 
-  Runs before `calculate_derived_stats/1` so the passive DEX/INT feed every
-  DEX/INT-derived stat (HIT, ASPD, MATK, max SP) just like a real stat point,
-  matching rAthena (e.g. Owl's Eye).
+  Runs before `calculate_derived_stats/1` so the passive stat bonuses feed every
+  stat derived from them (HIT, ASPD, ATK, MATK, max SP) just like a real stat
+  point spent on the attribute.
   """
   @spec apply_passive_modifiers(t()) :: t()
   def apply_passive_modifiers(%__MODULE__{} = stats) do
     passive = %{
+      str: Passives.str_bonus(stats),
       dex: Passives.dex_bonus(stats),
       int: Passives.int_bonus(stats),
       hit: Passives.hit_bonus(stats),

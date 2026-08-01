@@ -38,6 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat DEX bonus contributed by this passive at the given level."
   @callback dex_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc "Returns a flat STR bonus contributed by this passive at the given level."
+  @callback str_bonus(level :: pos_integer(), ctx()) :: integer()
+
   @doc "Returns a flat HIT bonus contributed by this passive at the given level."
   @callback hit_bonus(level :: pos_integer(), ctx()) :: integer()
 
@@ -130,6 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       critical_bonus: 2,
                       flee_bonus: 2,
                       dex_bonus: 2,
+                      str_bonus: 2,
                       hit_bonus: 2,
                       hit_rate_bonus_pct: 2,
                       range_bonus: 2,

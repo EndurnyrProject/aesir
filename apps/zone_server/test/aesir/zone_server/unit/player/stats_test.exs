@@ -32,6 +32,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
     @impl Passive
     def int_bonus(level, _ctx), do: 2 * level
+
+    @impl Passive
+    def str_bonus(level, _ctx), do: level
   end
 
   setup :setup_ets_tables
@@ -1935,7 +1938,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
-  describe "passive aspd_bonus and int_bonus" do
+  describe "passive aspd_bonus, int_bonus, and str_bonus" do
     defp learned_skills_stats(learned_skills) do
       %Stats{
         base_stats: %{str: 10, agi: 30, vit: 25, int: 30, dex: 20, luk: 10},
@@ -1954,7 +1957,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       |> Stats.calculate_stats()
     end
 
-    test "a learned aspd_bonus/int_bonus passive reaches ASPD and effective INT" do
+    test "a learned aspd_bonus/int_bonus/str_bonus passive reaches derived stats" do
       stub(Catalog, :by_id, fn 9_900_010 -> {:ok, AspdIntPassive.definition()} end)
 
       stub(Catalog, :passive_module_for, fn :test_aspd_int_passive ->
@@ -1971,6 +1974,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert boosted.derived_stats.aspd == min(base.derived_stats.aspd + agi, 193)
       assert boosted.derived_stats.aspd > base.derived_stats.aspd
       assert Stats.get_effective_stat(boosted, :int) == Stats.get_effective_stat(base, :int) + 10
+      assert Stats.get_effective_stat(boosted, :str) == Stats.get_effective_stat(base, :str) + 5
+      assert boosted.combat_stats.atk > base.combat_stats.atk
     end
   end
 
