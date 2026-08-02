@@ -549,23 +549,32 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
 
-    test "a {:target, :armor} decision casts {:break_equip, :armor} to the target session, not self",
-         %{player_state: player_state, stats: stats, target_state: target_state} do
-      test_pid = self()
-      target_pid = spawn(fn -> relay_once(test_pid) end)
+    for {decision_slot, equip_location} <- [
+          armor: :armor,
+          shield: :left_hand,
+          helm: :head_top
+        ] do
+      test "a target #{decision_slot} decision breaks #{equip_location} on the target session",
+           %{player_state: player_state, stats: stats, target_state: target_state} do
+        test_pid = self()
+        target_pid = spawn(fn -> relay_once(test_pid) end)
+        decision_slot = unquote(decision_slot)
+        equip_location = unquote(equip_location)
 
-      stub(UnitRegistry, :get_unit, fn :mob, 2001 ->
-        {:ok, {FakeUnit, target_state, target_pid}}
-      end)
+        stub(UnitRegistry, :get_unit, fn :mob, 2001 ->
+          {:ok, {FakeUnit, target_state, target_pid}}
+        end)
 
-      stub(EquipBreak, :resolve, fn _attacker, _target -> [{:target, :armor}] end)
+        stub(EquipBreak, :resolve, fn _attacker, _target -> [{:target, decision_slot}] end)
 
-      capture_log(fn ->
-        assert Combat.execute_attack(stats, player_state, 2001) == :ok
-      end)
+        capture_log(fn ->
+          assert Combat.execute_attack(stats, player_state, 2001) == :ok
+        end)
 
-      assert_receive {:relayed, {:"$gen_cast", {:inventory, {:break_equip, :armor}}}}
-      refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
+        assert_receive {:relayed, {:"$gen_cast", {:inventory, {:break_equip, ^equip_location}}}}
+
+        refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
+      end
     end
 
     # PvP damage is a no-op today (handle_player_attack_hit returns

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
@@ -35,17 +36,55 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
     }
   end
 
+  defp player_target(stats \\ victim()) do
+    {:player, System.unique_integer([:positive]), stats}
+  end
+
+  describe "slot resolution and Chemical Protection" do
+    for {slot, matching_status, other_status} <- [
+          {:weapon, :sc_cp_weapon, :sc_cp_armor},
+          {:shield, :sc_cp_shield, :sc_cp_helm},
+          {:armor, :sc_cp_armor, :sc_cp_weapon},
+          {:helm, :sc_cp_helm, :sc_cp_shield}
+        ] do
+      test "#{slot} breaks without CP, matching CP vetoes, and another slot's CP does not" do
+        slot = unquote(slot)
+        matching_status = unquote(matching_status)
+        other_status = unquote(other_status)
+        {:player, victim_id, _stats} = target = player_target()
+
+        assert EquipBreak.resolve_slot(10_000, target, slot, rng: worst_roll()) == [
+                 {:target, slot}
+               ]
+
+        StatusStorage.apply_status(:player, victim_id, matching_status)
+        assert EquipBreak.resolve_slot(10_000, target, slot, rng: best_roll()) == []
+
+        {:player, other_victim_id, _stats} = other_target = player_target()
+        StatusStorage.apply_status(:player, other_victim_id, other_status)
+
+        assert EquipBreak.resolve_slot(10_000, other_target, slot, rng: worst_roll()) == [
+                 {:target, slot}
+               ]
+      end
+    end
+
+    test "mob targets remain a no-op" do
+      assert EquipBreak.resolve_slot(10_000, {:mob, 123}, :armor, rng: best_roll()) == []
+    end
+  end
+
   describe "rate boundaries" do
     test "a zero rate never breaks (best possible roll)" do
       attacker = attacker(%{break_weapon_rate: 0, break_armor_rate: 0})
 
-      assert EquipBreak.resolve(attacker, {:player, victim()}, rng: best_roll()) == []
+      assert EquipBreak.resolve(attacker, player_target(), rng: best_roll()) == []
     end
 
     test "a 10000 rate always breaks (worst possible roll)" do
       attacker = attacker(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
 
-      assert EquipBreak.resolve(attacker, {:player, victim()}, rng: worst_roll()) == [
+      assert EquipBreak.resolve(attacker, player_target(), rng: worst_roll()) == [
                {:target, :weapon},
                {:target, :armor}
              ]
@@ -57,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
       attacker = attacker(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
       victim = victim(%{unbreakable_weapon: 1})
 
-      assert EquipBreak.resolve(attacker, {:player, victim}, rng: best_roll()) == [
+      assert EquipBreak.resolve(attacker, player_target(victim), rng: best_roll()) == [
                {:target, :armor}
              ]
     end
@@ -66,7 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
       attacker = attacker(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
       victim = victim(%{unbreakable_armor: 1})
 
-      assert EquipBreak.resolve(attacker, {:player, victim}, rng: best_roll()) == [
+      assert EquipBreak.resolve(attacker, player_target(victim), rng: best_roll()) == [
                {:target, :weapon}
              ]
     end
@@ -76,13 +115,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
       roll_75 = fn _ -> 75 end
 
       # Without prevention the effective rate is 100 and the roll of 75 breaks it.
-      assert EquipBreak.resolve(attacker, {:player, victim()}, rng: roll_75) == [
+      assert EquipBreak.resolve(attacker, player_target(), rng: roll_75) == [
                {:target, :armor}
              ]
 
       # A 50% unbreakable halves the rate to 50; the same roll of 75 no longer breaks.
       protected = victim(%{unbreakable: 50})
-      assert EquipBreak.resolve(attacker, {:player, protected}, rng: roll_75) == []
+      assert EquipBreak.resolve(attacker, player_target(protected), rng: roll_75) == []
     end
   end
 
@@ -92,10 +131,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
       # (sword); armor break is unaffected by weapon type.
       attacker = attacker(%{break_weapon_rate: 10_000, break_armor_rate: 10_000}, @mace)
 
-      assert EquipBreak.resolve(attacker, {:player, victim(%{}, @sword)}, rng: worst_roll()) == [
-               {:target, :weapon},
-               {:target, :armor}
-             ]
+      assert EquipBreak.resolve(attacker, player_target(victim(%{}, @sword)), rng: worst_roll()) ==
+               [
+                 {:target, :weapon},
+                 {:target, :armor}
+               ]
     end
 
     test "an immune-type target never suffers a weapon break from a breakable attacker" do
@@ -103,9 +143,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
       # (mace); armor break is still allowed.
       attacker = attacker(%{break_weapon_rate: 10_000, break_armor_rate: 10_000}, @sword)
 
-      assert EquipBreak.resolve(attacker, {:player, victim(%{}, @mace)}, rng: worst_roll()) == [
-               {:target, :armor}
-             ]
+      assert EquipBreak.resolve(attacker, player_target(victim(%{}, @mace)), rng: worst_roll()) ==
+               [
+                 {:target, :armor}
+               ]
     end
   end
 

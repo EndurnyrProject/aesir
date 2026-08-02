@@ -409,7 +409,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              hits
            ) do
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
-      roll_equipment_breaks(player_state, target_state, target_type, target_pid)
+      roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
       dispatch_dealt_damage(attacker, target_type, target_id, damage_result)
       OnHitEffects.after_hit(attacker, target, damage_result)
       drain_hp(attacker, dealt_damage(damage_result.damage, target_type, hits))
@@ -504,18 +504,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   # `:target` decisions for player victims (mob "equipment" never breaks in
   # Renewal), so mob targets receive nothing.
   #
-  defp roll_equipment_breaks(player_state, target_state, target_type, target_pid) do
+  defp roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid) do
     target_type
-    |> break_target(target_state)
+    |> break_target(target_id, target_state)
     |> maybe_roll(player_state, target_pid)
   end
 
   # The `:player` clauses below are intentionally unreachable until PvP lands
   # (see the NOTE), so their dead-clause warnings are suppressed.
-  @dialyzer {:no_match, break_target: 2, maybe_roll: 3}
+  @dialyzer {:no_match, break_target: 3, maybe_roll: 3}
 
-  defp break_target(:player, target_state), do: {:player, target_state.stats}
-  defp break_target(target_type, target_state), do: {target_type, target_state}
+  defp break_target(:player, target_id, target_state),
+    do: {:player, target_id, target_state.stats}
+
+  defp break_target(target_type, _target_id, target_state), do: {target_type, target_state}
 
   # NOTE: player victims are skipped entirely: `handle_player_attack_hit/7`
   # returns `{:error, :pvp_not_implemented}` and applies no damage, so rolling a
@@ -523,7 +525,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   # The enemy-break wiring (the `{:player, ...}` tuple above and the `:target`
   # dispatch below) stays built but unreachable; whoever implements PvP removes
   # the damage stub in `handle_player_attack_hit/7` AND this gate together.
-  defp maybe_roll({:player, _victim_stats}, _player_state, _target_pid), do: :ok
+  defp maybe_roll({:player, _target_id, _victim_stats}, _player_state, _target_pid), do: :ok
 
   defp maybe_roll(target, player_state, target_pid) do
     player_state.stats
@@ -538,7 +540,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     do: PlayerSession.break_equip(target_pid, break_slot(slot))
 
   defp break_slot(:weapon), do: :right_hand
+  # Left hand may hold a two-handed weapon's composite bit; the first shield-break
+  # caller must guard on the item being armor-typed before breaking this slot.
+  defp break_slot(:shield), do: :left_hand
   defp break_slot(:armor), do: :armor
+  defp break_slot(:helm), do: :head_top
 
   # Fires the attacker's `on_dealt_damage` statuses once per confirmed weapon
   # swing (never per multi-hit), the attacker-side counterpart of the victim's

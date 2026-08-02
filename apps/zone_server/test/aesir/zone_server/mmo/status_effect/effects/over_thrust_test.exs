@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.OverThrustTest do
         modifiers: %Modifiers{equipment: OverThrust.modifiers(%StatusEntry{val1: rate}, %{})}
       }
 
-      assert EquipBreak.resolve(attacker, {:player, victim}, rng: fn _ -> 1 end) == []
+      assert EquipBreak.resolve(attacker, {:player, 1002, victim}, rng: fn _ -> 1 end) == []
     end
   end
 
