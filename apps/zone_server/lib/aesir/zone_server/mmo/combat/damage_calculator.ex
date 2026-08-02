@@ -113,12 +113,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
           {:ok, damage_result()} | {:error, atom()}
   def calculate_damage(attacker, defender, opts) do
     case Keyword.get(opts, :fixed_damage) do
-      nil -> calculate_pipeline_damage(attacker, defender, opts)
+      nil -> calculate_pipeline_damage(attacker, defender, opts, &apply_defense_formula/3)
       fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
     end
   end
 
-  defp calculate_pipeline_damage(attacker, defender, opts) do
+  @doc """
+  Calculates physical skill damage while omitting the defender's status DEF.
+
+  This restricted entry point preserves equipment DEF and the rest of the
+  weapon-damage pipeline. It exists for skills whose mechanic explicitly
+  ignores status DEF without exposing a general bypass option.
+  """
+  @spec calculate_damage_ignoring_status_def(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_damage_ignoring_status_def(attacker, defender, opts) do
+    case Keyword.get(opts, :fixed_damage) do
+      nil ->
+        calculate_pipeline_damage(
+          attacker,
+          defender,
+          opts,
+          &apply_defense_formula_ignoring_status_def/3
+        )
+
+      fixed_damage ->
+        {:ok, %{damage: fixed_damage, is_critical: false}}
+    end
+  end
+
+  defp calculate_pipeline_damage(attacker, defender, opts, defense_calculator) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
@@ -129,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
          total_atk = total_atk + beast_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
-         {:ok, final_damage} <- apply_defense_formula(total_atk, defender, attacker) do
+         {:ok, final_damage} <- defense_calculator.(total_atk, defender, attacker) do
       finalize_damage(final_damage, attacker, opts)
     end
   end
@@ -282,16 +306,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   - sDEF = soft defense (VIT-based)
   """
   @spec apply_defense_formula(number(), combatant(), combatant() | nil) :: {:ok, integer()}
-  def apply_defense_formula(total_atk, defender, attacker \\ nil) do
+  def apply_defense_formula(total_atk, defender, attacker \\ nil),
+    do: apply_defense_formula(total_atk, defender, attacker, :apply_status_def)
+
+  defp apply_defense_formula_ignoring_status_def(total_atk, defender, attacker),
+    do: apply_defense_formula(total_atk, defender, attacker, :ignore_status_def)
+
+  defp apply_defense_formula(total_atk, defender, attacker, status_def_mode) do
     hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender)
-    soft_def = calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
+
+    soft_def =
+      case status_def_mode do
+        :apply_status_def ->
+          calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
+
+        :ignore_status_def ->
+          0
+      end
 
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
 
     # Apply status effect defense modifiers
-    {modified_hard_def, modified_soft_def} =
+    {modified_hard_def, calculated_soft_def} =
       apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers)
+
+    # Load-bearing: status-effect modifiers can turn the zeroed soft-DEF input
+    # back into a positive value, so ignore mode must clamp again here.
+    modified_soft_def =
+      if status_def_mode == :ignore_status_def, do: 0, else: calculated_soft_def
 
     # Apply Renewal defense reduction formula
     # Handle edge case where hard_def = -400 (causes division by zero)

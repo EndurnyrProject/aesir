@@ -72,6 +72,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
           | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
+    execute_single_target_attack(
+      caster_state,
+      target_id,
+      opts,
+      &DamageCalculator.calculate_damage/3
+    )
+  end
+
+  @doc """
+  Executes Acid Terror through the weapon-damage path while ignoring status DEF.
+
+  All ordinary skill-attack validation, hit delivery, and on-hit handling remain
+  active. Only the damage calculator's status-DEF term is omitted.
+  """
+  @spec execute_acid_terror_attack(struct(), integer(), keyword()) ::
+          :ok
+          | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
+          | {:error, atom()}
+  def execute_acid_terror_attack(caster_state, target_id, opts) do
+    execute_single_target_attack(
+      caster_state,
+      target_id,
+      opts,
+      &DamageCalculator.calculate_damage_ignoring_status_def/3
+    )
+  end
+
+  defp execute_single_target_attack(caster_state, target_id, opts, damage_calculator) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
@@ -115,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             target,
             skill_id,
             skill_level,
-            calc_opts,
+            {calc_opts, damage_calculator},
             hit_opts
           )
         end)
@@ -449,7 +477,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target,
          skill_id,
          skill_level,
-         calc_opts,
+         calc_context,
          hit_opts
        ) do
     if weapon_hit_intercepted?(attacker, target_type, target) do
@@ -462,7 +490,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         target,
         skill_id,
         skill_level,
-        calc_opts,
+        calc_context,
         hit_opts
       )
     end
@@ -506,7 +534,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target,
          skill_id,
          skill_level,
-         calc_opts,
+         calc_context,
          hit_opts
        ) do
     %{hit_rate_bonus_pct: hit_rate_bonus_pct, ignore_flee: ignore_flee?} = hit_opts
@@ -546,7 +574,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           target,
           skill_id,
           skill_level,
-          calc_opts,
+          calc_context,
           hit_opts
         )
     end
@@ -559,12 +587,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target,
          skill_id,
          skill_level,
-         calc_opts,
+         calc_context,
          hit_opts
        ) do
     %{display_hits: display_hits, ranged: ranged?} = hit_opts
+    {calc_opts, damage_calculator} = damage_calculation(calc_context)
 
-    case DamageCalculator.calculate_damage(attacker, target, calc_opts) do
+    case damage_calculator.(attacker, target, calc_opts) do
       {:ok, damage_result} ->
         hit_info = %{
           dmg_type: :physical,
@@ -613,6 +642,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         %{hit?: false, damage: 0}
     end
   end
+
+  defp damage_calculation({calc_opts, damage_calculator}),
+    do: {calc_opts, damage_calculator}
+
+  defp damage_calculation(calc_opts),
+    do: {calc_opts, &DamageCalculator.calculate_damage/3}
 
   defp reported_hit(results, target_state) do
     damage = Enum.sum_by(results, & &1.damage)

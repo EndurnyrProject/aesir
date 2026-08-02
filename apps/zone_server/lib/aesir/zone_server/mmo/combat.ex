@@ -54,6 +54,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   defdelegate execute_skill_attack(caster_state, target_id, opts), to: SkillAttack
 
+  @doc "Executes Acid Terror through its restricted status-DEF-ignoring damage path."
+  defdelegate execute_acid_terror_attack(caster_state, target_id, opts), to: SkillAttack
+
   @doc """
   Executes a self/ground-centered splash skill against every offensive target
   in range.
