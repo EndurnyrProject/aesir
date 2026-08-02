@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   MVP tier is **derived, not stored**: a mob is MVP-tier when it carries MVP
   experience or at least one MVP drop entry. Most of the boss-classified mobs
-  are mini-bosses, which fall out of `grant/5` on that single comparison.
+  are mini-bosses, which fall out of `grant/6` on that single comparison.
 
   The winner is the single highest damage dealer among the contributors
   `Aesir.ZoneServer.Unit.Mob.KillExp.eligible_damage/2` considers eligible
@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -50,22 +51,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
           MobDefinition.t(),
           String.t(),
           integer(),
-          integer()
+          integer(),
+          LootOwnership.t()
         ) :: :ok
-  def grant(_aggro_list, %MobDefinition{mvp_exp: 0, mvp_drops: []}, _map_name, _x, _y), do: :ok
+  def grant(
+        _aggro_list,
+        %MobDefinition{mvp_exp: 0, mvp_drops: []},
+        _map_name,
+        _x,
+        _y,
+        _ownership
+      ),
+      do: :ok
 
-  def grant(aggro_list, %MobDefinition{} = mob_data, map_name, x, y)
+  def grant(aggro_list, %MobDefinition{} = mob_data, map_name, x, y, ownership)
       when map_size(aggro_list) > 0 do
     winner = pick_winner(aggro_list, map_name)
 
     grant_exp(winner, mob_data)
-    grant_drop(winner, mob_data, map_name, x, y)
+    grant_drop(winner, mob_data, map_name, x, y, ownership)
     announce(winner, mob_data)
 
     :ok
   end
 
-  def grant(_aggro_list, %MobDefinition{}, _map_name, _x, _y), do: :ok
+  def grant(_aggro_list, %MobDefinition{}, _map_name, _x, _y, _ownership), do: :ok
 
   @spec pick_winner(%{non_neg_integer() => pos_integer()}, String.t()) :: winner() | nil
   defp pick_winner(aggro_list, map_name) do
@@ -114,11 +124,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   # `{:npc, {:script_apply, op}}` seam (which itself runs `InventoryOps.add/6`). A full
   # inventory -- or no MVP left to receive it -- scatters the item onto the
   # death cell instead.
-  @spec grant_drop(winner() | nil, MobDefinition.t(), String.t(), integer(), integer()) :: :ok
-  defp grant_drop(winner, %MobDefinition{mvp_drops: drops, level: level}, map_name, x, y) do
+  @spec grant_drop(
+          winner() | nil,
+          MobDefinition.t(),
+          String.t(),
+          integer(),
+          integer(),
+          LootOwnership.t()
+        ) :: :ok
+  defp grant_drop(
+         winner,
+         %MobDefinition{mvp_drops: drops, level: level},
+         map_name,
+         x,
+         y,
+         ownership
+       ) do
     case roll(drops, level, base_level(winner, level)) do
       nil -> :ok
-      nameid -> deliver(winner, nameid, map_name, x, y)
+      nameid -> deliver(winner, nameid, map_name, x, y, ownership)
     end
   end
 
@@ -140,15 +164,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   # call *into* a `MobSession` from the attacker's own `PlayerSession`, so a
   # `GenServer.call` issued from the dying mob would deadlock against an
   # in-flight one of those until both sides time out and crash.
-  @spec deliver(winner() | nil, non_neg_integer(), String.t(), integer(), integer()) :: :ok
-  defp deliver(nil, nameid, map_name, x, y), do: scatter(nameid, map_name, x, y)
+  @spec deliver(
+          winner() | nil,
+          non_neg_integer(),
+          String.t(),
+          integer(),
+          integer(),
+          LootOwnership.t()
+        ) :: :ok
+  defp deliver(nil, nameid, map_name, x, y, ownership),
+    do: scatter(nameid, map_name, x, y, nil, ownership)
 
-  defp deliver({_char_id, _name, _base_level, pid}, nameid, map_name, x, y) do
+  defp deliver({_char_id, _name, _base_level, pid} = winner, nameid, map_name, x, y, ownership) do
     {:ok, _pid} =
       Task.Supervisor.start_child(@task_supervisor, fn ->
         case give_item(pid, nameid) do
           :ok -> :ok
-          {:error, _reason} -> scatter(nameid, map_name, x, y)
+          {:error, _reason} -> scatter(nameid, map_name, x, y, winner, ownership)
         end
       end)
 
@@ -169,9 +201,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
     :exit, reason -> {:error, reason}
   end
 
-  @spec scatter(non_neg_integer(), String.t(), integer(), integer()) :: :ok
-  defp scatter(nameid, map_name, x, y) do
-    Coordinator.drop_items(map_name, [{nameid, 1, x, y, true}], x, y)
+  @spec scatter(
+          non_neg_integer(),
+          String.t(),
+          integer(),
+          integer(),
+          winner() | nil,
+          LootOwnership.t()
+        ) :: :ok
+  defp scatter(nameid, map_name, x, y, winner, ownership) do
+    Coordinator.drop_items(
+      map_name,
+      [{nameid, 1, x, y, true}],
+      x,
+      y,
+      ownership: {fallback_ownership(winner, ownership), true}
+    )
+  end
+
+  @spec fallback_ownership(winner() | nil, LootOwnership.t()) :: LootOwnership.t()
+  defp fallback_ownership(nil, ownership), do: ownership
+
+  defp fallback_ownership({recipient, _name, _base_level, _pid}, ownership) do
+    [second, third | _] =
+      [ownership.first, ownership.second, ownership.third]
+      |> Enum.reject(&(&1 == recipient))
+      |> Kernel.++([nil, nil])
+
+    %LootOwnership{first: recipient, second: second, third: third}
   end
 
   @spec base_level(winner() | nil, integer()) :: integer()

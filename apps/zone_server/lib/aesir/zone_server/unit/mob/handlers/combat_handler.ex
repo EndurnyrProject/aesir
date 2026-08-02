@@ -120,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   # Distributes EXP to every attacker who damaged the mob, proportional to
   # damage dealt (`KillExp.distribute/6`, design "Damage-based EXP share"),
-  # grants the MVP reward for an MVP-tier boss (`MvpReward.grant/5`, a no-op
+  # grants the MVP reward for an MVP-tier boss (`MvpReward.grant/6`, a no-op
   # for every other mob), then publishes the drop-rolling payload to the
   # killing blow's own session
   # (the only place holding both the drop table and the killer's stats). The
@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       mob_data.race
     )
 
-    MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y)
+    MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y, ownership)
 
     QuestHuntCredit.credit(attacker_id, mob_data.id, state.map_name, {state.x, state.y})
 

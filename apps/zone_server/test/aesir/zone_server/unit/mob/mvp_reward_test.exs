@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -82,6 +83,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
   defp drop(aegis, rate \\ 10_000), do: %MobDrop{item: aegis, rate: rate}
 
+  defp ownership(fields \\ []), do: struct!(%LootOwnership{}, fields)
+
   defp stub_items do
     stub(Items, :by_aegis, fn aegis ->
       case Map.fetch(@item_ids, aegis) do
@@ -108,18 +111,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
     end
   end
 
-  describe "grant/5 tier check" do
+  describe "grant/6 tier check" do
     test "a mini-boss with no mvp exp and no mvp drops produces no reward and no announcement" do
       reject(&Announcement.to_all/1)
       register_player(1)
 
-      assert :ok = MvpReward.grant(%{1 => 500}, mob(), "gld_dun03", 10, 10)
+      assert :ok = MvpReward.grant(%{1 => 500}, mob(), "gld_dun03", 10, 10, ownership())
 
       refute_receive {:progression, {:mob_kill_exp, _base, _job, _race}}
     end
   end
 
-  describe "grant/5 experience" do
+  describe "grant/6 experience" do
     test "credits base-only mvp exp to the highest damage dealer, not the killer" do
       test = self()
       stub(Announcement, :to_all, fn opts -> send(test, {:announced, opts}) end)
@@ -130,7 +133,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       register_player(2, name: "Bruiser", base_level: 50)
 
       assert :ok =
-               MvpReward.grant(%{1 => 100, 2 => 900}, mob(mvp_exp: 1000), "gld_dun03", 10, 10)
+               MvpReward.grant(
+                 %{1 => 100, 2 => 900},
+                 mob(mvp_exp: 1000),
+                 "gld_dun03",
+                 10,
+                 10,
+                 ownership()
+               )
 
       assert_receive {:progression, {:mob_kill_exp, 500, 0, _race}}
       refute_receive {:progression, {:mob_kill_exp, _base, _job, _race}}
@@ -142,13 +152,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       stub(LevelPenalty, :mvp_exp, fn 81, 99 -> 50 end)
       register_player(1, base_level: 99)
 
-      MvpReward.grant(%{1 => 100}, mob(mvp_exp: 1000), "gld_dun03", 10, 10)
+      MvpReward.grant(%{1 => 100}, mob(mvp_exp: 1000), "gld_dun03", 10, 10, ownership())
 
       assert_receive {:progression, {:mob_kill_exp, 500, 0, _race}}
     end
   end
 
-  describe "grant/5 drops" do
+  describe "grant/6 drops" do
     test "drops at most one item even when every entry would succeed its roll" do
       stub(Announcement, :to_all, fn _opts -> :ok end)
       stub_items()
@@ -159,7 +169,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         mob(mvp_drops: [drop("FIRST"), drop("SECOND"), drop("THIRD")]),
         "gld_dun03",
         10,
-        10
+        10,
+        ownership()
       )
 
       assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
@@ -176,36 +187,52 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       task =
         Task.async(fn ->
-          MvpReward.grant(%{1 => 100}, mob(mvp_drops: [drop("FIRST")]), "gld_dun03", 10, 10)
+          MvpReward.grant(
+            %{1 => 100},
+            mob(mvp_drops: [drop("FIRST")]),
+            "gld_dun03",
+            10,
+            10,
+            ownership()
+          )
         end)
 
       assert :ok = Task.await(task, 1000)
       assert_receive {:session_call, {:npc, {:script_apply, {:give_item, 1001, 1}}}}
     end
 
-    test "scatters the item onto the death cell when the winner is overweight" do
+    test "stamps an overweight fallback with the recipient and MVP ownership windows" do
       test = self()
       stub(Announcement, :to_all, fn _opts -> :ok end)
 
-      stub(Coordinator, :drop_items, fn map, items, x, y ->
-        send(test, {:floor, map, items, x, y})
+      stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+        send(test, {:floor, map, items, x, y, opts})
         :ok
       end)
 
       stub_items()
       register_player(1, pid: fake_session({:error, :overweight}))
+      ownership = ownership(first: 2, second: 1, third: 3)
 
-      MvpReward.grant(%{1 => 100}, mob(mvp_drops: [drop("FIRST")]), "gld_dun03", 42, 77)
+      MvpReward.grant(
+        %{1 => 100},
+        mob(mvp_drops: [drop("FIRST")]),
+        "gld_dun03",
+        42,
+        77,
+        ownership
+      )
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77,
+                      ownership: {%LootOwnership{first: 1, second: 2, third: 3}, true}}
     end
 
     test "scatters the item when the winner's session died before delivery" do
       test = self()
       stub(Announcement, :to_all, fn _opts -> :ok end)
 
-      stub(Coordinator, :drop_items, fn map, items, x, y ->
-        send(test, {:floor, map, items, x, y})
+      stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+        send(test, {:floor, map, items, x, y, opts})
         :ok
       end)
 
@@ -217,16 +244,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
 
       register_player(1, pid: dead)
 
-      MvpReward.grant(%{1 => 100}, mob(mvp_drops: [drop("FIRST")]), "gld_dun03", 42, 77)
+      MvpReward.grant(
+        %{1 => 100},
+        mob(mvp_drops: [drop("FIRST")]),
+        "gld_dun03",
+        42,
+        77,
+        ownership()
+      )
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77,
+                      ownership: {%LootOwnership{first: 1, second: nil, third: nil}, true}}
     end
 
     test "grants exp and announces when no drop entry succeeds its roll" do
       test = self()
       stub(Announcement, :to_all, fn opts -> send(test, {:announced, opts}) end)
       stub(LevelPenalty, :mvp_drop, fn _mob_level, _base_level -> 0 end)
-      reject(&Coordinator.drop_items/4)
+      reject(&Coordinator.drop_items/5)
       stub_items()
       register_player(1, pid: fake_session({:ok, %{}}))
 
@@ -235,7 +270,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         mob(mvp_exp: 500, mvp_drops: [drop("FIRST"), drop("SECOND")]),
         "gld_dun03",
         10,
-        10
+        10,
+        ownership()
       )
 
       refute_receive {:session_call, _msg}
@@ -244,7 +280,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
     end
   end
 
-  describe "grant/5 winner eligibility" do
+  describe "grant/6 winner eligibility" do
     test "falls through to the next highest contributor when the top one is offline" do
       test = self()
       stub(Announcement, :to_all, fn opts -> send(test, {:announced, opts}) end)
@@ -256,7 +292,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
         mob(mvp_exp: 700, mvp_drops: [drop("FIRST")]),
         "gld_dun03",
         10,
-        10
+        10,
+        ownership()
       )
 
       assert_receive {:progression, {:mob_kill_exp, 700, 0, _race}}
@@ -271,36 +308,46 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
       register_player(1, map_name: "prontera")
       register_player(2, name: "Stayer", pid: fake_session({:ok, %{}}))
 
-      MvpReward.grant(%{1 => 9000, 2 => 100}, mob(mvp_exp: 700), "gld_dun03", 10, 10)
+      MvpReward.grant(
+        %{1 => 9000, 2 => 100},
+        mob(mvp_exp: 700),
+        "gld_dun03",
+        10,
+        10,
+        ownership()
+      )
 
       assert_receive {:announced, %{text: "Stayer has defeated Baphomet!"}}
     end
 
-    test "drops to the floor with no exp and no announcement when nobody is eligible" do
+    test "uses ranked ownership as-is when no MVP recipient exists" do
       test = self()
       reject(&Announcement.to_all/1)
 
-      stub(Coordinator, :drop_items, fn map, items, x, y ->
-        send(test, {:floor, map, items, x, y})
+      stub(Coordinator, :drop_items, fn map, items, x, y, opts ->
+        send(test, {:floor, map, items, x, y, opts})
         :ok
       end)
 
       stub_items()
+      ownership = ownership(first: 1, second: 2, third: 3)
 
       MvpReward.grant(
         %{1 => 9000},
         mob(mvp_exp: 700, mvp_drops: [drop("FIRST")]),
         "gld_dun03",
         42,
-        77
+        77,
+        ownership
       )
 
-      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77}
+      assert_receive {:floor, "gld_dun03", [{1001, 1, 42, 77, true}], 42, 77,
+                      ownership: {^ownership, true}}
     end
 
     test "an empty aggro list produces no reward and no announcement" do
       reject(&Announcement.to_all/1)
-      reject(&Coordinator.drop_items/4)
+      reject(&Coordinator.drop_items/5)
       stub_items()
 
       assert :ok =
@@ -309,7 +356,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpRewardTest do
                  mob(mvp_exp: 700, mvp_drops: [drop("FIRST")]),
                  "gld_dun03",
                  10,
-                 10
+                 10,
+                 ownership()
                )
     end
   end
