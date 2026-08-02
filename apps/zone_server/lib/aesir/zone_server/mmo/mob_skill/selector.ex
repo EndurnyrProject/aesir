@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
     rows
     |> Enum.filter(fn row ->
-      row.state in eligible and castable?(row) and
+      row_state_eligible?(row, eligible, mob_state) and castable?(row) and
         condition_holds?(row, mob_state, env) and
         MobState.skill_ready?(mob_state, row.skill_id, now)
     end)
@@ -88,6 +88,16 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
   defp eligible_states(%MobState{ai_state: :return}), do: [:any]
 
+  # Player-owned summons have no combat rotation of their own: their imported
+  # rows are their entire behavior, so idle rows stay eligible in every state
+  # (a damaged Marine Sphere must still wander and self-destruct while engaged).
+  @spec row_state_eligible?(row(), [atom()], MobState.t()) :: boolean()
+  defp row_state_eligible?(%{state: :idle}, _eligible, %MobState{owner_player_id: owner})
+       when not is_nil(owner),
+       do: true
+
+  defp row_state_eligible?(row, eligible, _mob_state), do: row.state in eligible
+
   @spec castable?(row()) :: boolean()
   defp castable?(%{skill_id: skill_id}) do
     with {:ok, definition} <- SkillCatalog.by_id(skill_id),
@@ -109,6 +119,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp evaluate(:myhpltmaxrate, %{value: value}, %MobState{hp: hp, max_hp: max_hp}, _env)
        when is_integer(value) and max_hp > 0 do
     hp / max_hp * 100 <= value
+  end
+
+  defp evaluate(
+         :alchemist,
+         _condition,
+         %MobState{owner_player_id: owner_player_id, hp: hp, max_hp: max_hp},
+         _env
+       ) do
+    owner_player_id != nil and hp < max_hp
   end
 
   defp evaluate(:rudeattacked, _condition, %MobState{rude_attacked?: flag}, _env), do: flag

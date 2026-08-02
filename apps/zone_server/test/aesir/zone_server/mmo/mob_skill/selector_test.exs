@@ -123,6 +123,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(%{hp: 30, max_hp: 100}), [r], opts()) == {:cast, r}
     end
 
+    test "alchemist fires only for damaged player-owned mobs" do
+      r = row(%{condition: %{type: :alchemist}})
+
+      assert Selector.select(mob(%{owner_player_id: 42, hp: 99}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{owner_player_id: 42, hp: 100}), [r], opts()) == nil
+      assert Selector.select(mob(%{owner_player_id: nil, hp: 99}), [r], opts()) == nil
+    end
+
+    test "idle rows stay eligible in combat for player-owned mobs" do
+      r = row(%{state: :idle})
+
+      assert Selector.select(mob(%{ai_state: :combat, owner_player_id: 42}), [r], opts()) ==
+               {:cast, r}
+
+      assert Selector.select(mob(%{ai_state: :combat, owner_player_id: nil}), [r], opts()) == nil
+    end
+
     test "rudeattacked reads the transient flag" do
       r = row(%{condition: %{type: :rudeattacked}})
 
