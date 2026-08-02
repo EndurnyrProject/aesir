@@ -1,0 +1,59 @@
+---
+- job: alchemist
+  inherit:
+    - merchant
+  tree:
+    - name: AM_AXEMASTERY
+      max_level: 10
+    - name: AM_LEARNINGPOTION
+      max_level: 10
+    - name: AM_PHARMACY
+      max_level: 10
+      requires:
+        - name: AM_LEARNINGPOTION
+          level: 5
+    - name: AM_DEMONSTRATION
+      max_level: 5
+      requires:
+        - name: AM_PHARMACY
+          level: 4
+    - name: AM_ACIDTERROR
+      max_level: 5
+      requires:
+        - name: AM_PHARMACY
+          level: 5
+    - name: AM_POTIONPITCHER
+      max_level: 5
+      requires:
+        - name: AM_PHARMACY
+          level: 3
+    - name: AM_CANNIBALIZE
+      max_level: 5
+      requires:
+        - name: AM_PHARMACY
+          level: 6
+    - name: AM_SPHEREMINE
+      max_level: 5
+      requires:
+        - name: AM_PHARMACY
+          level: 2
+    - name: AM_CP_HELM
+      max_level: 5
+      requires:
+        - name: AM_PHARMACY
+          level: 2
+    - name: AM_CP_SHIELD
+      max_level: 5
+      requires:
+        - name: AM_CP_HELM
+          level: 3
+    - name: AM_CP_ARMOR
+      max_level: 5
+      requires:
+        - name: AM_CP_SHIELD
+          level: 3
+    - name: AM_CP_WEAPON
+      max_level: 5
+      requires:
+        - name: AM_CP_ARMOR
+          level: 3

@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
   alias Aesir.Net.SkillList
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Placement
@@ -33,6 +34,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
   @knight_class 7
   @swordman_class 1
   @acolyte_class 4
+  @merchant_class 5
+  @alchemist_class 18
 
   defmodule ValidJobMasterNpc do
     use Aesir.ZoneServer.Npc,
@@ -83,6 +86,19 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
     end
   end
 
+  defmodule AlchemistJobMasterNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 164, y: 160, dir: 0, sprite: 58, name: "Alchemist Master"}]
+
+    @impl true
+    def on_talk(ctx) do
+      ctx
+      |> jobchange(18)
+      |> mes("Done")
+      |> close()
+    end
+  end
+
   defmodule SkillResetNpc do
     use Aesir.ZoneServer.Npc,
       spawn: [%{map: "prontera", x: 163, y: 160, dir: 0, sprite: 58, name: "Skill Reset"}]
@@ -103,6 +119,7 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       ValidJobMasterNpc,
       BrokenJobMasterNpc,
       SwordmanJobMasterNpc,
+      AlchemistJobMasterNpc,
       SkillResetNpc
     ])
 
@@ -131,6 +148,83 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       assert state.stats.progression.job_id == @knight_class
 
       assert Repo.get(Character, character.id).class == @knight_class
+    end
+
+    test "Merchant keeps inherited skills and unlocks the Alchemist tree" do
+      discount = catalog_id(:mc_discount)
+      inccarry = catalog_id(:mc_inccarry)
+      bash = catalog_id(:sm_bash)
+      pharmacy = catalog_id(:am_pharmacy)
+      demonstration = catalog_id(:am_demonstration)
+      learning_potion = catalog_id(:am_learningpotion)
+      cp_helm = catalog_id(:am_cp_helm)
+      cp_shield = catalog_id(:am_cp_shield)
+      cp_armor = catalog_id(:am_cp_armor)
+
+      character =
+        insert_novice(%{
+          class: @merchant_class,
+          skill_point: 50,
+          learned_skills: %{
+            Integer.to_string(discount) => 5,
+            Integer.to_string(inccarry) => 3,
+            Integer.to_string(bash) => 3
+          }
+        })
+
+      session =
+        start_player_session(character: character, map_name: "prontera", position: {164, 160})
+
+      on_exit(fn -> end_player_session(session) end)
+      flush_packets()
+
+      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 164, y: 160, sprite: 58})
+      simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
+
+      assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
+      assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+
+      state = get_player_state(session.pid)
+      progression = state.stats.progression
+
+      assert progression.job_id == @alchemist_class
+      assert progression.learned_skills == %{discount => 5, inccarry => 3}
+
+      assert Repo.get(Character, character.id).learned_skills == %{
+               Integer.to_string(discount) => 5,
+               Integer.to_string(inccarry) => 3
+             }
+
+      assert {:error, :missing_prerequisite} = SkillTree.can_learn(progression, demonstration)
+
+      qualified_progression = %{
+        progression
+        | learned_skills:
+            Map.merge(progression.learned_skills, %{
+              learning_potion => 5,
+              pharmacy => 6,
+              cp_helm => 3,
+              cp_shield => 3,
+              cp_armor => 3
+            })
+      }
+
+      for skill <- [
+            :am_axemastery,
+            :am_learningpotion,
+            :am_pharmacy,
+            :am_demonstration,
+            :am_acidterror,
+            :am_potionpitcher,
+            :am_cannibalize,
+            :am_spheremine,
+            :am_cp_helm,
+            :am_cp_shield,
+            :am_cp_armor,
+            :am_cp_weapon
+          ] do
+        assert :ok = SkillTree.can_learn(qualified_progression, catalog_id(skill))
+      end
     end
 
     test "an invalid job id halts the script without mutating state" do
