@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @sprung_trap_lifetime 1_500
   @trap_item_id 1065
   @safetywall_skill_id 12
-  @no_overlap_skill_ids [@safetywall_skill_id, 70, 79]
+  @no_overlap_skill_ids [@safetywall_skill_id, 70, 79, 229]
 
   @type server :: GenServer.server()
   @type mover :: {atom(), integer()}
