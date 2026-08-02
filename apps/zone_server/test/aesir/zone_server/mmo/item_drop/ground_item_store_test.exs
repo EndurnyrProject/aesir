@@ -59,6 +59,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStoreTest do
     end
   end
 
+  describe "get/2" do
+    test "returns an item without removing it" do
+      item = GroundItem.new(501, 1, 100, 100)
+      assert :ok = GroundItemStore.put("prontera", item)
+
+      assert {:ok, ^item} = GroundItemStore.get("prontera", item.id)
+      assert {:ok, ^item} = GroundItemStore.get("prontera", item.id)
+    end
+
+    test "returns {:error, :gone} for an unknown id" do
+      assert {:error, :gone} = GroundItemStore.get("prontera", 123_456)
+    end
+  end
+
   describe "claim/2" do
     test "returns {:ok, item} once and {:error, :gone} on the second call" do
       item = GroundItem.new(501, 1, 100, 100)

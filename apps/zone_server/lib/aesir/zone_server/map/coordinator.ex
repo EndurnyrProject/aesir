@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -96,7 +97,8 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   Each entry is `{nameid, amount, item_x, item_y, identified}` as produced by
   `DropCalculator` (scatter already resolved). The coordinator is the single
-  writer of the ground-item store, so placement routes through here.
+  writer of the ground-item store, so placement routes through here. Pass an
+  `ownership:` option to stamp pickup rights onto every item in the call.
   """
   @spec drop_items(
           String.t(),
@@ -104,23 +106,30 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
             {non_neg_integer(), pos_integer(), non_neg_integer(), non_neg_integer(), boolean()}
           ],
           integer(),
-          integer()
+          integer(),
+          keyword()
         ) ::
           :ok
-  def drop_items(map_name, items, x, y) do
-    GenServer.cast(via_tuple(map_name), {:drop_items, items, x, y})
+  def drop_items(map_name, items, x, y, opts \\ []) do
+    GenServer.cast(via_tuple(map_name), {:drop_items, items, x, y, opts})
   end
 
   @doc """
   Atomically claims the ground item `ground_id` for `char_id`.
 
   Returns `{:ok, GroundItem.t()}` for the winner (and broadcasts the vanish to
-  in-range players) or `{:error, :gone}` if it was already taken or expired.
+  in-range players), `{:error, :protected}` when pickup rights deny the claim,
+  or `{:error, :gone}` if it was already taken or expired.
   """
-  @spec claim_item(String.t(), pos_integer(), integer()) ::
-          {:ok, GroundItem.t()} | {:error, :gone}
-  def claim_item(map_name, ground_id, char_id) do
-    GenServer.call(via_tuple(map_name), {:claim_item, ground_id, char_id})
+  @spec claim_item(String.t(), pos_integer(), integer(), LootOwnership.party_ctx()) ::
+          {:ok, GroundItem.t()} | {:error, :gone} | {:error, :protected}
+  def claim_item(
+        map_name,
+        ground_id,
+        char_id,
+        party_ctx \\ %{party_id: 0, pickup_share: false}
+      ) do
+    GenServer.call(via_tuple(map_name), {:claim_item, ground_id, char_id, party_ctx})
   end
 
   @doc """
@@ -236,9 +245,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_cast({:drop_items, items, _x, _y}, state) do
+  def handle_cast({:drop_items, items, _x, _y, opts}, state) do
+    stamp = ownership_stamp(opts)
+
     Enum.each(items, fn {nameid, amount, item_x, item_y, identified} ->
-      item = GroundItem.new(nameid, amount, item_x, item_y, identified)
+      item = GroundItem.new(nameid, amount, item_x, item_y, identified, stamp)
       GroundItemStore.put(state.map_name, item)
 
       Broadcast.to_in_range(
@@ -311,6 +322,28 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
+  defp ownership_stamp(opts) do
+    case Keyword.fetch(opts, :ownership) do
+      :error ->
+        []
+
+      {:ok, {%LootOwnership{first: nil, second: nil, third: nil}, boss?}}
+      when is_boolean(boss?) ->
+        []
+
+      {:ok, {%LootOwnership{} = ownership, boss?}} when is_boolean(boss?) ->
+        owners = {ownership.first, ownership.second, ownership.third}
+        unlock_at = LootOwnership.deadlines(boss?, System.monotonic_time(:millisecond))
+        [owners: owners, unlock_at: unlock_at]
+
+      {:ok, {{nil, nil, nil}, unlock_at}} when tuple_size(unlock_at) == 3 ->
+        []
+
+      {:ok, {owners, unlock_at}} when tuple_size(owners) == 3 and tuple_size(unlock_at) == 3 ->
+        [owners: owners, unlock_at: unlock_at]
+    end
+  end
+
   @impl true
   def handle_call(:get_info, _from, state) do
     info = %{
@@ -327,21 +360,28 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_call({:claim_item, ground_id, _char_id}, _from, state) do
-    case GroundItemStore.claim(state.map_name, ground_id) do
-      {:ok, %GroundItem{} = item} ->
-        Broadcast.to_in_range(
-          state.map_name,
-          item.x,
-          item.y,
-          Config.view_range(),
-          %ItemVanished{ground_id: ground_id, reason: :PICKED_UP}
-        )
+  def handle_call({:claim_item, ground_id, char_id, party_ctx}, _from, state) do
+    with {:ok, item} <- GroundItemStore.get(state.map_name, ground_id),
+         :ok <-
+           LootOwnership.can_claim?(
+             item,
+             char_id,
+             party_ctx,
+             System.monotonic_time(:millisecond)
+           ),
+         {:ok, %GroundItem{} = claimed} <- GroundItemStore.claim(state.map_name, ground_id) do
+      Broadcast.to_in_range(
+        state.map_name,
+        claimed.x,
+        claimed.y,
+        Config.view_range(),
+        %ItemVanished{ground_id: ground_id, reason: :PICKED_UP}
+      )
 
-        {:reply, {:ok, item}, state}
-
-      {:error, :gone} ->
-        {:reply, {:error, :gone}, state}
+      {:reply, {:ok, claimed}, state}
+    else
+      {:error, reason} when reason in [:gone, :protected] ->
+        {:reply, {:error, reason}, state}
     end
   end
 
