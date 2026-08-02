@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -37,11 +39,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     }
   end
 
-  defp state do
+  defp state(opts \\ []) do
     %{
       connection_pid: self(),
       game_state: %{
         character_id: 1001,
+        party_id: Keyword.get(opts, :party_id, 0),
         map_name: "prontera",
         x: 100,
         y: 100,
@@ -78,7 +81,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _inv, _stats, @item_def, 1 -> :ok end)
 
-    expect(Coordinator, :claim_item, fn "prontera", @ground_id, 1001 ->
+    reject(&PartyManager.get/1)
+
+    expect(Coordinator, :claim_item, fn "prontera",
+                                        @ground_id,
+                                        1001,
+                                        %{party_id: 0, pickup_share: false} ->
       {:ok, ground_item(@ground_id, 101, 100)}
     end)
 
@@ -93,7 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     stub(GroundItemStore, :query_in_range, fn _, _, _, _ -> [unidentified] end)
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
-    stub(Coordinator, :claim_item, fn _, _, _ -> {:ok, unidentified} end)
+    stub(Coordinator, :claim_item, fn _, _, _, _ -> {:ok, unidentified} end)
 
     expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, false -> {:ok, st} end)
 
@@ -109,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     stub(GroundItemStore, :query_in_range, fn _, _, _, _ -> [claimed] end)
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
-    stub(Coordinator, :claim_item, fn _, _, _ -> {:ok, claimed} end)
+    stub(Coordinator, :claim_item, fn _, _, _, _ -> {:ok, claimed} end)
 
     expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true ->
       {:error, :db_error, st}
@@ -134,7 +142,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
     stub(GroundItemStore, :get, fn "prontera", @ground_id -> {:ok, far} end)
     stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
     stub(Pathfinding, :find_path, fn :map_data, {100, 100}, {105, 100} -> {:ok, [{105, 100}]} end)
-    reject(&Coordinator.claim_item/3)
+    reject(&Coordinator.claim_item/4)
 
     expect(MovementHandler, :handle_request_move, fn moving, 105, 100, opts ->
       assert Keyword.fetch!(opts, :pickup_initiated) == true
@@ -154,7 +162,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
   test "item not on the map replies GONE without claiming" do
     stub(GroundItemStore, :query_in_range, fn "prontera", 100, 100, 2 -> [] end)
     stub(GroundItemStore, :get, fn "prontera", @ground_id -> {:error, :gone} end)
-    reject(&Coordinator.claim_item/3)
+    reject(&Coordinator.claim_item/4)
 
     assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, player_session())
 
@@ -176,8 +184,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
 
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _, _, @item_def, 1 -> :ok end)
+    reject(&PartyManager.get/1)
 
-    stub(Coordinator, :claim_item, fn "prontera", @ground_id, 1001 ->
+    stub(Coordinator, :claim_item, fn "prontera",
+                                      @ground_id,
+                                      1001,
+                                      %{party_id: 0, pickup_share: false} ->
       {:ok, ground_item(@ground_id, 100, 100)}
     end)
 
@@ -198,7 +210,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
 
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _, _, _, _ -> {:error, :overweight} end)
-    reject(&Coordinator.claim_item/3)
+    reject(&Coordinator.claim_item/4)
 
     assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
 
@@ -213,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
 
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _, _, _, _ -> {:error, :inventory_full} end)
-    reject(&Coordinator.claim_item/3)
+    reject(&Coordinator.claim_item/4)
 
     assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
 
@@ -229,12 +241,131 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
 
     stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
     stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
-    stub(Coordinator, :claim_item, fn _, _, _ -> {:error, :gone} end)
+    stub(Coordinator, :claim_item, fn _, _, _, _ -> {:error, :gone} end)
     reject(&InventoryManager.handle_give_item/3)
 
     assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
 
     assert_received {:send, :world,
                      {:pickup_result, %PickupResult{ground_id: @ground_id, result: :GONE}}}
+  end
+
+  test "partied pickup passes the live pickup-share flag to the claim" do
+    party = %PartyState{
+      party_id: 77,
+      name: "Vanguard",
+      leader_char_id: 1001,
+      exp_share: false,
+      item_pickup_share: true,
+      members: %{}
+    }
+
+    stub(GroundItemStore, :query_in_range, fn _, _, _, _ ->
+      [ground_item(@ground_id, 101, 100)]
+    end)
+
+    stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+    stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
+    expect(PartyManager, :get, fn 77 -> {:ok, party} end)
+
+    expect(Coordinator, :claim_item, fn "prontera",
+                                        @ground_id,
+                                        1001,
+                                        %{party_id: 77, pickup_share: true} ->
+      {:ok, ground_item(@ground_id, 101, 100)}
+    end)
+
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true -> {:ok, st} end)
+
+    assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state(party_id: 77))
+  end
+
+  test "missing party state falls back to the solo claim context" do
+    stub(GroundItemStore, :query_in_range, fn _, _, _, _ ->
+      [ground_item(@ground_id, 101, 100)]
+    end)
+
+    stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+    stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
+    expect(PartyManager, :get, fn 77 -> {:error, :not_found} end)
+
+    expect(Coordinator, :claim_item, fn "prontera",
+                                        @ground_id,
+                                        1001,
+                                        %{party_id: 0, pickup_share: false} ->
+      {:ok, ground_item(@ground_id, 101, 100)}
+    end)
+
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true -> {:ok, st} end)
+
+    assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state(party_id: 77))
+  end
+
+  test "protected arrival pickup replies LOOT_PROTECTED and clears the pickup intent" do
+    session =
+      player_session(
+        action_state: :moving_to_item,
+        movement_intent: :pickup,
+        pickup_target_id: @ground_id
+      )
+
+    stub(GroundItemStore, :query_in_range, fn _, _, _, _ ->
+      [ground_item(@ground_id, 100, 100)]
+    end)
+
+    stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+    stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
+    reject(&PartyManager.get/1)
+
+    expect(Coordinator, :claim_item, fn "prontera",
+                                        @ground_id,
+                                        1001,
+                                        %{party_id: 0, pickup_share: false} ->
+      {:error, :protected}
+    end)
+
+    reject(&InventoryManager.handle_give_item/4)
+
+    assert {:noreply, new_state} = PickupHandler.handle_reached_item(session)
+
+    assert_received {:send, :world,
+                     {:pickup_result,
+                      %PickupResult{ground_id: @ground_id, result: :LOOT_PROTECTED}}}
+
+    assert %PlayerState{action_state: :idle, pickup_target_id: nil} = new_state.game_state
+  end
+
+  test "give failure after claim preserves the ownership stamp on the re-drop" do
+    claimed = %{
+      ground_item(@ground_id, 101, 100)
+      | owners: {1001, 1002, nil},
+        unlock_at: {10_000, 12_000, 14_000}
+    }
+
+    stub(GroundItemStore, :query_in_range, fn _, _, _, _ -> [claimed] end)
+    stub(ItemManagement, :get_item_by_id, fn @nameid -> {:ok, @item_def} end)
+    stub(InventoryOps, :can_add, fn _, _, _, _ -> :ok end)
+    reject(&PartyManager.get/1)
+
+    expect(Coordinator, :claim_item, fn "prontera",
+                                        @ground_id,
+                                        1001,
+                                        %{party_id: 0, pickup_share: false} ->
+      {:ok, claimed}
+    end)
+
+    expect(InventoryManager, :handle_give_item, fn @item_def, 1, st, true ->
+      {:error, :db_error, st}
+    end)
+
+    expect(Coordinator, :drop_items, fn "prontera",
+                                        [{@nameid, 1, 101, 100, true}],
+                                        101,
+                                        100,
+                                        ownership: {{1001, 1002, nil}, {10_000, 12_000, 14_000}} ->
+      :ok
+    end)
+
+    assert {:noreply, _state} = PickupHandler.handle_pickup(@ground_id, state())
   end
 end

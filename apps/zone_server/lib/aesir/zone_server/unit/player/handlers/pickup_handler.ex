@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -76,7 +77,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
            find_in_range(gs, ground_id),
          {:ok, item_def} <- ItemManagement.get_item_by_id(nameid),
          :ok <- InventoryOps.can_add(gs.inventory, gs.stats, item_def, amount),
-         {:ok, claimed} <- Coordinator.claim_item(gs.map_name, ground_id, gs.character_id) do
+         {:ok, claimed} <-
+           Coordinator.claim_item(gs.map_name, ground_id, gs.character_id, party_ctx(gs)) do
       give_claimed(item_def, amount, identified, claimed, ground_id, state)
     else
       {:error, reason} ->
@@ -145,15 +147,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
         {:noreply, new_state}
 
       {:error, _reason, unchanged_state} ->
-        Coordinator.drop_items(
-          gs.map_name,
-          [{claimed.nameid, claimed.amount, claimed.x, claimed.y, claimed.identified}],
-          claimed.x,
-          claimed.y
-        )
+        redrop_claimed(gs.map_name, claimed)
 
         reply(unchanged_state, ground_id, :FAILED)
         {:noreply, unchanged_state}
+    end
+  end
+
+  @spec redrop_claimed(String.t(), GroundItem.t()) :: :ok
+  defp redrop_claimed(map_name, %GroundItem{owners: nil} = item) do
+    Coordinator.drop_items(
+      map_name,
+      [{item.nameid, item.amount, item.x, item.y, item.identified}],
+      item.x,
+      item.y
+    )
+  end
+
+  defp redrop_claimed(map_name, %GroundItem{owners: owners, unlock_at: unlock_at} = item) do
+    Coordinator.drop_items(
+      map_name,
+      [{item.nameid, item.amount, item.x, item.y, item.identified}],
+      item.x,
+      item.y,
+      ownership: {owners, unlock_at}
+    )
+  end
+
+  @spec party_ctx(%{party_id: non_neg_integer()}) :: %{
+          party_id: non_neg_integer(),
+          pickup_share: boolean()
+        }
+  defp party_ctx(%{party_id: 0}), do: %{party_id: 0, pickup_share: false}
+
+  defp party_ctx(%{party_id: party_id}) when party_id > 0 do
+    case PartyManager.get(party_id) do
+      {:ok, state} -> %{party_id: party_id, pickup_share: state.item_pickup_share}
+      {:error, _reason} -> %{party_id: 0, pickup_share: false}
     end
   end
 
@@ -174,6 +204,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   defp pickup_code(:inventory_full), do: :INVENTORY_FULL
   defp pickup_code(:gone), do: :GONE
   defp pickup_code(:item_not_found), do: :GONE
+  defp pickup_code(:protected), do: :LOOT_PROTECTED
 
   @spec reply(map(), pos_integer(), atom()) :: :ok
   defp reply(%{connection_pid: pid}, ground_id, code) do
