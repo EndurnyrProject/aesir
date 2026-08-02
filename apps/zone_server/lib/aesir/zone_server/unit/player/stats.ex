@@ -937,6 +937,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     Map.get(stats.modifiers.equipment, modifier_key, 0)
   end
 
+  @doc """
+  Gets the combined percentage bonus applied to HP recovery from consumable items.
+  """
+  @spec get_item_heal_rate(t()) :: number()
+  def get_item_heal_rate(%__MODULE__{} = stats) do
+    get_equipment_modifier(stats, :item_heal_rate) + get_status_modifier(stats, :item_heal_rate)
+  end
+
   # The trait derivation term is summed with the status/equipment modifiers
   # BEFORE the 0..SHRT_MAX clamp, matching rAthena's cap_value over the full
   # sum (status.cpp:2668/2672/2676/2680/2684/2688).

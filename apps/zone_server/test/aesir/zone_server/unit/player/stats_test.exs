@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
 
   defmodule AspdIntPassive do
     @moduledoc false
@@ -1773,6 +1774,12 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert Stats.get_equipment_modifier(result, :heal_power) == 15
       assert result.combat_stats.hplus == 0
+    end
+
+    test "bAddItemHealRate is exposed through the item heal rate reader" do
+      stats = %Stats{modifiers: %Modifiers{equipment: %{item_heal_rate: 20}}}
+
+      assert Stats.get_item_heal_rate(stats) == 20
     end
   end
 

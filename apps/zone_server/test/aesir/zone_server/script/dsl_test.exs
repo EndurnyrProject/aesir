@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Script.Ctx
@@ -42,6 +43,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   setup do
     Mimic.copy(CharacterPersistence)
+    Mimic.copy(Catalog)
+    Mimic.copy(Learned)
     Mimic.copy(StatusInterpreter)
     Mimic.copy(WarpHandler)
     Mimic.copy(SkillInterpreter)
@@ -112,6 +115,55 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = Dsl.heal(build_ctx(sp: 10), sp: 20)
 
       assert ctx.game_state.stats.current_state.sp == 30
+    end
+
+    test "HP consumables gain two percent per effective VIT" do
+      ctx = Dsl.heal(build_ctx(hp: 100, vit: 25), hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 250
+    end
+
+    test "SP consumables gain two percent per effective INT" do
+      ctx = Dsl.heal(build_ctx(sp: 10, int: 25), sp: 100)
+
+      assert ctx.game_state.stats.current_state.sp == 160
+    end
+
+    test "consumables gain five percent per learned Potion Research level" do
+      stub(Catalog, :by_name, fn :am_learningpotion -> {:ok, %{id: 227}} end)
+      stub(Learned, :learned_level, fn %{}, 227 -> 4 end)
+
+      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 220
+      assert ctx.game_state.stats.current_state.sp == 130
+    end
+
+    test "HP consumables include the item heal rate bonus" do
+      ctx = Dsl.heal(build_ctx(hp: 100, item_heal_rate: 30), hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 230
+    end
+
+    test "scaled recovery floors fractional results" do
+      ctx = Dsl.heal(build_ctx(hp: 100, vit: 25), hp: 105)
+
+      assert ctx.game_state.stats.current_state.hp == 257
+    end
+
+    test "zero-stat players recover exactly the item roll" do
+      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 200
+      assert ctx.game_state.stats.current_state.sp == 110
+    end
+
+    test "non-item heals remain unchanged" do
+      ctx = %{build_ctx(hp: 100, vit: 50, item_heal_rate: 50) | source: {:npc, __MODULE__}}
+
+      ctx = Dsl.heal(ctx, hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 200
     end
   end
 
@@ -898,11 +950,21 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   defp build_game_state(opts \\ []) do
     stats = %Stats{
+      base_stats: %{
+        vit: Keyword.get(opts, :vit, 0),
+        int: Keyword.get(opts, :int, 0)
+      },
       current_state: %CurrentState{
         hp: Keyword.get(opts, :hp, 100),
         sp: Keyword.get(opts, :sp, 10)
       },
       derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
+      modifiers: %{
+        equipment: %{item_heal_rate: Keyword.get(opts, :item_heal_rate, 0)},
+        status_effects: %{},
+        job_bonuses: %{},
+        passive: %{}
+      },
       progression: %PlayerProgression{
         base_level: 10,
         job_level: 3,

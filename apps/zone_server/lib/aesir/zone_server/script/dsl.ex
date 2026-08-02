@@ -63,6 +63,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.QuestLog
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpecialEffect
 
@@ -244,9 +245,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def heal(%Ctx{game_state: nil} = ctx, _opts), do: Ctx.halt(ctx, :no_player)
 
   def heal(%Ctx{} = ctx, opts) do
-    apply_heal(ctx, fn current, _max -> current + roll(Keyword.get(opts, :hp, 0)) end, fn
-      current, _max -> current + roll(Keyword.get(opts, :sp, 0))
-    end)
+    hp = opts |> Keyword.get(:hp, 0) |> roll() |> scale_consumable_recovery(ctx, :hp)
+    sp = opts |> Keyword.get(:sp, 0) |> roll() |> scale_consumable_recovery(ctx, :sp)
+
+    apply_heal(ctx, fn current, _max -> current + hp end, fn current, _max -> current + sp end)
   end
 
   @doc """
@@ -2210,6 +2212,29 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       {:error, _reason} -> 0
     end
   end
+
+  # Consumable recovery: +5%/Potion Research level, +2%/VIT (HP) or +2%/INT (SP),
+  # plus the item_heal_rate equipment bonus on HP; floored integer percent.
+  defp scale_consumable_recovery(
+         amount,
+         %Ctx{source: {:item, _}, game_state: %{stats: stats}} = ctx,
+         resource
+       ) do
+    potion_research_rate = 5 * getskilllv(ctx, :am_learningpotion)
+
+    stat_rate =
+      case resource do
+        :hp ->
+          2 * PlayerStats.get_effective_stat(stats, :vit) + PlayerStats.get_item_heal_rate(stats)
+
+        :sp ->
+          2 * PlayerStats.get_effective_stat(stats, :int)
+      end
+
+    div(amount * (100 + potion_research_rate + stat_rate), 100)
+  end
+
+  defp scale_consumable_recovery(amount, %Ctx{}, _resource), do: amount
 
   defp apply_heal(%Ctx{} = ctx, hp_fun, sp_fun) do
     stats = ctx.game_state.stats
