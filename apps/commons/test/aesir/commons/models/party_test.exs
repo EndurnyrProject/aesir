@@ -57,6 +57,16 @@ defmodule Aesir.Commons.Models.PartyTest do
 
       assert party.exp_share == false
     end
+
+    test "casts and persists item_pickup_share" do
+      assert {:ok, party} =
+               %Party{}
+               |> Party.changeset(valid_attrs(%{item_pickup_share: true}))
+               |> Repo.insert()
+
+      assert party.item_pickup_share
+      assert Repo.get!(Party, party.id).item_pickup_share
+    end
   end
 
   describe "new/1" do

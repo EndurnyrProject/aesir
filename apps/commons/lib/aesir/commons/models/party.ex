@@ -3,7 +3,7 @@ defmodule Aesir.Commons.Models.Party do
   Party model — persistence source of truth for party existence and options.
 
   Membership itself stays on the existing `characters.party_id` column; this
-  schema only tracks the party's name, leader, and even-share option.
+  schema only tracks the party's name, leader, even-share option, and item pickup-share option.
   """
 
   use Ecto.Schema
@@ -14,6 +14,7 @@ defmodule Aesir.Commons.Models.Party do
           name: String.t() | nil,
           leader_char_id: integer() | nil,
           exp_share: boolean(),
+          item_pickup_share: boolean(),
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
         }
@@ -22,6 +23,7 @@ defmodule Aesir.Commons.Models.Party do
     field :name, :string
     field :leader_char_id, :integer
     field :exp_share, :boolean, default: false
+    field :item_pickup_share, :boolean, default: false
 
     timestamps()
   end
@@ -32,7 +34,7 @@ defmodule Aesir.Commons.Models.Party do
   @spec changeset(t(), map()) :: Ecto.Changeset.t()
   def changeset(party, attrs) do
     party
-    |> cast(attrs, [:name, :leader_char_id, :exp_share])
+    |> cast(attrs, [:name, :leader_char_id, :exp_share, :item_pickup_share])
     |> update_change(:name, &String.trim/1)
     |> validate_required([:name, :leader_char_id])
     |> validate_length(:name, min: 1)
