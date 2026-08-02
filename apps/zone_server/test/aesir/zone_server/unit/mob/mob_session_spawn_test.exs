@@ -8,14 +8,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
   use Mimic
 
   alias Aesir.Net.UnitSpawn
+  alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Mob.KillExp
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(KillExp)
+  end
 
   test "the mob spawn broadcast carries its sprite-state aggregate" do
     test_pid = self()
@@ -41,6 +48,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSpawnTest do
                        effect_state: 8,
                        virtue: 2
                      }}
+  end
+
+  test "a lifetime schedules clean despawn and unregisters without death handling" do
+    state = build_mob_state(9)
+
+    stub(SpatialIndex, :add_unit, fn :mob, 9, 51, 50, "prontera" -> :ok end)
+    stub(SpatialIndex, :remove_unit, fn :mob, 9 -> :ok end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Broadcast, :publish_mob_despawn, fn "prontera", 9 -> :ok end)
+    reject(&Coordinator.mob_died/3)
+    reject(&KillExp.distribute/6)
+
+    UnitRegistry.register_unit(:mob, 9, MobState, state, self())
+
+    {:ok, initialized, :hibernate} =
+      MobSession.init(%{state: state, awake: false, lifetime_ms: 50})
+
+    assert_receive :despawn, 100
+    assert {:stop, :normal, ^initialized} = MobSession.handle_info(:despawn, initialized)
+    assert {:error, :not_found} = UnitRegistry.get_unit(:mob, 9)
+    assert :ok = MobSession.terminate(:normal, initialized)
   end
 
   test "a dead mob's spawn carries only the opt2 aggregate, never a dead bit in health_state" do

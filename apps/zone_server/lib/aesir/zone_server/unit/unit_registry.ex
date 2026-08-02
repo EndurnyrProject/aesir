@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @type unit_type :: Unit.unit_type()
@@ -124,6 +125,21 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     table_for(:unit_registry)
     |> :ets.match({{unit_type, :"$1"}, :_, :_, :_})
     |> Enum.map(&List.first/1)
+  end
+
+  @doc "Counts registered living mobs owned by a player and matching a mob class id."
+  @spec count_living_owned_mobs(integer(), integer()) :: non_neg_integer()
+  def count_living_owned_mobs(owner_player_id, mob_id) do
+    :mob
+    |> list_units_by_type()
+    |> Enum.count(fn instance_id ->
+      match?(
+        {:ok,
+         {MobState, %MobState{owner_player_id: ^owner_player_id, mob_id: ^mob_id, is_dead: false},
+          _pid}},
+        get_unit(:mob, instance_id)
+      )
+    end)
   end
 
   @doc """

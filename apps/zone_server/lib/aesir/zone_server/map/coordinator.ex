@@ -301,25 +301,30 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
         dispatch_owner_event(mob.owner_event, killer_char_id)
 
-        # Schedule respawn with spawn config
-        spawn_config = mob.spawn_ref
-        boss? = module.is_boss?(mob)
-        delay = respawn_delay(spawn_config, boss?)
-
-        if boss? do
-          respawn_at = DateTime.add(DateTime.utc_now(), delay, :millisecond)
-          BossRespawn.write(state.map_name, spawn_config.mob, respawn_at)
-        end
-
-        timer_ref = Process.send_after(self(), {:respawn_mob, spawn_config}, delay)
-
-        # Store timer with spawn config for cleanup
-        new_timers = Map.put(state.respawn_timers, instance_id, {timer_ref, spawn_config})
-
-        Logger.debug("Mob #{instance_id} died on #{state.map_name}, respawning in #{delay}ms")
-
-        {:noreply, %{state | respawn_timers: new_timers}}
+        {:noreply, schedule_mob_respawn(state, instance_id, module, mob)}
     end
+  end
+
+  # Summoned mobs have no map spawn line; death is terminal for them.
+  defp schedule_mob_respawn(state, _instance_id, _module, %{spawn_ref: %{summoned: true}}),
+    do: state
+
+  defp schedule_mob_respawn(state, instance_id, module, mob) do
+    spawn_config = mob.spawn_ref
+    boss? = module.is_boss?(mob)
+    delay = respawn_delay(spawn_config, boss?)
+
+    if boss? do
+      respawn_at = DateTime.add(DateTime.utc_now(), delay, :millisecond)
+      BossRespawn.write(state.map_name, spawn_config.mob, respawn_at)
+    end
+
+    timer_ref = Process.send_after(self(), {:respawn_mob, spawn_config}, delay)
+    new_timers = Map.put(state.respawn_timers, instance_id, {timer_ref, spawn_config})
+
+    Logger.debug("Mob #{instance_id} died on #{state.map_name}, respawning in #{delay}ms")
+
+    %{state | respawn_timers: new_timers}
   end
 
   defp ownership_stamp(opts) do
@@ -765,10 +770,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       |> MobState.new(mob_data, spawn_ref, state.map_name, x, y)
       |> MobState.set_owner_event(Keyword.get(opts, :event))
       |> MobState.set_master(Keyword.get(opts, :master_id))
+      |> MobState.configure_summon(opts)
 
     # Respawns and summons on a currently-empty map start dormant; the
     # coordinator wakes them when a player next shows up.
-    case MobSupervisor.spawn_mob(state.map_name, mob_state, awake: state.mobs_awake) do
+    session_opts = [awake: state.mobs_awake, lifetime_ms: Keyword.get(opts, :lifetime_ms)]
+
+    case MobSupervisor.spawn_mob(state.map_name, mob_state, session_opts) do
       {:ok, mob_pid} ->
         UnitRegistry.register_unit(:mob, instance_id, MobState, mob_state, mob_pid)
         {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
@@ -832,12 +840,13 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   defp random_variance(variance) when variance > 0, do: :rand.uniform(variance + 1) - 1
 
   # NOTE: summoned mobs (Dead Branch etc.) have no map spawn config; we fabricate
-  # a minimal MobSpawn with respawn_time 0 so they are not re-spawned on death.
+  # a minimal MobSpawn marked summoned so death is terminal instead of respawning.
   defp summon_spawn_ref(mob_data, x, y) do
     %MobSpawn{
       mob: mob_data.id,
       amount: 1,
       respawn_time: 0,
+      summoned: true,
       spawn_area: %MobSpawn.SpawnArea{x: x, y: y, xs: 0, ys: 0}
     }
   end

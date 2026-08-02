@@ -32,7 +32,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
     child_spec = %{
       id: MobSession,
       start:
-        {MobSession, :start_link, [%{state: mob_state, awake: Keyword.get(opts, :awake, true)}]},
+        {MobSession, :start_link,
+         [
+           %{
+             state: mob_state,
+             awake: Keyword.get(opts, :awake, true),
+             lifetime_ms: Keyword.get(opts, :lifetime_ms)
+           }
+         ]},
       restart: :temporary,
       type: :worker
     }

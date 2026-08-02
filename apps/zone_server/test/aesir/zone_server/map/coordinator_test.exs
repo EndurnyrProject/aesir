@@ -64,6 +64,42 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert mob.y in 0..39
     end
 
+    test "threads summon ownership, reward, HP, and lifetime options" do
+      test_pid = self()
+
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{} = mob, opts ->
+        send(test_pid, {:spawned, mob, opts})
+        {:ok, self()}
+      end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      opts = [
+        owner_player_id: 42,
+        hp_override: 2_345,
+        lifetime_ms: 50,
+        no_exp: true,
+        no_drops: true
+      ]
+
+      {:reply, {:ok, instance_id}, _new_state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, opts}, {self(), nil}, state)
+
+      assert_received {:spawned,
+                       %MobState{
+                         owner_player_id: 42,
+                         hp: 2_345,
+                         max_hp: 2_345,
+                         no_exp: true,
+                         no_drops: true
+                       }, session_opts}
+
+      assert session_opts[:lifetime_ms] == 50
+
+      assert {:ok, {MobState, %MobState{owner_player_id: 42, no_exp: true, no_drops: true}, _pid}} =
+               UnitRegistry.get_unit(:mob, instance_id)
+    end
+
     test "threads a :master_id opt onto the spawned mob (slave link)" do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
 
@@ -88,8 +124,29 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       {:reply, {:ok, instance_id}, _new_state} =
         Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
 
-      assert {:ok, {MobState, %MobState{master_id: nil}, _pid}} =
-               UnitRegistry.get_unit(:mob, instance_id)
+      assert {:ok,
+              {MobState,
+               %MobState{
+                 master_id: nil,
+                 owner_player_id: nil,
+                 no_exp: false,
+                 no_drops: false
+               }, _pid}} = UnitRegistry.get_unit(:mob, instance_id)
+    end
+
+    test "a killed summon is not scheduled for respawn" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      {:reply, {:ok, instance_id}, new_state} =
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+
+      assert {:noreply, after_death} =
+               Coordinator.handle_cast({:mob_died, instance_id, nil}, new_state)
+
+      assert after_death.respawn_timers == new_state.respawn_timers
+      refute_receive {:respawn_mob, _}, 50
     end
 
     test "rejects a fixed summon cell occupied by an active movement blocker" do

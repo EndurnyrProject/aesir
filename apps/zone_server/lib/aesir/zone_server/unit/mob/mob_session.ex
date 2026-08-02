@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.Mob.StealOps
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Public API
 
@@ -188,6 +189,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def init(%{state: mob_state} = args) do
     awake = Map.get(args, :awake, true)
+    schedule_despawn(Map.get(args, :lifetime_ms))
 
     # Set this process as the mob's process
     updated_state =
@@ -364,6 +366,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, state}
   end
 
+  @impl GenServer
+  def handle_info(:despawn, state) do
+    UnitRegistry.unregister_unit(:mob, state.instance_id)
+    {:stop, :normal, state}
+  end
+
   # :terminate stays bare: a singleton lifecycle atom (post-death cleanup timer).
   @impl GenServer
   def handle_info(:terminate, state) do
@@ -375,6 +383,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     Logger.error("MobSession #{state.instance_id} received unknown info: #{inspect(message)}")
     {:noreply, state}
   end
+
+  defp schedule_despawn(lifetime_ms) when is_integer(lifetime_ms) and lifetime_ms >= 0 do
+    Process.send_after(self(), :despawn, lifetime_ms)
+  end
+
+  defp schedule_despawn(nil), do: nil
 
   @impl GenServer
   def terminate(_reason, state) do

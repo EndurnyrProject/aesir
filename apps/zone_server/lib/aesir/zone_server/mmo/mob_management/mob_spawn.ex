@@ -23,13 +23,19 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobSpawn do
   end
 
   @enforce_keys [:mob, :amount, :respawn_time, :spawn_area]
-  defstruct mob: nil, amount: nil, respawn_time: nil, respawn_variance: 0, spawn_area: nil
+  defstruct mob: nil,
+            amount: nil,
+            respawn_time: nil,
+            respawn_variance: 0,
+            spawn_area: nil,
+            summoned: false
 
   @type t() :: %__MODULE__{
           mob: integer(),
           amount: integer(),
           respawn_time: integer(),
           respawn_variance: integer(),
-          spawn_area: SpawnArea.t()
+          spawn_area: SpawnArea.t(),
+          summoned: boolean()
         }
 end

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -68,6 +69,33 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
+
+  defp register_owned_mob(instance_id, owner_player_id, mob_id, dead? \\ false) do
+    state =
+      struct(MobState,
+        instance_id: instance_id,
+        owner_player_id: owner_player_id,
+        mob_id: mob_id,
+        is_dead: dead?
+      )
+
+    UnitRegistry.register_unit(:mob, instance_id, MobState, state, nil)
+  end
+
+  describe "count_living_owned_mobs/2" do
+    test "filters by owner and mob class and reflects unregistering" do
+      register_owned_mob(1, 42, 1002)
+      register_owned_mob(2, 42, 1002)
+      register_owned_mob(3, 43, 1002)
+      register_owned_mob(4, 42, 1003)
+      register_owned_mob(5, 42, 1002, true)
+
+      assert UnitRegistry.count_living_owned_mobs(42, 1002) == 2
+
+      UnitRegistry.unregister_unit(:mob, 1)
+      assert UnitRegistry.count_living_owned_mobs(42, 1002) == 1
+    end
+  end
 
   describe "register_unit/5" do
     test "registers a unit successfully" do

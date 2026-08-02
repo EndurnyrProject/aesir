@@ -80,6 +80,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     skill_cooldowns: %{},
     casting: nil,
     master_id: nil,
+    owner_player_id: nil,
+    no_exp: false,
+    no_drops: false,
     # True until the first AI tick after spawn has run skill selection; that
     # tick selects with the `:spawn` event so `onspawn` rows can fire.
     spawn_tick_pending?: true,
@@ -146,6 +149,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           skill_cooldowns: %{optional(integer()) => integer()},
           casting: map() | nil,
           master_id: integer() | nil,
+          owner_player_id: integer() | nil,
+          no_exp: boolean(),
+          no_drops: boolean(),
           spawn_tick_pending?: boolean(),
           last_ai_tick: integer() | nil,
           aggro_list: map(),
@@ -534,6 +540,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec set_master(t(), integer() | nil) :: t()
   def set_master(%__MODULE__{} = state, master_id) do
     %{state | master_id: master_id}
+  end
+
+  @doc "Configures player summon ownership, reward policy, and optional HP override."
+  @spec configure_summon(t(), keyword()) :: t()
+  def configure_summon(%__MODULE__{} = state, opts) do
+    state =
+      %{
+        state
+        | owner_player_id: Keyword.get(opts, :owner_player_id),
+          no_exp: Keyword.get(opts, :no_exp, false),
+          no_drops: Keyword.get(opts, :no_drops, false)
+      }
+
+    case Keyword.get(opts, :hp_override) do
+      nil -> state
+      hp -> %{state | hp: hp, max_hp: hp}
+    end
   end
 
   @doc """

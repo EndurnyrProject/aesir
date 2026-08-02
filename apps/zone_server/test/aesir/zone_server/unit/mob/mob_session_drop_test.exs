@@ -117,6 +117,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     refute boss?
   end
 
+  test "no_exp and no_drops suppress EXP distribution and drop generation" do
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
+    reject(&Aesir.ZoneServer.Unit.Mob.KillExp.distribute/6)
+
+    :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+
+    state =
+      build_mob_state(hp: 1, max_hp: 1000, drops: [%MobDrop{item: "Red_Potion", rate: 10_000}])
+      |> Map.put(:no_exp, true)
+      |> Map.put(:no_drops, true)
+
+    {:noreply, _state} = MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
+
+    refute_receive {:loot, {:mob_killed, _payload}}
+  end
+
   test "a mob death with no killer broadcasts nothing" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)

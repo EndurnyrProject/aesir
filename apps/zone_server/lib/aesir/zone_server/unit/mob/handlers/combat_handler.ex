@@ -131,34 +131,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   defp announce_kill(%MobState{mob_data: mob_data, aggro_list: aggro_list} = state, attacker_id) do
     ownership = LootOwnership.determine(state)
 
-    KillExp.distribute(
-      aggro_list,
-      mob_data.base_exp,
-      mob_data.job_exp,
-      mob_data.level,
-      state.map_name,
-      mob_data.race
-    )
+    unless state.no_exp do
+      KillExp.distribute(
+        aggro_list,
+        mob_data.base_exp,
+        mob_data.job_exp,
+        mob_data.level,
+        state.map_name,
+        mob_data.race
+      )
+    end
 
     MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y, ownership)
 
     QuestHuntCredit.credit(attacker_id, mob_data.id, state.map_name, {state.x, state.y})
 
-    PubSub.broadcast(
-      Aesir.PubSub,
-      "player:#{attacker_id}",
-      {:loot,
-       {:mob_killed,
-        %{
-          mob_id: mob_data.id,
-          drops: mob_data.drops,
-          mob_level: mob_data.level,
-          map: state.map_name,
-          x: state.x,
-          y: state.y,
-          ownership: ownership,
-          boss?: MobState.is_boss?(state)
-        }}}
-    )
+    unless state.no_drops do
+      PubSub.broadcast(
+        Aesir.PubSub,
+        "player:#{attacker_id}",
+        {:loot,
+         {:mob_killed,
+          %{
+            mob_id: mob_data.id,
+            drops: mob_data.drops,
+            mob_level: mob_data.level,
+            map: state.map_name,
+            x: state.x,
+            y: state.y,
+            ownership: ownership,
+            boss?: MobState.is_boss?(state)
+          }}}
+      )
+    end
   end
 end
