@@ -1,7 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+  use Mimic
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   describe "weapon/1" do
     test "includes the shared base and each tier bonus" do
@@ -132,6 +137,67 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
     end
   end
 
+  describe "pharmacy/2" do
+    test "includes the cast level, job level, integer Intelligence, DEX, and LUK terms" do
+      params = %{pharmacy_params() | skill_level: 1}
+
+      assert SuccessRate.pharmacy(999, params) == 300
+      assert SuccessRate.pharmacy(999, %{params | job_level: 1}) == 320
+      assert SuccessRate.pharmacy(999, %{params | int: 1}) == 300
+      assert SuccessRate.pharmacy(999, %{params | int: 2}) == 310
+      assert SuccessRate.pharmacy(999, %{params | dex: 1}) == 310
+      assert SuccessRate.pharmacy(999, %{params | luk: 1}) == 310
+    end
+
+    test "adds 50 per learned Learning Potion level" do
+      stub(Catalog, :by_name, fn :am_learningpotion -> {:ok, %{id: 227}} end)
+
+      assert SuccessRate.pharmacy(999, %{pharmacy_params() | learned_skills: %{227 => 3}}) ==
+               150
+    end
+
+    test "treats unavailable Learning Potion as level zero" do
+      stub(Catalog, :by_name, fn :am_learningpotion -> :error end)
+
+      params = %{pharmacy_params() | skill_level: 1, learned_skills: %{227 => 10}}
+
+      assert SuccessRate.pharmacy(999, params) == 300
+    end
+
+    test "uses the supplied product-class roll at each class boundary" do
+      params = %{pharmacy_params() | skill_level: 4}
+
+      assert SuccessRate.pharmacy(501, %{params | random_term: 2010}) == 3210
+      assert SuccessRate.pharmacy(504, %{params | random_term: 3000}) == 4200
+      assert SuccessRate.pharmacy(970, %{params | random_term: 1010}) == 2210
+      assert SuccessRate.pharmacy(970, %{params | random_term: 2000}) == 3200
+      assert SuccessRate.pharmacy(7135, %{params | random_term: 10}) == 1210
+      assert SuccessRate.pharmacy(7138, %{params | random_term: 1000}) == 2200
+      assert SuccessRate.pharmacy(547, %{params | random_term: -10}) == 1190
+      assert SuccessRate.pharmacy(547, %{params | random_term: -500}) == 700
+      assert SuccessRate.pharmacy(12_428, %{params | random_term: -10}) == 1190
+      assert SuccessRate.pharmacy(7139, %{params | random_term: -1000}) == 200
+      assert SuccessRate.pharmacy(999, %{params | random_term: 3000}) == 1200
+    end
+
+    test "clamps pharmacy chance at both bounds" do
+      assert SuccessRate.pharmacy(7139, %{pharmacy_params() | skill_level: 1, random_term: -1000}) ==
+               1
+
+      params = %{
+        pharmacy_params()
+        | job_level: 70,
+          int: 100,
+          dex: 200,
+          luk: 100,
+          skill_level: 10,
+          random_term: 3000
+      }
+
+      assert SuccessRate.pharmacy(501, params) == 10_000
+    end
+  end
+
   defp weapon_params do
     %{
       job_level: 10,
@@ -155,6 +221,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
       luk: 30,
       random_term: 500,
       skill_level: 2
+    }
+  end
+
+  defp pharmacy_params do
+    %{
+      job_level: 0,
+      int: 0,
+      dex: 0,
+      luk: 0,
+      skill_level: 0,
+      learned_skills: %{},
+      random_term: 0
     }
   end
 end

@@ -5,8 +5,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   Random terms are supplied by the caller; this module never rolls them.
   """
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
+
   @production_rate_multiplier 1
   @maximum_rate 10_000
+
+  @typedoc "Inputs for the pharmacy formula."
+  @type pharmacy_params :: %{
+          required(:job_level) => non_neg_integer(),
+          required(:int) => non_neg_integer(),
+          required(:dex) => non_neg_integer(),
+          required(:luk) => non_neg_integer(),
+          required(:skill_level) => non_neg_integer(),
+          required(:learned_skills) => Learned.t(),
+          required(:random_term) => integer()
+        }
 
   @typedoc "Inputs shared by mineral-refining formulas."
   @type mineral_params :: %{
@@ -69,6 +83,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   end
 
   @doc """
+  Calculates a pharmacy chance and clamps it to `1..10_000`.
+  """
+  @spec pharmacy(integer(), pharmacy_params() | map()) :: pos_integer()
+  def pharmacy(product_id, %{
+        job_level: job_level,
+        int: int,
+        dex: dex,
+        luk: luk,
+        skill_level: skill_level,
+        learned_skills: learned_skills,
+        random_term: random_term
+      }) do
+    instruction_term = 0
+
+    rate =
+      50 * learning_potion_level(learned_skills) +
+        300 * skill_level +
+        20 * job_level +
+        10 * div(int, 2) +
+        10 * dex +
+        10 * luk +
+        instruction_term +
+        product_class_roll(product_id, random_term)
+
+    rate
+    |> max(1)
+    |> min(@maximum_rate)
+  end
+
+  @doc """
   Calculates a mineral-refining chance without the weapon multiplier or floor.
 
   Star Crumb refining is guaranteed and ignores the supplied formula inputs.
@@ -89,6 +133,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   defp base(job_level, dex, luk, random_term) do
     20 * job_level + 10 * dex + 10 * luk + random_term
   end
+
+  defp learning_potion_level(learned_skills) do
+    case Catalog.by_name(:am_learningpotion) do
+      {:ok, %{id: id}} -> Learned.learned_level(learned_skills, id)
+      :error -> 0
+    end
+  end
+
+  defp product_class_roll(product_id, random_term) when product_id in 501..504, do: random_term
+  defp product_class_roll(970, random_term), do: random_term
+  defp product_class_roll(product_id, random_term) when product_id in 7135..7138, do: random_term
+  defp product_class_roll(547, random_term), do: random_term
+
+  defp product_class_roll(product_id, random_term) when product_id in [12_428, 7139],
+    do: random_term
+
+  defp product_class_roll(_product_id, _random_term), do: 0
 
   defp tier_bonus(1), do: 4000
   defp tier_bonus(2), do: 2000
