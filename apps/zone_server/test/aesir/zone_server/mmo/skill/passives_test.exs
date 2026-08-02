@@ -12,7 +12,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
   # Real equip.yml ids whose subtype matches the weapon atoms under test.
-  @weapon_ids %{one_handed_sword: 1101, mace: 1340, bow: 1701, knuckle: 1801}
+  @weapon_ids %{
+    one_handed_sword: 1101,
+    mace: 1340,
+    bow: 1701,
+    knuckle: 1801,
+    one_handed_axe: 1301,
+    two_handed_axe: 1314
+  }
   @both_hand 34
   @right_hand 2
 
@@ -143,9 +150,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   end
 
   defp build_player(learned_skills, weapon_atom) do
-    equip = if weapon_atom == :bow, do: @both_hand, else: @right_hand
-    nameid = Map.fetch!(@weapon_ids, weapon_atom)
-    weapon = %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+    inventory =
+      if weapon_atom == :bare_hands do
+        []
+      else
+        equip = if weapon_atom in [:bow, :two_handed_axe], do: @both_hand, else: @right_hand
+
+        [
+          %InventoryItem{
+            nameid: Map.fetch!(@weapon_ids, weapon_atom),
+            amount: 1,
+            equip: equip,
+            identify: 1
+          }
+        ]
+      end
 
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 10, int: 10, dex: 1, luk: 1},
@@ -155,7 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
         job_level: 30,
         learned_skills: learned_skills
       },
-      equipment: Stats.equipment_from_inventory([weapon])
+      equipment: Stats.equipment_from_inventory(inventory)
     }
 
     %PlayerState{stats: stats}
@@ -180,6 +199,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     test "MO_IRONHAND level 5 with a knuckle grants 15 ATK" do
       player = build_player(%{259 => 5}, :knuckle)
       assert Passives.atk_bonus(player) == 15
+    end
+
+    test "AM_AXEMASTERY level 10 with a one-handed axe grants 30 ATK" do
+      player = build_player(%{226 => 10}, :one_handed_axe)
+
+      assert Passives.atk_bonus(player) == 30
+      assert Stats.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+    end
+
+    test "AM_AXEMASTERY level 10 with a two-handed axe grants 30 ATK" do
+      player = build_player(%{226 => 10}, :two_handed_axe)
+
+      assert Passives.atk_bonus(player) == 30
+      assert Stats.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+    end
+
+    test "AM_AXEMASTERY level 10 with a one-handed sword grants 30 ATK" do
+      player = build_player(%{226 => 10}, :one_handed_sword)
+
+      assert Passives.atk_bonus(player) == 30
+      assert Stats.calculate_combat_stats(player.stats).combat_stats.passive_atk == 30
+    end
+
+    test "AM_AXEMASTERY grants no ATK with another weapon or bare hands" do
+      assert Passives.atk_bonus(build_player(%{226 => 10}, :mace)) == 0
+      assert Passives.atk_bonus(build_player(%{226 => 10}, :bare_hands)) == 0
     end
   end
 
