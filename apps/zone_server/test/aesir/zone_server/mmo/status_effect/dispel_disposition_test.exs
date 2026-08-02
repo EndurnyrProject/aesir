@@ -27,7 +27,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelDispositionTest do
 
   describe "statuses rAthena flags NoDispell" do
     test "survive dispel" do
-      for id <- [:sc_hiding, :sc_cloaking, :sc_pneuma, :sc_safetywall, :sc_poembragi, :sc_agifood] do
+      for id <- [
+            :sc_hiding,
+            :sc_cloaking,
+            :sc_pneuma,
+            :sc_safetywall,
+            :sc_poembragi,
+            :sc_agifood,
+            :sc_cp_weapon,
+            :sc_cp_shield,
+            :sc_cp_armor,
+            :sc_cp_helm
+          ] do
         module = module_for!(id)
 
         assert module.metadata().no_dispel,
