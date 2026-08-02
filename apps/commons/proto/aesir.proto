@@ -1179,6 +1179,8 @@ enum PickupResultCode {
   INVENTORY_FULL = 3;
   GONE = 4;
   FAILED = 5;
+  // The item is loot-protected for its owners' pickup windows; retry after the protection lapses.
+  LOOT_PROTECTED = 6;
 }
 
 // Server -> client, an item appeared on a map cell (drop or walk-up discovery).
@@ -1249,6 +1251,10 @@ message PartyKickRequest {
 // Client -> server, leader-only request to toggle even-share EXP.
 message PartyOptionsRequest {
   bool exp_share = 1;
+  // Leader-only rAthena-style party pickup-share option: party members of an online loot owner
+  // inherit the owner's pickup window. The client sends the full desired state of both options
+  // on every request (proto3 false-default).
+  bool item_pickup_share = 2;
 }
 
 // Client -> server, leader-only request to transfer leadership to an online,
@@ -1303,6 +1309,8 @@ message PartyInfo {
   uint32 leader_char_id = 3;
   bool exp_share = 4;
   repeated PartyMember members = 5;
+  // Current party pickup-share setting, mirrored from the party options.
+  bool item_pickup_share = 6;
 }
 
 // Server -> client, complete current snapshot for one party member.
