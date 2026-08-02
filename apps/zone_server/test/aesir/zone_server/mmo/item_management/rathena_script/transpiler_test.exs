@@ -141,11 +141,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.TranspilerTest do
 
   defp build_game_state(opts) do
     stats = %Stats{
+      base_stats: %{vit: 0, int: 0},
       current_state: %CurrentState{
         hp: Keyword.get(opts, :hp, 100),
         sp: Keyword.get(opts, :sp, 10)
       },
       derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
+      modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}},
       progression: %PlayerProgression{base_level: 10, job_level: 3, job_id: 0}
     }
 

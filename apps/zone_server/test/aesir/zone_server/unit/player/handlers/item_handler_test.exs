@@ -196,12 +196,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
 
   defp stats do
     %Aesir.ZoneServer.Unit.Player.Stats{
+      base_stats: %{vit: 0, int: 0},
       current_state: %Aesir.ZoneServer.Unit.Stats.CurrentState{hp: 100, sp: 10},
       derived_stats: %Aesir.ZoneServer.Unit.Stats.DerivedStats{
         max_hp: 500,
         max_sp: 200,
         aspd: 150
       },
+      modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}},
       progression: %Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression{
         base_level: 10,
         job_level: 3,
