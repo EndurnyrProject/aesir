@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStoreTest do
       assert a.x == 100
       assert a.y == 100
       assert a.identified == true
+      assert a.owners == nil
+      assert a.unlock_at == nil
     end
 
     test "scatters stacked drops with a sub-cell offset in {3, 6, 9, 12}" do
@@ -64,6 +66,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStoreTest do
 
       assert {:ok, ^item} = GroundItemStore.claim("prontera", item.id)
       assert {:error, :gone} = GroundItemStore.claim("prontera", item.id)
+    end
+
+    test "preserves an ownership stamp through a claim" do
+      owners = {101, 202, 303}
+      unlock_at = {1_000, 2_000, 3_000}
+      item = GroundItem.new(501, 1, 100, 100, true, owners: owners, unlock_at: unlock_at)
+
+      assert :ok = GroundItemStore.put("prontera", item)
+      assert {:ok, claimed} = GroundItemStore.claim("prontera", item.id)
+      assert claimed.owners == owners
+      assert claimed.unlock_at == unlock_at
     end
 
     test "returns {:error, :gone} for an unknown id" do
