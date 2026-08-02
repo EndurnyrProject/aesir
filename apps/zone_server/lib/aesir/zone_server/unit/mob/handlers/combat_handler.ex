@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
   @doc """
@@ -36,12 +37,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   def handle_apply_damage(damage, attacker_id, state) do
     {updated_mob, status} = MobState.apply_damage(state, damage)
     current_time = System.system_time(:second)
+    credited_attacker_id = credited_attacker_id(attacker_id)
 
     # Update last damage time and add aggro if attacker provided
     updated_mob =
       updated_mob
       |> Map.put(:last_damage_time, current_time)
-      |> maybe_add_aggro(attacker_id, damage)
+      |> maybe_add_aggro(credited_attacker_id, damage)
       |> AIStateMachine.handle_damage_reaction(attacker_id)
       |> maybe_note_rude_attack(attacker_id)
 
@@ -53,7 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         {:noreply, updated_mob}
 
       :dead ->
-        handle_death(updated_mob, attacker_id)
+        handle_death(updated_mob, credited_attacker_id)
     end
   end
 
@@ -61,6 +63,22 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   defp maybe_add_aggro(state, attacker_id, damage) do
     MobState.add_aggro(state, attacker_id, damage)
+  end
+
+  defp credited_attacker_id(nil), do: nil
+
+  defp credited_attacker_id(attacker_id) do
+    case UnitRegistry.get_unit(:mob, attacker_id) do
+      {:ok, {MobState, %MobState{owner_player_id: owner_player_id}, _pid}}
+      when is_integer(owner_player_id) ->
+        owner_player_id
+
+      {:ok, _unit} ->
+        attacker_id
+
+      {:error, :not_found} ->
+        attacker_id
+    end
   end
 
   # Records a rude attack when the hit came from beyond the mob's chase range
