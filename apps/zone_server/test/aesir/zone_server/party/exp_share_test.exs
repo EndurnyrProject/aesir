@@ -87,6 +87,7 @@ defmodule Aesir.ZoneServer.Party.ExpShareTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: true,
+        item_pickup_share: false,
         members: %{
           1 => member(1, 50, online: true, map_name: "prontera"),
           2 => member(2, 50, online: false, map_name: "prontera")
@@ -105,6 +106,7 @@ defmodule Aesir.ZoneServer.Party.ExpShareTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: true,
+        item_pickup_share: false,
         members: %{
           1 => member(1, 50, online: true, map_name: "prontera"),
           2 => member(2, 50, online: true, map_name: "geffen")
@@ -123,6 +125,7 @@ defmodule Aesir.ZoneServer.Party.ExpShareTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: true,
+        item_pickup_share: false,
         members: %{
           1 => member(1, 50, online: true, map_name: "prontera"),
           2 => member(2, 50, online: true, map_name: "prontera")
@@ -140,6 +143,7 @@ defmodule Aesir.ZoneServer.Party.ExpShareTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: true,
+        item_pickup_share: false,
         members: %{
           1 => member(1, 50, online: true, map_name: "prontera"),
           2 => member(2, 50, online: true, map_name: "prontera")

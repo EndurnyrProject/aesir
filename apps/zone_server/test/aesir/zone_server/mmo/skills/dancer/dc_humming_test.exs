@@ -86,6 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
          name: "Focus Ballet",
          leader_char_id: 1,
          exp_share: false,
+         item_pickup_share: false,
          members: %{
            1 => member(1),
            2 => member(2),

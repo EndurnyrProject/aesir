@@ -127,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: %{
         1 => party_member(1, "prontera"),
         2 => party_member(2, "prontera")
@@ -158,6 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: %{
         1 => party_member(1, "prontera"),
         2 => party_member(2, "prontera")
@@ -180,6 +182,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: %{
         1 => party_member(1, "prontera"),
         2 => party_member(2, "geffen")
@@ -202,6 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: %{
         1 => party_member(1, "prontera"),
         2 => party_member(2, "prontera")
@@ -230,6 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelusTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: %{1 => party_member(1, "prontera"), 2 => party_member(2, "prontera")}
     }
 

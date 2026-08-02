@@ -82,6 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
          name: "Party",
          leader_char_id: 1,
          exp_share: false,
+         item_pickup_share: false,
          members: %{
            1 => member(1),
            2 => member(2),

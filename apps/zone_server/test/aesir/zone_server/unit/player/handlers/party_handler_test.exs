@@ -531,12 +531,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
   end
 
   describe "handle_options_request/2" do
-    test "the leader enables even-share within the level-spread boundary" do
+    test "the leader enables even-share and item pickup share" do
       {leader, party} = party_fixture("Dagny")
 
       assert {:noreply, _state} =
                PartyHandler.handle_options_request(
-                 %PartyOptionsRequest{exp_share: true},
+                 %PartyOptionsRequest{exp_share: true, item_pickup_share: true},
                  state_for(leader)
                )
 
@@ -544,7 +544,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
                        {:party_action_result,
                         %PartyActionResult{action: "options", success: true, error: :NONE}}}
 
-      assert Repo.get(Aesir.Commons.Models.Party, party.party_id).exp_share == true
+      persisted = Repo.get(Aesir.Commons.Models.Party, party.party_id)
+      assert persisted.exp_share == true
+      assert persisted.item_pickup_share == true
     end
   end
 

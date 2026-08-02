@@ -93,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: %{
         1 => Member.new(1, "Char1", 100, true, "prontera"),
         2 => Member.new(2, "Char2", 100, true, "prontera")

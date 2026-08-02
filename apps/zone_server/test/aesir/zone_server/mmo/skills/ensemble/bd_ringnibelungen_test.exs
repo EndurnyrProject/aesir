@@ -120,6 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
          name: "Nibelungen Party",
          leader_char_id: caster.character_id,
          exp_share: false,
+         item_pickup_share: false,
          members: %{
            caster.character_id => member(caster.character_id),
            recipient.character_id => member(recipient.character_id)

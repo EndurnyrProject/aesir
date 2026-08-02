@@ -73,6 +73,7 @@ defmodule Aesir.ZoneServer.Party.ViewTest do
       name: "Aesir",
       leader_char_id: leader.char_id,
       exp_share: true,
+      item_pickup_share: true,
       members: %{leader.char_id => leader, member.char_id => member}
     }
 
@@ -82,6 +83,7 @@ defmodule Aesir.ZoneServer.Party.ViewTest do
     assert result.name == "Aesir"
     assert result.leader_char_id == 42
     assert result.exp_share == true
+    assert result.item_pickup_share == true
     assert length(result.members) == 2
 
     mapped_leader = Enum.find(result.members, &(&1.char_id == 42))

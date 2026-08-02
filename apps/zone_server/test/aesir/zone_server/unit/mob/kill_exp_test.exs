@@ -176,6 +176,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: true,
+        item_pickup_share: false,
         members: %{
           1 => party_member(1, "prontera"),
           2 => party_member(2, "prontera"),
@@ -206,6 +207,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: false,
+        item_pickup_share: false,
         members: %{1 => party_member(1, "prontera")}
       }
 
@@ -227,6 +229,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.KillExpTest do
         name: "Party",
         leader_char_id: 1,
         exp_share: true,
+        item_pickup_share: false,
         members: %{1 => party_member(1, "prontera")}
       }
 

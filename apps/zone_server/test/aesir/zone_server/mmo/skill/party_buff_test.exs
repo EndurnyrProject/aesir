@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PartyBuffTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: Map.new(members, &{&1.char_id, &1})
     }
   end

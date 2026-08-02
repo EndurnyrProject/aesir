@@ -8,14 +8,20 @@ defmodule Aesir.ZoneServer.Party.State do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Party.Member
 
-  @enforce_keys [:party_id, :name, :leader_char_id, :exp_share]
-  defstruct party_id: nil, name: nil, leader_char_id: nil, exp_share: nil, members: %{}
+  @enforce_keys [:party_id, :name, :leader_char_id, :exp_share, :item_pickup_share]
+  defstruct party_id: nil,
+            name: nil,
+            leader_char_id: nil,
+            exp_share: nil,
+            item_pickup_share: nil,
+            members: %{}
 
   @type t() :: %__MODULE__{
           party_id: non_neg_integer(),
           name: String.t(),
           leader_char_id: non_neg_integer(),
           exp_share: boolean(),
+          item_pickup_share: boolean(),
           members: %{non_neg_integer() => Member.t()}
         }
 

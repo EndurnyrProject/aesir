@@ -342,17 +342,18 @@ defmodule Aesir.ZoneServer.Party.Manager do
   end
 
   @doc """
-  Leader-only toggling of the `exp_share` option. Turning it on is rejected
-  with `{:error, :level_range}` when the online members' base-level spread
-  exceeds `Config.party_share_level/0` (design "Options").
+  Leader-only toggling of `exp_share` and `item_pickup_share`. Turning EXP
+  sharing on is rejected with `{:error, :level_range}` when the online
+  members' base-level spread exceeds `Config.party_share_level/0`; pickup
+  sharing has no level-spread gate (design "Options").
   """
-  @spec set_options(non_neg_integer(), non_neg_integer(), boolean()) ::
+  @spec set_options(non_neg_integer(), non_neg_integer(), boolean(), boolean()) ::
           {:ok, State.t()} | {:error, :not_leader | :level_range | :not_found | term()}
-  def set_options(party_id, requester_char_id, exp_share) do
-    mutate(party_id, &set_options_reply(requester_char_id, exp_share, &1))
+  def set_options(party_id, requester_char_id, exp_share, item_pickup_share) do
+    mutate(party_id, &set_options_reply(requester_char_id, exp_share, item_pickup_share, &1))
   end
 
-  defp set_options_reply(requester_char_id, exp_share, %State{} = state) do
+  defp set_options_reply(requester_char_id, exp_share, item_pickup_share, %State{} = state) do
     cond do
       state.leader_char_id != requester_char_id ->
         {{:error, :not_leader}, state}
@@ -361,9 +362,17 @@ defmodule Aesir.ZoneServer.Party.Manager do
         {{:error, :level_range}, state}
 
       true ->
-        case persist_party(state.party_id, %{exp_share: exp_share}) do
+        case persist_party(state.party_id, %{
+               exp_share: exp_share,
+               item_pickup_share: item_pickup_share
+             }) do
           :ok ->
-            new_state = %State{state | exp_share: exp_share}
+            new_state = %State{
+              state
+              | exp_share: exp_share,
+                item_pickup_share: item_pickup_share
+            }
+
             {{:ok, new_state}, new_state}
 
           {:error, reason} ->
@@ -416,7 +425,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   level spread and auto-disables `exp_share` per the same rule as
   `push_base_level/3` -- both login and logout cross this path (design
   "Level/presence tracking"). Never re-enables `exp_share`; re-enabling is a
-  manual leader action via `set_options/3`.
+  manual leader action via `set_options/4`.
   """
   @spec set_online(non_neg_integer(), non_neg_integer(), boolean()) ::
           {:ok, State.t()} | {:error, :not_member | :not_found | term()}
@@ -592,6 +601,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
       name: party.name,
       leader_char_id: party.leader_char_id,
       exp_share: party.exp_share,
+      item_pickup_share: party.item_pickup_share,
       members: Map.new(members, &{&1.char_id, &1})
     }
   end

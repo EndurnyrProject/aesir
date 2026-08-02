@@ -181,6 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
       name: "Party",
       leader_char_id: caster_id,
       exp_share: false,
+      item_pickup_share: false,
       members: %{
         caster_id => party_member(caster_id, "prontera"),
         member_id => party_member(member_id, "prontera")
@@ -200,6 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
       name: "Party",
       leader_char_id: 1,
       exp_share: false,
+      item_pickup_share: false,
       members: Map.new(1..5, fn char_id -> {char_id, party_member(char_id, "prontera")} end)
     }
 

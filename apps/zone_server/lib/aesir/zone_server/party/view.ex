@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Party.View do
       name: party.name,
       leader_char_id: party.leader_char_id,
       exp_share: party.exp_share,
+      item_pickup_share: party.item_pickup_share,
       members: party.members |> Map.values() |> Enum.map(&member/1)
     }
   end

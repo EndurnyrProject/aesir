@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCreditTest do
       name: "Party",
       leader_char_id: hd(char_ids),
       exp_share: false,
+      item_pickup_share: false,
       members: members
     }
   end

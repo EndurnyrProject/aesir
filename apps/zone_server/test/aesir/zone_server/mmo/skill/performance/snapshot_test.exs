@@ -65,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
          name: "Party",
          leader_char_id: 1,
          exp_share: false,
+         item_pickup_share: false,
          members: %{
            1 => member(1),
            2 => member(2),
@@ -140,6 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
          name: "Party",
          leader_char_id: 1,
          exp_share: false,
+         item_pickup_share: false,
          members: %{1 => member(1), 2 => member(2), 3 => member(3)}
        }}
     end)

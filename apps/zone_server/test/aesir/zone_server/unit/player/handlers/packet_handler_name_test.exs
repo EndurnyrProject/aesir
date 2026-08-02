@@ -76,7 +76,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
     s = state(party_id: 5)
 
     expect(PartyManager, :get, fn 5 ->
-      {:ok, %PartyState{party_id: 5, name: "Vanguard", leader_char_id: 1, exp_share: false}}
+      {:ok,
+       %PartyState{
+         party_id: 5,
+         name: "Vanguard",
+         leader_char_id: 1,
+         exp_share: false,
+         item_pickup_share: false
+       }}
     end)
 
     {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: @character_id}, s)
@@ -117,7 +124,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNameTest do
     end)
 
     expect(PartyManager, :get, fn 7 ->
-      {:ok, %PartyState{party_id: 7, name: "Vanguard", leader_char_id: 1, exp_share: false}}
+      {:ok,
+       %PartyState{
+         party_id: 7,
+         name: "Vanguard",
+         leader_char_id: 1,
+         exp_share: false,
+         item_pickup_share: false
+       }}
     end)
 
     {:noreply, ^s} = PacketHandler.handle_message(%NameRequest{entity_id: other_id}, s)

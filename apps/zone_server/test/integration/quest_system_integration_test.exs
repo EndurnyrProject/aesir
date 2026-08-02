@@ -178,6 +178,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
            name: "Party",
            leader_char_id: killer_id,
            exp_share: false,
+           item_pickup_share: false,
            members: members
          }}
       end)

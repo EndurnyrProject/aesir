@@ -477,7 +477,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
     end
   end
 
-  describe "set_options/3" do
+  describe "set_options/4" do
     test "leader can toggle exp_share on within the level-spread boundary and it broadcasts" do
       {leader, created} = party_fixture("Felix")
       target = leader_fixture("Greta", %{base_level: 1 + Config.party_share_level()})
@@ -485,10 +485,56 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{joined.party_id}")
 
-      assert {:ok, state} = Manager.set_options(joined.party_id, leader.id, true)
+      assert {:ok, state} = Manager.set_options(joined.party_id, leader.id, true, false)
       assert state.exp_share == true
+      assert state.item_pickup_share == false
       assert Repo.get(Party, joined.party_id).exp_share == true
       assert_receive {:social, {:party_updated, ^state}}
+    end
+
+    test "leader toggles item pickup share on and off, persists it, and rebuilds it" do
+      {leader, created} = party_fixture("PickupShare")
+
+      assert {:ok, enabled} = Manager.set_options(created.party_id, leader.id, false, true)
+      assert enabled.exp_share == false
+      assert enabled.item_pickup_share == true
+      assert Repo.get(Party, created.party_id).item_pickup_share == true
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(created.party_id)
+      assert rebuilt.item_pickup_share == true
+
+      assert {:ok, disabled} = Manager.set_options(rebuilt.party_id, leader.id, false, false)
+      assert disabled.item_pickup_share == false
+      assert Repo.get(Party, created.party_id).item_pickup_share == false
+    end
+
+    test "toggling either option preserves the other option" do
+      {leader, created} = party_fixture("IndependentOptions")
+
+      assert {:ok, exp_enabled} = Manager.set_options(created.party_id, leader.id, true, false)
+      assert {:ok, item_enabled} = Manager.set_options(created.party_id, leader.id, true, true)
+      assert item_enabled.exp_share == exp_enabled.exp_share
+      assert item_enabled.item_pickup_share == true
+
+      assert {:ok, exp_disabled} = Manager.set_options(created.party_id, leader.id, false, true)
+      assert exp_disabled.exp_share == false
+      assert exp_disabled.item_pickup_share == item_enabled.item_pickup_share
+    end
+
+    test "allows item pickup share with an out-of-range level spread" do
+      {leader, created} = party_fixture("PickupWithoutLevelGate")
+
+      target =
+        leader_fixture("FarPickup", %{
+          base_level: leader.base_level + Config.party_share_level() + 1
+        })
+
+      {:ok, joined} = Manager.add_member(created.party_id, target)
+
+      assert {:ok, state} = Manager.set_options(joined.party_id, leader.id, false, true)
+      assert state.exp_share == false
+      assert state.item_pickup_share == true
     end
 
     test "rejects enabling exp_share when the online level spread exceeds party_share_level" do
@@ -496,7 +542,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       target = leader_fixture("Ines", %{base_level: 2 + Config.party_share_level()})
       {:ok, joined} = Manager.add_member(created.party_id, target)
 
-      assert {:error, :level_range} = Manager.set_options(joined.party_id, leader.id, true)
+      assert {:error, :level_range} = Manager.set_options(joined.party_id, leader.id, true, false)
       assert Repo.get(Party, joined.party_id).exp_share == false
     end
 
@@ -505,11 +551,11 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       target = leader_fixture("Kiona")
       {:ok, joined} = Manager.add_member(created.party_id, target)
 
-      assert {:error, :not_leader} = Manager.set_options(joined.party_id, target.id, true)
+      assert {:error, :not_leader} = Manager.set_options(joined.party_id, target.id, false, true)
     end
 
     test "returns {:error, :not_found} when no party entry is running" do
-      assert {:error, :not_found} = Manager.set_options(999_999, 1, true)
+      assert {:error, :not_found} = Manager.set_options(999_999, 1, true, false)
     end
   end
 
@@ -536,7 +582,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       {leader, created} = party_fixture("Otto")
       target = leader_fixture("Petra")
       {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
       assert shared.exp_share == true
 
       over_limit = leader.base_level + Config.party_share_level() + 1
@@ -550,7 +596,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       {leader, created} = party_fixture("Quill")
       target = leader_fixture("Rosa")
       {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
 
       at_limit = leader.base_level + Config.party_share_level()
 
@@ -627,7 +673,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       {:ok, joined} = Manager.add_member(created.party_id, target)
       {:ok, _offline} = Manager.set_online(joined.party_id, target.id, false)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
       assert shared.exp_share == true
 
       assert {:ok, state} = Manager.set_online(shared.party_id, target.id, true)
@@ -643,7 +689,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       {:ok, joined} = Manager.add_member(created.party_id, target)
       {:ok, _offline} = Manager.set_online(joined.party_id, target.id, false)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
       assert shared.exp_share == true
 
       {:ok, disabled} = Manager.set_online(shared.party_id, target.id, true)
@@ -742,7 +788,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       {leader, created} = party_fixture("SyncLevelLeader")
       target = leader_fixture("SyncLevelTarget")
       {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
       %Member{} = old_member = Map.fetch!(shared.members, target.id)
 
       member = %Member{
@@ -770,7 +816,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
 
       {:ok, joined} = Manager.add_member(created.party_id, target)
       {:ok, offline} = Manager.set_online(joined.party_id, target.id, false)
-      {:ok, shared} = Manager.set_options(offline.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(offline.party_id, leader.id, true, false)
       %Member{} = old_member = Map.fetch!(shared.members, target.id)
       member = %Member{old_member | online: true}
 
@@ -791,7 +837,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       {leader, created} = party_fixture("SyncValidLevelLeader")
       target = leader_fixture("SyncValidLevelTarget")
       {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
       %Member{} = old_member = Map.fetch!(shared.members, target.id)
 
       member = %Member{
@@ -816,7 +862,7 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
       {leader, created} = party_fixture("SyncRollbackLeader")
       target = leader_fixture("SyncRollbackTarget")
       {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true)
+      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
       %Member{} = old_member = Map.fetch!(shared.members, target.id)
 
       member = %Member{

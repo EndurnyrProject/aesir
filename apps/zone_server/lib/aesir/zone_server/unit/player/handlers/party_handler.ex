@@ -136,15 +136,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
     ack_result(state, "leader", result)
   end
 
-  @doc "Leader-only even-share toggle (design \"Options\")."
+  @doc "Leader-only EXP and item pickup share toggles (design \"Options\")."
   @spec handle_options_request(PartyOptionsRequest.t(), SessionState.t()) ::
           {:noreply, SessionState.t()}
-  def handle_options_request(%PartyOptionsRequest{exp_share: exp_share}, state) do
+  def handle_options_request(
+        %PartyOptionsRequest{
+          exp_share: exp_share,
+          item_pickup_share: item_pickup_share
+        },
+        state
+      ) do
     char_id = requester_char_id(state)
 
     result =
       with {:ok, requester} <- fetch_character(char_id) do
-        PartyManager.set_options(requester.party_id, char_id, exp_share)
+        PartyManager.set_options(requester.party_id, char_id, exp_share, item_pickup_share)
       end
 
     ack_result(state, "options", result)

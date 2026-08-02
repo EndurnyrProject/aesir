@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
       name: "Priests",
       leader_char_id: 1_000,
       exp_share: false,
+      item_pickup_share: false,
       members: Map.new(member_ids, &{&1, member(&1)})
     }
   end

@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
          name: "Lady Luck",
          leader_char_id: 101,
          exp_share: false,
+         item_pickup_share: false,
          members: %{
            101 => member(101),
            102 => member(102),
