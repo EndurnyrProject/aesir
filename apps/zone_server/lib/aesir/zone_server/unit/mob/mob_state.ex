@@ -85,6 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     spawn_tick_pending?: true,
     last_ai_tick: nil,
     aggro_list: %{},
+    aggro_order: [],
     last_action_time: nil,
     last_movement_end_time: nil,
     last_idle_movement_time: nil,
@@ -148,6 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           spawn_tick_pending?: boolean(),
           last_ai_tick: integer() | nil,
           aggro_list: map(),
+          aggro_order: [integer()],
           last_action_time: integer() | nil,
           last_movement_end_time: integer() | nil,
           last_idle_movement_time: integer() | nil,
@@ -546,10 +548,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   Adds or updates aggro for a target.
   """
   @spec add_aggro(t(), integer(), integer()) :: t()
-  def add_aggro(%__MODULE__{aggro_list: aggro_list} = state, target_id, damage) do
+  def add_aggro(
+        %__MODULE__{aggro_list: aggro_list, aggro_order: aggro_order} = state,
+        target_id,
+        damage
+      ) do
     current_aggro = Map.get(aggro_list, target_id, 0)
     updated_aggro = Map.put(aggro_list, target_id, current_aggro + damage)
-    %{state | aggro_list: updated_aggro}
+
+    updated_aggro_order =
+      if target_id in aggro_order, do: aggro_order, else: [target_id | aggro_order]
+
+    %{state | aggro_list: updated_aggro, aggro_order: updated_aggro_order}
+  end
+
+  @doc """
+  Returns the rAthena-style damage log used for loot-owner ranking.
+  """
+  @spec damage_log(t()) :: [{integer(), integer()}]
+  def damage_log(%__MODULE__{aggro_list: aggro_list, aggro_order: aggro_order}) do
+    Enum.map(Enum.reverse(aggro_order), fn attacker_id ->
+      {attacker_id, Map.fetch!(aggro_list, attacker_id)}
+    end)
   end
 
   @doc """
@@ -568,7 +588,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec clear_aggro(t()) :: t()
   def clear_aggro(%__MODULE__{} = state) do
-    %{state | aggro_list: %{}}
+    %{state | aggro_list: %{}, aggro_order: []}
   end
 
   @doc """
@@ -583,6 +603,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         ai_state: :idle,
         target_id: nil,
         aggro_list: %{},
+        aggro_order: [],
         movement_state: :standing,
         walk_path: []
     }
