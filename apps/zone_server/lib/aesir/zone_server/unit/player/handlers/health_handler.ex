@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.Leveling
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -97,10 +99,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   Raises HP by `amount`, clamped at `max_hp`. No-op when the player is dead
   or `amount` is non-positive. Does not trigger death or cast-interrupt logic.
   """
-  @spec apply_heal(non_neg_integer(), integer() | nil, SessionState.t()) ::
-          {:noreply, SessionState.t()}
+  @spec apply_heal(
+          non_neg_integer() | {:potion, :hp | :sp, non_neg_integer()},
+          integer() | nil,
+          SessionState.t()
+        ) :: {:noreply, SessionState.t()}
   def apply_heal(_amount, _source_id, %{game_state: %{action_state: :dead}} = state) do
     {:noreply, state}
+  end
+
+  def apply_heal({:potion, :hp, amount}, source_id, state) do
+    apply_heal(scale_potion_recovery(amount, :hp, state.game_state.stats), source_id, state)
+  end
+
+  def apply_heal({:potion, :sp, amount}, _source_id, state) do
+    restore_sp(scale_potion_recovery(amount, :sp, state.game_state.stats), state)
   end
 
   def apply_heal(amount, _source_id, state) when amount > 0 do
@@ -132,6 +145,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       |> Map.get(:received_heal_rate, 0)
 
     div(amount * (100 + rate), 100)
+  end
+
+  defp scale_potion_recovery(amount, resource, stats) do
+    learning_potion = Learned.learned_level(stats.progression.learned_skills, 227)
+
+    recovery_rate =
+      case resource do
+        :hp ->
+          2 * PlayerStats.get_effective_stat(stats, :vit) + PlayerStats.get_item_heal_rate(stats)
+
+        :sp ->
+          2 * PlayerStats.get_effective_stat(stats, :int)
+      end
+
+    div(amount * (100 + 5 * learning_potion + recovery_rate), 100)
   end
 
   @doc """

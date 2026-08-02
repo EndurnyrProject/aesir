@@ -93,7 +93,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   target's session pid via `UnitRegistry` and calls `MobSession.heal/2`; a
   target that no longer exists is a silent no-op.
   """
-  @spec apply_heal(:player | :mob, integer(), non_neg_integer(), integer() | nil) :: :ok
+  @type heal_amount :: non_neg_integer() | {:potion, :hp | :sp, non_neg_integer()}
+
+  @spec apply_heal(:player | :mob, integer(), heal_amount(), integer() | nil) :: :ok
   def apply_heal(:player, unit_id, amount, source_id) do
     PubSub.broadcast(
       Aesir.PubSub,
@@ -102,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     )
   end
 
-  def apply_heal(:mob, unit_id, amount, _source_id) do
+  def apply_heal(:mob, unit_id, amount, _source_id) when is_integer(amount) do
     case UnitRegistry.get_unit(:mob, unit_id) do
       {:ok, {_module, _state, pid}} -> MobSession.heal(pid, amount)
       {:error, :not_found} -> :ok

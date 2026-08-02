@@ -505,6 +505,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
 
       HealthHandler.apply_heal(20, nil, build_state(70, :idle))
     end
+
+    test "potion HP descriptor applies the recipient VIT and Learning Potion terms once" do
+      state = build_recalculable_state(50, :idle, %{learned_skills: %{227 => 2}})
+      state = put_in(state.game_state.stats.base_stats.vit, 10)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{hp: 76}}}}} =
+               HealthHandler.apply_heal({:potion, :hp, 20}, nil, state)
+    end
+
+    test "potion SP descriptor applies recipient INT and restores SP" do
+      state = build_recalculable_state(50, :idle, %{learned_skills: %{227 => 2}})
+      state = put_in(state.game_state.stats.base_stats.int, 10)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: %{sp: 36}}}}} =
+               HealthHandler.apply_heal({:potion, :sp, 20}, nil, state)
+    end
   end
 
   describe "consume_sp/2" do
