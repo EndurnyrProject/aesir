@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @weapon_skill_ids 98..104
+  @pharmacy_skill_id 228
   @weapon_research_id 107
   @oridecon_research_id 97
   @default_rng &:rand.uniform/1
@@ -28,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   @spec run(PlayerState.t(), Recipe.t(), [non_neg_integer()]) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def run(%PlayerState{} = caster, %Recipe{} = recipe, chosen_catalyst_ids) do
-    {crumb_count, element, catalyst_ids} = Catalysts.resolve(chosen_catalyst_ids)
+    {crumb_count, element, catalyst_ids} = catalysts(recipe, chosen_catalyst_ids)
 
     with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
          :ok <- InventoryOps.can_add(caster.inventory, caster.stats, item_def, 1),
@@ -89,6 +90,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     }
   end
 
+  defp catalysts(%Recipe{skill_id: @pharmacy_skill_id}, _chosen_catalyst_ids), do: {0, nil, []}
+  defp catalysts(_recipe, chosen_catalyst_ids), do: Catalysts.resolve(chosen_catalyst_ids)
+
   defp success_chance(caster, %Recipe{skill_id: skill_id} = recipe, crumbs, element)
        when skill_id in @weapon_skill_ids do
     learned = caster.stats.progression.learned_skills
@@ -105,6 +109,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
       crumb_count: crumbs,
       elemental_stone?: not is_nil(element),
       anvil_bonus: Anvil.best(caster.inventory)
+    })
+  end
+
+  defp success_chance(caster, %Recipe{skill_id: @pharmacy_skill_id} = recipe, _crumbs, _element) do
+    learned = caster.stats.progression.learned_skills
+
+    SuccessRate.pharmacy(recipe.product_id, %{
+      job_level: caster.stats.progression.job_level,
+      int: caster.stats.base_stats.int,
+      dex: caster.stats.base_stats.dex,
+      luk: caster.stats.base_stats.luk,
+      skill_level: Learned.learned_level(learned, recipe.skill_id),
+      learned_skills: learned,
+      random_term: SuccessRate.pharmacy_roll(recipe.product_id, rng())
     })
   end
 

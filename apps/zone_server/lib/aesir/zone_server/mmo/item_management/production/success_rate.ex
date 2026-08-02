@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   @moduledoc """
   Calculates deterministic Renewal production chances in hundredths of a percent.
 
-  Random terms are supplied by the caller; this module never rolls them.
+  Random terms are supplied by the caller; `pharmacy_roll/2` derives one from a
+  caller-injected rng, and this module never touches the rng backend directly.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -10,6 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
 
   @production_rate_multiplier 1
   @maximum_rate 10_000
+
+  @typedoc "Function that returns an integer from 1 through its upper bound."
+  @type pharmacy_rng :: (pos_integer() -> pos_integer())
 
   @typedoc "Inputs for the pharmacy formula."
   @type pharmacy_params :: %{
@@ -83,6 +87,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   end
 
   @doc """
+  Rolls the formula term for a pharmacy product's class.
+  """
+  @spec pharmacy_roll(integer(), pharmacy_rng()) :: integer()
+  def pharmacy_roll(product_id, rng) when is_function(rng, 1) do
+    case product_class_range(product_id) do
+      nil -> 0
+      range -> range.first + rng.(Range.size(range)) - 1
+    end
+  end
+
+  @doc """
   Calculates a pharmacy chance and clamps it to `1..10_000`.
   """
   @spec pharmacy(integer(), pharmacy_params() | map()) :: pos_integer()
@@ -141,15 +156,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
     end
   end
 
-  defp product_class_roll(product_id, random_term) when product_id in 501..504, do: random_term
-  defp product_class_roll(970, random_term), do: random_term
-  defp product_class_roll(product_id, random_term) when product_id in 7135..7138, do: random_term
-  defp product_class_roll(547, random_term), do: random_term
+  defp product_class_roll(product_id, random_term) do
+    if is_nil(product_class_range(product_id)), do: 0, else: random_term
+  end
 
-  defp product_class_roll(product_id, random_term) when product_id in [12_428, 7139],
-    do: random_term
-
-  defp product_class_roll(_product_id, _random_term), do: 0
+  defp product_class_range(product_id) when product_id in 501..504, do: 2010..3000
+  defp product_class_range(970), do: 1010..2000
+  defp product_class_range(product_id) when product_id in 7135..7138, do: 10..1000
+  defp product_class_range(547), do: -500..-10
+  defp product_class_range(product_id) when product_id in [12_428, 7139], do: -1000..-10
+  defp product_class_range(_product_id), do: nil
 
   defp tier_bonus(1), do: 4000
   defp tier_bonus(2), do: 2000

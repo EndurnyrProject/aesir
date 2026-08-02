@@ -138,6 +138,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
   end
 
   describe "pharmacy/2" do
+    test "rolls each product class through its single classification table" do
+      assert SuccessRate.pharmacy_roll(501, fn 991 -> 1 end) == 2010
+      assert SuccessRate.pharmacy_roll(504, fn 991 -> 991 end) == 3000
+      assert SuccessRate.pharmacy_roll(970, fn 991 -> 1 end) == 1010
+      assert SuccessRate.pharmacy_roll(7135, fn 991 -> 991 end) == 1000
+      assert SuccessRate.pharmacy_roll(547, fn 491 -> 1 end) == -500
+      assert SuccessRate.pharmacy_roll(12_428, fn 991 -> 991 end) == -10
+      assert SuccessRate.pharmacy_roll(7139, fn 991 -> 1 end) == -1000
+      assert SuccessRate.pharmacy_roll(999, fn _ -> flunk("unexpected roll") end) == 0
+    end
+
     test "includes the cast level, job level, integer Intelligence, DEX, and LUK terms" do
       params = %{pharmacy_params() | skill_level: 1}
 

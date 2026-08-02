@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
-  use Aesir.DataCase, async: true
+  use Aesir.DataCase, async: false
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
@@ -12,6 +12,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   setup do
+    previous_rng = Application.get_env(:zone_server, :forge_rng)
+
+    on_exit(fn ->
+      if previous_rng,
+        do: Application.put_env(:zone_server, :forge_rng, previous_rng),
+        else: Application.delete_env(:zone_server, :forge_rng)
+    end)
+
     suffix = System.unique_integer([:positive])
 
     account =
@@ -85,6 +93,48 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     assert length(failed.pending_inventory_persist) == 2
   end
 
+  test "pharmacy ignores forge catalysts and adds an unstamped product", %{caster: caster} do
+    Application.put_env(:zone_server, :forge_rng, fn _upper -> 1 end)
+
+    caster =
+      caster
+      |> pharmacy_caster(10)
+      |> Map.put(:inventory, inventory([{1002, 1}, {1000, 1}, {994, 1}]))
+
+    assert {:ok, brewed} = Forge.run(caster, pharmacy_recipe(), [1000, 994])
+    assert ItemContainer.held_amount(brewed.inventory, 1002) == 0
+    assert ItemContainer.held_amount(brewed.inventory, 1000) == 1
+    assert ItemContainer.held_amount(brewed.inventory, 994) == 1
+
+    output =
+      Enum.find_value(brewed.inventory, fn {_index, item} -> item.nameid == 501 && item end)
+
+    assert output.amount == 1
+    assert ForgeStamp.decode(output) == :error
+    assert brewed.pending_production_result == %{success: true, item_id: 501}
+  end
+
+  test "failed pharmacy attempt burns its recipe materials", %{caster: caster} do
+    Application.put_env(:zone_server, :forge_rng, fn
+      991 -> 1
+      10_000 -> 10_000
+    end)
+
+    caster =
+      caster
+      |> pharmacy_caster(1)
+      |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:int)], 0)
+      |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:dex)], 0)
+      |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:luk)], 0)
+      |> put_in([Access.key!(:stats), Access.key!(:progression), Access.key!(:job_level)], 0)
+      |> Map.put(:inventory, inventory([{1002, 1}]))
+
+    assert {:ok, failed} = Forge.run(caster, pharmacy_recipe(), [])
+    assert ItemContainer.held_amount(failed.inventory, 1002) == 0
+    assert ItemContainer.held_amount(failed.inventory, 501) == 0
+    assert failed.pending_production_result == %{success: false, item_id: 501}
+  end
+
   test "full inventory and stale materials are rejected before consumption", %{caster: caster} do
     material = item(998, 2)
 
@@ -122,6 +172,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
 
     assert {:error, :no_materials} =
              Forge.run(%{caster | inventory: inventory([{998, 2}])}, recipe, [])
+  end
+
+  defp pharmacy_recipe do
+    %Recipe{
+      id: 119,
+      product_id: 501,
+      item_level: 22,
+      skill_id: 228,
+      skill_level: 1,
+      materials: [%{item_id: 1002, amount: 1}]
+    }
+  end
+
+  defp pharmacy_caster(caster, pharmacy_level) do
+    caster
+    |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:int)], 200)
+    |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:dex)], 200)
+    |> put_in([Access.key!(:stats), Access.key!(:base_stats), Access.key!(:luk)], 200)
+    |> put_in([Access.key!(:stats), Access.key!(:progression), Access.key!(:job_level)], 70)
+    |> put_in([Access.key!(:stats), Access.key!(:progression), Access.key!(:learned_skills)], %{
+      228 => pharmacy_level
+    })
   end
 
   defp weapon_recipe do
