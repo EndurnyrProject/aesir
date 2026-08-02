@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.KillExp
@@ -128,6 +129,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   defp announce_kill(_state, nil), do: :ok
 
   defp announce_kill(%MobState{mob_data: mob_data, aggro_list: aggro_list} = state, attacker_id) do
+    ownership = LootOwnership.determine(state)
+
     KillExp.distribute(
       aggro_list,
       mob_data.base_exp,
@@ -152,7 +155,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
           mob_level: mob_data.level,
           map: state.map_name,
           x: state.x,
-          y: state.y
+          y: state.y,
+          ownership: ownership,
+          boss?: MobState.is_boss?(state)
         }}}
     )
   end

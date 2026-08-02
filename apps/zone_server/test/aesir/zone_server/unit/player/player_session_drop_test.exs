@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -70,7 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
     }
   end
 
-  test "places rolled drops via the coordinator" do
+  test "places a legacy payload's rolled drops publicly via the coordinator" do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
     rolled = [{501, 1, 200, 90, true}]
 
@@ -80,6 +81,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
 
     {:noreply, _state} =
       PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
+  end
+
+  test "threads ownership through to the coordinator" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    rolled = [{501, 1, 200, 90, true}]
+    ownership = %LootOwnership{first: 1, second: 2, third: 3}
+    owned_payload = Map.merge(payload(drops), %{ownership: ownership, boss?: true})
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+
+    expect(Coordinator, :drop_items, fn "morocc",
+                                        ^rolled,
+                                        200,
+                                        90,
+                                        ownership: {^ownership, true} ->
+      :ok
+    end)
+
+    {:noreply, _state} =
+      PlayerSession.handle_info({:loot, {:mob_killed, owned_payload}}, state())
   end
 
   test "a killer without Ore Discovery receives only normal drops" do

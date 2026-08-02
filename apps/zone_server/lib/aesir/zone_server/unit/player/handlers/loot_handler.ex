@@ -66,7 +66,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   # holding both the table and the killer's stats) and places any results as
   # ground items through the map coordinator. Legacy payloads without a drop
   # table fall through to the no-op clause.
-  defp maybe_drop_items(%{drops: drops, mob_level: mob_level, map: map, x: x, y: y}, state, rng) do
+  defp maybe_drop_items(%{ownership: ownership, boss?: boss?} = payload, state, rng) do
+    maybe_drop_items(payload, state, rng, ownership: {ownership, boss?})
+  end
+
+  defp maybe_drop_items(payload, state, rng), do: maybe_drop_items(payload, state, rng, [])
+
+  defp maybe_drop_items(
+         %{drops: drops, mob_level: mob_level, map: map, x: x, y: y},
+         state,
+         rng,
+         opts
+       ) do
     stats = state.game_state.stats
     luk = Stats.get_effective_stat(stats, :luk)
     base_level = stats.progression.base_level
@@ -80,13 +91,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y)
       |> maybe_discover_ore(stats.progression.learned_skills, x, y, rng)
 
-    case items do
-      [] -> :ok
-      items -> Coordinator.drop_items(map, items, x, y)
+    case {items, opts} do
+      {[], _opts} -> :ok
+      {items, []} -> Coordinator.drop_items(map, items, x, y)
+      {items, opts} -> Coordinator.drop_items(map, items, x, y, opts)
     end
   end
 
-  defp maybe_drop_items(_payload, _state, _rng), do: :ok
+  defp maybe_drop_items(_payload, _state, _rng, _opts), do: :ok
 
   defp maybe_discover_ore(drops, learned_skills, x, y, rng) do
     if Learned.learned_level(learned_skills, 106) > 0 do

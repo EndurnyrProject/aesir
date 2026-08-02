@@ -17,13 +17,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  import Aesir.TestEtsSetup
+
+  alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
   setup :verify_on_exit!
   setup {Aesir.MimicMode, :global}
+  setup :setup_ets_tables
+
+  setup do
+    Mimic.copy(Aesir.ZoneServer.Unit.Mob.KillExp)
+  end
 
   test "killing a mob broadcasts the drop-rolling :mob_killed payload to the killer" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
@@ -43,6 +53,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     assert payload.map == "prontera"
     assert payload.x == 100
     assert payload.y == 100
+    assert payload.ownership == %LootOwnership{first: nil, second: nil, third: nil}
+    refute payload.boss?
 
     assert_receive {:unit_lifecycle,
                     %Event{
@@ -58,6 +70,51 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
 
     assert :ok = MobSession.terminate(:normal, dead_state)
     refute_receive {:unit_lifecycle, ^event}
+  end
+
+  test "mob death ranks ownership from the pre-death damage log" do
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
+
+    stub(Aesir.ZoneServer.Unit.Mob.KillExp, :distribute, fn _aggro,
+                                                            _base,
+                                                            _job,
+                                                            _level,
+                                                            _map,
+                                                            _race ->
+      :ok
+    end)
+
+    for char_id <- [42, 100, 200] do
+      UnitRegistry.register_unit(
+        :player,
+        char_id,
+        PlayerState,
+        struct(PlayerState,
+          character_id: char_id,
+          map_name: "prontera",
+          action_state: :idle,
+          stats: %{current_state: %{hp: 100}}
+        ),
+        self()
+      )
+    end
+
+    :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
+
+    state =
+      build_mob_state(hp: 1, max_hp: 1, drops: [])
+      |> MobState.add_aggro(100, 100)
+      |> MobState.add_aggro(200, 200)
+
+    pre_death_state = MobState.add_aggro(state, 42, 100)
+
+    {:noreply, _dead_state} =
+      MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
+
+    assert_receive {:loot, {:mob_killed, %{ownership: ownership, boss?: boss?}}}
+    assert ownership == LootOwnership.determine(pre_death_state)
+    refute boss?
   end
 
   test "a mob death with no killer broadcasts nothing" do
