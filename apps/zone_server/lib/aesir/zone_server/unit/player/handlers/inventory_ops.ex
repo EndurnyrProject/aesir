@@ -38,7 +38,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   @spec apply_change(integer(), inventory(), inventory(), Inventory.change()) ::
           {:ok, inventory()} | {:error, term()}
   def apply_change(char_id, old_inventory, new_inventory, change) do
-    Persistence.transaction(fn -> persist(char_id, old_inventory, new_inventory, change) end)
+    Persistence.transaction(fn ->
+      persist_change(char_id, old_inventory, new_inventory, change)
+    end)
   end
 
   @doc """
@@ -96,24 +98,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
     end
   end
 
-  @spec persist(integer(), inventory(), inventory(), Inventory.change()) ::
+  @doc false
+  @spec persist_change(integer(), inventory(), inventory(), Inventory.change()) ::
           {:ok, inventory()} | {:error, term()}
-  defp persist(char_id, _old, new_inventory, {:added, index, item}) do
+  def persist_change(char_id, _old, new_inventory, {:added, index, item}) do
     with {:ok, row} <- Persistence.insert_item(char_id, item_attrs(item)) do
       {:ok, PlayerState.put_item(new_inventory, index, row)}
     end
   end
 
-  defp persist(_char_id, old_inventory, new_inventory, {:stacked, index, amount}) do
+  def persist_change(_char_id, old_inventory, new_inventory, {:stacked, index, amount}) do
     update_at(old_inventory, new_inventory, index, %{amount: amount})
   end
 
-  defp persist(
-         char_id,
-         old_inventory,
-         new_inventory,
-         {:split, [{topped_index, amount}, {new_index, _}]}
-       ) do
+  def persist_change(
+        char_id,
+        old_inventory,
+        new_inventory,
+        {:split, [{topped_index, amount}, {new_index, _}]}
+      ) do
     inserted = PlayerState.get_by_index(new_inventory, new_index)
     topped_row = PlayerState.get_by_index(old_inventory, topped_index)
 
@@ -126,7 +129,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
     end
   end
 
-  defp persist(_char_id, old_inventory, new_inventory, {:removed, index}) do
+  def persist_change(_char_id, old_inventory, new_inventory, {:removed, index}) do
     item = PlayerState.get_by_index(old_inventory, index)
 
     with {:ok, _deleted} <- Persistence.delete_item(item) do
@@ -134,21 +137,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
     end
   end
 
-  defp persist(_char_id, old_inventory, new_inventory, {:reduced, index, left}) do
+  def persist_change(_char_id, old_inventory, new_inventory, {:reduced, index, left}) do
     update_at(old_inventory, new_inventory, index, %{amount: left})
   end
 
-  defp persist(_char_id, old_inventory, new_inventory, {:identified, index}) do
+  def persist_change(_char_id, old_inventory, new_inventory, {:identified, index}) do
     update_at(old_inventory, new_inventory, index, %{identify: 1})
   end
 
-  defp persist(_char_id, old_inventory, new_inventory, {:equipped, index, worn_mask, unequipped}) do
+  def persist_change(
+        _char_id,
+        old_inventory,
+        new_inventory,
+        {:equipped, index, worn_mask, unequipped}
+      ) do
     with {:ok, inventory} <- update_at(old_inventory, new_inventory, index, %{equip: worn_mask}) do
       unequip_rows(old_inventory, inventory, unequipped)
     end
   end
 
-  defp persist(_char_id, old_inventory, new_inventory, {:unequipped, index}) do
+  def persist_change(_char_id, old_inventory, new_inventory, {:unequipped, index}) do
     update_at(old_inventory, new_inventory, index, %{equip: 0})
   end
 
