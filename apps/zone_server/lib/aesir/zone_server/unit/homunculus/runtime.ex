@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
 
   @enforce_keys [:private_dirty]
   defstruct active_expiry_timer_ref: nil,
+            active_deadline_ms: nil,
+            clocks_online: false,
             hunger_timer_ref: nil,
             ai_timer_ref: nil,
             cast_timer_ref: nil,
@@ -22,6 +24,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
 
   @type t() :: %__MODULE__{
           active_expiry_timer_ref: timer_ref(),
+          active_deadline_ms: integer() | nil,
+          clocks_online: boolean(),
           hunger_timer_ref: timer_ref(),
           ai_timer_ref: timer_ref(),
           cast_timer_ref: timer_ref(),

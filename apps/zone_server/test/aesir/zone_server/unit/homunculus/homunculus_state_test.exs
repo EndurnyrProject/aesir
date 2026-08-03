@@ -67,6 +67,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusStateTest do
 
     assert %Runtime{
              active_expiry_timer_ref: nil,
+             active_deadline_ms: nil,
+             clocks_online: false,
              hunger_timer_ref: nil,
              ai_timer_ref: nil,
              cast_timer_ref: nil,
