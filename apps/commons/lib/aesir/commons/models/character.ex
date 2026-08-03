@@ -5,12 +5,14 @@ defmodule Aesir.Commons.Models.Character do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.CartItem
+  alias Aesir.Commons.Models.Homunculus
   alias Aesir.Commons.Models.InventoryItem
 
   @type t :: %__MODULE__{
           id: integer(),
           account_id: integer(),
           account: Account.t() | Ecto.Association.NotLoaded.t(),
+          homunculus: Homunculus.t() | Ecto.Association.NotLoaded.t() | nil,
           inventory_items: [InventoryItem.t()] | Ecto.Association.NotLoaded.t(),
           cart_items: [CartItem.t()] | Ecto.Association.NotLoaded.t(),
           char_num: integer(),
@@ -43,7 +45,6 @@ defmodule Aesir.Commons.Models.Character do
           guild_id: integer(),
           guild_position: integer(),
           pet_id: integer(),
-          homun_id: integer(),
           elemental_id: integer(),
           hair: integer(),
           hair_color: integer(),
@@ -93,6 +94,7 @@ defmodule Aesir.Commons.Models.Character do
 
   schema "characters" do
     belongs_to :account, Aesir.Commons.Models.Account
+    has_one :homunculus, Homunculus
     has_many :inventory_items, Aesir.Commons.Models.InventoryItem, foreign_key: :char_id
     has_many :cart_items, Aesir.Commons.Models.CartItem, foreign_key: :char_id
 
@@ -126,7 +128,6 @@ defmodule Aesir.Commons.Models.Character do
     field :guild_id, :integer, default: 0
     field :guild_position, :integer, default: 0
     field :pet_id, :integer, default: 0
-    field :homun_id, :integer, default: 0
     field :elemental_id, :integer, default: 0
     field :hair, :integer, default: 0
     field :hair_color, :integer, default: 0
@@ -209,7 +210,6 @@ defmodule Aesir.Commons.Models.Character do
       :guild_id,
       :guild_position,
       :pet_id,
-      :homun_id,
       :elemental_id,
       :hair,
       :hair_color,

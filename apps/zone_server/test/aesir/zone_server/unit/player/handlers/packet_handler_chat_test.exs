@@ -64,7 +64,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerChatTest do
       party_id: 0,
       guild_id: 0,
       pet_id: 0,
-      homun_id: 0,
       elemental_id: 0,
       hair: 0,
       hair_color: 0,
