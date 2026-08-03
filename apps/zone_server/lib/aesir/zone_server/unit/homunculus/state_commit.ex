@@ -68,37 +68,76 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   end
 
   @doc """
+  Recovers dead-session ghosts and reserves one transient GID before a durable
+  lifecycle transition begins.
+  """
+  @spec reserve_activation(SessionState.t(), HomunculusState.t(), keyword()) ::
+          {:ok, integer()} | {:error, :duplicate_session | :exhausted}
+  def reserve_activation(
+        %SessionState{} = session,
+        %HomunculusState{} = homunculus,
+        opts \\ []
+      ) do
+    validate_active!(prepare_active(session, homunculus, 1))
+
+    with :ok <- recover_owner_presence(homunculus.owner_character_id) do
+      WorldId.allocate(
+        Keyword.get(opts, :world_id_range, @world_id_range),
+        :homunculus
+      )
+    end
+  end
+
+  @doc "Releases an unregistered GID reserved for Homunculus activation."
+  @spec release_activation(integer()) :: :ok
+  def release_activation(gid), do: UnitRegistry.release_unit_id(gid, :homunculus)
+
+  @doc "Commits active world presence using an already reserved Homunculus GID."
+  @spec activate_claimed(SessionState.t(), HomunculusState.t(), pos_integer()) :: SessionState.t()
+  def activate_claimed(
+        %SessionState{} = session,
+        %HomunculusState{} = homunculus,
+        gid
+      )
+      when is_integer(gid) and gid > 0 do
+    active = prepare_active(session, homunculus, gid)
+    validate_active!(active)
+    commit(session, active)
+  end
+
+  @doc """
   Recovers dead-session ghosts, allocates one transient GID, and commits an
   active Homunculus at its owner's current position.
   """
   @spec activate(SessionState.t(), HomunculusState.t(), keyword()) ::
           {:ok, SessionState.t()} | {:error, :duplicate_session | :exhausted}
   def activate(%SessionState{} = session, %HomunculusState{} = homunculus, opts \\ []) do
+    with {:ok, gid} <- reserve_activation(session, homunculus, opts) do
+      {:ok, activate_claimed(session, homunculus, gid)}
+    end
+  end
+
+  defp prepare_active(session, homunculus, gid) do
     owner = session.game_state
 
-    active = %{
+    %{
       homunculus
       | lifecycle: :active,
-        world_gid: nil,
+        world_gid: gid,
         owner_session_pid: self(),
         map_name: owner.map_name,
         x: owner.x,
         y: owner.y,
         dir: owner.dir
     }
+  end
 
-    unless active_world_state?(%{active | world_gid: 1}) do
+  defp validate_active!(active) do
+    unless active_world_state?(active) do
       raise ArgumentError, "active Homunculus requires complete living world state"
     end
 
-    with :ok <- recover_owner_presence(homunculus.owner_character_id),
-         {:ok, gid} <-
-           WorldId.allocate(
-             Keyword.get(opts, :world_id_range, @world_id_range),
-             :homunculus
-           ) do
-      {:ok, commit(session, %{active | world_gid: gid})}
-    end
+    :ok
   end
 
   @doc """

@@ -30,6 +30,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
+  alias Aesir.ZoneServer.Unit.Homunculus.StateCommit, as: HomunculusStateCommit
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -40,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -210,6 +214,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   def handle_cast_complete(state, _token), do: {:noreply, state}
 
   defp complete_cast(state, game_state, ctx) do
+    expected_id = Map.get(ctx, :homunculus_id)
+
+    case LifecycleSkillHandler.preflight(state, ctx.skill_id, ctx.skill_level, expected_id) do
+      :ok -> complete_preflighted_cast(state, game_state, ctx, expected_id)
+      {:error, reason} -> reject_completed_cast(state, game_state, ctx.skill_id, reason)
+    end
+  end
+
+  defp complete_preflighted_cast(state, game_state, ctx, expected_id) do
     case Interpreter.complete_cast(game_state, ctx.skill_id, ctx.skill_level, ctx.target) do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, ctx.skill_id, ctx.skill_level)
@@ -223,13 +236,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
            state,
            end_cast(new_game_state),
            descriptor,
-           Map.get(ctx, :combat_target_id)
+           Map.get(ctx, :combat_target_id),
+           expected_id
          )}
 
       {:error, reason} ->
-        report_cast_failure(ctx.skill_id, game_state.character_id, reason)
-        {:noreply, %{state | game_state: end_cast(game_state)}}
+        reject_completed_cast(state, game_state, ctx.skill_id, reason)
     end
+  end
+
+  defp reject_completed_cast(state, game_state, skill_id, reason) do
+    report_cast_failure(skill_id, game_state.character_id, reason)
+    {:noreply, %{state | game_state: end_cast(game_state)}}
   end
 
   @doc """
@@ -343,6 +361,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp dispatch_resolved_cast(%{game_state: game_state} = state, skill_id, level, target, locked) do
+    case LifecycleSkillHandler.preflight(state, skill_id, level) do
+      :ok -> begin_preflighted_cast(state, game_state, skill_id, level, target, locked)
+      {:error, reason} -> reject_preflighted_cast(state, skill_id, reason)
+    end
+  end
+
+  defp begin_preflighted_cast(state, game_state, skill_id, level, target, locked) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level)
@@ -352,7 +377,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:deferred, new_game_state, descriptor} ->
-        {:noreply, resolve_deferred(state, new_game_state, descriptor, locked)}
+        {:noreply,
+         resolve_deferred(state, new_game_state, descriptor, locked, homunculus_id(state))}
 
       {:casting, new_game_state, info} ->
         schedule_cast(%{state | game_state: new_game_state}, info, locked)
@@ -368,6 +394,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         report_cast_failure(skill_id, game_state.character_id, reason)
         {:noreply, state}
     end
+  end
+
+  defp reject_preflighted_cast(%{game_state: game_state} = state, skill_id, reason) do
+    report_cast_failure(skill_id, game_state.character_id, reason)
+    {:noreply, state}
   end
 
   @doc "Returns and clears an unsettled deferred skill result."
@@ -441,11 +472,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     state
   end
 
+  defp resolve_deferred(state, game_state, descriptor, locked),
+    do: resolve_deferred(state, game_state, descriptor, locked, nil)
+
+  defp resolve_deferred(
+         state,
+         game_state,
+         %Interpreter.Deferred{effect: {:homunculus_lifecycle, operation}} = descriptor,
+         locked,
+         expected_id
+       ) do
+    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
+         {:ok, settled, homunculus, runtime, item_change, activation_gid} <-
+           LifecycleSkillHandler.settle(state, charged, operation, expected_id) do
+      {state, sphere_cost_plan} = prepare_cast_commit(state, settled)
+      state = %{state | homunculus_runtime: runtime}
+      state = commit_homunculus_transition(state, operation, homunculus, activation_gid)
+
+      state =
+        publish_cast_commit(state, descriptor.skill_id, descriptor.level, true, sphere_cost_plan)
+
+      notify_lifecycle_item(state.connection_pid, item_change)
+      state = send_homunculus_private_state(state)
+      broadcast_skill_use(settled, descriptor.skill_id, descriptor.level, descriptor.target)
+      maybe_resume_lock(state, locked)
+    else
+      {:error, reason} ->
+        Logger.error("Homunculus lifecycle skill settlement failed: #{inspect(reason)}")
+        report_cast_failure(descriptor.skill_id, game_state.character_id, reason)
+        maybe_resume_lock(%{state | game_state: game_state}, locked)
+    end
+  end
+
   defp resolve_deferred(
          state,
          game_state,
          %Interpreter.Deferred{effect: {:absorb_local, reward}} = descriptor,
-         locked
+         locked,
+         _expected_id
        ) do
     case Interpreter.settle_deferred(game_state, descriptor) do
       {:ok, charged} ->
@@ -463,7 +527,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          state,
          game_state,
          %Interpreter.Deferred{effect: {:transfer_sphere, target_id}} = descriptor,
-         locked
+         locked,
+         _expected_id
        ) do
     case Interpreter.settle_deferred(game_state, descriptor) do
       {:ok, charged} ->
@@ -481,7 +546,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
          state,
          game_state,
          %Interpreter.Deferred{effect: {:absorb_player, target_id}} = descriptor,
-         locked
+         locked,
+         _expected_id
        ) do
     token = make_ref()
     timer_ref = Process.send_after(self(), {:deferred_skill_timeout, token}, 1_000)
@@ -502,8 +568,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     state
   end
 
-  defp resolve_deferred(state, game_state, _descriptor, locked) do
+  defp resolve_deferred(state, game_state, _descriptor, locked, _expected_id) do
     maybe_resume_lock(%{state | game_state: game_state}, locked)
+  end
+
+  defp commit_homunculus_transition(state, :rest, homunculus, nil),
+    do: HomunculusStateCommit.commit(state, homunculus)
+
+  defp commit_homunculus_transition(state, _operation, homunculus, activation_gid),
+    do: HomunculusStateCommit.activate_claimed(state, homunculus, activation_gid)
+
+  defp notify_lifecycle_item(_connection_pid, nil), do: :ok
+
+  defp notify_lifecycle_item(connection_pid, {:removed, index}),
+    do: MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, 1))
+
+  defp notify_lifecycle_item(connection_pid, {:reduced, index, _left}),
+    do: MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, 1))
+
+  defp send_homunculus_private_state(%{homunculus: nil} = state), do: state
+
+  defp send_homunculus_private_state(state) do
+    packet = PrivateStateView.build(state.homunculus, state.homunculus_runtime)
+    MessageRouter.send_to(state.connection_pid, packet)
+    %{state | homunculus_runtime: %{state.homunculus_runtime | private_dirty: false}}
+  end
+
+  defp homunculus_id(%{homunculus: nil}), do: nil
+  defp homunculus_id(%{homunculus: homunculus}), do: homunculus.id
+
+  defp lifecycle_homunculus_id(state, skill_id, level) do
+    if LifecycleSkillHandler.operation(skill_id, level), do: homunculus_id(state)
   end
 
   defp cancel_deferred_timer(%{timer_ref: timer_ref}) when is_reference(timer_ref) do
@@ -761,7 +856,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       timer_ref: timer_ref,
       token: token,
       interruptible: true,
-      combat_target_id: locked
+      combat_target_id: locked,
+      homunculus_id: lifecycle_homunculus_id(state, info.skill_id, info.level)
     }
 
     case PlayerState.transition_to(game_state, :casting, context) do
@@ -860,13 +956,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # `postdelay?` is false for the auto-cast path only: the SkillCooldown packet
   # announces the cooldown the interpreter just wrote, and `auto_cast/4` writes
   # none, so sending it would grey out a bolt the server still considers ready.
-  defp commit_cast(
-         %{connection_pid: connection_pid} = state,
-         new_game_state,
-         skill_id,
-         level,
-         postdelay? \\ true
-       ) do
+  defp commit_cast(state, new_game_state, skill_id, level, postdelay? \\ true) do
+    {state, sphere_cost_plan} = prepare_cast_commit(state, new_game_state)
+    publish_cast_commit(state, skill_id, level, postdelay?, sphere_cost_plan)
+  end
+
+  defp prepare_cast_commit(%{connection_pid: connection_pid} = state, new_game_state) do
     previous_spheres = state.game_state.spirit_spheres
     equipped = Map.values(Inventory.equipped_items(new_game_state.inventory))
 
@@ -885,7 +980,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         InventoryStaging.drain(connection_pid, game_state)
       end)
 
-    game_state = state.game_state
+    {state, sphere_cost_plan}
+  end
+
+  defp publish_cast_commit(state, skill_id, level, postdelay?, sphere_cost_plan) do
+    %{connection_pid: connection_pid, game_state: game_state} = state
 
     CharacterPersistence.update_character(
       game_state.character_id,

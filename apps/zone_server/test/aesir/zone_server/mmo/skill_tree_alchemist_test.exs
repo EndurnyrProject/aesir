@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
     tree = SkillTree.tree_for(alchemist_id)
     owned_entries = Enum.filter(Map.values(tree), &(&1.owner_job_id == alchemist_id))
 
-    assert length(owned_entries) == 12
+    assert length(owned_entries) == 15
 
     for {name, max_level, requires} <- [
           {:am_axemastery, 10, []},
@@ -28,7 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
           {:am_cp_helm, 5, [{:am_pharmacy, 2}]},
           {:am_cp_shield, 5, [{:am_cp_helm, 3}]},
           {:am_cp_armor, 5, [{:am_cp_shield, 3}]},
-          {:am_cp_weapon, 5, [{:am_cp_armor, 3}]}
+          {:am_cp_weapon, 5, [{:am_cp_armor, 3}]},
+          {:am_rest, 1, [{:am_bioethics, 1}]},
+          {:am_callhomun, 1, [{:am_rest, 1}]},
+          {:am_resurrecthomun, 5, [{:am_callhomun, 1}]}
         ] do
       {:ok, definition} = Catalog.by_name(name)
       entry = tree[definition.id]
@@ -44,6 +47,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
 
     {:ok, discount} = Catalog.by_name(:mc_discount)
     assert Map.has_key?(tree, discount.id)
+
+    {:ok, bioethics} = Catalog.by_name(:am_bioethics)
+    refute Map.has_key?(tree, bioethics.id)
 
     assert log == ""
   end

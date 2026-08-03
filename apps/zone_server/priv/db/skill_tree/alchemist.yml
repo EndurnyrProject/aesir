@@ -57,3 +57,18 @@
       requires:
         - name: AM_CP_ARMOR
           level: 3
+    - name: AM_REST
+      max_level: 1
+      requires:
+        - name: AM_BIOETHICS
+          level: 1
+    - name: AM_CALLHOMUN
+      max_level: 1
+      requires:
+        - name: AM_REST
+          level: 1
+    - name: AM_RESURRECTHOMUN
+      max_level: 5
+      requires:
+        - name: AM_CALLHOMUN
+          level: 1
