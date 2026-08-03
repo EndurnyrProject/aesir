@@ -41,6 +41,23 @@ Non-trivial features follow: **brainstorming → architect → generate-tasks �
 recorded in the spec folder (e.g. `deferred.md`) — read existing specs before relitigating
 scope decisions.
 
+### Proportionality stop
+
+Do not build cross-cutting correctness machinery for a hypothetical race or failure mode. A new CAS,
+version counter, writer protocol, transaction coordinator, or whole-codebase persistence seam needs
+one of: a concrete reproducer, an observed production failure, or explicit user approval of that
+specific complexity.
+
+Stop and reopen the architecture when a narrow feature starts requiring unrelated writers, handlers,
+fixtures, or subsystems to migrate. A review finding that says “now sweep every writer” is evidence
+that the design boundary is wrong, not permission to expand the task recursively. Prefer the local
+transaction around rows the feature actually owns; record the theoretical race as deferred work and
+revisit it only when real evidence justifies the cost.
+
+Before continuing any scope-expanding review loop, report the file-count/blast-radius increase and
+ask whether the invariant is worth it. Delete an unmerged over-engineered stack rather than rescuing
+it because work has already been spent.
+
 When researching a mechanic in rAthena: the skill logic is modular under
 `rathena/src/map/skills/<job>/` — grepping only `skill.cpp` for a skill id finds the
 usability check and misses the real logic. Grep both.
