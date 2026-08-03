@@ -339,6 +339,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:visibility, {:player_left_view, about_char_id, about_account_id}})
   end
 
+  @doc "Grants mob-kill base EXP to this owner's exact active Homunculus."
+  @spec gain_homunculus_exp(pid(), pos_integer(), non_neg_integer(), String.t()) :: :ok
+  def gain_homunculus_exp(owner_pid, gid, base_exp, mob_map) do
+    GenServer.cast(owner_pid, {:homunculus, {:gain_exp, gid, base_exp, mob_map}})
+  end
+
   @doc "Notifies this player that a Homunculus entered their view range."
   @spec notify_homunculus_entered_view(pid(), pos_integer()) :: :ok
   def notify_homunculus_entered_view(pid, gid) do

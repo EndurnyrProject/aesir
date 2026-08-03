@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   @moduledoc """
   Kill-reward glue for a player session: drop rolling for the killing blow's
-  attacker (`{:mob_killed, ...}`) and hunting-quest kill credit
+  reward owner (`{:mob_killed, ...}`) and hunting-quest kill credit
   (`{:quest_kill, ...}`).
   """
 
@@ -27,10 +27,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   def info({:quest_kill, mob_id}, state), do: quest_kill(mob_id, state)
 
   @doc """
-  EXP for the kill is granted separately, per contributing attacker, via
-  `{:mob_kill_exp, base, job}` (`Unit.Mob.KillExp.distribute/5`); this
-  handler only rolls and places this session's own drops as the killing
-  blow's attacker.
+  EXP for the kill is granted separately, per eligible typed contributor, via
+  `{:progression, {:mob_kill_exp, base, job, mob_race}}`
+  (`Unit.Mob.KillExp.distribute_typed/6`); this handler only rolls and places
+  this reward-owner session's drops. Ore Discovery additionally requires an
+  actual player final source.
   """
   @spec mob_killed(map(), map()) :: {:noreply, map()}
   def mob_killed(payload, state), do: mob_killed(payload, state, &:rand.uniform/1)
@@ -62,8 +63,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
     end
   end
 
-  # Rolls the slain mob's drop table from the killer's session (the only place
-  # holding both the table and the killer's stats) and places any results as
+  # Rolls the slain mob's drop table from the reward owner's session (the only
+  # place holding both the table and the reward owner's stats) and places results as
   # ground items through the map coordinator. Legacy payloads without a drop
   # table fall through to the no-op clause.
   defp maybe_drop_items(%{ownership: ownership, boss?: boss?} = payload, state, rng) do
@@ -73,7 +74,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   defp maybe_drop_items(payload, state, rng), do: maybe_drop_items(payload, state, rng, [])
 
   defp maybe_drop_items(
-         %{drops: drops, mob_level: mob_level, map: map, x: x, y: y},
+         %{drops: drops, mob_level: mob_level, map: map, x: x, y: y} = payload,
          state,
          rng,
          opts
@@ -89,7 +90,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
     items =
       drops
       |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y)
-      |> maybe_discover_ore(stats.progression.learned_skills, x, y, rng)
+      |> maybe_discover_ore(
+        stats.progression.learned_skills,
+        x,
+        y,
+        rng,
+        Map.get(payload, :final_source, {:player, char_id})
+      )
 
     case {items, opts} do
       {[], _opts} -> :ok
@@ -100,7 +107,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
 
   defp maybe_drop_items(_payload, _state, _rng, _opts), do: :ok
 
-  defp maybe_discover_ore(drops, learned_skills, x, y, rng) do
+  defp maybe_discover_ore(drops, learned_skills, x, y, rng, {:player, _id}) do
     if Learned.learned_level(learned_skills, 106) > 0 do
       entries = OreTable.entries()
       {item_id, rate} = Enum.fetch!(entries, rng.(length(entries)) - 1)
@@ -110,6 +117,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       drops
     end
   end
+
+  defp maybe_discover_ore(drops, _learned_skills, _x, _y, _rng, _final_source), do: drops
 
   defp persist_quest_changes(char_id, quest_log, changes) do
     changes

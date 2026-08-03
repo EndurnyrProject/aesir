@@ -135,6 +135,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
              )
   end
 
+  test "a Homunculus final blow keeps normal drops but skips player-only Ore Discovery" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    rolled = [{501, 1, 200, 90, true}]
+    typed_payload = Map.put(payload(drops), :final_source, {:homunculus, 20})
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 0, "morocc", 200, 90 -> rolled end)
+    reject(&OreTable.entries/0)
+    expect(Coordinator, :drop_items, fn "morocc", ^rolled, 200, 90 -> :ok end)
+
+    assert {:noreply, _state} =
+             LootHandler.mob_killed(
+               typed_payload,
+               state(learned_skills: %{106 => 1}),
+               fn _upper -> 1 end
+             )
+  end
+
   test "Ore Discovery selects an entry before rolling its rate" do
     drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
     expected = [{701, 1, 200, 90, true}]

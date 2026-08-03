@@ -159,7 +159,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_ai_tick: integer() | nil,
           aggro_list: map(),
           aggro_order: [integer()],
-          typed_aggro_list: %{optional(Ref.t()) => non_neg_integer()},
+          typed_aggro_list: %{
+            optional(Ref.t()) => %{
+              contributor: Ref.t(),
+              source_type: atom(),
+              reward_owner_id: integer() | nil,
+              damage: non_neg_integer(),
+              first_hit_order: non_neg_integer()
+            }
+          },
           typed_aggro_order: [Ref.t()],
           last_action_time: integer() | nil,
           last_movement_end_time: integer() | nil,
@@ -593,22 +601,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     %{state | aggro_list: updated_aggro, aggro_order: updated_aggro_order}
   end
 
-  @doc "Records cumulative damage by exact typed contributor in first-hit order."
-  @spec add_typed_aggro(t(), Ref.t(), integer()) :: t()
+  @doc "Records cumulative damage and hit-time reward ownership by exact typed contributor."
+  @spec add_typed_aggro(t(), Ref.t(), integer() | nil, integer()) :: t()
   def add_typed_aggro(
         %__MODULE__{typed_aggro_list: aggro, typed_aggro_order: order} = state,
-        contributor_ref,
+        {source_type, _id} = contributor_ref,
+        reward_owner_id,
         damage
       ) do
-    updated = Map.update(aggro, contributor_ref, damage, &(&1 + damage))
-    updated_order = if contributor_ref in order, do: order, else: [contributor_ref | order]
+    {updated, updated_order} =
+      case Map.fetch(aggro, contributor_ref) do
+        {:ok, entry} ->
+          {Map.put(aggro, contributor_ref, %{entry | damage: entry.damage + damage}), order}
+
+        :error ->
+          entry = %{
+            contributor: contributor_ref,
+            source_type: source_type,
+            reward_owner_id: reward_owner_id,
+            damage: damage,
+            first_hit_order: length(order)
+          }
+
+          {Map.put(aggro, contributor_ref, entry), [contributor_ref | order]}
+      end
+
     %{state | typed_aggro_list: updated, typed_aggro_order: updated_order}
   end
 
   @doc "Returns typed cumulative contributors in stable first-hit order."
-  @spec typed_damage_log(t()) :: [{Ref.t(), integer()}]
+  @spec typed_damage_log(t()) :: [map()]
   def typed_damage_log(%__MODULE__{typed_aggro_list: aggro, typed_aggro_order: order}) do
-    Enum.map(Enum.reverse(order), &{&1, Map.fetch!(aggro, &1)})
+    Enum.map(Enum.reverse(order), &Map.fetch!(aggro, &1))
   end
 
   @doc """
@@ -624,8 +648,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @doc "Returns the exact typed contributor with the highest aggro."
   @spec get_highest_typed_aggro_target(t()) :: Ref.t() | nil
   def get_highest_typed_aggro_target(%__MODULE__{} = state) do
-    case Enum.max_by(typed_damage_log(state), fn {_ref, amount} -> amount end, fn -> nil end) do
-      {target_ref, _amount} -> target_ref
+    case Enum.max_by(typed_damage_log(state), & &1.damage, fn -> nil end) do
+      %{contributor: target_ref} -> target_ref
       nil -> nil
     end
   end

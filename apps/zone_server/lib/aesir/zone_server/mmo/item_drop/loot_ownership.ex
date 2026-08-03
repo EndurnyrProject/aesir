@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -41,6 +42,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
       |> Enum.map(&elem(&1, 0))
 
     [first, second, third] = Enum.take(owners ++ [nil, nil, nil], 3)
+    %__MODULE__{first: first, second: second, third: third}
+  end
+
+  @doc """
+  Ranks typed contributors after projecting eligible actual sources to their
+  hit-time reward owners and aggregating raw damage by owner.
+
+  The full typed log determines the bonus. It is added once to the reward owner
+  of the first eligible actual contributor; ties retain earliest hit order.
+  """
+  @spec determine_typed(MobState.t(), (map(), String.t() -> boolean())) :: t()
+  def determine_typed(mob_state, eligible? \\ &default_typed_eligible?/2) do
+    damage_log = MobState.typed_damage_log(mob_state)
+    bonus = div(Enum.sum_by(damage_log, & &1.damage) * Config.first_attack_loot_bonus(), 100)
+    eligible_entries = Enum.filter(damage_log, &eligible?.(&1, mob_state.map_name))
+
+    ranked =
+      eligible_entries
+      |> Enum.group_by(& &1.reward_owner_id)
+      |> Enum.map(fn {owner_id, entries} ->
+        damage = Enum.sum_by(entries, & &1.damage)
+        first_hit_order = Enum.min_by(entries, & &1.first_hit_order).first_hit_order
+        %{owner_id: owner_id, damage: damage, first_hit_order: first_hit_order}
+      end)
+      |> add_typed_first_attack_bonus(eligible_entries, bonus)
+      |> Enum.sort_by(&{-&1.damage, &1.first_hit_order})
+      |> Enum.take(3)
+      |> Enum.map(& &1.owner_id)
+
+    [first, second, third] = Enum.take(ranked ++ [nil, nil, nil], 3)
     %__MODULE__{first: first, second: second, third: third}
   end
 
@@ -112,6 +143,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
     [{attacker_id, damage + bonus} | rest]
   end
 
+  defp add_typed_first_attack_bonus(ranked, [], _bonus), do: ranked
+
+  defp add_typed_first_attack_bonus(ranked, [first_entry | _rest], bonus) do
+    Enum.map(ranked, fn
+      %{owner_id: owner_id} = entry when owner_id == first_entry.reward_owner_id ->
+        %{entry | damage: entry.damage + bonus}
+
+      entry ->
+        entry
+    end)
+  end
+
   defp windows(false) do
     {
       Config.item_first_get_time(),
@@ -148,12 +191,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership do
     end)
   end
 
+  defp default_typed_eligible?(
+         %{contributor: {:player, char_id}, reward_owner_id: char_id},
+         map_name
+       ),
+       do: default_eligible?(char_id, map_name)
+
+  defp default_typed_eligible?(
+         %{contributor: {:homunculus, gid}, reward_owner_id: owner_id},
+         map_name
+       ) do
+    default_eligible?(owner_id, map_name) and
+      case UnitRegistry.get_unit(:homunculus, gid) do
+        {:ok,
+         {HomunculusState,
+          %HomunculusState{owner_character_id: ^owner_id, map_name: ^map_name} = homunculus, _pid}} ->
+          HomunculusState.living?(homunculus)
+
+        _other ->
+          false
+      end
+  end
+
+  defp default_typed_eligible?(
+         %{contributor: {:mob, _gid}, reward_owner_id: owner_id},
+         map_name
+       )
+       when is_integer(owner_id),
+       do: default_eligible?(owner_id, map_name)
+
+  defp default_typed_eligible?(_entry, _map_name), do: false
+
   defp default_eligible?(attacker_id, map_name) do
     case UnitRegistry.get_unit(:player, attacker_id) do
-      {:ok, {_module, player_state, _pid}} ->
-        player_state.map_name == map_name and PlayerState.living?(player_state)
+      {:ok, {PlayerState, %PlayerState{map_name: ^map_name} = player_state, _pid}} ->
+        PlayerState.living?(player_state)
 
-      {:error, :not_found} ->
+      _other ->
         false
     end
   end

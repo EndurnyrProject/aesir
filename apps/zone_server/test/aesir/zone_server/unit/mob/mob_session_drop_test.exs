@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     assert payload.x == 100
     assert payload.y == 100
     assert payload.ownership == %LootOwnership{first: nil, second: nil, third: nil}
+    assert payload.final_source == {:player, 42}
     refute payload.boss?
 
     assert_receive {:unit_lifecycle,
@@ -76,12 +77,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
 
-    stub(Aesir.ZoneServer.Unit.Mob.KillExp, :distribute, fn _aggro,
-                                                            _base,
-                                                            _job,
-                                                            _level,
-                                                            _map,
-                                                            _race ->
+    stub(Aesir.ZoneServer.Unit.Mob.KillExp, :distribute_typed, fn _damage_log,
+                                                                  _base,
+                                                                  _job,
+                                                                  _level,
+                                                                  _map,
+                                                                  _race ->
       :ok
     end)
 
@@ -106,21 +107,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
       build_mob_state(hp: 1, max_hp: 1, drops: [])
       |> MobState.add_aggro(100, 100)
       |> MobState.add_aggro(200, 200)
+      |> MobState.add_typed_aggro({:player, 100}, 100, 100)
+      |> MobState.add_typed_aggro({:player, 200}, 200, 200)
 
-    pre_death_state = MobState.add_aggro(state, 42, 100)
+    pre_death_state =
+      state
+      |> MobState.add_aggro(42, 100)
+      |> MobState.add_typed_aggro({:player, 42}, 42, 100)
 
     {:noreply, _dead_state} =
       MobSession.handle_cast({:combat, {:apply_damage, 100, 42}}, state)
 
     assert_receive {:loot, {:mob_killed, %{ownership: ownership, boss?: boss?}}}
-    assert ownership == LootOwnership.determine(pre_death_state)
+    assert ownership == LootOwnership.determine_typed(pre_death_state)
     refute boss?
   end
 
   test "no_exp and no_drops suppress EXP distribution and drop generation" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
-    reject(&Aesir.ZoneServer.Unit.Mob.KillExp.distribute/6)
+    reject(&Aesir.ZoneServer.Unit.Mob.KillExp.distribute_typed/6)
 
     :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
 

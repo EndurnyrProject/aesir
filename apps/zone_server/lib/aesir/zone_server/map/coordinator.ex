@@ -197,12 +197,11 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @doc """
   Notifies the coordinator that a mob has died.
 
-  `killer_char_id` is the killing blow's attacker unit id, whatever its unit
-  type -- a mob-vs-mob kill or a despawn passes `nil`. When the dying mob
-  carries an `owner_event` (rAthena OnMyMobDead) and the killer resolves to a
-  live player session, the event fires attached to that player; anything else
-  (no `owner_event`, no killer, a non-player killer, an offline killer) fires
-  nothing.
+  `killer_char_id` is the reward-owner character ID of the killing blow;
+  rootless final sources and despawns pass `nil`. When the dying mob carries
+  an `owner_event` (rAthena OnMyMobDead) and that owner resolves to a live
+  player session, the event fires attached to that player; anything else
+  (no `owner_event`, no reward owner, or an offline owner) fires nothing.
   """
   @spec mob_died(String.t(), integer(), integer() | nil) :: :ok
   def mob_died(map_name, instance_id, killer_char_id \\ nil) do

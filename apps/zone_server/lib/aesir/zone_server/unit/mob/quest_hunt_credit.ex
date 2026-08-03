@@ -28,10 +28,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.QuestHuntCredit do
   Broadcasts `{:loot, {:quest_kill, mob_id}}` to every session eligible to
   credit the kill of `mob_id` at `{mob_x, mob_y}` on `mob_map`.
 
-  With no party (or a killer no longer in the registry) only the killer is
-  credited; otherwise the killer's live party co-members in range on the map
-  are, with the killer among them. `attacker_id` is never `nil` here --
-  `MobSession.announce_kill/2` guards that case before calling.
+  With no party (or a reward owner no longer in the registry) only that owner
+  is credited; otherwise the owner's live party co-members in range on the map
+  are, with the owner among them. `attacker_id` is never `nil` because the mob
+  death handler calls this module only for an integer reward owner.
   """
   @spec credit(non_neg_integer(), non_neg_integer(), String.t(), {integer(), integer()}) :: :ok
   def credit(attacker_id, mob_id, mob_map, {mob_x, mob_y}) do

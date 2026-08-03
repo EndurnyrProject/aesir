@@ -1,8 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
   @moduledoc """
-  MVP reward granting for a boss kill, called synchronously from
-  `Aesir.ZoneServer.Unit.Mob.MobSession.announce_kill/2` while the dying mob
-  still holds its full damage log.
+  MVP reward granting for a boss kill, called synchronously from the mob
+  death handler while the dying mob still holds its full damage log.
 
   MVP tier is **derived, not stored**: a mob is MVP-tier when it carries MVP
   experience or at least one MVP drop entry. Most of the boss-classified mobs

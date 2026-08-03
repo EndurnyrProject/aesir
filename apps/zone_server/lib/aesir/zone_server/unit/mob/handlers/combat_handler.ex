@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.KillExp
@@ -39,12 +40,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     {updated_mob, status} = MobState.apply_damage(state, damage)
     current_time = System.system_time(:second)
     attacker_ref = typed_attacker(attacker)
-    credited_attacker_id = credited_attacker_id(attacker_ref)
+    reward_owner_id = reward_owner_id(attacker_ref)
 
     updated_mob =
       updated_mob
       |> Map.put(:last_damage_time, current_time)
-      |> maybe_add_aggro(credited_attacker_id, attacker_ref, damage)
+      |> maybe_add_aggro(reward_owner_id, attacker_ref, damage)
       |> AIStateMachine.handle_damage_reaction(attacker_ref)
       |> maybe_note_rude_attack(attacker_ref)
 
@@ -56,39 +57,43 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         {:noreply, updated_mob}
 
       :dead ->
-        handle_death(updated_mob, credited_attacker_id)
+        handle_death(updated_mob, attacker_ref, reward_owner_id)
     end
   end
 
-  defp maybe_add_aggro(state, nil, nil, _damage), do: state
+  defp maybe_add_aggro(state, _reward_owner_id, nil, _damage), do: state
 
-  defp maybe_add_aggro(state, credited_id, attacker_ref, damage) do
-    state
-    |> MobState.add_aggro(credited_id, damage)
-    |> MobState.add_typed_aggro(attacker_ref, damage)
+  defp maybe_add_aggro(state, reward_owner_id, attacker_ref, damage) do
+    state = MobState.add_typed_aggro(state, attacker_ref, reward_owner_id, damage)
+
+    if is_integer(reward_owner_id) do
+      MobState.add_aggro(state, reward_owner_id, damage)
+    else
+      state
+    end
   end
 
-  defp credited_attacker_id(nil), do: nil
-  defp credited_attacker_id({:player, attacker_id}), do: attacker_id
+  defp reward_owner_id(nil), do: nil
+  defp reward_owner_id({:player, attacker_id}), do: attacker_id
 
-  defp credited_attacker_id({:homunculus, attacker_id}) do
+  defp reward_owner_id({:homunculus, attacker_id}) do
     case UnitRegistry.get_unit(:homunculus, attacker_id) do
-      {:ok, {_module, %{owner_character_id: owner_id}, _pid}} -> owner_id
-      {:error, :not_found} -> attacker_id
+      {:ok, {HomunculusState, %HomunculusState{owner_character_id: owner_id}, _pid}} -> owner_id
+      _other -> nil
     end
   end
 
-  defp credited_attacker_id({:mob, attacker_id}) do
+  defp reward_owner_id({:mob, attacker_id}) do
     case UnitRegistry.get_unit(:mob, attacker_id) do
       {:ok, {MobState, %MobState{owner_player_id: owner_player_id}, _pid}}
       when is_integer(owner_player_id) ->
         owner_player_id
 
       {:ok, _unit} ->
-        attacker_id
+        nil
 
       {:error, :not_found} ->
-        attacker_id
+        nil
     end
   end
 
@@ -131,7 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
-  defp handle_death(state, attacker_id) do
+  defp handle_death(state, attacker_ref, reward_owner_id) do
     # Mark as dead
     updated_state = state |> MobState.advance_deferred_epoch() |> MobState.set_dead()
 
@@ -139,10 +144,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     SpawnView.notify_despawn(updated_state)
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name)
 
-    announce_kill(state, attacker_id)
+    announce_kill(state, attacker_ref, reward_owner_id)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
-    Coordinator.mob_died(state.map_name, state.instance_id, attacker_id)
+    Coordinator.mob_died(state.map_name, state.instance_id, reward_owner_id)
 
     # Schedule process termination after a brief delay to handle cleanup
     Process.send_after(self(), :terminate, 1000)
@@ -150,22 +155,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     {:noreply, updated_state}
   end
 
-  # Distributes EXP to every attacker who damaged the mob, proportional to
-  # damage dealt (`KillExp.distribute/6`, design "Damage-based EXP share"),
-  # grants the MVP reward for an MVP-tier boss (`MvpReward.grant/6`, a no-op
-  # for every other mob), then publishes the drop-rolling payload to the
-  # killing blow's own session
-  # (the only place holding both the drop table and the killer's stats). The
-  # mob stays ignorant of who listens; an absent killer simply has no
-  # subscriber.
-  defp announce_kill(_state, nil), do: :ok
+  # Distributes typed EXP to every eligible contributor
+  # (`KillExp.distribute_typed/6`), grants the MVP reward for an MVP-tier boss,
+  # then sends quest credit and drop rolling to the killing blow's reward-owner
+  # session when one exists. A rootless final source still completes shared
+  # rewards but has no session to receive kill-local rewards.
+  defp announce_kill(_state, nil, _reward_owner_id), do: :ok
 
-  defp announce_kill(%MobState{mob_data: mob_data, aggro_list: aggro_list} = state, attacker_id) do
-    ownership = LootOwnership.determine(state)
+  defp announce_kill(
+         %MobState{mob_data: mob_data, aggro_list: aggro_list} = state,
+         attacker_ref,
+         reward_owner_id
+       ) do
+    ownership = LootOwnership.determine_typed(state)
 
     unless state.no_exp do
-      KillExp.distribute(
-        aggro_list,
+      KillExp.distribute_typed(
+        MobState.typed_damage_log(state),
         mob_data.base_exp,
         mob_data.job_exp,
         mob_data.level,
@@ -176,25 +182,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
     MvpReward.grant(aggro_list, mob_data, state.map_name, state.x, state.y, ownership)
 
-    QuestHuntCredit.credit(attacker_id, mob_data.id, state.map_name, {state.x, state.y})
+    if is_integer(reward_owner_id) do
+      QuestHuntCredit.credit(reward_owner_id, mob_data.id, state.map_name, {state.x, state.y})
 
-    unless state.no_drops do
-      PubSub.broadcast(
-        Aesir.PubSub,
-        "player:#{attacker_id}",
-        {:loot,
-         {:mob_killed,
-          %{
-            mob_id: mob_data.id,
-            drops: mob_data.drops,
-            mob_level: mob_data.level,
-            map: state.map_name,
-            x: state.x,
-            y: state.y,
-            ownership: ownership,
-            boss?: MobState.is_boss?(state)
-          }}}
-      )
+      unless state.no_drops do
+        PubSub.broadcast(
+          Aesir.PubSub,
+          "player:#{reward_owner_id}",
+          {:loot,
+           {:mob_killed,
+            %{
+              mob_id: mob_data.id,
+              drops: mob_data.drops,
+              mob_level: mob_data.level,
+              map: state.map_name,
+              x: state.x,
+              y: state.y,
+              ownership: ownership,
+              boss?: MobState.is_boss?(state),
+              final_source: attacker_ref
+            }}}
+        )
+      end
     end
   end
 end

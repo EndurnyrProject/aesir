@@ -52,16 +52,47 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerMasterCreditTest do
 
     assert killed.is_dead
 
-    assert_receive {:loot, {:mob_killed, %{ownership: %LootOwnership{first: ^owner_id}}}}
+    assert_receive {:loot,
+                    {:mob_killed,
+                     %{
+                       ownership: %LootOwnership{first: ^owner_id},
+                       final_source: {:mob, ^summon_id}
+                     }}}
   end
 
-  test "unowned mob damage remains credited to the mob instance" do
+  test "a rootless mob lethal source still distributes prior player EXP without local rewards" do
+    player_id = 42
+    rootless_mob_id = 9_001
+    register_player(player_id)
+    register_mob(rootless_mob_id, nil)
+    stub(Coordinator, :mob_died, fn _map, _instance_id, _attacker_id -> :ok end)
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{player_id}")
+
+    victim = mob_state(1)
+    mob_data = %{victim.mob_data | base_exp: 1_000, job_exp: 500, level: 1}
+    victim = %{victim | mob_data: mob_data}
+
+    {:noreply, damaged} =
+      CombatHandler.handle_apply_damage(100, {:player, player_id}, victim)
+
+    {:noreply, killed} =
+      CombatHandler.handle_apply_damage(900, {:mob, rootless_mob_id}, damaged)
+
+    assert killed.is_dead
+    assert_receive {:progression, {:mob_kill_exp, 100, 50, :formless}}
+    refute_receive {:loot, _event}, 50
+  end
+
+  test "unowned mob damage is retained only as an ownerless typed contributor" do
     attacker_id = 9_001
     register_mob(attacker_id, nil)
 
     {:noreply, victim} = CombatHandler.handle_apply_damage(100, attacker_id, mob_state(1))
 
-    assert MobState.damage_log(victim) == [{attacker_id, 100}]
+    assert MobState.damage_log(victim) == []
+
+    assert [%{contributor: {:mob, ^attacker_id}, reward_owner_id: nil, damage: 100}] =
+             MobState.typed_damage_log(victim)
   end
 
   test "player damage remains credited to the player" do

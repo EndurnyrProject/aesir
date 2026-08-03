@@ -127,8 +127,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusTargetingTest do
     assert damaged.target_ref == {:player, homunculus.world_gid}
 
     assert Aesir.ZoneServer.Unit.Mob.MobState.typed_damage_log(damaged) == [
-             {{:homunculus, homunculus.world_gid}, 15},
-             {{:player, homunculus.world_gid}, 20}
+             %{
+               contributor: {:homunculus, homunculus.world_gid},
+               source_type: :homunculus,
+               reward_owner_id: state.game_state.character_id,
+               damage: 15,
+               first_hit_order: 0
+             },
+             %{
+               contributor: {:player, homunculus.world_gid},
+               source_type: :player,
+               reward_owner_id: homunculus.world_gid,
+               damage: 20,
+               first_hit_order: 1
+             }
            ]
   end
 

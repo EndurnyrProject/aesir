@@ -104,6 +104,30 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def cast({:status_changed, _gid, _status_id, _event} = status_event, session),
     do: CombatHandler.handle(status_event, session)
 
+  def cast({:gain_exp, _gid, 0, _mob_map}, %SessionState{} = session),
+    do: {:noreply, session}
+
+  def cast(
+        {:gain_exp, gid, amount, mob_map},
+        %SessionState{
+          game_state: %{map_name: mob_map},
+          homunculus: %HomunculusState{world_gid: gid, map_name: mob_map} = homunculus
+        } = session
+      )
+      when is_integer(amount) and amount > 0 do
+    if HomunculusState.living?(homunculus) do
+      case ProgressionHandler.gain_exp(homunculus, amount) do
+        {:ok, progressed} -> {:noreply, StateCommit.commit(session, progressed)}
+        {:error, reason} -> {:noreply, log_error(session, :gain_exp, reason)}
+      end
+    else
+      {:noreply, session}
+    end
+  end
+
+  def cast({:gain_exp, _gid, _amount, _mob_map}, %SessionState{} = session),
+    do: {:noreply, session}
+
   def cast(command, %SessionState{} = session) do
     Logger.warning("Unsupported Homunculus cast: #{inspect(command)}")
     {:noreply, session}
