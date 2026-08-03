@@ -321,6 +321,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     Combatant.new!(%{
       unit_id: mob_state.instance_id,
       unit_type: :mob,
+      social_root: {:mob, mob_state.instance_id},
+      reward_root: nil,
       base_stats: %{
         str: mob_data.stats.str + modifier(modifiers, :str),
         agi: mob_data.stats.agi + modifier(modifiers, :agi),

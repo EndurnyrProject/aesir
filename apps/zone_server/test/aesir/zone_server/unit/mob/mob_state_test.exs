@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
@@ -237,6 +239,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       combatant = MobState.to_combatant(state)
 
       assert combatant.combat_stats.soft_mdef == 20
+    end
+  end
+
+  describe "to_combatant/1 relationships" do
+    test "an owned mob keeps mob roots and hostility" do
+      owned_mob = %MobState{build_mob_state() | owner_player_id: 10} |> MobState.to_combatant()
+      owner = Combatant.new!(%{unit_type: :player, unit_id: 10})
+
+      assert owned_mob.unit_type == :mob
+      assert owned_mob.social_root == {:mob, owned_mob.unit_id}
+      assert owned_mob.reward_root == nil
+      assert Relationship.enemy?(owner, owned_mob)
+      assert Relationship.enemy?(owned_mob, owner)
     end
   end
 

@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   Standardized combatant structure containing all data needed for combat calculations.
 
   Fields are organized into logical groups:
-  - Identity: unit_id, unit_type
+  - Identity: unit_id, unit_type, social_root, reward_root
   - Stats: base_stats, combat_stats (physical atk/def plus magic matk/mdef/soft_mdef), progression
   - Combat modifiers: element, race, size, weapon
   - Timing: attack_range, attack_delay_ms
@@ -53,6 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Unit identification
     unit_id: nil,
     unit_type: nil,
+    social_root: nil,
+    reward_root: nil,
     party_id: 0,
     guild_id: 0,
 
@@ -114,7 +116,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
   @type t() :: %__MODULE__{
           unit_id: integer(),
-          unit_type: :player | :mob | :skill_unit,
+          unit_type: :player | :mob | :homunculus | :skill_unit,
+          social_root: Aesir.ZoneServer.Unit.Ref.t() | nil,
+          reward_root: {:player, pos_integer()} | nil,
           party_id: non_neg_integer(),
           guild_id: non_neg_integer(),
           base_stats: %{
@@ -171,8 +175,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   """
   @spec new(map()) :: {:ok, t()} | {:error, String.t()}
   def new(attrs) when is_map(attrs) do
-    combatant = struct(__MODULE__, attrs)
-    {:ok, combatant}
+    combatant = attrs |> with_roots() |> then(&struct(__MODULE__, &1))
+
+    if valid_roots?(combatant) do
+      {:ok, combatant}
+    else
+      {:error, "Invalid combatant relationship roots"}
+    end
   rescue
     e in ArgumentError ->
       {:error, "Invalid combatant data: #{Exception.message(e)}"}
@@ -198,7 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       combatant.unit_id <= 0 ->
         {:error, "Invalid unit_id: must be positive integer"}
 
-      combatant.unit_type not in [:player, :mob, :skill_unit] ->
+      combatant.unit_type not in [:player, :mob, :homunculus, :skill_unit] ->
         {:error, "Invalid unit_type"}
 
       not is_map(combatant.base_stats) ->
@@ -227,7 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   @doc """
   Gets the unit type for this combatant.
   """
-  @spec get_unit_type(t()) :: :player | :mob
+  @spec get_unit_type(t()) :: :player | :mob | :homunculus | :skill_unit
   def get_unit_type(%__MODULE__{unit_type: unit_type}), do: unit_type
 
   @doc """
@@ -243,4 +252,48 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   @spec mob?(t()) :: boolean()
   def mob?(%__MODULE__{unit_type: :mob}), do: true
   def mob?(_), do: false
+
+  defp with_roots(%{unit_type: :player, unit_id: unit_id} = attrs) do
+    attrs
+    |> Map.put_new(:social_root, {:player, unit_id})
+    |> Map.put_new(:reward_root, {:player, unit_id})
+  end
+
+  defp with_roots(%{unit_type: :mob, unit_id: unit_id} = attrs) do
+    attrs
+    |> Map.put_new(:social_root, {:mob, unit_id})
+    |> Map.put_new(:reward_root, nil)
+  end
+
+  defp with_roots(attrs), do: attrs
+
+  defp valid_roots?(%__MODULE__{
+         unit_type: :player,
+         unit_id: unit_id,
+         social_root: {:player, unit_id},
+         reward_root: {:player, unit_id}
+       })
+       when is_integer(unit_id) and unit_id > 0,
+       do: true
+
+  defp valid_roots?(%__MODULE__{
+         unit_type: :mob,
+         unit_id: unit_id,
+         social_root: {:mob, unit_id},
+         reward_root: nil
+       })
+       when is_integer(unit_id) and unit_id > 0,
+       do: true
+
+  defp valid_roots?(%__MODULE__{
+         unit_type: :homunculus,
+         unit_id: unit_id,
+         social_root: {:player, owner_id},
+         reward_root: {:player, owner_id}
+       })
+       when is_integer(unit_id) and unit_id > 0 and is_integer(owner_id) and owner_id > 0,
+       do: true
+
+  defp valid_roots?(%__MODULE__{unit_type: :skill_unit}), do: true
+  defp valid_roots?(%__MODULE__{}), do: false
 end

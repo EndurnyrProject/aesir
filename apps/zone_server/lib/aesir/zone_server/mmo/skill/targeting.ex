@@ -1,69 +1,64 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @moduledoc """
-  Shared enemy-target relation for skills and combat.
+  Shared PvE target relations for skills and combat.
 
-  A living mob is an enemy of a player, and vice versa, but a mob is never a
-  valid target for another mob (PvE has no friendly fire between mobs). A
-  player, however, is never a valid target for another player until the
-  server gains PvP map modes: `pvp_enabled?/1` is the single seam that flips
-  that policy. Beyond PvP, players sharing the caster's nonzero party or
-  guild are never enemies.
+  Existing callers may keep passing player and mob state maps. New relationship
+  callers use typed combatants and unit references.
   """
 
-  @doc """
-  Validates that `target` is a living enemy of `attacker`.
-  """
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Unit.Ref
+
+  @doc "Validates that `target` is a living enemy of `attacker`."
   @spec validate_enemy(map(), map()) :: :ok | {:error, :invalid_target | :target_dead}
   def validate_enemy(attacker, target) do
-    cond do
-      not alive?(target) -> {:error, :target_dead}
-      same_unit?(attacker, target) -> {:error, :invalid_target}
-      pvp_blocked?(attacker, target) -> {:error, :invalid_target}
-      mob_vs_mob?(attacker, target) -> {:error, :invalid_target}
-      allied_players?(attacker, target) -> {:error, :invalid_target}
-      true -> :ok
+    if alive?(target) do
+      if enemy?(relationship_combatant(attacker), relationship_combatant(target)),
+        do: :ok,
+        else: {:error, :invalid_target}
+    else
+      {:error, :target_dead}
     end
   end
 
-  # Mobs never target other mobs; this is PvE-only friendly fire protection.
-  defp mob_vs_mob?(attacker, target) do
-    unit_type(attacker) == :mob and unit_type(target) == :mob
-  end
+  @doc "Returns whether two typed combatants are enemies on a PvE map."
+  @spec enemy?(Combatant.t(), Combatant.t()) :: boolean()
+  defdelegate enemy?(attacker, target), to: Relationship
 
-  # A player attacking another player is rejected until PvP map modes exist.
-  # Mob-vs-player and player-vs-mob are unaffected because at least one side is
-  # not a player. Flipping `pvp_enabled?/1` to true reopens player-vs-player and
-  # hands the alliance decision to `allied_players?/2`.
-  defp pvp_blocked?(attacker, target) do
-    unit_type(attacker) == :player and unit_type(target) == :player and
-      not pvp_enabled?(attacker)
-  end
+  @doc "Returns whether a player may directly support the exact owned Homunculus."
+  @spec direct_support?(Combatant.t(), Combatant.t()) :: boolean()
+  defdelegate direct_support?(caster, target), to: Relationship
 
-  @doc """
-  Returns whether `map` is a versus map.
+  @doc "Returns whether an explicit ground selector chooses a typed unit reference."
+  @spec ground_selected?(Relationship.ground_selector(), Ref.t()) :: boolean()
+  defdelegate ground_selected?(selector, target_ref), to: Relationship
 
-  No map carries a versus flag today, so this deliberately returns `false`.
-  This is the single seam to flip when versus map modes land. Versus covers
-  PvP, Battleground, GvG, and their variants.
-  """
+  @doc "Returns whether `map` is a versus map."
   @spec versus_map?(term()) :: boolean()
   def versus_map?(_map), do: false
 
-  defp pvp_enabled?(_attacker), do: false
+  defp relationship_combatant(unit) do
+    attrs = %{
+      unit_id: unit_id(unit),
+      unit_type: unit_type(unit),
+      party_id: Map.get(unit, :party_id, 0),
+      guild_id: Map.get(unit, :guild_id, 0)
+    }
 
-  defp same_unit?(attacker, target) do
-    unit_type(attacker) == unit_type(target) and unit_id(attacker) == unit_id(target)
+    unit
+    |> relationship_roots(attrs)
+    |> Combatant.new!()
   end
 
-  defp allied_players?(attacker, target) do
-    unit_type(attacker) == :player and unit_type(target) == :player and
-      (same_nonzero?(attacker, target, :party_id) or
-         same_nonzero?(attacker, target, :guild_id))
-  end
+  defp relationship_roots(unit, attrs) do
+    case {Map.fetch(unit, :social_root), Map.fetch(unit, :reward_root)} do
+      {{:ok, social_root}, {:ok, reward_root}} ->
+        Map.merge(attrs, %{social_root: social_root, reward_root: reward_root})
 
-  defp same_nonzero?(attacker, target, key) do
-    value = Map.get(attacker, key, 0)
-    value != 0 and value == Map.get(target, key, 0)
+      {:error, :error} ->
+        attrs
+    end
   end
 
   defp alive?(%{is_dead: true}), do: false
