@@ -30,6 +30,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @spec direct_support?(Combatant.t(), Combatant.t()) :: boolean()
   defdelegate direct_support?(caster, target), to: Relationship
 
+  @doc "Returns whether two unit snapshots share the exact social root."
+  @spec exact_ally?(map(), map()) :: boolean()
+  def exact_ally?(left, right) do
+    left_root = left |> relationship_combatant() |> Relationship.social_root()
+    right_root = right |> relationship_combatant() |> Relationship.social_root()
+    Ref.equal?(left_root, right_root)
+  end
+
   @doc "Returns whether an explicit ground selector chooses a typed unit reference."
   @spec ground_selected?(Relationship.ground_selector(), Ref.t()) :: boolean()
   defdelegate ground_selected?(selector, target_ref), to: Relationship
@@ -51,6 +59,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     |> Combatant.new!()
   end
 
+  defp relationship_roots(%{owner_character_id: owner_id}, attrs) do
+    Map.merge(attrs, %{social_root: {:player, owner_id}, reward_root: {:player, owner_id}})
+  end
+
   defp relationship_roots(unit, attrs) do
     case {Map.fetch(unit, :social_root), Map.fetch(unit, :reward_root)} do
       {{:ok, social_root}, {:ok, reward_root}} ->
@@ -68,10 +80,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defp alive?(_target), do: true
 
   defp unit_type(%{unit_type: unit_type}), do: unit_type
+
+  defp unit_type(%{owner_character_id: _owner_character_id, world_gid: _world_gid}),
+    do: :homunculus
+
   defp unit_type(%{character_id: _character_id}), do: :player
   defp unit_type(%{instance_id: _instance_id}), do: :mob
 
   defp unit_id(%{unit_id: unit_id}), do: unit_id
+  defp unit_id(%{owner_character_id: _owner_character_id, world_gid: world_gid}), do: world_gid
   defp unit_id(%{character_id: character_id}), do: character_id
   defp unit_id(%{instance_id: instance_id}), do: instance_id
 end

@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
+  alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree, as: HomunculusSkillTree
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -37,12 +39,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -154,9 +159,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # variable-cast path that applies each as a separate multiplicative factor
   # (rAthena skill_vfcastfix). Statuses without the key are skipped.
   @spec status_reductions(integer(), atom()) :: [non_neg_integer()]
-  defp status_reductions(character_id, state_key) do
-    :player
-    |> StatusStorage.get_unit_statuses(character_id)
+  defp status_reductions(character_id, state_key),
+    do: unit_status_reductions(:player, character_id, state_key)
+
+  defp unit_status_reductions(unit_type, unit_id, state_key) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
     |> Enum.flat_map(fn entry ->
       case Map.get(entry.state || %{}, state_key) do
         nil -> []
@@ -218,6 +226,64 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   def preflight_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
+  Begins a Homunculus cast through the restricted companion path.
+
+  Unlike player casts, this path has no inventory, weapon, quest-lineage, zeny,
+  ammo, or player act-delay requirements. It keeps the shared catalog, active
+  module, rank, target, range, status, SP, cooldown, cast-time, validation, and
+  module-execution rules. Manual commands and autonomous AI both call this
+  function; AI policy cannot weaken any check here.
+  """
+  @spec begin_homunculus_cast(
+          HomunculusState.t(),
+          integer(),
+          pos_integer(),
+          Active.target()
+        ) ::
+          {:instant, HomunculusState.t(), [Active.local_effect()]}
+          | {:casting, cast_info()}
+          | {:error, atom()}
+  def begin_homunculus_cast(caster, skill_id, level, target)
+      when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, prepared} <-
+           validate_homunculus_cast(caster, skill_id, level, target, now, :begin) do
+      timing = homunculus_cast_time(caster, prepared.module, target, level, prepared.definition)
+      schedule_homunculus_cast(timing, caster, target, level, prepared, now)
+    end
+  end
+
+  def begin_homunculus_cast(_caster, _skill_id, _level, _target),
+    do: {:error, :invalid_level}
+
+  @doc """
+  Completes a timed Homunculus cast against the latest companion and target.
+
+  It reruns every mutable restricted-path check and settles SP and the online
+  monotonic cooldown only after the skill module succeeds. Timer and immutable
+  token identity remain the owning aggregate handler's responsibility.
+  """
+  @spec complete_homunculus_cast(
+          HomunculusState.t(),
+          integer(),
+          pos_integer(),
+          Active.target()
+        ) :: {:ok, HomunculusState.t(), [Active.local_effect()]} | {:error, atom()}
+  def complete_homunculus_cast(caster, skill_id, level, target)
+      when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    with {:ok, prepared} <-
+           validate_homunculus_cast(caster, skill_id, level, target, now, :completion) do
+      complete_prepared_homunculus_cast(caster, target, level, prepared, now)
+    end
+  end
+
+  def complete_homunculus_cast(_caster, _skill_id, _level, _target),
+    do: {:error, :invalid_level}
 
   @doc """
   Validates an Encore-remembered skill without mutating the caster.
@@ -581,6 +647,187 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp put_resolved_combo_delay(definition, _level, _delay), do: definition
 
+  defp validate_homunculus_cast(caster, skill_id, level, target, now, phase) do
+    with :ok <- check_homunculus_caster(caster, phase),
+         {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         :ok <- check_homunculus_tree(caster, skill_id, level),
+         :ok <- check_homunculus_target(caster, target, definition),
+         :ok <- check_range(caster, target, definition, level),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- check_homunculus_status(caster, skill_id),
+         :ok <- check_cooldown(caster, skill_id, now),
+         {:ok, sp_cost} <- homunculus_sp_cost(caster, definition, level),
+         :ok <- check_homunculus_sp(caster, sp_cost),
+         :ok <- module.validate(caster, target, level, definition) do
+      {:ok, %{definition: definition, module: module, skill_id: skill_id, sp_cost: sp_cost}}
+    end
+  end
+
+  defp check_homunculus_caster(%HomunculusState{} = caster, phase) do
+    expected_action = if phase == :begin, do: :idle, else: :casting
+
+    cond do
+      not Unit.living?(caster) -> {:error, :dead}
+      caster.movement_state != :standing -> {:error, :moving}
+      caster.action_state != expected_action -> {:error, :busy}
+      true -> :ok
+    end
+  end
+
+  defp check_homunculus_caster(_caster, _phase), do: {:error, :invalid_caster}
+
+  defp check_homunculus_tree(caster, skill_id, level) do
+    with {:ok, entry} <- homunculus_tree_entry(caster.class_id, skill_id),
+         {:ok, species} <- homunculus_species(caster.class_id),
+         true <- entry.form == :any or species.form == :evolved,
+         true <- Map.get(caster.learned_skills, skill_id, 0) >= level,
+         true <- level <= entry.max_level do
+      :ok
+    else
+      false -> {:error, :skill_not_learned}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp homunculus_tree_entry(class_id, skill_id) do
+    case HomunculusSkillTree.entry(class_id, skill_id) do
+      {:ok, entry} -> {:ok, entry}
+      :error -> {:error, :wrong_species}
+    end
+  end
+
+  defp homunculus_species(class_id) do
+    case HomunculusCatalog.by_id(class_id) do
+      {:ok, species} -> {:ok, species}
+      :error -> {:error, :wrong_species}
+    end
+  end
+
+  defp check_homunculus_status(caster, skill_id) do
+    if StatusInterpreter.can_use_skill?(:homunculus, caster.world_gid, skill_id),
+      do: :ok,
+      else: {:error, :status_blocked}
+  end
+
+  defp homunculus_sp_cost(caster, definition, level) do
+    case Enum.at(definition.sp_cost, level - 1, 0) do
+      :all -> {:ok, caster.sp}
+      cost when is_integer(cost) and cost >= 0 -> {:ok, cost}
+      _invalid -> {:error, :invalid_cost}
+    end
+  end
+
+  defp check_homunculus_sp(%HomunculusState{sp: sp}, cost) when sp >= cost, do: :ok
+  defp check_homunculus_sp(%HomunculusState{}, _cost), do: {:error, :insufficient_sp}
+
+  defp homunculus_cast_time(caster, module, target, level, definition) do
+    definition = cast_timing_definition(caster, module, target, level, definition)
+
+    CastTime.compute(definition, level, %{
+      dex: max(caster.dex, 0),
+      int: max(caster.int, 0),
+      varcast_reductions:
+        unit_status_reductions(:homunculus, caster.world_gid, :cast_time_reduction),
+      varcast_rate: unit_merged_modifier(:homunculus, caster.world_gid, :varcast_rate),
+      fixed_cast: 0
+    })
+  end
+
+  defp schedule_homunculus_cast(%{total: 0}, caster, target, level, prepared, now) do
+    case complete_prepared_homunculus_cast(caster, target, level, prepared, now) do
+      {:ok, updated, effects} -> {:instant, updated, effects}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp schedule_homunculus_cast(timing, _caster, target, level, prepared, _now) do
+    {:casting,
+     %{
+       skill_id: prepared.skill_id,
+       level: level,
+       target: target,
+       element: prepared.definition.element,
+       fixed: timing.fixed,
+       total: timing.total
+     }}
+  end
+
+  defp complete_prepared_homunculus_cast(caster, target, level, prepared, now) do
+    case invoke_cast(
+           prepared.module,
+           caster,
+           target,
+           level,
+           prepared.definition,
+           :homunculus
+         ) do
+      {:ok, updated} ->
+        settle_homunculus_cast(updated, prepared, level, now, [])
+
+      {:ok, updated, :no_consume} ->
+        settle_homunculus_cast(updated, prepared, level, now, [])
+
+      {:local_effects, updated, effects} when is_list(effects) ->
+        settle_homunculus_cast(updated, prepared, level, now, effects)
+
+      {:deferred, _updated, _descriptor} ->
+        {:error, :unsupported_homunculus_deferred}
+
+      {:error, _reason} = error ->
+        error
+    end
+  end
+
+  defp settle_homunculus_cast(%HomunculusState{} = caster, prepared, level, now, effects) do
+    cooldown = Cooldown.duration(prepared.definition, level)
+
+    cooldowns =
+      if cooldown == 0,
+        do: caster.cooldowns,
+        else: Cooldown.put(caster.cooldowns, prepared.skill_id, now + cooldown)
+
+    {:ok, %{caster | sp: caster.sp - prepared.sp_cost, cooldowns: cooldowns}, effects}
+  end
+
+  defp settle_homunculus_cast(_caster, _prepared, _level, _now, _effects),
+    do: {:error, :invalid_caster_result}
+
+  defp check_homunculus_target(caster, :self, %{target_type: target_type})
+       when target_type in [:self, :target_ally, :target_any],
+       do: if(Unit.living?(caster), do: :ok, else: {:error, :dead})
+
+  defp check_homunculus_target(caster, {:unit, {:homunculus, gid}}, definition)
+       when gid == caster.world_gid,
+       do: check_homunculus_target(caster, :self, definition)
+
+  defp check_homunculus_target(caster, {:unit, target_ref}, definition)
+       when is_tuple(target_ref) do
+    with {:ok, _pid, target, target_type} <- TargetResolver.resolve(target_ref),
+         :ok <- TargetResolver.ensure_targetable(target, target_type) do
+      check_homunculus_relationship(caster, target, definition.target_type)
+    else
+      {:error, :not_found} -> {:error, :target_not_found}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp check_homunculus_target(_caster, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
+  defp check_homunculus_target(_caster, _target, _definition), do: {:error, :invalid_target}
+
+  defp check_homunculus_relationship(caster, target, :target_enemy),
+    do: Targeting.validate_enemy(caster, target)
+
+  defp check_homunculus_relationship(caster, target, :target_ally) do
+    if Targeting.exact_ally?(caster, target), do: :ok, else: {:error, :invalid_target}
+  end
+
+  defp check_homunculus_relationship(_caster, _target, :target_any), do: :ok
+
+  defp check_homunculus_relationship(_caster, _target, _target_type),
+    do: {:error, :invalid_target}
+
   defp validate_cast(game_state, skill_id, level, target, now) do
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
@@ -828,7 +1075,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   cast time. Exposed so the session handler can size the move-to-range approach for an
   out-of-range cast.
   """
-  @spec effective_range(Definition.t(), PlayerState.t(), non_neg_integer()) :: non_neg_integer()
+  @spec effective_range(Definition.t(), Active.caster(), non_neg_integer()) :: non_neg_integer()
   def effective_range(definition, game_state, level) do
     base_range = base_range(definition, game_state, level)
 
@@ -855,6 +1102,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       base_range
     end
   end
+
+  defp weapon_range(%HomunculusState{attack_range: range}), do: range
 
   defp weapon_range(%{stats: %{equipment: equipment}}) do
     equipment
@@ -934,6 +1183,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     :exit, _reason -> {:error, :target_not_found}
   end
 
+  defp check_cooldown(%HomunculusState{cooldowns: cooldowns}, skill_id, now) do
+    if Cooldown.ready?(cooldowns, skill_id, now) do
+      :ok
+    else
+      {:error, :on_cooldown}
+    end
+  end
+
   defp check_cooldown(game_state, skill_id, now) do
     if Cooldown.ready?(game_state.skill_cooldowns, skill_id, now) do
       :ok
@@ -966,9 +1223,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Reads a single summed key from the caster's merged status modifiers,
   # defaulting to 0 when no active status contributes it.
   @spec merged_modifier(integer(), atom()) :: integer()
-  defp merged_modifier(character_id, key) do
-    :player
-    |> ModifierCalculator.get_all_modifiers(character_id)
+  defp merged_modifier(character_id, key),
+    do: unit_merged_modifier(:player, character_id, key)
+
+  defp unit_merged_modifier(unit_type, unit_id, key) do
+    unit_type
+    |> ModifierCalculator.get_all_modifiers(unit_id)
     |> Map.get(key, 0)
   end
 

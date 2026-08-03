@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Homunculus.StateRestore
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @checkpoint_interval 5_000
@@ -69,7 +71,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   end
 
   @doc "Handles one ref-checked Homunculus timer event."
-  @spec info(atom(), reference(), SessionState.t()) :: {:noreply, SessionState.t()}
+  @spec info(term(), reference(), SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def info({:cast_complete, token}, ref, session),
+    do: CastingHandler.complete(ref, token, session)
+
   def info(:active_expired, ref, session), do: lifecycle_timeout(:active, ref, session)
   def info(:cooldowns_expired, ref, session), do: lifecycle_timeout(:cooldowns, ref, session)
   def info(:hunger_tick, ref, session), do: hunger_timeout(ref, session)
@@ -108,6 +114,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
           {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
   def local_effect({:homunculus, event}, %SessionState{} = session),
     do: CombatHandler.handle(event, session)
+
+  def local_effect({:player, {:apply_heal, amount, source}}, %SessionState{} = session),
+    do: HealthHandler.apply_heal(amount, source_id(source), session)
+
+  def local_effect({:player, {:apply_damage, amount, source}}, %SessionState{} = session),
+    do: HealthHandler.apply_damage(amount, source_id(source), session)
 
   @doc "Applies aggregate-local effects in list order through the current session state."
   @spec local_effects([tuple()], SessionState.t()) ::
@@ -194,6 +206,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def owner_died(%SessionState{} = session) when is_nil(session.homunculus), do: session
 
   def owner_died(%SessionState{} = session) do
+    session = CastingHandler.cancel(session)
+
     case LifecycleHandler.owner_died(session.homunculus, session.homunculus_runtime) do
       {:ok, homunculus, runtime} -> persist_and_commit(session, homunculus, runtime, :owner_death)
       {:noop, _homunculus, _runtime} -> session
@@ -209,6 +223,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def terminate(%SessionState{} = session) when is_nil(session.homunculus), do: session
 
   def terminate(%SessionState{} = session) do
+    session = CastingHandler.cancel(session)
+
     case LifecycleHandler.pause_offline(session.homunculus, session.homunculus_runtime) do
       {:ok, homunculus, runtime} ->
         finish_termination(session, homunculus, runtime)
@@ -259,6 +275,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
        do: {:noreply, session}
 
   defp lifecycle_timeout(:active, ref, session) do
+    session =
+      if Clock.current_timer?(session.homunculus_runtime.active_expiry_timer_ref, ref),
+        do: CastingHandler.cancel(session),
+        else: session
+
     result = LifecycleHandler.expire(session.homunculus, session.homunculus_runtime, ref)
     finish_lifecycle_timeout(session, result, :active_expiry)
   end
@@ -499,6 +520,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       &Clock.cancel/1
     )
   end
+
+  defp source_id({_type, id}) when is_integer(id), do: id
+  defp source_id(id) when is_integer(id) or is_nil(id), do: id
 
   defp log_error(session, operation, reason) do
     Logger.error("Homunculus #{operation} failed: #{inspect(reason)}")

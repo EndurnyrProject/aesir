@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
@@ -91,7 +92,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   def handle({:basic_attack, gid, target_ref}, session) do
     case active_homunculus(session, gid) do
       {:ok, homunculus} ->
-        attacking = %{homunculus | action_state: :attacking, target: target_ref}
+        session =
+          if homunculus.action_state == :casting,
+            do: CastingHandler.cancel(session),
+            else: session
+
+        attacking = %{session.homunculus | action_state: :attacking, target: target_ref}
         session = StateCommit.commit(session, attacking)
 
         case AutoAttack.execute_homunculus_attack(attacking, target_ref) do
@@ -133,6 +139,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   end
 
   defp die(%SessionState{} = session) do
+    session = CastingHandler.cancel(session)
     old_runtime = session.homunculus_runtime
 
     case LifecycleHandler.die(session.homunculus, old_runtime, timer_cancel: fn _ -> :ok end) do

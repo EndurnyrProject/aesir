@@ -19,8 +19,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   a long-running session.
 
   New skills are added by creating a module under `Aesir.ZoneServer.Mmo.Skills`
-  that does `use Skill` - no registration step. This replaces the former
-  per-capability registries.
+  that does `use Skill` - no registration step. Job namespaces and the
+  `Aesir.ZoneServer.Mmo.Skills.Homunculus` namespace follow the same manifest
+  convention, and absent future modules simply have no catalog entry. This
+  replaces the former per-capability registries.
   """
   alias Aesir.ZoneServer.Mmo.Skill.Definition
 

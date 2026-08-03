@@ -17,17 +17,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   """
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Ref
 
   @typedoc "The resolved cast target handed to `cast/4`."
-  @type target :: :self | {:unit, non_neg_integer()} | {:ground, integer(), integer()}
+  @type target ::
+          :self | {:unit, non_neg_integer() | Ref.t()} | {:ground, integer(), integer()}
 
-  @typedoc "A caster state, either a player or a mob."
-  @type caster :: PlayerState.t() | MobState.t()
+  @typedoc "A player, mob, or Homunculus caster state."
+  @type caster :: PlayerState.t() | MobState.t() | HomunculusState.t()
+
+  @typedoc "An aggregate-local effect returned without messaging the owner process."
+  @type local_effect :: {:homunculus | :player, tuple()}
 
   @typedoc "The entry point that caused a skill effect to run."
-  @type cast_origin :: :normal | :item | :auto | :mob | :direct
+  @type cast_origin :: :normal | :item | :auto | :mob | :homunculus | :direct
 
   @doc """
   Runs the skill's effect for a validated cast. Returns the updated caster state.
@@ -41,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
               {:ok, caster()}
               | {:ok, caster(), :no_consume}
+              | {:local_effects, caster(), [local_effect()]}
               | {:deferred, caster(), term()}
               | {:error, atom()}
 
@@ -54,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback cast_with_origin(caster(), target(), pos_integer(), Definition.t(), cast_origin()) ::
               {:ok, caster()}
               | {:ok, caster(), :no_consume}
+              | {:local_effects, caster(), [local_effect()]}
               | {:deferred, caster(), term()}
               | {:error, atom()}
 
@@ -104,11 +112,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
             ) :: :ok | {:error, term()}
 
   @doc "Optionally resolves a dynamic cost from the caster's current state."
-  @callback dynamic_cost(PlayerState.t(), target(), pos_integer(), Definition.t()) :: Cost.t()
+  @callback dynamic_cost(caster(), target(), pos_integer(), Definition.t()) :: Cost.t()
 
   @doc "Optionally adjusts the definition's resolved base cast range for this caster."
   @callback effective_range(
-              PlayerState.t(),
+              caster(),
               pos_integer(),
               Definition.t(),
               non_neg_integer()
@@ -124,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   cast time. A skill without it keeps its declared table verbatim, so every
   non-implementing skill stays on the constant-time default path.
   """
-  @callback dynamic_cast_time(PlayerState.t(), target(), pos_integer(), Definition.t()) ::
+  @callback dynamic_cast_time(caster(), target(), pos_integer(), Definition.t()) ::
               %{cast_time: non_neg_integer(), fixed_cast_time: non_neg_integer()}
 
   @optional_callbacks cast_with_origin: 5,
@@ -139,10 +147,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @doc """
   Resolves a cast target to a unit id.
 
-  When the target is `:self`, returns the caster's own `character_id`.
+  When the target is `:self`, returns the caster's player or world identity.
   When the target is `{:unit, id}`, returns `id` directly.
   """
-  @spec resolve_target_id(map(), target()) :: non_neg_integer()
+  @spec resolve_target_id(map(), target()) :: non_neg_integer() | Ref.t()
   def resolve_target_id(%{character_id: caster_id}, :self), do: caster_id
+  def resolve_target_id(%{world_gid: caster_id}, :self), do: caster_id
   def resolve_target_id(_caster, {:unit, id}), do: id
 end
