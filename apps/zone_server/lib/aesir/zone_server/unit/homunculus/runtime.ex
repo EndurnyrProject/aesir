@@ -1,0 +1,35 @@
+defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
+  @moduledoc """
+  Process-local bookkeeping for a Homunculus owned by a player session.
+
+  This state is not persisted or published as a world snapshot.
+  """
+
+  @typedoc "A scheduled OTP timer reference."
+  @type timer_ref :: reference() | nil
+
+  @enforce_keys [:private_dirty]
+  defstruct active_expiry_timer_ref: nil,
+            hunger_timer_ref: nil,
+            ai_timer_ref: nil,
+            cast_timer_ref: nil,
+            movement_timer_ref: nil,
+            checkpoint_timer_ref: nil,
+            separation_timer_ref: nil,
+            cooldown_timer_ref: nil,
+            movement_path: [],
+            private_dirty: false
+
+  @type t() :: %__MODULE__{
+          active_expiry_timer_ref: timer_ref(),
+          hunger_timer_ref: timer_ref(),
+          ai_timer_ref: timer_ref(),
+          cast_timer_ref: timer_ref(),
+          movement_timer_ref: timer_ref(),
+          checkpoint_timer_ref: timer_ref(),
+          separation_timer_ref: timer_ref(),
+          cooldown_timer_ref: timer_ref(),
+          movement_path: [{integer(), integer()}],
+          private_dirty: boolean()
+        }
+end

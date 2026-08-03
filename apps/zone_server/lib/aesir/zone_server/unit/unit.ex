@@ -9,8 +9,10 @@ defmodule Aesir.ZoneServer.Unit do
 
   @type entity_race ::
           :human
+          | :demi_human
           | :undead
           | :beast
+          | :brute
           | :demon
           | :dragon
           | :angel

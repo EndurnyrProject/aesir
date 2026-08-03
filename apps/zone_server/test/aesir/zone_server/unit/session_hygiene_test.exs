@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
     * neither session source may reference a concrete `Mmo.Skills.` module - the
       deferred-skill seam replaced the per-skill session clauses with one generic
       `{:skill, {:deferred, module, payload}}` dispatch, so no skill module is
-      named in either session.
+      named in either session;
+    * the source guard permits only `Homunculus.StateCommit` to replace the
+      aggregate's nested `homunculus` field directly.
   """
 
   use ExUnit.Case, async: false
@@ -48,6 +50,23 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
                            )
                          )
 
+  @zone_server_sources Path.wildcard(
+                         Path.join(__DIR__, "../../../../lib/aesir/zone_server/**/*.ex")
+                       )
+
+  @homunculus_state_commit_source Path.join(
+                                    __DIR__,
+                                    "../../../../lib/aesir/zone_server/unit/homunculus/state_commit.ex"
+                                  )
+
+  @homunculus_replacement_patterns [
+    ~r/%\{\s*[^}]*\|\s*[^}]*\bhomunculus\s*:/s,
+    ~r/%SessionState\s*\{[^}]*\bhomunculus\s*:/s,
+    ~r/Map\.(?:put|replace|replace!|update|update!)\s*\([^)]*,\s*:homunculus\s*,/s,
+    ~r/(?:put_in|update_in)\s*\([^,]*\.homunculus(?:\.\w+)*\s*,/s,
+    ~r/(?:put_in|update_in)\s*\([^,]*,\s*\[\s*:homunculus(?:\s*,[^\]]+)*\]\s*,/s
+  ]
+
   setup :verify_on_exit!
   setup :set_mimic_from_context
 
@@ -58,6 +77,31 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
 
     test "player session references no Mmo.Skills. module" do
       refute @player_session_source =~ "Mmo.Skills."
+    end
+
+    test "recognizes the guarded direct replacement forms" do
+      [struct_update, session_construction, map_replacement, dot_path_update, key_path_update] =
+        @homunculus_replacement_patterns
+
+      assert Regex.match?(struct_update, "%{session | other: value, homunculus: value}")
+      assert Regex.match?(session_construction, "%SessionState{other: value, homunculus: value}")
+
+      for function <- ["put", "replace", "replace!", "update", "update!"] do
+        assert Regex.match?(map_replacement, "Map.#{function}(session, :homunculus, value)")
+      end
+
+      assert Regex.match?(dot_path_update, "put_in(session.homunculus, value)")
+      assert Regex.match?(dot_path_update, "update_in(session.homunculus.hp, & &1)")
+      assert Regex.match?(key_path_update, "put_in(session, [:homunculus], value)")
+      assert Regex.match?(key_path_update, "update_in(session, [:homunculus, :hp], & &1)")
+    end
+
+    test "Homunculus StateCommit is the only guarded direct replacement path" do
+      assert [@homunculus_state_commit_source] ==
+               Enum.filter(@zone_server_sources, fn path ->
+                 source = File.read!(path)
+                 Enum.any?(@homunculus_replacement_patterns, &Regex.match?(&1, source))
+               end)
     end
   end
 

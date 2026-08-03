@@ -22,11 +22,13 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   must not carry (connection wiring, the single-dialog interaction lock, and the
   pending skill-menu/party/guild invite slots).
 
-  All handlers thread this struct as their session state. Every field except the
-  two enforced ones is nilable and defaults to `nil`; handlers set and clear the
-  optional slots with struct updates rather than dynamic map keys.
+  All handlers thread this struct as their session state. Optional slots default
+  to `nil` except `homunculus_runtime`, which starts as a fresh `Runtime`.
+  Handlers set and clear optional slots with struct updates rather than dynamic map keys.
   """
 
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   alias __MODULE__.PendingSkillTextInput
@@ -44,7 +46,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             pending_skill_menu: nil,
             deferred_skill_result: nil,
             pending_party_invite: nil,
-            pending_guild_invite: nil
+            pending_guild_invite: nil,
+            homunculus: nil,
+            homunculus_runtime: %Runtime{private_dirty: false}
 
   @type t() :: %__MODULE__{
           game_state: PlayerState.t(),
@@ -56,7 +60,9 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           pending_skill_menu: map() | nil,
           deferred_skill_result: map() | nil,
           pending_party_invite: map() | nil,
-          pending_guild_invite: map() | nil
+          pending_guild_invite: map() | nil,
+          homunculus: HomunculusState.t() | nil,
+          homunculus_runtime: Runtime.t()
         }
 
   @spec interaction_blocked?(map()) :: boolean()
