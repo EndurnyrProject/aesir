@@ -15,6 +15,8 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
   alias Aesir.Net.Envelope
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
+  alias Aesir.Net.HomunculusInspectCommand
+  alias Aesir.Net.HomunculusRequest
 
   defmodule FakeTransport do
     @moduledoc false
@@ -42,6 +44,11 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
     @impl true
     def handle_message(%Hello{protocol_version: version}, :control, session_data) do
       {:ok, session_data, [{:hello_ack, %HelloAck{protocol_version: version, accepted: true}}]}
+    end
+
+    def handle_message(message, channel, %{notify: pid} = session_data) do
+      send(pid, {:handled, message, channel})
+      {:ok, session_data}
     end
 
     def handle_message(_message, _channel, session_data), do: {:ok, session_data}
@@ -155,6 +162,53 @@ defmodule Aesir.Commons.Network.QuicConnectionTest do
 
     assert {:ok, %Envelope{body: {:char_auth_failed, %CharAuthFailed{reason: 7}}}} =
              Envelope.decode(payload)
+  end
+
+  test "drops a gameplay-tagged datagram before handler dispatch" do
+    {pid, parent} = start_owner(session_data: %{notify: self()})
+
+    request = %HomunculusRequest{
+      request_id: 42,
+      command: {:inspect, %HomunculusInspectCommand{}}
+    }
+
+    {:ok, iodata, _size} =
+      Envelope.encode(%Envelope{seq: 1, body: {:homunculus_request, request}})
+
+    datagram =
+      QuinnetCodec.encode_datagram(
+        QuinnetCodec.channel_id(:gameplay),
+        IO.iodata_to_binary(iodata)
+      )
+
+    send(pid, {:quic, parent, {:datagram, datagram}})
+    send(pid, {:quic, parent, {:connected, %{}}})
+
+    assert_receive {:sent, 100, _client_id}, @receive_timeout
+    refute_receive {:handled, ^request, :gameplay}
+    assert Process.alive?(pid)
+  end
+
+  test "dispatches a snapshots-tagged datagram" do
+    {pid, parent} = start_owner(session_data: %{notify: self()})
+
+    request = %HomunculusRequest{
+      request_id: 43,
+      command: {:inspect, %HomunculusInspectCommand{}}
+    }
+
+    {:ok, iodata, _size} =
+      Envelope.encode(%Envelope{seq: 1, body: {:homunculus_request, request}})
+
+    datagram =
+      QuinnetCodec.encode_datagram(
+        QuinnetCodec.channel_id(:snapshots),
+        IO.iodata_to_binary(iodata)
+      )
+
+    send(pid, {:quic, parent, {:datagram, datagram}})
+
+    assert_receive {:handled, ^request, :snapshots}, @receive_timeout
   end
 
   test "an external {:send, :snapshots, msg} sends a datagram on the snapshots channel" do

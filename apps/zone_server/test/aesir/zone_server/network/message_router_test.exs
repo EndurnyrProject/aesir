@@ -52,6 +52,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.SkillMenu{}, {:world, :skill_menu}},
     {%Aesir.Net.ProductionResult{}, {:world, :production_result}},
     {%Aesir.Net.SkillTextInputRequest{}, {:world, :skill_text_input_request}},
+    {%Aesir.Net.HomunculusResult{}, {:gameplay, :homunculus_result}},
+    {%Aesir.Net.HomunculusPrivateState{}, {:bulk, :homunculus_private_state}},
     {%Aesir.Net.SkillList{}, {:bulk, :skill_list}},
     {%Aesir.Net.InventoryList{}, {:bulk, :inventory_list}},
     {%Aesir.Net.Snapshot{}, {:snapshots, :snapshot}}
@@ -64,6 +66,23 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     |> Enum.filter(fn {_name, field} -> match?(%Protox.OneOf{parent: :body}, field.kind) end)
     |> Enum.map(fn {name, _field} -> name end)
     |> MapSet.new()
+  end
+
+  describe "delivery_scope/1" do
+    test "marks both Homunculus owner-private messages structurally" do
+      assert MessageRouter.delivery_scope(%Aesir.Net.HomunculusResult{}) == :owner_only
+      assert MessageRouter.delivery_scope(%Aesir.Net.HomunculusPrivateState{}) == :owner_only
+    end
+
+    test "keeps existing public messages area-scoped" do
+      for {struct, _route} <- @routes,
+          struct.__struct__ not in [
+            Aesir.Net.HomunculusResult,
+            Aesir.Net.HomunculusPrivateState
+          ] do
+        assert MessageRouter.delivery_scope(struct) == :area
+      end
+    end
   end
 
   describe "route/1" do

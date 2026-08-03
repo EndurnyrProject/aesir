@@ -103,9 +103,11 @@ defmodule Aesir.Commons.Network.QuicConnection do
   end
 
   def handle_info({:quic, conn, {:datagram, data}}, %State{conn: conn} = state) do
+    snapshots_channel_id = QuinnetCodec.channel_id(:snapshots)
+
     case QuinnetCodec.decode_datagram(data) do
-      {:ok, channel_id, payload} ->
-        case dispatch(state, channel_id, payload) do
+      {:ok, ^snapshots_channel_id, payload} ->
+        case dispatch(state, snapshots_channel_id, payload) do
           {:ok, state} ->
             {:noreply, state}
 
@@ -113,6 +115,9 @@ defmodule Aesir.Commons.Network.QuicConnection do
             Logger.warning("QuicConnection dropping bad datagram: #{inspect(reason)}")
             {:noreply, state}
         end
+
+      {:ok, _channel_id, _payload} ->
+        {:noreply, state}
 
       {:error, :empty_datagram} ->
         {:noreply, state}

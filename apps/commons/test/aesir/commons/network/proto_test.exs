@@ -53,6 +53,28 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
+  alias Aesir.Net.HomunculusAiConfig
+  alias Aesir.Net.HomunculusAiSkillConfig
+  alias Aesir.Net.HomunculusAttackCommand
+  alias Aesir.Net.HomunculusCastSkillCommand
+  alias Aesir.Net.HomunculusCooldown
+  alias Aesir.Net.HomunculusDeleteCommand
+  alias Aesir.Net.HomunculusDisplayedStats
+  alias Aesir.Net.HomunculusFeedCommand
+  alias Aesir.Net.HomunculusFollowCommand
+  alias Aesir.Net.HomunculusHpRange
+  alias Aesir.Net.HomunculusHpThreshold
+  alias Aesir.Net.HomunculusInspectCommand
+  alias Aesir.Net.HomunculusLearnSkillCommand
+  alias Aesir.Net.HomunculusMoveCommand
+  alias Aesir.Net.HomunculusPrivateState
+  alias Aesir.Net.HomunculusRenameCommand
+  alias Aesir.Net.HomunculusReplaceAiCommand
+  alias Aesir.Net.HomunculusRequest
+  alias Aesir.Net.HomunculusRestCommand
+  alias Aesir.Net.HomunculusResult
+  alias Aesir.Net.HomunculusSkillMetadata
+  alias Aesir.Net.HomunculusStandbyCommand
   alias Aesir.Net.InventoryItem
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
@@ -158,6 +180,118 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.VendingSaleReport
   alias Aesir.Net.VendingShopItem
   alias Aesir.Net.ZoneServerInfo
+
+  test "Homunculus envelope fields append at 169 through 171" do
+    fields = Envelope.schema().fields
+
+    assert fields.homunculus_request.tag == 169
+    assert fields.homunculus_result.tag == 170
+    assert fields.homunculus_private_state.tag == 171
+  end
+
+  test "every Homunculus command arm round-trips without an ownership selector" do
+    commands = [
+      inspect: %HomunculusInspectCommand{},
+      move: %HomunculusMoveCommand{x: -10, y: 320},
+      follow: %HomunculusFollowCommand{},
+      attack: %HomunculusAttackCommand{target_id: 77},
+      standby: %HomunculusStandbyCommand{},
+      cast_skill: %HomunculusCastSkillCommand{skill_id: 8_001, level: 5, target: {:target_id, 77}},
+      cast_skill: %HomunculusCastSkillCommand{skill_id: 8_002, level: 3, target: {:self, true}},
+      feed: %HomunculusFeedCommand{},
+      rename: %HomunculusRenameCommand{name: "Hildr"},
+      rest: %HomunculusRestCommand{},
+      delete: %HomunculusDeleteCommand{confirmed: true},
+      replace_ai: %HomunculusReplaceAiCommand{config: complete_homunculus_ai_config()},
+      learn_skill: %HomunculusLearnSkillCommand{skill_id: 8_003}
+    ]
+
+    assert Map.keys(HomunculusRequest.schema().fields) |> Enum.sort() ==
+             [
+               :attack,
+               :cast_skill,
+               :delete,
+               :feed,
+               :follow,
+               :inspect,
+               :learn_skill,
+               :move,
+               :rename,
+               :replace_ai,
+               :request_id,
+               :rest,
+               :standby
+             ]
+
+    for {tag, command} <- commands do
+      assert_round_trip(:homunculus_request, %HomunculusRequest{
+        request_id: 9_223_372_036_854_775_807,
+        command: {tag, command}
+      })
+    end
+  end
+
+  test "Homunculus results round-trip every stable error with correlation" do
+    errors = [
+      :HOMUNCULUS_ERROR_NONE,
+      :HOMUNCULUS_ERROR_NO_COMPANION,
+      :HOMUNCULUS_ERROR_MALFORMED_COMMAND,
+      :HOMUNCULUS_ERROR_WRONG_CHANNEL,
+      :HOMUNCULUS_ERROR_INVALID_LIFECYCLE,
+      :HOMUNCULUS_ERROR_INVALID_POSITION,
+      :HOMUNCULUS_ERROR_INVALID_TARGET,
+      :HOMUNCULUS_ERROR_OUT_OF_RANGE,
+      :HOMUNCULUS_ERROR_SKILL_NOT_LEARNED,
+      :HOMUNCULUS_ERROR_INVALID_SKILL_RANK,
+      :HOMUNCULUS_ERROR_ON_COOLDOWN,
+      :HOMUNCULUS_ERROR_INSUFFICIENT_SP,
+      :HOMUNCULUS_ERROR_MISSING_ITEM,
+      :HOMUNCULUS_ERROR_HP_GATE,
+      :HOMUNCULUS_ERROR_RENAME_NOT_ALLOWED,
+      :HOMUNCULUS_ERROR_INVALID_NAME,
+      :HOMUNCULUS_ERROR_CONFIRMATION_REQUIRED,
+      :HOMUNCULUS_ERROR_INVALID_AI_CONFIG,
+      :HOMUNCULUS_ERROR_INSUFFICIENT_SKILL_POINTS,
+      :HOMUNCULUS_ERROR_PREREQUISITES_NOT_MET,
+      :HOMUNCULUS_ERROR_BUSY
+    ]
+
+    for error <- errors do
+      assert_round_trip(:homunculus_result, %HomunculusResult{
+        request_id: 42,
+        success: error == :HOMUNCULUS_ERROR_NONE,
+        error: error,
+        state: if(error == :HOMUNCULUS_ERROR_NONE, do: complete_homunculus_private_state())
+      })
+    end
+  end
+
+  test "Homunculus enum zero values and optional HP threshold presence round-trip" do
+    assert %HomunculusAiConfig{}.stance == :HOMUNCULUS_AI_STANCE_UNSPECIFIED
+    assert %HomunculusAiSkillConfig{}.mode == :HOMUNCULUS_AI_SKILL_MODE_UNSPECIFIED
+    assert %HomunculusPrivateState{}.lifecycle == :HOMUNCULUS_LIFECYCLE_UNSPECIFIED
+    assert %HomunculusPrivateState{}.activity == :HOMUNCULUS_ACTIVITY_UNSPECIFIED
+    assert %HomunculusPrivateState{}.intimacy_grade == :HOMUNCULUS_INTIMACY_GRADE_UNSPECIFIED
+
+    without_threshold = %HomunculusAiSkillConfig{skill_id: 1}
+
+    with_zero_threshold = %HomunculusAiSkillConfig{
+      skill_id: 1,
+      self_hp_threshold: %HomunculusHpThreshold{percent: 0}
+    }
+
+    assert decode(without_threshold).self_hp_threshold == nil
+    assert decode(with_zero_threshold).self_hp_threshold == %HomunculusHpThreshold{percent: 0}
+  end
+
+  test "complete Homunculus owner-private state round-trips boundaries and AI rows" do
+    state = complete_homunculus_private_state()
+
+    assert state.intimacy_hundredths == 100_000
+    assert state.cooldowns == [%HomunculusCooldown{skill_id: 8_001, remaining_ms: 140_000}]
+    assert length(state.ai_config.skills) == 2
+    assert_round_trip(:homunculus_private_state, state)
+  end
 
   test "Hello and HelloAck omit capabilities without changing the protocol version" do
     for message <- [%Hello{protocol_version: 1, build: "legacy"}, %HelloAck{protocol_version: 1}] do
@@ -2790,6 +2924,96 @@ defmodule Aesir.Commons.Network.ProtoTest do
         ] do
       assert_round_trip(:mount_result, %MountResult{result: result})
     end
+  end
+
+  defp complete_homunculus_ai_config do
+    %HomunculusAiConfig{
+      stance: :HOMUNCULUS_AI_STANCE_AGGRESSIVE,
+      leash_distance: 14,
+      join_owner_target: true,
+      retaliate: true,
+      avoid_bosses: true,
+      allowed_mob_class_ids: [1_001, 1_002],
+      denied_mob_class_ids: [1_003],
+      auto_feed: true,
+      auto_feed_threshold: 75,
+      auto_cast_sp_reserve_percent: 100,
+      skills: [
+        %HomunculusAiSkillConfig{
+          skill_id: 8_001,
+          mode: :HOMUNCULUS_AI_SKILL_MODE_AUTO,
+          priority: 100,
+          self_hp_threshold: %HomunculusHpThreshold{percent: 25},
+          owner_hp_threshold: %HomunculusHpThreshold{percent: 50},
+          target_hp_range: %HomunculusHpRange{min_percent: 10, max_percent: 90}
+        },
+        %HomunculusAiSkillConfig{
+          skill_id: 8_002,
+          mode: :HOMUNCULUS_AI_SKILL_MODE_MANUAL,
+          priority: 1
+        }
+      ]
+    }
+  end
+
+  defp complete_homunculus_private_state do
+    %HomunculusPrivateState{
+      durable_id: 9_223_372_036_854_775_807,
+      world_gid: 4_294_967_295,
+      name: "Hildr",
+      rename_eligible: true,
+      species_id: 6_009,
+      evolved: true,
+      appearance_id: 6_017,
+      lifecycle: :HOMUNCULUS_LIFECYCLE_ACTIVE,
+      activity: :HOMUNCULUS_ACTIVITY_CASTING,
+      current_target_id: 77,
+      level: 99,
+      exp: 9_223_372_036_854_775_807,
+      next_exp: 9_223_372_036_854_775_807,
+      skill_points: 33,
+      hp: 12_345,
+      max_hp: 12_345,
+      sp: 1_234,
+      max_sp: 1_234,
+      stats: %HomunculusDisplayedStats{
+        str: 99,
+        agi: 98,
+        vit: 97,
+        int: 96,
+        dex: 95,
+        luk: 94,
+        atk: 500,
+        matk: 450,
+        def: 300,
+        mdef: 250,
+        hit: 400,
+        flee: 350,
+        critical: 42,
+        aspd: 190
+      },
+      hunger: 100,
+      intimacy_hundredths: 100_000,
+      intimacy_grade: :HOMUNCULUS_INTIMACY_GRADE_LOYAL,
+      food_item_id: 5_189,
+      active_remaining_ms: 1_800_000,
+      skills: [
+        %HomunculusSkillMetadata{
+          skill_id: 8_001,
+          level: 5,
+          max_level: 5,
+          learnable: true,
+          intimacy_required_hundredths: 91_100
+        }
+      ],
+      cooldowns: [%HomunculusCooldown{skill_id: 8_001, remaining_ms: 140_000}],
+      ai_config: complete_homunculus_ai_config()
+    }
+  end
+
+  defp decode(message) do
+    {:ok, decoded} = message.__struct__.decode(encode(message))
+    decoded
   end
 
   defp encode(message) do

@@ -12,6 +12,9 @@ defmodule Aesir.ZoneServerTest do
   alias Aesir.Net.EnterAck
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
+  alias Aesir.Net.HomunculusInspectCommand
+  alias Aesir.Net.HomunculusRequest
+  alias Aesir.Net.HomunculusResult
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.SessionAuth
   alias Aesir.Net.TimeSync
@@ -198,6 +201,49 @@ defmodule Aesir.ZoneServerTest do
                ZoneServer.handle_message(%TimeSync{client_tick: 42}, :control, %{})
 
       assert is_integer(tick)
+    end
+  end
+
+  describe "Homunculus channel gate" do
+    test "rejects every wrong channel before PlayerSession with a correlated gameplay result" do
+      test_pid = self()
+      player_pid = spawn(fn -> route_loop(test_pid) end)
+      session = %{player_session_pid: player_pid}
+
+      request = %HomunculusRequest{
+        request_id: 987,
+        command: {:inspect, %HomunculusInspectCommand{}}
+      }
+
+      for channel <- [:control, :world, :bulk, :snapshots] do
+        assert {:ok, ^session} = ZoneServer.handle_message(request, channel, session)
+
+        assert_receive {:send, :gameplay,
+                        {:homunculus_result,
+                         %HomunculusResult{
+                           request_id: 987,
+                           success: false,
+                           error: :HOMUNCULUS_ERROR_WRONG_CHANNEL,
+                           state: nil
+                         }}}
+
+        refute_receive {:message, ^request}
+      end
+    end
+
+    test "leaves reliable-gameplay requests on the existing session path for Task 31" do
+      test_pid = self()
+      player_pid = spawn(fn -> route_loop(test_pid) end)
+      session = %{player_session_pid: player_pid}
+
+      request = %HomunculusRequest{
+        request_id: 988,
+        command: {:inspect, %HomunculusInspectCommand{}}
+      }
+
+      assert {:ok, ^session} = ZoneServer.handle_message(request, :gameplay, session)
+      assert_receive {:message, ^request}
+      refute_receive {:send, _channel, _payload}
     end
   end
 

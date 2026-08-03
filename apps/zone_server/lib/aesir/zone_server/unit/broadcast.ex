@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   """
   require Logger
 
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -41,11 +42,8 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   """
   @spec to_players(Enumerable.t(), struct(), keyword()) :: :ok
   def to_players(char_ids, packet, opts \\ []) do
-    exclude_id = Keyword.get(opts, :exclude_id)
-
-    char_ids
-    |> Enum.reject(&(&1 == exclude_id))
-    |> Enum.each(&to_player(&1, packet))
+    ensure_area_delivery!(packet)
+    send_to_players(char_ids, packet, opts)
   end
 
   @doc """
@@ -55,9 +53,11 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   """
   @spec to_in_range(String.t(), integer(), integer(), integer(), struct(), keyword()) :: :ok
   def to_in_range(map_name, x, y, range, packet, opts \\ []) do
+    ensure_area_delivery!(packet)
+
     map_name
     |> SpatialIndex.get_players_in_range(x, y, range)
-    |> to_players(packet, opts)
+    |> send_to_players(packet, opts)
   end
 
   @doc """
@@ -67,7 +67,22 @@ defmodule Aesir.ZoneServer.Unit.Broadcast do
   """
   @spec to_visible_players(map(), struct(), keyword()) :: :ok
   def to_visible_players(game_state, packet, opts \\ []) do
-    to_players(game_state.visible_players, packet, opts)
+    ensure_area_delivery!(packet)
+    send_to_players(game_state.visible_players, packet, opts)
+  end
+
+  defp send_to_players(char_ids, packet, opts) do
+    exclude_id = Keyword.get(opts, :exclude_id)
+
+    char_ids
+    |> Enum.reject(&(&1 == exclude_id))
+    |> Enum.each(&to_player(&1, packet))
+  end
+
+  defp ensure_area_delivery!(packet) do
+    if MessageRouter.delivery_scope(packet) == :owner_only do
+      raise ArgumentError, "owner-only messages cannot use generic broadcasts"
+    end
   end
 
   @doc """

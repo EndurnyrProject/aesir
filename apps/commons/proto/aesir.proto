@@ -197,6 +197,10 @@ message Envelope {
     SkillTextInputReply skill_text_input_reply = 167;
     // 168: server-authoritative production outcome
     ProductionResult production_result = 168;
+    // 169-171: owner-private Homunculus commands, results, and state
+    HomunculusRequest homunculus_request = 169;
+    HomunculusResult homunculus_result = 170;
+    HomunculusPrivateState homunculus_private_state = 171;
   }
 }
 
@@ -1800,4 +1804,213 @@ enum SkillCastFailureReason {
 message SkillCastFailed {
   uint32 skill_id = 1;
   SkillCastFailureReason reason = 2;
+}
+
+// Client -> server. The authenticated character's sole Homunculus is implicit;
+// requests intentionally carry no owner or companion selector.
+message HomunculusRequest {
+  uint64 request_id = 1;
+
+  oneof command {
+    HomunculusInspectCommand inspect = 2;
+    HomunculusMoveCommand move = 3;
+    HomunculusFollowCommand follow = 4;
+    HomunculusAttackCommand attack = 5;
+    HomunculusStandbyCommand standby = 6;
+    HomunculusCastSkillCommand cast_skill = 7;
+    HomunculusFeedCommand feed = 8;
+    HomunculusRenameCommand rename = 9;
+    HomunculusRestCommand rest = 10;
+    HomunculusDeleteCommand delete = 11;
+    HomunculusReplaceAiCommand replace_ai = 12;
+    HomunculusLearnSkillCommand learn_skill = 13;
+  }
+}
+
+message HomunculusInspectCommand {}
+message HomunculusMoveCommand { int32 x = 1; int32 y = 2; }
+message HomunculusFollowCommand {}
+message HomunculusAttackCommand { uint32 target_id = 1; }
+message HomunculusStandbyCommand {}
+
+message HomunculusCastSkillCommand {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+
+  oneof target {
+    uint32 target_id = 3;
+    bool self = 4;
+  }
+}
+
+message HomunculusFeedCommand {}
+message HomunculusRenameCommand { string name = 1; }
+message HomunculusRestCommand {}
+message HomunculusDeleteCommand { bool confirmed = 1; }
+message HomunculusReplaceAiCommand { HomunculusAiConfig config = 1; }
+message HomunculusLearnSkillCommand { uint32 skill_id = 1; }
+
+enum HomunculusAiStance {
+  HOMUNCULUS_AI_STANCE_UNSPECIFIED = 0;
+  HOMUNCULUS_AI_STANCE_PASSIVE = 1;
+  HOMUNCULUS_AI_STANCE_ASSIST = 2;
+  HOMUNCULUS_AI_STANCE_AGGRESSIVE = 3;
+}
+
+enum HomunculusAiSkillMode {
+  HOMUNCULUS_AI_SKILL_MODE_UNSPECIFIED = 0;
+  HOMUNCULUS_AI_SKILL_MODE_MANUAL = 1;
+  HOMUNCULUS_AI_SKILL_MODE_AUTO = 2;
+}
+
+// Presence distinguishes an omitted threshold from an explicit zero value;
+// validation applies the approved percentage boundaries.
+message HomunculusHpThreshold { uint32 percent = 1; }
+message HomunculusHpRange { uint32 min_percent = 1; uint32 max_percent = 2; }
+
+message HomunculusAiSkillConfig {
+  uint32 skill_id = 1;
+  HomunculusAiSkillMode mode = 2;
+  uint32 priority = 3;
+  HomunculusHpThreshold self_hp_threshold = 4;
+  HomunculusHpThreshold owner_hp_threshold = 5;
+  HomunculusHpRange target_hp_range = 6;
+}
+
+// Complete replacement AI configuration. Claim safety is mandatory server-side
+// and therefore is not configurable on the wire.
+message HomunculusAiConfig {
+  HomunculusAiStance stance = 1;
+  uint32 leash_distance = 2;
+  bool join_owner_target = 3;
+  bool retaliate = 4;
+  bool avoid_bosses = 5;
+  repeated uint32 allowed_mob_class_ids = 6;
+  repeated uint32 denied_mob_class_ids = 7;
+  bool auto_feed = 8;
+  uint32 auto_feed_threshold = 9;
+  uint32 auto_cast_sp_reserve_percent = 10;
+  repeated HomunculusAiSkillConfig skills = 11;
+}
+
+enum HomunculusError {
+  HOMUNCULUS_ERROR_NONE = 0;
+  HOMUNCULUS_ERROR_NO_COMPANION = 1;
+  HOMUNCULUS_ERROR_MALFORMED_COMMAND = 2;
+  HOMUNCULUS_ERROR_WRONG_CHANNEL = 3;
+  HOMUNCULUS_ERROR_INVALID_LIFECYCLE = 4;
+  HOMUNCULUS_ERROR_INVALID_POSITION = 5;
+  HOMUNCULUS_ERROR_INVALID_TARGET = 6;
+  HOMUNCULUS_ERROR_OUT_OF_RANGE = 7;
+  HOMUNCULUS_ERROR_SKILL_NOT_LEARNED = 8;
+  HOMUNCULUS_ERROR_INVALID_SKILL_RANK = 9;
+  HOMUNCULUS_ERROR_ON_COOLDOWN = 10;
+  HOMUNCULUS_ERROR_INSUFFICIENT_SP = 11;
+  HOMUNCULUS_ERROR_MISSING_ITEM = 12;
+  HOMUNCULUS_ERROR_HP_GATE = 13;
+  HOMUNCULUS_ERROR_RENAME_NOT_ALLOWED = 14;
+  HOMUNCULUS_ERROR_INVALID_NAME = 15;
+  HOMUNCULUS_ERROR_CONFIRMATION_REQUIRED = 16;
+  HOMUNCULUS_ERROR_INVALID_AI_CONFIG = 17;
+  HOMUNCULUS_ERROR_INSUFFICIENT_SKILL_POINTS = 18;
+  HOMUNCULUS_ERROR_PREREQUISITES_NOT_MET = 19;
+  HOMUNCULUS_ERROR_BUSY = 20;
+}
+
+enum HomunculusLifecycle {
+  HOMUNCULUS_LIFECYCLE_UNSPECIFIED = 0;
+  HOMUNCULUS_LIFECYCLE_ACTIVE = 1;
+  HOMUNCULUS_LIFECYCLE_RESTED = 2;
+  HOMUNCULUS_LIFECYCLE_DEAD = 3;
+}
+
+enum HomunculusActivity {
+  HOMUNCULUS_ACTIVITY_UNSPECIFIED = 0;
+  HOMUNCULUS_ACTIVITY_IDLE = 1;
+  HOMUNCULUS_ACTIVITY_FOLLOWING = 2;
+  HOMUNCULUS_ACTIVITY_MOVING = 3;
+  HOMUNCULUS_ACTIVITY_ATTACKING = 4;
+  HOMUNCULUS_ACTIVITY_CASTING = 5;
+  HOMUNCULUS_ACTIVITY_STANDBY = 6;
+}
+
+enum HomunculusIntimacyGrade {
+  HOMUNCULUS_INTIMACY_GRADE_UNSPECIFIED = 0;
+  HOMUNCULUS_INTIMACY_GRADE_HATE_WITH_PASSION = 1;
+  HOMUNCULUS_INTIMACY_GRADE_HATE = 2;
+  HOMUNCULUS_INTIMACY_GRADE_AWKWARD = 3;
+  HOMUNCULUS_INTIMACY_GRADE_SHY = 4;
+  HOMUNCULUS_INTIMACY_GRADE_NEUTRAL = 5;
+  HOMUNCULUS_INTIMACY_GRADE_CORDIAL = 6;
+  HOMUNCULUS_INTIMACY_GRADE_LOYAL = 7;
+}
+
+message HomunculusDisplayedStats {
+  uint32 str = 1;
+  uint32 agi = 2;
+  uint32 vit = 3;
+  uint32 int = 4;
+  uint32 dex = 5;
+  uint32 luk = 6;
+  uint32 atk = 7;
+  uint32 matk = 8;
+  uint32 def = 9;
+  uint32 mdef = 10;
+  uint32 hit = 11;
+  uint32 flee = 12;
+  uint32 critical = 13;
+  uint32 aspd = 14;
+}
+
+message HomunculusSkillMetadata {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  uint32 max_level = 3;
+  bool learnable = 4;
+  uint32 intimacy_required_hundredths = 5;
+}
+
+message HomunculusCooldown {
+  uint32 skill_id = 1;
+  uint64 remaining_ms = 2;
+}
+
+// Server -> owner, complete authoritative private companion state.
+message HomunculusPrivateState {
+  uint64 durable_id = 1;
+  uint32 world_gid = 2;
+  string name = 3;
+  bool rename_eligible = 4;
+  uint32 species_id = 5;
+  bool evolved = 6;
+  uint32 appearance_id = 7;
+  HomunculusLifecycle lifecycle = 8;
+  HomunculusActivity activity = 9;
+  uint32 current_target_id = 10;
+  uint32 level = 11;
+  uint64 exp = 12;
+  uint64 next_exp = 13;
+  uint32 skill_points = 14;
+  uint64 hp = 15;
+  uint64 max_hp = 16;
+  uint64 sp = 17;
+  uint64 max_sp = 18;
+  HomunculusDisplayedStats stats = 19;
+  uint32 hunger = 20;
+  uint32 intimacy_hundredths = 21;
+  HomunculusIntimacyGrade intimacy_grade = 22;
+  uint32 food_item_id = 23;
+  uint64 active_remaining_ms = 24;
+  repeated HomunculusSkillMetadata skills = 25;
+  repeated HomunculusCooldown cooldowns = 26;
+  HomunculusAiConfig ai_config = 27;
+}
+
+// Server -> owner, correlated outcome and immediate authoritative post-state.
+// State is absent only when no companion exists or confirmed deletion succeeds.
+message HomunculusResult {
+  uint64 request_id = 1;
+  bool success = 2;
+  HomunculusError error = 3;
+  HomunculusPrivateState state = 4;
 }
