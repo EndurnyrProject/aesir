@@ -18,6 +18,19 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
                Items.apply_transpile(definition(%{type: :usable}), "itemheal 45,0;")
     end
 
+    test "keeps Stone of Sage active without a transpile failure" do
+      stone =
+        definition(%{
+          id: 12_040,
+          aegis_name: "Stone_Of_Intelligence_",
+          name: "Stone of Sage",
+          type: :usable
+        })
+
+      assert {%ItemDefinition{id: 12_040, on_use: "homevolution(ctx)"}, nil} =
+               Items.apply_transpile(stone, "homevolution;")
+    end
+
     test "keeps on_use nil and records an :on_use failure for an unsupported script" do
       assert {%ItemDefinition{on_use: nil}, {:on_use, 501, "Red Potion", {:unsupported, _}}} =
                Items.apply_transpile(definition(%{type: :usable}), "produce 1;")

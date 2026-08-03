@@ -12,6 +12,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
     end
   end
 
+  test "homevolution emits the generic zero-argument DSL call" do
+    assert {:ok, "homevolution(ctx)"} = compile("homevolution;")
+  end
+
   describe "generate/1 healing commands" do
     test "itemheal omits sp when zero" do
       assert {:ok, "heal(ctx, hp: 45)"} = compile("itemheal 45,0;")

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -46,14 +47,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   end
 
   defp run_effect(client_index, server_index, item_id, state) do
-    ctx =
-      state
-      |> Ctx.from_session({:item, item_id})
-      |> then(&CompiledItemScripts.on_use(item_id, &1))
+    original = Ctx.from_session(state, {:item, item_id})
+    ctx = CompiledItemScripts.on_use(item_id, original)
 
-    case ctx.status do
-      :ok -> consume(client_index, server_index, ctx, state)
-      {:error, reason} -> reject(client_index, reason, state)
+    case {ctx.status, ctx.homunculus_effects} do
+      {:ok, []} ->
+        consume(client_index, server_index, ctx, state)
+
+      {:ok, [effect]} ->
+        if %{ctx | homunculus_effects: []} == original do
+          ItemEffectHandler.handle(client_index, server_index, effect, state)
+        else
+          {:noreply, state}
+        end
+
+      {{:error, reason}, []} ->
+        reject(client_index, reason, state)
+
+      _invalid_homunculus_script ->
+        {:noreply, state}
     end
   end
 

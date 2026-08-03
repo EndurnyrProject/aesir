@@ -179,7 +179,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_rule(%{shape: :call, dsl: dsl, args: types}, args)
        when length(types) == length(args) do
     with {:ok, rendered} <- map_ok(Enum.zip(types, args), fn {t, a} -> render_arg(t, a) end) do
-      {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
+      case rendered do
+        [] -> {:ok, "#{dsl}(ctx)"}
+        _args -> {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
+      end
     end
   end
 

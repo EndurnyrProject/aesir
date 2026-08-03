@@ -108,6 +108,24 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     Application.get_env(:zone_server, :dialog_idle_timeout, @default_dialog_idle_timeout)
   end
 
+  @doc "Stages a Homunculus evolution for atomic item handling."
+  @spec homevolution(Ctx.t()) :: Ctx.t()
+  def homevolution(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def homevolution(%Ctx{} = ctx), do: stage_homunculus_effect(ctx, :homunculus_evolution)
+
+  @doc "Stages a positive fixed-point Homunculus intimacy increase for atomic item handling."
+  @spec add_homunculus_intimacy(Ctx.t(), pos_integer()) :: Ctx.t()
+  def add_homunculus_intimacy(%Ctx{status: {:error, _}} = ctx, amount)
+      when is_integer(amount) and amount > 0,
+      do: ctx
+
+  def add_homunculus_intimacy(%Ctx{} = ctx, amount) when is_integer(amount) and amount > 0,
+    do: stage_homunculus_effect(ctx, {:homunculus_intimacy, amount})
+
+  defp stage_homunculus_effect(ctx, effect) do
+    Map.update!(ctx, :homunculus_effects, &(&1 ++ [effect]))
+  end
+
   @doc """
   Appends a line to the context's dialog page buffer and returns the context.
 

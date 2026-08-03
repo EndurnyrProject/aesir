@@ -41,6 +41,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompilerTest do
     assert ctx.game_state.stats.current_state.hp == 150
   end
 
+  test "a Homunculus item script stages its typed effect" do
+    assert ScriptCompiler.compile_all!([item_def(12_040, "homevolution(ctx)")]) == :ok
+
+    assert %Ctx{homunculus_effects: [:homunculus_evolution]} =
+             CompiledItemScripts.on_use(12_040, build_ctx())
+  end
+
   test "the noop fallback returns the ctx unchanged for an unknown item id" do
     assert ScriptCompiler.compile_all!([item_def(501, "heal(ctx, hp: 50)")]) == :ok
 

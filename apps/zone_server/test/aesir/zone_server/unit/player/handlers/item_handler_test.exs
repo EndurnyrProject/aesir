@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
@@ -34,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   setup do
     Mimic.copy(Items)
     Mimic.copy(InventoryOps)
+    Mimic.copy(ItemEffectHandler)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
@@ -102,6 +104,72 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
                ItemHandler.handle_use_item(@red_potion_client_index, state)
 
       assert committed.game_state.stats == recalced_stats
+    end
+  end
+
+  describe "handle_use_item/2 with staged Homunculus effects" do
+    test "delegates exactly one effect using the original session" do
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, "homevolution(ctx)")])
+      definition = usable_definition(@red_potion_id, "homevolution(ctx)")
+      state = state_with_potion()
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      expect(ItemEffectHandler, :handle, fn
+        @red_potion_client_index, @red_potion_slot, :homunculus_evolution, ^state ->
+          {:noreply, state}
+      end)
+
+      assert {:noreply, ^state} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+    end
+
+    test "rejects mixed player mutation before inventory or Homunculus persistence" do
+      source = "ctx = heal(ctx, hp: 50)\nhomevolution(ctx)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      definition = usable_definition(@red_potion_id, source)
+      state = state_with_potion()
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+      reject(&ItemEffectHandler.handle/4)
+
+      assert {:noreply, ^state} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      refute_receive {:send, :gameplay, {:item_removed, _}}
+      refute_receive {:send, :gameplay, {:item_use_result, _}}
+      refute_receive {:send, :bulk, {:homunculus_private_state, _}}
+    end
+
+    test "rejects a staged effect when the script halts" do
+      source = ~s|ctx = homevolution(ctx)\nwarp(ctx, "nowhere", 0, 0)|
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      definition = usable_definition(@red_potion_id, source)
+      state = state_with_potion()
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      stub(WarpHandler, :warp, fn _session, _map, _x, _y -> {:error, :map_not_found} end)
+      reject(&InventoryOps.remove/4)
+      reject(&ItemEffectHandler.handle/4)
+
+      assert {:noreply, ^state} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      refute_receive {:send, _, _}
+    end
+
+    test "rejects a second staged effect before inventory or Homunculus persistence" do
+      source = "ctx = homevolution(ctx)\nadd_homunculus_intimacy(ctx, 100)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      definition = usable_definition(@red_potion_id, source)
+      state = state_with_potion()
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+      reject(&ItemEffectHandler.handle/4)
+
+      assert {:noreply, ^state} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      refute_receive {:send, _, _}
     end
   end
 

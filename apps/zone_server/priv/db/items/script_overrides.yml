@@ -11,3 +11,5 @@
       :swordman -> sc_start(ctx, :sc_blessing, 60_000, 10)
       _ -> ctx
     end
+- id: 100371
+  on_use: "add_homunculus_intimacy(ctx, 100)"

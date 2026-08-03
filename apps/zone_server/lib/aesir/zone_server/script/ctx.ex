@@ -36,6 +36,10 @@ defmodule Aesir.ZoneServer.Script.Ctx do
   @typedoc "Pipeline status: `:ok` until `halt/2` is called."
   @type status :: :ok | {:error, term()}
 
+  @typedoc "A Homunculus item effect staged for atomic validation and persistence."
+  @type homunculus_effect ::
+          :homunculus_evolution | {:homunculus_intimacy, pos_integer()}
+
   @enforce_keys [:char_id, :account_id, :connection_pid, :game_state, :source]
   defstruct char_id: nil,
             account_id: nil,
@@ -48,7 +52,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
             npc_gid: nil,
             page: [],
             session_ref: nil,
-            vars: %{}
+            vars: %{},
+            homunculus_effects: []
 
   @type t() :: %__MODULE__{
           char_id: integer() | nil,
@@ -62,7 +67,8 @@ defmodule Aesir.ZoneServer.Script.Ctx do
           npc_gid: non_neg_integer() | nil,
           page: [String.t()],
           session_ref: reference() | nil,
-          vars: map()
+          vars: map(),
+          homunculus_effects: [homunculus_effect()]
         }
 
   @doc """

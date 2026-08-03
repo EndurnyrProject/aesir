@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
           | %{shape: :announce, dsl: String.t(), fixed: pos_integer()}
 
   @commands %{
+    "homevolution" => %{shape: :call, dsl: "homevolution", args: []},
     "itemheal" => %{shape: :heal, dsl: "heal"},
     "heal" => %{shape: :heal, dsl: "heal"},
     "percentheal" => %{shape: :heal, dsl: "percent_heal"},

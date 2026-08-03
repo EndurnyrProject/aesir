@@ -164,6 +164,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
+    test "re-imported Stone stays active while the Supplement override survives", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 12040
+        aegis_name: Stone_Of_Intelligence_
+        name: Stone of Sage
+        type: usable
+        on_use: "homevolution(ctx)"
+      - id: 100371
+        aegis_name: Homun_F_Tablet
+        name: Homunculus Nutritional Supplement
+        type: usable
+      """)
+
+      File.cp!(
+        Application.app_dir(:zone_server, "priv/db/items/script_overrides.yml"),
+        Path.join(dir, "script_overrides.yml")
+      )
+
+      assert %{
+               by_id: %{
+                 12_040 => %ItemDefinition{on_use: "homevolution(ctx)"},
+                 100_371 => %ItemDefinition{on_use: "add_homunculus_intimacy(ctx, 100)"}
+               }
+             } = Loader.load(dir)
+    end
+
+    @tag :tmp_dir
     test "items without an override keep their on_use; the override file is not an item",
          %{tmp_dir: dir} do
       write_yaml(dir, @items_yaml)

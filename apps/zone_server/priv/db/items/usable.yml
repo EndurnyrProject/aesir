@@ -2836,6 +2836,7 @@
   buy: 100000
   id: 12040
   name: Stone of Sage
+  on_use: homevolution(ctx)
   type: usable
   weight: 300
 - aegis_name: Str_Dish01
