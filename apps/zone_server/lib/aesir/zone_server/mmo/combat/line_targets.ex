@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @doc """
@@ -26,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.LineTargets do
   the caster's cell covers the whole line.
   """
   @spec select(String.t(), {integer(), integer()}, {integer(), integer()}, map()) ::
-          [{atom(), integer()}]
+          [Ref.t()]
   def select(map_name, {sx, sy}, {tx, ty}, caster) do
     cell_set = sx |> Geometry.line_cells(sy, tx, ty) |> MapSet.new()
     radius = Geometry.manhattan_distance(sx, sy, tx, ty)

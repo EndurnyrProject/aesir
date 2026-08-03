@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -36,8 +37,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   torn down here and the hit lands on the devotee normally. Reflected packets
   and self-damage (attacker equals target) are never rerouted.
   """
-  @spec prepare_unit_damage(:player | :mob, integer(), integer(), map(), integer() | nil) ::
-          {integer(), map()}
+  @spec prepare_unit_damage(
+          :player | :mob | :homunculus,
+          integer(),
+          integer(),
+          map(),
+          integer() | Ref.t() | nil
+        ) :: {integer(), map()}
   def prepare_unit_damage(target_type, target_id, damage, hit_info, attacker_id) do
     case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
       :rerouted ->
@@ -56,18 +62,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   here. Packet-producing paths pass hit information returned by
   `prepare_unit_damage/5`, which prevents applying the same modifier twice.
   """
-  @spec apply_unit_damage(:player | :mob, pid(), integer(), integer(), map(), integer() | nil) ::
-          :ok
-  def apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker_id) do
-    final_damage =
-      if Map.get(hit_info, :pre_delivery_prepared?, false) do
-        damage
-      else
-        absorb_unit_damage(target_type, target_id, damage, hit_info)
-      end
+  @type local_effect :: {:homunculus, tuple()}
+  @type delivery_result :: :ok | {:local_effects, [local_effect()]}
 
-    unit_session(target_type).apply_damage(target_pid, final_damage, attacker_id)
-    reflect_unit_damage(target_type, target_id, final_damage, hit_info, attacker_id)
+  @spec apply_unit_damage(
+          :player | :mob | :homunculus,
+          pid(),
+          integer(),
+          integer(),
+          map(),
+          integer() | Ref.t() | nil
+        ) :: delivery_result()
+  def apply_unit_damage(target_type, target_pid, target_id, damage, hit_info, attacker) do
+    final_damage = prepared_damage(target_type, target_id, damage, hit_info)
+
+    delivery =
+      deliver_unit_damage(target_type, target_pid, target_id, final_damage, hit_info, attacker)
+
+    reflection = reflect_unit_damage(target_type, target_id, final_damage, hit_info, attacker)
+    merge_local_effects(delivery, reflection)
+  end
+
+  @doc "Builds aggregate-local Homunculus damage without sending to its owner process."
+  @spec local_damage_effect(Ref.t(), integer(), map(), Ref.t() | nil) :: tuple()
+  def local_damage_effect({:homunculus, world_gid} = target_ref, damage, hit_info, attacker)
+      when is_integer(damage) and damage >= 0 do
+    if Ref.valid?(target_ref) and (is_nil(attacker) or Ref.valid?(attacker)) do
+      final_damage = prepared_damage(:homunculus, world_gid, damage, hit_info)
+      {:homunculus, {:apply_damage, world_gid, final_damage, hit_info, attacker}}
+    else
+      raise ArgumentError, "invalid typed Homunculus damage effect"
+    end
+  end
+
+  @doc "Builds aggregate-local Homunculus healing without sending to its owner process."
+  @spec local_heal_effect(Ref.t(), heal_amount(), Ref.t() | nil) :: tuple()
+  def local_heal_effect({:homunculus, _world_gid} = target_ref, amount, source) do
+    if Ref.valid?(target_ref) and (is_nil(source) or Ref.valid?(source)) do
+      {:homunculus, {:apply_heal, elem(target_ref, 1), amount, source}}
+    else
+      raise ArgumentError, "invalid typed Homunculus heal effect"
+    end
   end
 
   @doc """
@@ -95,7 +130,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   """
   @type heal_amount :: non_neg_integer() | {:potion, :hp | :sp, non_neg_integer()}
 
-  @spec apply_heal(:player | :mob, integer(), heal_amount(), integer() | nil) :: :ok
+  @spec apply_heal(
+          :player | :mob | :homunculus,
+          integer(),
+          heal_amount(),
+          integer() | Ref.t() | nil
+        ) :: :ok
   def apply_heal(:player, unit_id, amount, source_id) do
     PubSub.broadcast(
       Aesir.PubSub,
@@ -108,6 +148,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     case UnitRegistry.get_unit(:mob, unit_id) do
       {:ok, {_module, _state, pid}} -> MobSession.heal(pid, amount)
       {:error, :not_found} -> :ok
+    end
+  end
+
+  def apply_heal(:homunculus, unit_id, amount, source) do
+    case UnitRegistry.get_unit(:homunculus, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        ensure_external_owner!(pid)
+        GenServer.cast(pid, {:homunculus, {:apply_heal, unit_id, amount, typed_source(source)}})
+
+      {:error, :not_found} ->
+        :ok
     end
   end
 
@@ -133,10 +184,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   # decision is safe inside the attacker's own process. Only real, positive,
   # non-reflected/non-redirected damage from a distinct attacker is eligible;
   # self-damage (Grand Cross) carries `attacker_id == target_id` and is skipped.
-  defp reroute_to_crusader(:player, target_id, damage, hit_info, attacker_id)
-       when damage > 0 and is_integer(attacker_id) and attacker_id != target_id do
-    if reroutable?(hit_info) do
-      dispatch_reroute(target_id, damage, hit_info, attacker_id)
+  defp reroute_to_crusader(:player, target_id, damage, hit_info, attacker)
+       when damage > 0 and not is_nil(attacker) do
+    if attacker_id(attacker) != target_id and reroutable?(hit_info) do
+      dispatch_reroute(target_id, damage, hit_info, attacker)
     else
       :not_rerouted
     end
@@ -203,15 +254,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   # Runs the victim's post-damage statuses and sends any reflected damage back to
   # the attacker. Fires only for short-range weapon damage that is neither a
   # reflected nor a redirected packet, so reflection can never loop or re-trigger.
-  # The reflected packet goes through the async apply path (a session cast) - this
-  # runs inside the attacker's own process, so a synchronous self-application would
-  # deadlock.
-  defp reflect_unit_damage(target_type, target_id, damage, hit_info, attacker_id)
-       when damage > 0 and is_integer(attacker_id) do
+  # External reflected damage stays asynchronous. When the attacker is a Homunculus
+  # owned by the current session, delivery returns an aggregate-local effect instead
+  # of messaging the session from inside itself.
+  defp reflect_unit_damage(target_type, target_id, damage, hit_info, attacker)
+       when damage > 0 and not is_nil(attacker) do
     if reflectable?(hit_info) do
       target_type
       |> StatusInterpreter.after_damage_taken(target_id, Map.put(hit_info, :damage, damage))
-      |> apply_reflected_damage(attacker_id)
+      |> apply_reflected_damage(reflection_target(attacker))
     else
       :ok
     end
@@ -226,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       not Map.get(hit_info, :redirected, false)
   end
 
-  defp apply_reflected_damage(amount, attacker_id) when amount > 0 do
+  defp apply_reflected_damage(amount, attacker_id) when amount > 0 and is_integer(attacker_id) do
     case TargetResolver.resolve(attacker_id) do
       {:ok, attacker_pid, _state, attacker_type} ->
         apply_unit_damage(
@@ -243,5 +294,85 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     end
   end
 
-  defp apply_reflected_damage(_amount, _attacker_id), do: :ok
+  defp apply_reflected_damage(amount, {attacker_type, attacker_id} = attacker_ref)
+       when amount > 0 do
+    case TargetResolver.resolve(attacker_ref) do
+      {:ok, attacker_pid, _state, ^attacker_type} ->
+        apply_unit_damage(
+          attacker_type,
+          attacker_pid,
+          attacker_id,
+          amount,
+          %{reflected: true},
+          nil
+        )
+
+      {:error, _reason} ->
+        :ok
+    end
+  end
+
+  defp apply_reflected_damage(_amount, _attacker), do: :ok
+
+  defp prepared_damage(target_type, target_id, damage, hit_info) do
+    if Map.get(hit_info, :pre_delivery_prepared?, false),
+      do: damage,
+      else: absorb_unit_damage(target_type, target_id, damage, hit_info)
+  end
+
+  defp deliver_unit_damage(:homunculus, target_pid, target_id, damage, hit_info, attacker)
+       when target_pid == self() do
+    effect =
+      local_damage_effect(
+        {:homunculus, target_id},
+        damage,
+        hit_info,
+        typed_attacker(attacker)
+      )
+
+    {:local_effects, [effect]}
+  end
+
+  defp deliver_unit_damage(:homunculus, target_pid, target_id, damage, hit_info, attacker) do
+    GenServer.cast(
+      target_pid,
+      {:homunculus, {:apply_damage, target_id, damage, hit_info, typed_attacker(attacker)}}
+    )
+  end
+
+  defp deliver_unit_damage(target_type, target_pid, _target_id, damage, _hit_info, attacker) do
+    unit_session(target_type).apply_damage(target_pid, damage, attacker_id(attacker))
+  end
+
+  defp merge_local_effects(:ok, :ok), do: :ok
+  defp merge_local_effects({:local_effects, effects}, :ok), do: {:local_effects, effects}
+  defp merge_local_effects(:ok, {:local_effects, effects}), do: {:local_effects, effects}
+
+  defp merge_local_effects({:local_effects, first}, {:local_effects, second}),
+    do: {:local_effects, first ++ second}
+
+  defp ensure_external_owner!(pid) when pid == self() do
+    raise ArgumentError,
+          "aggregate-local Homunculus healing must use local_heal_effect/3"
+  end
+
+  defp ensure_external_owner!(_pid), do: :ok
+
+  defp reflection_target(attacker_id) when is_integer(attacker_id), do: attacker_id
+  defp reflection_target(attacker_ref), do: typed_attacker(attacker_ref)
+
+  defp typed_attacker(nil), do: nil
+
+  defp typed_attacker({_unit_type, _unit_id} = ref) do
+    if Ref.valid?(ref), do: ref, else: raise(ArgumentError, "invalid attacker reference")
+  end
+
+  defp typed_attacker(attacker_id) when is_integer(attacker_id), do: {:player, attacker_id}
+
+  defp typed_source(nil), do: nil
+  defp typed_source({_unit_type, _unit_id} = source), do: typed_attacker(source)
+  defp typed_source(source_id) when is_integer(source_id), do: {:player, source_id}
+
+  defp attacker_id({_unit_type, unit_id}), do: unit_id
+  defp attacker_id(unit_id), do: unit_id
 end

@@ -351,6 +351,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:visibility, {:homunculus_left_view, gid}})
   end
 
+  @doc "Notifies this player that a visible Homunculus died."
+  @spec notify_homunculus_died(pid(), pos_integer()) :: :ok
+  def notify_homunculus_died(pid, gid) do
+    GenServer.cast(pid, {:visibility, {:homunculus_died, gid}})
+  end
+
   @doc "Warps this player to `{x, y}` on `map_name`."
   @spec warp(pid(), String.t(), integer(), integer()) :: :ok
   def warp(pid, map_name, x, y) do
@@ -796,6 +802,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:visibility, {:homunculus_left_view, gid}}, state) do
     VisibilityHandler.homunculus_left_view(gid, state)
+  end
+
+  @impl true
+  def handle_cast({:visibility, {:homunculus_died, gid}}, state) do
+    VisibilityHandler.homunculus_died(gid, state)
   end
 
   # Movement: the knockback landing delegates to MovementHandler (stop +

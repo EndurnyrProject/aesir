@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   end
 
   defp synchronize_presence(previous, %HomunculusState{} = current) do
-    remove_if_active(previous)
+    remove_if_active(previous, current.lifecycle)
 
     %{
       current
@@ -188,27 +188,36 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
 
   defp maybe_remove_replaced(_previous, _new_gid), do: :ok
 
-  defp remove_if_active(%HomunculusState{world_gid: gid} = previous) when is_integer(gid),
-    do: remove_world_presence(previous)
+  defp remove_if_active(previous), do: remove_if_active(previous, :out_of_sight)
 
-  defp remove_if_active(_previous), do: :ok
+  defp remove_if_active(%HomunculusState{world_gid: gid} = previous, reason)
+       when is_integer(gid),
+       do: remove_world_presence(previous, reason)
+
+  defp remove_if_active(_previous, _reason), do: :ok
 
   defp detach_world_presence(%HomunculusState{world_gid: gid} = homunculus) do
     clear_spatial_presence(homunculus)
     UnitRegistry.detach_unit(:homunculus, gid)
   end
 
-  defp remove_world_presence(%HomunculusState{world_gid: gid} = homunculus) do
-    clear_spatial_presence(homunculus)
+  defp remove_world_presence(%HomunculusState{} = homunculus),
+    do: remove_world_presence(homunculus, :out_of_sight)
+
+  defp remove_world_presence(%HomunculusState{world_gid: gid} = homunculus, reason) do
+    clear_spatial_presence(homunculus, reason)
     StatusStorage.clear_unit_statuses(:homunculus, gid)
     UnitRegistry.unregister_unit(:homunculus, gid)
   end
 
-  defp clear_spatial_presence(%HomunculusState{world_gid: gid}) do
+  defp clear_spatial_presence(%HomunculusState{} = homunculus),
+    do: clear_spatial_presence(homunculus, :out_of_sight)
+
+  defp clear_spatial_presence(%HomunculusState{world_gid: gid}, reason) do
     case SpatialIndex.get_unit_position(:homunculus, gid) do
       {:ok, {x, y, map_name}} ->
         observers = SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
-        SpawnView.notify_left(observers, gid)
+        notify_removed(observers, gid, reason)
         Movement.clear_dirty(map_name, :homunculus, gid)
 
       {:error, :not_found} ->
@@ -217,6 +226,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
 
     SpatialIndex.remove_unit(:homunculus, gid)
   end
+
+  defp notify_removed(observers, gid, :dead), do: SpawnView.notify_died(observers, gid)
+  defp notify_removed(observers, gid, _reason), do: SpawnView.notify_left(observers, gid)
 
   defp recover_owner_presence(owner_character_id) do
     :homunculus

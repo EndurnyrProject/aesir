@@ -28,8 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Ref
 
   # Blade Stop (MO_BLADESTOP) skill id, read from a caught player attacker's
   # learned skills so their own Root record carries their own level; a monster
@@ -60,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   @type combo_result ::
           {:ok, {:combo, atom(), {atom(), non_neg_integer()}, non_neg_integer()}}
 
-  @spec execute_attack(map(), map(), integer()) ::
+  @spec execute_attack(map(), map(), integer() | Ref.t()) ::
           :ok | :intercepted | combo_result() | {:error, atom()}
   def execute_attack(stats, player_state, target_id) do
     # Create player combatant - player_state already implements to_combatant
@@ -71,8 +73,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
+         target_id <- target_combatant.unit_id,
          :ok <-
-           AttackValidator.validate(attacker_combatant, target_combatant, projectile?: true) do
+           AttackValidator.validate(attacker_combatant, target_combatant, projectile?: true),
+         :ok <- validate_player_target(attacker_combatant, target_combatant, target_type) do
       resolve_player_attack_or_intercept(
         player_state,
         target_state,
@@ -217,30 +221,65 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     - :ok if attack was successful
     - {:error, reason} if attack failed
   """
-  @spec execute_mob_attack(map(), integer()) :: :ok | :intercepted | {:error, atom()}
-  def execute_mob_attack(mob_state, target_id) do
+  @spec execute_mob_attack(map(), integer() | Ref.t()) ::
+          :ok | :intercepted | {:error, atom()}
+  def execute_mob_attack(mob_state, target) do
     attacker_combatant = mob_state.__struct__.to_combatant(mob_state)
+    target = typed_mob_target(target)
 
-    with {:ok, target_pid, target_state, :player} <- TargetResolver.resolve(target_id),
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target),
+         true <- target_type in [:player, :homunculus],
+         :ok <- ensure_mob_targetable(target_state, target_type),
          target_combatant <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate_mob_attack(attacker_combatant, target_combatant) do
       resolve_mob_attack_or_intercept(
         attacker_combatant,
         target_combatant,
         target_pid,
-        target_id
+        target_type,
+        target_combatant.unit_id
       )
+    else
+      false -> {:error, :invalid_target}
+      error -> error
     end
   end
 
-  defp resolve_mob_attack_or_intercept(attacker, target, target_pid, target_id) do
-    case before_weapon_hit(:mob, attacker, target, :player, target_id, @mob_root_level) do
+  @doc "Executes one collision-safe Homunculus basic attack against a typed target."
+  @spec execute_homunculus_attack(struct(), Ref.t()) ::
+          DamageApplication.delivery_result() | {:error, atom()}
+  def execute_homunculus_attack(homunculus_state, target_ref) do
+    attacker = homunculus_state.__struct__.to_combatant(homunculus_state)
+
+    with true <- Ref.valid?(target_ref),
+         {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- AttackValidator.validate(attacker, target, projectile?: true),
+         :ok <- validate_homunculus_target(attacker, target, target_type),
+         {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+      resolve_homunculus_attack(combat_result, attacker, target, target_pid, target_type)
+    else
+      false -> {:error, :invalid_target}
+      error -> error
+    end
+  end
+
+  defp resolve_mob_attack_or_intercept(attacker, target, target_pid, target_type, target_id) do
+    case before_weapon_hit(:mob, attacker, target, target_type, target_id, @mob_root_level) do
       {:intercept, _result} ->
         :intercepted
 
       :continue ->
         with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
-          resolve_mob_attack(combat_result, attacker, target, target_pid, target_id)
+          resolve_mob_attack(
+            combat_result,
+            attacker,
+            target,
+            target_pid,
+            target_type,
+            target_id
+          )
         end
     end
   end
@@ -250,6 +289,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          attacker_combatant,
          target_combatant,
          target_pid,
+         target_type,
          target_id
        ) do
     case combat_result do
@@ -277,6 +317,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           attacker_combatant,
           target_combatant,
           target_pid,
+          target_type,
           target_id
         )
     end
@@ -478,8 +519,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
-  defp splash_hit(attacker, {_unit_type, target_id}) do
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+  defp splash_hit(attacker, {_unit_type, target_id} = target_ref) do
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          splash_target <- target_state.__struct__.to_combatant(target_state),
          {:ok, {:hit, damage_result}} <-
            check_hit_and_calculate_damage(attacker, splash_target) do
@@ -658,6 +699,43 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         Logger.warning("PvP combat not yet implemented")
         {:error, :pvp_not_implemented}
 
+      :homunculus ->
+        hit_info = %{
+          dmg_type: :physical,
+          is_short: true,
+          element: attacker_combatant.weapon.element,
+          skill_id: nil,
+          skill_level: nil,
+          from_caster?: true
+        }
+
+        {final_damage, prepared_hit_info} =
+          DamageApplication.prepare_unit_damage(
+            :homunculus,
+            target_id,
+            damage,
+            hit_info,
+            {:player, attacker_combatant.unit_id}
+          )
+
+        DamageApplication.broadcast_nearby(
+          target_combatant,
+          PacketFactory.build_attack_packet(
+            attacker_combatant,
+            target_combatant,
+            %{damage_result | damage: final_damage}
+          )
+        )
+
+        DamageApplication.apply_unit_damage(
+          :homunculus,
+          target_pid,
+          target_id,
+          final_damage,
+          prepared_hit_info,
+          {:player, attacker_combatant.unit_id}
+        )
+
       :skill_unit ->
         apply_skill_unit_target_damage(
           target_pid,
@@ -726,6 +804,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          attacker_combatant,
          target_combatant,
          target_pid,
+         target_type,
          target_id
        ) do
     damage = damage_result.damage
@@ -751,11 +830,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     {damage, hit_info} =
       DamageApplication.prepare_unit_damage(
-        :player,
+        target_type,
         target_id,
         damage,
         hit_info,
-        attacker_combatant.unit_id
+        mob_damage_source(target_type, attacker_combatant.unit_id)
       )
 
     attack_packet =
@@ -768,16 +847,99 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     DamageApplication.broadcast_nearby(target_combatant, attack_packet)
 
     DamageApplication.apply_unit_damage(
-      :player,
+      target_type,
       target_pid,
       target_id,
       damage,
       hit_info,
-      attacker_combatant.unit_id
+      mob_damage_source(target_type, attacker_combatant.unit_id)
     )
 
     OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result)
   end
+
+  defp resolve_homunculus_attack({:miss}, attacker, target, _target_pid, _target_type) do
+    DamageApplication.broadcast_nearby(target, PacketFactory.build_miss_packet(attacker, target))
+    :ok
+  end
+
+  defp resolve_homunculus_attack(
+         {:perfect_dodge},
+         attacker,
+         target,
+         _target_pid,
+         _target_type
+       ) do
+    DamageApplication.broadcast_nearby(
+      target,
+      PacketFactory.build_perfect_dodge_packet(attacker, target)
+    )
+
+    :ok
+  end
+
+  defp resolve_homunculus_attack(
+         {:hit, damage_result},
+         attacker,
+         target,
+         target_pid,
+         target_type
+       ) do
+    hit_info = %{
+      dmg_type: :physical,
+      is_short: attacker.attack_range <= 3,
+      element: attacker.weapon.element,
+      skill_id: nil,
+      skill_level: nil,
+      from_caster?: true
+    }
+
+    source = {:homunculus, attacker.unit_id}
+
+    {damage, hit_info} =
+      DamageApplication.prepare_unit_damage(
+        target_type,
+        target.unit_id,
+        damage_result.damage,
+        hit_info,
+        source
+      )
+
+    packet =
+      PacketFactory.build_attack_packet(attacker, target, %{damage_result | damage: damage})
+
+    DamageApplication.broadcast_nearby(target, packet)
+
+    DamageApplication.apply_unit_damage(
+      target_type,
+      target_pid,
+      target.unit_id,
+      damage,
+      hit_info,
+      source
+    )
+  end
+
+  defp typed_mob_target(target_id) when is_integer(target_id), do: {:player, target_id}
+  defp typed_mob_target(target_ref), do: target_ref
+
+  defp ensure_mob_targetable(target_state, :homunculus),
+    do: TargetResolver.ensure_targetable(target_state, :homunculus)
+
+  defp ensure_mob_targetable(_target_state, :player), do: :ok
+
+  defp mob_damage_source(:homunculus, attacker_id), do: {:mob, attacker_id}
+  defp mob_damage_source(_target_type, attacker_id), do: attacker_id
+
+  defp validate_player_target(attacker, target, :homunculus),
+    do: Targeting.validate_enemy(attacker, target)
+
+  defp validate_player_target(_attacker, _target, _target_type), do: :ok
+
+  defp validate_homunculus_target(_attacker, _target, :skill_unit), do: :ok
+
+  defp validate_homunculus_target(attacker, target, _type),
+    do: Targeting.validate_enemy(attacker, target)
 
   defp check_hit_and_calculate_damage(attacker_combatant, defender_combatant) do
     attacker_stats = %{

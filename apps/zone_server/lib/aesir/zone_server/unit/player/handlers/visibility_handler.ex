@@ -66,6 +66,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   @spec homunculus_left_view(pos_integer(), map()) :: {:noreply, map()}
   def homunculus_left_view(gid, state), do: reconcile_homunculus_visibility(gid, state)
 
+  @doc "Sends one death packet and clears a visible Homunculus from this observer."
+  @spec homunculus_died(pos_integer(), map()) :: {:noreply, map()}
+  def homunculus_died(gid, state) do
+    if MapSet.member?(state.game_state.visible_homunculi, gid) do
+      MessageRouter.send_to(state.connection_pid, %UnitDespawn{
+        gid: gid,
+        reason: DespawnReason.died()
+      })
+
+      publish_homunculus_visibility(state, gid, false)
+    else
+      {:noreply, state}
+    end
+  end
+
   defp reconcile_homunculus_visibility(gid, state) do
     visible? = MapSet.member?(state.game_state.visible_homunculi, gid)
 

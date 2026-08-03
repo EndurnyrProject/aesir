@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @doc """
@@ -30,10 +31,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   This is a simplified version of the attack paths that bypasses validation and
   is used by status effects and other systems.
   """
-  @spec deal_damage(integer(), integer(), atom(), atom()) :: :ok | {:error, atom()}
-  def deal_damage(target_id, damage, element \\ :neutral, source_type \\ :status_effect) do
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
-         :ok <- ensure_living_target(target_state, target_type) do
+  @spec deal_damage(integer() | Ref.t(), integer(), atom(), atom()) :: :ok | {:error, atom()}
+  def deal_damage(target, damage, element \\ :neutral, source_type \\ :status_effect) do
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target),
+         :ok <- ensure_living_target(target_state, target_type),
+         target_combatant <- target_state.__struct__.to_combatant(target_state),
+         target_id <- target_combatant.unit_id do
       Logger.debug(
         "Combat: Dealing #{damage} #{element} damage to #{target_type} #{target_id} from #{source_type}"
       )
@@ -73,17 +76,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:ok` on success.
     - `{:error, reason}` when the target is invalid, friendly, dead, or out of range.
   """
-  @spec execute_magic_damage(struct(), integer(), non_neg_integer(), keyword()) ::
+  @spec execute_magic_damage(struct(), integer() | Ref.t(), non_neg_integer(), keyword()) ::
           :ok | {:error, atom()}
-  def execute_magic_damage(caster_state, target_id, amount, opts) do
+  def execute_magic_damage(caster_state, target_ref, amount, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
     element = Keyword.get(opts, :element, :neutral)
 
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
       damage =
@@ -99,7 +103,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       {damage, hit_info} =
-        prepare_magic_hit(target_type, target_id, damage, hit_info, attacker.unit_id)
+        prepare_magic_hit(
+          target_type,
+          target_id,
+          damage,
+          hit_info,
+          damage_source(attacker, target_type)
+        )
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -277,7 +287,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       {damage, hit_info} =
-        prepare_magic_hit(target_type, target_id, damage, hit_info, caster.unit_id)
+        prepare_magic_hit(
+          target_type,
+          target_id,
+          damage,
+          hit_info,
+          damage_source(caster, target_type)
+        )
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -294,7 +310,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, nil)
 
       if dst_delay > 0 do
-        DamageApplication.unit_session(unit_type).apply_walk_delay(target_pid, dst_delay)
+        apply_walk_delay(unit_type, target_pid, dst_delay)
       end
 
       :ok
@@ -327,8 +343,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - :ok if the skill connected
     - {:error, reason} if the target was invalid, friendly, dead, or out of range
   """
-  @spec execute_magic_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
-  def execute_magic_attack(caster_state, target_id, opts) do
+  @spec execute_magic_attack(struct(), integer() | Ref.t(), keyword()) :: :ok | {:error, atom()}
+  def execute_magic_attack(caster_state, target_ref, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
@@ -337,9 +353,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     element = Keyword.get(opts, :element, :neutral)
     hits = Keyword.get(opts, :hit_count, 1)
 
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
       damages =
@@ -488,7 +505,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker) do
-    attacker_id = if attacker, do: attacker.unit_id
+    attacker_ref = if attacker, do: damage_source(attacker, target_type)
 
     DamageApplication.apply_unit_damage(
       target_type,
@@ -496,11 +513,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       target_id,
       damage,
       hit_info,
-      attacker_id
+      attacker_ref
     )
 
     :ok
   end
+
+  defp apply_walk_delay(unit_type, target_pid, dst_delay) when unit_type in [:player, :mob],
+    do: DamageApplication.unit_session(unit_type).apply_walk_delay(target_pid, dst_delay)
+
+  defp apply_walk_delay(:homunculus, _target_pid, _dst_delay), do: :ok
 
   defp ensure_living_target(_target_state, :skill_unit), do: :ok
 
@@ -611,8 +633,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         )
 
+      source = damage_source(attacker, target_type)
+
       {damage, hit_info} =
-        prepare_magic_hit(target_type, target_id, damage, hit_info, attacker.unit_id)
+        prepare_magic_hit(target_type, target_id, damage, hit_info, source)
 
       packet =
         PacketFactory.build_splash_damage_packet(
@@ -631,7 +655,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         target_id,
         damage,
         hit_info,
-        attacker.unit_id
+        source
       )
 
       [target_ref]
@@ -650,9 +674,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target,
          {skill_id, skill_level}
        ) do
+    source = damage_source(attacker, target_type)
+
     prepared_hits =
       Enum.map(damages, fn damage ->
-        prepare_magic_hit(target_type, target_id, damage, hit_info, attacker.unit_id)
+        prepare_magic_hit(target_type, target_id, damage, hit_info, source)
       end)
 
     if length(prepared_hits) > 1 and
@@ -704,6 +730,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
     end
   end
+
+  defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, target_type)
+       when unit_type == :homunculus or target_type == :homunculus,
+       do: {unit_type, unit_id}
+
+  defp damage_source(%{unit_id: unit_id}, _target_type), do: unit_id
 
   defp prepare_magic_hit(:skill_unit, _target_id, damage, hit_info, _attacker_id),
     do: {damage, hit_info}

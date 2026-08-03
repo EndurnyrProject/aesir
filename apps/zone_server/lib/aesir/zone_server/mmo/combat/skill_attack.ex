@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Ref
 
   @max_uint32 0xFFFF_FFFF
 
@@ -67,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       target_survives?: boolean}}` when `:report_hit` is `true`
     - {:error, reason} if the target was invalid, friendly, dead, or out of range
   """
-  @spec execute_skill_attack(struct(), integer(), keyword()) ::
+  @spec execute_skill_attack(struct(), integer() | Ref.t(), keyword()) ::
           :ok
           | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
           | {:error, atom()}
@@ -86,7 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   All ordinary skill-attack validation, hit delivery, and on-hit handling remain
   active. Only the damage calculator's status-DEF term is omitted.
   """
-  @spec execute_acid_terror_attack(struct(), integer(), keyword()) ::
+  @spec execute_acid_terror_attack(struct(), integer() | Ref.t(), keyword()) ::
           :ok
           | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
           | {:error, atom()}
@@ -203,7 +204,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_ratio` - percent of base attack the skill deals
     - `:skip_crit` - skip the critical roll
   """
-  @spec execute_line_attack(struct(), integer(), keyword()) :: [integer()]
+  @spec execute_line_attack(struct(), integer() | Ref.t(), keyword()) :: [integer()]
   def execute_line_attack(caster_state, target_id, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
@@ -259,10 +260,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          ranged? \\ false,
          ignore_flee? \\ false
        ) do
-    Enum.flat_map(targets, fn {_unit_type, target_id} ->
+    Enum.flat_map(targets, fn {_unit_type, _target_id} = target_ref ->
       apply_splash_hits(
         attacker,
-        target_id,
+        target_ref,
         skill_id,
         skill_level,
         calc_opts,
@@ -275,7 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp apply_splash_hits(
          attacker,
-         target_id,
+         target_ref,
          skill_id,
          skill_level,
          calc_opts,
@@ -283,7 +284,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          ranged?,
          ignore_flee?
        ) do
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          target <- target_state.__struct__.to_combatant(target_state) do
       hit_opts = %{
         display_hits: nil,
@@ -308,7 +309,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         end)
         |> Enum.any?(& &1.hit?)
 
-      if connected?, do: [target_id], else: []
+      if connected?, do: [elem(target_ref, 1)], else: []
     else
       _ -> []
     end
@@ -329,7 +330,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
   """
-  @spec execute_misc_attack(struct(), integer(), keyword()) :: :ok | {:error, atom()}
+  @spec execute_misc_attack(struct(), integer() | Ref.t(), keyword()) :: :ok | {:error, atom()}
   def execute_misc_attack(caster_state, target_id, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -369,10 +370,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     targets = SplashTargets.select(attacker.map_name, center, radius, attacker)
     base_damage = split_base_damage(base_damage, targets, Keyword.get(opts, :split, false))
 
-    Enum.flat_map(targets, fn {_unit_type, target_id} ->
+    Enum.flat_map(targets, fn {_unit_type, target_id} = target_ref ->
       case apply_misc_hit(
              attacker,
-             target_id,
+             target_ref,
              skill_id,
              skill_level,
              element,
@@ -398,16 +399,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp apply_misc_hit(
          attacker,
-         target_id,
+         target_ref,
          skill_id,
          skill_level,
          element,
          base_damage,
          display_hits
        ) do
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         target_id <- target.unit_id,
          :ok <- Targeting.validate_enemy(attacker, target),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(attacker, target,
@@ -428,7 +430,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           target_id,
           damage,
           hit_info,
-          attacker.unit_id
+          damage_source(attacker, target_type)
         )
 
       packet =
@@ -449,7 +451,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         target_id,
         damage,
         hit_info,
-        attacker.unit_id
+        damage_source(attacker, target_type)
       )
 
       :ok
@@ -462,7 +464,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # exclude a dodged target from a splash's knockback list.
   @spec apply_skill_damage(
           struct(),
-          :player | :mob | :skill_unit,
+          :player | :mob | :homunculus | :skill_unit,
           pid(),
           struct(),
           integer(),
@@ -502,7 +504,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # Stop) stay inert. An interception cancels this hit entirely: no hit roll, no
   # damage, no packet - the intercepting status owns its own feedback effect.
   # Magic and misc skills never call this path, so they can never be blocked.
-  @spec weapon_hit_intercepted?(struct(), :player | :mob | :skill_unit, struct()) :: boolean()
+  @spec weapon_hit_intercepted?(
+          struct(),
+          :player | :mob | :homunculus | :skill_unit,
+          struct()
+        ) :: boolean()
   defp weapon_hit_intercepted?(attacker, target_type, target) do
     attack_info = %{
       attacker: {attacker.unit_type, attacker.unit_id},
@@ -609,7 +615,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             target.unit_id,
             damage_result.damage,
             hit_info,
-            attacker.unit_id
+            damage_source(attacker, target_type)
           )
 
         packet =
@@ -631,7 +637,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           target.unit_id,
           damage,
           hit_info,
-          attacker.unit_id
+          damage_source(attacker, target_type)
         )
 
         OnHitEffects.after_hit(attacker, target, damage_result)
@@ -642,6 +648,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         %{hit?: false, damage: 0}
     end
   end
+
+  defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, target_type)
+       when unit_type == :homunculus or target_type == :homunculus,
+       do: {unit_type, unit_id}
+
+  defp damage_source(%{unit_id: unit_id}, _target_type), do: unit_id
 
   defp damage_calculation({calc_opts, damage_calculator}),
     do: {calc_opts, damage_calculator}

@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -33,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
           non_neg_integer(),
           integer() | map(),
           boolean()
-        ) :: [{atom(), integer()}]
+        ) :: [Ref.t()]
   def select(map_name, {cx, cy}, radius, caster, hits_caster \\ false) do
     caster = resolve_splash_caster(caster)
     caster_ref = {caster.unit_type, caster.unit_id}

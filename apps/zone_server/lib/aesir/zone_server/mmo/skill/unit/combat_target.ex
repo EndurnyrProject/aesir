@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -42,9 +43,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   with players and mobs; callers that only operate on real units filter through
   this predicate instead of matching `:skill_unit` themselves.
   """
-  @spec combat_unit?({atom(), integer()}) :: boolean()
+  @spec combat_unit?(Ref.t()) :: boolean()
   def combat_unit?({:skill_unit, _cell_id}), do: false
-  def combat_unit?({_unit_type, _unit_id}), do: true
+  def combat_unit?(target_ref), do: Ref.valid?(target_ref)
 
   @doc """
   True when `target_ref` should be excluded from an offensive selection
@@ -66,8 +67,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   confirms is currently targetable; a gone or non-targetable cell yields
   `{:error, :target_not_found}`.
   """
-  @spec resolve(integer()) ::
+  @spec resolve(integer() | {:skill_unit, pos_integer()}) ::
           {:ok, pid(), Cell.t(), :skill_unit} | {:error, :target_not_found}
+  def resolve({:skill_unit, target_id}), do: resolve(target_id)
+
   def resolve(target_id) do
     with {:ok, {_module, _cell, manager_pid}} when is_pid(manager_pid) <-
            UnitRegistry.get_unit(:skill_unit, target_id),
@@ -82,9 +85,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget do
   Resolves a skill-unit `target_id` to its authoritative `{x, y, map_name}`
   position, gated on the cell still being targetable.
   """
-  @spec resolve_position(integer()) ::
+  @spec resolve_position(integer() | {:skill_unit, pos_integer()}) ::
           {:ok, :skill_unit, {integer(), integer(), String.t()}}
           | {:error, :target_not_found}
+  def resolve_position({:skill_unit, target_id}), do: resolve_position(target_id)
+
   def resolve_position(target_id) do
     with {:ok, {_module, _cell, manager_pid}} when is_pid(manager_pid) <-
            UnitRegistry.get_unit(:skill_unit, target_id),

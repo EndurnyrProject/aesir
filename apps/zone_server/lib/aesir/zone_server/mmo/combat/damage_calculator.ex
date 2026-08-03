@@ -222,6 +222,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, player_status_atk(attacker) + weapon_component}
   end
 
+  def calculate_base_attack(%{unit_type: :homunculus} = attacker, _opts) do
+    {:ok, attacker.combat_stats.atk}
+  end
+
   def calculate_base_attack(%{unit_type: :mob} = attacker, _opts) do
     # Renewal mob melee (rAthena status_base_atk_min/max + battle_calc_base_damage):
     # the weapon hit rolls uniformly across the 80%-120% band of the mob's ATK,
@@ -451,6 +455,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_soft_defense(%{unit_type: :player} = defender) do
     # Renewal: soft_def = vit (direct VIT value)
+    defender.base_stats.vit
+  end
+
+  defp calculate_soft_defense(%{unit_type: :homunculus} = defender) do
     defender.base_stats.vit
   end
 

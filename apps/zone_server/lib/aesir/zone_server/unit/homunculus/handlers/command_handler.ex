@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
@@ -78,11 +79,42 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, session}
   end
 
-  @doc "Stable future command cast route; Task 24 supplies concrete commands."
-  @spec cast(term(), SessionState.t()) :: {:noreply, SessionState.t()}
+  @doc "Routes an asynchronous combat event through the sole aggregate writer."
+  @spec cast(term(), SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def cast({:apply_damage, _gid, _damage, _hit_info, _source} = combat_event, session),
+    do: CombatHandler.handle(combat_event, session)
+
+  def cast({:apply_heal, _gid, _amount, _source} = combat_event, session),
+    do: CombatHandler.handle(combat_event, session)
+
+  def cast({:drain_sp, _gid, _amount} = combat_event, session),
+    do: CombatHandler.handle(combat_event, session)
+
+  def cast({:basic_attack, _gid, _target_ref} = combat_event, session),
+    do: CombatHandler.handle(combat_event, session)
+
   def cast(command, %SessionState{} = session) do
     Logger.warning("Unsupported Homunculus cast: #{inspect(command)}")
     {:noreply, session}
+  end
+
+  @doc "Applies one aggregate-local Homunculus effect without messaging the owner process."
+  @spec local_effect(tuple(), SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def local_effect({:homunculus, event}, %SessionState{} = session),
+    do: CombatHandler.handle(event, session)
+
+  @doc "Applies aggregate-local effects in list order through the current session state."
+  @spec local_effects([tuple()], SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def local_effects(effects, %SessionState{} = session) when is_list(effects) do
+    Enum.reduce_while(effects, {:noreply, session}, fn effect, {:noreply, current} ->
+      case local_effect(effect, current) do
+        {:noreply, updated} -> {:cont, {:noreply, updated}}
+        {:stop, _reason, _state} = stop -> {:halt, stop}
+      end
+    end)
   end
 
   @doc "Stable future command call route; Task 24 supplies concrete commands."

@@ -77,4 +77,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.SpawnView do
       end
     end)
   end
+
+  @doc "Sends a died despawn for a Homunculus to its current observers."
+  @spec notify_died(Enumerable.t(), pos_integer()) :: :ok
+  def notify_died(observer_ids, gid) do
+    Enum.each(observer_ids, fn observer_id ->
+      with {:ok, pid} <- UnitRegistry.get_player_pid(observer_id) do
+        PlayerSession.notify_homunculus_died(pid, gid)
+      end
+    end)
+  end
 end
