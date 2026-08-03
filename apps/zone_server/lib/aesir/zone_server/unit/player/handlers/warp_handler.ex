@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
          {:ok, {fx, fy}} <- ensure_walkable(dest_map, x, y) do
       state = state |> SkillTextInputHandler.clear() |> SkillHandler.cancel_deferred()
       game_state = state.game_state
+      state = HomunculusCommandHandler.detach_for_warp(state)
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
       Broadcast.subscribe_mob_despawns(dest_map)

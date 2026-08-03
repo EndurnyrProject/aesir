@@ -79,6 +79,20 @@ defmodule Aesir.ZoneServer.Unit.SessionHygieneTest do
       refute @player_session_source =~ "Mmo.Skills."
     end
 
+    test "player session contains no Homunculus species or skill IDs" do
+      for id <- 6_001..6_016, do: refute(@player_session_source =~ Integer.to_string(id))
+      for id <- 8_001..8_016, do: refute(@player_session_source =~ Integer.to_string(id))
+    end
+
+    test "every Homunculus mailbox shape delegates through its namespace" do
+      assert @player_session_source =~
+               "handle_info({:timeout, ref, {:homunculus, event}}, state)"
+
+      assert @player_session_source =~ "handle_cast({:homunculus, command}, state)"
+      assert @player_session_source =~ "handle_call({:homunculus, command}, from, state)"
+      refute @player_session_source =~ "handle_info({:homunculus,"
+    end
+
     test "recognizes the guarded direct replacement forms" do
       [struct_update, session_construction, map_replacement, dot_path_update, key_path_update] =
         @homunculus_replacement_patterns

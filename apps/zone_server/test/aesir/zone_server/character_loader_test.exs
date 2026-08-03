@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.CharacterLoader
 
   describe "load_character/2" do
@@ -57,6 +58,23 @@ defmodule Aesir.ZoneServer.CharacterLoaderTest do
       assert loaded_character.base_level == 10
       assert loaded_character.job_level == 5
       assert loaded_character.class == 0
+    end
+
+    test "preloads the character's sole Homunculus", %{account: account, character: character} do
+      homunculus =
+        %Homunculus{}
+        |> Homunculus.changeset(%{
+          character_id: character.id,
+          class_id: 6_001,
+          name: "Hildr",
+          hp: 100,
+          max_hp: 100
+        })
+        |> Repo.insert!()
+
+      assert {:ok, loaded_character} = CharacterLoader.load_character(character.id, account.id)
+      assert loaded_character.homunculus.id == homunculus.id
+      assert loaded_character.homunculus.character_id == character.id
     end
 
     test "returns error when character not found", %{account: account} do

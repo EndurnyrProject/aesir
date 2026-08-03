@@ -123,6 +123,13 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     :ets.insert_new(table_for(:unit_registry_id_index), {unit_id, unit_type})
   end
 
+  @doc "Deletes a typed registry row while retaining its numeric ID claim."
+  @spec detach_unit(unit_type(), unit_id()) :: :ok
+  def detach_unit(unit_type, unit_id) do
+    :ets.delete(table_for(:unit_registry), {unit_type, unit_id})
+    :ok
+  end
+
   @doc "Releases an unregistered numeric unit ID claim."
   @spec release_unit_id(unit_id(), unit_type()) :: :ok
   def release_unit_id(unit_id, unit_type) do

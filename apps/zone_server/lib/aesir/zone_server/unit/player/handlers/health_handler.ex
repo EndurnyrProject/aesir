@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
@@ -352,6 +353,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     Broadcast.to_visible_players(dead_state, vanish)
     Lifecycle.publish_death(:player, game_state.character_id, game_state.map_name)
 
+    state = HomunculusCommandHandler.owner_died(state)
     {:noreply, SkillMenuHandler.clear(state)}
   end
 

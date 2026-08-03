@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.GuildSync
@@ -449,6 +450,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       client_capabilities: client_capabilities
     }
 
+    {:ok, state} = HomunculusCommandHandler.restore(state, loaded_homunculus(character))
+
     register_player(final_game_state)
 
     # Restore a mounted cart: load its rows, set the tier, and re-apply
@@ -514,17 +517,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # we enter view of can read it to build our spawn packet.
     state = update_game_state(state, game_state)
 
-    # Check initial visibility for players and mobs
-    updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
+    case HomunculusCommandHandler.spawned(state) do
+      {:noreply, state} ->
+        # Check initial visibility for players and mobs
+        updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
 
-    # After initial spawn, transition to standing state
-    # This happens after a short delay to ensure spawn packets are processed
-    Process.send_after(self(), :complete_spawn, 100)
+        # After initial spawn, transition to standing state
+        # This happens after a short delay to ensure spawn packets are processed
+        Process.send_after(self(), :complete_spawn, 100)
 
-    # Start the recurring natural-heal regen tick.
-    Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
+        # Start the recurring natural-heal regen tick.
+        Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
 
-    {:noreply, update_game_state(state, updated_game_state)}
+        {:noreply, update_game_state(state, updated_game_state)}
+
+      {:stop, reason, state} ->
+        {:stop, reason, state}
+    end
   end
 
   @impl true
@@ -541,8 +550,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
     state = update_game_state(state, game_state)
     updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
-
-    {:noreply, update_game_state(state, updated_game_state)}
+    state = update_game_state(state, updated_game_state)
+    HomunculusCommandHandler.entered_after_warp(state)
   end
 
   @impl true
@@ -610,6 +619,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   def handle_info({:message, message}, state) do
     PacketHandler.handle_message(message, state)
+  end
+
+  @impl true
+  def handle_info({:timeout, ref, {:homunculus, event}}, state) do
+    HomunculusCommandHandler.info(event, ref, state)
   end
 
   # Combat: cross-unit heal broadcast on this player's topic, and the
@@ -754,6 +768,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     )
 
     {:noreply, state}
+  end
+
+  @impl true
+  def handle_cast({:homunculus, command}, state) do
+    HomunculusCommandHandler.cast(command, state)
   end
 
   # Visibility: another player's session directly casting to this one as it
@@ -998,9 +1017,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   defp get_client_capabilities(args), do: Map.get(args, :client_capabilities, [])
 
+  defp loaded_homunculus(%{homunculus: %Ecto.Association.NotLoaded{}}), do: nil
+  defp loaded_homunculus(%{homunculus: homunculus}), do: homunculus
+
   @impl true
   def handle_call(:get_state, _from, state) do
     {:reply, state, state}
+  end
+
+  @impl true
+  def handle_call({:homunculus, command}, from, state) do
+    HomunculusCommandHandler.call(command, from, state)
   end
 
   # Inventory: synchronous single-row mutations.
@@ -1115,6 +1142,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     game_state = PlayerState.clear_pending_forced_movement(state.game_state)
     state = %{state | game_state: game_state}
     Process.demonitor(connection_monitor_ref, [:flush])
+    state = HomunculusCommandHandler.terminate(state)
+    game_state = state.game_state
 
     # Tear down an open vending shop so the registry entry + board don't leak;
     # a no-op when this session isn't vending.

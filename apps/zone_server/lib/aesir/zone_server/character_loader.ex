@@ -16,7 +16,7 @@ defmodule Aesir.ZoneServer.CharacterLoader do
   def load_character(char_id, account_id) do
     with {:ok, character} <- get_character(char_id),
          :ok <- validate_ownership(character, account_id) do
-      {:ok, character}
+      {:ok, Repo.preload(character, :homunculus)}
     else
       {:error, reason} ->
         Logger.error("Failed to load character #{char_id} for account #{account_id}: #{reason}")

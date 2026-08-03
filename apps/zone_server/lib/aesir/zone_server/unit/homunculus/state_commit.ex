@@ -17,6 +17,56 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
 
   @world_id_range 2..1_999_999
 
+  @doc "Stores a restored offline state without publishing world presence."
+  @spec restore(SessionState.t(), HomunculusState.t() | nil) :: SessionState.t()
+  def restore(%SessionState{} = session, nil), do: %{session | homunculus: nil}
+
+  def restore(%SessionState{} = session, %HomunculusState{} = homunculus) do
+    if offline_state?(homunculus) do
+      %{session | homunculus: homunculus}
+    else
+      raise ArgumentError, "restored Homunculus must be offline"
+    end
+  end
+
+  @doc """
+  Removes active world presence for a map transfer while retaining identity,
+  clocks, and the nested world snapshot for destination re-entry.
+  """
+  @spec detach(SessionState.t()) :: SessionState.t()
+  def detach(%SessionState{homunculus: %HomunculusState{world_gid: gid} = homunculus} = session)
+      when is_integer(gid) do
+    detach_world_presence(homunculus)
+    session
+  end
+
+  def detach(%SessionState{} = session), do: session
+
+  @doc "Removes all world presence and stores the supplied lifecycle state offline."
+  @spec clear_presence(SessionState.t(), HomunculusState.t() | nil) :: SessionState.t()
+  def clear_presence(%SessionState{} = session, nil) do
+    remove_if_active(session.homunculus)
+    %{session | homunculus: nil}
+  end
+
+  def clear_presence(%SessionState{} = session, %HomunculusState{} = homunculus) do
+    remove_if_active(session.homunculus)
+
+    offline = %{
+      homunculus
+      | world_gid: nil,
+        owner_session_pid: nil,
+        map_name: nil,
+        x: nil,
+        y: nil,
+        movement_state: :standing,
+        target: nil,
+        casting: nil
+    }
+
+    %{session | homunculus: offline}
+  end
+
   @doc """
   Recovers dead-session ghosts, allocates one transient GID, and commits an
   active Homunculus at its owner's current position.
@@ -143,7 +193,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
 
   defp remove_if_active(_previous), do: :ok
 
-  defp remove_world_presence(%HomunculusState{world_gid: gid}) do
+  defp detach_world_presence(%HomunculusState{world_gid: gid} = homunculus) do
+    clear_spatial_presence(homunculus)
+    UnitRegistry.detach_unit(:homunculus, gid)
+  end
+
+  defp remove_world_presence(%HomunculusState{world_gid: gid} = homunculus) do
+    clear_spatial_presence(homunculus)
+    StatusStorage.clear_unit_statuses(:homunculus, gid)
+    UnitRegistry.unregister_unit(:homunculus, gid)
+  end
+
+  defp clear_spatial_presence(%HomunculusState{world_gid: gid}) do
     case SpatialIndex.get_unit_position(:homunculus, gid) do
       {:ok, {x, y, map_name}} ->
         observers = SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
@@ -154,9 +215,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         :ok
     end
 
-    StatusStorage.clear_unit_statuses(:homunculus, gid)
     SpatialIndex.remove_unit(:homunculus, gid)
-    UnitRegistry.unregister_unit(:homunculus, gid)
   end
 
   defp recover_owner_presence(owner_character_id) do
@@ -237,6 +296,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   defp valid_position?(state) do
     nonempty_binary?(state.map_name) and is_integer(state.x) and is_integer(state.y) and
       is_integer(state.dir) and state.dir in 0..7 and state.movement_state in [:standing, :moving]
+  end
+
+  defp offline_state?(state) do
+    is_nil(state.world_gid) and is_nil(state.owner_session_pid) and is_nil(state.map_name) and
+      is_nil(state.x) and is_nil(state.y) and state.movement_state == :standing and
+      is_nil(state.target) and is_nil(state.casting)
   end
 
   defp positive_integer?(value), do: is_integer(value) and value > 0
