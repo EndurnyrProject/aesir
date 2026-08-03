@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Unit.WorldId
 
   @poring_id 1002
 
@@ -181,30 +182,37 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   describe "mob instance id allocation" do
     setup :setup_ets_tables
 
-    test "retries until the cross-type unit id index reports the candidate free" do
+    test "delegates allocation with the existing mob ID range" do
+      Mimic.copy(WorldId)
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
-
-      {:ok, counter} = Agent.start_link(fn -> 0 end)
       test_pid = self()
 
-      # Simulates the id colliding with an already-registered unit of any type
-      # (e.g. an online player's character_id) for the first three attempts.
-      stub(UnitRegistry, :unit_id_exists?, fn candidate ->
-        attempt = Agent.get_and_update(counter, fn n -> {n, n + 1} end)
-        send(test_pid, {:checked, candidate})
-        attempt < 3
+      stub(WorldId, :allocate, fn range ->
+        send(test_pid, {:allocated, range})
+        {:ok, 123_456}
       end)
 
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 
-      {:reply, {:ok, _instance_id}, _new_state} =
-        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+      assert {:reply, {:ok, 123_456}, _new_state} =
+               Coordinator.handle_call(
+                 {:summon_mob, @poring_id, 150, 100, []},
+                 {self(), nil},
+                 state
+               )
 
-      assert_received {:checked, _}
-      assert_received {:checked, _}
-      assert_received {:checked, _}
-      assert_received {:checked, _}
-      refute_received {:checked, _}
+      assert_received {:allocated, 2..1_999_999}
+    end
+
+    test "fails fast when the world ID range is exhausted" do
+      Mimic.copy(WorldId)
+      stub(WorldId, :allocate, fn 2..1_999_999 -> {:error, :exhausted} end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      assert_raise RuntimeError, "world ID range exhausted", fn ->
+        Coordinator.handle_call({:summon_mob, @poring_id, 150, 100, []}, {self(), nil}, state)
+      end
     end
   end
 end

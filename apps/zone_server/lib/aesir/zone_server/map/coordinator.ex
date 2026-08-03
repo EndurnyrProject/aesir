@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   alias Aesir.ZoneServer.Unit.SnapshotBuilder
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Unit.WorldId
   alias Phoenix.PubSub
 
   # Default per-map delta-snapshot flush cadence (~10 Hz); overridable at runtime
@@ -910,21 +911,10 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   # Range: 2 to 1,999,999 (following rAthena's MIN_FLOORITEM to MAX_FLOORITEM).
-  # This range overlaps character_ids (Postgres auto-increment), so dedup
-  # checks the cross-type unit id index, not just other mobs -- otherwise a
-  # collision with an online player's character_id makes the mob untargetable
-  # by player-first skill-target resolution.
   defp generate_mob_instance_id do
-    find_unused_mob_id(2, 1_999_999)
-  end
-
-  defp find_unused_mob_id(min_id, max_id) do
-    candidate_id = :rand.uniform(max_id - min_id) + min_id
-
-    if UnitRegistry.unit_id_exists?(candidate_id) do
-      find_unused_mob_id(min_id, max_id)
-    else
-      candidate_id
+    case WorldId.allocate(2..1_999_999) do
+      {:ok, instance_id} -> instance_id
+      {:error, :exhausted} -> raise "world ID range exhausted"
     end
   end
 
