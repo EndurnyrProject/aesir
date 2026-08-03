@@ -76,6 +76,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           view_range: integer(),
           visible_players: MapSet.t(),
           visible_mobs: MapSet.t(),
+          visible_homunculi: MapSet.t(),
           visible_warps: MapSet.t(),
           visible_npcs: MapSet.t(),
           visible_shops: MapSet.t(),
@@ -221,6 +222,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # and session-life-only temp char vars (never persisted).
     :zeny,
     # Session-owned ordinary Monk combo window.
+    visible_homunculi: MapSet.new(),
     combo: Combo.new(),
     spirit_spheres: SpiritSpheres.new(),
     spirit_sphere_timer: nil,
@@ -347,6 +349,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       view_range: Config.view_range(),
       visible_players: MapSet.new(),
       visible_mobs: MapSet.new(),
+      visible_homunculi: MapSet.new(),
       visible_warps: MapSet.new(),
       visible_npcs: MapSet.new(),
       visible_shops: MapSet.new(),
@@ -415,6 +418,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         pending_forced_movement: nil,
         visible_players: MapSet.new(),
         visible_mobs: MapSet.new(),
+        visible_homunculi: MapSet.new(),
         visible_warps: MapSet.new(),
         visible_npcs: MapSet.new(),
         visible_shops: MapSet.new(),

@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
@@ -59,7 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   ## Parameters
     - state: The player session state
-    
+
   ## Returns
     - {:noreply, updated_state} - Updated state with new position/walking status
   """
@@ -366,7 +367,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     - state: The player session state
     - dest_x: Destination X coordinate
     - dest_y: Destination Y coordinate
-    
+
   ## Returns
     - {:noreply, updated_state} - Updated state with movement path or error handling
   """
@@ -526,7 +527,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
 
   ## Parameters
     - state: The player session state
-    
+
   ## Returns
     - {:noreply, updated_state} - Updated state with stopped movement
   """
@@ -674,6 +675,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       send_mob_vanish_packet_to(game_state.character_id, mob_id)
     end)
 
+    homunculi_in_range =
+      SpatialIndex.get_homunculi_in_range(
+        game_state.map_name,
+        game_state.x,
+        game_state.y,
+        game_state.view_range
+      )
+
+    new_visible_homunculi = MapSet.new(homunculi_in_range)
+
+    new_visible_homunculi
+    |> MapSet.difference(game_state.visible_homunculi)
+    |> Enum.each(&send_homunculus_spawn_packet_to(game_state.character_id, &1))
+
+    game_state.visible_homunculi
+    |> MapSet.difference(new_visible_homunculi)
+    |> Enum.each(&HomunculusSpawnView.send_despawn(game_state.character_id, &1))
+
     # Handle warp visibility — static NPC warp entities are not spatial-indexed
     # (few per map; held per-map in `Npc.Warps`). Diff against `visible_warps`
     # using the same Manhattan-distance convention as the mob path
@@ -776,10 +795,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     # Keep last_visibility_cell for potential optimization later
     current_cell = {div(game_state.x, 8), div(game_state.y, 8)}
 
-    %{
+    updated_game_state = %{
       game_state
       | visible_players: new_visible,
         visible_mobs: new_visible_mobs,
+        visible_homunculi: new_visible_homunculi,
         visible_warps: new_visible_warps,
         visible_npcs: new_visible_npcs,
         visible_shops: new_visible_shops,
@@ -787,6 +807,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         visible_skill_units: new_visible_skill_units,
         last_visibility_cell: current_cell
     }
+
+    UnitRegistry.update_unit_state(
+      :player,
+      updated_game_state.character_id,
+      updated_game_state
+    )
+
+    updated_game_state
   end
 
   defp manhattan(x1, y1, x2, y2), do: abs(x2 - x1) + abs(y2 - y1)
@@ -889,6 +917,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       |> Enum.each(&Broadcast.to_player(to_char_id, &1))
     else
       _ -> :ok
+    end
+  end
+
+  defp send_homunculus_spawn_packet_to(to_char_id, gid) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, homunculus, _pid}} -> HomunculusSpawnView.send_spawn(to_char_id, homunculus)
+      {:error, :not_found} -> :ok
     end
   end
 

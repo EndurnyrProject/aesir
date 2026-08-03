@@ -166,6 +166,27 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
                )
     end
 
+    test "releases the claimed world ID when the mob session fails to start" do
+      test_pid = self()
+
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{instance_id: instance_id}, _opts ->
+        send(test_pid, {:claimed_instance_id, instance_id})
+        {:error, :start_failed}
+      end)
+
+      state = %Coordinator{map_name: "prontera", next_mob_id: 1}
+
+      assert {:reply, {:error, :start_failed}, ^state} =
+               Coordinator.handle_call(
+                 {:summon_mob, @poring_id, 150, 100, []},
+                 {self(), nil},
+                 state
+               )
+
+      assert_received {:claimed_instance_id, instance_id}
+      refute UnitRegistry.unit_id_exists?(instance_id)
+    end
+
     test "replies with the error when the mob id is unknown" do
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 
@@ -187,8 +208,8 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
       test_pid = self()
 
-      stub(WorldId, :allocate, fn range ->
-        send(test_pid, {:allocated, range})
+      stub(WorldId, :allocate, fn range, unit_type ->
+        send(test_pid, {:allocated, range, unit_type})
         {:ok, 123_456}
       end)
 
@@ -201,12 +222,12 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
                  state
                )
 
-      assert_received {:allocated, 2..1_999_999}
+      assert_received {:allocated, 2..1_999_999, :mob}
     end
 
     test "fails fast when the world ID range is exhausted" do
       Mimic.copy(WorldId)
-      stub(WorldId, :allocate, fn 2..1_999_999 -> {:error, :exhausted} end)
+      stub(WorldId, :allocate, fn 2..1_999_999, :mob -> {:error, :exhausted} end)
 
       state = %Coordinator{map_name: "prontera", next_mob_id: 1}
 

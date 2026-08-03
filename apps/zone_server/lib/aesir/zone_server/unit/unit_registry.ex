@@ -117,6 +117,19 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     :ets.member(table_for(:unit_registry_id_index), unit_id)
   end
 
+  @doc "Atomically reserves a numeric unit ID for a unit type."
+  @spec claim_unit_id(unit_id(), unit_type()) :: boolean()
+  def claim_unit_id(unit_id, unit_type) do
+    :ets.insert_new(table_for(:unit_registry_id_index), {unit_id, unit_type})
+  end
+
+  @doc "Releases an unregistered numeric unit ID claim."
+  @spec release_unit_id(unit_id(), unit_type()) :: :ok
+  def release_unit_id(unit_id, unit_type) do
+    :ets.delete_object(table_for(:unit_registry_id_index), {unit_id, unit_type})
+    :ok
+  end
+
   @doc """
   Lists all units of a specific type.
   """

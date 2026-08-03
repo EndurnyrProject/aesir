@@ -15,9 +15,11 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Skill.Ground.Trigger
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -49,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     )
 
     UnitRegistry.update_unit_state(unit_type, unit_id, updated_state)
+    notify_homunculus_boundaries(unit_type, unit_id, previous, updated_state, map_name)
     mark_dirty(map_name, unit_type, unit_id, move_state(updated_state.movement_state))
 
     mover = {unit_type, unit_id}
@@ -115,6 +118,13 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     :ok
   end
 
+  @doc "Removes a unit from its map's pending movement snapshot."
+  @spec clear_dirty(String.t(), unit_type(), unit_id()) :: :ok
+  def clear_dirty(map_name, unit_type, unit_id) do
+    :ets.delete(dirty_table(), {map_name, unit_type, unit_id})
+    :ok
+  end
+
   @doc """
   Drains and clears the dirty set for a map.
 
@@ -140,6 +150,44 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
     drained
   end
+
+  defp notify_homunculus_boundaries(
+         :homunculus,
+         gid,
+         previous,
+         updated_state,
+         map_name
+       ) do
+    old_players = players_near(previous)
+
+    new_players =
+      MapSet.new(
+        SpatialIndex.get_players_in_range(
+          map_name,
+          updated_state.x,
+          updated_state.y,
+          Config.view_range()
+        )
+      )
+
+    old_players
+    |> MapSet.difference(new_players)
+    |> HomunculusSpawnView.notify_left(gid)
+
+    new_players
+    |> MapSet.difference(old_players)
+    |> HomunculusSpawnView.notify_entered(gid)
+  end
+
+  defp notify_homunculus_boundaries(_type, _id, _previous, _state, _map), do: :ok
+
+  defp players_near({:ok, {x, y, map_name}}) do
+    map_name
+    |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
+    |> MapSet.new()
+  end
+
+  defp players_near({:error, _reason}), do: MapSet.new()
 
   @spec move_state(atom()) :: move_state()
   defp move_state(:moving), do: @moving

@@ -4,9 +4,13 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Net.Snapshot, as: NetSnapshot
+  alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -26,6 +30,14 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       action_state: :idle,
       movement_state: :standing,
       view_range: 14,
+      visible_players: MapSet.new(),
+      visible_mobs: MapSet.new(),
+      visible_homunculi: MapSet.new(),
+      visible_warps: MapSet.new(),
+      visible_npcs: MapSet.new(),
+      visible_shops: MapSet.new(),
+      visible_items: MapSet.new(),
+      visible_skill_units: MapSet.new(),
       stats: %{
         current_state: %{hp: 100},
         derived_stats: %{max_hp: 100}
@@ -37,6 +49,43 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
     SpatialIndex.add_unit(:player, state.character_id, state.x, state.y, state.map_name)
     UnitRegistry.register_unit(:player, state.character_id, PlayerState, state, self())
     state
+  end
+
+  defp register_homunculus do
+    homunculus = %HomunculusState{
+      id: 1,
+      owner_character_id: 1001,
+      class_id: 6_001,
+      name: "Lif",
+      lifecycle: :active,
+      level: 50,
+      hp: 950,
+      max_hp: 1_000,
+      world_gid: 70_001,
+      map_name: @map_name,
+      x: 52,
+      y: 50,
+      dir: 1,
+      movement_state: :moving
+    }
+
+    SpatialIndex.add_unit(
+      :homunculus,
+      homunculus.world_gid,
+      homunculus.x,
+      homunculus.y,
+      homunculus.map_name
+    )
+
+    UnitRegistry.register_unit(
+      :homunculus,
+      homunculus.world_gid,
+      HomunculusState,
+      homunculus,
+      self()
+    )
+
+    homunculus
   end
 
   defp register_mob(attrs) do
@@ -157,6 +206,24 @@ defmodule Aesir.ZoneServer.Map.CoordinatorFlushTest do
       assert length(chunks) >= 2
       ticks = chunks |> Enum.map(& &1.server_tick) |> Enum.uniq()
       assert [777] = ticks
+    end
+
+    test "Homunculus deltas are delivered only after its entry spawn is queued" do
+      observer = register_player(character_id: 1001, x: 50, y: 50)
+      homunculus = register_homunculus()
+      Movement.mark_dirty(@map_name, :homunculus, homunculus.world_gid, 1)
+
+      assert {[], _} = Coordinator.flush_snapshots(@map_name, %{}, 1)
+
+      visible = MovementHandler.handle_visibility_update(observer)
+      assert visible.visible_homunculi == MapSet.new([homunculus.world_gid])
+      assert_receive {:"$gen_cast", {:send_packet, %UnitSpawn{gid: 70_001}}}
+
+      Movement.mark_dirty(@map_name, :homunculus, homunculus.world_gid, 1)
+      {[{pid, chunks}], _} = Coordinator.flush_snapshots(@map_name, %{}, 2)
+      Enum.each(chunks, &PlayerSession.send_packet(pid, &1))
+
+      assert_receive {:"$gen_cast", {:send_packet, %NetSnapshot{entities: [%{id: 70_001}]}}}
     end
 
     test "a flush with no dirty units and no echoes yields no deliveries" do

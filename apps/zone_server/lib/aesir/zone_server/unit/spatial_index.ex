@@ -257,6 +257,12 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
     ])
   end
 
+  @doc "Gets transient Homunculus gids in range of a position."
+  @spec get_homunculi_in_range(String.t(), integer(), integer(), non_neg_integer()) :: [integer()]
+  def get_homunculi_in_range(map_name, x, y, range) do
+    get_units_in_range(:homunculus, map_name, x, y, range)
+  end
+
   # Player-specific wrapper functions for backward compatibility
 
   @doc """

@@ -338,6 +338,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:visibility, {:player_left_view, about_char_id, about_account_id}})
   end
 
+  @doc "Notifies this player that a Homunculus entered their view range."
+  @spec notify_homunculus_entered_view(pid(), pos_integer()) :: :ok
+  def notify_homunculus_entered_view(pid, gid) do
+    GenServer.cast(pid, {:visibility, {:homunculus_entered_view, gid}})
+  end
+
+  @doc "Notifies this player that a Homunculus left their view range."
+  @spec notify_homunculus_left_view(pid(), pos_integer()) :: :ok
+  def notify_homunculus_left_view(pid, gid) do
+    GenServer.cast(pid, {:visibility, {:homunculus_left_view, gid}})
+  end
+
   @doc "Warps this player to `{x, y}` on `map_name`."
   @spec warp(pid(), String.t(), integer(), integer()) :: :ok
   def warp(pid, map_name, x, y) do
@@ -755,6 +767,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:visibility, {:player_left_view, other_char_id, _other_account_id}}, state) do
     VisibilityHandler.left_view(other_char_id, state)
+  end
+
+  @impl true
+  def handle_cast({:visibility, {:homunculus_entered_view, gid}}, state) do
+    VisibilityHandler.homunculus_entered_view(gid, state)
+  end
+
+  @impl true
+  def handle_cast({:visibility, {:homunculus_left_view, gid}}, state) do
+    VisibilityHandler.homunculus_left_view(gid, state)
   end
 
   # Movement: the knockback landing delegates to MovementHandler (stop +

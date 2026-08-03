@@ -15,8 +15,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpawnView
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending.Registry, as: VendingRegistry
 
@@ -53,6 +56,62 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
     MessageRouter.send_to(state.connection_pid, packet)
 
     {:noreply, state}
+  end
+
+  @doc "Reconciles a Homunculus entry event against current world visibility."
+  @spec homunculus_entered_view(pos_integer(), map()) :: {:noreply, map()}
+  def homunculus_entered_view(gid, state), do: reconcile_homunculus_visibility(gid, state)
+
+  @doc "Reconciles a Homunculus leave event against current world visibility."
+  @spec homunculus_left_view(pos_integer(), map()) :: {:noreply, map()}
+  def homunculus_left_view(gid, state), do: reconcile_homunculus_visibility(gid, state)
+
+  defp reconcile_homunculus_visibility(gid, state) do
+    visible? = MapSet.member?(state.game_state.visible_homunculi, gid)
+
+    case {current_homunculus(gid, state.game_state), visible?} do
+      {{:visible, homunculus}, false} ->
+        MessageRouter.send_to(state.connection_pid, HomunculusSpawnView.build(homunculus))
+        send_active_icons(:homunculus, gid, state.game_state.character_id)
+        publish_homunculus_visibility(state, gid, true)
+
+      {:hidden, true} ->
+        MessageRouter.send_to(state.connection_pid, %UnitDespawn{
+          gid: gid,
+          reason: DespawnReason.out_of_sight()
+        })
+
+        publish_homunculus_visibility(state, gid, false)
+
+      _unchanged ->
+        {:noreply, state}
+    end
+  end
+
+  defp current_homunculus(gid, player) do
+    with {:ok, {_module, %HomunculusState{} = homunculus, _pid}} <-
+           UnitRegistry.get_unit(:homunculus, gid),
+         {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(:homunculus, gid),
+         true <- map_name == player.map_name,
+         true <- abs(x - player.x) + abs(y - player.y) <= player.view_range do
+      {:visible, homunculus}
+    else
+      _ -> :hidden
+    end
+  end
+
+  defp publish_homunculus_visibility(state, gid, visible?) do
+    game_state = update_visible_homunculus(state.game_state, gid, visible?)
+    UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
+    {:noreply, %{state | game_state: game_state}}
+  end
+
+  defp update_visible_homunculus(game_state, gid, true) do
+    %{game_state | visible_homunculi: MapSet.put(game_state.visible_homunculi, gid)}
+  end
+
+  defp update_visible_homunculus(game_state, gid, false) do
+    %{game_state | visible_homunculi: MapSet.delete(game_state.visible_homunculi, gid)}
   end
 
   defp maybe_send_vending_board(connection_pid, char_id) do

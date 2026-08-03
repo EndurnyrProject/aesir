@@ -1,16 +1,59 @@
 defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   @moduledoc """
-  Replaces the Homunculus nested in its owning player session.
+  Replaces the Homunculus nested in its owning player session and synchronizes
+  active world presence.
   """
 
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
+  alias Aesir.ZoneServer.Unit.Homunculus.SpawnView
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Unit.WorldId
+
+  @world_id_range 2..1_999_999
 
   @doc """
-  Stores `homunculus` in `session` and marks the owner-private view dirty.
+  Recovers dead-session ghosts, allocates one transient GID, and commits an
+  active Homunculus at its owner's current position.
+  """
+  @spec activate(SessionState.t(), HomunculusState.t(), keyword()) ::
+          {:ok, SessionState.t()} | {:error, :duplicate_session | :exhausted}
+  def activate(%SessionState{} = session, %HomunculusState{} = homunculus, opts \\ []) do
+    owner = session.game_state
 
-  World registry and spatial publication begin with the active-world task.
+    active = %{
+      homunculus
+      | lifecycle: :active,
+        world_gid: nil,
+        owner_session_pid: self(),
+        map_name: owner.map_name,
+        x: owner.x,
+        y: owner.y,
+        dir: owner.dir
+    }
+
+    unless active_world_state?(%{active | world_gid: 1}) do
+      raise ArgumentError, "active Homunculus requires complete living world state"
+    end
+
+    with :ok <- recover_owner_presence(homunculus.owner_character_id),
+         {:ok, gid} <-
+           WorldId.allocate(
+             Keyword.get(opts, :world_id_range, @world_id_range),
+             :homunculus
+           ) do
+      {:ok, commit(session, %{active | world_gid: gid})}
+    end
+  end
+
+  @doc """
+  Stores `homunculus`, marks the owner-private view dirty, and synchronizes its
+  active registry, spatial, movement, status, and observer state.
   """
   @spec commit(SessionState.t(), HomunculusState.t() | nil) :: SessionState.t()
   def commit(
@@ -18,10 +61,184 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         homunculus
       )
       when is_struct(homunculus, HomunculusState) or is_nil(homunculus) do
+    homunculus = synchronize_presence(session.homunculus, homunculus)
+
     %{
       session
       | homunculus: homunculus,
         homunculus_runtime: %{runtime | private_dirty: true}
     }
   end
+
+  defp synchronize_presence(previous, %HomunculusState{lifecycle: :active} = current) do
+    unless active_world_state?(current) do
+      raise ArgumentError, "active Homunculus requires complete living world state"
+    end
+
+    current = %{current | owner_session_pid: self()}
+    maybe_remove_replaced(previous, current.world_gid)
+    publish_active(previous, current)
+    current
+  end
+
+  defp synchronize_presence(previous, nil) do
+    remove_if_active(previous)
+    nil
+  end
+
+  defp synchronize_presence(previous, %HomunculusState{} = current) do
+    remove_if_active(previous)
+
+    %{
+      current
+      | world_gid: nil,
+        owner_session_pid: nil,
+        map_name: nil,
+        x: nil,
+        y: nil,
+        movement_state: :standing
+    }
+  end
+
+  defp publish_active(
+         %HomunculusState{world_gid: gid, map_name: old_map, x: old_x, y: old_y},
+         %HomunculusState{world_gid: gid} = current
+       ) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, previous_state, _pid}}
+      when {old_map, old_x, old_y} == {current.map_name, current.x, current.y} ->
+        UnitRegistry.update_unit_state(:homunculus, gid, current)
+        maybe_mark_snapshot_dirty(previous_state, current)
+
+      {:ok, {_module, _state, _pid}} ->
+        Movement.set_position(:homunculus, gid, current, current.map_name)
+
+      {:error, :not_found} ->
+        register_active(current)
+    end
+  end
+
+  defp publish_active(_previous, %HomunculusState{} = current), do: register_active(current)
+
+  defp register_active(%HomunculusState{} = current) do
+    UnitRegistry.register_unit(
+      :homunculus,
+      current.world_gid,
+      HomunculusState,
+      current,
+      current.owner_session_pid
+    )
+
+    Movement.set_position(:homunculus, current.world_gid, current, current.map_name)
+  end
+
+  defp maybe_remove_replaced(%HomunculusState{world_gid: gid} = previous, new_gid)
+       when is_integer(gid) and gid != new_gid,
+       do: remove_world_presence(previous)
+
+  defp maybe_remove_replaced(_previous, _new_gid), do: :ok
+
+  defp remove_if_active(%HomunculusState{world_gid: gid} = previous) when is_integer(gid),
+    do: remove_world_presence(previous)
+
+  defp remove_if_active(_previous), do: :ok
+
+  defp remove_world_presence(%HomunculusState{world_gid: gid}) do
+    case SpatialIndex.get_unit_position(:homunculus, gid) do
+      {:ok, {x, y, map_name}} ->
+        observers = SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
+        SpawnView.notify_left(observers, gid)
+        Movement.clear_dirty(map_name, :homunculus, gid)
+
+      {:error, :not_found} ->
+        :ok
+    end
+
+    StatusStorage.clear_unit_statuses(:homunculus, gid)
+    SpatialIndex.remove_unit(:homunculus, gid)
+    UnitRegistry.unregister_unit(:homunculus, gid)
+  end
+
+  defp recover_owner_presence(owner_character_id) do
+    :homunculus
+    |> UnitRegistry.list_units_by_type()
+    |> Enum.reduce_while(:ok, fn gid, :ok ->
+      recover_registered(gid, owner_character_id)
+    end)
+  end
+
+  defp recover_registered(gid, owner_character_id) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, %HomunculusState{owner_character_id: ^owner_character_id}, pid}} ->
+        recover_observed_owner(gid, pid)
+
+      _other ->
+        {:cont, :ok}
+    end
+  end
+
+  defp recover_observed_owner(_gid, pid) when is_pid(pid) and node(pid) != node(),
+    do: {:halt, {:error, :duplicate_session}}
+
+  defp recover_observed_owner(gid, pid) when is_pid(pid) do
+    if Process.alive?(pid),
+      do: {:halt, {:error, :duplicate_session}},
+      else: ghost_cleanup_result(gid, pid)
+  end
+
+  defp recover_observed_owner(gid, _pid), do: ghost_cleanup_result(gid, nil)
+
+  defp ghost_cleanup_result(gid, observed_pid) do
+    case cleanup_ghost(gid, observed_pid) do
+      :ok -> {:cont, :ok}
+      {:error, :duplicate_session} = error -> {:halt, error}
+    end
+  end
+
+  defp cleanup_ghost(gid, observed_pid) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, %HomunculusState{} = state, ^observed_pid}} ->
+        remove_world_presence(state)
+
+      {:ok, {_module, %HomunculusState{}, _new_pid}} ->
+        {:error, :duplicate_session}
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp maybe_mark_snapshot_dirty(previous, current) do
+    if snapshot_public_changed?(previous, current) do
+      move_state = if current.movement_state == :moving, do: 1, else: 0
+      Movement.mark_dirty(current.map_name, :homunculus, current.world_gid, move_state)
+    end
+  end
+
+  defp snapshot_public_changed?(previous, current) do
+    Map.take(previous, [:hp, :max_hp, :dir, :movement_state]) !=
+      Map.take(current, [:hp, :max_hp, :dir, :movement_state])
+  end
+
+  defp active_world_state?(%HomunculusState{} = state) do
+    HomunculusState.living?(state) and valid_identity?(state) and valid_health?(state) and
+      valid_position?(state)
+  end
+
+  defp valid_identity?(state) do
+    positive_integer?(state.world_gid) and positive_integer?(state.class_id) and
+      positive_integer?(state.level) and nonempty_binary?(state.name)
+  end
+
+  defp valid_health?(state) do
+    positive_integer?(state.max_hp) and is_integer(state.hp) and state.hp <= state.max_hp
+  end
+
+  defp valid_position?(state) do
+    nonempty_binary?(state.map_name) and is_integer(state.x) and is_integer(state.y) and
+      is_integer(state.dir) and state.dir in 0..7 and state.movement_state in [:standing, :moving]
+  end
+
+  defp positive_integer?(value), do: is_integer(value) and value > 0
+  defp nonempty_binary?(value), do: is_binary(value) and byte_size(value) > 0
 end

@@ -60,4 +60,24 @@ defmodule Aesir.ZoneServer.Unit.WorldIdTest do
     refute UnitRegistry.unit_id_exists?(3)
     assert {:ok, 3} = WorldId.allocate(2..3)
   end
+
+  test "concurrent dynamic allocations claim unique IDs and exclude collisions" do
+    UnitRegistry.register_unit(:player, 2, __MODULE__, %{})
+
+    results =
+      1..4
+      |> Task.async_stream(
+        fn _ -> WorldId.allocate(2..5, :homunculus) end,
+        ordered: false,
+        max_concurrency: 4
+      )
+      |> Enum.map(fn {:ok, result} -> result end)
+
+    claimed = for {:ok, id} <- results, do: id
+
+    assert Enum.sort(claimed) == [3, 4, 5]
+    assert Enum.count(results, &(&1 == {:error, :exhausted})) == 1
+    assert Enum.uniq(claimed) == claimed
+    refute 2 in claimed
+  end
 end

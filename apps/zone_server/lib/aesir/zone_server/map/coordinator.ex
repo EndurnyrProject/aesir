@@ -587,7 +587,14 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     with {:ok, pid} <- UnitRegistry.get_player_pid(char_id),
          {:ok, {_module, %PlayerState{} = state, _pid}} <- UnitRegistry.get_unit(:player, char_id),
          visible when visible != [] <-
-           visible_entities(keyed_entities, char_id, state.x, state.y, state.view_range) do
+           visible_entities(
+             keyed_entities,
+             char_id,
+             state.x,
+             state.y,
+             state.view_range,
+             state.visible_homunculi
+           ) do
       [{pid, SnapshotBuilder.chunks_for(visible, {state.x, state.y}, server_tick)}]
     else
       _ -> []
@@ -599,11 +606,16 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
           integer(),
           integer(),
           integer(),
-          integer()
+          integer(),
+          MapSet.t(integer())
         ) :: [SnapshotEntity.t()]
-  defp visible_entities(keyed_entities, char_id, px, py, view_range) do
+  defp visible_entities(keyed_entities, char_id, px, py, view_range, visible_homunculi) do
     keyed_entities
-    |> Enum.reject(fn {key, _entity} -> key == {:player, char_id} end)
+    |> Enum.reject(fn
+      {{:player, ^char_id}, _entity} -> true
+      {{:homunculus, gid}, _entity} -> not MapSet.member?(visible_homunculi, gid)
+      _other -> false
+    end)
     |> Enum.filter(fn {_key, entity} ->
       abs(entity.x - px) + abs(entity.y - py) <= view_range
     end)
@@ -783,6 +795,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         {{:ok, instance_id}, %{state | next_mob_id: state.next_mob_id + 1}}
 
       {:error, reason} ->
+        UnitRegistry.release_unit_id(instance_id, :mob)
         Logger.error("Failed to start mob session #{inspect(mob_data.id)}: #{inspect(reason)}")
         {{:error, reason}, state}
     end
@@ -912,7 +925,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   # Range: 2 to 1,999,999 (following rAthena's MIN_FLOORITEM to MAX_FLOORITEM).
   defp generate_mob_instance_id do
-    case WorldId.allocate(2..1_999_999) do
+    case WorldId.allocate(2..1_999_999, :mob) do
       {:ok, instance_id} -> instance_id
       {:error, :exhausted} -> raise "world ID range exhausted"
     end
