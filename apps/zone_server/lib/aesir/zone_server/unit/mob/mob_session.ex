@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @doc """
   Applies damage to the mob.
   """
-  @spec apply_damage(pid(), integer(), integer() | nil) :: :ok
+  @spec apply_damage(pid(), integer(), tuple() | integer() | nil) :: :ok
   def apply_damage(pid, damage, attacker_id \\ nil) do
     GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id}})
   end
@@ -95,9 +95,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @doc """
   Sets the mob's AI target.
   """
-  @spec set_target(pid(), integer() | nil) :: :ok
-  def set_target(pid, target_id) do
-    GenServer.cast(pid, {:ai, {:set_target, target_id}})
+  @spec set_target(pid(), tuple() | integer() | nil) :: :ok
+  def set_target(pid, target_ref) do
+    GenServer.cast(pid, {:ai, {:set_target, target_ref}})
   end
 
   @doc """
@@ -250,8 +250,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_wake(state)
   end
 
-  def handle_cast({:ai, {:set_target, target_id}}, state) do
-    AiHandler.handle_set_target(state, target_id)
+  def handle_cast({:ai, {:set_target, target_ref}}, state) do
+    AiHandler.handle_set_target(state, target_ref)
   end
 
   # Casting: a status tick/expiry that may interrupt an in-flight cast.

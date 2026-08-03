@@ -228,12 +228,12 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
       assert :ok = Interpreter.apply_status(:player, char_id, :sc_hiding, duration: 60_000)
       assert Interpreter.concealed?(:player, char_id)
 
-      assert AIStateMachine.process_ai(idle(normal)).target_id == nil
-      assert AIStateMachine.process_ai(idle(boss)).target_id == char_id
+      assert AIStateMachine.process_ai(idle(normal)).target_ref == nil
+      assert AIStateMachine.process_ai(idle(boss)).target_ref == {:player, char_id}
 
       :ok = Interpreter.remove_status(:player, char_id, :sc_hiding)
 
-      assert AIStateMachine.process_ai(idle(normal)).target_id == char_id
+      assert AIStateMachine.process_ai(idle(normal)).target_ref == {:player, char_id}
     end
   end
 
@@ -433,7 +433,7 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
   defp idle(mob) do
     %MobState{} = state = get_mob_state(mob.pid)
 
-    %MobState{state | ai_state: :idle, target_id: nil}
+    %MobState{state | ai_state: :idle, target_ref: nil}
   end
 
   defp stub_mob_supervisor do

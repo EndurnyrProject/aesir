@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       map_name: @map,
       x: 100,
       y: 100,
-      target_id: 42,
+      target_ref: {:player, 42},
       hp: 500,
       max_hp: 500,
       mob_data: mob_data()
@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
 
     test ":target with no target errors" do
-      assert Executor.resolve_target(mob(%{target_id: nil}), row(%{target: :target})) ==
+      assert Executor.resolve_target(mob(%{target_ref: nil}), row(%{target: :target})) ==
                {:error, :no_target}
     end
 
@@ -284,7 +284,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
 
     test ":around5 with no target errors" do
-      assert Executor.resolve_target(mob(%{target_id: nil}), row(%{target: :around5})) ==
+      assert Executor.resolve_target(mob(%{target_ref: nil}), row(%{target: :around5})) ==
                {:error, :no_target}
     end
   end
@@ -470,7 +470,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     test "propagates a target resolution error without dispatching" do
       reject(&Combat.execute_magic_attack/3)
 
-      assert Executor.execute(mob(%{target_id: nil}), row()) == {:error, :no_target}
+      assert Executor.execute(mob(%{target_ref: nil}), row()) == {:error, :no_target}
     end
 
     test "fires the mob emote on a successfully-resolved cast when the row has one" do
@@ -496,7 +496,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       reject(&Emote.show/2)
       reject(&Combat.execute_magic_attack/3)
 
-      assert Executor.execute(mob(%{target_id: nil}), row(%{emotion: 3})) == {:error, :no_target}
+      assert Executor.execute(mob(%{target_ref: nil}), row(%{emotion: 3})) == {:error, :no_target}
     end
   end
 
@@ -532,7 +532,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         :ok
       end)
 
-      caster = mob(%{target_id: nil})
+      caster = mob(%{target_ref: nil})
 
       assert Executor.broadcast_casting(caster, row()) == :ok
 

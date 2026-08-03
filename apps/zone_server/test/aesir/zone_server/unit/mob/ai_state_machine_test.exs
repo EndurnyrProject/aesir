@@ -128,7 +128,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
     end
 
@@ -143,7 +143,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
     end
 
@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
     end
 
@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
       assert result.ai_state == :alert
     end
 
@@ -190,7 +190,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.check_aggro(state)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
       assert result.ai_state == :alert
       assert result.initiated_by_self? == true
     end
@@ -206,7 +206,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
     end
 
@@ -222,11 +222,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       end)
 
       base = base_mob_state(modes: [:aggressive, :boss])
-      state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_id: nil}
+      state = %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
       assert result.ai_state == :alert
     end
 
@@ -243,13 +243,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       concealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
-      assert concealed.target_id == nil
+      assert concealed.target_ref == nil
 
       stub(Interpreter, :concealed?, fn :player, 2 -> false end)
 
       revealed = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
-      assert revealed.target_id == 2
+      assert revealed.target_ref == {:player, 2}
       assert revealed.ai_state == :alert
     end
   end
@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(combat_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
     end
 
@@ -283,7 +283,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(aggressive_idle_mob_state())
 
-      assert result.target_id == 3
+      assert result.target_ref == {:player, 3}
       assert result.ai_state == :alert
     end
 
@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {100, 100, "prontera"}}
       end)
 
-      stub(Combat, :execute_mob_attack, fn _state, 3 ->
+      stub(Combat, :execute_mob_attack, fn _state, {:player, 3} ->
         send(test_pid, :attacked)
         :ok
       end)
@@ -306,7 +306,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         |> AIStateMachine.process_ai()
 
       assert_received :attacked
-      assert result.target_id == 3
+      assert result.target_ref == {:player, 3}
     end
   end
 
@@ -326,7 +326,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(combat_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
       refute_received :attacked
     end
@@ -342,7 +342,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(chase_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :return
     end
 
@@ -362,13 +362,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         | x: 100,
           y: 100,
           ai_state: :combat,
-          target_id: 2,
+          target_ref: {:player, 2},
           last_attack_time: nil
       }
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
     end
   end
 
@@ -382,11 +382,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         {:ok, {101, 101, "prontera"}}
       end)
 
-      state = %MobState{base_mob_state() | ai_state: :alert, target_id: 2}
+      state = %MobState{base_mob_state() | ai_state: :alert, target_ref: {:player, 2}}
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
     end
 
@@ -397,7 +397,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(chase_mob_state())
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :return
     end
   end
@@ -408,7 +408,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.handle_damage_reaction(state, 2)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
       assert result.ai_state == :combat
       assert result.initiated_by_self? == false
     end
@@ -418,14 +418,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
         %MobState{
           base_mob_state()
           | ai_state: :alert,
-            target_id: 2,
+            target_ref: {:player, 2},
             initiated_by_self?: true
         }
         |> MobState.add_aggro(3, 100)
 
       result = AIStateMachine.handle_damage_reaction(state, 3)
 
-      assert result.target_id == 3
+      assert result.target_ref == {:player, 3}
       assert result.initiated_by_self? == false
     end
   end
@@ -448,7 +448,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :idle
       refute_received :attacked
     end
@@ -464,7 +464,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
     end
   end
 
@@ -482,7 +482,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == nil
+      assert result.target_ref == nil
       assert result.ai_state == :return
     end
 
@@ -497,7 +497,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
       result = AIStateMachine.process_ai(state)
 
-      assert result.target_id == 2
+      assert result.target_ref == {:player, 2}
       assert result.ai_state in [:chase, :combat, :alert]
     end
   end
@@ -645,7 +645,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   defp aggressive_idle_mob_state do
     base = base_mob_state(modes: [:aggressive])
 
-    %MobState{base | x: 100, y: 100, ai_state: :idle, target_id: nil}
+    %MobState{base | x: 100, y: 100, ai_state: :idle, target_ref: nil}
   end
 
   defp chase_mob_state do
@@ -654,7 +654,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       | x: 100,
         y: 100,
         ai_state: :chase,
-        target_id: 2,
+        target_ref: {:player, 2},
         movement_state: :standing,
         process_pid: self()
     }
@@ -677,7 +677,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       | x: 100,
         y: 100,
         ai_state: :combat,
-        target_id: 2,
+        target_ref: {:player, 2},
         last_attack_time: nil
     }
   end

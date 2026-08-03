@@ -93,6 +93,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrikeTest do
              StatusStrike.cast(caster, @target_id, 4, definition(), :sc_poison)
   end
 
+  test "preserves a typed Homunculus target for damage and status delivery" do
+    caster = mob_caster()
+    target_ref = {:homunculus, 1_500_001}
+
+    expect(Combat, :execute_skill_attack, fn _caster, ^target_ref, _opts ->
+      {:ok, %{hit?: true}}
+    end)
+
+    reject(&UnitRegistry.unit_exists?/2)
+
+    expect(StatusInterpreter, :apply_status, fn :homunculus, 1_500_001, :sc_poison, opts ->
+      assert opts[:source_type] == :mob
+      :ok
+    end)
+
+    assert {:ok, ^caster} =
+             StatusStrike.cast(caster, target_ref, 1, definition(), :sc_poison)
+  end
+
   test "widens a mob caster's attack range only up to its skill range" do
     caster = mob_caster(12, 9)
 

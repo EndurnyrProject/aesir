@@ -134,8 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
 
   defp evaluate(:onspawn, _condition, _mob_state, env), do: env.event == :spawn
 
-  defp evaluate(:casttargeted, _condition, %MobState{target_id: target_id}, _env) do
-    target_id != nil
+  defp evaluate(:casttargeted, _condition, %MobState{target_ref: target_ref}, _env) do
+    target_ref != nil
   end
 
   defp evaluate(:slavele, %{value: value}, %MobState{instance_id: instance_id}, env)

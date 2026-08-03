@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
+  alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -72,27 +73,29 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   @doc """
   Handles when a mob takes damage and should react.
   """
-  @spec handle_damage_reaction(MobState.t(), integer() | nil) :: MobState.t()
-  def handle_damage_reaction(state, attacker_id) do
-    case {state.ai_state, attacker_id} do
+  @spec handle_damage_reaction(MobState.t(), tuple() | integer() | nil) :: MobState.t()
+  def handle_damage_reaction(state, attacker) do
+    attacker_ref = if is_integer(attacker), do: {:player, attacker}, else: attacker
+
+    case {state.ai_state, attacker_ref} do
       {:idle, nil} ->
         # Damaged but no attacker info, become alert (retaliation, not self-initiated)
         state
         |> MobState.set_initiated(false)
         |> MobState.set_ai_state(:alert)
 
-      {:idle, attacker_id} when is_integer(attacker_id) ->
-        # Attacked by specific entity, target them (retaliation, not self-initiated)
+      {:idle, {_type, _id} = attacker_ref} ->
         state
-        |> MobState.set_target(attacker_id)
+        |> MobState.set_target(attacker_ref)
         |> MobState.set_initiated(false)
         |> MobState.set_ai_state(:combat)
 
-      {_, attacker_id} when is_integer(attacker_id) ->
-        # Already in combat, might switch targets based on aggro
-        highest_aggro_target = MobState.get_highest_aggro_target(state)
+      {_, {_type, _id}} ->
+        highest_aggro_target =
+          MobState.get_highest_typed_aggro_target(state) ||
+            legacy_aggro_target(state)
 
-        if highest_aggro_target != state.target_id do
+        if highest_aggro_target != state.target_ref do
           # Aggro targets only ever come from taking damage, so a switch here is
           # always a retaliation against the new attacker.
           state
@@ -172,7 +175,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
       |> SpatialIndex.get_all_units_in_range(target_x, target_y, range * 2)
       |> Enum.reject(fn {type, id} ->
         (type == :mob and id == state.instance_id) or
-          (type == :player and id == state.target_id) or inactive_player?({type, id})
+          {type, id} == state.target_ref or inactive_unit?({type, id})
       end)
       |> Enum.reduce(MapSet.new(), fn {type, id}, acc ->
         case SpatialIndex.get_unit_position(type, id) do
@@ -226,23 +229,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp process_alert(state) do
-    case state.target_id do
+    case state.target_ref do
       nil ->
         # No target, return to idle
         MobState.set_ai_state(state, :idle)
 
-      target_id ->
+      target_ref ->
         cond do
-          not can_target?(state, target_id) ->
+          not can_target?(state, target_ref) ->
             state
             |> MobState.set_target(nil)
             |> MobState.set_ai_state(:idle)
 
-          target_in_attack_range?(state, target_id) ->
+          target_in_attack_range?(state, target_ref) ->
             # Target in attack range, switch to combat
             MobState.set_ai_state(state, :combat)
 
-          target_in_chase_range?(state, target_id) ->
+          target_in_chase_range?(state, target_ref) ->
             # Target in chase range, start chasing
             MobState.set_ai_state(state, :chase)
 
@@ -256,24 +259,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp process_combat(state) do
-    case state.target_id do
+    case state.target_ref do
       nil ->
         # No target, return to idle
         MobState.set_ai_state(state, :idle)
 
-      target_id ->
+      target_ref ->
         cond do
-          not can_target?(state, target_id) ->
+          not can_target?(state, target_ref) ->
             # Target went untargetable (trick-dead) or concealed, shed aggro
             state
             |> MobState.set_target(nil)
             |> MobState.set_ai_state(:idle)
 
-          target_in_attack_range?(state, target_id) ->
+          target_in_attack_range?(state, target_ref) ->
             # Can attack - perform attack logic here
-            execute_mob_attack(state, target_id)
+            execute_mob_attack(state, target_ref)
 
-          target_in_chase_range?(state, target_id) ->
+          target_in_chase_range?(state, target_ref) ->
             # Target moved out of attack range but still chaseable
             MobState.set_ai_state(state, :chase)
 
@@ -293,27 +296,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp process_chase(state) do
-    case state.target_id do
+    case state.target_ref do
       nil ->
         # No target, return to idle
         MobState.set_ai_state(state, :idle)
 
-      target_id ->
+      target_ref ->
         cond do
-          not can_target?(state, target_id) ->
+          not can_target?(state, target_ref) ->
             # Target went untargetable (trick-dead) or concealed, shed aggro and return to spawn
             state
             |> MobState.set_target(nil)
             |> MobState.set_ai_state(:return)
 
-          target_in_attack_range?(state, target_id) ->
+          target_in_attack_range?(state, target_ref) ->
             # Caught up to target, switch to combat
             MobState.set_ai_state(state, :combat)
 
-          target_in_chase_range?(state, target_id) ->
+          target_in_chase_range?(state, target_ref) ->
             # Continue chasing - move towards target using pathfinding
             # credo:disable-for-next-line Credo.Check.Refactor.Nesting
-            case SpatialIndex.get_unit_position(:player, target_id) do
+            case target_position(target_ref) do
               {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
                 {dest_x, dest_y} = chase_destination(state, {target_x, target_y})
                 move_toward(state, dest_x, dest_y)
@@ -351,64 +354,99 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp find_nearby_targets(state) do
-    view_range = state.view_range
+    players =
+      SpatialIndex.get_units_in_range(
+        :player,
+        state.map_name,
+        state.x,
+        state.y,
+        state.view_range
+      )
+      |> Enum.map(&{:player, &1})
 
-    # Find players in range (primary targets), excluding untargetable (trick-dead)
-    # and concealed players
-    SpatialIndex.get_units_in_range(:player, state.map_name, state.x, state.y, view_range)
-    |> Enum.filter(&can_target?(state, &1))
+    homunculi =
+      state.map_name
+      |> SpatialIndex.get_all_units_in_range(state.x, state.y, state.view_range)
+      |> Enum.filter(&(elem(&1, 0) == :homunculus))
+
+    Enum.filter(players ++ homunculi, &can_target?(state, &1))
   end
 
-  # Single predicate shared by the aggro scan and the combat/chase validity
-  # checks. Concealment (Hiding, Cloaking) hides a player from every mob except
-  # bosses, which act as detectors.
-  defp can_target?(%MobState{} = state, target_id) do
-    living_player?(target_id) and
+  defp can_target?(%MobState{} = state, {:player, target_id}) do
+    living_unit?(:player, target_id) and
       Interpreter.targetable?(:player, target_id) and
       not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
       (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
   end
 
-  defp living_player?(target_id) do
-    case UnitRegistry.get_unit(:player, target_id) do
-      {:ok, {_module, player, _pid}} -> Unit.living?(player)
+  defp can_target?(%MobState{} = state, {:homunculus, _id} = target_ref),
+    do: living_enemy?(state, target_ref)
+
+  defp can_target?(_state, _target_ref), do: false
+
+  defp living_unit?(type, id) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, target, _pid}} -> Unit.living?(target)
       {:error, :not_found} -> false
     end
   end
 
-  defp inactive_player?({:player, player_id}), do: not living_player?(player_id)
+  defp living_enemy?(state, {type, id}) do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {module, target, _pid}} ->
+        Unit.living?(target) and
+          Relationship.enemy?(MobState.to_combatant(state), module.to_combatant(target))
 
-  defp inactive_player?(_unit), do: false
+      {:error, :not_found} ->
+        false
+    end
+  end
+
+  defp inactive_unit?({type, id}) when type in [:player, :homunculus] do
+    case UnitRegistry.get_unit(type, id) do
+      {:ok, {_module, unit, _pid}} -> not Unit.living?(unit)
+      {:error, :not_found} -> true
+    end
+  end
+
+  defp inactive_unit?(_unit), do: false
+
+  defp legacy_aggro_target(state) do
+    case MobState.get_highest_aggro_target(state) do
+      nil -> nil
+      target_id -> {:player, target_id}
+    end
+  end
 
   defp select_closest_target(state, targets) when is_list(targets) do
     targets
-    |> Enum.map(fn target_id ->
-      case SpatialIndex.get_unit_position(:player, target_id) do
+    |> Enum.map(fn target_ref ->
+      case target_position(target_ref) do
         {:ok, {target_x, target_y, _map}} ->
           distance = abs(state.x - target_x) + abs(state.y - target_y)
-          {target_id, distance}
+          {target_ref, distance}
 
         _ ->
           # Invalid position, very high distance
-          {target_id, 999_999}
+          {target_ref, 999_999}
       end
     end)
     |> Enum.min_by(fn {_id, distance} -> distance end)
     |> elem(0)
   end
 
-  defp target_in_attack_range?(state, target_id) do
+  defp target_in_attack_range?(state, target_ref) do
     attack_range = MobState.get_attack_range(state)
-    target_in_range?(state, target_id, attack_range)
+    target_in_range?(state, target_ref, attack_range)
   end
 
-  defp target_in_chase_range?(state, target_id) do
+  defp target_in_chase_range?(state, target_ref) do
     chase_range = MobState.get_chase_range(state)
-    target_in_range?(state, target_id, chase_range)
+    target_in_range?(state, target_ref, chase_range)
   end
 
-  defp target_in_range?(state, target_id, range) do
-    case SpatialIndex.get_unit_position(:player, target_id) do
+  defp target_in_range?(state, target_ref, range) do
+    case target_position(target_ref) do
       {:ok, {target_x, target_y, map_name}} when map_name == state.map_name ->
         distance = Geometry.chebyshev_distance(state.x, state.y, target_x, target_y)
         distance <= range
@@ -451,7 +489,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     end
   end
 
-  defp execute_mob_attack(state, target_id) do
+  defp target_position({type, id}), do: SpatialIndex.get_unit_position(type, id)
+
+  defp execute_mob_attack(state, target_ref) do
     # Check if enough time has passed since last attack
     current_time = System.system_time(:millisecond)
     attack_delay = MobState.get_attack_delay(state)
@@ -464,7 +504,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     if can_attack do
       # Execute attack using the Combat system. An intercepted swing (a target
       # status caught it, dealing no damage) still advances the attack cadence.
-      case Combat.execute_mob_attack(state, target_id) do
+      case Combat.execute_mob_attack(state, target_ref) do
         result when result in [:ok, :intercepted] ->
           %{state | last_attack_time: current_time}
 

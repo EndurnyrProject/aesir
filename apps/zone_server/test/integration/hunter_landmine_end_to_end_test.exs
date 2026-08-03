@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Integration.HunterLandmineEndToEndTest do
       start_player_session(character: player_character(), map_name: @map, position: @trap)
 
     mob = start_mob_session(unit_id: @mob_id, map_name: @map, position: {150, 150})
-    caster = %{get_mob_state(mob.pid) | target_id: @player_id}
+    caster = %{get_mob_state(mob.pid) | target_ref: {:player, @player_id}}
 
     assert :ok = Executor.execute(caster, land_protector_row())
     assert Enum.any?(Storage.all(), &(&1.skill_name == :sa_landprotector))

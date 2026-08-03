@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Integration.HunterSandmanIntegrationTest do
       emotion: nil
     }
 
-    caster = %{get_mob_state(mob.pid) | target_id: player.character.id}
+    caster = %{get_mob_state(mob.pid) | target_ref: {:player, player.character.id}}
 
     assert {:ok, _} = UnitRegistry.get_unit_info(:player, inside.character.id)
     assert {:ok, _} = UnitRegistry.get_unit_info(:player, outside.character.id)

@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       initiated_by_self?: false,
       hp: 100,
       max_hp: 100,
-      target_id: 1,
+      target_ref: {:player, 1},
       rude_attacked?: false,
       skill_cooldowns: %{}
     }
@@ -158,8 +158,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
     test "casttargeted fires only when a target exists" do
       r = row(%{condition: %{type: :casttargeted}})
 
-      assert Selector.select(mob(%{target_id: 42}), [r], opts()) == {:cast, r}
-      assert Selector.select(mob(%{target_id: nil}), [r], opts()) == nil
+      assert Selector.select(mob(%{target_ref: {:player, 42}}), [r], opts()) == {:cast, r}
+      assert Selector.select(mob(%{target_ref: nil}), [r], opts()) == nil
     end
 
     test "slavele fires when the master's living-slave count is at or below the value" do

@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Integration.KnightMobCastTest do
 
     mob = start_mob_session(unit_id: 9_101, map_name: @map, position: {150, 150})
 
-    caster = %{mob_state(mob) | target_id: target.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, target.character.id}}
 
     assert :ok = Executor.execute(caster, twohandquicken_row())
 
@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Integration.KnightMobCastTest do
     primary_hp = current_hp(primary.pid)
     bystander_hp = current_hp(bystander.pid)
 
-    caster = %{mob_state(mob) | target_id: primary.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, primary.character.id}}
 
     assert :ok = Executor.execute(caster, spearstab_row())
 
@@ -93,7 +93,7 @@ defmodule Aesir.ZoneServer.Integration.KnightMobCastTest do
     primary_hp = current_hp(primary.pid)
     bystander_hp = current_hp(bystander.pid)
 
-    caster = %{mob_state(mob) | target_id: primary.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, primary.character.id}}
 
     assert :ok = Executor.execute(caster, brandishspear_row())
 

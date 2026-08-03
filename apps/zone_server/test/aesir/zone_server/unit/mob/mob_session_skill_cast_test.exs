@@ -215,7 +215,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
       test_pid = self()
 
-      expect(Combat, :execute_mob_attack, fn _state, @target_id ->
+      expect(Combat, :execute_mob_attack, fn _state, {:player, @target_id} ->
         send(test_pid, :melee)
         :intercepted
       end)
@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         :ok = StatusStorage.apply_status(:mob, 1, :sc_test_mob_skill_block)
       end)
 
-      expect(Combat, :execute_mob_attack, fn _state, @target_id -> :ok end)
+      expect(Combat, :execute_mob_attack, fn _state, {:player, @target_id} -> :ok end)
       reject(&Combat.execute_magic_attack/3)
       on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, 1) end)
 
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       stub(StatusInterpreter, :can_attack?, fn :mob, 1 -> true end)
       test_pid = self()
 
-      expect(Combat, :execute_mob_attack, fn _state, @target_id ->
+      expect(Combat, :execute_mob_attack, fn _state, {:player, @target_id} ->
         send(test_pid, :melee)
         :ok
       end)
@@ -709,7 +709,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       reject(&Combat.execute_magic_attack/3)
       test_pid = self()
 
-      expect(Combat, :execute_mob_attack, fn _state, @target_id ->
+      expect(Combat, :execute_mob_attack, fn _state, {:player, @target_id} ->
         send(test_pid, :melee)
         :ok
       end)

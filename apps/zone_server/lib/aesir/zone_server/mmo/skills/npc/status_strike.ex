@@ -19,9 +19,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @spec cast(struct(), integer(), pos_integer(), struct(), atom()) ::
+  @spec cast(struct(), integer() | Ref.t(), pos_integer(), struct(), atom()) ::
           {:ok, struct()} | {:error, atom()}
   def cast(caster, target_id, level, definition, status) do
     opts = [
@@ -54,12 +55,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
 
   defp combat_caster(caster), do: caster
 
-  @spec apply_status(struct(), integer(), pos_integer(), atom()) :: :ok
-  defp apply_status(caster, target_id, level, status) do
+  @spec apply_status(struct(), integer() | Ref.t(), pos_integer(), atom()) :: :ok
+  defp apply_status(caster, target, level, status) do
     {caster_id, source_type} = caster_ref(caster)
-    unit_type = target_unit_type(target_id)
+    {unit_type, unit_id} = target_ref(target)
 
-    StatusInterpreter.apply_status(unit_type, target_id, status,
+    StatusInterpreter.apply_status(unit_type, unit_id, status,
       val1: level,
       caster_id: caster_id,
       source_id: caster_id,
@@ -73,8 +74,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike do
   defp caster_ref(%MobState{instance_id: id}), do: {id, :mob}
   defp caster_ref(%PlayerState{character_id: id}), do: {id, :player}
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  @spec target_ref(integer() | Ref.t()) :: Ref.t()
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) when is_integer(target_id) do
+    unit_type = if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+    {unit_type, target_id}
   end
 end

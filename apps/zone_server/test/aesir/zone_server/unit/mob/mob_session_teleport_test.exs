@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
 
     assert updated.x == 150
     assert updated.y == 160
-    assert updated.target_id == nil
+    assert updated.target_ref == nil
     assert updated.ai_state == :idle
     assert updated.movement_state == :standing
     assert updated.deferred_epoch == 1

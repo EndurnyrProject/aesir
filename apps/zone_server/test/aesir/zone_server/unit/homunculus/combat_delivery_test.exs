@@ -198,8 +198,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
                skip_range: true
              )
 
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, ^gid}}}
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, ^gid}}}
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, {:homunculus, ^gid}}}}
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, {:homunculus, ^gid}}}}
   end
 
   test "splash, line, and skill-unit delivery include the typed Homunculus", %{

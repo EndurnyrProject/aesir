@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
 
     mob = start_mob_session(unit_id: 8_101, map_name: @map, position: {150, 150})
 
-    caster = %{mob_state(mob) | target_id: target.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, target.character.id}}
 
     assert :ok = Executor.execute(caster, snap_row())
 
@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
         modes: [:boss]
       )
 
-    caster = %{mob_state(boss) | target_id: target.character.id}
+    caster = %{mob_state(boss) | target_ref: {:player, target.character.id}}
 
     assert :ok = Executor.execute(caster, snap_row())
 
@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
     primary_hp = get_player_state(primary.pid).stats.current_state.hp
     bystander_hp = get_player_state(bystander.pid).stats.current_state.hp
 
-    caster = %{mob_state(mob) | target_id: primary.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, primary.character.id}}
 
     assert :ok = Executor.execute(caster, ki_explosion_row())
 

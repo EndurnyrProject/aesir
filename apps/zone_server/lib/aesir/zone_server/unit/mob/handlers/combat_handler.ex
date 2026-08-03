@@ -29,23 +29,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   reaction to the hit, and an HP broadcast to nearby players, then falls
   through to the death path if the hit was lethal.
   """
-  @spec handle_apply_damage(integer(), integer() | nil, MobState.t()) :: {:noreply, MobState.t()}
+  @spec handle_apply_damage(integer(), tuple() | integer() | nil, MobState.t()) ::
+          {:noreply, MobState.t()}
   def handle_apply_damage(_damage, _attacker_id, %{is_dead: true} = state) do
     {:noreply, state}
   end
 
-  def handle_apply_damage(damage, attacker_id, state) do
+  def handle_apply_damage(damage, attacker, state) do
     {updated_mob, status} = MobState.apply_damage(state, damage)
     current_time = System.system_time(:second)
-    credited_attacker_id = credited_attacker_id(attacker_id)
+    attacker_ref = typed_attacker(attacker)
+    credited_attacker_id = credited_attacker_id(attacker_ref)
 
-    # Update last damage time and add aggro if attacker provided
     updated_mob =
       updated_mob
       |> Map.put(:last_damage_time, current_time)
-      |> maybe_add_aggro(credited_attacker_id, damage)
-      |> AIStateMachine.handle_damage_reaction(attacker_id)
-      |> maybe_note_rude_attack(attacker_id)
+      |> maybe_add_aggro(credited_attacker_id, attacker_ref, damage)
+      |> AIStateMachine.handle_damage_reaction(attacker_ref)
+      |> maybe_note_rude_attack(attacker_ref)
 
     # Send HP update packet to nearby players
     SpawnView.notify_hp_update(updated_mob)
@@ -59,15 +60,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
-  defp maybe_add_aggro(state, nil, _damage), do: state
+  defp maybe_add_aggro(state, nil, nil, _damage), do: state
 
-  defp maybe_add_aggro(state, attacker_id, damage) do
-    MobState.add_aggro(state, attacker_id, damage)
+  defp maybe_add_aggro(state, credited_id, attacker_ref, damage) do
+    state
+    |> MobState.add_aggro(credited_id, damage)
+    |> MobState.add_typed_aggro(attacker_ref, damage)
   end
 
   defp credited_attacker_id(nil), do: nil
+  defp credited_attacker_id({:player, attacker_id}), do: attacker_id
 
-  defp credited_attacker_id(attacker_id) do
+  defp credited_attacker_id({:homunculus, attacker_id}) do
+    case UnitRegistry.get_unit(:homunculus, attacker_id) do
+      {:ok, {_module, %{owner_character_id: owner_id}, _pid}} -> owner_id
+      {:error, :not_found} -> attacker_id
+    end
+  end
+
+  defp credited_attacker_id({:mob, attacker_id}) do
     case UnitRegistry.get_unit(:mob, attacker_id) do
       {:ok, {MobState, %MobState{owner_player_id: owner_player_id}, _pid}}
       when is_integer(owner_player_id) ->
@@ -85,8 +96,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   # (an attacker it cannot path to). Phase 1 only counts the signal; Phase 2's
   # `rudeattacked` condition consumes it. An attacker whose position can't be
   # resolved is skipped silently.
-  defp maybe_note_rude_attack(state, attacker_id) when is_integer(attacker_id) do
-    case resolve_attacker_position(attacker_id) do
+  defp maybe_note_rude_attack(state, {_type, _id} = attacker_ref) do
+    case resolve_attacker_position(attacker_ref) do
       {:ok, {x, y}} ->
         if Geometry.chebyshev_distance(x, y, state.x, state.y) >
              MobState.get_chase_range(state) do
@@ -102,18 +113,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
   defp maybe_note_rude_attack(state, _attacker_id), do: state
 
-  # The attacker type isn't known here, so try :player then :mob (mirrors the
-  # combat action handler's target resolution).
-  defp resolve_attacker_position(attacker_id) do
-    case SpatialIndex.get_unit_position(:player, attacker_id) do
-      {:ok, {x, y, _map}} ->
-        {:ok, {x, y}}
+  defp resolve_attacker_position({type, attacker_id}) do
+    case SpatialIndex.get_unit_position(type, attacker_id) do
+      {:ok, {x, y, _map}} -> {:ok, {x, y}}
+      {:error, :not_found} -> :error
+    end
+  end
 
-      {:error, :not_found} ->
-        case SpatialIndex.get_unit_position(:mob, attacker_id) do
-          {:ok, {x, y, _map}} -> {:ok, {x, y}}
-          {:error, :not_found} -> :error
-        end
+  defp typed_attacker(nil), do: nil
+  defp typed_attacker({_type, _id} = attacker_ref), do: attacker_ref
+
+  defp typed_attacker(attacker_id) when is_integer(attacker_id) do
+    cond do
+      match?({:ok, _unit}, UnitRegistry.get_unit(:player, attacker_id)) -> {:player, attacker_id}
+      match?({:ok, _unit}, UnitRegistry.get_unit(:mob, attacker_id)) -> {:mob, attacker_id}
+      true -> {:player, attacker_id}
     end
   end
 

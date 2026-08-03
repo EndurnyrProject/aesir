@@ -93,15 +93,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
   end
 
   @doc """
-  Sets the mob's AI target for an `{:ai, {:set_target, target_id}}` cast,
+  Sets the mob's typed AI target for an `{:ai, {:set_target, target_ref}}` cast,
   entering combat if a target is given or returning to idle if cleared.
   """
-  @spec handle_set_target(MobState.t(), integer() | nil) :: {:noreply, MobState.t()}
-  def handle_set_target(state, target_id) do
+  @spec handle_set_target(MobState.t(), tuple() | integer() | nil) :: {:noreply, MobState.t()}
+  def handle_set_target(state, target_ref) do
     updated_state =
       state
-      |> MobState.set_target(target_id)
-      |> MobState.set_ai_state(if target_id, do: :combat, else: :idle)
+      |> MobState.set_target(target_ref)
+      |> MobState.set_ai_state(if target_ref, do: :combat, else: :idle)
 
     {:noreply, updated_state}
   end

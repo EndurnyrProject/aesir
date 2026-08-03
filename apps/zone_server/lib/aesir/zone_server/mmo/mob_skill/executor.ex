@@ -23,8 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   the ground effect on my target" - e.g. `SA_LANDPROTECTOR`, `PR_SANCTUARY`,
   `WZ_METEOR`) - the caster's own cell for a self-target, `SpatialIndex` for
   anyone else, `{:error, :no_target}` if that unit's cell cannot be resolved.
-  Every other skill adapts uniformly: `{:unit, type, id}` -> `{:unit, id}`,
-  `{:ground, x, y, area}` -> `{:ground, x, y}`.
+  Other unit skills retain a typed Homunculus ref while legacy player and mob
+  targets remain bare IDs; ground targets become `{:ground, x, y}`.
 
   Packet ownership: the combat primitives a skill's `cast/4`/`mob_cast/5` calls
   (e.g. `Combat.execute_magic_damage/4`) broadcast their own `SkillDamage`
@@ -52,7 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   @typedoc "A resolved cast target: a concrete unit or a ground cell."
   @type target ::
-          {:unit, :player | :mob, integer()} | {:ground, integer(), integer(), atom()}
+          {:unit, :player | :mob | :homunculus, integer()}
+          | {:ground, integer(), integer(), atom()}
 
   @doc """
   Resolves the row's `target` code against the live world.
@@ -62,12 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   through for the ground-target skill to size the AoE.
   """
   @spec resolve_target(MobState.t(), map()) :: {:ok, target()} | {:error, atom()}
-  def resolve_target(%MobState{target_id: nil}, %{target: :target}), do: {:error, :no_target}
+  def resolve_target(%MobState{target_ref: nil}, %{target: :target}), do: {:error, :no_target}
 
-  def resolve_target(%MobState{target_id: target_id}, %{target: :target}) do
-    if living_unit?(:player, target_id),
-      do: {:ok, {:unit, :player, target_id}},
-      else: {:error, :no_target}
+  def resolve_target(%MobState{target_ref: {type, id}}, %{target: :target}) do
+    if living_unit?(type, id), do: {:ok, {:unit, type, id}}, else: {:error, :no_target}
   end
 
   def resolve_target(%MobState{instance_id: id}, %{target: :self}), do: {:ok, {:unit, :mob, id}}
@@ -97,13 +96,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   def resolve_target(%MobState{x: x, y: y}, %{target: area}) when area in @around_self,
     do: {:ok, {:ground, x, y, area}}
 
-  def resolve_target(%MobState{target_id: nil}, %{target: area}) when area in @around_target,
+  def resolve_target(%MobState{target_ref: nil}, %{target: area}) when area in @around_target,
     do: {:error, :no_target}
 
-  def resolve_target(%MobState{target_id: target_id}, %{target: area})
+  def resolve_target(%MobState{target_ref: {type, id}}, %{target: area})
       when area in @around_target do
-    if living_unit?(:player, target_id) do
-      case SpatialIndex.get_unit_position(:player, target_id) do
+    if living_unit?(type, id) do
+      case SpatialIndex.get_unit_position(type, id) do
         {:ok, {x, y, _map}} -> {:ok, {:ground, x, y, area}}
         {:error, :not_found} -> {:error, :no_target}
       end
@@ -140,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   def broadcast_casting(%MobState{} = state, row) do
     packet = %SkillCasting{
       src_id: state.instance_id,
-      target_id: state.target_id || 0,
+      target_id: target_id(state.target_ref),
       x: 0,
       y: 0,
       skill_id: row.skill_id,
@@ -165,6 +164,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
     Broadcast.to_in_range(state.map_name, state.x, state.y, Config.view_range(), packet)
   end
+
+  defp target_id(nil), do: 0
+  defp target_id({_type, id}), do: id
 
   defp maybe_emote(%MobState{instance_id: instance_id}, row) do
     case Map.get(row, :emotion) do
@@ -208,6 +210,9 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
 
   defp adapt_target({:unit, unit_type, id}, %{target_type: :ground}, state),
     do: ground_center(unit_type, id, state)
+
+  defp adapt_target({:unit, :homunculus, id}, _definition, _state),
+    do: {:ok, {:unit, {:homunculus, id}}}
 
   defp adapt_target({:unit, _unit_type, id}, _definition, _state), do: {:ok, {:unit, id}}
   defp adapt_target({:ground, x, y, _area}, _definition, _state), do: {:ok, {:ground, x, y}}

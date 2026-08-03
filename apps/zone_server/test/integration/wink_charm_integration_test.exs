@@ -40,20 +40,20 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     mob = start_charmable_mob()
 
     MobSession.set_target(mob.pid, dancer.character.id)
-    assert eventually(fn -> mob_target(mob) == dancer.character.id end)
+    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
 
     charm(dancer, mob)
     force_tick(mob)
 
     assert eventually(fn ->
              state = get_mob_state(mob.pid)
-             state.target_id == nil and state.ai_state not in [:alert, :combat]
+             state.target_ref == nil and state.ai_state not in [:alert, :combat]
            end)
 
     flush_packets()
     force_ticks(mob, 3)
 
-    assert eventually(fn -> mob_target(mob) == other.character.id end)
+    assert eventually(fn -> mob_target(mob) == {:player, other.character.id} end)
 
     assert_receive {:packet_sent, %DamageDealt{src_id: source_id, target_id: target_id}, _},
                    2_000
@@ -88,7 +88,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     assert eventually(fn -> mob_target(mob) == nil end)
     force_ticks(mob, 2)
 
-    assert eventually(fn -> mob_target(mob) == dancer.character.id end)
+    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
   end
 
   test "expiry releases a held target without an explicit removal call" do
@@ -112,7 +112,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
            )
 
     force_ticks(mob, 2)
-    assert eventually(fn -> mob_target(mob) == dancer.character.id end)
+    assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
   end
 
   test "a second Dancer replaces the first charmer and makes the first targetable" do
@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
 
     assert eventually(fn ->
              state = get_mob_state(mob.pid)
-             state.target_id == first.character.id and state.ai_state == :combat
+             state.target_ref == {:player, first.character.id} and state.ai_state == :combat
            end)
   end
 
@@ -257,6 +257,6 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
   end
 
   defp force_ticks(mob, count), do: Enum.each(1..count, fn _ -> force_tick(mob) end)
-  defp mob_target(mob), do: get_mob_state(mob.pid).target_id
+  defp mob_target(mob), do: get_mob_state(mob.pid).target_ref
   defp player_sp(pid), do: get_player_state(pid).stats.current_state.sp
 end

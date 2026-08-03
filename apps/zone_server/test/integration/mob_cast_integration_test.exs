@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   defp caster_targeting(char_id) do
     mob = spawn_test_mob(@map, {150, 150}, mob_id: @mob_id)
-    %{get_mob_state(mob.pid) | target_id: char_id}
+    %{get_mob_state(mob.pid) | target_ref: {:player, char_id}}
   end
 
   describe "SA_DISPELL rows" do
@@ -307,7 +307,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
 
       mob = spawn_test_mob(@map, {150, 150}, mob_id: @stun_mob_id)
-      caster = %{get_mob_state(mob.pid) | target_id: char_id}
+      caster = %{get_mob_state(mob.pid) | target_ref: {:player, char_id}}
 
       flush_packets()
       assert :ok = Executor.execute(caster, row!(@stun_mob_id, "NPC_STUNATTACK"))
@@ -325,7 +325,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
 
       mob = spawn_test_mob(@map, {150, 150}, mob_id: @stun_mob_id, dex: 300)
-      caster = %{get_mob_state(mob.pid) | target_id: char_id}
+      caster = %{get_mob_state(mob.pid) | target_ref: {:player, char_id}}
 
       flush_packets()
       assert :ok = Executor.execute(caster, row!(@stun_mob_id, "NPC_STUNATTACK"))

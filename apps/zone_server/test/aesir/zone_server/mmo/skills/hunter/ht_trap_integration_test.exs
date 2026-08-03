@@ -184,7 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
   test "a real mob cast captures a player already at the trap without displacing it" do
     player = start_real_player(id: @caster_id, map_name: @map, position: @trap)
-    mob = %{build_mob_state(40, 40) | target_id: @caster_id}
+    mob = %{build_mob_state(40, 40) | target_ref: {:player, @caster_id}}
 
     UnitRegistry.register_unit(:mob, @mob_id, MobState, mob, self())
     flush_packets()

@@ -60,7 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
         state
         | movement_state: :moving,
           walk_path: [{51, 50}],
-          target_id: 99,
+          target_ref: {:player, 99},
           ai_state: :chase
       }
 
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSleepTest do
       assert slept.ai_timer_ref == nil
       assert slept.movement_state == :standing
       assert slept.walk_path == []
-      assert slept.target_id == nil
+      assert slept.target_ref == nil
       assert slept.ai_state == :idle
     end
 

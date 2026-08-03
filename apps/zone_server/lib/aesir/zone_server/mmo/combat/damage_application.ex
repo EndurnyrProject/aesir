@@ -340,8 +340,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     )
   end
 
-  defp deliver_unit_damage(target_type, target_pid, _target_id, damage, _hit_info, attacker) do
-    unit_session(target_type).apply_damage(target_pid, damage, attacker_id(attacker))
+  defp deliver_unit_damage(:mob, target_pid, _target_id, damage, _hit_info, attacker) do
+    MobSession.apply_damage(target_pid, damage, mob_attacker(attacker))
+  end
+
+  defp deliver_unit_damage(:player, target_pid, _target_id, damage, _hit_info, attacker) do
+    PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
   end
 
   defp merge_local_effects(:ok, :ok), do: :ok
@@ -372,6 +376,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp typed_source(nil), do: nil
   defp typed_source({_unit_type, _unit_id} = source), do: typed_attacker(source)
   defp typed_source(source_id) when is_integer(source_id), do: {:player, source_id}
+
+  defp mob_attacker({:homunculus, _unit_id} = attacker), do: attacker
+  defp mob_attacker(attacker), do: attacker_id(attacker)
 
   defp attacker_id({_unit_type, unit_id}), do: unit_id
   defp attacker_id(unit_id), do: unit_id

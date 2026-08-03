@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
         | x: 100,
           y: 100,
           ai_state: :chase,
-          target_id: target_id,
+          target_ref: {:player, target_id},
           movement_state: :standing,
           last_movement_end_time: nil
       }
@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Unit.MovementInterruptsTest do
         | x: 100,
           y: 100,
           ai_state: :chase,
-          target_id: target_id,
+          target_ref: {:player, target_id},
           movement_state: :standing,
           last_movement_end_time: nil
       }

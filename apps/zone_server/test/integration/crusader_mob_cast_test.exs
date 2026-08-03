@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderMobCastTest do
     mob_hp = current_mob_hp(mob.pid)
     target_hp = current_hp(target.pid)
 
-    caster = %{mob_state(mob) | target_id: target.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, target.character.id}}
 
     assert :ok = Executor.execute(caster, grandcross_row())
 
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderMobCastTest do
 
     target_hp = current_hp(target.pid)
 
-    caster = %{mob_state(mob) | target_id: target.character.id}
+    caster = %{mob_state(mob) | target_ref: {:player, target.character.id}}
 
     assert :ok = Executor.execute(caster, shieldcharge_row())
 

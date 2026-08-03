@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.CombatCalculations, as: MobCombatCalc
+  alias Aesir.ZoneServer.Unit.Ref
 
   @behaviour Aesir.ZoneServer.Unit
 
@@ -61,7 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # The cell the mob actually spawned on. AI wander/return anchors here, not
     # on `spawn_ref.spawn_area`, whose 0,0 means "random cell anywhere".
     spawn_point: nil,
-    target_id: nil,
+    target_ref: nil,
     # true when aggro was acquired by the aggressive scan (mob walked up to a
     # target that has not hit it), false when acquired by taking damage. Reads
     # the `angry` vs `attack` skill-state distinction.
@@ -89,6 +90,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     last_ai_tick: nil,
     aggro_list: %{},
     aggro_order: [],
+    typed_aggro_list: %{},
+    typed_aggro_order: [],
     last_action_time: nil,
     last_movement_end_time: nil,
     last_idle_movement_time: nil,
@@ -142,7 +145,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           ai_awake: boolean(),
           ai_timer_ref: reference() | nil,
           spawn_point: {integer(), integer()} | nil,
-          target_id: integer() | nil,
+          target_ref: Ref.t() | nil,
           initiated_by_self?: boolean(),
           rude_attack_count: integer(),
           rude_attacked?: boolean(),
@@ -156,6 +159,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_ai_tick: integer() | nil,
           aggro_list: map(),
           aggro_order: [integer()],
+          typed_aggro_list: %{optional(Ref.t()) => non_neg_integer()},
+          typed_aggro_order: [Ref.t()],
           last_action_time: integer() | nil,
           last_movement_end_time: integer() | nil,
           last_idle_movement_time: integer() | nil,
@@ -459,10 +464,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @doc """
   Sets the combat target.
   """
-  @spec set_target(t(), integer() | nil) :: t()
-  def set_target(%__MODULE__{} = state, target_id) do
-    %{state | target_id: target_id}
-  end
+  @spec set_target(t(), Ref.t() | integer() | nil) :: t()
+  def set_target(%__MODULE__{} = state, target_id) when is_integer(target_id),
+    do: %{state | target_ref: {:player, target_id}}
+
+  def set_target(%__MODULE__{} = state, target_ref), do: %{state | target_ref: target_ref}
 
   @doc """
   Records whether the mob initiated combat itself (aggressive scan) or is
@@ -587,6 +593,24 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     %{state | aggro_list: updated_aggro, aggro_order: updated_aggro_order}
   end
 
+  @doc "Records cumulative damage by exact typed contributor in first-hit order."
+  @spec add_typed_aggro(t(), Ref.t(), integer()) :: t()
+  def add_typed_aggro(
+        %__MODULE__{typed_aggro_list: aggro, typed_aggro_order: order} = state,
+        contributor_ref,
+        damage
+      ) do
+    updated = Map.update(aggro, contributor_ref, damage, &(&1 + damage))
+    updated_order = if contributor_ref in order, do: order, else: [contributor_ref | order]
+    %{state | typed_aggro_list: updated, typed_aggro_order: updated_order}
+  end
+
+  @doc "Returns typed cumulative contributors in stable first-hit order."
+  @spec typed_damage_log(t()) :: [{Ref.t(), integer()}]
+  def typed_damage_log(%__MODULE__{typed_aggro_list: aggro, typed_aggro_order: order}) do
+    Enum.map(Enum.reverse(order), &{&1, Map.fetch!(aggro, &1)})
+  end
+
   @doc """
   Returns the rAthena-style damage log used for loot-owner ranking.
   """
@@ -595,6 +619,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     Enum.map(Enum.reverse(aggro_order), fn attacker_id ->
       {attacker_id, Map.fetch!(aggro_list, attacker_id)}
     end)
+  end
+
+  @doc "Returns the exact typed contributor with the highest aggro."
+  @spec get_highest_typed_aggro_target(t()) :: Ref.t() | nil
+  def get_highest_typed_aggro_target(%__MODULE__{} = state) do
+    case Enum.max_by(typed_damage_log(state), fn {_ref, amount} -> amount end, fn -> nil end) do
+      {target_ref, _amount} -> target_ref
+      nil -> nil
+    end
   end
 
   @doc """
@@ -613,7 +646,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec clear_aggro(t()) :: t()
   def clear_aggro(%__MODULE__{} = state) do
-    %{state | aggro_list: %{}, aggro_order: []}
+    %{state | aggro_list: %{}, aggro_order: [], typed_aggro_list: %{}, typed_aggro_order: []}
   end
 
   @doc """
@@ -626,9 +659,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       | is_dead: true,
         hp: 0,
         ai_state: :idle,
-        target_id: nil,
+        target_ref: nil,
         aggro_list: %{},
         aggro_order: [],
+        typed_aggro_list: %{},
+        typed_aggro_order: [],
         movement_state: :standing,
         walk_path: []
     }
