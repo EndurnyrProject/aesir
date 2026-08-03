@@ -1,0 +1,1057 @@
+---
+- attack_delay: 700
+  base_class_id: 6001
+  element: neutral
+  evolution_class_id: 6009
+  food: Pet_Food
+  form: original
+  hungry_delay: 60000
+  id: 6001
+  name: Lif
+  race: demi_human
+  size: Small
+  skills:
+    - 8001
+    - 8002
+    - 8003
+    - 8004
+  stats:
+    agi:
+      base: 20
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    dex:
+      base: 24
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 6
+    hp:
+      base: 150
+      evolution_max: 2400
+      evolution_min: 800
+      growth_max: 100
+      growth_min: 60
+    int:
+      base: 35
+      evolution_max: 50
+      evolution_min: 30
+      growth_max: 20
+      growth_min: 4
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 6
+    sp:
+      base: 40
+      evolution_max: 480
+      evolution_min: 220
+      growth_max: 9
+      growth_min: 4
+    str:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    vit:
+      base: 15
+      evolution_max: 40
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 5
+  variant: Lif
+- attack_delay: 700
+  base_class_id: 6002
+  element: neutral
+  evolution_class_id: 6010
+  food: Zargon
+  form: original
+  hungry_delay: 60000
+  id: 6002
+  name: Amistr
+  race: brute
+  size: Small
+  skills:
+    - 8005
+    - 8006
+    - 8007
+    - 8008
+  stats:
+    agi:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    dex:
+      base: 24
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    hp:
+      base: 320
+      evolution_max: 3600
+      evolution_min: 1600
+      growth_max: 130
+      growth_min: 80
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 10
+      evolution_max: 360
+      evolution_min: 120
+      growth_max: 4
+      growth_min: 1
+    str:
+      base: 20
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 8
+    vit:
+      base: 35
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+  variant: Amistr
+- attack_delay: 700
+  base_class_id: 6003
+  element: neutral
+  evolution_class_id: 6011
+  food: Garlet
+  form: original
+  hungry_delay: 60000
+  id: 6003
+  name: Filir
+  race: brute
+  size: Small
+  skills:
+    - 8009
+    - 8010
+    - 8011
+    - 8012
+  stats:
+    agi:
+      base: 35
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 8
+    dex:
+      base: 30
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    hp:
+      base: 90
+      evolution_max: 3200
+      evolution_min: 1200
+      growth_max: 75
+      growth_min: 45
+    int:
+      base: 8
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 3
+    luk:
+      base: 9
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 25
+      evolution_max: 400
+      evolution_min: 200
+      growth_max: 6
+      growth_min: 3
+    str:
+      base: 29
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+    vit:
+      base: 9
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+  variant: Filir
+- attack_delay: 700
+  base_class_id: 6004
+  element: neutral
+  evolution_class_id: 6012
+  food: Scell
+  form: original
+  hungry_delay: 60000
+  id: 6004
+  name: Vanilmirth
+  race: formless
+  size: Small
+  skills:
+    - 8013
+    - 8014
+    - 8015
+    - 8016
+  stats:
+    agi:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    dex:
+      base: 11
+      evolution_max: 50
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    hp:
+      base: 80
+      evolution_max: 4800
+      evolution_min: 1200
+      growth_max: 150
+      growth_min: 30
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 30
+      growth_min: 1
+    luk:
+      base: 11
+      evolution_max: 100
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    sp:
+      base: 11
+      evolution_max: 640
+      evolution_min: 480
+      growth_max: 7
+      growth_min: 0
+    str:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    vit:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+  variant: Vanilmirth
+- attack_delay: 700
+  base_class_id: 6005
+  element: neutral
+  evolution_class_id: 6013
+  food: Pet_Food
+  form: original
+  hungry_delay: 60000
+  id: 6005
+  name: Lif
+  race: demi_human
+  size: Small
+  skills:
+    - 8001
+    - 8002
+    - 8003
+    - 8004
+  stats:
+    agi:
+      base: 20
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    dex:
+      base: 24
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 6
+    hp:
+      base: 150
+      evolution_max: 2400
+      evolution_min: 800
+      growth_max: 100
+      growth_min: 60
+    int:
+      base: 35
+      evolution_max: 50
+      evolution_min: 30
+      growth_max: 20
+      growth_min: 4
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 6
+    sp:
+      base: 40
+      evolution_max: 480
+      evolution_min: 220
+      growth_max: 9
+      growth_min: 4
+    str:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    vit:
+      base: 15
+      evolution_max: 40
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 5
+  variant: Lif2
+- attack_delay: 700
+  base_class_id: 6006
+  element: neutral
+  evolution_class_id: 6014
+  food: Zargon
+  form: original
+  hungry_delay: 60000
+  id: 6006
+  name: Amistr
+  race: brute
+  size: Small
+  skills:
+    - 8005
+    - 8006
+    - 8007
+    - 8008
+  stats:
+    agi:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    dex:
+      base: 24
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    hp:
+      base: 320
+      evolution_max: 3600
+      evolution_min: 1600
+      growth_max: 130
+      growth_min: 80
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 10
+      evolution_max: 360
+      evolution_min: 120
+      growth_max: 4
+      growth_min: 1
+    str:
+      base: 20
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 8
+    vit:
+      base: 35
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+  variant: Amistr2
+- attack_delay: 700
+  base_class_id: 6007
+  element: neutral
+  evolution_class_id: 6015
+  food: Garlet
+  form: original
+  hungry_delay: 60000
+  id: 6007
+  name: Filir
+  race: brute
+  size: Small
+  skills:
+    - 8009
+    - 8010
+    - 8011
+    - 8012
+  stats:
+    agi:
+      base: 35
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 8
+    dex:
+      base: 30
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    hp:
+      base: 90
+      evolution_max: 3200
+      evolution_min: 1200
+      growth_max: 75
+      growth_min: 45
+    int:
+      base: 8
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 3
+    luk:
+      base: 9
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 25
+      evolution_max: 400
+      evolution_min: 200
+      growth_max: 6
+      growth_min: 3
+    str:
+      base: 29
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+    vit:
+      base: 9
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+  variant: Filir2
+- attack_delay: 700
+  base_class_id: 6008
+  element: neutral
+  evolution_class_id: 6016
+  food: Scell
+  form: original
+  hungry_delay: 60000
+  id: 6008
+  name: Vanilmirth
+  race: formless
+  size: Small
+  skills:
+    - 8013
+    - 8014
+    - 8015
+    - 8016
+  stats:
+    agi:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    dex:
+      base: 11
+      evolution_max: 50
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    hp:
+      base: 80
+      evolution_max: 4800
+      evolution_min: 1200
+      growth_max: 150
+      growth_min: 30
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 30
+      growth_min: 1
+    luk:
+      base: 11
+      evolution_max: 100
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    sp:
+      base: 11
+      evolution_max: 640
+      evolution_min: 480
+      growth_max: 7
+      growth_min: 0
+    str:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    vit:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+  variant: Vanilmirth2
+- attack_delay: 700
+  base_class_id: 6001
+  element: neutral
+  evolution_class_id: 6009
+  food: Pet_Food
+  form: evolved
+  hungry_delay: 60000
+  id: 6009
+  name: Lif
+  race: demi_human
+  size: Medium
+  skills:
+    - 8001
+    - 8002
+    - 8003
+    - 8004
+  stats:
+    agi:
+      base: 20
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    dex:
+      base: 24
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 6
+    hp:
+      base: 150
+      evolution_max: 2400
+      evolution_min: 800
+      growth_max: 100
+      growth_min: 60
+    int:
+      base: 35
+      evolution_max: 50
+      evolution_min: 30
+      growth_max: 20
+      growth_min: 4
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 6
+    sp:
+      base: 40
+      evolution_max: 480
+      evolution_min: 220
+      growth_max: 9
+      growth_min: 4
+    str:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    vit:
+      base: 15
+      evolution_max: 40
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 5
+  variant: Lif_H
+- attack_delay: 700
+  base_class_id: 6002
+  element: neutral
+  evolution_class_id: 6010
+  food: Zargon
+  form: evolved
+  hungry_delay: 60000
+  id: 6010
+  name: Amistr
+  race: brute
+  size: Medium
+  skills:
+    - 8005
+    - 8006
+    - 8007
+    - 8008
+  stats:
+    agi:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    dex:
+      base: 24
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    hp:
+      base: 320
+      evolution_max: 3600
+      evolution_min: 1600
+      growth_max: 130
+      growth_min: 80
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 10
+      evolution_max: 360
+      evolution_min: 120
+      growth_max: 4
+      growth_min: 1
+    str:
+      base: 20
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 8
+    vit:
+      base: 35
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+  variant: Amistr_H
+- attack_delay: 700
+  base_class_id: 6003
+  element: neutral
+  evolution_class_id: 6011
+  food: Garlet
+  form: evolved
+  hungry_delay: 60000
+  id: 6011
+  name: Filir
+  race: brute
+  size: Medium
+  skills:
+    - 8009
+    - 8010
+    - 8011
+    - 8012
+  stats:
+    agi:
+      base: 35
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 8
+    dex:
+      base: 30
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    hp:
+      base: 90
+      evolution_max: 3200
+      evolution_min: 1200
+      growth_max: 75
+      growth_min: 45
+    int:
+      base: 8
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 3
+    luk:
+      base: 9
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 25
+      evolution_max: 400
+      evolution_min: 200
+      growth_max: 6
+      growth_min: 3
+    str:
+      base: 29
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+    vit:
+      base: 9
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+  variant: Filir_H
+- attack_delay: 700
+  base_class_id: 6004
+  element: neutral
+  evolution_class_id: 6012
+  food: Scell
+  form: evolved
+  hungry_delay: 60000
+  id: 6012
+  name: Vanilmirth
+  race: formless
+  size: Medium
+  skills:
+    - 8013
+    - 8014
+    - 8015
+    - 8016
+  stats:
+    agi:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    dex:
+      base: 11
+      evolution_max: 50
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    hp:
+      base: 80
+      evolution_max: 4800
+      evolution_min: 1200
+      growth_max: 150
+      growth_min: 30
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 30
+      growth_min: 1
+    luk:
+      base: 11
+      evolution_max: 100
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    sp:
+      base: 11
+      evolution_max: 640
+      evolution_min: 480
+      growth_max: 7
+      growth_min: 0
+    str:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    vit:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+  variant: Vanilmirth_H
+- attack_delay: 700
+  base_class_id: 6005
+  element: neutral
+  evolution_class_id: 6013
+  food: Pet_Food
+  form: evolved
+  hungry_delay: 60000
+  id: 6013
+  name: Lif
+  race: demi_human
+  size: Medium
+  skills:
+    - 8001
+    - 8002
+    - 8003
+    - 8004
+  stats:
+    agi:
+      base: 20
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    dex:
+      base: 24
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 6
+    hp:
+      base: 150
+      evolution_max: 2400
+      evolution_min: 800
+      growth_max: 100
+      growth_min: 60
+    int:
+      base: 35
+      evolution_max: 50
+      evolution_min: 30
+      growth_max: 20
+      growth_min: 4
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 6
+    sp:
+      base: 40
+      evolution_max: 480
+      evolution_min: 220
+      growth_max: 9
+      growth_min: 4
+    str:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 5
+    vit:
+      base: 15
+      evolution_max: 40
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 5
+  variant: Lif_H2
+- attack_delay: 700
+  base_class_id: 6006
+  element: neutral
+  evolution_class_id: 6014
+  food: Zargon
+  form: evolved
+  hungry_delay: 60000
+  id: 6014
+  name: Amistr
+  race: brute
+  size: Medium
+  skills:
+    - 8005
+    - 8006
+    - 8007
+    - 8008
+  stats:
+    agi:
+      base: 17
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    dex:
+      base: 24
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    hp:
+      base: 320
+      evolution_max: 3600
+      evolution_min: 1600
+      growth_max: 130
+      growth_min: 80
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+    luk:
+      base: 12
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 10
+      evolution_max: 360
+      evolution_min: 120
+      growth_max: 4
+      growth_min: 1
+    str:
+      base: 20
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 8
+    vit:
+      base: 35
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+  variant: Amistr_H2
+- attack_delay: 700
+  base_class_id: 6007
+  element: neutral
+  evolution_class_id: 6015
+  food: Garlet
+  form: evolved
+  hungry_delay: 60000
+  id: 6015
+  name: Filir
+  race: brute
+  size: Medium
+  skills:
+    - 8009
+    - 8010
+    - 8011
+    - 8012
+  stats:
+    agi:
+      base: 35
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 8
+    dex:
+      base: 30
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 20
+      growth_min: 4
+    hp:
+      base: 90
+      evolution_max: 3200
+      evolution_min: 1200
+      growth_max: 75
+      growth_min: 45
+    int:
+      base: 8
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 19
+      growth_min: 3
+    luk:
+      base: 9
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 19
+      growth_min: 3
+    sp:
+      base: 25
+      evolution_max: 400
+      evolution_min: 200
+      growth_max: 6
+      growth_min: 3
+    str:
+      base: 29
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 20
+      growth_min: 4
+    vit:
+      base: 9
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 10
+      growth_min: 1
+  variant: Filir_H2
+- attack_delay: 700
+  base_class_id: 6008
+  element: neutral
+  evolution_class_id: 6016
+  food: Scell
+  form: evolved
+  hungry_delay: 60000
+  id: 6016
+  name: Vanilmirth
+  race: formless
+  size: Medium
+  skills:
+    - 8013
+    - 8014
+    - 8015
+    - 8016
+  stats:
+    agi:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    dex:
+      base: 11
+      evolution_max: 50
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    hp:
+      base: 80
+      evolution_max: 4800
+      evolution_min: 1200
+      growth_max: 150
+      growth_min: 30
+    int:
+      base: 11
+      evolution_max: 50
+      evolution_min: 20
+      growth_max: 30
+      growth_min: 1
+    luk:
+      base: 11
+      evolution_max: 100
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    sp:
+      base: 11
+      evolution_max: 640
+      evolution_min: 480
+      growth_max: 7
+      growth_min: 0
+    str:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+    vit:
+      base: 11
+      evolution_max: 30
+      evolution_min: 10
+      growth_max: 30
+      growth_min: 1
+  variant: Vanilmirth_H2

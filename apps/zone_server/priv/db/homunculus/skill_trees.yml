@@ -1,0 +1,577 @@
+---
+- class_id: 6001
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HLIF_HEAL
+  skill_id: 8001
+- class_id: 6001
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8001
+  skill: HLIF_AVOID
+  skill_id: 8002
+- class_id: 6001
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8001
+  skill: HLIF_BRAIN
+  skill_id: 8003
+- class_id: 6001
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HLIF_CHANGE
+  skill_id: 8004
+- class_id: 6002
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HAMI_CASTLE
+  skill_id: 8005
+- class_id: 6002
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8005
+  skill: HAMI_DEFENCE
+  skill_id: 8006
+- class_id: 6002
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8006
+  skill: HAMI_SKIN
+  skill_id: 8007
+- class_id: 6002
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HAMI_BLOODLUST
+  skill_id: 8008
+- class_id: 6003
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HFLI_MOON
+  skill_id: 8009
+- class_id: 6003
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8009
+  skill: HFLI_FLEET
+  skill_id: 8010
+- class_id: 6003
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8010
+  skill: HFLI_SPEED
+  skill_id: 8011
+- class_id: 6003
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HFLI_SBR44
+  skill_id: 8012
+- class_id: 6004
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HVAN_CAPRICE
+  skill_id: 8013
+- class_id: 6004
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8013
+  skill: HVAN_CHAOTIC
+  skill_id: 8014
+- class_id: 6004
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8013
+  skill: HVAN_INSTRUCT
+  skill_id: 8015
+- class_id: 6004
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HVAN_EXPLOSION
+  skill_id: 8016
+- class_id: 6005
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HLIF_HEAL
+  skill_id: 8001
+- class_id: 6005
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8001
+  skill: HLIF_AVOID
+  skill_id: 8002
+- class_id: 6005
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8001
+  skill: HLIF_BRAIN
+  skill_id: 8003
+- class_id: 6005
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HLIF_CHANGE
+  skill_id: 8004
+- class_id: 6006
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HAMI_CASTLE
+  skill_id: 8005
+- class_id: 6006
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8005
+  skill: HAMI_DEFENCE
+  skill_id: 8006
+- class_id: 6006
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8006
+  skill: HAMI_SKIN
+  skill_id: 8007
+- class_id: 6006
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HAMI_BLOODLUST
+  skill_id: 8008
+- class_id: 6007
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HFLI_MOON
+  skill_id: 8009
+- class_id: 6007
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8009
+  skill: HFLI_FLEET
+  skill_id: 8010
+- class_id: 6007
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8010
+  skill: HFLI_SPEED
+  skill_id: 8011
+- class_id: 6007
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HFLI_SBR44
+  skill_id: 8012
+- class_id: 6008
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HVAN_CAPRICE
+  skill_id: 8013
+- class_id: 6008
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8013
+  skill: HVAN_CHAOTIC
+  skill_id: 8014
+- class_id: 6008
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8013
+  skill: HVAN_INSTRUCT
+  skill_id: 8015
+- class_id: 6008
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HVAN_EXPLOSION
+  skill_id: 8016
+- class_id: 6009
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HLIF_HEAL
+  skill_id: 8001
+- class_id: 6009
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8001
+  skill: HLIF_AVOID
+  skill_id: 8002
+- class_id: 6009
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8001
+  skill: HLIF_BRAIN
+  skill_id: 8003
+- class_id: 6009
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HLIF_CHANGE
+  skill_id: 8004
+- class_id: 6010
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HAMI_CASTLE
+  skill_id: 8005
+- class_id: 6010
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8005
+  skill: HAMI_DEFENCE
+  skill_id: 8006
+- class_id: 6010
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8006
+  skill: HAMI_SKIN
+  skill_id: 8007
+- class_id: 6010
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HAMI_BLOODLUST
+  skill_id: 8008
+- class_id: 6011
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HFLI_MOON
+  skill_id: 8009
+- class_id: 6011
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8009
+  skill: HFLI_FLEET
+  skill_id: 8010
+- class_id: 6011
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8010
+  skill: HFLI_SPEED
+  skill_id: 8011
+- class_id: 6011
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HFLI_SBR44
+  skill_id: 8012
+- class_id: 6012
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HVAN_CAPRICE
+  skill_id: 8013
+- class_id: 6012
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8013
+  skill: HVAN_CHAOTIC
+  skill_id: 8014
+- class_id: 6012
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8013
+  skill: HVAN_INSTRUCT
+  skill_id: 8015
+- class_id: 6012
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HVAN_EXPLOSION
+  skill_id: 8016
+- class_id: 6013
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HLIF_HEAL
+  skill_id: 8001
+- class_id: 6013
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8001
+  skill: HLIF_AVOID
+  skill_id: 8002
+- class_id: 6013
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8001
+  skill: HLIF_BRAIN
+  skill_id: 8003
+- class_id: 6013
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HLIF_CHANGE
+  skill_id: 8004
+- class_id: 6014
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HAMI_CASTLE
+  skill_id: 8005
+- class_id: 6014
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8005
+  skill: HAMI_DEFENCE
+  skill_id: 8006
+- class_id: 6014
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8006
+  skill: HAMI_SKIN
+  skill_id: 8007
+- class_id: 6014
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HAMI_BLOODLUST
+  skill_id: 8008
+- class_id: 6015
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HFLI_MOON
+  skill_id: 8009
+- class_id: 6015
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8009
+  skill: HFLI_FLEET
+  skill_id: 8010
+- class_id: 6015
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8010
+  skill: HFLI_SPEED
+  skill_id: 8011
+- class_id: 6015
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HFLI_SBR44
+  skill_id: 8012
+- class_id: 6016
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires: []
+  skill: HVAN_CAPRICE
+  skill_id: 8013
+- class_id: 6016
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 3
+      skill_id: 8013
+  skill: HVAN_CHAOTIC
+  skill_id: 8014
+- class_id: 6016
+  form: any
+  max_level: 5
+  required_intimacy: 0
+  required_level: 0
+  requires:
+    - level: 5
+      skill_id: 8013
+  skill: HVAN_INSTRUCT
+  skill_id: 8015
+- class_id: 6016
+  form: evolved
+  max_level: 3
+  required_intimacy: 91000
+  required_level: 0
+  requires: []
+  skill: HVAN_EXPLOSION
+  skill_id: 8016

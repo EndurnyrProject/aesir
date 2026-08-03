@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs, as: HomunculusCatalogs
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = MobSkillDb.reload()
     :ok = LevelPenalty.reload()
     :ok = RefineDatabase.reload()
+    :ok = HomunculusCatalogs.reload()
     :ok = ShopVerifier.verify!(Shops.all())
     # Runs before any coordinator starts, as a single grouped query. It records
     # deadlines only: spawning or arming anything here would be duplicated by
