@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePower do
     id: :sc_maximizepower,
     no_dispel: false,
     properties: [:buff],
+    target_types: [:player],
     permanent: true,
     calc_flags: [:atk],
     icon: :maximize

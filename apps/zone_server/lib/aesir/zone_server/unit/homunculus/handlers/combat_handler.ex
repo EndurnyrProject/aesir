@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
           | {:apply_heal, pos_integer(), non_neg_integer(), tuple() | nil}
           | {:drain_sp, pos_integer(), non_neg_integer()}
           | {:basic_attack, pos_integer(), tuple()}
+          | {:status_changed, pos_integer(), atom(), :applied | :tick | :expired}
 
   @doc "Applies one typed combat event through the owning aggregate."
   @spec handle(event(), SessionState.t()) ::
@@ -79,6 +80,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   end
 
   def handle({:drain_sp, _gid, _amount}, session), do: {:noreply, session}
+
+  def handle({:status_changed, gid, _status_id, _event}, session) do
+    case active_homunculus(session, gid) do
+      {:ok, homunculus} -> {:noreply, StateCommit.commit(session, homunculus)}
+      {:error, :stale_target} -> {:noreply, session}
+    end
+  end
 
   def handle({:basic_attack, gid, target_ref}, session) do
     case active_homunculus(session, gid) do

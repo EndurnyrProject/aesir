@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicCandy do
     id: :sc_magiccandy,
     no_dispel: true,
     properties: [:buff],
+    target_types: [:player],
     calc_flags: [:matk],
     icon: :magic_candy,
     tick_interval: 10_000

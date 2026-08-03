@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     id: :sc_sightblaster,
     no_dispel: true,
     properties: [:buff],
+    target_types: [:player],
     duration: 900_000,
     tick_interval: 20,
     no_save: true,

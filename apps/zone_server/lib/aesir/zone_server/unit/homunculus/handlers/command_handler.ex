@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
@@ -94,6 +95,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def cast({:basic_attack, _gid, _target_ref} = combat_event, session),
     do: CombatHandler.handle(combat_event, session)
 
+  def cast({:status_changed, _gid, _status_id, _event} = status_event, session),
+    do: CombatHandler.handle(status_event, session)
+
   def cast(command, %SessionState{} = session) do
     Logger.warning("Unsupported Homunculus cast: #{inspect(command)}")
     {:noreply, session}
@@ -126,9 +130,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   end
 
   @doc "Detaches active presence before the owner leaves the old warp map."
-  @spec detach_for_warp(map()) :: map()
-  def detach_for_warp(%SessionState{} = session), do: StateCommit.detach(session)
-  def detach_for_warp(session) when is_map(session), do: session
+  @spec detach_for_warp(map(), boolean()) :: map()
+  def detach_for_warp(%SessionState{} = session, false) do
+    case session.homunculus do
+      %HomunculusState{world_gid: gid} when is_integer(gid) ->
+        StatusInterpreter.remove_on_map_change(:homunculus, gid)
+
+      _other ->
+        :ok
+    end
+
+    StateCommit.detach(session)
+  end
+
+  def detach_for_warp(%SessionState{} = session, true), do: StateCommit.detach(session)
+
+  def detach_for_warp(session, same_map?) when is_map(session) and is_boolean(same_map?),
+    do: session
 
   @doc """
   Re-enters active presence adjacent to the owner without changing clocks or GID.

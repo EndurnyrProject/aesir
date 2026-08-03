@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod do
     no_dispel: false,
     no_save: true,
     properties: [:buff],
+    target_types: [:player],
     icon: :magicrod
 
   import Bitwise, only: [|||: 2]

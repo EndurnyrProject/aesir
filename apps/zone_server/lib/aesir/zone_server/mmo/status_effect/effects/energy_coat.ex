@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat do
     id: :sc_energycoat,
     no_dispel: false,
     properties: [:buff],
+    target_types: [:player],
     duration: 300_000,
     icon: :energycoat,
     opt3: :energycoat

@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
          {:ok, {fx, fy}} <- ensure_walkable(dest_map, x, y) do
       state = state |> SkillTextInputHandler.clear() |> SkillHandler.cancel_deferred()
       game_state = state.game_state
-      state = HomunculusCommandHandler.detach_for_warp(state)
+      state = HomunculusCommandHandler.detach_for_warp(state, same_map?)
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
       Broadcast.subscribe_mob_despawns(dest_map)

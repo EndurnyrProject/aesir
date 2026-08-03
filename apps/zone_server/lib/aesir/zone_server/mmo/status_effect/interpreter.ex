@@ -84,7 +84,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp apply_known_status(unit_type, unit_id, status_id, status_params, definition) do
-    with :ok <- ensure_living_target(unit_type, unit_id) do
+    with :ok <- ensure_eligible_target(unit_type, definition),
+         :ok <- ensure_living_target(unit_type, unit_id) do
       if Keyword.get(status_params, :loaded, false) do
         apply_loaded_status(unit_type, unit_id, status_id, status_params, definition)
       else
@@ -942,7 +943,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       :ok ->
         if StatusStorage.get_status(unit_type, unit_id, status_id) === stored_instance do
           StatusDisplay.on_applied(unit_type, unit_id, status_id, stored_instance)
-          notify_mob_status_applied(unit_type, unit_id, status_id)
+          notify_unit_status_applied(unit_type, unit_id, status_id)
 
           maybe_refresh_owner(unit_type, unit_id, true,
             owner_refresh: Keyword.get(status_params, :owner_refresh, :defer)
@@ -1008,7 +1009,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     module.on_expire({unit_type, unit_id}, instance, context)
   end
 
-  defp notify_mob_status_applied(:mob, unit_id, status_id) do
+  defp notify_unit_status_applied(:mob, unit_id, status_id) do
     case UnitRegistry.get_unit(:mob, unit_id) do
       {:ok, {_module, _state, pid}} when is_pid(pid) ->
         GenServer.cast(pid, {:casting, {:status_changed, status_id, :apply}})
@@ -1018,7 +1019,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp notify_mob_status_applied(_unit_type, _unit_id, _status_id), do: :ok
+  defp notify_unit_status_applied(:homunculus, unit_id, status_id) do
+    case UnitRegistry.get_unit(:homunculus, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) and pid != self() ->
+        GenServer.cast(pid, {:homunculus, {:status_changed, unit_id, status_id, :applied}})
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp notify_unit_status_applied(_unit_type, _unit_id, _status_id), do: :ok
 
   defp resolve_tick(tick, _definition) when tick > 0, do: tick
   defp resolve_tick(_tick, %{tick_interval: interval}) when is_integer(interval), do: interval
@@ -1242,7 +1253,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
-  defp ensure_living_target(unit_type, unit_id) when unit_type in [:player, :mob] do
+  defp ensure_eligible_target(:homunculus, %{require_weapon: [_ | _]}),
+    do: {:error, :ineligible_target}
+
+  defp ensure_eligible_target(unit_type, %{target_types: target_types}) do
+    if unit_type in target_types, do: :ok, else: {:error, :ineligible_target}
+  end
+
+  defp ensure_living_target(unit_type, unit_id)
+       when unit_type in [:player, :mob, :homunculus] do
     case UnitRegistry.get_unit(unit_type, unit_id) do
       {:ok, {_module, target_state, _pid}} ->
         if Unit.living?(target_state), do: :ok, else: {:error, :target_dead}

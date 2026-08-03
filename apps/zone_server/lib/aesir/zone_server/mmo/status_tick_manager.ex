@@ -176,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
       {_unit_type, status_types} ->
         Enum.each(status_types, fn status_type ->
-          notify_mob_session(unit_type, unit_id, status_type, :expired)
+          notify_unit_session(unit_type, unit_id, status_type, :expired)
         end)
     end
   end
@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
       # Update the next tick time efficiently
       StatusStorage.update_next_tick(unit_type, unit_id, status_type, now_ms + tick_interval)
 
-      notify_mob_session(unit_type, unit_id, status_type, :tick)
+      notify_unit_session(unit_type, unit_id, status_type, :tick)
     end)
 
     # Notify the unit to recalculate stats after processing all statuses
@@ -259,7 +259,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   # broadcast by the interpreter, so this is a per-status cast the MobSession
   # hooks into for generic status-based cast interruption. A mob no
   # longer in the registry simply has no session to notify.
-  defp notify_mob_session(:mob, instance_id, status_id, event) do
+  defp notify_unit_session(:mob, instance_id, status_id, event) do
     case UnitRegistry.get_unit(:mob, instance_id) do
       {:ok, {_module, _state, pid}} when is_pid(pid) ->
         MobSession.notify_status_changed(pid, status_id, event)
@@ -269,5 +269,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     end
   end
 
-  defp notify_mob_session(_unit_type, _unit_id, _status_id, _event), do: :ok
+  defp notify_unit_session(:homunculus, world_gid, status_id, event) do
+    case UnitRegistry.get_unit(:homunculus, world_gid) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        GenServer.cast(pid, {:homunculus, {:status_changed, world_gid, status_id, event}})
+
+      _ ->
+        :ok
+    end
+  end
+
+  defp notify_unit_session(_unit_type, _unit_id, _status_id, _event), do: :ok
 end

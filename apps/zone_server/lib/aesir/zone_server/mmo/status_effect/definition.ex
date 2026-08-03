@@ -62,6 +62,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       target even from an external caster; use it for a status a boss must be able
       to receive by design (e.g. Root locking a boss attacker), where the usual
       "boss rejects externally-sourced statuses" gate would otherwise block it
+    - `:target_types` - unit types eligible to hold the status. Defaults to
+      players, mobs, and Homunculi; narrow it only when the callback depends on
+      player-only state such as equipment or player SP delivery.
     - `:require_weapon` - list of weapon type atoms (mirrors rAthena's
       `SCF_REQUIREWEAPON`); when non-empty, the status ends the moment its
       holder wields a weapon outside the list. Enforced by
@@ -225,6 +228,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @callback dynamic_option(StatusEntry.t()) :: atom() | nil
 
+  @known_target_types [:player, :mob, :homunculus]
+
   @known_properties [
     :buff,
     :debuff,
@@ -250,7 +255,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     blocked_skills: [],
     immunity: [],
     cleanse: [],
-    require_weapon: []
+    require_weapon: [],
+    target_types: [:player, :mob, :homunculus]
   }
 
   @scalar_defaults %{
@@ -286,6 +292,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     immunity: {:list, :atom},
     cleanse: {:list, :atom},
     require_weapon: {:list, :atom},
+    target_types: {:list, {:enum, @known_target_types}},
     resistance_type: {:enum, [:physical, :magical]},
     duration_adjustment: :integer,
     bypass_resistance: :boolean,

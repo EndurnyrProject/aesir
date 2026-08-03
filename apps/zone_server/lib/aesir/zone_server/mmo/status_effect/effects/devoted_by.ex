@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DevotedBy do
     remove_on_map_change: true,
     permanent: true,
     properties: [:buff],
+    target_types: [:player],
     tick_interval: 1_000
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.DevotionMirror

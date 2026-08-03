@@ -41,10 +41,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
 
   @doc """
   Deals damage to the target through the combat system.
+
+  Aggregate-local delivery is not supported through this fire-and-forget seam.
   """
   @spec deal_damage(Definition.target(), number(), atom()) :: :ok | {:error, term()}
-  def deal_damage({_unit_type, unit_id}, amount, element \\ :neutral) do
-    Combat.deal_damage(unit_id, trunc(amount), element, :status_effect)
+  def deal_damage(target, amount, element \\ :neutral) do
+    Combat.deal_damage(target, trunc(amount), element, :status_effect)
   end
 
   @doc """

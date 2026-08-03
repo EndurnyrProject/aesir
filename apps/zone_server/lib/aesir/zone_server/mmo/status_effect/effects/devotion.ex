@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion do
     no_save: true,
     remove_on_map_change: true,
     properties: [:buff],
+    target_types: [:player],
     tick_interval: 1_000,
     icon: :devotion
 
