@@ -23,6 +23,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   @separation_delay 3_000
   @adjacent_offsets [{0, -1}, {-1, 0}, {1, 0}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}]
 
+  @doc "Validates an explicit destination through the production pathfinder."
+  @spec validate_destination(SessionState.t(), {integer(), integer()}) :: :ok | {:error, atom()}
+  def validate_destination(%SessionState{} = session, destination) do
+    case path(session, destination) do
+      {:ok, _cells} -> :ok
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @doc "Starts an explicit path to one traversable cell on the current map."
   @spec move_to(SessionState.t(), {integer(), integer()}) :: SessionState.t()
   def move_to(%SessionState{} = session, destination) do
@@ -37,17 +46,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   @doc "Leaves standby and paths to a deterministic traversable cell beside the owner."
   @spec follow(SessionState.t()) :: SessionState.t()
   def follow(%SessionState{} = session) do
-    session = CastingHandler.cancel(session)
+    case follow_result(session) do
+      {:ok, updated} -> updated
+      {:error, _reason, unchanged} -> stop(unchanged, true)
+    end
+  end
 
-    case owner_adjacent_cell(session) do
-      nil ->
-        stop(session, true)
-
-      destination ->
-        case path(session, destination) do
-          {:ok, cells} -> start_path(session, cells, nil, false)
-          {:error, _reason} -> stop(session, true)
-        end
+  @doc "Returns the observable outcome of following through the production pathfinder."
+  @spec follow_result(SessionState.t()) ::
+          {:ok, SessionState.t()} | {:error, atom(), SessionState.t()}
+  def follow_result(%SessionState{} = session) do
+    with destination when not is_nil(destination) <- owner_adjacent_cell(session),
+         {:ok, cells} <- path(session, destination) do
+      {:ok, session |> CastingHandler.cancel() |> start_path(cells, nil, false)}
+    else
+      nil -> {:error, :invalid_goal, session}
+      {:error, reason} -> {:error, reason, session}
     end
   end
 

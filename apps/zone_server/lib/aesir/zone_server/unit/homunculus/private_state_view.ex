@@ -89,6 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PrivateStateView do
   defp activity(%HomunculusState{lifecycle: :dead}),
     do: :HOMUNCULUS_ACTIVITY_UNSPECIFIED
 
+  defp activity(%HomunculusState{standby?: true}), do: :HOMUNCULUS_ACTIVITY_STANDBY
   defp activity(%HomunculusState{action_state: :moving}), do: :HOMUNCULUS_ACTIVITY_MOVING
   defp activity(%HomunculusState{action_state: :attacking}), do: :HOMUNCULUS_ACTIVITY_ATTACKING
   defp activity(%HomunculusState{action_state: :casting}), do: :HOMUNCULUS_ACTIVITY_CASTING

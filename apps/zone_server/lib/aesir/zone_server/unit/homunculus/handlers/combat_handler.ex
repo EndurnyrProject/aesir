@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
@@ -123,34 +124,64 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   end
 
   def handle({:basic_attack, gid, target_ref}, session) do
+    case basic_attack(session, gid, target_ref) do
+      {:ok, updated} -> {:noreply, updated}
+      {:error, _reason, unchanged} -> {:noreply, unchanged}
+      {:stop, _reason, _state} = stop -> stop
+    end
+  end
+
+  @doc "Executes one validated basic attack and exposes its production failure reason."
+  @spec basic_attack(SessionState.t(), pos_integer(), tuple()) ::
+          {:ok, SessionState.t()}
+          | {:error, atom(), SessionState.t()}
+          | {:stop, term(), SessionState.t()}
+  def basic_attack(%SessionState{} = session, gid, target_ref) do
     now_ms = System.monotonic_time(:millisecond)
 
     with {:ok, homunculus} <- active_homunculus(session, gid),
-         true <- basic_attack_ready?(session.homunculus_runtime, homunculus, now_ms) do
+         true <- basic_attack_ready?(session.homunculus_runtime, homunculus, now_ms),
+         true <- StatusInterpreter.can_attack?(:homunculus, gid),
+         result <- AutoAttack.execute_homunculus_attack(homunculus, target_ref),
+         :ok <- attack_result(result) do
       runtime = %{session.homunculus_runtime | last_basic_attack_at_ms: now_ms}
       session = %{session | homunculus_runtime: runtime}
-
-      session =
-        if homunculus.action_state == :casting,
-          do: CastingHandler.cancel(session),
-          else: session
-
-      attacking = %{session.homunculus | action_state: :attacking, target: target_ref}
+      attacking = %{homunculus | action_state: :attacking, target: target_ref}
       session = StateCommit.commit(session, attacking)
 
-      case AutoAttack.execute_homunculus_attack(attacking, target_ref) do
-        {:local_effects, effects} ->
-          effects
-          |> apply_local_effects(session)
-          |> finish_attack(gid)
-
-        _result ->
-          finish_attack({:noreply, session}, gid)
-      end
+      finish_basic_attack(result, session, gid)
     else
-      _not_ready_or_stale -> {:noreply, session}
+      false ->
+        reason =
+          if basic_attack_ready?(session.homunculus_runtime, session.homunculus, now_ms),
+            do: :status_blocked,
+            else: :attack_rate_limited
+
+        {:error, reason, session}
+
+      {:error, reason} ->
+        {:error, normalize_attack_error(reason, target_ref), session}
     end
   end
+
+  defp finish_basic_attack({:local_effects, effects}, session, gid) do
+    case effects |> apply_local_effects(session) |> finish_attack(gid) do
+      {:noreply, updated} -> {:ok, updated}
+      {:stop, _reason, _state} = stop -> stop
+    end
+  end
+
+  defp finish_basic_attack(_delivered, session, gid) do
+    {:noreply, updated} = finish_attack({:noreply, session}, gid)
+    {:ok, updated}
+  end
+
+  defp normalize_attack_error(:not_found, {:mob, _id}), do: :mob_unavailable
+  defp normalize_attack_error(:target_no_pid, {:mob, _id}), do: :mob_unavailable
+  defp normalize_attack_error(reason, _target_ref), do: reason
+
+  defp attack_result({:error, reason}), do: {:error, reason}
+  defp attack_result(_result), do: :ok
 
   @doc false
   @spec basic_attack_ready?(map(), HomunculusState.t(), integer()) :: boolean()

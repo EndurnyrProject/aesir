@@ -508,29 +508,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp resolve_deferred(
          state,
          game_state,
-         %Interpreter.Deferred{effect: {:homunculus_lifecycle, operation}} = descriptor,
+         %Interpreter.Deferred{effect: {:homunculus_lifecycle, _operation}} = descriptor,
          locked,
          expected_id
        ) do
-    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
-         {:ok, settled, homunculus, runtime, item_change, activation_gid} <-
-           LifecycleSkillHandler.settle(state, charged, operation, expected_id) do
-      {state, sphere_cost_plan} = prepare_cast_commit(state, settled)
-      state = %{state | homunculus_runtime: runtime}
-      state = commit_homunculus_transition(state, operation, homunculus, activation_gid)
+    case settle_lifecycle_deferred(state, game_state, descriptor, expected_id) do
+      {:ok, settled, item_change} ->
+        notify_lifecycle_item(settled.connection_pid, item_change)
+        settled = send_homunculus_private_state(settled)
 
-      state =
-        publish_cast_commit(state, descriptor.skill_id, descriptor.level, true, sphere_cost_plan)
+        broadcast_skill_use(
+          settled.game_state,
+          descriptor.skill_id,
+          descriptor.level,
+          descriptor.target
+        )
 
-      notify_lifecycle_item(state.connection_pid, item_change)
-      state = send_homunculus_private_state(state)
-      broadcast_skill_use(settled, descriptor.skill_id, descriptor.level, descriptor.target)
-      maybe_resume_lock(state, locked)
-    else
-      {:error, reason} ->
+        maybe_resume_lock(settled, locked)
+
+      {:error, reason, unchanged} ->
         Logger.error("Homunculus lifecycle skill settlement failed: #{inspect(reason)}")
         report_cast_failure(descriptor.skill_id, game_state.character_id, reason)
-        maybe_resume_lock(%{state | game_state: game_state}, locked)
+        maybe_resume_lock(unchanged, locked)
     end
   end
 
@@ -600,6 +599,80 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp resolve_deferred(state, game_state, _descriptor, locked, _expected_id) do
     maybe_resume_lock(%{state | game_state: game_state}, locked)
+  end
+
+  @doc "Executes and settles an instant owner lifecycle skill inside the current session."
+  @spec execute_lifecycle_skill(SessionState.t(), integer(), pos_integer()) ::
+          {:ok, SessionState.t()} | {:error, term(), SessionState.t()}
+  def execute_lifecycle_skill(%SessionState{} = state, skill_id, level) do
+    expected_id = homunculus_id(state)
+    locked = state.game_state.combat_target_id
+
+    with :ok <- ensure_no_deferred_skill(state),
+         {:ok, gated_state} <- cast_gate(state, skill_id),
+         {:ok, ready_state} <- ensure_idle_for_cast(gated_state, notify?: false),
+         ready_state =
+           maybe_cancel_combo(
+             ready_state,
+             skill_id,
+             ready_state.game_state.character_id
+           ),
+         :ok <- LifecycleSkillHandler.preflight(ready_state, skill_id, level, expected_id),
+         {:deferred, game_state, %Interpreter.Deferred{} = descriptor} <-
+           Interpreter.cast(ready_state.game_state, skill_id, level, :self),
+         {:ok, settled, item_change} <-
+           settle_lifecycle_deferred(ready_state, game_state, descriptor, expected_id) do
+      cancel_staged_action_timer(state)
+      MovementHandler.publish_force_stop_movement(state)
+      notify_lifecycle_item(settled.connection_pid, item_change)
+
+      broadcast_skill_use(
+        settled.game_state,
+        descriptor.skill_id,
+        descriptor.level,
+        descriptor.target
+      )
+
+      {:ok, maybe_resume_lock(settled, locked)}
+    else
+      :busy -> {:error, :busy, state}
+      {:error, reason, _unchanged} -> {:error, reason, state}
+      {:error, reason} -> {:error, reason, state}
+      _unexpected -> {:error, :invalid_lifecycle_skill, state}
+    end
+  end
+
+  defp ensure_no_deferred_skill(%{deferred_skill_result: nil}), do: :ok
+  defp ensure_no_deferred_skill(_state), do: {:error, :busy}
+
+  defp cancel_staged_action_timer(%{game_state: %{continuous_attack_timer: timer_ref}})
+       when is_reference(timer_ref) do
+    Process.cancel_timer(timer_ref)
+    :ok
+  end
+
+  defp cancel_staged_action_timer(_state), do: :ok
+
+  defp settle_lifecycle_deferred(
+         state,
+         game_state,
+         %Interpreter.Deferred{effect: {:homunculus_lifecycle, operation}} = descriptor,
+         expected_id
+       ) do
+    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
+         {:ok, settled, homunculus, runtime, item_change, activation_gid} <-
+           LifecycleSkillHandler.settle(state, charged, operation, expected_id) do
+      {state, sphere_cost_plan} = prepare_cast_commit(state, settled)
+      state = %{state | homunculus_runtime: runtime}
+      state = commit_homunculus_transition(state, operation, homunculus, activation_gid)
+
+      committed =
+        publish_cast_commit(state, descriptor.skill_id, descriptor.level, true, sphere_cost_plan)
+
+      {:ok, committed, item_change}
+    else
+      {:error, reason} -> {:error, reason, %{state | game_state: game_state}}
+    end
   end
 
   defp settle_potion_inventory(
@@ -900,32 +973,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Once the read-only gate and cast validation permit dispatch, prepare the
   # ordinary cast action. A moving player is stopped first; any other busy state
   # aborts. An in-flight descriptor rejects regardless of action_state.
-  defp ensure_idle_for_cast(%{game_state: %{casting: casting}}) when not is_nil(casting),
-    do: :busy
+  defp ensure_idle_for_cast(state, opts \\ [])
 
-  defp ensure_idle_for_cast(%{game_state: %{action_state: :idle}} = state), do: {:ok, state}
+  defp ensure_idle_for_cast(%{game_state: %{casting: casting}}, _opts)
+       when not is_nil(casting),
+       do: :busy
 
-  defp ensure_idle_for_cast(%{game_state: %{action_state: moving}} = state)
+  defp ensure_idle_for_cast(%{game_state: %{action_state: :idle}} = state, _opts),
+    do: {:ok, state}
+
+  defp ensure_idle_for_cast(%{game_state: %{action_state: moving}} = state, opts)
        when moving in [:moving, :combat_moving, :skill_moving, :moving_to_item] do
-    {:noreply, stopped_state} = MovementHandler.handle_force_stop_movement(state)
-
-    case PlayerState.transition_to(stopped_state.game_state, :idle) do
-      {:ok, idle_game_state} -> {:ok, %{stopped_state | game_state: idle_game_state}}
-      {:error, _reason} -> :busy
-    end
+    stopped_state = stop_movement_for_cast(state, Keyword.get(opts, :notify?, true))
+    transition_to_cast_idle(stopped_state, opts)
   end
 
   # A player mid-swing in the auto-attack loop sits in :attacking between swings.
   # Casting from there is legal: drop through :idle (a valid transition that
   # cancels the pending swing) so the cast starts, then resume the loop after.
-  defp ensure_idle_for_cast(%{game_state: %{action_state: :attacking}} = state) do
-    case PlayerState.transition_to(state.game_state, :idle) do
+  defp ensure_idle_for_cast(%{game_state: %{action_state: :attacking}} = state, opts),
+    do: transition_to_cast_idle(state, opts)
+
+  defp ensure_idle_for_cast(_state, _opts), do: :busy
+
+  defp stop_movement_for_cast(state, true) do
+    {:noreply, stopped_state} = MovementHandler.handle_force_stop_movement(state)
+    stopped_state
+  end
+
+  defp stop_movement_for_cast(%{game_state: game_state} = state, false),
+    do: %{state | game_state: PlayerState.stop_walking(game_state)}
+
+  defp transition_to_cast_idle(%{game_state: game_state} = state, opts) do
+    game_state =
+      if Keyword.get(opts, :notify?, true),
+        do: game_state,
+        else: %{game_state | continuous_attack_timer: nil}
+
+    case PlayerState.transition_to(game_state, :idle) do
       {:ok, idle_game_state} -> {:ok, %{state | game_state: idle_game_state}}
       {:error, _reason} -> :busy
     end
   end
-
-  defp ensure_idle_for_cast(_state), do: :busy
 
   defp schedule_cast(%{game_state: game_state} = state, info, locked) do
     now = System.monotonic_time(:millisecond)

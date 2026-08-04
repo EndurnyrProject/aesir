@@ -107,6 +107,7 @@ defmodule Aesir.Commons.Models.Homunculus do
       :ai_config
     ])
     |> validate_required([:character_id, :class_id, :name])
+    |> validate_length(:name, min: 1, max: 23)
     |> validate_inclusion(:lifecycle, @lifecycles)
     |> validate_number(:level, greater_than_or_equal_to: 1, less_than_or_equal_to: 99)
     |> validate_number(:hunger, greater_than_or_equal_to: 0, less_than_or_equal_to: 100)

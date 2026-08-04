@@ -6,9 +6,28 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   require Logger
 
   alias Aesir.Commons.Models.Homunculus
+  alias Aesir.Net.HomunculusAiConfig
+  alias Aesir.Net.HomunculusAiSkillConfig
+  alias Aesir.Net.HomunculusAttackCommand
+  alias Aesir.Net.HomunculusCastSkillCommand
+  alias Aesir.Net.HomunculusDeleteCommand
+  alias Aesir.Net.HomunculusFeedCommand
+  alias Aesir.Net.HomunculusFollowCommand
+  alias Aesir.Net.HomunculusInspectCommand
+  alias Aesir.Net.HomunculusLearnSkillCommand
+  alias Aesir.Net.HomunculusMoveCommand
+  alias Aesir.Net.HomunculusRenameCommand
+  alias Aesir.Net.HomunculusReplaceAiCommand
+  alias Aesir.Net.HomunculusRequest
+  alias Aesir.Net.HomunculusRestCommand
+  alias Aesir.Net.HomunculusResult
+  alias Aesir.Net.HomunculusStandbyCommand
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config, as: AiConfig
+  alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
@@ -24,17 +43,21 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
+  alias Aesir.ZoneServer.Unit.Homunculus.SpawnView
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Homunculus.StateRestore
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler, as: PlayerMovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  @rest_skill_id 244
   @checkpoint_interval 5_000
   @persistence_retry_delay 100
   @castling_redirect_limit 8
@@ -248,13 +271,536 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     end)
   end
 
-  @doc "Stable future command call route; Task 24 supplies concrete commands."
-  @spec call(term(), GenServer.from(), SessionState.t()) ::
-          {:reply, {:error, :unsupported}, SessionState.t()}
-  def call(command, _from, %SessionState{} = session) do
-    Logger.warning("Unsupported Homunculus call: #{inspect(command)}")
-    {:reply, {:error, :unsupported}, session}
+  @doc "Executes one channel-vetted owner request inline in the player aggregate."
+  @spec request(HomunculusRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def request(%HomunculusRequest{} = request, %SessionState{} = session) do
+    {outcome, updated} =
+      with :ok <- validate_request(request),
+           {:ok, command} <- decode_command(request.command),
+           :ok <- require_companion(session) do
+        case execute(command, session) do
+          {:ok, next} -> {{:ok, nil}, next}
+          {:error, reason, unchanged} -> {{:error, reason}, unchanged}
+          {:stop, reason, stopped} -> {{:stop, reason}, stopped}
+        end
+      else
+        {:error, reason} -> {{:error, reason}, session}
+      end
+
+    result = build_result(request.request_id, outcome, updated)
+    MessageRouter.send_to(session.connection_pid, result)
+    updated = clear_result_dirty(updated)
+
+    case outcome do
+      {:stop, reason} -> {:stop, reason, updated}
+      _other -> {:noreply, updated}
+    end
   end
+
+  @doc "Keeps the synchronous namespaced aggregate seam compatible for server callers."
+  @spec call(term(), GenServer.from(), SessionState.t()) ::
+          {:reply, :ok | {:error, atom()}, SessionState.t()}
+          | {:stop, term(), {:error, atom()}, SessionState.t()}
+  def call(command, _from, %SessionState{} = session) do
+    case execute(command, session) do
+      {:ok, updated} -> {:reply, :ok, updated}
+      {:error, reason, unchanged} -> {:reply, {:error, reason}, unchanged}
+      {:stop, reason, stopped} -> {:stop, reason, {:error, reason}, stopped}
+    end
+  end
+
+  defp validate_request(%HomunculusRequest{request_id: id}) when is_integer(id) and id > 0,
+    do: :ok
+
+  defp validate_request(%HomunculusRequest{}), do: {:error, :malformed}
+
+  defp decode_command({:inspect, %HomunculusInspectCommand{}}), do: {:ok, :inspect}
+
+  defp decode_command({:move, %HomunculusMoveCommand{x: x, y: y}})
+       when is_integer(x) and is_integer(y),
+       do: {:ok, {:move, x, y}}
+
+  defp decode_command({:follow, %HomunculusFollowCommand{}}), do: {:ok, :follow}
+
+  defp decode_command({:attack, %HomunculusAttackCommand{target_id: id}}) when id > 0,
+    do: {:ok, {:attack, id}}
+
+  defp decode_command({:standby, %HomunculusStandbyCommand{}}), do: {:ok, :standby}
+
+  defp decode_command(
+         {:cast_skill, %HomunculusCastSkillCommand{skill_id: id, level: level, target: target}}
+       )
+       when id > 0 and level > 0 and not is_nil(target),
+       do: {:ok, {:cast_skill, id, level, target}}
+
+  defp decode_command({:feed, %HomunculusFeedCommand{}}), do: {:ok, :feed}
+  defp decode_command({:rename, %HomunculusRenameCommand{name: name}}), do: {:ok, {:rename, name}}
+  defp decode_command({:rest, %HomunculusRestCommand{}}), do: {:ok, :rest}
+
+  defp decode_command({:delete, %HomunculusDeleteCommand{confirmed: confirmed}})
+       when is_boolean(confirmed),
+       do: {:ok, {:delete, confirmed}}
+
+  defp decode_command(
+         {:replace_ai, %HomunculusReplaceAiCommand{config: %HomunculusAiConfig{} = config}}
+       ),
+       do: {:ok, {:replace_ai, config}}
+
+  defp decode_command({:learn_skill, %HomunculusLearnSkillCommand{skill_id: id}}) when id > 0,
+    do: {:ok, {:learn_skill, id}}
+
+  defp decode_command(_command), do: {:error, :malformed}
+
+  defp require_companion(%SessionState{} = session) do
+    if match?(%HomunculusState{}, session.homunculus),
+      do: :ok,
+      else: {:error, :no_companion}
+  end
+
+  defp execute(:inspect, session), do: {:ok, session}
+
+  defp execute({:move, x, y}, session) do
+    with :ok <- require_actionable(session),
+         :ok <- MovementHandler.validate_destination(session, {x, y}) do
+      {:ok, MovementHandler.move_to(session, {x, y})}
+    else
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute(:follow, session) do
+    with :ok <- require_actionable(session),
+         {:ok, updated} <- MovementHandler.follow_result(session) do
+      {:ok, updated}
+    else
+      {:error, reason, unchanged} -> {:error, reason, unchanged}
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute({:attack, target_id}, session) do
+    with :ok <- require_actionable(session),
+         {:ok, target_ref} <- command_target_ref(session, target_id) do
+      CombatHandler.basic_attack(session, session.homunculus.world_gid, target_ref)
+    else
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute(:standby, session) do
+    case require_actionable(session) do
+      :ok -> {:ok, MovementHandler.standby(session)}
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute({:cast_skill, skill_id, level, wire_target}, session) do
+    with :ok <- require_living(session),
+         :ok <- SkillInterpreter.preflight_homunculus_skill(session.homunculus, skill_id, level),
+         {:ok, target} <- cast_target(session, wire_target) do
+      case CastingHandler.begin(session, skill_id, level, target) do
+        {:ok, updated} -> {:ok, updated}
+        {:error, reason, unchanged} -> {:error, reason, unchanged}
+        {:stop, reason, stopped} -> {:stop, reason, stopped}
+      end
+    else
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute(:feed, session) do
+    inventory = session.game_state.inventory
+
+    with :ok <- require_living(session),
+         {:ok, index} <- HungerHandler.food_index(session.homunculus.class_id, inventory) do
+      finish_feed(session, inventory, index)
+    else
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute({:rename, raw_name}, session) do
+    with :ok <- require_rename_available(session.homunculus),
+         {:ok, name} <- normalize_name(raw_name),
+         updated = %{session.homunculus | name: name, rename_available: false},
+         :ok <- persist_fields(session.homunculus, %{name: name, rename_available: false}) do
+      committed = StateCommit.commit(session, updated)
+      refresh_renamed_observers(updated)
+      {:ok, committed}
+    else
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute(:rest, session) do
+    if Unit.living?(session.game_state) do
+      SkillHandler.execute_lifecycle_skill(session, @rest_skill_id, 1)
+    else
+      {:error, :owner_dead, session}
+    end
+  end
+
+  defp execute({:delete, confirmed}, session) do
+    case LifecycleHandler.delete(
+           session.homunculus,
+           session.homunculus_runtime,
+           confirmed,
+           timer_cancel: &ignore_timer_cancel/1
+         ) do
+      {:ok, nil, _runtime} -> finish_delete(session)
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute({:replace_ai, wire_config}, session) do
+    with {:ok, specs} <- StateRestore.ai_skill_specs(session.homunculus.learned_skills),
+         {:ok, config} <- AiConfig.decode(ai_persisted_map(wire_config), specs) do
+      case persist_fields(session.homunculus, %{ai_config: AiConfig.encode(config)}) do
+        :ok -> {:ok, StateCommit.commit(session, %{session.homunculus | ai_config: config})}
+        {:error, reason} -> {:error, reason, session}
+      end
+    else
+      {:error, _reason} -> {:error, :invalid_ai_config, session}
+    end
+  end
+
+  defp execute({:learn_skill, skill_id}, session) when is_integer(skill_id) and skill_id > 0 do
+    case ProgressionHandler.learn_skill(session.homunculus, skill_id) do
+      {:ok, homunculus} -> {:ok, StateCommit.commit(session, homunculus)}
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
+
+  defp execute(_command, session), do: {:error, :malformed, session}
+
+  defp require_living(%SessionState{} = session) do
+    if match?(%HomunculusState{}, session.homunculus) and
+         HomunculusState.living?(session.homunculus),
+       do: :ok,
+       else: {:error, :invalid_lifecycle}
+  end
+
+  defp require_actionable(%SessionState{} = session) do
+    with :ok <- require_living(session),
+         %HomunculusState{action_state: action, movement_state: movement} <- session.homunculus,
+         true <- action != :casting and movement == :standing do
+      :ok
+    else
+      false -> {:error, :busy}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp command_target_ref(session, target_id) do
+    cond do
+      target_id == session.game_state.character_id -> {:ok, {:player, target_id}}
+      target_id == session.homunculus.world_gid -> {:ok, {:homunculus, target_id}}
+      true -> registered_target_ref(target_id)
+    end
+  end
+
+  defp registered_target_ref(target_id) do
+    player = UnitRegistry.get_unit(:player, target_id)
+    homunculus = UnitRegistry.get_unit(:homunculus, target_id)
+
+    case {player, homunculus} do
+      {{:ok, _player}, {:ok, _homunculus}} -> {:error, :invalid_target}
+      {{:ok, _player}, _missing} -> {:ok, {:player, target_id}}
+      {_missing, {:ok, _homunculus}} -> {:ok, {:homunculus, target_id}}
+      {_missing_player, _missing_homunculus} -> {:ok, {:mob, target_id}}
+    end
+  end
+
+  defp cast_target(_session, {:self, true}), do: {:ok, :self}
+  defp cast_target(_session, {:self, _false}), do: {:error, :malformed}
+
+  defp cast_target(session, {:target_id, target_id}) when target_id > 0 do
+    with {:ok, target_ref} <- command_target_ref(session, target_id) do
+      {:ok, {:unit, target_ref}}
+    end
+  end
+
+  defp cast_target(_session, _target), do: {:error, :malformed}
+
+  defp finish_feed(session, inventory, index) do
+    case HungerHandler.feed(
+           session.homunculus,
+           session.homunculus_runtime,
+           inventory
+         ) do
+      {:ok, homunculus, runtime, new_inventory} ->
+        updated =
+          if is_nil(homunculus) do
+            clear_companion_runtime(session)
+          else
+            %{session | homunculus_runtime: runtime}
+          end
+
+        updated = %{updated | game_state: %{session.game_state | inventory: new_inventory}}
+        committed = StateCommit.commit(updated, homunculus)
+        MessageRouter.send_to(session.connection_pid, InventoryView.item_removed(index, 1))
+        {:ok, committed}
+
+      {:error, reason, _homunculus, _runtime, ^inventory} ->
+        {:error, reason, session}
+    end
+  end
+
+  defp finish_delete(session) do
+    case Persistence.load_for_character(session.game_state.character_id) do
+      %Homunculus{id: id} = row when id == session.homunculus.id ->
+        case Persistence.delete(row, session.game_state.inventory) do
+          {:ok, inventory, nil} ->
+            updated = clear_companion_runtime(session)
+            updated = %{updated | game_state: %{session.game_state | inventory: inventory}}
+            {:ok, StateCommit.commit(updated, nil)}
+
+          {:error, reason} ->
+            {:error, reason, session}
+        end
+
+      _missing ->
+        {:error, :not_persisted, session}
+    end
+  end
+
+  defp persist_fields(%HomunculusState{} = homunculus, attrs) do
+    case Persistence.load_for_character(homunculus.owner_character_id) do
+      %Homunculus{id: id} = row when id == homunculus.id ->
+        case Persistence.save_semantic(row, attrs) do
+          {:ok, _row} -> :ok
+          {:error, reason} -> {:error, {:persistence, reason}}
+        end
+
+      _missing ->
+        {:error, :not_persisted}
+    end
+  end
+
+  defp require_rename_available(%HomunculusState{rename_available: true}), do: :ok
+
+  defp require_rename_available(%HomunculusState{}),
+    do: {:error, :rename_not_allowed}
+
+  defp normalize_name(name) when is_binary(name) do
+    if String.valid?(name) do
+      normalized = name |> String.normalize(:nfc) |> String.trim()
+
+      if String.length(normalized) in 1..23,
+        do: {:ok, normalized},
+        else: {:error, :invalid_name}
+    else
+      {:error, :invalid_name}
+    end
+  end
+
+  defp normalize_name(_name), do: {:error, :invalid_name}
+
+  defp refresh_renamed_observers(%HomunculusState{world_gid: gid} = homunculus)
+       when is_integer(gid) do
+    homunculus.map_name
+    |> SpatialIndex.get_players_in_range(homunculus.x, homunculus.y, Config.view_range())
+    |> Enum.each(fn observer_id ->
+      SpawnView.send_despawn(observer_id, gid)
+      SpawnView.send_spawn(observer_id, homunculus)
+    end)
+  end
+
+  defp refresh_renamed_observers(%HomunculusState{}), do: :ok
+
+  defp ai_persisted_map(%HomunculusAiConfig{} = config) do
+    %{
+      "stance" => ai_stance(config.stance),
+      "leash_distance" => config.leash_distance,
+      "join_owner_target" => config.join_owner_target,
+      "retaliate" => config.retaliate,
+      "avoid_bosses" => config.avoid_bosses,
+      "allowed_mob_class_ids" => config.allowed_mob_class_ids,
+      "denied_mob_class_ids" => config.denied_mob_class_ids,
+      "auto_feed" => config.auto_feed,
+      "auto_feed_threshold" => config.auto_feed_threshold,
+      "auto_cast_sp_reserve_percent" => config.auto_cast_sp_reserve_percent,
+      "skills" => Enum.map(config.skills, &ai_skill_map/1)
+    }
+  end
+
+  defp ai_stance(:HOMUNCULUS_AI_STANCE_PASSIVE), do: "passive"
+  defp ai_stance(:HOMUNCULUS_AI_STANCE_ASSIST), do: "assist"
+  defp ai_stance(:HOMUNCULUS_AI_STANCE_AGGRESSIVE), do: "aggressive"
+  defp ai_stance(_stance), do: nil
+
+  defp ai_skill_map(%HomunculusAiSkillConfig{} = skill) do
+    %{
+      "skill_id" => skill.skill_id,
+      "mode" => ai_skill_mode(skill.mode),
+      "priority" => skill.priority,
+      "self_hp_threshold" => threshold(skill.self_hp_threshold),
+      "owner_hp_threshold" => threshold(skill.owner_hp_threshold),
+      "target_hp_range" => hp_range(skill.target_hp_range)
+    }
+  end
+
+  defp ai_skill_map(_skill), do: %{}
+  defp ai_skill_mode(:HOMUNCULUS_AI_SKILL_MODE_MANUAL), do: "manual"
+  defp ai_skill_mode(:HOMUNCULUS_AI_SKILL_MODE_AUTO), do: "auto"
+  defp ai_skill_mode(_mode), do: nil
+  defp threshold(nil), do: nil
+  defp threshold(%{percent: percent}), do: percent
+  defp threshold(_threshold), do: :invalid
+  defp hp_range(nil), do: nil
+
+  defp hp_range(%{min_percent: min_percent, max_percent: max_percent}) do
+    %{"min_percent" => min_percent, "max_percent" => max_percent}
+  end
+
+  defp hp_range(_range), do: :invalid
+
+  defp ignore_timer_cancel(_ref), do: :ok
+
+  defp build_result(request_id, {:ok, _none}, session) do
+    %HomunculusResult{
+      request_id: request_id,
+      success: true,
+      error: :HOMUNCULUS_ERROR_NONE,
+      state: private_state(session)
+    }
+  end
+
+  defp build_result(request_id, {:error, reason}, session) do
+    %HomunculusResult{
+      request_id: request_id,
+      success: false,
+      error: protocol_error(reason),
+      state: private_state(session)
+    }
+  end
+
+  defp build_result(request_id, {:stop, reason}, session) do
+    %HomunculusResult{
+      request_id: request_id,
+      success: false,
+      error: protocol_error(reason),
+      state: private_state(session)
+    }
+  end
+
+  defp private_state(%SessionState{} = session) do
+    case session.homunculus do
+      nil ->
+        nil
+
+      %HomunculusState{} = homunculus ->
+        PrivateStateView.build(homunculus, session.homunculus_runtime)
+    end
+  end
+
+  defp clear_result_dirty(%SessionState{} = session) do
+    runtime = %{session.homunculus_runtime | private_dirty: false}
+    %{session | homunculus_runtime: runtime}
+  end
+
+  defp protocol_error(reason) when reason in [:no_companion, :no_homunculus],
+    do: :HOMUNCULUS_ERROR_NO_COMPANION
+
+  defp protocol_error(reason)
+       when reason in [:malformed, :invalid_command, :invalid_target_shape],
+       do: :HOMUNCULUS_ERROR_MALFORMED_COMMAND
+
+  defp protocol_error(reason)
+       when reason in [
+              :invalid_lifecycle,
+              :dead,
+              :not_living,
+              :invalid_state,
+              :owner_dead
+            ],
+       do: :HOMUNCULUS_ERROR_INVALID_LIFECYCLE
+
+  defp protocol_error(reason)
+       when reason in [
+              :invalid_destination,
+              :invalid_position,
+              :out_of_bounds,
+              :no_path,
+              :invalid_start,
+              :invalid_goal,
+              :goal_not_walkable
+            ],
+       do: :HOMUNCULUS_ERROR_INVALID_POSITION
+
+  defp protocol_error(reason)
+       when reason in [
+              :invalid_target,
+              :target_not_found,
+              :target_unavailable,
+              :target_dead,
+              :target_no_pid,
+              :wrong_target_type,
+              :different_map,
+              :owner_not_found,
+              :owner_unavailable,
+              :mob_unavailable,
+              :invalid_castling_endpoint,
+              :stale_castling_endpoint
+            ],
+       do: :HOMUNCULUS_ERROR_INVALID_TARGET
+
+  defp protocol_error(reason)
+       when reason in [:out_of_range, :range, :target_out_of_range, :projectile_blocked],
+       do: :HOMUNCULUS_ERROR_OUT_OF_RANGE
+
+  defp protocol_error(reason)
+       when reason in [
+              :invalid_skill,
+              :unknown_skill,
+              :wrong_species,
+              :skill_not_learned,
+              :passive_skill
+            ],
+       do: :HOMUNCULUS_ERROR_SKILL_NOT_LEARNED
+
+  defp protocol_error(reason) when reason in [:invalid_level, :max_rank, :invalid_rank],
+    do: :HOMUNCULUS_ERROR_INVALID_SKILL_RANK
+
+  defp protocol_error(:on_cooldown), do: :HOMUNCULUS_ERROR_ON_COOLDOWN
+  defp protocol_error(:insufficient_sp), do: :HOMUNCULUS_ERROR_INSUFFICIENT_SP
+
+  defp protocol_error(reason)
+       when reason in [:missing_food, :food_item_not_found, :missing_item, :item_not_found],
+       do: :HOMUNCULUS_ERROR_MISSING_ITEM
+
+  defp protocol_error(:hp_gate), do: :HOMUNCULUS_ERROR_HP_GATE
+  defp protocol_error(:rename_not_allowed), do: :HOMUNCULUS_ERROR_RENAME_NOT_ALLOWED
+  defp protocol_error(:invalid_name), do: :HOMUNCULUS_ERROR_INVALID_NAME
+  defp protocol_error(:confirmation_required), do: :HOMUNCULUS_ERROR_CONFIRMATION_REQUIRED
+  defp protocol_error(:invalid_ai_config), do: :HOMUNCULUS_ERROR_INVALID_AI_CONFIG
+  defp protocol_error(:skill_points), do: :HOMUNCULUS_ERROR_INSUFFICIENT_SKILL_POINTS
+
+  defp protocol_error(reason)
+       when reason in [
+              :level,
+              :intimacy,
+              :insufficient_intimacy,
+              :form,
+              :prerequisites,
+              :already_evolved
+            ],
+       do: :HOMUNCULUS_ERROR_PREREQUISITES_NOT_MET
+
+  defp protocol_error(reason)
+       when reason in [
+              :busy,
+              :moving,
+              :status_blocked,
+              :bio_explosion_pending,
+              :attack_rate_limited,
+              :homunculus_not_found
+            ],
+       do: :HOMUNCULUS_ERROR_BUSY
+
+  defp protocol_error({:persistence, _reason}), do: :HOMUNCULUS_ERROR_BUSY
+  defp protocol_error(_reason), do: :HOMUNCULUS_ERROR_BUSY
 
   @doc "Detaches active presence before the owner leaves the old warp map."
   @spec detach_for_warp(map(), boolean()) :: map()
@@ -651,6 +1197,28 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     |> AiHandler.cancel()
     |> MovementHandler.cancel()
     |> CastingHandler.cancel_bio_explosion()
+  end
+
+  @doc "Clears every companion-owned timer and transient field before permanent removal."
+  @spec clear_companion_runtime(SessionState.t()) :: SessionState.t()
+  def clear_companion_runtime(%SessionState{} = session) do
+    runtime = session.homunculus_runtime
+
+    [
+      runtime.active_expiry_timer_ref,
+      runtime.cooldown_timer_ref,
+      runtime.hunger_timer_ref,
+      runtime.checkpoint_timer_ref,
+      runtime.ai_timer_ref,
+      runtime.movement_timer_ref,
+      runtime.separation_timer_ref,
+      runtime.cast_timer_ref,
+      runtime.bio_explosion_timer_ref
+    ]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.each(&Clock.cancel/1)
+
+    %{session | homunculus_runtime: %Runtime{private_dirty: false}}
   end
 
   @doc "Stops hunger plus action timers after Rest, death, or deletion."

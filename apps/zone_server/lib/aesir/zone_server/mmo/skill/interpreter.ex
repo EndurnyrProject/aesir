@@ -228,6 +228,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def preflight_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
   @doc """
+  Validates immutable Homunculus skill identity and learned-rank requirements.
+
+  This read-only preflight deliberately excludes caster action, target, range,
+  status, SP, cooldown, and skill-effect validation. Cast execution repeats the
+  same checks as part of its authoritative full validation.
+  """
+  @spec preflight_homunculus_skill(HomunculusState.t(), integer(), integer()) ::
+          :ok | {:error, atom()}
+  def preflight_homunculus_skill(%HomunculusState{} = caster, skill_id, level)
+      when is_integer(level) and level > 0 do
+    case prepare_homunculus_skill(caster, skill_id, level) do
+      {:ok, _definition} -> :ok
+      {:error, _reason} = error -> error
+    end
+  end
+
+  def preflight_homunculus_skill(_caster, _skill_id, _level), do: {:error, :invalid_level}
+
+  @doc """
   Begins a Homunculus cast through the restricted companion path.
 
   Unlike player casts, this path has no inventory, weapon, quest-lineage, zeny,
@@ -649,10 +668,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp validate_homunculus_cast(caster, skill_id, level, target, now, phase) do
     with :ok <- check_homunculus_caster(caster, phase),
-         {:ok, definition} <- fetch_definition(skill_id),
-         :ok <- check_max_level(definition, level),
-         :ok <- check_castable(definition),
-         :ok <- check_homunculus_tree(caster, skill_id, level),
+         {:ok, definition} <- prepare_homunculus_skill(caster, skill_id, level),
          :ok <- check_homunculus_target(caster, target, definition),
          :ok <- check_range(caster, target, definition, level),
          {:ok, module} <- fetch_active_module(definition),
@@ -662,6 +678,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_homunculus_sp(caster, sp_cost),
          :ok <- module.validate(caster, target, level, definition) do
       {:ok, %{definition: definition, module: module, skill_id: skill_id, sp_cost: sp_cost}}
+    end
+  end
+
+  defp prepare_homunculus_skill(caster, skill_id, level) do
+    with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         :ok <- check_homunculus_tree(caster, skill_id, level) do
+      {:ok, definition}
     end
   end
 

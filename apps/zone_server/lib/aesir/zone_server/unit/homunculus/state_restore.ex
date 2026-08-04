@@ -134,6 +134,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
   defp ai_config(config, specs) when config == %{}, do: {:ok, Config.default(specs)}
   defp ai_config(config, specs), do: Config.decode(config, specs)
 
+  @doc "Builds the strict AI skill specifications for learned Homunculus skills."
+  @spec ai_skill_specs(map()) :: {:ok, [Config.skill_spec()]} | {:error, :invalid_skills}
+  def ai_skill_specs(learned_skills) when is_map(learned_skills), do: skill_specs(learned_skills)
+  def ai_skill_specs(_learned_skills), do: {:error, :invalid_skills}
+
   defp skill_specs(learned_skills) do
     learned_skills
     |> Map.keys()

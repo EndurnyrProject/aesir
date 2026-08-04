@@ -531,27 +531,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   ## Returns
     - {:noreply, updated_state} - Updated state with stopped movement
   """
-  def handle_force_stop_movement(
-        %{game_state: game_state, connection_pid: connection_pid} = state
-      ) do
+  def handle_force_stop_movement(%{game_state: game_state} = state) do
     if game_state.movement_state == :moving do
-      game_state = PlayerState.stop_walking(game_state)
-
-      packet = %MoveStop{
-        gid: game_state.character_id,
-        x: game_state.x,
-        y: game_state.y
-      }
-
-      MessageRouter.send_to(connection_pid, packet)
-
-      broadcast_stop_to_nearby(game_state, packet)
-
-      {:noreply, %{state | game_state: game_state}}
+      publish_force_stop_movement(state)
+      {:noreply, %{state | game_state: PlayerState.stop_walking(game_state)}}
     else
       {:noreply, state}
     end
   end
+
+  @doc "Publishes the authoritative stop packet without mutating player state."
+  @spec publish_force_stop_movement(SessionState.t()) :: :ok
+  def publish_force_stop_movement(%{
+        game_state: %{movement_state: :moving} = game_state,
+        connection_pid: connection_pid
+      }) do
+    packet = %MoveStop{
+      gid: game_state.character_id,
+      x: game_state.x,
+      y: game_state.y
+    }
+
+    MessageRouter.send_to(connection_pid, packet)
+    broadcast_stop_to_nearby(game_state, packet)
+  end
+
+  def publish_force_stop_movement(%SessionState{}), do: :ok
 
   @doc """
   Commits displacement only when the live session still matches its expected cell.

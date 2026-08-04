@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.GuildMemberPositionRequest
   alias Aesir.Net.GuildNoticeEditRequest
   alias Aesir.Net.GuildPositionEditRequest
+  alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.MountRequest
@@ -63,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingPurchaseRequest
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -97,6 +99,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   else falls to a logging catch-all.
   """
   def handle_message(message, state)
+
+  def handle_message(%HomunculusRequest{} = request, state) do
+    HomunculusCommandHandler.request(request, state)
+  end
 
   # MapLoaded - Player finished loading map (protobuf analogue of CZ_NOTIFY_ACTORINIT)
   def handle_message(%MapLoaded{}, state) do
