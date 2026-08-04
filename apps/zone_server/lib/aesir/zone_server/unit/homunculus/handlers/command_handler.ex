@@ -6,22 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   require Logger
 
   alias Aesir.Commons.Models.Homunculus
-  alias Aesir.Net.HomunculusAiConfig
-  alias Aesir.Net.HomunculusAiSkillConfig
-  alias Aesir.Net.HomunculusAttackCommand
-  alias Aesir.Net.HomunculusCastSkillCommand
-  alias Aesir.Net.HomunculusDeleteCommand
-  alias Aesir.Net.HomunculusFeedCommand
-  alias Aesir.Net.HomunculusFollowCommand
-  alias Aesir.Net.HomunculusInspectCommand
-  alias Aesir.Net.HomunculusLearnSkillCommand
-  alias Aesir.Net.HomunculusMoveCommand
-  alias Aesir.Net.HomunculusRenameCommand
-  alias Aesir.Net.HomunculusReplaceAiCommand
   alias Aesir.Net.HomunculusRequest
-  alias Aesir.Net.HomunculusRestCommand
-  alias Aesir.Net.HomunculusResult
-  alias Aesir.Net.HomunculusStandbyCommand
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -34,11 +19,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastlingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.RequestProtocol
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
@@ -46,10 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Homunculus.StateRestore
-  alias Aesir.ZoneServer.Unit.Mob.MobSession
-  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
-  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler, as: PlayerMovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -60,8 +44,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   @rest_skill_id 244
   @checkpoint_interval 5_000
   @persistence_retry_delay 100
-  @castling_redirect_limit 8
-  @castling_stale_fallback_limit 2
   @adjacent_offsets [{0, -1}, {-1, 0}, {1, 0}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}]
 
   @doc "Restores a preloaded durable row into the private, offline aggregate slot."
@@ -189,56 +171,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def local_effect(
         {:homunculus, {:castling_swap, gid}},
         %SessionState{
-          game_state: %PlayerState{} = owner,
-          homunculus: %HomunculusState{world_gid: gid} = homunculus
+          game_state: %PlayerState{},
+          homunculus: %HomunculusState{world_gid: gid}
         } = session
-      ) do
-    with true <- castling_units_valid?(owner, homunculus),
-         {:ok, {PlayerState, ^owner, owner_pid}} <-
-           Movement.swap_ready(:player, owner.character_id),
-         true <- owner_pid == self(),
-         {:ok, {HomunculusState, ^homunculus, ^owner_pid}} <-
-           Movement.swap_ready(:homunculus, gid) do
-      swapped_owner = prepare_castling_owner(owner, homunculus)
-
-      swapped_homunculus = %{
-        homunculus
-        | x: owner.x,
-          y: owner.y,
-          action_state: :idle,
-          movement_state: :standing,
-          target: nil,
-          casting: nil
-      }
-
-      case Movement.swap_positions(
-             {:player, owner.character_id, swapped_owner},
-             {:homunculus, gid, swapped_homunculus},
-             owner.map_name
-           ) do
-        :ok ->
-          session = MovementHandler.cancel(session)
-          Clock.cancel(session.homunculus_runtime.cast_timer_ref)
-          reconciled_owner = PlayerMovementHandler.handle_visibility_update(swapped_owner)
-          runtime = %{session.homunculus_runtime | cast_timer_ref: nil, private_dirty: true}
-
-          updated =
-            struct(session,
-              game_state: reconciled_owner,
-              homunculus: swapped_homunculus,
-              homunculus_runtime: runtime
-            )
-
-          redirect_castling_mob(owner.map_name, owner.character_id, gid)
-          {:noreply, updated}
-
-        {:error, :stale_endpoint} ->
-          {:error, :stale_castling_endpoint, session}
-      end
-    else
-      _invalid -> {:error, :stale_castling_endpoint, session}
-    end
-  end
+      ),
+      do: CastlingHandler.swap(session, gid)
 
   def local_effect({:homunculus, event}, %SessionState{} = session),
     do: CombatHandler.handle(event, session)
@@ -276,8 +213,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
           {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
   def request(%HomunculusRequest{} = request, %SessionState{} = session) do
     {outcome, updated} =
-      with :ok <- validate_request(request),
-           {:ok, command} <- decode_command(request.command),
+      with :ok <- RequestProtocol.validate_request(request),
+           {:ok, command} <- RequestProtocol.decode_command(request.command),
            :ok <- require_companion(session) do
         case execute(command, session) do
           {:ok, next} -> {{:ok, nil}, next}
@@ -288,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
         {:error, reason} -> {{:error, reason}, session}
       end
 
-    result = build_result(request.request_id, outcome, updated)
+    result = RequestProtocol.build_result(request.request_id, outcome, updated)
     MessageRouter.send_to(session.connection_pid, result)
     updated = clear_result_dirty(updated)
 
@@ -309,48 +246,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       {:stop, reason, stopped} -> {:stop, reason, {:error, reason}, stopped}
     end
   end
-
-  defp validate_request(%HomunculusRequest{request_id: id}) when is_integer(id) and id > 0,
-    do: :ok
-
-  defp validate_request(%HomunculusRequest{}), do: {:error, :malformed}
-
-  defp decode_command({:inspect, %HomunculusInspectCommand{}}), do: {:ok, :inspect}
-
-  defp decode_command({:move, %HomunculusMoveCommand{x: x, y: y}})
-       when is_integer(x) and is_integer(y),
-       do: {:ok, {:move, x, y}}
-
-  defp decode_command({:follow, %HomunculusFollowCommand{}}), do: {:ok, :follow}
-
-  defp decode_command({:attack, %HomunculusAttackCommand{target_id: id}}) when id > 0,
-    do: {:ok, {:attack, id}}
-
-  defp decode_command({:standby, %HomunculusStandbyCommand{}}), do: {:ok, :standby}
-
-  defp decode_command(
-         {:cast_skill, %HomunculusCastSkillCommand{skill_id: id, level: level, target: target}}
-       )
-       when id > 0 and level > 0 and not is_nil(target),
-       do: {:ok, {:cast_skill, id, level, target}}
-
-  defp decode_command({:feed, %HomunculusFeedCommand{}}), do: {:ok, :feed}
-  defp decode_command({:rename, %HomunculusRenameCommand{name: name}}), do: {:ok, {:rename, name}}
-  defp decode_command({:rest, %HomunculusRestCommand{}}), do: {:ok, :rest}
-
-  defp decode_command({:delete, %HomunculusDeleteCommand{confirmed: confirmed}})
-       when is_boolean(confirmed),
-       do: {:ok, {:delete, confirmed}}
-
-  defp decode_command(
-         {:replace_ai, %HomunculusReplaceAiCommand{config: %HomunculusAiConfig{} = config}}
-       ),
-       do: {:ok, {:replace_ai, config}}
-
-  defp decode_command({:learn_skill, %HomunculusLearnSkillCommand{skill_id: id}}) when id > 0,
-    do: {:ok, {:learn_skill, id}}
-
-  defp decode_command(_command), do: {:error, :malformed}
 
   defp require_companion(%SessionState{} = session) do
     if match?(%HomunculusState{}, session.homunculus),
@@ -455,7 +350,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   defp execute({:replace_ai, wire_config}, session) do
     with {:ok, specs} <- StateRestore.ai_skill_specs(session.homunculus.learned_skills),
-         {:ok, config} <- AiConfig.decode(ai_persisted_map(wire_config), specs) do
+         {:ok, config} <- AiConfig.decode(RequestProtocol.ai_persisted_map(wire_config), specs) do
       case persist_fields(session.homunculus, %{ai_config: AiConfig.encode(config)}) do
         :ok -> {:ok, StateCommit.commit(session, %{session.homunculus | ai_config: config})}
         {:error, reason} -> {:error, reason, session}
@@ -609,198 +504,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   defp refresh_renamed_observers(%HomunculusState{}), do: :ok
 
-  defp ai_persisted_map(%HomunculusAiConfig{} = config) do
-    %{
-      "stance" => ai_stance(config.stance),
-      "leash_distance" => config.leash_distance,
-      "join_owner_target" => config.join_owner_target,
-      "retaliate" => config.retaliate,
-      "avoid_bosses" => config.avoid_bosses,
-      "allowed_mob_class_ids" => config.allowed_mob_class_ids,
-      "denied_mob_class_ids" => config.denied_mob_class_ids,
-      "auto_feed" => config.auto_feed,
-      "auto_feed_threshold" => config.auto_feed_threshold,
-      "auto_cast_sp_reserve_percent" => config.auto_cast_sp_reserve_percent,
-      "skills" => Enum.map(config.skills, &ai_skill_map/1)
-    }
-  end
-
-  defp ai_stance(:HOMUNCULUS_AI_STANCE_PASSIVE), do: "passive"
-  defp ai_stance(:HOMUNCULUS_AI_STANCE_ASSIST), do: "assist"
-  defp ai_stance(:HOMUNCULUS_AI_STANCE_AGGRESSIVE), do: "aggressive"
-  defp ai_stance(_stance), do: nil
-
-  defp ai_skill_map(%HomunculusAiSkillConfig{} = skill) do
-    %{
-      "skill_id" => skill.skill_id,
-      "mode" => ai_skill_mode(skill.mode),
-      "priority" => skill.priority,
-      "self_hp_threshold" => threshold(skill.self_hp_threshold),
-      "owner_hp_threshold" => threshold(skill.owner_hp_threshold),
-      "target_hp_range" => hp_range(skill.target_hp_range)
-    }
-  end
-
-  defp ai_skill_map(_skill), do: %{}
-  defp ai_skill_mode(:HOMUNCULUS_AI_SKILL_MODE_MANUAL), do: "manual"
-  defp ai_skill_mode(:HOMUNCULUS_AI_SKILL_MODE_AUTO), do: "auto"
-  defp ai_skill_mode(_mode), do: nil
-  defp threshold(nil), do: nil
-  defp threshold(%{percent: percent}), do: percent
-  defp threshold(_threshold), do: :invalid
-  defp hp_range(nil), do: nil
-
-  defp hp_range(%{min_percent: min_percent, max_percent: max_percent}) do
-    %{"min_percent" => min_percent, "max_percent" => max_percent}
-  end
-
-  defp hp_range(_range), do: :invalid
-
   defp ignore_timer_cancel(_ref), do: :ok
-
-  defp build_result(request_id, {:ok, _none}, session) do
-    %HomunculusResult{
-      request_id: request_id,
-      success: true,
-      error: :HOMUNCULUS_ERROR_NONE,
-      state: private_state(session)
-    }
-  end
-
-  defp build_result(request_id, {:error, reason}, session) do
-    %HomunculusResult{
-      request_id: request_id,
-      success: false,
-      error: protocol_error(reason),
-      state: private_state(session)
-    }
-  end
-
-  defp build_result(request_id, {:stop, reason}, session) do
-    %HomunculusResult{
-      request_id: request_id,
-      success: false,
-      error: protocol_error(reason),
-      state: private_state(session)
-    }
-  end
-
-  defp private_state(%SessionState{} = session) do
-    case session.homunculus do
-      nil ->
-        nil
-
-      %HomunculusState{} = homunculus ->
-        PrivateStateView.build(homunculus, session.homunculus_runtime)
-    end
-  end
 
   defp clear_result_dirty(%SessionState{} = session) do
     runtime = %{session.homunculus_runtime | private_dirty: false}
     %{session | homunculus_runtime: runtime}
   end
-
-  defp protocol_error(reason) when reason in [:no_companion, :no_homunculus],
-    do: :HOMUNCULUS_ERROR_NO_COMPANION
-
-  defp protocol_error(reason)
-       when reason in [:malformed, :invalid_command, :invalid_target_shape],
-       do: :HOMUNCULUS_ERROR_MALFORMED_COMMAND
-
-  defp protocol_error(reason)
-       when reason in [
-              :invalid_lifecycle,
-              :dead,
-              :not_living,
-              :invalid_state,
-              :owner_dead
-            ],
-       do: :HOMUNCULUS_ERROR_INVALID_LIFECYCLE
-
-  defp protocol_error(reason)
-       when reason in [
-              :invalid_destination,
-              :invalid_position,
-              :out_of_bounds,
-              :no_path,
-              :invalid_start,
-              :invalid_goal,
-              :goal_not_walkable
-            ],
-       do: :HOMUNCULUS_ERROR_INVALID_POSITION
-
-  defp protocol_error(reason)
-       when reason in [
-              :invalid_target,
-              :target_not_found,
-              :target_unavailable,
-              :target_dead,
-              :target_no_pid,
-              :wrong_target_type,
-              :different_map,
-              :owner_not_found,
-              :owner_unavailable,
-              :mob_unavailable,
-              :invalid_castling_endpoint,
-              :stale_castling_endpoint
-            ],
-       do: :HOMUNCULUS_ERROR_INVALID_TARGET
-
-  defp protocol_error(reason)
-       when reason in [:out_of_range, :range, :target_out_of_range, :projectile_blocked],
-       do: :HOMUNCULUS_ERROR_OUT_OF_RANGE
-
-  defp protocol_error(reason)
-       when reason in [
-              :invalid_skill,
-              :unknown_skill,
-              :wrong_species,
-              :skill_not_learned,
-              :passive_skill
-            ],
-       do: :HOMUNCULUS_ERROR_SKILL_NOT_LEARNED
-
-  defp protocol_error(reason) when reason in [:invalid_level, :max_rank, :invalid_rank],
-    do: :HOMUNCULUS_ERROR_INVALID_SKILL_RANK
-
-  defp protocol_error(:on_cooldown), do: :HOMUNCULUS_ERROR_ON_COOLDOWN
-  defp protocol_error(:insufficient_sp), do: :HOMUNCULUS_ERROR_INSUFFICIENT_SP
-
-  defp protocol_error(reason)
-       when reason in [:missing_food, :food_item_not_found, :missing_item, :item_not_found],
-       do: :HOMUNCULUS_ERROR_MISSING_ITEM
-
-  defp protocol_error(:hp_gate), do: :HOMUNCULUS_ERROR_HP_GATE
-  defp protocol_error(:rename_not_allowed), do: :HOMUNCULUS_ERROR_RENAME_NOT_ALLOWED
-  defp protocol_error(:invalid_name), do: :HOMUNCULUS_ERROR_INVALID_NAME
-  defp protocol_error(:confirmation_required), do: :HOMUNCULUS_ERROR_CONFIRMATION_REQUIRED
-  defp protocol_error(:invalid_ai_config), do: :HOMUNCULUS_ERROR_INVALID_AI_CONFIG
-  defp protocol_error(:skill_points), do: :HOMUNCULUS_ERROR_INSUFFICIENT_SKILL_POINTS
-
-  defp protocol_error(reason)
-       when reason in [
-              :level,
-              :intimacy,
-              :insufficient_intimacy,
-              :form,
-              :prerequisites,
-              :already_evolved
-            ],
-       do: :HOMUNCULUS_ERROR_PREREQUISITES_NOT_MET
-
-  defp protocol_error(reason)
-       when reason in [
-              :busy,
-              :moving,
-              :status_blocked,
-              :bio_explosion_pending,
-              :attack_rate_limited,
-              :homunculus_not_found
-            ],
-       do: :HOMUNCULUS_ERROR_BUSY
-
-  defp protocol_error({:persistence, _reason}), do: :HOMUNCULUS_ERROR_BUSY
-  defp protocol_error(_reason), do: :HOMUNCULUS_ERROR_BUSY
 
   @doc "Detaches active presence before the owner leaves the old warp map."
   @spec detach_for_warp(map(), boolean()) :: map()
@@ -1270,82 +979,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       cell = {x + dx, y + dy}
       if Cell.traversable?(map_name, elem(cell, 0), elem(cell, 1)), do: cell
     end)
-  end
-
-  defp castling_units_valid?(owner, homunculus) do
-    Unit.living?(owner) and HomunculusState.living?(homunculus) and
-      owner.map_name == homunculus.map_name and is_binary(owner.map_name) and
-      Enum.all?([owner.x, owner.y, homunculus.x, homunculus.y], &is_integer/1)
-  end
-
-  defp prepare_castling_owner(owner, homunculus) do
-    casting = owner.casting
-
-    owner =
-      owner
-      |> PlayerState.stop_walking()
-      |> PlayerState.clear_combat_intent()
-      |> PlayerState.clear_pickup_intent()
-      |> PlayerState.clear_pending_forced_movement()
-
-    owner = if is_nil(casting), do: PlayerState.clear_skill_intent(owner), else: owner
-
-    Map.merge(owner, %{
-      x: homunculus.x,
-      y: homunculus.y,
-      action_state: if(is_nil(casting), do: :idle, else: owner.action_state),
-      casting: casting
-    })
-  end
-
-  defp redirect_castling_mob(map_name, owner_id, homunculus_gid) do
-    expected = {:player, owner_id}
-    replacement = {:homunculus, homunculus_gid}
-
-    map_name
-    |> castling_redirect_candidates(expected)
-    |> Enum.reduce_while(:not_redirected, fn mob_id, _acc ->
-      redirect_castling_candidate(mob_id, expected, replacement)
-    end)
-  end
-
-  defp castling_redirect_candidates(map_name, expected) do
-    map_ids = :mob |> SpatialIndex.get_units_on_map(map_name) |> Enum.sort()
-
-    {targeting_owner, stale_fallback} =
-      Enum.split_with(map_ids, fn mob_id -> mob_targets?(mob_id, expected) end)
-
-    (targeting_owner ++ Enum.take(stale_fallback, @castling_stale_fallback_limit))
-    |> Enum.uniq()
-    |> Enum.take(@castling_redirect_limit)
-  end
-
-  defp mob_targets?(mob_id, expected) do
-    match?({:ok, {_module, %{target_ref: ^expected}, _pid}}, UnitRegistry.get_unit(:mob, mob_id))
-  end
-
-  defp redirect_castling_candidate(mob_id, expected, replacement) do
-    case live_mob_pid(mob_id) do
-      {:ok, pid} ->
-        case MobSession.redirect_target(pid, expected, replacement) do
-          :ok -> {:halt, :ok}
-          {:error, :outcome_unknown} -> {:halt, :outcome_unknown}
-          {:error, _definitive} -> {:cont, :not_redirected}
-        end
-
-      _unavailable ->
-        {:cont, :not_redirected}
-    end
-  end
-
-  defp live_mob_pid(mob_id) do
-    case UnitRegistry.get_unit(:mob, mob_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) and pid != self() ->
-        if Process.alive?(pid), do: {:ok, pid}, else: :error
-
-      _other ->
-        :error
-    end
   end
 
   defp cancel_runtime(runtime) do
