@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Clock do
   to durable remainders; `resume_cooldowns/2` performs the inverse conversion.
   """
 
+  alias Aesir.ZoneServer.Unit.Homunculus.Runtime
+
   @active_duration_ms 1_800_000
 
   @type milliseconds :: non_neg_integer()
@@ -107,6 +109,27 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Clock do
       nil -> nil
       deadline_ms -> start_timer(max(deadline_ms - now_ms, 0), :cooldowns_expired, opts)
     end
+  end
+
+  @doc """
+  Arms one Homunculus timer.
+
+  The default OTP timer delivers `{:timeout, ref, {:homunculus, event}}`.
+  """
+  @spec arm(milliseconds(), term(), timer_opts()) :: reference()
+  def arm(delay_ms, event, opts \\ []), do: start_timer(delay_ms, event, opts)
+
+  @doc "Cancels the timer stored in one `Runtime` field and clears the field."
+  @spec cancel_field(Runtime.t(), atom(), timer_opts()) :: Runtime.t()
+  def cancel_field(%Runtime{} = runtime, field, opts \\ []) do
+    runtime |> Map.fetch!(field) |> cancel(opts)
+    Map.put(runtime, field, nil)
+  end
+
+  @doc "Cancels every timer-reference field of the `Runtime` and clears them all."
+  @spec cancel_all(Runtime.t(), timer_opts()) :: Runtime.t()
+  def cancel_all(%Runtime{} = runtime, opts \\ []) do
+    Enum.reduce(Runtime.timer_fields(), runtime, &cancel_field(&2, &1, opts))
   end
 
   @doc "Cancels a stored OTP timer reference."

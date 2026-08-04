@@ -292,9 +292,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler do
     timer_start.(delay, :hunger_tick)
   end
 
-  defp default_start_timer(delay, event) do
-    :erlang.start_timer(delay, self(), {:homunculus, event})
-  end
+  defp default_start_timer(delay, event), do: Clock.arm(delay, event)
 
   defp cancel_timer(nil, _opts), do: :ok
 

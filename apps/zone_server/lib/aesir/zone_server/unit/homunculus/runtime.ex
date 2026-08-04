@@ -46,4 +46,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
           sp_regen_deadline_ms: integer() | nil,
           private_dirty: boolean()
         }
+
+  @doc "Returns every timer-reference field of this struct."
+  @spec timer_fields() :: [atom()]
+  def timer_fields do
+    %__MODULE__{private_dirty: false}
+    |> Map.from_struct()
+    |> Map.keys()
+    |> Enum.filter(&(&1 |> Atom.to_string() |> String.ends_with?("_timer_ref")))
+  end
 end

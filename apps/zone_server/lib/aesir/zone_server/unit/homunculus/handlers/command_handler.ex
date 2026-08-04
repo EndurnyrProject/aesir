@@ -643,7 +643,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   defp activate_if_needed(session, homunculus), do: {:ok, StateCommit.commit(session, homunculus)}
 
   defp stop_activation(session, reason) do
-    cancel_runtime(session.homunculus_runtime)
+    Clock.cancel_all(session.homunculus_runtime)
     Logger.error("Homunculus activation failed: #{inspect(reason)}")
     {:stop, {:homunculus_activation_failed, reason}, session}
   end
@@ -876,10 +876,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   defp arm_checkpoint(%SessionState{} = session) when is_nil(session.homunculus), do: session
 
   defp arm_checkpoint(%SessionState{} = session) do
-    Clock.cancel(session.homunculus_runtime.checkpoint_timer_ref)
-    ref = :erlang.start_timer(@checkpoint_interval, self(), {:homunculus, :checkpoint})
-    runtime = %{session.homunculus_runtime | checkpoint_timer_ref: ref}
-    %{session | homunculus_runtime: runtime}
+    runtime = Clock.cancel_field(session.homunculus_runtime, :checkpoint_timer_ref)
+    ref = Clock.arm(@checkpoint_interval, :checkpoint)
+    %{session | homunculus_runtime: %{runtime | checkpoint_timer_ref: ref}}
   end
 
   @doc "Arms the bounded active runtime without allocating or activating world identity."
@@ -913,22 +912,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   @doc "Clears every companion-owned timer and transient field before permanent removal."
   @spec clear_companion_runtime(SessionState.t()) :: SessionState.t()
   def clear_companion_runtime(%SessionState{} = session) do
-    runtime = session.homunculus_runtime
-
-    [
-      runtime.active_expiry_timer_ref,
-      runtime.cooldown_timer_ref,
-      runtime.hunger_timer_ref,
-      runtime.checkpoint_timer_ref,
-      runtime.ai_timer_ref,
-      runtime.movement_timer_ref,
-      runtime.separation_timer_ref,
-      runtime.cast_timer_ref,
-      runtime.bio_explosion_timer_ref
-    ]
-    |> Enum.reject(&is_nil/1)
-    |> Enum.each(&Clock.cancel/1)
-
+    Clock.cancel_all(session.homunculus_runtime)
     %{session | homunculus_runtime: %Runtime{private_dirty: false}}
   end
 
@@ -979,22 +963,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       cell = {x + dx, y + dy}
       if Cell.traversable?(map_name, elem(cell, 0), elem(cell, 1)), do: cell
     end)
-  end
-
-  defp cancel_runtime(runtime) do
-    Enum.each(
-      [
-        runtime.active_expiry_timer_ref,
-        runtime.cooldown_timer_ref,
-        runtime.hunger_timer_ref,
-        runtime.checkpoint_timer_ref,
-        runtime.ai_timer_ref,
-        runtime.bio_explosion_timer_ref,
-        runtime.movement_timer_ref,
-        runtime.separation_timer_ref
-      ],
-      &Clock.cancel/1
-    )
   end
 
   defp source_id({_type, id}) when is_integer(id), do: id

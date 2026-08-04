@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
     session = cancel_ai_timer(session)
 
     if eligible?(session) do
-      ref = :erlang.start_timer(@tick_interval, self(), {:homunculus, :ai_tick})
+      ref = Clock.arm(@tick_interval, :ai_tick)
       %{session | homunculus_runtime: %{session.homunculus_runtime | ai_timer_ref: ref}}
     else
       session
@@ -46,8 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   end
 
   defp cancel_ai_timer(session) do
-    Clock.cancel(session.homunculus_runtime.ai_timer_ref)
-    %{session | homunculus_runtime: %{session.homunculus_runtime | ai_timer_ref: nil}}
+    %{session | homunculus_runtime: Clock.cancel_field(session.homunculus_runtime, :ai_timer_ref)}
   end
 
   @doc "Consumes one matching timer, executes at most one intent, and rearms once."

@@ -129,19 +129,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   @doc "Cancels all movement-owned timers and path bookkeeping."
   @spec cancel(SessionState.t()) :: SessionState.t()
   def cancel(%SessionState{} = session) do
-    runtime = session.homunculus_runtime
-    Clock.cancel(runtime.movement_timer_ref)
-    Clock.cancel(runtime.separation_timer_ref)
+    runtime =
+      session.homunculus_runtime
+      |> Clock.cancel_field(:movement_timer_ref)
+      |> Clock.cancel_field(:separation_timer_ref)
 
-    %{
-      session
-      | homunculus_runtime: %{
-          runtime
-          | movement_timer_ref: nil,
-            separation_timer_ref: nil,
-            movement_path: []
-        }
-    }
+    %{session | homunculus_runtime: %{runtime | movement_path: []}}
   end
 
   defp tick_current(%SessionState{} = session) do
@@ -285,15 +278,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   end
 
   defp cancel_movement(session) do
-    Clock.cancel(session.homunculus_runtime.movement_timer_ref)
-
-    runtime = %{
-      session.homunculus_runtime
-      | movement_timer_ref: nil,
-        movement_path: []
-    }
-
-    %{session | homunculus_runtime: runtime}
+    runtime = Clock.cancel_field(session.homunculus_runtime, :movement_timer_ref)
+    %{session | homunculus_runtime: %{runtime | movement_path: []}}
   end
 
   defp arm_movement(session) do
@@ -301,7 +287,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
       ModifierCalculator.get_all_modifiers(:homunculus, session.homunculus.world_gid)
 
     interval = Stats.movement_delay_ms(@movement_interval, modifiers)
-    ref = :erlang.start_timer(interval, self(), {:homunculus, :movement_tick})
+    ref = Clock.arm(interval, :movement_tick)
     runtime = %{session.homunculus_runtime | movement_timer_ref: ref}
     %{session | homunculus_runtime: runtime}
   end
@@ -311,13 +297,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
        do: session
 
   defp arm_separation(session) do
-    ref = :erlang.start_timer(@separation_delay, self(), {:homunculus, :separation_timeout})
+    ref = Clock.arm(@separation_delay, :separation_timeout)
     %{session | homunculus_runtime: %{session.homunculus_runtime | separation_timer_ref: ref}}
   end
 
   defp cancel_separation(session) do
-    Clock.cancel(session.homunculus_runtime.separation_timer_ref)
-    %{session | homunculus_runtime: %{session.homunculus_runtime | separation_timer_ref: nil}}
+    %{
+      session
+      | homunculus_runtime: Clock.cancel_field(session.homunculus_runtime, :separation_timer_ref)
+    }
   end
 
   @doc "Relocates to the first deterministic traversable owner-adjacent cell."

@@ -75,17 +75,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   @doc "Cancels a pending Bio Explosion without changing its settled costs."
   @spec cancel_bio_explosion(SessionState.t()) :: SessionState.t()
   def cancel_bio_explosion(%SessionState{} = session) do
-    runtime = session.homunculus_runtime
-    Clock.cancel(runtime.bio_explosion_timer_ref)
-
-    %{
-      session
-      | homunculus_runtime: %{
-          runtime
-          | bio_explosion_timer_ref: nil,
-            bio_explosion_descriptor: nil
-        }
-    }
+    runtime = Clock.cancel_field(session.homunculus_runtime, :bio_explosion_timer_ref)
+    %{session | homunculus_runtime: %{runtime | bio_explosion_descriptor: nil}}
   end
 
   @doc "Cancels the current cast without settling SP or cooldown."
@@ -150,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
 
   defp schedule(session, info) do
     token = make_ref()
-    timer_ref = :erlang.start_timer(info.total, self(), {:homunculus, {:cast_complete, token}})
+    timer_ref = Clock.arm(info.total, {:cast_complete, token})
 
     casting = %{
       token: token,
@@ -356,7 +347,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     )
 
     runtime = session.homunculus_runtime
-    ref = :erlang.start_timer(descriptor.delay_ms, self(), {:homunculus, :bio_explosion})
+    ref = Clock.arm(descriptor.delay_ms, :bio_explosion)
 
     death_descriptor =
       Map.take(descriptor, [
