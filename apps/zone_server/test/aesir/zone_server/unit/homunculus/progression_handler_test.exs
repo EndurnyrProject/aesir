@@ -334,7 +334,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     assert evolved.size == :medium
     assert evolved.race == :demi_human
     assert evolved.element == {:neutral, 1}
-    assert evolved.attack_delay_ms == 700
+    assert evolved.attack_delay_ms == 623
     assert evolved.intimacy_hundredths == 1_000
     assert evolved.level == 42
     assert evolved.exp == 123
@@ -375,8 +375,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
       :movement_state,
       :target,
       :casting,
-      :attack_range,
-      :combat_stats
+      :attack_range
     ]
 
     assert Map.take(evolved, preserved_fields) == Map.take(original, preserved_fields)
@@ -497,7 +496,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
       intimacy_hundredths: row.intimacy_hundredths,
       learned_skills: row.learned_skills,
       ai_config: Config.default(),
-      world_gid: 70_001,
+      world_gid: nil,
       map_name: "progression_test",
       x: 10,
       y: 10,

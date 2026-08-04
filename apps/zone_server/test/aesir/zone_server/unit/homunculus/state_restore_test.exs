@@ -56,6 +56,17 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestoreTest do
     assert state.ai_config == Config.default([])
   end
 
+  test "restore derives passive maxima and nonzero combat values from raw durable fields" do
+    assert {:ok, state} = restore(learned_skills: %{"8003" => 5}, sp: 205)
+
+    assert state.raw_max_sp == 200
+    assert state.max_sp == 210
+    assert state.sp == 205
+    assert state.combat_stats.atk > 0
+    assert state.combat_stats.hit > 0
+    assert state.attack_delay_ms < state.raw_attack_delay_ms
+  end
+
   defp restore(overrides) do
     row =
       struct!(Homunculus, %{

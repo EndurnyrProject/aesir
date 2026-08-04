@@ -11,6 +11,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.Net.UnitHp
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
+  alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
@@ -29,7 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
           | {:apply_heal, pos_integer(), non_neg_integer(), tuple() | nil}
           | {:drain_sp, pos_integer(), non_neg_integer()}
           | {:basic_attack, pos_integer(), tuple()}
-          | {:status_changed, pos_integer(), atom(), :applied | :tick | :expired}
+          | {:status_changed, pos_integer(), atom(), :applied | :tick | :expired | :removed}
 
   @doc "Applies one typed combat event through the owning aggregate."
   @spec handle(event(), SessionState.t()) ::
@@ -84,36 +87,49 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   def handle({:drain_sp, _gid, _amount}, session), do: {:noreply, session}
 
-  def handle({:status_changed, gid, _status_id, _event}, session) do
+  def handle({:status_changed, gid, status_id, event}, session) do
     case active_homunculus(session, gid) do
-      {:ok, homunculus} -> {:noreply, StateCommit.commit(session, homunculus)}
+      {:ok, homunculus} -> refresh_status(session, homunculus, status_id, event)
       {:error, :stale_target} -> {:noreply, session}
     end
   end
 
   def handle({:basic_attack, gid, target_ref}, session) do
-    case active_homunculus(session, gid) do
-      {:ok, homunculus} ->
-        session =
-          if homunculus.action_state == :casting,
-            do: CastingHandler.cancel(session),
-            else: session
+    now_ms = System.monotonic_time(:millisecond)
 
-        attacking = %{session.homunculus | action_state: :attacking, target: target_ref}
-        session = StateCommit.commit(session, attacking)
+    with {:ok, homunculus} <- active_homunculus(session, gid),
+         true <- basic_attack_ready?(session.homunculus_runtime, homunculus, now_ms) do
+      runtime = %{session.homunculus_runtime | last_basic_attack_at_ms: now_ms}
+      session = %{session | homunculus_runtime: runtime}
 
-        case AutoAttack.execute_homunculus_attack(attacking, target_ref) do
-          {:local_effects, effects} ->
-            effects
-            |> apply_local_effects(session)
-            |> finish_attack(gid)
+      session =
+        if homunculus.action_state == :casting,
+          do: CastingHandler.cancel(session),
+          else: session
 
-          _result ->
-            finish_attack({:noreply, session}, gid)
-        end
+      attacking = %{session.homunculus | action_state: :attacking, target: target_ref}
+      session = StateCommit.commit(session, attacking)
 
-      {:error, :stale_target} ->
-        {:noreply, session}
+      case AutoAttack.execute_homunculus_attack(attacking, target_ref) do
+        {:local_effects, effects} ->
+          effects
+          |> apply_local_effects(session)
+          |> finish_attack(gid)
+
+        _result ->
+          finish_attack({:noreply, session}, gid)
+      end
+    else
+      _not_ready_or_stale -> {:noreply, session}
+    end
+  end
+
+  @doc false
+  @spec basic_attack_ready?(map(), HomunculusState.t(), integer()) :: boolean()
+  def basic_attack_ready?(runtime, %HomunculusState{} = homunculus, now_ms) do
+    case runtime.last_basic_attack_at_ms do
+      nil -> true
+      last_at -> now_ms - last_at >= homunculus.attack_delay_ms
     end
   end
 
@@ -137,6 +153,60 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
       {:error, :stale_target} ->
         {:noreply, session}
+    end
+  end
+
+  defp refresh_status(session, homunculus, :sc_change, :expired) do
+    if lif?(homunculus) do
+      recomputed = recompute_statuses(homunculus)
+      changed = %{recomputed | hp: 10, sp: 10}
+
+      case persist_resources(changed) do
+        :ok ->
+          notify_hp(changed)
+          {:noreply, StateCommit.commit(session, changed)}
+
+        {:error, reason} ->
+          {:stop, {:homunculus_change_expiry_persistence_failed, reason}, session}
+      end
+    else
+      commit_recomputed(session, homunculus)
+    end
+  end
+
+  defp refresh_status(session, homunculus, _status_id, _event),
+    do: commit_recomputed(session, homunculus)
+
+  defp commit_recomputed(session, homunculus) do
+    recomputed = recompute_statuses(homunculus)
+    notify_hp(recomputed)
+    {:noreply, StateCommit.commit(session, recomputed)}
+  end
+
+  defp recompute_statuses(%HomunculusState{} = homunculus) do
+    modifiers =
+      ModifierCalculator.get_all_modifiers(:homunculus, homunculus.world_gid)
+
+    Stats.recompute(homunculus, modifiers)
+  end
+
+  defp lif?(%HomunculusState{} = homunculus) do
+    case Catalog.by_id(homunculus.class_id) do
+      {:ok, %{base_class_id: base_class_id}} -> base_class_id in [6001, 6005]
+      :error -> false
+    end
+  end
+
+  defp persist_resources(%HomunculusState{} = homunculus) do
+    case Persistence.load_for_character(homunculus.owner_character_id) do
+      %Homunculus{id: id} = row when id == homunculus.id ->
+        case Persistence.checkpoint(row, %{hp: homunculus.hp, sp: homunculus.sp}) do
+          {:ok, _row} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+
+      _missing ->
+        {:error, :not_persisted}
     end
   end
 

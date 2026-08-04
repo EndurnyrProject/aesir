@@ -255,10 +255,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         target_hp <- target_state.__struct__.get_stats(target_state).hp,
          :ok <- AttackValidator.validate(attacker, target, projectile?: true),
          :ok <- validate_homunculus_target(attacker, target, target_type),
          {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
-      resolve_homunculus_attack(combat_result, attacker, target, target_pid, target_type)
+      resolve_homunculus_attack(
+        combat_result,
+        attacker,
+        target,
+        target_pid,
+        target_type,
+        target_hp
+      )
     else
       false -> {:error, :invalid_target}
       error -> error
@@ -858,7 +866,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result)
   end
 
-  defp resolve_homunculus_attack({:miss}, attacker, target, _target_pid, _target_type) do
+  defp resolve_homunculus_attack({:miss}, attacker, target, _target_pid, _target_type, _target_hp) do
     DamageApplication.broadcast_nearby(target, PacketFactory.build_miss_packet(attacker, target))
     :ok
   end
@@ -868,7 +876,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          attacker,
          target,
          _target_pid,
-         _target_type
+         _target_type,
+         _target_hp
        ) do
     DamageApplication.broadcast_nearby(
       target,
@@ -883,7 +892,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          attacker,
          target,
          target_pid,
-         target_type
+         target_type,
+         target_hp
        ) do
     hit_info = %{
       dmg_type: :physical,
@@ -905,20 +915,49 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         source
       )
 
+    damage = min(damage, target_hp)
+
     packet =
       PacketFactory.build_attack_packet(attacker, target, %{damage_result | damage: damage})
 
     DamageApplication.broadcast_nearby(target, packet)
 
-    DamageApplication.apply_unit_damage(
-      target_type,
-      target_pid,
-      target.unit_id,
-      damage,
-      hit_info,
-      source
-    )
+    delivery =
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target.unit_id,
+        damage,
+        hit_info,
+        source
+      )
+
+    proc_effects =
+      :homunculus
+      |> StatusInterpreter.on_dealt_damage(attacker.unit_id, %{
+        target: {target_type, target.unit_id},
+        damage: damage,
+        element: attacker.weapon.element,
+        primary_basic_weapon_hit?: true
+      })
+      |> Enum.map(&homunculus_proc_effect/1)
+
+    append_local_effects(delivery, proc_effects)
   end
+
+  defp homunculus_proc_effect({:local_heal, target, amount, source}) do
+    DamageApplication.local_heal_effect(target, amount, source)
+  end
+
+  defp homunculus_proc_effect(follow_up) do
+    raise ArgumentError, "unsupported Homunculus dealt-damage follow-up: #{inspect(follow_up)}"
+  end
+
+  defp append_local_effects(delivery, []), do: delivery
+  defp append_local_effects(:ok, effects), do: {:local_effects, effects}
+
+  defp append_local_effects({:local_effects, current}, effects),
+    do: {:local_effects, current ++ effects}
 
   defp typed_mob_target(target_id) when is_integer(target_id), do: {:player, target_id}
   defp typed_mob_target(target_ref), do: target_ref

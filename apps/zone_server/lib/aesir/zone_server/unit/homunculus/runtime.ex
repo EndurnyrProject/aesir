@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
             separation_timer_ref: nil,
             cooldown_timer_ref: nil,
             movement_path: [],
+            last_basic_attack_at_ms: nil,
             private_dirty: false
 
   @type t() :: %__MODULE__{
@@ -34,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Runtime do
           separation_timer_ref: timer_ref(),
           cooldown_timer_ref: timer_ref(),
           movement_path: [{integer(), integer()}],
+          last_basic_attack_at_ms: integer() | nil,
           private_dirty: boolean()
         }
 end

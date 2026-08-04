@@ -18,6 +18,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   """
   @spec get_all_modifiers(atom(), integer()) :: map()
   def get_all_modifiers(unit_type, unit_id) do
+    calculate_modifiers(unit_type, unit_id, fn instance ->
+      ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+    end)
+  end
+
+  @doc false
+  @spec get_all_modifiers(atom(), integer(), map()) :: map()
+  def get_all_modifiers(unit_type, unit_id, target_stats) when is_map(target_stats) do
+    calculate_modifiers(unit_type, unit_id, fn instance ->
+      ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance, target_stats)
+    end)
+  end
+
+  defp calculate_modifiers(unit_type, unit_id, context_builder) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
     |> Enum.sort_by(&{&1.started_at, &1.type})
@@ -27,7 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
           acc
 
         definition ->
-          context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+          context = context_builder.(instance)
           merge_modifiers(acc, definition.module.modifiers(instance, context))
       end
     end)

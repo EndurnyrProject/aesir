@@ -7,10 +7,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Bloodlust
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.StatusTickManager
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -61,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_increaseagi, val1: 4, val2: 7)
     assert StatusStorage.has_status?(:homunculus, gid, :sc_increaseagi)
 
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.agi == 19 end)
     entry = StatusStorage.get_status(:homunculus, gid, :sc_increaseagi)
     context = ContextBuilder.build_context(:homunculus, gid, nil, entry)
     homunculus = PlayerSession.get_state(session.pid).homunculus
@@ -172,6 +178,85 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     assert StatusStorage.has_status?(:homunculus, gid, :sc_increaseagi)
   end
 
+  test "retained Fleet and Speed modifiers survive warp re-entry", %{session: session, gid: gid} do
+    baseline = PlayerSession.get_state(session.pid).homunculus
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_fleet, val2: 120, val3: 25)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_speed, val2: 50)
+
+    assert_eventually(fn ->
+      current = PlayerSession.get_state(session.pid).homunculus
+
+      current.attack_delay_ms < baseline.attack_delay_ms and
+        current.combat_stats.flee == baseline.combat_stats.flee + 50
+    end)
+
+    before_warp = PlayerSession.get_state(session.pid).homunculus
+    :sys.replace_state(session.pid, &CommandHandler.detach_for_warp(&1, false))
+
+    :sys.replace_state(session.pid, fn current ->
+      StateCommit.activate_claimed(current, current.homunculus, gid)
+    end)
+
+    reentered = PlayerSession.get_state(session.pid).homunculus
+    assert reentered.world_gid == gid
+    assert reentered.attack_delay_ms == before_warp.attack_delay_ms
+    assert reentered.combat_stats.flee == before_warp.combat_stats.flee
+    assert StatusStorage.has_status?(:homunculus, gid, :sc_fleet)
+    assert StatusStorage.has_status?(:homunculus, gid, :sc_speed)
+  end
+
+  test "same-GID activation preserves modifiers and fresh activation is isolated", %{
+    session: session,
+    gid: gid
+  } do
+    baseline = PlayerSession.get_state(session.pid).homunculus
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_fleet, val2: 120, val3: 25)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_speed, val2: 50)
+
+    assert_eventually(fn ->
+      PlayerSession.get_state(session.pid).homunculus.attack_delay_ms < baseline.attack_delay_ms
+    end)
+
+    :sys.replace_state(session.pid, fn current ->
+      StateCommit.activate_claimed(current, current.homunculus, gid)
+    end)
+
+    retained = PlayerSession.get_state(session.pid).homunculus
+    assert retained.attack_delay_ms < baseline.attack_delay_ms
+    assert retained.combat_stats.flee == baseline.combat_stats.flee + 50
+
+    fresh_gid = 1_950_000 + rem(System.unique_integer([:positive]), 40_000)
+    assert UnitRegistry.claim_unit_id(fresh_gid, :homunculus)
+
+    :sys.replace_state(session.pid, fn current ->
+      fresh = %{current.homunculus | world_gid: nil}
+      StateCommit.activate_claimed(current, fresh, fresh_gid)
+    end)
+
+    activated = PlayerSession.get_state(session.pid).homunculus
+    assert activated.world_gid == fresh_gid
+    assert activated.attack_delay_ms == baseline.attack_delay_ms
+    assert activated.combat_stats.flee == baseline.combat_stats.flee
+  end
+
+  test "progression recompute retains active StatusStorage modifiers", %{
+    session: session,
+    gid: gid
+  } do
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_change, val2: 30, val3: 20)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_fleet, val2: 120, val3: 25)
+
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.vit == 43 end)
+    active = PlayerSession.get_state(session.pid).homunculus
+
+    assert {:ok, progressed} = ProgressionHandler.gain_exp(active, 0)
+    assert progressed.vit == active.vit
+    assert progressed.int == active.int
+    assert progressed.attack_delay_ms == active.attack_delay_ms
+    assert StatusStorage.has_status?(:homunculus, gid, :sc_change)
+    assert StatusStorage.has_status?(:homunculus, gid, :sc_fleet)
+  end
+
   test "Rest clears statuses without clearing durable cooldowns", %{session: session, gid: gid} do
     assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_increaseagi)
     cooldowns = PlayerSession.get_state(session.pid).homunculus.cooldowns
@@ -227,6 +312,110 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     assert_eventually(fn ->
       not StatusStorage.has_status?(:homunculus, gid, :sc_increaseagi)
     end)
+  end
+
+  test "all six shared statuses are discovered with canonical metadata", %{gid: gid} do
+    expected = %{
+      sc_avoid: :hlif_avoid,
+      sc_change: :hlif_change,
+      sc_defence: nil,
+      sc_bloodlust: :hami_bloodlust,
+      sc_fleet: :hfli_fleet,
+      sc_speed: :hfli_speed
+    }
+
+    Enum.each(expected, fn {status_id, icon} ->
+      definition = Registry.get_definition(status_id)
+      assert definition.properties == [:buff]
+      assert definition.no_dispel == false
+      assert definition.icon == icon
+      assert :ok = Interpreter.apply_status(:homunculus, gid, status_id, duration: 60_000)
+      assert StatusStorage.has_status?(:homunculus, gid, status_id)
+
+      :ok =
+        StatusStorage.update_status(:homunculus, gid, status_id, fn entry ->
+          %{entry | expires_at: System.monotonic_time(:millisecond) - 1}
+        end)
+    end)
+
+    assert {:noreply, _state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
+    assert_eventually(fn -> StatusStorage.get_unit_statuses(:homunculus, gid) == [] end)
+  end
+
+  test "shared status modifier channels feed the Homunculus readers", %{gid: gid} do
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_avoid, val2: 80)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_change, val2: 30, val3: 20)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_defence, val2: 15)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_bloodlust, val2: 40)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_fleet, val2: 120, val3: 25)
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_speed, val2: 50)
+
+    assert %{
+             movement_speed: -80,
+             vit: 30,
+             int: 20,
+             def: 15,
+             atk_rate: 65,
+             hom_aspd_rate: 120,
+             flee: 50
+           } = ModifierCalculator.get_all_modifiers(:homunculus, gid)
+
+    assert {:error, :prevented} =
+             Interpreter.apply_status(:homunculus, gid, :sc_change, val2: 60, val3: 40)
+  end
+
+  test "Change natural expiry sets exactly 10 HP and SP but explicit removal does not", %{
+    session: session,
+    character: character,
+    gid: gid
+  } do
+    assert :ok =
+             Interpreter.apply_status(:homunculus, gid, :sc_change,
+               val2: 30,
+               val3: 20,
+               duration: 60_000
+             )
+
+    :ok =
+      StatusStorage.update_status(:homunculus, gid, :sc_change, fn entry ->
+        %{entry | expires_at: System.monotonic_time(:millisecond) - 1}
+      end)
+
+    assert {:noreply, _state} = StatusTickManager.handle_info(:tick, %StatusTickManager.State{})
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 10 end)
+    assert PlayerSession.get_state(session.pid).homunculus.sp == 10
+    assert Repo.get_by!(Homunculus, character_id: character.id).hp == 10
+
+    :sys.replace_state(session.pid, fn current ->
+      StateCommit.commit(current, %{current.homunculus | hp: 400, sp: 100})
+    end)
+
+    assert :ok = Interpreter.apply_status(:homunculus, gid, :sc_change, val2: 30, val3: 20)
+    assert :ok = Interpreter.remove_status(:homunculus, gid, :sc_change)
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 400 end)
+    assert PlayerSession.get_state(session.pid).homunculus.sp == 100
+  end
+
+  test "Bloodlust emits one typed local heal only for positive primary basic hits" do
+    instance = %StatusEntry{val2: 50, val3: 100, val4: 20}
+    holder = {:homunculus, 70_001}
+
+    assert {:ok, ^instance, [{:local_heal, ^holder, 24, ^holder}]} =
+             Bloodlust.on_dealt_damage(
+               holder,
+               instance,
+               %{damage: 123, primary_basic_weapon_hit?: true},
+               %{}
+             )
+
+    for hit <- [
+          %{damage: 0, primary_basic_weapon_hit?: true},
+          %{damage: 123, skill_id: 8_005},
+          %{damage: 123, reflected: true},
+          %{damage: 123, dmg_type: :magic}
+        ] do
+      assert {:ok, ^instance} = Bloodlust.on_dealt_damage(holder, instance, hit, %{})
+    end
   end
 
   test "a dead Homunculus rejects status application", %{session: session, gid: gid} do

@@ -93,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Ref
 
   @typedoc "The unit a status effect is attached to."
   @type target :: {Unit.unit_type(), integer()}
@@ -106,8 +107,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @type auto_cast :: {:auto_cast, atom(), pos_integer(), {:unit, integer()}}
 
+  @typedoc "A typed aggregate-local heal emitted by an attacker-side status proc."
+  @type local_heal :: {:local_heal, Ref.t(), pos_integer(), Ref.t()}
+
   @typedoc "A follow-up action a lifecycle callback asks the engine to run after it returns."
-  @type follow_up :: {atom(), keyword()} | auto_cast()
+  @type follow_up :: {atom(), keyword()} | auto_cast() | local_heal()
 
   @typedoc """
   Result of a lifecycle callback.

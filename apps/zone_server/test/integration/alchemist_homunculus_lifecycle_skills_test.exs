@@ -64,6 +64,8 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
       assert Inventory.held_amount(state.game_state.inventory, @embryo) == 0
       assert state.homunculus.lifecycle == :active
       assert state.homunculus.hp == state.homunculus.max_hp
+      assert state.homunculus.combat_stats.atk > 0
+      assert state.homunculus.combat_stats.hit > 0
       assert is_integer(state.homunculus.world_gid)
       session_pid = session.pid
 

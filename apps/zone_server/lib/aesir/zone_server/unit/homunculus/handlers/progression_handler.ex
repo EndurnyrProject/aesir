@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.Homunculus.ExpTable
   alias Aesir.ZoneServer.Mmo.Homunculus.Growth
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
@@ -46,6 +48,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
 
   def gain_exp(%HomunculusState{} = state, amount, opts)
       when is_integer(amount) and amount >= 0 do
+    state = recompute(state)
+
     with {:ok, species} <- catalog_row(state.class_id),
          {:ok, progressed} <- advance_levels(%{state | exp: state.exp + amount}, species, opts) do
       persist(state, progressed)
@@ -57,6 +61,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
   @doc "Learns one rank after validating the current class tree and persists it atomically with AI."
   @spec learn_skill(HomunculusState.t(), pos_integer()) :: result()
   def learn_skill(%HomunculusState{} = state, skill_id) do
+    state = recompute(state)
+
     with {:ok, entry} <- skill_entry(state.class_id, skill_id),
          :ok <- validate_learning(state, entry) do
       learned_skills = Map.update(state.learned_skills, skill_id, 1, &(&1 + 1))
@@ -69,7 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
           ai_config: ai_config
       }
 
-      persist(state, updated)
+      persist(state, recompute(updated))
     end
   end
 
@@ -88,6 +94,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
   @doc "Returns the pure original-to-evolved state transition without consuming or persisting an item."
   @spec evolve(HomunculusState.t(), opts()) :: result()
   def evolve(%HomunculusState{} = state, opts \\ []) do
+    state = recompute(state)
+
     with :ok <- require_active(state),
          :ok <- require_living(state),
          {:ok, original} <- catalog_row(state.class_id),
@@ -96,15 +104,17 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
          {:ok, evolved} <- catalog_row(original.evolution_class_id) do
       bonuses = Growth.evolution(evolved, opts)
 
-      {:ok,
-       state
-       |> apply_bonuses(bonuses)
-       |> Map.put(:class_id, evolved.id)
-       |> Map.put(:intimacy_hundredths, 1_000)
-       |> Map.put(:race, evolved.race)
-       |> Map.put(:element, {evolved.element, 1})
-       |> Map.put(:size, evolved.size)
-       |> Map.put(:attack_delay_ms, evolved.attack_delay)}
+      evolved_state =
+        state
+        |> apply_bonuses(bonuses)
+        |> Map.put(:class_id, evolved.id)
+        |> Map.put(:intimacy_hundredths, 1_000)
+        |> Map.put(:race, evolved.race)
+        |> Map.put(:element, {evolved.element, 1})
+        |> Map.put(:size, evolved.size)
+        |> Map.put(:raw_attack_delay_ms, evolved.attack_delay)
+
+      {:ok, recompute(evolved_state)}
     end
   end
 
@@ -140,13 +150,33 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
 
   defp apply_bonuses(state, bonuses) do
     Enum.reduce(bonuses, state, fn
-      {:hp, value}, current -> Map.update!(current, :max_hp, &(&1 + value))
-      {:sp, value}, current -> Map.update!(current, :max_sp, &(&1 + value))
-      {stat, value}, current -> Map.update!(current, stat, &(&1 + value))
+      {:hp, value}, current -> Map.update!(current, :raw_max_hp, &(&1 + value))
+      {:sp, value}, current -> Map.update!(current, :raw_max_sp, &(&1 + value))
+      {stat, value}, current -> Map.update!(current, raw_stat(stat), &(&1 + value))
     end)
   end
 
-  defp fully_restore(state), do: %{state | hp: state.max_hp, sp: state.max_sp}
+  defp fully_restore(state) do
+    effective = recompute(state)
+    %{effective | hp: effective.max_hp, sp: effective.max_sp}
+  end
+
+  defp recompute(%HomunculusState{lifecycle: :active, world_gid: gid} = state)
+       when is_integer(gid) do
+    modifiers =
+      ModifierCalculator.get_all_modifiers(:homunculus, gid, HomunculusState.get_stats(state))
+
+    Stats.recompute(state, modifiers)
+  end
+
+  defp recompute(%HomunculusState{} = state), do: Stats.recompute(state)
+
+  defp raw_stat(:str), do: :raw_str
+  defp raw_stat(:agi), do: :raw_agi
+  defp raw_stat(:vit), do: :raw_vit
+  defp raw_stat(:int), do: :raw_int
+  defp raw_stat(:dex), do: :raw_dex
+  defp raw_stat(:luk), do: :raw_luk
 
   @doc false
   @spec persistence_attrs(HomunculusState.t()) :: map()
@@ -154,6 +184,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
     state
     |> Map.from_struct()
     |> Map.take(@durable_fields)
+    |> Map.put(:max_hp, state.raw_max_hp)
+    |> Map.put(:max_sp, state.raw_max_sp)
+    |> Map.put(:str, state.raw_str)
+    |> Map.put(:agi, state.raw_agi)
+    |> Map.put(:vit, state.raw_vit)
+    |> Map.put(:int, state.raw_int)
+    |> Map.put(:dex, state.raw_dex)
+    |> Map.put(:luk, state.raw_luk)
     |> Map.put(:lifecycle, Atom.to_string(state.lifecycle))
     |> Map.put(:ai_config, Config.encode(state.ai_config))
   end

@@ -196,30 +196,30 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Notifies the attacker's implementing statuses that one of its weapon hits landed.
 
   Only statuses implementing `c:Definition.on_dealt_damage/4` are dispatched -
-  the registry indexes them, so an attacker holding none (and, today, every
-  attacker) costs one registry read and nothing else. Status follow-ups are
-  applied here; `{:auto_cast, ...}` follow-ups are returned for the combat path
-  to drain once the triggering hit has settled.
+  the registry indexes them, so an attacker holding none costs one registry
+  read and nothing else. Status follow-ups are applied here; typed combat
+  follow-ups are returned for the attacker's own combat path to settle.
   """
-  @spec on_dealt_damage(unit_type(), integer(), map()) :: [Definition.auto_cast()]
+  @spec on_dealt_damage(unit_type(), integer(), map()) ::
+          [Definition.auto_cast() | Definition.local_heal()]
   def on_dealt_damage(unit_type, unit_id, hit_info) do
     implementing = Registry.statuses_implementing(:on_dealt_damage)
 
     if MapSet.size(implementing) == 0 do
       []
     else
-      {auto_casts, status_follow_ups} =
+      {combat_follow_ups, status_follow_ups} =
         unit_type
         |> StatusStorage.get_unit_statuses(unit_id)
         |> Enum.filter(&MapSet.member?(implementing, &1.type))
         |> Enum.flat_map(&dispatch_dealt_damage(unit_type, unit_id, &1, hit_info))
-        |> Enum.split_with(&match?({:auto_cast, _, _, _}, &1))
+        |> Enum.split_with(&combat_follow_up?/1)
 
       Enum.each(status_follow_ups, fn {status_id, params} ->
         apply_status(unit_type, unit_id, status_id, params)
       end)
 
-      auto_casts
+      combat_follow_ups
     end
   end
 
@@ -247,6 +247,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       end)
     end
   end
+
+  defp combat_follow_up?({:auto_cast, _, _, _}), do: true
+  defp combat_follow_up?({:local_heal, _, _, _}), do: true
+  defp combat_follow_up?(_follow_up), do: false
 
   @doc "Notifies active statuses that their holder made movement contact with a unit."
   @spec on_movement_contact(unit_type(), integer(), {unit_type(), integer()}) :: :ok
@@ -312,6 +316,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       module.on_expire({unit_type, unit_id}, instance, context)
       StatusStorage.remove_status(unit_type, unit_id, status_id)
       StatusDisplay.on_removed(unit_type, unit_id, status_id, instance)
+      notify_unit_status_removed(unit_type, unit_id, status_id)
       :ok
     end)
 
@@ -1020,16 +1025,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   defp notify_unit_status_applied(:homunculus, unit_id, status_id) do
+    notify_homunculus_owner(unit_id, status_id, :applied)
+  end
+
+  defp notify_unit_status_applied(_unit_type, _unit_id, _status_id), do: :ok
+
+  defp notify_unit_status_removed(:homunculus, unit_id, status_id) do
+    notify_homunculus_owner(unit_id, status_id, :removed)
+  end
+
+  defp notify_unit_status_removed(_unit_type, _unit_id, _status_id), do: :ok
+
+  defp notify_homunculus_owner(unit_id, status_id, event) do
     case UnitRegistry.get_unit(:homunculus, unit_id) do
-      {:ok, {_module, _state, pid}} when is_pid(pid) and pid != self() ->
-        GenServer.cast(pid, {:homunculus, {:status_changed, unit_id, status_id, :applied}})
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        GenServer.cast(pid, {:homunculus, {:status_changed, unit_id, status_id, event}})
 
       _ ->
         :ok
     end
   end
-
-  defp notify_unit_status_applied(_unit_type, _unit_id, _status_id), do: :ok
 
   defp resolve_tick(tick, _definition) when tick > 0, do: tick
   defp resolve_tick(_tick, %{tick_interval: interval}) when is_integer(interval), do: interval

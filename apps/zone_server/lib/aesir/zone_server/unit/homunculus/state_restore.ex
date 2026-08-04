@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
@@ -55,13 +56,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
         |> Map.put(:learned_skills, learned_skills)
         |> Map.put(:cooldowns, cooldowns)
         |> Map.put(:ai_config, ai_config)
+        |> Map.put(:raw_max_hp, row.max_hp)
+        |> Map.put(:raw_max_sp, row.max_sp)
+        |> Map.put(:raw_str, row.str)
+        |> Map.put(:raw_agi, row.agi)
+        |> Map.put(:raw_vit, row.vit)
+        |> Map.put(:raw_int, row.int)
+        |> Map.put(:raw_dex, row.dex)
+        |> Map.put(:raw_luk, row.luk)
         |> Map.put(:race, species.race)
         |> Map.put(:element, {species.element, 1})
         |> Map.put(:size, species.size)
         |> Map.put(:attack_delay_ms, species.attack_delay)
+        |> Map.put(:raw_attack_delay_ms, species.attack_delay)
         |> put_lifecycle_invariants(lifecycle)
 
-      {:ok, struct!(HomunculusState, state)}
+      {:ok, state |> then(&struct!(HomunculusState, &1)) |> Stats.recompute()}
     else
       :error -> {:error, :invalid_species}
       {:error, _reason} = error -> error
@@ -185,8 +195,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
   end
 
   defp valid_vitals?(row) do
-    non_negative?(row.hp) and positive?(row.max_hp) and row.hp <= row.max_hp and
-      non_negative?(row.sp) and non_negative?(row.max_sp) and row.sp <= row.max_sp
+    non_negative?(row.hp) and positive?(row.max_hp) and
+      non_negative?(row.sp) and non_negative?(row.max_sp)
   end
 
   defp valid_bond?(row) do

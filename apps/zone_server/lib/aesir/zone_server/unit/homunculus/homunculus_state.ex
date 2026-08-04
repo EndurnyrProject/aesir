@@ -28,15 +28,21 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
         }
   @type combat_stats :: %{
           atk: integer(),
+          atk_min: integer(),
+          atk_max: integer(),
           def: integer(),
+          soft_def: integer(),
           hit: integer(),
           flee: integer(),
           perfect_dodge: integer(),
+          critical: integer(),
           matk: integer(),
           matk_min: integer(),
           matk_max: integer(),
           mdef: integer(),
-          soft_mdef: integer()
+          soft_mdef: integer(),
+          hp_regen_rate: integer(),
+          sp_regen_rate: integer()
         }
 
   @enforce_keys [:id, :owner_character_id, :class_id, :name]
@@ -52,14 +58,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
             skill_points: 0,
             hp: 0,
             max_hp: 0,
+            raw_max_hp: nil,
             sp: 0,
             max_sp: 0,
+            raw_max_sp: nil,
             str: 0,
+            raw_str: nil,
             agi: 0,
+            raw_agi: nil,
             vit: 0,
+            raw_vit: nil,
             int: 0,
+            raw_int: nil,
             dex: 0,
+            raw_dex: nil,
             luk: 0,
+            raw_luk: nil,
             hunger: 32,
             intimacy_hundredths: 2_100,
             active_remaining_ms: 1_800_000,
@@ -81,17 +95,24 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
             size: :medium,
             attack_range: 1,
             attack_delay_ms: 500,
+            raw_attack_delay_ms: nil,
             combat_stats: %{
               atk: 0,
+              atk_min: 0,
+              atk_max: 0,
               def: 0,
+              soft_def: 0,
               hit: 0,
               flee: 0,
               perfect_dodge: 0,
+              critical: 0,
               matk: 0,
               matk_min: 0,
               matk_max: 0,
               mdef: 0,
-              soft_mdef: 0
+              soft_mdef: 0,
+              hp_regen_rate: 0,
+              sp_regen_rate: 0
             }
 
   @type t() :: %__MODULE__{
@@ -107,14 +128,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
           skill_points: non_neg_integer(),
           hp: non_neg_integer(),
           max_hp: non_neg_integer(),
+          raw_max_hp: non_neg_integer() | nil,
           sp: non_neg_integer(),
           max_sp: non_neg_integer(),
+          raw_max_sp: non_neg_integer() | nil,
           str: integer(),
+          raw_str: integer() | nil,
           agi: integer(),
+          raw_agi: integer() | nil,
           vit: integer(),
+          raw_vit: integer() | nil,
           int: integer(),
+          raw_int: integer() | nil,
           dex: integer(),
+          raw_dex: integer() | nil,
           luk: integer(),
+          raw_luk: integer() | nil,
           hunger: non_neg_integer(),
           intimacy_hundredths: non_neg_integer(),
           active_remaining_ms: non_neg_integer(),
@@ -136,6 +165,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
           size: Unit.entity_size(),
           attack_range: pos_integer(),
           attack_delay_ms: pos_integer(),
+          raw_attack_delay_ms: pos_integer() | nil,
           combat_stats: combat_stats()
         }
 

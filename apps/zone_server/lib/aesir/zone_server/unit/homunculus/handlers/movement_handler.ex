@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
@@ -276,7 +278,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   end
 
   defp arm_movement(session) do
-    ref = :erlang.start_timer(@movement_interval, self(), {:homunculus, :movement_tick})
+    modifiers =
+      ModifierCalculator.get_all_modifiers(:homunculus, session.homunculus.world_gid)
+
+    interval = Stats.movement_delay_ms(@movement_interval, modifiers)
+    ref = :erlang.start_timer(interval, self(), {:homunculus, :movement_tick})
     runtime = %{session.homunculus_runtime | movement_timer_ref: ref}
     %{session | homunculus_runtime: runtime}
   end

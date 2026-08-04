@@ -223,7 +223,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   def calculate_base_attack(%{unit_type: :homunculus} = attacker, _opts) do
-    {:ok, attacker.combat_stats.atk}
+    min_atk = attacker.combat_stats.atk_min
+    max_atk = attacker.combat_stats.atk_max
+
+    weapon_atk =
+      if max_atk > min_atk,
+        do: min_atk + :rand.uniform(max_atk - min_atk + 1) - 1,
+        else: min_atk
+
+    {:ok, attacker.combat_stats.atk + weapon_atk}
   end
 
   def calculate_base_attack(%{unit_type: :mob} = attacker, _opts) do
@@ -459,7 +467,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp calculate_soft_defense(%{unit_type: :homunculus} = defender) do
-    defender.base_stats.vit
+    defender.combat_stats.soft_def
   end
 
   defp calculate_soft_defense(%{unit_type: :mob}) do

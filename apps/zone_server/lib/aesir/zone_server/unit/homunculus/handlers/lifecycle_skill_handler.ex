@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
@@ -293,29 +294,40 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
       stats =
         Map.new(species.stats, fn {name, range} -> {String.to_existing_atom(name), range.base} end)
 
-      {:ok,
-       struct!(HomunculusState, %{
-         id: 1,
-         owner_character_id: character_id,
-         class_id: class_id,
-         name: species.name,
-         lifecycle: :active,
-         hp: stats.hp,
-         max_hp: stats.hp,
-         sp: stats.sp,
-         max_sp: stats.sp,
-         str: stats.str,
-         agi: stats.agi,
-         vit: stats.vit,
-         int: stats.int,
-         dex: stats.dex,
-         luk: stats.luk,
-         ai_config: Config.default([]),
-         race: species.race,
-         element: {species.element, 1},
-         size: species.size,
-         attack_delay_ms: species.attack_delay
-       })}
+      state =
+        struct!(HomunculusState, %{
+          id: 1,
+          owner_character_id: character_id,
+          class_id: class_id,
+          name: species.name,
+          lifecycle: :active,
+          hp: stats.hp,
+          max_hp: stats.hp,
+          raw_max_hp: stats.hp,
+          sp: stats.sp,
+          max_sp: stats.sp,
+          raw_max_sp: stats.sp,
+          str: stats.str,
+          raw_str: stats.str,
+          agi: stats.agi,
+          raw_agi: stats.agi,
+          vit: stats.vit,
+          raw_vit: stats.vit,
+          int: stats.int,
+          raw_int: stats.int,
+          dex: stats.dex,
+          raw_dex: stats.dex,
+          luk: stats.luk,
+          raw_luk: stats.luk,
+          ai_config: Config.default([]),
+          race: species.race,
+          element: {species.element, 1},
+          size: species.size,
+          attack_delay_ms: species.attack_delay,
+          raw_attack_delay_ms: species.attack_delay
+        })
+
+      {:ok, Stats.recompute(state)}
     end
   end
 

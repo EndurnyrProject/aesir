@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
@@ -78,7 +80,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         %HomunculusState{} = homunculus,
         opts \\ []
       ) do
-    validate_active!(prepare_active(session, homunculus, 1))
+    validate_active!(prepare_active(session, homunculus, 1, %{}))
 
     with :ok <- recover_owner_presence(homunculus.owner_character_id) do
       WorldId.allocate(
@@ -100,7 +102,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         gid
       )
       when is_integer(gid) and gid > 0 do
-    active = prepare_active(session, homunculus, gid)
+    modifiers = activation_modifiers(homunculus, gid)
+    active = prepare_active(session, homunculus, gid, modifiers)
     validate_active!(active)
     commit(session, active)
   end
@@ -117,8 +120,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
     end
   end
 
-  defp prepare_active(session, homunculus, gid) do
+  defp prepare_active(session, homunculus, gid, modifiers) do
     owner = session.game_state
+    homunculus = Stats.recompute(homunculus, modifiers)
 
     %{
       homunculus
@@ -131,6 +135,16 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
         dir: owner.dir
     }
   end
+
+  defp activation_modifiers(%HomunculusState{world_gid: gid} = homunculus, gid),
+    do:
+      ModifierCalculator.get_all_modifiers(
+        :homunculus,
+        gid,
+        HomunculusState.get_stats(homunculus)
+      )
+
+  defp activation_modifiers(%HomunculusState{}, _gid), do: %{}
 
   defp validate_active!(active) do
     unless active_world_state?(active) do

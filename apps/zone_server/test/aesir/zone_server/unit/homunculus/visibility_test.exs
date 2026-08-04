@@ -239,13 +239,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
     refute_receive {:"$gen_cast", {:visibility, {:homunculus_left_view, 70_001}}}, 20
   end
 
-  test "invalid activation fails before claiming a dynamic ID" do
+  test "invalid activation validates without reading modifiers from the dummy gid" do
     owner = player_state(42, 50, 50)
+    StatusStorage.apply_status(:homunculus, 1, :sc_fleet, val2: 120, val3: 25)
 
     assert_raise ArgumentError, ~r/complete living world state/, fn ->
       StateCommit.activate(
         session(owner),
-        %{homunculus() | world_gid: nil, hp: 0},
+        %{homunculus() | world_gid: 1, hp: 0},
         world_id_range: 5..5
       )
     end

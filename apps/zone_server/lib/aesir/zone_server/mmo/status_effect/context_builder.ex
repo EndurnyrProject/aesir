@@ -33,9 +33,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder do
   """
   @spec build_context(atom(), integer(), integer() | nil, StatusEntry.t()) :: map()
   def build_context(unit_type, unit_id, caster_id, %StatusEntry{} = instance) do
-    # Get the unit stats for the target
-    target_stats = get_unit_stats(unit_type, unit_id)
+    build_context(unit_type, unit_id, caster_id, instance, get_unit_stats(unit_type, unit_id))
+  end
 
+  @doc false
+  @spec build_context(atom(), integer(), integer() | nil, StatusEntry.t(), map()) :: map()
+  def build_context(unit_type, unit_id, caster_id, %StatusEntry{} = instance, target_stats) do
     # The caster is looked up with its own unit type (a player can curse a mob
     # and vice versa) and tolerantly: a caster may legitimately despawn while
     # its status lives on, which must not crash the target.
