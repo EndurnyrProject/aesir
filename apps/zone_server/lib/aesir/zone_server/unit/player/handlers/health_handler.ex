@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -109,12 +110,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:noreply, state}
   end
 
-  def apply_heal({:potion, :hp, amount}, source_id, state) do
-    apply_heal(scale_potion_recovery(amount, :hp, state.game_state.stats), source_id, state)
+  def apply_heal({:potion, :hp, _amount} = descriptor, source_id, state) do
+    apply_heal(
+      PotionRecovery.recover(descriptor, potion_recipient_terms(state)),
+      source_id,
+      state
+    )
   end
 
-  def apply_heal({:potion, :sp, amount}, _source_id, state) do
-    restore_sp(scale_potion_recovery(amount, :sp, state.game_state.stats), state)
+  def apply_heal({:potion, :sp, _amount} = descriptor, _source_id, state) do
+    restore_sp(PotionRecovery.recover(descriptor, potion_recipient_terms(state)), state)
   end
 
   def apply_heal(amount, _source_id, state) when amount > 0 do
@@ -148,19 +153,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     div(amount * (100 + rate), 100)
   end
 
-  defp scale_potion_recovery(amount, resource, stats) do
-    learning_potion = Learned.learned_level(stats.progression.learned_skills, 227)
-
-    recovery_rate =
-      case resource do
-        :hp ->
-          2 * PlayerStats.get_effective_stat(stats, :vit) + PlayerStats.get_item_heal_rate(stats)
-
-        :sp ->
-          2 * PlayerStats.get_effective_stat(stats, :int)
-      end
-
-    div(amount * (100 + 5 * learning_potion + recovery_rate), 100)
+  defp potion_recipient_terms(%{game_state: %{stats: stats}}) do
+    %{
+      learning_potion: Learned.learned_level(stats.progression.learned_skills, 227),
+      effective_vit: PlayerStats.get_effective_stat(stats, :vit),
+      effective_int: PlayerStats.get_effective_stat(stats, :int),
+      item_heal_rate: PlayerStats.get_item_heal_rate(stats)
+    }
   end
 
   @doc """

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -32,11 +33,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit, as: HomunculusStateCommit
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryStaging
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -51,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # SA_CASTCANCEL cancels the caster's own in-flight cast, so it is the one skill
   # that must run while the player is busy in :casting. It is intercepted ahead of
@@ -59,7 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   @cast_cancel_id 275
   @combo_followup_ids [272, 273]
 
-  @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer()) ::
+  @spec handle_use_skill(SessionState.t(), integer(), pos_integer(), integer() | tuple()) ::
           {:noreply, SessionState.t()}
   def handle_use_skill(state, skill_id, level, target_id) do
     state = maybe_cancel_combo(state, skill_id, target_id)
@@ -479,6 +483,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp resolve_deferred(
          state,
          game_state,
+         %Interpreter.Deferred{
+           effect: {:potion_delivery, target_ref, potion_descriptor}
+         } = descriptor,
+         locked,
+         _expected_id
+       ) do
+    with {:ok, charged} <- Interpreter.settle_deferred(game_state, descriptor),
+         {:ok, settled} <- settle_potion_inventory(charged) do
+      committed = commit_cast(state, settled, descriptor.skill_id, descriptor.level)
+      broadcast_skill_use(settled, descriptor.skill_id, descriptor.level, descriptor.target)
+
+      committed
+      |> deliver_potion(target_ref, potion_descriptor)
+      |> maybe_resume_lock(locked)
+    else
+      {:error, reason} ->
+        Logger.error("Potion Pitcher settlement failed: #{inspect(reason)}")
+        report_cast_failure(descriptor.skill_id, game_state.character_id, reason)
+        maybe_resume_lock(state, locked)
+    end
+  end
+
+  defp resolve_deferred(
+         state,
+         game_state,
          %Interpreter.Deferred{effect: {:homunculus_lifecycle, operation}} = descriptor,
          locked,
          expected_id
@@ -571,6 +600,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
 
   defp resolve_deferred(state, game_state, _descriptor, locked, _expected_id) do
     maybe_resume_lock(%{state | game_state: game_state}, locked)
+  end
+
+  defp settle_potion_inventory(
+         %PlayerState{
+           character_id: character_id,
+           pending_inventory_persist: [{old_inventory, new_inventory, change}]
+         } = game_state
+       ) do
+    case InventoryOps.apply_change(character_id, old_inventory, new_inventory, change) do
+      {:ok, persisted_inventory} ->
+        {:ok,
+         %{
+           game_state
+           | inventory: persisted_inventory,
+             pending_inventory_persist: []
+         }}
+
+      {:error, reason} ->
+        {:error, {:inventory_persistence_failed, reason}}
+    end
+  end
+
+  defp settle_potion_inventory(%PlayerState{}), do: {:error, :invalid_potion_staging}
+
+  defp deliver_potion(state, {:player, target_id}, descriptor) do
+    DamageApplication.apply_heal(
+      :player,
+      target_id,
+      descriptor,
+      state.game_state.character_id
+    )
+
+    state
+  end
+
+  defp deliver_potion(
+         %{game_state: %{character_id: owner_id}} = state,
+         {:homunculus, gid} = target_ref,
+         descriptor
+       ) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {HomunculusState, %HomunculusState{owner_character_id: ^owner_id}, owner_pid}}
+      when owner_pid == self() ->
+        source = {:player, state.game_state.character_id}
+        effect = DamageApplication.local_heal_effect(target_ref, descriptor, source)
+        {:noreply, delivered} = HomunculusCommandHandler.local_effect(effect, state)
+        HomunculusCommandHandler.publish_private_state_if_dirty(delivered)
+
+      _stale ->
+        state
+    end
   end
 
   defp commit_homunculus_transition(state, :rest, homunculus, nil) do
@@ -1240,5 +1320,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp skill_use_target_id(%{character_id: caster_id}, :self), do: caster_id
+  defp skill_use_target_id(_game_state, {:unit, {_type, id}}), do: id
   defp skill_use_target_id(_game_state, {:unit, id}), do: id
 end

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
+  alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -139,6 +140,43 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
              UnitRegistry.get_unit(:homunculus, gid)
 
     assert registered.hp == state.homunculus.hp
+  end
+
+  test "local HP potion recovery rounds before the Renewal three-times multiplier", %{
+    session: session,
+    gid: gid
+  } do
+    :sys.replace_state(session.pid, fn current ->
+      current = StateCommit.commit(current, %{current.homunculus | hp: 100})
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, :hp, 101}, nil)
+      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    assert PlayerSession.get_state(session.pid).homunculus.hp == 463
+  end
+
+  test "Homunculus SP potion recovery is canonical target recovery without HP's multiplier", %{
+    session: session,
+    gid: gid
+  } do
+    :sys.replace_state(session.pid, fn current ->
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, :sp, 41}, nil)
+      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    assert PlayerSession.get_state(session.pid).homunculus.sp == 199
+  end
+
+  test "local HP potion recovery clamps to the effective maximum", %{session: session, gid: gid} do
+    :sys.replace_state(session.pid, fn current ->
+      effect = DamageApplication.local_heal_effect({:homunculus, gid}, {:potion, :hp, 101}, nil)
+      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    assert PlayerSession.get_state(session.pid).homunculus.hp == 1_000
   end
 
   test "external mob damage and typed SP drains arrive asynchronously", %{

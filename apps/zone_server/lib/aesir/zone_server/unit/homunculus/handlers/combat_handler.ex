@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.Net.UnitHp
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -29,7 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   @type event ::
           {:apply_damage, pos_integer(), non_neg_integer(), map(), tuple() | nil}
-          | {:apply_heal, pos_integer(), non_neg_integer(), tuple() | nil}
+          | {:apply_heal, pos_integer(), DamageApplication.heal_amount(), tuple() | nil}
           | {:drain_sp, pos_integer(), non_neg_integer()}
           | {:basic_attack, pos_integer(), tuple()}
           | {:status_changed, pos_integer(), atom(), :applied | :tick | :expired | :removed}
@@ -58,6 +60,32 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   def handle({:apply_damage, _gid, _damage, _hit_info, _attacker}, session),
     do: {:noreply, session}
+
+  # Renewal's three-times Homunculus bonus applies only to HP potion recovery; SP uses shared recovery unmultiplied.
+  def handle({:apply_heal, gid, {:potion, :hp, _amount} = descriptor, _source}, session) do
+    case active_homunculus(session, gid) do
+      {:ok, homunculus} ->
+        amount = PotionRecovery.recover(descriptor, potion_recipient_terms(homunculus)) * 3
+        updated = %{homunculus | hp: min(homunculus.hp + amount, homunculus.max_hp)}
+        notify_hp(updated)
+        {:noreply, StateCommit.commit(session, updated)}
+
+      {:error, :stale_target} ->
+        {:noreply, session}
+    end
+  end
+
+  def handle({:apply_heal, gid, {:potion, :sp, _amount} = descriptor, _source}, session) do
+    case active_homunculus(session, gid) do
+      {:ok, homunculus} ->
+        amount = PotionRecovery.recover(descriptor, potion_recipient_terms(homunculus))
+        updated = %{homunculus | sp: min(homunculus.sp + amount, homunculus.max_sp)}
+        {:noreply, StateCommit.commit(session, updated)}
+
+      {:error, :stale_target} ->
+        {:noreply, session}
+    end
+  end
 
   def handle({:apply_heal, gid, amount, _source}, session)
       when is_integer(amount) and amount > 0 do
@@ -249,6 +277,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
       %HomunculusState{world_gid: ^gid, lifecycle: :active} = state -> {:ok, state}
       _other -> {:error, :stale_target}
     end
+  end
+
+  defp potion_recipient_terms(%HomunculusState{} = homunculus) do
+    %{
+      learning_potion: 0,
+      effective_vit: homunculus.vit,
+      effective_int: homunculus.int,
+      item_heal_rate: 0
+    }
   end
 
   defp notify_hp(%HomunculusState{} = state) do

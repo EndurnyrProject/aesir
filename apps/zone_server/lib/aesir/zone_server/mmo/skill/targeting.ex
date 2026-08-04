@@ -27,8 +27,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   defdelegate enemy?(attacker, target), to: Relationship
 
   @doc "Returns whether a player may directly support the exact owned Homunculus."
-  @spec direct_support?(Combatant.t(), Combatant.t()) :: boolean()
-  defdelegate direct_support?(caster, target), to: Relationship
+  @spec direct_support?(Combatant.t() | map(), Combatant.t() | map()) :: boolean()
+  def direct_support?(%Combatant{} = caster, %Combatant{} = target),
+    do: Relationship.direct_support?(caster, target)
+
+  def direct_support?(caster, target),
+    do:
+      Relationship.direct_support?(relationship_combatant(caster), relationship_combatant(target))
 
   @doc "Returns whether two unit snapshots share the exact social root."
   @spec exact_ally?(map(), map()) :: boolean()

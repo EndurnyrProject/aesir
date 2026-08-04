@@ -88,6 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Processes a decoded protobuf message routed to the player session.
@@ -149,6 +150,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   # SkillCast - Player casts a targeted skill (protobuf analogue of CZ_USE_SKILL 0x0113)
+  def handle_message(%SkillCast{skill_id: 231, level: level, target_id: target_id}, state) do
+    target = potion_pitcher_target(target_id)
+    SkillHandler.handle_use_skill(state, 231, level, target)
+  end
+
   def handle_message(%SkillCast{skill_id: skill_id, level: level, target_id: target_id}, state) do
     SkillHandler.handle_use_skill(state, skill_id, level, target_id)
   end
@@ -437,4 +443,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   end
 
   defp nv_basic_gate(_state, _action), do: :ok
+
+  defp potion_pitcher_target(target_id) do
+    case UnitRegistry.get_unit(:homunculus, target_id) do
+      {:ok, _entry} -> {:homunculus, target_id}
+      {:error, :not_found} -> target_id
+    end
+  end
 end
