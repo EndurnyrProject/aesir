@@ -71,12 +71,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   @doc """
   Whether `mover` is a hostile PvE target relative to this trap's caster.
 
-  Player traps target mobs and mob traps target players. Same-side contacts do
-  not trigger harmful traps; PvP and mob-on-mob targeting remain out of scope.
+  Player traps target mobs. Mob traps target players and Homunculi. Same-side
+  contacts do not trigger harmful traps; PvP and mob-on-mob targeting remain
+  out of scope.
   """
   @spec enemy?(Group.t(), {atom(), integer()}) :: boolean()
   def enemy?(%Group{caster_type: :player}, {:mob, _mover_id}), do: true
-  def enemy?(%Group{caster_type: :mob}, {:player, _mover_id}), do: true
+
+  def enemy?(%Group{caster_type: :mob}, {mover_type, _mover_id})
+      when mover_type in [:player, :homunculus],
+      do: true
+
   def enemy?(%Group{}, {_mover_type, _mover_id}), do: false
 
   defp claymore_spendable?(skill_name),

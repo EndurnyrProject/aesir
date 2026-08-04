@@ -28,23 +28,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
       240_000
     ]
 
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
 
   @impl Active
+  def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
+    with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
+    else
+      _ -> {:error, :invalid_target}
+    end
+  end
+
+  def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
+    do: {:error, :invalid_target}
+
+  def validate(_caster, _target, _level, _definition), do: :ok
+
+  @impl Active
   def cast(%{character_id: caster_id} = caster, target, level, definition) do
-    target_id = Active.resolve_target_id(caster, target)
+    {unit_type, target_id} = target_ref(caster, target)
     duration = Enum.at(definition.duration, level - 1)
 
     params = [val1: level, val2: 2 + level, caster_id: caster_id, duration: duration]
 
     # NOTE: Aesir has no SC_CHANGEUNDEAD player misc-attack path. When it exists, add
     # Increase AGI's transformed-player removal/attack branch and remove this note.
-    case StatusInterpreter.apply_status(:player, target_id, :sc_increaseagi, params) do
+    case StatusInterpreter.apply_status(unit_type, target_id, :sc_increaseagi, params) do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end
+
+  defp target_ref(%{character_id: caster_id}, :self), do: {:player, caster_id}
+  defp target_ref(_caster, {:unit, {unit_type, unit_id}}), do: {unit_type, unit_id}
+  defp target_ref(_caster, {:unit, target_id}), do: {:player, target_id}
 end

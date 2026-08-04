@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DenylistTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
+  alias Aesir.ZoneServer.Mmo.MobSkill.Importer
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
   test "denied?/1 is false for an id never swept into the list" do
@@ -119,5 +120,44 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DenylistTest do
       refute Denylist.denied?(skill_id)
       assert Denylist.reason_for(skill_id) == nil
     end
+  end
+
+  test "exactly the thirteen active Homunculus skills are denied to mob casters" do
+    active = [8001, 8002, 8004, 8005, 8006, 8008, 8009, 8010, 8011, 8012, 8013, 8014, 8016]
+    passive = [8003, 8007, 8015]
+
+    for skill_id <- active do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert {:ok, _module} = Catalog.active_module_for(definition.name)
+      assert Denylist.denied?(skill_id)
+      assert Denylist.reason_for(skill_id) =~ "Homunculus"
+    end
+
+    for skill_id <- passive do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert :error = Catalog.active_module_for(definition.name)
+      refute Denylist.denied?(skill_id)
+      assert Denylist.reason_for(skill_id) == nil
+    end
+  end
+
+  test "importer classification and current YAML rows preserve the exact Homunculus split" do
+    active = [8001, 8002, 8004, 8005, 8006, 8008, 8009, 8010, 8011, 8012, 8013, 8014, 8016]
+    passive = [8003, 8007, 8015]
+
+    assert Enum.all?(active, &match?({:denylisted, _reason}, Importer.classify(&1)))
+    assert Enum.all?(passive, &(Importer.classify(&1) == :unresolved))
+
+    path = Application.app_dir(:zone_server, "priv/db/mob_skills/mob_skills.yml")
+
+    imported_skill_ids =
+      path
+      |> YamlElixir.read_from_file!()
+      |> Map.values()
+      |> List.flatten()
+      |> Enum.map(& &1["skill_id"])
+      |> MapSet.new()
+
+    assert MapSet.disjoint?(imported_skill_ids, MapSet.new(8001..8016))
   end
 end

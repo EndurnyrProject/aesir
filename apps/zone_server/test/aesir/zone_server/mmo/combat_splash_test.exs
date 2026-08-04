@@ -150,6 +150,17 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     assert_received :apply_damage
     assert_received :broadcast
     assert_received :apply_damage
+
+    typed_hits =
+      Combat.execute_splash_attack(caster, @center, 2,
+        skill_id: 7,
+        skill_level: 5,
+        skill_ratio: 200,
+        skip_crit: true,
+        typed_results: true
+      )
+
+    assert Enum.sort(typed_hits) == [{:mob, 2001}, {:mob, 2002}]
   end
 
   test "execute_splash_attack forwards an explicit element without changing the default" do

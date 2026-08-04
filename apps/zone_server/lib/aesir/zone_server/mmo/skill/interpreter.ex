@@ -89,10 +89,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         }
 
   @spec cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
+          | {:error, atom()}
   def cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     case begin_cast(game_state, skill_id, level, target) do
       {:instant, game_state} -> {:ok, game_state}
+      {:instant, game_state, effects} -> {:local_effects, game_state, effects}
       {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
       {:casting, game_state, _info} -> complete_cast(game_state, skill_id, level, target)
       {:error, _reason} = error -> error
@@ -123,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec begin_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:instant, PlayerState.t()}
+          | {:instant, PlayerState.t(), [Active.effect()]}
           | {:deferred, PlayerState.t(), term()}
           | {:casting, PlayerState.t(), cast_info()}
           | {:error, atom()}
@@ -642,14 +647,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            target: target
          }}
 
-      {:ok, game_state} ->
-        {:ok,
-         game_state
-         |> Cost.apply_commitment(commitment)
-         |> deduct_zeny(zeny)
-         |> consume_ammo(definition)
-         |> put_cooldown(skill_id, definition, level, now)
-         |> put_resolved_act_delay(apply_act_delay, after_cast_delay, now)}
+      {result, game_state, effects}
+      when result in [:ok, :local_effects] and is_list(effects) ->
+        settled =
+          game_state
+          |> Cost.apply_commitment(commitment)
+          |> deduct_zeny(zeny)
+          |> consume_ammo(definition)
+          |> put_cooldown(skill_id, definition, level, now)
+          |> put_resolved_act_delay(apply_act_delay, after_cast_delay, now)
+
+        if result == :local_effects,
+          do: {:local_effects, settled, effects},
+          else: {:ok, settled}
 
       {:error, _reason} = error ->
         error
@@ -954,6 +964,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
            prepared
          ) do
       {:ok, game_state} -> {:instant, game_state}
+      {:local_effects, game_state, effects} -> {:instant, game_state, effects}
       {:deferred, game_state, descriptor} -> {:deferred, game_state, descriptor}
       {:error, _reason} = error -> error
     end
@@ -1377,11 +1388,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     case result do
       {:ok, game_state} ->
         announce_ground_cast(module, game_state, target, level, definition)
-        {:ok, consume_catalysts(game_state, definition)}
+        {:ok, consume_catalysts(game_state, definition), []}
 
       {:ok, game_state, :no_consume} ->
         announce_ground_cast(module, game_state, target, level, definition)
-        {:ok, game_state}
+        {:ok, game_state, []}
+
+      {:local_effects, game_state, effects} when is_list(effects) ->
+        {:local_effects, consume_catalysts(game_state, definition), effects}
 
       {:deferred, game_state, descriptor} ->
         {:deferred, game_state, descriptor}

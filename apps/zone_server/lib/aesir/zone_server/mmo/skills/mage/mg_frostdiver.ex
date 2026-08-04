@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
+  def cast(caster, {:unit, target}, level, definition) do
     opts = [
       skill_id: definition.id,
       skill_level: level,
@@ -39,9 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
       skip_range: true
     ]
 
-    case Combat.execute_magic_attack(caster, target_id, opts) do
+    case Combat.execute_magic_attack(caster, target, opts) do
       :ok ->
-        maybe_freeze(target_id, level)
+        maybe_freeze(caster, target, level)
         {:ok, caster}
 
       {:error, _reason} = error ->
@@ -49,11 +49,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
     end
   end
 
-  @spec maybe_freeze(integer(), pos_integer()) :: :ok
-  defp maybe_freeze(target_id, level) do
+  defp maybe_freeze(caster, target, level) do
     if :rand.uniform(100) <= freeze_chance(level) do
-      unit_type = target_unit_type(target_id)
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze, duration: 3000 * level)
+      {unit_type, unit_id} = target_ref(target)
+      {source_type, source_id} = source_ref(caster)
+
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
+        duration: 3000 * level,
+        caster_id: source_id,
+        source_type: source_type
+      )
     end
 
     :ok
@@ -62,8 +67,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   @spec freeze_chance(pos_integer()) :: pos_integer()
   defp freeze_chance(level), do: min(3 * level + 35, level + 60)
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
+  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
+  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
+
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
+  def cast(caster, {:unit, target}, level, definition) do
     opts = [
       skill_id: definition.id,
       skill_level: level,
@@ -41,9 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
       element: :neutral
     ]
 
-    case Combat.execute_misc_attack(caster, target_id, opts) do
+    case Combat.execute_misc_attack(caster, target, opts) do
       :ok ->
-        maybe_stun_or_blind(target_id)
+        maybe_stun_or_blind(caster, target)
         {:ok, caster}
 
       {:error, _reason} = error ->
@@ -51,30 +51,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
     end
   end
 
-  @spec maybe_stun_or_blind(integer()) :: :ok
-  defp maybe_stun_or_blind(target_id) do
-    unit_type = target_unit_type(target_id)
+  defp maybe_stun_or_blind(caster, target) do
+    {unit_type, unit_id} = target_ref(target)
+    {source_type, source_id} = source_ref(caster)
+    status_opts = [duration: 4_500, caster_id: source_id, source_type: source_type]
 
     if :rand.uniform(100) <= @stun_chance do
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_stun, duration: 4_500)
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun, status_opts)
     else
-      maybe_blind(unit_type, target_id)
+      maybe_blind(unit_type, unit_id, {source_type, source_id})
     end
 
     :ok
   end
 
-  @spec maybe_blind(atom(), integer()) :: :ok
-  defp maybe_blind(unit_type, target_id) do
+  defp maybe_blind(unit_type, unit_id, {source_type, source_id}) do
     if :rand.uniform(100) <= @blind_chance do
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_blind, duration: 18_000)
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
+        duration: 18_000,
+        caster_id: source_id,
+        source_type: source_type
+      )
     end
 
     :ok
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
+  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
+  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
+
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

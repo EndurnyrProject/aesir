@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         {:ok, {PlayerState, %PlayerState{character_id: @caster_id}, self()}}
       end)
 
-      expect(Combat, :execute_misc_attack, fn caster, 2001, opts ->
+      expect(Combat, :execute_misc_attack, fn caster, {:mob, 2001}, opts ->
         assert caster.character_id == @caster_id
         assert opts[:base_damage] >= 450 and opts[:base_damage] <= 545
         assert opts[:element] == :earth
@@ -109,7 +109,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
       end)
 
       for reason <- [:target_dead, :not_found, :failed_delivery] do
-        expect(Combat, :execute_misc_attack, fn _caster, 2001, _opts -> {:error, reason} end)
+        expect(Combat, :execute_misc_attack, fn _caster, {:mob, 2001}, _opts ->
+          {:error, reason}
+        end)
+
         reject(&StatusInterpreter.apply_status/4)
 
         armed = group(%{base_damage: 500})
@@ -137,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
         {:ok, {Map, mob_caster, self()}}
       end)
 
-      expect(Combat, :execute_misc_attack, fn ^mob_caster, 3000, _opts -> :ok end)
+      expect(Combat, :execute_misc_attack, fn ^mob_caster, {:player, 3000}, _opts -> :ok end)
 
       expect(StatusInterpreter, :apply_status, fn :player, 3000, :sc_stun, params ->
         assert params[:source_id] == 4000

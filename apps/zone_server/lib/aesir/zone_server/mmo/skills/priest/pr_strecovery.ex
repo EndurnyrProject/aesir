@@ -19,9 +19,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -36,6 +38,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   # modules. Add each here when its module exists, then remove this note.
 
   @impl Active
+  def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
+    with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
+    else
+      _ -> {:error, :invalid_target}
+    end
+  end
+
+  def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
+    do: {:error, :invalid_target}
+
+  def validate(_caster, _target, _level, _definition), do: :ok
+
+  @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, _level, _definition) do
@@ -43,16 +61,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
     {:ok, caster}
   end
 
+  def cast(
+        %{character_id: caster_id} = caster,
+        {:unit, {unit_type, target_id} = target_ref},
+        _level,
+        _definition
+      ) do
+    with {:ok, %{unit_type: ^unit_type} = target} <- Combat.resolve_combatant(target_ref) do
+      cure_or_defer(caster, caster_id, unit_type, target_id, target)
+    end
+  end
+
   def cast(%{character_id: caster_id} = caster, {:unit, target_id}, _level, _definition) do
     with {:ok, %{unit_type: unit_type} = target} <- Combat.resolve_combatant(target_id) do
-      if undead?(target) do
-        payload = %{unit_type: unit_type, target_id: target_id, caster_id: caster_id}
-        Skill.defer(__MODULE__, payload, @undead_delay_ms)
-      else
-        cure_body_statuses(unit_type, target_id)
-      end
-
-      {:ok, caster}
+      cure_or_defer(caster, caster_id, unit_type, target_id, target)
     end
   end
 
@@ -63,8 +85,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
     apply_undead_effect(unit_type, target_id, caster_id)
   end
 
+  defp cure_or_defer(caster, caster_id, unit_type, target_id, target) do
+    if undead?(target) do
+      payload = %{unit_type: unit_type, target_id: target_id, caster_id: caster_id}
+      Skill.defer(__MODULE__, payload, @undead_delay_ms)
+    else
+      cure_body_statuses(unit_type, target_id)
+    end
+
+    {:ok, caster}
+  end
+
   @doc false
-  @spec apply_undead_effect(:player | :mob, integer(), integer()) :: :ok | {:error, atom()}
+  @spec apply_undead_effect(:player | :mob | :homunculus, integer(), integer()) ::
+          :ok | {:error, atom()}
   def apply_undead_effect(unit_type, target_id, caster_id) do
     StatusInterpreter.apply_status(unit_type, target_id, :sc_blind,
       caster_id: caster_id,

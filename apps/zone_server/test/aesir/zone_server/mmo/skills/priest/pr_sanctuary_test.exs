@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -104,8 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   end
 
   defp stub_tick(targets, enemies \\ []) do
-    stub(Combat, :resolve_combatant, fn 1_000 -> {:ok, %{unit_id: 1_000}} end)
-    stub(Combat, :splash_targets, fn "prontera", @center, 2, 1_000 -> enemies end)
+    stub(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, %{unit_id: 1_000}} end)
+    stub(Combat, :splash_targets, fn "prontera", @center, 2, %{unit_id: 1_000} -> enemies end)
 
     stub(SpatialIndex, :get_all_units_in_range, fn
       "prontera", 150, 150, 0 -> targets
@@ -243,6 +244,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     assert [%Group{skill_id: 70, visibility: :public}] = Storage.all()
   end
 
+  test "heals a living injured Homunculus through typed delivery regardless of caster ownership" do
+    gid = 1_500_001
+
+    homunculus = %HomunculusState{
+      id: 1,
+      owner_character_id: 9_999,
+      class_id: 6_001,
+      name: "Lif",
+      world_gid: gid,
+      lifecycle: :active,
+      action_state: :idle,
+      map_name: "prontera",
+      hp: 500,
+      max_hp: 1_000,
+      element: {:neutral, 1},
+      race: :demi_human
+    }
+
+    stub_tick([{:homunculus, gid}])
+
+    stub(UnitRegistry, :get_unit, fn :homunculus, ^gid ->
+      {:ok, {HomunculusState, homunculus, self()}}
+    end)
+
+    expect(DamageApplication, :apply_heal, fn :homunculus, ^gid, 500, 1_000 -> :ok end)
+
+    assert {:ok, %Group{state: %{hits_remaining: 8}}} =
+             PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
+  end
+
   test "heals living injured mobs every second without spending offensive quota" do
     target = mob(2_001, :formless, :neutral)
     stub_tick([{:mob, 2_001}])
@@ -342,7 +373,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   end
 
   test "an exhausted field expires without looking up targets" do
-    reject(&Combat.resolve_combatant/1)
+    reject(&Combat.resolve_combatant/2)
     reject(&SpatialIndex.get_all_units_in_range/4)
 
     assert {:expire, %Group{state: %{hits_remaining: 0}}} =

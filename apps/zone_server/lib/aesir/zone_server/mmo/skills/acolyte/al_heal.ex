@@ -56,11 +56,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     after_cast_delay: List.duplicate(500, 10)
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @impl Active
+  def validate(
+        %{character_id: caster_id},
+        {:unit, {:homunculus, _gid} = target_ref},
+        _level,
+        _definition
+      ) do
+    with {:ok, caster_combatant} <- Combat.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- Combat.resolve_combatant(target_ref),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
+    else
+      _ -> {:error, :invalid_target}
+    end
+  end
+
+  def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
+    do: {:error, :invalid_target}
+
+  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   @doc """
@@ -78,11 +103,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   def cast(caster, target, level, _definition) do
     combatant = caster.__struct__.to_combatant(caster)
     heal_value = compute_heal(combatant, level)
-    target_id = Active.resolve_target_id(caster, target)
+    target = Active.resolve_target_id(caster, target)
 
-    case Combat.resolve_combatant(target_id) do
+    case Combat.resolve_combatant(target) do
       {:ok, %{race: race}} when race in [:undead, :demon] ->
-        case Combat.execute_magic_damage(caster, target_id, heal_value,
+        case Combat.execute_magic_damage(caster, target, heal_value,
                skill_id: 28,
                skill_level: level,
                element: :holy,
@@ -93,9 +118,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
         end
 
       _ ->
-        Combat.apply_heal(target_unit_type(target_id), target_id, heal_value, combatant.unit_id)
+        heal_living_target(caster, target, heal_value, combatant.unit_id)
+    end
+  end
+
+  defp heal_living_target(
+         %{character_id: owner_id} = caster,
+         {:homunculus, gid} = target_ref,
+         heal_value,
+         source_id
+       ) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {HomunculusState, %HomunculusState{owner_character_id: ^owner_id}, owner_pid}}
+      when owner_pid == self() ->
+        effect = DamageApplication.local_heal_effect(target_ref, heal_value, {:player, source_id})
+        {:local_effects, caster, [effect]}
+
+      _ ->
+        Combat.apply_heal(:homunculus, gid, heal_value, source_id)
         {:ok, caster}
     end
+  end
+
+  defp heal_living_target(caster, target, heal_value, source_id) do
+    {unit_type, unit_id} = target_ref(target)
+    Combat.apply_heal(unit_type, unit_id, heal_value, source_id)
+    {:ok, caster}
   end
 
   defp compute_heal(combatant, level) do
@@ -115,8 +163,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     |> then(&(&1 + div(&1 * heal_power, 100)))
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp target_ref({unit_type, unit_id} = ref) do
+    if Ref.valid?(ref), do: {unit_type, unit_id}, else: raise(ArgumentError, "invalid target ref")
+  end
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

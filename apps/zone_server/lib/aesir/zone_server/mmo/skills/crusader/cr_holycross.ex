@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
   @blind_duration 18_000
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
+  def cast(caster, {:unit, target}, level, definition) do
     opts = [
       skill_id: definition.id,
       skill_level: level,
@@ -43,9 +43,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
       report_hit: true
     ]
 
-    case Combat.execute_skill_attack(caster, target_id, opts) do
+    case Combat.execute_skill_attack(caster, target, opts) do
       {:ok, %{hit?: hit?}} ->
-        if hit?, do: maybe_blind(target_id, level)
+        if hit?, do: maybe_blind(caster, target, level)
         {:ok, caster}
 
       {:error, _reason} = error ->
@@ -64,18 +64,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
 
   defp skill_ratio(_caster, level), do: 35 * level
 
-  @spec maybe_blind(integer(), pos_integer()) :: :ok
-  defp maybe_blind(target_id, level) do
+  defp maybe_blind(caster, target, level) do
     if :rand.uniform(100) <= 3 * level do
-      unit_type = target_unit_type(target_id)
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_blind, duration: @blind_duration)
+      {unit_type, unit_id} = target_ref(target)
+      {source_type, source_id} = source_ref(caster)
+
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
+        duration: @blind_duration,
+        caster_id: source_id,
+        source_type: source_type
+      )
     end
 
     :ok
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
+  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
+  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
+
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

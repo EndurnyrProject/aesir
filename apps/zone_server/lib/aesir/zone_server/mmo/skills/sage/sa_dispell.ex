@@ -37,7 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
     fixed_cast_time: List.duplicate(400, 5),
     item_cost: [%{id: 715, amount: 1}]
 
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -45,6 +47,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   @behaviour Active
 
   @default_rng &:rand.uniform/1
+
+  @impl Active
+  def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
+    with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
+    else
+      _ -> {:error, :invalid_target}
+    end
+  end
+
+  def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
+    do: {:error, :invalid_target}
+
+  def validate(_caster, _target, _level, _definition), do: :ok
 
   @doc """
   Rolls `50 + 10*lv`% and, on success, dispels the target.
@@ -55,18 +73,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), map(), keyword()) ::
           {:ok, PlayerState.t()}
-  def cast(caster, {:unit, target_id}, level, _definition, opts \\ []) do
+  def cast(caster, {:unit, target}, level, _definition, opts \\ []) do
     rng = Keyword.get(opts, :rng, @default_rng)
 
     if rng.(100) <= 50 + 10 * level do
-      Dispel.dispel({target_unit_type(target_id), target_id})
+      Dispel.dispel(target_ref(target))
     end
 
     {:ok, caster}
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

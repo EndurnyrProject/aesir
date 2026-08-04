@@ -38,17 +38,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
   @behaviour Active
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
-    %{base_level: base_level, int: caster_int} = PlayerState.get_stats(caster)
+  def cast(caster, {:unit, target}, level, definition) do
+    %{base_level: base_level, int: caster_int} = caster_stats(caster)
+    {source_type, source_id} = source_ref(caster)
     rate = 50 + 3 * level + div(base_level + caster_int, 5)
 
     if :rand.uniform(100) <= rate do
-      unit_type = target_unit_type(target_id)
-      duration = Enum.at(definition.duration, level - 1)
+      {unit_type, unit_id} = target_ref(target)
+      duration = Enum.at(definition.duration, min(level, length(definition.duration)) - 1)
 
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_decreaseagi,
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_decreaseagi,
         val1: level,
-        caster_id: caster_id,
+        caster_id: source_id,
+        source_type: source_type,
         duration: duration
       )
     end
@@ -56,8 +58,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
     {:ok, caster}
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp caster_stats(%{character_id: _} = caster), do: PlayerState.get_stats(caster)
+
+  defp caster_stats(caster) do
+    combatant = caster.__struct__.to_combatant(caster)
+    %{base_level: combatant.progression.base_level, int: combatant.base_stats.int}
+  end
+
+  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
+  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
+
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

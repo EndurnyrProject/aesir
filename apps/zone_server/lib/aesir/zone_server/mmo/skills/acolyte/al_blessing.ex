@@ -30,11 +30,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @impl Active
+  def validate(%{character_id: caster_id}, {:unit, {:homunculus, gid}}, _level, _definition) do
+    with {:ok, caster_combatant} <- TargetResolver.resolve_combatant(:player, caster_id),
+         {:ok, target_combatant} <- TargetResolver.resolve_combatant(:homunculus, gid),
+         true <- Targeting.direct_support?(caster_combatant, target_combatant) do
+      :ok
+    else
+      _ -> {:error, :invalid_target}
+    end
+  end
+
+  def validate(_caster, {:unit, {:homunculus, _gid}}, _level, _definition),
+    do: {:error, :invalid_target}
+
+  def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -43,25 +60,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
     target_id = Active.resolve_target_id(caster, target)
     duration = Enum.at(definition.duration, level - 1)
 
-    with {:ok, unit_type, val2} <- target_status_params(target, target_id, level) do
+    with {:ok, unit_type, unit_id, val2} <- target_status_params(target, target_id, level) do
       params = [val1: level, val2: val2, caster_id: caster_id, duration: duration]
 
       # NOTE: Aesir has no SC_CHANGEUNDEAD player misc-attack path. When it exists, add
       # Blessing's transformed-player removal/attack branch and remove this note.
-      case StatusInterpreter.apply_status(unit_type, target_id, :sc_blessing, params) do
+      case StatusInterpreter.apply_status(unit_type, unit_id, :sc_blessing, params) do
         :ok -> {:ok, caster}
         {:error, _reason} = error -> error
       end
     end
   end
 
-  defp target_status_params(:self, _target_id, level), do: {:ok, :player, level}
+  defp target_status_params(:self, target_id, level), do: {:ok, :player, target_id, level}
+
+  defp target_status_params({:unit, {unit_type, unit_id}}, _target_id, level) do
+    with {:ok, combatant} <- TargetResolver.resolve_combatant(unit_type, unit_id) do
+      val2 = if undead_or_demon?(combatant), do: 0, else: level
+      {:ok, unit_type, unit_id, val2}
+    end
+  end
 
   defp target_status_params(_target, target_id, level) do
     if UnitRegistry.unit_exists?(:mob, target_id) do
       mob_status_params(target_id, level)
     else
-      {:ok, :player, level}
+      {:ok, :player, target_id, level}
     end
   end
 
@@ -69,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
     case TargetResolver.resolve_combatant(:mob, target_id) do
       {:ok, combatant} ->
         val2 = if undead_or_demon?(combatant), do: 0, else: level
-        {:ok, :mob, val2}
+        {:ok, :mob, target_id, val2}
 
       {:error, _reason} = error ->
         error

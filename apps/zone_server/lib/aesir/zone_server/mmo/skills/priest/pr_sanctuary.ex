@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -100,11 +101,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     do: {:expire, group}
 
   def on_interval(%Group{} = group, _now) do
-    case Combat.resolve_combatant(group.caster_id) do
+    case Combat.resolve_combatant(group.caster_type, group.caster_id) do
       {:ok, caster} ->
         enemies =
           group.map_name
-          |> Combat.splash_targets(group.center, definition().splash_radius, group.caster_id)
+          |> Combat.splash_targets(group.center, definition().splash_radius, caster)
           |> MapSet.new()
 
         group
@@ -168,6 +169,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     {:cont, group}
   end
 
+  defp heal_target(:homunculus, unit_id, _pid, group) do
+    DamageApplication.apply_heal(
+      :homunculus,
+      unit_id,
+      heal_amount(group.level),
+      group.caster_id
+    )
+
+    {:cont, group}
+  end
+
   defp heal_target(:mob, _unit_id, pid, group) when is_pid(pid) do
     MobSession.heal(pid, heal_amount(group.level))
     {:cont, group}
@@ -215,6 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
        do: hp >= max_hp
 
   defp full_hp?(%MobState{hp: hp, max_hp: max_hp}), do: hp >= max_hp
+  defp full_hp?(%HomunculusState{hp: hp, max_hp: max_hp}), do: hp >= max_hp
   defp full_hp?(_state), do: true
 
   defp emperium?(%MobState{mob_id: 1_288}), do: true

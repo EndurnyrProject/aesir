@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
+  def cast(caster, {:unit, target}, level, definition) do
     opts = [
       skill_id: definition.id,
       skill_level: level,
@@ -38,9 +38,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
       report_hit: true
     ]
 
-    case Combat.execute_skill_attack(caster, target_id, opts) do
+    case Combat.execute_skill_attack(caster, target, opts) do
       {:ok, %{hit?: true}} ->
-        maybe_blind(target_id)
+        maybe_blind(caster, target)
         {:ok, caster}
 
       {:ok, %{hit?: false}} ->
@@ -51,18 +51,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
     end
   end
 
-  @spec maybe_blind(integer()) :: :ok
-  defp maybe_blind(target_id) do
+  defp maybe_blind(caster, target) do
     if :rand.uniform(100) <= @blind_chance do
-      unit_type = target_unit_type(target_id)
-      StatusInterpreter.apply_status(unit_type, target_id, :sc_blind, duration: 18_000)
+      {unit_type, unit_id} = target_ref(target)
+      {source_type, source_id} = source_ref(caster)
+
+      StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
+        duration: 18_000,
+        caster_id: source_id,
+        source_type: source_type
+      )
     end
 
     :ok
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
+  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
+  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
+
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

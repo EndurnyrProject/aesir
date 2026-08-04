@@ -64,31 +64,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
          {:ok, {x, y, ^map_name}} <- SpatialIndex.get_unit_position(mover_type, mover_id) do
       definition = definition()
 
-      hits =
-        Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius,
-          skill_id: definition.id,
-          skill_level: group.level,
-          skill_ratio: 100,
-          element: :water,
-          ignore_flee: true,
-          skip_crit: true
-        )
+      caster
+      |> Combat.execute_splash_attack({x, y}, definition.splash_radius,
+        skill_id: definition.id,
+        skill_level: group.level,
+        skill_ratio: 100,
+        element: :water,
+        ignore_flee: true,
+        skip_crit: true,
+        typed_results: true
+      )
+      |> Enum.each(&freeze(group, &1))
 
-      Enum.each(hits, &freeze(group, target_type(group), &1))
       :expire
     else
       _ -> {:ok, group}
     end
   end
 
-  defp freeze(group, unit_type, unit_id) do
+  defp freeze(group, {unit_type, unit_id}) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
       duration: Enum.at(@freeze_durations, group.level - 1),
       caster_id: group.caster_id,
       source_type: group.caster_type
     )
   end
-
-  defp target_type(%Group{caster_type: :player}), do: :mob
-  defp target_type(%Group{caster_type: :mob}), do: :player
 end

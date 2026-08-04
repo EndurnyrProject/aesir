@@ -65,19 +65,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     end
   end
 
-  defp fire(%Group{state: %{base_damage: base_damage}} = group, {_mover_type, mover_id}) do
+  defp fire(%Group{state: %{base_damage: base_damage}} = group, {mover_type, mover_id} = mover) do
     definition = definition()
 
     case Trap.resolve_caster(group) do
       {:ok, caster_state} ->
-        case Combat.execute_misc_attack(caster_state, mover_id,
+        case Combat.execute_misc_attack(caster_state, mover,
                skill_id: definition.id,
                skill_level: group.level,
                base_damage: Trap.roll_damage(base_damage),
                element: definition.element
              ) do
           :ok ->
-            StatusInterpreter.apply_status(opposing_type(group.caster_type), mover_id, :sc_stun,
+            StatusInterpreter.apply_status(mover_type, mover_id, :sc_stun,
               source_id: group.caster_id,
               source_type: group.caster_type,
               success_rate: 10,
@@ -94,7 +94,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
         {:ok, group}
     end
   end
-
-  defp opposing_type(:player), do: :mob
-  defp opposing_type(:mob), do: :player
 end

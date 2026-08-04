@@ -114,17 +114,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.HomunculusStatusTest do
     end)
   end
 
-  test "player-only, equipment-only, and player-resource statuses reject Homunculi", %{
-    gid: gid
-  } do
-    assert {:error, :ineligible_target} =
-             Interpreter.apply_status(:homunculus, gid, :sc_devotion)
+  test "the exact player/equipment/resource status exclusion set rejects Homunculi", %{gid: gid} do
+    require_weapon = [:sc_adrenaline, :sc_adrenaline2, :sc_spearquicken, :sc_twohandquicken]
 
-    assert {:error, :ineligible_target} =
-             Interpreter.apply_status(:homunculus, gid, :sc_adrenaline)
+    player_only = [
+      :sc_devoted_by,
+      :sc_devotion,
+      :sc_energycoat,
+      :sc_magiccandy,
+      :sc_magicrod,
+      :sc_maximizepower,
+      :sc_sightblaster
+    ]
 
-    assert {:error, :ineligible_target} =
-             Interpreter.apply_status(:homunculus, gid, :sc_maximizepower)
+    for status <- require_weapon ++ player_only do
+      assert {:error, :ineligible_target} =
+               Interpreter.apply_status(:homunculus, gid, status)
+    end
   end
 
   test "a manual status tick delivers typed damage through the owner session", %{

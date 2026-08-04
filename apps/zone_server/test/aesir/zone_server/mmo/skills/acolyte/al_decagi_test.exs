@@ -77,6 +77,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagiTest do
 
       assert {:ok, @caster} = AlDecagi.cast(@caster, {:unit, @target_id}, 10, definition)
     end
+
+    test "canonical extended level 48 retains val1 and clamps duration to level 10",
+         %{definition: definition} do
+      expect(StatusInterpreter, :apply_status, fn _unit_type,
+                                                  @target_id,
+                                                  :sc_decreaseagi,
+                                                  params ->
+        assert params[:duration] == 130_000
+        assert params[:val1] == 48
+        :ok
+      end)
+
+      assert {:ok, @caster} = AlDecagi.cast(@caster, {:unit, @target_id}, 48, definition)
+    end
   end
 
   describe "cast/4 — landing roll miss" do

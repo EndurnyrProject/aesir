@@ -69,18 +69,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwaveTest do
 
   test "drains the level-scaled percentage from hostile player and mob contacts" do
     for {percentage, level} <- Enum.with_index([20, 35, 50, 65, 80], 1) do
-      expect(Resource, :drain_sp_percent, fn :mob, 2_000, ^percentage -> :ok end)
+      expect(Resource, :drain_sp_percent, fn {:mob, 2_000}, ^percentage -> :ok end)
       assert :expire = HtShockwave.on_touch(group(level), {:mob, 2_000})
     end
 
-    expect(Resource, :drain_sp_percent, fn :player, 3_000, 50 -> :ok end)
+    expect(Resource, :drain_sp_percent, fn {:player, 3_000}, 50 -> :ok end)
 
     assert :expire =
              HtShockwave.on_touch(group(3, caster_type: :mob), {:player, 3_000})
   end
 
   test "does not damage or trigger on same-side contacts" do
-    reject(&Resource.drain_sp_percent/3)
+    reject(&Resource.drain_sp_percent/2)
 
     assert {:ok, %Group{}} = HtShockwave.on_touch(group(1), {:player, 2_000})
     assert {:ok, %Group{}} = HtShockwave.on_touch(group(1, caster_type: :mob), {:mob, 2_000})

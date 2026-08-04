@@ -53,9 +53,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
     end
   end
 
-  def on_touch(%Group{} = group, {:player, player_id} = mover) do
+  def on_touch(%Group{} = group, {unit_type, unit_id} = mover)
+      when unit_type in [:player, :homunculus] do
     if Trap.enemy?(group, mover) do
-      blind(group, :player, player_id)
+      blind(group, unit_type, unit_id)
       :expire
     else
       {:ok, group}

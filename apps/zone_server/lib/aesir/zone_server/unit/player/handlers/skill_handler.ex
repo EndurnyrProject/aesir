@@ -235,6 +235,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
         {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
 
+      {:local_effects, new_game_state, effects} ->
+        new_state =
+          state
+          |> commit_cast(new_game_state, ctx.skill_id, ctx.skill_level)
+          |> settle_local_effects(effects)
+
+        broadcast_skill_use(new_state.game_state, ctx.skill_id, ctx.skill_level, ctx.target)
+        resolved_state = %{new_state | game_state: end_cast(new_state.game_state)}
+        {:noreply, maybe_resume_lock(resolved_state, Map.get(ctx, :combat_target_id))}
+
       {:deferred, new_game_state, descriptor} ->
         {:noreply,
          resolve_deferred(
@@ -378,6 +388,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         new_state = commit_cast(state, new_game_state, skill_id, level)
         # Keep the departure snapshot for this visual: commit_cast/5 may drain a
         # staged warp and move the player before the committed state returns.
+        broadcast_skill_use(new_game_state, skill_id, level, target)
+        {:noreply, maybe_resume_lock(new_state, locked)}
+
+      {:instant, new_game_state, effects} ->
+        new_state =
+          state
+          |> commit_cast(new_game_state, skill_id, level)
+          |> settle_local_effects(effects)
+
         broadcast_skill_use(new_game_state, skill_id, level, target)
         {:noreply, maybe_resume_lock(new_state, locked)}
 
@@ -696,6 +715,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   defp settle_potion_inventory(%PlayerState{}), do: {:error, :invalid_potion_staging}
+
+  defp settle_local_effects(state, effects) do
+    effects
+    |> Enum.reduce(state, fn effect, current ->
+      {:noreply, updated} = HomunculusCommandHandler.local_effect(effect, current)
+      updated
+    end)
+    |> HomunculusCommandHandler.publish_private_state_if_dirty()
+  end
 
   defp deliver_potion(state, {:player, target_id}, descriptor) do
     DamageApplication.apply_heal(
@@ -1349,7 +1377,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp resolve_target(%{character_id: caster_id}, target_id) when target_id == caster_id,
     do: :self
 
-  defp resolve_target(_game_state, target_id), do: {:unit, target_id}
+  defp resolve_target(_game_state, target_id) do
+    if UnitRegistry.unit_exists?(:homunculus, target_id),
+      do: {:unit, {:homunculus, target_id}},
+      else: {:unit, target_id}
+  end
 
   defp maybe_cancel_combo(
          %{game_state: %{combo: %{target: {_type, retained_target_id}}}} = state,

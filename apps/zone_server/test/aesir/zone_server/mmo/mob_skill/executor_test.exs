@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -148,6 +149,19 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     }
   end
 
+  defp homunculus_state(gid, hp) do
+    %HomunculusState{
+      id: gid,
+      owner_character_id: 42,
+      class_id: 6001,
+      name: "Lif",
+      world_gid: gid,
+      lifecycle: if(hp > 0, do: :active, else: :dead),
+      action_state: if(hp > 0, do: :idle, else: :dead),
+      hp: hp
+    }
+  end
+
   defp stub_living_player_target(id \\ 42) do
     stub(UnitRegistry, :get_unit, fn :player, ^id ->
       {:ok, {PlayerState, player_state(id), self()}}
@@ -229,7 +243,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
 
     test ":randomtarget resolves to a player in skill range" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, @map, 100, 100, 10 -> [7] end)
+      stub(SpatialIndex, :get_units_in_range, fn
+        :player, @map, 100, 100, 10 -> [7]
+        :homunculus, @map, 100, 100, 10 -> []
+      end)
 
       stub(UnitRegistry, :get_unit, fn :player, 7 ->
         {:ok, {PlayerState, player_state(7), self()}}
@@ -239,8 +256,48 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
                {:ok, {:unit, :player, 7}}
     end
 
+    test ":randomtarget selects a living Homunculus when it is the only candidate" do
+      gid = 1_500_007
+
+      stub(SpatialIndex, :get_units_in_range, fn
+        :player, @map, 100, 100, 10 -> []
+        :homunculus, @map, 100, 100, 10 -> [gid]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :homunculus, ^gid ->
+        {:ok, {HomunculusState, homunculus_state(gid, 100), self()}}
+      end)
+
+      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
+               {:ok, {:unit, :homunculus, gid}}
+    end
+
+    test ":randomtarget excludes dead and stale Homunculi" do
+      dead_gid = 1_500_008
+      stale_gid = 1_500_009
+
+      stub(SpatialIndex, :get_units_in_range, fn
+        :player, @map, 100, 100, 10 -> []
+        :homunculus, @map, 100, 100, 10 -> [dead_gid, stale_gid]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, ^dead_gid ->
+          {:ok, {HomunculusState, homunculus_state(dead_gid, 0), self()}}
+
+        :homunculus, ^stale_gid ->
+          {:error, :not_found}
+      end)
+
+      assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
+               {:error, :no_target}
+    end
+
     test ":randomtarget excludes an indexed corpse in skill range" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, @map, 100, 100, 10 -> [7] end)
+      stub(SpatialIndex, :get_units_in_range, fn
+        :player, @map, 100, 100, 10 -> [7]
+        :homunculus, @map, 100, 100, 10 -> []
+      end)
 
       stub(UnitRegistry, :get_unit, fn :player, 7 ->
         {:ok, {PlayerState, player_state(7, :dead, 0), self()}}
@@ -250,7 +307,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     end
 
     test ":randomtarget errors when no player is in range" do
-      stub(SpatialIndex, :get_units_in_range, fn :player, @map, 100, 100, 10 -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn
+        :player, @map, 100, 100, 10 -> []
+        :homunculus, @map, 100, 100, 10 -> []
+      end)
 
       assert Executor.resolve_target(mob(), row(%{target: :randomtarget})) ==
                {:error, :no_target}
@@ -350,6 +410,30 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
 
       assert Executor.execute(mob(), frost_joker_row) == :ok
       refute_received {:skill, {:deferred, _, _}}
+    end
+
+    test "an imported Frost Diver row preserves a typed Homunculus status target and mob source" do
+      gid = 1_500_010
+      caster = mob(%{target_ref: {:homunculus, gid}})
+
+      stub(UnitRegistry, :get_unit, fn :homunculus, ^gid ->
+        {:ok, {HomunculusState, homunculus_state(gid, 100), self()}}
+      end)
+
+      expect(Combat, :execute_magic_attack, fn ^caster, {:homunculus, ^gid}, opts ->
+        assert opts[:skill_id] == 15
+        assert opts[:skill_level] == 40
+        :ok
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :homunculus, ^gid, :sc_freeze, opts ->
+        assert opts[:caster_id] == caster.instance_id
+        assert opts[:source_type] == :mob
+        :ok
+      end)
+
+      imported_row = row(%{skill: "MG_FROSTDIVER", skill_id: 15, level: 40, target: :target})
+      assert Executor.execute(caster, imported_row) == :ok
     end
 
     test "dispatches BA_PANGVOICE through its real mob status path" do

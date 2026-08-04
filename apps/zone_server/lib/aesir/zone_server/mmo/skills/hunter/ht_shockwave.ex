@@ -44,9 +44,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
 
   @impl Ground
   @spec on_touch(Group.t(), {atom(), integer()}) :: {:ok, Group.t()} | :expire
-  def on_touch(%Group{} = group, {mover_type, mover_id} = mover) do
+  def on_touch(%Group{} = group, mover) do
     if Trap.enemy?(group, mover) do
-      Resource.drain_sp_percent(mover_type, mover_id, percentage(group.level))
+      Resource.drain_sp_percent(mover, percentage(group.level))
       :expire
     else
       {:ok, group}

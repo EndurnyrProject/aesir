@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
     10 => "MG_SIGHT cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     16 => "MG_STONECURSE cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     29 => "AL_INCAGI cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
-    30 => "AL_DECAGI cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     51 => "TF_HIDING cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     61 => "KN_AUTOCOUNTER cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
     72 => "PR_STRECOVERY cast/4 pattern-matches %{character_id: _}, no mob-caster clause",
@@ -73,7 +72,20 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Denylist do
     330 =>
       "DC_SERVICEFORYOU requires a PlayerState party snapshot; there is no mob-caster clause",
     1011 =>
-      "DC_WINKCHARM reads PlayerState caster level and applies a player-origin status; there is no mob-caster clause"
+      "DC_WINKCHARM reads PlayerState caster level and applies a player-origin status; there is no mob-caster clause",
+    8001 => "Homunculus Healing Touch requires a Homunculus caster and owner inventory",
+    8002 => "Homunculus Emergency Avoid requires a Homunculus caster",
+    8004 => "Homunculus Mental Change requires a Lif caster and owner aggregate",
+    8005 => "Homunculus Castling requires an Amistr caster and owner movement aggregate",
+    8006 => "Homunculus Amistr Bulwark requires an Amistr caster and owner aggregate",
+    8008 => "Homunculus Blood Lust requires an evolved Amistr caster",
+    8009 => "Homunculus Moonlight requires a Filir caster",
+    8010 => "Homunculus Flitting requires a Filir caster",
+    8011 => "Homunculus Accelerated Flight requires a Filir caster",
+    8012 => "Homunculus S.B.R.44 requires an evolved Filir caster and intimacy settlement",
+    8013 => "Homunculus Caprice requires a Vanilmirth caster",
+    8014 => "Homunculus Chaotic Benediction requires a Vanilmirth owner aggregate",
+    8016 => "Homunculus Bio Explosion requires an evolved Vanilmirth aggregate"
   }
 
   @doc "Whether `skill_id` is denylisted for mob casting."

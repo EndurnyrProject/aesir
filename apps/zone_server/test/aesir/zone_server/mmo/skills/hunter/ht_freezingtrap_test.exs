@@ -96,8 +96,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
       assert opts[:element] == :water
       assert opts[:ignore_flee]
       assert opts[:skip_crit]
+      assert opts[:typed_results]
       send(test_pid, :damage_connected)
-      [2001, 2002]
+      [{:mob, 2001}, {:mob, 2002}]
     end)
 
     expect(StatusInterpreter, :apply_status, 2, fn :mob, id, :sc_freeze, params ->
@@ -113,6 +114,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     assert_received :damage_connected
     assert_received {:freeze_attempt, 2001}
     assert_received {:freeze_attempt, 2002}
+  end
+
+  test "same-number mob and Homunculus collision freezes only the typed connected hit" do
+    caster = %PlayerState{character_id: 1000, map_name: "prontera", x: 50, y: 50}
+
+    stub(UnitRegistry, :get_unit, fn :player, 1000 -> {:ok, {PlayerState, caster, self()}} end)
+    stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {51, 50, "prontera"}} end)
+
+    expect(Combat, :execute_splash_attack, fn ^caster, {51, 50}, 1, opts ->
+      assert opts[:typed_results]
+      [{:mob, 2001}]
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_freeze, _params -> :ok end)
+
+    assert :expire = HtFreezingtrap.on_touch(group(), {:mob, 2001})
   end
 
   test "mob-owned trap damages players and freezes only connected hits" do
@@ -133,7 +150,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
 
     stub(UnitRegistry, :get_unit, fn :mob, 1000 -> {:ok, {MobState, caster, self()}} end)
     stub(SpatialIndex, :get_unit_position, fn :player, 2001 -> {:ok, {51, 50, "prontera"}} end)
-    stub(Combat, :execute_splash_attack, fn ^caster, {51, 50}, 1, _opts -> [2002] end)
+
+    stub(Combat, :execute_splash_attack, fn ^caster, {51, 50}, 1, opts ->
+      assert opts[:typed_results]
+      [{:player, 2002}]
+    end)
 
     expect(StatusInterpreter, :apply_status, fn :player, 2002, :sc_freeze, params ->
       assert params[:source_type] == :mob

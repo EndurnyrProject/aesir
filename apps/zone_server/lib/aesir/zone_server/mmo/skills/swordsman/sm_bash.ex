@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
+  def cast(caster, {:unit, target}, level, definition) do
     opts = [
       skill_id: definition.id,
       skill_level: level,
@@ -34,9 +34,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
       report_hit: true
     ]
 
-    case Combat.execute_skill_attack(caster, target_id, opts) do
+    case Combat.execute_skill_attack(caster, target, opts) do
       {:ok, %{hit?: true}} ->
-        apply_riders(caster, target_id, level)
+        apply_riders(caster, target, level)
         {:ok, caster}
 
       {:ok, %{hit?: false}} ->
@@ -47,29 +47,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
     end
   end
 
-  @spec apply_riders(struct(), integer(), pos_integer()) :: :ok
-  defp apply_riders(caster, target_id, level) do
+  defp apply_riders(%{character_id: _} = caster, target, level) do
     :sm_bash
     |> Passives.rider_for(level, caster)
     |> Enum.each(fn {:apply_status, status_id, opts} ->
-      maybe_apply_rider(target_id, status_id, opts)
+      maybe_apply_rider(caster, target, status_id, opts)
     end)
   end
 
-  @spec maybe_apply_rider(integer(), atom(), keyword()) :: :ok
-  defp maybe_apply_rider(target_id, status_id, opts) do
+  defp apply_riders(_caster, _target, _level), do: :ok
+
+  defp maybe_apply_rider(caster, target, status_id, opts) do
     chance = Keyword.fetch!(opts, :chance)
 
     if :rand.uniform(10_000) <= chance do
-      unit_type = target_unit_type(target_id)
-      StatusInterpreter.apply_status(unit_type, target_id, status_id, duration: opts[:duration])
+      {unit_type, unit_id} = target_ref(target)
+      {source_type, source_id} = source_ref(caster)
+
+      StatusInterpreter.apply_status(unit_type, unit_id, status_id,
+        duration: opts[:duration],
+        caster_id: source_id,
+        source_type: source_type
+      )
     end
 
     :ok
   end
 
-  @spec target_unit_type(integer()) :: :mob | :player
-  defp target_unit_type(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id), do: :mob, else: :player
+  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
+  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
+  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
+
+  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
+
+  defp target_ref(target_id) do
+    if UnitRegistry.unit_exists?(:mob, target_id),
+      do: {:mob, target_id},
+      else: {:player, target_id}
   end
 end

@@ -568,6 +568,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     end
   end
 
+  defp unit_available?(:homunculus, unit_id, map_name) do
+    case UnitRegistry.get_unit(:homunculus, unit_id) do
+      {:ok, {_module, %{map_name: ^map_name} = state, _pid}} -> Unit.living?(state)
+      _other -> false
+    end
+  end
+
   defp unit_available?(_unit_type, _unit_id, _map_name), do: false
 
   defp invoke_interval(module, group, now) do
@@ -2065,7 +2072,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> MapSet.new()
   end
 
-  defp living_combat_unit?({unit_type, unit_id}) when unit_type in [:player, :mob] do
+  defp living_combat_unit?({unit_type, unit_id})
+       when unit_type in [:player, :mob, :homunculus] do
     case UnitRegistry.get_unit(unit_type, unit_id) do
       {:ok, {_module, state, _pid}} -> Unit.living?(state)
       _ -> false

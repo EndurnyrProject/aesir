@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -63,6 +64,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
     end)
 
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 7, definition())
+  end
+
+  test "connected mob Bash dispatches ordinary damage without a learned Fatal Blow rider" do
+    caster = %MobState{
+      instance_id: 3000,
+      mob_id: 1002,
+      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+      spawn_ref: nil,
+      map_name: "bash",
+      x: 50,
+      y: 50,
+      hp: 100,
+      max_hp: 100,
+      sp: 10,
+      max_sp: 10,
+      spawned_at: 0
+    }
+
+    expect(Combat, :execute_skill_attack, fn ^caster, {:homunculus, @target_id}, opts ->
+      assert opts[:skill_ratio] == 280
+      {:ok, %{hit?: true}}
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} =
+             SmBash.cast(caster, {:unit, {:homunculus, @target_id}}, 6, definition())
   end
 
   test "cast/4 returns {:ok, caster} and does not apply stun when SM_FATALBLOW is not learned" do

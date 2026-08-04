@@ -80,6 +80,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
 
       assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
     end
+
+    test "a typed Homunculus target remains exact despite a same-number mob",
+         %{definition: definition} do
+      expect(Combat, :resolve_combatant, fn {:homunculus, @ally_id} ->
+        {:ok, %{race: :formless}}
+      end)
+
+      expect(Combat, :apply_heal, fn :homunculus, @ally_id, 350, 1000 -> :ok end)
+
+      assert {:ok, @caster} =
+               AlHeal.cast(@caster, {:unit, {:homunculus, @ally_id}}, 5, definition)
+    end
   end
 
   describe "cast/4 — undead/demon target deals holy damage instead of healing" do

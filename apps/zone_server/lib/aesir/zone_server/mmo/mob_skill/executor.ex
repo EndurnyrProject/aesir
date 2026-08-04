@@ -87,9 +87,13 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   def resolve_target(%MobState{} = state, %{target: :randomtarget}) do
-    case players_in_skill_range(state) do
-      [] -> {:error, :no_target}
-      players -> {:ok, {:unit, :player, Enum.random(players)}}
+    case player_side_units_in_skill_range(state) do
+      [] ->
+        {:error, :no_target}
+
+      targets ->
+        {unit_type, unit_id} = Enum.random(targets)
+        {:ok, {:unit, unit_type, unit_id}}
     end
   end
 
@@ -263,10 +267,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
     if Unit.living?(friend), do: [friend], else: []
   end
 
-  defp players_in_skill_range(%MobState{} = state) do
-    :player
-    |> SpatialIndex.get_units_in_range(state.map_name, state.x, state.y, skill_range(state))
-    |> Enum.filter(&living_unit?(:player, &1))
+  defp player_side_units_in_skill_range(%MobState{} = state) do
+    [:player, :homunculus]
+    |> Enum.flat_map(fn unit_type ->
+      unit_type
+      |> SpatialIndex.get_units_in_range(state.map_name, state.x, state.y, skill_range(state))
+      |> Enum.filter(&living_unit?(unit_type, &1))
+      |> Enum.map(&{unit_type, &1})
+    end)
   end
 
   defp living_unit?(unit_type, unit_id) do

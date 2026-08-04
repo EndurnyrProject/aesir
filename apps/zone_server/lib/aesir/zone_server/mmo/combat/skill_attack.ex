@@ -266,19 +266,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       counts as hit if any of its hits connect
     - `:ranged` - forces `is_short: false` in each connected target's hit_info
       (default `false`, see `execute_skill_attack/3`)
+    - `:typed_results` - returns connected `{unit_type, unit_id}` refs instead of
+      bare ids from the same execution (default `false`)
   """
   @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
-          [integer()]
+          [integer() | Ref.t()]
   def execute_splash_attack(caster_state, center, radius, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
     hits = Keyword.get(opts, :hit_count, 1)
-    ranged? = Keyword.get(opts, :ranged, false)
-    ignore_flee? = Keyword.get(opts, :ignore_flee, false)
+
+    result_opts = %{
+      ranged?: Keyword.get(opts, :ranged, false),
+      ignore_flee?: Keyword.get(opts, :ignore_flee, false),
+      typed_results?: Keyword.get(opts, :typed_results, false)
+    }
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)
-    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits, ranged?, ignore_flee?)
+    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits, result_opts)
   end
 
   @doc """
@@ -308,7 +314,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
         attacker.map_name
         |> LineTargets.select({sx, sy}, {tx, ty}, attacker)
-        |> hit_targets(attacker, skill_id, skill_level, calc_opts, 1)
+        |> hit_targets(attacker, skill_id, skill_level, calc_opts, 1, %{
+          ranged?: false,
+          ignore_flee?: false,
+          typed_results?: false
+        })
 
       {:error, _reason} ->
         []
@@ -359,16 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts}
   end
 
-  defp hit_targets(
-         targets,
-         attacker,
-         skill_id,
-         skill_level,
-         calc_opts,
-         hits,
-         ranged? \\ false,
-         ignore_flee? \\ false
-       ) do
+  defp hit_targets(targets, attacker, skill_id, skill_level, calc_opts, hits, result_opts) do
     Enum.flat_map(targets, fn {_unit_type, _target_id} = target_ref ->
       apply_splash_hits(
         attacker,
@@ -377,8 +378,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_level,
         calc_opts,
         hits,
-        ranged?,
-        ignore_flee?
+        result_opts
       )
     end)
   end
@@ -390,8 +390,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_level,
          calc_opts,
          hits,
-         ranged?,
-         ignore_flee?
+         %{ranged?: ranged?, ignore_flee?: ignore_flee?, typed_results?: typed_results?}
        ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          target <- target_state.__struct__.to_combatant(target_state) do
@@ -418,11 +417,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         end)
         |> Enum.any?(& &1.hit?)
 
-      if connected?, do: [elem(target_ref, 1)], else: []
+      connected_target_result(connected?, target_ref, typed_results?)
     else
       _ -> []
     end
   end
+
+  defp connected_target_result(false, _target_ref, _typed_results?), do: []
+  defp connected_target_result(true, target_ref, true), do: [target_ref]
+  defp connected_target_result(true, target_ref, false), do: [elem(target_ref, 1)]
 
   @doc """
   Executes a single-target BF_MISC skill (trap) from a caster against a target.
