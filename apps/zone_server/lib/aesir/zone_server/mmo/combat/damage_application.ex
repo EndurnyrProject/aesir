@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   and self-damage (attacker equals target) are never rerouted.
   """
   @spec prepare_unit_damage(
-          :player | :mob | :homunculus,
+          :player | :mob | :homunculus | :skill_unit,
           integer(),
           integer(),
           map(),
@@ -63,10 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   `prepare_unit_damage/5`, which prevents applying the same modifier twice.
   """
   @type local_effect :: {:homunculus, tuple()}
-  @type delivery_result :: :ok | {:local_effects, [local_effect()]}
+  @type delivery_result :: :ok | {:local_effects, [local_effect()]} | {:error, atom()}
 
   @spec apply_unit_damage(
-          :player | :mob | :homunculus,
+          :player | :mob | :homunculus | :skill_unit,
           pid(),
           integer(),
           integer(),
@@ -245,6 +245,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     end
   end
 
+  defp absorb_unit_damage(:skill_unit, _target_id, damage, _hit_info), do: damage
+
   defp absorb_unit_damage(target_type, target_id, damage, hit_info) when damage > 0 do
     StatusInterpreter.absorb_damage(target_type, target_id, damage, hit_info)
   end
@@ -340,6 +342,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     )
   end
 
+  defp deliver_unit_damage(:skill_unit, target_pid, target_id, damage, _hit_info, attacker) do
+    damage_skill_unit(target_pid, target_id, damage, typed_source(attacker))
+  end
+
   defp deliver_unit_damage(:mob, target_pid, _target_id, damage, _hit_info, attacker) do
     MobSession.apply_damage(target_pid, damage, mob_attacker(attacker))
   end
@@ -348,6 +354,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
   end
 
+  defp merge_local_effects({:error, _reason} = error, :ok), do: error
   defp merge_local_effects(:ok, :ok), do: :ok
   defp merge_local_effects({:local_effects, effects}, :ok), do: {:local_effects, effects}
   defp merge_local_effects(:ok, {:local_effects, effects}), do: {:local_effects, effects}

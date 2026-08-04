@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.LineOfSight
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -24,6 +25,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
+
+  @bolts %{
+    14 => {:water, 100},
+    19 => {:fire, 100},
+    20 => {:wind, 100},
+    90 => {:earth, 200}
+  }
 
   @doc """
   Deals damage to a target entity (used by status effects).
@@ -316,6 +324,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       :ok
     end
   end
+
+  @doc """
+  Executes one of the four canonical bolt skills without entering a player cast path.
+
+  The selected bolt id is the damage and packet skill id. Canonical element and
+  hit count cannot be overridden; callers may override the default per-hit ratio
+  for effects attached to the selected bolt.
+  """
+  @spec execute_bolt(struct(), integer() | Ref.t(), integer(), pos_integer(), keyword()) ::
+          :ok | {:error, atom()}
+  def execute_bolt(caster, target_ref, bolt_id, level, opts \\ [])
+
+  def execute_bolt(caster, target_ref, bolt_id, level, opts)
+      when is_integer(level) and level > 0 and is_list(opts) do
+    case Map.fetch(@bolts, bolt_id) do
+      {:ok, {element, default_ratio}} ->
+        bolt_opts =
+          Keyword.merge(opts,
+            skill_id: bolt_id,
+            skill_level: level,
+            skill_ratio: Keyword.get(opts, :skill_ratio, default_ratio),
+            hit_count: level,
+            element: element,
+            skip_range: true
+          )
+
+        Combat.execute_magic_attack(caster, target_ref, bolt_opts)
+
+      :error ->
+        {:error, :invalid_bolt}
+    end
+  end
+
+  def execute_bolt(_caster, _target_ref, _bolt_id, _level, _opts), do: {:error, :invalid_level}
 
   @doc """
   Executes a direct single-target magic skill from a caster against a target.

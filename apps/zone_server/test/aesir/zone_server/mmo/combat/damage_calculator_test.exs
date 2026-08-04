@@ -14,8 +14,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
-  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -500,17 +498,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "applies renewal defense formula to a skill-unit cell defender" do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
-      cell = %Cell{
-        cell_id: 1,
-        group_id: 1,
-        map_name: "prt_fild01",
-        x: 163,
-        y: 55,
-        hp: 400,
-        state: %{combat: %{def: 30, soft_def: 5}}
-      }
+      mob = CombatTestHelper.create_mob_combatant(def: 30)
 
-      wall = CombatTarget.to_combatant(cell)
+      wall = %{
+        mob
+        | unit_id: 1,
+          unit_type: :skill_unit,
+          combat_stats: Map.put(mob.combat_stats, :soft_def, 5)
+      }
 
       assert {:ok, final_damage} = DamageCalculator.apply_defense_formula(150, wall)
 

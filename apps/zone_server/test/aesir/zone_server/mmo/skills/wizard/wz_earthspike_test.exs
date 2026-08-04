@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
   import Mimic
   import Aesir.TestEtsSetup
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike
@@ -14,6 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
 
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  setup do
+    Mimic.copy(MagicAttack)
+    :ok
+  end
 
   @mob_id 2000
 
@@ -65,12 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
       caster = caster()
       definition = WzEarthspike.definition()
 
-      expect(Combat, :execute_magic_attack, fn ^caster, @mob_id, opts ->
-        assert opts[:skill_id] == 90
-        assert opts[:skill_level] == 1
+      expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 1, opts ->
         assert opts[:skill_ratio] == 200
-        assert opts[:hit_count] == 1
-        assert opts[:element] == :earth
         :ok
       end)
 
@@ -82,12 +83,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
       caster = caster()
       definition = WzEarthspike.definition()
 
-      expect(Combat, :execute_magic_attack, fn ^caster, @mob_id, opts ->
-        assert opts[:skill_id] == 90
-        assert opts[:skill_level] == 5
+      expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 5, opts ->
         assert opts[:skill_ratio] == 200
-        assert opts[:hit_count] == 5
-        assert opts[:element] == :earth
         :ok
       end)
 
@@ -100,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
       definition = WzEarthspike.definition()
       :ok = StatusStorage.apply_status(:player, caster.character_id, :sc_earth_care_option)
 
-      expect(Combat, :execute_magic_attack, fn ^caster, @mob_id, opts ->
+      expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 3, opts ->
         assert opts[:skill_ratio] == 1800
         :ok
       end)
@@ -114,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
         caster = caster()
         definition = WzEarthspike.definition()
 
-        expect(Combat, :execute_magic_attack, fn ^caster, @mob_id, _opts ->
+        expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 3, _opts ->
           {:error, unquote(reason)}
         end)
 

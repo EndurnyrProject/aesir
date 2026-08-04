@@ -7,11 +7,15 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   then revalidates the latest caster and target through `Skill.Interpreter`.
   """
 
+  alias Aesir.Commons.Models.Homunculus
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
@@ -44,6 +48,46 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
 
   def complete(_timer_ref, _token, %SessionState{} = session), do: {:noreply, session}
 
+  @doc "Resolves only the current Bio Explosion timer against the same live world identity."
+  @spec resolve_bio_explosion(reference(), SessionState.t()) ::
+          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def resolve_bio_explosion(ref, %SessionState{} = session) when is_reference(ref) do
+    runtime = session.homunculus_runtime
+
+    if Clock.current_timer?(runtime.bio_explosion_timer_ref, ref) do
+      descriptor = runtime.bio_explosion_descriptor
+
+      session = %{
+        session
+        | homunculus_runtime: %{
+            runtime
+            | bio_explosion_timer_ref: nil,
+              bio_explosion_descriptor: nil
+          }
+      }
+
+      resolve_current_bio_explosion(session, descriptor)
+    else
+      {:noreply, session}
+    end
+  end
+
+  @doc "Cancels a pending Bio Explosion without changing its settled costs."
+  @spec cancel_bio_explosion(SessionState.t()) :: SessionState.t()
+  def cancel_bio_explosion(%SessionState{} = session) do
+    runtime = session.homunculus_runtime
+    Clock.cancel(runtime.bio_explosion_timer_ref)
+
+    %{
+      session
+      | homunculus_runtime: %{
+          runtime
+          | bio_explosion_timer_ref: nil,
+            bio_explosion_descriptor: nil
+        }
+    }
+  end
+
   @doc "Cancels the current cast without settling SP or cooldown."
   @spec cancel(SessionState.t()) :: SessionState.t()
   def cancel(%SessionState{} = session) do
@@ -58,6 +102,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
         session
     end
   end
+
+  defp begin_current(session, _homunculus, _id, _level, _target)
+       when not is_nil(session.homunculus_runtime.bio_explosion_timer_ref),
+       do: {:error, :bio_explosion_pending, session}
 
   defp begin_current(session, homunculus, id, level, target) do
     case Interpreter.begin_homunculus_cast(homunculus, id, level, target) do
@@ -80,10 +128,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   end
 
   defp finish_completed(session, updated, effects) do
-    completed_session = clear_runtime_cast(session)
+    cleared = clear_runtime_cast(session)
     updated = %{updated | action_state: :idle, casting: nil}
 
-    case finish(completed_session, updated, effects) do
+    case finish(cleared, updated, effects) do
       {:ok, completed} -> {:noreply, completed}
       {:error, _reason, restored} -> {:noreply, cancel(restored)}
       {:stop, _reason, _state} = stop -> stop
@@ -135,13 +183,37 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   end
 
   defp finish(session, homunculus, effects) do
-    case persist_intimacy_change(session, homunculus) do
-      :ok -> finish_without_item_cost(session, homunculus, effects)
-      {:error, reason} -> {:error, reason, session}
+    case bio_explosion_descriptor(effects) do
+      {:ok, descriptor} ->
+        finish_bio_explosion(session, homunculus, descriptor)
+
+      :none ->
+        case persist_intimacy_change(session, homunculus) do
+          :ok -> finish_committed(session, homunculus, effects)
+          {:error, reason} -> {:error, reason, session}
+        end
     end
   end
 
-  defp finish_without_item_cost(session, homunculus, effects) do
+  defp finish_bio_explosion(session, homunculus, descriptor) do
+    cond do
+      not is_nil(session.homunculus_runtime.bio_explosion_timer_ref) ->
+        {:error, :bio_explosion_pending, session}
+
+      homunculus.intimacy_hundredths < descriptor.required_intimacy ->
+        {:error, :insufficient_intimacy, session}
+
+      true ->
+        settled = %{homunculus | intimacy_hundredths: descriptor.reset_intimacy}
+
+        case persist_bio_explosion(session, settled) do
+          :ok -> execute_and_arm_bio_explosion(session, settled, descriptor)
+          {:error, _reason} -> {:error, :bio_explosion_settlement_failed, session}
+        end
+    end
+  end
+
+  defp finish_committed(session, homunculus, effects) do
     session
     |> rearm_cooldown(homunculus)
     |> StateCommit.commit(homunculus)
@@ -201,6 +273,111 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     session = StateCommit.commit(session, session.homunculus)
     runtime = %{session.homunculus_runtime | private_dirty: private_dirty}
     %{session | homunculus_runtime: runtime}
+  end
+
+  defp bio_explosion_descriptor(effects) do
+    case Enum.find(effects, fn
+           {:homunculus, {:schedule_bio_explosion, %{kind: :bio_explosion}}} -> true
+           _effect -> false
+         end) do
+      {:homunculus, {:schedule_bio_explosion, descriptor}} -> {:ok, descriptor}
+      nil -> :none
+    end
+  end
+
+  defp persist_bio_explosion(session, homunculus) do
+    now_ms = Clock.now_ms()
+
+    with %Homunculus{id: id} = row <-
+           Persistence.load_for_character(homunculus.owner_character_id),
+         true <- id == homunculus.id,
+         {:ok, clocks} <-
+           Clock.durable_snapshot(
+             homunculus.lifecycle,
+             session.homunculus_runtime.active_deadline_ms,
+             homunculus.cooldowns,
+             now_ms
+           ),
+         attrs <-
+           homunculus
+           |> ProgressionHandler.persistence_attrs()
+           |> Map.put(:active_remaining_ms, clocks.active_remaining_ms)
+           |> Map.put(:cooldowns, clocks.cooldowns),
+         {:ok, _row} <- Persistence.save_semantic(row, attrs) do
+      :ok
+    else
+      false -> {:error, :durable_state_mismatch}
+      nil -> {:error, :homunculus_not_found}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp resolve_current_bio_explosion(%SessionState{} = session, descriptor) do
+    case {session.homunculus, descriptor} do
+      {%HomunculusState{} = homunculus,
+       %{
+         kind: :bio_explosion,
+         homunculus_id: id,
+         world_gid: gid,
+         map_name: map_name,
+         lifecycle: lifecycle,
+         skill_id: skill_id
+       }}
+      when homunculus.id == id and homunculus.world_gid == gid and
+             homunculus.map_name == map_name and homunculus.lifecycle == lifecycle ->
+        if HomunculusState.living?(homunculus) do
+          CombatHandler.handle(
+            {:apply_damage, gid, homunculus.hp, %{skill_id: skill_id}, {:homunculus, gid}},
+            session
+          )
+        else
+          {:noreply, session}
+        end
+
+      _stale ->
+        {:noreply, session}
+    end
+  end
+
+  defp execute_and_arm_bio_explosion(session, homunculus, descriptor) do
+    session =
+      session
+      |> rearm_cooldown(homunculus)
+      |> StateCommit.commit(homunculus)
+
+    Combat.execute_misc_splash(homunculus, descriptor.center, descriptor.radius,
+      skill_id: descriptor.skill_id,
+      skill_level: descriptor.skill_level,
+      base_damage: descriptor.base_damage,
+      element: :neutral,
+      ignore_element: descriptor.ignore_element,
+      target_skill_units: descriptor.target_skill_units,
+      shoot_range_los: descriptor.shoot_range_los
+    )
+
+    runtime = session.homunculus_runtime
+    ref = :erlang.start_timer(descriptor.delay_ms, self(), {:homunculus, :bio_explosion})
+
+    death_descriptor =
+      Map.take(descriptor, [
+        :kind,
+        :homunculus_id,
+        :world_gid,
+        :map_name,
+        :lifecycle,
+        :skill_id
+      ])
+
+    completed = %{
+      session
+      | homunculus_runtime: %{
+          runtime
+          | bio_explosion_timer_ref: ref,
+            bio_explosion_descriptor: death_descriptor
+        }
+    }
+
+    {:ok, completed}
   end
 
   defp rearm_cooldown(session, homunculus) do

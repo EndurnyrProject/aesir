@@ -160,6 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       stub(MiscDamageCalculator, :calculate_misc_damage, fn _a, _t, opts ->
         assert opts[:base_damage] == 200
+        assert opts[:ignore_element]
         {:ok, %{damage: 40, is_critical: false}}
       end)
 
@@ -178,7 +179,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
           skill_id: 122,
           skill_level: 5,
           base_damage: 200,
-          element: :neutral
+          element: :neutral,
+          ignore_element: true
         )
 
       assert Enum.sort(hits) == [2001, 2002]

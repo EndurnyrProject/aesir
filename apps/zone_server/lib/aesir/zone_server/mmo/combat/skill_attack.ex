@@ -41,6 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
@@ -435,6 +438,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
     - `:base_damage` - the skill's per-level base damage (required)
     - `:element` - the skill's attack element (default `:neutral`)
+    - `:ignore_element` - bypass the element table (default `false`)
   """
   @spec execute_misc_attack(struct(), integer() | Ref.t(), keyword()) :: :ok | {:error, atom()}
   def execute_misc_attack(caster_state, target_id, opts) do
@@ -444,7 +448,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     base_damage = Keyword.fetch!(opts, :base_damage)
     element = Keyword.get(opts, :element, :neutral)
 
-    apply_misc_hit(attacker, target_id, skill_id, skill_level, element, base_damage, 1)
+    apply_misc_hit(
+      attacker,
+      target_id,
+      skill_id,
+      skill_level,
+      element,
+      base_damage,
+      1,
+      %{
+        ignore_element?: Keyword.get(opts, :ignore_element, false),
+        owner_derived_trap?: false
+      }
+    )
   end
 
   @doc """
@@ -462,6 +478,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:display_hit_count` - packet-only divisions for the total damage (default `1`)
     - `:split` - divide one supplied base by the selected living-enemy count
       before target-specific damage processing (default `false`)
+    - `:ignore_element` - bypass the element table (default `false`)
+    - `:target_skill_units` - include only live targetable traps (default `false`)
+    - `:shoot_range_los` - require projectile line of sight from the splash center
   """
   @spec execute_misc_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer()]
@@ -473,8 +492,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     element = Keyword.get(opts, :element, :neutral)
     display_hits = display_hit_count!(opts)
 
-    targets = SplashTargets.select(attacker.map_name, center, radius, attacker)
+    target_skill_units? = Keyword.get(opts, :target_skill_units, false)
+
+    targets =
+      SplashTargets.select(attacker.map_name, center, radius, attacker, false,
+        target_skill_units: target_skill_units?,
+        shoot_range_los: Keyword.get(opts, :shoot_range_los, false)
+      )
+
     base_damage = split_base_damage(base_damage, targets, Keyword.get(opts, :split, false))
+    ignore_element? = Keyword.get(opts, :ignore_element, false)
 
     Enum.flat_map(targets, fn {_unit_type, target_id} = target_ref ->
       case apply_misc_hit(
@@ -484,7 +511,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              skill_level,
              element,
              base_damage,
-             display_hits
+             display_hits,
+             %{
+               ignore_element?: ignore_element?,
+               owner_derived_trap?: target_skill_units?
+             }
            ) do
         :ok -> [target_id]
         _ -> []
@@ -510,17 +541,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_level,
          element,
          base_damage,
-         display_hits
+         display_hits,
+         misc_opts
        ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
-         target <- target_state.__struct__.to_combatant(target_state),
+         {:ok, target} <-
+           misc_target_combatant(target_state, misc_opts.owner_derived_trap?),
          target_id <- target.unit_id,
          :ok <- Targeting.validate_enemy(attacker, target),
          {:ok, %{damage: damage}} <-
-           MiscDamageCalculator.calculate_misc_damage(attacker, target,
-             base_damage: base_damage,
-             element: element
+           MiscDamageCalculator.calculate_misc_damage(
+             attacker,
+             target,
+             misc_damage_opts(base_damage, element, misc_opts.ignore_element?)
            ) do
       hit_info = %{
         dmg_type: :misc,
@@ -559,8 +593,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         hit_info,
         damage_source(attacker, target_type)
       )
-
-      :ok
     end
   end
 
@@ -626,6 +658,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         end
     end
   end
+
+  defp misc_target_combatant(%SkillUnitCell{} = cell, true),
+    do: TrapCombatTarget.to_combatant(cell)
+
+  defp misc_target_combatant(%SkillUnitCell{} = cell, false),
+    do: {:ok, CombatTarget.to_combatant(cell)}
+
+  defp misc_target_combatant(target_state, _owner_derived_trap?),
+    do: {:ok, target_state.__struct__.to_combatant(target_state)}
+
+  defp misc_damage_opts(base_damage, element, false),
+    do: [base_damage: base_damage, element: element]
+
+  defp misc_damage_opts(base_damage, element, true),
+    do: [base_damage: base_damage, element: element, ignore_element: true]
 
   # Rolls the weapon-class hit/flee check, then applies damage on a connect or
   # broadcasts the miss/perfect-dodge packet otherwise. Returns whether the

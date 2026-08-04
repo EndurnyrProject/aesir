@@ -8,13 +8,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
+  alias Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFirebolt
+  alias Aesir.ZoneServer.Mmo.Skills.Mage.MgLightningbolt
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -32,6 +35,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(MagicAttack)
+    :ok
+  end
 
   @caster_id 1000
   @target_id 2001
@@ -134,6 +142,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   defp targetable_cell(attrs \\ %{}) do
+    caster_type = Map.get(attrs, :caster_type, :player)
+    caster_id = Map.get(attrs, :caster_id, @caster_id)
+    register_cell_owner(caster_type, caster_id)
+
     manager =
       start_supervised!(
         {Manager,
@@ -158,8 +170,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
           skill_id: 0,
           skill_name: :fixture,
           level: 1,
-          caster_id: Map.get(attrs, :caster_id, @caster_id),
-          caster_type: Map.get(attrs, :caster_type, :player),
+          caster_id: caster_id,
+          caster_type: caster_type,
           map_name: @map_name,
           center: @center,
           cells: [cell_position],
@@ -176,10 +188,80 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     {manager, cell}
   end
 
+  defp register_cell_owner(:player, caster_id) do
+    caster = %{build_caster() | character_id: caster_id, account_id: caster_id}
+    :ok = UnitRegistry.register_unit(:player, caster_id, PlayerState, caster, self())
+  end
+
+  defp register_cell_owner(:mob, caster_id) do
+    mob = build_mob_state(caster_id, 150, 150)
+    :ok = UnitRegistry.register_unit(:mob, caster_id, MobState, mob, self())
+  end
+
+  describe "execute_bolt/5" do
+    test "maps every supported bolt to its canonical packet id, element, ratio, and hit count" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, opts ->
+        send(test_pid, {:calculated, opts})
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, _damage, @caster_id -> :ok end)
+
+      for {bolt_id, element, ratio} <- [
+            {14, :water, 100},
+            {19, :fire, 100},
+            {20, :wind, 100},
+            {90, :earth, 200}
+          ] do
+        assert :ok = MagicAttack.execute_bolt(caster, @target_id, bolt_id, 3)
+
+        for _hit <- 1..3 do
+          assert_received {:calculated, opts}
+          assert opts[:skill_ratio] == ratio
+          assert opts[:bonus_matk] == 0
+          assert opts[:element] == element
+          assert opts[:skill_id] == bolt_id
+          assert opts[:ignore_mdef] == false
+        end
+
+        assert_received {:packet, %SkillDamage{skill_id: ^bolt_id, level: 3, div: 3, damage: 30}}
+      end
+    end
+  end
+
+  describe "player bolt modules" do
+    test "preserve their canonical ids and Earth Care ratio through the shared helper" do
+      caster = build_caster()
+
+      for {module, bolt_id, opts} <- [
+            {MgColdbolt, 14, []},
+            {MgFirebolt, 19, []},
+            {MgLightningbolt, 20, []},
+            {WzEarthspike, 90, [skill_ratio: 200]}
+          ] do
+        expect(MagicAttack, :execute_bolt, fn ^caster, @target_id, ^bolt_id, 3, actual_opts ->
+          assert actual_opts == opts
+          :ok
+        end)
+
+        assert {:ok, ^caster} = module.cast(caster, {:unit, @target_id}, 3, module.definition())
+      end
+    end
+  end
+
   describe "execute_magic_attack/3" do
     test "damages a targetable skill-unit cell through its manager" do
       caster = build_caster()
-      {_manager, cell} = targetable_cell()
+      {_manager, cell} = targetable_cell(%{caster_type: :mob, caster_id: 5_000})
 
       stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
         {:ok, %{damage: 10, is_critical: false}}
@@ -200,7 +282,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
     test "does not broadcast when a targetable skill-unit cell disappears before damage" do
       caster = build_caster()
-      {manager, cell} = targetable_cell()
+      {manager, cell} = targetable_cell(%{caster_type: :mob, caster_id: 5_000})
 
       Mimic.copy(Manager)
 
@@ -226,7 +308,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
     test "applies explicit magic damage to a targetable skill-unit cell" do
       caster = build_caster()
-      {_manager, cell} = targetable_cell()
+      {_manager, cell} = targetable_cell(%{caster_type: :mob, caster_id: 5_000})
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
@@ -260,7 +342,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       cell_id = cell.cell_id
 
-      :ok = UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
       :ok = SpatialIndex.add_unit(:player, @caster_id, caster.x, caster.y, caster.map_name)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)

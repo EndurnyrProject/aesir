@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
       (default `:neutral`).
     - `:fixed_damage` - when set, short-circuits the pipeline and returns that
       flat value (default `nil`).
+    - `:ignore_element` - bypasses the element table when true (default `false`).
 
   ## Returns
 
@@ -62,8 +63,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
     element = Keyword.get(opts, :element, :neutral)
 
     damage =
-      base_damage
-      |> DamageShared.apply_element(element, defender)
+      if Keyword.get(opts, :ignore_element, false) do
+        base_damage
+      else
+        DamageShared.apply_element(base_damage, element, defender)
+      end
       |> DamageShared.clamp_min_one()
 
     {:ok, %{damage: damage, is_critical: false}}

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.View
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -932,7 +933,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     do: damage_cell_now_valid(cell_id, amount, nil, reason)
 
   defp damage_cell_now(cell_id, amount, {source_type, source_id} = source, reason)
-       when source_type in [:player, :mob, :npc] and is_integer(source_id) and source_id >= 0 do
+       when source_type in [:player, :mob, :homunculus, :npc] and is_integer(source_id) and
+              source_id >= 0 do
     damage_cell_now_valid(cell_id, amount, source, reason)
   end
 
@@ -1226,6 +1228,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp source_fields({:player, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_PLAYER, source_id}
+
+  defp source_fields({:homunculus, world_gid}) do
+    case UnitRegistry.get_unit(:homunculus, world_gid) do
+      {:ok, {_module, %HomunculusState{owner_character_id: owner_id}, _pid}} ->
+        {:SKILL_UNIT_OWNER_TYPE_PLAYER, owner_id}
+
+      {:error, :not_found} ->
+        raise ArgumentError, "Homunculus skill-unit damage source unavailable"
+    end
+  end
+
   defp source_fields({:mob, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_MOB, source_id}
   defp source_fields({:npc, source_id}), do: {:SKILL_UNIT_OWNER_TYPE_NPC, source_id}
   defp source_fields(nil), do: {:SKILL_UNIT_OWNER_TYPE_UNSPECIFIED, 0}

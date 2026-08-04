@@ -21,24 +21,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike do
     after_cast_delay: [1400, 1400, 1400, 1400, 1400],
     sp_cost: [14, 18, 22, 26, 30]
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @behaviour Active
 
   @impl Active
-  def cast(caster, {:unit, target_id}, level, definition) do
-    opts = [
-      skill_id: definition.id,
-      skill_level: level,
-      skill_ratio: skill_ratio(caster),
-      hit_count: level,
-      element: definition.element,
-      skip_range: true
-    ]
-
-    case Combat.execute_magic_attack(caster, target_id, opts) do
+  def cast(caster, {:unit, target_id}, level, _definition) do
+    case MagicAttack.execute_bolt(caster, target_id, 90, level, skill_ratio: skill_ratio(caster)) do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
     end

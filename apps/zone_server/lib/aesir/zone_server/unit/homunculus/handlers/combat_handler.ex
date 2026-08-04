@@ -239,7 +239,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   end
 
   defp die(%SessionState{} = session) do
-    session = session |> CastingHandler.cancel() |> AiHandler.cancel() |> MovementHandler.cancel()
+    session =
+      session
+      |> CastingHandler.cancel()
+      |> CastingHandler.cancel_bio_explosion()
+      |> AiHandler.cancel()
+      |> MovementHandler.cancel()
+
     old_runtime = session.homunculus_runtime
 
     case LifecycleHandler.die(session.homunculus, old_runtime, timer_cancel: fn _ -> :ok end) do

@@ -60,6 +60,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                )
     end
 
+    test "ignore_element bypasses the element table without changing misc damage otherwise" do
+      assert {:ok, %{damage: 100, is_critical: false}} =
+               MiscDamageCalculator.calculate_misc_damage(
+                 attacker(),
+                 defender(10, element: {:earth, 1}),
+                 base_damage: 100,
+                 element: :fire,
+                 ignore_element: true
+               )
+    end
+
     test "floors damage at 1 when base is 0" do
       assert {:ok, %{damage: 1, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(attacker(), defender(0), base_damage: 0)

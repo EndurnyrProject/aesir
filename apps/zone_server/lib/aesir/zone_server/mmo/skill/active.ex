@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @typedoc "An aggregate-local effect returned without messaging the owner process."
   @type local_effect ::
           {:homunculus | :player, tuple()}
+          | {:mob, {:apply_heal, pos_integer(), non_neg_integer(), Ref.t()}}
           | {:owner_item_cost, pos_integer(), pos_integer()}
 
   @typedoc "A staged external hit delivered only after aggregate settlement succeeds."

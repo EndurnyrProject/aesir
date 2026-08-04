@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -87,6 +88,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
           {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
   def info({:cast_complete, token}, ref, session),
     do: CastingHandler.complete(ref, token, session)
+
+  def info(:bio_explosion, ref, session),
+    do: CastingHandler.resolve_bio_explosion(ref, session)
 
   def info(:active_expired, ref, session), do: lifecycle_timeout(:active, ref, session)
   def info(:cooldowns_expired, ref, session), do: lifecycle_timeout(:cooldowns, ref, session)
@@ -227,6 +231,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, session}
   end
 
+  def local_effect({:mob, {:apply_heal, id, amount, source}}, %SessionState{} = session) do
+    :ok = DamageApplication.apply_heal(:mob, id, amount, source)
+    {:noreply, session}
+  end
+
   @doc "Applies aggregate-local effects in list order through the current session state."
   @spec local_effects([tuple()], SessionState.t()) :: local_effect_result()
   def local_effects(effects, %SessionState{} = session) when is_list(effects) do
@@ -316,7 +325,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def owner_died(%SessionState{} = session) when is_nil(session.homunculus), do: session
 
   def owner_died(%SessionState{} = session) do
-    session = CastingHandler.cancel(session)
+    session = session |> CastingHandler.cancel() |> CastingHandler.cancel_bio_explosion()
 
     case LifecycleHandler.owner_died(session.homunculus, session.homunculus_runtime) do
       {:ok, homunculus, runtime} ->
@@ -389,9 +398,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   defp lifecycle_timeout(:active, ref, session) do
     session =
-      if Clock.current_timer?(session.homunculus_runtime.active_expiry_timer_ref, ref),
-        do: CastingHandler.cancel(session),
-        else: session
+      if Clock.current_timer?(session.homunculus_runtime.active_expiry_timer_ref, ref) do
+        session |> CastingHandler.cancel() |> CastingHandler.cancel_bio_explosion()
+      else
+        session
+      end
 
     result = LifecycleHandler.expire(session.homunculus, session.homunculus_runtime, ref)
     finish_lifecycle_timeout(session, result, :active_expiry)
@@ -636,7 +647,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   @doc "Cancels AI, movement, and separation bookkeeping for inactive lifecycle transitions."
   @spec cancel_active_runtime(SessionState.t()) :: SessionState.t()
   def cancel_active_runtime(%SessionState{} = session) do
-    session |> AiHandler.cancel() |> MovementHandler.cancel()
+    session
+    |> AiHandler.cancel()
+    |> MovementHandler.cancel()
+    |> CastingHandler.cancel_bio_explosion()
   end
 
   @doc "Stops hunger plus action timers after Rest, death, or deletion."
@@ -772,6 +786,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
         runtime.hunger_timer_ref,
         runtime.checkpoint_timer_ref,
         runtime.ai_timer_ref,
+        runtime.bio_explosion_timer_ref,
         runtime.movement_timer_ref,
         runtime.separation_timer_ref
       ],

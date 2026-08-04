@@ -8,9 +8,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
   """
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -26,26 +29,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
 
   `hits_caster` (default `false`) is the Grand Cross exception: when `true`
   the caster is not excluded from its own selection on the caster-identity
-  check alone.
+  check alone. `target_skill_units: true` additionally admits only live,
+  targetable trap cells; all skill units remain excluded by default.
   """
   @spec select(
           String.t(),
           {integer(), integer()},
           non_neg_integer(),
           integer() | map(),
-          boolean()
+          boolean(),
+          keyword()
         ) :: [Ref.t()]
-  def select(map_name, {cx, cy}, radius, caster, hits_caster \\ false) do
+  def select(map_name, center, radius, caster, hits_caster \\ false, opts \\ [])
+
+  def select(map_name, {cx, cy}, radius, caster, hits_caster, opts) do
     caster = resolve_splash_caster(caster)
     caster_ref = {caster.unit_type, caster.unit_id}
 
     map_name
     |> SpatialIndex.get_all_units_in_range(cx, cy, radius * 2)
     |> Enum.filter(fn target_ref ->
-      CombatTarget.combat_unit?(target_ref) and
+      selectable_target?(target_ref, opts) and
         not CombatTarget.own_caster?(target_ref, caster_ref, hits_caster) and
-        offensive_target_in_square?(caster, target_ref, caster_ref, cx, cy, radius)
+        offensive_target_in_square?(caster, target_ref, caster_ref, cx, cy, radius, opts)
     end)
+  end
+
+  defp selectable_target?(target_ref, opts) do
+    CombatTarget.combat_unit?(target_ref) or
+      (Keyword.get(opts, :target_skill_units, false) and TrapCombatTarget.targetable?(target_ref))
   end
 
   defp offensive_target_in_square?(
@@ -54,20 +66,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SplashTargets do
          caster_ref,
          cx,
          cy,
-         radius
+         radius,
+         opts
        ) do
-    case TargetResolver.resolve(unit_type, target_id) do
-      {:ok, _pid, target_state, _target_type} ->
-        target = target_state.__struct__.to_combatant(target_state)
-
-        Unit.living?(target_state) and
-          splash_hittable?(caster, target, target_ref, caster_ref) and
-          splash_hit?(target_state, cx, cy, radius)
-
-      _ ->
-        false
+    with {:ok, _pid, target_state, _target_type} <-
+           TargetResolver.resolve(unit_type, target_id),
+         {:ok, target} <- splash_target_combatant(target_state, opts) do
+      target_living?(target_ref, target_state) and
+        splash_hittable?(caster, target, target_ref, caster_ref) and
+        splash_hit?(target_state, cx, cy, radius) and
+        splash_visible?(caster.map_name, {cx, cy}, target.position, opts)
+    else
+      _unavailable -> false
     end
   end
+
+  defp splash_target_combatant(%SkillUnitCell{} = cell, opts) do
+    if Keyword.get(opts, :target_skill_units, false),
+      do: TrapCombatTarget.to_combatant(cell),
+      else: {:ok, CombatTarget.to_combatant(cell)}
+  end
+
+  defp splash_target_combatant(target_state, _opts),
+    do: {:ok, target_state.__struct__.to_combatant(target_state)}
+
+  defp splash_visible?(map_name, center, target, opts) do
+    not Keyword.get(opts, :shoot_range_los, false) or
+      LineOfSight.clear?(map_name, center, target)
+  end
+
+  defp target_living?({:skill_unit, _cell_id}, _target_state), do: true
+  defp target_living?(_target_ref, target_state), do: Unit.living?(target_state)
 
   # Hits its own caster only reaches here when the skill allowed it (Grand
   # Cross), past the identity exclusion above; the general enemy check would
