@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
           required(:luk) => non_neg_integer(),
           required(:skill_level) => non_neg_integer(),
           required(:learned_skills) => Learned.t(),
+          required(:instruction_change_rank) => non_neg_integer(),
           required(:random_term) => integer()
         }
 
@@ -108,10 +109,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
         luk: luk,
         skill_level: skill_level,
         learned_skills: learned_skills,
+        instruction_change_rank: instruction_change_rank,
         random_term: random_term
-      }) do
-    instruction_term = 0
-
+      })
+      when is_integer(instruction_change_rank) and instruction_change_rank >= 0 do
     rate =
       50 * learning_potion_level(learned_skills) +
         300 * skill_level +
@@ -119,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
         10 * div(int, 2) +
         10 * dex +
         10 * luk +
-        instruction_term +
+        100 * instruction_change_rank +
         product_class_roll(product_id, random_term)
 
     rate

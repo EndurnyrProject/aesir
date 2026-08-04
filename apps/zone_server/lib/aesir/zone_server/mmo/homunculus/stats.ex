@@ -61,6 +61,14 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
     2 * passive_rank(state, @brain_surgery, @lif_classes)
   end
 
+  @doc "Returns Instruction Change's learned rank for original and evolved Vanilmirth."
+  @spec instruction_change_rank(HomunculusState.t() | nil) :: non_neg_integer()
+  def instruction_change_rank(nil), do: 0
+
+  def instruction_change_rank(%HomunculusState{} = state) do
+    passive_rank(state, @instruction_change, @vanilmirth_classes)
+  end
+
   @doc "Returns the learned passive rank only for the matching species and form."
   @spec passive_rank(HomunculusState.t(), pos_integer(), [pos_integer()]) :: non_neg_integer()
   def passive_rank(%HomunculusState{} = state, skill_id, base_classes)

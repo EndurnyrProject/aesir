@@ -243,6 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRateTest do
       luk: 0,
       skill_level: 0,
       learned_skills: %{},
+      instruction_change_rank: 0,
       random_term: 0
     }
   end

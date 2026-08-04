@@ -4,7 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Menu do
   reply (SA_AUTOSPELL's bolt list, SA_CREATECON's converter list).
 
   A skill opts in by declaring `@behaviour Skill.Menu` and implementing
-  `on_menu_reply/3`. Its `cast/4` stages the offer on `PlayerState`'s
+  `on_menu_reply/3`. It may additionally implement `on_menu_reply/4` when it
+  needs session-owned context. Its `cast/4` stages the offer on `PlayerState`'s
   `:pending_menu_offer`; the session handler sends it and parks it. When the
   client answers, `SkillMenuHandler` validates the reply against the parked offer
   and routes the accepted selection back here through
@@ -29,4 +30,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Menu do
               %{id: non_neg_integer(), extras: [non_neg_integer()]},
               pos_integer()
             ) :: {:ok, PlayerState.t()} | {:error, atom()}
+
+  @doc """
+  Acts on a validated selection with minimal session-owned context.
+
+  Modules implementing this optional callback receive `%{homunculus: state}`.
+  """
+  @callback on_menu_reply(
+              PlayerState.t(),
+              %{id: non_neg_integer(), extras: [non_neg_integer()]},
+              pos_integer(),
+              %{required(:homunculus) => struct() | nil}
+            ) :: {:ok, PlayerState.t()} | {:error, atom()}
+
+  @optional_callbacks on_menu_reply: 4
 end

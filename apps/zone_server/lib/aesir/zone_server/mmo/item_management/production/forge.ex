@@ -29,13 +29,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   @spec run(PlayerState.t(), Recipe.t(), [non_neg_integer()]) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def run(%PlayerState{} = caster, %Recipe{} = recipe, chosen_catalyst_ids) do
+    run(caster, recipe, chosen_catalyst_ids, 0)
+  end
+
+  @doc """
+  Runs one production attempt with the caller-supplied Instruction Change rank.
+  """
+  @spec run(PlayerState.t(), Recipe.t(), [non_neg_integer()], non_neg_integer()) ::
+          {:ok, PlayerState.t()} | {:error, atom()}
+  def run(
+        %PlayerState{} = caster,
+        %Recipe{} = recipe,
+        chosen_catalyst_ids,
+        instruction_change_rank
+      )
+      when is_integer(instruction_change_rank) and instruction_change_rank >= 0 do
     {crumb_count, element, catalyst_ids} = catalysts(recipe, chosen_catalyst_ids)
 
     with {:ok, item_def} <- ItemManagement.get_item_by_id(recipe.product_id),
          :ok <- InventoryOps.can_add(caster.inventory, caster.stats, item_def, 1),
          :ok <- check_materials(caster.inventory, recipe.materials, catalyst_ids) do
       consumed = consume_all(caster, recipe.materials, catalyst_ids)
-      chance = success_chance(consumed, recipe, crumb_count, element)
+      chance = success_chance(consumed, recipe, crumb_count, element, instruction_change_rank)
       success? = rng().(10_000) <= chance
 
       finish(consumed, recipe, item_def, success?, crumb_count, element)
@@ -93,7 +108,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   defp catalysts(%Recipe{skill_id: @pharmacy_skill_id}, _chosen_catalyst_ids), do: {0, nil, []}
   defp catalysts(_recipe, chosen_catalyst_ids), do: Catalysts.resolve(chosen_catalyst_ids)
 
-  defp success_chance(caster, %Recipe{skill_id: skill_id} = recipe, crumbs, element)
+  defp success_chance(
+         caster,
+         %Recipe{skill_id: skill_id} = recipe,
+         crumbs,
+         element,
+         _instruction_change_rank
+       )
        when skill_id in @weapon_skill_ids do
     learned = caster.stats.progression.learned_skills
 
@@ -112,7 +133,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     })
   end
 
-  defp success_chance(caster, %Recipe{skill_id: @pharmacy_skill_id} = recipe, _crumbs, _element) do
+  defp success_chance(
+         caster,
+         %Recipe{skill_id: @pharmacy_skill_id} = recipe,
+         _crumbs,
+         _element,
+         instruction_change_rank
+       ) do
     learned = caster.stats.progression.learned_skills
 
     SuccessRate.pharmacy(recipe.product_id, %{
@@ -122,11 +149,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
       luk: caster.stats.base_stats.luk,
       skill_level: Learned.learned_level(learned, recipe.skill_id),
       learned_skills: learned,
+      instruction_change_rank: instruction_change_rank,
       random_term: SuccessRate.pharmacy_roll(recipe.product_id, rng())
     })
   end
 
-  defp success_chance(caster, recipe, _crumbs, _element) do
+  defp success_chance(caster, recipe, _crumbs, _element, _instruction_change_rank) do
     learned = caster.stats.progression.learned_skills
 
     SuccessRate.mineral(mineral_kind(recipe), %{

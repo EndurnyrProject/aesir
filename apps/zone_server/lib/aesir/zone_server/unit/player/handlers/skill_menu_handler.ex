@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
   #
   # The pending `skill_id` was written by the server when it opened the menu, so
   # an unresolvable skill or one lacking the `Skill.Menu` capability is a server
-  # bug, not client input, and fails loudly. Only `on_menu_reply/3` returning an
+  # bug, not client input, and fails loudly. Only a menu callback returning an
   # error is a real runtime outcome (the selection stopped being valid while the
   # client was deciding); it leaves the session untouched beyond the clear.
   defp accept(
@@ -139,8 +139,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
          %{id: selected_id} = selection
        ) do
     cleared = clear(state)
+    module = menu_module(skill_id)
 
-    case menu_module(skill_id).on_menu_reply(state.game_state, selection, level) do
+    case menu_reply(module, state, selection, level) do
       {:ok, game_state} ->
         game_state = InventoryStaging.drain(state.connection_pid, game_state)
         %{cleared | game_state: drain_production_result(state.connection_pid, game_state)}
@@ -153,6 +154,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
         SkillHandler.report_cast_failure(skill_id, state.game_state.character_id, reason)
         cleared
+    end
+  end
+
+  defp menu_reply(module, state, selection, level) do
+    if function_exported?(module, :on_menu_reply, 4) do
+      module.on_menu_reply(state.game_state, selection, level, %{
+        homunculus: Map.get(state, :homunculus)
+      })
+    else
+      module.on_menu_reply(state.game_state, selection, level)
     end
   end
 
