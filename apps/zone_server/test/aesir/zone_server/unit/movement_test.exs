@@ -242,6 +242,68 @@ defmodule Aesir.ZoneServer.Unit.MovementTest do
     end
   end
 
+  describe "swap_positions/3" do
+    test "atomically swaps both snapshots and marks both standing" do
+      map_name = "amistr_swap_test"
+
+      owner =
+        struct(PlayerState, %{x: 10, y: 20, map_name: map_name, movement_state: :moving})
+
+      homunculus = %{x: 30, y: 40, map_name: map_name, movement_state: :moving}
+      swapped_owner = %{owner | x: 30, y: 40, movement_state: :standing}
+      swapped_homunculus = %{homunculus | x: 10, y: 20, movement_state: :standing}
+
+      UnitRegistry.register_unit(:player, 1001, __MODULE__, owner, self())
+      UnitRegistry.register_unit(:homunculus, 2001, __MODULE__, homunculus, self())
+      SpatialIndex.add_unit(:player, 1001, 10, 20, map_name)
+      SpatialIndex.add_unit(:homunculus, 2001, 30, 40, map_name)
+
+      assert :ok =
+               Movement.swap_positions(
+                 {:player, 1001, swapped_owner},
+                 {:homunculus, 2001, swapped_homunculus},
+                 map_name
+               )
+
+      assert {:ok, {30, 40, ^map_name}} = SpatialIndex.get_unit_position(:player, 1001)
+      assert {:ok, {10, 20, ^map_name}} = SpatialIndex.get_unit_position(:homunculus, 2001)
+      assert {:ok, {__MODULE__, ^swapped_owner, _pid}} = UnitRegistry.get_unit(:player, 1001)
+
+      assert {:ok, {__MODULE__, ^swapped_homunculus, _pid}} =
+               UnitRegistry.get_unit(:homunculus, 2001)
+
+      assert Enum.sort(Movement.drain_dirty(map_name)) == [
+               {:homunculus, 2001, 0},
+               {:player, 1001, 0}
+             ]
+    end
+
+    test "rejects a stale endpoint without mutating either unit" do
+      map_name = "amistr_swap_stale_test"
+
+      owner =
+        struct(PlayerState, %{x: 10, y: 20, map_name: map_name, movement_state: :standing})
+
+      homunculus = %{x: 30, y: 40, map_name: map_name, movement_state: :standing}
+
+      UnitRegistry.register_unit(:player, 1001, __MODULE__, owner, self())
+      UnitRegistry.register_unit(:homunculus, 2001, __MODULE__, homunculus, self())
+      SpatialIndex.add_unit(:player, 1001, 11, 20, map_name)
+      SpatialIndex.add_unit(:homunculus, 2001, 30, 40, map_name)
+
+      assert {:error, :stale_endpoint} =
+               Movement.swap_positions(
+                 {:player, 1001, %{owner | x: 30, y: 40}},
+                 {:homunculus, 2001, %{homunculus | x: 10, y: 20}},
+                 map_name
+               )
+
+      assert {:ok, {11, 20, ^map_name}} = SpatialIndex.get_unit_position(:player, 1001)
+      assert {:ok, {30, 40, ^map_name}} = SpatialIndex.get_unit_position(:homunculus, 2001)
+      assert Movement.drain_dirty(map_name) == []
+    end
+  end
+
   describe "mark_dirty/4 and drain_dirty/1" do
     test "drain returns each dirty unit once and then clears them" do
       map_name = "prontera"

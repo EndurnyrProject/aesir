@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
@@ -23,11 +24,19 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Homunculus.StateRestore
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler, as: PlayerMovementHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @checkpoint_interval 5_000
   @persistence_retry_delay 100
+  @castling_redirect_limit 8
+  @castling_stale_fallback_limit 2
   @adjacent_offsets [{0, -1}, {-1, 0}, {1, 0}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}]
 
   @doc "Restores a preloaded durable row into the private, offline aggregate slot."
@@ -142,9 +151,67 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, session}
   end
 
+  @type local_effect_result ::
+          {:noreply, SessionState.t()}
+          | {:error, atom(), SessionState.t()}
+          | {:stop, term(), SessionState.t()}
+
   @doc "Applies one aggregate-local Homunculus effect without messaging the owner process."
-  @spec local_effect(tuple(), SessionState.t()) ::
-          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  @spec local_effect(tuple(), SessionState.t()) :: local_effect_result()
+  def local_effect(
+        {:homunculus, {:castling_swap, gid}},
+        %SessionState{
+          game_state: %PlayerState{} = owner,
+          homunculus: %HomunculusState{world_gid: gid} = homunculus
+        } = session
+      ) do
+    with true <- castling_units_valid?(owner, homunculus),
+         {:ok, {PlayerState, ^owner, owner_pid}} <-
+           Movement.swap_ready(:player, owner.character_id),
+         true <- owner_pid == self(),
+         {:ok, {HomunculusState, ^homunculus, ^owner_pid}} <-
+           Movement.swap_ready(:homunculus, gid) do
+      swapped_owner = prepare_castling_owner(owner, homunculus)
+
+      swapped_homunculus = %{
+        homunculus
+        | x: owner.x,
+          y: owner.y,
+          action_state: :idle,
+          movement_state: :standing,
+          target: nil,
+          casting: nil
+      }
+
+      case Movement.swap_positions(
+             {:player, owner.character_id, swapped_owner},
+             {:homunculus, gid, swapped_homunculus},
+             owner.map_name
+           ) do
+        :ok ->
+          session = MovementHandler.cancel(session)
+          Clock.cancel(session.homunculus_runtime.cast_timer_ref)
+          reconciled_owner = PlayerMovementHandler.handle_visibility_update(swapped_owner)
+          runtime = %{session.homunculus_runtime | cast_timer_ref: nil, private_dirty: true}
+
+          updated =
+            struct(session,
+              game_state: reconciled_owner,
+              homunculus: swapped_homunculus,
+              homunculus_runtime: runtime
+            )
+
+          redirect_castling_mob(owner.map_name, owner.character_id, gid)
+          {:noreply, updated}
+
+        {:error, :stale_endpoint} ->
+          {:error, :stale_castling_endpoint, session}
+      end
+    else
+      _invalid -> {:error, :stale_castling_endpoint, session}
+    end
+  end
+
   def local_effect({:homunculus, event}, %SessionState{} = session),
     do: CombatHandler.handle(event, session)
 
@@ -155,12 +222,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     do: HealthHandler.apply_damage(amount, source_id(source), session)
 
   @doc "Applies aggregate-local effects in list order through the current session state."
-  @spec local_effects([tuple()], SessionState.t()) ::
-          {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  @spec local_effects([tuple()], SessionState.t()) :: local_effect_result()
   def local_effects(effects, %SessionState{} = session) when is_list(effects) do
     Enum.reduce_while(effects, {:noreply, session}, fn effect, {:noreply, current} ->
       case local_effect(effect, current) do
         {:noreply, updated} -> {:cont, {:noreply, updated}}
+        {:error, _reason, _state} = error -> {:halt, error}
         {:stop, _reason, _state} = stop -> {:halt, stop}
       end
     end)
@@ -613,6 +680,82 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       cell = {x + dx, y + dy}
       if Cell.traversable?(map_name, elem(cell, 0), elem(cell, 1)), do: cell
     end)
+  end
+
+  defp castling_units_valid?(owner, homunculus) do
+    Unit.living?(owner) and HomunculusState.living?(homunculus) and
+      owner.map_name == homunculus.map_name and is_binary(owner.map_name) and
+      Enum.all?([owner.x, owner.y, homunculus.x, homunculus.y], &is_integer/1)
+  end
+
+  defp prepare_castling_owner(owner, homunculus) do
+    casting = owner.casting
+
+    owner =
+      owner
+      |> PlayerState.stop_walking()
+      |> PlayerState.clear_combat_intent()
+      |> PlayerState.clear_pickup_intent()
+      |> PlayerState.clear_pending_forced_movement()
+
+    owner = if is_nil(casting), do: PlayerState.clear_skill_intent(owner), else: owner
+
+    Map.merge(owner, %{
+      x: homunculus.x,
+      y: homunculus.y,
+      action_state: if(is_nil(casting), do: :idle, else: owner.action_state),
+      casting: casting
+    })
+  end
+
+  defp redirect_castling_mob(map_name, owner_id, homunculus_gid) do
+    expected = {:player, owner_id}
+    replacement = {:homunculus, homunculus_gid}
+
+    map_name
+    |> castling_redirect_candidates(expected)
+    |> Enum.reduce_while(:not_redirected, fn mob_id, _acc ->
+      redirect_castling_candidate(mob_id, expected, replacement)
+    end)
+  end
+
+  defp castling_redirect_candidates(map_name, expected) do
+    map_ids = :mob |> SpatialIndex.get_units_on_map(map_name) |> Enum.sort()
+
+    {targeting_owner, stale_fallback} =
+      Enum.split_with(map_ids, fn mob_id -> mob_targets?(mob_id, expected) end)
+
+    (targeting_owner ++ Enum.take(stale_fallback, @castling_stale_fallback_limit))
+    |> Enum.uniq()
+    |> Enum.take(@castling_redirect_limit)
+  end
+
+  defp mob_targets?(mob_id, expected) do
+    match?({:ok, {_module, %{target_ref: ^expected}, _pid}}, UnitRegistry.get_unit(:mob, mob_id))
+  end
+
+  defp redirect_castling_candidate(mob_id, expected, replacement) do
+    case live_mob_pid(mob_id) do
+      {:ok, pid} ->
+        case MobSession.redirect_target(pid, expected, replacement) do
+          :ok -> {:halt, :ok}
+          {:error, :outcome_unknown} -> {:halt, :outcome_unknown}
+          {:error, _definitive} -> {:cont, :not_redirected}
+        end
+
+      _unavailable ->
+        {:cont, :not_redirected}
+    end
+  end
+
+  defp live_mob_pid(mob_id) do
+    case UnitRegistry.get_unit(:mob, mob_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) and pid != self() ->
+        if Process.alive?(pid), do: {:ok, pid}, else: :error
+
+      _other ->
+        :error
+    end
   end
 
   defp cancel_runtime(runtime) do

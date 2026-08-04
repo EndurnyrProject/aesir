@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Homunculus.NaturalRegen
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -210,7 +211,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
 
   defp start_path(session, cells, target, standby?) do
     session = cancel_movement(session)
-    runtime = %{session.homunculus_runtime | movement_path: cells}
+
+    runtime =
+      session.homunculus_runtime
+      |> Map.put(:movement_path, cells)
+      |> NaturalRegen.reset()
 
     homunculus = %{
       session.homunculus

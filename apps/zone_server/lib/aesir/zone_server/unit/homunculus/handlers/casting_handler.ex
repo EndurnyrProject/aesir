@@ -79,13 +79,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   end
 
   defp finish_completed(session, updated, effects) do
-    original = session
     session = clear_runtime_cast(session)
     updated = %{updated | action_state: :idle, casting: nil}
 
     case finish(session, updated, effects) do
       {:ok, completed} -> {:noreply, completed}
-      {:error, _reason, _session} -> {:noreply, restore_failed_completion(original)}
+      {:error, _reason, restored} -> {:noreply, cancel(restored)}
       {:stop, _reason, _state} = stop -> stop
     end
   end
@@ -143,8 +142,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     |> StateCommit.commit(homunculus)
     |> then(&CommandHandler.local_effects(effects, &1))
     |> case do
-      {:noreply, completed} -> {:ok, completed}
-      {:stop, _reason, _state} = stop -> stop
+      {:noreply, completed} ->
+        {:ok, completed}
+
+      {:error, reason, _unchanged} ->
+        {:error, reason, restore_failed_local_effect(session)}
+
+      {:stop, _reason, _state} = stop ->
+        stop
     end
   end
 
@@ -158,10 +163,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     end
   end
 
-  defp restore_failed_completion(session) do
-    session = clear_runtime_cast(session)
-    homunculus = %{session.homunculus | action_state: :idle, casting: nil}
-    StateCommit.commit(session, homunculus)
+  defp restore_failed_local_effect(session) do
+    private_dirty = session.homunculus_runtime.private_dirty
+    session = rearm_cooldown(session, session.homunculus)
+    session = StateCommit.commit(session, session.homunculus)
+    runtime = %{session.homunculus_runtime | private_dirty: private_dirty}
+    %{session | homunculus_runtime: runtime}
   end
 
   defp rearm_cooldown(session, homunculus) do

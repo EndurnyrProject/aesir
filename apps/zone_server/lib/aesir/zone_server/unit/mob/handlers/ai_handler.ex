@@ -92,6 +92,28 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler do
     {:noreply, schedule_jittered_ai_tick(%{state | ai_awake: true})}
   end
 
+  @doc "Redirects only a living mob whose current target still matches."
+  @spec handle_redirect_target(MobState.t(), tuple(), tuple()) ::
+          {:reply, :ok | {:error, atom()}, MobState.t()}
+  def handle_redirect_target(
+        %MobState{is_dead: false, target_ref: expected_ref} = state,
+        expected_ref,
+        new_ref
+      ) do
+    updated =
+      state
+      |> MobState.set_target(new_ref)
+      |> MobState.set_ai_state(:combat)
+
+    {:reply, :ok, updated}
+  end
+
+  def handle_redirect_target(%MobState{is_dead: true} = state, _expected_ref, _new_ref),
+    do: {:reply, {:error, :dead}, state}
+
+  def handle_redirect_target(%MobState{} = state, _expected_ref, _new_ref),
+    do: {:reply, {:error, :target_changed}, state}
+
   @doc """
   Sets the mob's typed AI target for an `{:ai, {:set_target, target_ref}}` cast,
   entering combat if a target is given or returning to idle if cleared.

@@ -49,7 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     assert HlifChange.definition().sp_cost == [100, 100, 100]
     assert HlifChange.definition().duration == [60_000, 180_000, 300_000]
     assert HlifChange.definition().cooldown == [600_000, 900_000, 1_200_000]
-    assert :error = Catalog.by_id(8_005)
+    assert {:ok, %{id: 8_005, name: :hami_castle}} = Catalog.by_id(8_005)
+    assert :error = Catalog.by_id(8_017)
   end
 
   test "Healing Touch returns the exact owner cost marker and owner-only heal" do
@@ -98,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
              Interpreter.begin_homunculus_cast(caster, 8_001, 1, {:unit, {:player, 100}})
 
     assert {:error, :unknown_skill} =
-             Interpreter.begin_homunculus_cast(caster, 8_005, 1, :self)
+             Interpreter.begin_homunculus_cast(caster, 8_017, 1, :self)
   end
 
   test "learned Mental Change remains castable after intimacy falls but requires evolved form" do
@@ -123,6 +124,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
 
     assert {:error, :status_blocked} =
              Interpreter.begin_homunculus_cast(caster, 8_001, 1, :self)
+  end
+
+  test "Homunculus module validation follows status cooldown and SP gates" do
+    caster = %{homunculus() | class_id: 6_002, learned_skills: %{8_005 => 1}}
+
+    StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_stun)
+
+    assert {:error, :status_blocked} =
+             Interpreter.begin_homunculus_cast(caster, 8_005, 1, :self)
+
+    StatusStorage.remove_status(:homunculus, caster.world_gid, :sc_stun)
+    now = System.monotonic_time(:millisecond)
+
+    assert {:error, :on_cooldown} =
+             Interpreter.begin_homunculus_cast(
+               %{caster | cooldowns: %{8_005 => now + 10_000}},
+               8_005,
+               1,
+               :self
+             )
+
+    assert {:error, :insufficient_sp} =
+             Interpreter.begin_homunculus_cast(%{caster | sp: 0}, 8_005, 1, :self)
   end
 
   test "CastingHandler applies Avoid to exactly owner and Lif" do

@@ -106,6 +106,79 @@ defmodule Aesir.ZoneServer.Unit.Movement do
 
   defp inactive_player?(_unit), do: false
 
+  @doc "Reads a registry snapshot only when its spatial endpoint is current and consistent."
+  @spec swap_ready(unit_type(), unit_id()) ::
+          {:ok, {module(), map(), pid()}} | {:error, :stale_endpoint}
+  def swap_ready(unit_type, unit_id) do
+    with {:ok, {module, %{map_name: state_map, x: state_x, y: state_y} = state, pid}} <-
+           UnitRegistry.get_unit(unit_type, unit_id),
+         true <- is_binary(state_map) and is_integer(state_x) and is_integer(state_y),
+         {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(unit_type, unit_id),
+         true <- {state_x, state_y, state_map} == {x, y, map_name} do
+      {:ok, {module, state, pid}}
+    else
+      _invalid -> {:error, :stale_endpoint}
+    end
+  end
+
+  @doc "Swaps two prevalidated same-map endpoints before emitting movement notifications."
+  @spec swap_positions(
+          {unit_type(), unit_id(), map()},
+          {unit_type(), unit_id(), map()},
+          String.t()
+        ) :: :ok | {:error, :stale_endpoint}
+  def swap_positions(
+        {first_type, first_id, first_updated} = first,
+        {second_type, second_id, second_updated} = second,
+        map_name
+      ) do
+    with {:ok, first_previous} <-
+           validate_swap_endpoint(first_type, first_id, second_updated, map_name),
+         {:ok, second_previous} <-
+           validate_swap_endpoint(second_type, second_id, first_updated, map_name) do
+      SpatialIndex.update_unit_position(
+        first_type,
+        first_id,
+        first_updated.x,
+        first_updated.y,
+        map_name
+      )
+
+      SpatialIndex.update_unit_position(
+        second_type,
+        second_id,
+        second_updated.x,
+        second_updated.y,
+        map_name
+      )
+
+      :ok = UnitRegistry.update_unit_state(first_type, first_id, first_updated)
+      :ok = UnitRegistry.update_unit_state(second_type, second_id, second_updated)
+      finish_position_change(first, first_previous, map_name)
+      finish_position_change(second, second_previous, map_name)
+    end
+  end
+
+  defp validate_swap_endpoint(unit_type, unit_id, other_updated, map_name) do
+    with {:ok, {_module, state, _pid}} <- swap_ready(unit_type, unit_id),
+         true <- state.map_name == map_name,
+         true <- {state.x, state.y} == {other_updated.x, other_updated.y} do
+      {:ok, {:ok, {state.x, state.y, map_name}}}
+    else
+      _invalid -> {:error, :stale_endpoint}
+    end
+  end
+
+  defp finish_position_change({unit_type, unit_id, updated_state}, previous, map_name) do
+    notify_homunculus_boundaries(unit_type, unit_id, previous, updated_state, map_name)
+    mark_dirty(map_name, unit_type, unit_id, @standing)
+
+    mover = {unit_type, unit_id}
+    fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
+    Trigger.on_enter_cell(mover, map_name, updated_state.x, updated_state.y)
+    fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
+  end
+
   @doc """
   Records a unit in its map's dirty set with the given `move_state`.
 

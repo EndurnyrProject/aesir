@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Homunculus.NaturalRegen
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -27,7 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   @doc "Arms exactly one AI timer for an active living Homunculus."
   @spec arm(SessionState.t()) :: SessionState.t()
   def arm(%SessionState{} = session) do
-    session = cancel(session)
+    session = cancel_ai_timer(session)
 
     if eligible?(session) do
       ref = :erlang.start_timer(@tick_interval, self(), {:homunculus, :ai_tick})
@@ -40,6 +41,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   @doc "Cancels the current AI chain without affecting other Homunculus clocks."
   @spec cancel(SessionState.t()) :: SessionState.t()
   def cancel(%SessionState{} = session) do
+    session = cancel_ai_timer(session)
+    %{session | homunculus_runtime: NaturalRegen.reset(session.homunculus_runtime)}
+  end
+
+  defp cancel_ai_timer(session) do
     Clock.cancel(session.homunculus_runtime.ai_timer_ref)
     %{session | homunculus_runtime: %{session.homunculus_runtime | ai_timer_ref: nil}}
   end
@@ -50,6 +56,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
   def tick(ref, %SessionState{} = session) do
     if session.homunculus_runtime.ai_timer_ref == ref and eligible?(session) do
       session = %{session | homunculus_runtime: %{session.homunculus_runtime | ai_timer_ref: nil}}
+      session = recover_naturally(session, Clock.now_ms())
       candidates = candidates(session)
 
       intent =
@@ -75,6 +82,17 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler do
     else
       {:noreply, session}
     end
+  end
+
+  defp recover_naturally(session, now_ms) do
+    {homunculus, runtime} =
+      NaturalRegen.tick(session.homunculus, session.homunculus_runtime, now_ms)
+
+    session = %{session | homunculus_runtime: runtime}
+
+    if homunculus == session.homunculus,
+      do: session,
+      else: StateCommit.commit(session, homunculus)
   end
 
   defp execute(:idle, session), do: {:noreply, session}

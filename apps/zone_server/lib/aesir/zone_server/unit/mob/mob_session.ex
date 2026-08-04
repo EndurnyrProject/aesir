@@ -100,6 +100,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:ai, {:set_target, target_ref}})
   end
 
+  @doc "Redirects a current live target atomically inside the mob session."
+  @spec redirect_target(pid(), tuple(), tuple()) :: :ok | {:error, atom()}
+  def redirect_target(pid, expected_ref, new_ref) do
+    GenServer.call(pid, {:ai, {:redirect_target, expected_ref, new_ref}}, 25)
+  catch
+    :exit, {:timeout, _call} -> {:error, :outcome_unknown}
+    :exit, _reason -> {:error, :unavailable}
+  end
+
   @doc """
   Marks the mob as having been stolen from.
   """
@@ -241,6 +250,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   # AI: sleep/wake suspension of the AI loop and target (re)assignment.
+  @impl GenServer
+  def handle_call({:ai, {:redirect_target, expected_ref, new_ref}}, _from, state) do
+    AiHandler.handle_redirect_target(state, expected_ref, new_ref)
+  end
+
   @impl GenServer
   def handle_cast({:ai, :sleep}, state) do
     AiHandler.handle_sleep(state)
