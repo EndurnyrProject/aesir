@@ -146,7 +146,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ItemEffectHandlerTest do
   test "Supplement adds exactly 100 hundredths, caps, and requires an active living companion", %{
     character: character
   } do
-    session = session(character, @supplement_id)
+    session =
+      session(character, @supplement_id, %{
+        active_remaining_ms: 123_456,
+        cooldowns: %{"8002" => 23_456}
+      })
 
     assert {:noreply, increased} =
              ItemEffectHandler.handle(
@@ -157,7 +161,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ItemEffectHandlerTest do
              )
 
     assert increased.homunculus.intimacy_hundredths == 2_200
-    assert Persistence.load_for_character(character.id).intimacy_hundredths == 2_200
+    persisted = Persistence.load_for_character(character.id)
+    assert persisted.intimacy_hundredths == 2_200
+    assert persisted.active_remaining_ms == 123_456
+    assert persisted.cooldowns == %{"8002" => 23_456}
 
     {:ok, _row} =
       character.id
@@ -175,7 +182,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ItemEffectHandlerTest do
              )
 
     assert capped.homunculus.intimacy_hundredths == 100_000
-    assert Persistence.load_for_character(character.id).intimacy_hundredths == 100_000
+    persisted = Persistence.load_for_character(character.id)
+    assert persisted.intimacy_hundredths == 100_000
+    assert persisted.active_remaining_ms == 123_456
+    assert persisted.cooldowns == %{"8002" => 23_456}
 
     Enum.each([%{lifecycle: :rested}, %{hp: 0}], fn attrs ->
       invalid = %{capped | homunculus: Map.merge(capped.homunculus, attrs)}

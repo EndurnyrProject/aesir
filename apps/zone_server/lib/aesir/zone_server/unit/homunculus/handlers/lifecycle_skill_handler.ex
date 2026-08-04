@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
 
   @embryo_id 7142
   @seed_of_life_id 7140
+  @lifecycle_skill_ids %{call: 243, rest: 244, resurrection: 247}
 
   @type operation :: :call | :rest | {:resurrection, 1..5}
 
@@ -54,6 +55,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
     with :ok <- preflight_operation(session, operation, expected_id),
          :ok <- unchanged_inventory(session.game_state.inventory, charged_game_state.inventory),
          {:ok, planned, planned_runtime, inventory, item_change} <- plan(session, operation) do
+      planned = preserve_lifecycle_cooldown(planned, charged_game_state, operation)
+
       settle_planned(
         session,
         charged_game_state,
@@ -84,6 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
             operation,
             persisted_inventory,
             persisted_row,
+            planned,
             item_change,
             claim
           )
@@ -101,10 +105,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
          operation,
          persisted_inventory,
          persisted_row,
+         planned,
          item_change,
          claim
        ) do
-    case activate_committed(session, operation, persisted_row) do
+    case activate_committed(session, operation, persisted_row, planned) do
       {:ok, homunculus, runtime} ->
         game_state = %{charged_game_state | inventory: persisted_inventory}
 
@@ -244,14 +249,37 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
     end
   end
 
-  defp activate_committed(%{homunculus: nil} = session, operation, %Homunculus{} = row) do
-    with {:ok, persisted} <- StateRestore.restore(row) do
-      activate(session, operation, persisted)
+  defp activate_committed(%{homunculus: nil} = session, operation, %Homunculus{} = row, planned) do
+    with {:ok, persisted} <- StateRestore.restore(row),
+         {:ok, homunculus, runtime} <- activate(session, operation, persisted) do
+      restore_planned_cooldowns(homunculus, runtime, planned.cooldowns)
     end
   end
 
-  defp activate_committed(session, operation, %Homunculus{}),
-    do: activate(session, operation, session.homunculus)
+  defp activate_committed(session, {:resurrection, level}, %Homunculus{}, planned) do
+    with {:ok, homunculus, runtime} <-
+           LifecycleHandler.resurrect(
+             session.homunculus,
+             restored_hp(session.homunculus, level),
+             session.homunculus_runtime
+           ) do
+      restore_planned_cooldowns(homunculus, runtime, planned.cooldowns)
+    end
+  end
+
+  defp activate_committed(session, operation, %Homunculus{}, planned) do
+    with {:ok, homunculus, runtime} <- activate(session, operation, session.homunculus) do
+      restore_planned_cooldowns(homunculus, runtime, planned.cooldowns)
+    end
+  end
+
+  defp restore_planned_cooldowns(homunculus, runtime, cooldowns) do
+    Clock.cancel(runtime.cooldown_timer_ref)
+    cooldown_timer_ref = Clock.arm_nearest_cooldown(cooldowns, Clock.now_ms())
+
+    {:ok, %{homunculus | cooldowns: cooldowns},
+     %{runtime | cooldown_timer_ref: cooldown_timer_ref}}
+  end
 
   defp activate(session, :call, persisted) when is_nil(session.homunculus),
     do: LifecycleHandler.first_creation(nil, persisted, session.homunculus_runtime)
@@ -262,13 +290,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   defp activate(session, :rest, _persisted),
     do: LifecycleHandler.voluntary_rest(session.homunculus, session.homunculus_runtime)
 
-  defp activate(session, {:resurrection, level}, _persisted),
-    do:
-      LifecycleHandler.resurrect(
-        session.homunculus,
-        restored_hp(session.homunculus, level),
-        session.homunculus_runtime
-      )
+  defp preserve_lifecycle_cooldown(planned, game_state, operation) do
+    skill_id =
+      case operation do
+        {:resurrection, _level} -> @lifecycle_skill_ids.resurrection
+        other -> Map.fetch!(@lifecycle_skill_ids, other)
+      end
+
+    case game_state.skill_cooldowns[skill_id] do
+      deadline when is_integer(deadline) ->
+        cooldowns = Map.update(planned.cooldowns, skill_id, deadline, &max(&1, deadline))
+        %{planned | cooldowns: cooldowns}
+
+      nil ->
+        planned
+    end
+  end
 
   defp persistence_attrs(state, runtime) do
     {:ok, clocks} =

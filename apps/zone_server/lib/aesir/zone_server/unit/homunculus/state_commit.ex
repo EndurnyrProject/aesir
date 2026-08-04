@@ -8,16 +8,48 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView
   alias Aesir.ZoneServer.Unit.Movement
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.WorldId
 
   @world_id_range 2..1_999_999
+  @owner_lifecycle_skill_ids [243, 244, 247]
+
+  @doc "Restores persisted owner lifecycle cooldowns into the player skill gate."
+  @spec restore_lifecycle_cooldowns(SessionState.t()) :: SessionState.t()
+  def restore_lifecycle_cooldowns(session), do: sync_owner_lifecycle_cooldowns(session)
+
+  @doc "Synchronizes owner lifecycle skill gates after a Homunculus cooldown update."
+  @spec sync_owner_lifecycle_cooldowns(SessionState.t()) :: SessionState.t()
+  def sync_owner_lifecycle_cooldowns(session) do
+    cooldowns =
+      case session.homunculus do
+        %HomunculusState{} = homunculus ->
+          Map.take(homunculus.cooldowns, @owner_lifecycle_skill_ids)
+
+        nil ->
+          %{}
+      end
+
+    game_state = %{
+      session.game_state
+      | skill_cooldowns:
+          session.game_state.skill_cooldowns
+          |> Map.drop(@owner_lifecycle_skill_ids)
+          |> Map.merge(cooldowns)
+    }
+
+    UnitRegistry.update_unit_state(:player, game_state.character_id, game_state)
+    %{session | game_state: game_state}
+  end
 
   @doc "Stores a restored offline state without publishing world presence."
   @spec restore(SessionState.t(), HomunculusState.t() | nil) :: SessionState.t()
@@ -173,6 +205,77 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
     }
   end
 
+  @doc "Commits an active same-GID appearance replacement and refreshes nearby observers."
+  @spec commit_appearance_refresh(SessionState.t(), HomunculusState.t() | nil) :: SessionState.t()
+  def commit_appearance_refresh(
+        %SessionState{
+          homunculus: %HomunculusState{
+            lifecycle: :active,
+            world_gid: gid,
+            map_name: map_name,
+            x: x,
+            y: y
+          },
+          homunculus_runtime: %Runtime{} = runtime
+        } = session,
+        %HomunculusState{lifecycle: :active, world_gid: gid} = current
+      )
+      when is_integer(gid) do
+    validate_active!(current)
+
+    observers =
+      map_name
+      |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
+      |> Enum.filter(&visible_observer?(&1, gid))
+
+    current = %{current | owner_session_pid: self()}
+
+    Movement.clear_dirty(map_name, :homunculus, gid)
+    publish_appearance_replacement(current)
+    Movement.clear_dirty(current.map_name, :homunculus, gid)
+
+    queue_appearance_refresh(session, observers, current)
+
+    %{
+      session
+      | homunculus: current,
+        homunculus_runtime: %{runtime | private_dirty: true}
+    }
+  end
+
+  def commit_appearance_refresh(%SessionState{} = session, homunculus),
+    do: commit(session, homunculus)
+
+  defp visible_observer?(observer_id, gid) do
+    case UnitRegistry.get_unit(:player, observer_id) do
+      {:ok, {_module, %PlayerState{visible_homunculi: visible_homunculi}, _pid}} ->
+        MapSet.member?(visible_homunculi, gid)
+
+      _ ->
+        false
+    end
+  end
+
+  defp queue_appearance_refresh(session, observers, current) do
+    packets = SpawnView.appearance_refresh_packets(current)
+    owner_id = session.game_state.character_id
+
+    Enum.each(observers, fn
+      ^owner_id -> Enum.each(packets, &MessageRouter.send_to(session.connection_pid, &1))
+      observer_id -> Enum.each(packets, &Broadcast.to_player(observer_id, &1))
+    end)
+  end
+
+  defp publish_appearance_replacement(%HomunculusState{world_gid: gid} = current) do
+    case UnitRegistry.get_unit(:homunculus, gid) do
+      {:ok, {_module, _previous_state, _pid}} ->
+        UnitRegistry.update_unit_state(:homunculus, gid, current)
+
+      {:error, :not_found} ->
+        register_active(current)
+    end
+  end
+
   defp synchronize_presence(previous, %HomunculusState{lifecycle: :active} = current) do
     unless active_world_state?(current) do
       raise ArgumentError, "active Homunculus requires complete living world state"
@@ -270,14 +373,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
     case SpatialIndex.get_unit_position(:homunculus, gid) do
       {:ok, {x, y, map_name}} ->
         observers = SpatialIndex.get_players_in_range(map_name, x, y, Config.view_range())
-        notify_removed(observers, gid, reason)
         Movement.clear_dirty(map_name, :homunculus, gid)
+        SpatialIndex.remove_unit(:homunculus, gid)
+        notify_removed(observers, gid, reason)
 
       {:error, :not_found} ->
-        :ok
+        SpatialIndex.remove_unit(:homunculus, gid)
     end
-
-    SpatialIndex.remove_unit(:homunculus, gid)
   end
 
   defp notify_removed(observers, gid, :dead), do: SpawnView.notify_died(observers, gid)

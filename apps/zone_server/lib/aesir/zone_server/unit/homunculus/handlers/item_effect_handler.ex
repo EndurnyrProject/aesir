@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler do
   def handle(client_index, server_index, effect, %SessionState{} = session, opts \\ []) do
     case transition(server_index, effect, session, opts) do
       {:ok, inventory, homunculus} ->
-        committed = commit(session, inventory, homunculus)
+        committed = commit(session, inventory, homunculus, effect)
         publish_success(committed, client_index, server_index)
         {:noreply, clear_private_dirty(committed)}
 
@@ -158,7 +158,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler do
     end
   end
 
-  defp commit(session, inventory, homunculus) do
+  defp commit(session, inventory, homunculus, :homunculus_evolution) do
+    session
+    |> Map.update!(:game_state, &%{&1 | inventory: inventory})
+    |> StateCommit.commit_appearance_refresh(homunculus)
+  end
+
+  defp commit(session, inventory, homunculus, _effect) do
     session
     |> Map.update!(:game_state, &%{&1 | inventory: inventory})
     |> StateCommit.commit(homunculus)

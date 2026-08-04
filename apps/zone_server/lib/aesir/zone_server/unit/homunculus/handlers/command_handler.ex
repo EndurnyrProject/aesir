@@ -918,6 +918,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
         session =
           session
           |> arm_active_runtime()
+          |> StateCommit.restore_lifecycle_cooldowns()
           |> send_private_state()
 
         {:noreply, session}
@@ -965,6 +966,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     updated =
       session
       |> persist_and_commit(homunculus, runtime, operation)
+      |> StateCommit.sync_owner_lifecycle_cooldowns()
       |> reconcile_active_runtime()
 
     {:noreply, updated}

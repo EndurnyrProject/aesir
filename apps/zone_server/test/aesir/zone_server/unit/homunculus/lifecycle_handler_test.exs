@@ -19,6 +19,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.LifecycleHandlerTest do
     assert {:ok, %{active_remaining_ms: 0, cooldowns: %{8001 => 500}}} =
              Clock.durable_snapshot(:rested, nil, %{8001 => 1_500}, 1_000)
 
+    assert {:ok, %{active_remaining_ms: 0}} =
+             Clock.durable_snapshot(:rested, nil, %{}, -1_000)
+
     assert {:error, :invalid_clock_state} =
              Clock.durable_snapshot(:dead, 1_500, %{}, 1_000)
   end

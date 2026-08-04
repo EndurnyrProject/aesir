@@ -78,7 +78,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Clock do
          true <- Enum.all?(cooldowns, fn {_skill_id, deadline_ms} -> is_integer(deadline_ms) end) do
       {:ok,
        %{
-         active_remaining_ms: pause_remaining(active_remaining_ms, now_ms),
+         active_remaining_ms:
+           if(lifecycle == :active, do: pause_remaining(active_remaining_ms, now_ms), else: 0),
          cooldowns: pause_cooldowns(cooldowns, now_ms)
        }}
     else

@@ -42,20 +42,29 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.SpawnView do
   @doc "Sends a Homunculus spawn and its public status icons to one observer."
   @spec send_spawn(non_neg_integer(), HomunculusState.t()) :: :ok
   def send_spawn(observer_id, %HomunculusState{} = state) do
-    Broadcast.to_player(observer_id, build(state))
-
-    :homunculus
-    |> StatusDisplay.active_icons(state.world_gid)
+    state
+    |> spawn_packets()
     |> Enum.each(&Broadcast.to_player(observer_id, &1))
+  end
+
+  @doc "Builds an ordered despawn, refreshed spawn, and public status-icon sequence."
+  @spec appearance_refresh_packets(HomunculusState.t()) :: [struct()]
+  def appearance_refresh_packets(%HomunculusState{} = state) do
+    [despawn_packet(state.world_gid) | spawn_packets(state)]
   end
 
   @doc "Sends an out-of-sight despawn to one observer."
   @spec send_despawn(non_neg_integer(), pos_integer()) :: :ok
   def send_despawn(observer_id, gid) do
-    Broadcast.to_player(observer_id, %UnitDespawn{
-      gid: gid,
-      reason: DespawnReason.out_of_sight()
-    })
+    Broadcast.to_player(observer_id, despawn_packet(gid))
+  end
+
+  defp spawn_packets(%HomunculusState{} = state) do
+    [build(state) | StatusDisplay.active_icons(:homunculus, state.world_gid)]
+  end
+
+  defp despawn_packet(gid) do
+    %UnitDespawn{gid: gid, reason: DespawnReason.out_of_sight()}
   end
 
   @doc "Notifies stationary observers that a Homunculus entered their view."

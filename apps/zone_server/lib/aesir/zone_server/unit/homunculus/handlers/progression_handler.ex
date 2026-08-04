@@ -35,9 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler do
     :luk,
     :hunger,
     :intimacy_hundredths,
-    :active_remaining_ms,
-    :learned_skills,
-    :cooldowns
+    :learned_skills
   ]
   @type opts :: [roll: (non_neg_integer(), non_neg_integer() -> non_neg_integer())]
   @type result :: {:ok, HomunculusState.t()} | {:error, atom() | {:persistence, term()}}

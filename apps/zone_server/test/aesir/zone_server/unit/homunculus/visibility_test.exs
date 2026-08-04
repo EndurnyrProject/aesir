@@ -183,6 +183,50 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.VisibilityTest do
     assert Movement.drain_dirty(active.map_name) == []
   end
 
+  test "appearance refresh replaces registry state without a pending snapshot" do
+    active = homunculus()
+
+    observer = %{
+      player_state(42, 100, 121)
+      | visible_homunculi: MapSet.new([active.world_gid])
+    }
+
+    pending_observer = player_state(43, 100, 122)
+    UnitRegistry.register_player(observer, self())
+    UnitRegistry.register_player(pending_observer, self())
+    SpatialIndex.add_player(observer.character_id, observer.x, observer.y, observer.map_name)
+
+    SpatialIndex.add_player(
+      pending_observer.character_id,
+      pending_observer.x,
+      pending_observer.y,
+      pending_observer.map_name
+    )
+
+    SpatialIndex.add_player(44, 100, 123, active.map_name)
+
+    register_homunculus(active)
+    Movement.mark_dirty(active.map_name, :homunculus, active.world_gid, 0)
+    session = %{session(observer) | homunculus: active}
+    evolved = %{active | class_id: 6_009, max_hp: 1_100}
+
+    committed = StateCommit.commit_appearance_refresh(session, evolved)
+
+    assert committed.homunculus.class_id == 6_009
+    assert committed.homunculus_runtime.private_dirty
+    assert Movement.drain_dirty(active.map_name) == []
+
+    assert {:ok, {HomunculusState, registered, _pid}} =
+             UnitRegistry.get_unit(:homunculus, active.world_gid)
+
+    assert registered.class_id == 6_009
+    assert registered.max_hp == 1_100
+    assert_receive {:send, :world, {:unit_despawn, %UnitDespawn{gid: 70_001}}}
+    assert_receive {:send, :world, {:unit_spawn, %UnitSpawn{gid: 70_001, job: 6_009}}}
+    refute_receive {:"$gen_cast", {:send_packet, %UnitDespawn{gid: 70_001}}}, 20
+    refute_receive {:"$gen_cast", {:send_packet, %UnitSpawn{gid: 70_001}}}, 20
+  end
+
   test "invalid active public state fails before world mutation" do
     observer = player_state(42, 100, 121)
     session = session(observer)

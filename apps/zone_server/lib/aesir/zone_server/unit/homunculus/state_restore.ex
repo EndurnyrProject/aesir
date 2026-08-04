@@ -122,9 +122,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
 
   defp validate_skills(class_id, learned_skills, cooldowns) do
     allowed = Map.new(SkillTree.for_class(class_id), &{&1.skill_id, &1.max_level})
+    owner_lifecycle_skills = MapSet.new([243, 244, 247])
 
     with true <- Enum.all?(learned_skills, fn {id, rank} -> rank <= Map.get(allowed, id, 0) end),
-         true <- Enum.all?(Map.keys(cooldowns), &Map.has_key?(allowed, &1)) do
+         true <-
+           Enum.all?(Map.keys(cooldowns), fn id ->
+             Map.has_key?(allowed, id) or MapSet.member?(owner_lifecycle_skills, id)
+           end) do
       :ok
     else
       _invalid -> {:error, :invalid_skills}

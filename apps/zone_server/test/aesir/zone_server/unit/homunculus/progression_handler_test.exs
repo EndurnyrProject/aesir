@@ -403,9 +403,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
                :luk,
                :hunger,
                :intimacy_hundredths,
-               :active_remaining_ms,
                :learned_skills,
-               :cooldowns,
                :ai_config
              ])
 
@@ -414,6 +412,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     refute Map.has_key?(attrs, :world_gid)
     refute Map.has_key?(attrs, :map_name)
     refute Map.has_key?(attrs, :owner_session_pid)
+    refute Map.has_key?(attrs, :active_remaining_ms)
+    refute Map.has_key?(attrs, :cooldowns)
     assert {:ok, _persisted} = Persistence.save_semantic(row, attrs)
 
     reloaded = Persistence.load_for_character(character.id)
