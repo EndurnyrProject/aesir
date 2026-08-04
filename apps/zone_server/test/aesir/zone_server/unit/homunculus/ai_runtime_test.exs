@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
@@ -27,7 +28,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @map "hom_ai_runtime_map"
@@ -229,28 +236,42 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert unchanged.homunculus_runtime.movement_timer_ref == nil
   end
 
-  test "AI adapts self targets and settles real SP and cooldown state" do
+  test "AI casts Mental Change with its real cost, status, and cooldown" do
     skill_config = auto_skill_config(8_004, :self)
 
     companion = %{
       homunculus()
       | class_id: 6_009,
+        sp: 150,
+        max_sp: 150,
         learned_skills: %{8_004 => 1},
         ai_config: skill_config
     }
 
     {:noreply, cast} = ai_tick(active_session(homunculus: companion))
 
-    assert cast.homunculus.sp == 49
+    assert cast.homunculus.sp == 50
     assert cast.homunculus.action_state == :idle
     assert cast.homunculus.casting == nil
     assert cast.homunculus.cooldowns[8_004] > System.monotonic_time(:millisecond)
     assert is_reference(cast.homunculus_runtime.cooldown_timer_ref)
+    assert StatusStorage.has_status?(:homunculus, companion.world_gid, :sc_change)
   end
 
-  test "AI adapts typed enemy targets through timed cast completion" do
-    register_mob(950, 3, 2)
-    skill_config = auto_skill_config(8_002, :enemy, stance: :aggressive)
+  test "AI rejects Healing Touch after its owner disappears" do
+    skill_config = auto_skill_config(8_001, :self, auto_cast_sp_reserve_percent: 0)
+    companion = %{homunculus() | learned_skills: %{8_001 => 1}, ai_config: skill_config}
+    session = active_session(homunculus: companion)
+    UnitRegistry.unregister_unit(:player, session.game_state.character_id)
+
+    {:noreply, rejected} = ai_tick(session)
+
+    assert rejected.homunculus.sp == companion.sp
+    assert rejected.homunculus.cooldowns == %{}
+  end
+
+  test "AI casts Urgent Escape as an instant owner and Lif self buff" do
+    skill_config = auto_skill_config(8_002, :self)
 
     companion = %{
       homunculus()
@@ -258,21 +279,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
         ai_config: skill_config
     }
 
-    {:noreply, casting} = ai_tick(active_session(homunculus: companion))
+    {:noreply, cast} = ai_tick(active_session(homunculus: companion))
 
-    assert casting.homunculus.action_state == :casting
-    assert casting.homunculus.casting.target == {:unit, {:mob, 950}}
-    assert is_reference(casting.homunculus_runtime.cast_timer_ref)
-
-    timer_ref = casting.homunculus_runtime.cast_timer_ref
-    token = casting.homunculus.casting.token
-    assert {:noreply, completed} = CastingHandler.complete(timer_ref, token, casting)
-
-    assert_received {:homunculus_test_attack, {:unit, {:mob, 950}}, 1}
-    assert completed.homunculus.sp == 30
-    assert completed.homunculus.action_state == :idle
-    assert completed.homunculus.casting == nil
-    assert completed.homunculus.cooldowns[8_002] > System.monotonic_time(:millisecond)
+    assert cast.homunculus.sp == 30
+    assert cast.homunculus.action_state == :idle
+    assert cast.homunculus.casting == nil
+    assert cast.homunculus.cooldowns[8_002] > System.monotonic_time(:millisecond)
+    assert StatusStorage.has_status?(:player, 42, :sc_avoid)
+    assert StatusStorage.has_status?(:homunculus, companion.world_gid, :sc_avoid)
   end
 
   test "automatic SP reserve blocks while the existing manual cast crosses it" do
@@ -281,14 +295,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     companion = %{
       homunculus()
       | class_id: 6_009,
-        sp: 1,
-        max_sp: 50,
+        sp: 100,
+        max_sp: 120,
         learned_skills: %{8_004 => 1},
         ai_config: skill_config
     }
 
     {:noreply, blocked} = ai_tick(active_session(homunculus: companion))
-    assert blocked.homunculus.sp == 1
+    assert blocked.homunculus.sp == 100
     assert blocked.homunculus.cooldowns == %{}
 
     assert {:ok, manually_cast} = CastingHandler.begin(blocked, 8_004, 1, :self)
@@ -391,7 +405,25 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
       movement_state: :standing,
       combat_target_id: nil,
       inventory: %{},
-      stats: %{current_state: %{hp: 100}, derived_stats: %{max_hp: 100}},
+      stats: %PlayerStats{
+        base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        derived_stats: %DerivedStats{max_hp: 100, max_sp: 100, aspd: 150},
+        combat_stats: %CombatStats{
+          atk: 1,
+          matk: 1,
+          matk_min: 1,
+          matk_max: 1,
+          heal_matk_min: 1,
+          heal_matk_max: 1,
+          def: 1,
+          mdef: 1,
+          hit: 1,
+          flee: 1,
+          critical: 1
+        },
+        current_state: %CurrentState{hp: 100, sp: 100},
+        progression: %PlayerProgression{base_level: 20, job_level: 20, learned_skills: %{}}
+      },
       visible_players: MapSet.new(),
       visible_mobs: MapSet.new(),
       visible_homunculi: MapSet.new(),

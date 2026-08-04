@@ -11,13 +11,14 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @type begin_result ::
           {:ok, SessionState.t()}
-          | {:error, atom(), SessionState.t()}
+          | {:error, term(), SessionState.t()}
           | {:stop, term(), SessionState.t()}
 
   @doc "Begins the shared manual/AI cast path and schedules a timed cast when required."
@@ -78,11 +79,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   end
 
   defp finish_completed(session, updated, effects) do
+    original = session
     session = clear_runtime_cast(session)
     updated = %{updated | action_state: :idle, casting: nil}
 
     case finish(session, updated, effects) do
       {:ok, completed} -> {:noreply, completed}
+      {:error, _reason, _session} -> {:noreply, restore_failed_completion(original)}
       {:stop, _reason, _state} = stop -> stop
     end
   end
@@ -116,7 +119,25 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     {:ok, StateCommit.commit(session, homunculus)}
   end
 
-  defp finish(session, homunculus, effects) do
+  defp finish(
+         session,
+         homunculus,
+         [{:owner_item_cost, item_id, amount} | effects]
+       )
+       when is_integer(item_id) and item_id > 0 and is_integer(amount) and amount > 0 do
+    case ItemEffectHandler.settle_skill_cost(session, homunculus, item_id, amount) do
+      {:ok, settled, index} ->
+        finish_with_item_cost(settled, homunculus, effects, index, amount)
+
+      {:error, reason} ->
+        {:error, reason, session}
+    end
+  end
+
+  defp finish(session, homunculus, effects),
+    do: finish_without_item_cost(session, homunculus, effects)
+
+  defp finish_without_item_cost(session, homunculus, effects) do
     session
     |> rearm_cooldown(homunculus)
     |> StateCommit.commit(homunculus)
@@ -125,6 +146,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
       {:noreply, completed} -> {:ok, completed}
       {:stop, _reason, _state} = stop -> stop
     end
+  end
+
+  defp finish_with_item_cost(session, homunculus, effects, index, amount) do
+    committed = session |> rearm_cooldown(homunculus) |> StateCommit.commit(homunculus)
+    :ok = ItemEffectHandler.publish_skill_cost(committed, index, amount)
+
+    case CommandHandler.local_effects(effects, committed) do
+      {:noreply, completed} -> {:ok, completed}
+      {:stop, _reason, _state} = stop -> stop
+    end
+  end
+
+  defp restore_failed_completion(session) do
+    session = clear_runtime_cast(session)
+    homunculus = %{session.homunculus | action_state: :idle, casting: nil}
+    StateCommit.commit(session, homunculus)
   end
 
   defp rearm_cooldown(session, homunculus) do

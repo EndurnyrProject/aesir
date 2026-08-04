@@ -30,7 +30,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @type caster :: PlayerState.t() | MobState.t() | HomunculusState.t()
 
   @typedoc "An aggregate-local effect returned without messaging the owner process."
-  @type local_effect :: {:homunculus | :player, tuple()}
+  @type local_effect ::
+          {:homunculus | :player, tuple()}
+          | {:owner_item_cost, pos_integer(), pos_integer()}
 
   @typedoc "The entry point that caused a skill effect to run."
   @type cast_origin :: :normal | :item | :auto | :mob | :homunculus | :direct

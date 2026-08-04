@@ -2,61 +2,74 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
-  import Mimic
 
-  alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid
+  alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifBrain
+  alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifChange
+  alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
-  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
-  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
-  setup :verify_on_exit!
 
   setup do
-    Mimic.copy(AutoAttack)
-    Mimic.copy(CharacterPersistence)
-    stub(CharacterPersistence, :update_stats, fn _id, _attrs, _opts -> :ok end)
     on_exit(&Catalog.reload/0)
     Catalog.reload()
     :ok
   end
 
-  test "catalog discovers shipped Homunculus namespace modules without requiring every tree row" do
-    assert {:ok, %{id: 8001, name: :hlif_heal}} = Catalog.by_id(8001)
+  test "catalog discovers the production Lif kit with canonical definitions" do
+    assert {:ok, %{id: 8_001, target_type: :self, item_cost: [%{id: 545, amount: 1}]}} =
+             Catalog.by_name(:hlif_heal)
 
-    assert {:ok, Aesir.ZoneServer.Mmo.Skills.Homunculus.TestSupport} =
-             Catalog.active_module_for(:hlif_heal)
-
-    assert {:ok, %{id: 8003}} = Catalog.by_id(8003)
+    assert {:ok, HlifHeal} = Catalog.active_module_for(:hlif_heal)
+    assert {:ok, HlifAvoid} = Catalog.active_module_for(:hlif_avoid)
+    assert {:ok, HlifChange} = Catalog.active_module_for(:hlif_change)
     assert :error = Catalog.active_module_for(:hlif_brain)
-    assert {:ok, %{id: 8004}} = Catalog.by_id(8004)
-    assert :error = Catalog.by_id(8005)
+
+    assert HlifHeal.definition().sp_cost == [13, 16, 19, 22, 25]
+    assert HlifHeal.definition().cooldown == List.duplicate(20_000, 5)
+    assert HlifAvoid.definition().sp_cost == [20, 25, 30, 35, 40]
+    assert HlifAvoid.definition().cooldown == List.duplicate(35_000, 5)
+    assert HlifAvoid.definition().duration == [40_000, 35_000, 30_000, 25_000, 20_000]
+    assert HlifBrain.definition().target_type == :passive
+    assert HlifChange.definition().sp_cost == [100, 100, 100]
+    assert HlifChange.definition().duration == [60_000, 180_000, 300_000]
+    assert HlifChange.definition().cooldown == [600_000, 900_000, 1_200_000]
+    assert :error = Catalog.by_id(8_005)
   end
 
-  test "restricted begin validates and settles an instant cast" do
-    caster = homunculus()
+  test "Healing Touch returns the exact owner cost marker and owner-only heal" do
+    caster = homunculus(%{level: 20, int: 5, learned_skills: %{8_001 => 5, 8_003 => 3}})
+    caster = %{caster | combat_stats: %{caster.combat_stats | matk_min: 77, matk_max: 77}}
+    register_active(caster, owner())
 
     assert {:instant, updated, effects} =
-             Interpreter.begin_homunculus_cast(caster, 8001, 1, :self)
+             Interpreter.begin_homunculus_cast(caster, 8_001, 5, :self)
 
-    assert updated.sp == 90
-    assert Map.has_key?(updated.cooldowns, 8001)
+    assert updated.sp == 75
+    assert updated.cooldowns[8_001] > System.monotonic_time(:millisecond)
 
     assert effects == [
-             {:homunculus, {:apply_heal, 1_500_001, 5, {:homunculus, 1_500_001}}}
+             {:owner_item_cost, 545, 1},
+             {:player, {:apply_heal, 156, {:homunculus, caster.world_gid}}}
            ]
   end
 
-  test "begin rejects invalid caster, tree, rank, SP, cooldown, and passive skills" do
+  test "restricted begin rejects caster, species, rank, SP, cooldown, passive, and target errors" do
     now = System.monotonic_time(:millisecond)
     caster = homunculus()
 
@@ -64,230 +77,86 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
           {%{caster | lifecycle: :dead, hp: 0, action_state: :dead}, :dead},
           {%{caster | movement_state: :moving}, :moving},
           {%{caster | action_state: :attacking}, :busy},
-          {%{caster | class_id: 6002}, :wrong_species},
+          {%{caster | class_id: 6_002}, :wrong_species},
           {%{caster | learned_skills: %{}}, :skill_not_learned},
-          {%{caster | sp: 9}, :insufficient_sp},
-          {%{caster | cooldowns: %{8001 => now + 10_000}}, :on_cooldown}
+          {%{caster | sp: 12}, :insufficient_sp},
+          {%{caster | cooldowns: %{8_001 => now + 10_000}}, :on_cooldown}
         ] do
       assert {:error, ^expected} =
-               Interpreter.begin_homunculus_cast(updated, 8001, 1, :self)
+               Interpreter.begin_homunculus_cast(updated, 8_001, 1, :self)
     end
 
     assert {:error, :skill_not_learned} =
-             Interpreter.begin_homunculus_cast(caster, 8001, 2, :self)
+             Interpreter.begin_homunculus_cast(caster, 8_001, 2, :self)
 
     assert {:error, :passive_skill} =
-             Interpreter.begin_homunculus_cast(caster, 8003, 1, :self)
+             Interpreter.begin_homunculus_cast(caster, 8_003, 1, :self)
+
+    register_active(caster, owner())
+
+    assert {:error, :invalid_target} =
+             Interpreter.begin_homunculus_cast(caster, 8_001, 1, {:unit, {:player, 100}})
 
     assert {:error, :unknown_skill} =
-             Interpreter.begin_homunculus_cast(caster, 8005, 1, :self)
+             Interpreter.begin_homunculus_cast(caster, 8_005, 1, :self)
   end
 
-  test "evolved-only skills require the current evolved form" do
-    original = %{homunculus() | learned_skills: %{8004 => 1}}
-    evolved = %{original | class_id: 6009}
+  test "learned Mental Change remains castable after intimacy falls but requires evolved form" do
+    original = homunculus(%{learned_skills: %{8_004 => 1}, sp: 100, intimacy_hundredths: 0})
+    evolved = %{original | class_id: 6_009}
+    register_active(evolved, owner())
 
     assert {:error, :skill_not_learned} =
-             Interpreter.begin_homunculus_cast(original, 8004, 1, :self)
+             Interpreter.begin_homunculus_cast(original, 8_004, 1, :self)
 
     assert {:instant, updated, []} =
-             Interpreter.begin_homunculus_cast(evolved, 8004, 1, :self)
+             Interpreter.begin_homunculus_cast(evolved, 8_004, 1, :self)
 
-    assert updated.sp == 99
+    assert updated.sp == 0
+    assert StatusStorage.has_status?(:homunculus, evolved.world_gid, :sc_change)
   end
 
-  test "status gates cannot be bypassed by cast caller policy" do
+  test "status gates remain mandatory on the restricted path" do
     caster = homunculus()
+    register_active(caster, owner())
     StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_stun)
 
     assert {:error, :status_blocked} =
-             Interpreter.begin_homunculus_cast(caster, 8001, 1, :self)
+             Interpreter.begin_homunculus_cast(caster, 8_001, 1, :self)
   end
 
-  test "target relationship, type, liveness, and range are checked at begin" do
-    caster = homunculus()
-    near = mob(1_600_010, 12, 10)
-    far = mob(1_600_011, 20, 10)
-    dead = %{mob(1_600_012, 12, 10) | hp: 0, is_dead: true}
-    Enum.each([near, far, dead], &register_mob/1)
-
-    assert {:casting, _info} =
-             Interpreter.begin_homunculus_cast(
-               caster,
-               8002,
-               1,
-               {:unit, {:mob, near.instance_id}}
-             )
-
-    assert {:error, :out_of_range} =
-             Interpreter.begin_homunculus_cast(
-               caster,
-               8002,
-               1,
-               {:unit, {:mob, far.instance_id}}
-             )
-
-    assert {:error, :target_dead} =
-             Interpreter.begin_homunculus_cast(
-               caster,
-               8002,
-               1,
-               {:unit, {:mob, dead.instance_id}}
-             )
-
-    assert {:error, :invalid_target} =
-             Interpreter.begin_homunculus_cast(caster, 8002, 1, :self)
-
-    assert {:error, :invalid_target} =
-             Interpreter.begin_homunculus_cast(caster, 8002, 1, {:unit, near.instance_id})
-  end
-
-  test "ally support requires the caster's exact social root" do
-    caster = homunculus()
-    register_active(caster, owner())
-
-    foreign_player = %{owner() | character_id: 200, x: 11}
-
-    UnitRegistry.register_unit(
-      :player,
-      foreign_player.character_id,
-      PlayerState,
-      foreign_player,
-      self()
-    )
-
-    SpatialIndex.add_unit(:player, foreign_player.character_id, 11, 10, foreign_player.map_name)
-
-    foreign_homunculus = %{
-      caster
-      | id: 2,
-        owner_character_id: 200,
-        world_gid: 1_500_002,
-        x: 11
-    }
-
-    UnitRegistry.register_unit(
-      :homunculus,
-      foreign_homunculus.world_gid,
-      HomunculusState,
-      foreign_homunculus,
-      self()
-    )
-
-    SpatialIndex.add_unit(
-      :homunculus,
-      foreign_homunculus.world_gid,
-      11,
-      10,
-      foreign_homunculus.map_name
-    )
-
-    assert {:error, :invalid_target} =
-             Interpreter.begin_homunculus_cast(
-               caster,
-               8001,
-               1,
-               {:unit, {:player, foreign_player.character_id}}
-             )
-
-    assert {:error, :invalid_target} =
-             Interpreter.begin_homunculus_cast(
-               caster,
-               8001,
-               1,
-               {:unit, {:homunculus, foreign_homunculus.world_gid}}
-             )
-  end
-
-  test "completion revalidates the latest target before settlement" do
+  test "CastingHandler applies Avoid to exactly owner and Lif" do
     session = session()
     register_active(session.homunculus, session.game_state)
-    target = mob(1_600_020, 12, 10)
-    register_mob(target)
 
-    assert {:ok, casting_session} =
-             CastingHandler.begin(session, 8002, 1, {:unit, {:mob, target.instance_id}})
+    assert {:ok, cast} = CastingHandler.begin(session, 8_002, 3, :self)
+    assert cast.homunculus.sp == 70
+    assert cast.homunculus.cooldowns[8_002] > System.monotonic_time(:millisecond)
 
-    token = casting_session.homunculus.casting.token
-    timer_ref = casting_session.homunculus_runtime.cast_timer_ref
-    UnitRegistry.update_unit_state(:mob, target.instance_id, %{target | hp: 0, is_dead: true})
+    owner_status = StatusStorage.get_status(:player, 100, :sc_avoid)
+    hom_status = StatusStorage.get_status(:homunculus, 1_500_001, :sc_avoid)
+    assert owner_status.val1 == 3
+    assert owner_status.val2 == 30
+    assert hom_status.val1 == 3
+    assert hom_status.val2 == 120
+  end
 
-    assert {:noreply, cancelled} = CastingHandler.complete(timer_ref, token, casting_session)
+  test "cancel clears a lower-level timed-cast setup without settling resources" do
+    token = make_ref()
+    timer_ref = :erlang.start_timer(60_000, self(), :unused)
+    casting = %{token: token, skill_id: 8_002, level: 1, target: :self}
+    session = session()
+    homunculus = %{session.homunculus | action_state: :casting, casting: casting}
+    runtime = %{session.homunculus_runtime | cast_timer_ref: timer_ref}
+
+    cancelled =
+      CastingHandler.cancel(%{session | homunculus: homunculus, homunculus_runtime: runtime})
+
     assert cancelled.homunculus.sp == 100
     assert cancelled.homunculus.cooldowns == %{}
+    assert cancelled.homunculus.action_state == :idle
     assert cancelled.homunculus.casting == nil
-    refute_received {:homunculus_test_attack, _, _}
-  end
-
-  test "instant aggregate-local Homunculus and owner effects apply directly" do
-    session = session()
-    register_active(session.homunculus, session.game_state)
-
-    assert {:ok, self_targeted} = CastingHandler.begin(session, 8001, 1, :self)
-    assert self_targeted.homunculus.hp == 55
-    assert self_targeted.homunculus.sp == 90
-
-    owner_session = %{session | homunculus: %{session.homunculus | cooldowns: %{}}}
-
-    assert {:ok, owner_targeted} =
-             CastingHandler.begin(owner_session, 8001, 1, {:unit, {:player, 100}})
-
-    assert owner_targeted.game_state.stats.current_state.hp == 57
-    assert Process.alive?(self())
-  end
-
-  test "a basic attack immediately cancels an active cast" do
-    stub(AutoAttack, :execute_homunculus_attack, fn _caster, _target_ref -> :ok end)
-
-    session = session()
-    register_active(session.homunculus, session.game_state)
-    target = mob(1_600_030, 12, 10)
-    register_mob(target)
-
-    assert {:ok, casting_session} =
-             CastingHandler.begin(session, 8002, 1, {:unit, {:mob, target.instance_id}})
-
-    token = casting_session.homunculus.casting.token
-    timer_ref = casting_session.homunculus_runtime.cast_timer_ref
-
-    assert {:noreply, attacked} =
-             CombatHandler.handle(
-               {:basic_attack, casting_session.homunculus.world_gid, {:mob, target.instance_id}},
-               casting_session
-             )
-
-    assert attacked.homunculus.action_state == :idle
-    assert attacked.homunculus.casting == nil
-    assert attacked.homunculus_runtime.cast_timer_ref == nil
-    assert {:noreply, ^attacked} = CastingHandler.complete(timer_ref, token, attacked)
-  end
-
-  test "timed aggregate cast settles only for the matching token and timer reference" do
-    session = session()
-    register_active(session.homunculus, session.game_state)
-    target = mob(1_600_001, 12, 10)
-    register_mob(target)
-
-    assert {:ok, casting_session} =
-             CastingHandler.begin(session, 8002, 1, {:unit, {:mob, target.instance_id}})
-
-    token = casting_session.homunculus.casting.token
-    timer_ref = casting_session.homunculus_runtime.cast_timer_ref
-    assert casting_session.homunculus.sp == 100
-    assert casting_session.homunculus.action_state == :casting
-
-    assert {:noreply, ^casting_session} =
-             CastingHandler.complete(make_ref(), token, casting_session)
-
-    assert {:noreply, completed} = CastingHandler.complete(timer_ref, token, casting_session)
-    assert completed.homunculus.sp == 80
-    assert completed.homunculus.action_state == :idle
-    assert completed.homunculus.casting == nil
-    assert completed.homunculus_runtime.cast_timer_ref == nil
-    assert_received {:homunculus_test_attack, {:unit, {:mob, 1_600_001}}, 1}
-
-    assert {:noreply, ^completed} = CastingHandler.complete(timer_ref, token, completed)
-    refute_received {:homunculus_test_attack, _, _}
+    assert cancelled.homunculus_runtime.cast_timer_ref == nil
   end
 
   defp session do
@@ -303,15 +172,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
       dir: 0,
       action_state: :idle,
       movement_state: :standing,
-      stats: %{
-        current_state: %{hp: 50, sp: 100},
-        derived_stats: %{max_hp: 100, max_sp: 100},
-        progression: %{learned_skills: %{}}
+      inventory: %{},
+      stats: %PlayerStats{
+        base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        derived_stats: %DerivedStats{max_hp: 100, max_sp: 100, aspd: 150},
+        combat_stats: %CombatStats{
+          atk: 1,
+          matk: 1,
+          matk_min: 1,
+          matk_max: 1,
+          heal_matk_min: 1,
+          heal_matk_max: 1,
+          def: 1,
+          mdef: 1,
+          hit: 1,
+          flee: 1,
+          critical: 1
+        },
+        current_state: %CurrentState{hp: 50, sp: 100},
+        progression: %PlayerProgression{
+          base_level: 20,
+          job_level: 20,
+          learned_skills: %{}
+        }
       }
     }
   end
 
-  defp register_active(homunculus, owner) do
+  defp register_active(homunculus, player) do
     UnitRegistry.register_unit(
       :homunculus,
       homunculus.world_gid,
@@ -328,54 +216,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
       homunculus.map_name
     )
 
-    UnitRegistry.register_unit(:player, owner.character_id, PlayerState, owner, self())
-    SpatialIndex.add_unit(:player, owner.character_id, owner.x, owner.y, owner.map_name)
+    UnitRegistry.register_unit(:player, player.character_id, PlayerState, player, self())
+    SpatialIndex.add_unit(:player, player.character_id, player.x, player.y, player.map_name)
   end
 
-  defp register_mob(mob) do
-    UnitRegistry.register_unit(:mob, mob.instance_id, MobState, mob, self())
-    SpatialIndex.add_unit(:mob, mob.instance_id, mob.x, mob.y, mob.map_name)
-  end
-
-  defp mob(id, x, y) do
-    %MobState{
-      instance_id: id,
-      mob_id: 1,
-      mob_data: nil,
-      spawn_ref: nil,
-      x: x,
-      y: y,
-      map_name: "hom_cast_map",
-      hp: 100,
-      max_hp: 100,
-      sp: 0,
-      max_sp: 0,
-      spawned_at: 0
-    }
-  end
-
-  defp homunculus do
-    %HomunculusState{
-      id: 1,
-      owner_character_id: 100,
-      owner_session_pid: self(),
-      class_id: 6001,
-      name: "Lif",
-      lifecycle: :active,
-      level: 20,
-      hp: 50,
-      max_hp: 100,
-      sp: 100,
-      max_sp: 100,
-      dex: 1,
-      int: 1,
-      learned_skills: %{8001 => 1, 8002 => 1, 8003 => 1},
-      world_gid: 1_500_001,
-      map_name: "hom_cast_map",
-      x: 10,
-      y: 10,
-      action_state: :idle,
-      movement_state: :standing
-    }
+  defp homunculus(overrides \\ %{}) do
+    struct!(
+      HomunculusState,
+      Map.merge(
+        %{
+          id: 1,
+          owner_character_id: 100,
+          owner_session_pid: self(),
+          class_id: 6_001,
+          name: "Lif",
+          lifecycle: :active,
+          level: 20,
+          hp: 50,
+          max_hp: 100,
+          sp: 100,
+          max_sp: 100,
+          dex: 1,
+          int: 1,
+          learned_skills: %{8_001 => 1, 8_002 => 3, 8_003 => 1},
+          world_gid: 1_500_001,
+          map_name: "hom_cast_map",
+          x: 10,
+          y: 10,
+          action_state: :idle,
+          movement_state: :standing
+        },
+        overrides
+      )
+    )
   end
 end
