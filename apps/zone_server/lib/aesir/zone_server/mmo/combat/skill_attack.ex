@@ -1,4 +1,28 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
+  defmodule PreparedHit do
+    @moduledoc """
+    Opaque connected physical hit awaiting authoritative settlement.
+
+    Constructed only by `SkillAttack.prepare_staged_skill_attack/3` and consumed
+    only by `SkillAttack.deliver_prepared_skill_hit/1`.
+    """
+
+    @enforce_keys [
+      :attacker,
+      :target_type,
+      :target_pid,
+      :target,
+      :skill_id,
+      :skill_level,
+      :damage_result,
+      :display_hits,
+      :ranged
+    ]
+    defstruct @enforce_keys
+
+    @opaque t :: %__MODULE__{}
+  end
+
   @moduledoc """
   Physical (BF_WEAPON) and misc (BF_MISC) offensive skill paths: single-target
   skill strikes, ground-centered physical splashes, line strikes, and trap
@@ -36,6 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:force_crit` - guarantee a critical, applying the crit multiplier without
       rolling (Auto Counter's counter strike); wins over `:skip_crit`
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
+    - `:base_damage` - non-negative integer replacing only the unit-specific
+      base attack roll; the normal ratio/modifier/defense pipeline still applies
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
     - `:hit_count` - number of hits to deliver, each rolling its own hit/flee
       check and its own damage (default `1`)
@@ -82,6 +108,80 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   end
 
   @doc """
+  Prepares one connected physical skill hit without delivering it.
+
+  This dedicated seam performs target validation, one hit/flee decision, and the
+  ordinary raw physical damage calculation. Miss feedback is broadcast
+  immediately. A connected hit is returned as an opaque descriptor; no
+  pre-delivery status hook, damage packet, target damage, or on-hit effect runs
+  until `deliver_prepared_skill_hit/1` is called.
+  """
+  @spec prepare_staged_skill_attack(struct(), integer() | Ref.t(), keyword()) ::
+          {:ok, :miss | PreparedHit.t()} | {:error, atom()}
+  def prepare_staged_skill_attack(caster_state, target_id, opts) do
+    attacker = caster_state.__struct__.to_combatant(caster_state)
+    skill_id = Keyword.fetch!(opts, :skill_id)
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    display_hits = Keyword.get(opts, :display_hit_count, 1)
+    hit_rate_bonus_pct = Keyword.get(opts, :hit_rate_bonus_pct, 0)
+
+    calc_opts = physical_skill_calc_opts(caster_state, opts)
+    validator_opts = physical_skill_validator_opts(opts)
+
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- AttackValidator.validate(attacker, target, validator_opts),
+         :ok <- Targeting.validate_enemy(attacker, target) do
+      if weapon_hit_intercepted?(attacker, target_type, target) do
+        {:ok, :miss}
+      else
+        prepare_staged_skill_hit(
+          {attacker, target_type, target_pid, target},
+          skill_id,
+          skill_level,
+          calc_opts,
+          %{
+            display_hits: display_hits,
+            hit_rate_bonus_pct: hit_rate_bonus_pct,
+            ignore_flee: Keyword.get(opts, :ignore_flee, false),
+            ranged: Keyword.get(opts, :ranged, false)
+          }
+        )
+      end
+    end
+  end
+
+  @doc "Delivers one opaque hit returned by `prepare_staged_skill_attack/3`."
+  @spec deliver_prepared_skill_hit(PreparedHit.t()) :: :ok
+  def deliver_prepared_skill_hit(%PreparedHit{} = prepared) do
+    %PreparedHit{
+      attacker: attacker,
+      target_type: target_type,
+      target_pid: target_pid,
+      target: target,
+      skill_id: skill_id,
+      skill_level: skill_level,
+      damage_result: damage_result,
+      display_hits: display_hits,
+      ranged: ranged?
+    } = prepared
+
+    _damage =
+      deliver_calculated_skill_hit(
+        attacker,
+        {target_type, target_pid, target},
+        skill_id,
+        skill_level,
+        damage_result,
+        display_hits,
+        ranged?
+      )
+
+    :ok
+  end
+
+  @doc """
   Executes Acid Terror through the weapon-damage path while ignoring status DEF.
 
   All ordinary skill-attack validation, hit delivery, and on-hit handling remain
@@ -110,18 +210,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     hit_rate_bonus_pct = Keyword.get(opts, :hit_rate_bonus_pct, 0)
     ranged? = Keyword.get(opts, :ranged, false)
 
-    calc_opts =
-      Keyword.take(opts, [
-        :skill_ratio,
-        :skip_crit,
-        :force_crit,
-        :bonus_atk,
-        :fixed_damage,
-        :element,
-        :skill_id
-      ]) ++ shield_base_opts(caster_state, opts)
-
-    validator_opts = Keyword.take(opts, [:skip_range]) ++ [projectile?: true]
+    calc_opts = physical_skill_calc_opts(caster_state, opts)
+    validator_opts = physical_skill_validator_opts(opts)
 
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
@@ -241,6 +331,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   end
 
   defp shield_base_opts(_caster_state, _opts), do: []
+
+  defp physical_skill_calc_opts(caster_state, opts) do
+    Keyword.take(opts, [
+      :skill_ratio,
+      :skip_crit,
+      :force_crit,
+      :bonus_atk,
+      :base_damage,
+      :fixed_damage,
+      :element,
+      :skill_id
+    ]) ++ shield_base_opts(caster_state, opts)
+  end
+
+  defp physical_skill_validator_opts(opts),
+    do: Keyword.take(opts, [:skip_range]) ++ [projectile?: true]
 
   defp multi_target_opts(opts) do
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -458,6 +564,69 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
+  defp prepare_staged_skill_hit(
+         {attacker, target_type, target_pid, target},
+         skill_id,
+         skill_level,
+         calc_opts,
+         hit_opts
+       ) do
+    %{
+      display_hits: display_hits,
+      hit_rate_bonus_pct: hit_rate_bonus_pct,
+      ignore_flee: ignore_flee?,
+      ranged: ranged?
+    } = hit_opts
+
+    hit_result =
+      if ignore_flee? do
+        :hit
+      else
+        HitCalculations.calculate_hit_result(
+          hit_stats(attacker, hit_rate_bonus_pct),
+          flee_stats(target)
+        )
+      end
+
+    case hit_result do
+      :miss ->
+        DamageApplication.broadcast_nearby(
+          target,
+          PacketFactory.build_miss_packet(attacker, target)
+        )
+
+        {:ok, :miss}
+
+      :perfect_dodge ->
+        DamageApplication.broadcast_nearby(
+          target,
+          PacketFactory.build_perfect_dodge_packet(attacker, target)
+        )
+
+        {:ok, :miss}
+
+      :hit ->
+        case DamageCalculator.calculate_damage(attacker, target, calc_opts) do
+          {:ok, damage_result} ->
+            {:ok,
+             %PreparedHit{
+               attacker: attacker,
+               target_type: target_type,
+               target_pid: target_pid,
+               target: target,
+               skill_id: skill_id,
+               skill_level: skill_level,
+               damage_result: damage_result,
+               display_hits: display_hits,
+               ranged: ranged?
+             }}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
   # Rolls the weapon-class hit/flee check, then applies damage on a connect or
   # broadcasts the miss/perfect-dodge packet otherwise. Returns whether the
   # hit connected, so callers can gate follow-up effects (status riders) or
@@ -601,46 +770,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
     case damage_calculator.(attacker, target, calc_opts) do
       {:ok, damage_result} ->
-        hit_info = %{
-          dmg_type: :physical,
-          is_short: not ranged? and attacker.attack_range <= 3,
-          element: :neutral,
-          skill_id: skill_id,
-          skill_level: skill_level
-        }
-
-        {damage, hit_info} =
-          DamageApplication.prepare_unit_damage(
-            target_type,
-            target.unit_id,
-            damage_result.damage,
-            hit_info,
-            damage_source(attacker, target_type)
-          )
-
-        packet =
-          skill_damage_packet(
+        damage =
+          deliver_calculated_skill_hit(
             attacker,
-            target,
+            {target_type, target_pid, target},
             skill_id,
             skill_level,
             damage_result,
-            damage,
-            display_hits
+            display_hits,
+            ranged?
           )
-
-        DamageApplication.broadcast_nearby(target, packet)
-
-        DamageApplication.apply_unit_damage(
-          target_type,
-          target_pid,
-          target.unit_id,
-          damage,
-          hit_info,
-          damage_source(attacker, target_type)
-        )
-
-        OnHitEffects.after_hit(attacker, target, damage_result)
 
         %{hit?: true, damage: damage}
 
@@ -654,6 +793,60 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
        do: {unit_type, unit_id}
 
   defp damage_source(%{unit_id: unit_id}, _target_type), do: unit_id
+
+  defp deliver_calculated_skill_hit(
+         attacker,
+         {target_type, target_pid, target},
+         skill_id,
+         skill_level,
+         damage_result,
+         display_hits,
+         ranged?
+       ) do
+    hit_info = %{
+      dmg_type: :physical,
+      is_short: not ranged? and attacker.attack_range <= 3,
+      element: :neutral,
+      skill_id: skill_id,
+      skill_level: skill_level
+    }
+
+    source = damage_source(attacker, target_type)
+
+    {damage, hit_info} =
+      DamageApplication.prepare_unit_damage(
+        target_type,
+        target.unit_id,
+        damage_result.damage,
+        hit_info,
+        source
+      )
+
+    packet =
+      skill_damage_packet(
+        attacker,
+        target,
+        skill_id,
+        skill_level,
+        damage_result,
+        damage,
+        display_hits
+      )
+
+    DamageApplication.broadcast_nearby(target, packet)
+
+    DamageApplication.apply_unit_damage(
+      target_type,
+      target_pid,
+      target.unit_id,
+      damage,
+      hit_info,
+      source
+    )
+
+    OnHitEffects.after_hit(attacker, target, damage_result)
+    damage
+  end
 
   defp damage_calculation({calc_opts, damage_calculator}),
     do: {calc_opts, damage_calculator}

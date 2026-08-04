@@ -17,6 +17,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @element_status_keys [
     water: :subele_water,
@@ -272,6 +275,77 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, element: :poison)
       assert_received {:attack_element, :poison}
+    end
+  end
+
+  describe "calculate_base_attack/2 base damage override" do
+    test "replaces only the rolled base attack" do
+      attacker = CombatTestHelper.create_mob_combatant(atk: 999, str: 99, base_level: 99)
+
+      assert {:ok, 400} = DamageCalculator.calculate_base_attack(attacker, base_damage: 400)
+    end
+
+    test "Fleet's Homunculus atk_rate changes the normal base-damage pipeline" do
+      stub(ElementModifiers, :get_modifier, fn :fire, :neutral, 1, _bonuses -> 1.5 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+
+      homunculus_id = 30_001
+
+      on_exit(fn ->
+        StatusStorage.clear_unit_statuses(:homunculus, homunculus_id)
+        UnitRegistry.unregister_unit(:homunculus, homunculus_id)
+      end)
+
+      UnitRegistry.register_unit(
+        :homunculus,
+        homunculus_id,
+        HomunculusState,
+        %HomunculusState{
+          id: 30_001,
+          owner_character_id: 30_002,
+          class_id: 6003,
+          name: "Fleet test",
+          world_gid: homunculus_id
+        },
+        self()
+      )
+
+      attacker =
+        CombatTestHelper.create_mob_combatant(atk: 999, str: 99, base_level: 99)
+        |> Map.put(:unit_type, :homunculus)
+        |> Map.put(:unit_id, homunculus_id)
+
+      defender =
+        CombatTestHelper.create_player_combatant(vit: 40, base_level: 10)
+        |> Map.put(:element, {:neutral, 1})
+
+      opts = [base_damage: 400, skill_ratio: 200, element: :fire, skip_crit: true]
+
+      assert {:ok, %{damage: 800, is_critical: false}} =
+               DamageCalculator.calculate_damage(attacker, defender, opts)
+
+      :ok = StatusStorage.apply_status(:homunculus, homunculus_id, :sc_fleet, val2: 0, val3: 25)
+      assert %{atk_rate: 25} = ModifierCalculator.get_all_modifiers(:homunculus, homunculus_id)
+
+      assert {:ok, %{damage: 1_010, is_critical: false}} =
+               DamageCalculator.calculate_damage(attacker, defender, opts)
+    end
+
+    test "rejects negative and non-integer overrides" do
+      attacker = CombatTestHelper.create_mob_combatant()
+
+      assert {:error, :invalid_base_damage} =
+               DamageCalculator.calculate_base_attack(attacker, base_damage: -1)
+
+      assert {:error, :invalid_base_damage} =
+               DamageCalculator.calculate_base_attack(attacker, base_damage: 1.5)
+    end
+
+    test "ordinary base attacks remain unit-specific" do
+      attacker = CombatTestHelper.create_mob_combatant(atk: 0, str: 10, base_level: 5)
+
+      assert {:ok, 15} = DamageCalculator.calculate_base_attack(attacker)
     end
   end
 

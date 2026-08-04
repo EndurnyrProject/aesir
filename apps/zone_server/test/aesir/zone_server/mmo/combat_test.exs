@@ -739,6 +739,27 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                  hit_count: 1
                )
     end
+
+    test "forwards a physical base damage override into the ordinary calculator", %{
+      player_state: player_state
+    } do
+      expect(DamageCalculator, :calculate_damage, fn _attacker, _target, opts ->
+        assert opts[:base_damage] == 40_000
+        assert opts[:skill_ratio] == 300
+        {:ok, %{damage: 120_000, is_critical: false}}
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 120_000, _attacker_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_skill_attack(player_state, 2001,
+                 skill_id: 7,
+                 skill_level: 3,
+                 base_damage: 40_000,
+                 skill_ratio: 300,
+                 skip_crit: true
+               )
+    end
   end
 
   describe "execute_skill_attack/3 hit result" do

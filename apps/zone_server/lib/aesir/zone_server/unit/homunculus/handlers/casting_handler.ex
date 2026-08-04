@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Homunculus.Persistence
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
@@ -79,10 +80,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
   end
 
   defp finish_completed(session, updated, effects) do
-    session = clear_runtime_cast(session)
+    completed_session = clear_runtime_cast(session)
     updated = %{updated | action_state: :idle, casting: nil}
 
-    case finish(session, updated, effects) do
+    case finish(completed_session, updated, effects) do
       {:ok, completed} -> {:noreply, completed}
       {:error, _reason, restored} -> {:noreply, cancel(restored)}
       {:stop, _reason, _state} = stop -> stop
@@ -133,8 +134,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     end
   end
 
-  defp finish(session, homunculus, effects),
-    do: finish_without_item_cost(session, homunculus, effects)
+  defp finish(session, homunculus, effects) do
+    case persist_intimacy_change(session, homunculus) do
+      :ok -> finish_without_item_cost(session, homunculus, effects)
+      {:error, reason} -> {:error, reason, session}
+    end
+  end
 
   defp finish_without_item_cost(session, homunculus, effects) do
     session
@@ -160,6 +165,33 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     case CommandHandler.local_effects(effects, committed) do
       {:noreply, completed} -> {:ok, completed}
       {:stop, _reason, _state} = stop -> stop
+    end
+  end
+
+  defp persist_intimacy_change(session, homunculus) do
+    if session.homunculus.intimacy_hundredths == homunculus.intimacy_hundredths do
+      :ok
+    else
+      persist_changed_intimacy(session, homunculus.intimacy_hundredths)
+    end
+  end
+
+  defp persist_changed_intimacy(session, intimacy) do
+    owner_id = session.game_state.character_id
+    homunculus_id = session.homunculus.id
+
+    case Persistence.load_for_character(owner_id) do
+      %{id: ^homunculus_id} = row ->
+        case Persistence.save_semantic(row, %{intimacy_hundredths: intimacy}) do
+          {:ok, _row} -> :ok
+          {:error, reason} -> {:error, reason}
+        end
+
+      nil ->
+        {:error, :homunculus_not_found}
+
+      _other ->
+        {:error, :homunculus_id_mismatch}
     end
   end
 

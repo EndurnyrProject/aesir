@@ -54,6 +54,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   defdelegate execute_skill_attack(caster_state, target_id, opts), to: SkillAttack
 
+  @doc "Prepares one connected physical skill hit without delivery side effects."
+  defdelegate prepare_staged_skill_attack(caster_state, target_id, opts), to: SkillAttack
+
+  @doc "Delivers an opaque hit returned by `prepare_staged_skill_attack/3`."
+  defdelegate deliver_prepared_skill_hit(prepared_hit), to: SkillAttack
+
   @doc "Executes Acid Terror through its restricted status-DEF-ignoring damage path."
   defdelegate execute_acid_terror_attack(caster_state, target_id, opts), to: SkillAttack
 

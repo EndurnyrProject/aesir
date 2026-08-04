@@ -202,17 +202,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   def calculate_base_attack(attacker), do: calculate_base_attack(attacker, [])
 
   @doc """
-  Calculates base attack, honouring the `:shield_base` option.
+  Calculates base attack with optional narrow base replacement.
 
-  When `:shield_base` is set on a player attacker, the equipped weapon's ATK
-  and mastery are replaced by the pre-computed shield contribution
-  (`4×refine + shield_weight`, resolved by the caller from the worn shield), so
-  the base becomes the stat-derived batk plus that contribution. Any other unit
-  type ignores the option and falls back to its plain base — mobs carry no
-  shield and use their weapon/batk roll.
+  `:base_damage` must be a non-negative integer. When present it replaces only
+  the unit-specific base attack roll; P.Atk, skill ratio, combat modifiers,
+  RES/DEF, minimum damage, and critical processing remain in the normal damage
+  pipeline.
+
+  `:shield_base` replaces a player attacker's weapon ATK and mastery with the
+  pre-computed shield contribution. Other unit types ignore it.
   """
   @spec calculate_base_attack(combatant(), keyword()) :: {:ok, integer()} | {:error, atom()}
-  def calculate_base_attack(%{unit_type: :player} = attacker, opts) do
+  def calculate_base_attack(attacker, opts) do
+    case Keyword.fetch(opts, :base_damage) do
+      {:ok, damage} when is_integer(damage) and damage >= 0 -> {:ok, damage}
+      {:ok, _invalid} -> {:error, :invalid_base_damage}
+      :error -> calculate_unit_base_attack(attacker, opts)
+    end
+  end
+
+  defp calculate_unit_base_attack(%{unit_type: :player} = attacker, opts) do
     weapon_component =
       case Keyword.get(opts, :shield_base) do
         nil -> calculate_weapon_attack(attacker) + calculate_mastery_bonus(attacker)
@@ -222,7 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, player_status_atk(attacker) + weapon_component}
   end
 
-  def calculate_base_attack(%{unit_type: :homunculus} = attacker, _opts) do
+  defp calculate_unit_base_attack(%{unit_type: :homunculus} = attacker, _opts) do
     min_atk = attacker.combat_stats.atk_min
     max_atk = attacker.combat_stats.atk_max
 
@@ -234,7 +243,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, attacker.combat_stats.atk + weapon_atk}
   end
 
-  def calculate_base_attack(%{unit_type: :mob} = attacker, _opts) do
+  defp calculate_unit_base_attack(%{unit_type: :mob} = attacker, _opts) do
     # Renewal mob melee (rAthena status_base_atk_min/max + battle_calc_base_damage):
     # the weapon hit rolls uniformly across the 80%-120% band of the mob's ATK,
     # then the mob's base ATK (STR + base level) is added flat.
@@ -254,9 +263,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, weapon_atk + batk}
   end
 
-  def calculate_base_attack(_attacker, _opts) do
-    {:error, :unknown_unit_type}
-  end
+  defp calculate_unit_base_attack(_attacker, _opts), do: {:error, :unknown_unit_type}
 
   # Player stat-derived base attack (rAthena status->batk): the weapon-independent
   # portion the shield damage base builds on. (STR*2) + (DEX/5) + (LUK/3) +
@@ -639,6 +646,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     case combatant.unit_type do
       :player -> {:player, combatant.unit_id}
       :mob -> {:mob, combatant.unit_id}
+      :homunculus -> {:homunculus, combatant.unit_id}
       _ -> {:unknown, combatant.unit_id}
     end
   end

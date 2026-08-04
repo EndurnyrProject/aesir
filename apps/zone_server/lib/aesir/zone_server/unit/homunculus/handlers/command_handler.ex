@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
@@ -220,6 +221,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   def local_effect({:player, {:apply_damage, amount, source}}, %SessionState{} = session),
     do: HealthHandler.apply_damage(amount, source_id(source), session)
+
+  def local_effect({:prepared_external_hit, prepared}, %SessionState{} = session) do
+    :ok = SkillAttack.deliver_prepared_skill_hit(prepared)
+    {:noreply, session}
+  end
 
   @doc "Applies aggregate-local effects in list order through the current session state."
   @spec local_effects([tuple()], SessionState.t()) :: local_effect_result()

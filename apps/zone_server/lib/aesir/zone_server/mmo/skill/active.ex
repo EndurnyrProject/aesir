@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   `mob_cast/5` is optional and preferred by the mob executor when a skill exports
   it; see its callback doc for the raw-target and row contract.
   """
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack.PreparedHit
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -34,6 +35,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
           {:homunculus | :player, tuple()}
           | {:owner_item_cost, pos_integer(), pos_integer()}
 
+  @typedoc "A staged external hit delivered only after aggregate settlement succeeds."
+  @type external_effect :: {:prepared_external_hit, PreparedHit.t()}
+
+  @typedoc "An effect settled by the owning aggregate after the caster state commits."
+  @type effect :: local_effect() | external_effect()
+
   @typedoc "The entry point that caused a skill effect to run."
   @type cast_origin :: :normal | :item | :auto | :mob | :homunculus | :direct
 
@@ -49,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback cast(caster(), target(), pos_integer(), Definition.t()) ::
               {:ok, caster()}
               | {:ok, caster(), :no_consume}
-              | {:local_effects, caster(), [local_effect()]}
+              | {:local_effects, caster(), [effect()]}
               | {:deferred, caster(), term()}
               | {:error, atom()}
 
@@ -63,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @callback cast_with_origin(caster(), target(), pos_integer(), Definition.t(), cast_origin()) ::
               {:ok, caster()}
               | {:ok, caster(), :no_consume}
-              | {:local_effects, caster(), [local_effect()]}
+              | {:local_effects, caster(), [effect()]}
               | {:deferred, caster(), term()}
               | {:error, atom()}
 
