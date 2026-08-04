@@ -31,10 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.TestMissingBehavior do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8003,
     name: :hlif_brain,
-    display_name: "Homunculus Missing Behavior Fixture",
+    display_name: "Homunculus Passive Fixture",
     max_level: 5,
-    target_type: :self,
-    sp_cost: List.duplicate(1, 5)
+    target_type: :passive
 end
 
 defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.TestEvolved do
@@ -46,7 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.TestEvolved do
     display_name: "Homunculus Evolved Fixture",
     max_level: 3,
     target_type: :self,
-    sp_cost: List.duplicate(1, 3)
+    sp_cost: List.duplicate(1, 3),
+    cooldown: List.duplicate(1_000, 3)
 
   @behaviour Aesir.ZoneServer.Mmo.Skill.Active
 

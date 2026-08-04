@@ -70,6 +70,24 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler do
     end
   end
 
+  @doc "Returns whether the inventory contains the catalog food for this species."
+  @spec food_available?(pos_integer(), inventory()) :: boolean()
+  def food_available?(class_id, inventory),
+    do: match?({:ok, _index}, food_index(class_id, inventory))
+
+  @doc "Returns the exact inventory stack index for the catalog food."
+  @spec food_index(pos_integer(), inventory()) :: {:ok, non_neg_integer()} | {:error, atom()}
+  def food_index(class_id, inventory) do
+    with {:ok, %{food: food}} <- catalog_food(class_id),
+         {:ok, item} <- food_item(food),
+         index when is_integer(index) <- Inventory.stackable_index(inventory, item.id) do
+      {:ok, index}
+    else
+      nil -> {:error, :missing_food}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @doc "Consumes one catalog food and atomically persists its relationship transition."
   @spec feed(HomunculusState.t(), Runtime.t(), inventory(), opts()) :: result()
   def feed(homunculus, runtime, inventory, opts \\ [])
@@ -176,13 +194,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler do
   end
 
   defp food_removal(class_id, inventory) do
-    with {:ok, %{food: food}} <- catalog_food(class_id),
-         {:ok, item} <- food_item(food),
-         index when is_integer(index) <- Inventory.stackable_index(inventory, item.id),
-         {:ok, new_inventory, change} <- Inventory.remove(inventory, index, 1) do
-      {:ok, new_inventory, change}
-    else
-      nil -> {:error, :missing_food}
+    case food_index(class_id, inventory) do
+      {:ok, index} -> Inventory.remove(inventory, index, 1)
       {:error, reason} -> {:error, reason}
     end
   end

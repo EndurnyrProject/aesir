@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
            ]
   end
 
-  test "begin rejects invalid caster, tree, rank, SP, cooldown, and missing behavior state" do
+  test "begin rejects invalid caster, tree, rank, SP, cooldown, and passive skills" do
     now = System.monotonic_time(:millisecond)
     caster = homunculus()
 
@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     assert {:error, :skill_not_learned} =
              Interpreter.begin_homunculus_cast(caster, 8001, 2, :self)
 
-    assert {:error, :no_behavior} =
+    assert {:error, :passive_skill} =
              Interpreter.begin_homunculus_cast(caster, 8003, 1, :self)
 
     assert {:error, :unknown_skill} =

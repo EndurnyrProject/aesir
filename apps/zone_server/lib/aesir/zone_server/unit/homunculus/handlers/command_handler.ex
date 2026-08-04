@@ -10,10 +10,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
@@ -80,6 +82,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def info(:cooldowns_expired, ref, session), do: lifecycle_timeout(:cooldowns, ref, session)
   def info(:hunger_tick, ref, session), do: hunger_timeout(ref, session)
   def info(:checkpoint, ref, session), do: checkpoint_timeout(ref, session)
+  def info(:ai_tick, ref, session), do: AiHandler.tick(ref, session)
+
+  def info(:movement_tick, ref, session),
+    do: {:noreply, MovementHandler.tick(ref, session)}
+
+  def info(:separation_timeout, ref, session),
+    do: {:noreply, MovementHandler.separation_timeout(ref, session)}
 
   def info(event, _ref, %SessionState{} = session) do
     Logger.warning("Unsupported Homunculus info event: #{inspect(event)}")
@@ -168,6 +177,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   @doc "Detaches active presence before the owner leaves the old warp map."
   @spec detach_for_warp(map(), boolean()) :: map()
   def detach_for_warp(%SessionState{} = session, false) do
+    session = cancel_active_runtime(session)
+
     case session.homunculus do
       %HomunculusState{world_gid: gid} when is_integer(gid) ->
         StatusInterpreter.remove_on_map_change(:homunculus, gid)
@@ -179,7 +190,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     StateCommit.detach(session)
   end
 
-  def detach_for_warp(%SessionState{} = session, true), do: StateCommit.detach(session)
+  def detach_for_warp(%SessionState{} = session, true),
+    do: session |> cancel_active_runtime() |> StateCommit.detach()
 
   def detach_for_warp(session, same_map?) when is_map(session) and is_boolean(same_map?),
     do: session
@@ -218,6 +230,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
       end
 
     session
+    |> arm_active_runtime()
     |> send_private_state()
     |> then(&{:noreply, &1})
   end
@@ -233,9 +246,16 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     session = CastingHandler.cancel(session)
 
     case LifecycleHandler.owner_died(session.homunculus, session.homunculus_runtime) do
-      {:ok, homunculus, runtime} -> persist_and_commit(session, homunculus, runtime, :owner_death)
-      {:noop, _homunculus, _runtime} -> session
-      {:error, reason} -> log_error(session, :owner_death, reason)
+      {:ok, homunculus, runtime} ->
+        session
+        |> persist_and_commit(homunculus, runtime, :owner_death)
+        |> reconcile_active_runtime()
+
+      {:noop, _homunculus, _runtime} ->
+        session
+
+      {:error, reason} ->
+        log_error(session, :owner_death, reason)
     end
   end
 
@@ -247,7 +267,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   def terminate(%SessionState{} = session) when is_nil(session.homunculus), do: session
 
   def terminate(%SessionState{} = session) do
-    session = CastingHandler.cancel(session)
+    session = session |> CastingHandler.cancel() |> cancel_active_runtime()
 
     case LifecycleHandler.pause_offline(session.homunculus, session.homunculus_runtime) do
       {:ok, homunculus, runtime} ->
@@ -267,13 +287,9 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
     case activate_if_needed(session, homunculus) do
       {:ok, session} ->
-        {_result, _homunculus, runtime} =
-          HungerHandler.arm(session.homunculus, session.homunculus_runtime)
-
         session =
           session
-          |> Map.put(:homunculus_runtime, runtime)
-          |> arm_checkpoint()
+          |> arm_active_runtime()
           |> send_private_state()
 
         {:noreply, session}
@@ -316,7 +332,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   end
 
   defp finish_lifecycle_timeout(session, {:ok, homunculus, runtime}, operation) do
-    {:noreply, persist_and_commit(session, homunculus, runtime, operation)}
+    updated =
+      session
+      |> persist_and_commit(homunculus, runtime, operation)
+      |> reconcile_active_runtime()
+
+    {:noreply, updated}
   end
 
   defp finish_lifecycle_timeout(session, {:noop, _homunculus, _runtime}, _operation),
@@ -340,7 +361,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
          ) do
       {:ok, homunculus, runtime, ^inventory} ->
         session =
-          session |> Map.put(:homunculus_runtime, runtime) |> StateCommit.commit(homunculus)
+          session
+          |> Map.put(:homunculus_runtime, runtime)
+          |> StateCommit.commit(homunculus)
+          |> reconcile_active_runtime()
 
         {:noreply, session}
 
@@ -517,6 +541,64 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     %{session | homunculus_runtime: runtime}
   end
 
+  @doc "Arms the bounded active runtime without allocating or activating world identity."
+  @spec arm_active_runtime(SessionState.t()) :: SessionState.t()
+  def arm_active_runtime(%SessionState{} = session) do
+    session = arm_checkpoint(session)
+
+    if match?(%HomunculusState{}, session.homunculus) and
+         HomunculusState.living?(session.homunculus) do
+      {_result, _homunculus, runtime} =
+        HungerHandler.arm(session.homunculus, session.homunculus_runtime)
+
+      session
+      |> Map.put(:homunculus_runtime, runtime)
+      |> AiHandler.arm()
+      |> MovementHandler.sync_separation()
+    else
+      cancel_active_runtime(session)
+    end
+  end
+
+  @doc "Cancels AI, movement, and separation bookkeeping for inactive lifecycle transitions."
+  @spec cancel_active_runtime(SessionState.t()) :: SessionState.t()
+  def cancel_active_runtime(%SessionState{} = session) do
+    session |> AiHandler.cancel() |> MovementHandler.cancel()
+  end
+
+  @doc "Stops hunger plus action timers after Rest, death, or deletion."
+  @spec deactivate_runtime(SessionState.t()) :: SessionState.t()
+  def deactivate_runtime(%SessionState{} = session) do
+    session = cancel_active_runtime(session)
+
+    case session.homunculus do
+      %HomunculusState{} = homunculus ->
+        {_result, _homunculus, runtime} =
+          HungerHandler.arm(homunculus, session.homunculus_runtime)
+
+        %{session | homunculus_runtime: runtime}
+
+      nil ->
+        session
+    end
+  end
+
+  @doc "Publishes one private snapshot only when aggregate mutations marked it dirty."
+  @spec publish_private_state_if_dirty(SessionState.t()) :: SessionState.t()
+  def publish_private_state_if_dirty(
+        %SessionState{homunculus_runtime: %Runtime{private_dirty: true}} = session
+      ),
+      do: send_private_state(session)
+
+  def publish_private_state_if_dirty(%SessionState{} = session), do: session
+
+  defp reconcile_active_runtime(session) do
+    if match?(%HomunculusState{}, session.homunculus) and
+         HomunculusState.living?(session.homunculus),
+       do: session,
+       else: deactivate_runtime(session)
+  end
+
   defp send_private_state(%SessionState{} = session) when is_nil(session.homunculus), do: session
 
   defp send_private_state(%SessionState{} = session) do
@@ -539,7 +621,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
         runtime.active_expiry_timer_ref,
         runtime.cooldown_timer_ref,
         runtime.hunger_timer_ref,
-        runtime.checkpoint_timer_ref
+        runtime.checkpoint_timer_ref,
+        runtime.ai_timer_ref,
+        runtime.movement_timer_ref,
+        runtime.separation_timer_ref
       ],
       &Clock.cancel/1
     )

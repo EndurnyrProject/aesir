@@ -36,6 +36,21 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestoreTest do
     assert Map.keys(state.ai_config.skills) |> Enum.sort() == [8_001, 8_004]
   end
 
+  test "encoded active and passive manual rows survive relog restoration" do
+    specs = [
+      %{id: 8_001, target: :owner, allowed_thresholds: [:self_hp, :owner_hp]},
+      %{id: 8_003, target: :self, allowed_thresholds: []}
+    ]
+
+    encoded = specs |> Config.default() |> Config.encode()
+
+    assert {:ok, state} =
+             restore(learned_skills: %{"8001" => 1, "8003" => 1}, ai_config: encoded)
+
+    assert state.ai_config == Config.default(specs)
+    assert Map.keys(state.ai_config.skills) |> Enum.sort() == [8_001, 8_003]
+  end
+
   test "empty maps restore the intended legacy AI default" do
     assert {:ok, state} = restore(learned_skills: %{}, cooldowns: %{}, ai_config: %{})
     assert state.ai_config == Config.default([])

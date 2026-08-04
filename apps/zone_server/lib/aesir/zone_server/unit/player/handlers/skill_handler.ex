@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler
   alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
   alias Aesir.ZoneServer.Unit.Homunculus.StateCommit, as: HomunculusStateCommit
@@ -572,11 +573,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     maybe_resume_lock(%{state | game_state: game_state}, locked)
   end
 
-  defp commit_homunculus_transition(state, :rest, homunculus, nil),
-    do: HomunculusStateCommit.commit(state, homunculus)
+  defp commit_homunculus_transition(state, :rest, homunculus, nil) do
+    state
+    |> HomunculusStateCommit.commit(homunculus)
+    |> HomunculusCommandHandler.deactivate_runtime()
+  end
 
-  defp commit_homunculus_transition(state, _operation, homunculus, activation_gid),
-    do: HomunculusStateCommit.activate_claimed(state, homunculus, activation_gid)
+  defp commit_homunculus_transition(state, _operation, homunculus, activation_gid) do
+    state
+    |> HomunculusStateCommit.activate_claimed(homunculus, activation_gid)
+    |> HomunculusCommandHandler.arm_active_runtime()
+  end
 
   defp notify_lifecycle_item(_connection_pid, nil), do: :ok
 

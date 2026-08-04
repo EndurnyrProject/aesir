@@ -13,9 +13,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.HungerHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Persistence
@@ -139,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
   end
 
   defp die(%SessionState{} = session) do
-    session = CastingHandler.cancel(session)
+    session = session |> CastingHandler.cancel() |> AiHandler.cancel() |> MovementHandler.cancel()
     old_runtime = session.homunculus_runtime
 
     case LifecycleHandler.die(session.homunculus, old_runtime, timer_cancel: fn _ -> :ok end) do

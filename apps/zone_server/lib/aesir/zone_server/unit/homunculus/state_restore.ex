@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
   @durable_fields [
@@ -41,7 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
          {:ok, learned_skills} <- integer_map(row.learned_skills, :positive),
          {:ok, cooldowns} <- integer_map(row.cooldowns, :non_negative),
          :ok <- validate_skills(row.class_id, learned_skills, cooldowns),
-         specs <- skill_specs(learned_skills),
+         {:ok, specs} <- skill_specs(learned_skills),
          {:ok, ai_config} <- ai_config(row.ai_config, specs),
          :ok <- validate_row(row, lifecycle) do
       state =
@@ -127,8 +128,41 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
     learned_skills
     |> Map.keys()
     |> Enum.sort()
-    |> Enum.map(&%{id: &1, target: :self, allowed_thresholds: [:self_hp, :owner_hp, :target_hp]})
+    |> Enum.reduce_while({:ok, []}, fn id, {:ok, specs} ->
+      case catalog_skill_spec(id) do
+        {:ok, spec} -> {:cont, {:ok, [spec | specs]}}
+        :error -> {:halt, {:error, :invalid_skills}}
+      end
+    end)
+    |> case do
+      {:ok, specs} -> {:ok, Enum.reverse(specs)}
+      error -> error
+    end
   end
+
+  defp catalog_skill_spec(id) do
+    case SkillCatalog.by_id(id) do
+      {:ok, %{target_type: :passive}} ->
+        {:ok, %{id: id, target: :self, allowed_thresholds: []}}
+
+      {:ok, definition} ->
+        ai_skill_spec(id, definition.target_type)
+
+      :error ->
+        :error
+    end
+  end
+
+  defp ai_skill_spec(id, :self),
+    do: {:ok, %{id: id, target: :self, allowed_thresholds: [:self_hp, :owner_hp]}}
+
+  defp ai_skill_spec(id, target_type) when target_type in [:target_ally, :target_any],
+    do: {:ok, %{id: id, target: :owner, allowed_thresholds: [:self_hp, :owner_hp]}}
+
+  defp ai_skill_spec(id, :target_enemy),
+    do: {:ok, %{id: id, target: :enemy, allowed_thresholds: [:self_hp, :owner_hp, :target_hp]}}
+
+  defp ai_skill_spec(_id, _target_type), do: :error
 
   defp validate_row(row, lifecycle) do
     valid_identity?(row) and valid_resources?(row) and
