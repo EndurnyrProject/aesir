@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config, as: AiConfig
+  alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter, as: SkillInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -41,7 +42,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @rest_skill_id 244
   @checkpoint_interval 5_000
   @persistence_retry_delay 100
   @adjacent_offsets [{0, -1}, {-1, 0}, {1, 0}, {0, 1}, {-1, -1}, {1, -1}, {-1, 1}, {1, 1}]
@@ -330,7 +330,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   defp execute(:rest, session) do
     if Unit.living?(session.game_state) do
-      SkillHandler.execute_lifecycle_skill(session, @rest_skill_id, 1)
+      SkillHandler.execute_lifecycle_skill(session, LifecycleSkills.rest_id(), 1)
     else
       {:error, :owner_dead, session}
     end

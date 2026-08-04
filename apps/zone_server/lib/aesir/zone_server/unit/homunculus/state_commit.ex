@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -21,7 +22,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   alias Aesir.ZoneServer.Unit.WorldId
 
   @world_id_range 2..1_999_999
-  @owner_lifecycle_skill_ids [243, 244, 247]
 
   @doc "Restores persisted owner lifecycle cooldowns into the player skill gate."
   @spec restore_lifecycle_cooldowns(SessionState.t()) :: SessionState.t()
@@ -30,10 +30,12 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
   @doc "Synchronizes owner lifecycle skill gates after a Homunculus cooldown update."
   @spec sync_owner_lifecycle_cooldowns(SessionState.t()) :: SessionState.t()
   def sync_owner_lifecycle_cooldowns(session) do
+    lifecycle_ids = LifecycleSkills.ids()
+
     cooldowns =
       case session.homunculus do
         %HomunculusState{} = homunculus ->
-          Map.take(homunculus.cooldowns, @owner_lifecycle_skill_ids)
+          Map.take(homunculus.cooldowns, lifecycle_ids)
 
         nil ->
           %{}
@@ -43,7 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateCommit do
       session.game_state
       | skill_cooldowns:
           session.game_state.skill_cooldowns
-          |> Map.drop(@owner_lifecycle_skill_ids)
+          |> Map.drop(lifecycle_ids)
           |> Map.merge(cooldowns)
     }
 

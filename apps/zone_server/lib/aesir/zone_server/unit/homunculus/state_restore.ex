@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
+  alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
@@ -122,7 +123,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.StateRestore do
 
   defp validate_skills(class_id, learned_skills, cooldowns) do
     allowed = Map.new(SkillTree.for_class(class_id), &{&1.skill_id, &1.max_level})
-    owner_lifecycle_skills = MapSet.new([243, 244, 247])
+    owner_lifecycle_skills = MapSet.new(LifecycleSkills.ids())
 
     with true <- Enum.all?(learned_skills, fn {id, rank} -> rank <= Map.get(allowed, id, 0) end),
          true <-

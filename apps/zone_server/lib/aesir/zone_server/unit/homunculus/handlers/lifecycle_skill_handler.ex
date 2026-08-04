@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   alias Aesir.Commons.Models.Homunculus
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
+  alias Aesir.ZoneServer.Mmo.Homunculus.LifecycleSkills
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
@@ -18,7 +19,6 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
 
   @embryo_id 7142
   @seed_of_life_id 7140
-  @lifecycle_skill_ids %{call: 243, rest: 244, resurrection: 247}
 
   @type operation :: :call | :rest | {:resurrection, 1..5}
 
@@ -293,8 +293,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.LifecycleSkillHandler do
   defp preserve_lifecycle_cooldown(planned, game_state, operation) do
     skill_id =
       case operation do
-        {:resurrection, _level} -> @lifecycle_skill_ids.resurrection
-        other -> Map.fetch!(@lifecycle_skill_ids, other)
+        {:resurrection, _level} -> LifecycleSkills.resurrection_id()
+        other -> LifecycleSkills.id_for(other)
       end
 
     case game_state.skill_cooldowns[skill_id] do
