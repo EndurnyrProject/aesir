@@ -57,26 +57,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
 
   defp apply_riders(_caster, _target, _level), do: :ok
 
-  defp maybe_apply_rider(caster, target, status_id, opts) do
+  defp maybe_apply_rider(%{character_id: caster_id}, target, status_id, opts) do
     chance = Keyword.fetch!(opts, :chance)
 
     if :rand.uniform(10_000) <= chance do
       {unit_type, unit_id} = target_ref(target)
-      {source_type, source_id} = source_ref(caster)
 
       StatusInterpreter.apply_status(unit_type, unit_id, status_id,
         duration: opts[:duration],
-        caster_id: source_id,
-        source_type: source_type
+        caster_id: caster_id,
+        source_type: :player
       )
     end
 
     :ok
   end
-
-  defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
-  defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
-  defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
 
   defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
 

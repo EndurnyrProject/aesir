@@ -806,8 +806,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       hplus: combat_modifier(stats, :hplus, crt_eff),
       crate: combat_modifier(stats, :crate, div(crt_eff, 3)),
       overrefine_band: get_equipment_modifier(stats, :overrefine_band),
-      ignore_size_penalty: get_status_modifier(stats, :ignore_size_penalty) == true,
-      max_weapon_damage: get_status_modifier(stats, :max_weapon_damage) == true
+      ignore_size_penalty: get_status_flag(stats, :ignore_size_penalty),
+      max_weapon_damage: get_status_flag(stats, :max_weapon_damage)
     }
 
     %{stats | combat_stats: combat_stats}
@@ -926,6 +926,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @spec get_status_modifier(t(), atom()) :: number()
   def get_status_modifier(%__MODULE__{} = stats, modifier_key) do
     Map.get(stats.modifiers.status_effects, modifier_key, 0)
+  end
+
+  @doc """
+  Gets a boolean status-effect flag (e.g. `:ignore_size_penalty`), defaulting to
+  `false` when no active status contributes it.
+
+  Status modifiers are not all numeric: a few statuses contribute `true` as a
+  switch rather than a magnitude, so those keys must be read through this
+  accessor instead of `get_status_modifier/2`.
+  """
+  @spec get_status_flag(t(), atom()) :: boolean()
+  def get_status_flag(%__MODULE__{} = stats, modifier_key) do
+    Map.get(stats.modifiers.status_effects, modifier_key, false) == true
   end
 
   @doc """

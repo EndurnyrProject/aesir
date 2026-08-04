@@ -50,6 +50,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   @max_uint32 0xFFFF_FFFF
 
+  @typep damage_calculator ::
+           (struct(), struct(), keyword() -> {:ok, map()} | {:error, atom()})
+
+  # The damage-calculation context threaded down to `apply_skill_damage/8`:
+  # either bare calculator options (implying `DamageCalculator.calculate_damage/3`)
+  # or an explicit `{opts, calculator}` pair for skills using another formula.
+  @typep calc_context :: keyword() | {keyword(), damage_calculator()}
+
   @doc """
   Executes a single-target offensive skill from a caster against a target.
 
@@ -688,7 +696,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           struct(),
           integer(),
           pos_integer(),
-          keyword(),
+          calc_context(),
           map()
         ) :: %{hit?: boolean(), damage: non_neg_integer()}
   defp apply_skill_damage(

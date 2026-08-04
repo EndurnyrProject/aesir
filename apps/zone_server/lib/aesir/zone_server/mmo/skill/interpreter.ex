@@ -397,7 +397,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   collection.
   """
   @spec complete_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
+          | {:error, atom()}
   def complete_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0,
     do: complete_validated_cast(game_state, skill_id, level, target, :without_input)
 
@@ -414,7 +417,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
           pos_integer(),
           Active.target(),
           term()
-        ) :: {:ok, PlayerState.t()} | {:deferred, PlayerState.t(), term()} | {:error, atom()}
+        ) ::
+          {:ok, PlayerState.t()}
+          | {:local_effects, PlayerState.t(), [Active.effect()]}
+          | {:deferred, PlayerState.t(), term()}
+          | {:error, atom()}
   def complete_cast_with_input(game_state, skill_id, level, target, input)
       when is_integer(level) and level > 0,
       do: complete_validated_cast(game_state, skill_id, level, target, {:with_input, input})

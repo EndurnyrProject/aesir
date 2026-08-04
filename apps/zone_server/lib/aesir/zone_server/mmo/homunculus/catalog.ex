@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   def validate!(rows) when is_list(rows) do
     require!(length(rows) == 16, "expected 16 Homunculus class rows")
     ids = MapSet.new(rows, & &1["id"])
-    require!(ids == @class_ids, "expected Homunculus class ids 6001..6016")
+    require!(MapSet.equal?(ids, @class_ids), "expected Homunculus class ids 6001..6016")
 
     Enum.each(rows, &validate_row!(&1, ids))
     :ok

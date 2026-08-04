@@ -9,6 +9,7 @@
   {"lib/aesir/char_server/characters.ex", :call_without_opaque},
   {"lib/aesir/zone_server/party/manager.ex", :call_without_opaque},
   {"lib/aesir/zone_server/guild/manager.ex", :call_without_opaque},
+  {"lib/aesir/zone_server/unit/homunculus/persistence.ex", :call_without_opaque},
 
   # MapSet is an opaque type; the A* closed-set is threaded through MapSet.put/2 and
   # the recursive loop, which dialyzer reports as opaque-term violations even though
