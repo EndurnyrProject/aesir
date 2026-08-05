@@ -265,7 +265,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
       }
 
       assert {:instant, updated, []} =
-               Interpreter.begin_homunculus_cast(caster, 8006, level, :self)
+               Interpreter.begin_cast(caster, 8006, level, :self)
 
       assert updated.sp == 200 - Enum.at([20, 25, 30, 35, 40], level - 1)
       assert updated.cooldowns[8006] >= now + 29_000
@@ -299,7 +299,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
       }
 
       assert {:instant, updated, []} =
-               Interpreter.begin_homunculus_cast(caster, 8008, level, :self)
+               Interpreter.begin_cast(caster, 8008, level, :self)
 
       assert updated.sp == 80
       assert updated.cooldowns[8008] >= now + cooldown - 1_000

@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -272,7 +273,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
         sp_cost: [0]
       }
 
-      stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+      homunculus_definition = %{definition | id: 8_001, cast_time: [100]}
+
+      stub(Catalog, :by_id, fn
+        29 -> {:ok, definition}
+        8_001 -> {:ok, homunculus_definition}
+      end)
+
       stub(Catalog, :active_module_for, fn :origin_aware -> {:ok, OriginAwareSkill} end)
       :ok
     end
@@ -280,6 +287,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "normal casts dispatch normal origin" do
       assert {:ok, _} = Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, :self)
       assert_received {:cast_origin, :normal}
+    end
+
+    test "timed Homunculus casts keep the shared begin shape and dispatch their origin" do
+      caster = %HomunculusState{
+        id: 1,
+        owner_character_id: 100,
+        owner_session_pid: self(),
+        class_id: 6_001,
+        name: "Lif",
+        lifecycle: :active,
+        hp: 100,
+        sp: 100,
+        learned_skills: %{8_001 => 1},
+        world_gid: 1_500_001,
+        map_name: "prontera",
+        x: 10,
+        y: 10
+      }
+
+      assert {:casting, ^caster, %{skill_id: 8_001}} =
+               Interpreter.begin_cast(caster, 8_001, 1, :self)
+
+      assert {:ok, _updated} =
+               Interpreter.complete_cast(%{caster | action_state: :casting}, 8_001, 1, :self)
+
+      assert_received {:cast_origin, :homunculus}
     end
 
     test "item casts dispatch item origin" do
@@ -2296,7 +2329,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
                Interpreter.cast(equipped_game_state(%Equipment{}), 6, 1, :self)
     end
 
-    test "a mob-shaped caster ignores player weapon requirements" do
+    test "ordinary preflight rejects mob casters without lifecycle adapters" do
       definition = %{weapon_definition([:musical]) | sp_cost: [:all]}
       stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
 
@@ -2311,7 +2344,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
           act_delay_until: 0
         })
 
-      assert :ok = Interpreter.preflight_cast(caster, 6, 1, :self)
+      assert {:error, :unsupported_caster} = Interpreter.preflight_cast(caster, 6, 1, :self)
       refute Map.has_key?(caster.stats, :equipment)
     end
 

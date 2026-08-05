@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def broadcast_source(%PlayerState{character_id: character_id}), do: character_id
 
   @impl true
-  def knows?(caster, definition, level) do
+  def knows?(caster, definition, level, :begin) do
     learned = caster.stats.progression.learned_skills
 
     with true <- Learned.learned_level(learned, definition.id) >= level,
@@ -57,14 +57,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     end
   end
 
+  def knows?(caster, definition, _level, :completion) do
+    if quest_lineage?(caster, definition), do: :ok, else: {:error, :skill_not_learned}
+  end
+
   @impl true
-  def castable_state(%PlayerState{}, phase) when phase in [:begin, :completion], do: :ok
+  def castable_state(%PlayerState{}, _skill_id, phase) when phase in [:begin, :completion],
+    do: :ok
+
+  @impl true
+  def castable_status(%PlayerState{}, _skill_id), do: :ok
+
+  @impl true
+  def completion_revalidates_definition?, do: false
+
+  @impl true
+  def valid_caster_result?(_caster), do: true
+
+  @impl true
+  def cast_origin(%PlayerState{}), do: :normal
+
+  @impl true
+  def validate_target(%PlayerState{}, _target, _definition), do: :continue
+
+  @impl true
+  def cost_before_validation?, do: false
 
   @impl true
   def cost(caster, module, target, definition, level) do
-    with {:ok, cost} <- resolve_cost(caster, module, target, level, definition),
-         {:ok, commitment} <- Cost.prepare(caster, cost),
-         zeny = effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0)),
+    with {:ok, cost} <- resolve_cost(caster, module, target, level, definition) do
+      zeny = effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0))
+      prepare_cost(caster, module, definition, cost, zeny)
+    end
+  end
+
+  @doc false
+  @spec prepare_cost(PlayerState.t(), module(), map(), Cost.t(), non_neg_integer()) ::
+          {:ok, map()} | {:error, atom()}
+  def prepare_cost(caster, module, definition, cost, zeny) do
+    with {:ok, commitment} <- Cost.prepare(caster, cost),
          :ok <- check_zeny(caster, zeny),
          :ok <- check_catalysts(caster, definition),
          :ok <- check_ammo(caster, definition) do
@@ -74,22 +105,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
          module: module,
          cost: cost,
          commitment: commitment,
-         zeny: zeny
+         zeny: zeny,
+         consume_catalysts?: true
        }}
     end
   end
 
   @impl true
-  def commit(caster, %{commitment: commitment, zeny: zeny}) do
+  def commit(caster, %{
+        commitment: commitment,
+        zeny: zeny,
+        definition: definition,
+        consume_catalysts?: consume_catalysts?
+      }) do
     caster
     |> Cost.apply_commitment(commitment)
     |> deduct_zeny(zeny)
+    |> maybe_consume_catalysts(definition, consume_catalysts?)
+    |> consume_ammo(definition)
   end
 
   @impl true
-  def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now) do
+  def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now, :begin) do
     Cooldown.ready?(cooldowns, skill_id, now)
   end
+
+  def cooldown_ready?(%PlayerState{}, _skill_id, _now, :completion), do: true
 
   @impl true
   def put_cooldown(caster, _skill_id, 0), do: caster
@@ -161,9 +202,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     end
   end
 
-  defp effective_item_cost(_caster, %{item_cost: []}), do: []
+  @doc "Returns the item requirements owed by a player for a skill."
+  @spec effective_item_cost(PlayerState.t(), map()) :: [map()]
+  def effective_item_cost(_caster, %{item_cost: []}), do: []
 
-  defp effective_item_cost(caster, definition) do
+  def effective_item_cost(caster, definition) do
     if StatusStorage.has_status?(:player, caster.character_id, :sc_intoabyss) do
       Enum.reject(definition.item_cost, &(&1.id in @waivable_gemstone_ids))
     else
@@ -181,6 +224,49 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   defp deduct_zeny(caster, 0), do: caster
   defp deduct_zeny(caster, cost), do: %{caster | zeny: caster.zeny - cost}
+
+  defp maybe_consume_catalysts(caster, _definition, false), do: caster
+
+  defp maybe_consume_catalysts(caster, definition, true) do
+    Enum.reduce(effective_item_cost(caster, definition), caster, fn
+      %{id: id, amount: amount}, state -> remove_item(state, id, amount)
+    end)
+  end
+
+  defp consume_ammo(caster, %{requires_ammo: false}), do: caster
+
+  defp consume_ammo(caster, %{requires_ammo: true}) do
+    case Ammo.consume_one(caster.inventory) do
+      {:ok, inventory, change} -> record_inventory_change(caster, inventory, change)
+      {:error, _reason} -> caster
+    end
+  end
+
+  defp remove_item(caster, _id, 0), do: caster
+
+  defp remove_item(caster, id, amount) do
+    case Inventory.stackable_index(caster.inventory, id) do
+      nil ->
+        caster
+
+      index ->
+        take = min(amount, caster.inventory[index].amount)
+        {:ok, inventory, change} = Inventory.remove(caster.inventory, index, take)
+
+        caster
+        |> record_inventory_change(inventory, change)
+        |> remove_item(id, amount - take)
+    end
+  end
+
+  defp record_inventory_change(caster, inventory, change) do
+    %{
+      caster
+      | inventory: inventory,
+        pending_inventory_persist:
+          caster.pending_inventory_persist ++ [{caster.inventory, inventory, change}]
+    }
+  end
 
   defp status_reductions(character_id, state_key) do
     :player

@@ -4,9 +4,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
 
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree, as: HomunculusSkillTree
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
@@ -34,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   def broadcast_source(%HomunculusState{world_gid: world_gid}), do: {:homunculus, world_gid}
 
   @impl true
-  def knows?(caster, definition, level) do
+  def knows?(caster, definition, level, _phase) do
     with {:ok, entry} <- homunculus_tree_entry(caster.class_id, definition.id),
          {:ok, species} <- homunculus_species(caster.class_id),
          true <- entry.form == :any or species.form == :evolved,
@@ -48,22 +51,78 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   end
 
   @impl true
-  def castable_state(%HomunculusState{} = caster, phase) do
+  def castable_state(%HomunculusState{} = caster, _skill_id, phase) do
     expected_action = if phase == :begin, do: :idle, else: :casting
 
     cond do
-      not Unit.living?(caster) -> {:error, :dead}
-      caster.movement_state != :standing -> {:error, :moving}
-      caster.action_state != expected_action -> {:error, :busy}
-      true -> :ok
+      not Unit.living?(caster) ->
+        {:error, :dead}
+
+      caster.movement_state != :standing ->
+        {:error, :moving}
+
+      caster.action_state != expected_action ->
+        {:error, :busy}
+
+      true ->
+        :ok
     end
   end
+
+  @impl true
+  def castable_status(%HomunculusState{} = caster, skill_id) do
+    if StatusInterpreter.can_use_skill?(:homunculus, caster.world_gid, skill_id),
+      do: :ok,
+      else: {:error, :status_blocked}
+  end
+
+  @impl true
+  def completion_revalidates_definition?, do: true
+
+  @impl true
+  def valid_caster_result?(%HomunculusState{}), do: true
+  def valid_caster_result?(_caster), do: false
+
+  @impl true
+  def cast_origin(%HomunculusState{}), do: :homunculus
+
+  @impl true
+  def validate_target(caster, :self, %{target_type: target_type})
+      when target_type in [:self, :target_ally, :target_any],
+      do: if(Unit.living?(caster), do: :ok, else: {:error, :dead})
+
+  def validate_target(caster, {:unit, {:homunculus, gid}}, definition)
+      when gid == caster.world_gid,
+      do: validate_target(caster, :self, definition)
+
+  def validate_target(caster, {:unit, target_ref}, definition) when is_tuple(target_ref) do
+    with {:ok, _pid, target, target_type} <- TargetResolver.resolve(target_ref),
+         :ok <- TargetResolver.ensure_targetable(target, target_type) do
+      validate_relationship(caster, target, definition.target_type)
+    else
+      {:error, :not_found} -> {:error, :target_not_found}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  def validate_target(_caster, {:ground, _x, _y}, %{target_type: :ground}), do: :ok
+  def validate_target(_caster, _target, _definition), do: {:error, :invalid_target}
+
+  @impl true
+  def cost_before_validation?, do: true
 
   @impl true
   def cost(caster, module, _target, definition, level) do
     with {:ok, sp_cost} <- homunculus_sp_cost(caster, definition, level),
          :ok <- check_sp(caster, sp_cost) do
-      {:ok, %{definition: definition, module: module, sp_cost: sp_cost}}
+      {:ok,
+       %{
+         definition: definition,
+         module: module,
+         sp_cost: sp_cost,
+         deferred_error: :unsupported_homunculus_deferred,
+         instant_effects: []
+       }}
     end
   end
 
@@ -73,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   end
 
   @impl true
-  def cooldown_ready?(%HomunculusState{cooldowns: cooldowns}, skill_id, now) do
+  def cooldown_ready?(%HomunculusState{cooldowns: cooldowns}, skill_id, now, _phase) do
     Cooldown.ready?(cooldowns, skill_id, now)
   end
 
@@ -98,6 +157,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
       fixed_cast: 0
     }
   end
+
+  defp validate_relationship(caster, target, :target_enemy),
+    do: Targeting.validate_enemy(caster, target)
+
+  defp validate_relationship(caster, target, :target_ally) do
+    if Targeting.exact_ally?(caster, target), do: :ok, else: {:error, :invalid_target}
+  end
+
+  defp validate_relationship(_caster, _target, :target_any), do: :ok
+  defp validate_relationship(_caster, _target, _target_type), do: {:error, :invalid_target}
 
   defp status_reductions(world_gid, state_key) do
     :homunculus

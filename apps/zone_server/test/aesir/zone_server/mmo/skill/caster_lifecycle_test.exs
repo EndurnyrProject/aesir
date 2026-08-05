@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -29,14 +30,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       definition = definition()
       caster = player(learned_skills: %{definition.id => 2})
 
-      assert Caster.Player.knows?(caster, definition, 2) == :ok
-      assert Caster.Player.knows?(caster, definition, 3) == {:error, :skill_not_learned}
+      assert Caster.Player.knows?(caster, definition, 2, :begin) == :ok
+
+      assert Caster.Player.knows?(caster, definition, 3, :begin) ==
+               {:error, :skill_not_learned}
+
+      assert Caster.Player.knows?(player(learned_skills: %{}), definition, 3, :completion) == :ok
     end
 
-    test "has no interpreter-level caster state gate" do
+    test "has no interpreter-level caster state or status gate" do
       for phase <- [:begin, :completion], action_state <- [:idle, :casting, :dead] do
-        assert Caster.Player.castable_state(player(action_state: action_state), phase) == :ok
+        assert Caster.Player.castable_state(
+                 player(action_state: action_state),
+                 29,
+                 phase
+               ) ==
+                 :ok
       end
+    end
+
+    test "uses the ordinary cast origin and validates before preparing cost" do
+      assert Caster.Player.cast_origin(player()) == :normal
+      refute Caster.Player.cost_before_validation?()
     end
 
     test "mirrors full cost preparation and resource failures" do
@@ -53,15 +68,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
                {:error, :insufficient_sp}
     end
 
-    test "mirrors commitment and zeny debit" do
-      caster = player(sp: 10, zeny: 5)
+    test "mirrors commitment and every player-owned resource debit" do
+      caster =
+        player(
+          sp: 10,
+          zeny: 5,
+          inventory: %{
+            0 => %InventoryItem{nameid: 717, amount: 1, equip: 0},
+            1 => %InventoryItem{nameid: 1_750, amount: 2, equip: 0x008000}
+          }
+        )
 
-      {:ok, prepared} =
-        Caster.Player.cost(caster, DynamicCost, :self, definition(zeny_cost: [3]), 1)
+      definition =
+        definition(
+          zeny_cost: [3],
+          item_cost: [%{id: 717, amount: 1}],
+          requires_ammo: true
+        )
+
+      {:ok, prepared} = Caster.Player.cost(caster, DynamicCost, :self, definition, 1)
 
       committed = Caster.Player.commit(caster, prepared)
       assert committed.stats.current_state.sp == 3
       assert committed.zeny == 2
+      refute Map.has_key?(committed.inventory, 0)
+      assert committed.inventory[1].amount == 1
+      assert length(committed.pending_inventory_persist) == 2
 
       unchanged =
         Caster.Player.commit(caster, %{
@@ -72,17 +104,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
               spheres: SpiritSpheres.new(),
               write_spheres?: false
             },
-            zeny: 0
+            zeny: 0,
+            consume_catalysts?: false
         })
 
       assert unchanged.stats.current_state.sp == 10
       assert unchanged.zeny == 5
+      assert unchanged.inventory[0].amount == 1
+      assert unchanged.inventory[1].amount == 1
     end
 
     test "mirrors cooldown readiness and storage" do
       now = System.monotonic_time(:millisecond)
-      assert Caster.Player.cooldown_ready?(player(skill_cooldowns: %{1 => now - 1}), 1, now)
-      refute Caster.Player.cooldown_ready?(player(skill_cooldowns: %{1 => now + 10_000}), 1, now)
+
+      assert Caster.Player.cooldown_ready?(
+               player(skill_cooldowns: %{1 => now - 1}),
+               1,
+               now,
+               :begin
+             )
+
+      refute Caster.Player.cooldown_ready?(
+               player(skill_cooldowns: %{1 => now + 10_000}),
+               1,
+               now,
+               :begin
+             )
+
+      assert Caster.Player.cooldown_ready?(
+               player(skill_cooldowns: %{1 => now + 10_000}),
+               1,
+               now,
+               :completion
+             )
 
       assert Caster.Player.put_cooldown(player(), 1, 0).skill_cooldowns == %{}
 
@@ -121,22 +175,44 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
     test "mirrors species-tree knowledge for success and failure" do
       caster = homunculus(learned_skills: %{8_001 => 2})
 
-      assert Caster.Homunculus.knows?(caster, definition(id: 8_001), 2) == :ok
+      assert Caster.Homunculus.knows?(caster, definition(id: 8_001), 2, :begin) == :ok
 
-      assert Caster.Homunculus.knows?(caster, definition(id: 8_001), 3) ==
+      assert Caster.Homunculus.knows?(caster, definition(id: 8_001), 3, :completion) ==
                {:error, :skill_not_learned}
     end
 
-    test "mirrors phase-aware caster state for success and failure" do
-      assert Caster.Homunculus.castable_state(homunculus(), :begin) == :ok
+    test "separates phase-aware caster state from skill-specific status gates" do
+      caster = homunculus()
 
-      assert Caster.Homunculus.castable_state(homunculus(action_state: :casting), :begin) ==
+      assert Caster.Homunculus.castable_state(caster, 8_001, :begin) == :ok
+
+      assert Caster.Homunculus.castable_state(
+               homunculus(action_state: :casting),
+               8_001,
+               :begin
+             ) == {:error, :busy}
+
+      assert Caster.Homunculus.castable_state(
+               homunculus(action_state: :casting),
+               8_001,
+               :completion
+             ) == :ok
+
+      assert Caster.Homunculus.castable_state(caster, 8_001, :completion) ==
                {:error, :busy}
 
-      assert Caster.Homunculus.castable_state(homunculus(action_state: :casting), :completion) ==
-               :ok
+      :ok = StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_stun)
 
-      assert Caster.Homunculus.castable_state(homunculus(), :completion) == {:error, :busy}
+      assert Caster.Homunculus.castable_state(caster, 8_001, :begin) == :ok
+      assert Caster.Homunculus.castable_status(caster, 8_001) == {:error, :status_blocked}
+      assert Caster.Homunculus.completion_revalidates_definition?()
+      assert Caster.Homunculus.valid_caster_result?(caster)
+      refute Caster.Homunculus.valid_caster_result?(:malformed)
+    end
+
+    test "uses the Homunculus cast origin and prepares cost before validation" do
+      assert Caster.Homunculus.cast_origin(homunculus()) == :homunculus
+      assert Caster.Homunculus.cost_before_validation?()
     end
 
     test "mirrors SP cost preparation and failures" do
@@ -167,12 +243,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
     test "mirrors cooldown readiness and storage" do
       now = System.monotonic_time(:millisecond)
-      assert Caster.Homunculus.cooldown_ready?(homunculus(cooldowns: %{1 => now - 1}), 1, now)
+
+      assert Caster.Homunculus.cooldown_ready?(
+               homunculus(cooldowns: %{1 => now - 1}),
+               1,
+               now,
+               :begin
+             )
 
       refute Caster.Homunculus.cooldown_ready?(
                homunculus(cooldowns: %{1 => now + 10_000}),
                1,
-               now
+               now,
+               :completion
              )
 
       assert Caster.Homunculus.put_cooldown(homunculus(), 1, 0).cooldowns == %{}

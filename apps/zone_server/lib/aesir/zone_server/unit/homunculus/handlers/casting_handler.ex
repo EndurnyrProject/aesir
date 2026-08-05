@@ -99,21 +99,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
        do: {:error, :bio_explosion_pending, session}
 
   defp begin_current(session, homunculus, id, level, target) do
-    case Interpreter.begin_homunculus_cast(homunculus, id, level, target) do
+    case Interpreter.begin_cast(homunculus, id, level, target) do
+      {:instant, updated} -> finish(session, updated, [])
       {:instant, updated, effects} -> finish(session, updated, effects)
-      {:casting, info} -> schedule(session, info)
+      {:casting, updated, info} -> schedule(session, updated, info)
       {:error, reason} -> {:error, reason, session}
     end
   end
 
   defp complete_current(session, homunculus, casting) do
-    case Interpreter.complete_homunculus_cast(
+    case Interpreter.complete_cast(
            homunculus,
            casting.skill_id,
            casting.level,
            casting.target
          ) do
-      {:ok, updated, effects} -> finish_completed(session, updated, effects)
+      {:ok, updated} -> finish_completed(session, updated, [])
+      {:local_effects, updated, effects} -> finish_completed(session, updated, effects)
       {:error, _reason} -> {:noreply, cancel(session)}
     end
   end
@@ -139,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     end
   end
 
-  defp schedule(session, info) do
+  defp schedule(session, homunculus, info) do
     token = make_ref()
     timer_ref = Clock.arm(info.total, {:cast_complete, token})
 
@@ -153,7 +155,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler do
     }
 
     runtime = %{session.homunculus_runtime | cast_timer_ref: timer_ref}
-    homunculus = %{session.homunculus | action_state: :casting, casting: casting}
+    homunculus = %{homunculus | action_state: :casting, casting: casting}
     session = %{session | homunculus_runtime: runtime}
     {:ok, StateCommit.commit(session, homunculus)}
   end

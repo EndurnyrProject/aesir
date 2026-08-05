@@ -292,7 +292,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
 
   defp execute({:cast_skill, skill_id, level, wire_target}, session) do
     with :ok <- require_living(session),
-         :ok <- SkillInterpreter.preflight_homunculus_skill(session.homunculus, skill_id, level),
+         :ok <- SkillInterpreter.preflight_skill(session.homunculus, skill_id, level),
          {:ok, target} <- cast_target(session, wire_target) do
       case CastingHandler.begin(session, skill_id, level, target) do
         {:ok, updated} -> {:ok, updated}

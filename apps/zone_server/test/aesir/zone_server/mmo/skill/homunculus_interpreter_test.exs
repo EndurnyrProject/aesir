@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -23,7 +24,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  defmodule MalformedCasterResultSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(_caster, _target, _level, _definition), do: {:ok, %{}}
+
+    @impl true
+    def validate(_caster, _target, _level, _definition), do: :ok
+  end
+
   setup :setup_ets_tables
+  setup :verify_on_exit!
 
   setup do
     on_exit(&Catalog.reload/0)
@@ -59,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     register_active(caster, owner())
 
     assert {:instant, updated, effects} =
-             Interpreter.begin_homunculus_cast(caster, 8_001, 5, :self)
+             Interpreter.begin_cast(caster, 8_001, 5, :self)
 
     assert updated.sp == 75
     assert updated.cooldowns[8_001] > System.monotonic_time(:millisecond)
@@ -84,22 +96,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
           {%{caster | cooldowns: %{8_001 => now + 10_000}}, :on_cooldown}
         ] do
       assert {:error, ^expected} =
-               Interpreter.begin_homunculus_cast(updated, 8_001, 1, :self)
+               Interpreter.begin_cast(updated, 8_001, 1, :self)
     end
 
     assert {:error, :skill_not_learned} =
-             Interpreter.begin_homunculus_cast(caster, 8_001, 2, :self)
+             Interpreter.begin_cast(caster, 8_001, 2, :self)
 
     assert {:error, :passive_skill} =
-             Interpreter.begin_homunculus_cast(caster, 8_003, 1, :self)
+             Interpreter.begin_cast(caster, 8_003, 1, :self)
 
     register_active(caster, owner())
 
     assert {:error, :invalid_target} =
-             Interpreter.begin_homunculus_cast(caster, 8_001, 1, {:unit, {:player, 100}})
+             Interpreter.begin_cast(caster, 8_001, 1, {:unit, {:player, 100}})
 
     assert {:error, :unknown_skill} =
-             Interpreter.begin_homunculus_cast(caster, 8_017, 1, :self)
+             Interpreter.begin_cast(caster, 8_017, 1, :self)
   end
 
   test "learned Mental Change remains castable after intimacy falls but requires evolved form" do
@@ -108,22 +120,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     register_active(evolved, owner())
 
     assert {:error, :skill_not_learned} =
-             Interpreter.begin_homunculus_cast(original, 8_004, 1, :self)
+             Interpreter.begin_cast(original, 8_004, 1, :self)
 
     assert {:instant, updated, []} =
-             Interpreter.begin_homunculus_cast(evolved, 8_004, 1, :self)
+             Interpreter.begin_cast(evolved, 8_004, 1, :self)
 
     assert updated.sp == 0
     assert StatusStorage.has_status?(:homunculus, evolved.world_gid, :sc_change)
   end
 
-  test "status gates remain mandatory on the restricted path" do
+  test "completion revalidates definition level and active kind" do
+    caster = homunculus(%{action_state: :casting, learned_skills: %{8_001 => 99, 8_003 => 1}})
+
+    assert {:error, :invalid_level} =
+             Interpreter.complete_cast(caster, 8_001, 99, :self)
+
+    assert {:error, :passive_skill} =
+             Interpreter.complete_cast(caster, 8_003, 1, :self)
+  end
+
+  test "malformed caster results return the restricted-path fail-safe" do
+    caster = homunculus(%{action_state: :casting})
+    register_active(caster, owner())
+
+    stub(Catalog, :active_module_for, fn :hlif_heal -> {:ok, MalformedCasterResultSkill} end)
+
+    assert {:error, :invalid_caster_result} =
+             Interpreter.complete_cast(caster, 8_001, 1, :self)
+  end
+
+  test "status gates remain mandatory after skill and target validation" do
     caster = homunculus()
     register_active(caster, owner())
     StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_stun)
 
+    assert {:error, :unknown_skill} =
+             Interpreter.begin_cast(caster, 8_017, 1, :self)
+
+    assert {:error, :passive_skill} =
+             Interpreter.begin_cast(caster, 8_003, 1, :self)
+
+    assert {:error, :wrong_species} =
+             Interpreter.begin_cast(%{caster | class_id: 6_002}, 8_001, 1, :self)
+
+    assert {:error, :invalid_target} =
+             Interpreter.begin_cast(caster, 8_001, 1, {:unit, {:player, 100}})
+
     assert {:error, :status_blocked} =
-             Interpreter.begin_homunculus_cast(caster, 8_001, 1, :self)
+             Interpreter.begin_cast(caster, 8_001, 1, :self)
   end
 
   test "Homunculus module validation follows status cooldown and SP gates" do
@@ -132,13 +176,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     StatusStorage.apply_status(:homunculus, caster.world_gid, :sc_stun)
 
     assert {:error, :status_blocked} =
-             Interpreter.begin_homunculus_cast(caster, 8_005, 1, :self)
+             Interpreter.begin_cast(caster, 8_005, 1, :self)
 
     StatusStorage.remove_status(:homunculus, caster.world_gid, :sc_stun)
     now = System.monotonic_time(:millisecond)
 
     assert {:error, :on_cooldown} =
-             Interpreter.begin_homunculus_cast(
+             Interpreter.begin_cast(
                %{caster | cooldowns: %{8_005 => now + 10_000}},
                8_005,
                1,
@@ -146,7 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
              )
 
     assert {:error, :insufficient_sp} =
-             Interpreter.begin_homunculus_cast(%{caster | sp: 0}, 8_005, 1, :self)
+             Interpreter.begin_cast(%{caster | sp: 0}, 8_005, 1, :self)
   end
 
   test "CastingHandler applies Avoid to exactly owner and Lif" do

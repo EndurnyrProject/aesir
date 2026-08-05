@@ -227,7 +227,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
     assert Stats.healing_touch_bonus_rate(recomputed) == 10
 
     assert {:error, :passive_skill} =
-             Interpreter.begin_homunculus_cast(recomputed, 8_003, 1, :self)
+             Interpreter.begin_cast(recomputed, 8_003, 1, :self)
 
     non_lif = %{recomputed | class_id: 6_002}
     assert Stats.healing_touch_bonus_rate(non_lif) == 0
@@ -238,7 +238,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
     original = %{original | learned_skills: %{8_004 => 3}, sp: 300}
 
     assert {:error, :skill_not_learned} =
-             Interpreter.begin_homunculus_cast(original, 8_004, 1, :self)
+             Interpreter.begin_cast(original, 8_004, 1, :self)
 
     session = start_lif(class_id: 6_009, sp: 300, learned_skills: %{"8004" => 3})
     state = PlayerSession.get_state(session.pid)
