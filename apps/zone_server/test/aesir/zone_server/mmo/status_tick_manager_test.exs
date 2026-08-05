@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
 
   setup do
     stub(Interpreter, :process_tick, fn _type, _id, _status -> :ok end)
+    stub(Interpreter, :process_tick_if_current, fn _type, _id, _status, _generation -> :stop end)
 
     stub(Interpreter, :expire_status_if_current, fn unit_type, unit_id, status_id, entry ->
       StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, entry)
@@ -43,6 +44,66 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
   defp tick(state \\ %StatusTickManager.State{}) do
     {:noreply, _new_state} = StatusTickManager.handle_info(:tick, state)
     :ok
+  end
+
+  describe "exact status ticks" do
+    test "schedules the first deadline at started_at plus 1,000 ms" do
+      started_at = System.monotonic_time(:millisecond) - 1_000
+      due_at = started_at + 1_000
+      state = %StatusTickManager.State{}
+
+      assert {:noreply, ^state} =
+               StatusTickManager.handle_cast(
+                 {:schedule_exact_tick, :player, @player_id, @status, 41, due_at},
+                 state
+               )
+
+      assert_receive {:exact_status_tick, :player, @player_id, @status, 41, ^due_at}, 50
+    end
+
+    test "continuation advances from the prior deadline without handler drift" do
+      due_at = System.monotonic_time(:millisecond) - 5_000
+      next_due_at = due_at + 500
+      state = %StatusTickManager.State{}
+
+      expect(Interpreter, :process_tick_if_current, fn
+        :player, @player_id, @status, 42 -> :continue
+      end)
+
+      assert {:noreply, ^state} =
+               StatusTickManager.handle_info(
+                 {:exact_status_tick, :player, @player_id, @status, 42, due_at},
+                 state
+               )
+
+      assert_receive {:exact_status_tick, :player, @player_id, @status, 42, ^next_due_at}
+    end
+
+    test "a stale exact tick stops without scheduling another deadline" do
+      due_at = System.monotonic_time(:millisecond) - 5_000
+      state = %StatusTickManager.State{}
+
+      expect(Interpreter, :process_tick_if_current, fn
+        :player, @player_id, @status, 43 -> :stop
+      end)
+
+      assert {:noreply, ^state} =
+               StatusTickManager.handle_info(
+                 {:exact_status_tick, :player, @player_id, @status, 43, due_at},
+                 state
+               )
+
+      refute_receive {:exact_status_tick, :player, @player_id, @status, 43, _}
+    end
+
+    test "the global poll does not process a tickless exact status" do
+      reject(&Interpreter.process_tick/3)
+      :ok = StatusStorage.apply_status(:player, @player_id, @status, tick: 0)
+
+      tick()
+
+      assert %{next_tick_at: nil} = StatusStorage.get_status(:player, @player_id, @status)
+    end
   end
 
   describe "mob notifications" do
@@ -185,6 +246,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManagerTest do
       tick()
 
       assert_receive {:stats, :recalculate}
+    end
+
+    test "ordinary statuses retain their 1,000 ms polling cadence" do
+      expect(Interpreter, :process_tick, fn :player, @player_id, @status -> :ok end)
+      :ok = StatusStorage.apply_status(:player, @player_id, @status, tick: 1_000)
+      :ok = StatusStorage.update_next_tick(:player, @player_id, @status, past())
+      before_tick = System.monotonic_time(:millisecond)
+
+      tick()
+
+      after_tick = System.monotonic_time(:millisecond)
+      entry = StatusStorage.get_status(:player, @player_id, @status)
+      assert entry.next_tick_at in (before_tick + 1_000)..(after_tick + 1_000)
     end
   end
 end

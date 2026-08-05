@@ -101,6 +101,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  defmodule ExactTickStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_exact_tick,
+      no_dispel: false,
+      properties: [:buff]
+
+    @impl true
+    def on_tick(_target, %{state: %{observer: observer, remove?: true}}, _context) do
+      send(observer, :exact_tick_removed)
+      :remove
+    end
+
+    def on_tick(_target, %{state: %{observer: observer, ticks: ticks}} = instance, _context) do
+      send(observer, {:exact_tick, ticks + 1})
+      {:ok, %{instance | state: %{instance.state | ticks: ticks + 1}}}
+    end
+  end
+
   defmodule MutuallyExclusiveX do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mutually_exclusive_x,
@@ -204,6 +222,114 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  describe "process_tick_if_current/4" do
+    test "ticks and continues only for the current generation" do
+      target_id = 7_601
+      setup_player_mock(target_id)
+      Registry.register_module(ExactTickStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), ticks: 0}
+        )
+
+      entry = StatusStorage.get_status(:player, target_id, :sc_test_exact_tick)
+
+      assert :continue =
+               Interpreter.process_tick_if_current(
+                 :player,
+                 target_id,
+                 :sc_test_exact_tick,
+                 entry.generation
+               )
+
+      assert_receive {:exact_tick, 1}
+
+      assert %{state: %{ticks: 1}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_exact_tick)
+    end
+
+    test "a replaced generation makes the captured tick a no-op" do
+      target_id = 7_602
+      setup_player_mock(target_id)
+      Registry.register_module(ExactTickStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), ticks: 0}
+        )
+
+      stale_generation =
+        StatusStorage.get_status(:player, target_id, :sc_test_exact_tick).generation
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), ticks: 10}
+        )
+
+      assert :stop =
+               Interpreter.process_tick_if_current(
+                 :player,
+                 target_id,
+                 :sc_test_exact_tick,
+                 stale_generation
+               )
+
+      refute_receive {:exact_tick, _}
+
+      assert %{state: %{ticks: 10}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_exact_tick)
+    end
+
+    test "a current terminal tick removes the status and stops" do
+      target_id = 7_603
+      setup_player_mock(target_id)
+      Registry.register_module(ExactTickStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), remove?: true}
+        )
+
+      generation = StatusStorage.get_status(:player, target_id, :sc_test_exact_tick).generation
+
+      assert :stop =
+               Interpreter.process_tick_if_current(
+                 :player,
+                 target_id,
+                 :sc_test_exact_tick,
+                 generation
+               )
+
+      assert_receive :exact_tick_removed
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_exact_tick)
+    end
+
+    test "a removed generation makes the captured tick a no-op" do
+      target_id = 7_604
+      setup_player_mock(target_id)
+      Registry.register_module(ExactTickStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), ticks: 0}
+        )
+
+      generation = StatusStorage.get_status(:player, target_id, :sc_test_exact_tick).generation
+      :ok = StatusStorage.remove_status(:player, target_id, :sc_test_exact_tick)
+
+      assert :stop =
+               Interpreter.process_tick_if_current(
+                 :player,
+                 target_id,
+                 :sc_test_exact_tick,
+                 generation
+               )
+
+      refute_receive {:exact_tick, _}
+    end
+  end
 
   describe "mob status application notification" do
     test "a successful tickless application asynchronously notifies the mob session" do

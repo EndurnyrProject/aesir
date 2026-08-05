@@ -152,6 +152,45 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Runs an exact tick only when the expected status generation is still current.
+
+  Returns `:continue` when the callback retained the current status, otherwise
+  returns `:stop` so an exact-timer owner does not schedule another deadline.
+  """
+  @spec process_tick_if_current(unit_type(), integer(), atom(), pos_integer()) ::
+          :continue | :stop
+  def process_tick_if_current(unit_type, unit_id, status_id, expected_generation) do
+    with %{module: module} when not is_nil(module) <- Registry.get_definition(status_id),
+         %StatusEntry{generation: ^expected_generation} = instance <-
+           StatusStorage.get_status(unit_type, unit_id, status_id) do
+      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+      case module.on_tick({unit_type, unit_id}, instance, context) do
+        {:ok, new_instance} ->
+          store_instance_changes_if_current(
+            unit_type,
+            unit_id,
+            status_id,
+            expected_generation,
+            new_instance
+          )
+
+          :continue
+
+        :remove ->
+          expire_status_if_current(unit_type, unit_id, status_id, instance)
+          :stop
+
+        {:error, reason} ->
+          Logger.warning("Status #{status_id} exact on_tick failed: #{inspect(reason)}")
+          :stop
+      end
+    else
+      _ -> :stop
+    end
+  end
+
+  @doc """
   Notifies all active statuses on a unit that it took damage.
 
   `damage_info` is a map with at least `:damage` and `:element`; the player
@@ -1244,6 +1283,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end)
 
     :ok
+  end
+
+  defp store_instance_changes_if_current(
+         unit_type,
+         unit_id,
+         status_id,
+         expected_generation,
+         new_instance
+       ) do
+    StatusStorage.update_status(unit_type, unit_id, status_id, fn
+      %StatusEntry{generation: ^expected_generation} = entry ->
+        %{entry | state: new_instance.state || %{}, phase: new_instance.phase}
+
+      current ->
+        current
+    end)
   end
 
   defp with_active_status(unit_type, unit_id, status_id, fun) do

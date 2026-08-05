@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   # 1 second tick rate
   @tick_interval_ms 1000
+  @exact_tick_interval_ms 500
   # Process statuses in batches
   @tick_batch_size 100
 
@@ -52,6 +53,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     GenServer.call(__MODULE__, :get_stats)
   end
 
+  @doc "Schedules a generation-tagged status tick for an absolute monotonic deadline."
+  @spec schedule_exact_tick(atom(), integer(), atom(), pos_integer(), integer()) :: :ok
+  def schedule_exact_tick(unit_type, unit_id, status_id, generation, due_at) do
+    GenServer.cast(
+      __MODULE__,
+      {:schedule_exact_tick, unit_type, unit_id, status_id, generation, due_at}
+    )
+  end
+
   @impl true
   def init(_opts) do
     timer_ref = Process.send_after(self(), :tick, @tick_interval_ms)
@@ -66,6 +76,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   @impl true
+  def handle_info(
+        {:exact_status_tick, unit_type, unit_id, status_id, generation, due_at},
+        state
+      ) do
+    if Interpreter.process_tick_if_current(unit_type, unit_id, status_id, generation) == :continue do
+      schedule_exact_message(
+        unit_type,
+        unit_id,
+        status_id,
+        generation,
+        due_at + @exact_tick_interval_ms
+      )
+    end
+
+    {:noreply, state}
+  end
+
   def handle_info(:tick, state) do
     now_ms = System.monotonic_time(:millisecond)
 
@@ -107,6 +134,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   end
 
   @impl true
+  def handle_cast(
+        {:schedule_exact_tick, unit_type, unit_id, status_id, generation, due_at},
+        state
+      ) do
+    schedule_exact_message(unit_type, unit_id, status_id, generation, due_at)
+    {:noreply, state}
+  end
+
   def handle_cast(:force_tick, state) do
     send(self(), :tick)
     {:noreply, state}
@@ -131,6 +166,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     }
 
     {:reply, stats, state}
+  end
+
+  defp schedule_exact_message(unit_type, unit_id, status_id, generation, due_at) do
+    delay = max(due_at - System.monotonic_time(:millisecond), 0)
+
+    Process.send_after(
+      self(),
+      {:exact_status_tick, unit_type, unit_id, status_id, generation, due_at},
+      delay
+    )
   end
 
   defp process_expired_statuses(now_ms) do
