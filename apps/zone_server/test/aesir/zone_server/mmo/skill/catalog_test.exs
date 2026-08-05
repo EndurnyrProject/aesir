@@ -34,6 +34,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     assert :error = Catalog.by_id(999_999)
   end
 
+  test "reload/0 rebuilds the requirement index" do
+    assert :ok = Catalog.reload()
+    assert {:ok, []} = Catalog.requirements_for(29)
+    assert :error = Catalog.requirements_for(999_999)
+  end
+
   test "by_id/1 loads AL_DP as a passive skill" do
     assert {:ok, %Definition{} = defn} = Catalog.by_id(22)
     assert defn.name == :al_dp

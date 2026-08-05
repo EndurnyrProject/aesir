@@ -27,4 +27,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   def for(%module{}) do
     raise ArgumentError, "unsupported skill caster struct: #{inspect(module)}"
   end
+
+  @spec for_kind(kind()) :: module()
+  def for_kind(:player), do: __MODULE__.Player
+  def for_kind(:homunculus), do: __MODULE__.Homunculus
+  def for_kind(:mob), do: __MODULE__.Mob
+
+  def for_kind(other) do
+    raise ArgumentError, "unsupported caster kind: #{inspect(other)}"
+  end
 end

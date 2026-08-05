@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   replaces the former per-capability registries.
   """
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Requirement
 
   @pt_key __MODULE__
 
@@ -32,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
            all: [Definition.t()],
            by_id: %{integer() => Definition.t()},
            by_name: %{atom() => Definition.t()},
+           requirements: %{integer() => [Requirement.t()]},
            active: %{atom() => module()},
            ground: %{atom() => module()},
            passive: %{atom() => module()},
@@ -50,6 +52,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
 
   @spec by_name(atom()) :: {:ok, Definition.t()} | :error
   def by_name(name), do: Map.fetch(index().by_name, name)
+
+  @spec requirements_for(integer()) :: {:ok, [Requirement.t()]} | :error
+  def requirements_for(id), do: Map.fetch(index().requirements, id)
 
   @spec active_module_for(atom()) :: {:ok, module()} | :error
   def active_module_for(name), do: Map.fetch(index().active, name)
@@ -126,6 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
       all: definitions,
       by_id: Map.new(definitions, &{&1.id, &1}),
       by_name: Map.new(definitions, &{&1.name, &1}),
+      requirements: Map.new(definitions, &{&1.id, &1.requires}),
       active: modules_with_capability(modules, :active),
       ground: modules_with_capability(modules, :ground),
       passive: modules_with_capability(modules, :passive),
