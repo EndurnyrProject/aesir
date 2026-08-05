@@ -12,8 +12,8 @@ defmodule Aesir.ZoneServer.Integration.CrusaderMobCastTest do
     * `CR_AUTOGUARD` (Guard) toggles `sc_autoguard` onto the mob caster with no
       shield gate.
 
-  `CR_DEVOTION` is not exercised here: it is denylisted (party/devotion
-  semantics are player-only) so the sweep only asserts the denylist reason.
+  `CR_DEVOTION` is not exercised here: its party requirement is unavailable
+  to mob casters, so the sweep only asserts the missing requirement.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -24,8 +24,8 @@ defmodule Aesir.ZoneServer.Integration.CrusaderMobCastTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -82,9 +82,8 @@ defmodule Aesir.ZoneServer.Integration.CrusaderMobCastTest do
     assert eventually(fn -> StatusStorage.has_status?(:mob, 9_303, :sc_autoguard) end)
   end
 
-  test "Devotion is denied for mob casters with a stated reason" do
-    assert Denylist.denied?(255)
-    assert Denylist.reason_for(255) =~ "player-only"
+  test "Devotion is uncastable for mob casters missing party support" do
+    assert Castability.check(definition(), :mob) == {:error, {:missing, [:party]}}
 
     mob = start_mob_session(unit_id: 9_304, map_name: @map, position: {150, 150})
 

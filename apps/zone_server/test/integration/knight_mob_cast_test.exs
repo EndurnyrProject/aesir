@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Integration.KnightMobCastTest do
       also carries `level: 30`, past the 10-entry player `duration` array
       (`Enum.at/2` returns `nil` at index 29); unlike `WZ_METEOR`/
       `WZ_VERMILION`'s equivalent out-of-range index (which crash and are
-      denylisted), Two-Hand Quicken degrades gracefully because
+      uncastable by mobs), Two-Hand Quicken degrades gracefully because
       `StatusInterpreter.apply_status/4` falls back to `definition.duration`
       (unset here) and then a hardcoded 10 000 ms - this test locks in that
       fallback rather than a crash.
@@ -21,8 +21,9 @@ defmodule Aesir.ZoneServer.Integration.KnightMobCastTest do
       nearby bystander with no mount/riding gate - a mob caster has no
       `option` bitmask to check in the first place.
 
-  None of the three is on `MobSkill.Denylist`, so the sweep already exercises
-  them for a clean result; these add the observable behavioural assertions.
+  All three satisfy their declared mob requirements, so the sweep already
+  exercises them for a clean result; these add the observable behavioural
+  assertions.
   """
 
   use Aesir.ZoneServer.IntegrationCase

@@ -13,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 266,
     name: :mo_investigate,
-    # Player-coupled at runtime (character_id), but not on the pre-migration mob denylist.
+    # Player-coupled at runtime (character_id), but accepted by the previous mob gate.
     # Kept mob-selectable with [] to preserve exact pre-migration behaviour; a mob caster
     # falls through to the {:error, :invalid_target} clause as it does today.
     requires: [],

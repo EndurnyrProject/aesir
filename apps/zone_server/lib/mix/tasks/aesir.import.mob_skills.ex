@@ -14,10 +14,10 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
 
   After writing, it prints a coverage manifest: total rows, distinct skills, and
   which skills are `:castable` (resolve in the live skill catalog with an active
-  module and are not denylisted), `:denylisted` (resolve but are denied, with the
-  reason), or `:unresolved` (no catalog entry / no active module) - see
-  `MobSkill.Importer.classify/1` - with the row-coverage %, the denylisted skills
-  and their reasons, and the top unresolved skills by row count.
+  module and satisfy their mob requirements), `:uncastable` (resolve but have
+  missing requirements), or `:unresolved` (no catalog entry / no active module) -
+  see `MobSkill.Importer.classify/1` - with the row-coverage %, uncastable skills
+  and their missing requirements, and the top unresolved skills by row count.
   """
   use Mix.Task
 
@@ -58,8 +58,8 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
 
     castable = Enum.filter(classified, fn {_s, _c, class} -> class == :castable end)
 
-    denylisted =
-      Enum.filter(classified, fn {_s, _c, class} -> match?({:denylisted, _}, class) end)
+    uncastable =
+      Enum.filter(classified, fn {_s, _c, class} -> match?({:uncastable, _}, class) end)
 
     unresolved = Enum.filter(classified, fn {_s, _c, class} -> class == :unresolved end)
     castable_rows = sum_rows(castable)
@@ -67,15 +67,15 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
     Mix.shell().info("  rows: #{total}   distinct skills: #{map_size(skill_rows)}")
 
     Mix.shell().info(
-      "  castable skills: #{length(castable)}   denylisted skills: #{length(denylisted)}   " <>
+      "  castable skills: #{length(castable)}   uncastable skills: #{length(uncastable)}   " <>
         "unresolved skills: #{length(unresolved)}   " <>
         "row coverage: #{percent(castable_rows, total)}% (#{castable_rows}/#{total})"
     )
 
-    Mix.shell().info("  denylisted skills (rows, reason):")
+    Mix.shell().info("  uncastable skills (rows, missing requirements):")
 
-    Enum.each(denylisted, fn {skill, count, {:denylisted, reason}} ->
-      Mix.shell().info("    #{skill}: #{count} (#{reason})")
+    Enum.each(uncastable, fn {skill, count, {:uncastable, reason}} ->
+      Mix.shell().info("    #{skill}: #{count} (#{inspect(reason)})")
     end)
 
     Mix.shell().info("  top unresolved skills by row count:")

@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.RemainingJobRequirementsTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.Skill.Castability
 
   @requirements [
@@ -40,14 +39,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.RemainingJobRequirementsTest do
   ]
 
   test "mob-row skills declare requirements matching safe mob castability" do
-    for {module, id, denylisted?, crashes_for_mob?, requires} <- @requirements do
+    for {module, id, explicitly_refused?, crashes_for_mob?, requires} <- @requirements do
       definition = module.definition()
 
       expected =
-        if denylisted? or crashes_for_mob?, do: {:error, {:missing, requires}}, else: :ok
+        if explicitly_refused? or crashes_for_mob?,
+          do: {:error, {:missing, requires}},
+          else: :ok
 
       assert definition.id == id
-      assert Denylist.denied?(id) == denylisted?
       assert definition.requires == requires
       assert Castability.check(definition, :mob) == expected
     end

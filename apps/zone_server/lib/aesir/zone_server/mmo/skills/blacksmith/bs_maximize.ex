@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximize do
   level seconds; casting it again ends the effect.
   """
 
-  # Denylist gap: this player-only cast crashes when invoked by a mob.
+  # Requirement gap closed: this player-only cast crashes when invoked by a mob.
   use Aesir.ZoneServer.Mmo.Skill,
     id: 114,
     name: :bs_maximize,

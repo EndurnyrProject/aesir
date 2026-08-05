@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Selector
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
   setup :verify_on_exit!
@@ -95,14 +95,16 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.SelectorTest do
       assert Selector.select(mob(), [unresolvable], opts()) == nil
     end
 
-    test "a row whose skill_id is denylisted is skipped" do
-      stub(Denylist, :denied?, fn 19 -> true end)
+    test "a row whose skill is uncastable for a mob is skipped" do
+      stub(Castability, :check, fn _definition, :mob ->
+        {:error, {:missing, [:player_state]}}
+      end)
 
       assert Selector.select(mob(), [row()], opts()) == nil
     end
 
-    test "a row whose skill_id resolves and is not denylisted fires" do
-      stub(Denylist, :denied?, fn 19 -> false end)
+    test "a row whose skill resolves and is castable for a mob fires" do
+      stub(Castability, :check, fn _definition, :mob -> :ok end)
 
       assert Selector.select(mob(), [row()], opts()) == {:cast, row()}
     end

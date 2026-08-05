@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.SwordsmanKnightCrusaderRequirementsTest do
   use ExUnit.Case, async: true
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.Skill.Castability
 
   @requirements [
@@ -25,10 +24,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SwordsmanKnightCrusaderRequirementsTest do
     {Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge, 250, []}
   ]
 
-  test "mob-row skills preserve denylist castability" do
+  test "mob-row skills preserve mob castability" do
     for {module, id, requires} <- @requirements do
       definition = module.definition()
-      expected = if Denylist.denied?(id), do: {:error, {:missing, requires}}, else: :ok
+      expected = if requires == [], do: :ok, else: {:error, {:missing, requires}}
 
       assert definition.id == id
       assert definition.requires == requires

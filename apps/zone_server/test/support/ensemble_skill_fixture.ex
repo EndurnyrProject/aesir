@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.TestSupport.EnsembleSkill do
   application manifest - so `Catalog.discover/0` **does** find it and id 999_998
   is present in `Catalog.all/0` for the whole test run. That is deliberate:
   `Catalog.ensemble?/1` cannot otherwise be exercised. Anything that enumerates
-  the catalog (skill trees, mob-cast denylists) must tolerate it.
+  the catalog (skill trees, mob-cast requirement checks) must tolerate it.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

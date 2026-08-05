@@ -23,8 +23,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobSkill.Db
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Executor
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
@@ -61,7 +61,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   @summon_mob_id 2_142
   @summon_slave_id 2_143
 
-  # Wind Ghost: carries `WZ_JUPITEL` rows. Not denylisted for mob casting.
+  # Wind Ghost: carries `WZ_JUPITEL` rows, which are castable by mobs.
   @jupitel_mob_id 1_450
 
   # Nidhoggr's Shadow carries level 11 WZ_METEOR; Dark Shadow carries level 21
@@ -652,8 +652,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   describe "WZ_JUPITEL deferred effect" do
     test "a mob-cast row's deferred hit lands via MobSession's deferred handler" do
-      refute Denylist.denied?(84),
-             "WZ_JUPITEL (84) is denylisted for mob casting - this scenario needs the real path"
+      assert Castability.check_by_id(84, :mob) == :ok,
+             "WZ_JUPITEL (84) must be castable by mobs for this scenario to use the real path"
 
       victim =
         start_player_session(id: 9_814, name: "Struck", position: {153, 150}, map_name: @map)

@@ -18,7 +18,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 12,
     name: :mg_safetywall,
-    requires: [:inventory],
+    # Mob-castable: this is a ground placement (`Unit.place/4`) that works for any
+    # caster. The Blue Gemstone (`item_cost` below) is a player-side catalyst charged
+    # by the cost pipeline, not a requirement for the mob ground cast; declaring
+    # `[:inventory]` would wrongly refuse the 50 mob rows that cast Safety Wall.
+    requires: [],
     display_name: "Safety Wall",
     max_level: 10,
     target_type: :ground,

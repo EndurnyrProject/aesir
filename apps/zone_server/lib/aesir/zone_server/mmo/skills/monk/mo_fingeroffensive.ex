@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 267,
     name: :mo_fingeroffensive,
-    # Player-coupled at runtime (character_id), but not on the pre-migration mob denylist.
+    # Player-coupled at runtime (character_id), but accepted by the previous mob gate.
     # Kept mob-selectable with [] to preserve exact pre-migration behaviour; a mob caster
     # falls through to the {:error, :invalid_target} clause as it does today.
     requires: [],

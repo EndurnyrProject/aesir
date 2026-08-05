@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
 
   Range (7..11 by level) is enforced by the skill interpreter from the
   definition's per-level `range`. Devotion is player-only; a mob caster is
-  rejected and the skill is denylisted for the mob executor.
+  rejected and the skill declares an unmet mob requirement.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 255,

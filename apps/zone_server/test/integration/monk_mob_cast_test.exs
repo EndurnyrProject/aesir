@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Integration.MonkMobCastTest do
     * `MO_BALKYOUNG` (Ki Explosion) damages, knocks back, and stuns its player
       targets using the caster's generic unit identity (no player-only state).
 
-  Neither is on the `MobSkill.Denylist`, so the sweep exercises them too; these
-  add the observable behavioural assertions.
+  Both satisfy their declared mob requirements, so the sweep exercises them
+  too; these add the observable behavioural assertions.
   """
 
   use Aesir.ZoneServer.IntegrationCase

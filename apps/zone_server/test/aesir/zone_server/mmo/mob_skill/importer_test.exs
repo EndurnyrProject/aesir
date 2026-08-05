@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ImporterTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
   alias Aesir.ZoneServer.Mmo.MobSkill.Importer
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
 
   setup :verify_on_exit!
 
@@ -117,16 +117,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ImporterTest do
   describe "classify/1" do
     # MG_FIREBOLT: a real player skill (id 19), resolvable in Skill.Catalog with
     # an active module, so it classifies as :castable by default.
-    test "a skill id that resolves with an active module and is not denylisted is :castable" do
-      stub(Denylist, :reason_for, fn 19 -> nil end)
+    test "a skill id that resolves with an active module and is castable is :castable" do
+      stub(Castability, :check, fn _definition, :mob -> :ok end)
 
       assert Importer.classify(19) == :castable
     end
 
-    test "a skill id that resolves but is denylisted reports the reason" do
-      stub(Denylist, :reason_for, fn 19 -> "no proto message" end)
+    test "a skill id that resolves but is uncastable reports missing requirements" do
+      stub(Castability, :check, fn _definition, :mob ->
+        {:error, {:missing, [:player_state]}}
+      end)
 
-      assert Importer.classify(19) == {:denylisted, "no proto message"}
+      assert Importer.classify(19) == {:uncastable, {:missing, [:player_state]}}
     end
 
     test "a skill id with no catalog entry is :unresolved" do

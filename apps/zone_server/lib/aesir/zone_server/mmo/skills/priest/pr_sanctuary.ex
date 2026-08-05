@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     id: 70,
     name: :pr_sanctuary,
     # Player-coupled at runtime (Blue Gemstone catalyst), but not on the pre-migration mob
-    # denylist. Kept mob-selectable with [] to preserve exact pre-migration behaviour; a
+    # previous refusal set. Kept mob-selectable with [] to preserve exact pre-migration behaviour; a
     # mob simply fails the cast gracefully as it does today.
     requires: [],
     display_name: "Sanctuary",

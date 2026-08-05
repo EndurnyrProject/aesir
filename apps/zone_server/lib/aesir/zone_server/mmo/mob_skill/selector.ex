@@ -12,10 +12,10 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
     1. **State** - the row's `state` must be eligible for the mob's current
        `ai_state` (see `eligible_states/1`, an approximation of rAthena states).
     2. **Castable** - the row's skill must resolve in the real skill catalog
-       (`Skill.Catalog.by_id/1` with an active module) and must not be in
-       `MobSkill.Denylist`. Non-castable rows are dropped silently; coverage
-       is tracked once globally by the importer's manifest and the sweep
-       test, not per-tick here (that would spam).
+       (`Skill.Catalog.by_id/1` with an active module) and satisfy its declared
+       requirements for a mob caster. Non-castable rows are dropped silently;
+       coverage is tracked once globally by the importer's manifest and the
+       sweep test, not per-tick here (that would spam).
     3. **Condition** - the row's `condition` predicate must hold.
     4. **Delay** - the row's skill must be off cooldown (`MobState.skill_ready?/3`).
     5. **Rate** - each surviving row rolls `rng.(10_000) <= row.rate` in order;
@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
       actually evaluated), tests inject a pure fun.
   """
 
-  alias Aesir.ZoneServer.Mmo.MobSkill.Denylist
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -102,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Selector do
   defp castable?(%{skill_id: skill_id}) do
     with {:ok, definition} <- SkillCatalog.by_id(skill_id),
          {:ok, _module} <- SkillCatalog.active_module_for(definition.name) do
-      not Denylist.denied?(skill_id)
+      Castability.check(definition, :mob) == :ok
     else
       :error -> false
     end
