@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
 
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.Skill.Requirement
 
   @typedoc "How a skill is targeted (rAthena `inf`)."
   @type target_type ::
@@ -89,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             damage_kind: :weapon,
             damage_base: :weapon,
             item_cost: [],
+            requires: [],
             requires_ammo: false,
             require_weapon: [],
             status: nil,
@@ -123,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           damage_kind: damage_kind(),
           damage_base: damage_base(),
           item_cost: [item_cost_entry()],
+          requires: [Requirement.t()],
           requires_ammo: boolean(),
           require_weapon: [atom()],
           status: atom() | nil,
@@ -170,6 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_kind: {:enum, [:weapon, :magic, :misc]},
     damage_base: {:enum, [:weapon, :shield]},
     item_cost: {:list, %{id: {:required, :integer}, amount: {:required, {:integer, {:gt, 0}}}}},
+    requires: {:list, {:enum, Requirement.all()}},
     requires_ammo: :boolean,
     require_weapon: {:list, :atom},
     status: :atom,
@@ -201,6 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_kind: :weapon,
     damage_base: :weapon,
     item_cost: [],
+    requires: [],
     requires_ammo: false,
     require_weapon: [],
     status: nil,

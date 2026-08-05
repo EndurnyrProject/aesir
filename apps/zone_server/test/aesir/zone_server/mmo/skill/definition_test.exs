@@ -10,6 +10,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
     max_level: 5
   ]
 
+  describe "requires" do
+    test "accepts a declared requirement through use Skill" do
+      [{module, _bytecode}] =
+        Code.compile_string("""
+        defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest.InventorySkill do
+          use Aesir.ZoneServer.Mmo.Skill,
+            id: 9_001,
+            name: :inventory_skill,
+            display_name: "Inventory Skill",
+            max_level: 1,
+            requires: [:inventory]
+        end
+        """)
+
+      assert module.definition().requires == [:inventory]
+    end
+
+    test "defaults to no requirements" do
+      [{module, _bytecode}] =
+        Code.compile_string("""
+        defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest.PermissiveSkill do
+          use Aesir.ZoneServer.Mmo.Skill,
+            id: 9_002,
+            name: :permissive_skill,
+            display_name: "Permissive Skill",
+            max_level: 1
+        end
+        """)
+
+      assert module.definition().requires == []
+    end
+
+    test "rejects an unknown requirement and names it" do
+      assert_raise ArgumentError, ~r/:inventroy/, fn ->
+        Code.compile_string("""
+        defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest.InvalidRequirementSkill do
+          use Aesir.ZoneServer.Mmo.Skill,
+            id: 9_003,
+            name: :invalid_requirement_skill,
+            display_name: "Invalid Requirement Skill",
+            max_level: 1,
+            requires: [:inventroy]
+        end
+        """)
+      end
+    end
+  end
+
   describe "quest metadata" do
     test "defaults non-quest skills to no owner" do
       definition = Definition.build!(@required_opts, __MODULE__)
