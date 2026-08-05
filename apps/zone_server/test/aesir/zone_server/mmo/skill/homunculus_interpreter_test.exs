@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Net.GroundSkill
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -12,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifChange
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -43,6 +45,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
       send(self(), {:auto_cast_sp, caster.sp})
       {:ok, caster}
     end
+
+    @impl true
+    def validate(_caster, _target, _level, _definition), do: :ok
+  end
+
+  defmodule GroundCastProbeSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    def __skill_capabilities__, do: [:active]
+
+    @impl true
+    def cast(caster, {:ground, _x, _y}, 1, _definition), do: {:ok, caster}
 
     @impl true
     def validate(_caster, _target, _level, _definition), do: :ok
@@ -107,6 +121,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     assert {:ok, updated} = Interpreter.auto_cast(homunculus(), definition.id, 1, :self)
     assert updated.sp == 92
     assert_received {:auto_cast_sp, 100}
+  end
+
+  test "a Homunculus ground cast broadcasts its world GID in an encodable packet" do
+    definition = %Definition{
+      id: 9_999_902,
+      name: :ground_cast_probe,
+      display_name: "Ground Cast Probe",
+      max_level: 1,
+      target_type: :ground,
+      damage_type: :no_damage,
+      requires: [:homunculus_state],
+      sp_cost: [0]
+    }
+
+    stub(Catalog, :by_id, fn
+      9_999_902 -> {:ok, definition}
+      other -> call_original(Catalog, :by_id, [other])
+    end)
+
+    stub(Catalog, :active_module_for, fn
+      :ground_cast_probe -> {:ok, GroundCastProbeSkill}
+      other -> call_original(Catalog, :active_module_for, [other])
+    end)
+
+    caster = homunculus()
+
+    expect(Broadcast, :to_in_range, fn "hom_cast_map", 12, 10, _range, packet ->
+      assert %GroundSkill{src_id: src_id} = packet
+      assert src_id == caster.world_gid
+      refute src_id == caster.owner_character_id
+      assert {:ok, _iodata, _size} = GroundSkill.encode(packet)
+      :ok
+    end)
+
+    assert {:ok, _caster} =
+             Interpreter.auto_cast(caster, definition.id, 1, {:ground, 12, 10})
   end
 
   test "Healing Touch returns the exact owner cost marker and owner-only heal" do

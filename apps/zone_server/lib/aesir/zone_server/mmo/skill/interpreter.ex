@@ -1178,9 +1178,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # `GroundSkill` comes from the group placement.
   defp announce_ground_cast(module, game_state, {:ground, x, y}, level, definition) do
     if :ground not in module.__skill_capabilities__() do
+      adapter = Caster.for(game_state)
+
       packet = %GroundSkill{
         skill_id: definition.id,
-        src_id: game_state.character_id,
+        src_id: adapter.id(game_state),
         level: level,
         x: x,
         y: y,
