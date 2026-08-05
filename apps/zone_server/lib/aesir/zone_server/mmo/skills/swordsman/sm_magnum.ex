@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 7,
     name: :sm_magnum,
+    requires: [:player_state],
     display_name: "Magnum Break",
     max_level: 10,
     target_type: :self,

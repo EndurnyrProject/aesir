@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 5,
     name: :sm_bash,
+    requires: [],
     display_name: "Bash",
     max_level: 10,
     target_type: :target_enemy,

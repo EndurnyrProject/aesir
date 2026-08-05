@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 56,
     name: :kn_pierce,
+    requires: [],
     display_name: "Pierce",
     max_level: 10,
     target_type: :target_enemy,

@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8,
     name: :sm_endure,
+    requires: [:player_state],
     status: :sc_endure,
     display_name: "Endure",
     max_level: 10,

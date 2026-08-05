@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquicken do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 60,
     name: :kn_twohandquicken,
+    requires: [],
     status: :sc_twohandquicken,
     display_name: "Two-Hand Quicken",
     max_level: 10,

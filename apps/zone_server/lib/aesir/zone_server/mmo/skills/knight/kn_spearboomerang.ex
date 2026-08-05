@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 59,
     name: :kn_spearboomerang,
+    requires: [],
     display_name: "Spear Boomerang",
     max_level: 5,
     target_type: :target_enemy,

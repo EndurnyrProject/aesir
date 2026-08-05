@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 61,
     name: :kn_autocounter,
+    requires: [:player_state],
     status: :sc_auto_counter,
     display_name: "Auto Counter",
     max_level: 5,

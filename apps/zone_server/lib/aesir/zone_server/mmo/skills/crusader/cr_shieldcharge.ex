@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 250,
     name: :cr_shieldcharge,
+    requires: [],
     display_name: "Shield Charge",
     max_level: 5,
     target_type: :target_enemy,

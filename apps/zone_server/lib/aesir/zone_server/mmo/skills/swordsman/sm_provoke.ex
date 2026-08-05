@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 6,
     name: :sm_provoke,
+    requires: [:player_state],
     display_name: "Provoke",
     max_level: 10,
     target_type: :target_enemy,

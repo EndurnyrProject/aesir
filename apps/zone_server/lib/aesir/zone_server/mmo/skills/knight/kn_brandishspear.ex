@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 57,
     name: :kn_brandishspear,
+    requires: [],
     display_name: "Brandish Spear",
     max_level: 10,
     target_type: :target_enemy,

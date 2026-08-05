@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 253,
     name: :cr_holycross,
+    requires: [],
     display_name: "Holy Cross",
     max_level: 10,
     target_type: :target_enemy,

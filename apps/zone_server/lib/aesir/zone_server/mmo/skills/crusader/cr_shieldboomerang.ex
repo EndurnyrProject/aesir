@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerang do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 251,
     name: :cr_shieldboomerang,
+    requires: [],
     display_name: "Shield Boomerang",
     max_level: 5,
     target_type: :target_enemy,

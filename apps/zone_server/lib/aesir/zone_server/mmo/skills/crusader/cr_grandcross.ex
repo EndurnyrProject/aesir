@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 254,
     name: :cr_grandcross,
+    requires: [],
     display_name: "Grand Cross",
     max_level: 10,
     target_type: :self,

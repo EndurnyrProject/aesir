@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 62,
     name: :kn_bowlingbash,
+    requires: [],
     display_name: "Bowling Bash",
     max_level: 10,
     target_type: :target_enemy,

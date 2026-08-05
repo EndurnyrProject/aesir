@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 252,
     name: :cr_reflectshield,
+    requires: [],
     status: :sc_reflectshield,
     display_name: "Reflect Shield",
     max_level: 10,

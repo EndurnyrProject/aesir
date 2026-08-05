@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstab do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 58,
     name: :kn_spearstab,
+    requires: [],
     display_name: "Spear Stab",
     max_level: 10,
     target_type: :target_enemy,

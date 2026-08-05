@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 255,
     name: :cr_devotion,
+    requires: [:party],
     status: :sc_devotion,
     display_name: "Devotion",
     max_level: 5,
