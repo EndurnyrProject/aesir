@@ -57,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
-      assert params[:duration] == 18_000
+      assert params == [duration: 18_000, caster_id: 1_000, source_type: :player]
       :ok
     end)
 
