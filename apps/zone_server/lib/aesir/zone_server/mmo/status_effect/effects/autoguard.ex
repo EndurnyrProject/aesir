@@ -42,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
           map(),
           map()
         ) :: :continue | {:intercept, :blocked}
+  def before_weapon_hit(_target, _entry, %{ignores_auto_guard: true}, _context), do: :continue
+
   def before_weapon_hit({unit_type, unit_id}, %StatusEntry{val1: level}, _attack_info, _context) do
     if blocked?(level) do
       SpecialEffect.play({unit_type, unit_id}, :guard, :area)

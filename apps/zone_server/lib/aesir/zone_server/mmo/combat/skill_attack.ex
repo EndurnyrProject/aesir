@@ -114,7 +114,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       caster_state,
       target_id,
       opts,
-      &DamageCalculator.calculate_damage/3
+      &DamageCalculator.calculate_damage/3,
+      %{}
+    )
+  end
+
+  @doc """
+  Executes the forced-hit, no-attacker-card physical path used by Venom Knife.
+
+  This narrow entry forces neutral long-range damage and marks only Auto Guard
+  as exempt. Every other weapon interception and ordinary damage-delivery hook
+  remains active.
+  """
+  @spec execute_forced_no_card_attack(struct(), integer() | Ref.t(), keyword()) ::
+          :ok
+          | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
+          | {:error, atom()}
+  def execute_forced_no_card_attack(caster_state, target_id, opts) do
+    opts = Keyword.merge(opts, ignore_flee: true, element: :neutral, ranged: true)
+
+    execute_single_target_attack(
+      caster_state,
+      target_id,
+      opts,
+      &DamageCalculator.calculate_damage_ignoring_attacker_cards/3,
+      %{ignores_auto_guard: true}
     )
   end
 
@@ -144,7 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
          :ok <- Targeting.validate_enemy(attacker, target) do
-      if weapon_hit_intercepted?(attacker, target_type, target) do
+      if weapon_hit_intercepted?(attacker, target_type, target, %{}) do
         {:ok, :miss}
       else
         prepare_staged_skill_hit(
@@ -207,11 +231,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       caster_state,
       target_id,
       opts,
-      &DamageCalculator.calculate_damage_ignoring_status_def/3
+      &DamageCalculator.calculate_damage_ignoring_status_def/3,
+      %{}
     )
   end
 
-  defp execute_single_target_attack(caster_state, target_id, opts, damage_calculator) do
+  defp execute_single_target_attack(
+         caster_state,
+         target_id,
+         opts,
+         damage_calculator,
+         weapon_hit_metadata
+       ) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
@@ -233,7 +264,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         display_hits: display_hits,
         hit_rate_bonus_pct: hit_rate_bonus_pct,
         ignore_flee: Keyword.get(opts, :ignore_flee, false),
-        ranged: ranged?
+        ranged: ranged?,
+        weapon_hit_metadata: weapon_hit_metadata
       }
 
       results =
@@ -280,6 +312,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer() | Ref.t()]
   def execute_splash_attack(caster_state, center, radius, opts) do
+    execute_splash_with(
+      caster_state,
+      center,
+      radius,
+      opts,
+      &DamageCalculator.calculate_damage/3
+    )
+  end
+
+  @doc """
+  Executes a forced-hit physical splash while omitting attacker cardfix only.
+
+  This is the restricted delivery path for Venom Splasher. It preserves every
+  interception and damage-delivery hook, including Auto Guard.
+  """
+  @spec execute_forced_no_card_splash(
+          struct(),
+          {integer(), integer()},
+          non_neg_integer(),
+          keyword()
+        ) :: [integer() | Ref.t()]
+  def execute_forced_no_card_splash(caster_state, center, radius, opts) do
+    execute_splash_with(
+      caster_state,
+      center,
+      radius,
+      Keyword.put(opts, :ignore_flee, true),
+      &DamageCalculator.calculate_damage_ignoring_attacker_cards/3
+    )
+  end
+
+  defp execute_splash_with(caster_state, center, radius, opts, damage_calculator) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
     hits = Keyword.get(opts, :hit_count, 1)
@@ -292,7 +356,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
     attacker.map_name
     |> SplashTargets.select(center, radius, attacker)
-    |> hit_targets(attacker, skill_id, skill_level, calc_opts, hits, result_opts)
+    |> hit_targets(
+      attacker,
+      skill_id,
+      skill_level,
+      {calc_opts, damage_calculator},
+      hits,
+      result_opts
+    )
   end
 
   @doc """
@@ -406,7 +477,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         display_hits: nil,
         hit_rate_bonus_pct: 0,
         ignore_flee: ignore_flee?,
-        ranged: ranged?
+        ranged: ranged?,
+        weapon_hit_metadata: %{}
       }
 
       connected? =
@@ -709,7 +781,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          calc_context,
          hit_opts
        ) do
-    if weapon_hit_intercepted?(attacker, target_type, target) do
+    if weapon_hit_intercepted?(
+         attacker,
+         target_type,
+         target,
+         Map.fetch!(hit_opts, :weapon_hit_metadata)
+       ) do
       %{hit?: false, damage: 0}
     else
       resolve_skill_hit(
@@ -734,19 +811,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @spec weapon_hit_intercepted?(
           struct(),
           :player | :mob | :homunculus | :skill_unit,
-          struct()
+          struct(),
+          map()
         ) :: boolean()
-  defp weapon_hit_intercepted?(attacker, target_type, target) do
-    attack_info = %{
-      attacker: {attacker.unit_type, attacker.unit_id},
-      target: {target_type, target.unit_id},
-      attacker_boss?: attacker.class == :boss,
-      attacker_root_level: 0,
-      attacker_position: attacker.position,
-      attacker_short?: attacker.attack_range <= 3,
-      distance: cell_distance(attacker, target),
-      basic_attack?: false
-    }
+  defp weapon_hit_intercepted?(attacker, target_type, target, metadata) do
+    attack_info =
+      Map.merge(
+        %{
+          attacker: {attacker.unit_type, attacker.unit_id},
+          target: {target_type, target.unit_id},
+          attacker_boss?: attacker.class == :boss,
+          attacker_root_level: 0,
+          attacker_position: attacker.position,
+          attacker_short?: attacker.attack_range <= 3,
+          distance: cell_distance(attacker, target),
+          basic_attack?: false
+        },
+        metadata
+      )
 
     match?(
       {:intercept, _result},

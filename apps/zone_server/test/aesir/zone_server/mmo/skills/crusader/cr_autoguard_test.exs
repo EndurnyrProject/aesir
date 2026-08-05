@@ -57,6 +57,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
   end
 
   describe "status block roll" do
+    test "Venom Knife's exact metadata exemption always continues" do
+      seed_for_roll(1)
+      reject(&SpecialEffect.play/3)
+
+      assert :continue =
+               Autoguard.before_weapon_hit(
+                 {:mob, 7000},
+                 entry(10),
+                 %{ignores_auto_guard: true},
+                 %{}
+               )
+    end
+
     test "a roll at the level's exact block chance intercepts and plays the guard effect" do
       for level <- [1, 5, 10] do
         seed_for_roll(elem(@block_chance, level - 1))
@@ -188,6 +201,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
       expect(StatusInterpreter, :before_weapon_hit, fn :player, 5000, attack_info ->
         assert attack_info.basic_attack? == false
         assert attack_info.target == {:player, 5000}
+        refute Map.has_key?(attack_info, :ignores_auto_guard)
         {:intercept, :blocked}
       end)
 
