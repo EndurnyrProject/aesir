@@ -347,6 +347,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       (default `false`, see `execute_skill_attack/3`)
     - `:typed_results` - returns connected `{unit_type, unit_id}` refs instead of
       bare ids from the same execution (default `false`)
+    - `:target_skill_units` - additionally admits targetable enemy trap cells
+      reached by the splash (default `false`)
   """
   @spec execute_splash_attack(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [integer() | Ref.t()]
@@ -393,8 +395,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       typed_results?: Keyword.get(opts, :typed_results, false)
     }
 
+    selection_opts = Keyword.take(opts, [:target_skill_units])
+
     attacker.map_name
-    |> SplashTargets.select(center, radius, attacker)
+    |> SplashTargets.select(center, radius, attacker, false, selection_opts)
     |> hit_targets(
       attacker,
       skill_id,
