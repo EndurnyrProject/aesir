@@ -96,6 +96,63 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Returns the right-hand dual-wield damage rate, defaulting to 50% without a mastery.
+  """
+  @spec right_hand_damage_rate(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()
+  def right_hand_damage_rate(%PlayerState{stats: stats}), do: right_hand_damage_rate(stats)
+
+  def right_hand_damage_rate(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(50, fn {module, level}, rate ->
+      case module.right_hand_damage_rate(level, ctx) do
+        0 -> rate
+        replacement -> replacement
+      end
+    end)
+  end
+
+  @doc """
+  Returns the left-hand dual-wield damage rate, defaulting to 30% without a mastery.
+  """
+  @spec left_hand_damage_rate(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()
+  def left_hand_damage_rate(%PlayerState{stats: stats}), do: left_hand_damage_rate(stats)
+
+  def left_hand_damage_rate(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(30, fn {module, level}, rate ->
+      case module.left_hand_damage_rate(level, ctx) do
+        0 -> rate
+        replacement -> replacement
+      end
+    end)
+  end
+
+  @doc """
+  Returns the Katar secondary damage rate, defaulting to 1% without Double Attack.
+  """
+  @spec katar_secondary_rate(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()
+  def katar_secondary_rate(%PlayerState{stats: stats}), do: katar_secondary_rate(stats)
+
+  def katar_secondary_rate(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(1, fn {module, level}, rate ->
+      case module.katar_secondary_rate(level, ctx) do
+        0 -> rate
+        replacement -> replacement
+      end
+    end)
+  end
+
+  @doc """
   Sums the multiplicative hit-rate bonus percentage contributed by every learned passive.
   """
   @spec hit_rate_bonus_pct(PlayerState.t() | PlayerStats.t()) :: integer()
@@ -312,13 +369,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
-  Keeps the proc with the highest `:multi_hit` (carrying its own `:chance`
-  along with it), since only one multi-hit source exists at first job. Returns
-  `%{}` when nothing procs.
+  Keeps the proc with the highest `:multi_hit` (carrying its own `:chance` and
+  `:hit_bonus` metadata along with it), since only one multi-hit source exists
+  at first job. Returns `%{}` when nothing procs.
   """
   @spec attack_procs(PlayerState.t() | PlayerStats.t()) :: %{
           optional(:multi_hit) => pos_integer(),
-          optional(:chance) => 1..100
+          optional(:chance) => 1..100,
+          optional(:hit_bonus) => non_neg_integer()
         }
   def attack_procs(%PlayerState{stats: stats}), do: attack_procs(stats)
 

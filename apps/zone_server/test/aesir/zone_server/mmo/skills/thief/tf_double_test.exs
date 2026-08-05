@@ -15,9 +15,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDoubleTest do
     assert {:ok, TfDouble} = Catalog.passive_module_for(:tf_double)
   end
 
-  test "attack_proc is %{multi_hit: 2, chance: 7 * level} for a dagger" do
-    assert TfDouble.attack_proc(5, %{weapon_type: :dagger}) == %{multi_hit: 2, chance: 35}
-    assert TfDouble.attack_proc(10, %{weapon_type: :dagger}) == %{multi_hit: 2, chance: 70}
+  test "a successful dagger proc carries learned HIT with its two hits" do
+    assert TfDouble.attack_proc(5, %{weapon_type: :dagger}) ==
+             %{multi_hit: 2, chance: 35, hit_bonus: 5}
+
+    assert TfDouble.attack_proc(10, %{weapon_type: :dagger}) ==
+             %{multi_hit: 2, chance: 70, hit_bonus: 10}
   end
 
   test "attack_proc is empty for other weapons" do
@@ -25,11 +28,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDoubleTest do
     assert TfDouble.attack_proc(5, %{weapon_type: :bow}) == %{}
   end
 
-  test "hit_bonus is level for a dagger" do
-    assert TfDouble.hit_bonus(7, %{weapon_type: :dagger}) == 7
+  test "does not contribute persistent HIT" do
+    assert TfDouble.hit_bonus(7, %{weapon_type: :dagger}) == 0
   end
 
-  test "hit_bonus is 0 for other weapons" do
-    assert TfDouble.hit_bonus(7, %{weapon_type: :bow}) == 0
+  test "raises Katar secondary rate by two percent per learned level" do
+    assert TfDouble.katar_secondary_rate(1, %{weapon_type: :katar}) == 3
+    assert TfDouble.katar_secondary_rate(10, %{weapon_type: :katar}) == 21
+    assert TfDouble.katar_secondary_rate(10, %{weapon_type: :dagger}) == 0
   end
 end

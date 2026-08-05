@@ -223,6 +223,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
   @passive_channel_defaults [
     {:atk_bonus, 2, quote(do: def(atk_bonus(_level, _ctx), do: 0))},
+    {:right_hand_damage_rate, 2, quote(do: def(right_hand_damage_rate(_level, _ctx), do: 0))},
+    {:left_hand_damage_rate, 2, quote(do: def(left_hand_damage_rate(_level, _ctx), do: 0))},
+    {:katar_secondary_rate, 2, quote(do: def(katar_secondary_rate(_level, _ctx), do: 0))},
     {:hit_bonus, 2, quote(do: def(hit_bonus(_level, _ctx), do: 0))},
     {:critical_bonus, 2, quote(do: def(critical_bonus(_level, _ctx), do: 0))},
     {:flee_bonus, 2, quote(do: def(flee_bonus(_level, _ctx), do: 0))},

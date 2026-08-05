@@ -18,7 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     bow: 1701,
     knuckle: 1801,
     one_handed_axe: 1301,
-    two_handed_axe: 1314
+    two_handed_axe: 1314,
+    katar: 1250,
+    dagger: 1201
   }
   @both_hand 34
   @right_hand 2
@@ -154,7 +156,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       if weapon_atom == :bare_hands do
         []
       else
-        equip = if weapon_atom in [:bow, :two_handed_axe], do: @both_hand, else: @right_hand
+        equip =
+          if weapon_atom in [:bow, :two_handed_axe, :katar], do: @both_hand, else: @right_hand
 
         [
           %InventoryItem{
@@ -373,6 +376,42 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       }
 
       assert Passives.aspd_bonus(%{player | stats: active_stats}) == 5
+    end
+  end
+
+  describe "weapon hand rates" do
+    test "return the unmastered defaults despite unrelated passives" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.right_hand_damage_rate(player) == 50
+      assert Passives.left_hand_damage_rate(player) == 30
+      assert Passives.katar_secondary_rate(player) == 1
+      assert Passives.atk_bonus(player) == 20
+    end
+
+    test "learned masteries replace only their hand rates" do
+      player = build_player(%{132 => 5, 133 => 5}, :one_handed_sword)
+
+      assert Passives.right_hand_damage_rate(player) == 100
+      assert Passives.left_hand_damage_rate(player) == 80
+      assert Passives.katar_secondary_rate(player) == 1
+      assert Passives.atk_bonus(player) == 0
+    end
+
+    test "Double Attack raises only the Katar secondary rate" do
+      player = build_player(%{48 => 10}, :katar)
+
+      assert Passives.katar_secondary_rate(player) == 21
+      assert Passives.right_hand_damage_rate(player) == 50
+      assert Passives.left_hand_damage_rate(player) == 30
+      assert Passives.attack_procs(player) == %{}
+    end
+
+    test "preserves Double Attack HIT on its successful proc metadata" do
+      player = build_player(%{48 => 7}, :dagger)
+
+      assert Passives.attack_procs(player) == %{multi_hit: 2, chance: 49, hit_bonus: 7}
+      assert Passives.hit_bonus(player) == 0
     end
   end
 

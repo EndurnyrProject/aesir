@@ -29,6 +29,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat ATK bonus contributed by this passive at the given level."
   @callback atk_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc "Returns the right-hand dual-wield damage rate percentage."
+  @callback right_hand_damage_rate(level :: pos_integer(), ctx()) :: integer()
+
+  @doc "Returns the left-hand dual-wield damage rate percentage."
+  @callback left_hand_damage_rate(level :: pos_integer(), ctx()) :: integer()
+
+  @doc "Returns the Katar secondary damage rate percentage."
+  @callback katar_secondary_rate(level :: pos_integer(), ctx()) :: integer()
+
   @doc "Returns a flat critical bonus in rAthena tenths contributed by this passive at the given level."
   @callback critical_bonus(level :: pos_integer(), ctx()) :: integer()
 
@@ -74,11 +83,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   Aggregated by `Skill.Passives.attack_procs/1` and queried in the normal-attack
   path. A `:multi_hit` value of `n` delivers the basic attack as `n` hits;
   `:chance` (1-100) is the percent chance the multi-hit rolls, defaulting to 100
-  (always) when absent.
+  (always) when absent. `:hit_bonus` applies only when the proc succeeds.
   """
   @callback attack_proc(level :: pos_integer(), ctx()) :: %{
               optional(:multi_hit) => pos_integer(),
-              optional(:chance) => 1..100
+              optional(:chance) => 1..100,
+              optional(:hit_bonus) => non_neg_integer()
             }
 
   @typedoc """
@@ -133,6 +143,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
             ) :: :none | {:apply_status, atom(), keyword()}
 
   @optional_callbacks atk_bonus: 2,
+                      right_hand_damage_rate: 2,
+                      left_hand_damage_rate: 2,
+                      katar_secondary_rate: 2,
                       critical_bonus: 2,
                       flee_bonus: 2,
                       dex_bonus: 2,
