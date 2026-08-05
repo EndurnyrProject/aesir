@@ -88,6 +88,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
 
       @skill_definition Aesir.ZoneServer.Mmo.Skill.Definition.build!(opts, __MODULE__)
 
+      # Whether this module explicitly passed `requires:` (vs relying on the default).
+      # Recorded at compile time so the mob-skill requirement manifest can detect a
+      # missing annotation robustly (no runtime source inspection, Mimic-safe).
+      @requires_declared Keyword.has_key?(opts, :requires)
+
+      @doc false
+      def __requires_declared__, do: @requires_declared
+
       @doc false
       def skill_name, do: @skill_definition.name
 

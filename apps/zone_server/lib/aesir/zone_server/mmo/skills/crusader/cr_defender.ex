@@ -10,6 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 257,
     name: :cr_defender,
+    # Caster-generic: has an explicit `validate(%MobState{})` clause and a generic
+    # `cast/4`, so a mob casts it fine (shield check is player-only). Not denylisted.
+    requires: [],
     status: :sc_defender,
     display_name: "Defending Aura",
     max_level: 5,
