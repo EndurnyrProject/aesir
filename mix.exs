@@ -4,7 +4,7 @@ defmodule Aesir.MixProject do
   def project do
     [
       apps_path: "apps",
-      version: "0.11.0",
+      version: "0.12.0",
       start_permanent: Mix.env() == :prod,
       dialyzer: dialyzer(),
       deps: deps(),
