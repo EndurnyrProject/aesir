@@ -17,9 +17,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -94,7 +96,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     attacker = combatant(1001, :player)
     target = combatant(2001, :mob)
 
-    player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+    player_state =
+      PlayerStateFixture.build(%{
+        character_id: 1001,
+        x: 150,
+        y: 150,
+        map_name: "prontera",
+        stats: %{
+          combat_stats: Map.merge(attacker.combat_stats, %{critical: 0, passive_atk: 0}),
+          derived_stats: %{aspd: 150}
+        }
+      })
+
     target_state = living_mob_state(target, 150, 150)
 
     stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
@@ -104,11 +117,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       {:ok, %{damage: 50, is_critical: false}}
     end)
 
+    stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Passives, :attack_procs, fn _player -> %{} end)
     stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
 
-    %{attacker: attacker, player_state: player_state}
+    %{attacker: player_state.stats, player_state: player_state}
   end
 
   describe "execute_attack/3 confirmed ordinary hits" do
@@ -127,7 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
         assert :ok = Combat.execute_attack(attacker, player_state, 2001)
       end)
 
-      assert_received {:after_normal_hit, %FakeUnit{},
+      assert_received {:after_normal_hit, %PlayerState{},
                        %{target_type: :mob, target_id: 2001, position: {150, 150}}}
 
       refute_received {:after_normal_hit, _, _}
@@ -136,7 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     test "a multi-hit swing still dispatches exactly once",
          %{attacker: attacker, player_state: player_state} do
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-      expect(MobSession, :apply_damage, 2, fn _pid, _damage, _attacker_id -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
       expect(Passives, :after_normal_hit, fn _player, _hit -> :ok end)
 
       capture_log(fn ->
@@ -185,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       expect(MobSession, :apply_damage, fn _pid, 75, _attacker_id -> :ok end)
       reject(&Passives.after_normal_hit/2)
 
-      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 500}} =
+      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 1_000}} =
                Combat.execute_attack(attacker, player_state, 2001)
     end
 

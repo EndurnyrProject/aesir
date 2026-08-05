@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
@@ -133,18 +134,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        ) do
     case Passives.attack_replacement(player_state) do
       :normal ->
-        with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
-          resolve_player_attack(
-            combat_result,
-            player_state,
-            target_state,
-            attacker,
-            target,
-            target_pid,
-            target_type,
-            target_id
-          )
-        end
+        calculate_player_normal_attack(
+          player_state,
+          target_state,
+          attacker,
+          target,
+          target_pid,
+          target_type,
+          target_id
+        )
 
       {:skill_attack, opts, next_stage} ->
         with :ok <-
@@ -157,6 +155,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
                ) do
           {:ok, {:combo, next_stage, {target_type, target_id}, max(attacker.attack_delay_ms, 1)}}
         end
+    end
+  end
+
+  defp calculate_player_normal_attack(
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       )
+       when target_type in [:homunculus, :skill_unit] do
+    with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+      resolve_player_attack(
+        combat_result,
+        player_state,
+        target_state,
+        attacker,
+        target,
+        target_pid,
+        target_type,
+        target_id
+      )
+    end
+  end
+
+  defp calculate_player_normal_attack(
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    with {:ok, swing} <- HandedAttack.calculate(player_state, attacker, target) do
+      resolve_player_weapon_swing(
+        swing,
+        player_state,
+        target_state,
+        attacker,
+        target,
+        target_pid,
+        target_type,
+        target_id
+      )
     end
   end
 
@@ -423,20 +468,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   defp resolve_player_attack(
          {:hit, damage_result},
-         _player_state,
-         _target_state,
-         attacker,
-         target,
-         target_pid,
-         :player,
-         target_id
-       ) do
-    handle_player_attack_hit(damage_result, attacker, target, target_pid, :player, target_id, 1)
-    :ok
-  end
-
-  defp resolve_player_attack(
-         {:hit, damage_result},
          player_state,
          target_state,
          attacker,
@@ -445,8 +476,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
-    hits = attack_hits(player_state)
-
     with :ok <-
            handle_player_attack_hit(
              damage_result,
@@ -455,13 +484,129 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              target_pid,
              target_type,
              target_id,
-             hits
+             1
            ) do
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
-      dispatch_dealt_damage(attacker, target_type, target_id, damage_result)
+
+      dispatch_dealt_damage(
+        attacker,
+        target_type,
+        target_id,
+        damage_result.damage,
+        attacker.weapon.element
+      )
+
       OnHitEffects.after_hit(attacker, target, damage_result)
-      drain_hp(attacker, dealt_damage(damage_result.damage, target_type, hits))
+      drain_hp(attacker, damage_result.damage)
+      splash_attack(attacker, target)
+      :ok
+    end
+  end
+
+  defp resolve_player_weapon_swing(
+         %HandedAttack{outcome: :miss},
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    resolve_player_attack(
+      {:miss},
+      player_state,
+      target_state,
+      attacker,
+      target,
+      target_pid,
+      target_type,
+      target_id
+    )
+  end
+
+  defp resolve_player_weapon_swing(
+         %HandedAttack{outcome: :perfect_dodge},
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    resolve_player_attack(
+      {:perfect_dodge},
+      player_state,
+      target_state,
+      attacker,
+      target,
+      target_pid,
+      target_type,
+      target_id
+    )
+  end
+
+  defp resolve_player_weapon_swing(
+         %HandedAttack{},
+         _player_state,
+         _target_state,
+         attacker,
+         _target,
+         _target_pid,
+         :player,
+         target_id
+       ) do
+    Logger.warning("PvP combat not yet implemented for #{attacker.unit_id} against #{target_id}")
+    :ok
+  end
+
+  defp resolve_player_weapon_swing(
+         %HandedAttack{} = swing,
+         player_state,
+         target_state,
+         attacker,
+         target,
+         target_pid,
+         target_type,
+         target_id
+       ) do
+    hit_info = %{
+      dmg_type: :physical,
+      is_short: true,
+      element: swing.primary_element,
+      skill_id: nil,
+      skill_level: nil,
+      from_caster?: true
+    }
+
+    source = player_damage_source(target_type, attacker.unit_id)
+
+    {settled, delivery} =
+      DamageApplication.apply_weapon_swing(
+        target_type,
+        target_pid,
+        target_id,
+        swing,
+        hit_info,
+        source
+      )
+
+    with :ok <- delivery do
+      DamageApplication.broadcast_nearby(
+        target,
+        PacketFactory.build_weapon_swing_packet(attacker, target, settled)
+      )
+
+      damage = settled_damage(settled)
+      damage_result = %{damage: damage, is_critical: settled.outcome == :critical}
+
+      dispatch_normal_hit_passives(player_state, target_type, target_id, target)
+      roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+      dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
+      OnHitEffects.after_hit(attacker, target, damage_result)
+      drain_hp(attacker, damage)
       splash_attack(attacker, target)
       :ok
     end
@@ -491,12 +636,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   # The heal is a broadcast to the attacker's own session rather than a direct
   # state write: `execute_attack/3` runs inside that session, so it lands as an
   # ordinary message the single writer applies after the current one.
-  # Only the mob path delivers the multi-hit; a skill unit takes a single hit
-  # whatever the proc rolled, so the drain always reads the damage that actually
-  # landed.
-  defp dealt_damage(damage, :mob, hits), do: damage * hits
-  defp dealt_damage(damage, _target_type, _hits), do: damage
-
   defp drain_hp(attacker, damage) do
     case HpDrain.roll(attacker, damage) do
       0 -> :ok
@@ -603,13 +742,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   #
   # Skill units are excluded: they are not living targets and hold no state a
   # proc could act on (rAthena procs autospell against `bl` units only).
-  defp dispatch_dealt_damage(_attacker, :skill_unit, _target_id, _damage_result), do: :ok
+  defp dispatch_dealt_damage(_attacker, :skill_unit, _target_id, _damage, _element), do: :ok
 
-  defp dispatch_dealt_damage(attacker, target_type, target_id, damage_result) do
+  defp dispatch_dealt_damage(attacker, target_type, target_id, damage, element) do
     hit_info = %{
       target: {target_type, target_id},
-      damage: damage_result.damage,
-      element: attacker.weapon.element
+      damage: damage,
+      element: element
     }
 
     :player
@@ -634,21 +773,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :error ->
         raise "auto-cast of unknown skill #{inspect(skill_name)} at level #{level}: " <>
                 "a status named a skill absent from the catalog"
-    end
-  end
-
-  # The number of basic-attack hits to deliver, driven by passive procs (e.g.
-  # Double Attack's `%{multi_hit: 2, chance: 7 * level}`). The proc's `:chance`
-  # (default 100 when absent) is rolled out of 100 before the multi-hit is
-  # delivered; a failed roll (or no proc) delivers a single hit.
-  defp attack_hits(player_state) do
-    case Passives.attack_procs(player_state) do
-      %{multi_hit: n} = proc when n > 1 ->
-        chance = Map.get(proc, :chance, 100)
-        if :rand.uniform(100) <= chance, do: n, else: 1
-
-      _ ->
-        1
     end
   end
 
@@ -966,6 +1090,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     do: TargetResolver.ensure_targetable(target_state, :homunculus)
 
   defp ensure_mob_targetable(_target_state, :player), do: :ok
+
+  defp settled_damage(%HandedAttack{primary: primary, secondary: nil}), do: primary.damage
+
+  defp settled_damage(%HandedAttack{primary: primary, secondary: secondary}),
+    do: primary.damage + secondary.damage
+
+  defp player_damage_source(:homunculus, attacker_id), do: {:player, attacker_id}
+  defp player_damage_source(_target_type, attacker_id), do: attacker_id
 
   defp mob_damage_source(:homunculus, attacker_id), do: {:mob, attacker_id}
   defp mob_damage_source(_target_type, attacker_id), do: attacker_id

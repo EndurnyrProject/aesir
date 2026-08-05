@@ -5,7 +5,66 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
+  alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
+
+  describe "build_weapon_swing_packet/3" do
+    test "publishes one settled primary component" do
+      attacker = CombatTestHelper.create_player_combatant(attack_delay_ms: 500)
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert %DamageDealt{damage: 100, damage2: 0, div: 1, type: 0} =
+               PacketFactory.build_weapon_swing_packet(attacker, defender, swing(100))
+    end
+
+    test "publishes dual-dagger components without turning them into divisions" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert %DamageDealt{damage: 100, damage2: 40, div: 1, type: 0} =
+               PacketFactory.build_weapon_swing_packet(
+                 attacker,
+                 defender,
+                 swing(100, secondary: 40)
+               )
+    end
+
+    test "publishes the derived Katar secondary in damage2" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert %DamageDealt{damage: 100, damage2: 21, div: 1, type: 0} =
+               PacketFactory.build_weapon_swing_packet(
+                 attacker,
+                 defender,
+                 swing(100, secondary: 21)
+               )
+    end
+
+    test "uses div only for Double Attack presentation" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert %DamageDealt{damage: 100, damage2: 0, div: 2, type: 4} =
+               PacketFactory.build_weapon_swing_packet(
+                 attacker,
+                 defender,
+                 swing(100, divisions: 2)
+               )
+    end
+
+    test "retains the critical attack type for a critical swing" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert %DamageDealt{damage: 200, damage2: 20, div: 1, type: 8} =
+               PacketFactory.build_weapon_swing_packet(
+                 attacker,
+                 defender,
+                 swing(200, secondary: 20, outcome: :critical)
+               )
+    end
+  end
 
   describe "src_speed / src_delay carry the attacker's attack cadence" do
     setup do
@@ -74,6 +133,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
                PacketFactory.build_perfect_dodge_packet(attacker, defender)
     end
   end
+
+  defp swing(primary_damage, opts \\ []) do
+    secondary_damage = Keyword.get(opts, :secondary)
+    outcome = Keyword.get(opts, :outcome, :hit)
+
+    %HandedAttack{
+      primary: %{damage: primary_damage, is_critical: outcome == :critical},
+      secondary:
+        if(secondary_damage,
+          do: %{damage: secondary_damage, is_critical: outcome == :critical}
+        ),
+      raw_total: primary_damage + secondary_damage(secondary_damage),
+      display_divisions: Keyword.get(opts, :divisions, 1),
+      outcome: outcome,
+      primary_element: :neutral
+    }
+  end
+
+  defp secondary_damage(nil), do: 0
+  defp secondary_damage(damage), do: damage
 
   describe "attack speed is no longer inverted" do
     test "a higher-ASPD attacker emits a smaller src_speed than a lower-ASPD one" do

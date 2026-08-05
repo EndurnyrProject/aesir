@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
 
   # e_damage_type: single-hit skill display (rAthena DMG_SINGLE).
   @dmg_single 6
@@ -106,6 +107,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       div: hits,
       type: @attack_type_multi_hit,
       damage2: 0,
+      is_sp_damage: false
+    }
+  end
+
+  @doc "Builds one authoritative packet for a settled ordinary weapon swing."
+  @spec build_weapon_swing_packet(Combatant.t(), Combatant.t(), HandedAttack.t()) ::
+          DamageDealt.t()
+  def build_weapon_swing_packet(attacker, defender, %HandedAttack{} = swing) do
+    %DamageDealt{
+      src_id: attacker.unit_id,
+      target_id: defender.unit_id,
+      server_tick: ServerTick.now(),
+      src_speed: attacker.attack_delay_ms,
+      dmg_speed: 500,
+      damage: swing.primary.damage,
+      div: swing.display_divisions,
+      type: weapon_swing_type(swing),
+      damage2: secondary_damage(swing.secondary),
       is_sp_damage: false
     }
   end
@@ -251,6 +270,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       is_sp_damage: false
     }
   end
+
+  defp weapon_swing_type(%HandedAttack{outcome: :critical}), do: @attack_type_critical
+
+  defp weapon_swing_type(%HandedAttack{display_divisions: divisions}) when divisions > 1,
+    do: @attack_type_multi_hit
+
+  defp weapon_swing_type(%HandedAttack{}), do: @attack_type_normal
+
+  defp secondary_damage(nil), do: 0
+  defp secondary_damage(secondary), do: secondary.damage
 
   @doc """
   Creates packets for any combat result type.

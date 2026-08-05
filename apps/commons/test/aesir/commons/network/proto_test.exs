@@ -923,7 +923,29 @@ defmodule Aesir.Commons.Network.ProtoTest do
              Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
-  test "damage_dealt preserves negative sint32 damage through envelope oneof" do
+  test "damage_dealt retains primary, presentation-division, and secondary field numbers" do
+    fields = DamageDealt.schema().fields
+
+    assert fields.damage.tag == 6
+    assert fields.div.tag == 7
+    assert fields.damage2.tag == 9
+
+    assert Map.keys(fields) |> Enum.sort() ==
+             [
+               :damage,
+               :damage2,
+               :div,
+               :dmg_speed,
+               :is_sp_damage,
+               :server_tick,
+               :src_id,
+               :src_speed,
+               :target_id,
+               :type
+             ]
+  end
+
+  test "damage_dealt preserves explicit signed nonzero components through envelope oneof" do
     env = %Envelope{
       body:
         {:damage_dealt,

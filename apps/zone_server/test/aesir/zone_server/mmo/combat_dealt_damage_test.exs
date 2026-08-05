@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -61,13 +62,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
     def on_dealt_damage(_target, instance, hit_info, _context) do
       {:ok, instance, [{:auto_cast, :sa_not_a_real_skill, 1, hit_info.target}]}
     end
-  end
-
-  defmodule FakeUnit do
-    @moduledoc false
-    defstruct [:combatant, :stats, :x, :y]
-
-    def to_combatant(%__MODULE__{combatant: combatant}), do: combatant
   end
 
   setup :set_mimic_from_context
@@ -137,11 +131,18 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
         map_name: @map_name
       })
 
-    player_state = %PlayerState{
-      character_id: @attacker_id,
-      action_state: :idle,
-      stats: %{current_state: %{hp: 100}}
-    }
+    player_state =
+      PlayerStateFixture.build(%{
+        character_id: @attacker_id,
+        x: 150,
+        y: 150,
+        map_name: @map_name,
+        stats: %{
+          combat_stats: Map.merge(attacker.combat_stats, %{critical: 0, passive_atk: 0}),
+          derived_stats: %{aspd: 150},
+          modifiers: %{equipment: %{atk_ele: :fire}}
+        }
+      })
 
     Mimic.copy(MobState)
     stub(MobState, :to_combatant, fn ^target_state -> target end)
@@ -175,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
 
     stub_unit_info()
 
-    %{player_state: %FakeUnit{combatant: attacker, x: 150, y: 150}, stats: attacker}
+    %{player_state: player_state, stats: player_state.stats}
   end
 
   defp arm_proc_status do
@@ -219,7 +220,6 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
       assert :ok = Combat.execute_attack(ctx.stats, ctx.player_state, @mob_id)
 
       assert [
-               {:damage_applied, 50},
                {:damage_applied, 50},
                {:hook_ran, _pid, _target, _hit_info},
                {:"$gen_cast", {:skill, {:auto_cast, @bolt_id, 3, {:mob, @mob_id}}}}

@@ -629,8 +629,13 @@ message ActionRequest {
   uint32 action = 2;
 }
 
-// Server -> client, basic-attack damage result (replaces RO ZC_NOTIFY_ACT 0x08C8).
-// `damage`/`damage2` are signed so negative (heal-as-damage) values survive.
+// Server -> client, one authoritative basic-attack result (replaces RO ZC_NOTIFY_ACT 0x08C8).
+// `damage` is the settled primary/right-hand aggregate; `damage2` is the settled
+// left-hand or Katar secondary aggregate, or zero when absent. Their sum is the
+// target HP mutation; a Devotion reroute instead zeroes both on the devotee packet
+// while applying the raw aggregate once to the linked Crusader. Both are signed so
+// negative (heal-as-damage) values survive. `div` is presentation-only: the number
+// of equal visual hits for a multi-hit swing, not components or HP mutations.
 message DamageDealt {
   uint32 src_id = 1;
   uint32 target_id = 2;

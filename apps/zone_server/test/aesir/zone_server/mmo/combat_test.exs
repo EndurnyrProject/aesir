@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.HpDrain
+  alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -18,7 +20,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -63,6 +73,52 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     })
   end
 
+  defp dual_dagger_player, do: dagger_player(40)
+
+  defp dagger_player(left_base_atk \\ nil) do
+    stats = %PlayerStats{
+      base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 200, luk: 1},
+      derived_stats: %DerivedStats{max_hp: 100, max_sp: 100, aspd: 150},
+      combat_stats: %CombatStats{
+        atk: 180,
+        def: 0,
+        hit: 200,
+        flee: 0,
+        critical: 0,
+        perfect_dodge: 0,
+        passive_atk: 0
+      },
+      current_state: %CurrentState{hp: 100, sp: 100},
+      progression: %PlayerProgression{base_level: 50, job_level: 30, learned_skills: %{}},
+      equipment: %Equipment{},
+      right_hand: weapon_hand(:right_hand, 100),
+      left_hand: if(left_base_atk, do: weapon_hand(:left_hand, left_base_atk))
+    }
+
+    state = %PlayerState{
+      character_id: 1001,
+      x: 150,
+      y: 150,
+      map_name: "prontera",
+      action_state: :idle,
+      stats: stats
+    }
+
+    {stats, state}
+  end
+
+  defp weapon_hand(slot, base_atk) do
+    %WeaponHand{
+      item_id: 1201,
+      subtype: :dagger,
+      element: :neutral,
+      base_atk: base_atk,
+      refine_atk: 0,
+      overrefine_band: 0,
+      slot: slot
+    }
+  end
+
   defp living_mob_state(combatant, x, y) do
     Mimic.copy(MobState)
 
@@ -104,24 +160,81 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
+  describe "execute_attack/3 handed weapon swings" do
+    test "settles dual components once and publishes their one HP mutation" do
+      test_pid = self()
+      {stats, player_state} = dual_dagger_player()
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+      stub(Passives, :right_hand_damage_rate, fn _player -> 100 end)
+      stub(Passives, :left_hand_damage_rate, fn _player -> 100 end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(DamageCalculator, :calculate_secondary_hand_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 140, hit_info ->
+        assert hit_info.components == [
+                 {:primary, 100, :neutral},
+                 {:secondary, 40, :neutral}
+               ]
+
+        100
+      end)
+
+      Mimic.copy(OnHitEffects)
+      Mimic.copy(HpDrain)
+
+      expect(MobSession, :apply_damage, fn _pid, 100, 1001 -> :ok end)
+      expect(Passives, :after_normal_hit, fn ^player_state, _hit -> :ok end)
+      expect(EquipBreak, :resolve, fn ^stats, {:mob, ^target_state} -> [] end)
+      expect(StatusInterpreter, :on_dealt_damage, fn :player, 1001, _hit -> [] end)
+      expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 100} -> :ok end)
+      expect(HpDrain, :roll, fn _attacker, 100 -> 0 end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 2001)
+      end)
+
+      assert_received {:packet, %DamageDealt{damage: 72, damage2: 28, div: 1}}
+      refute_received {:packet, %DamageDealt{}}
+    end
+  end
+
   describe "execute_attack/3 multi-hit procs" do
     setup do
-      attacker = combatant(1001, :player)
+      {stats, player_state} = dagger_player()
       target = combatant(2001, :mob)
-
-      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
       target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
 
-      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
         {:ok, %{damage: 50, is_critical: false}}
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
-      %{player_state: player_state, stats: attacker, target: target, target_state: target_state}
+      %{player_state: player_state, stats: stats, target: target, target_state: target_state}
     end
 
     test "an intercepting target status ends the swing with no damage before Trifecta" do
@@ -148,13 +261,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                        }}
     end
 
-    test "applies damage twice and the broadcast packet reflects 2 hits when multi_hit: 2",
+    test "applies one aggregate mutation for a two-division Double Attack",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
 
-      expect(MobSession, :apply_damage, 2, fn _pid, damage, _attacker_id ->
+      expect(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)
@@ -164,7 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       assert_received {:damage_applied, 50}
-      assert_received {:damage_applied, 50}
+      refute_received {:damage_applied, _}
     end
 
     test "the broadcast packet carries div 2 and the multi-hit type when multi_hit: 2",
@@ -185,26 +298,17 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       assert_received {:packet, %DamageDealt{} = packet}
       assert packet.div == 2
-      assert packet.damage == 100
+      assert packet.damage == 50
+      assert packet.damage2 == 0
       assert packet.type == 4
     end
 
-    test "a consuming pre-delivery modifier doubles only the first multi-hit packet and HP loss",
+    test "a consuming pre-delivery modifier sees Double Attack once",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-
-      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, 2001, 50, _hit_info ->
-        case Process.get(:lex_aeterna_hit, 0) do
-          0 ->
-            Process.put(:lex_aeterna_hit, 1)
-            100
-
-          1 ->
-            50
-        end
-      end)
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, _hit_info -> 100 end)
 
       stub(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
         send(test_pid, {:damage_applied, damage})
@@ -221,17 +325,17 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       assert_received {:damage_applied, 100}
-      assert_received {:damage_applied, 50}
-      assert_received {:packet, %DamageDealt{damage: 100, div: 1}}
-      assert_received {:packet, %DamageDealt{damage: 50, div: 1}}
+      refute_received {:damage_applied, _}
+      assert_received {:packet, %DamageDealt{damage: 100, damage2: 0, div: 2}}
+      refute_received {:packet, %DamageDealt{}}
     end
 
-    test "equal modified multi-hits retain their combined packet",
+    test "a fully absorbed Double Attack retains divisions with zero components",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
 
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
-      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, 2001, 50, _hit_info -> 100 end)
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, _hit_info -> 0 end)
       stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
@@ -243,7 +347,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 2001) == :ok
       end)
 
-      assert_received {:packet, %DamageDealt{damage: 200, div: 2, type: 4}}
+      assert_received {:packet, %DamageDealt{damage: 0, damage2: 0, div: 2, type: 4}}
       refute_received {:packet, %DamageDealt{div: 1}}
     end
 
@@ -283,7 +387,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       :rand.seed(:exsss, {1, 2, 3})
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2, chance: 50} end)
 
-      expect(MobSession, :apply_damage, 2, fn _pid, damage, _attacker_id ->
+      expect(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)
@@ -293,7 +397,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       assert_received {:damage_applied, 50}
-      assert_received {:damage_applied, 50}
+      refute_received {:damage_applied, _}
     end
 
     test "rolls the proc's :chance and delivers a single hit when it fails",
@@ -346,7 +450,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
-      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 500}} =
+      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 1_000}} =
                Combat.execute_attack(stats, player_state, 2001)
 
       assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 75}}
@@ -389,7 +493,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
-      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 500}} =
+      assert {:ok, {:combo, :quadruple, {:mob, 2001}, 1_000}} =
                Combat.execute_attack(stats, player_state, 2001)
 
       assert_received {:packet, %SkillDamage{skill_id: 263, div: 3, damage: 0}}
@@ -412,7 +516,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
 
-      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
         {:ok, %{damage: 50, is_critical: false}}
       end)
 
@@ -478,16 +582,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
   describe "execute_attack/3 equipment breaks" do
     setup do
-      attacker = combatant(1001, :player)
+      {stats, player_state} = dagger_player()
       target = combatant(2001, :mob)
-
-      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
       target_state = living_mob_state(target, 150, 150)
 
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
 
-      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
         {:ok, %{damage: 50, is_critical: false}}
       end)
 
@@ -495,7 +597,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(Passives, :attack_procs, fn _player -> %{} end)
       stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
 
-      %{player_state: player_state, stats: attacker, target_state: target_state}
+      %{player_state: player_state, stats: stats, target_state: target_state}
     end
 
     test "a {:self, :weapon} decision casts {:break_equip, :right_hand} to the attacker session",
@@ -517,7 +619,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
       stub(EquipBreak, :resolve, fn _attacker, _target -> [{:self, :weapon}] end)
 
-      expect(MobSession, :apply_damage, 2, fn _pid, damage, _attacker_id ->
+      expect(MobSession, :apply_damage, fn _pid, damage, _attacker_id ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)
@@ -527,7 +629,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       assert_received {:damage_applied, 50}
-      assert_received {:damage_applied, 50}
+      refute_received {:damage_applied, _}
       assert_received {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}
       refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
     end
@@ -583,19 +685,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     test "a player target is not rolled for breaks while PvP is unimplemented",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
-      target = combatant(3001, :player)
-
-      target_state = %PlayerState{
-        character_id: 3001,
-        action_state: :idle,
-        x: 150,
-        y: 150,
-        map_name: "prontera",
-        stats: %{current_state: %{hp: 100}}
-      }
-
-      Mimic.copy(PlayerState)
-      stub(PlayerState, :to_combatant, fn ^target_state -> target end)
+      target_state = %{player_state | character_id: 3001}
 
       stub(UnitRegistry, :get_unit, fn
         :mob, 3001 -> {:error, :not_found}
@@ -1120,7 +1210,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
       stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
 
-      stub(DamageCalculator, :calculate_damage, fn _a, _d ->
+      stub(DamageCalculator, :calculate_damage, fn _a, _d, _opts ->
         {:ok, %{damage: 50, is_critical: false}}
       end)
 
