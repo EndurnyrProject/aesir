@@ -163,30 +163,62 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     with %{module: module} when not is_nil(module) <- Registry.get_definition(status_id),
          %StatusEntry{generation: ^expected_generation} = instance <-
            StatusStorage.get_status(unit_type, unit_id, status_id) do
-      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
-
-      case module.on_tick({unit_type, unit_id}, instance, context) do
-        {:ok, new_instance} ->
-          store_instance_changes_if_current(
+      case UnitRegistry.get_unit_info(unit_type, unit_id) do
+        {:ok, %{stats: target_stats}} when not is_nil(target_stats) ->
+          process_current_exact_tick(
+            module,
             unit_type,
             unit_id,
             status_id,
             expected_generation,
-            new_instance
+            instance,
+            target_stats
           )
 
-          :continue
+        unexpected ->
+          Logger.warning(
+            "Stopping exact tick for #{status_id}: invalid #{unit_type} #{unit_id} lookup #{inspect(unexpected)}"
+          )
 
-        :remove ->
-          expire_status_if_current(unit_type, unit_id, status_id, instance)
-          :stop
-
-        {:error, reason} ->
-          Logger.warning("Status #{status_id} exact on_tick failed: #{inspect(reason)}")
+          StatusStorage.remove_status_if_current(unit_type, unit_id, status_id, instance)
           :stop
       end
     else
       _ -> :stop
+    end
+  end
+
+  defp process_current_exact_tick(
+         module,
+         unit_type,
+         unit_id,
+         status_id,
+         expected_generation,
+         instance,
+         target_stats
+       ) do
+    context =
+      ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance, target_stats)
+
+    case module.on_tick({unit_type, unit_id}, instance, context) do
+      {:ok, new_instance} ->
+        store_instance_changes_if_current(
+          unit_type,
+          unit_id,
+          status_id,
+          expected_generation,
+          new_instance
+        )
+
+        :continue
+
+      :remove ->
+        expire_status_if_current(unit_type, unit_id, status_id, instance)
+        :stop
+
+      {:error, reason} ->
+        Logger.warning("Status #{status_id} exact on_tick failed: #{inspect(reason)}")
+        :stop
     end
   end
 

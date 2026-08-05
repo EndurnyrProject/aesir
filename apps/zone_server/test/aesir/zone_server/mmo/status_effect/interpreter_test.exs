@@ -465,6 +465,70 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       refute_receive {:exact_tick, _}
     end
+
+    @tag :capture_log
+    test "an unexpected target lookup error removes the current generation and stops" do
+      target_id = 7_608
+      setup_player_mock(target_id)
+      Registry.register_module(ExactTickStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), ticks: 0}
+        )
+
+      generation = StatusStorage.get_status(:player, target_id, :sc_test_exact_tick).generation
+      stub(UnitRegistry, :get_unit_info, fn :player, ^target_id -> {:error, :unavailable} end)
+
+      assert :stop =
+               Interpreter.process_tick_if_current(
+                 :player,
+                 target_id,
+                 :sc_test_exact_tick,
+                 generation
+               )
+
+      refute_receive {:exact_tick, _}
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_exact_tick)
+    end
+
+    @tag :capture_log
+    test "an unexpected target shape stops without removing a replacement generation" do
+      target_id = 7_608
+      setup_player_mock(target_id)
+      Registry.register_module(ExactTickStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+          state: %{observer: self(), ticks: 0}
+        )
+
+      entry = StatusStorage.get_status(:player, target_id, :sc_test_exact_tick)
+
+      stub(UnitRegistry, :get_unit_info, fn :player, ^target_id ->
+        :ok =
+          StatusStorage.apply_status(:player, target_id, :sc_test_exact_tick,
+            state: %{observer: self(), ticks: 10}
+          )
+
+        {:ok, %{stats: nil}}
+      end)
+
+      assert :stop =
+               Interpreter.process_tick_if_current(
+                 :player,
+                 target_id,
+                 :sc_test_exact_tick,
+                 entry.generation
+               )
+
+      refute_receive {:exact_tick, _}
+
+      assert %{generation: generation, state: %{ticks: 10}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_exact_tick)
+
+      assert generation > entry.generation
+    end
   end
 
   describe "mob status application notification" do

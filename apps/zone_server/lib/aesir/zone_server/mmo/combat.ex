@@ -71,6 +71,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   defdelegate execute_splash_attack(caster_state, center, radius, opts), to: SkillAttack
 
+  @doc "Executes Venom Splasher's forced-hit splash without attacker cardfix."
+  defdelegate execute_forced_no_card_splash(caster_state, center, radius, opts), to: SkillAttack
+
   @doc """
   Executes a line skill against the primary target plus every offensive
   target standing on the straight line of cells between the caster and it.
