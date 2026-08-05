@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotector do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 288,
     name: :sa_landprotector,
+    requires: [],
     display_name: "Land Protector",
     max_level: 5,
     target_type: :ground,

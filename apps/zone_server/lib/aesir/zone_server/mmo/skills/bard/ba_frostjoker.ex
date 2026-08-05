@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 318,
     name: :ba_frostjoker,
+    requires: [],
     display_name: "Frost Joker",
     max_level: 5,
     target_type: :self,

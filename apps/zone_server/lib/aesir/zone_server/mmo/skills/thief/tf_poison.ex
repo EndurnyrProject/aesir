@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoison do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 52,
     name: :tf_poison,
+    requires: [],
     display_name: "Envenom",
     max_level: 10,
     target_type: :target_enemy,

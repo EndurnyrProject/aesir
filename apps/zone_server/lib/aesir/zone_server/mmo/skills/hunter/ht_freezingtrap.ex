@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 121,
     name: :ht_freezingtrap,
+    requires: [],
     display_name: "Freezing Trap",
     max_level: 5,
     target_type: :ground,

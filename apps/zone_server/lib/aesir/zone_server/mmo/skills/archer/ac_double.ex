@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcDouble do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 46,
     name: :ac_double,
+    requires: [],
     display_name: "Double Strafe",
     max_level: 10,
     target_type: :target_enemy,

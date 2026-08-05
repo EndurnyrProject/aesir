@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 119,
     name: :ht_sandman,
+    requires: [],
     display_name: "Sandman",
     max_level: 5,
     target_type: :ground,

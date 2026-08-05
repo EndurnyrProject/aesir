@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 277,
     name: :sa_spellbreaker,
+    requires: [],
     display_name: "Spell Breaker",
     max_level: 5,
     target_type: :target_enemy,

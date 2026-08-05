@@ -4,9 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
   area after a one-second delay without dealing damage.
   """
 
+  # Denylist gap: this player-only cast crashes when invoked by a mob.
   use Aesir.ZoneServer.Mmo.Skill,
     id: 110,
     name: :bs_hammerfall,
+    requires: [:player_state],
     display_name: "Hammer Fall",
     max_level: 5,
     target_type: :ground,

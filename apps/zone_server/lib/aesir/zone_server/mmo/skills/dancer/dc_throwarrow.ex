@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcThrowarrow do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 324,
     name: :dc_throwarrow,
+    requires: [],
     display_name: "Throw Arrow",
     max_level: 5,
     target_type: :target_enemy,

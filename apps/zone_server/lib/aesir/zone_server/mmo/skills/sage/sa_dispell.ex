@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 289,
     name: :sa_dispell,
+    requires: [],
     display_name: "Dispell",
     max_level: 5,
     target_type: :target_any,

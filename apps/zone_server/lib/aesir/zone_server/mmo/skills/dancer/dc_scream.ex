@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 326,
     name: :dc_scream,
+    requires: [],
     display_name: "Dazzler",
     max_level: 5,
     target_type: :self,

@@ -4,9 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline do
   nearby party members wielding an axe or mace.
   """
 
+  # Denylist gap: this player-only cast crashes when invoked by a mob.
   use Aesir.ZoneServer.Mmo.Skill,
     id: 111,
     name: :bs_adrenaline,
+    requires: [:player_state],
     display_name: "Adrenaline Rush",
     max_level: 5,
     target_type: :self,

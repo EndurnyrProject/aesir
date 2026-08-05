@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCannibalize do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 232,
     name: :am_cannibalize,
+    requires: [],
     display_name: "Bio Cannibalize",
     max_level: 5,
     target_type: :ground,

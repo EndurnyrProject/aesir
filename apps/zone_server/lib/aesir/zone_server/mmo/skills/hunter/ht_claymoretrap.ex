@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 123,
     name: :ht_claymoretrap,
+    requires: [],
     display_name: "Claymore Trap",
     max_level: 5,
     target_type: :ground,

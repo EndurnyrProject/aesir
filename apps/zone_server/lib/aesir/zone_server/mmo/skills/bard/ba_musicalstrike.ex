@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 316,
     name: :ba_musicalstrike,
+    requires: [],
     display_name: "Musical Strike",
     max_level: 5,
     target_type: :target_enemy,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 122,
     name: :ht_blastmine,
+    requires: [],
     display_name: "Blast Mine",
     max_level: 5,
     target_type: :ground,

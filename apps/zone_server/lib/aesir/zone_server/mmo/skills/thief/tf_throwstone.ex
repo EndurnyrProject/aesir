@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 152,
     name: :tf_throwstone,
+    requires: [],
     display_name: "Stone Fling",
     max_level: 1,
     target_type: :target_enemy,

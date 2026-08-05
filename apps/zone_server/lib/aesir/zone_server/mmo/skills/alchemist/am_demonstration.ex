@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 229,
     name: :am_demonstration,
+    requires: [],
     display_name: "Demonstration",
     max_level: 5,
     target_type: :ground,

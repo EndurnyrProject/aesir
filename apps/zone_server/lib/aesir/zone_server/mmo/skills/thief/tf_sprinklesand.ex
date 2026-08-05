@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 149,
     name: :tf_sprinklesand,
+    requires: [],
     display_name: "Sand Attack",
     max_level: 1,
     target_type: :target_enemy,

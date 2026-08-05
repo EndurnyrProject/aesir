@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 120,
     name: :ht_flasher,
+    requires: [],
     display_name: "Flasher",
     max_level: 5,
     target_type: :ground,

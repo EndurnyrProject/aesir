@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBacksliding do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 150,
     name: :tf_backsliding,
+    requires: [:player_state],
     display_name: "Back Slide",
     max_level: 1,
     target_type: :self,

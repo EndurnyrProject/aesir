@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 116,
     name: :ht_landmine,
+    requires: [],
     display_name: "Land Mine",
     max_level: 5,
     target_type: :ground,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrap do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 115,
     name: :ht_skidtrap,
+    requires: [],
     display_name: "Skid Trap",
     max_level: 5,
     target_type: :ground,

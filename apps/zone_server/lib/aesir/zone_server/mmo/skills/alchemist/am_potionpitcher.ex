@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 231,
     name: :am_potionpitcher,
+    requires: [],
     display_name: "Potion Pitcher",
     max_level: 5,
     target_type: :target_ally,

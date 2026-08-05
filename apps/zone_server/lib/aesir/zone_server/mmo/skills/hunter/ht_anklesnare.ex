@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 117,
     name: :ht_anklesnare,
+    requires: [],
     display_name: "Ankle Snare",
     max_level: 5,
     target_type: :ground,

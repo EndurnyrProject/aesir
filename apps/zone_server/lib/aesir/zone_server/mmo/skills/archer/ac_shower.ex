@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 47,
     name: :ac_shower,
+    requires: [],
     display_name: "Arrow Shower",
     max_level: 10,
     target_type: :target_enemy,

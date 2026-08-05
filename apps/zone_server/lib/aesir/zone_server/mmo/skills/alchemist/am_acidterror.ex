@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 230,
     name: :am_acidterror,
+    requires: [],
     display_name: "Acid Terror",
     max_level: 5,
     target_type: :target_enemy,

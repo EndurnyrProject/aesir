@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammonite do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 42,
     name: :mc_mammonite,
+    requires: [],
     display_name: "Mammonite",
     max_level: 10,
     target_type: :target_enemy,

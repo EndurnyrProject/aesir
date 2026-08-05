@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 118,
     name: :ht_shockwave,
+    requires: [],
     display_name: "Shockwave Trap",
     max_level: 5,
     target_type: :ground,
