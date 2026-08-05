@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   @callback attack_range(state()) :: non_neg_integer()
   @callback broadcast_source(state()) ::
               integer() | {Aesir.ZoneServer.Unit.unit_type(), integer()}
+  @callback sp(state()) :: non_neg_integer()
+  @callback deduct_sp(state(), non_neg_integer()) :: state()
 
   @spec for(struct()) :: module()
   def for(%PlayerState{}), do: __MODULE__.Player

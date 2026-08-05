@@ -25,4 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Mob do
 
   @impl true
   def broadcast_source(%MobState{instance_id: instance_id}), do: {:mob, instance_id}
+
+  @impl true
+  def sp(%MobState{sp: sp}), do: sp
+
+  @impl true
+  def deduct_sp(%MobState{} = caster, amount), do: %{caster | sp: caster.sp - amount}
 end

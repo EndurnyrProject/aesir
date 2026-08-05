@@ -37,6 +37,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   def broadcast_source(%HomunculusState{world_gid: world_gid}), do: {:homunculus, world_gid}
 
   @impl true
+  def sp(%HomunculusState{sp: sp}), do: sp
+
+  @impl true
+  def deduct_sp(%HomunculusState{} = caster, amount), do: %{caster | sp: caster.sp - amount}
+
+  @impl true
   def knows?(caster, definition, level, _phase) do
     with {:ok, entry} <- homunculus_tree_entry(caster.class_id, definition.id),
          {:ok, species} <- homunculus_species(caster.class_id),

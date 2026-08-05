@@ -46,6 +46,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def broadcast_source(%PlayerState{character_id: character_id}), do: character_id
 
   @impl true
+  def sp(%PlayerState{stats: %{current_state: %{sp: sp}}}), do: sp
+
+  @impl true
+  def deduct_sp(%PlayerState{stats: stats} = caster, amount) do
+    current_state = %{stats.current_state | sp: stats.current_state.sp - amount}
+    %{caster | stats: %{stats | current_state: current_state}}
+  end
+
+  @impl true
   def knows?(caster, definition, level, :begin) do
     learned = caster.stats.progression.learned_skills
 

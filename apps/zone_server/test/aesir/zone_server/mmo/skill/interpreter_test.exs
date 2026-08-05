@@ -2509,6 +2509,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       :ok
     end
 
+    test "rejects a non-player caster" do
+      assert {:error, :unsupported_caster} =
+               Interpreter.item_cast(struct(HomunculusState), 6, 1, :self)
+    end
+
     test "casts a skill the player never learned" do
       assert {:ok, _updated} = Interpreter.item_cast(item_game_state(), 6, 1, :self)
     end

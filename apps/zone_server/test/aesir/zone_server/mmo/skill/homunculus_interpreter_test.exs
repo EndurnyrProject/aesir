@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifAvoid
   alias Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifBrain
@@ -29,6 +30,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
 
     @impl true
     def cast(_caster, _target, _level, _definition), do: {:ok, %{}}
+
+    @impl true
+    def validate(_caster, _target, _level, _definition), do: :ok
+  end
+
+  defmodule AutoCastProbeSkill do
+    @behaviour Aesir.ZoneServer.Mmo.Skill.Active
+
+    @impl true
+    def cast(caster, :self, 1, _definition) do
+      send(self(), {:auto_cast_sp, caster.sp})
+      {:ok, caster}
+    end
 
     @impl true
     def validate(_caster, _target, _level, _definition), do: :ok
@@ -63,6 +77,36 @@ defmodule Aesir.ZoneServer.Mmo.Skill.HomunculusInterpreterTest do
     assert HlifChange.definition().cooldown == [600_000, 900_000, 1_200_000]
     assert {:ok, %{id: 8_005, name: :hami_castle}} = Catalog.by_id(8_005)
     assert :error = Catalog.by_id(8_017)
+  end
+
+  test "auto-cast charges a Homunculus only two thirds SP and skips other requirements" do
+    definition = %Definition{
+      id: 9_999_901,
+      name: :auto_cast_probe,
+      display_name: "Auto Cast Probe",
+      max_level: 1,
+      target_type: :self,
+      damage_type: :no_damage,
+      requires: [:player_state, :inventory, :zeny],
+      sp_cost: [12],
+      zeny_cost: [100],
+      item_cost: [%{id: 716, amount: 1}],
+      requires_ammo: true
+    }
+
+    stub(Catalog, :by_id, fn
+      9_999_901 -> {:ok, definition}
+      other -> call_original(Catalog, :by_id, [other])
+    end)
+
+    stub(Catalog, :active_module_for, fn
+      :auto_cast_probe -> {:ok, AutoCastProbeSkill}
+      other -> call_original(Catalog, :active_module_for, [other])
+    end)
+
+    assert {:ok, updated} = Interpreter.auto_cast(homunculus(), definition.id, 1, :self)
+    assert updated.sp == 92
+    assert_received {:auto_cast_sp, 100}
   end
 
   test "Healing Touch returns the exact owner cost marker and owner-only heal" do

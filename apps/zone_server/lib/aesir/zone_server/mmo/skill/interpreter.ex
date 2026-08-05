@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   `auto_cast/4` and `item_cast/4` are narrow entry points for casts the player
   did not initiate (a status proc, an item's script); each documents exactly
-  which requirements it bypasses.
+  which requirements it bypasses. Status auto-casts accept every registered
+  caster and charge only SP. Item casts are player-only because item scripts
+  operate on player inventories.
   """
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.GroundSkill
@@ -158,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # instant as a combo follow-up). Skills without the callback take the
   # definition unchanged, so their timing is byte-identical to the default path.
   @spec cast_timing_definition(
-          PlayerState.t(),
+          Active.caster(),
           module(),
           Active.target(),
           pos_integer(),
@@ -398,15 +400,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   @doc """
-  Runs a status-driven auto-cast: the restricted entry SA_AUTOSPELL's proc uses.
+  Runs a status-driven auto-cast for any caster registered with `Caster.for/1`.
 
-  Deliberately not `complete_cast/4`. rAthena's proc jumps straight to
-  `skill_castend_*` (battle.cpp:7502-7526) and so skips everything a player cast
-  earns: no cast time, no learned/range/cooldown/act-delay check, no catalyst or
-  ammo consumption, and no cooldown written. What it keeps is the SP charge -
-  fixed at 2/3 of the bolt's raw cost, with `skill_get_sp` read straight from the
-  db, so caster `sp_cost_rate` sources deliberately do not apply - and the bolt's
-  aftercast delay.
+  Deliberately not `complete_cast/4`. The proc jumps straight to skill execution
+  and skips ordinary cast requirements: no cast time, learned/range/cooldown or
+  act-delay check, catalyst/ammo/zeny validation or consumption, and no cooldown
+  written. It charges only SP, fixed at 2/3 of the skill's raw database cost, so
+  caster `sp_cost_rate` sources deliberately do not apply. Players also receive
+  the skill's aftercast delay; casters without player act-delay state do not.
 
   Insufficient SP returns `{:error, :insufficient_sp}` and runs nothing, which the
   caller drops silently: rAthena's `status_charge` failing simply skips the proc,
@@ -415,22 +416,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   A ground bolt (Thunderstorm, Heaven's Drive) is cast at the victim's cell,
   mirroring rAthena's `skill_get_casttype` switch to `skill_castend_pos2`.
   """
-  @spec auto_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+  @spec auto_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
+          {:ok, Active.caster()} | {:error, atom()}
   def auto_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
+    adapter = Caster.for(game_state)
 
     with {:ok, definition} <- fetch_definition(skill_id),
          :ok <- check_max_level(definition, level),
          {:ok, module} <- fetch_active_module(definition),
          {:ok, resolved} <- resolve_auto_cast_target(definition, target),
          cost = auto_cast_sp_cost(definition, level),
-         :ok <- check_sp(game_state, cost),
+         :ok <- check_sp(adapter, game_state, cost),
          {:ok, game_state} <-
            run_unconditional(module, game_state, resolved, level, definition, :auto) do
       {:ok,
        game_state
-       |> deduct_sp(cost)
+       |> adapter.deduct_sp(cost)
        |> put_act_delay(definition, level, now)}
     end
   end
@@ -439,6 +441,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   @doc """
   Runs an item-triggered cast: the restricted entry `itemskill` uses.
+
+  This entry point is player-only because item scripts execute against a player
+  inventory; an item-triggered cast has no meaning for a non-player caster.
 
   Deliberately not `complete_cast/4`. A skill cast by consuming an item is by
   construction not one the player learned, and the item itself is the cost: the
@@ -454,7 +459,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec item_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
-  def item_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+  def item_cast(%PlayerState{} = game_state, skill_id, level, target)
+      when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
     with {:ok, definition} <- fetch_definition(skill_id),
@@ -473,7 +479,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  def item_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+  def item_cast(%PlayerState{}, _skill_id, _level, _target), do: {:error, :invalid_level}
+  def item_cast(_game_state, _skill_id, _level, _target), do: {:error, :unsupported_caster}
 
   @doc "Resolves the committed after-cast duration, including Monk combo flooring."
   @spec resolved_after_cast_delay(PlayerState.t() | map(), Definition.t(), pos_integer()) ::
@@ -1087,8 +1094,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp check_sp(game_state, cost) do
-    if game_state.stats.current_state.sp >= cost, do: :ok, else: {:error, :insufficient_sp}
+  defp check_sp(adapter, game_state, cost) do
+    if adapter.sp(game_state) >= cost, do: :ok, else: {:error, :insufficient_sp}
   end
 
   # Reads a folded equipment modifier off the caster's `stats.modifiers.equipment`
@@ -1188,12 +1195,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp announce_ground_cast(_module, _game_state, _target, _level, _definition), do: :ok
 
-  defp deduct_sp(game_state, cost) do
-    stats = game_state.stats
-    current = %{stats.current_state | sp: stats.current_state.sp - cost}
-    %{game_state | stats: %{stats | current_state: current}}
-  end
-
   # Cooldown is the definition's per-level duration plus the caster's per-skill
   # equipment `{:skill_cooldown, id}` delta (rAthena bSkillCooldown, ms, negative
   # shortens). The final duration is floored at 0; a duration that collapses to 0
@@ -1234,7 +1235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp put_resolved_act_delay(game_state, true, delay, now),
     do: %{game_state | act_delay_until: now + delay}
 
-  defp put_act_delay(game_state, definition, level, now) do
+  defp put_act_delay(%PlayerState{} = game_state, definition, level, now) do
     case Enum.at(definition.after_cast_delay, level - 1) do
       nil ->
         game_state
@@ -1249,6 +1250,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         }
     end
   end
+
+  defp put_act_delay(game_state, _definition, _level, _now), do: game_state
 
   defp resolve_delay(game_state, skill_id, base) do
     base = combo_base_delay(game_state, skill_id, base)
