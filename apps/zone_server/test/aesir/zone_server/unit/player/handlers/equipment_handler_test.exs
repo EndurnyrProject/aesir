@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     game_state = %{game_state | inventory: %{0 => weapon}}
 
     :ok = StatusStorage.apply_status(:player, 1000, :sc_aspersio, duration: 30_000)
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_encpoison, duration: 30_000)
 
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
     stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: game_state.stats}} end)
@@ -55,6 +56,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     state = %{connection_pid: self(), game_state: game_state}
     assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
     refute StatusStorage.has_status?(:player, 1000, :sc_aspersio)
+    refute StatusStorage.has_status?(:player, 1000, :sc_encpoison)
   end
 
   test "keeps weapon-unequip statuses after failures and non-weapon changes" do
