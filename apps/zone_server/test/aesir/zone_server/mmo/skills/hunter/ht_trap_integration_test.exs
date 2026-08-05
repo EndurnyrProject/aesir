@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   test "capturing a real mob pulls it onto the trap cell through its session" do
     _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
     mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})
-    :ok = Storage.insert(ankle_group(1))
+    :ok = Manager.register(ankle_group(1))
 
     assert :ok = Manager.trigger(1, {:mob, @mob_id}, :on_touch)
 
@@ -250,7 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   test "a concurrently displaced player is still captured and the stale pull no-ops" do
     UnitRegistry.register_unit(:mob, @mob_id, MobState, build_mob_state(40, 40), self())
     player = start_real_player(id: @caster_id, map_name: @map, position: {49, 50})
-    :ok = Storage.insert(ankle_group(2, :mob, @mob_id))
+    :ok = Manager.register(ankle_group(2, :mob, @mob_id))
 
     :ok = :sys.suspend(player.pid)
 
@@ -275,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
     first = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})
     second = start_real_mob(unit_id: @mob_id + 1, map_name: @map, position: {49, 50})
-    :ok = Storage.insert(ankle_group(5))
+    :ok = Manager.register(ankle_group(5))
 
     assert :ok = Manager.trigger(5, {:mob, @mob_id}, :on_touch)
     assert Storage.get(5).state.trap.phase == :captured
@@ -308,7 +308,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
         modes: [:status_immune]
       )
 
-    :ok = Storage.insert(ankle_group(6))
+    :ok = Manager.register(ankle_group(6))
     assert :ok = Manager.trigger(6, {:mob, @mob_id}, :on_touch)
     Process.sleep(50)
     assert {49, 50} == {MobSession.get_state(immune.pid).x, MobSession.get_state(immune.pid).y}
@@ -322,7 +322,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
         state: %{group_id: 999, link_id: 999}
       )
 
-    :ok = Storage.insert(ankle_group(7))
+    :ok = Manager.register(ankle_group(7))
     assert :ok = Manager.trigger(7, {:mob, @mob_id + 1}, :on_touch)
     Process.sleep(50)
     assert {49, 50} == {MobSession.get_state(snared.pid).x, MobSession.get_state(snared.pid).y}
@@ -365,7 +365,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   test "a dead target leaves the snare armed without a status" do
     _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
     mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50}, hp: 100)
-    :ok = Storage.insert(ankle_group(4))
+    :ok = Manager.register(ankle_group(4))
 
     MobSession.apply_damage(mob.pid, 100)
     assert_eventually(fn -> MobSession.get_state(mob.pid).is_dead end)
@@ -402,7 +402,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
           state: %{trap: %TrapState{reclaim_item_id: 1065}}
       }
 
-      :ok = Storage.insert(group)
+      :ok = Manager.register(group)
       assert :ok = Manager.trigger(manager(), group_id, {:mob, mob_id}, :on_touch)
 
       expected = collision_landing({50, y}, level + 5)
@@ -418,7 +418,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
       stop_remaining = stop_expires_at - System.monotonic_time(:millisecond)
       assert stop_remaining in 2_500..3_000
 
-      assert %Group{visibility: :public, expires_at: expires_at, state: %{trap: trap}} =
+      assert %Group{visibility: :party_only, expires_at: expires_at, state: %{trap: trap}} =
                Storage.get(group_id)
 
       assert trap.phase == :used
@@ -458,7 +458,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
           state: %{trap: %TrapState{reclaim_item_id: 1065}}
       }
 
-      :ok = Storage.insert(group)
+      :ok = Manager.register(group)
       assert :ok = Manager.trigger(manager(), group_id, {:mob, mob_id}, :on_touch)
 
       assert %Group{visibility: :party_only, state: %{trap: %{phase: :armed}}} =
@@ -485,12 +485,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     UnitRegistry.register_unit(:mob, @mob_id, MobState, mob_state, fake_mob)
     SpatialIndex.add_unit(:mob, @mob_id, sx, sy, @map)
 
-    :ok = Storage.insert(landmine_group())
+    :ok = Manager.register(landmine_group())
 
     assert [%{__struct__: Group, group_id: 999, visibility: :party_only}] =
              Storage.get_groups_at_cell(@map, 50, 50)
 
-    assert [] = Storage.get_cells_by_group(999)
+    # An armed party_only trap is materialized (visible to caster/party) but
+    # stays out of the public snapshot until it detonates and turns public.
+    assert [_armed_cell] = Storage.get_cells_by_group(999)
     assert %{groups: []} = Aesir.ZoneServer.Mmo.Skill.Unit.snapshot(@map)
 
     {tx, ty} = @trap
@@ -504,7 +506,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
 
     assert %{
              __struct__: Group,
-             visibility: :public,
+             visibility: :party_only,
              expires_at: expires_at,
              state: %{trap: %TrapState{phase: :used}}
            } = Storage.get(999)

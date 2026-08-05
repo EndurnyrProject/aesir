@@ -159,6 +159,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
 
   defp stats(job_id) do
     %Aesir.ZoneServer.Unit.Player.Stats{
+      base_stats: %Aesir.ZoneServer.Unit.Stats.BaseStats{
+        str: 0,
+        agi: 0,
+        vit: 0,
+        int: 0,
+        dex: 0,
+        luk: 0
+      },
       current_state: %Aesir.ZoneServer.Unit.Stats.CurrentState{hp: 100, sp: 10},
       derived_stats: %Aesir.ZoneServer.Unit.Stats.DerivedStats{
         max_hp: 500,

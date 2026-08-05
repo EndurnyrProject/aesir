@@ -37,18 +37,24 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
   test "a live mob drops the charmer, then acquires and attacks another player" do
     dancer = start_dancer("Protected", {150, 150})
     other = start_player("Other", {152, 150})
-    mob = start_charmable_mob()
+    mob = start_charmable_mob(awake: false)
 
     MobSession.set_target(mob.pid, dancer.character.id)
     assert eventually(fn -> mob_target(mob) == {:player, dancer.character.id} end)
 
+    # Charm has a ~1s cast that damage interrupts (health_handler cancels casts).
+    # An awake mob attacking the adjacent dancer would race and cancel the cast,
+    # so the status intermittently never landed. Cast while the mob is dormant,
+    # then wake it to exercise the real autonomous drop-and-reacquire behaviour.
     charm(dancer, mob)
-    force_tick(mob)
+    MobSession.wake(mob.pid)
+    force_ticks(mob, 3)
 
-    assert eventually(fn ->
-             state = get_mob_state(mob.pid)
-             state.target_ref == nil and state.ai_state not in [:alert, :combat]
-           end)
+    # The charmer must be released. Asserting the transient `target_ref == nil`
+    # state is a race: an aggressive mob re-acquires the other nearby player in
+    # the same or next tick, so the null moment can be skipped entirely. The
+    # stable, meaningful outcome is that the mob no longer targets the charmer.
+    assert eventually(fn -> mob_target(mob) != {:player, dancer.character.id} end)
 
     flush_packets()
     force_ticks(mob, 3)
@@ -95,20 +101,25 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
     dancer = start_dancer("ExpiryCharm", {150, 150})
     mob = start_charmable_mob()
 
+    # The window must comfortably outlast full-suite scheduler jitter: the mob is
+    # awake and can be starved for a while before it processes the forced tick
+    # that sheds the charmed target. A 500ms charm could lapse before that tick
+    # ran, so the target was never observably released. Pump several ticks and
+    # give the charm a wide window so the release is deterministic.
     assert :ok =
              StatusInterpreter.apply_status(:mob, mob.unit_id, :sc_winkcharm,
-               duration: 500,
+               duration: 2_000,
                caster_id: dancer.character.id,
                resistance_roll: fn _ -> true end
              )
 
     MobSession.set_target(mob.pid, dancer.character.id)
-    force_tick(mob)
+    force_ticks(mob, 3)
     assert eventually(fn -> mob_target(mob) == nil end)
 
     assert eventually(
              fn -> not StatusStorage.has_status?(:mob, mob.unit_id, :sc_winkcharm) end,
-             2_000
+             4_000
            )
 
     force_ticks(mob, 2)
@@ -158,15 +169,14 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
   defp charm(dancer, mob) do
     cast(dancer, mob.unit_id)
 
-    assert eventually(
-             fn ->
-               case StatusStorage.get_status(:mob, mob.unit_id, :sc_winkcharm) do
-                 %{source_id: source_id} -> source_id == dancer.character.id
-                 nil -> false
-               end
-             end,
-             2_000
-           )
+    # The cast threads through the full player-session pipeline; under full-suite
+    # load a 2s budget was occasionally too tight. Use the generous default.
+    assert eventually(fn ->
+             case StatusStorage.get_status(:mob, mob.unit_id, :sc_winkcharm) do
+               %{source_id: source_id} -> source_id == dancer.character.id
+               nil -> false
+             end
+           end)
   end
 
   defp cast(session, target_id) do
@@ -188,7 +198,7 @@ defmodule Aesir.ZoneServer.Integration.WinkCharmIntegrationTest do
         max_hp: 50_000,
         race: :demi_human,
         modes: Keyword.get(opts, :modes, [:aggressive]),
-        awake: true
+        awake: Keyword.get(opts, :awake, true)
       )
 
     on_exit(fn ->

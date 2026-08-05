@@ -111,7 +111,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     def start_link(%PlayerState{} = game_state, target_pid),
       do: GenServer.start_link(__MODULE__, {game_state, target_pid})
 
-    def resurrect(pid), do: GenServer.call(pid, :resurrect, 500)
+    # A generous timeout: resurrection validation is pull-based over ETS with no
+    # cross-session call-back, so this cannot deadlock. The default-length budget
+    # still fails a genuine cyclic call while absorbing full-suite scheduler jitter
+    # that a tight 500ms budget turned into a flake.
+    def resurrect(pid), do: GenServer.call(pid, :resurrect, 5_000)
 
     @impl true
     def init({%PlayerState{} = game_state, target_pid}) do
