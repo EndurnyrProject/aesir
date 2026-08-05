@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 156,
     name: :al_holylight,
+    requires: [],
     display_name: "Holy Light",
     max_level: 1,
     target_type: :target_enemy,

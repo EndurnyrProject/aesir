@@ -27,6 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 271,
     name: :mo_extremityfist,
+    # Player-coupled at runtime (character_id + spirit spheres), but not on the pre-migration
+    # mob denylist. Kept mob-selectable with [] to preserve exact pre-migration behaviour; a
+    # mob caster falls through to the {:error, :invalid_target} clause as it does today.
+    requires: [],
     status: :sc_extremityfist,
     display_name: "Asura Strike",
     max_level: 5,

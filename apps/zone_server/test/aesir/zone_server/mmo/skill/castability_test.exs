@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastabilityTest do
   end
 
   test "checks a catalog skill by id and reports an unknown id" do
-    assert :ok = Castability.check_by_id(29, :mob)
+    assert {:error, {:missing, [:player_state]}} = Castability.check_by_id(29, :mob)
     assert :error = Castability.check_by_id(999_999, :player)
   end
 

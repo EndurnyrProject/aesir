@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1_016,
     name: :mo_balkyoung,
+    requires: [],
     display_name: "Ki Explosion",
     max_level: 1,
     target_type: :target_enemy,

@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
     name: :al_heal,
+    requires: [],
     display_name: "Heal",
     max_level: 10,
     target_type: :target_any,

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 25,
     name: :al_pneuma,
+    requires: [],
     display_name: "Pneuma",
     max_level: 1,
     target_type: :ground,

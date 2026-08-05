@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 72,
     name: :pr_strecovery,
+    requires: [:player_state],
     status: :sc_blind,
     display_name: "Status Recovery",
     max_level: 1,

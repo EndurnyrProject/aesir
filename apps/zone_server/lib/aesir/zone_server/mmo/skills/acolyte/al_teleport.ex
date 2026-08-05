@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 26,
     name: :al_teleport,
+    requires: [],
     display_name: "Teleport",
     max_level: 2,
     target_type: :self,

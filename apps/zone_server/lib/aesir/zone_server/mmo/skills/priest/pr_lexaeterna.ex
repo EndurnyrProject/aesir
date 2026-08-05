@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 78,
     name: :pr_lexaeterna,
+    requires: [:player_state],
     status: :sc_aeterna,
     display_name: "Lex Aeterna",
     max_level: 1,

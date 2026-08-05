@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 264,
     name: :mo_bodyrelocation,
+    requires: [],
     display_name: "Snap",
     max_level: 1,
     target_type: :ground,

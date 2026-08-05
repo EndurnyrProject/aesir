@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 73,
     name: :pr_kyrie,
+    requires: [:player_state],
     status: :sc_kyrie,
     display_name: "Kyrie Eleison",
     max_level: 10,

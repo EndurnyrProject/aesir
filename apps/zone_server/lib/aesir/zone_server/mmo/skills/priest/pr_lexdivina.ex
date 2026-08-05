@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 76,
     name: :pr_lexdivina,
+    requires: [:player_state],
     display_name: "Lex Divina",
     max_level: 10,
     target_type: :target_enemy,

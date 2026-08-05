@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 30,
     name: :al_decagi,
+    requires: [],
     display_name: "Decrease AGI",
     max_level: 10,
     target_type: :target_enemy,
