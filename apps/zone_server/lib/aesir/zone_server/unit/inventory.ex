@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
          :ok <- validate_requirements(item_def, ctx),
          :ok <- validate_not_broken(item),
          :ok <- validate_identified(item),
-         {:ok, worn_mask} <- resolve_worn_mask(inventory, item_def, position) do
+         {:ok, worn_mask} <- resolve_worn_mask(inventory, item_def, position, ctx) do
       {inventory, unequipped} = unequip_conflicts(inventory, index, worn_mask)
       equipped = %{item | equip: worn_mask}
       new_inventory = ItemContainer.put_item(inventory, index, equipped)
@@ -172,22 +172,41 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   end
 
   @both_accessory 0x88
+  @right_hand 0x02
+  @left_hand 0x20
   @right_accessory 0x08
   @left_accessory 0x80
+  @assassin_job_id 12
 
-  # The worn slot is derived from the item's own location mask, mirroring
-  # rAthena's `pc_equipitem`. The client-supplied `position` is only consulted to
-  # disambiguate the dual accessory slots (see `worn_mask/3`); for every other
-  # item the position the client requests is irrelevant.
-  defp resolve_worn_mask(inventory, %ItemDefinition{locations: locations}, position) do
-    allowed = EquipLocation.location_atoms_to_bitmask(locations)
+  # The worn slot is derived from the item's own location mask. The client-supplied
+  # `position` is only consulted to disambiguate the dual accessory slots (see
+  # `worn_mask/3`) and to equip a normal Assassin dagger in the left hand. For every
+  # other item the requested position is irrelevant.
+  defp resolve_worn_mask(inventory, %ItemDefinition{} = item_def, position, ctx) do
+    allowed = EquipLocation.location_atoms_to_bitmask(item_def.locations)
 
-    if allowed == 0 do
-      {:error, :cannot_equip}
-    else
-      {:ok, worn_mask(inventory, allowed, position)}
+    cond do
+      allowed == 0 ->
+        {:error, :cannot_equip}
+
+      assassin_left_hand_dagger?(item_def, allowed, position, ctx) ->
+        {:ok, @left_hand}
+
+      true ->
+        {:ok, worn_mask(inventory, allowed, position)}
     end
   end
+
+  defp assassin_left_hand_dagger?(
+         %ItemDefinition{subtype: :dagger},
+         @right_hand,
+         @left_hand,
+         %{job_id: job_id}
+       ) do
+    job_id == @assassin_job_id
+  end
+
+  defp assassin_left_hand_dagger?(_item_def, _allowed, _position, _ctx), do: false
 
   defp worn_mask(inventory, allowed, position)
        when (allowed &&& @both_accessory) == @both_accessory do

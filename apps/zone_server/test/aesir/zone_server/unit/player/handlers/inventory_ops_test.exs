@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
   # Real equip.yml ids.
   @sword 1101
+  @dagger 1201
+  @jur 1250
   @guard 2101
   @potion 501
 
@@ -210,6 +212,61 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       reloaded = load(char.id)
       assert reloaded[katana_index].equip == 34
       assert reloaded[shield_index].equip == 0
+    end
+
+    test "equipping a left dagger persists the shield displacement", %{character: char} do
+      _shield = seed_item(char.id, @guard, 1, %{equip: @left_hand})
+      _dagger = seed_item(char.id, @dagger, 1)
+      inv = load(char.id)
+
+      dagger_index = index_of(inv, @dagger)
+      shield_index = index_of(inv, @guard)
+
+      {:ok, new_inv, {:equipped, ^dagger_index, @left_hand, [^shield_index]} = change} =
+        Inventory.equip(inv, dagger_index, @left_hand, %{job_id: 12, base_level: 99})
+
+      assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
+
+      assert %{^dagger_index => %InventoryItem{equip: @left_hand}} = persisted
+      assert %{^shield_index => %InventoryItem{equip: 0}} = persisted
+
+      reloaded = load(char.id)
+      assert reloaded[dagger_index].equip == @left_hand
+      assert reloaded[shield_index].equip == 0
+    end
+
+    test "equipping a Katar persists both dagger displacements", %{character: char} do
+      _right_dagger = seed_item(char.id, @dagger, 1, %{equip: @right_hand})
+      _left_dagger = seed_item(char.id, @dagger, 1, %{equip: @left_hand})
+      _jur = seed_item(char.id, @jur, 1)
+      inv = load(char.id)
+
+      right_dagger_index =
+        Enum.find_value(inv, fn {index, item} ->
+          if item.nameid == @dagger and item.equip == @right_hand, do: index
+        end)
+
+      left_dagger_index =
+        Enum.find_value(inv, fn {index, item} ->
+          if item.nameid == @dagger and item.equip == @left_hand, do: index
+        end)
+
+      jur_index = index_of(inv, @jur)
+
+      {:ok, new_inv, {:equipped, ^jur_index, 34, unequipped} = change} =
+        Inventory.equip(inv, jur_index, @left_hand, %{job_id: 12, base_level: 99})
+
+      assert Enum.sort(unequipped) == Enum.sort([right_dagger_index, left_dagger_index])
+      assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
+
+      assert %{^jur_index => %InventoryItem{equip: 34}} = persisted
+      assert %{^right_dagger_index => %InventoryItem{equip: 0}} = persisted
+      assert %{^left_dagger_index => %InventoryItem{equip: 0}} = persisted
+
+      reloaded = load(char.id)
+      assert reloaded[jur_index].equip == 34
+      assert reloaded[right_dagger_index].equip == 0
+      assert reloaded[left_dagger_index].equip == 0
     end
   end
 

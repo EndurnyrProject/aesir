@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
   # Real equip.yml ids used across the suite.
   @sword 1101
   @katana 1116
+  @dagger 1201
+  @jur 1250
   @shield 2101
   @body_armor 2301
   @ring 2601
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
 
   # Job ids: swordman (1) can wear the katana, novice (0) cannot.
   @swordman 1
+  @assassin 12
   @novice 0
 
   defp item(attrs) do
@@ -167,6 +170,90 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
 
       assert location == 2
       assert %{0 => %InventoryItem{equip: 2}} = new_inv
+    end
+
+    test "admits a right-hand-only dagger into the requested left hand for a normal Assassin" do
+      inv = inventory([item(nameid: @dagger, amount: 1)])
+      ctx = %{job_id: @assassin, base_level: 99}
+
+      assert {:ok, %{0 => %InventoryItem{equip: @left_hand}}, {:equipped, 0, @left_hand, []}} =
+               Inventory.equip(inv, 0, @left_hand, ctx)
+    end
+
+    test "keeps ordinary masks for non-Assassins, non-daggers, and other positions" do
+      dagger = inventory([item(nameid: @dagger, amount: 1)])
+      jur = inventory([item(nameid: @jur, amount: 1)])
+      assassin_ctx = %{job_id: @assassin, base_level: 99}
+      swordman_ctx = %{job_id: @swordman, base_level: 99}
+
+      assert {:ok, %{0 => %InventoryItem{equip: @right_hand}}, {:equipped, 0, @right_hand, []}} =
+               Inventory.equip(dagger, 0, @left_hand, swordman_ctx)
+
+      assert {:ok, %{0 => %InventoryItem{equip: @both_hand}}, {:equipped, 0, @both_hand, []}} =
+               Inventory.equip(jur, 0, @left_hand, assassin_ctx)
+
+      assert {:ok, %{0 => %InventoryItem{equip: @right_hand}}, {:equipped, 0, @right_hand, []}} =
+               Inventory.equip(dagger, 0, @both_hand, assassin_ctx)
+    end
+
+    test "validates a left-hand dagger before admitting it" do
+      ctx = %{job_id: @assassin, base_level: 99}
+
+      assert {:error, :item_unidentified} =
+               Inventory.equip(
+                 inventory([item(nameid: @dagger, identify: 0)]),
+                 0,
+                 @left_hand,
+                 ctx
+               )
+
+      assert {:error, :item_broken} =
+               Inventory.equip(
+                 inventory([item(nameid: @dagger, attribute: 1)]),
+                 0,
+                 @left_hand,
+                 ctx
+               )
+
+      assert {:error, :requirement_unmet} =
+               Inventory.equip(
+                 inventory([item(nameid: @dagger)]),
+                 0,
+                 @left_hand,
+                 %{job_id: -1, base_level: 99}
+               )
+    end
+
+    test "a left dagger displaces a shield without disturbing the right-hand dagger" do
+      inv =
+        inventory([
+          item(nameid: @dagger, equip: @right_hand),
+          item(nameid: @shield, equip: @left_hand),
+          item(nameid: @dagger)
+        ])
+
+      assert {:ok, new_inv, {:equipped, 2, @left_hand, [1]}} =
+               Inventory.equip(inv, 2, @left_hand, %{job_id: @assassin, base_level: 99})
+
+      assert %{0 => %InventoryItem{equip: @right_hand}} = new_inv
+      assert %{1 => %InventoryItem{equip: 0}} = new_inv
+      assert %{2 => %InventoryItem{equip: @left_hand}} = new_inv
+    end
+
+    test "a two-handed Katar displaces both Assassin daggers" do
+      inv =
+        inventory([
+          item(nameid: @dagger, equip: @right_hand),
+          item(nameid: @dagger, equip: @left_hand),
+          item(nameid: @jur)
+        ])
+
+      assert {:ok, new_inv, {:equipped, 2, @both_hand, unequipped}} =
+               Inventory.equip(inv, 2, @left_hand, %{job_id: @assassin, base_level: 99})
+
+      assert Enum.sort(unequipped) == [0, 1]
+      assert %{0 => %InventoryItem{equip: 0}, 1 => %InventoryItem{equip: 0}} = new_inv
+      assert %{2 => %InventoryItem{equip: @both_hand}} = new_inv
     end
 
     test "auto-unequips the occupant of a location being taken", %{ctx: ctx} do
