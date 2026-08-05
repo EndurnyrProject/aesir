@@ -17,9 +17,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
       attacker_combatant = %{...}  # Standardized combatant structure
       defender_combatant = %{...}  # Standardized combatant structure
-      
+
       case DamageCalculator.calculate_damage(attacker_combatant, defender_combatant) do
-        {:ok, damage_result} -> 
+        {:ok, damage_result} ->
           # damage_result contains: %{damage: integer(), is_critical: boolean()}
         {:error, reason} ->
           # Handle error
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
       attacker = build_player_combatant(player_stats)
       defender = build_mob_combatant(mob_data)
-      
+
       case DamageCalculator.calculate_damage(attacker, defender) do
         {:ok, %{damage: 150, is_critical: false}} ->
           apply_damage_to_target(defender, 150)
@@ -112,10 +112,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @spec calculate_damage(combatant(), combatant(), keyword()) ::
           {:ok, damage_result()} | {:error, atom()}
   def calculate_damage(attacker, defender, opts) do
-    case Keyword.get(opts, :fixed_damage) do
-      nil -> calculate_pipeline_damage(attacker, defender, opts, &apply_defense_formula/3)
-      fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
-    end
+    calculate_damage_with(
+      attacker,
+      defender,
+      opts,
+      :primary,
+      &apply_defense_formula/3
+    )
+  end
+
+  @doc """
+  Calculates left-hand weapon damage without attacker cardfix or equipment DEF-ignore.
+
+  The selected left hand supplies weapon ATK, refine, overrefine, subtype, and
+  element. Global attacker modifiers and every defender-side channel remain active.
+  Returns `{:error, :no_left_hand}` when no left-hand snapshot is available.
+  """
+  @spec calculate_secondary_hand_damage(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_secondary_hand_damage(%Combatant{left_hand: nil}, _defender, _opts),
+    do: {:error, :no_left_hand}
+
+  def calculate_secondary_hand_damage(attacker, defender, opts) do
+    calculate_damage_with(
+      attacker,
+      defender,
+      opts,
+      :secondary,
+      &apply_defense_formula_without_equipment_def_ignore/3
+    )
+  end
+
+  @doc """
+  Calculates physical damage while omitting only attacker equipment cardfix.
+
+  Equipment-derived DEF-ignore, skill and range rates, status/passive modifiers,
+  and defender-side channels remain active.
+  """
+  @spec calculate_damage_ignoring_attacker_cards(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_damage_ignoring_attacker_cards(attacker, defender, opts) do
+    calculate_damage_with(
+      attacker,
+      defender,
+      opts,
+      :ignore_attacker_cards,
+      &apply_defense_formula/3
+    )
   end
 
   @doc """
@@ -128,28 +171,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @spec calculate_damage_ignoring_status_def(combatant(), combatant(), keyword()) ::
           {:ok, damage_result()} | {:error, atom()}
   def calculate_damage_ignoring_status_def(attacker, defender, opts) do
-    case Keyword.get(opts, :fixed_damage) do
-      nil ->
-        calculate_pipeline_damage(
-          attacker,
-          defender,
-          opts,
-          &apply_defense_formula_ignoring_status_def/3
-        )
+    calculate_damage_with(
+      attacker,
+      defender,
+      opts,
+      :primary,
+      &apply_defense_formula_ignoring_status_def/3
+    )
+  end
 
-      fixed_damage ->
-        {:ok, %{damage: fixed_damage, is_critical: false}}
+  defp calculate_damage_with(attacker, defender, opts, attack_path, defense_calculator) do
+    case Keyword.get(opts, :fixed_damage) do
+      nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_calculator)
+      fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
     end
   end
 
-  defp calculate_pipeline_damage(attacker, defender, opts, defense_calculator) do
+  defp calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_calculator) do
+    attacker = select_weapon_hand(attacker, attack_path)
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
     with {:ok, base_atk} <- calculate_base_attack(attacker, opts),
          patk_atk = apply_patk_multiplier(base_atk, attacker),
          skilled_atk = div(patk_atk * skill_ratio, 100) + bonus_atk,
-         {:ok, modified_atk} <- apply_modifier_pipeline(skilled_atk, attacker, defender, opts),
+         {:ok, modified_atk} <-
+           apply_modifier_pipeline(skilled_atk, attacker, defender, opts, attack_path),
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
          total_atk = total_atk + beast_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
@@ -298,6 +345,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec apply_modifier_pipeline(integer(), combatant(), combatant(), keyword()) :: {:ok, number()}
   def apply_modifier_pipeline(base_damage, attacker, defender, opts \\ []) do
+    apply_modifier_pipeline(base_damage, attacker, defender, opts, :primary)
+  end
+
+  defp apply_modifier_pipeline(base_damage, attacker, defender, opts, attack_path) do
     {unit_type, unit_id} = get_unit_type_and_id(attacker)
     attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
     forced_element = Keyword.get(opts, :element)
@@ -309,7 +360,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       |> apply_size_modifier(attacker, defender)
       |> apply_element_modifier(attack_element, defender, attacker_modifiers)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
-      |> apply_equipment_attack_families(attacker, defender, skill_id, attack_element)
+      |> apply_equipment_attack_families(
+        attacker,
+        defender,
+        skill_id,
+        attack_element,
+        attack_path
+      )
       |> apply_equipment_taken_families(attacker, defender, attack_element, opts)
 
     {:ok, total_atk}
@@ -329,10 +386,37 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: apply_defense_formula(total_atk, defender, attacker, :apply_status_def)
 
   defp apply_defense_formula_ignoring_status_def(total_atk, defender, attacker),
-    do: apply_defense_formula(total_atk, defender, attacker, :ignore_status_def)
+    do:
+      apply_defense_formula(
+        total_atk,
+        defender,
+        attacker,
+        :ignore_status_def,
+        :apply_equipment_def_ignore
+      )
 
-  defp apply_defense_formula(total_atk, defender, attacker, status_def_mode) do
-    hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender)
+  defp apply_defense_formula_without_equipment_def_ignore(total_atk, defender, attacker),
+    do:
+      apply_defense_formula(
+        total_atk,
+        defender,
+        attacker,
+        :apply_status_def,
+        :omit_equipment_def_ignore
+      )
+
+  defp apply_defense_formula(total_atk, defender, attacker, status_def_mode),
+    do:
+      apply_defense_formula(
+        total_atk,
+        defender,
+        attacker,
+        status_def_mode,
+        :apply_equipment_def_ignore
+      )
+
+  defp apply_defense_formula(total_atk, defender, attacker, status_def_mode, def_ignore_mode) do
+    hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender, def_ignore_mode)
 
     soft_def =
       case status_def_mode do
@@ -435,6 +519,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   # Private helper functions
 
+  defp select_weapon_hand(
+         %Combatant{unit_type: :player, right_hand: right, left_hand: left} = attacker,
+         attack_path
+       )
+       when not is_nil(right) or not is_nil(left) do
+    selected = if attack_path == :secondary, do: left, else: right || left
+    shared_atk = attacker.combat_stats.atk - hand_atk(right) - hand_atk(left)
+
+    combat_stats =
+      attacker.combat_stats
+      |> Map.put(:atk, shared_atk + hand_atk(selected))
+      |> Map.put(:overrefine_band, hand_overrefine_band(selected))
+
+    weapon =
+      if attack_path == :secondary,
+        do: selected_weapon(attacker.weapon, selected),
+        else: attacker.weapon
+
+    %{attacker | combat_stats: combat_stats, weapon: weapon}
+  end
+
+  defp select_weapon_hand(attacker, _attack_path), do: attacker
+
+  defp hand_atk(nil), do: 0
+  defp hand_atk(hand), do: hand.base_atk + hand.refine_atk
+
+  defp hand_overrefine_band(nil), do: 0
+  defp hand_overrefine_band(hand), do: hand.overrefine_band
+
+  defp selected_weapon(weapon, nil), do: weapon
+
+  defp selected_weapon(weapon, hand) do
+    %{weapon | type: hand.subtype, element: hand.element}
+  end
+
   defp calculate_weapon_attack(%{unit_type: :player} = attacker) do
     # Renewal player weapon ATK: the equipped weapon's accumulated flat ATK
     # (combat_stats.atk, includes the refine bonus) rolls uniformly across an
@@ -458,8 +577,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       end
 
     # Overrefine (rAthena battle.cpp:2413-2420): a per-hit rnd()%band + 1 extra.
-    # ponytail: Aesir sums both hands into one combat_stats.overrefine_band;
-    # left/right-hand dual-wield split is deferred.
     overrefine_band = Map.get(attacker.combat_stats, :overrefine_band, 0)
     overrefine_extra = DamageShared.overrefine_roll(overrefine_band)
 
@@ -489,9 +606,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # Reduces the defender's hard DEF by the attacker's equipment ignore-def-by-race
   # percent before the renewal formula. A nil attacker (legacy 2-arity call) or a
   # 0 rate leaves hard DEF bit-identical.
-  defp ignore_hard_def(hard_def, nil, _defender), do: hard_def
+  defp ignore_hard_def(hard_def, _attacker, _defender, :omit_equipment_def_ignore),
+    do: hard_def
 
-  defp ignore_hard_def(hard_def, attacker, defender) do
+  defp ignore_hard_def(hard_def, nil, _defender, :apply_equipment_def_ignore), do: hard_def
+
+  defp ignore_hard_def(hard_def, attacker, defender, :apply_equipment_def_ignore) do
     rate = EquipmentBonuses.ignore_def_rate(attacker, defender.race)
     div(hard_def * (100 - rate), 100)
   end
@@ -519,16 +639,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # and equipment never compound against each other — mirroring the magic
   # pipeline's cardfix model. A family summing to 0 is identity, preserving the
   # float damage untouched.
-  defp apply_equipment_attack_families(damage, attacker, defender, skill_id, attack_element) do
-    %{race_class: race_class, element: element, size: size, skill: skill} =
+  defp apply_equipment_attack_families(
+         damage,
+         attacker,
+         defender,
+         skill_id,
+         attack_element,
+         attack_path
+       ) do
+    %{race_class: card_race_class, element: card_element, size: card_size, skill: skill} =
       EquipmentBonuses.attack_rates(attacker, defender, skill_id, attack_element)
 
-    race_class = race_class + RaceModifiers.dragonology_atk_rate(attacker, defender.race)
+    {card_race_class, card_element, card_size} =
+      case attack_path do
+        path when path in [:secondary, :ignore_attacker_cards] -> {0, 0, 0}
+        :primary -> {card_race_class, card_element, card_size}
+      end
+
+    race_class =
+      card_race_class + RaceModifiers.dragonology_atk_rate(attacker, defender.race)
 
     damage
     |> apply_family_step(race_class)
-    |> apply_family_step(element)
-    |> apply_family_step(size)
+    |> apply_family_step(card_element)
+    |> apply_family_step(card_size)
     |> apply_family_step(skill)
     |> apply_family_step(EquipmentBonuses.long_atk_rate(attacker))
     |> apply_family_step(EquipmentBonuses.short_atk_rate(attacker))

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @element_status_keys [
@@ -1724,6 +1725,221 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
         DamageCalculator.apply_defense_formula(200, brute_defender, zero_attacker)
 
       assert with_zero_ignore == baseline
+    end
+  end
+
+  describe "hand-specific cardfix channels" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      {:ok,
+       left_hand: %WeaponHand{
+         item_id: 2,
+         subtype: :dagger,
+         element: :neutral,
+         base_atk: 0,
+         refine_atk: 0,
+         overrefine_band: 0,
+         slot: :left_hand
+       }}
+    end
+
+    test "primary and IgnoreAtkCard preserve scripted aggregate weapon element" do
+      right = %WeaponHand{
+        item_id: 1,
+        subtype: :dagger,
+        element: :fire,
+        base_atk: 100,
+        refine_atk: 0,
+        overrefine_band: 0,
+        slot: :right_hand
+      }
+
+      attacker =
+        CombatTestHelper.create_player_combatant(weapon_type: :dagger, weapon_element: :holy)
+        |> Map.put(:right_hand, right)
+
+      defender =
+        CombatTestHelper.create_mob_combatant(def: 0)
+        |> Map.put(:element, {:earth, 1})
+
+      opts = [base_damage: 1_000, skip_crit: true]
+
+      expect(ElementModifiers, :get_modifier, 2, fn attack_element, _, _, _ ->
+        assert attack_element == :holy
+        1.0
+      end)
+
+      assert {:ok, _} = DamageCalculator.calculate_damage(attacker, defender, opts)
+
+      assert {:ok, _} =
+               DamageCalculator.calculate_damage_ignoring_attacker_cards(attacker, defender, opts)
+    end
+
+    test "secondary damage fails when the attacker has no left-hand snapshot" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert {:error, :no_left_hand} =
+               DamageCalculator.calculate_secondary_hand_damage(attacker, defender,
+                 fixed_damage: 1_000
+               )
+    end
+
+    test "primary, secondary, and IgnoreAtkCard separate cardfix from equipment DEF-ignore", %{
+      left_hand: left_hand
+    } do
+      attacker = %{
+        CombatTestHelper.create_player_combatant()
+        | left_hand: left_hand,
+          equip_modifiers: %{
+            {:addrace, :brute} => 100,
+            {:ignore_def_race, :brute} => 100
+          }
+      }
+
+      defender = CombatTestHelper.create_mob_combatant(race: :brute, def: 100)
+      opts = [base_damage: 1_000, skip_crit: true]
+
+      assert {:ok, %{damage: 2_000}} =
+               DamageCalculator.calculate_damage(attacker, defender, opts)
+
+      assert {:ok, %{damage: 1_000}} =
+               DamageCalculator.calculate_damage_ignoring_attacker_cards(attacker, defender, opts)
+
+      assert {:ok, %{damage: 820}} =
+               DamageCalculator.calculate_secondary_hand_damage(attacker, defender, opts)
+    end
+
+    test "restricted paths retain skill, range, status, passive, and defender channels", %{
+      left_hand: left_hand
+    } do
+      attacker = %{
+        CombatTestHelper.create_player_combatant(weapon_type: :sword)
+        | left_hand: left_hand,
+          dragonology_level: 5,
+          equip_modifiers: %{
+            {:addrace, :dragon} => 100,
+            {:skill_atk, 123} => 20,
+            short_atk_rate: 25
+          }
+      }
+
+      defender = %{
+        CombatTestHelper.create_mob_combatant(race: :dragon, def: 0)
+        | equip_modifiers: %{{:subrace, :human} => 10}
+      }
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{atk_rate: 50}
+        _, _ -> %{}
+      end)
+
+      opts = [base_damage: 1_000, skill_id: 123, skip_crit: true]
+
+      no_cards = %{
+        attacker
+        | equip_modifiers: Map.delete(attacker.equip_modifiers, {:addrace, :dragon})
+      }
+
+      assert {:ok, %{damage: 2_430}} =
+               DamageCalculator.calculate_damage(no_cards, defender, opts)
+
+      assert {:ok, %{damage: 2_430}} =
+               DamageCalculator.calculate_damage_ignoring_attacker_cards(attacker, defender, opts)
+
+      assert {:ok, %{damage: 2_430}} =
+               DamageCalculator.calculate_secondary_hand_damage(attacker, defender, opts)
+    end
+
+    test "primary and IgnoreAtkCard use the left hand magnitude in a left-only loadout" do
+      left = %WeaponHand{
+        item_id: 2,
+        subtype: :dagger,
+        element: :water,
+        base_atk: 50,
+        refine_atk: 10,
+        overrefine_band: 0,
+        slot: :left_hand
+      }
+
+      attacker =
+        CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
+        |> Map.put(:left_hand, left)
+        |> Map.put(:weapon, %{type: :dagger, element: :water, size: :all})
+        |> Map.update!(:combat_stats, fn stats ->
+          stats
+          |> Map.put(:atk, 60)
+          |> Map.put(:max_weapon_damage, true)
+        end)
+
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+
+      assert {:ok, %{damage: 72}} =
+               DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert {:ok, %{damage: 72}} =
+               DamageCalculator.calculate_damage_ignoring_attacker_cards(attacker, defender,
+                 skip_crit: true
+               )
+    end
+
+    test "each calculator reconstructs weapon ATK, refine, overrefine, and element from its selected hand" do
+      right = %WeaponHand{
+        item_id: 1,
+        subtype: :dagger,
+        element: :fire,
+        base_atk: 100,
+        refine_atk: 20,
+        overrefine_band: 0,
+        slot: :right_hand
+      }
+
+      left = %WeaponHand{
+        item_id: 2,
+        subtype: :dagger,
+        element: :water,
+        base_atk: 50,
+        refine_atk: 10,
+        overrefine_band: 1,
+        slot: :left_hand
+      }
+
+      attacker =
+        CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
+        |> Map.put(:right_hand, right)
+        |> Map.put(:left_hand, left)
+        |> Map.put(:weapon, %{type: :dagger, element: :fire, size: :all})
+        |> Map.update!(:combat_stats, fn stats ->
+          stats
+          |> Map.put(:atk, 210)
+          |> Map.put(:max_weapon_damage, true)
+          |> Map.put(:overrefine_band, 1)
+        end)
+
+      defender =
+        CombatTestHelper.create_mob_combatant(def: 0)
+        |> Map.put(:element, {:earth, 1})
+
+      expect(ElementModifiers, :get_modifier, 3, fn
+        :fire, _, _, _ -> 1.0
+        :water, _, _, _ -> 2.0
+      end)
+
+      assert {:ok, %{damage: 180}} =
+               DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+
+      assert {:ok, %{damage: 180}} =
+               DamageCalculator.calculate_damage_ignoring_attacker_cards(attacker, defender,
+                 skip_crit: true
+               )
+
+      assert {:ok, %{damage: 218}} =
+               DamageCalculator.calculate_secondary_hand_damage(attacker, defender,
+                 skip_crit: true
+               )
     end
   end
 
