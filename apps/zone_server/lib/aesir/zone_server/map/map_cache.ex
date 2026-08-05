@@ -82,4 +82,28 @@ defmodule Aesir.ZoneServer.Map.MapCache do
       {:error, _} -> false
     end
   end
+
+  @doc """
+  Returns whether an in-bounds neighboring cell is impassable base terrain.
+  """
+  @spec adjacent_impassable?(String.t(), integer(), integer()) :: boolean()
+  def adjacent_impassable?(map_name, x, y) do
+    case get(map_name) do
+      {:ok, %MapData{xs: width, ys: height} = map_data} ->
+        impassable? =
+          for x_offset <- -1..1,
+              y_offset <- -1..1,
+              x_offset != 0 or y_offset != 0,
+              neighbor_x = x + x_offset,
+              neighbor_y = y + y_offset,
+              neighbor_x >= 0 and neighbor_x < width,
+              neighbor_y >= 0 and neighbor_y < height,
+              do: not MapData.walkable?(map_data, neighbor_x, neighbor_y)
+
+        Enum.any?(impassable?)
+
+      {:error, :not_found} ->
+        false
+    end
+  end
 end
