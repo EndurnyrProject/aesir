@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcFireattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 186,
     name: :npc_fireattack,
+    requires: [],
     display_name: "Fire Attack",
     max_level: 10,
     target_type: :target_enemy,

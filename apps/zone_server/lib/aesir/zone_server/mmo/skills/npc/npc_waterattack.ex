@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcWaterattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 184,
     name: :npc_waterattack,
+    requires: [],
     display_name: "Water Attack",
     max_level: 10,
     target_type: :target_enemy,

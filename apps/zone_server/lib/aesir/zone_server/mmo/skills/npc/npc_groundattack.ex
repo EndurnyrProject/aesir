@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcGroundattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 185,
     name: :npc_groundattack,
+    requires: [],
     display_name: "NPC Ground Attack",
     max_level: 9,
     target_type: :ground,

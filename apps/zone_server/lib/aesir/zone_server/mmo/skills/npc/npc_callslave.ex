@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCallslave do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 352,
     name: :npc_callslave,
+    requires: [],
     display_name: "Call Slave",
     max_level: 1,
     target_type: :self,

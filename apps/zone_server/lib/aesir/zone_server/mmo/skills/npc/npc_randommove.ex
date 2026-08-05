@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcRandommove do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 331,
     name: :npc_randommove,
+    requires: [],
     display_name: "NPC Random Move",
     max_level: 1,
     target_type: :self,

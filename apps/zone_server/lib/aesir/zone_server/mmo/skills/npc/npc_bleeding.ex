@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcBleeding do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 660,
     name: :npc_bleeding,
+    requires: [],
     display_name: "Bleeding",
     max_level: 10,
     target_type: :target_enemy,

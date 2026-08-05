@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 173,
     name: :npc_selfdestruction,
+    requires: [],
     display_name: "NPC Self Destruction",
     max_level: 1,
     target_type: :self,

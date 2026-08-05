@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcWindattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 187,
     name: :npc_windattack,
+    requires: [],
     display_name: "Wind Attack",
     max_level: 10,
     target_type: :target_enemy,

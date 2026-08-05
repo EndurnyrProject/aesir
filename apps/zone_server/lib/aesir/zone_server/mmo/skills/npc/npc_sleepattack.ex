@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSleepattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 182,
     name: :npc_sleepattack,
+    requires: [],
     display_name: "Sleep Attack",
     max_level: 10,
     target_type: :target_enemy,

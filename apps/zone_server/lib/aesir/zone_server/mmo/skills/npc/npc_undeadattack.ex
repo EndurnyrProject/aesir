@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcUndeadattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 347,
     name: :npc_undeadattack,
+    requires: [],
     display_name: "Undead Attack",
     max_level: 10,
     target_type: :target_enemy,

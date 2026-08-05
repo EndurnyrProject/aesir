@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcPoison do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 176,
     name: :npc_poison,
+    requires: [],
     display_name: "Poison",
     max_level: 10,
     target_type: :target_enemy,

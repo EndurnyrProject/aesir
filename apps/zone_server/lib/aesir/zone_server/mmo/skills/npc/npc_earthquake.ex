@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcEarthquake do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 653,
     name: :npc_earthquake,
+    requires: [],
     display_name: "NPC Earthquake",
     max_level: 10,
     target_type: :ground,

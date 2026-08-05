@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcDarkstrike do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 340,
     name: :npc_darkstrike,
+    requires: [],
     display_name: "Dark Strike",
     max_level: 10,
     target_type: :target_enemy,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSilenceattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 178,
     name: :npc_silenceattack,
+    requires: [],
     display_name: "Silence Attack",
     max_level: 10,
     target_type: :target_enemy,

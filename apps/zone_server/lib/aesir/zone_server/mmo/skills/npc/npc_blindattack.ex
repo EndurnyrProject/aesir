@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcBlindattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 177,
     name: :npc_blindattack,
+    requires: [],
     display_name: "Blind Attack",
     max_level: 10,
     target_type: :target_enemy,

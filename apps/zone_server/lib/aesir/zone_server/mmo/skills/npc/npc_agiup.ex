@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAgiup do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 350,
     name: :npc_agiup,
+    requires: [],
     status: :sc_increaseagi,
     display_name: "Increase AGI (NPC)",
     max_level: 50,

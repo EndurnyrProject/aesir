@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcHolyattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 189,
     name: :npc_holyattack,
+    requires: [],
     display_name: "Holy Attack",
     max_level: 10,
     target_type: :target_enemy,

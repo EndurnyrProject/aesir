@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcAllheal do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 687,
     name: :npc_allheal,
+    requires: [],
     display_name: "Heal (NPC)",
     max_level: 50,
     target_type: :target_ally,

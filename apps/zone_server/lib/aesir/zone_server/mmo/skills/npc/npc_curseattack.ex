@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcCurseattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 181,
     name: :npc_curseattack,
+    requires: [],
     display_name: "Curse Attack",
     max_level: 10,
     target_type: :target_enemy,

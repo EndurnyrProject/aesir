@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSummonslave do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 196,
     name: :npc_summonslave,
+    requires: [],
     display_name: "Summon Slave",
     max_level: 16,
     target_type: :self,

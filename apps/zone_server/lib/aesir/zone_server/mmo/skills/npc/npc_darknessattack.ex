@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcDarknessattack do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 190,
     name: :npc_darknessattack,
+    requires: [],
     display_name: "Darkness Attack",
     max_level: 10,
     target_type: :target_enemy,
