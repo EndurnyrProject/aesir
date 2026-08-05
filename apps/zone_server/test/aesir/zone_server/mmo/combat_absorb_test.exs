@@ -6,8 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -143,6 +146,46 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
     end)
 
     :ok
+  end
+
+  describe "aggregate weapon-swing absorption" do
+    test "one dual-component swing spends one mob absorber budget" do
+      test_pid = self()
+      stub_mob_target(@mob_id)
+      stub_entity_info(:mob, @mob_id)
+
+      :ok = StatusInterpreter.apply_status(:mob, @mob_id, :sc_kyrie, val2: 10_000, val3: 2)
+
+      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id ->
+        send(test_pid, :damage_applied)
+        :ok
+      end)
+
+      swing = %HandedAttack{
+        primary: %{damage: 100, is_critical: false},
+        secondary: %{damage: 50, is_critical: false},
+        raw_total: 150,
+        display_divisions: 1,
+        outcome: :hit,
+        primary_element: :neutral
+      }
+
+      {settled, :ok} =
+        DamageApplication.apply_weapon_swing(
+          :mob,
+          self(),
+          @mob_id,
+          swing,
+          %{dmg_type: :physical, is_short: true, element: :neutral},
+          @caster_id
+        )
+
+      assert settled.primary.damage + settled.secondary.damage == 0
+      assert_received :damage_applied
+
+      assert %{state: %{shield_hp: 9_850, hits_remaining: 1}} =
+               StatusStorage.get_status(:mob, @mob_id, :sc_kyrie)
+    end
   end
 
   describe "pre-damage absorb hook on skill damage" do

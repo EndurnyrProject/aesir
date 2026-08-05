@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -99,7 +100,73 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
 
   defp melee_hit, do: %{dmg_type: :physical, is_short: true, element: :neutral}
 
+  defp swing(primary, secondary) do
+    %HandedAttack{
+      primary: %{damage: primary, is_critical: false},
+      secondary: %{damage: secondary, is_critical: false},
+      raw_total: primary + secondary,
+      display_divisions: 1,
+      outcome: :hit,
+      primary_element: :neutral
+    }
+  end
+
   describe "devotion damage reroute" do
+    test "redirects one dual-component aggregate and zeroes the devotee components" do
+      devotee = spawn_session(:devotee)
+      crusader = spawn_session(:crusader)
+      arm_devotion(make_ref())
+      stub_alive_crusader(crusader)
+      stub_positions(in_range_pos())
+
+      {settled, delivery} =
+        DamageApplication.apply_weapon_swing(
+          :player,
+          devotee,
+          @devotee_id,
+          swing(100, 50),
+          melee_hit(),
+          @attacker_id
+        )
+
+      assert delivery == :ok
+      assert settled.raw_total == 150
+      assert settled.primary.damage == 0
+      assert settled.secondary.damage == 0
+      assert_receive {:crusader, 150, @attacker_id}
+      refute_receive {:crusader, _, _}
+      refute_receive {:devotee, _, _}
+    end
+
+    test "tears down one stale link and delivers one aggregate to the devotee" do
+      devotee = spawn_session(:devotee)
+      crusader = spawn_session(:crusader)
+      arm_devotion(make_ref())
+      stub_unit_info()
+      stub_alive_crusader(crusader)
+      stub_positions(out_of_range_pos())
+
+      {settled, delivery} =
+        DamageApplication.apply_weapon_swing(
+          :player,
+          devotee,
+          @devotee_id,
+          swing(100, 50),
+          melee_hit(),
+          @attacker_id
+        )
+
+      assert delivery == :ok
+      assert settled.raw_total == 150
+      assert settled.primary.damage == 100
+      assert settled.secondary.damage == 50
+      assert StatusStorage.get_status(:player, @devotee_id, :sc_devotion) == nil
+      assert StatusStorage.get_status(:player, @crusader_id, :sc_devoted_by) == nil
+      assert_receive {:devotee, 150, @attacker_id}
+      refute_receive {:devotee, _, _}
+      refute_receive {:crusader, _, _}
+    end
+
     test "redirects the full computed damage to the crusader; devotee takes zero" do
       devotee = spawn_session(:devotee)
       crusader = spawn_session(:crusader)

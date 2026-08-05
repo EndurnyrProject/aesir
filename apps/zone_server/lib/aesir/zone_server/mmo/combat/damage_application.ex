@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
@@ -46,13 +47,73 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
         ) :: {integer(), map()}
   def prepare_unit_damage(target_type, target_id, damage, hit_info, attacker_id) do
     case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
-      :rerouted ->
+      {:rerouted, _delivery} ->
         {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
 
       :not_rerouted ->
         {absorb_unit_damage(target_type, target_id, damage, hit_info),
          Map.put(hit_info, :pre_delivery_prepared?, true)}
     end
+  end
+
+  @doc """
+  Settles and delivers one already-calculated ordinary weapon swing.
+
+  Devotion and mutating status absorption see the raw aggregate once. The
+  returned swing retains its raw total and carries post-absorption components
+  whose sum is the one delivered HP mutation.
+  """
+  @spec apply_weapon_swing(
+          :player | :mob | :homunculus | :skill_unit,
+          pid(),
+          integer(),
+          HandedAttack.t(),
+          map(),
+          integer() | Ref.t() | nil
+        ) :: {HandedAttack.t(), delivery_result()}
+  def apply_weapon_swing(
+        target_type,
+        target_pid,
+        target_id,
+        %HandedAttack{raw_total: raw_total} = swing,
+        hit_info,
+        attacker
+      )
+      when raw_total > 0 do
+    hit_info = Map.put(hit_info, :components, component_metadata(swing))
+
+    case reroute_to_crusader(target_type, target_id, raw_total, hit_info, attacker) do
+      {:rerouted, delivery} ->
+        {settle_components(swing, 0), delivery}
+
+      :not_rerouted ->
+        final_damage = absorb_unit_damage(target_type, target_id, raw_total, hit_info)
+        settled = settle_components(swing, final_damage)
+        prepared_hit = Map.put(hit_info, :pre_delivery_prepared?, true)
+
+        delivery =
+          apply_unit_damage(
+            target_type,
+            target_pid,
+            target_id,
+            final_damage,
+            prepared_hit,
+            attacker
+          )
+
+        {settled, delivery}
+    end
+  end
+
+  def apply_weapon_swing(
+        _target_type,
+        _target_pid,
+        _target_id,
+        %HandedAttack{} = swing,
+        _hit_info,
+        _attacker
+      ) do
+    {settle_components(swing, 0), :ok}
   end
 
   @doc """
@@ -199,8 +260,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp dispatch_reroute(target_id, damage, hit_info, attacker_id) do
     case Devotion.redirect_target(target_id) do
       {:ok, crusader_id} ->
-        redirect_damage(crusader_id, damage, hit_info, attacker_id)
-        :rerouted
+        {:rerouted, redirect_damage(crusader_id, damage, hit_info, attacker_id)}
 
       :stale ->
         Devotion.teardown(target_id)
@@ -252,6 +312,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp absorb_unit_damage(_target_type, _target_id, damage, _hit_info), do: damage
+
+  defp component_metadata(%HandedAttack{} = swing) do
+    primary = {:primary, swing.primary.damage, swing.primary_element}
+
+    case swing.secondary do
+      nil -> [primary]
+      secondary -> [primary, {:secondary, secondary.damage, swing.primary_element}]
+    end
+  end
+
+  defp settle_components(%HandedAttack{raw_total: raw_total} = swing, final_damage)
+       when raw_total > 0 do
+    secondary_damage =
+      case swing.secondary do
+        nil -> 0
+        secondary -> div(final_damage * secondary.damage, raw_total)
+      end
+
+    %{
+      swing
+      | primary: %{swing.primary | damage: final_damage - secondary_damage},
+        secondary: settle_secondary(swing.secondary, secondary_damage)
+    }
+  end
+
+  defp settle_components(%HandedAttack{} = swing, _final_damage) do
+    %{
+      swing
+      | primary: %{swing.primary | damage: 0},
+        secondary: settle_secondary(swing.secondary, 0)
+    }
+  end
+
+  defp settle_secondary(nil, _damage), do: nil
+  defp settle_secondary(secondary, damage), do: %{secondary | damage: damage}
 
   # Runs the victim's post-damage statuses and sends any reflected damage back to
   # the attacker. Fires only for short-range weapon damage that is neither a
