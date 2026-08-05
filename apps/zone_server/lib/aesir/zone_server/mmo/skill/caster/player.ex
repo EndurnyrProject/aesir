@@ -2,11 +2,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @moduledoc false
 
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
+  @behaviour Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
 
+  alias Aesir.ZoneServer.Mmo.Skill.Cooldown
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
+  alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+
+  @waivable_gemstone_ids [715, 716, 717]
 
   @impl true
   def kind, do: :player
@@ -32,4 +45,174 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @impl true
   def broadcast_source(%PlayerState{character_id: character_id}), do: character_id
+
+  @impl true
+  def knows?(caster, definition, level) do
+    learned = caster.stats.progression.learned_skills
+
+    with true <- Learned.learned_level(learned, definition.id) >= level,
+         true <- quest_lineage?(caster, definition) do
+      :ok
+    else
+      false -> {:error, :skill_not_learned}
+    end
+  end
+
+  @impl true
+  def castable_state(%PlayerState{} = caster, phase) do
+    expected_action = if phase == :begin, do: :idle, else: :casting
+
+    cond do
+      not Unit.living?(caster) -> {:error, :dead}
+      caster.movement_state != :standing -> {:error, :moving}
+      caster.action_state != expected_action -> {:error, :busy}
+      true -> :ok
+    end
+  end
+
+  @impl true
+  def cost(caster, module, target, definition, level) do
+    with {:ok, cost} <- resolve_cost(caster, module, target, level, definition),
+         {:ok, commitment} <- Cost.prepare(caster, cost),
+         zeny = effective_zeny_cost(caster, Enum.at(definition.zeny_cost, level - 1, 0)),
+         :ok <- check_zeny(caster, zeny),
+         :ok <- check_catalysts(caster, definition),
+         :ok <- check_ammo(caster, definition) do
+      {:ok,
+       %{
+         definition: definition,
+         module: module,
+         cost: cost,
+         commitment: commitment,
+         zeny: zeny
+       }}
+    end
+  end
+
+  @impl true
+  def commit(caster, %{commitment: commitment, zeny: zeny}) do
+    caster
+    |> Cost.apply_commitment(commitment)
+    |> deduct_zeny(zeny)
+  end
+
+  @impl true
+  def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id) do
+    Cooldown.ready?(cooldowns, skill_id, System.monotonic_time(:millisecond))
+  end
+
+  @impl true
+  def put_cooldown(caster, _skill_id, 0), do: caster
+
+  def put_cooldown(%PlayerState{skill_cooldowns: cooldowns} = caster, skill_id, expires_at) do
+    %{caster | skill_cooldowns: Cooldown.put(cooldowns, skill_id, expires_at)}
+  end
+
+  @impl true
+  def act_ready?(caster) do
+    PlayerState.act_ready?(caster, System.monotonic_time(:millisecond))
+  end
+
+  @impl true
+  def cast_stats(caster, skill_id) do
+    base_stats = caster.stats.base_stats
+
+    %{
+      dex: base_stats.dex,
+      int: base_stats.int,
+      varcast_reductions: status_reductions(caster.character_id, :cast_time_reduction),
+      varcast_rate:
+        merged_modifier(caster.character_id, :varcast_rate) +
+          equip_modifier(caster, :varcast_rate) +
+          equip_modifier(caster, {:skill_varcast_rate, skill_id}),
+      fixed_cast: equip_modifier(caster, :fixed_cast)
+    }
+  end
+
+  defp quest_lineage?(caster, %{quest_skill: true} = definition) do
+    SkillTree.quest_skill_available?(caster.stats.progression.job_id, definition)
+  end
+
+  defp quest_lineage?(_caster, _definition), do: true
+
+  defp resolve_cost(caster, module, target, level, definition) do
+    cost =
+      if function_exported?(module, :dynamic_cost, 4) do
+        module.dynamic_cost(caster, target, level, definition)
+      else
+        Cost.from_definition(caster, definition, level,
+          sp: Cost.resolve_sp(caster, definition, level)
+        )
+      end
+
+    Cost.validate_resolved(cost)
+  end
+
+  defp effective_zeny_cost(_caster, 0), do: 0
+
+  defp effective_zeny_cost(caster, cost) do
+    reduction = caster |> Passives.zeny_cost_reduction() |> min(100) |> max(0)
+    div(cost * (100 - reduction), 100)
+  end
+
+  defp check_zeny(_caster, 0), do: :ok
+
+  defp check_zeny(caster, cost) do
+    if caster.zeny >= cost, do: :ok, else: {:error, :insufficient_zeny}
+  end
+
+  defp check_catalysts(caster, definition) do
+    if Enum.all?(effective_item_cost(caster, definition), fn %{id: id, amount: amount} ->
+         Inventory.held_amount(caster.inventory, id) >= amount
+       end) do
+      :ok
+    else
+      {:error, :missing_catalyst}
+    end
+  end
+
+  defp effective_item_cost(_caster, %{item_cost: []}), do: []
+
+  defp effective_item_cost(caster, definition) do
+    if StatusStorage.has_status?(:player, caster.character_id, :sc_intoabyss) do
+      Enum.reject(definition.item_cost, &(&1.id in @waivable_gemstone_ids))
+    else
+      definition.item_cost
+    end
+  end
+
+  defp check_ammo(caster, definition) do
+    if definition.requires_ammo and Ammo.equipped_ammo_index(caster.inventory) == nil do
+      {:error, :no_ammo}
+    else
+      :ok
+    end
+  end
+
+  defp deduct_zeny(caster, 0), do: caster
+  defp deduct_zeny(caster, cost), do: %{caster | zeny: caster.zeny - cost}
+
+  defp status_reductions(character_id, state_key) do
+    :player
+    |> StatusStorage.get_unit_statuses(character_id)
+    |> Enum.flat_map(fn entry ->
+      case Map.get(entry.state || %{}, state_key) do
+        nil -> []
+        value -> [value]
+      end
+    end)
+  end
+
+  defp merged_modifier(character_id, key) do
+    :player
+    |> ModifierCalculator.get_all_modifiers(character_id)
+    |> Map.get(key, 0)
+  end
+
+  defp equip_modifier(caster, key) do
+    caster.stats
+    |> Map.get(:modifiers, %{})
+    |> Map.get(:equipment, %{})
+    |> Map.get(key, 0)
+  end
 end
