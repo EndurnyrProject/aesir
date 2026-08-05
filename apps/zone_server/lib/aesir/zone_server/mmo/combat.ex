@@ -54,6 +54,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   """
   defdelegate execute_skill_attack(caster_state, target_id, opts), to: SkillAttack
 
+  @doc "Executes Sonic Blow with its optional final damage and HIT acceleration."
+  defdelegate execute_sonic_blow_attack(caster_state, target_id, opts), to: SkillAttack
+
   @doc "Prepares one connected physical skill hit without delivery side effects."
   defdelegate prepare_staged_skill_attack(caster_state, target_id, opts), to: SkillAttack
 
