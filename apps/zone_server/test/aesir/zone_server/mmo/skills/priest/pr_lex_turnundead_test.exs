@@ -52,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
   test "Lex Divina removes existing Silence instead of refreshing it" do
     {:ok, definition} = Catalog.by_id(76)
-    caster = %{character_id: 1_000}
+    caster = %PlayerState{character_id: 1_000}
     target_id = 2_000
 
     stub(Combat, :resolve_combatant, fn ^target_id -> {:ok, %{unit_type: :mob}} end)
@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
   test "Lex Divina delays a certain Silence application for one second" do
     {:ok, definition} = Catalog.by_id(76)
-    caster = %{character_id: 1_000}
+    caster = %PlayerState{character_id: 1_000}
     target_id = 2_000
 
     stub(Combat, :resolve_combatant, fn ^target_id -> {:ok, %{unit_type: :mob}} end)
@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
 
   test "Lex Aeterna applies its status with the configured duration" do
     {:ok, definition} = Catalog.by_id(78)
-    caster = %{character_id: 1_000}
+    caster = %PlayerState{character_id: 1_000}
     target_id = 2_000
 
     stub(Combat, :resolve_combatant, fn ^target_id -> {:ok, %{unit_type: :mob}} end)

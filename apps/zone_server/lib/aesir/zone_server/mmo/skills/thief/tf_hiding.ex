@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 51,
     name: :tf_hiding,
-    requires: [:player_state],
+    requires: [],
     status: :sc_hiding,
     display_name: "Hiding",
     max_level: 10,
@@ -16,13 +16,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding do
     sp_cost: List.duplicate(10, 10)
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, :self, level, _definition) do
-    case StatusInterpreter.toggle_status(:player, caster_id, :sc_hiding, duration: 30_000 * level) do
+  def cast(caster, {:unit, caster_id}, level, definition) do
+    if Caster.for(caster).id(caster) == caster_id,
+      do: cast(caster, :self, level, definition),
+      else: {:error, :invalid_target}
+  end
+
+  def cast(caster, :self, level, _definition) do
+    adapter = Caster.for(caster)
+
+    case StatusInterpreter.toggle_status(
+           adapter.unit_type(caster),
+           adapter.id(caster),
+           :sc_hiding,
+           duration: 30_000 * level
+         ) do
       {:ok, _} -> {:ok, caster}
       {:error, _reason} = error -> error
     end

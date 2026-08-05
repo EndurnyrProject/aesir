@@ -6,10 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSightTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgSight
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :verify_on_exit!
 
-  @caster %{character_id: 1000}
+  @caster %PlayerState{character_id: 1000}
 
   describe "skill data" do
     test "mg_sight loads from the catalog as a self no-damage fire skill" do

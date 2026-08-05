@@ -11,12 +11,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
   only arms the buff. The counter level is carried in the buff's `val1` so the
   interception can scale its counter ratio.
 
-  Player-only: a mob never casts Auto Counter (no mob-skill row references it).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 61,
     name: :kn_autocounter,
-    requires: [:player_state],
+    requires: [],
     status: :sc_auto_counter,
     display_name: "Auto Counter",
     max_level: 5,
@@ -26,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
     sp_cost: [3, 3, 3, 3, 3]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
@@ -33,14 +33,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
   @counter_ms_per_level 400
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, {:unit, _target_id}, level, _definition) do
+  def cast(caster, {:unit, _target_id}, level, _definition) do
+    adapter = Caster.for(caster)
+    caster_id = adapter.id(caster)
+
     params = [
       val1: level,
       caster_id: caster_id,
       duration: @counter_ms_per_level * level
     ]
 
-    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_auto_counter, params) do
+    with :ok <-
+           StatusInterpreter.apply_status(
+             adapter.unit_type(caster),
+             caster_id,
+             :sc_auto_counter,
+             params
+           ) do
       {:ok, caster}
     end
   end

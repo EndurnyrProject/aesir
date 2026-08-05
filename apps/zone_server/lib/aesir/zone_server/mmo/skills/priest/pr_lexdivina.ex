@@ -9,7 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 76,
     name: :pr_lexdivina,
-    requires: [:player_state],
+    requires: [],
     display_name: "Lex Divina",
     max_level: 10,
     target_type: :target_enemy,
@@ -22,19 +22,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit
 
   @behaviour Active
 
   @delay_ms 1_000
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, {:unit, target_id}, level, definition) do
+    caster_id = Caster.for(caster).id(caster)
+
     with {:ok, %{unit_type: unit_type}} <- Combat.resolve_combatant(target_id) do
       if StatusStorage.has_status?(unit_type, target_id, :sc_silence) do
         StatusInterpreter.remove_status(unit_type, target_id, :sc_silence)
@@ -57,7 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
 
   @doc "Applies the scheduled Silence toggle. Ignores the caster state - it acts on the target."
   @impl Active
-  @spec deferred(map(), PlayerState.t()) :: :ok | {:error, atom()}
+  @spec deferred(map(), Active.caster()) :: :ok | {:error, atom()}
   def deferred(
         %{unit_type: unit_type, target_id: target_id, caster_id: caster_id, duration: duration},
         _caster
@@ -66,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
   end
 
   @doc false
-  @spec apply_silence(:player | :mob, integer(), integer(), pos_integer()) ::
+  @spec apply_silence(Unit.unit_type(), integer(), integer(), pos_integer()) ::
           :ok | {:error, atom()}
   def apply_silence(unit_type, target_id, caster_id, duration) do
     StatusInterpreter.apply_status(unit_type, target_id, :sc_silence,

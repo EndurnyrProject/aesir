@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndureTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :verify_on_exit!
 
@@ -14,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndureTest do
 
   test "cast/4 applies SC_ENDURE with val1=level and correct duration" do
     {:ok, definition} = Catalog.by_id(8)
-    caster = %{character_id: 2000}
+    caster = %PlayerState{character_id: 2000}
 
     expect(StatusInterpreter, :apply_status, fn :player, 2000, :sc_endure, params ->
       assert params[:val1] == 3

@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :verify_on_exit!
 
@@ -18,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
 
   test "cast/4 applies sc_hiding for 30000 * level ms on first cast" do
     {:ok, definition} = Catalog.by_id(51)
-    caster = %{character_id: 3000}
+    caster = %PlayerState{character_id: 3000}
 
     expect(StatusInterpreter, :toggle_status, fn :player, 3000, :sc_hiding, params ->
       assert params[:duration] == 30_000 * 5
@@ -30,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
 
   test "cast/4 removes sc_hiding on second cast" do
     {:ok, definition} = Catalog.by_id(51)
-    caster = %{character_id: 3000}
+    caster = %PlayerState{character_id: 3000}
 
     expect(StatusInterpreter, :toggle_status, fn :player, 3000, :sc_hiding, _params ->
       {:ok, :removed}
@@ -41,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHidingTest do
 
   test "cast/4 propagates an error from toggle_status" do
     {:ok, definition} = Catalog.by_id(51)
-    caster = %{character_id: 3000}
+    caster = %PlayerState{character_id: 3000}
 
     expect(StatusInterpreter, :toggle_status, fn :player, 3000, :sc_hiding, _params ->
       {:error, :immune}

@@ -76,6 +76,15 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   @musical_strike_mob_id 2_226
   @frost_joker_mob_id 2_437
 
+  # These mobs carry the status rows exercised by the caster-generic sweep.
+  @provoke_mob_id 1_057
+  @endure_mob_id 1_060
+  @sight_mob_id 1_129
+  @hiding_mob_id 1_056
+  @auto_counter_mob_id 2_017
+  @lex_mob_id 1_637
+  @frost_nova_mob_id 1_639
+
   setup :set_mimic_private
   setup :verify_on_exit!
 
@@ -114,6 +123,102 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   defp caster_targeting(char_id) do
     mob = spawn_test_mob(@map, {150, 150}, mob_id: @mob_id)
     %{get_mob_state(mob.pid) | target_ref: {:player, char_id}}
+  end
+
+  defp complete_mob_cast(mob, row, target_id) do
+    :sys.replace_state(mob.pid, fn state ->
+      state
+      |> MobState.set_target(target_id)
+      |> MobState.set_casting(%{row: row, complete_at: 0, timer_ref: nil})
+    end)
+
+    send(mob.pid, {:casting, :complete})
+  end
+
+  describe "caster-generic status rows" do
+    test "a mob casts Provoke against a player" do
+      player =
+        start_player_session(id: 9_821, name: "Provoked", position: {151, 150}, map_name: @map)
+
+      char_id = player.character.id
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @provoke_mob_id)
+      row = row!(@provoke_mob_id, "SM_PROVOKE", level: 10, target: :target)
+
+      complete_mob_cast(mob, row, char_id)
+
+      assert_eventually(fn -> StatusStorage.has_status?(:player, char_id, :sc_provoke) end, 2_000)
+    end
+
+    test "mobs self-cast Endure, Sight, Hiding, and Auto Counter while targeting a player" do
+      player =
+        start_player_session(id: 9_822, name: "Targeted", position: {151, 150}, map_name: @map)
+
+      char_id = player.character.id
+
+      for {mob_id, skill, status} <- [
+            {@endure_mob_id, "SM_ENDURE", :sc_endure},
+            {@sight_mob_id, "MG_SIGHT", :sc_sight},
+            {@hiding_mob_id, "TF_HIDING", :sc_hiding},
+            {@auto_counter_mob_id, "KN_AUTOCOUNTER", :sc_auto_counter}
+          ] do
+        mob = spawn_test_mob(@map, {150, 150}, mob_id: mob_id)
+        row = row!(mob_id, skill, target: :self)
+        caster_id = get_mob_state(mob.pid).instance_id
+        on_exit(fn -> StatusStorage.clear_unit_statuses(:mob, caster_id) end)
+
+        complete_mob_cast(mob, row, char_id)
+
+        assert_eventually(fn -> StatusStorage.has_status?(:mob, caster_id, status) end, 1_000)
+      end
+    end
+
+    test "a mob casts Lex Aeterna and delayed Lex Divina against a player" do
+      player =
+        start_player_session(id: 9_823, name: "Lexed", position: {151, 150}, map_name: @map)
+
+      char_id = player.character.id
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      for {skill, status, timeout} <- [
+            {"PR_LEXAETERNA", :sc_aeterna, 1_000},
+            {"PR_LEXDIVINA", :sc_silence, 2_000}
+          ] do
+        mob = spawn_test_mob(@map, {150, 150}, mob_id: @lex_mob_id)
+        row = row!(@lex_mob_id, skill, target: :target)
+
+        complete_mob_cast(mob, row, char_id)
+
+        assert_eventually(fn -> StatusStorage.has_status?(:player, char_id, status) end, timeout)
+      end
+    end
+
+    test "a mob casts Frost Nova and freezes a nearby player" do
+      player =
+        start_player_session(
+          id: 9_824,
+          name: "Frosted",
+          position: {151, 150},
+          map_name: @map,
+          vit: 0,
+          luk: 0
+        )
+
+      char_id = player.character.id
+      on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
+
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @frost_nova_mob_id)
+      row = row!(@frost_nova_mob_id, "WZ_FROSTNOVA", target: :self)
+
+      Mimic.copy(Resistance)
+      stub(Resistance, :roll_success, fn _success_rate -> true end)
+      Mimic.allow(Resistance, self(), mob.pid)
+
+      complete_mob_cast(mob, row, char_id)
+
+      assert_eventually(fn -> StatusStorage.has_status?(:player, char_id, :sc_freeze) end, 1_000)
+    end
   end
 
   describe "SA_DISPELL rows" do

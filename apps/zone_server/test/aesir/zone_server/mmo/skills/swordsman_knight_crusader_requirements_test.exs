@@ -5,10 +5,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.SwordsmanKnightCrusaderRequirementsTest do
 
   @requirements [
     {Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash, 5, []},
-    {Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure, 8, [:player_state]},
+    {Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure, 8, []},
     {Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum, 7, [:player_state]},
-    {Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke, 6, [:player_state]},
-    {Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter, 61, [:player_state]},
+    {Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke, 6, []},
+    {Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter, 61, []},
     {Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash, 62, []},
     {Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear, 57, []},
     {Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce, 56, []},

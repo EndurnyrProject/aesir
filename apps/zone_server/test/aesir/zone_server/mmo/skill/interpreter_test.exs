@@ -224,6 +224,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     %{gs | stats: %{gs.stats | modifiers: %Modifiers{equipment: equipment}}}
   end
 
+  defp stub_provoke_target(target_id) do
+    stub(TargetResolver, :resolve, fn ^target_id ->
+      {:ok, self(), struct(MobState, instance_id: target_id, hp: 1, max_hp: 1), :mob}
+    end)
+  end
+
   defp resurrection_game_state do
     %{
       game_state(100, %{54 => 1})
@@ -879,6 +885,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   test "targeted skill cast within definition.range proceeds to behavior" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(5)} end)
+    stub_provoke_target(9999)
 
     stub(SpatialIndex, :get_unit_position, fn
       :player, 9999 -> {:error, :not_found}
@@ -893,6 +900,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   test "a melee skill (range: -1) resolves to the weapon range: adjacent target is in range" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(-1)} end)
+    stub_provoke_target(9999)
 
     stub(SpatialIndex, :get_unit_position, fn
       :player, 9999 -> {:error, :not_found}
@@ -919,6 +927,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   test "a per-level range list resolves the range for the cast level, not the widest level" do
     stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition([3, 5, 7, 9, 11])} end)
+    stub_provoke_target(9999)
 
     stub(SpatialIndex, :get_unit_position, fn
       :player, 9999 -> {:error, :not_found}
@@ -1022,6 +1031,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
 
       target_id = SkillUnitId.first()
+      # Resolve returns the real skill-unit type; sm_provoke must carry that
+      # unit_type through to apply_status (not re-derive it via caster-only helpers).
+      stub(TargetResolver, :resolve, fn ^target_id ->
+        {:ok, self(), struct(MobState, instance_id: target_id, hp: 1, max_hp: 1), :skill_unit}
+      end)
 
       stub(Combat, :resolve_target_position, fn ^target_id ->
         {:ok, :skill_unit, {14, 10, "prontera"}}
@@ -1045,6 +1059,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
     test "an enemy skill still accepts a mob target routed through Combat.resolve_target_position" do
       stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+      stub_provoke_target(9999)
       stub(Combat, :resolve_target_position, fn 9999 -> {:ok, :mob, {14, 10, "prontera"}} end)
       stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
 
@@ -1112,6 +1127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   test "ally skill cast on another unit proceeds to behavior" do
     stub(Catalog, :by_id, fn 6 -> {:ok, unit_definition(:target_ally, 9)} end)
+    stub_provoke_target(9999)
     stub(SpatialIndex, :get_unit_position, fn :player, 9999 -> {:ok, {14, 10, "prontera"}} end)
     stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
 

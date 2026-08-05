@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8,
     name: :sm_endure,
-    requires: [:player_state],
+    requires: [],
     status: :sc_endure,
     display_name: "Endure",
     max_level: 10,
@@ -28,16 +28,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure do
     ]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, :self, level, definition) do
+  def cast(caster, {:unit, caster_id}, level, definition) do
+    if Caster.for(caster).id(caster) == caster_id,
+      do: cast(caster, :self, level, definition),
+      else: {:error, :invalid_target}
+  end
+
+  def cast(caster, :self, level, definition) do
+    adapter = Caster.for(caster)
+    caster_id = adapter.id(caster)
     duration = Enum.at(definition.duration, level - 1)
     params = [val1: level, caster_id: caster_id, duration: duration]
 
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_endure, params) do
+    case StatusInterpreter.apply_status(adapter.unit_type(caster), caster_id, :sc_endure, params) do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
     end

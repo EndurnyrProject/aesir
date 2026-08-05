@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 6,
     name: :sm_provoke,
-    requires: [:player_state],
+    requires: [],
     display_name: "Provoke",
     max_level: 10,
     target_type: :target_enemy,
@@ -16,13 +16,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
     sp_cost: [4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
     duration: List.duplicate(30_000, 10)
 
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
+  def cast(caster, {:unit, target_id}, level, definition) do
+    caster_id = Caster.for(caster).id(caster)
     duration = Enum.at(definition.duration, level - 1)
 
     params = [
@@ -33,9 +36,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke do
       duration: duration
     ]
 
-    case StatusInterpreter.apply_status(:mob, target_id, :sc_provoke, params) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+    with {:ok, _pid, _target, unit_type} <- TargetResolver.resolve(target_id),
+         :ok <- StatusInterpreter.apply_status(unit_type, target_id, :sc_provoke, params) do
+      {:ok, caster}
     end
   end
 end

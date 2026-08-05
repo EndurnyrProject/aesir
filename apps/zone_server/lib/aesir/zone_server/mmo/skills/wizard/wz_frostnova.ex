@@ -25,12 +25,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
 
   @behaviour Active
 
   @impl Active
+  def cast(caster, {:unit, caster_id}, level, definition) do
+    if Caster.for(caster).id(caster) == caster_id,
+      do: cast(caster, :self, level, definition),
+      else: {:error, :invalid_target}
+  end
+
   def cast(caster, :self, level, definition) do
     cast(caster, :self, level, definition, &Resistance.roll_success/1)
   end

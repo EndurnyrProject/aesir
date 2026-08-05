@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.RemainingJobRequirementsTest do
 
   @requirements [
     {Aesir.ZoneServer.Mmo.Skills.Thief.TfBacksliding, 150, true, false, [:player_state]},
-    {Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding, 51, true, false, [:player_state]},
+    {Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding, 51, false, false, []},
     {Aesir.ZoneServer.Mmo.Skills.Thief.TfPoison, 52, false, false, []},
     {Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand, 149, false, false, []},
     {Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstone, 152, false, false, []},

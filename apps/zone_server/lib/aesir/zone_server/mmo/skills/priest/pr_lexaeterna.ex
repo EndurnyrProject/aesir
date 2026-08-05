@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 78,
     name: :pr_lexaeterna,
-    requires: [:player_state],
+    requires: [],
     status: :sc_aeterna,
     display_name: "Lex Aeterna",
     max_level: 1,
@@ -21,16 +21,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, {:unit, target_id}, level, definition) do
+    caster_id = Caster.for(caster).id(caster)
+
     with {:ok, %{unit_type: unit_type}} <- Combat.resolve_combatant(target_id),
          :ok <-
            StatusInterpreter.apply_status(unit_type, target_id, :sc_aeterna,

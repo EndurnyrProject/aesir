@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
@@ -12,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
   describe "cast/4" do
     test "arms sc_auto_counter on the caster for 400 * level ms carrying the level in val1" do
       test_pid = self()
-      caster = %{character_id: 4001}
+      caster = %PlayerState{character_id: 4001}
       {:ok, definition} = Catalog.by_id(61)
 
       stub(StatusInterpreter, :apply_status, fn :player, 4001, :sc_auto_counter, params ->
@@ -29,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
     end
 
     test "propagates an application failure" do
-      caster = %{character_id: 4002}
+      caster = %PlayerState{character_id: 4002}
       {:ok, definition} = Catalog.by_id(61)
 
       stub(StatusInterpreter, :apply_status, fn :player, 4002, :sc_auto_counter, _params ->
