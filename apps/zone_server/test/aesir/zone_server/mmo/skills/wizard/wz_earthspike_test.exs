@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
         equipment: %Equipment{}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   describe "definition/0" do

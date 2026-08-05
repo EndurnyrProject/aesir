@@ -112,6 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         base_stats: %{dex: 1, int: 1}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   describe "definition/0" do

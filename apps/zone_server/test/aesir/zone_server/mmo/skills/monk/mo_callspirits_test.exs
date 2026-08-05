@@ -123,6 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspiritsTest do
         equipment: %{}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp caster(sp, spirit_spheres, learned_level) do

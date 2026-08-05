@@ -157,5 +157,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
         equipment: %{}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 end

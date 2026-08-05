@@ -200,7 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     casters =
       for caster_id <- [1_000, 1_001] do
-        %PlayerState{
+        Aesir.ZoneServer.PlayerStateFixture.build(%PlayerState{
           character_id: caster_id,
           map_name: "prontera",
           x: 150,
@@ -208,7 +208,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
           inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
           pending_inventory_persist: [],
           stats: %{current_state: %{sp: 100}}
-        }
+        })
       end
 
     tasks =

@@ -33,14 +33,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       assert Caster.Player.knows?(caster, definition, 3) == {:error, :skill_not_learned}
     end
 
-    test "mirrors phase-aware caster state for success and failure" do
-      assert Caster.Player.castable_state(player(), :begin) == :ok
-
-      assert Caster.Player.castable_state(player(action_state: :casting), :begin) ==
-               {:error, :busy}
-
-      assert Caster.Player.castable_state(player(action_state: :casting), :completion) == :ok
-      assert Caster.Player.castable_state(player(), :completion) == {:error, :busy}
+    test "has no interpreter-level caster state gate" do
+      for phase <- [:begin, :completion], action_state <- [:idle, :casting, :dead] do
+        assert Caster.Player.castable_state(player(action_state: action_state), phase) == :ok
+      end
     end
 
     test "mirrors full cost preparation and resource failures" do
@@ -85,8 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
     test "mirrors cooldown readiness and storage" do
       now = System.monotonic_time(:millisecond)
-      assert Caster.Player.cooldown_ready?(player(skill_cooldowns: %{1 => now - 1}), 1)
-      refute Caster.Player.cooldown_ready?(player(skill_cooldowns: %{1 => now + 10_000}), 1)
+      assert Caster.Player.cooldown_ready?(player(skill_cooldowns: %{1 => now - 1}), 1, now)
+      refute Caster.Player.cooldown_ready?(player(skill_cooldowns: %{1 => now + 10_000}), 1, now)
 
       assert Caster.Player.put_cooldown(player(), 1, 0).skill_cooldowns == %{}
 
@@ -96,8 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
     test "mirrors act-delay readiness" do
       now = System.monotonic_time(:millisecond)
-      assert Caster.Player.act_ready?(player(act_delay_until: now - 1))
-      refute Caster.Player.act_ready?(player(act_delay_until: now + 10_000))
+      assert Caster.Player.act_ready?(player(act_delay_until: now - 1), now)
+      refute Caster.Player.act_ready?(player(act_delay_until: now + 10_000), now)
     end
 
     test "cast stats match the player interpreter inputs without modifiers" do
@@ -171,8 +167,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
 
     test "mirrors cooldown readiness and storage" do
       now = System.monotonic_time(:millisecond)
-      assert Caster.Homunculus.cooldown_ready?(homunculus(cooldowns: %{1 => now - 1}), 1)
-      refute Caster.Homunculus.cooldown_ready?(homunculus(cooldowns: %{1 => now + 10_000}), 1)
+      assert Caster.Homunculus.cooldown_ready?(homunculus(cooldowns: %{1 => now - 1}), 1, now)
+
+      refute Caster.Homunculus.cooldown_ready?(
+               homunculus(cooldowns: %{1 => now + 10_000}),
+               1,
+               now
+             )
 
       assert Caster.Homunculus.put_cooldown(homunculus(), 1, 0).cooldowns == %{}
 
@@ -181,8 +182,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
     end
 
     test "mirrors action readiness" do
-      assert Caster.Homunculus.act_ready?(homunculus())
-      refute Caster.Homunculus.act_ready?(homunculus(action_state: :attacking))
+      now = System.monotonic_time(:millisecond)
+      assert Caster.Homunculus.act_ready?(homunculus(), now)
+      refute Caster.Homunculus.act_ready?(homunculus(action_state: :attacking), now)
     end
 
     test "cast stats match the homunculus interpreter inputs without modifiers" do

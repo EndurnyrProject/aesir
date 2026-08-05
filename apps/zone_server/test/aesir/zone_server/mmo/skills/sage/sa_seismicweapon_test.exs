@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSeismicweaponTest do
         equipment: equipment
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   describe "catalog registration" do

@@ -161,6 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
       },
       zeny: 0
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp target do

@@ -126,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
         progression: %PlayerProgression{job_id: 19, learned_skills: %{1010 => 1}}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp register_mob(modes, x, y) do

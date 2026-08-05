@@ -25,8 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
   @callback cost(state(), module(), Active.target(), Definition.t(), pos_integer()) ::
               {:ok, prepared()} | {:error, atom()}
   @callback commit(state(), prepared()) :: state()
-  @callback cooldown_ready?(state(), integer()) :: boolean()
+  @callback cooldown_ready?(state(), integer(), integer()) :: boolean()
   @callback put_cooldown(state(), integer(), integer()) :: state()
-  @callback act_ready?(state()) :: boolean()
+  @callback act_ready?(state(), integer()) :: boolean()
   @callback cast_stats(state(), integer()) :: cast_stats()
 end

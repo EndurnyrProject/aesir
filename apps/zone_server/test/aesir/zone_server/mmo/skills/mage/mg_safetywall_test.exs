@@ -140,15 +140,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
       :ets.insert(EtsTable.table_for(:map_cache), {@map_name, MapData.new(@map_name, 200, 200)})
       stub(Storage, :get_groups_at_cell, fn @map_name, 150, 150 -> [group(5)] end)
 
-      caster = %{
-        character_id: @caster_id,
-        map_name: @map_name,
-        x: 150,
-        y: 150,
-        inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
-        pending_inventory_persist: [],
-        stats: %{current_state: %{sp: 100}}
-      }
+      caster =
+        Aesir.ZoneServer.PlayerStateFixture.build(%{
+          character_id: @caster_id,
+          map_name: @map_name,
+          x: 150,
+          y: 150,
+          inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
+          pending_inventory_persist: [],
+          stats: %{current_state: %{sp: 100}}
+        })
 
       assert {:error, :safetywall_overlap} =
                Interpreter.complete_cast(caster, 12, 5, {:ground, 150, 150})
@@ -186,14 +187,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
 
       casters =
         for caster_id <- [@caster_id, @caster_id + 1] do
-          %PlayerState{
+          Aesir.ZoneServer.PlayerStateFixture.build(%PlayerState{
             character_id: caster_id,
             map_name: @map_name,
             x: 150,
             y: 150,
             inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
             stats: %{current_state: %{sp: 100}}
-          }
+          })
         end
 
       tasks =

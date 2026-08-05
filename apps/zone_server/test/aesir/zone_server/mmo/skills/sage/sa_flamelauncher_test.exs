@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
         equipment: equipment
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp catalyst(amount), do: %InventoryItem{nameid: @catalyst_id, amount: amount, equip: 0}

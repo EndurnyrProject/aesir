@@ -173,6 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
         progression: %{learned_skills: %{29 => 10}}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp party_player(id, opts) do

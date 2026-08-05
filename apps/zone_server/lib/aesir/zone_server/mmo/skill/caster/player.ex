@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
-  alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -59,16 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
-  def castable_state(%PlayerState{} = caster, phase) do
-    expected_action = if phase == :begin, do: :idle, else: :casting
-
-    cond do
-      not Unit.living?(caster) -> {:error, :dead}
-      caster.movement_state != :standing -> {:error, :moving}
-      caster.action_state != expected_action -> {:error, :busy}
-      true -> :ok
-    end
-  end
+  def castable_state(%PlayerState{}, phase) when phase in [:begin, :completion], do: :ok
 
   @impl true
   def cost(caster, module, target, definition, level) do
@@ -97,8 +87,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
-  def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id) do
-    Cooldown.ready?(cooldowns, skill_id, System.monotonic_time(:millisecond))
+  def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now) do
+    Cooldown.ready?(cooldowns, skill_id, now)
   end
 
   @impl true
@@ -109,8 +99,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
-  def act_ready?(caster) do
-    PlayerState.act_ready?(caster, System.monotonic_time(:millisecond))
+  def act_ready?(caster, now) do
+    PlayerState.act_ready?(caster, now)
   end
 
   @impl true

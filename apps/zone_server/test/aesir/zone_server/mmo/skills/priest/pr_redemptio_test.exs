@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
         }
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp member(char_id, map_name \\ "prontera") do
@@ -149,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
 
     assert {:ok, updated} = Interpreter.complete_cast(caster(7), 1014, 1, :self)
 
-    assert updated.stats.current_state == %{hp: 1, sp: 200}
+    assert updated.stats.current_state == %CurrentState{hp: 1, sp: 200}
     assert updated.stats.progression.base_exp == 123_456
     assert updated.stats.progression.job_exp == 65_432
   end

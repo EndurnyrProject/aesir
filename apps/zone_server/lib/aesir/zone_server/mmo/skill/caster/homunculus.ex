@@ -73,8 +73,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   end
 
   @impl true
-  def cooldown_ready?(%HomunculusState{cooldowns: cooldowns}, skill_id) do
-    Cooldown.ready?(cooldowns, skill_id, System.monotonic_time(:millisecond))
+  def cooldown_ready?(%HomunculusState{cooldowns: cooldowns}, skill_id, now) do
+    Cooldown.ready?(cooldowns, skill_id, now)
   end
 
   @impl true
@@ -85,8 +85,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   end
 
   @impl true
-  def act_ready?(%HomunculusState{action_state: :idle}), do: true
-  def act_ready?(%HomunculusState{}), do: false
+  def act_ready?(%HomunculusState{action_state: :idle}, _now), do: true
+  def act_ready?(%HomunculusState{}, _now), do: false
 
   @impl true
   def cast_stats(caster, _skill_id) do

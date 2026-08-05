@@ -30,8 +30,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
+  alias Aesir.ZoneServer.Unit.Stats.DerivedStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -103,7 +109,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def validate(_game_state, _target, _level, _definition), do: :ok
 
     @impl true
-    def dynamic_cost(%{dynamic_sp: sp}, _target, _level, _definition) do
+    def dynamic_cost(_game_state, _target, _level, _definition) do
+      sp = Process.get(:interpreter_test_dynamic_sp)
       send(self(), {:dynamic_cost_prepared, sp})
       %Cost{sp: sp}
     end
@@ -133,7 +140,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def validate(_game_state, _target, _level, _definition), do: :ok
 
     @impl true
-    def dynamic_cost(game_state, _target, _level, _definition), do: game_state.dynamic_cost
+    def dynamic_cost(_game_state, _target, _level, _definition),
+      do: Process.get(:interpreter_test_dynamic_cost)
   end
 
   defmodule ResourceChangingCostSkill do
@@ -161,9 +169,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
 
     @impl true
-    def validate(%{allow_cast?: true}, _target, _level, _definition), do: :ok
-
-    def validate(_game_state, _target, _level, _definition), do: {:error, :requirements_changed}
+    def validate(_game_state, _target, _level, _definition) do
+      if Process.get(:interpreter_test_allow_cast?, false),
+        do: :ok,
+        else: {:error, :requirements_changed}
+    end
   end
 
   defmodule DynamicCastTimeSkill do
@@ -176,30 +186,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     def validate(_game_state, _target, _level, _definition), do: :ok
 
     @impl true
-    def dynamic_cast_time(%{instant_cast?: true}, _target, _level, _definition),
-      do: %{cast_time: 0, fixed_cast_time: 0}
-
     def dynamic_cast_time(_game_state, _target, _level, definition) do
-      %{
-        cast_time: Enum.at(definition.cast_time, 0),
-        fixed_cast_time: Enum.at(definition.fixed_cast_time, 0)
-      }
+      if Process.get(:interpreter_test_instant_cast?, false) do
+        %{cast_time: 0, fixed_cast_time: 0}
+      else
+        %{
+          cast_time: Enum.at(definition.cast_time, 0),
+          fixed_cast_time: Enum.at(definition.fixed_cast_time, 0)
+        }
+      end
     end
   end
 
   defp game_state(sp, learned) do
-    %{
+    %PlayerState{
       character_id: 1000,
       x: 10,
       y: 10,
       map_name: "prontera",
+      action_state: :idle,
+      movement_state: :standing,
       skill_cooldowns: %{},
       act_delay_until: 0,
-      stats: %{
-        base_stats: %{dex: 1, int: 1},
-        current_state: %{sp: sp, hp: 100},
-        derived_stats: %{max_sp: 200, max_hp: 100},
-        progression: %{learned_skills: learned},
+      stats: %PlayerStats{
+        base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        current_state: %CurrentState{sp: sp, hp: 100},
+        derived_stats: %DerivedStats{max_sp: 200, max_hp: 100},
+        progression: %PlayerProgression{learned_skills: learned},
         equipment: %Equipment{}
       }
     }
@@ -207,14 +220,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   defp game_state(sp, learned, equipment) do
     gs = game_state(sp, learned)
-    %{gs | stats: Map.put(gs.stats, :modifiers, %{equipment: equipment})}
+    %{gs | stats: %{gs.stats | modifiers: %Modifiers{equipment: equipment}}}
   end
 
   defp resurrection_game_state do
-    Map.merge(game_state(100, %{54 => 1}), %{
-      inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
-      pending_inventory_persist: []
-    })
+    %{
+      game_state(100, %{54 => 1})
+      | inventory: %{0 => %InventoryItem{nameid: 717, amount: 1, equip: 0}},
+        pending_inventory_persist: []
+    }
   end
 
   defp resurrection_mob do
@@ -313,8 +327,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
     stub(Catalog, :active_module_for, fn :origin_aware -> {:ok, OriginAwareSkill} end)
 
-    off_lineage = put_in(game_state(100, %{29 => 1}), [:stats, :progression, :job_id], 1)
-    eligible = put_in(game_state(100, %{29 => 1}), [:stats, :progression, :job_id], 11)
+    off_lineage =
+      put_in(
+        game_state(100, %{29 => 1}),
+        [Access.key!(:stats), Access.key!(:progression), Access.key!(:job_id)],
+        1
+      )
+
+    eligible =
+      put_in(
+        game_state(100, %{29 => 1}),
+        [Access.key!(:stats), Access.key!(:progression), Access.key!(:job_id)],
+        11
+      )
 
     assert {:error, :skill_not_learned} = Interpreter.cast(off_lineage, 29, 1, :self)
     assert {:ok, _updated} = Interpreter.cast(eligible, 29, 1, :self)
@@ -539,7 +564,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
     stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCostSkill} end)
 
-    gs = Map.put(game_state(50, %{29 => 1}), :dynamic_sp, 10)
+    Process.put(:interpreter_test_dynamic_sp, 10)
+    gs = game_state(50, %{29 => 1})
     assert {:ok, updated} = Interpreter.cast(gs, 29, 1, :self)
 
     assert_received {:dynamic_cost_prepared, 10}
@@ -560,15 +586,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
     stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCostSkill} end)
 
-    started = Map.put(game_state(50, %{29 => 1}), :dynamic_sp, 10)
+    Process.put(:interpreter_test_dynamic_sp, 10)
+    started = game_state(50, %{29 => 1})
     assert {:casting, ^started, _info} = Interpreter.begin_cast(started, 29, 1, :self)
     assert_received {:dynamic_cost_prepared, 10}
 
+    Process.put(:interpreter_test_dynamic_sp, 60)
+
     assert {:error, :insufficient_sp} =
-             Interpreter.complete_cast(%{started | dynamic_sp: 60}, 29, 1, :self)
+             Interpreter.complete_cast(started, 29, 1, :self)
 
     assert_received {:dynamic_cost_prepared, 60}
     refute_received {:dynamic_cost_prepared, 60}
+    refute_received {:cost_skill_sp, _}
+  end
+
+  test "rebuilds completion context from the caster's current SP" do
+    definition = %Definition{
+      id: 29,
+      name: :cost_skill,
+      display_name: "Cost Skill",
+      max_level: 1,
+      target_type: :self,
+      sp_cost: [10],
+      cast_time: [1_000]
+    }
+
+    stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
+    stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, StaticCostSkill} end)
+
+    started = game_state(50, %{29 => 1})
+    assert {:casting, ^started, _info} = Interpreter.begin_cast(started, 29, 1, :self)
+
+    depleted = put_in(started.stats.current_state.sp, 5)
+    assert {:error, :insufficient_sp} = Interpreter.complete_cast(depleted, 29, 1, :self)
     refute_received {:cost_skill_sp, _}
   end
 
@@ -584,8 +635,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
     stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCostSkill} end)
 
+    Process.put(:interpreter_test_dynamic_sp, nil)
+
     assert {:error, :invalid_cost} =
-             Interpreter.cast(Map.put(game_state(50, %{29 => 1}), :dynamic_sp, nil), 29, 1, :self)
+             Interpreter.cast(game_state(50, %{29 => 1}), 29, 1, :self)
 
     assert_received {:dynamic_cost_prepared, nil}
     refute_received {:cost_skill_sp, _}
@@ -604,9 +657,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, MalformedCostSkill} end)
 
     for dynamic_cost <- [nil, %{}, %Cost{hp: -1}, %Cost{sp: :all}, %Cost{spheres: -1}] do
-      game_state = Map.put(game_state(50, %{29 => 1}), :dynamic_cost, dynamic_cost)
+      Process.put(:interpreter_test_dynamic_cost, dynamic_cost)
 
-      assert {:error, :invalid_cost} = Interpreter.cast(game_state, 29, 1, :self)
+      assert {:error, :invalid_cost} = Interpreter.cast(game_state(50, %{29 => 1}), 29, 1, :self)
       refute_received :malformed_cost_effect
     end
   end
@@ -647,11 +700,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(Catalog, :by_id, fn 29 -> {:ok, definition} end)
     stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, CompletionValidationSkill} end)
 
-    starting = Map.put(game_state(50, %{29 => 1}), :allow_cast?, true)
+    Process.put(:interpreter_test_allow_cast?, true)
+    starting = game_state(50, %{29 => 1})
     assert {:casting, ^starting, _info} = Interpreter.begin_cast(starting, 29, 1, :self)
 
+    Process.put(:interpreter_test_allow_cast?, false)
+
     assert {:error, :requirements_changed} =
-             Interpreter.complete_cast(%{starting | allow_cast?: false}, 29, 1, :self)
+             Interpreter.complete_cast(starting, 29, 1, :self)
 
     refute_received :completion_validation_effect
   end
@@ -1128,11 +1184,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(Catalog, :by_id, fn 29 -> {:ok, @timing_definition} end)
       stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, DynamicCastTimeSkill} end)
 
-      instant = Map.put(game_state(50, %{29 => 1}), :instant_cast?, true)
-      assert {:instant, _gs} = Interpreter.begin_cast(instant, 29, 1, :self)
+      Process.put(:interpreter_test_instant_cast?, true)
+      assert {:instant, _gs} = Interpreter.begin_cast(game_state(50, %{29 => 1}), 29, 1, :self)
 
-      timed = Map.put(game_state(50, %{29 => 1}), :instant_cast?, false)
-      assert {:casting, _gs, info} = Interpreter.begin_cast(timed, 29, 1, :self)
+      Process.put(:interpreter_test_instant_cast?, false)
+
+      assert {:casting, _gs, info} =
+               Interpreter.begin_cast(game_state(50, %{29 => 1}), 29, 1, :self)
+
       assert info.fixed == 400
       assert info.total > 400
     end
@@ -1670,6 +1729,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert Map.has_key?(updated.skill_cooldowns, 6)
     end
 
+    test "keeps completion free of begin-only gates" do
+      definition = %Definition{
+        id: 6,
+        name: :sm_provoke,
+        display_name: "Completion Subset",
+        max_level: 1,
+        target_type: :passive,
+        require_weapon: [:musical],
+        sp_cost: [0, 0],
+        cooldown: [10_000, 10_000]
+      }
+
+      stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+      stub(SmProvoke, :cast, fn caster, :self, 2, _definition -> {:ok, caster} end)
+
+      blocked = %{
+        game_state(100, %{})
+        | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 10_000},
+          act_delay_until: System.monotonic_time(:millisecond) + 10_000
+      }
+
+      assert {:ok, _updated} = Interpreter.complete_cast(blocked, 6, 2, :self)
+    end
+
     test "completes a timed cast when another effect arms cooldown and action delay" do
       definition = %{instant_definition() | cast_time: [1_000]}
       stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
@@ -1747,10 +1830,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
       :ok = StatusStorage.apply_status(:player, 1000, :sc_intoabyss)
 
-      without_trap =
-        game_state(100, %{117 => 1})
-        |> Map.merge(%{inventory: %{}, pending_inventory_persist: []})
-        |> then(&struct(PlayerState, &1))
+      without_trap = game_state(100, %{117 => 1})
 
       stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: %{}}} end)
 
@@ -1921,7 +2001,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       stub(SmProvoke, :cast, fn caster, :self, 1, resolved_definition ->
         assert resolved_definition.after_cast_delay == [500]
 
-        {:ok, put_in(caster, [:stats, :modifiers, :equipment, :delay_rate], 0)}
+        {:ok,
+         put_in(
+           caster,
+           [
+             Access.key!(:stats),
+             Access.key!(:modifiers),
+             Access.key!(:equipment),
+             :delay_rate
+           ],
+           0
+         )}
       end)
 
       before = System.monotonic_time(:millisecond)
@@ -2234,7 +2324,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
           equipped_game_state(%Equipment{right_hand: 90_202})
           | skill_cooldowns: %{6 => System.monotonic_time(:millisecond) + 60_000}
         }
-        |> put_in([:stats, :current_state, :sp], 0)
+        |> put_in(
+          [Access.key!(:stats), Access.key!(:current_state), Access.key!(:sp)],
+          0
+        )
 
       assert {:error, :wrong_weapon} = Interpreter.cast(gs, 6, 1, :self)
       assert gs.stats.current_state.sp == 0
@@ -2544,13 +2637,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     test "completion revalidates the module before effect or cooldown" do
       stub(Catalog, :by_id, fn 319 -> {:ok, @replay_definition} end)
       stub(Catalog, :active_module_for, fn :cost_skill -> {:ok, CompletionValidationSkill} end)
-      state = game_state(100, %{319 => 2}) |> Map.put(:allow_cast?, true)
+      Process.put(:interpreter_test_allow_cast?, true)
+      state = game_state(100, %{319 => 2})
       memory = %{skill_id: 319, level: 2}
 
       assert :ok = Interpreter.encore_replay_preflight(state, memory, :self)
 
+      Process.put(:interpreter_test_allow_cast?, false)
+
       assert {:error, :requirements_changed} =
-               Interpreter.complete_encore_replay(%{state | allow_cast?: false}, memory, :self)
+               Interpreter.complete_encore_replay(state, memory, :self)
 
       refute_received :completion_validation_effect
       assert state.skill_cooldowns == %{}

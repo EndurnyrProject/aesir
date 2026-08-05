@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalystTest do
         progression: %{learned_skills: learned}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp gem(amount), do: %InventoryItem{nameid: @gem_id, amount: amount, equip: 0}

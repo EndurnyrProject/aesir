@@ -106,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
         progression: %{learned_skills: %{skill_id => 5}}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp player_state(character_id) do

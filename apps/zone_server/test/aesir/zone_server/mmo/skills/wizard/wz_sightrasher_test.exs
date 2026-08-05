@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
         equipment: %Equipment{}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp stub_catalog do

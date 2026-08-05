@@ -276,6 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
         progression: %{learned_skills: learned_skills}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   defp catalyst(amount), do: %InventoryItem{nameid: 523, amount: amount, equip: 0}

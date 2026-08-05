@@ -18,9 +18,8 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
        unbuffed control.
 
   Real sessions register the units and provide the fake connection so the status
-  display broadcast has a target; the interpreter itself is driven with a plain
-  game_state map keyed to the registered character id, exactly as the skill unit
-  tests do, so the cast numbers stay deterministic.
+  display broadcast has a target; the interpreter itself is driven with a
+  deterministic PlayerState fixture keyed to the registered character id.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -151,8 +150,6 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
     div(max_hp - 1, 3)
   end
 
-  # Plain caster game_state keyed to a registered character id, mirroring the
-  # skill interpreter unit tests. Only fields the cast path reads are populated.
   defp game_state(character_id) do
     %{
       character_id: character_id,
@@ -168,5 +165,6 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase3IntegrationTest do
         progression: %{learned_skills: %{@al_incagi => 1}}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 end

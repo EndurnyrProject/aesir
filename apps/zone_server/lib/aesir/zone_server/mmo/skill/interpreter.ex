@@ -32,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog, as: HomunculusCatalog
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree, as: HomunculusSkillTree
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.CastContext
+  alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
@@ -134,27 +136,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def begin_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
-    with {:ok, prepared} <- validate_cast(game_state, skill_id, level, target, now) do
-      %{definition: definition, module: module} = prepared
-      base_stats = game_state.stats.base_stats
-
-      timing =
-        CastTime.compute(
-          cast_timing_definition(game_state, module, target, level, definition),
-          level,
-          %{
-            dex: base_stats.dex,
-            int: base_stats.int,
-            varcast_reductions: status_reductions(game_state.character_id, :cast_time_reduction),
-            varcast_rate:
-              merged_modifier(game_state.character_id, :varcast_rate) +
-                equip_modifier(game_state, :varcast_rate) +
-                equip_modifier(game_state, {:skill_varcast_rate, skill_id}),
-            fixed_cast: equip_modifier(game_state, :fixed_cast)
-          }
+    with {:ok, context} <- validate_cast(game_state, skill_id, level, target, now) do
+      timing_definition =
+        cast_timing_definition(
+          context.caster,
+          context.module,
+          context.target,
+          context.level,
+          context.definition
         )
 
-      schedule(timing, game_state, skill_id, level, target, prepared)
+      timing = CastTime.compute(timing_definition, context.level, context.stats)
+
+      schedule(timing, game_state, skill_id, level, target, context)
     end
   end
 
@@ -163,10 +157,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # Collects each active status's stored reduction percentage as a list, for the
   # variable-cast path that applies each as a separate multiplicative factor
   # (rAthena skill_vfcastfix). Statuses without the key are skipped.
-  @spec status_reductions(integer(), atom()) :: [non_neg_integer()]
-  defp status_reductions(character_id, state_key),
-    do: unit_status_reductions(:player, character_id, state_key)
-
   defp unit_status_reductions(unit_type, unit_id, state_key) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
@@ -220,11 +210,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   """
   @spec preflight_cast(PlayerState.t(), integer(), pos_integer(), Active.target()) ::
           :ok | {:error, atom()}
-  def preflight_cast(game_state, skill_id, level, target)
+  def preflight_cast(%PlayerState{} = game_state, skill_id, level, target)
       when is_integer(level) and level > 0 do
     now = System.monotonic_time(:millisecond)
 
     case validate_cast(game_state, skill_id, level, target, now) do
+      {:ok, _context} -> :ok
+      {:error, _reason} = error -> error
+    end
+  end
+
+  def preflight_cast(game_state, skill_id, level, target)
+      when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+
+    case validate_non_player_preflight(game_state, skill_id, level, target, now) do
       {:ok, _prepared} -> :ok
       {:error, _reason} = error -> error
     end
@@ -443,29 +443,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  defp complete_prepared_cast(game_state, skill_id, level, target, input, now, prepared) do
-    %{
-      definition: definition,
-      module: module,
-      cost: cost,
-      commitment: commitment,
-      zeny: zeny
-    } = prepared
-
-    apply_act_delay = Enum.at(definition.after_cast_delay, level - 1) not in [nil, 0]
-    after_cast_delay = resolved_after_cast_delay(game_state, definition, level)
-    definition = put_resolved_combo_delay(definition, level, after_cast_delay)
+  defp complete_prepared_cast(
+         game_state,
+         skill_id,
+         level,
+         target,
+         input,
+         now,
+         %CastContext{} = context
+       ) do
+    apply_act_delay = Enum.at(context.definition.after_cast_delay, level - 1) not in [nil, 0]
+    after_cast_delay = resolved_after_cast_delay(game_state, context.definition, level)
+    definition = put_resolved_combo_delay(context.definition, level, after_cast_delay)
 
     complete_resolved_cast(
       game_state,
-      module,
+      context.module,
       target,
       level,
       definition,
       %{
-        commitment: commitment,
-        cost: cost,
-        zeny: zeny,
+        adapter: context.adapter,
+        prepared_cost: context.cost,
         skill_id: skill_id,
         level: level,
         apply_act_delay: apply_act_delay,
@@ -631,9 +630,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          level,
          definition,
          %{
-           commitment: commitment,
-           cost: cost,
-           zeny: zeny,
+           adapter: adapter,
+           prepared_cost: prepared_cost,
            skill_id: skill_id,
            level: level,
            apply_act_delay: apply_act_delay,
@@ -647,8 +645,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         {:deferred, game_state,
          %Deferred{
            effect: descriptor,
-           cost: cost,
-           zeny: zeny,
+           cost: prepared_cost.cost,
+           zeny: prepared_cost.zeny,
            skill_id: skill_id,
            level: level,
            target: target
@@ -658,10 +656,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       when result in [:ok, :local_effects] and is_list(effects) ->
         settled =
           game_state
-          |> Cost.apply_commitment(commitment)
-          |> deduct_zeny(zeny)
+          |> then(&adapter.commit(&1, prepared_cost))
           |> consume_ammo(definition)
-          |> put_cooldown(skill_id, definition, level, now)
+          |> put_cooldown(adapter, skill_id, definition, level, now)
           |> put_resolved_act_delay(apply_act_delay, after_cast_delay, now)
 
         if result == :local_effects,
@@ -875,6 +872,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
          :ok <- check_weapon(game_state, definition),
+         Caster.Player = adapter = Caster.for(game_state),
+         :ok <- adapter.knows?(game_state, definition, level),
+         :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
+         {:ok, _module} <- fetch_active_module(definition),
+         context = CastContext.build(game_state, definition, level, target, :begin),
+         :ok <- adapter.castable_state(game_state, :begin),
+         :ok <- check_context_cooldown(context, now),
+         :ok <- check_context_act_delay(context, now),
+         :ok <- context.module.validate(game_state, target, level, definition) do
+      prepare_cast(context)
+    end
+  end
+
+  defp validate_completion(game_state, skill_id, level, target) do
+    with {:ok, definition} <- fetch_definition(skill_id),
+         {:ok, _module} <- fetch_active_module(definition),
+         context = CastContext.build(game_state, definition, level, target, :completion),
+         adapter = context.adapter,
+         :ok <- adapter.castable_state(game_state, :completion),
+         :ok <- check_quest_lineage(game_state, definition),
+         :ok <- check_target(game_state, target, definition),
+         :ok <- check_range(game_state, target, definition, level),
+         :ok <- context.module.validate(game_state, target, level, definition) do
+      prepare_cast(context)
+    end
+  end
+
+  defp validate_non_player_preflight(game_state, skill_id, level, target, now) do
+    with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         :ok <- check_castable(definition),
+         :ok <- check_weapon(game_state, definition),
          :ok <- check_learned(game_state, skill_id, level),
          :ok <- check_quest_lineage(game_state, definition),
          :ok <- check_target(game_state, target, definition),
@@ -883,18 +913,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_cooldown(game_state, skill_id, now),
          :ok <- check_act_delay(game_state, now),
          :ok <- module.validate(game_state, target, level, definition) do
-      prepare_cast(game_state, module, target, level, definition)
-    end
-  end
-
-  defp validate_completion(game_state, skill_id, level, target) do
-    with {:ok, definition} <- fetch_definition(skill_id),
-         {:ok, module} <- fetch_active_module(definition),
-         :ok <- check_quest_lineage(game_state, definition),
-         :ok <- check_target(game_state, target, definition),
-         :ok <- check_range(game_state, target, definition, level),
-         :ok <- module.validate(game_state, target, level, definition) do
-      prepare_cast(game_state, module, target, level, definition)
+      prepare_non_player_preflight(game_state, module, target, level, definition)
     end
   end
 
@@ -928,7 +947,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp validate_encore_replay(_game_state, _memory, _target, _now),
     do: {:error, :invalid_replay_memory}
 
-  defp prepare_cast(game_state, module, target, level, definition) do
+  defp prepare_cast(%CastContext{} = context) do
+    adapter = context.adapter
+
+    case adapter.cost(
+           context.caster,
+           context.module,
+           context.target,
+           context.definition,
+           context.level
+         ) do
+      {:ok, prepared} -> {:ok, %{context | cost: prepared}}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp prepare_non_player_preflight(game_state, module, target, level, definition) do
     with {:ok, cost} <- resolve_cost(game_state, module, target, level, definition),
          {:ok, commitment} <- Cost.prepare(game_state, cost),
          zeny = effective_zeny_cost(game_state, Enum.at(definition.zeny_cost, level - 1, 0)),
@@ -946,13 +980,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
+  defp check_context_cooldown(%CastContext{} = context, now) do
+    adapter = context.adapter
+
+    if adapter.cooldown_ready?(context.caster, context.definition.id, now),
+      do: :ok,
+      else: {:error, :on_cooldown}
+  end
+
+  defp check_context_act_delay(%CastContext{} = context, now) do
+    adapter = context.adapter
+
+    if adapter.act_ready?(context.caster, now),
+      do: :ok,
+      else: {:error, :act_delayed}
+  end
+
   @spec schedule(
           CastTime.result(),
           PlayerState.t(),
           integer(),
           pos_integer(),
           Active.target(),
-          map()
+          CastContext.t()
         ) ::
           {:instant, PlayerState.t()}
           | {:deferred, PlayerState.t(), term()}
@@ -1265,10 +1315,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   # Reads a single summed key from the caster's merged status modifiers,
   # defaulting to 0 when no active status contributes it.
-  @spec merged_modifier(integer(), atom()) :: integer()
-  defp merged_modifier(character_id, key),
-    do: unit_merged_modifier(:player, character_id, key)
-
   defp unit_merged_modifier(unit_type, unit_id, key) do
     unit_type
     |> ModifierCalculator.get_all_modifiers(unit_id)
@@ -1500,6 +1546,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
         cooldowns = Cooldown.put(game_state.skill_cooldowns, skill_id, now + duration)
         %{game_state | skill_cooldowns: cooldowns}
     end
+  end
+
+  defp put_cooldown(game_state, adapter, skill_id, definition, level, now) do
+    duration =
+      definition
+      |> Cooldown.duration(level)
+      |> Kernel.+(equip_modifier(game_state, {:skill_cooldown, skill_id}))
+      |> max(0)
+
+    expires_at = if duration == 0, do: 0, else: now + duration
+    adapter.put_cooldown(game_state, skill_id, expires_at)
   end
 
   # After-cast act delay (AfterCastActDelay) reduced by delay-rate sources

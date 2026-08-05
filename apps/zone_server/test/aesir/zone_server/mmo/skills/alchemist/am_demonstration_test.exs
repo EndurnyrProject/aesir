@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       pending_inventory_persist: [],
       stats: %{current_state: %{sp: 100}}
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 
   describe "skill data and placement" do

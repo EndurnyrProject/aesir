@@ -81,5 +81,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
         progression: %{learned_skills: %{304 => 1}}
       }
     }
+    |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
 end
