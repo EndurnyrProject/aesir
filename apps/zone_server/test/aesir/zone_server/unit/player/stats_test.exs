@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   defmodule AspdIntPassive do
     @moduledoc false
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
   # Real equip.yml ids.
   @sword 1101
+  @knife 1201
   @mace 1340
   @javelin 1401
   @lance 1410
@@ -1209,7 +1211,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
     end
 
-    test "equipping the Sword (atk 25) raises combat atk by 25 and sets weapon type" do
+    test "equipping the Sword (atk 25) raises combat atk by 25 and publishes its right hand" do
       sword = equipped(@sword, @right_hand)
 
       bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
@@ -1217,6 +1219,97 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert armed.combat_stats.atk == bare.combat_stats.atk + 25
       assert Stats.weapon_type(armed.equipment) == :one_handed_sword
+
+      assert armed.right_hand == %WeaponHand{
+               item_id: @sword,
+               subtype: :one_handed_sword,
+               element: :neutral,
+               base_atk: 25,
+               refine_atk: 0,
+               overrefine_band: 0,
+               slot: :right_hand
+             }
+
+      assert armed.left_hand == nil
+    end
+
+    test "a left-only dagger publishes only its left hand without changing aggregate ATK" do
+      armed =
+        Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [equipped(@knife, @left_hand)])
+
+      assert armed.combat_stats.atk == 17
+      assert armed.right_hand == nil
+
+      assert %WeaponHand{
+               item_id: @knife,
+               subtype: :dagger,
+               base_atk: 17,
+               slot: :left_hand
+             } = armed.left_hand
+    end
+
+    test "dual weapons keep base, refine, overrefine, and element local to each hand" do
+      right = %ItemDefinition{
+        id: 90_301,
+        aegis_name: "right_dagger",
+        name: "Right Dagger",
+        type: :weapon,
+        subtype: :dagger,
+        weapon_level: 4,
+        attack: 40,
+        attack_element: :fire
+      }
+
+      left = %ItemDefinition{
+        id: 90_302,
+        aegis_name: "left_dagger",
+        name: "Left Dagger",
+        type: :weapon,
+        subtype: :dagger,
+        weapon_level: 3,
+        attack: 17,
+        attack_element: :wind
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_301 -> {:ok, right}
+        90_302 -> {:ok, left}
+      end)
+
+      stub(RefineDatabase, :level_info, fn
+        :weapon, 4, 7 -> %{bonus: 500, randombonus_max: 200}
+        :weapon, 3, 8 -> %{bonus: 900, randombonus_max: 400}
+      end)
+
+      armed =
+        swordman(%Equipment{}, %{})
+        |> Stats.apply_equipment_modifiers([
+          refined(90_301, @right_hand, 7),
+          refined(90_302, @left_hand, 8)
+        ])
+        |> Stats.calculate_combat_stats()
+
+      assert armed.combat_stats.atk == 71
+
+      assert armed.right_hand == %WeaponHand{
+               item_id: 90_301,
+               subtype: :dagger,
+               element: :fire,
+               base_atk: 40,
+               refine_atk: 5,
+               overrefine_band: 2,
+               slot: :right_hand
+             }
+
+      assert armed.left_hand == %WeaponHand{
+               item_id: 90_302,
+               subtype: :dagger,
+               element: :wind,
+               base_atk: 17,
+               refine_atk: 9,
+               overrefine_band: 4,
+               slot: :left_hand
+             }
     end
 
     test "removing the weapon reverts the atk bonus and weapon type" do
@@ -1227,6 +1320,32 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert reverted.combat_stats.atk == 0
       assert Stats.weapon_type(reverted.equipment) == :fist
+    end
+
+    test "a Katar doubles final CRIT until it is removed" do
+      base =
+        swordman(%Equipment{}, %{})
+        |> put_in([Access.key!(:base_stats), Access.key!(:luk)], 30)
+        |> put_in([Access.key!(:modifiers), Access.key!(:status_effects)], %{
+          critical: 2,
+          critical_rate: 50
+        })
+
+      bare = base |> Stats.apply_equipment_modifiers([]) |> Stats.calculate_combat_stats()
+
+      armed =
+        base
+        |> Stats.apply_equipment_modifiers([equipped(1250, @both_hand)])
+        |> Stats.calculate_combat_stats()
+
+      reverted = armed |> Stats.apply_equipment_modifiers([]) |> Stats.calculate_combat_stats()
+
+      assert bare.combat_stats.critical == 18
+      assert armed.combat_stats.critical == 36
+      assert armed.right_hand.subtype == :katar
+      assert armed.left_hand == nil
+      assert reverted.combat_stats.critical == bare.combat_stats.critical
+      assert reverted.right_hand == nil
     end
 
     test "a known armor's defense adds to combat def" do

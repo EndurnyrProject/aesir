@@ -26,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       DamageCalculator.calculate_damage(player_combatant, mob_combatant)
   """
 
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
+
   @typedoc """
   Standardized combatant structure containing all data needed for combat calculations.
 
@@ -78,6 +80,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Weapon information
     weapon: nil,
+    right_hand: nil,
+    left_hand: nil,
 
     # Attack range for combat distance calculations
     attack_range: nil,
@@ -153,6 +157,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             element: atom(),
             size: atom()
           },
+          right_hand: WeaponHand.t() | nil,
+          left_hand: WeaponHand.t() | nil,
           attack_range: integer(),
           attack_delay_ms: integer(),
           position: {integer(), integer()} | nil,

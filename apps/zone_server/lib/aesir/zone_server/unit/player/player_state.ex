@@ -994,6 +994,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
         element: weapon_element(state.stats),
         size: :medium
       },
+      right_hand: state.stats.right_hand,
+      left_hand: state.stats.left_hand,
       attack_range: WeaponTypes.get_attack_range(weapon_type) + passive_range,
       attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
       position: {state.x, state.y},

@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats
 
   @riding_option_bit Option.id(:riding)
@@ -147,6 +148,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     # list can still re-evaluate the on_equip programs - their level inputs
     # (BaseLevel/JobLevel) change without any equipment change.
     worn_items: [],
+    right_hand: nil,
+    left_hand: nil,
 
     # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
     # single writer's authoritative in-memory value. `MountHandler` keeps this
@@ -185,6 +188,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
               card3: integer()
             }
           ],
+          right_hand: WeaponHand.t() | nil,
+          left_hand: WeaponHand.t() | nil,
           riding: boolean()
         }
 
@@ -395,7 +400,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
     equipment_bonuses = calculate_equipment_bonuses(stats.worn_items, stats.progression)
+
     %{stats | modifiers: %{stats.modifiers | equipment: equipment_bonuses}}
+    |> put_weapon_hands(stats.worn_items)
   end
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items)
@@ -423,6 +430,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         worn_items: worn_items,
         modifiers: %{stats.modifiers | equipment: equipment_bonuses}
     }
+    |> put_weapon_hands(worn_items)
+  end
+
+  defp put_weapon_hands(stats, worn_items) do
+    %{
+      stats
+      | right_hand: weapon_hand(worn_items, :right_hand),
+        left_hand: weapon_hand(worn_items, :left_hand)
+    }
+  end
+
+  defp weapon_hand(worn_items, slot) do
+    case Enum.find(worn_items, &worn_in_slot?(&1, slot)) do
+      nil -> nil
+      item -> weapon_hand(item, slot, ItemManagement.get_item_by_id(item.nameid))
+    end
+  end
+
+  defp weapon_hand(item, slot, {:ok, %ItemDefinition{type: :weapon} = item_def}) do
+    {refine_atk, overrefine_band} = weapon_refine(item_def, item.refine)
+
+    %WeaponHand{
+      item_id: item.nameid,
+      subtype: item_def.subtype,
+      element: weapon_element(item_def, item),
+      base_atk: item_def.attack,
+      refine_atk: refine_atk,
+      overrefine_band: overrefine_band,
+      slot: slot
+    }
+  end
+
+  defp weapon_hand(_item, _slot, _item_result), do: nil
+
+  defp worn_in_slot?(item, slot) do
+    locations = EquipLocation.bitmask_to_location_atoms(item.equip)
+    slot in locations and (slot == :right_hand or :right_hand not in locations)
+  end
+
+  defp weapon_element(%ItemDefinition{attack_element: element}, _item)
+       when is_atom(element) and not is_nil(element),
+       do: element
+
+  defp weapon_element(_item_def, item) do
+    case ForgeStamp.decode(item) do
+      {:ok, %{element: element}} -> element
+      _ -> :neutral
+    end
+  end
+
+  defp weapon_refine(_item_def, refine) when refine <= 0, do: {0, 0}
+
+  defp weapon_refine(%ItemDefinition{weapon_level: level}, refine) do
+    case RefineDatabase.level_info(:weapon, level, refine) do
+      %{bonus: bonus, randombonus_max: random} -> {div(bonus, 100), div(random, 100)}
+      nil -> {0, 0}
+    end
   end
 
   @doc """
@@ -756,6 +820,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     passive_critical = Passives.critical_bonus(stats)
     passive_critical_display = div(passive_critical, 10)
 
+    critical =
+      trunc(
+        (base_critical + passive_critical_display + get_status_modifier(stats, :critical) +
+           get_equipment_modifier(stats, :critical)) *
+          (100 + get_status_modifier(stats, :critical_rate)) / 100
+      )
+      |> apply_katar_critical(stats.right_hand)
+
     # Effective trait stats feed the six SP-A combat slots (rows 5-10).
     pow_eff = get_effective_stat(stats, :pow)
     sta_eff = get_effective_stat(stats, :sta)
@@ -779,12 +851,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     combat_stats = %Stats.CombatStats{
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
-      critical:
-        trunc(
-          (base_critical + passive_critical_display + get_status_modifier(stats, :critical) +
-             get_equipment_modifier(stats, :critical)) *
-            (100 + get_status_modifier(stats, :critical_rate)) / 100
-        ),
+      critical: critical,
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
@@ -812,6 +879,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     %{stats | combat_stats: combat_stats}
   end
+
+  defp apply_katar_critical(critical, %WeaponHand{subtype: :katar}), do: critical * 2
+  defp apply_katar_critical(critical, _right_hand), do: critical
 
   @spec forged_star_damage([map()]) :: non_neg_integer()
   defp forged_star_damage(worn_items) do

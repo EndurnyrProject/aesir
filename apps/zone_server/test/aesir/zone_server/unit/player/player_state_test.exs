@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   describe "new/1 char vars and zeny" do
     test "loads vars, an empty temp_vars, and zeny from the character" do
@@ -513,6 +514,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       # Sword (id 1101), subtype one_handed_sword, worn on the right hand (bitmask 2).
       combatant = PlayerState.to_combatant(with_weapon(state, 1101, 2))
       assert combatant.weapon.type == :one_handed_sword
+    end
+
+    test "exports the player's optional weapon hands", %{state: state} do
+      worn = %InventoryItem{nameid: 1101, amount: 1, equip: 2, identify: 1}
+      state = put_in(state.stats, Stats.apply_equipment_modifiers(state.stats, [worn]))
+
+      combatant = PlayerState.to_combatant(state)
+
+      assert %WeaponHand{item_id: 1101, slot: :right_hand} = combatant.right_hand
+      assert combatant.left_hand == nil
+    end
+
+    test "an unarmed player's combatant has no weapon hand snapshots", %{state: state} do
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.right_hand == nil
+      assert combatant.left_hand == nil
     end
 
     test "an unarmed player resolves to :fist", %{state: state} do
