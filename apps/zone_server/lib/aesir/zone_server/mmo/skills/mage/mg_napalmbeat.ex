@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmbeat do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 11,
     name: :mg_napalmbeat,
+    requires: [],
     display_name: "Napalm Beat",
     max_level: 10,
     target_type: :target_enemy,

@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 16,
     name: :mg_stonecurse,
+    requires: [:inventory],
     display_name: "Stone Curse",
     max_level: 10,
     target_type: :target_enemy,

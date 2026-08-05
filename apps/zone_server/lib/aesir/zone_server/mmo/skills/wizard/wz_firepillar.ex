@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 80,
     name: :wz_firepillar,
+    requires: [:inventory],
     display_name: "Fire Pillar",
     max_level: 10,
     target_type: :ground,

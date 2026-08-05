@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFireball do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 17,
     name: :mg_fireball,
+    requires: [],
     display_name: "Fire Ball",
     max_level: 10,
     target_type: :target_enemy,

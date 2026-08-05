@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirebolt do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 19,
     name: :mg_firebolt,
+    requires: [],
     display_name: "Fire Bolt",
     max_level: 10,
     target_type: :target_enemy,

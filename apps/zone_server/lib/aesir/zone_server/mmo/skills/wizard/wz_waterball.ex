@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 86,
     name: :wz_waterball,
+    requires: [:player_state],
     display_name: "Water Ball",
     max_level: 5,
     target_type: :target_enemy,

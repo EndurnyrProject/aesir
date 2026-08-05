@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstorm do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 21,
     name: :mg_thunderstorm,
+    requires: [],
     display_name: "Thunderstorm",
     max_level: 10,
     target_type: :ground,

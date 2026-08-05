@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 12,
     name: :mg_safetywall,
+    requires: [:inventory],
     display_name: "Safety Wall",
     max_level: 10,
     target_type: :ground,

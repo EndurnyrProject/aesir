@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 14,
     name: :mg_coldbolt,
+    requires: [],
     display_name: "Cold Bolt",
     max_level: 10,
     target_type: :target_enemy,

@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 89,
     name: :wz_stormgust,
+    requires: [],
     display_name: "Storm Gust",
     max_level: 10,
     target_type: :ground,

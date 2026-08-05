@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 92,
     name: :wz_quagmire,
+    requires: [],
     display_name: "Quagmire",
     max_level: 5,
     target_type: :ground,

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSight do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 10,
     name: :mg_sight,
+    requires: [:player_state],
     display_name: "Sight",
     max_level: 1,
     target_type: :self,

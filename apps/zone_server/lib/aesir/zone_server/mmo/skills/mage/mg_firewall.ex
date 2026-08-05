@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 18,
     name: :mg_firewall,
+    requires: [],
     display_name: "Fire Wall",
     max_level: 10,
     target_type: :ground,

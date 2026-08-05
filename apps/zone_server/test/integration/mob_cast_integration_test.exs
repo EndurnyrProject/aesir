@@ -64,6 +64,11 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   # Wind Ghost: carries `WZ_JUPITEL` rows. Not denylisted for mob casting.
   @jupitel_mob_id 1_450
 
+  # Nidhoggr's Shadow carries level 11 WZ_METEOR; Dark Shadow carries level 21
+  # WZ_VERMILION. Both exceed the player skill definitions' level 10 maximum.
+  @meteor_mob_id 2_110
+  @vermilion_mob_id 2_100
+
   # Gloom Under Night carries level 5 HT_FREEZINGTRAP around-self rows.
   @freezing_trap_mob_id 2_431
 
@@ -171,6 +176,31 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
                Executor.execute(caster_targeting(char_id), row!(@mob_id, "SA_DISPELL", level: 5))
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
+    end
+  end
+
+  describe "wizard ground rows above player max level" do
+    test "Meteor Storm and Lord of Vermilion cast without raising and preserve row level" do
+      target = spawn_test_mob(@map, {170, 170}, mob_id: @stun_mob_id)
+
+      for {mob_id, skill_name, skill_atom, level} <- [
+            {@meteor_mob_id, "WZ_METEOR", :wz_meteor, 11},
+            {@vermilion_mob_id, "WZ_VERMILION", :wz_vermilion, 21}
+          ] do
+        mob = spawn_test_mob(@map, {169, 170}, mob_id: mob_id)
+        caster = %{get_mob_state(mob.pid) | target_ref: {:mob, target.unit_id}}
+
+        assert :ok = Executor.execute(caster, row!(mob_id, skill_name, level: level))
+
+        assert %Group{level: ^level} =
+                 group =
+                 Enum.find(
+                   Storage.all(),
+                   &(&1.skill_name == skill_atom and &1.caster_id == caster.instance_id)
+                 )
+
+        on_exit(fn -> Storage.delete(group.group_id) end)
+      end
     end
   end
 

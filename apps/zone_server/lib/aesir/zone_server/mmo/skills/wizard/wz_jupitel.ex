@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 84,
     name: :wz_jupitel,
+    requires: [],
     display_name: "Jupitel Thunder",
     max_level: 10,
     target_type: :target_enemy,

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 15,
     name: :mg_frostdiver,
+    requires: [],
     display_name: "Frost Diver",
     max_level: 10,
     target_type: :target_enemy,

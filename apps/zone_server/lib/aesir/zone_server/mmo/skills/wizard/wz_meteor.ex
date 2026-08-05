@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 83,
     name: :wz_meteor,
+    requires: [],
     display_name: "Meteor Storm",
     max_level: 10,
     target_type: :ground,
@@ -45,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
   def on_place(%Group{center: center, level: level}) do
     definition = definition()
+    idx = min(level, definition.max_level) - 1
 
     {:ok,
      %{
@@ -52,7 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
        state: %{ignore_land_protector: true},
        interval: definition.hit_interval,
        initial_delay: 700,
-       duration: Enum.at(definition.duration, level - 1),
+       duration: Enum.at(definition.duration, idx),
        lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action}
      }}
   end
@@ -61,7 +63,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   @spec schedule(Group.t(), (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}
   def schedule(%Group{center: {x, y}, created_at: created_at, level: level} = group, rng) do
     definition = definition()
-    count = Enum.at(@hit_counts, level - 1)
+    idx = min(level, definition.max_level) - 1
+    count = Enum.at(@hit_counts, idx)
     radius = definition.splash_radius
 
     schedule =
@@ -101,6 +104,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok
   defp hit(group, definition, caster, {unit_type, target_id}) do
+    idx = min(group.level, definition.max_level) - 1
+
     case Combat.apply_skill_unit_damage(
            caster,
            unit_type,
@@ -113,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
       :ok ->
         StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,
           val1: group.level,
-          duration: Enum.at(definition.unit_duration, group.level - 1),
+          duration: Enum.at(definition.unit_duration, idx),
           success_rate: 3 * group.level
         )
 

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 90,
     name: :wz_earthspike,
+    requires: [:player_state],
     display_name: "Earth Spike",
     max_level: 5,
     target_type: :target_enemy,

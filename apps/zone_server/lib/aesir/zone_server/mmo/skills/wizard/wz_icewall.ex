@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 87,
     name: :wz_icewall,
+    requires: [:player_state],
     display_name: "Ice Wall",
     max_level: 10,
     target_type: :ground,

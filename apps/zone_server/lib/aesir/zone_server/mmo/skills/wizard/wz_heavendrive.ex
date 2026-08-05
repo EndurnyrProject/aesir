@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendrive do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 91,
     name: :wz_heavendrive,
+    requires: [],
     display_name: "Heaven's Drive",
     max_level: 5,
     target_type: :ground,

@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 13,
     name: :mg_soulstrike,
+    requires: [],
     display_name: "Soul Strike",
     max_level: 10,
     target_type: :target_enemy,

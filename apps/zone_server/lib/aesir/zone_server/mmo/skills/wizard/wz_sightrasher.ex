@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 81,
     name: :wz_sightrasher,
+    requires: [:player_state],
     display_name: "Sightrasher",
     max_level: 10,
     target_type: :self,

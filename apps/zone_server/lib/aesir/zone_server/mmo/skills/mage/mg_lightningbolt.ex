@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgLightningbolt do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 20,
     name: :mg_lightningbolt,
+    requires: [],
     display_name: "Lightning Bolt",
     max_level: 10,
     target_type: :target_enemy,

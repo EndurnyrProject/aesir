@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 88,
     name: :wz_frostnova,
+    requires: [],
     display_name: "Frost Nova",
     max_level: 10,
     target_type: :self,
