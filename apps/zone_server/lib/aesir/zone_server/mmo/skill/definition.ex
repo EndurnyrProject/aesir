@@ -90,7 +90,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             damage_kind: :weapon,
             damage_base: :weapon,
             item_cost: [],
-            requires: [],
+            # Caster facilities this skill requires (see `Skill.Requirement`). Silence means
+            # PLAYER-ONLY: an un-annotated skill defaults to `[:player_state]`, which no mob
+            # can provide, so a mob never casts it. Caster-generic skills MUST opt in with an
+            # explicit `requires: []` (or a narrower set). This default makes the
+            # crash-a-MobSession class structurally impossible.
+            requires: [:player_state],
             requires_ammo: false,
             require_weapon: [],
             status: nil,
@@ -205,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     damage_kind: :weapon,
     damage_base: :weapon,
     item_cost: [],
-    requires: [],
+    requires: [:player_state],
     requires_ammo: false,
     require_weapon: [],
     status: nil,

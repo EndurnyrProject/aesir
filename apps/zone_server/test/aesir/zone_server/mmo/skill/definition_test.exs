@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
       assert module.definition().requires == [:inventory]
     end
 
-    test "defaults to no requirements" do
+    test "defaults to player-only requirements when not declared" do
       [{module, _bytecode}] =
         Code.compile_string("""
         defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest.PermissiveSkill do
@@ -39,7 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
         end
         """)
 
-      assert module.definition().requires == []
+      # An un-annotated skill defaults to player-only, so a mob never casts it.
+      assert module.definition().requires == [:player_state]
+      refute module.__requires_declared__()
     end
 
     test "rejects an unknown requirement and names it" do
