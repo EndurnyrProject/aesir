@@ -1614,6 +1614,56 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  describe "Venom Dust admission" do
+    test "rejects the whole group when any cell overlaps another Venom Dust" do
+      manager = start_manager(10_000)
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(1, skill_id: 140, cells: [{100, 100}])
+               )
+
+      assert {:error, :skill_unit_overlap} =
+               Manager.register(
+                 manager,
+                 group(2, skill_id: 140, cells: [{101, 100}, {100, 100}])
+               )
+
+      assert nil == Storage.get(2)
+      assert [] == Storage.get_cells_by_group(2)
+    end
+
+    test "rejects Venom Dust overlapping a trap group" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, trap_group(1))
+
+      assert {:error, :skill_unit_overlap} =
+               Manager.register(manager, group(2, skill_id: 140))
+
+      assert nil == Storage.get(2)
+    end
+
+    test "rejects Venom Dust overlapping seeded Poison Mist" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, group(1, skill_id: 8020))
+      assert {:error, :skill_unit_overlap} = Manager.register(manager, group(2, skill_id: 140))
+      assert nil == Storage.get(2)
+    end
+
+    test "keeps ordinary groups stackable and marks admitted Venom Dust" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, group(1, skill_id: 1))
+      assert :ok = Manager.register(manager, group(2, skill_id: 140))
+      assert %Group{state: %{removed_by_fire_rain: true}} = Storage.get(2)
+      assert %Group{} = ordinary = Storage.get(1)
+      assert ordinary.state == %{}
+    end
+  end
+
   describe "Safety Wall serialization" do
     test "admits only one of two concurrent same-cell casts from different casters" do
       manager = start_manager(10_000)

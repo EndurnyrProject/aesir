@@ -40,6 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @sprung_trap_lifetime 1_500
   @trap_item_id 1065
   @safetywall_skill_id 12
+  @venom_dust_skill_id 140
+  @poison_mist_skill_id 8020
   @no_overlap_skill_ids [@safetywall_skill_id, 70, 79, 229]
 
   @type server :: GenServer.server()
@@ -272,6 +274,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   def handle_call({:register, group}, _from, state) do
     with {:ok, group} <- apply_exclusive_family(group, state.clock.()),
          :ok <- ensure_no_overlap_admission(group),
+         {:ok, group} <- add_venom_dust_metadata(group),
          {:ok, group} <- apply_land_protector(group),
          {:ok, group} <- schedule_group(group, state.rng),
          {:ok, group} <- register_group(group) do
@@ -810,7 +813,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     if overlap?, do: {:error, overlap_error(skill_id)}, else: :ok
   end
 
+  defp ensure_no_overlap_admission(%Group{skill_id: @venom_dust_skill_id} = group) do
+    overlap? =
+      Enum.any?(group.cells, fn {x, y} ->
+        group.map_name
+        |> Storage.get_groups_at_cell(x, y)
+        |> Enum.any?(&venom_dust_blocker?(&1, group))
+      end)
+
+    if overlap?, do: {:error, :skill_unit_overlap}, else: :ok
+  end
+
   defp ensure_no_overlap_admission(%Group{}), do: :ok
+
+  defp venom_dust_blocker?(%Group{group_id: group_id}, %Group{group_id: group_id}), do: false
+
+  defp venom_dust_blocker?(%Group{skill_id: skill_id}, _group)
+       when skill_id in [@venom_dust_skill_id, @poison_mist_skill_id],
+       do: true
+
+  defp venom_dust_blocker?(%Group{state: %{trap: %TrapState{}}}, _group), do: true
+  defp venom_dust_blocker?(%Group{}, _group), do: false
+
+  defp add_venom_dust_metadata(%Group{skill_id: @venom_dust_skill_id} = group),
+    do: {:ok, %{group | state: Map.put(group.state, :removed_by_fire_rain, true)}}
+
+  defp add_venom_dust_metadata(%Group{} = group), do: {:ok, group}
 
   defp overlap_error(@safetywall_skill_id), do: :safetywall_overlap
   defp overlap_error(_skill_id), do: :skill_unit_overlap
