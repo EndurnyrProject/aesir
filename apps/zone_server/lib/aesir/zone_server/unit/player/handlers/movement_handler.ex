@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.MovementEngine
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -420,6 +421,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
              {game_state.x, game_state.y},
              {dest_x, dest_y}
            ) do
+      state = dispatch_movement_intent(state, game_state)
+      game_state = state.game_state
+
       # A manual move (no combat_initiated:/pickup_initiated: flag) while heading
       # to a target or item cancels that pending intent so the player can walk away.
       game_state = maybe_clear_action_intent(game_state, opts)
@@ -468,6 +472,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         MessageRouter.send_to(connection_pid, packet)
 
         {:noreply, state}
+    end
+  end
+
+  defp dispatch_movement_intent(state, game_state) do
+    position = %{map: game_state.map_name, x: game_state.x, y: game_state.y}
+
+    case Interpreter.on_movement_intent(:player, game_state.character_id, position) do
+      :changed -> StatusManager.recalculate_after_status_change(state)
+      :unchanged -> state
     end
   end
 

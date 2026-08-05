@@ -172,6 +172,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   end
 
   @doc """
+  Atomically replaces a status only when its current entry exactly matches the expected entry.
+
+  Returns whether the replacement was stored. A newer same-type application is
+  never overwritten.
+  """
+  @spec replace_status_if_current(
+          unit_type(),
+          integer(),
+          atom(),
+          StatusEntry.t(),
+          StatusEntry.t()
+        ) :: boolean()
+  def replace_status_if_current(unit_type, unit_id, status_type, expected_entry, replacement) do
+    key = {unit_type, unit_id, status_type}
+
+    match_spec = [
+      {{key, :"$1"}, [{:"=:=", :"$1", {:const, expected_entry}}],
+       [
+         {:const, {key, replacement}}
+       ]}
+    ]
+
+    :ets.select_replace(table_for(:player_statuses), match_spec) == 1
+  end
+
+  @doc """
   Atomically removes and returns a status entry.
 
   Consumers of single-use statuses use this to claim the entry before applying

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -44,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
     Mimic.copy(Warps)
     Mimic.copy(StatusDisplay)
     Mimic.copy(Interpreter)
+    Mimic.copy(StatusManager)
     Mimic.copy(SkillUnit)
     Mimic.copy(SkillUnitManager)
     Mimic.copy(Storage)
@@ -65,6 +67,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
 
     stub(StatusDisplay, :active_icons, fn _type, _id -> [] end)
     stub(Interpreter, :can_move?, fn _type, _id -> true end)
+
+    stub(Interpreter, :on_movement_intent, fn _type, _id, _position ->
+      :unchanged
+    end)
+
+    stub(StatusManager, :recalculate_after_status_change, fn state -> state end)
     stub(SkillUnit, :in_range, fn _map, _x, _y, _range, _observer_id, _party_id -> [] end)
     stub(Storage, :get_groups_at_cell, fn _map, _x, _y -> [] end)
     stub(FieldSupport, :sources_for_unit, fn _type, _id -> [] end)
@@ -113,6 +121,52 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
       assert_receive {:movement, :movement_tick}, 300
     end
 
+    test "dispatches once at the committed cell after validating the command" do
+      expect(Interpreter, :on_movement_intent, fn :player, 1, position ->
+        assert position == %{map: "prontera", x: 50, y: 50}
+        :unchanged
+      end)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      Mimic.copy(Movement)
+      stub(Movement, :set_position, fn _type, _id, _state, _map -> :ok end)
+      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
+      stub(SpatialIndex, :get_units_in_range, fn :mob, _, _, _, _ -> [] end)
+
+      {:noreply, _stepped_state} = MovementHandler.handle_movement_tick(new_state)
+    end
+
+    test "recalculates once through the owner when movement intent changes a status" do
+      expect(Interpreter, :on_movement_intent, fn :player,
+                                                  1,
+                                                  %{
+                                                    map: "prontera",
+                                                    x: 50,
+                                                    y: 50
+                                                  } ->
+        :changed
+      end)
+
+      expect(StatusManager, :recalculate_after_status_change, fn state ->
+        send(self(), :movement_status_recalculated)
+        state
+      end)
+
+      {:noreply, _new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert_received :movement_status_recalculated
+    end
+
+    test "invalid path commands do not dispatch movement intent" do
+      stub(Pathfinding, :find_path, fn _map, _from, _to -> {:error, :no_path} end)
+      reject(&Interpreter.on_movement_intent/3)
+
+      {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
+
+      assert new_state.game_state.movement_state == :standing
+    end
+
     test "does not broadcast a movement UnitSpawn to nearby players" do
       # Movement now reaches observers via per-map delta snapshots
       # (see Map.CoordinatorFlushTest), not a reliable UnitSpawn{moving: true}.
@@ -132,6 +186,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   describe "handle_request_move/4 status gating" do
     test "a player under a no_move status is snapped back and no path is set" do
       stub(Interpreter, :can_move?, fn :player, 1 -> false end)
+      reject(&Interpreter.on_movement_intent/3)
 
       {:noreply, new_state} = MovementHandler.handle_request_move(idle_state(), 51, 50)
 

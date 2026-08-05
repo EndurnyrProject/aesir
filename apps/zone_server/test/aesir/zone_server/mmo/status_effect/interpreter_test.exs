@@ -119,6 +119,59 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  defmodule MovementIntentStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_movement_intent,
+      no_dispel: false,
+      properties: [:buff]
+
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    @impl true
+    def modifiers(%{state: %{wall: true}}, _context), do: %{movement_speed: -10}
+    def modifiers(_instance, _context), do: %{}
+
+    @impl true
+    def on_movement_intent(
+          {:player, target_id},
+          %{state: %{observer: observer, action: action}} = instance,
+          position,
+          _context
+        ) do
+      send(observer, {:movement_intent, position})
+      handle_action(action, target_id, instance)
+    end
+
+    @impl true
+    def on_expire(_target, %{state: %{observer: observer}}, _context) do
+      send(observer, :movement_intent_expired)
+      :ok
+    end
+
+    defp handle_action(:update, _target_id, instance) do
+      {:ok, %{instance | state: Map.put(instance.state, :wall, true)}}
+    end
+
+    defp handle_action(:remove, _target_id, _instance), do: :remove
+    defp handle_action(:unchanged, _target_id, instance), do: {:ok, instance}
+
+    defp handle_action(:replace_then_update, target_id, instance) do
+      StatusStorage.apply_status(:player, target_id, :sc_test_movement_intent,
+        state: %{observer: instance.state.observer, action: :unchanged, generation: :new}
+      )
+
+      {:ok, %{instance | state: Map.put(instance.state, :generation, :stale)}}
+    end
+
+    defp handle_action(:replace_then_remove, target_id, instance) do
+      StatusStorage.apply_status(:player, target_id, :sc_test_movement_intent,
+        state: %{observer: instance.state.observer, action: :unchanged, generation: :new}
+      )
+
+      :remove
+    end
+  end
+
   defmodule MutuallyExclusiveX do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mutually_exclusive_x,
@@ -222,6 +275,89 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  describe "on_movement_intent/3" do
+    test "does not scan status storage when no definition implements the capability" do
+      Mimic.copy(StatusStorage)
+      reject(&StatusStorage.get_unit_statuses/2)
+
+      assert :unchanged =
+               Interpreter.on_movement_intent(:player, 7_604, %{
+                 map: "prontera",
+                 x: 50,
+                 y: 50
+               })
+    end
+
+    test "stores a current-generation update and reports changed stats" do
+      target_id = 7_605
+      setup_player_mock(target_id)
+      Registry.register_module(MovementIntentStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_movement_intent,
+          state: %{observer: self(), action: :update, wall: false}
+        )
+
+      assert :changed =
+               Interpreter.on_movement_intent(:player, target_id, %{
+                 map: "prontera",
+                 x: 50,
+                 y: 50
+               })
+
+      assert_receive {:movement_intent, %{map: "prontera", x: 50, y: 50}}
+
+      assert %{state: %{wall: true}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_movement_intent)
+    end
+
+    test "removes the current generation through its lifecycle" do
+      target_id = 7_606
+      setup_player_mock(target_id)
+      Registry.register_module(MovementIntentStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_movement_intent,
+          state: %{observer: self(), action: :remove, wall: true}
+        )
+
+      assert :changed =
+               Interpreter.on_movement_intent(:player, target_id, %{
+                 map: "prontera",
+                 x: 50,
+                 y: 50
+               })
+
+      assert_receive :movement_intent_expired
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_movement_intent)
+    end
+
+    test "does not overwrite or remove a replacement generation" do
+      target_id = 7_607
+      setup_player_mock(target_id)
+      Registry.register_module(MovementIntentStatus)
+
+      for action <- [:replace_then_update, :replace_then_remove] do
+        :ok =
+          StatusStorage.apply_status(:player, target_id, :sc_test_movement_intent,
+            state: %{observer: self(), action: action, generation: :old}
+          )
+
+        assert :unchanged =
+                 Interpreter.on_movement_intent(:player, target_id, %{
+                   map: "prontera",
+                   x: 50,
+                   y: 50
+                 })
+
+        assert %{state: %{generation: :new}} =
+                 StatusStorage.get_status(:player, target_id, :sc_test_movement_intent)
+
+        refute_receive :movement_intent_expired
+      end
+    end
+  end
 
   describe "process_tick_if_current/4" do
     test "ticks and continues only for the current generation" do

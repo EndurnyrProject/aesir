@@ -151,6 +151,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @doc "Invoked when the status holder makes movement contact with another unit."
   @callback on_contact(target(), StatusEntry.t(), target(), context()) :: hook_result()
 
+  @doc "Invoked once when the status holder submits a valid movement command."
+  @callback on_movement_intent(target(), StatusEntry.t(), map(), context()) :: hook_result()
+
   @doc """
   Invoked on the attacker holding this status after one of its weapon hits commits.
 
@@ -322,7 +325,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   registry to index. Only hooks whose dispatch is on a hot path are tracked;
   the rest are called unconditionally through their no-op defaults.
   """
-  @type capability :: :before_weapon_hit | :on_dealt_damage | :after_damage_taken
+  @type capability ::
+          :before_weapon_hit | :on_dealt_damage | :after_damage_taken | :on_movement_intent
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
@@ -381,6 +385,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     dealt_damage? = Module.defines?(env.module, {:on_dealt_damage, 4})
     before_weapon_hit? = Module.defines?(env.module, {:before_weapon_hit, 4})
     after_damage_taken? = Module.defines?(env.module, {:after_damage_taken, 4})
+    movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
 
     dealt_damage_default =
       unless dealt_damage? do
@@ -406,16 +411,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
         end
       end
 
+    movement_intent_default = movement_intent_default(movement_intent?)
+
     capabilities =
       []
       |> maybe_add_capability(before_weapon_hit?, :before_weapon_hit)
       |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
       |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
+      |> maybe_add_capability(movement_intent?, :on_movement_intent)
 
     quote do
       unquote(dealt_damage_default)
       unquote(before_weapon_hit_default)
       unquote(after_damage_taken_default)
+      unquote(movement_intent_default)
 
       @doc false
       def __status_capabilities__, do: unquote(capabilities)
@@ -424,6 +433,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   defp maybe_add_capability(capabilities, true, capability), do: [capability | capabilities]
   defp maybe_add_capability(capabilities, false, _capability), do: capabilities
+
+  defp movement_intent_default(true), do: nil
+
+  defp movement_intent_default(false) do
+    quote do
+      @impl true
+      def on_movement_intent(_target, instance, _position, _context), do: {:ok, instance}
+    end
+  end
 
   @doc """
   Validates `use` options against the metadata schema and fills in defaults.

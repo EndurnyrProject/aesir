@@ -287,6 +287,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  @doc """
+  Dispatches movement intent once to statuses indexed for the capability.
+
+  Returns `:changed` only when a current-generation mutation changes status
+  modifiers, allowing the owning session to perform one synchronous recalculation.
+  """
+  @spec on_movement_intent(unit_type(), integer(), %{map: String.t(), x: integer(), y: integer()}) ::
+          :changed | :unchanged
+  def on_movement_intent(unit_type, unit_id, position) do
+    implementing = Registry.statuses_implementing(:on_movement_intent)
+
+    if MapSet.size(implementing) == 0 do
+      :unchanged
+    else
+      dispatch_movement_intents(unit_type, unit_id, implementing, position)
+    end
+  end
+
+  defp dispatch_movement_intents(unit_type, unit_id, implementing, position) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.filter(&MapSet.member?(implementing, &1.type))
+    |> Enum.reduce(:unchanged, fn instance, result ->
+      if dispatch_movement_intent(unit_type, unit_id, instance, position),
+        do: :changed,
+        else: result
+    end)
+  end
+
   defp combat_follow_up?({:auto_cast, _, _, _}), do: true
   defp combat_follow_up?({:local_heal, _, _, _}), do: true
   defp combat_follow_up?(_follow_up), do: false
@@ -1161,6 +1190,71 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp dispatch_dealt_damage(unit_type, unit_id, instance, hit_info),
     do: dispatch_hook(:on_dealt_damage, unit_type, unit_id, instance, hit_info)
+
+  defp dispatch_movement_intent(unit_type, unit_id, instance, position) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        false
+
+      definition ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+        case definition.module.on_movement_intent(
+               {unit_type, unit_id},
+               instance,
+               position,
+               context
+             ) do
+          {:ok, new_instance} ->
+            store_movement_changes_if_current(
+              unit_type,
+              unit_id,
+              instance,
+              new_instance,
+              definition.module,
+              context
+            )
+
+          :remove ->
+            removed? = expire_status_if_current(unit_type, unit_id, instance.type, instance)
+            removed? and definition.module.modifiers(instance, context) != %{}
+
+          {:error, reason} ->
+            Logger.warning(
+              "Status #{instance.type} on_movement_intent failed: #{inspect(reason)}"
+            )
+
+            false
+
+          result ->
+            raise "invalid on_movement_intent result for #{instance.type}: #{inspect(result)}"
+        end
+    end
+  end
+
+  defp store_movement_changes_if_current(
+         unit_type,
+         unit_id,
+         instance,
+         new_instance,
+         module,
+         context
+       ) do
+    updated = %{instance | state: new_instance.state || %{}, phase: new_instance.phase}
+
+    if updated != instance and
+         StatusStorage.replace_status_if_current(
+           unit_type,
+           unit_id,
+           instance.type,
+           instance,
+           updated
+         ) do
+      module.modifiers(instance, context) != module.modifiers(updated, context)
+    else
+      false
+    end
+  end
 
   # Shared body of the two damage-driven hooks: both take the event map as their
   # third argument and return follow-ups for their caller to drain.
