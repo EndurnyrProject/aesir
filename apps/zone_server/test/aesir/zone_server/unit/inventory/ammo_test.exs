@@ -34,6 +34,18 @@ defmodule Aesir.ZoneServer.Unit.Inventory.AmmoTest do
     end
   end
 
+  describe "equipped_ammo/1" do
+    test "returns the equipped row and its item definition without changing inventory" do
+      ammo = item(1771, 3, @ammo_bit)
+      inventory = %{1 => ammo}
+
+      assert {:ok, ^ammo, definition} = Ammo.equipped_ammo(inventory)
+      assert definition.id == 1771
+      assert definition.attack == 30
+      assert inventory == %{1 => ammo}
+    end
+  end
+
   describe "consume_one/1" do
     test "decrements the equipped ammo stack by one" do
       inventory = %{1 => item(1750, 30, @ammo_bit)}

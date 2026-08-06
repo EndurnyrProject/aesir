@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Ammo do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Unit.Inventory
 
   @doc """
@@ -25,6 +27,20 @@ defmodule Aesir.ZoneServer.Unit.Inventory.Ammo do
     Enum.find_value(inventory, fn {index, %InventoryItem{equip: equip}} ->
       if (equip &&& ammo_bit) != 0, do: index
     end)
+  end
+
+  @doc "Returns the equipped ammo row and its item definition without changing inventory."
+  @spec equipped_ammo(Inventory.t()) ::
+          {:ok, InventoryItem.t(), ItemDefinition.t()} | {:error, :no_ammo | :unknown_item}
+  def equipped_ammo(inventory) when is_map(inventory) do
+    with index when not is_nil(index) <- equipped_ammo_index(inventory),
+         row = Map.fetch!(inventory, index),
+         {:ok, definition} <- Items.by_id(row.nameid) do
+      {:ok, row, definition}
+    else
+      nil -> {:error, :no_ammo}
+      :error -> {:error, :unknown_item}
+    end
   end
 
   @doc """
