@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.Handlers.AiHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler
@@ -351,6 +352,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_info({:ai, :tick}, state) do
     AiHandler.handle_ai_tick(state)
+  end
+
+  def handle_info({:attack_intent, _target_ref}, %{is_dead: true} = state),
+    do: {:noreply, state}
+
+  def handle_info({:attack_intent, target_ref}, state) do
+    {:noreply, AIStateMachine.handle_damage_reaction(state, target_ref)}
   end
 
   # Casting: the self-armed cast-timer resolution.

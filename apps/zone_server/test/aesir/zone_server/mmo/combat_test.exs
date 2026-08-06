@@ -197,6 +197,28 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       assert_received {:hit_rate_bonus_pct, 0}
       assert_received {:hit_rate_bonus_pct, 20}
     end
+
+    test "a missed boosted swing never applies its Poison rider" do
+      Mimic.copy(HitCalculations)
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+      attacker = combatant(1001, :player)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      expect(StatusInterpreter, :before_normal_attack, fn :player, 1001, _attack_info ->
+        %{damage_rate: 300, poison: %{chance: 100, level: 10, duration: 60_000}}
+      end)
+
+      expect(HitCalculations, :calculate_hit_result, fn _attacker_stats, _defender_stats ->
+        :miss
+      end)
+
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert :ok = Combat.execute_attack(attacker, %FakeUnit{combatant: attacker}, 2001)
+    end
   end
 
   describe "execute_attack/3 handed weapon swings" do

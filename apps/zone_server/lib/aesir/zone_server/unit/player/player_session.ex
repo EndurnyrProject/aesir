@@ -650,6 +650,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     CombatActionHandler.handle_auto_attack(state, target_id)
   end
 
+  @impl true
+  def handle_info({:attack_intent, {_target_type, target_id}}, state) do
+    CombatActionHandler.handle_attack_request(state, target_id, 0)
+  end
+
   # Combat: the combo-window timeout that expires an unconsumed Monk combo.
   @impl true
   def handle_info({:combo_timeout, generation}, state) do

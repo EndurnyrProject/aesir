@@ -212,7 +212,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        )
        when target_type in [:homunculus, :skill_unit] do
     with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
-      combat_result = apply_damage_modifier(combat_result, modifier)
+      combat_result =
+        combat_result
+        |> apply_poison_rider_on_hit(
+          modifier,
+          {:player, attacker.unit_id},
+          {target_type, target_id}
+        )
+        |> apply_damage_modifier(modifier)
 
       resolve_player_attack(
         combat_result,
@@ -238,8 +245,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          modifier
        ) do
     with {:ok, swing} <- HandedAttack.calculate(player_state, attacker, target) do
+      swing =
+        swing
+        |> apply_poison_rider_on_hit(
+          modifier,
+          {:player, attacker.unit_id},
+          {target_type, target_id}
+        )
+        |> apply_damage_modifier(modifier)
+
       resolve_player_weapon_swing(
-        apply_damage_modifier(swing, modifier),
+        swing,
         player_state,
         target_state,
         attacker,
@@ -351,8 +367,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          :ok <- validate_homunculus_target(attacker, target, target_type),
          modifier <- normal_attack_modifier(:homunculus, attacker, target_type, target.unit_id),
          {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+      combat_result =
+        combat_result
+        |> apply_poison_rider_on_hit(
+          modifier,
+          {:homunculus, attacker.unit_id},
+          {target_type, target.unit_id}
+        )
+        |> apply_damage_modifier(modifier)
+
       resolve_homunculus_attack(
-        apply_damage_modifier(combat_result, modifier),
+        combat_result,
         attacker,
         target,
         target_pid,
@@ -374,8 +399,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         modifier = normal_attack_modifier(:mob, attacker, target_type, target_id)
 
         with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+          combat_result =
+            combat_result
+            |> apply_poison_rider_on_hit(
+              modifier,
+              {:mob, attacker.unit_id},
+              {target_type, target_id}
+            )
+            |> apply_damage_modifier(modifier)
+
           resolve_mob_attack(
-            apply_damage_modifier(combat_result, modifier),
+            combat_result,
             attacker,
             target,
             target_pid,
@@ -478,12 +512,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       element: primary_attack_element(attacker_type, attacker)
     }
 
-    modifier =
-      StatusInterpreter.before_normal_attack(attacker_type, attacker.unit_id, attack_info)
-
-    apply_poison_rider(modifier, {attacker_type, attacker.unit_id}, {target_type, target_id})
-    modifier
+    StatusInterpreter.before_normal_attack(attacker_type, attacker.unit_id, attack_info)
   end
+
+  defp apply_poison_rider_on_hit(
+         {:hit, _damage_result} = result,
+         modifier,
+         source,
+         target
+       ) do
+    apply_poison_rider(modifier, source, target)
+    result
+  end
+
+  defp apply_poison_rider_on_hit(
+         %HandedAttack{outcome: outcome} = result,
+         modifier,
+         source,
+         target
+       )
+       when outcome in [:hit, :critical] do
+    apply_poison_rider(modifier, source, target)
+    result
+  end
+
+  defp apply_poison_rider_on_hit(result, _modifier, _source, _target), do: result
 
   defp apply_poison_rider(%{poison: poison}, source, {target_type, target_id})
        when target_type != :skill_unit do

@@ -382,8 +382,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusInterpreterTest do
                )
 
       status = StatusStorage.get_status(:player, player_id, :sc_poisonreact)
-      assert status.state[:counter_remaining] == 5
-      assert status.state[:boost_mode] == false
+      assert status.state == %{level: 10, charges: 5, chance: 50, mode: :block}
     end
 
     test "deadly poison has conditional tick", %{player_id: player_id} do
