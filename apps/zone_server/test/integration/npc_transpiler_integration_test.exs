@@ -27,6 +27,9 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicaccel
+  alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknife
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.Transpiler.Codegen
@@ -251,11 +254,51 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
     assert learned[1009] == 1
     refute Map.has_key?(learned, 144)
     refute Map.has_key?(learned, 1001)
+    refute Map.has_key?(learned, 1003)
+    refute Map.has_key?(learned, 1004)
     assert gs.stats.progression.skill_point == 0
     assert_received {:send, _ch, {:skill_list, _list}}
 
     assert {%Ctx{status: :ok}, nil} = FGetplatinumskills.call(%{ctx | game_state: gs}, [])
     assert GenServer.call(session, :game_state).stats.progression.learned_skills == learned
+  end
+
+  test "the generated platinum function grants both catalogued Assassin quest skills" do
+    game_state = %PlayerState{
+      character_id: @char_id,
+      account_id: 9100,
+      zeny: 0,
+      vars: %{},
+      temp_vars: %{},
+      inventory: %{},
+      stats: stats(%{}, 12)
+    }
+
+    {:ok, session} = Session.start_link(%{connection_pid: self(), game_state: game_state})
+
+    ctx = %Ctx{
+      char_id: @char_id,
+      account_id: 9100,
+      connection_pid: self(),
+      game_state: game_state,
+      source: {:npc, 0},
+      session_pid: session
+    }
+
+    assert Catalog.passive_module_for(:as_sonicaccel) == {:ok, AsSonicaccel}
+    assert Catalog.active_module_for(:as_venomknife) == {:ok, AsVenomknife}
+    assert {%Ctx{status: :ok}, nil} = FGetplatinumskills.call(ctx, [])
+
+    granted = GenServer.call(session, :game_state).stats.progression
+    assert granted.learned_skills[1003] == 1
+    assert granted.learned_skills[1004] == 1
+    assert granted.skill_point == 0
+
+    assert {:ok, reset_game_state} =
+             GenServer.call(session, {:npc, {:script_apply, {:reset_skills}}})
+
+    assert reset_game_state.stats.progression.learned_skills[1003] == 1
+    assert reset_game_state.stats.progression.learned_skills[1004] == 1
   end
 
   test "attached Falcon script executes concrete checkfalcon and setfalcon calls", %{

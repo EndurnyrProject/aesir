@@ -372,6 +372,38 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   end
 
   describe "quest skill lineage" do
+    test "Assassin quest skills stay outside point spending and on the Assassin branch" do
+      {:ok, assassin_id} = AvailableJobs.job_name_to_id(:assassin)
+      progression = swordman_progression(job_id: assassin_id, learned_skills: %{})
+
+      for skill_id <- [1003, 1004] do
+        assert {:ok, %Definition{} = definition} = Catalog.by_id(skill_id)
+        assert definition.quest_skill
+        assert definition.quest_owner_job == :assassin
+        refute Map.has_key?(SkillTree.tree_for(assassin_id), skill_id)
+        refute Enum.any?(SkillTree.available_for(progression), &(&1.skill_id == skill_id))
+        assert {:error, :not_in_tree} = SkillTree.learn(progression, skill_id)
+
+        for job <- [
+              :assassin,
+              :assassin_cross,
+              :baby_assassin,
+              :guillotine_cross,
+              :guillotine_cross_t,
+              :baby_guillotine_cross,
+              :shadow_cross
+            ] do
+          {:ok, job_id} = AvailableJobs.job_name_to_id(job)
+          assert SkillTree.quest_skill_available?(job_id, definition)
+        end
+
+        for job <- [:thief, :rogue] do
+          {:ok, job_id} = AvailableJobs.job_name_to_id(job)
+          refute SkillTree.quest_skill_available?(job_id, definition)
+        end
+      end
+    end
+
     test "adds a learned grant-only quest skill for an eligible lineage with its owner job id" do
       stub_quest_definitions()
 

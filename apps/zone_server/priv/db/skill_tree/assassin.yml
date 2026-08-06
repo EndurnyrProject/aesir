@@ -1,0 +1,54 @@
+---
+- job: assassin
+  inherit:
+    - novice
+    - thief
+  tree:
+    - name: AS_RIGHT
+      max_level: 5
+    - name: AS_LEFT
+      max_level: 5
+      requires:
+        - name: AS_RIGHT
+          level: 2
+    - name: AS_KATAR
+      max_level: 10
+    - name: AS_CLOAKING
+      max_level: 10
+      requires:
+        - name: TF_HIDING
+          level: 2
+    - name: AS_SONICBLOW
+      max_level: 10
+      requires:
+        - name: AS_KATAR
+          level: 4
+    - name: AS_GRIMTOOTH
+      max_level: 5
+      requires:
+        - name: AS_CLOAKING
+          level: 2
+        - name: AS_SONICBLOW
+          level: 5
+    - name: AS_ENCHANTPOISON
+      max_level: 10
+      requires:
+        - name: TF_POISON
+          level: 1
+    - name: AS_POISONREACT
+      max_level: 10
+      requires:
+        - name: AS_ENCHANTPOISON
+          level: 3
+    - name: AS_VENOMDUST
+      max_level: 10
+      requires:
+        - name: AS_ENCHANTPOISON
+          level: 5
+    - name: AS_SPLASHER
+      max_level: 10
+      requires:
+        - name: AS_POISONREACT
+          level: 5
+        - name: AS_VENOMDUST
+          level: 5

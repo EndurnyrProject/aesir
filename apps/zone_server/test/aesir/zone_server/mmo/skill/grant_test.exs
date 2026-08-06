@@ -2,9 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GrantTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Grant
+  alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   setup :verify_on_exit!
 
@@ -105,5 +108,54 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GrantTest do
       learned = %{1 => 10, 9001 => 2}
       assert Grant.grant(learned, 9001, 0) == {:error, :invalid_level}
     end
+  end
+
+  describe "Assassin quest grants" do
+    test "both platinum skills belong to Assassin lineage only" do
+      {:ok, sonic_acceleration} = Catalog.by_id(1003)
+      {:ok, venom_knife} = Catalog.by_id(1004)
+
+      for definition <- [sonic_acceleration, venom_knife] do
+        assert definition.quest_skill
+        assert definition.quest_owner_job == :assassin
+        assert SkillTree.quest_skill_available?(job_id(:assassin), definition)
+        assert SkillTree.quest_skill_available?(job_id(:assassin_cross), definition)
+        refute SkillTree.quest_skill_available?(job_id(:thief), definition)
+        refute SkillTree.quest_skill_available?(job_id(:rogue), definition)
+      end
+    end
+
+    test "both permanent grants survive reset without refunding their levels" do
+      assert {:ok, learned} = Grant.grant(%{132 => 3}, :as_sonicaccel, 1)
+      assert {:ok, learned} = Grant.grant(learned, :as_venomknife, 1)
+
+      progression = %PlayerProgression{
+        base_level: 99,
+        job_level: 50,
+        base_exp: 0,
+        job_exp: 0,
+        job_id: job_id(:assassin),
+        skill_point: 2,
+        status_point: 0,
+        learned_skills: learned
+      }
+
+      reset = SkillTree.reset_skills(progression)
+
+      assert reset.learned_skills == %{1003 => 1, 1004 => 1}
+      assert reset.skill_point == 5
+    end
+
+    test "an ordinary Assassin skill is not grantable and leaves learned skills unchanged" do
+      learned = %{1003 => 1}
+
+      assert Grant.grant(learned, :as_sonicblow, 1) == {:error, :not_grantable}
+      assert learned == %{1003 => 1}
+    end
+  end
+
+  defp job_id(name) do
+    {:ok, id} = AvailableJobs.job_name_to_id(name)
+    id
   end
 end
