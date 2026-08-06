@@ -61,16 +61,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
       :ok = Registry.register_module(TestStatus)
       :ok = Registry.register_module(MovementIntentStatus)
 
-      assert Registry.statuses_implementing(:on_movement_intent) ==
-               MapSet.new([:sc_registry_movement_intent])
+      implementing = Registry.statuses_implementing(:on_movement_intent)
+      assert MapSet.member?(implementing, :sc_registry_movement_intent)
+      assert MapSet.member?(implementing, :sc_cloaking)
+      refute MapSet.member?(implementing, :sc_registry_test)
     end
 
     test "indexes committed actions and metadata flags independently" do
       :ok = Registry.register_module(TestStatus)
       :ok = Registry.register_module(CommittedActionStatus)
 
-      assert Registry.statuses_implementing(:on_committed_action) ==
-               MapSet.new([:sc_registry_committed_action])
+      implementing = Registry.statuses_implementing(:on_committed_action)
+      assert MapSet.member?(implementing, :sc_registry_committed_action)
+      assert MapSet.member?(implementing, :sc_cloaking)
+      refute MapSet.member?(implementing, :sc_registry_test)
 
       assert MapSet.member?(
                Registry.statuses_with_flag(:no_pick_item),

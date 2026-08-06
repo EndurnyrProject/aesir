@@ -136,19 +136,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   @spec process_tick(unit_type(), integer(), atom()) :: :ok
   def process_tick(unit_type, unit_id, status_id) do
-    with_active_status(unit_type, unit_id, status_id, fn module, instance, context ->
-      case module.on_tick({unit_type, unit_id}, instance, context) do
-        {:ok, new_instance} ->
-          store_instance_changes(unit_type, unit_id, status_id, new_instance)
+    case StatusStorage.get_status(unit_type, unit_id, status_id) do
+      %StatusEntry{generation: generation} when is_integer(generation) ->
+        process_tick_if_current(unit_type, unit_id, status_id, generation)
+        :ok
 
-        :remove ->
-          remove_status(unit_type, unit_id, status_id)
-
-        {:error, reason} ->
-          Logger.warning("Status #{status_id} on_tick failed: #{inspect(reason)}")
-          :ok
-      end
-    end)
+      _missing ->
+        :ok
+    end
   end
 
   @doc """

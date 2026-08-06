@@ -2,24 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
   @moduledoc """
   Cloaking (SC_CLOAKING).
 
-  Conceals the character while allowing movement. Doubles CRIT and adjusts
-  movement speed by skill level (val1). Broken by taking damage.
-
-  ## Movement speed and the wall-adjacency gap
-
-  rAthena's `status_calc_speed` makes Cloaking bidirectional based on a
-  wall-adjacency bit (`val4 & 1`):
-
-    - not adjacent to a wall (`val4 & 1 == 0`): SLOW,
-      `max(val, val1 < 3 ? 300 : 30 - 3 * val1)`
-    - adjacent to a wall (`val4 & 1 == 1`): HASTE,
-      `max(val, val1 >= 10 ? 25 : 3 * val1 - 3)`
-
-  Aesir does not track wall adjacency, so the haste branch cannot be modelled.
-  We implement the conservative not-against-wall SLOW for every level
-  (`val1 < 3 -> 300`, otherwise `30 - 3 * val1`, reaching 0 at level 10),
-  expressed as a positive `:movement_speed` modifier. A Cloaking user hugging a
-  wall would be hasted in rAthena but is merely un-slowed here.
+  Conceals its holder, doubles CRIT, and applies wall-sensitive movement speed.
+  Player movement commands refresh the stored adjacency branch.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_cloaking,
@@ -29,27 +13,90 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
     flags: [:cloak, :no_pick_item, :stop_attacking],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
+    remove_on_map_change: true,
     icon: :cloaking,
     option: :cloak
 
-  import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
-
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @impl true
-  def modifiers(%StatusEntry{val1: level}, _context) do
-    %{critical_rate: 100, movement_speed: speed_penalty(level)}
+  @spec modifiers(StatusEntry.t(), map()) :: %{
+          critical_rate: 100,
+          movement_speed: integer()
+        }
+  def modifiers(%StatusEntry{val1: level, state: state}, _context) when level in 1..10 do
+    adjacent? = Map.get(state, :adjacent_impassable?, false)
+    %{critical_rate: 100, movement_speed: movement_modifier(level, adjacent?)}
   end
 
-  @spec speed_penalty(integer() | nil) :: non_neg_integer()
-  defp speed_penalty(level) when is_integer(level) and level >= 3, do: 30 - 3 * level
-  defp speed_penalty(_level), do: 300
-
   @impl true
-  def on_apply(_target, instance, _context) do
-    {:ok, put_state(instance, :cloaked, true)}
+  @spec on_movement_intent(Definition.target(), StatusEntry.t(), map(), Definition.context()) ::
+          {:ok, StatusEntry.t()} | :remove
+  def on_movement_intent(
+        {:player, _unit_id},
+        %StatusEntry{val1: level} = instance,
+        %{map: map, x: x, y: y},
+        _context
+      ) do
+    adjacent? = MapCache.adjacent_impassable?(map, x, y)
+
+    if level in 1..2 and not adjacent? do
+      :remove
+    else
+      {:ok, %{instance | state: Map.put(instance.state, :adjacent_impassable?, adjacent?)}}
+    end
   end
 
+  def on_movement_intent({:mob, _unit_id}, instance, _position, _context),
+    do: {:ok, instance}
+
   @impl true
-  def on_damage(_target, _instance, _damage_info, _context), do: :remove
+  @spec on_committed_action(
+          Definition.target(),
+          StatusEntry.t(),
+          Definition.committed_action(),
+          Definition.context()
+        ) :: {:ok, StatusEntry.t()} | :remove
+  def on_committed_action({:player, _unit_id}, instance, {:skill, 135}, _context),
+    do: {:ok, instance}
+
+  def on_committed_action({:player, _unit_id}, _instance, :normal_attack, _context), do: :remove
+
+  def on_committed_action({:player, _unit_id}, _instance, {:skill, _skill_id}, _context),
+    do: :remove
+
+  def on_committed_action({:mob, _unit_id}, _instance, :normal_attack, _context), do: :remove
+
+  def on_committed_action({:mob, _unit_id}, instance, {:skill, _skill_id}, _context),
+    do: {:ok, instance}
+
+  @impl true
+  @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) ::
+          {:ok, StatusEntry.t()} | :remove
+  def on_tick({:player, unit_id}, instance, _context) do
+    with {:ok, {_module, _state, pid}} when is_pid(pid) <- UnitRegistry.get_unit(:player, unit_id),
+         :ok <- PlayerSession.try_consume_sp(pid, 1) do
+      {:ok, instance}
+    else
+      {:error, _reason} -> :remove
+    end
+  end
+
+  def on_tick({:mob, _unit_id}, instance, _context), do: {:ok, instance}
+
+  @impl true
+  @spec after_damage_taken(Definition.target(), StatusEntry.t(), map(), Definition.context()) ::
+          :ok | :remove
+  def after_damage_taken(_target, _instance, %{damage: damage}, _context) when damage > 0,
+    do: :remove
+
+  def after_damage_taken(_target, _instance, %{damage: 0}, _context), do: :ok
+
+  defp movement_modifier(level, false) when level in 1..2, do: 300
+  defp movement_modifier(level, false), do: 30 - 3 * level
+  defp movement_modifier(level, true), do: -min(25, 3 * level - 3)
 end

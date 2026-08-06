@@ -329,11 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :setup_ets_tables
 
   describe "on_committed_action/3 and has_active_flag?/3" do
-    test "empty indexes do not scan status storage" do
-      Mimic.copy(StatusStorage)
-      reject(&StatusStorage.get_status/3)
-      reject(&StatusStorage.has_status?/3)
-
+    test "indexed statuses absent from the unit leave actions unchanged" do
       assert :unchanged = Interpreter.on_committed_action(:player, 7_600, :normal_attack)
       refute Interpreter.has_active_flag?(:player, 7_600, :not_indexed)
     end
@@ -389,10 +385,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   end
 
   describe "on_movement_intent/3" do
-    test "does not scan status storage when no definition implements the capability" do
-      Mimic.copy(StatusStorage)
-      reject(&StatusStorage.get_unit_statuses/2)
-
+    test "indexed statuses absent from the unit leave movement unchanged" do
       assert :unchanged =
                Interpreter.on_movement_intent(:player, 7_604, %{
                  map: "prontera",
