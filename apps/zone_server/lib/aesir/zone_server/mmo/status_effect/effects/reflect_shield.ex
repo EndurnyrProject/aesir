@@ -4,10 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
 
   Toggled by CR_REFLECTSHIELD while a shield is equipped. Implements
   `after_damage_taken/4`: `val1` carries the skill level, and every short-range
-  weapon hit that reaches the hook reflects `(10 + 3 * val1)` percent of the
-  delivered damage back to the attacker. The hook seam already guarantees
-  short-range-weapon-only dispatch and loop prevention (reflected/redirected
-  hits never re-trigger it), so this module owns only the percentage.
+  physical hit that is neither reflected nor redirected reflects
+  `(10 + 3 * val1)` percent of the delivered damage back to the attacker.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_reflectshield,
@@ -23,14 +21,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
   @impl true
   @spec after_damage_taken({atom(), integer()}, StatusEntry.t(), map(), map()) ::
           :ok | {:reflect, non_neg_integer()}
-  def after_damage_taken(target, %StatusEntry{val1: level}, %{damage: damage}, _context) do
-    amount = div(damage * (10 + 3 * level), 100)
+  def after_damage_taken(target, %StatusEntry{val1: level}, hit_info, _context) do
+    if reflectable?(hit_info) do
+      amount = div(hit_info.damage * (10 + 3 * level), 100)
 
-    if amount > 0 do
-      SpecialEffect.play(target, :reflectshield, :area)
-      {:reflect, amount}
+      if amount > 0 do
+        SpecialEffect.play(target, :reflectshield, :area)
+        {:reflect, amount}
+      else
+        :ok
+      end
     else
       :ok
     end
+  end
+
+  defp reflectable?(hit_info) do
+    Map.get(hit_info, :dmg_type) == :physical and
+      Map.get(hit_info, :is_short, false) == true and
+      not Map.get(hit_info, :reflected, false) and
+      not Map.get(hit_info, :redirected, false)
   end
 end

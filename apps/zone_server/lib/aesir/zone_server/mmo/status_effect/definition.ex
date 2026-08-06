@@ -113,6 +113,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @typedoc "A player action committed after validation and before execution."
   @type committed_action :: :normal_attack | {:skill, pos_integer()}
 
+  @typedoc "Bounded Poison metadata attached to one ordinary swing."
+  @type poison_rider :: %{
+          chance: 1..100,
+          level: pos_integer(),
+          duration: pos_integer()
+        }
+
+  @typedoc "Bounded damage and Poison changes claimed for one ordinary swing."
+  @type normal_attack_modifier :: %{
+          required(:damage_rate) => non_neg_integer(),
+          optional(:poison) => poison_rider()
+        }
+
+  @typedoc "Result of an attacker-side ordinary-swing callback."
+  @type before_normal_attack_result ::
+          :continue | {:claim, normal_attack_modifier()}
+
   @typedoc "A follow-up action a lifecycle callback asks the engine to run after it returns."
   @type follow_up :: {atom(), keyword()} | auto_cast() | local_heal()
 
@@ -188,22 +205,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
               :continue | {:intercept, term()}
 
   @doc """
+  Atomically claims a bounded modifier for the holder's next ordinary swing.
+
+  Returning `{:claim, modifier}` asks the interpreter to remove this exact
+  status generation before exposing the modifier. Only damage-rate and Poison
+  metadata are accepted; callbacks cannot request casts or arbitrary effects.
+  """
+  @callback before_normal_attack(target(), StatusEntry.t(), map(), context()) ::
+              before_normal_attack_result()
+
+  @doc """
   Post-damage hook fired on the victim after a delivered hit reduced its HP.
 
-  Runs inside the attacker's process, and only for short-range weapon damage:
-  ranged and magic hits, and hits already flagged `reflected`/`redirected`,
-  never reach it. Returning `{:reflect, amount}` sends `amount` damage back to
-  the attacker through the asynchronous damage path (flagged `reflected: true`,
-  so it can never re-trigger this hook); `:ok` does nothing. `hit_info` carries
-  the delivered `:damage`, plus the hit's `:dmg_type`, `:is_short` and
-  `:element`.
+  Runs inside the attacker's process for every positive delivered hit. Each
+  status filters the damage shape it owns. Returning `{:reflect, amount}` sends
+  `amount` damage back to the typed attacker through the asynchronous damage
+  path; `:remove` expires the exact status generation, and `:ok` does nothing.
+  `hit_info` carries the delivered `:damage`, typed `:attacker`, and the hit's
+  `:dmg_type`, `:is_short` and `:element`.
 
   Statuses that do not implement it are excluded from dispatch entirely (the
   registry indexes the implementers), so a hit on a victim holding none costs
   one registry read.
   """
   @callback after_damage_taken(target(), StatusEntry.t(), map(), context()) ::
-              :ok | {:reflect, non_neg_integer()}
+              :ok | :remove | {:reflect, non_neg_integer()}
 
   @doc """
   Pre-damage hook that may reduce or block an incoming hit before HP is applied.
@@ -334,6 +360,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   """
   @type capability ::
           :before_weapon_hit
+          | :before_normal_attack
           | :on_dealt_damage
           | :after_damage_taken
           | :on_movement_intent
@@ -395,6 +422,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   defmacro __before_compile__(env) do
     dealt_damage? = Module.defines?(env.module, {:on_dealt_damage, 4})
     before_weapon_hit? = Module.defines?(env.module, {:before_weapon_hit, 4})
+    before_normal_attack? = Module.defines?(env.module, {:before_normal_attack, 4})
     after_damage_taken? = Module.defines?(env.module, {:after_damage_taken, 4})
     movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
@@ -415,6 +443,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
         end
       end
 
+    before_normal_attack_default = before_normal_attack_default(before_normal_attack?)
+
     after_damage_taken_default =
       unless after_damage_taken? do
         quote do
@@ -429,6 +459,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     capabilities =
       []
       |> maybe_add_capability(before_weapon_hit?, :before_weapon_hit)
+      |> maybe_add_capability(before_normal_attack?, :before_normal_attack)
       |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
       |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
@@ -437,6 +468,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     quote do
       unquote(dealt_damage_default)
       unquote(before_weapon_hit_default)
+      unquote(before_normal_attack_default)
       unquote(after_damage_taken_default)
       unquote(movement_intent_default)
       unquote(committed_action_default)
@@ -448,6 +480,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   defp maybe_add_capability(capabilities, true, capability), do: [capability | capabilities]
   defp maybe_add_capability(capabilities, false, _capability), do: capabilities
+
+  defp before_normal_attack_default(true), do: nil
+
+  defp before_normal_attack_default(false) do
+    quote do
+      @impl true
+      def before_normal_attack(_target, _instance, _attack_info, _context), do: :continue
+    end
+  end
 
   defp movement_intent_default(true), do: nil
 

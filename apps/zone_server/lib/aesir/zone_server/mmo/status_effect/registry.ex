@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   Each definition is the module's validated metadata map with the implementing
   module under the `:module` key, so metadata consumers (properties, immunity,
   resistance) operate on plain maps while behavior dispatches to the module.
+  Hot-path callbacks, including attacker-side `before_normal_attack`, are indexed
+  from each module's published capabilities during registration.
   """
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 

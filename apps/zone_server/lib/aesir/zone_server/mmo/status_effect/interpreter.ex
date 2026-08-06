@@ -264,6 +264,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Atomically claims one bounded modifier for the attacker's ordinary swing.
+
+  The callback result is exposed only after the captured status generation was
+  removed successfully. An attacker holding no implementing status stays on a
+  constant-time registry-read no-op path.
+  """
+  @spec before_normal_attack(unit_type(), integer(), map()) ::
+          Definition.normal_attack_modifier() | nil
+  def before_normal_attack(unit_type, unit_id, attack_info) do
+    :before_normal_attack
+    |> Registry.statuses_implementing()
+    |> Enum.find_value(fn status_id ->
+      case StatusStorage.get_status(unit_type, unit_id, status_id) do
+        nil -> nil
+        instance -> claim_normal_attack_modifier(unit_type, unit_id, instance, attack_info)
+      end
+    end)
+  end
+
+  @doc """
   Notifies the attacker's implementing statuses that one of its weapon hits landed.
 
   Only statuses implementing `c:Definition.on_dealt_damage/4` are dispatched -
@@ -1218,6 +1238,56 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     end
   end
 
+  defp claim_normal_attack_modifier(unit_type, unit_id, instance, attack_info) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        nil
+
+      %{module: module} ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+        case module.before_normal_attack({unit_type, unit_id}, instance, attack_info, context) do
+          :continue ->
+            nil
+
+          {:claim, modifier} ->
+            claim_bounded_modifier(unit_type, unit_id, instance, modifier)
+
+          result ->
+            raise "invalid before_normal_attack result for #{instance.type}: #{inspect(result)}"
+        end
+    end
+  end
+
+  defp claim_bounded_modifier(unit_type, unit_id, instance, modifier) do
+    if valid_normal_attack_modifier?(modifier) do
+      if expire_status_if_current(unit_type, unit_id, instance.type, instance),
+        do: modifier,
+        else: nil
+    else
+      raise "invalid before_normal_attack result for #{instance.type}: #{inspect(modifier)}"
+    end
+  end
+
+  defp valid_normal_attack_modifier?(%{damage_rate: rate} = modifier)
+       when is_integer(rate) and rate >= 0 do
+    allowed_keys? = Map.keys(modifier) |> Enum.all?(&(&1 in [:damage_rate, :poison]))
+    allowed_keys? and valid_poison_rider?(Map.get(modifier, :poison))
+  end
+
+  defp valid_normal_attack_modifier?(_modifier), do: false
+
+  defp valid_poison_rider?(nil), do: true
+
+  defp valid_poison_rider?(%{chance: chance, level: level, duration: duration} = poison) do
+    Map.keys(poison) |> Enum.sort() == [:chance, :duration, :level] and
+      is_integer(chance) and chance in 1..100 and
+      is_integer(level) and level > 0 and
+      is_integer(duration) and duration > 0
+  end
+
+  defp valid_poison_rider?(_poison), do: false
+
   defp dispatch_after_damage_taken(unit_type, unit_id, instance, hit_info) do
     case Registry.get_definition(instance.type) do
       nil ->
@@ -1239,6 +1309,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
             amount
 
           {:reflect, _amount} ->
+            0
+
+          :remove ->
+            expire_status_if_current(unit_type, unit_id, instance.type, instance)
             0
 
           result ->

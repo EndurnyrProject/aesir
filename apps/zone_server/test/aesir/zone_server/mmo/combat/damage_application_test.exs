@@ -156,6 +156,70 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     refute_received {:after_damage_taken, _hit_info}
   end
 
+  test "dispatches post-damage for positive ranged magic with a typed attacker" do
+    target_id = 18
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+    Registry.register_module(AfterDamage)
+
+    :ok =
+      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_after_damage,
+        state: %{test_pid: self()}
+      )
+
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, 20 -> :ok end)
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :player,
+               target_pid,
+               target_id,
+               40,
+               %{dmg_type: :magic, is_short: false, element: :fire},
+               {:mob, 20}
+             )
+
+    assert_received {:after_damage_taken,
+                     %{
+                       damage: 40,
+                       attacker: {:mob, 20},
+                       dmg_type: :magic,
+                       is_short: false
+                     }}
+  end
+
+  test "fully absorbed zero damage does not dispatch post-damage" do
+    target_id = 19
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+    Registry.register_module(FullAbsorb)
+    Registry.register_module(AfterDamage)
+
+    :ok =
+      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_full,
+        state: %{test_pid: self()}
+      )
+
+    :ok =
+      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_after_damage,
+        state: %{test_pid: self()}
+      )
+
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, 20 -> :ok end)
+
+    {_settled, :ok} =
+      DamageApplication.apply_weapon_swing(
+        :player,
+        target_pid,
+        target_id,
+        swing(100, 50),
+        melee_hit(),
+        {:mob, 20}
+      )
+
+    refute_received {:after_damage_taken, _hit_info}
+  end
+
   test "one aggregate delivery produces one HP and death transition" do
     target_id = 15
     test_pid = self()

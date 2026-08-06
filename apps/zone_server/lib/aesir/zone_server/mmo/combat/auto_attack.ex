@@ -173,6 +173,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        ) do
     case Passives.attack_replacement(player_state) do
       :normal ->
+        modifier = normal_attack_modifier(:player, attacker, target_type, target_id)
+
         calculate_player_normal_attack(
           player_state,
           target_state,
@@ -180,7 +182,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           target,
           target_pid,
           target_type,
-          target_id
+          target_id,
+          modifier
         )
 
       {:skill_attack, opts, next_stage} ->
@@ -204,10 +207,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target,
          target_pid,
          target_type,
-         target_id
+         target_id,
+         modifier
        )
        when target_type in [:homunculus, :skill_unit] do
     with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
+      combat_result = apply_damage_modifier(combat_result, modifier)
+
       resolve_player_attack(
         combat_result,
         player_state,
@@ -228,11 +234,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target,
          target_pid,
          target_type,
-         target_id
+         target_id,
+         modifier
        ) do
     with {:ok, swing} <- HandedAttack.calculate(player_state, attacker, target) do
       resolve_player_weapon_swing(
-        swing,
+        apply_damage_modifier(swing, modifier),
         player_state,
         target_state,
         attacker,
@@ -342,9 +349,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_hp <- target_state.__struct__.get_stats(target_state).hp,
          :ok <- AttackValidator.validate(attacker, target, projectile?: true),
          :ok <- validate_homunculus_target(attacker, target, target_type),
+         modifier <- normal_attack_modifier(:homunculus, attacker, target_type, target.unit_id),
          {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
       resolve_homunculus_attack(
-        combat_result,
+        apply_damage_modifier(combat_result, modifier),
         attacker,
         target,
         target_pid,
@@ -363,9 +371,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         :intercepted
 
       :continue ->
+        modifier = normal_attack_modifier(:mob, attacker, target_type, target_id)
+
         with {:ok, combat_result} <- check_hit_and_calculate_damage(attacker, target) do
           resolve_mob_attack(
-            combat_result,
+            apply_damage_modifier(combat_result, modifier),
             attacker,
             target,
             target_pid,
@@ -442,7 +452,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       attacker_root_level: attacker_root_level,
       attacker_position: attacker.position,
       attacker_short?: attacker.attack_range <= 3,
-      distance: cell_distance(attacker, target)
+      distance: cell_distance(attacker, target),
+      basic_attack?: true,
+      element: primary_attack_element(attacker_type, attacker)
     })
   end
 
@@ -456,6 +468,70 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
        do: Learned.learned_level(learned, @bladestop_skill_id)
 
   defp attacker_root_level(_state), do: 0
+
+  defp primary_attack_element(:mob, %{element: {element, _level}}), do: element
+  defp primary_attack_element(_attacker_type, attacker), do: attacker.weapon.element
+
+  defp normal_attack_modifier(attacker_type, attacker, target_type, target_id) do
+    attack_info = %{
+      target: {target_type, target_id},
+      element: primary_attack_element(attacker_type, attacker)
+    }
+
+    modifier =
+      StatusInterpreter.before_normal_attack(attacker_type, attacker.unit_id, attack_info)
+
+    apply_poison_rider(modifier, {attacker_type, attacker.unit_id}, {target_type, target_id})
+    modifier
+  end
+
+  defp apply_poison_rider(%{poison: poison}, source, {target_type, target_id})
+       when target_type != :skill_unit do
+    if :rand.uniform(100) <= poison.chance do
+      {source_type, source_id} = source
+
+      case StatusInterpreter.apply_status(target_type, target_id, :sc_poison,
+             caster_id: source_id,
+             source_type: source_type,
+             duration: poison.duration,
+             val1: poison.level
+           ) do
+        :ok ->
+          :ok
+
+        {:error, reason}
+        when reason in [:immune, :boss_immune, :prevented, :conflict, :resisted, :target_dead] ->
+          :ok
+
+        {:error, reason} ->
+          raise "ordinary-swing Poison rider failed: #{inspect(reason)}"
+      end
+    end
+
+    :ok
+  end
+
+  defp apply_poison_rider(_modifier, _source, _target), do: :ok
+
+  defp apply_damage_modifier(%HandedAttack{} = swing, %{damage_rate: rate}) do
+    primary = scale_damage_result(swing.primary, rate)
+    secondary = if swing.secondary, do: scale_damage_result(swing.secondary, rate)
+
+    %{
+      swing
+      | primary: primary,
+        secondary: secondary,
+        raw_total: primary.damage + if(secondary, do: secondary.damage, else: 0)
+    }
+  end
+
+  defp apply_damage_modifier({:hit, result}, %{damage_rate: rate}),
+    do: {:hit, scale_damage_result(result, rate)}
+
+  defp apply_damage_modifier(result, _modifier), do: result
+
+  defp scale_damage_result(result, rate),
+    do: %{result | damage: div(result.damage * (100 + rate), 100)}
 
   # Chebyshev cell distance between the two combatants, the Renewal metric Root
   # uses to gate monster attackers. Positions ride both combatants on a real
@@ -617,7 +693,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       element: swing.primary_element,
       skill_id: nil,
       skill_level: nil,
-      from_caster?: true
+      from_caster?: true,
+      basic_attack?: true
     }
 
     source = player_damage_source(target_type, attacker.unit_id)
@@ -839,7 +916,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
-          from_caster?: true
+          from_caster?: true,
+          basic_attack?: true
         }
 
         prepared_hits =
@@ -877,7 +955,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
-          from_caster?: true
+          from_caster?: true,
+          basic_attack?: true
         }
 
         {final_damage, prepared_hit_info} =
@@ -996,7 +1075,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       element: attacker_combatant.weapon.element,
       skill_id: nil,
       skill_level: nil,
-      from_caster?: true
+      from_caster?: true,
+      basic_attack?: true
     }
 
     {damage, hit_info} =
@@ -1064,7 +1144,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       element: attacker.weapon.element,
       skill_id: nil,
       skill_level: nil,
-      from_caster?: true
+      from_caster?: true,
+      basic_attack?: true
     }
 
     source = {:homunculus, attacker.unit_id}
@@ -1135,11 +1216,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp settled_damage(%HandedAttack{primary: primary, secondary: secondary}),
     do: primary.damage + secondary.damage
 
-  defp player_damage_source(:homunculus, attacker_id), do: {:player, attacker_id}
-  defp player_damage_source(_target_type, attacker_id), do: attacker_id
+  defp player_damage_source(_target_type, attacker_id), do: {:player, attacker_id}
 
-  defp mob_damage_source(:homunculus, attacker_id), do: {:mob, attacker_id}
-  defp mob_damage_source(_target_type, attacker_id), do: attacker_id
+  defp mob_damage_source(_target_type, attacker_id), do: {:mob, attacker_id}
 
   defp validate_player_target(attacker, target, :homunculus),
     do: Targeting.validate_enemy(attacker, target)

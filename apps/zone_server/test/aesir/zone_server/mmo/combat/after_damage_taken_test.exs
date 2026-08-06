@@ -21,8 +21,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
       properties: [:buff]
 
     @impl true
-    def after_damage_taken(_target, _instance, %{damage: damage}, _context) do
-      {:reflect, div(damage, 2)}
+    def after_damage_taken(_target, _instance, hit_info, _context) do
+      if Map.get(hit_info, :dmg_type) == :physical and Map.get(hit_info, :is_short, false) and
+           not Map.get(hit_info, :reflected, false) and
+           not Map.get(hit_info, :redirected, false),
+         do: {:reflect, div(hit_info.damage, 2)},
+         else: :ok
     end
   end
 

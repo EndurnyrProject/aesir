@@ -140,8 +140,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     delivery =
       deliver_unit_damage(target_type, target_pid, target_id, final_damage, hit_info, attacker)
 
-    reflection = reflect_unit_damage(target_type, target_id, final_damage, hit_info, attacker)
-    merge_local_effects(delivery, reflection)
+    post_delivery =
+      after_damage_taken(delivery, target_type, target_id, final_damage, hit_info, attacker)
+
+    merge_local_effects(delivery, post_delivery)
   end
 
   @doc "Builds aggregate-local Homunculus damage without sending to its owner process."
@@ -348,31 +350,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp settle_secondary(nil, _damage), do: nil
   defp settle_secondary(secondary, damage), do: %{secondary | damage: damage}
 
-  # Runs the victim's post-damage statuses and sends any reflected damage back to
-  # the attacker. Fires only for short-range weapon damage that is neither a
-  # reflected nor a redirected packet, so reflection can never loop or re-trigger.
-  # External reflected damage stays asynchronous. When the attacker is a Homunculus
-  # owned by the current session, delivery returns an aggregate-local effect instead
-  # of messaging the session from inside itself.
-  defp reflect_unit_damage(target_type, target_id, damage, hit_info, attacker)
-       when damage > 0 and not is_nil(attacker) do
-    if reflectable?(hit_info) do
-      target_type
-      |> StatusInterpreter.after_damage_taken(target_id, Map.put(hit_info, :damage, damage))
-      |> apply_reflected_damage(reflection_target(attacker))
-    else
-      :ok
-    end
+  # Runs every victim post-delivery hook once for positive damage. Individual
+  # statuses own their hit-shape filters; reflected damage remains asynchronous.
+  defp after_damage_taken({:error, _reason}, _target_type, _target_id, _damage, _hit_info, _attacker),
+    do: :ok
+
+  defp after_damage_taken(_delivery, target_type, target_id, damage, hit_info, attacker)
+       when damage > 0 do
+    delivered_hit =
+      hit_info
+      |> Map.put(:damage, damage)
+      |> Map.put(:attacker, typed_attacker(attacker))
+
+    target_type
+    |> StatusInterpreter.after_damage_taken(target_id, delivered_hit)
+    |> apply_reflected_damage(reflection_target(attacker))
   end
 
-  defp reflect_unit_damage(_target_type, _target_id, _damage, _hit_info, _attacker_id), do: :ok
-
-  defp reflectable?(hit_info) do
-    Map.get(hit_info, :dmg_type) == :physical and
-      Map.get(hit_info, :is_short, false) == true and
-      not Map.get(hit_info, :reflected, false) and
-      not Map.get(hit_info, :redirected, false)
-  end
+  defp after_damage_taken(_delivery, _target_type, _target_id, _damage, _hit_info, _attacker),
+    do: :ok
 
   defp apply_reflected_damage(amount, attacker_id) when amount > 0 and is_integer(attacker_id) do
     case TargetResolver.resolve(attacker_id) do
@@ -464,6 +460,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp ensure_external_owner!(_pid), do: :ok
 
+  defp reflection_target(nil), do: nil
   defp reflection_target(attacker_id) when is_integer(attacker_id), do: attacker_id
   defp reflection_target(attacker_ref), do: typed_attacker(attacker_ref)
 

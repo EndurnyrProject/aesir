@@ -225,24 +225,35 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         {:ok, %{damage: 40, is_critical: false}}
       end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 140, hit_info ->
+      expect(StatusInterpreter, :before_normal_attack, fn :player, 1001, attack_info ->
+        assert attack_info == %{target: {:mob, 2001}, element: :neutral}
+        %{damage_rate: 150}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 350, hit_info ->
         assert hit_info.components == [
-                 {:primary, 100, :neutral},
-                 {:secondary, 40, :neutral}
+                 {:primary, 250, :neutral},
+                 {:secondary, 100, :neutral}
                ]
 
-        100
+        350
+      end)
+
+      expect(StatusInterpreter, :after_damage_taken, fn :mob, 2001, hit_info ->
+        assert hit_info.damage == 350
+        assert hit_info.attacker == {:player, 1001}
+        0
       end)
 
       Mimic.copy(OnHitEffects)
       Mimic.copy(HpDrain)
 
-      expect(MobSession, :apply_damage, fn _pid, 100, 1001 -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 350, 1001 -> :ok end)
       expect(Passives, :after_normal_hit, fn ^player_state, _hit -> :ok end)
       expect(EquipBreak, :resolve, fn ^stats, {:mob, ^target_state} -> [] end)
       expect(StatusInterpreter, :on_dealt_damage, fn :player, 1001, _hit -> [] end)
-      expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 100} -> :ok end)
-      expect(HpDrain, :roll, fn _attacker, 100 -> 0 end)
+      expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 350} -> :ok end)
+      expect(HpDrain, :roll, fn _attacker, 350 -> 0 end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
         send(test_pid, {:packet, packet})
@@ -253,7 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert :ok = Combat.execute_attack(stats, player_state, 2001)
       end)
 
-      assert_received {:packet, %DamageDealt{damage: 72, damage2: 28, div: 1}}
+      assert_received {:packet, %DamageDealt{damage: 250, damage2: 100, div: 1}}
       refute_received {:packet, %DamageDealt{}}
     end
   end
@@ -277,7 +288,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
 
     test "an intercepting target status ends the swing with no damage before Trifecta" do
-      attacker = combatant(1001, :player, attack_range: 1)
+      attacker =
+        1001
+        |> combatant(:player, attack_range: 1)
+        |> put_in([Access.key!(:weapon), :element], :poison)
+
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
 
       stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, attack_info ->
@@ -296,6 +311,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                          target: {:mob, 2001},
                          attacker_boss?: false,
                          attacker_root_level: 0,
+                         basic_attack?: true,
+                         element: :poison,
                          distance: 0
                        }}
     end
@@ -1218,7 +1235,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       reject(&PlayerSession.apply_damage/3)
 
-      mob = combatant(3001, :mob, attack_range: 1, position: {150, 150})
+      mob =
+        3001
+        |> combatant(:mob, attack_range: 1, position: {150, 150})
+        |> Map.put(:element, {:poison, 1})
+
       mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
 
       assert :intercepted = Combat.execute_mob_attack(mob_state, 2001)
@@ -1229,6 +1250,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                          target: {:player, 2001},
                          attacker_boss?: false,
                          attacker_root_level: 5,
+                         basic_attack?: true,
+                         element: :poison,
                          distance: 1
                        }}
     end
