@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
 
   # Blade Stop (MO_BLADESTOP) skill id, read from a caught player attacker's
@@ -63,32 +64,70 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   @type combo_result ::
           {:ok, {:combo, atom(), {atom(), non_neg_integer()}, non_neg_integer()}}
 
-  @spec execute_attack(map(), map(), integer() | Ref.t()) ::
-          :ok | :intercepted | combo_result() | {:error, atom()}
-  def execute_attack(stats, player_state, target_id) do
-    # Create player combatant - player_state already implements to_combatant
-    # But we need to update the stats first
-    player_state = %{player_state | stats: stats}
-    attacker_combatant = player_state.__struct__.to_combatant(player_state)
+  @type attack_result :: :ok | :intercepted | combo_result() | {:error, atom()}
 
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
-         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
-         target_combatant <- target_state.__struct__.to_combatant(target_state),
-         target_id <- target_combatant.unit_id,
-         :ok <-
-           AttackValidator.validate(attacker_combatant, target_combatant, projectile?: true),
-         :ok <- validate_player_target(attacker_combatant, target_combatant, target_type) do
-      resolve_player_attack_or_intercept(
-        player_state,
-        target_state,
-        attacker_combatant,
-        target_combatant,
-        target_pid,
-        target_type,
-        target_id
-      )
+  @spec execute_attack(map(), map(), integer() | Ref.t()) :: attack_result()
+  def execute_attack(stats, player_state, target_id) do
+    {result, _player_state} =
+      execute_attack(stats, player_state, target_id, &recalculate_player_state/1)
+
+    result
+  end
+
+  @doc "Executes a player attack and returns the post-commit player state to its owner session."
+  @spec execute_attack(map(), map(), integer() | Ref.t(), (map() -> map())) ::
+          {attack_result(), map()}
+  def execute_attack(stats, player_state, target_id, recalculate) do
+    player_state = %{player_state | stats: stats}
+    validation_combatant = player_state.__struct__.to_combatant(player_state)
+
+    case validate_player_attack(validation_combatant, target_id) do
+      {:ok, target_pid, target_state, target_type, target_combatant} ->
+        player_state =
+          commit_normal_attack(player_state, validation_combatant.unit_id, recalculate)
+
+        attacker = player_state.__struct__.to_combatant(player_state)
+
+        result =
+          resolve_player_attack_or_intercept(
+            player_state,
+            target_state,
+            attacker,
+            target_combatant,
+            target_pid,
+            target_type,
+            target_combatant.unit_id
+          )
+
+        {result, player_state}
+
+      error ->
+        {error, player_state}
     end
   end
+
+  defp validate_player_attack(attacker, target_id) do
+    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- AttackValidator.validate(attacker, target, projectile?: true),
+         :ok <- validate_player_target(attacker, target, target_type) do
+      {:ok, target_pid, target_state, target_type, target}
+    end
+  end
+
+  defp commit_normal_attack(player_state, player_id, recalculate) do
+    case StatusInterpreter.on_committed_action(:player, player_id, :normal_attack) do
+      :changed -> recalculate.(player_state)
+      :unchanged -> player_state
+    end
+  end
+
+  defp recalculate_player_state(%{character_id: character_id, stats: stats} = player_state) do
+    %{player_state | stats: PlayerStats.calculate_stats(stats, character_id)}
+  end
+
+  defp recalculate_player_state(player_state), do: player_state
 
   defp resolve_player_attack_or_intercept(
          player_state,

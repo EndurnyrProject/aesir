@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Pathfinding
@@ -42,12 +43,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
   """
   @spec handle_pickup(pos_integer(), map()) :: {:noreply, map()}
   def handle_pickup(ground_id, %{game_state: gs} = state) do
-    case find_in_range(gs, ground_id) do
-      {:ok, _item} ->
-        do_pickup(ground_id, state)
+    if pickup_blocked?(gs) do
+      reply(state, ground_id, :FAILED)
+      {:noreply, state}
+    else
+      case find_in_range(gs, ground_id) do
+        {:ok, _item} ->
+          do_pickup(ground_id, state)
 
-      {:error, :too_far} ->
-        walk_to_item(ground_id, state)
+        {:error, :too_far} ->
+          walk_to_item(ground_id, state)
+      end
     end
   end
 
@@ -60,8 +66,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
     {:noreply, state}
   end
 
-  def handle_reached_item(%{game_state: %{pickup_target_id: ground_id}} = state) do
-    {:noreply, picked_up} = do_pickup(ground_id, state)
+  def handle_reached_item(%{game_state: %{pickup_target_id: ground_id} = gs} = state) do
+    picked_up =
+      if pickup_blocked?(gs) do
+        reply(state, ground_id, :FAILED)
+        state
+      else
+        {:noreply, result} = do_pickup(ground_id, state)
+        result
+      end
 
     game_state =
       picked_up.game_state
@@ -69,6 +82,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler do
       |> to_idle()
 
     {:noreply, %{picked_up | game_state: game_state}}
+  end
+
+  defp pickup_blocked?(game_state) do
+    StatusInterpreter.has_active_flag?(:player, game_state.character_id, :no_pick_item)
   end
 
   @spec do_pickup(pos_integer(), map()) :: {:noreply, map()}

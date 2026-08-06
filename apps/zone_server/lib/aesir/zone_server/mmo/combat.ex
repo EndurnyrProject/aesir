@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
   See `Aesir.ZoneServer.Mmo.Combat.AutoAttack.execute_attack/3`.
   """
   defdelegate execute_attack(stats, player_state, target_id), to: AutoAttack
+  defdelegate execute_attack(stats, player_state, target_id, recalculate), to: AutoAttack
 
   @doc """
   Executes a basic attack from mob to player.

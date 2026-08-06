@@ -24,6 +24,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
     def on_movement_intent(_target, instance, _position, _context), do: {:ok, instance}
   end
 
+  defmodule CommittedActionStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_registry_committed_action,
+      no_dispel: false,
+      flags: [:no_pick_item]
+
+    @impl true
+    def on_committed_action(_target, instance, _action, _context), do: {:ok, instance}
+  end
+
   setup :setup_ets_tables
 
   describe "register_module/1" do
@@ -53,6 +63,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.RegistryTest do
 
       assert Registry.statuses_implementing(:on_movement_intent) ==
                MapSet.new([:sc_registry_movement_intent])
+    end
+
+    test "indexes committed actions and metadata flags independently" do
+      :ok = Registry.register_module(TestStatus)
+      :ok = Registry.register_module(CommittedActionStatus)
+
+      assert Registry.statuses_implementing(:on_committed_action) ==
+               MapSet.new([:sc_registry_committed_action])
+
+      assert MapSet.member?(
+               Registry.statuses_with_flag(:no_pick_item),
+               :sc_registry_committed_action
+             )
     end
   end
 end

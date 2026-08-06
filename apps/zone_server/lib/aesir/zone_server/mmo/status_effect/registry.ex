@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   def register_module(module) do
     definition = Map.put(module.metadata(), :module, module)
     :ets.insert(table_for(:status_effect_definitions), {module.id(), definition})
-    index_capabilities(module)
+    index_capabilities(module, definition.flags)
     :ok
   end
 
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
   call per status. Returns an empty set when nothing implements it - the common
   case on the combat hot path.
   """
-  @spec statuses_implementing(Definition.capability()) :: MapSet.t(atom())
+  @spec statuses_implementing(Definition.capability() | {:flag, atom()}) :: MapSet.t(atom())
   def statuses_implementing(capability) do
     case :ets.lookup(table_for(:status_effect_definitions), @capabilities_key) do
       [{_, capabilities}] -> Map.get(capabilities, capability, @no_statuses)
@@ -93,8 +93,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Registry do
     end
   end
 
-  defp index_capabilities(module) do
-    case module.__status_capabilities__() do
+  @doc "Returns the ids of registered statuses declaring `flag`."
+  @spec statuses_with_flag(atom()) :: MapSet.t(atom())
+  def statuses_with_flag(flag), do: statuses_implementing({:flag, flag})
+
+  defp index_capabilities(module, flags) do
+    capabilities = module.__status_capabilities__() ++ Enum.map(flags, &{:flag, &1})
+
+    case capabilities do
       [] ->
         :ok
 

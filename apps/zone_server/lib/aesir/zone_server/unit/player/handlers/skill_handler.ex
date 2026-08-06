@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -98,6 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp cast_cancel(%{game_state: game_state} = state, level) do
     case Interpreter.begin_cast(game_state, @cast_cancel_id, level, :self) do
       {:instant, charged_game_state} ->
+        charged_game_state = dispatch_committed_action(state, charged_game_state, @cast_cancel_id)
         penalty = cast_cancel_penalty(game_state.casting, level)
 
         cancelled_state = cancel_cast(%{state | game_state: charged_game_state}, :castcancel)
@@ -182,11 +184,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp complete_input_cast(state, skill_id, level, target, input) do
     case Interpreter.complete_cast_with_input(state.game_state, skill_id, level, target, input) do
       {:ok, new_game_state} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         new_state = commit_cast(state, new_game_state, skill_id, level)
         broadcast_skill_use(new_state.game_state, skill_id, level, target)
         {:noreply, new_state}
 
       {:deferred, new_game_state, descriptor} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         {:noreply, resolve_deferred(state, new_game_state, descriptor, nil)}
 
       {:error, reason} ->
@@ -385,6 +389,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   defp begin_preflighted_cast(state, game_state, skill_id, level, target, locked) do
     case Interpreter.begin_cast(game_state, skill_id, level, target) do
       {:instant, new_game_state} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         new_state = commit_cast(state, new_game_state, skill_id, level)
         # Keep the departure snapshot for this visual: commit_cast/5 may drain a
         # staged warp and move the player before the committed state returns.
@@ -392,6 +397,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:instant, new_game_state, effects} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+
         new_state =
           state
           |> commit_cast(new_game_state, skill_id, level)
@@ -401,10 +408,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
         {:noreply, maybe_resume_lock(new_state, locked)}
 
       {:deferred, new_game_state, descriptor} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
+
         {:noreply,
          resolve_deferred(state, new_game_state, descriptor, locked, homunculus_id(state))}
 
       {:casting, new_game_state, info} ->
+        new_game_state = dispatch_committed_action(state, new_game_state, skill_id)
         schedule_cast(%{state | game_state: new_game_state}, info, locked)
 
       # Out of range: walk into range instead of fizzling (mirrors attack-move).
@@ -417,6 +427,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       {:error, reason} ->
         report_cast_failure(skill_id, game_state.character_id, reason)
         {:noreply, state}
+    end
+  end
+
+  defp dispatch_committed_action(state, game_state, skill_id) do
+    case StatusInterpreter.on_committed_action(
+           :player,
+           game_state.character_id,
+           {:skill, skill_id}
+         ) do
+      :changed ->
+        StatusManager.recalculate_after_status_change(%{state | game_state: game_state}).game_state
+
+      :unchanged ->
+        game_state
     end
   end
 

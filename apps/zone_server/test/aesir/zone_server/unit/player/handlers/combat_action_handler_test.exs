@@ -225,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
 
     test "an attack on a target on a different map is rejected without attacking or chasing" do
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2000 -> {:error, :not_found}
@@ -245,7 +245,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
 
     test "an attack on a target beyond view range is rejected without attacking or chasing" do
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       stub(SpatialIndex, :get_unit_position, fn
         :player, 2000 -> {:error, :not_found}
@@ -365,9 +365,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         :skill_unit, ^skill_unit_id -> {:ok, {10, 11, "prontera"}}
       end)
 
-      stub(Combat, :execute_attack, fn _stats, _game_state, target_id ->
+      stub(Combat, :execute_attack, fn _stats, game_state, target_id, _recalculate ->
         send(self(), {:attacked, target_id})
-        :ok
+        {:ok, game_state}
       end)
 
       state = acquire_state("prontera")
@@ -529,7 +529,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     test "a bow attack with no arrows fails with :no_ammo and never strikes" do
       stub(Stats, :weapon_type, fn _equipment -> :bow end)
       stub_target_in_range()
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       state = combat_state(%{})
 
@@ -554,7 +554,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       end)
 
       stub_target_in_range()
-      stub(Combat, :execute_attack, fn _stats, _gs, _target -> :ok end)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, _target, _recalculate ->
+        {:ok, game_state}
+      end)
 
       stub(InventoryOps, :apply_change, fn _char, _old, new, _change ->
         send(self(), :persisted)
@@ -581,8 +584,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       stub(Stats, :weapon_type, fn _equipment -> :bow end)
       stub_target_in_range()
 
-      stub(Combat, :execute_attack, fn _stats, _game_state, 2000 ->
-        {:error, :target_not_found}
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        {{:error, :target_not_found}, game_state}
       end)
 
       reject(&Ammo.consume_one/1)
@@ -610,7 +613,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       end)
 
       stub_target_in_range()
-      stub(Combat, :execute_attack, fn _stats, _gs, _target -> :ok end)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, _target, _recalculate ->
+        {:ok, game_state}
+      end)
 
       stub(InventoryOps, :apply_change, fn _char, _old, new, _change ->
         send(self(), :persisted)
@@ -636,7 +642,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     test "a dagger attack strikes without consuming ammo" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
       stub_target_in_range()
-      stub(Combat, :execute_attack, fn _stats, _gs, _target -> :ok end)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, _target, _recalculate ->
+        {:ok, game_state}
+      end)
+
       reject(&Ammo.consume_one/1)
 
       state = combat_state(%{})
@@ -687,9 +697,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         :mob, 2000 -> {:ok, {10, 11, "prontera"}}
       end)
 
-      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
         send(self(), :attacked)
-        :intercepted
+        {:intercepted, game_state}
       end)
 
       {:noreply, s1} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
@@ -709,9 +719,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         :mob, 2000 -> {:ok, {10, 11, "prontera"}}
       end)
 
-      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
         send(self(), :attacked)
-        :ok
+        {:ok, game_state}
       end)
 
       {:noreply, s1} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
@@ -737,8 +747,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         :mob, 2000 -> {:ok, {10, 11, "prontera"}}
       end)
 
-      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
-        {:ok, {:combo, :quadruple, {:mob, 2000}, 20}}
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        {{:ok, {:combo, :quadruple, {:mob, 2000}, 20}}, game_state}
       end)
 
       {:noreply, opened} = CombatActionHandler.handle_attack_request(loop_state(), 2000, 7)
@@ -787,7 +797,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     test "a dead or missing target stops the loop and clears combat intent" do
       stub(Stats, :weapon_type, fn _equipment -> :dagger end)
       stub(SpatialIndex, :get_unit_position, fn _type, _id -> {:error, :not_found} end)
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       ref = Process.send_after(self(), :never, 60_000)
       state = locked_state(%{combat_target_id: 2000, continuous_attack_timer: ref})
@@ -802,7 +812,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
     test "a stunned player stops the loop instead of swinging through" do
       stub(Interpreter, :can_attack?, fn :player, 1000 -> false end)
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       ref = Process.send_after(self(), :never, 60_000)
       state = locked_state(%{combat_target_id: 2000, continuous_attack_timer: ref})
@@ -815,7 +825,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
     end
 
     test "an auto-attack for a target that is no longer locked is ignored" do
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
       state = locked_state(%{combat_target_id: 9999})
 
       assert {:noreply, ^state} = CombatActionHandler.handle_auto_attack(state, 2000)
@@ -829,7 +839,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
         :mob, 2000 -> {:ok, {30, 30, "prontera"}}
       end)
 
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
       stub(MapCache, :get, fn "prontera" -> {:ok, :map_data} end)
       stub(Pathfinding, :find_path, fn _map, _from, _to -> {:ok, [{29, 29}]} end)
 
@@ -856,7 +866,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       end)
 
       # Any swing here would violate the ASPD cadence: the last one just landed.
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       old_ref = Process.send_after(self(), :never, 60_000)
 
@@ -1020,7 +1030,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [{:mob, 5000}] end)
       stub_open_terrain()
       capture_moves(:repick)
-      reject(&Combat.execute_attack/3)
+      reject(&Combat.execute_attack/4)
 
       state = approach_state(%{x: 21, y: 20, combat_target_id: 2000})
 
@@ -1042,9 +1052,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
 
-      stub(Combat, :execute_attack, fn _stats, _gs, 2000 ->
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
         send(self(), :attacked)
-        :ok
+        {:ok, game_state}
       end)
 
       state = approach_state(%{x: 21, y: 20, combat_target_id: 2000})
@@ -1127,7 +1137,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       end)
 
       stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
-      stub(Combat, :execute_attack, fn _stats, _gs, 2000 -> :ok end)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        {:ok, game_state}
+      end)
     end
 
     test "a swing on arrival from a combat approach sends the authoritative cell" do

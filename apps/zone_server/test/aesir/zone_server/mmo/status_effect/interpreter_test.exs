@@ -172,6 +172,58 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  defmodule CommittedActionStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_committed_action,
+      no_dispel: false,
+      properties: [:buff],
+      flags: [:no_pick_item]
+
+    alias Aesir.ZoneServer.Mmo.StatusStorage
+
+    @impl true
+    def modifiers(%{state: %{modified?: true}}, _context), do: %{cri: 10}
+    def modifiers(_instance, _context), do: %{}
+
+    @impl true
+    def on_committed_action(
+          {:player, target_id},
+          %{state: %{observer: observer, action: action}} = instance,
+          committed_action,
+          _context
+        ) do
+      send(observer, {:committed_action, committed_action})
+      handle_action(action, target_id, instance)
+    end
+
+    @impl true
+    def on_expire(_target, %{state: %{observer: observer}}, _context) do
+      send(observer, :committed_action_expired)
+      :ok
+    end
+
+    defp handle_action(:update, _target_id, instance) do
+      {:ok, %{instance | state: Map.put(instance.state, :modified?, true)}}
+    end
+
+    defp handle_action(:remove, _target_id, _instance), do: :remove
+
+    defp handle_action(:replace_then_remove, target_id, instance) do
+      StatusStorage.apply_status(:player, target_id, :sc_test_committed_action,
+        state: %{observer: instance.state.observer, action: :remove, generation: :new}
+      )
+
+      :remove
+    end
+  end
+
+  defmodule UnrelatedFlagStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_unrelated_flag,
+      no_dispel: false,
+      flags: [:unrelated]
+  end
+
   defmodule MutuallyExclusiveX do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
       id: :sc_test_mutually_exclusive_x,
@@ -275,6 +327,66 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  describe "on_committed_action/3 and has_active_flag?/3" do
+    test "empty indexes do not scan status storage" do
+      Mimic.copy(StatusStorage)
+      reject(&StatusStorage.get_status/3)
+      reject(&StatusStorage.has_status?/3)
+
+      assert :unchanged = Interpreter.on_committed_action(:player, 7_600, :normal_attack)
+      refute Interpreter.has_active_flag?(:player, 7_600, :not_indexed)
+    end
+
+    test "updates, removes, and ignores stale replacement results" do
+      target_id = 7_601
+      setup_player_mock(target_id)
+      Registry.register_module(CommittedActionStatus)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_committed_action,
+          state: %{observer: self(), action: :update, modified?: false}
+        )
+
+      assert :changed = Interpreter.on_committed_action(:player, target_id, :normal_attack)
+      assert_receive {:committed_action, :normal_attack}
+
+      assert %{state: %{modified?: true}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_committed_action)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_committed_action,
+          state: %{observer: self(), action: :remove}
+        )
+
+      assert :changed = Interpreter.on_committed_action(:player, target_id, {:skill, 5})
+      assert_receive {:committed_action, {:skill, 5}}
+      assert_receive :committed_action_expired
+      refute StatusStorage.has_status?(:player, target_id, :sc_test_committed_action)
+
+      :ok =
+        StatusStorage.apply_status(:player, target_id, :sc_test_committed_action,
+          state: %{observer: self(), action: :replace_then_remove, generation: :old}
+        )
+
+      assert :unchanged = Interpreter.on_committed_action(:player, target_id, :normal_attack)
+
+      assert %{state: %{generation: :new}} =
+               StatusStorage.get_status(:player, target_id, :sc_test_committed_action)
+    end
+
+    test "queries only statuses indexed for the requested flag" do
+      target_id = 7_602
+      Registry.register_module(CommittedActionStatus)
+      Registry.register_module(UnrelatedFlagStatus)
+
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_test_unrelated_flag)
+      refute Interpreter.has_active_flag?(:player, target_id, :no_pick_item)
+
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_test_committed_action)
+      assert Interpreter.has_active_flag?(:player, target_id, :no_pick_item)
+    end
+  end
 
   describe "on_movement_intent/3" do
     test "does not scan status storage when no definition implements the capability" do

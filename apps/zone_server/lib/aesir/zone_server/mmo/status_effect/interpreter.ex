@@ -320,6 +320,33 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Dispatches a validated player action once to statuses indexed for the capability.
+
+  Updates and removals use the captured status entry as their generation token.
+  Returns `:changed` when a current entry changed, otherwise `:unchanged`.
+  """
+  @spec on_committed_action(unit_type(), integer(), Definition.committed_action()) ::
+          :changed | :unchanged
+  def on_committed_action(unit_type, unit_id, action) do
+    implementing = Registry.statuses_implementing(:on_committed_action)
+
+    Enum.reduce(implementing, :unchanged, fn status_id, result ->
+      case StatusStorage.get_status(unit_type, unit_id, status_id) do
+        nil -> result
+        instance -> dispatch_committed_action(unit_type, unit_id, instance, action, result)
+      end
+    end)
+  end
+
+  @doc "Returns whether the unit has an active status indexed for `flag`."
+  @spec has_active_flag?(unit_type(), integer(), atom()) :: boolean()
+  def has_active_flag?(unit_type, unit_id, flag) do
+    flag
+    |> Registry.statuses_with_flag()
+    |> Enum.any?(&StatusStorage.has_status?(unit_type, unit_id, &1))
+  end
+
+  @doc """
   Dispatches movement intent once to statuses indexed for the capability.
 
   Returns `:changed` only when a current-generation mutation changes status
@@ -1222,6 +1249,54 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp dispatch_dealt_damage(unit_type, unit_id, instance, hit_info),
     do: dispatch_hook(:on_dealt_damage, unit_type, unit_id, instance, hit_info)
+
+  defp dispatch_committed_action(unit_type, unit_id, instance, action, unchanged) do
+    case Registry.get_definition(instance.type) do
+      nil ->
+        unchanged
+
+      %{module: module} ->
+        context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+        result = module.on_committed_action({unit_type, unit_id}, instance, action, context)
+        apply_committed_action_result(result, unit_type, unit_id, instance, unchanged)
+    end
+  end
+
+  defp apply_committed_action_result(
+         {:ok, new_instance},
+         unit_type,
+         unit_id,
+         instance,
+         unchanged
+       ) do
+    updated = %{instance | state: new_instance.state, phase: new_instance.phase}
+
+    if updated != instance and
+         StatusStorage.replace_status_if_current(
+           unit_type,
+           unit_id,
+           instance.type,
+           instance,
+           updated
+         ),
+       do: :changed,
+       else: unchanged
+  end
+
+  defp apply_committed_action_result(:remove, unit_type, unit_id, instance, unchanged) do
+    if expire_status_if_current(unit_type, unit_id, instance.type, instance),
+      do: :changed,
+      else: unchanged
+  end
+
+  defp apply_committed_action_result({:error, reason}, _unit_type, _unit_id, instance, unchanged) do
+    Logger.warning("Status #{instance.type} on_committed_action failed: #{inspect(reason)}")
+    unchanged
+  end
+
+  defp apply_committed_action_result(invalid, _unit_type, _unit_id, instance, _unchanged) do
+    raise "invalid on_committed_action result for #{instance.type}: #{inspect(invalid)}"
+  end
 
   defp dispatch_movement_intent(unit_type, unit_id, instance, position) do
     case Registry.get_definition(instance.type) do

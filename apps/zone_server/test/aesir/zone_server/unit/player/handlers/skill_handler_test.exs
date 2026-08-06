@@ -239,6 +239,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
     test "publishes the final resource projection after consuming SP" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
+
+      expect(StatusInterpreter, :on_committed_action, fn :player, 1000, {:skill, 29} ->
+        :unchanged
+      end)
+
       stub(PlayerStats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
       stub(Broadcast, :to_in_range, fn "prontera", 150, 150, _range, _packet -> :ok end)
       stub(StatusSync, :send_stat_updates, fn _conn, _stats -> :ok end)
@@ -356,6 +361,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
 
       expect(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self ->
         {:deferred, game_state, descriptor}
+      end)
+
+      expect(StatusInterpreter, :on_committed_action, fn :player, 1000, {:skill, 29} ->
+        :unchanged
       end)
 
       reject(&CharacterPersistence.update_character/3)

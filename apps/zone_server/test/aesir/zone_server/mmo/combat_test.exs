@@ -137,6 +137,45 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     state
   end
 
+  describe "execute_attack/4 committed action" do
+    test "dispatches after validation and rebuilds the attacker after owner recalculation" do
+      Mimic.copy(HitCalculations)
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+      attacker = combatant(1001, :player, hit_rate_bonus_pct: 0)
+      recalculated = combatant(1001, :player, hit_rate_bonus_pct: 25)
+      player = %FakeUnit{combatant: attacker}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      expect(StatusInterpreter, :on_committed_action, fn :player, 1001, :normal_attack ->
+        :changed
+      end)
+
+      expect(HitCalculations, :calculate_hit_result, fn attacker_stats, _defender_stats ->
+        assert attacker_stats.hit_rate_bonus_pct == 25
+        :miss
+      end)
+
+      recalculate = fn _validated_player -> %FakeUnit{combatant: recalculated} end
+
+      assert {:ok, %FakeUnit{combatant: ^recalculated}} =
+               Combat.execute_attack(attacker, player, 2001, recalculate)
+    end
+
+    test "does not dispatch for a rejected target" do
+      attacker = combatant(1001, :player)
+      player = %FakeUnit{combatant: attacker}
+
+      stub(UnitRegistry, :get_unit, fn :mob, 9999 -> {:error, :not_found} end)
+      reject(&StatusInterpreter.on_committed_action/3)
+
+      assert {{:error, :target_not_found}, %FakeUnit{combatant: ^attacker}} =
+               Combat.execute_attack(attacker, player, 9999, &Function.identity/1)
+    end
+  end
+
   describe "execute_attack/3 persistent hit-rate bonus" do
     test "normal attacks publish the attacker's multiplicative hit-rate bonus" do
       Mimic.copy(HitCalculations)
@@ -1099,6 +1138,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       mob = combatant(3001, :mob, attack_range: 1, position: {150, 150})
       mob_state = %FakeUnit{combatant: mob, x: 150, y: 150}
 
+      reject(&StatusInterpreter.on_committed_action/3)
       assert :ok = Combat.execute_mob_attack(mob_state, 2001)
     end
   end

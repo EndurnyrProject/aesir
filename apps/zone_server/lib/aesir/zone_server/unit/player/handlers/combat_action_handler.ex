@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -434,7 +435,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp do_execute_attack(state, target_id, transitioned_state, weapon_type) do
-    case Combat.execute_attack(transitioned_state.stats, transitioned_state, target_id) do
+    recalculate = fn game_state ->
+      StatusManager.recalculate_after_status_change(%{state | game_state: game_state}).game_state
+    end
+
+    {result, transitioned_state} =
+      Combat.execute_attack(
+        transitioned_state.stats,
+        transitioned_state,
+        target_id,
+        recalculate
+      )
+
+    case result do
       :ok ->
         handle_successful_attack(state, target_id, transitioned_state, weapon_type, nil)
 

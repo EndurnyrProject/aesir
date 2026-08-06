@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
   alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Pathfinding
@@ -20,10 +21,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   setup :verify_on_exit!
+  setup :stub_pickup_gate
 
   @ground_id 4242
   @nameid 501
   @item_def %{id: @nameid, weight: 10}
+
+  defp stub_pickup_gate(_context) do
+    stub(StatusInterpreter, :has_active_flag?, fn :player, 1001, :no_pick_item -> false end)
+    :ok
+  end
 
   defp ground_item(id, x, y, identified \\ true) do
     %GroundItem{
@@ -71,6 +78,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PickupHandlerTest do
         pickup_target_id: Keyword.get(opts, :pickup_target_id)
       }
     }
+  end
+
+  test "initial pickup rejects an active no-pick-item flag without looking up or claiming" do
+    expect(StatusInterpreter, :has_active_flag?, fn :player, 1001, :no_pick_item -> true end)
+    reject(&GroundItemStore.query_in_range/4)
+    reject(&Coordinator.claim_item/4)
+
+    assert {:noreply, returned} = PickupHandler.handle_pickup(@ground_id, state())
+    assert returned == state()
+
+    assert_received {:send, :world,
+                     {:pickup_result, %PickupResult{ground_id: @ground_id, result: :FAILED}}}
+  end
+
+  test "arrival rejects a no-pick-item flag gained while walking without claiming" do
+    session =
+      player_session(
+        action_state: :moving_to_item,
+        movement_intent: :pickup,
+        pickup_target_id: @ground_id
+      )
+
+    expect(StatusInterpreter, :has_active_flag?, fn :player, 1001, :no_pick_item -> true end)
+    reject(&Coordinator.claim_item/4)
+
+    assert {:noreply, returned} = PickupHandler.handle_reached_item(session)
+
+    assert %PlayerState{action_state: :idle, pickup_target_id: nil} = returned.game_state
+
+    assert_received {:send, :world,
+                     {:pickup_result, %PickupResult{ground_id: @ground_id, result: :FAILED}}}
   end
 
   test "in-range pickup gives the item, claims it, and replies OK" do
