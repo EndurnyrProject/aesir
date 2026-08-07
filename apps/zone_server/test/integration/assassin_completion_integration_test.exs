@@ -577,17 +577,17 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     {:ok, account} =
       %Account{}
       |> Account.changeset(%{
-        username: "assassincompletion#{uniq}",
-        userid: "assassincompletion#{uniq}",
+        username: "asncompl#{uniq}",
+        userid: "asncompl#{uniq}",
         user_pass: "password",
-        email: "assassincompletion#{uniq}@aesir.test"
+        email: "asncompl#{uniq}@aesir.test"
       })
       |> Repo.insert()
 
     attrs = %{
       account_id: account.id,
       char_num: 0,
-      name: "AssassinCompletion#{uniq}",
+      name: "AsnCompl#{uniq}",
       class: 12,
       base_level: 80,
       job_level: 50,

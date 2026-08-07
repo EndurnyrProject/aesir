@@ -177,16 +177,25 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   # registry standalone, without booting the NPC session tree.
   @spec terminate_sessions() :: :ok
   defp terminate_sessions do
-    case Process.whereis(@session_dynamic_supervisor) do
+    supervisor =
+      ProcessTree.get({@session_dynamic_supervisor, :server}) || @session_dynamic_supervisor
+
+    resolved =
+      case supervisor do
+        pid when is_pid(pid) -> pid
+        name -> Process.whereis(name)
+      end
+
+    case resolved do
       nil ->
         :ok
 
-      supervisor ->
-        supervisor
+      sup ->
+        sup
         |> DynamicSupervisor.which_children()
         |> Enum.each(fn
           {_id, child_pid, _type, _modules} when is_pid(child_pid) ->
-            DynamicSupervisor.terminate_child(supervisor, child_pid)
+            DynamicSupervisor.terminate_child(sup, child_pid)
 
           _not_a_pid ->
             :ok

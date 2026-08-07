@@ -100,9 +100,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       start_supervised!(
         %{
           id: {:integration_default, Aesir.ZoneServer.Mmo.Skill.Unit.Manager},
-          start:
-            {Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :start_link,
-             [[name: nil, schedule_tick: fn _pid, _interval -> :ok end]]}
+          start: {Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :start_link, [[name: nil]]}
         },
         []
       )
@@ -116,6 +114,36 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     # can see hand-spawned observers/players.
     npc_interaction = start_supervised!(Task.Supervisor, [])
     Process.put({Aesir.ZoneServer.Npc.InteractionSupervisor, :server}, npc_interaction)
+
+    # NPC Session GenServers (OnTimer/OnInit/OnTouch event state) must run under
+    # this test's seed too, or their dispatched tasks resolve the boot `nil`
+    # tables and can't see hand-spawned observers. Start per-test registry +
+    # dynamic supervisor and point Npc.Session at them via ProcessTree.
+    npc_session_registry_name = :"session_registry_#{byte_size(seed)}_#{:erlang.unique_integer()}"
+
+    _npc_session_registry =
+      start_supervised!(
+        %{
+          id: {:integration_default, Aesir.ZoneServer.Npc.SessionRegistry},
+          start: {Registry, :start_link, [[keys: :unique, name: npc_session_registry_name]]}
+        },
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Npc.SessionRegistry, :server}, npc_session_registry_name)
+
+    npc_session_dyn =
+      start_supervised!(
+        %{
+          id: {:integration_default, Aesir.ZoneServer.Npc.SessionDynamicSupervisor},
+          start:
+            {DynamicSupervisor, :start_link,
+             [[name: nil, strategy: :one_for_one, max_restarts: 5, max_seconds: 60]]}
+        },
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Npc.SessionDynamicSupervisor, :server}, npc_session_dyn)
 
     # Most integration tests run on "prontera". Start a per-test seeded map
     # world (Coordinator + MobSupervisor) so drops/loot/pickup route through
@@ -136,6 +164,8 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     Process.delete({Aesir.ZoneServer.Mmo.StatusTickManager, :server})
     Process.delete({Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :server})
     Process.delete({Aesir.ZoneServer.Npc.InteractionSupervisor, :server})
+    Process.delete({Aesir.ZoneServer.Npc.SessionRegistry, :server})
+    Process.delete({Aesir.ZoneServer.Npc.SessionDynamicSupervisor, :server})
     :ok
   end
 

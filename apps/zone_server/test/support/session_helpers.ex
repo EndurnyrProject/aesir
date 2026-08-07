@@ -135,10 +135,10 @@ defmodule Aesir.ZoneServer.SessionHelpers do
       stats: %{
         str: 10,
         agi: opts[:agi] || 10,
-        vit: 10,
+        vit: opts[:vit] || 10,
         int: 5,
         dex: opts[:dex] || 10,
-        luk: 5
+        luk: opts[:luk] || 5
       },
       attack_range: 1,
       skill_range: 10,

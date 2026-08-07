@@ -297,10 +297,10 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
     {:ok, account} =
       %Account{}
       |> Account.changeset(%{
-        username: "hunterprogression#{uniq}",
-        userid: "hunterprogression#{uniq}",
+        username: "hunterprog#{uniq}",
+        userid: "hunterprog#{uniq}",
         user_pass: "password",
-        email: "hunterprogression#{uniq}@aesir.test"
+        email: "hunterprog#{uniq}@aesir.test"
       })
       |> Repo.insert()
 

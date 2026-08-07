@@ -45,8 +45,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
-  alias Aesir.ZoneServer.Map.MapManager
-  alias Aesir.ZoneServer.Map.PartitionedSupervisor
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -60,15 +58,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
   setup do
     put_map(@map)
     put_map(@warp_map)
-    ensure_coordinator(@map)
-    ensure_coordinator(@warp_map)
-
-    on_exit(fn ->
-      stop_coordinator(@warp_map)
-      stop_coordinator(@map)
-      :ets.delete(EtsTable.table_for(:map_cache), @warp_map)
-      :ets.delete(EtsTable.table_for(:map_cache), @map)
-    end)
+    start_per_test_map(@map)
+    start_per_test_map(@warp_map)
 
     :ok
   end
@@ -548,27 +539,6 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAoiIntegrationTest do
     case Process.info(pid, :status) do
       {:status, :suspended} -> :erlang.resume_process(pid)
       _ -> :ok
-    end
-  end
-
-  defp ensure_coordinator(map_name) do
-    case MapManager.get_coordinator(map_name) do
-      {:ok, _pid} ->
-        :ok
-
-      {:error, :not_found} ->
-        assert :ok = MapManager.restart_coordinator(map_name)
-
-        assert_eventually(fn ->
-          match?({:ok, _pid}, MapManager.get_coordinator(map_name))
-        end)
-    end
-  end
-
-  defp stop_coordinator(map_name) do
-    case PartitionedSupervisor.stop_map_coordinator(map_name) do
-      :ok -> :ok
-      {:error, :not_found} -> :ok
     end
   end
 

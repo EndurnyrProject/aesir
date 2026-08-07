@@ -252,10 +252,23 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
 
   describe "Grand Cross" do
     test "full cast: deducts 20% max HP, roots the caster, damages the cross with half self-damage and blinds an undead mob" do
+      # vit/luk 0: the self-root is applied through the resistance pipeline in
+      # the skill-unit manager process, so zeroed resist stats (100% infliction
+      # short-circuits the roll, full 950ms root window) keep it deterministic.
       crusader =
-        start_solo_crusader(9_650, {150, 150}, %{max_hp: 2_000, hp: 2_000, max_sp: 200, sp: 200})
+        start_solo_crusader(9_650, {150, 150}, %{
+          max_hp: 2_000,
+          hp: 2_000,
+          max_sp: 200,
+          sp: 200,
+          vit: 0,
+          luk: 0
+        })
 
-      undead = spawn_mob(9_651, {151, 150}, hp: 100_000, race: :undead)
+      # vit/luk 0: the chance-based Blind resistance roll happens in a game
+      # process, so zeroed resist stats (100% infliction short-circuits the
+      # roll) are the only way to keep it deterministic under load.
+      undead = spawn_mob(9_651, {151, 150}, hp: 100_000, race: :undead, vit: 0, luk: 0)
 
       max_hp = max_hp(crusader.pid)
       cost = div(max_hp * 20, 100)
@@ -276,6 +289,14 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
                )
              end)
 
+      # The 950ms self-root is applied at the same completion instant that
+      # placed the skill unit above. Poll it immediately via the direct ETS
+      # read: gating it behind `current_hp` (a call into the busy caster
+      # session) can eat the whole root window under full-suite load.
+      assert eventually(fn ->
+               not StatusInterpreter.can_move?(:player, crusader.character.id)
+             end)
+
       assert_packet_sent_with(GroundSkill, fn packet ->
         assert packet.skill_id == @cr_grandcross
         assert packet.src_id == crusader.character.id
@@ -285,8 +306,6 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
       end)
 
       assert eventually(fn -> current_hp(crusader.pid) <= max_hp - cost end, 6_000)
-
-      refute StatusInterpreter.can_move?(:player, crusader.character.id)
 
       post_cost_hp = current_hp(crusader.pid)
       assert eventually(fn -> current_hp(crusader.pid) < post_cost_hp end)

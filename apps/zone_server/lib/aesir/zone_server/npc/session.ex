@@ -324,11 +324,11 @@ defmodule Aesir.ZoneServer.Npc.Session do
   # Private Functions
 
   @spec via(non_neg_integer()) :: GenServer.name()
-  defp via(gid), do: {:via, Registry, {@session_registry, gid}}
+  defp via(gid), do: {:via, Registry, {session_registry(), gid}}
 
   @spec whereis(non_neg_integer()) :: pid() | nil
   defp whereis(gid) do
-    case Registry.lookup(@session_registry, gid) do
+    case Registry.lookup(session_registry(), gid) do
       [{pid, _value}] -> pid
       [] -> nil
     end
@@ -336,10 +336,18 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec start_child(non_neg_integer()) :: pid()
   defp start_child(gid) do
-    case DynamicSupervisor.start_child(@session_dynamic_supervisor, {__MODULE__, gid: gid}) do
+    case DynamicSupervisor.start_child(session_dynamic_supervisor(), {__MODULE__, gid: gid}) do
       {:ok, pid} -> pid
       {:error, {:already_started, pid}} -> pid
     end
+  end
+
+  defp session_registry do
+    ProcessTree.get({@session_registry, :server}) || @session_registry
+  end
+
+  defp session_dynamic_supervisor do
+    ProcessTree.get({@session_dynamic_supervisor, :server}) || @session_dynamic_supervisor
   end
 
   # `elapsed_ms` is the caller's authoritative elapsed reading, taken
@@ -367,8 +375,14 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec dispatch(non_neg_integer(), String.t(), (non_neg_integer(), String.t() -> any())) :: :ok
   defp dispatch(gid, label, on_fire) do
-    _ = Task.Supervisor.start_child(@interaction_supervisor, fn -> on_fire.(gid, label) end)
+    _ =
+      Task.Supervisor.start_child(interaction_supervisor(), fn -> on_fire.(gid, label) end)
+
     :ok
+  end
+
+  defp interaction_supervisor do
+    ProcessTree.get({@interaction_supervisor, :server}) || @interaction_supervisor
   end
 
   @spec timer_schedule(non_neg_integer()) :: [timer_entry()]

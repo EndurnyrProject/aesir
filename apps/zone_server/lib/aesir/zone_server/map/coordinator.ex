@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     clean_name = String.replace_suffix(map_name, ".gat", "")
 
     case lookup_server(clean_name) do
-      {:ok, _pid} ->
+      [{_pid, _}] ->
         GenServer.call(server(clean_name), {:summon_mob, mob_id, x, y, opts})
 
       [] ->

@@ -137,8 +137,18 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   describe "caster-generic status rows" do
     test "a mob casts Provoke against a player" do
+      # vit/luk 0: Provoke's one-shot resistance roll happens in the mob
+      # session process, so zeroed resist stats (100% infliction short-circuits
+      # the roll) are the only way to keep it deterministic.
       player =
-        start_player_session(id: 9_821, name: "Provoked", position: {151, 150}, map_name: @map)
+        start_player_session(
+          id: 9_821,
+          name: "Provoked",
+          position: {151, 150},
+          map_name: @map,
+          vit: 0,
+          luk: 0
+        )
 
       char_id = player.character.id
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
