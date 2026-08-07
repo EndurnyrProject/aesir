@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
 
   @map "cast_sweep_map"
   @caster_mob_id 1_002
+  @compatible_assassin_skill_ids MapSet.new([135, 136, 137, 140, 141])
 
   coerce_value = fn
     value when is_binary(value) -> String.to_atom(value)
@@ -70,6 +71,17 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
     end)
 
   @skills skills
+
+  test "the mob sweep includes every compatible imported Assassin definition" do
+    swept_ids = @skills |> Enum.map(fn {definition, _row} -> definition.id end) |> MapSet.new()
+
+    assert MapSet.subset?(@compatible_assassin_skill_ids, swept_ids)
+
+    Enum.each(@compatible_assassin_skill_ids, fn skill_id ->
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert :ok = Castability.check(definition, :mob)
+    end)
+  end
 
   test "mob declarations match execution through live MobSessions" do
     Enum.each(@skills, fn {definition, row} ->

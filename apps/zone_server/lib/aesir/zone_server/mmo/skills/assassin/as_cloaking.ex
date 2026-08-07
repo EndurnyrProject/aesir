@@ -38,6 +38,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
 
   def validate(%PlayerState{}, :self, _level, _definition), do: :ok
   def validate(%MobState{}, :self, _level, _definition), do: :ok
+
+  def validate(%MobState{instance_id: caster_id}, {:unit, caster_id}, _level, _definition),
+    do: :ok
+
   def validate(_caster, _target, _level, _definition), do: {:error, :invalid_target}
 
   @impl Active
