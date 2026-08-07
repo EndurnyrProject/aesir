@@ -352,8 +352,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   # Runs every victim post-delivery hook once for positive damage. Individual
   # statuses own their hit-shape filters; reflected damage remains asynchronous.
-  defp after_damage_taken({:error, _reason}, _target_type, _target_id, _damage, _hit_info, _attacker),
-    do: :ok
+  defp after_damage_taken(
+         {:error, _reason},
+         _target_type,
+         _target_id,
+         _damage,
+         _hit_info,
+         _attacker
+       ),
+       do: :ok
 
   defp after_damage_taken(_delivery, target_type, target_id, damage, hit_info, attacker)
        when damage > 0 do

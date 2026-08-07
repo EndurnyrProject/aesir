@@ -383,8 +383,6 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
     end
   end
 
-  defp isolate_world_state(tags), do: Aesir.TestEtsSetup.setup_ets_tables(tags)
-
   defp gid_for(module) do
     {^module, placement} = Enum.find(NpcRegistry.entries(), fn {mod, _} -> mod == module end)
     NpcRegistry.entity_id(placement)

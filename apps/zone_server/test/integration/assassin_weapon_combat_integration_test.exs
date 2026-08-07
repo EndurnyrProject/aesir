@@ -370,7 +370,9 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
       :erlang.trace_pattern({AutoAttack, :dispatch_normal_hit_passives, 4}, false, [:local])
     end)
 
-    assert :erlang.trace_pattern({AutoAttack, :dispatch_normal_hit_passives, 4}, true, [:local]) > 0
+    assert :erlang.trace_pattern({AutoAttack, :dispatch_normal_hit_passives, 4}, true, [:local]) >
+             0
+
     test_pid = self()
     tracer_pid = spawn_link(fn -> forward_traces(test_pid) end)
     assert :erlang.trace(self(), true, [:call, {:tracer, tracer_pid}]) == 1
@@ -383,11 +385,12 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
     assert trace_pid == self()
 
-    refute_receive {:trace, ^trace_pid, :call,
-                    {AutoAttack, :dispatch_normal_hit_passives, _args}}
+    refute_receive {:trace, ^trace_pid, :call, {AutoAttack, :dispatch_normal_hit_passives, _args}}
 
     assert :erlang.trace(self(), false, [:call]) == 1
-    assert :erlang.trace_pattern({AutoAttack, :dispatch_normal_hit_passives, 4}, false, [:local]) > 0
+
+    assert :erlang.trace_pattern({AutoAttack, :dispatch_normal_hit_passives, 4}, false, [:local]) >
+             0
 
     double = start_assassin(equipped: [right: @knife], skills: %{@tf_double => 10})
     double_target = start_target(unique_id(), race: :formless)

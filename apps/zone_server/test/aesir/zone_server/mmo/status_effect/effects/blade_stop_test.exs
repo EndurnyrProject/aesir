@@ -168,6 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
         attack_range: 1,
         weapon: %{element: :neutral}
       }
+
       target = %{unit_id: monk_id, class: :normal, position: {150, 150}, attack_range: 1}
       player_state = %FakeCombatUnit{combatant: attacker}
       target_state = %FakeCombatUnit{combatant: target}
