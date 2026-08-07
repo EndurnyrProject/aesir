@@ -34,7 +34,6 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
 
     on_exit(fn ->
       ClusterTestHelper.clear_all()
-      :ets.delete(map_cache, @map)
     end)
 
     :ok

@@ -43,8 +43,6 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
 
     on_exit(fn ->
       ClusterTestHelper.clear_all()
-      :ets.delete(map_cache, @map)
-      :ets.delete(map_cache, @other_map)
     end)
 
     :ok

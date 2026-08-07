@@ -42,11 +42,6 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})
     :ets.insert(map_cache, {@other_map, MapData.new(@other_map, 200, 200)})
 
-    on_exit(fn ->
-      :ets.delete(map_cache, @map)
-      :ets.delete(map_cache, @other_map)
-    end)
-
     :ok
   end
 

@@ -7,53 +7,32 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   {tag, struct}}` push to the test process as `{:packet_sent, struct, channel}`.
   This allows testing real game mechanics end-to-end while keeping network I/O
   deterministic.
+
+  ## Isolation
+
+  Each test boots its OWN ETS world: the EtsTable is started with a fresh random
+  seed (the same mechanism `TestEtsSetup` uses for unit tests) and that seed is
+  placed in the test process dictionary. Every unit the test hand-spawns
+  (`PlayerSession`, `MobSession`, ...) resolves its `seedN_*` tables via
+  `ProcessTree`, so tests are fully isolated from each other and from the
+  globally-booted (`nil` seed) coordinators. A fresh seed also starts with empty
+  definition/cache tables, so `MapCache` and status definitions are re-initialised
+  per test.
+
+  Immutable boot state that legitimately lives on the `nil` tables (the `MapCache`
+  walkability file, status definitions) is re-created into each per-test seed on
+  demand. Tests that need a map's `Coordinator` must start their own under
+  `start_supervised/1` against the current seed rather than consulting the
+  globally-booted `MapManager`.
   """
 
   use ExUnit.CaseTemplate
 
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.PacketHelpers
   alias Ecto.Adapters.SQL.Sandbox
-
-  # Runtime ETS tables that hold per-unit / per-test state. Integration tests run
-  # against the app-boot (seed `nil`) tables shared by every test in the beam, so
-  # they must be wiped between tests. Leaving them dirty leaks units across files:
-  # e.g. a player registered as `{:player, 2001}` by one test is later resolved
-  # (with a now-dead pid) when another test's combat code scans the registry.
-  # Definition/cache tables (`:map_cache`, `:status_effect_definitions`) are loaded
-  # once at boot and deliberately preserved.
-  @runtime_tables [
-    :unit_registry,
-    :unit_registry_id_index,
-    :player_positions,
-    :spatial_index,
-    :visibility_pairs,
-    :map_units,
-    :movement_dirty,
-    :status_instances,
-    :player_statuses,
-    :dynamic_cell_contributions,
-    :dynamic_cell_source_index,
-    :dynamic_cell_coordinate_index,
-    :field_supports,
-    :skill_units,
-    :skill_unit_cells,
-    :skill_unit_coordinate_index,
-    :skill_unit_caster_index,
-    :skill_unit_target_index,
-    :skill_unit_group_cells_index,
-    :skill_unit_group_observers,
-    :field_support_unit_index,
-    :field_support_group_index,
-    :skill_unit_due_index,
-    :skill_unit_expiry_index,
-    :skill_unit_observer_groups,
-    :skill_unit_map_index,
-    :vending_registry,
-    :ground_items,
-    :server_temp_vars,
-    :npc_vars
-  ]
 
   using do
     quote do
@@ -77,34 +56,127 @@ defmodule Aesir.ZoneServer.IntegrationCase do
     end
   end
 
-  setup tags do
-    # Mimic only leaves global mode once its server processes the previous owner's
-    # :DOWN, which races the next test starting: until then every `stub/3` from the
-    # new test raises "Only the global owner is allowed". Claiming a mode per test
-    # makes that deterministic. Modules (or describes) that want global mode declare
-    # `setup {Aesir.MimicMode, :global}`, which runs after this template's setup and wins.
+  setup _tags do
     Mimic.set_mimic_private()
 
-    # Set up database sandbox in shared mode since we're async: false
     :ok = Sandbox.checkout(Aesir.Repo)
     Sandbox.mode(Aesir.Repo, {:shared, self()})
 
-    # Run character persistence inline (synchronously) for integration tests.
-    # The fire-and-forget task otherwise races the sandbox teardown, and its
-    # expected failure logs (in-memory characters absent from the DB) land outside
-    # the test body. Inline writes happen within the body, where @moduletag
-    # :capture_log covers them. The real async path stays covered by the
-    # CharacterPersistence unit tests.
     prev_inline = Application.get_env(:zone_server, :inline_persistence)
     Application.put_env(:zone_server, :inline_persistence, true)
     on_exit(fn -> restore_inline_persistence(prev_inline) end)
 
-    # Set up ETS tables needed by the zone server
-    setup_ets_tables(tags)
+    # Per-test seeded EtsTable + process-dict seed (mirrors TestEtsSetup). Every
+    # hand-spawned unit inherits this seed via ProcessTree, giving true isolation.
+    seed = 5 |> :crypto.strong_rand_bytes() |> Base.url_encode64(padding: false)
+    _pid = start_supervised({EtsTable, seed: seed}, [])
+    Process.put({EtsTable, :seed}, seed)
 
-    # The fake connection process forwards outbound pushes here as
-    # {:packet_sent, struct, channel}; no network mocking required.
-    {:ok, %{test_pid: self()}}
+    # A fresh seed starts with empty definition/cache tables; re-create them so
+    # hand-spawned units can walk maps and apply statuses.
+    :ok = MapCache.init()
+    :ok = Interpreter.init()
+    # Pre-warm an empty warp index so `Warps.for_map/1` returns `:error` without
+    # triggering the lazy loader (mirrors TestEtsSetup). Tests exercising real warp
+    # data erase this and call `Warps.reload/0`.
+    :persistent_term.put(Aesir.ZoneServer.Npc.Warps, %{by_map: %{}})
+
+    # Start per-test background world-driving managers against this seed so
+    # status expiries/ticks and ground-skill units operate on the test's own
+    # tables instead of the boot `nil`-seeded singleton. Skill.Unit.Manager's
+    # `default_server/0` already resolves `ProcessTree.get({__MODULE__, :server})`
+    # or falls back to the registered global; StatusTickManager now mirrors that.
+    # Each is started unnamed and pointed at via the process dictionary, so the
+    # boot-named singletons stay untouched for other tests.
+    status_tick =
+      start_supervised!(
+        {Aesir.ZoneServer.Mmo.StatusTickManager, name: nil},
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Mmo.StatusTickManager, :server}, status_tick)
+
+    skill_unit =
+      start_supervised!(
+        %{
+          id: {:integration_default, Aesir.ZoneServer.Mmo.Skill.Unit.Manager},
+          start:
+            {Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :start_link,
+             [[name: nil, schedule_tick: fn _pid, _interval -> :ok end]]}
+        },
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :server}, skill_unit)
+    on_exit(fn -> clean_manager_servers() end)
+
+    # NPC event/script coroutines (donpcevent, OnInit timers, on_talk) spawn as
+    # tasks under the boot-global InteractionSupervisor, which resolves `nil`
+    # tables. Start a per-test one so those tasks inherit this test's seed and
+    # can see hand-spawned observers/players.
+    npc_interaction = start_supervised!(Task.Supervisor, [])
+    Process.put({Aesir.ZoneServer.Npc.InteractionSupervisor, :server}, npc_interaction)
+
+    # Most integration tests run on "prontera". Start a per-test seeded map
+    # world (Coordinator + MobSupervisor) so drops/loot/pickup route through
+    # this test's own tables instead of the globally-booted `nil`-seeded
+    # coordinator. Tests on other maps call `start_per_test_map/1`.
+    start_per_test_map("prontera")
+
+    {:ok,
+     %{
+       test_pid: self(),
+       seed: seed,
+       status_tick_manager: status_tick,
+       skill_unit_manager: skill_unit
+     }}
+  end
+
+  defp clean_manager_servers do
+    Process.delete({Aesir.ZoneServer.Mmo.StatusTickManager, :server})
+    Process.delete({Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :server})
+    Process.delete({Aesir.ZoneServer.Npc.InteractionSupervisor, :server})
+    :ok
+  end
+
+  @doc """
+  Boots a per-test seeded world for `map_name`: a per-test `Map.Coordinator` and
+  its `MobSupervisor`, pointed at via `ProcessTree` so `Coordinator.drop_items`,
+  `claim_item`, `mob_died`, etc. write to this test's own seeded tables instead of
+  the globally-booted `nil`-seeded coordinator. The supervisor is supervised for
+  the test and torn down automatically.
+  """
+  def start_per_test_map(map_name) do
+    mob_sup =
+      start_supervised!(
+        %{
+          id: {Aesir.ZoneServer.Unit.Mob.MobSupervisor, map_name},
+          start: {Aesir.ZoneServer.Unit.Mob.MobSupervisor, :start_link, [map_name, [name: nil]]}
+        },
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Unit.Mob.MobSupervisor, map_name}, mob_sup)
+
+    coord =
+      start_supervised!(
+        %{
+          id: {:coordinator, map_name},
+          start:
+            {Aesir.ZoneServer.Map.Coordinator, :start_link, [[map_name: map_name, name: nil]]}
+        },
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Map.Coordinator, map_name}, coord)
+    on_exit(fn -> clean_map_servers(map_name) end)
+    {:ok, coord}
+  end
+
+  defp clean_map_servers(map_name) do
+    Process.delete({Aesir.ZoneServer.Unit.Mob.MobSupervisor, map_name})
+    Process.delete({Aesir.ZoneServer.Map.Coordinator, map_name})
+    :ok
   end
 
   defp restore_inline_persistence(nil),
@@ -113,33 +185,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   defp restore_inline_persistence(value),
     do: Application.put_env(:zone_server, :inline_persistence, value)
 
-  # Wipe the shared runtime ETS tables so each integration test starts from a
-  # clean world. Integration tests do not seed their own `EtsTable`; they read
-  # and write the app-boot (seed `nil`) tables, which persist for the whole beam.
-  def setup_ets_tables(_tags) do
-    clear_runtime_tables()
-
-    # Pre-warm an empty warp index so `Warps.for_map/1` returns `:error`
-    # without triggering the lazy loader (which would otherwise sanitize the
-    # real warp files against the un-stubbed MapCache). Mirrors TestEtsSetup.
-    :persistent_term.put(Aesir.ZoneServer.Npc.Warps, %{by_map: %{}})
-
-    :ok
-  end
-
-  @doc false
-  def clear_runtime_tables do
-    Enum.each(@runtime_tables, fn table ->
-      resolved = EtsTable.table_for(table)
-
-      case :ets.whereis(resolved) do
-        :undefined -> :ok
-        _tid -> :ets.delete_all_objects(resolved)
-      end
-    end)
-
-    :ok
-  end
+  # A per-test seeded world starts clean; no shared-table wipe is needed.
 
   @doc """
   Asserts that a packet of a specific type was sent.

@@ -250,6 +250,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   @doc false
   @spec tick(server(), integer()) :: :ok
+  def tick(server, now) when server == __MODULE__, do: tick(default_server(), now)
   def tick(server, now), do: GenServer.call(server, {:tick, now})
 
   @impl true

@@ -35,6 +35,10 @@ defmodule Aesir.ZoneServer.Script.Interaction do
 
   @supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
 
+  defp supervisor do
+    ProcessTree.get({Aesir.ZoneServer.Npc.InteractionSupervisor, :server}) || @supervisor
+  end
+
   @doc """
   Starts a supervised, unlinked interaction process for `module`, returning its pid.
 
@@ -53,7 +57,7 @@ defmodule Aesir.ZoneServer.Script.Interaction do
 
   @spec start(pid(), module(), Ctx.t(), (Ctx.t() -> any())) :: {:ok, pid()} | {:error, term()}
   def start(session_pid, module, %Ctx{} = base_ctx, entry_fn) when is_function(entry_fn, 1) do
-    Task.Supervisor.start_child(@supervisor, fn ->
+    Task.Supervisor.start_child(supervisor(), fn ->
       run(base_ctx, module, session_pid, entry_fn)
     end)
   end

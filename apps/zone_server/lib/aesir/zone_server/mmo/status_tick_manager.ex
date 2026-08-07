@@ -40,26 +40,35 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
 
   @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+    {name, opts} = Keyword.pop(opts, :name, __MODULE__)
+
+    case name do
+      nil -> GenServer.start_link(__MODULE__, opts)
+      name -> GenServer.start_link(__MODULE__, opts, name: name)
+    end
   end
 
   @spec force_tick() :: :ok
   def force_tick do
-    GenServer.cast(__MODULE__, :force_tick)
+    GenServer.cast(server(), :force_tick)
   end
 
   @spec get_stats() :: map()
   def get_stats do
-    GenServer.call(__MODULE__, :get_stats)
+    GenServer.call(server(), :get_stats)
   end
 
   @doc "Schedules a generation-tagged status tick for an absolute monotonic deadline."
   @spec schedule_exact_tick(atom(), integer(), atom(), pos_integer(), integer()) :: :ok
   def schedule_exact_tick(unit_type, unit_id, status_id, generation, due_at) do
     GenServer.cast(
-      __MODULE__,
+      server(),
       {:schedule_exact_tick, unit_type, unit_id, status_id, generation, due_at}
     )
+  end
+
+  defp server do
+    ProcessTree.get({__MODULE__, :server}) || __MODULE__
   end
 
   @impl true

@@ -324,7 +324,13 @@ defmodule Aesir.ZoneServer.Integration.ItemDropTest do
   end
 
   defp coordinator_pid do
-    {:ok, pid} = MapManager.get_coordinator(@map)
-    pid
+    case ProcessTree.get({Aesir.ZoneServer.Map.Coordinator, @map}) do
+      nil ->
+        {:ok, pid} = MapManager.get_coordinator(@map)
+        pid
+
+      pid ->
+        pid
+    end
   end
 end

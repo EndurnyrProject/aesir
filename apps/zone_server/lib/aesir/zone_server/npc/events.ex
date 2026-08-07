@@ -26,6 +26,10 @@ defmodule Aesir.ZoneServer.Npc.Events do
   @supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
   @on_init_timeout 5_000
 
+  defp supervisor do
+    ProcessTree.get({Aesir.ZoneServer.Npc.InteractionSupervisor, :server}) || @supervisor
+  end
+
   @doc """
   Targeted, detached event dispatch — what `donpcevent "Name::OnLabel"`
   compiles to.
@@ -179,7 +183,7 @@ defmodule Aesir.ZoneServer.Npc.Events do
 
   @spec spawn_detached(module(), non_neg_integer(), String.t()) :: :ok
   defp spawn_detached(module, gid, label) do
-    case Task.Supervisor.start_child(@supervisor, fn -> run_detached(module, gid, label) end) do
+    case Task.Supervisor.start_child(supervisor(), fn -> run_detached(module, gid, label) end) do
       {:ok, _pid} ->
         :ok
 
@@ -198,7 +202,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
     case Registry.module_for_unit(gid) do
       {:ok, {module, _placement}} ->
         task =
-          Task.Supervisor.async_nolink(@supervisor, fn -> run_detached(module, gid, "OnInit") end)
+          Task.Supervisor.async_nolink(supervisor(), fn ->
+            run_detached(module, gid, "OnInit")
+          end)
 
         {gid, task}
 

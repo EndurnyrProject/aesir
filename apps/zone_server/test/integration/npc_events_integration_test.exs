@@ -143,16 +143,10 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
   end
 
   describe "touch-area warper: OnTouch-less fallback warps and resets hysteresis" do
-    # Isolates this describe's real-time movement/warp cycle from the actual,
-    # permanently-running "prontera" `Map.Coordinator` (started by boot's
-    # `MapManager`, sharing `IntegrationCase`'s default un-seeded tables):
-    # without a fresh per-test `EtsTable` seed, the live coordinator's own
-    # broadcast tick races this test's direct `UnitRegistry` reads/writes for
-    # the same char_id, flickering the position back and forth. See
-    # `Aesir.TestEtsSetup` and `on_touch_test.exs`/`warp_integration_test.exs`,
-    # which take on this same isolation directly instead of `IntegrationCase`.
-    setup :isolate_world_state
-
+    # IntegrationCase already boots a per-test seeded ETS world, so this
+    # describe is naturally isolated from the boot `nil`-seeded Coordinator;
+    # no extra `TestEtsSetup` isolation is needed (double-seeding would race
+    # the freshly-created tables).
     setup do
       NpcRegistry.reload([TouchWarperNpc])
       gid = gid_for(TouchWarperNpc)

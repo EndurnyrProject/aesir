@@ -46,7 +46,6 @@ defmodule Aesir.ZoneServer.Integration.DancerEncoreIntegrationTest do
 
     map_cache = EtsTable.table_for(:map_cache)
     :ets.insert(map_cache, {@map, MapData.new(@map, 200, 200)})
-    on_exit(fn -> :ets.delete(map_cache, @map) end)
 
     :ok
   end

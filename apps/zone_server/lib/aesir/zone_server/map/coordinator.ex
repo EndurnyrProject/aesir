@@ -90,7 +90,12 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   """
   def start_link(opts) do
     map_name = Keyword.fetch!(opts, :map_name)
-    GenServer.start_link(__MODULE__, opts, name: via_tuple(map_name))
+    {name, opts} = Keyword.pop(opts, :name, via_tuple(map_name))
+
+    case name do
+      nil -> GenServer.start_link(__MODULE__, opts)
+      _ -> GenServer.start_link(__MODULE__, opts, name: name)
+    end
   end
 
   @doc """
@@ -112,7 +117,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         ) ::
           :ok
   def drop_items(map_name, items, x, y, opts \\ []) do
-    GenServer.cast(via_tuple(map_name), {:drop_items, items, x, y, opts})
+    GenServer.cast(server(map_name), {:drop_items, items, x, y, opts})
   end
 
   @doc """
@@ -130,21 +135,21 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         char_id,
         party_ctx \\ %{party_id: 0, pickup_share: false}
       ) do
-    GenServer.call(via_tuple(map_name), {:claim_item, ground_id, char_id, party_ctx})
+    GenServer.call(server(map_name), {:claim_item, ground_id, char_id, party_ctx})
   end
 
   @doc """
   Changes map weather.
   """
   def set_weather(map_name, weather_type) do
-    GenServer.cast(via_tuple(map_name), {:set_weather, weather_type})
+    GenServer.cast(server(map_name), {:set_weather, weather_type})
   end
 
   @doc """
   Gets map information.
   """
   def get_map_info(map_name) do
-    GenServer.call(via_tuple(map_name), :get_info)
+    GenServer.call(server(map_name), :get_info)
   end
 
   @impl true
@@ -165,8 +170,18 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
         {:error, _} -> []
       end
 
-    # Start mob supervisor for this map
-    {:ok, mob_supervisor_pid} = MobSupervisor.start_link(map_name)
+    # Start the mob supervisor for this map. Under a per-test coordinator a
+    # per-test supervisor is already registered in ProcessTree; reuse it instead
+    # of re-registering (which would collide with the globally-booted one).
+    mob_supervisor_pid =
+      case ProcessTree.get({MobSupervisor, map_name}) do
+        nil ->
+          {:ok, pid} = MobSupervisor.start_link(map_name)
+          pid
+
+        pid when is_pid(pid) ->
+          pid
+      end
 
     state = %__MODULE__{
       map_name: map_name,
@@ -206,7 +221,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   @spec mob_died(String.t(), integer(), integer() | nil) :: :ok
   def mob_died(map_name, instance_id, killer_char_id \\ nil) do
     clean_name = String.replace_suffix(map_name, ".gat", "")
-    GenServer.cast(via_tuple(clean_name), {:mob_died, instance_id, killer_char_id})
+    GenServer.cast(server(clean_name), {:mob_died, instance_id, killer_char_id})
   end
 
   @doc """
@@ -228,9 +243,9 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   def summon_mob(map_name, mob_id, x, y, opts \\ []) do
     clean_name = String.replace_suffix(map_name, ".gat", "")
 
-    case Registry.lookup(Aesir.ZoneServer.MapRegistry, clean_name) do
-      [{_pid, _value}] ->
-        GenServer.call(via_tuple(clean_name), {:summon_mob, mob_id, x, y, opts})
+    case lookup_server(clean_name) do
+      {:ok, _pid} ->
+        GenServer.call(server(clean_name), {:summon_mob, mob_id, x, y, opts})
 
       [] ->
         {:error, :map_not_found}
@@ -241,7 +256,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   Gets information about all mobs on the map.
   """
   def get_mob_info(map_name) do
-    GenServer.call(via_tuple(map_name), :get_mob_info)
+    GenServer.call(server(map_name), :get_mob_info)
   end
 
   @impl true
@@ -623,6 +638,17 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
 
   defp via_tuple(map_name) do
     {:via, Registry, {Aesir.ZoneServer.MapRegistry, map_name}}
+  end
+
+  defp server(map_name) do
+    ProcessTree.get({__MODULE__, map_name}) || via_tuple(map_name)
+  end
+
+  defp lookup_server(map_name) do
+    case ProcessTree.get({__MODULE__, map_name}) do
+      nil -> Registry.lookup(Aesir.ZoneServer.MapRegistry, map_name)
+      pid -> [{pid, :per_test}]
+    end
   end
 
   # Mob Spawning Functions

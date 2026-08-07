@@ -192,12 +192,12 @@ defmodule Aesir.ZoneServer.Integration.AnnouncementIntegrationTest do
   end
 
   defp ensure_coordinator(map) do
-    case Registry.lookup(Aesir.ZoneServer.MapRegistry, map) do
-      [{pid, _}] ->
+    case ProcessTree.get({Coordinator, map}) do
+      pid when is_pid(pid) ->
         pid
 
-      [] ->
-        {:ok, pid} = Coordinator.start_link(map_name: map)
+      _ ->
+        {:ok, pid} = Aesir.ZoneServer.IntegrationCase.start_per_test_map(map)
         on_exit(fn -> stop_if_alive(pid) end)
         pid
     end

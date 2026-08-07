@@ -17,8 +17,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   Starts the mob supervisor for a specific map.
   """
   @spec start_link(String.t()) :: Supervisor.on_start()
-  def start_link(map_name) do
-    DynamicSupervisor.start_link(__MODULE__, map_name, name: via_tuple(map_name))
+  def start_link(map_name, opts \\ []) do
+    {name, opts} = Keyword.pop(opts, :name, via_tuple(map_name))
+
+    case name do
+      nil -> DynamicSupervisor.start_link(__MODULE__, map_name, opts)
+      _ -> DynamicSupervisor.start_link(__MODULE__, map_name, Keyword.put(opts, :name, name))
+    end
   end
 
   @doc """
@@ -44,7 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
       type: :worker
     }
 
-    case DynamicSupervisor.start_child(via_tuple(map_name), child_spec) do
+    case DynamicSupervisor.start_child(server(map_name), child_spec) do
       {:ok, pid} ->
         {:ok, pid}
 
@@ -62,7 +67,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec terminate_mob(String.t(), pid()) :: :ok | {:error, :not_found}
   def terminate_mob(map_name, pid) when is_pid(pid) do
-    DynamicSupervisor.terminate_child(via_tuple(map_name), pid)
+    DynamicSupervisor.terminate_child(server(map_name), pid)
   end
 
   @doc """
@@ -70,7 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec get_mob_processes(String.t()) :: [pid()]
   def get_mob_processes(map_name) do
-    DynamicSupervisor.which_children(via_tuple(map_name))
+    DynamicSupervisor.which_children(server(map_name))
     |> Enum.map(fn {_, pid, _, _} -> pid end)
     |> Enum.filter(&is_pid/1)
   end
@@ -80,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec count_mobs(String.t()) :: integer()
   def count_mobs(map_name) do
-    DynamicSupervisor.count_children(via_tuple(map_name)).active
+    DynamicSupervisor.count_children(server(map_name)).active
   end
 
   @doc """
@@ -110,7 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   def terminate_all_mobs(map_name) do
     get_mob_processes(map_name)
     |> Enum.each(fn pid ->
-      DynamicSupervisor.terminate_child(via_tuple(map_name), pid)
+      DynamicSupervisor.terminate_child(server(map_name), pid)
     end)
 
     Logger.info("Terminated all mobs on #{map_name}")
@@ -159,7 +164,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec stop(String.t()) :: :ok
   def stop(map_name) do
-    case GenServer.whereis(via_tuple(map_name)) do
+    case GenServer.whereis(server(map_name)) do
       nil -> :ok
       pid -> DynamicSupervisor.stop(pid)
     end
@@ -170,12 +175,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec get_supervisor_info(String.t()) :: map()
   def get_supervisor_info(map_name) do
-    children = DynamicSupervisor.count_children(via_tuple(map_name))
+    children = DynamicSupervisor.count_children(server(map_name))
 
     %{
       map_name: map_name,
       active_mobs: children.active,
-      supervisor_pid: GenServer.whereis(via_tuple(map_name)),
+      supervisor_pid: GenServer.whereis(server(map_name)),
       processes: get_mob_processes(map_name)
     }
   end
@@ -195,5 +200,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
 
   defp via_tuple(map_name) do
     {:via, Registry, {Aesir.ZoneServer.ProcessRegistry, {:mob_supervisor, map_name}}}
+  end
+
+  defp server(map_name) do
+    ProcessTree.get({__MODULE__, map_name}) || via_tuple(map_name)
   end
 end
