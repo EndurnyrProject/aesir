@@ -220,6 +220,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     seed_item(caster_character.id, @red_gemstone, 1)
     caster = start_character(caster_character, {29, 30})
     target = start_real_mob(26_301, {30, 30})
+    zero_mob_poison_resistance(target)
     already_poisoned = start_real_mob(26_302, {31, 31})
 
     assert :ok =
@@ -533,6 +534,16 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     updated =
       :sys.replace_state(mob.pid, fn state ->
         %{state | mob_data: %{state.mob_data | element: element}}
+      end)
+
+    :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
+  end
+
+  defp zero_mob_poison_resistance(mob) do
+    updated =
+      :sys.replace_state(mob.pid, fn state ->
+        stats = %{state.mob_data.stats | vit: 0, luk: 0}
+        %{state | mob_data: %{state.mob_data | stats: stats}}
       end)
 
     :ok = UnitRegistry.update_unit_state(:mob, mob.unit_id, updated)
