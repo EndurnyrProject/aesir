@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -44,6 +45,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.CloakingTest do
              critical_rate: 100,
              movement_speed: 15
            }
+  end
+
+  test "modifiers/2 stays total for a level-less entry instead of crashing the recalc" do
+    # A directly-applied sc_cloaking with no val1 (level 0) must not raise a
+    # FunctionClauseError and take the unit's whole stat recalculation down.
+    entry = %StatusEntry{type: :sc_cloaking, val1: 0, state: %{}}
+
+    assert Cloaking.modifiers(entry, %{}) == %{critical_rate: 100, movement_speed: 0}
   end
 
   test "low levels end on the next open-terrain movement command but higher levels remain" do

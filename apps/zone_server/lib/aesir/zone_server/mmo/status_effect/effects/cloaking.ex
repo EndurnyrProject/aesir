@@ -33,6 +33,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Cloaking do
     %{critical_rate: 100, movement_speed: movement_modifier(level, adjacent?)}
   end
 
+  # A structurally-valid sc_cloaking entry whose level falls outside the
+  # learnable 1..10 range (e.g. a level-less status applied directly by a
+  # utility/test path) must not crash the modifier pipeline and take the unit's
+  # whole stat recalculation down with it. Keep the concealment CRIT bonus and
+  # contribute no speed delta, since no level-specific branch applies.
+  def modifiers(%StatusEntry{}, _context), do: %{critical_rate: 100, movement_speed: 0}
+
   @impl true
   @spec on_movement_intent(Definition.target(), StatusEntry.t(), map(), Definition.context()) ::
           {:ok, StatusEntry.t()} | :remove
