@@ -175,8 +175,18 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
 
     test "a mob casts Lex Aeterna and delayed Lex Divina against a player" do
+      # vit/luk zeroed so Lex Divina's silence resistance (vit + luk/3 percent)
+      # cannot shorten the status below the observable window — mirrors the
+      # Frost Nova test's determinism pattern in this file.
       player =
-        start_player_session(id: 9_823, name: "Lexed", position: {151, 150}, map_name: @map)
+        start_player_session(
+          id: 9_823,
+          name: "Lexed",
+          position: {151, 150},
+          map_name: @map,
+          vit: 0,
+          luk: 0
+        )
 
       char_id = player.character.id
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)
