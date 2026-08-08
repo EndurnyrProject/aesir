@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Targeting.validate_enemy(attacker, target) do
       damage =
         amount
-        |> DamageShared.apply_element(element, target)
+        |> DamageShared.apply_element(element, target, DamageShared.attacker_modifiers(attacker))
         |> DamageShared.clamp_min_one()
 
       hit_info =
@@ -505,7 +505,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp skill_unit_damage(
-         _attacker,
+         attacker,
          target,
          element,
          _skill_ratio,
@@ -516,7 +516,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        )
        when is_integer(fixed_damage) and fixed_damage >= 0 do
     fixed_damage
-    |> DamageShared.apply_element(element, target)
+    |> DamageShared.apply_element(element, target, DamageShared.attacker_modifiers(attacker))
     |> DamageShared.clamp_min_one()
   end
 

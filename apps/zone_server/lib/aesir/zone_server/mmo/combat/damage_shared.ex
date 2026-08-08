@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   @doc """
   Applies the defender's element resistance to `damage`.
@@ -46,6 +47,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
         damage
     end
   end
+
+  @doc """
+  Resolves an attacker combatant's aggregated status modifiers for the flat-
+  damage element step.
+
+  The flat BF_MISC path (`MiscDamageCalculator`) and the explicit-amount magic
+  paths (`MagicAttack.execute_magic_damage/4` and fixed skill-unit hits) skip
+  the full `DamageCalculator`/`MagicDamageCalculator` pipeline, so they never
+  resolve the attacker's modifiers on their own. This is the seam that lets an
+  `{:element_ratio, element}` bonus (the Sage element fields Volcano, Deluge and
+  Violent Gale) reach those paths through `apply_element/4`.
+
+  Returns `%{}` for an attacker without a resolvable unit (unowned traps,
+  environmental damage), so `apply_element/4` simply finds no bonus.
+  """
+  @spec attacker_modifiers(map() | nil) :: map()
+  def attacker_modifiers(%{unit_type: unit_type, unit_id: unit_id})
+      when unit_type in [:player, :mob, :homunculus] and is_integer(unit_id) do
+    ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+  end
+
+  def attacker_modifiers(_attacker), do: %{}
 
   @doc """
   Applies the generic status-effect `damage_multiplier` to `damage`.

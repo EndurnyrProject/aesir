@@ -119,4 +119,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
       assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{}) == 200.0
     end
   end
+
+  describe "attacker_modifiers/1 fallback" do
+    test "an attacker with no unit fields resolves to an empty modifier map" do
+      assert DamageShared.attacker_modifiers(%{combat_stats: %{}}) == %{}
+    end
+
+    test "a nil attacker resolves to an empty modifier map" do
+      assert DamageShared.attacker_modifiers(nil) == %{}
+    end
+
+    test "an unknown unit_type resolves to an empty modifier map" do
+      assert DamageShared.attacker_modifiers(%{unit_type: :npc, unit_id: 5}) == %{}
+    end
+  end
 end

@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
   end
 
   @spec calculate_pipeline_damage(map(), map(), keyword()) :: {:ok, misc_damage_result()}
-  defp calculate_pipeline_damage(_attacker, defender, opts) do
+  defp calculate_pipeline_damage(attacker, defender, opts) do
     base_damage = Keyword.get(opts, :base_damage, 0)
     element = Keyword.get(opts, :element, :neutral)
 
@@ -66,7 +66,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator do
       if Keyword.get(opts, :ignore_element, false) do
         base_damage
       else
-        DamageShared.apply_element(base_damage, element, defender)
+        DamageShared.apply_element(
+          base_damage,
+          element,
+          defender,
+          DamageShared.attacker_modifiers(attacker)
+        )
       end
       |> DamageShared.clamp_min_one()
 

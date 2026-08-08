@@ -8,8 +8,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
   """
 
   use ExUnit.Case, async: true
+  use Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+
+  setup :set_mimic_from_context
+
+  setup do
+    # The flat BF_MISC path now resolves the attacker's status modifiers for the
+    # element-ratio seam; default to none so existing damage assertions hold.
+    Mimic.copy(ModifierCalculator)
+    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    :ok
+  end
 
   defp attacker do
     %{unit_type: :player, unit_id: 1001, combat_stats: %{}}
@@ -82,6 +94,53 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                  fixed_damage: 50,
                  base_damage: 9999,
                  element: :fire
+               )
+    end
+
+    test "a matching {:element_ratio, _} attacker modifier raises the element ratio" do
+      # Attacker standing on a fire field: fire vs earth L1 = 2.0, plus 20 ratio
+      # points -> 2.2. 100 -> 220. (Volcano/Deluge/Violent Gale reaching BF_MISC.)
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
+        %{{:element_ratio, :fire} => 20}
+      end)
+
+      assert {:ok, %{damage: 220, is_critical: false}} =
+               MiscDamageCalculator.calculate_misc_damage(
+                 attacker(),
+                 defender(10, element: {:earth, 1}),
+                 base_damage: 100,
+                 element: :fire
+               )
+    end
+
+    test "a non-matching {:element_ratio, _} modifier is ignored" do
+      # Wind-field ratio does not touch a fire attack.
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
+        %{{:element_ratio, :wind} => 20}
+      end)
+
+      assert {:ok, %{damage: 200, is_critical: false}} =
+               MiscDamageCalculator.calculate_misc_damage(
+                 attacker(),
+                 defender(10, element: {:earth, 1}),
+                 base_damage: 100,
+                 element: :fire
+               )
+    end
+
+    test "the ratio bonus is added unclamped over an immunity (0.0 + 20 pts -> 0.20)" do
+      # Faithful to rAthena: the element-ratio points are added to the raw
+      # attribute ratio with no floor, so poison-on-poison (0.0) + 20 -> 0.20.
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
+        %{{:element_ratio, :poison} => 20}
+      end)
+
+      assert {:ok, %{damage: 20, is_critical: false}} =
+               MiscDamageCalculator.calculate_misc_damage(
+                 attacker(),
+                 defender(10, element: {:poison, 1}),
+                 base_damage: 100,
+                 element: :poison
                )
     end
   end
