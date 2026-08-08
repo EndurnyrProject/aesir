@@ -26,14 +26,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Blade Stop (MO_BLADESTOP) skill id, read from a caught player attacker's
   # learned skills so their own Root record carries their own level; a monster
@@ -99,7 +103,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
             target_combatant.unit_id
           )
 
-        {result, player_state}
+        case result do
+          {:snatcher, updated_player_state} -> {:ok, updated_player_state}
+          result -> {result, player_state}
+        end
 
       error ->
         {error, player_state}
@@ -771,13 +778,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       damage = settled_damage(settled)
       damage_result = %{damage: damage, is_critical: settled.outcome == :critical}
 
+      updated_player_state = maybe_snatch(player_state, target_type, target_id)
+
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
       dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
       OnHitEffects.after_hit(attacker, target, damage_result)
       drain_hp(attacker, damage)
       splash_attack(attacker, target)
-      :ok
+      {:snatcher, updated_player_state}
+    end
+  end
+
+  defp maybe_snatch(player_state, :mob, target_id) do
+    chance = Passives.steal_proc(player_state)
+
+    if chance > 0 and :rand.uniform(1_000) <= chance do
+      snatch(player_state, target_id)
+    else
+      player_state
+    end
+  end
+
+  defp maybe_snatch(player_state, _target_type, _target_id), do: player_state
+
+  defp snatch(player_state, target_id) do
+    caster_dex = PlayerStats.get_effective_stat(player_state.stats, :dex)
+    tf_steal_level = Learned.learned_level(player_state.stats.progression.learned_skills, 50)
+
+    with {:ok, {_module, _state, mob_pid}} <- UnitRegistry.get_unit(:mob, target_id),
+         {:ok, item_id} <- MobSession.attempt_steal(mob_pid, caster_dex, tf_steal_level),
+         {:ok, item_def} <- ItemManagement.get_item_by_id(item_id),
+         {:ok, inventory, change} <-
+           InventoryOps.add(
+             player_state.character_id,
+             player_state.inventory,
+             player_state.stats,
+             item_def,
+             1
+           ) do
+      %{
+        player_state
+        | inventory: inventory,
+          pending_inventory_notify: player_state.pending_inventory_notify ++ [change]
+      }
+    else
+      _ -> player_state
     end
   end
 

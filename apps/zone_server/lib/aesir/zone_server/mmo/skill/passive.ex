@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
           vit: non_neg_integer(),
           int: non_neg_integer(),
           riding: boolean(),
+          learned_skills: %{integer() => non_neg_integer()},
           statuses_active?: boolean()
         }
 

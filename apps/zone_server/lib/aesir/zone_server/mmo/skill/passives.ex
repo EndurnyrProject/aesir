@@ -369,7 +369,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @doc """
   Returns the highest normal-hit item-steal chance contributed by learned passives.
   """
-  @spec steal_proc(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()
+  @spec steal_proc(PlayerState.t() | PlayerStats.t() | term()) :: non_neg_integer()
   def steal_proc(%PlayerState{stats: stats}), do: steal_proc(stats)
 
   def steal_proc(%PlayerStats{} = stats) do
@@ -381,6 +381,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       max(acc, Map.get(module.steal_proc(level, ctx), :chance_permille, 0))
     end)
   end
+
+  # Non-player casters (mobs, test fakes) never contribute a Snatcher proc.
+  def steal_proc(_), do: 0
 
   @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
@@ -506,6 +509,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
       vit: stats.base_stats.vit,
       int: stats.base_stats.int,
       riding: stats.riding,
+      learned_skills: stats.progression.learned_skills,
       statuses_active?: Map.get(stats.modifiers, :statuses_active?, false)
     }
   end

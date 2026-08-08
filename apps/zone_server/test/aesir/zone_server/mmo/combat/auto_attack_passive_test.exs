@@ -15,12 +15,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -29,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
   setup do
     stub(EquipBreak, :resolve, fn _attacker, _target -> [] end)
+    stub(Passives, :steal_proc, fn _player -> 0 end)
     :ok
   end
 
@@ -148,6 +152,47 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
                        %{target_type: :mob, target_id: 2001, position: {150, 150}}}
 
       refute_received {:after_normal_hit, _, _}
+    end
+
+    test "adds a stolen item when the Snatcher proc succeeds",
+         %{attacker: attacker, player_state: player_state} do
+      item_def = %ItemDefinition{id: 909, aegis_name: "Jellopy", name: "Jellopy", weight: 1}
+      inventory = %{0 => %{nameid: 909, amount: 1}}
+      change = {:added, 0, %{nameid: 909, amount: 1}}
+
+      stub(Passives, :steal_proc, fn ^player_state -> 1_000 end)
+      expect(MobSession, :attempt_steal, fn _pid, _dex, 0 -> {:ok, 909} end)
+      expect(ItemManagement, :get_item_by_id, fn 909 -> {:ok, item_def} end)
+
+      expect(InventoryOps, :add, fn 1001, _old_inventory, _stats, ^item_def, 1 ->
+        {:ok, inventory, change}
+      end)
+
+      capture_log(fn ->
+        assert {:ok, updated} =
+                 Combat.execute_attack(attacker, player_state, 2001, &Function.identity/1)
+
+        assert updated.inventory == inventory
+        assert updated.pending_inventory_notify == [change]
+      end)
+    end
+
+    test "does not attempt Snatcher against a player target",
+         %{attacker: attacker, player_state: player_state} do
+      target_state = %{player_state | character_id: 3001}
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, self()} end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 3001 ->
+        {:ok, {PlayerState, target_state, self()}}
+      end)
+
+      reject(&Passives.steal_proc/1)
+      reject(&MobSession.attempt_steal/3)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 3001)
+      end)
     end
 
     test "a multi-hit swing still dispatches exactly once",
