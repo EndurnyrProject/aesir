@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
   setup do
     Mimic.copy(Interpreter)
+    Mimic.copy(StatusStorage)
     Mimic.copy(MobSession)
     Mimic.copy(Combat)
     Mimic.copy(SpatialIndex)
@@ -39,6 +41,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
     stub(Interpreter, :targetable?, fn _type, _id -> true end)
     stub(Interpreter, :charmed_against?, fn _type, _id, _target_id -> false end)
     stub(Interpreter, :concealed?, fn _type, _id -> false end)
+    stub(StatusStorage, :has_status?, fn _type, _id, _status -> false end)
     stub(MapCache, :get, fn _map -> {:ok, :map_data} end)
     stub(Cell, :traversable?, fn "prontera", _x, _y -> true end)
     stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _range -> [] end)
@@ -153,6 +156,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       end)
 
       stub(UnitRegistry, :get_unit, fn :player, 2 -> {:error, :not_found} end)
+
+      result = AIStateMachine.process_ai(aggressive_idle_mob_state())
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a player in Gangster Paradise is not acquired by an idle aggressive mob" do
+      stub(StatusStorage, :has_status?, fn :player, 2, :sc_gangsterparadise -> true end)
+
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
 
       result = AIStateMachine.process_ai(aggressive_idle_mob_state())
 

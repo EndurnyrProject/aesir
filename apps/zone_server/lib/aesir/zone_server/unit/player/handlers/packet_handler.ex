@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SitHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -132,22 +133,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # NOTE: also bypass when SU_BASIC_SKILL >= 1 is implemented.
   def handle_message(%ActionRequest{action: 2}, state) do
     case nv_basic_gate(state, :sit) do
-      :ok -> Logger.debug("Player sitting down")
-      {:error, _} -> Logger.warning("Player blocked from sitting: NV_BASIC level too low")
+      :ok -> SitHandler.handle_sit(state)
+      {:error, _} ->
+        Logger.warning("Player blocked from sitting: NV_BASIC level too low")
+        {:noreply, state}
     end
-
-    {:noreply, state}
   end
 
   # Standing up is gated the same as sitting in rAthena (DMG_SIT_DOWN path
   # checks NV_BASIC < 3); a player who can't sit can't stand either.
   def handle_message(%ActionRequest{action: 3}, state) do
     case nv_basic_gate(state, :sit) do
-      :ok -> Logger.debug("Player standing up")
-      {:error, _} -> Logger.warning("Player blocked from standing: NV_BASIC level too low")
+      :ok -> SitHandler.handle_stand(state)
+      {:error, _} ->
+        Logger.warning("Player blocked from standing: NV_BASIC level too low")
+        {:noreply, state}
     end
-
-    {:noreply, state}
   end
 
   def handle_message(%ActionRequest{action: action}, state) do

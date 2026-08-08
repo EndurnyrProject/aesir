@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -374,6 +375,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
   defp can_target?(%MobState{} = state, {:player, target_id}) do
     living_unit?(:player, target_id) and
+      not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
       Interpreter.targetable?(:player, target_id) and
       not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
       (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
