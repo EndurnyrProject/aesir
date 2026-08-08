@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   ## Metadata options
 
     - `:id` - the status identifier atom (required, e.g. `:sc_poison`)
+    - `:metadata` - status-specific metadata exposed to consumers
     - `:properties` - list of known properties (`:buff`, `:debuff`, etc.)
     - `:calc_flags` - stat recalculation flags
     - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...)
@@ -300,6 +301,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   }
 
   @scalar_defaults %{
+    metadata: %{},
     resistance_type: nil,
     duration_adjustment: 0,
     bypass_resistance: false,
@@ -321,6 +323,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   @metadata_schema %{
     id: {:required, :atom},
+    metadata: :map,
     properties: {:list, {:enum, @known_properties}},
     calc_flags: {:list, :atom},
     flags: {:list, :atom},
