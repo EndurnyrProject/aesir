@@ -770,6 +770,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     end
   end
 
+  describe "calculate_damage_simple_defense/3" do
+    setup do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      stub(CriticalHits, :calculate_critical_hit, fn _, damage ->
+        %{damage: damage, is_critical: false}
+      end)
+
+      :ok
+    end
+
+    test "drops hard DEF as a flat subtraction, not the renewal curve" do
+      attacker = CombatTestHelper.create_player_combatant()
+      undefended = CombatTestHelper.create_mob_combatant(def: 0)
+      defended = CombatTestHelper.create_mob_combatant(def: 100)
+
+      # Scale damage well above the DEF so neither result hits the min-1 clamp.
+      opts = [skill_ratio: 1_000, skip_crit: true]
+
+      :rand.seed(:exsss, {7, 8, 9})
+
+      assert {:ok, %{damage: without_def}} =
+               DamageCalculator.calculate_damage_simple_defense(attacker, undefended, opts)
+
+      :rand.seed(:exsss, {7, 8, 9})
+
+      assert {:ok, %{damage: with_def}} =
+               DamageCalculator.calculate_damage_simple_defense(attacker, defended, opts)
+
+      # A mob carries no soft DEF, so 100 hard DEF is subtracted flat.
+      assert without_def - with_def == 100
+    end
+
+    test "still clamps to a minimum of 1 against overwhelming DEF" do
+      attacker = CombatTestHelper.create_player_combatant()
+      wall = CombatTestHelper.create_mob_combatant(def: 100_000)
+
+      assert {:ok, %{damage: 1}} =
+               DamageCalculator.calculate_damage_simple_defense(attacker, wall, skip_crit: true)
+    end
+  end
+
   describe "mob status modifier lookup key" do
     setup do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)

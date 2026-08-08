@@ -179,6 +179,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
         assert opts[:element] == :neutral
         assert opts[:hit_count] == 1
         assert opts[:skip_crit]
+        assert opts[:ignore_flee]
+        assert opts[:simple_defense]
         :ok
       end)
 

@@ -180,6 +180,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
   end
 
+  @doc """
+  Calculates physical skill damage using the simplified (flat) defense reduction.
+
+  For a skill with simplified defense (e.g. Asura Strike), the renewal
+  `Attack * (4000 + eDEF) / (4000 + eDEF*10)` curve is replaced by a flat
+  subtraction of hard + soft DEF (`total_atk - (eDEF + sDEF)`). Every other
+  channel - status DEF modifiers, equipment DEF-ignore, divine protection, phys
+  damage reduction, and the min-1 clamp - is unchanged.
+  """
+  @spec calculate_damage_simple_defense(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_damage_simple_defense(attacker, defender, opts) do
+    calculate_damage_with(
+      attacker,
+      defender,
+      opts,
+      :primary,
+      &apply_defense_formula_simple/3
+    )
+  end
+
   defp calculate_damage_with(attacker, defender, opts, attack_path, defense_calculator) do
     case Keyword.get(opts, :fixed_damage) do
       nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_calculator)
@@ -405,6 +426,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         :omit_equipment_def_ignore
       )
 
+  defp apply_defense_formula_simple(total_atk, defender, attacker),
+    do:
+      apply_defense_formula(
+        total_atk,
+        defender,
+        attacker,
+        :apply_status_def,
+        :apply_equipment_def_ignore,
+        :simple
+      )
+
   defp apply_defense_formula(total_atk, defender, attacker, status_def_mode),
     do:
       apply_defense_formula(
@@ -415,7 +447,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         :apply_equipment_def_ignore
       )
 
-  defp apply_defense_formula(total_atk, defender, attacker, status_def_mode, def_ignore_mode) do
+  defp apply_defense_formula(total_atk, defender, attacker, status_def_mode, def_ignore_mode),
+    do:
+      apply_defense_formula(
+        total_atk,
+        defender,
+        attacker,
+        status_def_mode,
+        def_ignore_mode,
+        :renewal
+      )
+
+  defp apply_defense_formula(
+         total_atk,
+         defender,
+         attacker,
+         status_def_mode,
+         def_ignore_mode,
+         def_formula
+       ) do
     hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender, def_ignore_mode)
 
     soft_def =
@@ -444,8 +494,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     effective_hard_def = if modified_hard_def == -400, do: -399, else: modified_hard_def
 
     base_damage =
-      total_atk * (4000 + effective_hard_def) / (4000 + 10 * effective_hard_def) -
-        modified_soft_def
+      defense_base_damage(def_formula, total_atk, effective_hard_def, modified_soft_def)
 
     final_damage =
       base_damage
@@ -458,6 +507,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     {:ok, final_damage}
   end
+
+  # Renewal DEF curve vs. the simplified flat subtraction: the simple path drops
+  # hard + soft DEF as a flat value, completely bypassing the renewal reduction
+  # formula.
+  defp defense_base_damage(:renewal, total_atk, hard_def, soft_def),
+    do: total_atk * (4000 + hard_def) / (4000 + 10 * hard_def) - soft_def
+
+  defp defense_base_damage(:simple, total_atk, hard_def, soft_def),
+    do: total_atk - (hard_def + soft_def)
 
   @doc """
   Applies critical hit calculation to final damage.

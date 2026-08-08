@@ -22,6 +22,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
 
   The three-cell relocation is a rider on the strike, not a precondition: an
   unwalkable destination lands the blow and simply stages no movement.
+
+  The blow always connects - a high-flee or perfect-dodge target cannot evade
+  it - and its DEF reduction is a flat hard+soft subtraction rather than the
+  renewal DEF curve.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -142,7 +146,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfist do
       bonus_atk: bonus_atk,
       element: :neutral,
       hit_count: 1,
-      skip_crit: true
+      skip_crit: true,
+      ignore_flee: true,
+      simple_defense: true
     )
   end
 

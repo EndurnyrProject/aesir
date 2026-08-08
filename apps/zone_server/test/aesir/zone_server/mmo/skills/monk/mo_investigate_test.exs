@@ -42,6 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
       assert opts[:skill_ratio] == 300
       assert opts[:skip_crit]
       assert opts[:skip_range]
+      assert opts[:ignore_flee]
+      refute opts[:simple_defense]
       :ok
     end)
 

@@ -93,7 +93,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       than `1`, damage is summed and `hit?` is `true` if any hit connected.
       Default `false`, so existing callers see no change. (default `false`)
     - `:ignore_flee` - when `true`, skips the hit/flee roll while retaining
-      interception, validation, damage preparation, and delivery (default `false`)
+      interception, validation, damage preparation, and delivery, so the strike
+      always connects (e.g. Occult Impaction, Asura Strike) (default `false`)
+    - `:simple_defense` - when `true`, the target's DEF is dropped as a flat
+      hard+soft subtraction instead of the renewal DEF curve (e.g. Asura
+      Strike) (default `false`)
     - `:ranged` - forces `is_short: false` in the delivered hit_info,
       overriding the caster's melee attack-range classification, for a skill
       whose reach is short but whose damage type is renewal's ranged physical
@@ -111,13 +115,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           | {:ok, %{hit?: boolean(), damage: non_neg_integer(), target_survives?: boolean()}}
           | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
-    execute_single_target_attack(
-      caster_state,
-      target_id,
-      opts,
-      &DamageCalculator.calculate_damage/3,
-      %{}
-    )
+    calculator =
+      if Keyword.get(opts, :simple_defense, false),
+        do: &DamageCalculator.calculate_damage_simple_defense/3,
+        else: &DamageCalculator.calculate_damage/3
+
+    execute_single_target_attack(caster_state, target_id, opts, calculator, %{})
   end
 
   @doc """

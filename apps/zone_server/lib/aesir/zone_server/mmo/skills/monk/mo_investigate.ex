@@ -5,6 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
   A single-target physical strike, usable against any enemy in range. It deals
   bonus damage when the target is the Monk's own linked Root peer, closing the
   pair after the hit lands.
+
+  The strike always connects: a high-flee or perfect-dodge target cannot evade
+  it.
   """
 
   @sp_costs Enum.map(1..5, &Aesir.ZoneServer.Mmo.Skills.Monk.Formulas.occult_sp_cost/1)
@@ -63,7 +66,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
       skill_level: level,
       skill_ratio: Formulas.occult_ratio(level, Root.rooted?(target_type, target_id)),
       skip_crit: true,
-      skip_range: true
+      skip_range: true,
+      ignore_flee: true
     ]
   end
 end
