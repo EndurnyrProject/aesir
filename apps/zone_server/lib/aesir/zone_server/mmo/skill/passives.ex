@@ -537,7 +537,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @spec build_ctx(PlayerStats.t()) :: Passive.ctx()
   defp build_ctx(%PlayerStats{} = stats) do
     %{
-      weapon_type: if(stats.equipment, do: PlayerStats.weapon_type(stats.equipment), else: :bare_hands),
+      weapon_type:
+        if(stats.equipment, do: PlayerStats.weapon_type(stats.equipment), else: :bare_hands),
       base_level: stats.progression.base_level,
       job_level: stats.progression.job_level,
       max_hp: derived_stat(stats.derived_stats, :max_hp),

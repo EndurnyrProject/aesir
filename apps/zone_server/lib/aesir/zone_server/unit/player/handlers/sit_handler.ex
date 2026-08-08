@@ -38,7 +38,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SitHandler do
       |> Enum.flat_map(&player/1)
       |> Enum.filter(&gangster_sitting?/1)
 
-    Enum.each(player_ids, &Interpreter.remove_status(:player, &1, @status_id, owner_refresh: :defer))
+    Enum.each(
+      player_ids,
+      &Interpreter.remove_status(:player, &1, @status_id, owner_refresh: :defer)
+    )
 
     if length(participants) > 1 do
       Enum.each(participants, fn %{character_id: character_id} ->

@@ -83,11 +83,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
   end
 
   defp current_caster?(%PlayerState{} = caster, caster_id, map_name, epoch) do
-    caster.character_id == caster_id and caster.map_name == map_name and caster.deferred_epoch == epoch and
+    caster.character_id == caster_id and caster.map_name == map_name and
+      caster.deferred_epoch == epoch and
       Unit.living?(caster)
   end
 
-  defp current_target?(target, target_type, map_name, epoch) when target_type in [:player, :mob] do
+  defp current_target?(target, target_type, map_name, epoch)
+       when target_type in [:player, :mob] do
     target.map_name == map_name and target.deferred_epoch == epoch and Unit.living?(target)
   end
 

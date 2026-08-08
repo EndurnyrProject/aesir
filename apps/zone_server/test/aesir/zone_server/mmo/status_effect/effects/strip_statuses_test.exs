@@ -2,7 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripStatusesTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.Character
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.{StripArmor, StripHelm}
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripArmor
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripHelm
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry

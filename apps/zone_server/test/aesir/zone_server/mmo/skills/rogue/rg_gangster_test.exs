@@ -35,7 +35,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGangsterTest do
     register(rogue)
     register(seated_rogue)
 
-    assert {:noreply, sitting} = PacketHandler.handle_message(%ActionRequest{action: 2}, %{game_state: rogue})
+    assert {:noreply, sitting} =
+             PacketHandler.handle_message(%ActionRequest{action: 2}, %{game_state: rogue})
+
     assert sitting.game_state.action_state == :sitting
     assert StatusStorage.has_status?(:player, 1, :sc_gangsterparadise)
     assert StatusStorage.has_status?(:player, 2, :sc_gangsterparadise)
@@ -59,7 +61,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGangsterTest do
   end
 
   defp player(id, action_state \\ :idle) do
-    player = put_in(PlayerState.new(character(id)).stats.progression.learned_skills, %{1 => 3, 223 => 1})
+    player =
+      put_in(PlayerState.new(character(id)).stats.progression.learned_skills, %{1 => 3, 223 => 1})
+
     %{player | action_state: action_state}
   end
 

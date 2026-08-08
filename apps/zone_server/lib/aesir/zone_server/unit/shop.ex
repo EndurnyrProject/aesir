@@ -131,7 +131,12 @@ defmodule Aesir.ZoneServer.Unit.Shop do
       end
 
     if discount do
-      discount_pct = max(skill_rate(player_state, @discount_skill_id), Passives.shop_discount_pct(player_state))
+      discount_pct =
+        max(
+          skill_rate(player_state, @discount_skill_id),
+          Passives.shop_discount_pct(player_state)
+        )
+
       max(1, apply_rate(base_price, -discount_pct))
     else
       base_price

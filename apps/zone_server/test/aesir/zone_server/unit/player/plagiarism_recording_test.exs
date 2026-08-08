@@ -42,8 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlagiarismRecordingTest do
 
     assert new_state.game_state.plagiarized == %{skill_id: @copyable_skill_id, level: 3}
 
-    assert_received {:send, :bulk,
-                     {:skill_list, %SkillList{skills: skills}}}
+    assert_received {:send, :bulk, {:skill_list, %SkillList{skills: skills}}}
 
     assert %{skill_id: @copyable_skill_id, level: 3} =
              Enum.find(skills, &(&1.skill_id == @copyable_skill_id))

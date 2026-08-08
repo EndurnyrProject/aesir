@@ -58,7 +58,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap do
     if dagger?(caster), do: div(ratio, 2), else: ratio
   end
 
-  defp dagger?(%PlayerState{stats: %{equipment: equipment}}), do: Stats.weapon_type(equipment) == :dagger
+  defp dagger?(%PlayerState{stats: %{equipment: equipment}}),
+    do: Stats.weapon_type(equipment) == :dagger
+
   defp dagger?(_caster), do: false
 
   defp apply_stun(caster, target_type, target_ref, level) do

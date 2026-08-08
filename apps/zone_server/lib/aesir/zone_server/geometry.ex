@@ -57,11 +57,12 @@ defmodule Aesir.ZoneServer.Geometry do
   The approach direction is calculated from the target to the attacker, then
   compared with the direction opposite the target's facing. The rear arc
   includes the directly opposite direction and its adjacent diagonals.
+
+  `attacker` must expose integer `:x`/`:y`; `target` must additionally expose an
+  integer `:dir` (0..7). Typed loosely as `map()` so live unit structs
+  (`PlayerState`/`MobState`) resolved generically as `struct()` are accepted.
   """
-  @spec behind?(
-          %{required(:x) => integer(), required(:y) => integer()},
-          %{required(:x) => integer(), required(:y) => integer(), required(:dir) => 0..7}
-        ) :: boolean()
+  @spec behind?(map(), map()) :: boolean()
   def behind?(
         %{x: attacker_x, y: attacker_y},
         %{x: target_x, y: target_y, dir: target_dir}

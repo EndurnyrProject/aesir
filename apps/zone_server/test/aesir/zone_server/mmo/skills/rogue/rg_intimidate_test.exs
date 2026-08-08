@@ -2,12 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
   use ExUnit.Case, async: true
   use Mimic
 
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -70,7 +70,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     on_exit(fn -> Process.exit(target_pid, :kill) end)
 
-    stub(TargetResolver, :resolve, fn {:player, @target_id} -> {:ok, target_pid, target, :player} end)
+    stub(TargetResolver, :resolve, fn {:player, @target_id} ->
+      {:ok, target_pid, target, :player}
+    end)
+
     expect(Cell, :random_traversable, fn "prontera" -> {:ok, {44, 55}} end)
     expect(PlayerSession, :warp, fn ^target_pid, "prontera", 44, 55 -> :ok end)
     expect(PlayerSession, :warp, fn ^caster_pid, "prontera", 44, 55 -> :ok end)
