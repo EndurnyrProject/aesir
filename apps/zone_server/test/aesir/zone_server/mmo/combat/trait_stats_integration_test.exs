@@ -101,7 +101,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   end
 
   describe "refine-scaled bonus (katar 1298)" do
-    test "critical is unchanged at refine 0 and rises with refine", %{account: account} do
+    # Katar weapons double the effective critical rate (renewal), so the
+    # refine-scaled `bonus bCritical,getrefine()` amount is applied first and the
+    # whole crit is then doubled: bare has no katar (x1), the equipped set has (x2).
+    test "critical scales with refine through the katar x2 doubling", %{account: account} do
       # Katar is an assassin (class 12) weapon; a swordman has no katar ASPD row.
       bare = account |> spawn_character("BareKatar", 2, 12) |> spawn_state()
 
@@ -117,8 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
         |> equip(@katar_id, @both_hand, 7)
         |> spawn_state()
 
-      assert combat(unrefined).critical == combat(bare).critical
-      assert combat(refined).critical == combat(bare).critical + 7
+      assert combat(unrefined).critical == combat(bare).critical * 2
+      assert combat(refined).critical == (combat(bare).critical + 7) * 2
 
       assert unequipped(refined).combat_stats.critical == combat(bare).critical
     end

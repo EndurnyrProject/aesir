@@ -71,7 +71,15 @@ defmodule Aesir.ZoneServer.Unit.KnockbackCancelWalkTest do
     assert_eventually(fn -> MobSession.get_state(mob.pid).is_dead end)
     state = MobSession.get_state(mob.pid)
     assert {state.x, state.y} == {150, 150}
-    assert {:ok, {150, 150, @map_name}} = SpatialIndex.get_unit_position(:mob, mob.unit_id)
+
+    # Death fires an async Coordinator.mob_died cleanup that removes the mob from
+    # the spatial index, so the entry may already be gone by the time we look.
+    # Either way it was never displaced to the knockback destination (152,150).
+    assert SpatialIndex.get_unit_position(:mob, mob.unit_id) in [
+             {:ok, {150, 150, @map_name}},
+             {:error, :not_found}
+           ]
+
     refute_packet_sent(Knockback)
   end
 end
