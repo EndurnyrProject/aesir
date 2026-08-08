@@ -668,6 +668,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     do: not restricted?(unit_type, unit_id, &prevents_attack?/1)
 
   @doc """
+  Returns whether an active status blocks equipping `slot`.
+  """
+  @spec equip_blocked?(unit_type(), integer(), slot :: atom()) :: boolean()
+  def equip_blocked?(unit_type, unit_id, slot) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.any?(fn %StatusEntry{type: type} ->
+      match?(%{metadata: %{strip_slot: ^slot}}, Registry.get_definition(type))
+    end)
+  end
+
+  @doc """
   Returns whether a unit may use skills, i.e. carries no `prevents_skills` status.
   """
   @spec can_use_skill?(unit_type(), integer()) :: boolean()

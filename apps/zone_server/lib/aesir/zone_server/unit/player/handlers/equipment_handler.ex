@@ -51,8 +51,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     }
 
     case Inventory.equip(game_state.inventory, server_index, position, ctx) do
-      {:ok, new_inventory, {:equipped, _index, _mask, _unequipped} = change} ->
-        commit_equip(server_index, new_inventory, change, state)
+      {:ok, new_inventory, {:equipped, _index, mask, _unequipped} = change} ->
+        if any_slot_blocked?(game_state.character_id, mask) do
+          send_packet(state, equip_failure_result(server_index, :fail))
+          {:noreply, state}
+        else
+          commit_equip(server_index, new_inventory, change, state)
+        end
 
       {:error, reason} ->
         send_packet(state, equip_failure_result(server_index, equip_failure(reason)))
@@ -192,6 +197,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp enforce_weapon_requirements(game_state) do
     weapon_type = Stats.weapon_type(game_state.stats.equipment)
     StatusInterpreter.enforce_weapon_requirements(:player, game_state.character_id, weapon_type)
+  end
+
+  defp any_slot_blocked?(character_id, mask) do
+    Enum.any?(EquipLocation.bitmask_to_location_atoms(mask), fn slot ->
+      StatusInterpreter.equip_blocked?(:player, character_id, slot)
+    end)
   end
 
   defp unequipped_mask(inventory, server_index) do

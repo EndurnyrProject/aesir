@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -32,6 +33,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
 
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
+  end
+
+  test "rejects an equip while Divest Weapon blocks its slot" do
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    sword = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+    game_state = %{game_state | inventory: %{0 => sword}}
+    state = %{connection_pid: self(), game_state: game_state}
+
+    :ok = UnitRegistry.register_player(game_state, self())
+
+    assert :ok =
+             StatusInterpreter.apply_status(:player, 1000, :sc_stripweapon,
+               duration: 30_000,
+               bypass_resistance: true
+             )
+
+    assert StatusInterpreter.equip_blocked?(:player, 1000, :right_hand)
+    refute StatusInterpreter.equip_blocked?(:player, 1000, :armor)
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
+
+    assert :ok = StatusInterpreter.remove_status(:player, 1000, :sc_stripweapon)
+    refute StatusInterpreter.equip_blocked?(:player, 1000, :right_hand)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, new, {:equipped, 0, 2, []} ->
+      {:ok, new}
+    end)
+
+    expect(Stats, :calculate_stats, fn stats, 1000, [%InventoryItem{nameid: 1101, equip: 2}] ->
+      stats
+    end)
+
+    assert {:noreply, %{game_state: %{inventory: %{0 => %InventoryItem{equip: 2}}}}} =
+             EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
   end
 
   test "removes weapon-unequip statuses only after a successful weapon unequip" do
