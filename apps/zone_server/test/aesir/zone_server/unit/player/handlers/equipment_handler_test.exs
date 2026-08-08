@@ -82,8 +82,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     weapon = %InventoryItem{nameid: 501, amount: 1, equip: 2}
     game_state = %{game_state | inventory: %{0 => weapon}}
 
-    :ok = StatusStorage.apply_status(:player, 1000, :sc_aspersio, duration: 30_000)
-    :ok = StatusStorage.apply_status(:player, 1000, :sc_encpoison, duration: 30_000)
+    # Applied directly so end_on_start exclusion does not displace them; all
+    # carry :remove_on_unequip_weapon and must drop together on the unequip.
+    weapon_unequip_statuses = [
+      :sc_aspersio,
+      :sc_encpoison,
+      :sc_fireweapon,
+      :sc_waterweapon,
+      :sc_windweapon,
+      :sc_earthweapon
+    ]
+
+    for status <- weapon_unequip_statuses do
+      :ok = StatusStorage.apply_status(:player, 1000, status, duration: 30_000)
+    end
 
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
     stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: game_state.stats}} end)
@@ -98,8 +110,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
 
     state = %{connection_pid: self(), game_state: game_state}
     assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
-    refute StatusStorage.has_status?(:player, 1000, :sc_aspersio)
-    refute StatusStorage.has_status?(:player, 1000, :sc_encpoison)
+
+    for status <- weapon_unequip_statuses do
+      refute StatusStorage.has_status?(:player, 1000, status)
+    end
   end
 
   test "keeps weapon-unequip statuses after failures and non-weapon changes" do

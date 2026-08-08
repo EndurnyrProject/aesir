@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -91,6 +92,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WeaponEndowTest do
 
         assert_received {:attack_element, unquote(element)}
       end
+    end
+  end
+
+  describe "RemoveOnUnequipWeapon flag" do
+    for status_id <- [:sc_fireweapon, :sc_waterweapon, :sc_windweapon, :sc_earthweapon] do
+      test "#{status_id} carries :remove_on_unequip_weapon" do
+        assert :remove_on_unequip_weapon in Registry.get_definition(unquote(status_id)).flags
+      end
+    end
+
+    test "sc_watk_element does NOT carry :remove_on_unequip_weapon" do
+      refute :remove_on_unequip_weapon in Registry.get_definition(:sc_watk_element).flags
     end
   end
 

@@ -9,14 +9,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Waterweapon do
   (replace-on-cast) to keep two of them from ever being live at once.
 
   rAthena ends this status when the endowed weapon is unequipped
-  (`RemoveOnUnequipWeapon`). Aesir has no equipment-change hook for statuses,
-  so the endow currently survives a weapon swap.
+  (`RemoveOnUnequipWeapon`), which the equipment handler enforces off the
+  `:remove_on_unequip_weapon` flag, so the endow drops on a weapon swap.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_waterweapon,
     no_dispel: false,
     properties: [:buff],
     calc_flags: [:atk_ele],
+    flags: [:remove_on_unequip_weapon],
     end_on_start: [
       :sc_aspersio,
       :sc_encpoison,
