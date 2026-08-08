@@ -1,0 +1,106 @@
+---
+- job: rogue
+  inherit:
+    - novice
+    - thief
+  tree:
+    - name: sm_sword
+      max_level: 10
+    - name: ac_vulture
+      max_level: 10
+    - name: ac_double
+      max_level: 10
+      requires:
+        - name: ac_vulture
+          level: 10
+    - name: ht_removetrap
+      max_level: 1
+      requires:
+        - name: ac_double
+          level: 5
+    - name: rg_snatcher
+      max_level: 10
+      requires:
+        - name: tf_steal
+          level: 1
+    - name: rg_stealcoin
+      max_level: 10
+      requires:
+        - name: rg_snatcher
+          level: 4
+    - name: rg_backstap
+      max_level: 10
+      requires:
+        - name: rg_stealcoin
+          level: 4
+    - name: rg_tunneldrive
+      max_level: 5
+      requires:
+        - name: tf_hiding
+          level: 1
+    - name: rg_raid
+      max_level: 5
+      requires:
+        - name: rg_backstap
+          level: 2
+        - name: rg_tunneldrive
+          level: 2
+    - name: rg_stripweapon
+      max_level: 5
+      requires:
+        - name: rg_striparmor
+          level: 5
+    - name: rg_stripshield
+      max_level: 5
+      requires:
+        - name: rg_striphelm
+          level: 5
+    - name: rg_striparmor
+      max_level: 5
+      requires:
+        - name: rg_stripshield
+          level: 5
+    - name: rg_striphelm
+      max_level: 5
+      requires:
+        - name: rg_stealcoin
+          level: 2
+    - name: rg_intimidate
+      max_level: 5
+      requires:
+        - name: rg_backstap
+          level: 4
+        - name: rg_raid
+          level: 5
+    - name: rg_graffiti
+      max_level: 1
+      requires:
+        - name: rg_flaggraffiti
+          level: 5
+    - name: rg_flaggraffiti
+      max_level: 5
+      requires:
+        - name: rg_cleaner
+          level: 1
+    - name: rg_cleaner
+      max_level: 1
+      requires:
+        - name: rg_gangster
+          level: 1
+    - name: rg_gangster
+      max_level: 1
+      requires:
+        - name: rg_stripshield
+          level: 3
+    - name: rg_compulsion
+      max_level: 5
+      requires:
+        - name: rg_gangster
+          level: 1
+    - name: rg_plagiarism
+      max_level: 10
+      requires:
+        - name: rg_intimidate
+          level: 5
+    - name: rg_closeconfine
+      max_level: 1
