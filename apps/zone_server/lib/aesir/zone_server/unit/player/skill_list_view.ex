@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   @doc """
@@ -24,7 +25,12 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
   Entries whose skill is absent from `Catalog` are skipped (the tree loader
   already filters these, so this is belt-and-suspenders).
   """
-  @spec build(PlayerProgression.t()) :: SkillList.t()
+  @spec build(PlayerProgression.t() | PlayerState.t()) :: SkillList.t()
+  def build(%PlayerState{stats: %{progression: progression}, plagiarized: plagiarized}) do
+    %SkillList{skills: skills} = build(progression)
+    %SkillList{skills: skills ++ plagiarized_skill(plagiarized, progression.job_id)}
+  end
+
   def build(%PlayerProgression{} = progression) do
     skills =
       progression
@@ -37,6 +43,32 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
       end)
 
     %SkillList{skills: skills}
+  end
+
+  defp plagiarized_skill(nil, _job_id), do: []
+
+  defp plagiarized_skill(%{skill_id: skill_id, level: level}, job_id) do
+    case Catalog.by_id(skill_id) do
+      {:ok, definition} ->
+        [
+          to_skill_info(
+            %{
+              skill_id: skill_id,
+              owner_job_id: job_id,
+              level: level,
+              max_level: definition.max_level,
+              requires: [],
+              base_level: 0,
+              job_level: 0,
+              upgradable: false
+            },
+            definition
+          )
+        ]
+
+      :error ->
+        []
+    end
   end
 
   @spec to_skill_info(SkillTree.view_entry(), Definition.t()) :: SkillInfo.t()

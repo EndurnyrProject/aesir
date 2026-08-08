@@ -188,6 +188,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                      }}
   end
 
+  test "delivers the skill id and level to a player victim" do
+    target_id = 19
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, 20 -> :ok end)
+    expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :player,
+               target_pid,
+               target_id,
+               40,
+               %{skill_id: 21, skill_level: 5},
+               20
+             )
+  end
+
   test "fully absorbed zero damage does not dispatch post-damage" do
     target_id = 19
     target_pid = spawn(fn -> Process.sleep(:infinity) end)

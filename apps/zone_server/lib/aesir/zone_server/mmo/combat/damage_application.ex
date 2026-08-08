@@ -448,6 +448,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     MobSession.apply_damage(target_pid, damage, mob_attacker(attacker))
   end
 
+  defp deliver_unit_damage(
+         :player,
+         target_pid,
+         _target_id,
+         damage,
+         %{skill_id: skill_id, skill_level: skill_level},
+         attacker
+       )
+       when is_integer(skill_id) and is_integer(skill_level) do
+    PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
+    PlayerSession.record_skill_hit(target_pid, skill_id, skill_level)
+  end
+
   defp deliver_unit_damage(:player, target_pid, _target_id, damage, _hit_info, attacker) do
     PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
   end

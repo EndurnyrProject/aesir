@@ -89,6 +89,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:unit, {:apply_damage, damage, attacker_id}})
   end
 
+  @doc """
+  Notifies this player that a skill hit landed, so plagiarism recording can run.
+  Separate from `apply_damage/3` to keep the damage path's contract unchanged.
+  """
+  def record_skill_hit(pid, skill_id, skill_level) do
+    GenServer.cast(pid, {:unit, {:record_skill_hit, skill_id, skill_level}})
+  end
+
   @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
   def apply_walk_delay(pid, duration),
     do: GenServer.cast(pid, {:movement, {:apply_walk_delay, duration}})
@@ -882,6 +890,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:unit, {:apply_damage, damage, attacker_id}}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
+  end
+
+  @impl true
+  def handle_cast({:unit, {:record_skill_hit, skill_id, skill_level}}, state) do
+    HealthHandler.record_skill_hit(skill_id, skill_level, state)
   end
 
   @impl true

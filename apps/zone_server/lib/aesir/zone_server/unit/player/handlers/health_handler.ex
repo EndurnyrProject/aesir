@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -43,10 +44,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @plagiarism_skill_id 225
 
   @doc """
   Computes the HP after taking `damage`, clamped at 0.
@@ -66,7 +70,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:noreply, state}
   end
 
-  def apply_damage(damage, attacker_id, state) when is_integer(damage) and damage > 0 do
+  def apply_damage(damage, attacker_id, state)
+      when is_integer(damage) and damage > 0 do
     stats = state.game_state.stats
     new_hp = damaged_hp(stats.current_state.hp, damage)
     max_hp = stats.derived_stats.max_hp
@@ -94,6 +99,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
+
+  @doc """
+  Records a plagiarism copy when a copyable skill hits this player, pushing a
+  refreshed skill list to the client. Decoupled from `apply_damage/3` so the
+  damage path keeps its original contract.
+  """
+  @spec record_skill_hit(integer() | nil, integer() | nil, SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def record_skill_hit(skill_id, skill_level, state) do
+    {game_state, copied?} = maybe_record_plagiarism(state.game_state, skill_id, skill_level)
+    state = StatsManager.update_game_state(state, game_state)
+
+    if copied? do
+      MessageRouter.send_to(state.connection_pid, SkillListView.build(game_state))
+    end
+
+    {:noreply, state}
+  end
+
+  defp maybe_record_plagiarism(
+         %PlayerState{
+           character_id: character_id,
+           stats: %{progression: %{learned_skills: learned}}
+         } =
+           game_state,
+         skill_id,
+         skill_level
+       )
+       when is_integer(skill_id) and is_integer(skill_level) and skill_level > 0 do
+    plagiarism_level = Learned.learned_level(learned, @plagiarism_skill_id)
+
+    if plagiarism_level > 0 and PlagiarismCopyable.copyable?(skill_id) and
+         not StatusStorage.has_status?(:player, character_id, :sc_preserve) do
+      {%{
+         game_state
+         | plagiarized: %{skill_id: skill_id, level: min(skill_level, plagiarism_level)}
+       }, true}
+    else
+      {game_state, false}
+    end
+  end
+
+  defp maybe_record_plagiarism(game_state, _skill_id, _skill_level), do: {game_state, false}
 
   @doc """
   Applies a heal to the player.

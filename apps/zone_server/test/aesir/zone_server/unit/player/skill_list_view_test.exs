@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
   alias Aesir.Net.SkillRequirement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -161,6 +162,21 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
 
       assert %SkillInfo{job_id: @archer_job_id, level: 1, upgradable: false} =
                by_id(eligible, @quest_skill_id)
+    end
+
+    test "includes the copied skill as a castable entry" do
+      state = %PlayerState{
+        stats: %{progression: progression(skill_point: 0)},
+        plagiarized: %{skill_id: @mg_thunderstorm_id, level: 4}
+      }
+
+      assert %SkillInfo{
+               skill_id: @mg_thunderstorm_id,
+               level: 4,
+               type: 2,
+               upgradable: false,
+               requires: []
+             } = SkillListView.build(state) |> by_id(@mg_thunderstorm_id)
     end
 
     test "a non-area skill (SM_SWORD) reports splash_radius 0" do
