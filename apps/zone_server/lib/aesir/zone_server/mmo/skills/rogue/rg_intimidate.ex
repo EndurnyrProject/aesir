@@ -19,13 +19,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
   @impl Active
-  def cast(%PlayerState{} = caster, {:unit, target_ref}, level, definition) do
+  def cast(caster, {:unit, target_ref}, level, definition) do
     with {:ok, _pid, target, _target_type} <- TargetResolver.resolve(target_ref) do
       opts = [
         skill_id: definition.id,
@@ -57,33 +58,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
           caster_id: caster_id,
           deferred_epoch: caster_epoch,
           target_epoch: target_epoch
-        },
-        %PlayerState{} = caster
+        } = payload,
+        caster
       ) do
     if current_caster?(caster, caster_id, map_name, caster_epoch) do
-      relocate(target_ref, target_epoch, caster_id, map_name)
+      caster_type = Map.get(payload, :caster_type, :player)
+      relocate(caster_type, target_ref, target_epoch, caster_id, map_name)
     end
 
     :ok
   end
 
-  defp relocate(target_ref, target_epoch, caster_id, map_name) do
+  defp relocate(caster_type, target_ref, target_epoch, caster_id, map_name) do
     with {:ok, target_pid, target, target_type} <- TargetResolver.resolve(target_ref),
          true <- current_target?(target, target_type, map_name, target_epoch),
          {:ok, {x, y}} <- Cell.random_traversable(map_name) do
       warp_target(target_type, target_pid, map_name, x, y)
-      PlayerSession.warp(self(), map_name, x, y)
+      warp_caster(caster_type, map_name, x, y)
 
       _ =
         StatusInterpreter.apply_status(target_type, unit_id(target_ref), :sc_intimidate,
           caster_id: caster_id,
-          source_type: :player
+          source_type: caster_type
         )
     end
   end
 
   defp current_caster?(%PlayerState{} = caster, caster_id, map_name, epoch) do
     caster.character_id == caster_id and caster.map_name == map_name and
+      caster.deferred_epoch == epoch and
+      Unit.living?(caster)
+  end
+
+  defp current_caster?(%MobState{} = caster, caster_id, map_name, epoch) do
+    caster.instance_id == caster_id and caster.map_name == map_name and
       caster.deferred_epoch == epoch and
       Unit.living?(caster)
   end
@@ -98,16 +106,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
   defp warp_target(:player, pid, map_name, x, y), do: PlayerSession.warp(pid, map_name, x, y)
   defp warp_target(:mob, pid, map_name, x, y), do: MobSession.warp(pid, map_name, x, y)
 
+  # The caster runs in its own session process, so warp `self()`.
+  defp warp_caster(:player, map_name, x, y), do: PlayerSession.warp(self(), map_name, x, y)
+  defp warp_caster(:mob, map_name, x, y), do: MobSession.warp(self(), map_name, x, y)
+
   defp unit_id({_unit_type, unit_id}), do: unit_id
   defp unit_id(unit_id), do: unit_id
 
   defp deferred_payload(caster, target_ref, target) do
+    {caster_type, caster_id} = caster_ref(caster)
+
     %{
       target: target_ref,
       map_name: caster.map_name,
-      caster_id: caster.character_id,
+      caster_type: caster_type,
+      caster_id: caster_id,
       deferred_epoch: caster.deferred_epoch,
       target_epoch: target.deferred_epoch
     }
   end
+
+  defp caster_ref(%PlayerState{character_id: caster_id}), do: {:player, caster_id}
+  defp caster_ref(%MobState{instance_id: caster_id}), do: {:mob, caster_id}
 end

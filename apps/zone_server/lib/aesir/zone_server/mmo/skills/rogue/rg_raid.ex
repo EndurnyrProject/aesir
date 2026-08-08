@@ -30,7 +30,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
 
   def validate(%MobState{}, _target, _level, _definition), do: :ok
 
+  # Mobs cast RG_RAID via the mob-skill executor, which resolves the row target
+  # to a concrete unit (`{:unit, id}`) rather than the `:self` atom the player
+  # interpreter passes. Raid is a self-centered AoE, so the specific unit is
+  # irrelevant - delegate to the self path.
   @impl Active
+  def cast(caster, {:unit, _target_ref}, level, definition),
+    do: cast(caster, :self, level, definition)
+
   def cast(%{map_name: map_name, x: x, y: y} = caster, :self, level, definition) do
     {source_type, source_id} = source = caster_ref(caster)
     StatusInterpreter.remove_status(source_type, source_id, :sc_hiding)
