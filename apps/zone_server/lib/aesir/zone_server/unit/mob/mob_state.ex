@@ -100,6 +100,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     # Combat state
     hp: nil,
     max_hp: nil,
+    # Immutable un-buffed HP ceiling. `max_hp` tracks the effective ceiling
+    # after `:max_hp_rate` statuses (e.g. SC_DELUGE); this is what the recalc
+    # scales from so a buff never compounds on a previous buff.
+    base_max_hp: nil,
     sp: nil,
     max_sp: nil,
     is_dead: false,
@@ -176,6 +180,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           last_attack_time: integer() | nil,
           hp: integer(),
           max_hp: integer(),
+          base_max_hp: integer() | nil,
           sp: integer(),
           max_sp: integer(),
           is_dead: boolean(),
@@ -209,6 +214,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       spawn_point: {x, y},
       hp: mob_data.hp,
       max_hp: mob_data.hp,
+      base_max_hp: mob_data.hp,
       sp: mob_data.sp,
       max_sp: mob_data.sp,
       spawned_at: current_time,
@@ -382,6 +388,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   # State Management Functions
+
+  @doc """
+  Recomputes `max_hp` from the immutable `base_max_hp` and the unit's aggregated
+  `:max_hp_rate` status modifier (e.g. SC_DELUGE), then clamps current HP to the
+  new ceiling.
+
+  Mirrors rAthena's `status_calc_maxhp` for non-PC units (`status.cpp:6213`,
+  `status.cpp:8712`): a buff raises the ceiling without healing, and its removal
+  caps any overflow HP back down. Unlike a player's cached stats, every other
+  mob combat number is folded live in `to_combatant/1`, so only the stored HP
+  ceiling needs an explicit recompute.
+  """
+  @spec recalculate_max_hp(t()) :: t()
+  def recalculate_max_hp(%__MODULE__{instance_id: instance_id} = state) do
+    base = state.base_max_hp || state.max_hp
+    rate = :mob |> Interpreter.get_all_modifiers(instance_id) |> Map.get(:max_hp_rate, 0)
+    new_max = max(1, div(base * (100 + rate), 100))
+    %{state | max_hp: new_max, hp: min(state.hp, new_max)}
+  end
 
   @doc """
   Sets the process PID for this mob state.
@@ -573,7 +598,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     case Keyword.get(opts, :hp_override) do
       nil -> state
-      hp -> %{state | hp: hp, max_hp: hp}
+      hp -> %{state | hp: hp, max_hp: hp, base_max_hp: hp}
     end
   end
 

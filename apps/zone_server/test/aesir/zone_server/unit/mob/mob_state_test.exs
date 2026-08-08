@@ -419,4 +419,56 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert MobState.to_combatant(state).element == {:neutral, 1}
     end
   end
+
+  describe "recalculate_max_hp/1" do
+    test "a freshly built mob records its base_max_hp" do
+      state = build_mob_state()
+
+      assert state.base_max_hp == 1000
+      assert state.max_hp == 1000
+    end
+
+    test "with no :max_hp_rate status the ceiling stays at the base" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      updated = MobState.recalculate_max_hp(state)
+
+      assert updated.max_hp == 1000
+      assert updated.hp == state.hp
+    end
+
+    test "SC_DELUGE raises the ceiling by its tabulated percent without healing" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
+
+      updated = MobState.recalculate_max_hp(state)
+
+      # level 5 -> deluge_eff index rem(4, 5) == 4 -> +15%
+      assert updated.max_hp == 1150
+      assert updated.hp == state.hp
+    end
+
+    test "removing the buff caps overflow HP back down to the base ceiling" do
+      buffed = %MobState{build_mob_state() | max_hp: 1150, hp: 1150}
+      UnitRegistry.register_unit(:mob, buffed.instance_id, MobState, buffed, self())
+
+      updated = MobState.recalculate_max_hp(buffed)
+
+      assert updated.max_hp == 1000
+      assert updated.hp == 1000
+    end
+
+    test "scales from base_max_hp so a re-apply never compounds" do
+      # A stale effective ceiling must not be used as the recalc base.
+      state = %MobState{build_mob_state() | max_hp: 1150}
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
+
+      updated = MobState.recalculate_max_hp(state)
+
+      assert updated.max_hp == 1150
+    end
+  end
 end

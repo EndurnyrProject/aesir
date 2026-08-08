@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
@@ -297,10 +298,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     AiHandler.handle_set_target(state, target_ref)
   end
 
-  # Casting: a status tick/expiry that may interrupt an in-flight cast.
+  # Casting: a status apply/tick/expiry that may interrupt an in-flight cast,
+  # and may also recompute the mob's HP ceiling for a `:max_hp_rate` status.
   @impl GenServer
   def handle_cast({:casting, {:status_changed, status_id, event}}, state) do
-    CastingHandler.handle_status_changed(status_id, event, state)
+    {:noreply, state} = CastingHandler.handle_status_changed(status_id, event, state)
+    {:noreply, maybe_recalculate_max_hp(status_id, state)}
   end
 
   # Movement: pathing kickoff, the instant teleport reposition, and the
@@ -443,6 +446,27 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   defp schedule_despawn(nil), do: nil
+
+  # SC_DELUGE and any future `:max_hp_rate` status recomputes the mob's HP
+  # ceiling on apply/removal (rAthena's SCB_MAXHP recalc). Gated on the
+  # status's `calc_flags` so ordinary status ticks stay off this path, and
+  # only broadcasts when the ceiling actually moved.
+  defp maybe_recalculate_max_hp(status_id, state) do
+    if max_hp_status?(status_id) do
+      updated = MobState.recalculate_max_hp(state)
+      unless updated.max_hp == state.max_hp, do: SpawnView.notify_hp_update(updated)
+      updated
+    else
+      state
+    end
+  end
+
+  defp max_hp_status?(status_id) do
+    case Registry.get_definition(status_id) do
+      %{calc_flags: flags} -> :max_hp_rate in flags
+      _ -> false
+    end
+  end
 
   @impl GenServer
   def terminate(_reason, state) do

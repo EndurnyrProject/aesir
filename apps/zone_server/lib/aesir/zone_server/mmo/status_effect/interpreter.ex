@@ -1200,6 +1200,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp notify_unit_status_applied(_unit_type, _unit_id, _status_id), do: :ok
 
+  defp notify_unit_status_removed(:mob, unit_id, status_id) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _state, pid}} when is_pid(pid) ->
+        GenServer.cast(pid, {:casting, {:status_changed, status_id, :removed}})
+
+      _ ->
+        :ok
+    end
+  end
+
   defp notify_unit_status_removed(:homunculus, unit_id, status_id) do
     notify_homunculus_owner(unit_id, status_id, :removed)
   end

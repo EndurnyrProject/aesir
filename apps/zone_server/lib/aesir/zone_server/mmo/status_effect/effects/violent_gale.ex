@@ -11,13 +11,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ViolentGale do
   wind-element attack ratio by a tabulated number of percentage points
   (`battle.cpp:538-544`).
 
-  ## Accepted deviation
-
-  The flee bonus only reaches players. Aesir's `:flee` modifier is read by the
-  player flee recalc (`unit/player/combat_calculations.ex`), whereas a mob's
-  flee is `level + agi` with no status term. rAthena's `status_calc_flee`
-  covers mobs too, so a mob standing in Violent Gale is missing its flee bonus
-  here. The element ratio applies to every unit type.
+  The `:flee` bonus reaches both unit types. A player picks it up through the
+  flee recalc (`unit/player/combat_calculations.ex`); a mob folds every combat
+  number — flee included — live in `MobState.to_combatant/1`, which sums the
+  active `:flee` modifiers onto its base `level + agi`, matching rAthena's
+  `status_calc_flee` covering `[PC|MOB|HOM|MER|ELEM]`. The element ratio applies
+  to every unit type.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_violentgale,

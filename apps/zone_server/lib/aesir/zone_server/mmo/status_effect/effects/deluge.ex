@@ -10,15 +10,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge do
   holder's water-element attack ratio by a tabulated number of percentage
   points (`battle.cpp:545-551`).
 
-  ## Accepted deviation
-
-  The max-HP bonus only reaches players. Aesir's `:max_hp_rate` modifier is read
-  by the player stat recalc (`unit/player/stats.ex`), whereas a mob's max HP is
-  static in `MobState` and never recalculated from status modifiers. rAthena
-  applies `status_get_hpbonus` to mobs as well, so a mob standing in Deluge is
-  missing its HP bonus here. The element ratio, which is the field's combat-
-  relevant half, applies to every unit type. Revisit if mob max HP ever becomes
-  recalculable.
+  The `:max_hp_rate` bonus reaches both unit types. A player picks it up through
+  the stat recalc (`unit/player/stats.ex`); a mob recomputes its stored HP
+  ceiling via `MobState.recalculate_max_hp/1` whenever the status applies or
+  ends, mirroring rAthena's non-PC `status_calc_maxhp` (`status.cpp:6213`,
+  `status.cpp:8712`) — the buff raises the ceiling without healing, and its
+  removal caps overflow HP back down. The element ratio applies to every unit
+  type.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_deluge,

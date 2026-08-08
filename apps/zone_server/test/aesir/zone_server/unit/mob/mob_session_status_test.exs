@@ -7,11 +7,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
 
   use ExUnit.Case, async: true
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  setup :setup_ets_tables
 
   defp build_mob_state do
     mob_data =
@@ -69,6 +77,54 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
                MobSession.handle_cast(
                  {:casting, {:status_changed, :sc_increase_agi, :expired}},
                  state
+               )
+    end
+  end
+
+  describe "{:casting, {:status_changed, ...}} max-HP recalc (SC_DELUGE)" do
+    setup do
+      Registry.register_module(Deluge)
+      :ok
+    end
+
+    test "an SC_DELUGE apply raises the HP ceiling without healing" do
+      state = build_mob_state()
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_deluge, val1: 5)
+
+      assert {:noreply, updated} =
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_deluge, :apply}},
+                 state
+               )
+
+      # level 5 -> +15% of the 1000 base ceiling; current HP is untouched.
+      assert updated.max_hp == 1150
+      assert updated.hp == state.hp
+    end
+
+    test "an SC_DELUGE removal caps overflow HP back down to the base ceiling" do
+      buffed = %MobState{build_mob_state() | max_hp: 1150, hp: 1150}
+      UnitRegistry.register_unit(:mob, buffed.instance_id, MobState, buffed, self())
+
+      assert {:noreply, updated} =
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_deluge, :removed}},
+                 buffed
+               )
+
+      assert updated.max_hp == 1000
+      assert updated.hp == 1000
+    end
+
+    test "a non-:max_hp_rate status change never touches the HP ceiling" do
+      buffed = %MobState{build_mob_state() | max_hp: 1150, hp: 1150}
+      UnitRegistry.register_unit(:mob, buffed.instance_id, MobState, buffed, self())
+
+      assert {:noreply, ^buffed} =
+               MobSession.handle_cast(
+                 {:casting, {:status_changed, :sc_increase_agi, :apply}},
+                 buffed
                )
     end
   end
