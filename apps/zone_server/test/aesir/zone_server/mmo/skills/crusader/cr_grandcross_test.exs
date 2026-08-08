@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
@@ -109,14 +111,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   end
 
   describe "on_place" do
-    test "places the 9-cell cross centered on the caster and roots a player caster" do
-      expect(StatusInterpreter, :apply_status, fn :player,
-                                                  @caster_id,
-                                                  :sc_grandcross_root,
-                                                  params ->
-        assert params[:duration] == 950
-        :ok
-      end)
+    test "places the 9-cell cross centered on the caster without rooting (root is applied in cast)" do
+      reject(&StatusInterpreter.apply_status/4)
 
       {:ok, placement} = CrGrandcross.on_place(group([]))
 
@@ -128,12 +124,47 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       assert placement.lifecycle_policy.max_instances_per_caster == 1
     end
 
-    test "a mob caster is not rooted" do
+    test "a mob caster placement is not rooted" do
       reject(&StatusInterpreter.apply_status/4)
 
       {:ok, placement} = CrGrandcross.on_place(group(caster_type: :mob, caster_id: @mob_id))
 
       assert length(placement.cells) == 9
+    end
+  end
+
+  describe "cast rooting and shield suppression" do
+    setup do
+      Mimic.copy(Stats)
+      :ok
+    end
+
+    test "a player cast roots the caster and suppresses their shield DEF/MDEF for the window" do
+      caster = %PlayerState{character_id: @caster_id, x: 100, y: 100}
+
+      stub(Unit, :place, fn ^caster, :cr_grandcross, 1, {100, 100} -> {:ok, :group} end)
+      stub(Stats, :shield_defense_contribution, fn _stats -> %{def: 7, mdef: 3} end)
+
+      expect(StatusInterpreter, :apply_status, fn :player,
+                                                  @caster_id,
+                                                  :sc_grandcross_root,
+                                                  params ->
+        assert params[:duration] == 950
+        assert params[:val1] == 7
+        assert params[:val2] == 3
+        :ok
+      end)
+
+      assert {:ok, ^caster} = CrGrandcross.cast(caster, :self, 1, definition())
+    end
+
+    test "a non-player (mob) self-cast is not rooted" do
+      caster = %{x: 5, y: 5}
+
+      stub(Unit, :place, fn ^caster, :cr_grandcross, 1, {5, 5} -> {:ok, :group} end)
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, ^caster} = CrGrandcross.cast(caster, :self, 1, definition())
     end
   end
 

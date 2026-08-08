@@ -78,6 +78,28 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1, refine: refine}
   end
 
+  defp base_character do
+    %Character{
+      id: 1,
+      name: "Crusader",
+      account_id: 1,
+      last_map: "prontera",
+      last_x: 100,
+      last_y: 100,
+      class: 0,
+      base_level: 1,
+      job_level: 1,
+      str: 1,
+      agi: 1,
+      vit: 1,
+      int: 1,
+      dex: 1,
+      luk: 1,
+      hp: 40,
+      sp: 11
+    }
+  end
+
   describe "from_character/1" do
     test "creates Stats struct from Character model" do
       character = %Character{
@@ -1190,6 +1212,47 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
     test "shield_stats is nil when no shield is worn" do
       assert Stats.shield_stats(%Equipment{}, []) == nil
+    end
+  end
+
+  describe "shield_defense_contribution/1" do
+    test "returns the DEF the equipped shield adds to the folded equipment" do
+      character = base_character()
+      player = PlayerState.new(character)
+
+      with_shield =
+        Stats.calculate_stats(
+          player.stats,
+          nil,
+          [equipped(@sword, @right_hand), equipped(@guard, @left_hand)]
+        )
+
+      without_shield =
+        Stats.calculate_stats(player.stats, nil, [equipped(@sword, @right_hand)])
+
+      contribution = Stats.shield_defense_contribution(with_shield)
+
+      # The marginal DEF the shield adds equals the difference in the caster's
+      # computed hard DEF between wearing it and not (base/status DEF are equal).
+      assert contribution.def == with_shield.combat_stats.def - without_shield.combat_stats.def
+      assert contribution.def > 0
+      # The Guard carries no MDEF script, so it suppresses no MDEF.
+      assert contribution.mdef == 0
+    end
+
+    test "a left-hand weapon (not a shield) contributes nothing" do
+      character = base_character()
+      player = PlayerState.new(character)
+
+      dual_wield =
+        Stats.calculate_stats(player.stats, nil, [equipped(@knife, @left_hand)])
+
+      assert Stats.shield_defense_contribution(dual_wield) == %{def: 0, mdef: 0}
+    end
+
+    test "a bare caster contributes nothing" do
+      player = PlayerState.new(base_character())
+      assert Stats.shield_defense_contribution(player.stats) == %{def: 0, mdef: 0}
     end
   end
 

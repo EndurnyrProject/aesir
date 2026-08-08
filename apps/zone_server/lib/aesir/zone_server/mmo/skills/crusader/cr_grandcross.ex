@@ -17,8 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   none (mob casters, which are simply excluded from their own selection). Non-caster
   undead-element or undead/demon-race mob targets are blinded for 18 s at 100%.
 
-  Mob casters carry no HP-rate/root cost machinery: `mob_cast` skips the player
-  gates, and the field never damages the mob itself.
+  On a player cast the caster is rooted in place (`sc_grandcross_root`) for the
+  field's lifetime so it stays centered on them, and loses their own shield's
+  DEF/MDEF for the same window (so they take the field's holy damage unshielded).
+
+  Mob casters carry no HP-rate/root cost machinery: they skip the player gates,
+  and the field never damages the mob itself.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 254,
@@ -45,6 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
   @behaviour Active
@@ -62,21 +68,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
 
   def cast(caster, :self, level, _definition) do
     case Unit.place(caster, :cr_grandcross, level, {caster.x, caster.y}) do
-      {:ok, _group} -> {:ok, caster}
-      {:error, _reason} = error -> error
+      {:ok, _group} ->
+        root_player_caster(caster)
+        {:ok, caster}
+
+      {:error, _reason} = error ->
+        error
     end
   end
 
   @impl Ground
-  def on_place(%Group{caster_type: :player, caster_id: caster_id} = group) do
+  def on_place(%Group{} = group), do: placement(group)
+
+  # A player caster is rooted for the field's lifetime and loses their own
+  # shield's defensive contribution for the same window: the shield DEF/MDEF is
+  # captured now and carried on the status as val1/val2, which the status emits
+  # as negative flat modifiers. Mob casters have no shield and are never rooted.
+  @spec root_player_caster(struct()) :: :ok
+  defp root_player_caster(%PlayerState{character_id: caster_id, stats: stats}) do
+    %{def: shield_def, mdef: shield_mdef} = Stats.shield_defense_contribution(stats)
+
     StatusInterpreter.apply_status(:player, caster_id, :sc_grandcross_root,
-      duration: @root_duration
+      duration: @root_duration,
+      val1: shield_def,
+      val2: shield_mdef
     )
 
-    placement(group)
+    :ok
   end
 
-  def on_place(%Group{} = group), do: placement(group)
+  defp root_player_caster(_mob_caster), do: :ok
 
   @impl Ground
   def on_interval(%Group{origin: origin, map_name: map_name, level: level} = group, _now) do
@@ -133,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     :ok
   end
 
-  # rAthena renewal `CR_GRANDCROSS` ratio: base_skillratio (100) + 40 * skill_lv.
+  # Grand Cross ratio: a 100% base plus 40% per skill level.
   @spec skill_ratio(pos_integer()) :: pos_integer()
   defp skill_ratio(level), do: 100 + 40 * level
 

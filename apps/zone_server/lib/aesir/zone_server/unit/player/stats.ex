@@ -562,6 +562,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
+  Returns the DEF and MDEF the currently equipped shield contributes.
+
+  Computed as the marginal difference the shield makes to the folded equipment
+  DEF/MDEF - the full worn set minus the same set without the left-hand item -
+  so shared armor-refine rounding is attributed to the shield correctly rather
+  than isolated per-item. A left-hand weapon (dual-wield or a two-hander) is not
+  a shield and contributes nothing. Both values are clamped at zero.
+
+  Used to suppress a caster's own shield defense for the lifetime of a skill
+  (Grand Cross): the caller applies these as negative flat `:def`/`:mdef` status
+  modifiers, so the shield's protection returns when the status ends.
+  """
+  @spec shield_defense_contribution(t()) :: %{def: non_neg_integer(), mdef: non_neg_integer()}
+  def shield_defense_contribution(%__MODULE__{equipment: %Equipment{} = equipment} = stats) do
+    if shield?(equipment) do
+      without_shield = Enum.reject(stats.worn_items, &worn_in_slot?(&1, :left_hand))
+      full = calculate_equipment_bonuses(stats.worn_items, stats.progression)
+      reduced = calculate_equipment_bonuses(without_shield, stats.progression)
+
+      %{
+        def: max(Map.get(full, :def, 0) - Map.get(reduced, :def, 0), 0),
+        mdef: max(Map.get(full, :mdef, 0) - Map.get(reduced, :mdef, 0), 0)
+      }
+    else
+      %{def: 0, mdef: 0}
+    end
+  end
+
+  def shield_defense_contribution(%__MODULE__{}), do: %{def: 0, mdef: 0}
+
+  @doc """
   Returns `{weight, refine}` for the equipped left-hand shield, or `nil` when no
   shield is worn.
 
