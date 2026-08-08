@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
   alias Aesir.Net.Announcement, as: AnnouncementMsg
   alias Aesir.Net.ItemAdded
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -112,6 +113,42 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionBreakTest do
 
       assert new_state.game_state.inventory == state.game_state.inventory
       refute_received {:send, _channel, {:item_added, _}}
+    end
+  end
+
+  describe "strip_equip cast" do
+    test "unequips the worn weapon and applies Divest Weapon", %{character: character} do
+      seed_equipped(character.id, 1101, 2)
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      server_index = index_of(state.game_state.inventory, 1101)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:equipment,
+           {:strip, :right_hand,
+            [duration: 30_000, val2: 10, caster_id: character.id, source_type: :player]}},
+          state
+        )
+
+      assert new_state.game_state.inventory[server_index].equip == 0
+      assert reload(character.id)[server_index].equip == 0
+      assert StatusStorage.has_status?(:player, character.id, :sc_stripweapon)
+    end
+
+    test "applies Divest Armor when the armor slot is empty", %{character: character} do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast(
+          {:equipment,
+           {:strip, :armor,
+            [duration: 30_000, val2: 10, caster_id: character.id, source_type: :player]}},
+          state
+        )
+
+      assert new_state.game_state.inventory == state.game_state.inventory
+      assert StatusStorage.has_status?(:player, character.id, :sc_striparmor)
     end
   end
 

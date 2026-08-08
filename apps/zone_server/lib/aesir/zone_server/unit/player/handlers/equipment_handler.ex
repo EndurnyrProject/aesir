@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   require Logger
 
+  import Bitwise
+
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.UnequipResult
@@ -39,6 +41,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   @unequip_result_success 0
   @unequip_result_failure 1
+
+  @strip_statuses %{
+    right_hand: :sc_stripweapon,
+    left_hand: :sc_stripshield,
+    armor: :sc_striparmor,
+    head_top: :sc_striphelm
+  }
 
   @doc """
   Handles an equip request for the item at `server_index` into `position`.
@@ -78,6 +87,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         send_packet(state, unequip_failure_result(server_index))
         {:noreply, state}
     end
+  end
+
+  @doc """
+  Force-unequips the item in `slot`, then applies the matching Divest status.
+  """
+  @spec handle_strip(atom(), keyword(), map()) :: {:noreply, map()}
+  def handle_strip(slot, status_opts, %{game_state: game_state} = state) do
+    status_id = Map.fetch!(@strip_statuses, slot)
+
+    state =
+      case equipped_item_in_slot(game_state.inventory, slot) do
+        {server_index, _item} ->
+          {:noreply, state} = handle_unequip(server_index, state)
+          state
+
+        nil ->
+          state
+      end
+
+    # The Divest skill already rolled its own success; the status apply must not
+    # double-dip the generic debuff resistance roll.
+    :ok =
+      StatusInterpreter.apply_status(
+        :player,
+        game_state.character_id,
+        status_id,
+        Keyword.put(status_opts, :bypass_resistance, true)
+      )
+
+    {:noreply, StatusManager.recalculate_after_status_change(state)}
   end
 
   defp commit_equip(
@@ -197,6 +236,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp enforce_weapon_requirements(game_state) do
     weapon_type = Stats.weapon_type(game_state.stats.equipment)
     StatusInterpreter.enforce_weapon_requirements(:player, game_state.character_id, weapon_type)
+  end
+
+  defp equipped_item_in_slot(inventory, slot) do
+    bit = EquipLocation.location_bit(slot)
+
+    Enum.find(Inventory.equipped_items(inventory), fn {_index, item} ->
+      (item.equip &&& bit) != 0
+    end)
   end
 
   defp any_slot_blocked?(character_id, mask) do

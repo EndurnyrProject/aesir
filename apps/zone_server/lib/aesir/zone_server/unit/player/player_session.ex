@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
@@ -391,6 +392,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec break_equip(pid(), atom()) :: :ok
   def break_equip(pid, slot) do
     GenServer.cast(pid, {:inventory, {:break_equip, slot}})
+  end
+
+  @doc "Force-unequips `slot` and applies its matching Divest status."
+  @spec strip_equip(pid(), atom(), keyword()) :: :ok
+  def strip_equip(pid, slot, status_opts) do
+    GenServer.cast(pid, {:equipment, {:strip, slot, status_opts}})
   end
 
   @doc "Repairs one broken inventory row through its owning player session."
@@ -873,6 +880,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:inventory, :repair_all}, state) do
     InventoryManager.handle_repair_all(state)
+  end
+
+  @impl true
+  def handle_cast({:equipment, {:strip, slot, status_opts}}, state) do
+    EquipmentHandler.handle_strip(slot, status_opts, state)
   end
 
   # Skill: a bolt SA_AUTOSPELL armed, procced by one of this player's weapon
