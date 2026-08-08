@@ -315,7 +315,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
-      apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, nil)
+      apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
 
       if dst_delay > 0 do
         apply_walk_delay(unit_type, target_pid, dst_delay)

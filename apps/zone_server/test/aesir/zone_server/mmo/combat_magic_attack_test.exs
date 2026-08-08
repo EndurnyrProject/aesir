@@ -701,7 +701,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
-      expect(MobSession, :apply_damage, fn _pid, 777, nil -> :ok end)
+      # The ground-unit tick attributes damage to its caster (kill-credit / aggro).
+      expect(MobSession, :apply_damage, fn _pid, 777, @caster_id -> :ok end)
 
       assert :ok =
                Combat.apply_skill_unit_damage(
