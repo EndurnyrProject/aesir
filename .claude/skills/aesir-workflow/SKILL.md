@@ -73,6 +73,39 @@ usability check and misses the real logic. Grep both.
   have silently run stale dev beams and regenerated output with old code. Sanity-check the
   output actually changed.
 
+### Integration test isolation (per-test worlds — the current model)
+
+`Aesir.ZoneServer.IntegrationCase` (`test/support/integration_case.ex`) now gives each test
+its **own** ETS world and background processes — do not reach for the old boot-global
+`MapManager`/`Coordinator`:
+
+- `use ExUnit.Case, async: false`; setup calls **`Mimic.set_mimic_private()`** (per-test
+  private mode) and seeds a fresh random `EtsTable` (seed stored on the test process), then
+  starts per-test unnamed `StatusTickManager`, skill-unit manager, and NPC interaction
+  supervisors, plus an isolated `"prontera"` world by default.
+- For any other map, call **`start_per_test_map(@map)`** in `setup` — it `start_supervised!`s
+  an unnamed `MobSupervisor` + `Coordinator` scoped through `ProcessTree` (`Process.put`),
+  auto-cleaned. **Never** add `MapManager.get_coordinator/1` wait/retry helpers or reuse a
+  boot-global map; a handful of legacy `ensure_coordinator` privates still target global
+  boot state — don't copy them.
+- `Aesir.TestEtsSetup.setup_ets_tables/1` is the **unit-test** seeded-ETS helper;
+  `IntegrationCase` mirrors that seeding but additionally boots the managers/coordinator, so
+  integration tests use `IntegrationCase`, not `TestEtsSetup`.
+- Helpers (`test/support/`): `simulate_incoming_message/2` (packet ingress),
+  `start_player_session/1` and `start_mob_session/1` (both accept `vit:`/`luk:`; mobs also
+  `agi:`/`dex:` and default `awake: false` to avoid idle-AI wander flakes),
+  `assert_packet_sent/2` / `collect_packets_of_type/2`, and
+  `assert_eventually`/`eventually/3` (`commons` `test_wait.ex`, polls 25ms/4s — use instead
+  of `Process.sleep`).
+- **Determinism**: chance rolls in the *test process* are stubbed
+  (`Mimic.stub(Resistance, :roll_success, fn _ -> true end)`; `Resistance` is made Mimic-able
+  in `test_helper.exs`); chance rolls in a *session/manager process* are pinned via stats
+  instead — `vit: 0, luk: 0` short-circuits infliction to 100%. Keep generated `userid`s
+  ≤23 chars (account validation), so use short prefixes.
+- **`assert_packet_sent` timeout trap**: `collect_packets_of_type` restarts its timeout after
+  every matching packet, so it waits the full timeout after the *last* match — keep the 100ms
+  default; raising it starves time-sensitive follow-up effects (e.g. remaining damage ticks).
+
 ### Known flaky tests (ignore when gating on green, if they pass in isolation)
 
 - `test/integration/npc_events_integration_test.exs` — OnTimer/OnMyMobDead timing.
@@ -102,25 +135,24 @@ usability check and misses the real logic. Grep both.
   gates). Insist on real `UnitRegistry`/`PlayerState`/`MobState` shapes.
 - Tests driving `PlayerSession.init`/`terminate` directly must `Mimic.copy(StatusPersistence)`
   and stub `restore_on_spawn`/`save_statuses`, or they hit the DB sandbox.
-- `IntegrationCase.setup_ets_tables/1` shares boot-time UnitRegistry/SpatialIndex with the
-  live prontera Coordinator — movement/warp scenarios must isolate via
-  `Aesir.TestEtsSetup.setup_ets_tables/1` or they race its ticks.
-- A test that reuses a real map name for its own supervised process races `MapManager`'s
-  lazy boot of that map ~500ms after app start — use a fake map name.
 - Deadlock-class bugs (self-calls inside a session) only reproduce when the cast goes
   through the real session (`simulate_incoming_message`), never when the test process calls
   `Skill.cast/4` directly.
 
 ## Engineering conventions (beyond CLAUDE.md)
 
-- **Single-writer sessions**: `PlayerSession`/`MobSession` are routing shells; all entity
-  mutation routes through their handlers. Never write another entity's state directly —
-  except `StatusStorage`, which is deliberately not single-writer (debuffs write target
-  rows cross-process; immobilization is pull-based via `can_move?`/`can_attack?`).
-  Corollary: never build offer/claim or two-phase-commit protocols between sessions to
-  coordinate a cross-unit effect (the Monk Root one was deleted) — use a synchronous atomic
-  claim on the shared store (`StatusStorage.take_status/3`) in the acting process instead,
-  and let ticks + finite durations self-heal a dead peer.
+- **Single-writer sessions** (full detail in `aesir-units`): `PlayerSession`/`MobSession`
+  are routing shells; all entity mutation routes through handlers in
+  `unit/{player,mob}/handlers/`. The session state is `SessionState` (wraps the immutable
+  `%PlayerState{}` as `game_state`); commit a new state with `StateCommit.commit/2` (publishes
+  to `UnitRegistry` + party/guild views). Never write another entity's state directly, and
+  never `GenServer.call(self(), ...)` inside a handler — except `StatusStorage`, which is
+  deliberately not single-writer (debuffs write target rows cross-process; immobilization is
+  pull-based via `can_move?`/`can_attack?`). Corollary: never build offer/claim or two-phase-
+  commit protocols between sessions to coordinate a cross-unit effect (the Monk Root one was
+  deleted) — use a synchronous atomic claim (`StatusStorage.take_status/3`) in the acting
+  process instead, and let ticks + finite durations self-heal a dead peer. `session_hygiene_test`
+  statically guards this shell architecture.
 - **Interpreted content, never generated modules**: item scripts and NPC scripts compile to
   interpreted AST/IR. The BEAM JIT dies above ~6-7k clauses in one function; the corpus
   needs ~14k. Do not reintroduce per-item/per-NPC generated modules.
@@ -139,6 +171,8 @@ usability check and misses the real logic. Grep both.
 
 ## Related skills
 
+- `aesir-units` — unit sessions, handlers, `SessionState`/`StateCommit`, the shared runtime
+  views, single-writer rule, deferred effects.
 - `aesir-npc` — NPCs, the scripting DSL, the transpiler.
 - `aesir-skills` — implementing job/player skills.
 - `aesir-status-effects` — status effect definitions.

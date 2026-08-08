@@ -79,6 +79,13 @@ Effects that must run later in the caster's session go through the generic seam:
 `PlayerSession`/`MobSession` — `session_hygiene_test` forbids `Mmo.Skills` references in
 sessions. MobSession handles `{:skill, {:deferred, module, payload}}` too.
 
+Delayed work that can be invalidated before it fires must carry an **epoch or token** captured
+at schedule time and re-checked at run time (cast completion uses a cast token; combo/spirit
+timers use generation counters; mob death/teleport advances a `deferred_epoch`) so a stale
+deferred effect no-ops instead of acting on a vanished/moved target. See `aesir-units` for the
+session shell, `SessionState`/`StateCommit`, and the single-writer/no-deadlock rules that
+govern where skill code runs.
+
 ## Skill-staged dialogs (client menus without new proto messages)
 
 When a skill needs a client menu (arrow crafting style): `cast/4` stages a dialog module on

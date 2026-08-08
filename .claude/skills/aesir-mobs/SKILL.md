@@ -12,13 +12,21 @@ description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn dat
   (two-axis: boss-flag vs MVP).
 - Spawns: `priv/db/spawns/<map>.yml` (`mix aesir.import.spawns`); map `Coordinator` owns
   spawning and the death path.
-- Runtime: `unit/mob/mob_session.ex` — one GenServer per mob instance with an AI tick loop;
-  `AiStateMachine` is a pure functional state machine (patrol/aggro/chase/attack/flee).
-  Post session-restructure, MobSession is a routing shell over `unit/mob/handlers/`
-  (movement/combat/ai/casting) — put logic in handlers, never new inline clauses.
+- Runtime: `unit/mob/mob_session.ex` — one GenServer per mob instance with a self-armed AI
+  tick loop; `AiStateMachine` is a pure functional state machine (patrol/aggro/chase/attack/
+  flee). MobSession is a routing shell over the handlers in `unit/mob/handlers/` — `AiHandler`
+  (tick/sleep-wake/targeting), `CastingHandler` (cast lifecycle), `CombatHandler` (damage/
+  death), `MovementHandler` (path/ticks/teleport/displacement). Put logic in handlers, never
+  new inline session clauses (`session_hygiene_test` guards this). See `aesir-units` for the
+  full shell/handler + single-writer model shared with `PlayerSession`.
 - Mob statuses share the player `StatusStorage`; mob vitals never touch `UnitRegistry`.
-- Mobs have real cast state: `begin_cast/3` / `abort_cast/1` (silence/stun interrupt works),
-  cooldowns keyed by skill_id, and `{:skill, {:deferred, module, payload}}` handling.
+- Mobs have real cast state via `CastingHandler`: `begin_cast/3` / `abort_cast/1` (silence/
+  stun interrupt works), cooldowns keyed by skill_id, and `{:skill, {:deferred, module,
+  payload}}` handling.
+- **Death path is deadlock-sensitive**: work that touches a player (e.g. MVP reward delivery,
+  `unit/mob/mvp_reward.ex`) runs *outside* the dying mob's process to avoid a reciprocal
+  player↔mob deadlock. Delayed/deferred work advances a `deferred_epoch` on death/teleport so
+  stale effects no-op — stamp and re-check an epoch/token for anything that can outlive the mob.
 
 ## Mob skills: one skill system, not two
 
