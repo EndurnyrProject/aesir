@@ -851,8 +851,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   # A weapon-class skill hit passes through the target's `before_weapon_hit`
   # interception statuses (Guard) exactly as a basic attack does, but tagged
   # `basic_attack?: false` so basic-attack-only stances (Auto Counter, Blade
-  # Stop) stay inert. An interception cancels this hit entirely: no hit roll, no
-  # damage, no packet - the intercepting status owns its own feedback effect.
+  # Stop) stay inert. An interception cancels this hit entirely: no hit roll and
+  # no damage. A shield block (Guard) still broadcasts a zero-damage "guarded"
+  # packet so the attacker sees the swing land for 0; other interceptions own
+  # their own feedback effect and stay silent.
   # Magic and misc skills never call this path, so they can never be blocked.
   @spec weapon_hit_intercepted?(
           struct(),
@@ -876,10 +878,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         metadata
       )
 
-    match?(
-      {:intercept, _result},
-      StatusInterpreter.before_weapon_hit(target_type, target.unit_id, attack_info)
-    )
+    case StatusInterpreter.before_weapon_hit(target_type, target.unit_id, attack_info) do
+      {:intercept, :blocked} ->
+        DamageApplication.broadcast_nearby(
+          target,
+          PacketFactory.build_guard_packet(attacker, target)
+        )
+
+        true
+
+      {:intercept, _result} ->
+        true
+
+      :continue ->
+        false
+    end
   end
 
   @spec cell_distance(struct(), struct()) :: non_neg_integer()

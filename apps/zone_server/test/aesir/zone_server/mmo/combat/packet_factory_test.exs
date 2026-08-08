@@ -8,6 +8,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
 
+  describe "build_guard_packet/2" do
+    test "publishes a zero-damage normal hit so the blocked swing still lands" do
+      attacker = CombatTestHelper.create_mob_combatant(unit_id: 44)
+      defender = CombatTestHelper.create_player_combatant(attack_delay_ms: 500)
+
+      assert %DamageDealt{src_id: 44, damage: 0, damage2: 0, div: 1, type: 0} =
+               PacketFactory.build_guard_packet(attacker, defender)
+    end
+  end
+
   describe "build_weapon_swing_packet/3" do
     test "publishes one settled primary component" do
       attacker = CombatTestHelper.create_player_combatant(attack_delay_ms: 500)

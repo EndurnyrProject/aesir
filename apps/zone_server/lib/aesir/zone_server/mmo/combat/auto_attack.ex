@@ -164,7 +164,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           target_id
         )
 
-      {:intercept, _result} ->
+      {:intercept, result} ->
+        broadcast_guard_feedback(result, attacker, target)
         :intercepted
     end
   end
@@ -399,7 +400,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   defp resolve_mob_attack_or_intercept(attacker, target, target_pid, target_type, target_id) do
     case before_weapon_hit(:mob, attacker, target, target_type, target_id, @mob_root_level) do
-      {:intercept, _result} ->
+      {:intercept, result} ->
+        broadcast_guard_feedback(result, attacker, target)
         :intercepted
 
       :continue ->
@@ -467,6 +469,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     :ok
   end
+
+  # A shield block (Guard) lands as a zero-damage hit, so the attacker's client
+  # still sees the swing connect. Other interceptions (Auto Counter, Blade Stop)
+  # own their own feedback and stay silent here.
+  defp broadcast_guard_feedback(:blocked, attacker, target) do
+    DamageApplication.broadcast_nearby(target, PacketFactory.build_guard_packet(attacker, target))
+  end
+
+  defp broadcast_guard_feedback(_result, _attacker, _target), do: :ok
 
   defp before_weapon_hit(
          _attacker_type,

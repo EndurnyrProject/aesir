@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.DamageDealt
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.SkillCast
   alias Aesir.Repo
@@ -197,12 +198,21 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
       assert StatusStorage.has_status?(:player, crusader.character.id, :sc_autoguard)
 
       crusader_hp = current_hp(crusader.pid)
+      flush_packets()
 
       :rand.seed(:exsss, @block_seed)
       assert :intercepted = Combat.execute_mob_attack(mob_state(mob), crusader.character.id)
 
       assert current_hp(crusader.pid) == crusader_hp
       assert StatusStorage.has_status?(:player, crusader.character.id, :sc_autoguard)
+
+      # The blocked swing still broadcasts a zero-damage "guarded" hit so the
+      # attacker sees the swing land for 0.
+      assert_packet_sent_with(DamageDealt, fn packet ->
+        assert packet.src_id == mob.unit_id
+        assert packet.target_id == crusader.character.id
+        assert packet.damage == 0
+      end)
     end
   end
 
