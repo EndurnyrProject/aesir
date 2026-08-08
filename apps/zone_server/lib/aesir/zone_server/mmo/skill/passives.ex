@@ -404,6 +404,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   def shop_discount_pct(_), do: 0
 
   @doc """
+  Returns the highest hidden movement speed rate from learned passives.
+  """
+  @spec hidden_move_speed(PlayerState.t() | PlayerStats.t() | term()) :: non_neg_integer()
+  def hidden_move_speed(%PlayerState{stats: stats}), do: hidden_move_speed(stats)
+
+  def hidden_move_speed(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, rate ->
+      max(rate, module.hidden_move_speed(level, ctx))
+    end)
+  end
+
+  def hidden_move_speed(_), do: 0
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance` and

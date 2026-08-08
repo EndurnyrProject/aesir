@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
 
   alias Aesir.Commons.StatusParams
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -126,7 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   def walk_speed_for(stats) do
     speed_delta =
       Stats.get_status_modifier(stats, :movement_speed) -
-        Stats.get_equipment_modifier(stats, :movement_speed)
+        Stats.get_equipment_modifier(stats, :movement_speed) + hiding_speed_penalty(stats)
 
     speed_rate = max(100 + speed_delta, @min_speed_rate)
 
@@ -138,5 +139,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
       |> min(@max_walk_speed)
 
     Map.get(stats.modifiers.status_effects, :walk_speed_override, calculated_walk_speed)
+  end
+
+  defp hiding_speed_penalty(stats) do
+    if Stats.get_status_flag(stats, :hiding), do: Passives.hidden_move_speed(stats), else: 0
   end
 end

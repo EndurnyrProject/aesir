@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.LexAeterna
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -657,6 +659,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   Returns whether a unit may move, i.e. carries no `prevents_movement` status.
   """
   @spec can_move?(unit_type(), integer()) :: boolean()
+  def can_move?(:player, unit_id) do
+    not restricted?(:player, unit_id, fn
+      :sc_hiding -> not tunnel_drive?(unit_id)
+      status_id -> prevents_movement?(status_id)
+    end)
+  end
+
   def can_move?(unit_type, unit_id),
     do: not restricted?(unit_type, unit_id, &prevents_movement?/1)
 
@@ -732,6 +741,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec concealed?(unit_type(), integer()) :: boolean()
   def concealed?(unit_type, unit_id),
     do: restricted?(unit_type, unit_id, &PropertyChecker.has_property?(&1, :conceals))
+
+  defp tunnel_drive?(unit_id) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {PlayerState, player, _pid}} -> Passives.hidden_move_speed(player) > 0
+      _ -> false
+    end
+  end
 
   defp restricted?(unit_type, unit_id, pred) do
     unit_type

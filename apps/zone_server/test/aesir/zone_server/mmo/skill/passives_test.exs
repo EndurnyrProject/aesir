@@ -178,6 +178,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def shop_discount_pct(level, _ctx), do: 5 * level
   end
 
+  defmodule HiddenMoveSpeedPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_012,
+      name: :test_hidden_move_speed_passive,
+      display_name: "Test Hidden Move Speed Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def hidden_move_speed(level, _ctx), do: 100 * level
+  end
+
   defmodule AfterNormalHitPassive do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.Skill,
@@ -533,6 +550,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert Passives.shop_discount_pct(player) == 0
       assert Passives.shop_discount_pct(player.stats) == 0
       assert Passives.shop_discount_pct(:mob) == 0
+    end
+  end
+
+  describe "hidden_move_speed/1" do
+    test "keeps the highest speed penalty from learned passive contributions" do
+      stub(Catalog, :by_id, fn
+        9_900_012 -> {:ok, HiddenMoveSpeedPassive.definition()}
+        213 -> {:ok, Aesir.ZoneServer.Mmo.Skills.Rogue.RgTunneldrive.definition()}
+      end)
+
+      stub(Catalog, :passive_module_for, fn
+        :test_hidden_move_speed_passive -> {:ok, HiddenMoveSpeedPassive}
+        :rg_tunneldrive -> {:ok, Aesir.ZoneServer.Mmo.Skills.Rogue.RgTunneldrive}
+      end)
+
+      player = build_player(%{9_900_012 => 1, 213 => 5}, :one_handed_sword)
+
+      assert Passives.hidden_move_speed(player) == 100
+      assert Passives.hidden_move_speed(player.stats) == 100
+      assert Passives.hidden_move_speed(:mob) == 0
     end
   end
 

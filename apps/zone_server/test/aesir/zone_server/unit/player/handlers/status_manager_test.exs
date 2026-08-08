@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ParamChange
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -117,6 +118,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
 
       assert applied.game_state.walk_speed == 181
       assert_receive {:send, :gameplay, {:param_change, %ParamChange{var_id: 0, value: 181}}}
+    end
+  end
+
+  describe "hiding movement" do
+    test "Tunnel Drive allows hiding movement at its speed penalty", %{state: state} do
+      game_state =
+        put_in(
+          state.game_state,
+          [Access.key!(:stats), Access.key!(:progression), Access.key!(:learned_skills)],
+          %{213 => 5}
+        )
+
+      :ok = UnitRegistry.register_player(game_state, self())
+
+      {:reply, :ok, hidden} =
+        StatusManager.handle_apply_status(:sc_hiding, [], %{state | game_state: game_state})
+
+      assert hidden.game_state.walk_speed == 285
+      assert Interpreter.can_move?(:player, game_state.character_id)
+    end
+
+    test "hiding roots a player without Tunnel Drive", %{state: state} do
+      :ok = UnitRegistry.register_player(state.game_state, self())
+
+      {:reply, :ok, hidden} = StatusManager.handle_apply_status(:sc_hiding, [], state)
+
+      assert hidden.game_state.walk_speed == 150
+      refute Interpreter.can_move?(:player, state.game_state.character_id)
     end
   end
 

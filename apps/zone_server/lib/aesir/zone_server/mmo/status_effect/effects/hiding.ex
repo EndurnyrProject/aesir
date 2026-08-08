@@ -3,14 +3,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hiding do
   Hiding (SC_HIDING).
 
   Conceals the character underground. Broken by taking damage. Movement while
-  hidden requires Tunnel Drive, which the skill system does not provide yet.
+  hidden requires Tunnel Drive.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_hiding,
     no_dispel: true,
-    properties: [:buff, :conceals],
+    properties: [:buff, :conceals, :prevents_movement],
     calc_flags: [:speed],
-    flags: [:hide, :no_pick_item, :no_consume_item, :stop_attacking],
+    flags: [:hide, :no_move, :no_pick_item, :no_consume_item, :stop_attacking],
     end_on_start: [:sc_closeconfine, :sc_closeconfine2],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
@@ -18,6 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hiding do
     option: :hide
 
   import Aesir.ZoneServer.Mmo.StatusEffect.Helpers
+
+  @impl true
+  def modifiers(_instance, _context), do: %{hiding: true}
 
   @impl true
   def on_apply(_target, instance, _context) do
