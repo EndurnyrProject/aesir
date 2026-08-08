@@ -367,6 +367,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   end
 
   @doc """
+  Returns the highest normal-hit item-steal chance contributed by learned passives.
+  """
+  @spec steal_proc(PlayerState.t() | PlayerStats.t()) :: non_neg_integer()
+  def steal_proc(%PlayerState{stats: stats}), do: steal_proc(stats)
+
+  def steal_proc(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      max(acc, Map.get(module.steal_proc(level, ctx), :chance_permille, 0))
+    end)
+  end
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance` and

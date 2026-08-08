@@ -77,6 +77,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns the zeny cost reduction percentage contributed by this passive."
   @callback zeny_cost_reduction(level :: pos_integer(), ctx()) :: non_neg_integer()
 
+  @doc "Returns the normal-hit item-steal chance contributed by this passive."
+  @callback steal_proc(level :: pos_integer(), ctx :: map()) :: %{
+              optional(:chance_permille) => non_neg_integer()
+            }
+
   @doc """
   Returns the procs this passive triggers on a normal attack at the given level.
 
@@ -159,6 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       max_hp_bonus: 2,
                       max_sp_rate_bonus: 2,
                       zeny_cost_reduction: 2,
+                      steal_proc: 2,
                       attack_proc: 2,
                       attack_replacement: 2,
                       after_normal_hit: 2,

@@ -110,6 +110,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def max_weight_bonus(level, _ctx), do: 2000 * level
   end
 
+  defmodule StealProcPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_008,
+      name: :test_steal_proc_passive,
+      display_name: "Test Steal Proc Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def steal_proc(level, _ctx), do: %{chance_permille: 50 * level}
+  end
+
+  defmodule HigherStealProcPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_009,
+      name: :test_higher_steal_proc_passive,
+      display_name: "Test Higher Steal Proc Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def steal_proc(level, _ctx), do: %{chance_permille: 100 * level}
+  end
+
   defmodule AfterNormalHitPassive do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.Skill,
@@ -412,6 +446,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
 
       assert Passives.attack_procs(player) == %{multi_hit: 2, chance: 49, hit_bonus: 7}
       assert Passives.hit_bonus(player) == 0
+    end
+  end
+
+  describe "steal_proc/1" do
+    test "keeps the highest chance from learned passive contributions" do
+      stub(Catalog, :by_id, fn
+        9_900_008 -> {:ok, StealProcPassive.definition()}
+        9_900_009 -> {:ok, HigherStealProcPassive.definition()}
+      end)
+
+      stub(Catalog, :passive_module_for, fn
+        :test_steal_proc_passive -> {:ok, StealProcPassive}
+        :test_higher_steal_proc_passive -> {:ok, HigherStealProcPassive}
+      end)
+
+      player = build_player(%{9_900_008 => 5, 9_900_009 => 3}, :one_handed_sword)
+
+      assert Passives.steal_proc(player) == 300
+      assert Passives.steal_proc(player.stats) == 300
+    end
+
+    test "returns 0 when no passive contributes" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.steal_proc(player) == 0
+      assert Passives.steal_proc(player.stats) == 0
     end
   end
 
