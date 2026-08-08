@@ -204,7 +204,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Hunter.Trap,
       Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,
       Aesir.ZoneServer.Mmo.Skills.Npc.StatusStrike,
-      Aesir.ZoneServer.Mmo.Skills.Shared.Envenom
+      Aesir.ZoneServer.Mmo.Skills.Shared.Envenom,
+      Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable
     ]
 
     test "every module under mmo/skills/ is either discovered or a declared helper" do

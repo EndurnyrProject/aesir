@@ -41,7 +41,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
                vars: %{"sphmask_q" => 1},
                temp_vars: %{},
                zeny: 5_000,
-               last_song: nil
+               last_song: nil,
+               plagiarized: nil
              } = PlayerState.new(character)
     end
 
