@@ -56,6 +56,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.TrickDeadTest do
     test "exempts NV_TRICKDEAD from its own skill prevention" do
       assert TrickDead.metadata().allow_skills == [143]
     end
+
+    test "is cleared by a cross-map warp" do
+      assert TrickDead.metadata().remove_on_map_change
+    end
   end
 
   describe "apply / toggle" do

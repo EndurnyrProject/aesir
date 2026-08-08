@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Hiding do
     end_on_start: [:sc_closeconfine, :sc_closeconfine2],
     prevented_by: [:sc_refresh, :sc_inspiration],
     no_save: true,
+    remove_on_map_change: true,
     icon: :hiding,
     option: :hide
 
