@@ -6,5 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripWeapon do
     metadata: %{strip_slot: :right_hand},
     no_dispel: false,
     properties: [:debuff],
+    bypass_resistance: true,
     icon: :noequipweapon
 end

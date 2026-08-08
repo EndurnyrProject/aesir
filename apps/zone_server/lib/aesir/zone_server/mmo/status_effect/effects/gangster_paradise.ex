@@ -3,5 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.GangsterParadise do
     id: :sc_gangsterparadise,
     icon: nil,
     no_dispel: false,
-    no_save: true
+    no_save: true,
+    bypass_resistance: true
 end

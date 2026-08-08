@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripHelm do
     metadata: %{strip_slot: :head_top},
     no_dispel: false,
     properties: [:debuff],
+    bypass_resistance: true,
     calc_flags: [:int],
     icon: :noequiphelm
 

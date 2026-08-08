@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StripArmor do
     metadata: %{strip_slot: :armor},
     no_dispel: false,
     properties: [:debuff],
+    bypass_resistance: true,
     calc_flags: [:vit],
     icon: :noequiparmor
 
