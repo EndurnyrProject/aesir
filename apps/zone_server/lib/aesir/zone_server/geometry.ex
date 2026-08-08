@@ -52,6 +52,27 @@ defmodule Aesir.ZoneServer.Geometry do
   end
 
   @doc """
+  Reports whether `attacker` is within the target's three-direction rear arc.
+
+  The approach direction is calculated from the target to the attacker, then
+  compared with the direction opposite the target's facing. The rear arc
+  includes the directly opposite direction and its adjacent diagonals.
+  """
+  @spec behind?(
+          %{required(:x) => integer(), required(:y) => integer()},
+          %{required(:x) => integer(), required(:y) => integer(), required(:dir) => 0..7}
+        ) :: boolean()
+  def behind?(
+        %{x: attacker_x, y: attacker_y},
+        %{x: target_x, y: target_y, dir: target_dir}
+      ) do
+    approach_direction = calculate_direction(target_x, target_y, attacker_x, attacker_y)
+    rear_direction = rem(target_dir + 4, 8)
+
+    direction_difference(approach_direction, rear_direction) <= 1
+  end
+
+  @doc """
   Calculates Manhattan distance between two points.
   Useful for grid-based movement.
   """

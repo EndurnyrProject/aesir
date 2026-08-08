@@ -74,6 +74,38 @@ defmodule Aesir.ZoneServer.GeometryTest do
     end
   end
 
+  describe "behind?/2" do
+    test "identifies rear, front, and side positions for every target facing" do
+      target = fn dir -> %{x: 10, y: 10, dir: dir} end
+
+      for {dir, rear, front, left_side, right_side} <- [
+            {0, {10, 11}, {10, 9}, {9, 10}, {11, 10}},
+            {1, {11, 11}, {9, 9}, {9, 11}, {11, 9}},
+            {2, {11, 10}, {9, 10}, {10, 11}, {10, 9}},
+            {3, {11, 9}, {9, 11}, {11, 11}, {9, 9}},
+            {4, {10, 9}, {10, 11}, {11, 10}, {9, 10}},
+            {5, {9, 9}, {11, 11}, {11, 9}, {9, 11}},
+            {6, {9, 10}, {11, 10}, {10, 9}, {10, 11}},
+            {7, {9, 11}, {11, 9}, {9, 9}, {11, 11}}
+          ] do
+        assert Geometry.behind?(position(rear), target.(dir))
+        refute Geometry.behind?(position(front), target.(dir))
+        refute Geometry.behind?(position(left_side), target.(dir))
+        refute Geometry.behind?(position(right_side), target.(dir))
+      end
+    end
+
+    test "includes the diagonals adjacent to directly behind" do
+      target = %{x: 10, y: 10, dir: 4}
+
+      assert Geometry.behind?(position({10, 9}), target)
+      assert Geometry.behind?(position({9, 9}), target)
+      assert Geometry.behind?(position({11, 9}), target)
+    end
+
+    defp position({x, y}), do: %{x: x, y: y}
+  end
+
   describe "line_cells/4" do
     test "walks a horizontal line inclusive of both endpoints" do
       assert Geometry.line_cells(0, 0, 4, 0) == [{0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}]
