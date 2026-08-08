@@ -707,6 +707,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
       assert :continue = Interpreter.before_weapon_hit(:player, target_id, attack_info)
     end
+
+    test "resolves interception in explicit priority order, not storage order" do
+      alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.AutoCounter
+      alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard
+
+      target_id = 7_704
+      setup_player_mock(target_id)
+      Registry.register_module(Autoguard)
+      Registry.register_module(AutoCounter)
+      Mimic.copy(Autoguard)
+      Mimic.copy(AutoCounter)
+
+      # Apply Autoguard first so raw storage-iteration order would let it win;
+      # the explicit precedence must still pick the higher-priority Auto Counter.
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_autoguard)
+      :ok = StatusStorage.apply_status(:player, target_id, :sc_auto_counter)
+
+      stub(Autoguard, :before_weapon_hit, fn _t, _i, _a, _c -> {:intercept, :blocked} end)
+      stub(AutoCounter, :before_weapon_hit, fn _t, _i, _a, _c -> {:intercept, :auto_counter} end)
+
+      attack_info = %{attacker: {:mob, 44}, target: {:player, target_id}}
+
+      assert {:intercept, :auto_counter} =
+               Interpreter.before_weapon_hit(:player, target_id, attack_info)
+    end
   end
 
   test "Lex Aeterna atomically grants its double to one of two concurrent hits" do

@@ -1233,16 +1233,36 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   defp dispatch_damage(unit_type, unit_id, instance, damage_info),
     do: dispatch_hook(:on_damage, unit_type, unit_id, instance, damage_info)
 
+  # Explicit precedence for the statuses that can intercept an incoming weapon
+  # hit, so the winner is deterministic rather than defined by storage iteration
+  # order. Definitive reactions resolve before the chance-based block: a caught
+  # blade halts the exchange, then a qualifying melee counter, then a qualifying
+  # poison-attack counter, and finally the probabilistic shield block - so a
+  # guaranteed reaction is never pre-empted by a chance roll. Any interceptor not
+  # listed here sorts last, preserving today's behaviour until it is placed.
+  @weapon_hit_interception_order [
+    :sc_bladestop_wait,
+    :sc_auto_counter,
+    :sc_poisonreact,
+    :sc_autoguard
+  ]
+
   defp find_weapon_hit_interception(unit_type, unit_id, implementing, attack_info) do
     unit_type
     |> StatusStorage.get_unit_statuses(unit_id)
     |> Enum.filter(&MapSet.member?(implementing, &1.type))
+    |> Enum.sort_by(&weapon_hit_interception_priority(&1.type))
     |> Enum.find_value(:continue, fn instance ->
       case dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
         :continue -> nil
         {:intercept, _result} = interception -> interception
       end
     end)
+  end
+
+  defp weapon_hit_interception_priority(status_id) do
+    Enum.find_index(@weapon_hit_interception_order, &(&1 == status_id)) ||
+      length(@weapon_hit_interception_order)
   end
 
   defp dispatch_before_weapon_hit(unit_type, unit_id, instance, attack_info) do
