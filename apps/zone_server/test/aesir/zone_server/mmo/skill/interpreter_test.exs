@@ -342,6 +342,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
              Interpreter.cast(game_state(100, %{}), 29, 1, :self)
   end
 
+  test "a copied skill casts at its recorded level" do
+    definition = %Definition{
+      id: 6,
+      name: :sm_provoke,
+      display_name: "Copied Skill",
+      max_level: 2,
+      target_type: :self,
+      sp_cost: [0, 0],
+      cast_time: [0, 0]
+    }
+
+    stub(Catalog, :by_id, fn 6 -> {:ok, definition} end)
+
+    stub(SmProvoke, :cast, fn caster, :self, level, _definition ->
+      send(self(), {:copied_skill_cast, level})
+      {:ok, caster}
+    end)
+
+    state = %{game_state(100, %{}) | plagiarized: %{skill_id: 6, level: 2}}
+
+    assert {:ok, _updated} = Interpreter.cast(state, 6, 2, :self)
+    assert_received {:copied_skill_cast, 2}
+  end
+
   test "casting above learned level returns :skill_not_learned" do
     assert {:error, :skill_not_learned} =
              Interpreter.cast(game_state(100, %{29 => 1}), 29, 5, :self)

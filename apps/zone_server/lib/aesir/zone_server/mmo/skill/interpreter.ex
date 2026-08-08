@@ -629,7 +629,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
          :ok <- check_max_level(definition, level),
          :ok <- check_castable(definition),
          :ok <- check_weapon(caster, definition),
-         :ok <- :erlang.apply(adapter, :knows?, [caster, definition, level, :begin]),
+         :ok <- check_learned(caster, adapter, definition, level, :begin),
          :ok <- check_target(caster, target, definition),
          :ok <- check_range(caster, target, definition, level),
          {:ok, _module} <- fetch_active_module(definition),
@@ -873,6 +873,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       :error -> {:error, :no_behavior}
     end
   end
+
+  defp check_learned(
+         %PlayerState{plagiarized: %{skill_id: skill_id, level: learned_level}},
+         _adapter,
+         %{id: skill_id},
+         level,
+         :begin
+       )
+       when learned_level >= level,
+       do: :ok
+
+  defp check_learned(caster, adapter, definition, level, phase),
+    do: :erlang.apply(adapter, :knows?, [caster, definition, level, phase])
 
   defp check_learned(game_state, skill_id, level) do
     learned = game_state.stats.progression.learned_skills
