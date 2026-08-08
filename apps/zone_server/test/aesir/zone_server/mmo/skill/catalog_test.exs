@@ -147,6 +147,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     end
   end
 
+  describe "sp_cost_at/2" do
+    test "reads the cost directly for a level within the defined range" do
+      assert Catalog.sp_cost_at([12, 14, 16, 18, 20, 22, 24, 26, 28, 30], 10) == 30
+      assert Catalog.sp_cost_at([12, 14, 16, 18, 20, 22, 24, 26, 28, 30], 1) == 12
+    end
+
+    test "extrapolates the linear trend past the defined range for high mob levels" do
+      # Fire Bolt's list (last three 26, 28, 30) at level 48: 30 + 39 + 38 = 107.
+      firebolt = [12, 14, 16, 18, 20, 22, 24, 26, 28, 30]
+      assert Catalog.sp_cost_at(firebolt, 48) == 107
+
+      # A decreasing table extrapolates downward from its last three entries.
+      # Frost Diver (last three 18, 17, 16) at level 13: 16 + div(4*-1,2) +
+      # div(3*-1,2) = 16 - 2 - 1 = 13.
+      frostdiver = [25, 24, 23, 22, 21, 20, 19, 18, 17, 16]
+      assert Catalog.sp_cost_at(frostdiver, 13) == 13
+    end
+
+    test "clamps to the last value when the list is too short to project a trend" do
+      assert Catalog.sp_cost_at([10], 5) == 10
+      assert Catalog.sp_cost_at([10, 12], 5) == 12
+    end
+
+    test "an :all-priced level resolves to 0 rather than crashing" do
+      assert Catalog.sp_cost_at([:all], 1) == 0
+    end
+  end
+
   describe "core Wizard skills" do
     test "reload/0 registers staged skills by id, name, and active or ground capability" do
       assert :ok = Catalog.reload()

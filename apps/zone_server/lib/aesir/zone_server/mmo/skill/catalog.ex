@@ -87,6 +87,37 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   def replayable?(id), do: performance?(id) or ensemble?(id)
 
   @doc """
+  The SP cost for `level` from a skill's `sp_cost` list, extrapolating past the
+  defined level range instead of clamping.
+
+  Mob skill rows routinely cast a skill above its player max level (e.g. Fire
+  Bolt at level 48). Rather than yielding the top-of-list value, the last three
+  entries project the linear trend for the requested level, matching how the
+  reference engine derives high-level costs (Fire Bolt at 48 resolves to ~107
+  rather than the level-10 30). Levels within range read directly. A list too
+  short to project (fewer than three entries), a non-positive final entry, or an
+  `:all`-priced level clamps to the nearest defined value; `:all` resolves to 0
+  since it depends on live SP the caller must supply.
+  """
+  @spec sp_cost_at([non_neg_integer() | :all], pos_integer()) :: non_neg_integer()
+  def sp_cost_at(sp_cost, level) when is_list(sp_cost) and level > 0 do
+    cap = length(sp_cost)
+    idx = min(level, cap) - 1
+
+    with true <- level > cap and idx > 1,
+         [a, b, c] when is_integer(a) and is_integer(b) and is_integer(c) and c > 1 <-
+           Enum.slice(sp_cost, (idx - 2)..idx) do
+      c + div((level - cap + 1) * (b - a), 2) + div((level - cap) * (c - b), 2)
+    else
+      _ -> clamp_sp_cost(Enum.at(sp_cost, idx, 0))
+    end
+  end
+
+  defp clamp_sp_cost(:all), do: 0
+  defp clamp_sp_cost(value) when is_integer(value), do: value
+  defp clamp_sp_cost(_), do: 0
+
+  @doc """
   Rebuilds the cached index after adding or editing skills in a running session.
   """
   @spec reload() :: :ok

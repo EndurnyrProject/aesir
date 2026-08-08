@@ -9,8 +9,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementField do
   (`src/map/skill.cpp:5883-5907`); `Skill.Unit.Manager` reproduces that from the
   `exclusive_family` lifecycle policy, so the family name lives here once.
 
-  Only the trio sets `inherit_family_duration`: a swap between them carries the
-  old field's *remaining* duration, so recasting never refreshes it.
+  Only the trio sets `inherit_family_duration`, marking themselves as fields
+  whose *remaining* duration is inherited by whatever replaces them: a swap
+  between the trio never refreshes, and a Land Protector placed over one takes
+  over its remaining time. Land Protector itself does not opt in, so an element
+  field placed over an existing Land Protector gets a fresh duration.
   """
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout

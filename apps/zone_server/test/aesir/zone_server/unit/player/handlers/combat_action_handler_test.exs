@@ -1188,4 +1188,110 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
       refute_received {:send, :gameplay, {:move_stop, _}}
     end
   end
+
+  # Free Cast lets its owner attack with a cast in flight (the cast becomes an
+  # overlay) and through the after-cast act delay. A caster without Free Cast
+  # stays blocked while casting.
+  describe "Free Cast attack overlays" do
+    alias Aesir.ZoneServer.Unit.Broadcast
+
+    @freecast_id 278
+
+    defp freecast_attack_state(extra) do
+      progression = %PlayerProgression{learned_skills: Map.get(extra, :learned_skills, %{})}
+
+      game_state =
+        %PlayerState{
+          character_id: 1000,
+          x: 21,
+          y: 20,
+          map_name: "prontera",
+          view_range: 14,
+          action_state: :idle,
+          movement_state: :standing,
+          walk_path: [],
+          last_attack_timestamp: 0,
+          act_delay_until: 0,
+          combat_action_type: 7,
+          combat_target_id: 2000,
+          stats: %{
+            derived_stats: %{aspd: 150},
+            equipment: %Equipment{},
+            progression: progression
+          }
+        }
+        |> Map.merge(Map.new(Map.drop(extra, [:learned_skills])))
+
+      %{game_state: game_state, connection_pid: self()}
+    end
+
+    defp stub_in_range_swing do
+      stub(Stats, :weapon_type, fn _equipment -> :fist end)
+
+      stub(SpatialIndex, :get_unit_position, fn
+        :player, 2000 -> {:error, :not_found}
+        :mob, 2000 -> {:ok, {20, 20, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet, _opts -> :ok end)
+
+      stub(Combat, :execute_attack, fn _stats, game_state, 2000, _recalculate ->
+        {:ok, game_state}
+      end)
+    end
+
+    test "a standing Free Caster swings mid-cast and keeps the cast running" do
+      stub_in_range_swing()
+
+      state =
+        freecast_attack_state(%{
+          action_state: :casting,
+          casting: %{token: make_ref(), skill_id: 29, skill_level: 1},
+          learned_skills: %{@freecast_id => 5}
+        })
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+
+      assert returned.game_state.action_state == :attacking
+      refute returned.game_state.casting == nil
+    end
+
+    test "a standing caster without Free Cast cannot swing mid-cast" do
+      stub_in_range_swing()
+      reject(&Combat.execute_attack/4)
+
+      cast = %{token: make_ref(), skill_id: 29, skill_level: 1}
+      state = freecast_attack_state(%{action_state: :casting, casting: cast})
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+
+      assert returned.game_state.action_state == :casting
+      assert returned.game_state.casting == cast
+    end
+
+    test "Free Cast lets its owner attack through the after-cast act delay" do
+      stub_in_range_swing()
+      future = System.monotonic_time(:millisecond) + 60_000
+
+      state =
+        freecast_attack_state(%{
+          act_delay_until: future,
+          learned_skills: %{@freecast_id => 5}
+        })
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+      assert returned.game_state.action_state == :attacking
+    end
+
+    test "a caster without Free Cast is still blocked by the after-cast act delay" do
+      reject(&Combat.execute_attack/4)
+      future = System.monotonic_time(:millisecond) + 60_000
+
+      state = freecast_attack_state(%{act_delay_until: future})
+
+      assert {:noreply, returned} = CombatActionHandler.handle_attack_request(state, 2000, 7)
+      assert returned.game_state.action_state == :idle
+    end
+  end
 end

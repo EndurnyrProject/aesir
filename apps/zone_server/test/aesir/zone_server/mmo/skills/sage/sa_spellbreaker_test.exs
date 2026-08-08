@@ -184,14 +184,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       assert caster.stats.current_state.sp == 100
     end
 
-    test "zaps nothing when the mob casts above the skill's max level" do
-      # Mob rows really do exceed the player table: AL_DECAGI lv 48, MG_FIREBALL lv 43.
-      overlevelled = %{skill: "MG_FIREBALL", skill_id: 17, level: 43}
+    test "extrapolates the SP cost when the mob casts above the skill's max level" do
+      # Mob rows really do exceed the player table (AL_DECAGI lv 48). The SP cost
+      # projects past the level-10 table from its last three entries
+      # (29, 31, 33) rather than clamping: 33 + 39 + 38 = 110.
+      overlevelled = %{skill: "AL_DECAGI", skill_id: 30, level: 48}
       stub_mob(mob_state(casting: %{row: overlevelled}))
       stub(MobSession, :interrupt_cast, fn _pid -> {:ok, overlevelled} end)
 
-      assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil)
-      assert_received {:zapped_sp, 0}
+      assert {:ok, _caster} = SaSpellbreaker.cast(caster(100, 500), {:unit, @target_id}, 5, nil)
+      assert_received {:zapped_sp, 110}
     end
   end
 

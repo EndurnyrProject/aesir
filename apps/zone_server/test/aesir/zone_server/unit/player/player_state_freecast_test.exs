@@ -77,14 +77,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateFreecastTest do
   end
 
   describe "attacking while casting" do
-    # Architecture 5.4 reaches `attacking_while_casting` only from
-    # `moving_while_casting`: the cast stops owning `action_state` when the
-    # caster walks, and that is what frees the attack. A standing cast still owns
-    # it, so it still blocks attacking — for Free Cast knowers too.
-    test "a standing cast blocks attacking, whoever the caster is",
-         %{casting_state: casting_state} do
-      assert PlayerState.transition_to(casting_state, :attacking, %{}) ==
-               {:error, :invalid_transition}
+    # `:attacking` is an overlay edge like `:moving`: the state machine permits
+    # `:casting -> :attacking` and keeps the cast in flight, whether the caster
+    # was standing or already walking. The Free Cast gate (only a Free Caster may
+    # swing mid-cast) lives in `CombatActionHandler`, not the state machine.
+    test "a standing cast permits the attacking overlay and keeps the cast",
+         %{casting_state: casting_state, context: context} do
+      assert {:ok, %{action_state: :attacking} = attacking} =
+               PlayerState.transition_to(casting_state, :attacking, %{})
+
+      assert attacking.casting == context
     end
 
     test "a cast overlaid on a walker does not block attacking",

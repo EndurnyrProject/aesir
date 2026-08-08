@@ -24,4 +24,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecastTest do
       assert SaFreecast.speed_rate(10) == 125
     end
   end
+
+  describe "amotion_rate/1" do
+    test "is rAthena's renewal 5 * (lv + 10), faster below level 10 and neutral at 10" do
+      assert SaFreecast.amotion_rate(1) == 55
+      assert SaFreecast.amotion_rate(5) == 75
+      assert SaFreecast.amotion_rate(10) == 100
+    end
+  end
 end

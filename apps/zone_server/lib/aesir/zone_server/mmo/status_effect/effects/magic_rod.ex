@@ -63,11 +63,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MagicRod do
   def absorb_damage(_target, instance, %{damage: damage}, _context), do: {:ok, damage, instance}
 
   # A skill absent from the catalog cannot have been cast; it contributes no SP,
-  # but the hit is still absorbed.
+  # but the hit is still absorbed. A mob casting above the skill's player max
+  # level (its rows routinely do) extrapolates rather than clamping, via the
+  # shared catalog accessor.
   @spec spell_sp_cost(integer(), integer()) :: non_neg_integer()
   defp spell_sp_cost(skill_id, skill_level) do
     case Catalog.by_id(skill_id) do
-      {:ok, %{sp_cost: sp_cost}} -> Enum.at(sp_cost, skill_level - 1, 0)
+      {:ok, %{sp_cost: sp_cost}} -> Catalog.sp_cost_at(sp_cost, skill_level)
       :error -> 0
     end
   end

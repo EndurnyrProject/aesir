@@ -12,18 +12,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast do
 
   ## Attacking while casting
 
-  Attacking falls out of the same move: a cast owns `action_state` only while the
-  caster stands still, and `:casting` permits no transition to `:attacking`. Once
-  Free Cast moves the caster to `:moving`, the cast is a mere overlay and the
-  existing `:moving -> :attacking` edge lets the auto-attack loop run alongside it
-  (rAthena `unit.cpp:3230`). A caster without Free Cast never leaves `:casting`
-  with a cast in flight, so attacking stays blocked for them with no extra gate.
+  A Free Caster may attack with a cast in flight, standing or moving (rAthena
+  `unit.cpp:3230`). The cast is an overlay on either action state: `:casting`
+  now permits `:casting -> :attacking` and `CombatActionHandler` takes it only
+  for a caster who knows Free Cast, keeping the `casting` descriptor across the
+  transition so the cast keeps running; a moving caster is already in `:moving`
+  and uses the existing `:moving -> :attacking` edge. A caster without Free Cast
+  stays blocked — `CombatActionHandler` refuses the swing while in `:casting`.
 
-  This matches the architecture's state diagram, which reaches
-  `attacking_while_casting` only from `moving_while_casting`. It is narrower than
-  rAthena, where a *standing* Free Caster may also attack; that gap and the
-  `unit.cpp:3233` after-cast-delay bypass (Aesir gates attacks on `act_ready?`,
-  and Free Cast does not currently bypass it) are left for a fidelity pass.
+  Free Cast also lifts the after-cast act delay for its owner's attacks (rAthena
+  `unit.cpp:3233`, a second Free Cast gate): `CombatActionHandler` treats
+  `act_ready?` as satisfied whenever Free Cast is known.
 
   ## Walk speed
 
@@ -35,23 +34,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast do
   of use in the step scheduler rather than folded into `walk_speed`. No stat
   recalculation is triggered when a cast starts or ends.
 
-  ## Accepted deviation: no ASPD modification during cast
+  ## Attack motion during cast
 
-  rAthena additionally rescales attack motion while casting
-  (`status.cpp:6398-6400`):
-
-      #ifdef RENEWAL_ASPD
-        amotion = amotion * 5 * (skill_lv + 10) / 100;
-      #else
-        amotion += (2000 - amotion) * (55 - 5 * (skill_lv + 1)) / 100;
-      #endif
-
-  The two branches disagree in direction. Pre-renewal raises `amotion`, slowing
-  attacks — the intended cost. The renewal branch *lowers* it at every level
-  below 10: at level 1 it yields `amotion * 55 / 100`, a 45% faster attack, so
-  learning one level of Free Cast would speed up attacking while casting. That is
-  almost certainly a quirk rather than intent, so Aesir applies no ASPD
-  modification during cast. Recorded here for a future fidelity pass.
+  While a cast is in flight the attack motion is rescaled by the renewal factor
+  `amotion * 5 * (level + 10) / 100` (`status.cpp:6398-6400`), exposed as
+  `amotion_rate/1`. It is neutral (100%) at level 10 and *faster* below it — at
+  level 1 an attack takes 55% of its normal time. The direction is unintuitive
+  (the pre-renewal branch instead slows attacks), but it is the renewal formula,
+  applied at the point of use in `CombatActionHandler.compute_attack_delay/1`
+  and scoped to the cast just like the walk penalty.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 278,
@@ -85,4 +76,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast do
   """
   @spec speed_rate(pos_integer()) :: pos_integer()
   def speed_rate(level) when level > 0, do: 175 - 5 * level
+
+  @doc """
+  Attack-motion percentage while a cast is in flight (rAthena renewal
+  `amotion * 5 * (level + 10) / 100`). Neutral (100) at level 10; below it the
+  attack motion shrinks — a faster swing.
+  """
+  @spec amotion_rate(pos_integer()) :: pos_integer()
+  def amotion_rate(level) when level > 0, do: 5 * (level + 10)
 end

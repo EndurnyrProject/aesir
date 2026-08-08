@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   alias Aesir.ZoneServer.Mmo.Combat.AttackPositioning
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
+  alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -125,10 +126,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     # Store the action type in game state for later use
     state = %{state | game_state: %{state.game_state | combat_action_type: action_type}}
 
-    # Check attack rate limiting and after-cast act delay
-    attack_delay = AttackSpeed.calculate_delay_from_stats(state.game_state.stats)
+    # Check attack rate limiting and after-cast act delay. Free Cast lets its
+    # owner attack through the after-cast delay (a second Free Cast gate,
+    # separate from attacking-while-casting).
+    attack_delay = compute_attack_delay(state.game_state)
     can_attack = AttackSpeed.can_attack?(state.game_state.last_attack_timestamp, attack_delay)
-    act_ready = PlayerState.act_ready?(state.game_state, AttackSpeed.current_timestamp())
+
+    act_ready =
+      PlayerState.act_ready?(state.game_state, AttackSpeed.current_timestamp()) or
+        SaFreecast.known?(state.game_state)
 
     if can_attack and act_ready do
       # Check if target is in range
@@ -259,7 +265,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   # duplicate or early auto-attack tick must not swing before the cooldown
   # elapses. When it is too soon, re-arm for the remaining delay instead.
   defp swing_or_wait(%{game_state: game_state} = state, target_id) do
-    attack_delay = AttackSpeed.calculate_delay_from_stats(game_state.stats)
+    attack_delay = compute_attack_delay(game_state)
 
     if AttackSpeed.can_attack?(game_state.last_attack_timestamp, attack_delay) do
       execute_immediate_attack(state, target_id)
@@ -380,6 +386,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp execute_immediate_attack(state, target_id) do
     prev_action_state = state.game_state.action_state
 
+    if prev_action_state == :casting and not SaFreecast.known?(state.game_state) do
+      # A cast in flight blocks attacking unless the caster knows Free Cast, which
+      # keeps the cast as an overlay and lets the swing run alongside it. A
+      # standing caster reaches here in `:casting`; a moving-overlay caster is
+      # already in `:moving`, whose edge to `:attacking` is always open.
+      {:noreply, state}
+    else
+      do_execute_immediate_attack(state, target_id, prev_action_state)
+    end
+  end
+
+  defp do_execute_immediate_attack(state, target_id, prev_action_state) do
     case PlayerState.transition_to(state.game_state, :attacking) do
       {:ok, transitioned_state} ->
         transitioned_state = anchor_swing_position(state, prev_action_state, transitioned_state)
@@ -572,11 +590,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
     end
   end
 
+  # Attack delay (amotion) in ms. While a cast is in flight a Free Caster's
+  # attack motion is rescaled by the renewal factor `5 * (lv + 10) / 100`
+  # (neutral at level 10, faster below it), applied at the point of use and
+  # scoped to the cast, exactly like the Free Cast walk penalty. No cast in
+  # flight, or no Free Cast, leaves the base ASPD delay untouched.
+  @spec compute_attack_delay(map()) :: non_neg_integer()
+  defp compute_attack_delay(game_state) do
+    game_state.stats
+    |> AttackSpeed.calculate_delay_from_stats()
+    |> apply_freecast_amotion(game_state)
+  end
+
+  defp apply_freecast_amotion(delay, %{casting: nil}), do: delay
+
+  defp apply_freecast_amotion(delay, game_state) do
+    case SaFreecast.level(game_state) do
+      0 -> delay
+      level -> div(delay * SaFreecast.amotion_rate(level), 100)
+    end
+  end
+
   # Continuous (action 7) attacks are server-driven: keep the target locked and
   # arm the next swing on ASPD cadence. The loop resumes in
   # `handle_auto_attack/2` when the timer fires.
   defp schedule_next_auto_attack(game_state, target_id, current_timestamp) do
-    attack_delay = AttackSpeed.calculate_delay_from_stats(game_state.stats)
+    attack_delay = compute_attack_delay(game_state)
     timer_ref = Process.send_after(self(), {:combat, {:auto_attack, target_id}}, attack_delay)
 
     %{

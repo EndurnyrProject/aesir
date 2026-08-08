@@ -783,9 +783,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   # Per-caster family exclusivity (rAthena skill_unitsetting,
   # src/map/skill.cpp:5883-5907): placing a member of an exclusive family clears
   # the caster's existing member first, and only the caster's - other casters'
-  # fields are untouched. A swap between two groups that both opt into
-  # inherit_family_duration carries the replaced group's *remaining* duration, so
-  # recasting never refreshes it.
+  # fields are untouched. Placing any member over a replaced group that opted
+  # into inherit_family_duration carries that group's *remaining* duration into
+  # the new one, so a recast (or a Land Protector placed over an element field)
+  # never refreshes it.
   defp apply_exclusive_family(%Group{lifecycle_policy: %{exclusive_family: nil}} = group, _now),
     do: {:ok, group}
 
@@ -876,8 +877,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.sort_by(&{&1.created_at, &1.group_id})
   end
 
+  # Keyed on the *replaced* group's policy only: whatever replaces an element
+  # field inherits its remaining duration, including Land Protector. The trio
+  # opt in (a recast never refreshes); Land Protector does not, so placing an
+  # element field over an existing Land Protector still gets a fresh duration.
   defp inherit_family_duration(
-         %Group{lifecycle_policy: %{inherit_family_duration: true}} = group,
+         %Group{} = group,
          %Group{lifecycle_policy: %{inherit_family_duration: true}, expires_at: expires_at},
          now
        )

@@ -862,10 +862,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   defp valid_from_skill_moving?(to), do: to in [:idle, :moving]
   defp valid_from_moving_to_item?(to), do: to in [:idle, :moving, :combat_moving, :attacking]
   defp valid_from_attacking?(to), do: to in [:idle, :moving, :combat_moving, :moving_to_item]
-  # `:moving` is Free Cast's overlay edge: the caster walks and the cast keeps
-  # running (see `Mmo.Skills.Sage.SaFreecast`). `MovementHandler` only takes it for a
-  # caster who knows the skill; everyone else is hard-cancelled to `:idle` first.
-  defp valid_from_casting?(to), do: to in [:idle, :moving]
+  # `:moving` and `:attacking` are Free Cast's overlay edges: the caster walks or
+  # swings and the cast keeps running (see `Mmo.Skills.Sage.SaFreecast`).
+  # `MovementHandler`/`CombatActionHandler` only take them for a caster who knows
+  # the skill; everyone else is hard-cancelled or refused first.
+  defp valid_from_casting?(to), do: to in [:idle, :moving, :attacking]
   defp valid_from_sitting?(to), do: to == :idle
   defp valid_from_trading?(to), do: to == :idle
   defp valid_from_vending?(to), do: to == :idle

@@ -214,9 +214,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
       assert FieldSupport.supported?(:mob, 200, :sc_deluge)
     end
 
-    test "Land Protector replaces the caster's element field without inheriting", %{
+    test "Land Protector inherits the replaced element field's remaining duration", %{
       manager: manager
     } do
+      # Placing Land Protector over your own element field takes over the field's
+      # remaining time (rAthena skill.cpp:5883-5902): the trio opts into
+      # inherit_family_duration, and inheritance keys on the replaced field.
       :ok = Manager.register(manager, live_group(expires_at: 10_000))
 
       :ok =
@@ -235,7 +238,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcanoTest do
         )
 
       assert Storage.get(1) == nil
-      assert %Group{expires_at: 166_000} = Storage.get(2)
+      assert %Group{expires_at: 10_000} = Storage.get(2)
+    end
+
+    test "an element field placed over an existing Land Protector gets a fresh duration", %{
+      manager: manager
+    } do
+      # Land Protector does not opt into inherit_family_duration, so it does not
+      # pass its remaining time on to a trio field that replaces it.
+      :ok =
+        Manager.register(
+          manager,
+          group(
+            group_id: 1,
+            skill_id: 288,
+            skill_name: :sa_landprotector,
+            cells: [{10, 20}],
+            center: {10, 20},
+            expires_at: 10_000,
+            visibility: :public,
+            lifecycle_policy: ElementField.policy()
+          )
+        )
+
+      :ok = Manager.register(manager, deluge_group(expires_at: 61_000))
+
+      assert Storage.get(1) == nil
+      assert %Group{expires_at: 61_000} = Storage.get(2)
     end
   end
 

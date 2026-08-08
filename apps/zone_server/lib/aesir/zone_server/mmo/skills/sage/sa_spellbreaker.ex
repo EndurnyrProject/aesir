@@ -185,12 +185,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   end
 
   # A skill absent from the catalog cannot have been cast by a player, and every
-  # mob-only `NPC_*` skill declares no SpCost; both contribute 0, as
-  # `skill_get_sp` does for them.
+  # mob-only `NPC_*` skill declares no SpCost; both contribute 0. Mob rows cast
+  # above the skill's player max level (AL_DECAGI 48, MG_FIREBALL 43), so the SP
+  # cost extrapolates past the defined table via the shared catalog accessor
+  # rather than clamping to the top level.
   @spec interrupted_sp_cost(integer(), pos_integer()) :: non_neg_integer()
   defp interrupted_sp_cost(skill_id, level) do
     case Catalog.by_id(skill_id) do
-      {:ok, %{sp_cost: sp_cost}} -> Enum.at(sp_cost, level - 1, 0)
+      {:ok, %{sp_cost: sp_cost}} -> Catalog.sp_cost_at(sp_cost, level)
       :error -> 0
     end
   end
