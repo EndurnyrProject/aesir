@@ -135,6 +135,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   end
 
   @doc """
+  Attempts to steal zeny from this mob (RG_STEALCOIN).
+
+  Runs the rate roll, zeny roll, and `coin_stolen` flip inside the mob's own
+  process so concurrent attempts cannot both succeed. Bosses and status-immune
+  mobs return `{:error, :immune}`; failed and repeated attempts return
+  `{:error, :no_coin}` without changing the state.
+  """
+  @spec attempt_mug(pid(), StealOps.mug_caster(), pos_integer()) ::
+          {:ok, pos_integer()} | {:error, StealOps.mug_reason()}
+  def attempt_mug(pid, caster_stats, skill_level) do
+    GenServer.call(pid, {:steal, {:mug, caster_stats, skill_level}})
+  end
+
+  @doc """
   Force-cancels this mob's in-flight cast and reports what was cancelled.
 
   Unconditional: it ignores the row's `cancelable` flag, mirroring rAthena's
@@ -252,6 +266,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   def handle_call({:steal, {:attempt, caster_dex, skill_level}}, _from, state) do
     case StealOps.attempt_steal(state, caster_dex, skill_level) do
       {:ok, item_id, new_state} -> {:reply, {:ok, item_id}, new_state}
+      {:error, reason} -> {:reply, {:error, reason}, state}
+    end
+  end
+
+  @impl GenServer
+  def handle_call({:steal, {:mug, caster_stats, skill_level}}, _from, state) do
+    case StealOps.attempt_mug(state, caster_stats, skill_level) do
+      {:ok, zeny, new_state} -> {:reply, {:ok, zeny}, new_state}
       {:error, reason} -> {:reply, {:error, reason}, state}
     end
   end

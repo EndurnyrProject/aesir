@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   @moduledoc """
-  Single-writer owner of the TF_STEAL roll: rate check, per-drop roll, and the
-  `stolen_from` flip. Pure — result tuples only, no packets, no PubSub. Mirrors
+  Single-writer owner of TF_STEAL and RG_STEALCOIN rolls. Pure — result tuples
+  only, no packets, no PubSub. Mirrors
   `Aesir.ZoneServer.Unit.Player.Handlers.BreakOps`'s Ops-layer contract.
   """
 
@@ -9,8 +9,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
-  @typedoc "Why a steal attempt failed."
+  @typedoc "Why an item steal attempt failed."
   @type reason :: :boss | :already_stolen | :miss | :no_drop
+
+  @typedoc "Effective caster stats used by RG_STEALCOIN."
+  @type mug_caster() :: %{
+          required(:dex) => non_neg_integer(),
+          required(:luk) => non_neg_integer(),
+          required(:base_level) => non_neg_integer()
+        }
+
+  @typedoc "Why a zeny steal attempt failed."
+  @type mug_reason :: :no_coin | :immune
 
   @doc """
   Attempts to steal one item from the mob described by `state`.
@@ -44,10 +54,50 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
     end
   end
 
-  # rAthena pc_steal_item renewal rate formula, expressed as a percent out of 100.
+  @doc """
+  Attempts to steal zeny from a mob (RG_STEALCOIN).
+
+  Returns the zeny amount and a state marked as mugged on success. Bosses,
+  status-immune mobs, failed rolls, and already-mugged mobs do not mutate the
+  state.
+  """
+  @spec attempt_mug(MobState.t(), mug_caster(), pos_integer()) ::
+          {:ok, pos_integer(), MobState.t()} | {:error, mug_reason()}
+  def attempt_mug(
+        %MobState{mob_data: %{level: mob_level, modes: modes}} = state,
+        %{dex: dex, luk: luk, base_level: base_level},
+        skill_level
+      ) do
+    cond do
+      :boss in modes or :status_immune in modes ->
+        {:error, :immune}
+
+      state.coin_stolen ->
+        {:error, :no_coin}
+
+      :rand.uniform(1_000) > mug_rate(dex, luk, base_level, mob_level, skill_level) ->
+        {:error, :no_coin}
+
+      true ->
+        zeny = (:rand.uniform(3) + 7) * mob_level + div(skill_level * mob_level, 10)
+        {:ok, zeny, MobState.mark_coin_stolen(state)}
+    end
+  end
+
   @spec steal_rate(non_neg_integer(), non_neg_integer(), pos_integer()) :: integer()
   defp steal_rate(caster_dex, mob_dex, skill_level) do
     div(caster_dex - mob_dex, 2) + 6 * skill_level + 4
+  end
+
+  @spec mug_rate(
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          integer(),
+          pos_integer()
+        ) :: integer()
+  defp mug_rate(dex, luk, base_level, mob_level, skill_level) do
+    10 * skill_level + div(dex, 2) + div(luk, 2) + 2 * (base_level - mob_level)
   end
 
   # Walks the drop table in order, skipping steal-protected entries, and rolls

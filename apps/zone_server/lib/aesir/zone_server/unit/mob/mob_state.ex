@@ -119,6 +119,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
     # Skill interaction flags
     stolen_from: false,
+    coin_stolen: false,
 
     # OnMyMobDead owner event (rAthena): a raw "Name::OnLabel" ref threaded
     # through from the summoning op's `event:` opt, resolved only at death
@@ -186,6 +187,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           deferred_epoch: non_neg_integer(),
           status_effects: map(),
           stolen_from: boolean(),
+          coin_stolen: boolean(),
           owner_event: String.t() | nil
         }
 
@@ -581,6 +583,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec mark_stolen(t()) :: t()
   def mark_stolen(%__MODULE__{} = state) do
     %{state | stolen_from: true}
+  end
+
+  @doc """
+  Marks the mob as having had its zeny stolen.
+  """
+  @spec mark_coin_stolen(t()) :: t()
+  def mark_coin_stolen(%__MODULE__{} = state) do
+    %{state | coin_stolen: true}
   end
 
   @doc """
