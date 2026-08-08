@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Npc.Shop do
 
   `items` is the buy list: each entry pairs an item `nameid` with an optional
   per-shop buy-price override (`price: nil` falls back to `ItemDefinition.buy`).
-  `discount` controls whether Merchant Discount applies to purchases.
+  `discount` controls whether skill-based discounts apply to purchases.
   """
 
   @typedoc "A buy-list entry: an item id with an optional buy-price override."

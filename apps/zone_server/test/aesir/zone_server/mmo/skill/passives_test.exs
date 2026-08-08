@@ -144,6 +144,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
     def steal_proc(level, _ctx), do: %{chance_permille: 100 * level}
   end
 
+  defmodule ShopDiscountPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_010,
+      name: :test_shop_discount_passive,
+      display_name: "Test Shop Discount Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def shop_discount_pct(level, _ctx), do: 4 * level
+  end
+
+  defmodule HigherShopDiscountPassive do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.Skill,
+      id: 9_900_011,
+      name: :test_higher_shop_discount_passive,
+      display_name: "Test Higher Shop Discount Passive",
+      max_level: 10,
+      target_type: :passive
+
+    alias Aesir.ZoneServer.Mmo.Skill.Passive
+
+    @behaviour Passive
+
+    @impl Passive
+    def shop_discount_pct(level, _ctx), do: 5 * level
+  end
+
   defmodule AfterNormalHitPassive do
     @moduledoc false
     use Aesir.ZoneServer.Mmo.Skill,
@@ -472,6 +506,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
 
       assert Passives.steal_proc(player) == 0
       assert Passives.steal_proc(player.stats) == 0
+    end
+  end
+
+  describe "shop_discount_pct/1" do
+    test "keeps the highest discount from learned passive contributions" do
+      stub(Catalog, :by_id, fn
+        9_900_010 -> {:ok, ShopDiscountPassive.definition()}
+        9_900_011 -> {:ok, HigherShopDiscountPassive.definition()}
+      end)
+
+      stub(Catalog, :passive_module_for, fn
+        :test_shop_discount_passive -> {:ok, ShopDiscountPassive}
+        :test_higher_shop_discount_passive -> {:ok, HigherShopDiscountPassive}
+      end)
+
+      player = build_player(%{9_900_010 => 5, 9_900_011 => 3}, :one_handed_sword)
+
+      assert Passives.shop_discount_pct(player) == 20
+      assert Passives.shop_discount_pct(player.stats) == 20
+    end
+
+    test "returns 0 for players without discounts and non-player inputs" do
+      player = build_player(%{2 => 5}, :one_handed_sword)
+
+      assert Passives.shop_discount_pct(player) == 0
+      assert Passives.shop_discount_pct(player.stats) == 0
+      assert Passives.shop_discount_pct(:mob) == 0
     end
   end
 

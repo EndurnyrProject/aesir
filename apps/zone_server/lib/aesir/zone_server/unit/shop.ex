@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
@@ -129,9 +130,12 @@ defmodule Aesir.ZoneServer.Unit.Shop do
         _ -> base_buy(nameid)
       end
 
-    if discount,
-      do: apply_rate(base_price, -skill_rate(player_state, @discount_skill_id)),
-      else: base_price
+    if discount do
+      discount_pct = max(skill_rate(player_state, @discount_skill_id), Passives.shop_discount_pct(player_state))
+      max(1, apply_rate(base_price, -discount_pct))
+    else
+      base_price
+    end
   end
 
   @doc """

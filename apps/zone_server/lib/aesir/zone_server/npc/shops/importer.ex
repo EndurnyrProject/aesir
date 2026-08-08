@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   The fourth column begins with the sprite (numeric class id used as-is, or a
   string constant such as `HIDDEN_NPC` which falls back to a default merchant
   sprite). An optional bare `yes`/`no` discount token may follow the sprite and
-  controls whether Merchant Discount applies; omitting it enables Discount. The
+  controls whether skill-based discounts apply; omitting it enables discounts. The
   remaining `itemid:price` pairs become buy-list items, with `price == -1`
   mapped to `nil` (fall back to `ItemDefinition.buy`).
 

@@ -83,6 +83,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
               optional(:chance_permille) => non_neg_integer()
             }
 
+  @doc "Returns the NPC shop buy discount percentage contributed by this passive."
+  @callback shop_discount_pct(level :: pos_integer(), ctx :: map()) :: non_neg_integer()
+
   @doc """
   Returns the procs this passive triggers on a normal attack at the given level.
 
@@ -166,6 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       max_sp_rate_bonus: 2,
                       zeny_cost_reduction: 2,
                       steal_proc: 2,
+                      shop_discount_pct: 2,
                       attack_proc: 2,
                       attack_replacement: 2,
                       after_normal_hit: 2,

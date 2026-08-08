@@ -386,6 +386,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   def steal_proc(_), do: 0
 
   @doc """
+  Returns the highest NPC shop buy discount percentage from learned passives.
+  """
+  @spec shop_discount_pct(PlayerState.t() | PlayerStats.t() | term()) :: non_neg_integer()
+  def shop_discount_pct(%PlayerState{stats: stats}), do: shop_discount_pct(stats)
+
+  def shop_discount_pct(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, discount ->
+      max(discount, module.shop_discount_pct(level, ctx))
+    end)
+  end
+
+  def shop_discount_pct(_), do: 0
+
+  @doc """
   Folds the on-normal-attack procs of every learned passive into one map.
 
   Keeps the proc with the highest `:multi_hit` (carrying its own `:chance` and
@@ -501,7 +519,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
   @spec build_ctx(PlayerStats.t()) :: Passive.ctx()
   defp build_ctx(%PlayerStats{} = stats) do
     %{
-      weapon_type: PlayerStats.weapon_type(stats.equipment),
+      weapon_type: if(stats.equipment, do: PlayerStats.weapon_type(stats.equipment), else: :bare_hands),
       base_level: stats.progression.base_level,
       job_level: stats.progression.job_level,
       max_hp: derived_stat(stats.derived_stats, :max_hp),

@@ -128,10 +128,26 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
     end
 
     test "a shop can disable Discount without disabling Overcharge" do
-      player = player(%{learned_skills: %{37 => 10, 38 => 10}})
+      player = player(%{learned_skills: %{37 => 10, 38 => 10, 224 => 5}})
 
       assert Shop.effective_buy_price(%{shop() | discount: false}, @red_potion, player) == 50
       assert Shop.effective_sell_price(@red_potion, player) == 31
+    end
+
+    test "Haggle applies the highest NPC shop buy discount" do
+      player = player(%{learned_skills: %{37 => 10, 224 => 5}})
+
+      assert Shop.effective_buy_price(shop(), @red_potion, player) == 37
+
+      assert {:ok, %{total_cost: 37}} =
+               Shop.compute_buy(shop(), [{@red_potion, 1}], player)
+    end
+
+    test "Haggle never discounts an NPC shop item below 1 zeny" do
+      player = player(%{learned_skills: %{224 => 5}})
+      cheap_shop = %{shop() | items: [%{nameid: @red_potion, price: 1}]}
+
+      assert Shop.effective_buy_price(cheap_shop, @red_potion, player) == 1
     end
 
     test "displayed and charged prices share the Discount and Overcharge curves" do
