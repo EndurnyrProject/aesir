@@ -22,8 +22,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.EndOnStartTest do
     :sc_acceleration,
     :sc_adoramus,
     :sc_cartboost,
-    :sc_closeconfine,
-    :sc_closeconfine2,
     :sc_ghostweapon,
     :sc_gn_cartboost,
     :sc_magneticfield,
