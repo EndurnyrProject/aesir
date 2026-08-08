@@ -126,6 +126,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   @spec destroy(non_neg_integer()) :: :ok
   def destroy(group_id), do: Manager.destroy(group_id)
 
+  @doc "Destroys named ground skill-unit groups whose footprints intersect a square range."
+  @spec destroy_in_range(String.t(), {integer(), integer()}, non_neg_integer(), [atom()]) :: :ok
+  def destroy_in_range(map_name, {x, y}, radius, names) do
+    map_name
+    |> in_range(x, y, radius)
+    |> Enum.filter(&(&1.skill_name in names))
+    |> Enum.each(&destroy(&1.group_id))
+
+    :ok
+  end
+
   @doc "Builds the complete visible skill-unit snapshot for a map."
   @spec snapshot(String.t()) :: Aesir.Net.SkillUnitSnapshot.t()
   def snapshot(map_name) do
