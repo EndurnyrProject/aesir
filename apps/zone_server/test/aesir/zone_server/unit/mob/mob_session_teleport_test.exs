@@ -117,6 +117,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionTeleportTest do
     assert updated.deferred_epoch == 0
   end
 
+  test "warps to a target cell and broadcasts the landing" do
+    test_pid = self()
+
+    stub(Cell, :traversable?, fn "prontera", 150, 160 -> true end)
+
+    expect(Movement, :set_position, fn :mob, 1, updated_state, "prontera" ->
+      send(test_pid, {:reposition, updated_state.x, updated_state.y})
+      :ok
+    end)
+
+    expect(Broadcast, :to_in_range, fn "prontera", 150, 160, _range, packet ->
+      send(test_pid, {:warp_packet, packet})
+      :ok
+    end)
+
+    {:noreply, updated} =
+      MobSession.handle_cast({:movement, {:warp, "prontera", 150, 160}}, build_mob_state())
+
+    assert {updated.x, updated.y} == {150, 160}
+    assert_received {:reposition, 150, 160}
+    assert_received {:warp_packet, %Aesir.Net.Knockback{dst_x: 150, dst_y: 160}}
+  end
+
+  test "warp/4 casts a target-cell movement command" do
+    assert :ok = MobSession.warp(self(), "prontera", 150, 160)
+    assert_received {:"$gen_cast", {:movement, {:warp, "prontera", 150, 160}}}
+  end
+
   test "is a clean no-op when no walkable cell is available" do
     stub(Cell, :random_traversable, fn "prontera" -> {:error, :no_walkable_cell} end)
     reject(&Movement.set_position/4)

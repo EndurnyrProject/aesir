@@ -186,6 +186,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:movement, :teleport})
   end
 
+  @doc "Warps the mob to a specific walkable cell on its current map."
+  @spec warp(pid(), String.t(), integer(), integer()) :: :ok
+  def warp(pid, map_name, x, y) do
+    GenServer.cast(pid, {:movement, {:warp, map_name, x, y}})
+  end
+
   @doc """
   Stops the mob session.
   """
@@ -287,6 +293,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
 
   def handle_cast({:movement, :teleport}, state) do
     MovementHandler.handle_teleport(state)
+  end
+
+  def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
+    MovementHandler.handle_relocation(state, state.x, state.y, map_name, x, y)
   end
 
   def handle_cast({:movement, {:apply_walk_delay, duration}}, state) do
