@@ -136,10 +136,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
          ) do
       {:ok, persisted} ->
         if weapon_unequipped?(game_state.inventory, unequipped) do
-          remove_weapon_unequip_statuses(game_state.character_id)
+          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
         end
 
         updated_game_state = advance(game_state, persisted)
+
+        if shield_removed?(game_state.inventory, unequipped, updated_game_state.stats.equipment) do
+          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
+        end
 
         send_packet(state, equip_success_result(server_index, mask))
         Enum.each(unequipped, &send_packet(state, unequip_success_result(&1, 0)))
@@ -170,10 +174,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
          ) do
       {:ok, persisted} ->
         if right_hand?(mask) do
-          remove_weapon_unequip_statuses(game_state.character_id)
+          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
         end
 
         updated_game_state = advance(game_state, persisted)
+
+        if left_hand?(mask) and not Stats.shield?(updated_game_state.stats.equipment) do
+          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
+        end
 
         send_packet(state, unequip_success_result(server_index, mask))
         sync_after_change(updated_game_state, state)
@@ -271,13 +279,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     :right_hand in EquipLocation.bitmask_to_location_atoms(mask)
   end
 
-  defp remove_weapon_unequip_statuses(character_id) do
+  defp left_hand?(mask) do
+    :left_hand in EquipLocation.bitmask_to_location_atoms(mask)
+  end
+
+  # A shield is considered removed when a change touches the left-hand slot and no
+  # shield remains equipped afterwards. This drops shield-gated toggles on a plain
+  # takeoff or on a shield->weapon swap, while a shield->shield swap keeps them
+  # (a shield is still equipped).
+  defp shield_removed?(inventory, unequipped_indices, new_equipment) do
+    left_hand_unequipped?(inventory, unequipped_indices) and not Stats.shield?(new_equipment)
+  end
+
+  defp left_hand_unequipped?(inventory, unequipped_indices) do
+    Enum.any?(unequipped_indices, fn index ->
+      inventory
+      |> unequipped_mask(index)
+      |> left_hand?()
+    end)
+  end
+
+  defp remove_statuses_with_flag(character_id, flag) do
     :player
     |> StatusStorage.get_unit_statuses(character_id)
     |> Enum.each(fn status ->
       definition = StatusRegistry.get_definition(status.type)
 
-      if definition && :remove_on_unequip_weapon in definition.flags do
+      if definition && flag in definition.flags do
         StatusInterpreter.remove_status(:player, character_id, status.type)
       end
     end)

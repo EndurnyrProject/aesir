@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
   `after_damage_taken/4`: `val1` carries the skill level, and every short-range
   physical hit that is neither reflected nor redirected reflects
   `(10 + 3 * val1)` percent of the delivered damage back to the attacker.
+
+  The shield requirement is checked at cast time; the `:remove_on_unequip_shield`
+  flag drops the stance if the shield is later removed without a replacement.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_reflectshield,
@@ -13,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ReflectShield do
     permanent: true,
     no_save: true,
     properties: [:buff],
+    flags: [:remove_on_unequip_shield],
     icon: :reflectshield
 
   alias Aesir.ZoneServer.Mmo.StatusEntry

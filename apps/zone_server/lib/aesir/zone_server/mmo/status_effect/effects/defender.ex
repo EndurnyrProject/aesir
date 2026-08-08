@@ -3,7 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
   Defender (SC_DEFENDER).
 
   Persistent toggle that trades attack speed for reduced long-range weapon
-  damage taken. No duration; ends when the skill is re-cast.
+  damage taken. No duration; ends when the skill is re-cast. The shield
+  requirement is checked at cast time, and the `:remove_on_unequip_shield` flag
+  drops the stance if the shield is later removed without a replacement.
 
   ## Instance convention
 
@@ -27,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
     no_dispel: true,
     properties: [:buff],
     calc_flags: [:aspd],
+    flags: [:remove_on_unequip_shield],
     icon: :defender,
     permanent: true,
     no_save: true

@@ -142,6 +142,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     assert StatusStorage.has_status?(:player, 1000, :sc_aspersio)
   end
 
+  test "drops shield-gated toggles when the shield is unequipped" do
+    game_state = PlayerState.new(character())
+    shield = %InventoryItem{nameid: 2101, amount: 1, equip: 32, identify: 1}
+    game_state = %{game_state | inventory: %{0 => shield}}
+
+    shield_statuses = [:sc_autoguard, :sc_defender, :sc_reflectshield]
+    for status <- shield_statuses, do: :ok = StatusStorage.apply_status(:player, 1000, status)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: game_state.stats}} end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, _new, {:unequipped, 0} -> {:ok, %{}} end)
+    # The stubbed recalc keeps the default (shield-less) equipment, so no shield
+    # remains after the takeoff.
+    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+
+    state = %{connection_pid: self(), game_state: game_state}
+    assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
+
+    for status <- shield_statuses, do: refute(StatusStorage.has_status?(:player, 1000, status))
+  end
+
+  test "keeps shield-gated toggles on a shield-to-shield swap" do
+    game_state = PlayerState.new(character())
+    old_shield = %InventoryItem{nameid: 2101, amount: 1, equip: 32, identify: 1}
+    new_shield = %InventoryItem{nameid: 2101, amount: 1, equip: 0, identify: 1}
+    game_state = %{game_state | inventory: %{0 => old_shield, 1 => new_shield}}
+
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_autoguard)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, new, {:equipped, 1, 32, _unequipped} ->
+      {:ok, new}
+    end)
+
+    # A shield still occupies the left hand after the swap, so the real shield?
+    # check reports a shield is worn and the toggle must survive.
+    swapped_equipment = %{game_state.stats.equipment | left_hand: 2101}
+    swapped_stats = %{game_state.stats | equipment: swapped_equipment}
+    expect(Stats, :calculate_stats, fn _stats, 1000, _equipped -> swapped_stats end)
+
+    state = %{connection_pid: self(), game_state: game_state}
+    assert {:noreply, _state} = EquipmentHandler.handle_equip(1, 32, state)
+
+    assert StatusStorage.has_status?(:player, 1000, :sc_autoguard)
+  end
+
   test "publishes recalculated maxima and clamped resources after equipment changes" do
     game_state = PlayerState.new(character())
     item = %InventoryItem{nameid: 501, amount: 1, equip: 2}

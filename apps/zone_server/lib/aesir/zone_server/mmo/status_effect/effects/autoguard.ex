@@ -14,8 +14,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   basic attacks and weapon skills - so magic and misc damage is never blocked.
 
   The status is a permanent toggle (`permanent: true`, no expiry) that is not
-  persisted across logout (`no_save: true`); the shield requirement is checked by
-  the skill at cast time only.
+  persisted across logout (`no_save: true`). The shield requirement is checked by
+  the skill at cast time, and the `:remove_on_unequip_shield` flag drops the
+  stance if the shield is later unequipped or displaced without another shield
+  taking its place.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_autoguard,
@@ -23,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
     no_save: true,
     permanent: true,
     properties: [:buff],
+    flags: [:remove_on_unequip_shield],
     icon: :autoguard
 
   alias Aesir.ZoneServer.Mmo.StatusEntry
