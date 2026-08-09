@@ -13,8 +13,12 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
   `duplicate(<label>)` shops carry no items of their own; they are resolved in a
   second pass from the placed shop whose `id` (full NPC name, including any
   `#suffix`) equals the label. A duplicate whose source is not a placed plain
-  shop — typically a script-driven `callshop` NPC, which is out of scope — is
-  dropped (`:unknown_duplicate_source`).
+  shop is dropped, with the reason naming the source kind so the count is not
+  opaque: `:duplicate_of_script` (a dialog/`callshop`-driven `script` NPC),
+  `:duplicate_of_cashshop` (a cash-point `cashshop` NPC), or
+  `:unknown_duplicate_source` (no matching source found at all). The first two
+  dominate renewal merchant data and are simply out of scope for a data-only
+  zeny-shop importer.
 
   Every resolved shop is sanitized so the data files stay boot-clean for the
   fatal `Aesir.ZoneServer.Npc.ShopVerifier`: a shop on an unknown map
@@ -41,6 +45,7 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
 
   @type shop_map :: Importer.shop_map()
   @type duplicate :: {String.t(), shop_map()}
+  @type source :: {String.t(), Importer.source_type()}
 
   @impl Mix.Task
   def run(args) do
@@ -48,12 +53,12 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
     boot_map_cache!()
 
     files = shop_files(rathena)
-    {shops, duplicates, errors} = parse_files(files)
+    {shops, duplicates, sources, errors} = parse_files(files)
     Enum.each(errors, fn {file, line, reason} -> report_error(file, line, reason) end)
 
-    {resolved, unknown_sources} = resolve_duplicates(shops, duplicates)
+    {resolved, unresolved_reasons} = resolve_duplicates(shops, duplicates, Map.new(sources))
     {kept, skipped, dropped_items} = sanitize(resolved)
-    skipped = List.duplicate(:unknown_duplicate_source, unknown_sources) ++ skipped
+    skipped = unresolved_reasons ++ skipped
 
     write!(kept)
     report(files, shops, duplicates, kept, skipped, dropped_items, errors)
@@ -73,51 +78,71 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
   end
 
   @spec parse_files([Path.t()]) ::
-          {[shop_map()], [duplicate()], [{Path.t(), pos_integer(), term()}]}
+          {[shop_map()], [duplicate()], [source()], [{Path.t(), pos_integer(), term()}]}
   defp parse_files(files) do
-    Enum.reduce(files, {[], [], []}, fn file, {shops, duplicates, errors} ->
-      {file_shops, file_duplicates, file_errors} = parse_file(file)
-      {shops ++ file_shops, duplicates ++ file_duplicates, errors ++ file_errors}
+    Enum.reduce(files, {[], [], [], []}, fn file, {shops, duplicates, sources, errors} ->
+      {file_shops, file_duplicates, file_sources, file_errors} = parse_file(file)
+
+      {shops ++ file_shops, duplicates ++ file_duplicates, sources ++ file_sources,
+       errors ++ file_errors}
     end)
   end
 
   @spec parse_file(Path.t()) ::
-          {[shop_map()], [duplicate()], [{Path.t(), pos_integer(), term()}]}
+          {[shop_map()], [duplicate()], [source()], [{Path.t(), pos_integer(), term()}]}
   defp parse_file(file) do
     file
     |> File.read!()
     |> then(&:binary.split(&1, "\n", [:global]))
     |> Enum.with_index(1)
-    |> Enum.reduce({[], [], []}, fn {line, number}, {shops, duplicates, errors} ->
+    |> Enum.reduce({[], [], [], []}, fn {line, number}, {shops, duplicates, sources, errors} ->
       case Importer.parse_line(line) do
-        {:ok, shop} -> {[shop | shops], duplicates, errors}
-        {:duplicate, label, partial} -> {shops, [{label, partial} | duplicates], errors}
-        :skip -> {shops, duplicates, errors}
-        {:error, reason} -> {shops, duplicates, [{file, number, reason} | errors]}
+        {:ok, shop} -> {[shop | shops], duplicates, sources, errors}
+        {:duplicate, label, partial} -> {shops, [{label, partial} | duplicates], sources, errors}
+        {:source, type, exname} -> {shops, duplicates, [{exname, type} | sources], errors}
+        :skip -> {shops, duplicates, sources, errors}
+        {:error, reason} -> {shops, duplicates, sources, [{file, number, reason} | errors]}
       end
     end)
-    |> then(fn {shops, duplicates, errors} ->
-      {Enum.reverse(shops), Enum.reverse(duplicates), Enum.reverse(errors)}
+    |> then(fn {shops, duplicates, sources, errors} ->
+      {Enum.reverse(shops), Enum.reverse(duplicates), Enum.reverse(sources), Enum.reverse(errors)}
     end)
   end
 
   @doc """
   Two-pass `duplicate(label)` resolve. Builds an `id -> items` map from the placed
-  plain shops, fills each duplicate's items from it, and returns the combined shop
-  list plus the count of duplicates whose source was not a placed plain shop
-  (dropped).
+  plain shops and fills each duplicate's items from it. Returns the combined shop
+  list plus one drop-reason atom per unresolved duplicate, classified by the kind
+  of source it targeted using `source_types` (`label -> :script | :cashshop`):
+
+    * `:duplicate_of_script` - source is a `script` NPC (out of scope)
+    * `:duplicate_of_cashshop` - source is a `cashshop` NPC (out of scope)
+    * `:unknown_duplicate_source` - no matching source of any kind
   """
-  @spec resolve_duplicates([shop_map()], [duplicate()]) :: {[shop_map()], non_neg_integer()}
-  def resolve_duplicates(shops, duplicates) do
+  @spec resolve_duplicates([shop_map()], [duplicate()], %{String.t() => Importer.source_type()}) ::
+          {[shop_map()], [atom()]}
+  def resolve_duplicates(shops, duplicates, source_types \\ %{}) do
     id_map = Map.new(shops, fn shop -> {shop["id"], Map.take(shop, ["items", "discount"])} end)
 
-    {resolved, unknown} =
+    {resolved, unresolved} =
       Enum.split_with(duplicates, fn {label, _partial} -> Map.has_key?(id_map, label) end)
 
     resolved_shops =
       Enum.map(resolved, fn {label, partial} -> Map.merge(partial, id_map[label]) end)
 
-    {shops ++ resolved_shops, length(unknown)}
+    reasons =
+      Enum.map(unresolved, fn {label, _partial} -> unresolved_reason(source_types, label) end)
+
+    {shops ++ resolved_shops, reasons}
+  end
+
+  @spec unresolved_reason(%{String.t() => Importer.source_type()}, String.t()) :: atom()
+  defp unresolved_reason(source_types, label) do
+    case Map.get(source_types, label) do
+      :script -> :duplicate_of_script
+      :cashshop -> :duplicate_of_cashshop
+      nil -> :unknown_duplicate_source
+    end
   end
 
   @spec sanitize([shop_map()]) :: {[shop_map()], [atom()], non_neg_integer()}

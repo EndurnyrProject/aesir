@@ -86,6 +86,19 @@ defmodule Aesir.ZoneServer.Npc.Shops.ImporterTest do
       refute Map.has_key?(partial, "items")
     end
 
+    test "returns {:source, :script, exname} for a script NPC (a duplicate source)" do
+      assert {:source, :script, "#over_arrow"} =
+               Importer.parse_line("-\tscript\t#over_arrow\tHIDDEN_NPC,{")
+
+      assert {:source, :script, "pss"} =
+               Importer.parse_line("-\tscript\t::pss\tHIDDEN_NPC,{")
+    end
+
+    test "returns {:source, :cashshop, exname} for a cashshop NPC, taking the ::exname" do
+      assert {:source, :cashshop, "idRO_kafra"} =
+               Importer.parse_line("-\tcashshop\tidROCK::idRO_kafra\t721,16555:1000")
+    end
+
     test "skips a floating (-) shop line" do
       assert :skip = Importer.parse_line("-\tshop\tcard_mob#A\t-1,501:1000")
     end

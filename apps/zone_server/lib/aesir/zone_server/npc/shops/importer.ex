@@ -23,6 +23,14 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   `{:duplicate, label, partial_map}` so the import task can fill its items from
   the source shop named `label`.
 
+  A `script` or `cashshop` line yields `{:source, type, exname}` so the import
+  task can explain *why* an unresolved duplicate was dropped: most renewal
+  merchant "shops" are actually dialog/`callshop`-driven `script` NPCs or
+  cash-point `cashshop` NPCs, neither of which this data-only zeny-shop importer
+  can lift. The `exname` is the reference name a `duplicate(<label>)` targets:
+  the segment after `::` when the name is written `real::exname`, otherwise the
+  whole name.
+
   Pure functions - the boot-safety checks against `MapCache` and the item DB
   live in the `Mix.Tasks.Aesir.Import.Shops` task, not here.
   """
@@ -38,12 +46,19 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
 
     * `{:ok, shop_map}` - a valid placed plain shop, keyed as our YAML schema
     * `{:duplicate, label, shop_map}` - a `duplicate(<label>)` placement (no items)
+    * `{:source, type, exname}` - a `script`/`cashshop` NPC (a duplicate source)
     * `:skip` - a blank line, `//` comment, non-shop line, floating (`-`) shop,
       or non-UTF-8 line
     * `{:error, reason}` - a `shop`/`duplicate(...)` line that fails to parse
   """
+  @type source_type :: :script | :cashshop
+
   @spec parse_line(String.t()) ::
-          {:ok, shop_map()} | {:duplicate, String.t(), shop_map()} | :skip | {:error, term()}
+          {:ok, shop_map()}
+          | {:duplicate, String.t(), shop_map()}
+          | {:source, source_type(), String.t()}
+          | :skip
+          | {:error, term()}
   def parse_line(line) when is_binary(line) do
     if String.valid?(line) do
       classify(String.trim(line))
@@ -53,7 +68,11 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   end
 
   @spec classify(String.t()) ::
-          {:ok, shop_map()} | {:duplicate, String.t(), shop_map()} | :skip | {:error, term()}
+          {:ok, shop_map()}
+          | {:duplicate, String.t(), shop_map()}
+          | {:source, source_type(), String.t()}
+          | :skip
+          | {:error, term()}
   defp classify(""), do: :skip
   defp classify("//" <> _), do: :skip
 
@@ -65,11 +84,18 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
   end
 
   @spec parse_shop(String.t(), String.t(), String.t(), String.t()) ::
-          {:ok, shop_map()} | {:duplicate, String.t(), shop_map()} | :skip | {:error, term()}
+          {:ok, shop_map()}
+          | {:duplicate, String.t(), shop_map()}
+          | {:source, source_type(), String.t()}
+          | :skip
+          | {:error, term()}
   defp parse_shop("shop", position, name, params), do: build_shop(position, name, params)
 
   defp parse_shop("duplicate(" <> rest, position, name, params),
     do: build_duplicate(String.trim_trailing(rest, ")"), position, name, params)
+
+  defp parse_shop("script", _position, name, _params), do: {:source, :script, exname(name)}
+  defp parse_shop("cashshop", _position, name, _params), do: {:source, :cashshop, exname(name)}
 
   defp parse_shop(_type, _position, _name, _params), do: :skip
 
@@ -181,6 +207,9 @@ defmodule Aesir.ZoneServer.Npc.Shops.Importer do
 
   @spec display_name(String.t()) :: String.t()
   defp display_name(name), do: name |> String.split("#", parts: 2) |> hd()
+
+  @spec exname(String.t()) :: String.t()
+  defp exname(name), do: name |> String.split("::") |> List.last()
 
   @spec to_int(String.t()) :: {:ok, integer()} | :error
   defp to_int(str) do

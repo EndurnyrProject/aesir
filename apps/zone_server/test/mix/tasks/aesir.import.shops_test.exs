@@ -10,7 +10,7 @@ defmodule Mix.Tasks.Aesir.Import.ShopsTest do
   alias Aesir.ZoneServer.Npc.Warps
   alias Mix.Tasks.Aesir.Import.Shops, as: Task
 
-  describe "resolve_duplicates/2" do
+  describe "resolve_duplicates/3" do
     test "fills a duplicate's items and discount flag from its source shop" do
       shop =
         "Tool Dealer#alb"
@@ -19,7 +19,7 @@ defmodule Mix.Tasks.Aesir.Import.ShopsTest do
 
       duplicates = [{"Tool Dealer#alb", partial_map("Tool Dealer#alb2")}]
 
-      assert {resolved, 0} = Task.resolve_duplicates([shop], duplicates)
+      assert {resolved, []} = Task.resolve_duplicates([shop], duplicates)
 
       assert [
                %{"id" => "Tool Dealer#alb"},
@@ -31,11 +31,28 @@ defmodule Mix.Tasks.Aesir.Import.ShopsTest do
              ] = resolved
     end
 
-    test "drops a duplicate whose source is not a placed plain shop" do
+    test "classifies a duplicate of a script source as :duplicate_of_script" do
       shops = [shop_map("Tool Dealer#alb", [%{"id" => 501, "price" => nil}])]
+      duplicates = [{"GuildWarehouse", partial_map("Guild Warehouse#1")}]
+      sources = %{"GuildWarehouse" => :script}
+
+      assert {[%{"id" => "Tool Dealer#alb"}], [:duplicate_of_script]} =
+               Task.resolve_duplicates(shops, duplicates, sources)
+    end
+
+    test "classifies a duplicate of a cashshop source as :duplicate_of_cashshop" do
+      duplicates = [{"idRO_kafra", partial_map("Kafra Cash#1")}]
+      sources = %{"idRO_kafra" => :cashshop}
+
+      assert {[], [:duplicate_of_cashshop]} =
+               Task.resolve_duplicates([], duplicates, sources)
+    end
+
+    test "falls back to :unknown_duplicate_source when no source is known" do
       duplicates = [{"IceCreamer", partial_map("Ice Cream Maker#1")}]
 
-      assert {[%{"id" => "Tool Dealer#alb"}], 1} = Task.resolve_duplicates(shops, duplicates)
+      assert {[], [:unknown_duplicate_source]} =
+               Task.resolve_duplicates([], duplicates, %{})
     end
   end
 
