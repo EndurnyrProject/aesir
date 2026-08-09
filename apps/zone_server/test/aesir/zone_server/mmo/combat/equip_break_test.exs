@@ -74,6 +74,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreakTest do
     end
   end
 
+  describe "garment and shoes prevention (no natural source, no Chemical Protection)" do
+    for {slot, unbreakable_mod} <- [
+          {:garment, :unbreakable_garment},
+          {:shoes, :unbreakable_shoes}
+        ] do
+      test "#{slot} breaks via resolve_slot and its unbreakable flag vetoes it" do
+        slot = unquote(slot)
+        unbreakable_mod = unquote(unbreakable_mod)
+
+        assert EquipBreak.resolve_slot(10_000, player_target(), slot, rng: worst_roll()) == [
+                 {:target, slot}
+               ]
+
+        protected = player_target(victim(%{unbreakable_mod => 1}))
+        assert EquipBreak.resolve_slot(10_000, protected, slot, rng: best_roll()) == []
+      end
+    end
+
+    test "no natural weapon hit ever emits a garment or shoes break" do
+      attacker = attacker(%{break_weapon_rate: 10_000, break_armor_rate: 10_000})
+
+      decisions = EquipBreak.resolve(attacker, player_target(), rng: worst_roll())
+
+      refute Enum.any?(decisions, fn {_side, slot} -> slot in [:garment, :shoes] end)
+    end
+  end
+
   describe "rate boundaries" do
     test "a zero rate never breaks (best possible roll)" do
       attacker = attacker(%{break_weapon_rate: 0, break_armor_rate: 0})

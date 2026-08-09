@@ -10,13 +10,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   Player targets include the character id because status effects are stored by
   unit identity: `{:player, character_id, stats}`. Non-player targets never emit
   target-break decisions because they have no breakable equipment.
+
+  Garment and shoes are valid `resolve_slot/4` targets and honor the matching
+  `unbreakable_*` prevention flag, but no natural weapon hit ever rolls them:
+  in Renewal only weapon, armor, shield and helm break, so `resolve/3` never
+  emits a garment or shoes decision. They also have no Chemical Protection
+  counterpart, so their protection lookup yields none.
   """
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  @type slot :: :weapon | :shield | :armor | :helm
+  @type slot :: :weapon | :shield | :armor | :helm | :garment | :shoes
   @type decision :: {:self, :weapon} | {:target, slot()}
   @type target :: {:player, integer(), Stats.t()} | {atom(), term()}
 
@@ -35,7 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
     weapon: :unbreakable_weapon,
     shield: :unbreakable_shield,
     armor: :unbreakable_armor,
-    helm: :unbreakable_helm
+    helm: :unbreakable_helm,
+    garment: :unbreakable_garment,
+    shoes: :unbreakable_shoes
   }
 
   @default_rng &:rand.uniform/1
@@ -69,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
   """
   @spec resolve_slot(integer(), target(), slot(), keyword()) :: [decision()]
   def resolve_slot(rate, target, slot, opts \\ [])
-      when slot in [:weapon, :shield, :armor, :helm] do
+      when slot in [:weapon, :shield, :armor, :helm, :garment, :shoes] do
     rng = Keyword.get(opts, :rng, @default_rng)
 
     case target_slot(rate, target, slot, rng) do
@@ -124,8 +132,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipBreak do
 
   @spec slot_masked?({integer(), Stats.t()}, slot()) :: boolean()
   defp slot_masked?({victim_id, victim}, slot) do
-    stat_slot_masked?(victim, slot) or
-      StatusStorage.has_status?(:player, victim_id, Map.fetch!(@chemical_protection, slot))
+    stat_slot_masked?(victim, slot) or slot_chemical_protected?(victim_id, slot)
+  end
+
+  @spec slot_chemical_protected?(integer(), slot()) :: boolean()
+  defp slot_chemical_protected?(victim_id, slot) do
+    case Map.get(@chemical_protection, slot) do
+      nil -> false
+      status -> StatusStorage.has_status?(:player, victim_id, status)
+    end
   end
 
   @spec stat_slot_masked?(Stats.t(), slot()) :: boolean()
