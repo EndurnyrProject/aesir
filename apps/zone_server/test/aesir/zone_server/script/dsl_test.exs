@@ -145,6 +145,19 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert ctx.game_state.stats.current_state.hp == 230
     end
 
+    test "HP consumables include the per-item add_item_heal bonus for the used item" do
+      # build_ctx sources item 501, so the per-item bonus applies.
+      ctx = Dsl.heal(build_ctx(hp: 100, equipment: %{{:add_item_heal, 501} => 40}), hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 240
+    end
+
+    test "per-item add_item_heal for a different item does not apply" do
+      ctx = Dsl.heal(build_ctx(hp: 100, equipment: %{{:add_item_heal, 999} => 40}), hp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 200
+    end
+
     test "scaled recovery floors fractional results" do
       ctx = Dsl.heal(build_ctx(hp: 100, vit: 25), hp: 105)
 
@@ -960,7 +973,11 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       },
       derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
       modifiers: %{
-        equipment: %{item_heal_rate: Keyword.get(opts, :item_heal_rate, 0)},
+        equipment:
+          Map.merge(
+            %{item_heal_rate: Keyword.get(opts, :item_heal_rate, 0)},
+            Keyword.get(opts, :equipment, %{})
+          ),
         status_effects: %{},
         job_bonuses: %{},
         passive: %{}

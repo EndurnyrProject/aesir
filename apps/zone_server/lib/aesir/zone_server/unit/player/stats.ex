@@ -1062,10 +1062,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
-  Gets the combined flat equipment modifier for a given key (e.g. `:atk`,
-  `:def`, `:matk`), or 0 if none exist.
+  Gets the combined equipment modifier for a given key, or 0 if none exist. The
+  key is a flat atom (e.g. `:atk`, `:def`, `:matk`) or a parameterized tuple
+  (e.g. `{:add_item_heal, item_id}`).
   """
-  @spec get_equipment_modifier(t(), atom()) :: number()
+  @spec get_equipment_modifier(t(), atom() | {atom(), term()}) :: number()
   def get_equipment_modifier(%__MODULE__{} = stats, modifier_key) do
     Map.get(stats.modifiers.equipment, modifier_key, 0)
   end
