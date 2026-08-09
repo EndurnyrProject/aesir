@@ -125,6 +125,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     stolen_from: false,
     coin_stolen: false,
 
+    # Attack-type of recent damaging hits, keyed by the typed attacker ref
+    # (e.g. `{:player, id}` / the raw attacker id form the combat path uses).
+    # Written just before each hit is applied so the death path can read the
+    # killing blow's classification (`:melee | :ranged | :magic`) to grant the
+    # attacker's on-kill HP/SP gain equipment bonuses. Keyed by attacker so
+    # simultaneous attackers never read each other's classification.
+    last_hit_types: %{},
+
     # OnMyMobDead owner event (rAthena): a raw "Name::OnLabel" ref threaded
     # through from the summoning op's `event:` opt, resolved only at death
     # time. `nil` for every ordinary spawn -- exactly today's behavior.
@@ -193,6 +201,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           status_effects: map(),
           stolen_from: boolean(),
           coin_stolen: boolean(),
+          last_hit_types: %{optional(term()) => :melee | :ranged | :magic},
           owner_event: String.t() | nil
         }
 
@@ -523,6 +532,25 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @spec note_rude_attack(t()) :: t()
   def note_rude_attack(%__MODULE__{rude_attack_count: count} = state) do
     %{state | rude_attack_count: count + 1, rude_attacked?: true}
+  end
+
+  @doc """
+  Records the attack-type classification of an incoming hit, keyed by its
+  attacker, so the death path can grant the killer the matching on-kill HP/SP
+  gain equipment bonus. Overwrites any prior entry for the same attacker.
+  """
+  @spec note_hit_type(t(), term(), :melee | :ranged | :magic) :: t()
+  def note_hit_type(%__MODULE__{last_hit_types: types} = state, attacker, bf) do
+    %{state | last_hit_types: Map.put(types, attacker, bf)}
+  end
+
+  @doc """
+  Returns the recorded attack-type classification of `attacker`'s most recent
+  hit, or `:other` when none was recorded (no gain-eligible blow).
+  """
+  @spec hit_type(t(), term()) :: :melee | :ranged | :magic | :other
+  def hit_type(%__MODULE__{last_hit_types: types}, attacker) do
+    Map.get(types, attacker, :other)
   end
 
   @doc """

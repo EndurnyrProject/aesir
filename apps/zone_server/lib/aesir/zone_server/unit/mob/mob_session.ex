@@ -42,6 +42,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id}})
   end
 
+  @doc """
+  Records the attack-type classification (`:melee | :ranged | :magic`) of the
+  hit `attacker` is about to land, so a lethal hit can grant the killer the
+  matching on-kill HP/SP gain equipment bonus. Sent just before the paired
+  `apply_damage/3`; per-sender message ordering guarantees it is stored first.
+  """
+  @spec note_hit_type(pid(), tuple() | integer(), :melee | :ranged | :magic) :: :ok
+  def note_hit_type(pid, attacker, bf) do
+    GenServer.cast(pid, {:combat, {:note_hit_type, attacker, bf}})
+  end
+
   @spec apply_walk_delay(pid(), non_neg_integer()) :: :ok
   def apply_walk_delay(pid, duration),
     do: GenServer.cast(pid, {:movement, {:apply_walk_delay, duration}})
@@ -345,6 +356,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_cast({:combat, {:apply_damage, damage, attacker_id}}, state) do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
+  end
+
+  def handle_cast({:combat, {:note_hit_type, attacker, bf}}, state) do
+    {:noreply, MobState.note_hit_type(state, attacker, bf)}
   end
 
   # Unit: heal and SP drain. Heal broadcasts the new HP and is ungated (a

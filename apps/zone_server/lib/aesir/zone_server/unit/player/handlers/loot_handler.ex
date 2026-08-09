@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   """
   @spec info(term(), map()) :: {:noreply, map()}
   def info({:mob_killed, payload}, state), do: mob_killed(payload, state)
+  def info({:kill_gain, payload}, state), do: kill_gain_reward(payload, state)
   def info({:quest_kill, mob_id}, state), do: quest_kill(mob_id, state)
 
   @doc """
@@ -42,6 +44,51 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   def mob_killed(payload, state, rng) do
     maybe_drop_items(payload, state, rng)
     {:noreply, state}
+  end
+
+  @doc """
+  Grants the killing player the on-kill HP/SP gain equipment bonuses matching
+  the killing blow's attack type (`{:loot, {:kill_gain, ...}}`, broadcast
+  independently of drops).
+
+  Only the player's own killing blow counts — a homunculus/slave kill credits
+  the owner's rewards but not their on-kill gain — and only weapon/magic blows
+  are eligible. The heal is a raw forced grant (no received-heal scaling).
+  """
+  @spec kill_gain_reward(map(), map()) :: {:noreply, map()}
+  def kill_gain_reward(%{final_source: {:player, char_id}, kill_bf: kill_bf} = payload, state)
+      when kill_bf in [:melee, :ranged, :magic] do
+    if char_id == state.game_state.character_id do
+      equipment = state.game_state.stats.modifiers.equipment
+      {hp, sp} = kill_gain(kill_bf, equipment, Map.get(payload, :mob_race))
+
+      {:noreply, state} = HealthHandler.gain_hp(hp, state)
+      HealthHandler.restore_sp(sp, state)
+    else
+      {:noreply, state}
+    end
+  end
+
+  def kill_gain_reward(_payload, state), do: {:noreply, state}
+
+  defp kill_gain(:melee, equipment, mob_race) do
+    {Map.get(equipment, :hp_gain_value, 0),
+     Map.get(equipment, :sp_gain_value, 0) + sp_gain_race(equipment, mob_race)}
+  end
+
+  defp kill_gain(:ranged, equipment, _mob_race) do
+    {0, Map.get(equipment, :long_sp_gain_value, 0)}
+  end
+
+  defp kill_gain(:magic, equipment, _mob_race) do
+    {Map.get(equipment, :magic_hp_gain_value, 0), Map.get(equipment, :magic_sp_gain_value, 0)}
+  end
+
+  defp sp_gain_race(equipment, mob_race) do
+    race = bonus_race(mob_race)
+
+    Map.get(equipment, {:sp_gain_race, race}, 0) +
+      Map.get(equipment, {:sp_gain_race, :all}, 0)
   end
 
   @doc """

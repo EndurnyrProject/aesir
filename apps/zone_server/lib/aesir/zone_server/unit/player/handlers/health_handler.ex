@@ -344,6 +344,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def restore_sp(_amount, state), do: {:noreply, state}
 
+  @doc """
+  Restores HP to the player, clamped at `max_hp`, as a raw forced heal.
+
+  Unlike `apply_heal/3` this bypasses the received-heal-rate scaling
+  (SC_INCHEALRATE / `heal_power2`): on-kill HP gain is a fixed grant, not a
+  heal received from a caster. No-op for a non-positive amount or a dead player.
+  """
+  @spec gain_hp(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def gain_hp(_amount, %{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+
+  def gain_hp(amount, state) when is_integer(amount) and amount > 0 do
+    max_hp = state.game_state.stats.derived_stats.max_hp
+    {:noreply, put_hp(state, min(current_hp(state) + amount, max_hp))}
+  end
+
+  def gain_hp(_amount, state), do: {:noreply, state}
+
+  defp current_hp(state), do: state.game_state.stats.current_state.hp
+
+  defp put_hp(state, new_hp) do
+    stats = state.game_state.stats
+    updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
+    game_state = %{state.game_state | stats: updated_stats}
+    state = StatsManager.update_game_state(state, game_state)
+
+    StatusSync.send_param(state.connection_pid, StatusParams.hp(), new_hp)
+    CharacterPersistence.update_stats(game_state.character_id, %{hp: new_hp}, async: true)
+    state
+  end
+
   defp current_sp(state), do: state.game_state.stats.current_state.sp
 
   defp put_sp(state, new_sp) do

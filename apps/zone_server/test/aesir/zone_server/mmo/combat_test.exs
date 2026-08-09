@@ -674,6 +674,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       stub(Passives, :attack_procs, fn _player -> %{} end)
       stub(MobSession, :apply_damage, fn _pid, _damage, _attacker_id -> :ok end)
+      stub(MobSession, :note_hit_type, fn _pid, _attacker, _bf -> :ok end)
 
       %{player_state: player_state, stats: stats, target_state: target_state}
     end

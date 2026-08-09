@@ -57,7 +57,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         {:noreply, updated_mob}
 
       :dead ->
-        handle_death(updated_mob, attacker_ref, reward_owner_id)
+        handle_death(
+          updated_mob,
+          attacker_ref,
+          reward_owner_id,
+          MobState.hit_type(state, attacker)
+        )
     end
   end
 
@@ -136,7 +141,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
-  defp handle_death(state, attacker_ref, reward_owner_id) do
+  defp handle_death(state, attacker_ref, reward_owner_id, kill_bf) do
     # Mark as dead
     updated_state = state |> MobState.advance_deferred_epoch() |> MobState.set_dead()
 
@@ -144,7 +149,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     SpawnView.notify_despawn(updated_state)
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name)
 
-    announce_kill(state, attacker_ref, reward_owner_id)
+    announce_kill(state, attacker_ref, reward_owner_id, kill_bf)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
     Coordinator.mob_died(state.map_name, state.instance_id, reward_owner_id)
@@ -160,12 +165,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   # then sends quest credit and drop rolling to the killing blow's reward-owner
   # session when one exists. A rootless final source still completes shared
   # rewards but has no session to receive kill-local rewards.
-  defp announce_kill(_state, nil, _reward_owner_id), do: :ok
+  defp announce_kill(_state, nil, _reward_owner_id, _kill_bf), do: :ok
 
   defp announce_kill(
          %MobState{mob_data: mob_data, aggro_list: aggro_list} = state,
          attacker_ref,
-         reward_owner_id
+         reward_owner_id,
+         kill_bf
        ) do
     ownership = LootOwnership.determine_typed(state)
 
@@ -185,6 +191,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
 
     if is_integer(reward_owner_id) do
       QuestHuntCredit.credit(reward_owner_id, mob_data.id, state.map_name, {state.x, state.y})
+      announce_kill_gain(reward_owner_id, attacker_ref, mob_data.race, kill_bf)
 
       unless state.no_drops do
         PubSub.broadcast(
@@ -208,4 +215,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
       end
     end
   end
+
+  # Grants the killer the on-kill HP/SP gain equipment bonuses, decoupled from
+  # drops so a no-drop mob still heals its killer. Only weapon/magic blows are
+  # gain-eligible; the reader further restricts this to the reward owner's own
+  # killing blow (a homunculus/slave kill credits rewards but not on-kill gain).
+  defp announce_kill_gain(reward_owner_id, attacker_ref, mob_race, kill_bf)
+       when kill_bf in [:melee, :ranged, :magic] do
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{reward_owner_id}",
+      {:loot, {:kill_gain, %{kill_bf: kill_bf, mob_race: mob_race, final_source: attacker_ref}}}
+    )
+  end
+
+  defp announce_kill_gain(_reward_owner_id, _attacker_ref, _mob_race, _kill_bf), do: :ok
 end

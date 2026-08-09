@@ -454,8 +454,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     damage_skill_unit(target_pid, target_id, damage, typed_source(attacker))
   end
 
-  defp deliver_unit_damage(:mob, target_pid, _target_id, damage, _hit_info, attacker) do
-    MobSession.apply_damage(target_pid, damage, mob_attacker(attacker))
+  defp deliver_unit_damage(:mob, target_pid, _target_id, damage, hit_info, attacker) do
+    mob_attacker = mob_attacker(attacker)
+    note_kill_attack_type(target_pid, mob_attacker, kill_attack_type(hit_info))
+    MobSession.apply_damage(target_pid, damage, mob_attacker)
   end
 
   defp deliver_unit_damage(
@@ -473,6 +475,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp deliver_unit_damage(:player, target_pid, _target_id, damage, _hit_info, attacker) do
     PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
+  end
+
+  # Classifies a hit for the on-kill HP/SP gain equipment bonuses: a physical
+  # hit is melee within melee range, ranged otherwise; magic is magic; every
+  # other shape (misc skills, reflected damage) grants nothing.
+  defp kill_attack_type(%{dmg_type: :magic}), do: :magic
+  defp kill_attack_type(%{dmg_type: :physical, is_short: true}), do: :melee
+  defp kill_attack_type(%{dmg_type: :physical}), do: :ranged
+  defp kill_attack_type(_hit_info), do: :other
+
+  # Records the classification on the target just before the paired damage, so
+  # a lethal blow grants the killer's on-kill gain. Only gain-eligible attacks
+  # from a real attacker are worth a message.
+  defp note_kill_attack_type(_target_pid, nil, _bf), do: :ok
+  defp note_kill_attack_type(_target_pid, _attacker, :other), do: :ok
+
+  defp note_kill_attack_type(target_pid, attacker, bf) do
+    MobSession.note_hit_type(target_pid, attacker, bf)
   end
 
   defp merge_local_effects({:error, _reason} = error, :ok), do: error
