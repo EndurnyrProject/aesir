@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
     flags: [:remove_on_unequip_shield],
     icon: :autoguard
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Shrink
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.SpecialEffect
@@ -47,14 +48,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
         ) :: :continue | {:intercept, :blocked}
   def before_weapon_hit(_target, _entry, %{ignores_auto_guard: true}, _context), do: :continue
 
-  def before_weapon_hit({unit_type, unit_id}, %StatusEntry{val1: level}, _attack_info, _context) do
+  def before_weapon_hit({unit_type, unit_id}, %StatusEntry{val1: level}, attack_info, _context) do
     if blocked?(level) do
       SpecialEffect.play({unit_type, unit_id}, :guard, :area)
+      maybe_shrink_stun({unit_type, unit_id}, attack_info)
       {:intercept, :blocked}
     else
       :continue
     end
   end
+
+  @spec maybe_shrink_stun({Unit.unit_type(), integer()}, map()) :: :ok
+  defp maybe_shrink_stun(guarder, %{attacker: attacker}),
+    do: Shrink.maybe_stun_attacker(guarder, attacker)
+
+  defp maybe_shrink_stun(_guarder, _attack_info), do: :ok
 
   @spec blocked?(integer()) :: boolean()
   defp blocked?(level) do
