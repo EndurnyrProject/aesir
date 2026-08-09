@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   # Version-suffixed: the cache stores built structs, so a shape change (new
   # field, new convert/2 clause) must invalidate every existing cache. Freshness
   # is mtime-based and cannot detect that the cache was built by older code.
-  @cache_file "mobs_v3.etf"
+  @cache_file "mobs_v4.etf"
 
   @field_names MobDefinition
                |> struct(%{})
@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   # here to :demi_human to match Combat.RaceModifiers without regenerating the YAML.
   defp convert(:race, "demihuman"), do: :demi_human
   defp convert(:race, v), do: String.to_atom(v)
+  defp convert(:race_groups, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:modes, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:stats, v), do: Map.new(v, fn {k, n} -> {String.to_atom(k), n} end)
   defp convert(:drops, v), do: Enum.map(v, &to_drop!/1)

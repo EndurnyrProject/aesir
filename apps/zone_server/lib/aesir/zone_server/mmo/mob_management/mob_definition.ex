@@ -27,6 +27,11 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
           | :player
 
   @typedoc """
+  Secondary mob group classifications
+  """
+  @type race2 :: atom()
+
+  @typedoc """
   Element types with level
   """
   @type element :: {atom(), integer()}
@@ -66,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
             chase_range: 12,
             size: nil,
             race: nil,
+            race_groups: [],
             element: nil,
             walk_speed: nil,
             attack_delay: nil,
@@ -97,6 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
           chase_range: integer(),
           size: size(),
           race: race(),
+          race_groups: [race2()],
           element: element(),
           walk_speed: integer(),
           attack_delay: integer(),
