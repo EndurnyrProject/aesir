@@ -4464,6 +4464,10 @@
   locations:
     - both_hand
   name: Katar Of Speed
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 136}, 25)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx
   range: 1
   subtype: katar
   type: weapon
@@ -64081,6 +64085,12 @@
   locations:
     - right_hand
   name: Erde
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 230}, 20)
+    ctx = bonus(ctx, {:skill_atk, 229}, 20)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, :heal_power, 10)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -102569,6 +102579,10 @@
   locations:
     - shadow_shoes
   name: Assassin Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 137}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Rogue_Shoes
@@ -102707,6 +102721,10 @@
   locations:
     - shadow_armor
   name: Assassin Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 136}, (20 + (refine(ctx) * 3)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Rogue_Armor
@@ -102716,6 +102734,10 @@
   locations:
     - shadow_armor
   name: Rogue Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 214}, (20 + (refine(ctx) * 5)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Wizard_Armor
@@ -107218,6 +107240,11 @@
   locations:
     - shadow_left_accessory
   name: Super Power Shadow Pendant
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:skill_atk, 212}, (10 + (div(refine(ctx), 2) * 4)))
+    ctx = bonus(ctx, {:skill_atk, 214}, (10 + (div(refine(ctx), 2) * 4)))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Super_Power_Earing
@@ -114164,6 +114191,7 @@
     - both_hand
   magic_attack: 250
   name: Agate Filo
+  on_equip: bonus(ctx, {:skill_atk, 136}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -120575,6 +120603,7 @@
     - right_hand
   magic_attack: 120
   name: Shark Knife
+  on_equip: bonus(ctx, {:skill_atk, 212}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -120593,6 +120622,7 @@
     - right_hand
   magic_attack: 120
   name: Platinum Dagger
+  on_equip: bonus(ctx, {:skill_atk, 214}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -131767,6 +131797,7 @@
     - right_hand
   magic_attack: 110
   name: Coolant Injection
+  on_equip: bonus(ctx, {:skill_atk, 230}, 30)
   range: 1
   refineable: true
   slots: 1
@@ -137837,6 +137868,10 @@
   defense: 20
   equip_level_min: 50
   id: 400512
+  jobs:
+    - crusader
+    - knight
+    - swordman
   locations:
     - head_top
   name: Hat of Desert
@@ -137850,6 +137885,10 @@
   defense: 20
   equip_level_min: 50
   id: 400513
+  jobs:
+    - crusader
+    - knight
+    - swordman
   locations:
     - head_top
   name: '[Not For Sale] Hat of Desert'
@@ -176277,6 +176316,24 @@
   locations:
     - right_hand
   name: Paradise Rogue Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, {:skill_atk, 212}, 20)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 214}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 214}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: dagger
   type: weapon
@@ -185953,6 +186010,24 @@
   locations:
     - right_hand
   name: Paradise Alchemist Mace
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 230}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 230}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: mace
   type: weapon
@@ -187678,6 +187753,24 @@
   locations:
     - both_hand
   name: Paradise Assassin Katar
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = if (base_level(ctx) >= 60) do
+      bonus(ctx, :hit, 15)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 75) do
+      bonus(ctx, {:skill_atk, 136}, 10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 90) do
+      bonus(ctx, {:skill_atk, 136}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: katar
   type: weapon
