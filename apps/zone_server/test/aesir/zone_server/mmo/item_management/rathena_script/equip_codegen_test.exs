@@ -570,11 +570,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("if (BaseJob==Job_Mage) bonus bStr,10;")
     end
 
-    test "conditional assignment is rejected" do
-      assert {:error, {:unsupported, {:conditional_assignment, "x"}}} =
-               compile("if (getrefine()>7) .@x = 5;")
-    end
-
     test "unassigned variable is rejected" do
       assert {:error, {:unsupported, {:unassigned_var, "z"}}} = compile("bonus bStr,.@z;")
     end
@@ -591,6 +586,55 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
     test "bonus with more than two args is rejected" do
       assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus bStr,1,2;")
+    end
+  end
+
+  describe "conditional assignment (branch-merged ternary)" do
+    test "a var assigned in one branch folds into a ternary at its later use" do
+      assert {:ok, [{:bonus, :str, {:ternary, {:>, :refine, 7}, 5, 0}}]} =
+               compile("if (getrefine()>7) .@x = 5;\nbonus bStr,.@x;")
+    end
+
+    test "if/else-if assignments nest into nested ternaries" do
+      src = """
+      .@r = getrefine();
+      if (.@r >= 9) { .@val = 40; } else if (.@r >= 7) { .@val = 20; }
+      bonus bStr,.@val;
+      """
+
+      assert {:ok,
+              [
+                {:bonus, :str,
+                 {:ternary, {:>=, :refine, 9}, 40, {:ternary, {:>=, :refine, 7}, 20, 0}}}
+              ]} = compile(src)
+    end
+
+    test "a compound assignment inside a branch reads the pre-if value" do
+      src = """
+      .@b = 40;
+      if (getrefine()>=5) { .@b += 10; }
+      bonus bStr,.@b;
+      """
+
+      assert {:ok, [{:bonus, :str, {:ternary, {:>=, :refine, 5}, {:+, 40, 10}, 40}}]} =
+               compile(src)
+    end
+
+    test "a bonus inside a branch inlines the branch-local value directly" do
+      src = """
+      if (getrefine()>=7) { .@val = 10; bonus bStr,.@val; }
+      """
+
+      assert {:ok, [{:if, {:>=, :refine, 7}, [{:bonus, :str, 10}], []}]} = compile(src)
+    end
+
+    test "a var reassigned to the same value in both branches skips the ternary" do
+      src = """
+      if (getrefine()>=7) { .@v = 3; } else { .@v = 3; }
+      bonus bStr,.@v;
+      """
+
+      assert {:ok, [{:bonus, :str, 3}]} = compile(src)
     end
   end
 

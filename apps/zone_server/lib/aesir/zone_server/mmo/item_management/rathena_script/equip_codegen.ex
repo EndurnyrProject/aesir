@@ -12,21 +12,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   ## Refine-variable inlining
 
-  The `.@r = getrefine();` idiom is handled at transpile time. A top-level
-  assignment to a `.@`-scoped variable binds its name to a compiled, input-pure
-  expression in a transpile-time environment; every later `.@r` use is
-  substituted, so the emitted program is pure in the `EquipScript.inputs()`
-  (refine, base level, job level) and the evaluator needs no variable
-  environment. Later assignments shadow earlier ones.
+  The `.@r = getrefine();` idiom is handled at transpile time. An assignment to
+  a `.@`-scoped variable binds its name to a compiled, input-pure expression in
+  a transpile-time environment; every later `.@r` use is substituted, so the
+  emitted program is pure in the `EquipScript.inputs()` (refine, base level, job
+  level) and the evaluator needs no variable environment. Later assignments
+  shadow earlier ones. Compound assignment (`.@x += n`) is desugared by the
+  front end to `.@x = .@x + n`, so it needs no special handling.
 
-  Assignments inside an `if` branch are rejected (`{:conditional_assignment, name}`):
-  the value would depend on the branch taken, making inlining unsound. Branches are
-  therefore walked with the environment read-only.
+  Assignments inside an `if` branch are supported by folding the two branch
+  environments back together at the join: a variable an `if` may have reassigned
+  takes the branch-selecting ternary `cond ? then_value : else_value` at every
+  later use, keeping the value input-pure even though it depended on the branch
+  taken (`merge_envs/4`). A side that leaves the variable untouched reads the
+  pre-`if` value, or `0` when the variable did not exist yet (rAthena's unset
+  `.@var`). Bonuses emitted *inside* a branch already see that branch's evolving
+  environment, so they inline the branch-local value directly.
 
   ## Vocabulary
 
-  - `{:assign, {:var, :local, name, :int}, ast}` at the top level — inline-bind,
-    emit nothing.
+  - `{:assign, {:var, :local, name, :int}, ast}` — inline-bind, emit nothing;
+    inside an `if` branch it feeds `merge_envs/4` (see Refine-variable inlining).
   - `bonus bKey,amount` — `{:bonus, destination, expr}` when `bKey` resolves via
     `BonusKeys` (miss -> `{:unknown_bonus_key, key}`); any other command name and
     any other `bonus` shape is unsupported. Destinations carrying a
@@ -96,9 +102,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
   @logic_ops [:&&, :||]
 
+  @type env :: %{String.t() => EquipScript.expr()}
+
   @spec generate([tuple()]) ::
           {:ok, EquipScript.program()} | {:error, {:unsupported, detail()}}
-  def generate(stmts) when is_list(stmts), do: reduce_top(unblock_all(stmts), %{}, [])
+  def generate(stmts) when is_list(stmts) do
+    with {:ok, {instrs, _env}} <- reduce(unblock_all(stmts), %{}) do
+      {:ok, instrs}
+    end
+  end
 
   @spec unblock_all([tuple()]) :: [tuple()]
   defp unblock_all(stmts), do: Enum.flat_map(stmts, &unblock/1)
@@ -106,45 +118,88 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp unblock({:block, stmts}), do: unblock_all(stmts)
   defp unblock(stmt), do: [stmt]
 
-  @spec reduce_top([tuple()], %{String.t() => EquipScript.expr()}, [EquipScript.instr()]) ::
-          {:ok, EquipScript.program()} | {:error, {:unsupported, detail()}}
-  defp reduce_top([], _env, acc), do: {:ok, Enum.reverse(acc)}
-
-  defp reduce_top([{:assign, {:var, :local, name, :int}, ast} | rest], env, acc) do
-    with {:ok, expr} <- compile_expr(ast, env) do
-      reduce_top(rest, Map.put(env, name, expr), acc)
-    end
-  end
-
-  defp reduce_top([stmt | rest], env, acc) do
-    with {:ok, instrs} <- compile_instrs(stmt, env) do
-      reduce_top(rest, env, Enum.reverse(instrs) ++ acc)
-    end
-  end
-
-  @spec reduce_branch([tuple()], %{String.t() => EquipScript.expr()}) ::
-          {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
-  defp reduce_branch(stmts, env) do
-    stmts
-    |> unblock_all()
-    |> Enum.reduce_while({:ok, []}, fn stmt, {:ok, acc} ->
-      case branch_instr(stmt, env) do
-        {:ok, instrs} -> {:cont, {:ok, Enum.reverse(instrs) ++ acc}}
+  # Threads the transpile-time variable environment through a statement list,
+  # returning the emitted instructions and the resulting environment.
+  @spec reduce([tuple()], env()) ::
+          {:ok, {[EquipScript.instr()], env()}} | {:error, {:unsupported, detail()}}
+  defp reduce(stmts, env) do
+    Enum.reduce_while(stmts, {:ok, {[], env}}, fn stmt, {:ok, {acc, env}} ->
+      case step(stmt, env) do
+        {:ok, {instrs, env}} -> {:cont, {:ok, {acc ++ instrs, env}}}
         {:error, _} = error -> {:halt, error}
       end
     end)
-    |> case do
-      {:ok, acc} -> {:ok, Enum.reverse(acc)}
-      error -> error
+  end
+
+  # A `.@var` assignment binds an input-pure expression and emits nothing; an
+  # `if` folds its branch environments back together (`merge_envs/4`); every
+  # other statement compiles to instructions and leaves the environment as-is.
+  @spec step(tuple(), env()) ::
+          {:ok, {[EquipScript.instr()], env()}} | {:error, {:unsupported, detail()}}
+  defp step({:assign, {:var, :local, name, :int}, ast}, env) do
+    with {:ok, expr} <- compile_expr(ast, env) do
+      {:ok, {[], Map.put(env, name, expr)}}
     end
   end
 
-  @spec branch_instr(tuple(), %{String.t() => EquipScript.expr()}) ::
-          {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
-  defp branch_instr({:assign, {:var, :local, name, :int}, _ast}, _env),
-    do: unsupported({:conditional_assignment, name})
+  defp step({:if, cond_expr, then_stmts, else_stmts}, env) do
+    with {:ok, condition} <- compile_cond(cond_expr, env),
+         {:ok, {then_instrs, then_env}} <- reduce(unblock_all(then_stmts), env),
+         {:ok, {else_instrs, else_env}} <- reduce(unblock_all(else_stmts), env) do
+      merged = merge_envs(env, condition, then_env, else_env)
+      # An `if` whose branches emit nothing existed only to conditionally assign
+      # a variable; that effect is already captured in `merged`, so it needs no
+      # runtime instruction.
+      instrs =
+        if then_instrs == [] and else_instrs == [],
+          do: [],
+          else: [{:if, condition, then_instrs, else_instrs}]
 
-  defp branch_instr(stmt, env), do: compile_instrs(stmt, env)
+      {:ok, {instrs, merged}}
+    end
+  end
+
+  defp step(stmt, env) do
+    with {:ok, instrs} <- compile_instrs(stmt, env) do
+      {:ok, {instrs, env}}
+    end
+  end
+
+  # Merges the two branch environments back into the pre-`if` environment: a
+  # variable an `if` may have reassigned takes the branch-selecting ternary
+  # `cond ? then_value : else_value` at every later use. An unset side reads the
+  # pre-`if` value, or `0` when the variable did not exist yet. Variables neither
+  # branch touched are left as they were, and a variable both branches set to the
+  # same value skips the ternary.
+  @spec merge_envs(env(), EquipScript.condition(), env(), env()) :: env()
+  defp merge_envs(base_env, condition, then_env, else_env) do
+    [then_env, else_env]
+    |> Enum.flat_map(&Map.keys/1)
+    |> Enum.uniq()
+    |> Enum.filter(fn key ->
+      Map.get(then_env, key) != Map.get(base_env, key) or
+        Map.get(else_env, key) != Map.get(base_env, key)
+    end)
+    |> Enum.reduce(base_env, fn key, env ->
+      then_value = branch_value(then_env, base_env, key)
+      else_value = branch_value(else_env, base_env, key)
+
+      merged =
+        if then_value == else_value,
+          do: then_value,
+          else: {:ternary, condition, then_value, else_value}
+
+      Map.put(env, key, merged)
+    end)
+  end
+
+  @spec branch_value(env(), env(), String.t()) :: EquipScript.expr()
+  defp branch_value(branch_env, base_env, key) do
+    case Map.fetch(branch_env, key) do
+      {:ok, value} -> value
+      :error -> Map.get(base_env, key, 0)
+    end
+  end
 
   # A statement normally compiles to exactly one instruction; pair keys expand
   # to two. Normalizing here keeps both fold points list-shaped without every
@@ -212,14 +267,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, "skill", [skill_ast, level_ast, _flag]}, env),
     do: compile_grant_skill(skill_ast, level_ast, env)
-
-  defp compile_instr({:if, cond_expr, then_stmts, else_stmts}, env) do
-    with {:ok, condition} <- compile_cond(cond_expr, env),
-         {:ok, then_instrs} <- reduce_branch(then_stmts, env),
-         {:ok, else_instrs} <- reduce_branch(else_stmts, env) do
-      {:ok, {:if, condition, then_instrs, else_instrs}}
-    end
-  end
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
