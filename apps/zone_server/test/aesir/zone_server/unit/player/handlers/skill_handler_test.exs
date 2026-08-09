@@ -1138,6 +1138,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert SkillHandler.interrupt_cast_on_damage(state) == state
     end
 
+    test "bNoCastCancel equipment keeps a variable-phase cast alive despite damage" do
+      reject(&Broadcast.to_player/2)
+
+      state =
+        45
+        |> interrupting_state(fixed_offset: -100)
+        |> with_equipment_modifiers(%{no_cast_cancel: 1})
+
+      assert SkillHandler.interrupt_cast_on_damage(state) == state
+      assert state.game_state.action_state == :casting
+      refute_received {:to_player, %CastCancel{}}
+    end
+
     test "damage on a non-casting player is a no-op" do
       reject(&Broadcast.to_player/2)
 
@@ -1542,6 +1555,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
   # Builds a real :casting state with a live cast-complete timer and a controllable
   # phase. `fixed_offset` is added to `now`: negative = variable phase (past),
   # positive = fixed phase (future).
+  defp with_equipment_modifiers(state, modifiers) do
+    stats = state.game_state.stats
+    new_stats = %{stats | modifiers: %{stats.modifiers | equipment: modifiers}}
+    %{state | game_state: %{state.game_state | stats: new_stats}}
+  end
+
   defp interrupting_state(sp, opts) do
     fixed_offset = Keyword.fetch!(opts, :fixed_offset)
     interruptible = Keyword.get(opts, :interruptible, true)

@@ -276,11 +276,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   """
   @spec interrupt_cast_on_damage(SessionState.t()) :: SessionState.t()
   def interrupt_cast_on_damage(
-        %{game_state: %{casting: %{fixed_until: _, interruptible: _} = ctx}} = state
+        %{game_state: %{casting: %{fixed_until: _, interruptible: _} = ctx} = game_state} = state
       ) do
     now = System.monotonic_time(:millisecond)
 
-    if now >= ctx.fixed_until and ctx.interruptible do
+    if now >= ctx.fixed_until and ctx.interruptible and not cast_cancel_immune?(game_state) do
       cancel_cast(state, :damage)
     else
       state
@@ -288,6 +288,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   end
 
   def interrupt_cast_on_damage(state), do: state
+
+  # `bNoCastCancel`: equipment that keeps a cast running when the caster is hit
+  # during the interruptible (variable) phase.
+  defp cast_cancel_immune?(%{stats: stats}) do
+    Stats.get_equipment_modifier(stats, :no_cast_cancel) > 0
+  end
+
+  defp cast_cancel_immune?(_game_state), do: false
 
   @doc """
   Forced cancel, phase-agnostic (used by movement). Cancels any in-flight cast;
