@@ -177,6 +177,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "long_range_defense_rate/3" do
+    test "sums defender equipment and status for a ranged hit" do
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{long_atk_def: 20})
+
+      assert EquipmentBonuses.long_range_defense_rate(defender, %{long_atk_def: 10}, true) == 30
+    end
+
+    test "returns 0 for a melee hit even with the modifier present" do
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{long_atk_def: 30})
+
+      assert EquipmentBonuses.long_range_defense_rate(defender, %{long_atk_def: 10}, false) == 0
+    end
+  end
+
   describe "magic_attack_rates/4" do
     test "sums magic_add* families plus magic_atk_ele and skill" do
       attacker =

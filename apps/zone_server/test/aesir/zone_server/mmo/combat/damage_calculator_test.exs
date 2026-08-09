@@ -2037,6 +2037,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert_in_delta reduced / baseline, 0.80, 0.02
     end
 
+    test "long_atk_def combines equipment and status reductions on ranged damage" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      equipped = %{defender | equip_modifiers: %{long_atk_def: 20}}
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+      reduced = damage_with_defender_modifiers(attacker, equipped, %{long_atk_def: 10})
+
+      assert_in_delta reduced / baseline, 0.70, 0.02
+    end
+
+    test "long_atk_def: 30 reduces long-range weapon damage by 30%" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      equipped = %{defender | equip_modifiers: %{long_atk_def: 30}}
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+      reduced = damage_with_defender_modifiers(attacker, equipped, %{})
+
+      assert_in_delta reduced / baseline, 0.70, 0.02
+    end
+
+    test "long_atk_def leaves melee weapon damage untouched" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
+      defender = CombatTestHelper.create_mob_combatant(def: 0)
+      equipped = %{defender | equip_modifiers: %{long_atk_def: 30}}
+
+      baseline = damage_with_defender_modifiers(attacker, defender, %{})
+      melee = damage_with_defender_modifiers(attacker, equipped, %{})
+
+      assert melee == baseline
+    end
+
+    test "long_atk_def floors ranged damage at 1" do
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+
+      defender = %{
+        CombatTestHelper.create_mob_combatant(def: 0)
+        | equip_modifiers: %{long_atk_def: 100}
+      }
+
+      assert damage_with_defender_modifiers(attacker, defender, %{}) == 1
+    end
+
     test "the per-hit ranged opt triggers the reduction with a melee weapon equipped" do
       attacker = CombatTestHelper.create_player_combatant(weapon_type: :sword)
       defender = CombatTestHelper.create_mob_combatant(def: 0)

@@ -751,10 +751,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         ranged_hit?(attacker, opts)
       )
 
+    long_def =
+      EquipmentBonuses.long_range_defense_rate(
+        defender,
+        status_modifiers,
+        ranged_hit?(attacker, opts)
+      )
+
     damage
     |> apply_taken_step(race_class)
     |> apply_taken_step(element)
     |> apply_taken_step(size)
+    |> apply_taken_step(long_def)
     |> apply_taken_rate_step(ranged)
   end
 

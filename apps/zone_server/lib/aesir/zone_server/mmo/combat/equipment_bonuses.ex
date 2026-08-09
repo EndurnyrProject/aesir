@@ -95,6 +95,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   def ranged_damage_taken_rate(%Combatant{}, _status_modifiers, false), do: 0
 
   @doc """
+  Percent reduction the defender's equipment and statuses apply to incoming
+  long-range physical damage.
+
+  Equipment and status values sum, and melee hits read zero.
+  """
+  @spec long_range_defense_rate(Combatant.t(), map(), boolean()) :: rate()
+  def long_range_defense_rate(%Combatant{} = defender, status_modifiers, true) do
+    Map.get(defender.equip_modifiers, :long_atk_def, 0) +
+      Map.get(status_modifiers, :long_atk_def, 0)
+  end
+
+  def long_range_defense_rate(%Combatant{}, _status_modifiers, false), do: 0
+
+  @doc """
   Magic attack-side rate sums keyed on the defender's traits and the spell's
   element.
   """
