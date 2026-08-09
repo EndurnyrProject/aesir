@@ -77,6 +77,40 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bHPDrainRate,RC_Brute,5;")
     end
 
+    test "bHPRegenRate emits an interval-keyed bonus (amount, interval)" do
+      assert {:ok, [{:bonus, {:hp_regen_bonus, 10_000}, 5}]} =
+               compile("bonus2 bHPRegenRate,5,10000;")
+    end
+
+    test "bHPLossRate emits an interval-keyed loss bonus" do
+      assert {:ok, [{:bonus, {:hp_loss_bonus, 5_000}, 10}]} =
+               compile("bonus2 bHPLossRate,10,5000;")
+    end
+
+    test "interval bonus accepts a refine-dependent amount" do
+      assert {:ok, [{:bonus, {:hp_regen_bonus, 1_000}, {:*, :refine, 2}}]} =
+               compile("bonus2 bHPRegenRate,getrefine()*2,1000;")
+    end
+
+    test "interval bonus rejects a non-literal interval" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus2 bHPRegenRate,5,getrefine();")
+    end
+
+    test "bMagicAddRace2 emits a race2-keyed magic bonus" do
+      assert {:ok, [{:bonus, {:magic_addrace2, :goblin}, 20}]} =
+               compile("bonus2 bMagicAddRace2,RC2_Goblin,20;")
+    end
+
+    test "bIgnoreDefClassRate emits a class-keyed ignore-def bonus" do
+      assert {:ok, [{:bonus, {:ignore_def_class, :boss}, 50}]} =
+               compile("bonus2 bIgnoreDefClassRate,Class_Boss,50;")
+    end
+
+    test "bSPGainValue compiles to the flat sp-gain destination" do
+      assert {:ok, [{:bonus, :sp_gain_value, 5}]} = compile("bonus bSPGainValue,5;")
+    end
+
     test "bAtkEle compiles to a :set instruction carrying the element" do
       assert {:ok, [{:set, :atk_ele, :fire}]} = compile("bonus bAtkEle,Ele_Fire;")
     end

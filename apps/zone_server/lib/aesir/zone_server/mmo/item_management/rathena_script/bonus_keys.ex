@@ -30,6 +30,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   Each argument owns its own summing destination, so the codegen emits two
   ordinary `:bonus` instructions and no new IR shape is needed.
 
+  A fifth table, `@interval_keys`, covers the periodic HP-regen/loss `bonus2`
+  keys whose arguments are an **amount and an interval** in milliseconds
+  (`bonus2 bHPRegenRate,n,t`). The interval becomes the destination param, so
+  equal-interval contributions across items sum into one `{family, interval}`
+  entry — mirroring how the periodic-regen tick accumulates and fires per
+  interval. `interval_family/1` exposes the family to the codegen.
+
   Two per-destination rules also live here rather than in the evaluator, so the
   data table stays the single extension point:
 
@@ -45,7 +52,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @type destination :: atom()
-  @type param :: :race | :element | :size | :class | :skill | :status | :item | :race2
+  @type param ::
+          :race | :element | :size | :class | :skill | :status | :item | :race2 | :interval
   @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
   @type value_schema :: %{dest: destination(), param: param()}
   @type pair_schema :: %{first: destination(), second: destination()}
@@ -110,6 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsplashrange" => :splash_range,
     "blongatkdef" => :long_atk_def,
     "bhpgainvalue" => :hp_gain_value,
+    "bspgainvalue" => :sp_gain_value,
     "bshortweapondamagereturn" => :short_weapon_damage_return,
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
@@ -150,7 +159,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
     "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
-    "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent}
+    "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent},
+    "bmagicaddrace2" => %{family: :magic_addrace2, param: :race2, unit: :percent},
+    "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent}
   }
 
   @value_keys %{
@@ -172,6 +183,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bignoredefrace" => %{family: :ignore_def_race, param: :race, amount: 100},
     "bignoremdefrace" => %{family: :ignore_mdef_race, param: :race, amount: 100},
     "bignoredefclass" => %{family: :ignore_def_class, param: :class, amount: 100}
+  }
+
+  # Periodic `bonus2` keys `bonus2 bHPRegenRate,n,t` / `bonus2 bHPLossRate,n,t`
+  # whose arguments are an amount and an interval in milliseconds. The interval
+  # becomes the destination param, so equal-interval contributions sum into one
+  # `{family, interval}` entry the regen tick reads and fires per interval.
+  @interval_keys %{
+    "bhpregenrate" => :hp_regen_bonus,
+    "bhplossrate" => :hp_loss_bonus
   }
 
   # `bonus3` keys whose third argument is a trigger-condition flag
@@ -286,6 +306,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     do: Map.fetch(@flag_param_keys, String.downcase(name))
 
   @doc """
+  Resolves a periodic HP-regen/loss `bonus2` key (`bonus2 bHPRegenRate,n,t`) to
+  the `modifiers.equipment` family its per-interval entries store into. The
+  amount is the leading argument and the interval (the second argument, in
+  milliseconds) becomes the destination param. Returns `:error` for keys outside
+  that vocabulary.
+  """
+  @spec interval_family(String.t()) :: {:ok, atom()} | :error
+  def interval_family(name) when is_binary(name),
+    do: Map.fetch(@interval_keys, String.downcase(name))
+
+  @doc """
   Whether a `bonus3` key's third argument is a droppable trigger-condition flag,
   making its leading `param, amount` pair identical to the key's `bonus2` form.
   The transpiler resolves such keys through `param_schema/1` and discards the
@@ -303,6 +334,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def families do
     (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
     |> Enum.map(& &1.family)
+    |> Kernel.++(Map.values(@interval_keys))
     |> Enum.uniq()
   end
 
@@ -360,11 +392,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec family_param(atom()) :: {:ok, param()} | :error
   def family_param(family) when is_atom(family) do
-    (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
-    |> Enum.find(&(&1.family == family))
-    |> case do
-      %{param: param} -> {:ok, param}
-      nil -> :error
+    if family in Map.values(@interval_keys) do
+      {:ok, :interval}
+    else
+      (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
+      |> Enum.find(&(&1.family == family))
+      |> case do
+        %{param: param} -> {:ok, param}
+        nil -> :error
+      end
     end
   end
 end

@@ -57,7 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     — or an `{:int, id}` literal, and item via a bare `{:int, id}` kept verbatim).
     A key in `BonusKeys.pair_schema/1` instead takes two
     amounts and expands to TWO `{:bonus, dest, expr}` instructions, one per
-    destination, each summing independently. `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
+    destination, each summing independently. A key in
+    `BonusKeys.interval_family/1` (`bHPRegenRate`/`bHPLossRate`) instead carries
+    an amount and a positive-integer interval; the interval becomes the
+    destination param, emitting `{:bonus, {family, interval}, expr}` so
+    equal-interval contributions sum. `RC_Boss` is a sentinel: on an `:addrace`/`:subrace`
     family it redirects to `:addclass`/`:subclass`; on any other family it is
     unsupported. A non-constant or unresolvable param is
     `{:unresolved_param, detail}`; any other shape is unsupported.
@@ -243,8 +247,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, "bonus2", [{:name, key}, first_arg, second_arg]}, env) do
     case BonusKeys.pair_schema(key) do
-      {:ok, schema} -> compile_pair_bonus(schema, first_arg, second_arg, env)
-      :error -> compile_param_bonus(key, first_arg, second_arg, env)
+      {:ok, schema} ->
+        compile_pair_bonus(schema, first_arg, second_arg, env)
+
+      :error ->
+        case BonusKeys.interval_family(key) do
+          {:ok, family} -> compile_interval_bonus(family, first_arg, second_arg, env)
+          :error -> compile_param_bonus(key, first_arg, second_arg, env)
+        end
     end
   end
 
@@ -313,6 +323,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       {:ok, {:bonus, dest, amount}}
     end
   end
+
+  # A periodic HP-regen/loss key `bonus2 bHPRegenRate,n,t` carries an amount and
+  # an interval in milliseconds. The interval must be a positive integer literal;
+  # it becomes the destination param so equal-interval contributions sum into one
+  # `{family, interval}` entry the regen tick reads. A non-literal or non-positive
+  # interval is unsupported.
+  @spec compile_interval_bonus(atom(), term(), term(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_interval_bonus(family, value_arg, {:int, interval}, env) when interval > 0 do
+    with {:ok, expr} <- compile_expr(value_arg, env) do
+      {:ok, {:bonus, {family, interval}, expr}}
+    end
+  end
+
+  defp compile_interval_bonus(_family, _value_arg, interval_arg, _env),
+    do: unsupported({:unresolved_param, interval_arg})
 
   # Both arguments of a pair key are amounts summing into a destination of their
   # own, so the key expands to two independent `:bonus` instructions rather than

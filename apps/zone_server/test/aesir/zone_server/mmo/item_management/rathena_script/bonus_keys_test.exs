@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :hp_drain_percent,
     :long_atk_def,
     :hp_gain_value,
+    :sp_gain_value,
     :short_weapon_damage_return,
     :fixcast_rate,
     :item_heal_rate,
@@ -267,13 +268,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
     "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
-    "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent}
+    "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent},
+    "bmagicaddrace2" => %{family: :magic_addrace2, param: :race2, unit: :percent},
+    "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent}
   }
 
   # Families reachable only through the single-argument flag-param keys
-  # (`bonus bIgnoreDefClass,Class_Boss;`), which `families/0`/`family_param/1`
-  # also expose but which carry no `bonus2` schema of their own.
-  @flag_only_families [:ignore_def_class]
+  # (`bonus bIgnoreDefRace,RC_Brute;`), which `families/0`/`family_param/1`
+  # also expose but which carry no `bonus2` schema of their own. `ignore_def_class`
+  # is no longer here — `bIgnoreDefClassRate` gives it a `bonus2` schema too.
+  @flag_only_families []
+
+  # Families reachable only through the periodic-interval keys
+  # (`bHPRegenRate`/`bHPLossRate`), exposed by `families/0`/`family_param/1` as
+  # `:interval`-param destinations.
+  @interval_families [:hp_regen_bonus, :hp_loss_bonus]
 
   describe "param_schema/1" do
     test "resolves every documented bonus2 parameterized key" do
@@ -339,7 +348,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   describe "families/0" do
     test "returns exactly the documented param-key families" do
       expected =
-        (@param_schemas |> Map.values() |> Enum.map(& &1.family)) ++ @flag_only_families
+        (@param_schemas |> Map.values() |> Enum.map(& &1.family)) ++
+          @flag_only_families ++ @interval_families
 
       assert Enum.sort(BonusKeys.families()) == Enum.sort(Enum.uniq(expected))
     end
@@ -357,7 +367,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "resolves flag-only families reachable through the single-argument keys" do
-      assert BonusKeys.family_param(:ignore_def_class) == {:ok, :class}
+      assert BonusKeys.family_param(:ignore_def_race) == {:ok, :race}
+    end
+
+    test "resolves the periodic-interval families to the :interval param kind" do
+      assert BonusKeys.family_param(:hp_regen_bonus) == {:ok, :interval}
+      assert BonusKeys.family_param(:hp_loss_bonus) == {:ok, :interval}
+    end
+  end
+
+  describe "interval_family/1" do
+    test "resolves the periodic HP regen/loss keys case-insensitively" do
+      assert BonusKeys.interval_family("bHPRegenRate") == {:ok, :hp_regen_bonus}
+      assert BonusKeys.interval_family("bhpregenrate") == {:ok, :hp_regen_bonus}
+      assert BonusKeys.interval_family("bHPLossRate") == {:ok, :hp_loss_bonus}
+      assert BonusKeys.interval_family("BHPLOSSRATE") == {:ok, :hp_loss_bonus}
+    end
+
+    test "returns :error for flat, param and pair keys" do
+      assert BonusKeys.interval_family("bStr") == :error
+      assert BonusKeys.interval_family("bAddRace") == :error
+      assert BonusKeys.interval_family("bHPDrainRate") == :error
     end
   end
 

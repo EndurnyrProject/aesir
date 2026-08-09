@@ -197,11 +197,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   @doc """
   Percent of the defender's hard DEF ignored by the attacker's equipment,
-  capped at 100.
+  capped at 100. Sums the by-race (`bIgnoreDefRace`/`bIgnoreDefRaceRate`) and
+  by-class (`bIgnoreDefClass`/`bIgnoreDefClassRate`) contributions against the
+  defender's race and class.
   """
-  @spec ignore_def_rate(Combatant.t(), atom()) :: rate()
-  def ignore_def_rate(%Combatant{} = attacker, defender_race) do
-    min(read(attacker, :ignore_def_race, defender_race), 100)
+  @spec ignore_def_rate(Combatant.t(), Combatant.t()) :: rate()
+  def ignore_def_rate(%Combatant{} = attacker, %Combatant{race: race, class: class}) do
+    min(read(attacker, :ignore_def_race, race) + read(attacker, :ignore_def_class, class), 100)
   end
 
   @doc """

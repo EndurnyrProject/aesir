@@ -661,16 +661,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     defender.combat_stats.soft_def
   end
 
-  # Reduces the defender's hard DEF by the attacker's equipment ignore-def-by-race
-  # percent before the renewal formula. A nil attacker (legacy 2-arity call) or a
-  # 0 rate leaves hard DEF bit-identical.
+  # Reduces the defender's hard DEF by the attacker's equipment
+  # ignore-def-by-race/class percent before the renewal formula. A nil attacker
+  # (legacy 2-arity call) or a 0 rate leaves hard DEF bit-identical.
   defp ignore_hard_def(hard_def, _attacker, _defender, :omit_equipment_def_ignore),
     do: hard_def
 
   defp ignore_hard_def(hard_def, nil, _defender, :apply_equipment_def_ignore), do: hard_def
 
   defp ignore_hard_def(hard_def, attacker, defender, :apply_equipment_def_ignore) do
-    rate = EquipmentBonuses.ignore_def_rate(attacker, defender.race)
+    rate = EquipmentBonuses.ignore_def_rate(attacker, defender)
     div(hard_def * (100 - rate), 100)
   end
 

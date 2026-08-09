@@ -228,6 +228,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
   describe "ignore_def_rate/2" do
     test "sums specific race and :all" do
+      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :normal)
+
       attacker =
         CombatTestHelper.create_player_combatant()
         |> with_equip_modifiers(%{
@@ -235,24 +237,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
           {:ignore_def_race, :all} => 10
         })
 
-      assert EquipmentBonuses.ignore_def_rate(attacker, :brute) == 40
+      assert EquipmentBonuses.ignore_def_rate(attacker, defender) == 40
     end
 
-    test "caps at 100" do
+    test "adds the by-class contribution against the defender's class" do
+      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{
+          {:ignore_def_race, :brute} => 20,
+          {:ignore_def_class, :boss} => 15,
+          {:ignore_def_class, :all} => 5
+        })
+
+      assert EquipmentBonuses.ignore_def_rate(attacker, defender) == 40
+    end
+
+    test "caps the combined race and class rate at 100" do
+      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+
       attacker =
         CombatTestHelper.create_player_combatant()
         |> with_equip_modifiers(%{
           {:ignore_def_race, :brute} => 80,
-          {:ignore_def_race, :all} => 80
+          {:ignore_def_class, :boss} => 80
         })
 
-      assert EquipmentBonuses.ignore_def_rate(attacker, :brute) == 100
+      assert EquipmentBonuses.ignore_def_rate(attacker, defender) == 100
     end
 
     test "empty equip_modifiers returns 0" do
+      defender = CombatTestHelper.create_mob_combatant(race: :brute, class: :normal)
       attacker = CombatTestHelper.create_player_combatant()
 
-      assert EquipmentBonuses.ignore_def_rate(attacker, :brute) == 0
+      assert EquipmentBonuses.ignore_def_rate(attacker, defender) == 0
     end
   end
 

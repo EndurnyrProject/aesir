@@ -106,6 +106,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           spirit_sphere_revision: non_neg_integer(),
           skill_cooldowns: %{integer() => integer()},
           regen_accumulators: %{atom() => non_neg_integer()},
+          equip_regen_accumulators: %{{atom(), pos_integer()} => non_neg_integer()},
           stats: PlayerStats.t(),
           vars: %{String.t() => term()},
           temp_vars: %{String.t() => term()},
@@ -291,6 +292,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     last_song: nil,
     plagiarized: nil,
     regen_accumulators: %{hp_acc: 0, sp_acc: 0, skill_hp_acc: 0, skill_sp_acc: 0},
+    # Per-interval elapsed-time accumulators for periodic equipment HP
+    # regen/loss (`bHPRegenRate`/`bHPLossRate`), keyed by `{family, interval_ms}`.
+    equip_regen_accumulators: %{},
     # Party membership (0 = none), sourced from the Character at spawn and
     # kept current by Party.Manager pushes (`characters.party_id` is the
     # source of truth; this mirrors it for the session's lifetime).
