@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
              int: 30,
              varcast_reductions: [],
              varcast_rate: 0,
-             fixed_cast: 0
+             fixed_cast: 0,
+             fixcast_rate: 0
            }
   end
 

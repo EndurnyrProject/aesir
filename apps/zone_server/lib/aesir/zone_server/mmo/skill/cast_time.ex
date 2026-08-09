@@ -26,11 +26,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   cast, after the multiplicative `varcast_reductions` factor - matching rAthena's
   distinct additive pass in `skill_vfcastfix`.
 
+  `fixcast_rate` is the ADDITIVE percentage channel on the fixed portion
+  (summed across equipment sources, negative = shorter). It scales the resolved
+  fixed cast by `max(0, 100 + fixcast_rate) / 100`, applied before the flat
+  `fixed_cast` delta.
+
   `fixed_cast` is a FLAT millisecond delta on the fixed portion only (equipment
   fixed-cast bonuses are overwhelmingly negative). It is applied after the
-  skill's own fixed cast is resolved and floored at 0; the variable portion is
-  derived from the unmodified fixed cast, so shortening the fixed portion never
-  silently lengthens the variable one.
+  percentage `fixcast_rate` scaling and after the skill's own fixed cast is
+  resolved, then floored at 0; the variable portion is derived from the
+  unmodified fixed cast, so shortening the fixed portion never silently
+  lengthens the variable one.
 
   Skills with rAthena's `CastTimeFlags.IgnoreDex` set `ignore_dex` on their
   definition. Their variable portion skips the DEX/INT stat factor while still
@@ -52,7 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
           required(:int) => non_neg_integer(),
           optional(:varcast_reductions) => [non_neg_integer()],
           optional(:varcast_rate) => integer(),
-          optional(:fixed_cast) => integer()
+          optional(:fixed_cast) => integer(),
+          optional(:fixcast_rate) => integer()
         }
 
   @typedoc "Computed cast-time breakdown in milliseconds."
@@ -79,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
   defp compute_for_base(base, definition, level, stats) when base in [nil, 0] do
     case Enum.at(definition.fixed_cast_time, level - 1) do
       fixed when is_integer(fixed) and fixed > 0 ->
-        fixed = max(0, fixed + Map.get(stats, :fixed_cast, 0))
+        fixed = adjust_fixed(fixed, stats)
         %{fixed: fixed, variable: 0, total: fixed}
 
       _other ->
@@ -93,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
     varcast_rate = Map.get(stats, :varcast_rate, 0)
 
     fct_base = fixed_cast(definition, level, base)
-    fct = max(0, fct_base + Map.get(stats, :fixed_cast, 0))
+    fct = adjust_fixed(fct_base, stats)
     vct_base = max(0, base - fct_base)
     reduction = stat_reduction(definition, dex, int)
     vct_after_stat = round(vct_base * reduction)
@@ -107,6 +114,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTime do
     vct = round(vct_reduced * max(0, 100 + varcast_rate) / 100)
 
     %{fixed: fct, variable: vct, total: fct + vct}
+  end
+
+  # Applies the percentage `fixcast_rate` scaling, then the flat `fixed_cast`
+  # delta, to a resolved fixed-cast base; floored at 0.
+  @spec adjust_fixed(non_neg_integer(), stats()) :: non_neg_integer()
+  defp adjust_fixed(fct_base, stats) do
+    rate = Map.get(stats, :fixcast_rate, 0)
+    scaled = round(fct_base * max(0, 100 + rate) / 100)
+    max(0, scaled + Map.get(stats, :fixed_cast, 0))
   end
 
   @spec stat_reduction(Definition.t(), non_neg_integer(), non_neg_integer()) :: float()

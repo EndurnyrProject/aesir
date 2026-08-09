@@ -183,7 +183,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
         merged_modifier(caster.character_id, :varcast_rate) +
           equip_modifier(caster, :varcast_rate) +
           equip_modifier(caster, {:skill_varcast_rate, skill_id}),
-      fixed_cast: equip_modifier(caster, :fixed_cast)
+      fixed_cast: equip_modifier(caster, :fixed_cast),
+      fixcast_rate:
+        equip_modifier(caster, :fixcast_rate) +
+          equip_modifier(caster, {:skill_fixcast_rate, skill_id})
     }
   end
 

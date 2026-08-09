@@ -177,4 +177,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
                %{fixed: 350, variable: 650, total: 1_000}
     end
   end
+
+  describe "compute/3 fixcast_rate" do
+    test "a negative rate scales the fixed cast down by a percentage" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{
+               dex: 0,
+               int: 0,
+               fixcast_rate: -50
+             }) == %{fixed: 175, variable: 650, total: 825}
+    end
+
+    test "a positive rate scales the fixed cast up" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0, fixcast_rate: 100}) ==
+               %{fixed: 700, variable: 650, total: 1_350}
+    end
+
+    test "the rate floors the fixed cast at 0, never inverting it" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{
+               dex: 0,
+               int: 0,
+               fixcast_rate: -150
+             }) == %{fixed: 0, variable: 650, total: 650}
+    end
+
+    test "the percentage rate applies before the flat fixed_cast delta" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{
+               dex: 0,
+               int: 0,
+               fixcast_rate: -50,
+               fixed_cast: -25
+             }) == %{fixed: 150, variable: 650, total: 800}
+    end
+
+    test "the rate also scales the default 20% fixed portion" do
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0, fixcast_rate: -50}) ==
+               %{fixed: 100, variable: 800, total: 900}
+    end
+
+    test "the rate never touches the variable cast" do
+      assert %{variable: 650} =
+               CastTime.compute(definition([1_000], [350]), 1, %{
+                 dex: 0,
+                 int: 0,
+                 fixcast_rate: -80
+               })
+    end
+
+    test "fixcast_rate defaults to 0 when absent" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0}) ==
+               %{fixed: 350, variable: 650, total: 1_000}
+    end
+  end
 end

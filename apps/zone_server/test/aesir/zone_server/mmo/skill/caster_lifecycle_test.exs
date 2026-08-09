@@ -177,8 +177,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
         player(
           equipment_modifiers: %{
             {:skill_varcast_rate, 29} => -30,
+            {:skill_fixcast_rate, 29} => -40,
             varcast_rate: -10,
-            fixed_cast: 25
+            fixed_cast: 25,
+            fixcast_rate: -10
           }
         )
 
@@ -379,7 +381,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
         merged_modifier(:player, caster.character_id) +
           equip_modifier(caster, :varcast_rate) +
           equip_modifier(caster, {:skill_varcast_rate, skill_id}),
-      fixed_cast: equip_modifier(caster, :fixed_cast)
+      fixed_cast: equip_modifier(caster, :fixed_cast),
+      fixcast_rate:
+        equip_modifier(caster, :fixcast_rate) +
+          equip_modifier(caster, {:skill_fixcast_rate, skill_id})
     }
   end
 
