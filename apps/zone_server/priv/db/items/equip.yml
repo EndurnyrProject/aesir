@@ -11818,6 +11818,14 @@
     - right_hand
   magic_attack: 125
   name: Warlock's Magic Wand
+  on_equip: |-
+    ctx = bonus(ctx, :int, 4)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, {:ignore_mdef_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 25)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -11840,6 +11848,14 @@
     - right_hand
   magic_attack: 125
   name: Warlock's Battle Wand
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 15)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -12625,6 +12641,12 @@
     - right_hand
   magic_attack: 100
   name: TE Woe Staff
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 10)
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, 10)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 1000)
+    ctx = bonus(ctx, :heal_power, 5)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -12778,6 +12800,13 @@
     - right_hand
   magic_attack: 125
   name: Half BF Staff2
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 10)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 200)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -12827,6 +12856,21 @@
     - right_hand
   magic_attack: 150
   name: Baculum Daemonicum
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx = if (base_level(ctx) > 99) do
+      bonus(ctx, :matk, 30)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:add_eff, :sc_blind}, 2000)
+      ctx = bonus(ctx, :sp_cost_rate, -10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -17779,6 +17823,12 @@
     - both_hand
   magic_attack: 130
   name: TE Woe Two Hand Staff
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 20)
+    ctx = bonus(ctx, {:magic_addrace, :player_doram}, 20)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
+    ctx = bonus(ctx, :heal_power, 5)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_staff
@@ -28962,6 +29012,14 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :hit, 10)
+    ctx = bonus(ctx, :max_hp, 500)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 100)
+    ctx
   type: armor
 - aegis_name: Medal_Thief
   armor_level: 1
@@ -28978,6 +29036,14 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = bonus(ctx, :max_sp, 80)
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 100)
+    ctx
   type: armor
 - aegis_name: Medal_Acolyte
   armor_level: 1
@@ -28992,6 +29058,13 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :mdef, 6)
+    ctx = bonus(ctx, :max_hp, 600)
+    ctx = bonus(ctx, {:add_eff, :sc_silence}, 100)
+    ctx
   type: armor
 - aegis_name: Medal_Mage
   armor_level: 1
@@ -29028,6 +29101,14 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :critical, 10)
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = bonus(ctx, :max_sp, 80)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx
   type: armor
 - aegis_name: Medal_Merchant
   armor_level: 1
@@ -29042,6 +29123,14 @@
   locations:
     - both_accessory
   name: Medal of Honor
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :max_hp, 500)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 100)
+    ctx
   type: armor
 - aegis_name: Icarus_Wing
   armor_level: 1
@@ -29163,6 +29252,14 @@
   locations:
     - both_accessory
   name: Sheriff Badge
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :critical, 10)
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = bonus(ctx, :max_sp, 80)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx
   type: armor
 - aegis_name: Directive_A
   armor_level: 1
@@ -39689,6 +39786,13 @@
     - head_mid
     - head_top
   name: Grand Peco Hairband
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :brute}, 7)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 7)
+    ctx = bonus(ctx, {:addrace, :player_human}, 7)
+    ctx = bonus(ctx, {:addrace, :player_doram}, 7)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 10)
+    ctx
   refineable: true
   type: armor
   view: 473
@@ -44846,6 +44950,13 @@
   locations:
     - head_top
   name: Hat Of Expert
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_bleeding}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_silence}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_confusion}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_curse}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_blind}, 500)
+    ctx
   refineable: true
   type: armor
   view: 16
@@ -45275,6 +45386,19 @@
   locations:
     - head_top
   name: Shaman Hat
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 2)
+    ctx = bonus(ctx, {:subele, :neutral}, 3)
+    ctx = bonus(ctx, {:subele, :water}, 3)
+    ctx = bonus(ctx, {:subele, :earth}, 3)
+    ctx = bonus(ctx, {:subele, :fire}, 3)
+    ctx = bonus(ctx, {:subele, :wind}, 3)
+    ctx = bonus(ctx, {:subele, :poison}, 3)
+    ctx = bonus(ctx, {:subele, :holy}, 3)
+    ctx = bonus(ctx, {:subele, :shadow}, 3)
+    ctx = bonus(ctx, {:subele, :ghost}, 3)
+    ctx = bonus(ctx, {:subele, :undead}, 3)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -49387,6 +49511,12 @@
     - right_hand
   magic_attack: 120
   name: Ancient Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp, 100)
+    ctx = bonus(ctx, :sp_regen, 5)
+    ctx = bonus(ctx, {:add_eff2, :sc_curse}, 20)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 20)
+    ctx
   refineable: true
   subtype: dagger
   type: weapon
@@ -114938,6 +115068,10 @@
   locations:
     - both_hand
   name: End Of The Horizon
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 500)
+    ctx
   range: 9
   refineable: true
   slots: 1

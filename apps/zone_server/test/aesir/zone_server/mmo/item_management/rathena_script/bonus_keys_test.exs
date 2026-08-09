@@ -379,6 +379,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
   end
 
+  describe "bonus3_flag_key?/1" do
+    test "is true for the reader-backed flag-arg keys, any case" do
+      for key <- ~w(bAddEff bAddEffWhenHit bSubEle bSubRace bSubSize bSubClass) do
+        assert BonusKeys.bonus3_flag_key?(key)
+        assert BonusKeys.bonus3_flag_key?(String.upcase(key))
+      end
+    end
+
+    test "is false for bonus3 keys outside the allow-list" do
+      for key <- ~w(bAddEffOnSkill bAutoSpell bAddMonsterDropItem bAddRace bStr) do
+        refute BonusKeys.bonus3_flag_key?(key)
+      end
+    end
+
+    test "every flag-arg key resolves through param_schema/1" do
+      for key <- ~w(bAddEff bAddEffWhenHit bSubEle bSubRace bSubSize bSubClass) do
+        assert {:ok, _schema} = BonusKeys.param_schema(key)
+      end
+    end
+  end
+
   describe "param_domain/1" do
     test "race domain" do
       assert BonusKeys.param_domain(:race) == [

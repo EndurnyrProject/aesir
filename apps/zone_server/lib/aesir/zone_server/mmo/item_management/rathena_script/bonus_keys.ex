@@ -174,6 +174,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bignoredefclass" => %{family: :ignore_def_class, param: :class, amount: 100}
   }
 
+  # `bonus3` keys whose third argument is a trigger-condition flag
+  # (short/long/weapon/magic/self/target) rather than a value. Their leading
+  # `param, amount` pair is identical to the same key's `bonus2` form, so the
+  # transpiler reuses that key's `@param_keys` schema and drops the flag. Only
+  # keys whose `{family, param}` destination already has a runtime consumer are
+  # listed: the sub-resist family (read on the damage-taken side) and the
+  # on-hit status-infliction family. The dropped flag makes the effect apply to
+  # every attack instead of only the flagged category — the same breadth the
+  # `bonus2` form of these keys already has.
+  @bonus3_flag_keys MapSet.new([
+                      "baddeff",
+                      "baddeffwhenhit",
+                      "bsubele",
+                      "bsubrace",
+                      "bsubsize",
+                      "bsubclass"
+                    ])
+
   @race_domain [
     :formless,
     :undead,
@@ -266,6 +284,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @spec flag_param_schema(String.t()) :: {:ok, flag_schema()} | :error
   def flag_param_schema(name) when is_binary(name),
     do: Map.fetch(@flag_param_keys, String.downcase(name))
+
+  @doc """
+  Whether a `bonus3` key's third argument is a droppable trigger-condition flag,
+  making its leading `param, amount` pair identical to the key's `bonus2` form.
+  The transpiler resolves such keys through `param_schema/1` and discards the
+  flag. Returns `false` for every other key (any case).
+  """
+  @spec bonus3_flag_key?(String.t()) :: boolean()
+  def bonus3_flag_key?(name) when is_binary(name),
+    do: MapSet.member?(@bonus3_flag_keys, String.downcase(name))
 
   @doc """
   The deduplicated set of family atoms every recognized `bonus2` and

@@ -55,7 +55,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     family it redirects to `:addclass`/`:subclass`; on any other family it is
     unsupported. A non-constant or unresolvable param is
     `{:unresolved_param, detail}`; any other shape is unsupported.
-    `bonus3`..`bonus5` parse as ordinary commands and stay unsupported.
+  - `bonus3 bKey,param,amount,flag` — for the keys in
+    `BonusKeys.bonus3_flag_key?/1` (the sub-resist family and the on-hit
+    status-infliction family), whose third argument is a trigger-condition flag
+    rather than a value: the leading `param, amount` pair is identical to the
+    key's `bonus2` form, so it resolves through the same param schema and the
+    flag is dropped. Every other `bonus3` key, and `bonus4`/`bonus5`, parse as
+    ordinary commands and stay unsupported.
   - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is an
     input-pure boolean over comparisons / `&&` / `||`; a read outside the
     inputs, such as `BaseClass` or `eaclass()`, is unsupported.
@@ -174,6 +180,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp compile_instr({:cmd, "bonus2", args}, _env), do: unsupported({:bonus_shape, args})
+
+  # A `bonus3` key whose third argument is a trigger-condition flag has the same
+  # leading `param, amount` pair as its `bonus2` form; it reuses that key's param
+  # schema and drops the flag. Every other `bonus3` shape stays unsupported.
+  defp compile_instr({:cmd, "bonus3", [{:name, key}, param_ast, amount, _flag]}, env) do
+    if BonusKeys.bonus3_flag_key?(key) do
+      compile_param_bonus(key, param_ast, amount, env)
+    else
+      unsupported({:unsupported_command, "bonus3"})
+    end
+  end
 
   defp compile_instr({:if, cond_expr, then_stmts, else_stmts}, env) do
     with {:ok, condition} <- compile_cond(cond_expr, env),

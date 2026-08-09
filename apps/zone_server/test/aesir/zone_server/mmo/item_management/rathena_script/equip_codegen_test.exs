@@ -480,9 +480,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bMaxHP,RC_Brute,10;")
     end
 
-    test "bonus3/4/5 are unsupported commands" do
+    test "unsupported bonus3 keys, and bonus4/5, stay unsupported commands" do
       assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
-               compile("bonus3 bAddMonsterDropItem,501,100;")
+               compile("bonus3 bAddMonsterDropItem,501,2,100;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
                compile("bonus4 bAutoSpell,MG_FIREBOLT,5,20,0;")
@@ -505,10 +505,47 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus2 bAddRace,RC_Brute;")
     end
 
-    test "bonus3/4 bAddEff forms with atf flag/duration are rejected" do
-      assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
+    test "bonus3 flag-arg keys reuse the bonus2 param schema and drop the flag" do
+      # on-hit status infliction (add_eff / add_eff_when_hit)
+      assert {:ok, [{:bonus, {:add_eff, :sc_stun}, 500}]} =
                compile("bonus3 bAddEff,Eff_Stun,500,ATF_TARGET;")
 
+      assert {:ok, [{:bonus, {:add_eff, :sc_curse}, 200}]} =
+               compile("bonus3 bAddEff,Eff_Curse,200,ATF_WEAPON|ATF_LONG|ATF_TARGET;")
+
+      assert {:ok, [{:bonus, {:add_eff_when_hit, :sc_blind}, 300}]} =
+               compile("bonus3 bAddEffWhenHit,Eff_Blind,300,ATF_SHORT;")
+
+      # sub-resist family (subele / subrace / subsize / subclass)
+      assert {:ok, [{:bonus, {:subele, :fire}, 3}]} =
+               compile("bonus3 bSubEle,Ele_Fire,3,BF_MAGIC;")
+
+      assert {:ok, [{:bonus, {:subrace, :demon}, 10}]} =
+               compile("bonus3 bSubRace,RC_Demon,10,BF_WEAPON;")
+
+      assert {:ok, [{:bonus, {:subsize, :large}, 15}]} =
+               compile("bonus3 bSubSize,Size_Large,15,BF_WEAPON;")
+
+      assert {:ok, [{:bonus, {:subclass, :boss}, 20}]} =
+               compile("bonus3 bSubClass,Class_Boss,20,BF_NORMAL;")
+    end
+
+    test "bonus3 flag-arg keys accept a refine-dependent amount" do
+      assert {:ok, [{:bonus, {:subele, :water}, {:*, :refine, 2}}]} =
+               compile("bonus3 bSubEle,Ele_Water,getrefine()*2,BF_MAGIC;")
+    end
+
+    test "a bonus3 key outside the flag-arg allow-list stays unsupported" do
+      assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
+               compile("bonus3 bAddEffOnSkill,MG_FIREBOLT,Eff_Stun,500;")
+    end
+
+    test "bonus3 flag-arg key with an unresolvable param is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "Eff_NotAStatus"}}} =
+               compile("bonus3 bAddEff,Eff_NotAStatus,500,ATF_TARGET;")
+    end
+
+    test "bonus4 bAddEff (flag + duration) stays unsupported" do
       assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
                compile("bonus4 bAddEff,Eff_Stun,500,ATF_TARGET,5000;")
     end
