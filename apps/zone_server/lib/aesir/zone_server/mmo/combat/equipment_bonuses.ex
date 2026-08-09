@@ -4,8 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   Every read sums a family's specific-param key with its `:all` key
   (`Map.get(combatant.equip_modifiers, key, 0)`), matching how the status
-  modifier tuple keys already sum in the magic calculator. Mobs carry an
-  empty `equip_modifiers` map, so every read is zero for them.
+  modifier tuple keys already sum in the magic calculator. Secondary monster
+  group families sum each matching group and the `:all` key once. Mobs carry
+  an empty `equip_modifiers` map, so every read is zero for them.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -17,7 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @doc """
   Physical attack-side rate sums keyed on the defender's traits.
 
-  Race and class share one family group per renewal (`race_class`). `bAddEle`
+  Race, secondary monster groups, and class share one family group per renewal
+  (`race_class`). `bAddEle`
   keys on the defender's own defense element (`defender.element`), not the
   attack's element, so `attack_element` is accepted for call-site symmetry
   with `damage_taken_rates/3` but is not read here.
@@ -32,7 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     %{
       race_class:
         read(attacker, :addrace, defender.race) + read(attacker, :addclass, defender.class) +
-          add_damage_class_rate(attacker, defender),
+          add_damage_class_rate(attacker, defender) +
+          read_race2(attacker, :addrace2, defender.race2),
       element: read(attacker, :addele, element_atom(defender.element)),
       size: read(attacker, :addsize, defender.size),
       skill: skill_rate(attacker, :skill_atk, skill_id)
@@ -40,8 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
-  Damage-taken-side rate sums keyed on the attacker's traits, read off the
-  defender's own equipment.
+  Damage-taken-side rate sums keyed on the attacker's traits, including
+  secondary monster groups, read off the defender's own equipment.
 
   `status_modifiers` is the defender's folded status-effect modifier map; its
   element/race resist keys (`:subele_holy`, `:subrace_demon`) sum into the same
@@ -78,7 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     %{
       race_class:
         read(defender, :subrace, attacker.race) + read(defender, :subclass, attacker.class) +
-          status_subrace(status_modifiers, attacker.race),
+          status_subrace(status_modifiers, attacker.race) +
+          read_race2(defender, :subrace2, attacker.race2),
       element:
         read(defender, :subele, attack_element) +
           read(defender, :sub_def_ele, element_atom(attacker.element)) +
@@ -123,8 +127,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   def long_range_defense_rate(%Combatant{}, _status_modifiers, false), do: 0
 
   @doc """
-  Magic attack-side rate sums keyed on the defender's traits and the spell's
-  element.
+  Magic attack-side rate sums keyed on the defender's traits, including
+  secondary monster groups, and the spell's element.
   """
   @spec magic_attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom()) :: %{
           race: rate(),
@@ -141,7 +145,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
         spell_element
       ) do
     %{
-      race: read(attacker, :magic_addrace, defender.race),
+      race:
+        read(attacker, :magic_addrace, defender.race) +
+          read_race2(attacker, :magic_addrace2, defender.race2),
       class: read(attacker, :magic_addclass, defender.class),
       element_target: read(attacker, :magic_addele, element_atom(defender.element)),
       size: read(attacker, :magic_addsize, defender.size),
@@ -255,6 +261,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
 
   defp add_damage_class_rate(attacker, %Combatant{monster_id: monster_id}) do
     Map.get(attacker.equip_modifiers, {:add_damage_class, monster_id}, 0)
+  end
+
+  @spec read_race2(Combatant.t(), atom(), [atom()]) :: rate()
+  defp read_race2(%Combatant{} = combatant, family, race2) when is_list(race2) do
+    group_sum =
+      Enum.reduce(race2, 0, fn group, acc ->
+        acc + Map.get(combatant.equip_modifiers, {family, group}, 0)
+      end)
+
+    group_sum + Map.get(combatant.equip_modifiers, {family, :all}, 0)
   end
 
   @spec read(Combatant.t(), atom(), atom()) :: rate()

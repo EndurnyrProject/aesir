@@ -36,6 +36,73 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              }
     end
 
+    test "secondary monster groups add physical and magic attack bonuses" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:addrace2, :goblin} => 20, {:magic_addrace2, :goblin} => 30})
+
+      defender = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin]}
+
+      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
+               race_class: 20,
+               element: 0,
+               size: 0,
+               skill: 0
+             }
+
+      assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
+               race: 30,
+               class: 0,
+               element_target: 0,
+               size: 0,
+               atk_ele: 0,
+               skill: 0
+             }
+    end
+
+    test "secondary monster group all bonus is counted once" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{
+          {:addrace2, :goblin} => 10,
+          {:addrace2, :orc} => 15,
+          {:addrace2, :all} => 5
+        })
+
+      defender = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin, :orc]}
+
+      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
+               race_class: 30,
+               element: 0,
+               size: 0,
+               skill: 0
+             }
+    end
+
+    test "empty secondary monster groups do not match exact bonuses" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:addrace2, :goblin} => 20, {:magic_addrace2, :goblin} => 30})
+
+      defender = %{CombatTestHelper.create_mob_combatant() | race2: []}
+
+      assert EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral) == %{
+               race_class: 0,
+               element: 0,
+               size: 0,
+               skill: 0
+             }
+
+      assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
+               race: 0,
+               class: 0,
+               element_target: 0,
+               size: 0,
+               atk_ele: 0,
+               skill: 0
+             }
+    end
+
     test "race and class share one family group" do
       attacker =
         CombatTestHelper.create_player_combatant()
@@ -126,6 +193,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                race_class: 15 + 5,
                element: 9,
                size: 10,
+               skill: 0
+             }
+    end
+
+    test "secondary monster groups sum matching damage-taken bonuses" do
+      defender =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:subrace2, :goblin} => 10, {:subrace2, :orc} => 15})
+
+      attacker = %{CombatTestHelper.create_mob_combatant() | race2: [:goblin, :orc]}
+
+      assert EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral) == %{
+               race_class: 25,
+               element: 0,
+               size: 0,
                skill: 0
              }
     end
