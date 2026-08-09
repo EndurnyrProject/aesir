@@ -139,7 +139,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       skill_lv_condition: [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}],
       stat_expr: [{:bonus, :atk, {:div, {:stat, :str}, 10}}],
       stat_condition: [{:if, {:>=, {:stat, :int}, 120}, [{:bonus, :matk, 10}], []}],
-      stat_combined: [{:bonus, :hit, {:div, {:+, {:stat, :str}, {:stat, :dex}}, 12}}]
+      stat_combined: [{:bonus, :hit, {:div, {:+, {:stat, :str}, {:stat, :dex}}, 12}}],
+      min_expr: [{:bonus, :atk, {:div, {:min, :base_level, 195}, 15}}],
+      max_expr: [{:bonus, :atk, {:max, 1, :refine}}],
+      pow_nested: [{:bonus, :atk, {:pow, {:min, :refine, 15}, 2}}],
+      pow_scaled: [{:bonus, :atk, {:div, {:*, {:pow, :refine, 2}, 125}, 100}}]
     ]
 
     for {name, program} <- programs do
@@ -527,6 +531,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, on(0)) == %{}
       assert EquipScript.eval(program, on(0, stats: %{str: 1})) == %{atk: 5}
+    end
+
+    test "min and max clamp their operands" do
+      assert EquipScript.eval([{:bonus, :atk, {:min, :base_level, 195}}], on(0, base_level: 250)) ==
+               %{atk: 195}
+
+      assert EquipScript.eval([{:bonus, :atk, {:max, 1, :refine}}], on(0)) == %{atk: 1}
+      assert EquipScript.eval([{:bonus, :atk, {:max, 1, :refine}}], on(9)) == %{atk: 9}
+    end
+
+    test "pow raises the base to a non-negative integer exponent" do
+      assert EquipScript.eval([{:bonus, :atk, {:pow, :refine, 2}}], on(12)) == %{atk: 144}
+
+      assert EquipScript.eval([{:bonus, :atk, {:pow, {:min, :refine, 15}, 2}}], on(20)) ==
+               %{atk: 225}
+    end
+
+    test "pow with a negative exponent truncates to zero" do
+      assert EquipScript.eval([{:bonus, :atk, {:pow, 2, {:-, 0, :refine}}}], on(3)) == %{atk: 0}
     end
   end
 end

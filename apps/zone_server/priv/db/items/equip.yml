@@ -4721,6 +4721,15 @@
   locations:
     - both_hand
   name: Metal Katar
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (refine(ctx) * 5))
+    ctx = bonus(ctx, :crit_atk_rate, refine(ctx))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :atk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -6866,6 +6875,15 @@
   locations:
     - both_hand
   name: Metal Two Handed Axe
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 7))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :atk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -6909,6 +6927,7 @@
   locations:
     - right_hand
   name: Vicious Mind Spear
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 3
   refineable: true
   slots: 1
@@ -7761,6 +7780,10 @@
   locations:
     - right_hand
   name: Crimson Spear
+  on_equip: |-
+    ctx = bonus(ctx, :atk, if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225))
+    ctx = bonus(ctx, :atk, (div(max(0, (base_level(ctx) - 70)), 10) * 5))
+    ctx
   range: 3
   refineable: true
   slots: 2
@@ -7949,6 +7972,7 @@
   locations:
     - both_hand
   name: Vicious Mind Lance
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 3
   refineable: true
   slots: 1
@@ -8812,6 +8836,14 @@
   locations:
     - both_hand
   name: Metal Lance
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (refine(ctx) * 6))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :atk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -8915,6 +8947,10 @@
   locations:
     - both_hand
   name: Crimson Lance
+  on_equip: |-
+    ctx = bonus(ctx, :atk, if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225))
+    ctx = bonus(ctx, :atk, (div(max(0, (base_level(ctx) - 70)), 10) * 5))
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -10011,6 +10047,30 @@
   locations:
     - right_hand
   name: Glorious Morning Star
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:add_eff, :sc_stun}, 2000)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -10902,6 +10962,15 @@
     - right_hand
   magic_attack: 10
   name: Metal Book
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (refine(ctx) * 5))
+    ctx = bonus(ctx, :matk, (refine(ctx) * 2))
+    ctx = if (base_level(ctx) > 20) do
+      bonus(ctx, :atk, (div((min(base_level(ctx), 120) - 20), 10) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -11199,6 +11268,11 @@
     - right_hand
   magic_attack: 120
   name: Vicious Mind Rod
+  on_equip: |-
+    ctx = bonus(ctx, :matk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :int, 5)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -13154,6 +13228,11 @@
     - right_hand
   magic_attack: 70
   name: Crimson Rod
+  on_equip: |-
+    ctx = bonus(ctx, :int, 4)
+    ctx = bonus(ctx, :matk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -14440,6 +14519,28 @@
   locations:
     - both_hand
   name: Glorious Hunter Bow
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 55)
+    ctx = bonus(ctx, {:addrace, :player_human}, 55)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :crit_atk_rate, (min(10, refine(ctx)) * 2))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, {:skill_atk, 46}, 20)
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   subtype: bow
@@ -14567,6 +14668,7 @@
   locations:
     - right_hand
   name: Vicious Mind Knuckle
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 1
   refineable: true
   slots: 1
@@ -15279,6 +15381,10 @@
   locations:
     - right_hand
   name: Crimson Knuckles
+  on_equip: |-
+    ctx = bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -15406,6 +15512,7 @@
   locations:
     - right_hand
   name: Fist of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: knuckle
@@ -15847,6 +15954,10 @@
     - right_hand
   magic_attack: 50
   name: Vicious Mind Violin
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :matk, div(pow(min(refine(ctx), 15), 2), 2))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -16510,6 +16621,7 @@
   locations:
     - right_hand
   name: Crimson Violin
+  on_equip: 'bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))'
   range: 2
   refineable: true
   slots: 2
@@ -16543,6 +16655,7 @@
   locations:
     - right_hand
   name: Unity Violin
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 2
   refineable: true
   slots: 1
@@ -16658,6 +16771,7 @@
     - right_hand
   magic_attack: 100
   name: Violin of Evil
+  on_equip: bonus(ctx, :matk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: musical
@@ -17490,6 +17604,7 @@
   locations:
     - right_hand
   name: Crimson Whip
+  on_equip: 'bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))'
   range: 2
   refineable: true
   slots: 2
@@ -17508,6 +17623,10 @@
     - right_hand
   magic_attack: 50
   name: Vicious Mind Wire
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :matk, div(pow(min(refine(ctx), 15), 2), 2))
+    ctx
   range: 2
   refineable: true
   slots: 1
@@ -17525,6 +17644,7 @@
   locations:
     - right_hand
   name: Unity Whip
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 2
   refineable: true
   slots: 1
@@ -18167,6 +18287,10 @@
     - both_hand
   magic_attack: 150
   name: Crimson Two-Handed Staff
+  on_equip: |-
+    ctx = bonus(ctx, :int, 5)
+    ctx = bonus(ctx, :matk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -18188,6 +18312,11 @@
     - both_hand
   magic_attack: 200
   name: Vicious Mind Staff
+  on_equip: |-
+    ctx = bonus(ctx, :matk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :int, 6)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -18277,6 +18406,7 @@
     - both_hand
   magic_attack: 135
   name: Unity Two-Handed Staff
+  on_equip: bonus(ctx, :matk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -18457,6 +18587,7 @@
     - both_hand
   magic_attack: 200
   name: Staff of Evil
+  on_equip: bonus(ctx, :matk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: two_handed_staff
@@ -18493,6 +18624,10 @@
     - both_hand
   magic_attack: 250
   name: Illusion Wizardry Staff
+  on_equip: |-
+    ctx = bonus(ctx, :int, (6 + div(min(refine(ctx), 10), 2)))
+    ctx = bonus(ctx, :dex, (2 + div(min(refine(ctx), 10), 2)))
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -20317,6 +20452,27 @@
   locations:
     - left_hand
   name: Immune Shield
+  on_equip: |-
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, {:subele, :neutral}, (min(refine(ctx), 12) - 4))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, {:subele, :neutral}, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:subele, :fire}, 5)
+      ctx = bonus(ctx, {:subele, :water}, 5)
+      ctx = bonus(ctx, {:subele, :wind}, 5)
+      ctx = bonus(ctx, {:subele, :earth}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -20610,6 +20766,10 @@
   locations:
     - left_hand
   name: Bunker Shield
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, (4 + max(0, (refine(ctx) - 4))))
+    ctx = bonus(ctx, :aspd_rate, -5)
+    ctx
   refineable: true
   type: armor
   view: 3
@@ -41895,6 +42055,18 @@
   locations:
     - head_top
   name: Taurus Crown
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, max(1, min(12, refine(ctx))))
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :atk, 15)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :agi, 2)
+    ctx
   refineable: true
   type: armor
   view: 536
@@ -51103,6 +51275,15 @@
   locations:
     - right_hand
   name: Metal Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (refine(ctx) * 5))
+    ctx = bonus(ctx, :matk, (refine(ctx) * 2))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :atk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   subtype: dagger
@@ -52237,6 +52418,15 @@
   locations:
     - both_hand
   name: Metal Revolver
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (3 * refine(ctx)))
+    ctx = bonus(ctx, :long_atk_rate, refine(ctx))
+    ctx = if (base_level(ctx) >= 20) do
+      bonus(ctx, :atk, (3 * div(min(base_level(ctx), 120), 10)))
+    else
+      ctx
+    end
+    ctx
   range: 7
   refineable: true
   slots: 1
@@ -52271,6 +52461,14 @@
   locations:
     - both_hand
   name: Crimson Revolver
+  on_equip: |-
+    ctx = bonus(ctx, :atk, if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225))
+    ctx = if (base_level(ctx) > 70) do
+      bonus(ctx, :atk, (div((base_level(ctx) - 70), 10) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 7
   refineable: true
   slots: 2
@@ -52289,6 +52487,7 @@
   locations:
     - both_hand
   name: Vicious Mind Revolver
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 7
   refineable: true
   slots: 1
@@ -52307,6 +52506,7 @@
   locations:
     - both_hand
   name: Unity Revolver
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 7
   refineable: true
   slots: 1
@@ -52609,6 +52809,7 @@
   locations:
     - both_hand
   name: Handgun of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 7
   refineable: true
   subtype: revolver
@@ -53980,6 +54181,16 @@
   locations:
     - both_hand
   name: Crimson Huuma Shuriken
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :atk, if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225))
+    ctx = bonus(ctx, :matk, if((refine(ctx) <= 15), do: div(pow(refine(ctx), 2), 2), else: 225))
+    ctx = if (base_level(ctx) > 70) do
+      bonus(ctx, :atk, (div((base_level(ctx) - 70), 10) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -53999,6 +54210,11 @@
     - both_hand
   magic_attack: 50
   name: Vicious Mind Huuma Shuriken
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :matk, div(pow(min(refine(ctx), 15), 2), 2))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -54017,6 +54233,7 @@
   locations:
     - both_hand
   name: Unity Huuma Shuriken
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -54136,6 +54353,7 @@
   locations:
     - both_hand
   name: Huuma of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: huuma
@@ -55699,6 +55917,7 @@
   locations:
     - right_hand
   name: Crimson Saber
+  on_equip: 'bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))'
   range: 1
   refineable: true
   slots: 2
@@ -55726,6 +55945,7 @@
   locations:
     - right_hand
   name: Vicious Mind Saber
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 1
   refineable: true
   slots: 1
@@ -55753,6 +55973,7 @@
   locations:
     - right_hand
   name: Unity Sword
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -55780,6 +56001,7 @@
   locations:
     - right_hand
   name: Unity Dagger
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -55963,6 +56185,7 @@
   locations:
     - right_hand
   name: Saber of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -58650,6 +58873,10 @@
   locations:
     - armor
   name: Egregori Mail
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :angel}, (3 + max(0, (refine(ctx) - 5))))
+    ctx = bonus(ctx, {:magic_addrace, :angel}, (3 + max(0, (refine(ctx) - 5))))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -58740,6 +58967,10 @@
   locations:
     - armor
   name: Exorcist Mail
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :undead}, (3 + max(0, (refine(ctx) - 5))))
+    ctx = bonus(ctx, {:magic_addrace, :undead}, (3 + max(0, (refine(ctx) - 5))))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -60214,6 +60445,10 @@
   locations:
     - armor
   name: Sealed Tatenasi Armor
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = bonus(ctx, :vit, min(refine(ctx), 10))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -61524,6 +61759,12 @@
   locations:
     - armor
   name: Khalitzburg Armor
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+    ctx = bonus(ctx, {:subrace, :player_human}, 1)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 1)
+    ctx = bonus(ctx, :long_atk_rate, (6 * div(min(15, refine(ctx)), 3)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -66155,6 +66396,15 @@
   locations:
     - right_hand
   name: Metal Mace
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 5))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :atk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -66564,6 +66814,7 @@
   locations:
     - right_hand
   name: Crimson Mace
+  on_equip: 'bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))'
   range: 1
   refineable: true
   slots: 2
@@ -66591,6 +66842,10 @@
   locations:
     - right_hand
   name: Vicious Mind Mace
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -66661,6 +66916,7 @@
   locations:
     - right_hand
   name: Unity Mace
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -67072,6 +67328,7 @@
   locations:
     - right_hand
   name: Mace of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: mace
@@ -67959,6 +68216,7 @@
   locations:
     - both_hand
   name: Vicious Mind Bow
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 5
   refineable: true
   slots: 1
@@ -68151,6 +68409,7 @@
   locations:
     - both_hand
   name: Crimson Bow
+  on_equip: 'bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))'
   range: 5
   refineable: true
   slots: 2
@@ -68172,6 +68431,7 @@
   locations:
     - both_hand
   name: Unity Bow
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 5
   refineable: true
   slots: 1
@@ -68500,6 +68760,7 @@
   locations:
     - both_hand
   name: Bow of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 5
   refineable: true
   subtype: bow
@@ -74018,6 +74279,23 @@
   locations:
     - head_top
   name: Thornbush Hairband
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, {:magic_addele, :fire}, 5)
+    ctx = bonus(ctx, {:magic_addele, :water}, 5)
+    ctx = bonus(ctx, {:magic_addele, :wind}, 5)
+    ctx = bonus(ctx, {:magic_addele, :earth}, 5)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, {:magic_addele, :fire}, (min(refine(ctx), 10) * 2))
+      ctx = bonus(ctx, {:magic_addele, :water}, (min(refine(ctx), 10) * 2))
+      ctx = bonus(ctx, {:magic_addele, :wind}, (min(refine(ctx), 10) * 2))
+      ctx = bonus(ctx, {:magic_addele, :earth}, (min(refine(ctx), 10) * 2))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -75092,6 +75370,11 @@
   locations:
     - head_top
   name: Palace Guard Cap
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, max(5, refine(ctx)))
+    ctx = bonus(ctx, :long_atk_def, max(5, refine(ctx)))
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79302,6 +79585,31 @@
   locations:
     - head_top
   name: Spell Circuit
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (div(refine(ctx), 2) * 20))
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:magic_atk_ele, :shadow}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 10) do
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :fixed_cast, ((0 - max(min((refine(ctx) - 15), 5), 0)) * 100))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79357,6 +79665,19 @@
   locations:
     - head_top
   name: 2017 RTC Symbols
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 2)
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, :max_sp_rate, 3)
+    ctx = bonus(ctx, {:subrace, :demi_human}, (6 + div(min(15, refine(ctx)), 3)))
+    ctx = bonus(ctx, {:subrace, :player_human}, (6 + div(min(15, refine(ctx)), 3)))
+    ctx = bonus(ctx, {:subrace, :player_doram}, (6 + div(min(15, refine(ctx)), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :mdef, 6)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79384,6 +79705,27 @@
   locations:
     - head_top
   name: General's Helm
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (div(refine(ctx), 2) * 15))
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, :aspd_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :aspd, 1)
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 10) do
+      bonus(ctx, :crit_atk_rate, 15)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :fixed_cast, ((0 - max(min((refine(ctx) - 15), 5), 0)) * 100))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79776,6 +80118,31 @@
   locations:
     - head_top
   name: Fancy Feather Hat
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (15 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :long_atk_rate, 7)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, :aspd, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :long_atk_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      bonus(ctx, :fixed_cast, (-100 * div(min((refine(ctx) - 10), 15), 1)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79812,6 +80179,33 @@
   locations:
     - head_top
   name: Dog Officer
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (15 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :atk, 30)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, :aspd, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, :crit_atk_rate, 3)
+      ctx = bonus(ctx, :long_atk_rate, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      bonus(ctx, :fixed_cast, (-100 * div(min((refine(ctx) - 10), 15), 1)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79851,6 +80245,34 @@
   locations:
     - head_top
   name: Amistr Beret
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (10 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :atk, (10 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :holy}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, :matk_rate, 3)
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      bonus(ctx, :fixed_cast, (-100 * div(min((refine(ctx) - 10), 15), 1)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -80286,6 +80708,31 @@
   locations:
     - head_top
   name: Engineer Cap
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (10 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :atk, (10 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :formless}, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :formless}, 10)
+      ctx = bonus(ctx, {:magic_addrace, :formless}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, {:addrace, :formless}, min((refine(ctx) - 10), 15))
+      ctx = bonus(ctx, {:magic_addrace, :formless}, min((refine(ctx) - 10), 15))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -80755,6 +81202,14 @@
   locations:
     - head_top
   name: Flame Bird
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :fire}, (20 + (refine(ctx) * 3)))
+    ctx = if (refine(ctx) >= 8) do
+      grant_skill(ctx, 18, min(10, refine(ctx)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -92530,6 +92985,7 @@
   locations:
     - garment
   name: Hunter's Manteau
+  on_equip: bonus(ctx, :hit, (1 + max(1, (refine(ctx) - 5))))
   refineable: true
   slots: 1
   type: armor
@@ -94271,6 +94727,7 @@
   locations:
     - garment
   name: Illusion Ancient Cape
+  on_equip: bonus(ctx, :agi, (2 + div(min(refine(ctx), 10), 2)))
   refineable: true
   slots: 1
   type: armor
@@ -96691,6 +97148,15 @@
   locations:
     - both_hand
   name: Metal Two Hand Sword
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (refine(ctx) * 6))
+    ctx = bonus(ctx, :matk, (refine(ctx) * 2))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :atk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -96898,6 +97364,10 @@
   locations:
     - both_hand
   name: Crimson Two-Handed Sword
+  on_equip: |-
+    ctx = bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx = bonus(ctx, :matk, if((refine(ctx) <= 15), do: div(pow(refine(ctx), 2), 2), else: 225))
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -96917,6 +97387,10 @@
   locations:
     - both_hand
   name: Vicious Mind Two-Handed Sword
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :matk, div(pow(min(refine(ctx), 15), 2), 2))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -97092,6 +97566,7 @@
   locations:
     - both_hand
   name: Two-Handed Sword of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: two_handed_sword
@@ -97108,6 +97583,16 @@
   locations:
     - both_hand
   name: Trial Rune Knight's Two-Handed Sword
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, :critical, 10)
+    ctx = bonus(ctx, :atk, (6 * div(min(base_level(ctx), 160), 10)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, skill_lv(ctx, 60))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -97495,6 +97980,11 @@
   locations:
     - both_hand
   name: Full Force
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :atk, (pow(refine(ctx), 2) * 4))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -98316,6 +98806,18 @@
   locations:
     - shoes
   name: Immune Boots
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, (3 + max(1, (refine(ctx) - 6))))
+    ctx = bonus(ctx, {:subele, :shadow}, -3)
+    ctx = bonus(ctx, {:subele, :earth}, -3)
+    ctx = bonus(ctx, {:subele, :fire}, -3)
+    ctx = bonus(ctx, {:subele, :ghost}, -3)
+    ctx = bonus(ctx, {:subele, :holy}, -3)
+    ctx = bonus(ctx, {:subele, :poison}, -3)
+    ctx = bonus(ctx, {:subele, :undead}, -3)
+    ctx = bonus(ctx, {:subele, :water}, -3)
+    ctx = bonus(ctx, {:subele, :wind}, -3)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -99004,6 +99506,10 @@
   locations:
     - shoes
   name: Louise's Red Boots
+  on_equip: |-
+    ctx = bonus(ctx, {:add_item_heal, 569}, 100)
+    ctx = bonus(ctx, :hp_regen, (50 + (min(refine(ctx), 10) * 10)))
+    ctx
   refineable: true
   type: armor
   weight: 400
@@ -100400,6 +100906,7 @@
   locations:
     - shoes
   name: Spiked Boots
+  on_equip: bonus(ctx, :short_weapon_damage_return, div(min(refine(ctx), 10), 2))
   refineable: true
   slots: 1
   type: armor
@@ -105960,6 +106467,10 @@
   locations:
     - shadow_shoes
   name: Rogue Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :atk, (skill_lv(ctx, 2) + ((max(refine(ctx), 6) - 6) * skill_lv(ctx, 2))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Wizard_Shoes
@@ -106002,6 +106513,10 @@
   locations:
     - shadow_shoes
   name: Bard Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :atk, (skill_lv(ctx, 315) + ((max(refine(ctx), 6) - 6) * skill_lv(ctx, 315))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Dancer_Shoes
@@ -106010,6 +106525,10 @@
   locations:
     - shadow_shoes
   name: Dancer Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :atk, (skill_lv(ctx, 323) + ((max(refine(ctx), 6) - 6) * skill_lv(ctx, 323))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Knight_Armor
@@ -106054,6 +106573,10 @@
   locations:
     - shadow_armor
   name: Alchemist Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :atk, (skill_lv(ctx, 227) + ((max(refine(ctx), 6) - 6) * skill_lv(ctx, 227))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Priest_Armor
@@ -115044,6 +115567,7 @@
   locations:
     - both_hand
   name: Lance of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -115552,6 +116076,7 @@
     - right_hand
   magic_attack: 100
   name: Rod of Evil
+  on_equip: bonus(ctx, :matk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: staff
@@ -116614,6 +117139,7 @@
     - right_hand
   magic_attack: 100
   name: Wire of Evil
+  on_equip: bonus(ctx, :matk, pow(refine(ctx), 2))
   range: 2
   refineable: true
   subtype: whip
@@ -116991,6 +117517,7 @@
   locations:
     - both_hand
   name: Crimson Katar
+  on_equip: 'bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))'
   range: 1
   refineable: true
   slots: 2
@@ -117008,6 +117535,7 @@
   locations:
     - both_hand
   name: Vicious Mind Katar
+  on_equip: bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
   range: 1
   refineable: true
   slots: 1
@@ -117047,6 +117575,7 @@
   locations:
     - both_hand
   name: Unity Katar
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -117163,6 +117692,7 @@
   locations:
     - both_hand
   name: Katar of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: katar
@@ -117757,6 +118287,10 @@
   locations:
     - both_hand
   name: Crimson Two-Handed Axe
+  on_equip: |-
+    ctx = bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -117779,6 +118313,10 @@
   locations:
     - both_hand
   name: Vicious Mind Two-Handed Axe
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -117801,6 +118339,7 @@
   locations:
     - both_hand
   name: Unity Two-Handed Axe
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -117949,6 +118488,7 @@
   locations:
     - both_hand
   name: Two-Handed Axe of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -119415,6 +119955,10 @@
   locations:
     - both_accessory
   name: Steam Starter Ring
+  on_equip: |-
+    ctx = grant_skill(ctx, 28, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, max(0, (101 - base_level(ctx))))
+    ctx
   type: armor
   weight: 10
 - aegis_name: Broken_Chip_1
@@ -119789,6 +120333,13 @@
   locations:
     - both_accessory
   name: Foxtail Ring
+  on_equip: |-
+    ctx = bonus(ctx, {:exp_add_race, :all}, 5)
+    ctx = bonus(ctx, :atk, (2 * min(div(base_level(ctx), 5), 10)))
+    ctx = bonus(ctx, :matk, (2 * min(div(base_level(ctx), 5), 10)))
+    ctx = bonus(ctx, :max_hp, (10 * min(div(base_level(ctx), 5), 10)))
+    ctx = bonus(ctx, :max_sp, (5 * min(div(base_level(ctx), 5), 10)))
+    ctx
   type: armor
   weight: 100
 - aegis_name: Magical_Ring
@@ -120806,6 +121357,10 @@
   locations:
     - right_accessory
   name: Royal Guardian Ring
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, min(div(base_level(ctx), 25), 7))
+    ctx = bonus(ctx, :max_sp_rate, min(div(base_level(ctx), 25), 7))
+    ctx
   slots: 1
   type: armor
   weight: 10
@@ -122045,6 +122600,10 @@
   locations:
     - right_hand
   name: Crimson Bible
+  on_equip: |-
+    ctx = bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx = bonus(ctx, :matk, if((refine(ctx) <= 15), do: div(pow(refine(ctx), 2), 2), else: 225))
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -122064,6 +122623,11 @@
   locations:
     - right_hand
   name: Vicious Mind Book
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :matk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -122083,6 +122647,7 @@
   locations:
     - right_hand
   name: Unity Bible
+  on_equip: bonus(ctx, :atk, div((pow(refine(ctx), 2) * 125), 100))
   range: 1
   refineable: true
   slots: 1
@@ -122206,6 +122771,7 @@
     - right_hand
   magic_attack: 100
   name: Book of Evil
+  on_equip: bonus(ctx, :matk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: book
@@ -122223,6 +122789,13 @@
   locations:
     - right_hand
   name: Illusion Book of the Apocalypse
+  on_equip: |-
+    ctx = bonus(ctx, {:addele, :water}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:addele, :earth}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:addele, :fire}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:addele, :wind}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:subele, :holy}, -30)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -122408,6 +122981,13 @@
   locations:
     - right_hand
   name: Illusion Tablet
+  on_equip: |-
+    ctx = bonus(ctx, {:addele, :shadow}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:addele, :undead}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:addele, :poison}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:addele, :ghost}, (10 + (10 * div(min(refine(ctx), 10), 3))))
+    ctx = bonus(ctx, {:subele, :shadow}, -30)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -122830,6 +123410,10 @@
   locations:
     - right_hand
   name: Crimson Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :atk, ((div((base_level(ctx) - 70), 10) * 5) + if((refine(ctx) <= 15), do: pow(refine(ctx), 2), else: 225)))
+    ctx = bonus(ctx, :matk, if((refine(ctx) <= 15), do: div(pow(refine(ctx), 2), 2), else: 225))
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -122867,6 +123451,10 @@
     - right_hand
   magic_attack: 50
   name: Vicious Mind Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :atk, pow(min(refine(ctx), 15), 2))
+    ctx = bonus(ctx, :matk, div(pow(min(refine(ctx), 15), 2), 2))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -123013,6 +123601,12 @@
     - right_hand
   magic_attack: 40
   name: Enhanced Metal Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :matk, ((40 + (4 * refine(ctx))) + (3 * div(min(base_level(ctx), 150), 10))))
+    ctx = bonus(ctx, :aspd, 1)
+    ctx = bonus(ctx, :aspd_rate, (2 * refine(ctx)))
+    ctx = bonus(ctx, :atk, (7 * (refine(ctx) + div(min(base_level(ctx), 150), 10))))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -123383,6 +123977,7 @@
   locations:
     - right_hand
   name: Dagger of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 1
   refineable: true
   subtype: dagger
@@ -123434,6 +124029,16 @@
     - right_hand
   magic_attack: 140
   name: Trial Shadow Chaser's Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :matk, (3 * div(min(base_level(ctx), 160), 10)))
+    ctx = bonus(ctx, :atk, (3 * div(min(base_level(ctx), 160), 10)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :matk_rate, skill_lv(ctx, 210))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -123895,6 +124500,31 @@
     - right_hand
   magic_attack: 130
   name: Scarlet Athame
+  on_equip: |-
+    ctx = grant_skill(ctx, 83, 1)
+    ctx = bonus(ctx, {:magic_atk_ele, :fire}, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :max_hp_rate, 10)
+      ctx = bonus(ctx, :max_sp_rate, 10)
+      ctx = bonus(ctx, :long_atk_def, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      grant_skill(ctx, 83, min(10, refine(ctx)))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :max_hp_rate, 10)
+      ctx = bonus(ctx, :max_sp_rate, 10)
+      ctx = bonus(ctx, :long_atk_def, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -133919,6 +134549,7 @@
   locations:
     - right_hand
   name: Spear of Evil
+  on_equip: bonus(ctx, :atk, pow(refine(ctx), 2))
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -141031,6 +141662,28 @@
   locations:
     - head_top
   name: Northern Tiara
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, :matk, (20 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:magic_atk_ele, :all}, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, {:magic_atk_ele, :all}, 7)
+      ctx = bonus(ctx, :fixed_cast, (-100 * div(min((refine(ctx) - 10), 15), 1)))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -143682,6 +144335,31 @@
   locations:
     - head_top
   name: Rising Circlet
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 500)
+    ctx = bonus(ctx, :max_sp, 200)
+    ctx = bonus(ctx, :matk, (5 * div(min(250, base_level(ctx)), 15)))
+    ctx = bonus(ctx, :atk, (5 * div(min(250, base_level(ctx)), 15)))
+    ctx = if (base_level(ctx) >= 100) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, :fixed_cast, -500)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :varcast_rate, -10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -147804,6 +148482,10 @@
   locations:
     - head_mid
   name: Little Abyss Dragon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, div(min(base_level(ctx), 100), 2))
+    ctx = bonus(ctx, :matk, div(min(base_level(ctx), 100), 2))
+    ctx
   type: armor
   view: 2316
   weight: 300
@@ -157526,6 +158208,32 @@
   locations:
     - armor
   name: Paradise Luxury Suit
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 1500)
+    ctx = bonus(ctx, :max_sp, 150)
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, :atk, (5 * div(min(base_level(ctx), 150), 10)))
+    ctx = if (base_level(ctx) >= 105) do
+      bonus(ctx, :atk_rate, 3)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      bonus(ctx, :max_hp_rate, 3)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, :atk, 40)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: 2Para_Armor_B
   armor_level: 1
@@ -157535,6 +158243,32 @@
   locations:
     - armor
   name: Advanced Paradise Robe
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 1000)
+    ctx = bonus(ctx, :max_sp, 250)
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, :matk, (5 * div(min(base_level(ctx), 150), 10)))
+    ctx = if (base_level(ctx) >= 105) do
+      bonus(ctx, :matk_rate, 3)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      bonus(ctx, :max_hp_rate, 3)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, :matk, 40)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Cursed_Devils_Mail_A
   armor_level: 1
@@ -159705,6 +160439,39 @@
   locations:
     - armor
   name: Virtuous Lightbringer
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = bonus(ctx, :pow, 15)
+    ctx = bonus(ctx, :spl, 15)
+    ctx = bonus(ctx, {:subclass, :boss}, 5)
+    ctx = bonus(ctx, {:subclass, :normal}, 5)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 7)
+    ctx = bonus(ctx, {:subrace, :player_human}, 7)
+    ctx = bonus(ctx, :max_hp_rate, (min(15, refine(ctx)) * 3))
+    ctx = bonus(ctx, :max_sp_rate, (min(15, refine(ctx)) * 3))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, {:addsize, :all}, 15)
+      ctx = bonus(ctx, {:magic_addsize, :all}, 15)
+      ctx = if (refine(ctx) >= 12) do
+        ctx = bonus(ctx, {:addsize, :all}, 25)
+        ctx = bonus(ctx, {:magic_addsize, :all}, 25)
+        ctx = bonus(ctx, {:subrace, :demon}, 15)
+        ctx = bonus(ctx, {:subrace, :undead}, 15)
+        ctx = if (refine(ctx) >= 14) do
+          bonus(ctx, {:magic_atk_ele, :holy}, 60)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -160364,6 +161131,10 @@
   locations:
     - left_hand
   name: Illusion Guard
+  on_equip: |-
+    ctx = bonus(ctx, :aspd, 2)
+    ctx = bonus(ctx, :perfect_hit, (3 * div(min(refine(ctx), 12), 2)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -160377,6 +161148,10 @@
   locations:
     - left_hand
   name: Illusion Silver Guard
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -7)
+    ctx = bonus(ctx, :delay_rate, (0 - div(min(refine(ctx), 12), 2)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -162275,6 +163050,30 @@
   locations:
     - shoes
   name: Paradise Boots
+  on_equip: |-
+    ctx = bonus(ctx, :short_atk_rate, 3)
+    ctx = bonus(ctx, :long_atk_rate, 3)
+    ctx = bonus(ctx, :critical, div(min(base_level(ctx), 100), 5))
+    ctx = if (base_level(ctx) >= 30) do
+      ctx = bonus(ctx, :short_atk_rate, 3)
+      ctx = bonus(ctx, :long_atk_rate, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 45) do
+      ctx = bonus(ctx, :short_atk_rate, 4)
+      ctx = bonus(ctx, :long_atk_rate, 4)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 85) do
+      bonus(ctx, :fixed_cast, -300)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: 1Para_Boots_B
   armor_level: 1
@@ -162284,6 +163083,25 @@
   locations:
     - shoes
   name: Paradise Shoes
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, 3)
+    ctx = bonus(ctx, :matk, (2 * div(min(base_level(ctx), 100), 5)))
+    ctx = if (base_level(ctx) >= 30) do
+      bonus(ctx, {:magic_atk_ele, :all}, 3)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 45) do
+      bonus(ctx, {:magic_atk_ele, :all}, 4)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 85) do
+      bonus(ctx, :fixed_cast, -300)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: 2Para_Boots_A
   armor_level: 1
@@ -162293,6 +163111,33 @@
   locations:
     - shoes
   name: Paradise Luxury Boots
+  on_equip: |-
+    ctx = bonus(ctx, :short_atk_rate, 10)
+    ctx = bonus(ctx, :long_atk_rate, 10)
+    ctx = bonus(ctx, :fixed_cast, -300)
+    ctx = bonus(ctx, :max_hp, (50 * div(min(base_level(ctx), 150), 10)))
+    ctx = bonus(ctx, :max_sp, (20 * div(min(base_level(ctx), 150), 10)))
+    ctx = if (base_level(ctx) >= 105) do
+      bonus(ctx, :critical, 15)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, :crit_atk_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      bonus(ctx, :crit_atk_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, :atk_rate, 5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Egirnion_Shoes
   armor_level: 1
@@ -162769,6 +163614,32 @@
   locations:
     - shoes
   name: Advanced Paradise Shoes
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_addele, :all}, 10)
+    ctx = bonus(ctx, :fixed_cast, -300)
+    ctx = bonus(ctx, :max_hp, (40 * div(min(base_level(ctx), 150), 10)))
+    ctx = bonus(ctx, :max_sp, (30 * div(min(base_level(ctx), 150), 10)))
+    ctx = if (base_level(ctx) >= 105) do
+      bonus(ctx, :varcast_rate, -10)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, {:magic_addele, :all}, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      bonus(ctx, {:magic_addele, :all}, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, :matk_rate, 5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Hero_Boots_LT
   armor_level: 2
@@ -167096,6 +167967,26 @@
   locations:
     - garment
   name: Paradise Manteau
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 20)
+    ctx = bonus(ctx, :hit, 15)
+    ctx = bonus(ctx, :hit, div(min(base_level(ctx), 100), 5))
+    ctx = if (base_level(ctx) >= 30) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 45) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 85) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: 1Para_Manteau_B
   armor_level: 1
@@ -167105,6 +167996,26 @@
   locations:
     - garment
   name: Paradise Muffler
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 20)
+    ctx = bonus(ctx, :flee, 20)
+    ctx = bonus(ctx, :flee, div(min(base_level(ctx), 100), 5))
+    ctx = if (base_level(ctx) >= 30) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 45) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 85) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: 2Para_Manteau_A
   armor_level: 1
@@ -167114,6 +168025,32 @@
   locations:
     - garment
   name: Advanced Paradise Manteau
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 20)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :hit, 35)
+    ctx = bonus(ctx, :varcast_rate, (-1 * div(min(base_level(ctx), 150), 10)))
+    ctx = if (base_level(ctx) >= 105) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: 2Para_Manteau_B
   armor_level: 1
@@ -167123,6 +168060,32 @@
   locations:
     - garment
   name: Advanced Paradise Muffler
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 20)
+    ctx = bonus(ctx, :flee, 40)
+    ctx = bonus(ctx, :varcast_rate, -15)
+    ctx = bonus(ctx, :aspd_rate, div(min(base_level(ctx), 150), 10))
+    ctx = if (base_level(ctx) >= 105) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 110) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 120) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) >= 130) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: C_Kings_Twin_Sword
   armor_level: 1
@@ -175754,6 +176717,17 @@
   locations:
     - both_accessory
   name: Armaia Belt
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :max_hp_rate, 2)
+    ctx = bonus(ctx, {:skill_atk, 230}, (min(base_level(ctx), 99) * 1))
+    ctx = if (skill_lv(ctx, 114) == 5) do
+      bonus(ctx, {:skill_atk, 153}, 25)
+    else
+      ctx
+    end
+    ctx
   slots: 1
   type: armor
 - aegis_name: Comp_Armaia_Belt_ROC
@@ -175763,6 +176737,17 @@
   locations:
     - both_accessory
   name: '[Not For Sale] Armaia Belt'
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :max_hp_rate, 2)
+    ctx = bonus(ctx, {:skill_atk, 230}, (min(base_level(ctx), 99) * 1))
+    ctx = if (skill_lv(ctx, 114) == 5) do
+      bonus(ctx, {:skill_atk, 153}, 25)
+    else
+      ctx
+    end
+    ctx
   slots: 1
   type: armor
 - aegis_name: Barmund_Ring
@@ -179758,6 +180743,22 @@
   locations:
     - right_hand
   name: Booster Sword
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 2)
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, (-1 * skill_lv(ctx, 227)))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :long_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -180983,6 +181984,24 @@
   locations:
     - right_hand
   name: Open Illusion Immaterial Sword
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(refine(ctx), 2)))
+    ctx = if (base_level(ctx) >= 150) do
+      bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :atk_rate, 5)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -182199,6 +183218,40 @@
   locations:
     - right_hand
   name: Super Novice Booster Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, :atk, (3 * refine(ctx)))
+    ctx = bonus(ctx, :atk, (3 * div(min(base_level(ctx), 195), 15)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :aspd_rate, skill_lv(ctx, 2))
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :long_atk_rate, 10)
+        ctx = bonus(ctx, :short_atk_rate, 10)
+        ctx = bonus(ctx, {:skill_atk, 212}, 15)
+        ctx = bonus(ctx, {:skill_atk, 214}, 15)
+        ctx = if (refine(ctx) >= 11) do
+          ctx = bonus(ctx, {:addsize, :all}, 15)
+          ctx = bonus(ctx, :atk_rate, 10)
+          ctx = if (refine(ctx) >= 13) do
+            ctx = bonus(ctx, {:skill_atk, 212}, 25)
+            ctx = bonus(ctx, {:skill_atk, 214}, 25)
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: dagger
   type: weapon
@@ -182824,6 +183877,25 @@
   locations:
     - right_hand
   name: Opened Illusion Moonlight Sword
+  on_equip: |-
+    ctx = bonus(ctx, :hit, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = if (base_level(ctx) >= 150) do
+        bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -183285,6 +184357,22 @@
   locations:
     - right_hand
   name: Booster Axe
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :atk, (skill_lv(ctx, 107) * 3))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:addsize, :all}, 15)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -183686,6 +184774,27 @@
   locations:
     - right_hand
   name: Opened Illusion War Axe
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :luk, 3)
+    ctx = bonus(ctx, :hit, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :critical, (3 * div(refine(ctx), 2)))
+    ctx = if (base_level(ctx) >= 150) do
+      bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :atk_rate, 5)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -184260,6 +185369,31 @@
     - right_hand
   magic_attack: 240
   name: Opened Illusion Pole Axe
+  on_equip: |-
+    ctx = bonus(ctx, :hit, (3 * refine(ctx)))
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(refine(ctx), 2)))
+    ctx = if (base_level(ctx) >= 150) do
+      ctx = bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+      ctx = bonus(ctx, :matk, (min(base_level(ctx), 170) * 3))
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -186332,6 +187466,35 @@
     - right_hand
   magic_attack: 180
   name: Deus Ex Machina
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
+    ctx = grant_skill(ctx, 34, 1)
+    ctx = bonus(ctx, :max_hp_rate, (2 * refine(ctx)))
+    ctx = bonus(ctx, :max_sp_rate, (2 * refine(ctx)))
+    ctx = bonus(ctx, :delay_rate, (0 - refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, :long_atk_def, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      grant_skill(ctx, 34, min(10, refine(ctx)))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :long_atk_def, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      bonus(ctx, :fixcast_rate, -70)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -187458,6 +188621,42 @@
     - right_hand
   magic_attack: 200
   name: Super Novice Booster Wand
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :matk_rate, 2)
+    ctx = bonus(ctx, :matk, (3 * refine(ctx)))
+    ctx = bonus(ctx, :matk, (3 * div(min(base_level(ctx), 195), 15)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :varcast_rate, (0 - skill_lv(ctx, 9)))
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, {:magic_atk_ele, :all}, 10)
+        ctx = bonus(ctx, {:skill_atk, 20}, 15)
+        ctx = bonus(ctx, {:skill_atk, 19}, 15)
+        ctx = bonus(ctx, {:skill_atk, 14}, 15)
+        ctx = if (refine(ctx) >= 11) do
+          ctx = bonus(ctx, {:magic_addsize, :all}, 15)
+          ctx = bonus(ctx, :matk_rate, 10)
+          ctx = if (refine(ctx) >= 13) do
+            ctx = bonus(ctx, {:skill_atk, 20}, 25)
+            ctx = bonus(ctx, {:skill_atk, 19}, 25)
+            ctx = bonus(ctx, {:skill_atk, 14}, 25)
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   subtype: staff
   type: weapon
@@ -188700,6 +189899,22 @@
   locations:
     - right_hand
   name: Booster Knuckles
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, {:addclass, :all}, 3)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :max_hp_rate, (skill_lv(ctx, 270) * 2))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:addsize, :all}, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -189327,6 +190542,25 @@
   locations:
     - right_hand
   name: Opened Illusion Combo Battle Glove
+  on_equip: |-
+    ctx = bonus(ctx, :hit, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = if (base_level(ctx) >= 150) do
+        bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -189516,6 +190750,26 @@
     - right_hand
   magic_attack: 160
   name: Booster Guitar
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 3)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :matk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = bonus(ctx, :matk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, (skill_lv(ctx, 315) * -1))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addsize, :all}, 10)
+      ctx = bonus(ctx, {:magic_addsize, :all}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -190319,6 +191573,27 @@
     - right_hand
   magic_attack: 160
   name: Booster Whip
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 3)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :matk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = bonus(ctx, :matk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, (skill_lv(ctx, 323) * -1))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 10)
+      ctx = bonus(ctx, {:addsize, :all}, 10)
+      ctx = bonus(ctx, {:magic_addsize, :all}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 2
   refineable: true
   slots: 2
@@ -191317,6 +192592,38 @@
     - right_hand
   magic_attack: 360
   name: Sceptre of Exiled Kingdom
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 5)
+    ctx = grant_skill(ctx, 254, 1)
+    ctx = bonus(ctx, {:magic_atk_ele, :holy}, (10 * refine(ctx)))
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :max_hp_rate, 10)
+      ctx = bonus(ctx, :max_sp_rate, 10)
+      ctx = bonus(ctx, :long_atk_def, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      grant_skill(ctx, 254, min(10, refine(ctx)))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :max_hp_rate, 10)
+      ctx = bonus(ctx, :max_sp_rate, 10)
+      ctx = bonus(ctx, :long_atk_def, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      grant_skill(ctx, 111, 5)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -192068,6 +193375,31 @@
     - right_hand
   magic_attack: 255
   name: Opened Illusion Iron Driver
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :aspd_rate, (3 * div(refine(ctx), 2)))
+    ctx = if (base_level(ctx) >= 150) do
+      ctx = bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+      ctx = bonus(ctx, :matk, (min(base_level(ctx), 170) * 3))
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx = bonus(ctx, :aspd_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -192338,6 +193670,22 @@
   locations:
     - both_hand
   name: Booster Two-handed Sword
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 10)
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, skill_lv(ctx, 60))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :crit_atk_rate, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -192628,6 +193976,12 @@
   locations:
     - both_hand
   name: Awakened Full Force
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :movement_speed, 25)
+    ctx = bonus(ctx, {:subclass, :boss}, 40)
+    ctx = bonus(ctx, :atk, (pow(refine(ctx), 2) * 4))
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -192976,6 +194330,22 @@
   locations:
     - both_hand
   name: Booster Katar
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, 2)
+    ctx = bonus(ctx, :crit_atk_rate, 3)
+    ctx = bonus(ctx, :atk, (refine(ctx) * 3))
+    ctx = bonus(ctx, :atk, (div(min(base_level(ctx), 180), 15) * 3))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :crit_atk_rate, skill_lv(ctx, 134))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :atk_rate, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -193607,6 +194977,26 @@
   locations:
     - both_hand
   name: Open Illusion Infiltrator
+  on_equip: |-
+    ctx = bonus(ctx, :hit, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :critical, (3 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = if (base_level(ctx) >= 150) do
+        bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -194692,6 +196082,25 @@
   locations:
     - both_hand
   name: Opened Illusion Spectral Spear
+  on_equip: |-
+    ctx = bonus(ctx, :hit, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :aspd_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = if (base_level(ctx) >= 150) do
+        bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 2
@@ -195528,6 +196937,26 @@
     - right_hand
   magic_attack: 330
   name: Opened Illusion Wizardry Staff
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = if (base_level(ctx) >= 150) do
+        bonus(ctx, :matk, (min(base_level(ctx), 170) * 3))
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -196167,6 +197596,29 @@
     - both_hand
   magic_attack: 240
   name: Opened Illusion Huuma Fluttering Snow
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :varcast_rate, -5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = if (base_level(ctx) >= 150) do
+        ctx = bonus(ctx, :atk, (min(base_level(ctx), 170) * 3))
+        ctx = bonus(ctx, :matk, (min(base_level(ctx), 170) * 3))
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2

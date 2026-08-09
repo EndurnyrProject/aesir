@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   and parsed back to the tuple form at load time through a closed vocabulary
   (`parse!/1`): `bonus/3`, `refine/1`, `base_level/1`, `job_level/1`,
-  `+ - *` and `div/2`, comparisons, `&&`/`||`, `if/else` statements, and the
+  `+ - *`, `div/2`, `min/2`, `max/2`, `pow/2`, comparisons, `&&`/`||`, `if/else` statements, and the
   inline `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the
   source is never compiled to code — the equip corpus (~13k items) is far past
   the BEAM clause-count ceiling — so `eval/2` interprets the tuple program
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.Skill.Learned
 
-  @type arith_op :: :+ | :- | :* | :div
+  @type arith_op :: :+ | :- | :* | :div | :min | :max | :pow
   @type compare_op :: :> | :< | :>= | :<= | :== | :!=
   @type logic_op :: :and | :or
 
@@ -77,7 +77,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc """
   An input-pure arithmetic expression evaluating to an integer. `{:ternary, c, a, b}`
   is the rAthena `c ? a : b` conditional expression: `a` when the condition
-  holds, `b` otherwise.
+  holds, `b` otherwise. Besides `+ - * div`, the binary-op form also carries the
+  two-argument math combinators `min`, `max` and `pow` (integer exponentiation;
+  a negative exponent yields `0`, matching the C-cast-to-int semantics).
   """
   @type expr ::
           integer()
@@ -197,6 +199,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
+  defp render_expr({:min, l, r}), do: "min(#{render_expr(l)}, #{render_expr(r)})"
+  defp render_expr({:max, l, r}), do: "max(#{render_expr(l)}, #{render_expr(r)})"
+  defp render_expr({:pow, l, r}), do: "pow(#{render_expr(l)}, #{render_expr(r)})"
 
   defp render_expr({:ternary, condition, then_expr, else_expr}) do
     "if(#{render_cond(condition)}, do: #{render_expr(then_expr)}, else: #{render_expr(else_expr)})"
@@ -260,7 +265,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:stat, _, [{:ctx, _, c}, stat]}) when is_atom(c),
     do: {:stat, validate_stat!(stat)}
 
-  defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div] do
+  defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div, :min, :max, :pow] do
     {op, parse_expr!(l), parse_expr!(r)}
   end
 
@@ -371,6 +376,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_expr({:-, a, b}, inputs), do: eval_expr(a, inputs) - eval_expr(b, inputs)
   defp eval_expr({:*, a, b}, inputs), do: eval_expr(a, inputs) * eval_expr(b, inputs)
   defp eval_expr({:div, a, b}, inputs), do: div(eval_expr(a, inputs), eval_expr(b, inputs))
+  defp eval_expr({:min, a, b}, inputs), do: min(eval_expr(a, inputs), eval_expr(b, inputs))
+  defp eval_expr({:max, a, b}, inputs), do: max(eval_expr(a, inputs), eval_expr(b, inputs))
+  defp eval_expr({:pow, a, b}, inputs), do: int_pow(eval_expr(a, inputs), eval_expr(b, inputs))
 
   defp eval_expr({:ternary, condition, then_expr, else_expr}, inputs) do
     if eval_cond(condition, inputs),
@@ -389,6 +397,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_cond({:and, a, b}, inputs), do: eval_cond(a, inputs) and eval_cond(b, inputs)
   defp eval_cond({:or, a, b}, inputs), do: eval_cond(a, inputs) or eval_cond(b, inputs)
   defp eval_cond(other, _inputs), do: malformed!("condition", other)
+
+  # rAthena's `pow` casts a C `double` result to `int`; a non-negative integer
+  # exponent is exact via `Integer.pow/2`, and a negative exponent (a fractional
+  # magnitude) truncates to `0`.
+  defp int_pow(base, exp) when is_integer(base) and is_integer(exp) and exp >= 0,
+    do: Integer.pow(base, exp)
+
+  defp int_pow(_base, _exp), do: 0
 
   @spec malformed!(String.t(), term()) :: no_return()
   defp malformed!(kind, term) do

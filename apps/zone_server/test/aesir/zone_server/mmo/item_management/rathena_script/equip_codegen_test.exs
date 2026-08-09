@@ -679,4 +679,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bInt,readparam(bMaxHP);")
     end
   end
+
+  describe "min/max/pow math combinators" do
+    test "min over a level input clamps then scales" do
+      assert {:ok, [{:bonus, :atk, {:div, {:min, :base_level, 195}, 15}}]} =
+               compile("bonus bBaseAtk,min(BaseLevel,195)/15;")
+    end
+
+    test "max over refine" do
+      assert {:ok, [{:bonus, :atk, {:max, 1, :refine}}]} =
+               compile("bonus bBaseAtk,max(1,getrefine());")
+    end
+
+    test "pow of a clamped refine nests min inside pow" do
+      assert {:ok, [{:bonus, :atk, {:pow, {:min, :refine, 15}, 2}}]} =
+               compile("bonus bBaseAtk,pow(min(getrefine(),15),2);")
+    end
+
+    test "pow with an arithmetic base and a scaling divisor" do
+      assert {:ok, [{:bonus, :atk, {:div, {:*, {:pow, :refine, 2}, 125}, 100}}]} =
+               compile("bonus bBaseAtk,pow(getrefine(),2)*125/100;")
+    end
+
+    test "max over a learned skill level resolves the skill inside" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:bonus, :heal_power, {:max, 1, {:skill_lv, ^heal_id}}}]} =
+               compile("bonus bHealPower,max(1,getskilllv(AL_HEAL));")
+    end
+
+    test "an unresolvable operand inside a combinator propagates the error" do
+      assert {:error, {:unsupported, {:unsupported_call, "rand"}}} =
+               compile("bonus bInt,min(rand(5),3);")
+    end
+  end
 end

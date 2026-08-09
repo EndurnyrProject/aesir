@@ -76,9 +76,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     C/Elixir truncating integer division), and the `cond ? a : b` ternary ->
     `{:ternary, cond, a, b}`, `getskilllv(<skill>)` -> `{:skill_lv, id}`
     (the wearer's learned level of a skill, resolved like a `bonus2` skill
-    param), and `readparam(<stat>)` -> `{:stat, atom}` (the wearer's base stat,
-    for the base/trait stat constants only). `rand(...)` and every other call
-    are unsupported.
+    param), `readparam(<stat>)` -> `{:stat, atom}` (the wearer's base stat,
+    for the base/trait stat constants only), and the pure two-argument integer
+    combinators `min(a,b)`, `max(a,b)` and `pow(base,exp)` over the same
+    input-pure operands. `rand(...)` and every other call are unsupported.
 
   A program that compiles to zero instructions (script was only assignments) yields
   `{:ok, []}`, which the importer stores as no `on_equip`.
@@ -456,8 +457,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     with {:ok, stat} <- resolve(&Resolver.resolve_stat_param/1, const), do: {:ok, {:stat, stat}}
   end
 
+  # `pow`, `min` and `max` are pure two-argument integer combinators over the
+  # input-pure vocabulary; they compile to the matching binary-op IR node.
+  defp compile_expr({:call, "pow", [lhs, rhs]}, env), do: compile_math(:pow, lhs, rhs, env)
+  defp compile_expr({:call, "min", [lhs, rhs]}, env), do: compile_math(:min, lhs, rhs, env)
+  defp compile_expr({:call, "max", [lhs, rhs]}, env), do: compile_math(:max, lhs, rhs, env)
+
   defp compile_expr({:call, name, _args}, _env), do: unsupported({:unsupported_call, name})
   defp compile_expr(other, _env), do: unsupported({:expression, other})
+
+  @spec compile_math(:min | :max | :pow, term(), term(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, EquipScript.expr()} | {:error, {:unsupported, detail()}}
+  defp compile_math(op, lhs, rhs, env) do
+    with {:ok, l} <- compile_expr(lhs, env),
+         {:ok, r} <- compile_expr(rhs, env) do
+      {:ok, {op, l, r}}
+    end
+  end
 
   @spec compile_cond(term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.condition()} | {:error, {:unsupported, detail()}}
