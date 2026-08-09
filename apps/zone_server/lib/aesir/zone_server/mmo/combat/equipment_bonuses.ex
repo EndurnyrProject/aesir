@@ -57,17 +57,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   keyed on the incoming attack's element, and `:sub_def_ele` keyed on the
   attacker's own defensive element (its armor/innate element). Both read off
   the defender's equipment.
+
+  The `skill` family is the defender's per-skill damage reduction
+  (`{:sub_skill, skill_id}`), read exactly for the incoming `skill_id` (no
+  catch-all): a normal attack (`skill_id == nil`) reduces nothing.
   """
-  @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom(), map()) :: %{
+  @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom(), map(), pos_integer() | nil) :: %{
           race_class: rate(),
           element: rate(),
-          size: rate()
+          size: rate(),
+          skill: rate()
         }
   def damage_taken_rates(
         %Combatant{} = defender,
         %Combatant{} = attacker,
         attack_element,
-        status_modifiers \\ %{}
+        status_modifiers \\ %{},
+        skill_id \\ nil
       ) do
     %{
       race_class:
@@ -79,7 +85,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
           status_subele(status_modifiers, attack_element) +
           faith_resist_rate(defender, attack_element) +
           skin_temper_resist_rate(defender, attack_element),
-      size: read(defender, :subsize, attacker.size)
+      size: read(defender, :subsize, attacker.size),
+      skill: skill_rate(defender, :sub_skill, skill_id)
     }
   end
 

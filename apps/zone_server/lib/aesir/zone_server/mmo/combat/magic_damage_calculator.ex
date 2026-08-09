@@ -65,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   # a `%Combatant{}` (only real combatants carry a folded `equip_modifiers` map).
   @zero_equip_rates %{
     attack: %{race: 0, class: 0, element_target: 0, size: 0, atk_ele: 0, skill: 0},
-    taken: %{race_class: 0, element: 0, size: 0},
+    taken: %{race_class: 0, element: 0, size: 0, skill: 0},
     ignore_mdef: 0
   }
 
@@ -257,6 +257,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     |> reduce_by(taken.race_class)
     |> reduce_by(taken.element)
     |> reduce_by(taken.size)
+    |> reduce_by(taken.skill)
   end
 
   defp reduce_by(damage, 0), do: damage
@@ -287,7 +288,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
           defender,
           attacker,
           element,
-          combatant_modifiers(defender)
+          combatant_modifiers(defender),
+          skill_id
         ),
       ignore_mdef: EquipmentBonuses.ignore_mdef_rate(attacker, defender)
     }

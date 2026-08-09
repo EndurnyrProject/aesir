@@ -388,7 +388,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         attack_element,
         attack_path
       )
-      |> apply_equipment_taken_families(attacker, defender, attack_element, opts)
+      |> apply_equipment_taken_families(attacker, defender, skill_id, attack_element, opts)
 
     {:ok, total_atk}
   end
@@ -735,12 +735,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # (thrown-weapon skills), a ranged weapon class, or a long attack range (ranged
   # mobs) — matching the `is_short` determination used at hit delivery. Each
   # reduction family is floored at the min-1 damage convention.
-  defp apply_equipment_taken_families(damage, attacker, defender, attack_element, opts) do
+  defp apply_equipment_taken_families(damage, attacker, defender, skill_id, attack_element, opts) do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
 
-    %{race_class: race_class, element: element, size: size} =
-      EquipmentBonuses.damage_taken_rates(defender, attacker, attack_element, status_modifiers)
+    %{race_class: race_class, element: element, size: size, skill: skill} =
+      EquipmentBonuses.damage_taken_rates(
+        defender,
+        attacker,
+        attack_element,
+        status_modifiers,
+        skill_id
+      )
 
     race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)
 
@@ -762,6 +768,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     |> apply_taken_step(race_class)
     |> apply_taken_step(element)
     |> apply_taken_step(size)
+    |> apply_taken_step(skill)
     |> apply_taken_step(long_def)
     |> apply_taken_rate_step(ranged)
   end

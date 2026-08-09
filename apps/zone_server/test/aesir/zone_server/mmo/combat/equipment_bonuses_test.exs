@@ -125,7 +125,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire) == %{
                race_class: 15 + 5,
                element: 9,
-               size: 10
+               size: 10,
+               skill: 0
              }
     end
 
@@ -148,7 +149,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral) == %{
                race_class: 0,
                element: 0,
-               size: 0
+               size: 0,
+               skill: 0
              }
     end
 
@@ -175,7 +177,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.damage_taken_rates(defender, attacker, :holy, status) == %{
                race_class: 4 + 6,
                element: 10 + 25,
-               size: 0
+               size: 0,
+               skill: 0
              }
     end
 
@@ -187,8 +190,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, status) == %{
                race_class: 0,
                element: 0,
-               size: 0
+               size: 0,
+               skill: 0
              }
+    end
+
+    test "sub_skill reduces only the matching incoming skill id, exactly (no :all)" do
+      defender =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:sub_skill, 18} => 30, {:sub_skill, :all} => 99})
+
+      attacker = CombatTestHelper.create_mob_combatant()
+
+      assert %{skill: 30} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, 18)
+
+      assert %{skill: 0} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, 42)
+
+      assert %{skill: 0} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil)
     end
   end
 
