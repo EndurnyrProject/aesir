@@ -379,9 +379,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       |> Map.put(:damage, damage)
       |> Map.put(:attacker, typed_attacker(attacker))
 
-    target_type
-    |> StatusInterpreter.after_damage_taken(target_id, delivered_hit)
-    |> apply_reflected_damage(reflection_target(attacker))
+    status_reflect = StatusInterpreter.after_damage_taken(target_type, target_id, delivered_hit)
+    equip_reflect = equipment_damage_return(target_type, target_id, delivered_hit)
+
+    apply_reflected_damage(status_reflect + equip_reflect, reflection_target(attacker))
   end
 
   defp after_damage_taken(_delivery, _target_type, _target_id, _damage, _hit_info, _attacker),
@@ -423,6 +424,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   defp apply_reflected_damage(_amount, _attacker), do: :ok
+
+  # Equipment-granted melee damage reflect (`bShortWeaponDamageReturn`): the
+  # defender's gear returns a percent of the delivered damage to the attacker on
+  # a short-range physical hit. Shares Reflect Shield's hit-shape filter, so an
+  # already-reflected, redirected, ranged, or magic hit reflects nothing. Only
+  # players carry equipment, so mobs and other unit types never reflect here.
+  defp equipment_damage_return(:player, target_id, hit_info) do
+    if melee_reflectable?(hit_info) do
+      div(hit_info.damage * short_weapon_return_percent(target_id), 100)
+    else
+      0
+    end
+  end
+
+  defp equipment_damage_return(_target_type, _target_id, _hit_info), do: 0
+
+  defp short_weapon_return_percent(target_id) do
+    case UnitRegistry.get_unit_info(:player, target_id) do
+      {:ok, %{equip_modifiers: equip}} -> max(Map.get(equip, :short_weapon_damage_return, 0), 0)
+      _ -> 0
+    end
+  end
+
+  defp melee_reflectable?(hit_info) do
+    Map.get(hit_info, :dmg_type) == :physical and
+      Map.get(hit_info, :is_short, false) == true and
+      not Map.get(hit_info, :reflected, false) and
+      not Map.get(hit_info, :redirected, false)
+  end
 
   defp prepared_damage(target_type, target_id, damage, hit_info) do
     if Map.get(hit_info, :pre_delivery_prepared?, false),
