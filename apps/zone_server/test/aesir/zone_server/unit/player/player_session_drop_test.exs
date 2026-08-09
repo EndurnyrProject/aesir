@@ -57,6 +57,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
         Keyword.get(opts, :learned_skills, %{})
       )
 
+    game_state =
+      put_in(
+        game_state.stats.modifiers.equipment,
+        Keyword.get(opts, :equipment_modifiers, %{})
+      )
+
     %{game_state: game_state, connection_pid: self()}
   end
 
@@ -185,6 +191,38 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionDropTest do
 
     {:noreply, _state} =
       PlayerSession.handle_info({:loot, {:mob_killed, payload(drops)}}, state())
+  end
+
+  test "adds matching and universal equipment drop bonuses into the roll" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    equipment_modifiers = %{{:drop_add_race, :brute} => 20, {:drop_add_race, :all} => 30}
+    race_payload = Map.put(payload(drops), :mob_race, :brute)
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{drop_rate: 100} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 150, "morocc", 200, 90 -> [] end)
+    reject(&Coordinator.drop_items/4)
+
+    {:noreply, _state} =
+      PlayerSession.handle_info(
+        {:loot, {:mob_killed, race_payload}},
+        state(equipment_modifiers: equipment_modifiers)
+      )
+  end
+
+  test "applies the universal equipment drop bonus to every monster race" do
+    drops = [%MobDrop{item: "Red_Potion", rate: 10_000}]
+    equipment_modifiers = %{{:drop_add_race, :brute} => 20, {:drop_add_race, :all} => 30}
+    race_payload = Map.put(payload(drops), :mob_race, :demon)
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 -> %{drop_rate: 100} end)
+    expect(DropCalculator, :roll, fn ^drops, 7, 50, 50, 130, "morocc", 200, 90 -> [] end)
+    reject(&Coordinator.drop_items/4)
+
+    {:noreply, _state} =
+      PlayerSession.handle_info(
+        {:loot, {:mob_killed, race_payload}},
+        state(equipment_modifiers: equipment_modifiers)
+      )
   end
 
   test "an empty roll does not call the coordinator" do

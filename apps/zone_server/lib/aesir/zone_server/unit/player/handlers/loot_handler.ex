@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   """
 
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -85,7 +86,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
     char_id = state.game_state.character_id
 
     drop_bonus =
-      :player |> ModifierCalculator.get_all_modifiers(char_id) |> Map.get(:drop_rate, 0)
+      :player
+      |> ModifierCalculator.get_all_modifiers(char_id)
+      |> Map.get(:drop_rate, 0)
+      |> Kernel.+(drop_add_race(stats.modifiers.equipment, Map.get(payload, :mob_race)))
 
     equip_drops =
       DropCalculator.roll_equipment_drops(
@@ -116,6 +120,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   end
 
   defp maybe_drop_items(_payload, _state, _rng, _opts), do: :ok
+
+  defp drop_add_race(equipment, mob_race) do
+    race = bonus_race(mob_race)
+
+    Map.get(equipment, {:drop_add_race, race}, 0) +
+      Map.get(equipment, {:drop_add_race, :all}, 0)
+  end
+
+  defp bonus_race(:player), do: RaceModifiers.player_race()
+  defp bonus_race(race) when is_atom(race), do: race
 
   defp maybe_discover_ore(drops, learned_skills, x, y, rng, {:player, _id}) do
     if Learned.learned_level(learned_skills, 106) > 0 do
