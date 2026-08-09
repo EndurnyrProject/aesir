@@ -408,7 +408,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
     {equipment_bonuses, granted_skills} =
       stats.worn_items
-      |> calculate_equipment_bonuses(stats.progression)
+      |> calculate_equipment_bonuses(stats.progression, equip_stat_params(stats))
       |> split_granted_skills()
 
     %{
@@ -438,7 +438,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     {equipment_bonuses, granted_skills} =
       worn_items
-      |> calculate_equipment_bonuses(stats.progression)
+      |> calculate_equipment_bonuses(stats.progression, equip_stat_params(stats))
       |> split_granted_skills()
 
     %{
@@ -596,8 +596,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def shield_defense_contribution(%__MODULE__{equipment: %Equipment{} = equipment} = stats) do
     if shield?(equipment) do
       without_shield = Enum.reject(stats.worn_items, &worn_in_slot?(&1, :left_hand))
-      full = calculate_equipment_bonuses(stats.worn_items, stats.progression)
-      reduced = calculate_equipment_bonuses(without_shield, stats.progression)
+      stat_params = equip_stat_params(stats)
+      full = calculate_equipment_bonuses(stats.worn_items, stats.progression, stat_params)
+      reduced = calculate_equipment_bonuses(without_shield, stats.progression, stat_params)
 
       %{
         def: max(Map.get(full, :def, 0) - Map.get(reduced, :def, 0), 0),
@@ -1274,7 +1275,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # the wlv5/armor-lv2 trait riders accumulate alongside the flat bonuses.
   # Armor refine DEF is summed raw into `refine_def` and folded into `def`
   # once, after the reduce, per the rAthena `(refinedef+50)/100` rounding.
-  defp calculate_equipment_bonuses(worn_items, progression) do
+  # The wearer's base stats (allocated points plus job bonuses) that an
+  # `on_equip` `readparam(bStr)` reads. Deliberately excludes equipment, status
+  # and passive contributions: equip scripts run before those in the recompute
+  # pipeline, and reading them would make an equipment bonus depend on the very
+  # bonuses being computed.
+  @stat_param_keys [:str, :agi, :vit, :int, :dex, :luk, :pow, :sta, :wis, :spl, :con, :crt]
+
+  @spec equip_stat_params(t()) :: %{atom() => integer()}
+  defp equip_stat_params(%__MODULE__{base_stats: base, modifiers: %Modifiers{job_bonuses: job}})
+       when not is_nil(base) do
+    Map.new(@stat_param_keys, fn stat ->
+      {stat, Map.get(base, stat, 0) + Map.get(job, stat, 0)}
+    end)
+  end
+
+  defp equip_stat_params(%__MODULE__{}), do: %{}
+
+  defp calculate_equipment_bonuses(worn_items, progression, stat_params) do
     bonuses =
       worn_items
       |> Enum.reduce(
@@ -1297,7 +1315,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             {:ok, %ItemDefinition{} = item_def} ->
               acc
               |> accumulate_item_bonus(item_def, item.refine)
-              |> apply_equip_script(item_def.on_equip, item.refine, progression)
+              |> apply_equip_script(item_def.on_equip, item.refine, progression, stat_params)
 
             _ ->
               acc
@@ -1320,14 +1338,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # (`BonusKeys.max_destination?/1`), where the strongest single item wins.
   # Constant-valued ones (`:atk_ele` from `bonus bAtkEle`) are not summable, so
   # the last equipped item to set one wins.
-  defp apply_equip_script(acc, nil, _refine, _progression), do: acc
+  defp apply_equip_script(acc, nil, _refine, _progression, _stat_params), do: acc
 
-  defp apply_equip_script(acc, program, refine, progression) do
+  defp apply_equip_script(acc, program, refine, progression, stat_params) do
     inputs = %{
       refine: refine,
       base_level: progression.base_level,
       job_level: progression.job_level,
-      learned_skills: progression.learned_skills
+      learned_skills: progression.learned_skills,
+      stats: stat_params
     }
 
     program

@@ -74,9 +74,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     `getrefine()` -> `:refine`, `BaseLevel` -> `:base_level`, `JobLevel` ->
     `:job_level`, inlined `.@var`, `+ - * /` arithmetic (`/` -> `:div`, matching
     C/Elixir truncating integer division), and the `cond ? a : b` ternary ->
-    `{:ternary, cond, a, b}`, and `getskilllv(<skill>)` -> `{:skill_lv, id}`
+    `{:ternary, cond, a, b}`, `getskilllv(<skill>)` -> `{:skill_lv, id}`
     (the wearer's learned level of a skill, resolved like a `bonus2` skill
-    param). `rand(...)` and every other call are unsupported.
+    param), and `readparam(<stat>)` -> `{:stat, atom}` (the wearer's base stat,
+    for the base/trait stat constants only). `rand(...)` and every other call
+    are unsupported.
 
   A program that compiles to zero instructions (script was only assignments) yields
   `{:ok, []}`, which the importer stores as no `on_equip`.
@@ -444,6 +446,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # its learned-skills input.
   defp compile_expr({:call, "getskilllv", [skill_ast]}, _env) do
     with {:ok, id} <- resolve_skill_ref(skill_ast), do: {:ok, {:skill_lv, id}}
+  end
+
+  # `readparam(<stat>)` reads the wearer's base stat; only the base/trait stat
+  # constants (`bStr`, `bPow`, ...) are supported, resolving to the stat atom
+  # the runtime feeds from its `:stats` input. Any other parameter is
+  # unsupported.
+  defp compile_expr({:call, "readparam", [{:name, const}]}, _env) do
+    with {:ok, stat} <- resolve(&Resolver.resolve_stat_param/1, const), do: {:ok, {:stat, stat}}
   end
 
   defp compile_expr({:call, name, _args}, _env), do: unsupported({:unsupported_call, name})

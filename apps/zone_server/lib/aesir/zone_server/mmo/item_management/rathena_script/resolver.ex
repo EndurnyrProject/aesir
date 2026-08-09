@@ -270,6 +270,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "rc2_encroached_gephenia" => :encroached_gephenia
   }
 
+  # rAthena's `readparam` character-parameter constants that the equip corpus
+  # reads (`readparam(bStr)`), mapped to the stat atoms `EquipScript` feeds from
+  # its `:stats` input. Only the six base stats and the six trait stats appear;
+  # they downcase to the same atoms `BonusKeys` uses for the matching `bonus`
+  # destinations. Keyed downcased because the corpus is consistent but a
+  # case-insensitive lookup costs nothing.
+  @stat_params %{
+    "bstr" => :str,
+    "bagi" => :agi,
+    "bvit" => :vit,
+    "bint" => :int,
+    "bdex" => :dex,
+    "bluk" => :luk,
+    "bpow" => :pow,
+    "bsta" => :sta,
+    "bwis" => :wis,
+    "bspl" => :spl,
+    "bcon" => :con,
+    "bcrt" => :crt
+  }
+
   @effs %{
     "Eff_Stun" => :sc_stun,
     "Eff_Poison" => :sc_poison,
@@ -355,6 +376,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   """
   @spec resolve_eff(String.t()) :: {:ok, atom()} | error()
   def resolve_eff(symbol) when is_binary(symbol), do: lookup(@effs, symbol)
+
+  @doc """
+  Resolves an rAthena `readparam` character-parameter constant (`bStr`, `bInt`,
+  `bPow`, ...) to the stat atom `EquipScript` reads from its `:stats` input.
+  Only the six base stats and six trait stats are supported; any other
+  parameter (HP, weight, ...) resolves `:error`. Lookup is case-insensitive.
+  """
+  @spec resolve_stat_param(String.t()) :: {:ok, atom()} | error()
+  def resolve_stat_param(symbol) when is_binary(symbol) do
+    case Map.fetch(@stat_params, String.downcase(symbol)) do
+      {:ok, value} -> {:ok, value}
+      :error -> unknown(symbol)
+    end
+  end
+
+  @doc """
+  Returns the full `readparam`-constant-to-stat-atom map, backing the
+  `EquipScript` validation vocabulary and the codegen tests.
+  """
+  @spec stat_params() :: %{String.t() => atom()}
+  def stat_params, do: @stat_params
 
   @doc """
   Returns the full rAthena-symbol-to-status-atom map for `Eff_*` constants.

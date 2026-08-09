@@ -143,6 +143,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     end
   end
 
+  describe "resolve_stat_param/1" do
+    test "maps a base stat constant to its stat atom" do
+      assert {:ok, :str} = Resolver.resolve_stat_param("bStr")
+      assert {:ok, :luk} = Resolver.resolve_stat_param("bLuk")
+    end
+
+    test "maps a trait stat constant to its stat atom" do
+      assert {:ok, :pow} = Resolver.resolve_stat_param("bPow")
+      assert {:ok, :crt} = Resolver.resolve_stat_param("bCrt")
+    end
+
+    test "lookup is case-insensitive" do
+      assert {:ok, :int} = Resolver.resolve_stat_param("BINT")
+    end
+
+    test "a non-stat parameter is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "bMaxHP"}} = Resolver.resolve_stat_param("bMaxHP")
+    end
+  end
+
   describe "resolve_effect/1" do
     test "maps an EF_ constant to its effect atom" do
       assert {:ok, :heal2} = Resolver.resolve_effect("EF_HEAL2")

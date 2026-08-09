@@ -43,6 +43,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     semantics (the strongest grant wins, both within one program and — via the
     `Stats` cross-item merge — across worn items); `Stats` partitions those keys
     out of the numeric bonus map into its own granted-skills channel.
+
+  ## Stat-aware constructs
+
+  `{:stat, atom}` (source `stat(ctx, :str)`) is an expression that reads one of
+  the wearer's character stats (`readparam(bStr)` in the corpus). It consults
+  the optional `:stats` input, a `%{stat_atom => integer}` map of the wearer's
+  base stats (allocated points plus job bonuses, excluding this equipment's own
+  contribution so the read is non-circular); a stat the map lacks reads `0`. The
+  supported atoms are the six base stats (`:str :agi :vit :int :dex :luk`) and
+  the six trait stats (`:pow :sta :wis :spl :con :crt`).
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
@@ -60,7 +70,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           :refine => integer(),
           :base_level => integer(),
           :job_level => integer(),
-          optional(:learned_skills) => %{integer() => non_neg_integer()}
+          optional(:learned_skills) => %{integer() => non_neg_integer()},
+          optional(:stats) => %{atom() => integer()}
         }
 
   @typedoc """
@@ -76,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {arith_op(), expr(), expr()}
           | {:ternary, condition(), expr(), expr()}
           | {:skill_lv, pos_integer()}
+          | {:stat, atom()}
 
   @typedoc "An input-pure boolean condition gating an `:if` instruction or a ternary."
   @type condition ::
@@ -108,6 +120,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
   @plain_arith_ops [:+, :-, :*]
+
+  # The stat atoms a `{:stat, atom}` expression may read: the six base stats and
+  # six trait stats, matching `Resolver.stat_params/0`'s value set.
+  @stat_params [:str, :agi, :vit, :int, :dex, :luk, :pow, :sta, :wis, :spl, :con, :crt]
 
   @doc """
   Renders a program as an Elixir DSL source string, mirroring the `on_use`
@@ -179,6 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr(:base_level), do: "base_level(ctx)"
   defp render_expr(:job_level), do: "job_level(ctx)"
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
+  defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
 
   defp render_expr({:ternary, condition, then_expr, else_expr}) do
@@ -240,6 +257,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:skill_lv, _, [{:ctx, _, c}, id]}) when is_atom(c),
     do: {:skill_lv, validate_skill_id!(id)}
 
+  defp parse_expr!({:stat, _, [{:ctx, _, c}, stat]}) when is_atom(c),
+    do: {:stat, validate_stat!(stat)}
+
   defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div] do
     {op, parse_expr!(l), parse_expr!(r)}
   end
@@ -296,6 +316,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp validate_skill_id!(id) when is_integer(id) and id > 0, do: id
   defp validate_skill_id!(id), do: malformed!("skill id", id)
 
+  defp validate_stat!(stat) when is_atom(stat) do
+    if stat in @stat_params, do: stat, else: malformed!("stat param", stat)
+  end
+
+  defp validate_stat!(stat), do: malformed!("stat param", stat)
+
   defp validate_domain_param!(dest, domain, param) do
     if param in BonusKeys.param_domain(domain),
       do: dest,
@@ -337,6 +363,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_expr({:skill_lv, skill_id}, inputs),
     do: inputs |> Map.get(:learned_skills, %{}) |> Learned.learned_level(skill_id)
+
+  defp eval_expr({:stat, stat}, inputs),
+    do: inputs |> Map.get(:stats, %{}) |> Map.get(stat, 0)
 
   defp eval_expr({:+, a, b}, inputs), do: eval_expr(a, inputs) + eval_expr(b, inputs)
   defp eval_expr({:-, a, b}, inputs), do: eval_expr(a, inputs) - eval_expr(b, inputs)

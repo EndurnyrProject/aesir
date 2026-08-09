@@ -652,4 +652,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bInt,getskilllv(XX_NOTASKILL);")
     end
   end
+
+  describe "readparam read" do
+    test "a base stat readparam resolves to a stat expression" do
+      assert {:ok, [{:bonus, :atk, {:div, {:stat, :str}, 10}}]} =
+               compile("bonus bBaseAtk,readparam(bStr)/10;")
+    end
+
+    test "a trait stat readparam resolves to its stat atom" do
+      assert {:ok, [{:bonus, :patk, {:div, {:stat, :pow}, 15}}]} =
+               compile("bonus bPAtk,readparam(bPow)/15;")
+    end
+
+    test "readparam is usable inside an input-pure condition" do
+      assert {:ok, [{:if, {:>=, {:stat, :str}, 120}, [{:bonus, :atk, 10}], []}]} =
+               compile("if (readparam(bStr)>=120) bonus bBaseAtk,10;")
+    end
+
+    test "multiple readparams combine in one arithmetic expression" do
+      assert {:ok, [{:bonus, :hit, {:div, {:+, {:stat, :str}, {:stat, :dex}}, 12}}]} =
+               compile("bonus bHit,(readparam(bStr)+readparam(bDex))/12;")
+    end
+
+    test "a non-stat readparam parameter is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "bMaxHP"}}} =
+               compile("bonus bInt,readparam(bMaxHP);")
+    end
+  end
 end

@@ -136,7 +136,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       grant_skill: [{:grant_skill, 28, 3}],
       grant_skill_refine_level: [{:grant_skill, 28, {:+, 1, :refine}}],
       skill_lv_expr: [{:bonus, :heal_power, {:skill_lv, 87}}],
-      skill_lv_condition: [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}]
+      skill_lv_condition: [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}],
+      stat_expr: [{:bonus, :atk, {:div, {:stat, :str}, 10}}],
+      stat_condition: [{:if, {:>=, {:stat, :int}, 120}, [{:bonus, :matk, 10}], []}],
+      stat_combined: [{:bonus, :hit, {:div, {:+, {:stat, :str}, {:stat, :dex}}, 12}}]
     ]
 
     for {name, program} <- programs do
@@ -295,6 +298,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     test "raises on an unknown bonus destination" do
       assert_raise ArgumentError, fn ->
         EquipScript.parse!("bonus(ctx, :maxhp, 10)")
+      end
+    end
+
+    test "parses a valid stat expression and rejects an unknown stat atom" do
+      assert [{:bonus, :atk, {:stat, :str}}] =
+               EquipScript.parse!("bonus(ctx, :atk, stat(ctx, :str))")
+
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("bonus(ctx, :atk, stat(ctx, :max_hp))")
       end
     end
 
@@ -495,6 +507,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, on(0)) == %{}
       assert EquipScript.eval(program, on(0, learned_skills: %{87 => 1})) == %{int: 3}
+    end
+
+    test "stat reads the wearer's stat from the inputs" do
+      program = [{:bonus, :atk, {:div, {:stat, :str}, 10}}]
+
+      assert EquipScript.eval(program, on(0, stats: %{str: 95})) == %{atk: 9}
+    end
+
+    test "a stat gate picks its branch from the stat value" do
+      program = [{:if, {:>=, {:stat, :int}, 120}, [{:bonus, :matk, 10}], []}]
+
+      assert EquipScript.eval(program, on(0, stats: %{int: 120})) == %{matk: 10}
+      assert EquipScript.eval(program, on(0, stats: %{int: 119})) == %{}
+    end
+
+    test "a stat defaults to 0 when the stats input is absent" do
+      program = [{:if, {:>=, {:stat, :str}, 1}, [{:bonus, :atk, 5}], []}]
+
+      assert EquipScript.eval(program, on(0)) == %{}
+      assert EquipScript.eval(program, on(0, stats: %{str: 1})) == %{atk: 5}
     end
   end
 end
