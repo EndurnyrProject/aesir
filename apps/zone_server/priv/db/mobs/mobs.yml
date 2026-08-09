@@ -688,6 +688,8 @@
     - change_target_chase
   name: Archer Skeleton
   race: undead
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 29
@@ -890,7 +892,10 @@
     - change_target_melee
     - change_target_chase
   name: Orc Warrior
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
+    - orc
   size: medium
   stats:
     agi: 15
@@ -1752,6 +1757,8 @@
     - can_attack
   name: Golem
   race: formless
+  race_groups:
+    - golem
   size: large
   stats:
     agi: 27
@@ -3157,6 +3164,8 @@
     - can_attack
   name: Hydra
   race: plant
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 9
@@ -4069,7 +4078,9 @@
       rate: 5000
   mvp_exp: 26730
   name: Orc Hero
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 82
@@ -4664,7 +4675,7 @@
     - change_target_melee
     - change_target_chase
   name: Anubis
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 67
@@ -4827,6 +4838,8 @@
     - change_target_chase
   name: Baphomet Jr.
   race: demon
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 60
@@ -4882,7 +4895,9 @@
     - change_target_melee
     - change_target_chase
   name: Bathory
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 38
@@ -5244,6 +5259,8 @@
     - change_target_chase
   name: Deviruchi
   race: demon
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 49
@@ -5349,6 +5366,8 @@
     - change_target_chase
   name: Drainliar
   race: brute
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 34
@@ -5953,7 +5972,9 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: medium
   stats:
     agi: 54
@@ -6007,7 +6028,9 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: medium
   stats:
     agi: 16
@@ -6061,7 +6084,9 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: medium
   stats:
     agi: 16
@@ -6115,7 +6140,9 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: medium
   stats:
     agi: 27
@@ -6169,7 +6196,9 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: medium
   stats:
     agi: 37
@@ -6436,7 +6465,9 @@
     - change_target_melee
     - change_target_chase
   name: Joker
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 99
@@ -6546,7 +6577,9 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - kobold
   size: medium
   stats:
     agi: 76
@@ -6600,7 +6633,9 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - kobold
   size: medium
   stats:
     agi: 61
@@ -6655,7 +6690,9 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - kobold
   size: medium
   stats:
     agi: 64
@@ -6707,7 +6744,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 31
@@ -6759,7 +6796,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 31
@@ -6917,7 +6954,7 @@
     - change_target_melee
     - change_target_chase
   name: Marduk
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 49
@@ -7563,6 +7600,8 @@
     - change_target_chase
   name: Orc Skeleton
   race: undead
+  race_groups:
+    - orc
   size: medium
   stats:
     agi: 16
@@ -7609,6 +7648,8 @@
     - change_target_chase
   name: Orc Zombie
   race: undead
+  race_groups:
+    - orc
   size: medium
   stats:
     agi: 17
@@ -7662,7 +7703,7 @@
     - change_target_melee
     - change_target_chase
   name: Pasana
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 36
@@ -7836,7 +7877,7 @@
       rate: 5000
   mvp_exp: 104400
   name: Pharaoh
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 102
@@ -8158,7 +8199,7 @@
     - change_target_melee
     - change_target_chase
   name: Raydric
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 87
@@ -8212,7 +8253,7 @@
     - change_target_melee
     - change_target_chase
   name: Requiem
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 34
@@ -8671,7 +8712,7 @@
     - looter
     - can_attack
   name: Zenorc
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 18
@@ -8725,7 +8766,7 @@
     - change_target_melee
     - change_target_chase
   name: Zerom
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 49
@@ -8776,6 +8817,8 @@
     - change_target_chase
   name: Whisper
   race: demon
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 48
@@ -9154,7 +9197,10 @@
     - change_target_melee
     - change_target_chase
   name: Orc Archer
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
+    - orc
   size: medium
   stats:
     agi: 32
@@ -9219,7 +9265,9 @@
       rate: 5000
   mvp_exp: 15553
   name: Orc Lord
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 95
@@ -9272,6 +9320,8 @@
     - change_target_chase
   name: Mimic
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 120
@@ -9380,6 +9430,8 @@
     - change_target_chase
   name: Alarm
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 72
@@ -9490,6 +9542,8 @@
     - change_target_chase
   name: Rideword
   race: formless
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 53
@@ -9704,6 +9758,8 @@
     - change_target_chase
   name: Punk
   race: plant
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 39
@@ -9757,7 +9813,7 @@
     - change_target_melee
     - change_target_chase
   name: Zealotus
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -9863,7 +9919,7 @@
     - change_target_melee
     - change_target_chase
   name: Phendark
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 65
@@ -9924,6 +9980,8 @@
     - change_target_chase
   name: Mysteltainn
   race: formless
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 139
@@ -9983,6 +10041,8 @@
     - change_target_chase
   name: Ogretooth
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 105
@@ -10041,6 +10101,8 @@
     - change_target_chase
   name: Executioner
   race: formless
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 96
@@ -10261,6 +10323,9 @@
     - change_target_chase
   name: Cramp
   race: brute
+  race_groups:
+    - clocktower
+    - rockridge
   size: small
   stats:
     agi: 43
@@ -10313,6 +10378,8 @@
     - change_target_chase
   name: Brilight
   race: insect
+  race_groups:
+    - rockridge
   size: small
   stats:
     agi: 19
@@ -10422,7 +10489,10 @@
     - change_target_melee
     - change_target_chase
   name: High Orc
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
+    - orc
   size: large
   stats:
     agi: 16
@@ -10532,6 +10602,8 @@
     - change_target_chase
   name: Stem Worm
   race: plant
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 37
@@ -10588,6 +10660,8 @@
     - change_target_chase
   name: Penomena
   race: fish
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 38
@@ -10644,7 +10718,9 @@
     - change_target_melee
     - change_target_chase
   name: Abysmal Knight
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 55
@@ -11039,7 +11115,7 @@
     - change_target_melee
     - change_target_chase
   name: Smoking Orc
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 24
@@ -11538,7 +11614,7 @@
     - can_move
     - can_attack
   name: Christmas Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 53
@@ -11590,7 +11666,7 @@
     - can_attack
     - change_target_melee
   name: Christmas Cookie
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 16
@@ -11640,7 +11716,7 @@
     - can_move
     - can_attack
   name: Antonio
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -11799,7 +11875,7 @@
     - change_target_melee
     - change_target_chase
   name: Chepet
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 35
@@ -12253,7 +12329,9 @@
     - can_attack
     - change_target_chase
   name: Goblin Archer
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: small
   stats:
     agi: 34
@@ -12585,7 +12663,7 @@
     - change_target_melee
     - change_target_chase
   name: Merman
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 29
@@ -12636,7 +12714,7 @@
     - cast_sensor_idle
     - can_attack
   name: Cookie
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 23
@@ -12851,6 +12929,8 @@
     - can_attack
   name: Clock
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 24
@@ -12902,6 +12982,8 @@
     - can_attack
   name: Clock Tower Manager
   race: formless
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 28
@@ -13069,7 +13151,9 @@
     - change_target_melee
     - change_target_chase
   name: Orc Lady
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - orc
   size: medium
   stats:
     agi: 11
@@ -13166,7 +13250,9 @@
     - cast_sensor_idle
     - can_attack
   name: Alice
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 53
@@ -13318,6 +13404,8 @@
     - can_attack
   name: Stalactic Golem
   race: formless
+  race_groups:
+    - golem
   size: large
   stats:
     agi: 47
@@ -13372,6 +13460,8 @@
     - change_target_chase
   name: Tri Joint
   race: insect
+  race_groups:
+    - rockridge
   size: small
   stats:
     agi: 33
@@ -13422,7 +13512,7 @@
     - cast_sensor_idle
     - can_attack
   name: Goblin Steamrider
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -13474,6 +13564,8 @@
     - can_attack
   name: Sage Worm
   race: brute
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 29
@@ -13525,7 +13617,9 @@
     - can_attack
     - change_target_chase
   name: Kobold Archer
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - kobold
   size: small
   stats:
     agi: 39
@@ -13617,7 +13711,7 @@
     - can_attack
     - change_target_chase
   name: Archer Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -13653,7 +13747,7 @@
     - can_attack
     - change_target_chase
   name: Knight Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -13687,7 +13781,7 @@
     - can_attack
     - change_target_chase
   name: Soldier Guardian
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 56
@@ -13717,6 +13811,8 @@
     - boss
   name: Emperium
   race: angel
+  race_groups:
+    - gvg
   size: small
   stats:
     agi: 17
@@ -14165,7 +14261,9 @@
     - change_target_melee
     - change_target_chase
   name: Kobold Leader
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - kobold
   size: medium
   stats:
     agi: 34
@@ -14333,7 +14431,9 @@
     - change_target_melee
     - change_target_chase
   name: Goblin Leader
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - goblin
   size: medium
   stats:
     agi: 67
@@ -14841,7 +14941,7 @@
     - change_target_melee
     - change_target_chase
   name: Panzer Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 60
@@ -15131,7 +15231,7 @@
     - change_target_melee
     - change_target_chase
   name: Mobster
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 36
@@ -15238,7 +15338,9 @@
     - change_target_melee
     - change_target_chase
   name: Assaulter
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ninja
   size: medium
   stats:
     agi: 92
@@ -15714,6 +15816,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -15757,6 +15861,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -15800,6 +15906,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -15843,6 +15951,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -15886,6 +15996,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -15929,6 +16041,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -15972,6 +16086,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16015,6 +16131,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16058,6 +16176,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16101,6 +16221,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16144,6 +16266,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16187,6 +16311,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16230,6 +16356,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16273,6 +16401,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16316,6 +16446,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16359,6 +16491,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16402,6 +16536,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16445,6 +16581,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16488,6 +16626,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16531,6 +16671,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16574,6 +16716,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16617,6 +16761,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16660,6 +16806,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16703,6 +16851,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16746,6 +16896,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16789,6 +16941,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16832,6 +16986,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16875,6 +17031,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16918,6 +17076,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -16961,6 +17121,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17004,6 +17166,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17047,6 +17211,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17090,6 +17256,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17133,6 +17301,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17176,6 +17346,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17219,6 +17391,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17262,6 +17436,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17305,6 +17481,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17348,6 +17526,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17391,6 +17571,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -17431,6 +17613,8 @@
     - change_target_chase
   name: Assaulter
   race: demon
+  race_groups:
+    - ninja
   size: medium
   stats:
     agi: 86
@@ -17536,6 +17720,8 @@
     - change_target_chase
   name: Lava Golem
   race: formless
+  race_groups:
+    - golem
   size: large
   stats:
     agi: 42
@@ -18115,7 +18301,9 @@
     - change_target_melee
     - change_target_chase
   name: Elder
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 63
@@ -18164,6 +18352,8 @@
     - change_target_chase
   name: Demon Pungus
   race: demon
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 61
@@ -18797,7 +18987,7 @@
     - can_attack
     - change_target_chase
   name: Violy
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -19319,7 +19509,9 @@
     - change_target_melee
     - change_target_chase
   name: Shinobi
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ninja
   size: medium
   stats:
     agi: 70
@@ -19686,7 +19878,7 @@
     - cast_sensor_idle
     - can_attack
   name: Dumpling Child
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 43
@@ -20269,6 +20461,8 @@
     - change_target_chase
   name: Side Winder
   race: brute
+  race_groups:
+    - werner_lab
   size: medium
   stats:
     agi: 32
@@ -20710,7 +20904,7 @@
     - change_target_melee
     - change_target_chase
   name: Joker
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 99
@@ -20778,7 +20972,7 @@
     - change_target_melee
     - change_target_chase
   name: High Orc
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 16
@@ -20951,7 +21145,7 @@
     - change_target_melee
     - change_target_chase
   name: Chepet
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 35
@@ -21190,7 +21384,7 @@
     - change_target_melee
     - change_target_chase
   name: Merman
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 29
@@ -21224,7 +21418,7 @@
     - change_target_melee
     - change_target_chase
   name: Orc Lady
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 11
@@ -21326,7 +21520,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold Archer
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 39
@@ -21428,7 +21622,7 @@
     - change_target_melee
     - change_target_chase
   name: Marduk
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 49
@@ -21632,7 +21826,7 @@
     - change_target_melee
     - change_target_chase
   name: Pasana
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 36
@@ -21734,7 +21928,7 @@
     - change_target_melee
     - change_target_chase
   name: Raydric
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 87
@@ -21768,7 +21962,7 @@
     - change_target_melee
     - change_target_chase
   name: Requiem
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 34
@@ -21836,7 +22030,7 @@
     - change_target_melee
     - change_target_chase
   name: Zerom
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 49
@@ -21938,7 +22132,7 @@
     - change_target_melee
     - change_target_chase
   name: Orc Archer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 32
@@ -22244,7 +22438,7 @@
     - change_target_melee
     - change_target_chase
   name: Zealotus
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -22312,7 +22506,7 @@
     - change_target_melee
     - change_target_chase
   name: Phendark
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 65
@@ -22618,7 +22812,7 @@
       rate: 5500
   mvp_exp: 225504
   name: Samurai Specter
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 161
@@ -22827,6 +23021,8 @@
     - change_target_chase
   name: Wooden Golem
   race: plant
+  race_groups:
+    - golem
   size: large
   stats:
     agi: 30
@@ -22880,7 +23076,7 @@
     - change_target_melee
     - change_target_chase
   name: Wootan Shooter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 23
@@ -22934,7 +23130,7 @@
     - change_target_melee
     - change_target_chase
   name: Wootan Fighter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 14
@@ -23314,7 +23510,7 @@
     - change_target_melee
     - change_target_chase
   name: Bloody Murderer
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 65
@@ -23531,7 +23727,7 @@
       rate: 5500
   mvp_exp: 60030
   name: Amon Ra
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -23889,7 +24085,7 @@
     - item: Old_Violet_Box
       rate: 5000
   name: White Lady
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 244
@@ -23939,7 +24135,7 @@
     - change_target_melee
     - change_target_chase
   name: Green Maiden
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 65
@@ -24019,7 +24215,7 @@
     - cast_sensor_idle
     - can_attack
   name: Alice
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 53
@@ -24157,7 +24353,7 @@
     - change_target_melee
     - change_target_chase
   name: Bathory
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 38
@@ -24460,7 +24656,7 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 54
@@ -24494,7 +24690,7 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 16
@@ -24528,7 +24724,7 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 16
@@ -24562,7 +24758,7 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 27
@@ -24596,7 +24792,7 @@
     - change_target_melee
     - change_target_chase
   name: Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 37
@@ -24632,7 +24828,7 @@
     - change_target_melee
     - change_target_chase
   name: Goblin Leader
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 67
@@ -24730,7 +24926,7 @@
     - change_target_melee
     - change_target_chase
   name: Incantation Samurai
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 161
@@ -24828,7 +25024,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 76
@@ -24862,7 +25058,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -24896,7 +25092,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 64
@@ -24932,7 +25128,7 @@
     - change_target_melee
     - change_target_chase
   name: Kobold Leader
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 34
@@ -25323,7 +25519,9 @@
     - change_target_melee
     - change_target_chase
   name: Shinobi
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ninja
   size: medium
   stats:
     agi: 70
@@ -25762,7 +25960,7 @@
     - change_target_melee
     - change_target_chase
   name: Elder
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 63
@@ -25890,7 +26088,7 @@
     - can_attack
     - change_target_chase
   name: Goblin Archer
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 34
@@ -26383,7 +26581,7 @@
     - can_move
     - can_attack
   name: Christmas Orc
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 24
@@ -26521,7 +26719,7 @@
     - can_attack
     - change_target_melee
   name: Gangster
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 50
@@ -27040,7 +27238,7 @@
     - change_target_melee
     - change_target_chase
   name: Christmas Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 53
@@ -27776,6 +27974,8 @@
     - change_target_chase
   name: Teddy Bear
   race: formless
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 81
@@ -28159,7 +28359,7 @@
       rate: 5000
   mvp_exp: 200448
   name: White Lady
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 244
@@ -28214,7 +28414,7 @@
     - change_target_melee
     - change_target_chase
   name: Green Maiden
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 79
@@ -28264,6 +28464,8 @@
     - can_attack
   name: Gremlin
   race: demon
+  race_groups:
+    - rachel_sanctuary
   size: large
   stats:
     agi: 75
@@ -28311,6 +28513,8 @@
     - can_attack
   name: Beholder
   race: formless
+  race_groups:
+    - rachel_sanctuary
   size: small
   stats:
     agi: 82
@@ -28365,6 +28569,8 @@
     - change_target_chase
   name: Seyren Windsor
   race: demon
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 99
@@ -28419,6 +28625,8 @@
     - change_target_chase
   name: Eremes Guile
   race: demon
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 137
@@ -28472,7 +28680,9 @@
     - change_target_melee
     - change_target_chase
   name: Howard Alt-Eisen
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 79
@@ -28527,7 +28737,9 @@
     - change_target_melee
     - change_target_chase
   name: Margaretha Sorin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 74
@@ -28581,7 +28793,9 @@
     - change_target_melee
     - change_target_chase
   name: Cecil Damon
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 126
@@ -28636,7 +28850,9 @@
     - change_target_melee
     - change_target_chase
   name: Kathryne Keyron
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 78
@@ -28680,6 +28896,9 @@
     - change_target_chase
   name: Lord Knight Seyren
   race: demon
+  race_groups:
+    - bio5_swordman_thief
+    - biolab
   size: medium
   stats:
     agi: 165
@@ -28723,6 +28942,9 @@
     - change_target_chase
   name: Assassin Cross Eremes
   race: demon
+  race_groups:
+    - bio5_swordman_thief
+    - biolab
   size: medium
   stats:
     agi: 338
@@ -28765,7 +28987,10 @@
     - change_target_melee
     - change_target_chase
   name: Whitesmith Howard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
+    - biolab
   size: medium
   stats:
     agi: 148
@@ -28808,7 +29033,10 @@
     - change_target_melee
     - change_target_chase
   name: High Priest Margaretha
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
+    - biolab
   size: medium
   stats:
     agi: 150
@@ -28851,7 +29079,10 @@
     - change_target_melee
     - change_target_chase
   name: Sniper Cecil
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
+    - biolab
   size: medium
   stats:
     agi: 258
@@ -28894,7 +29125,10 @@
     - change_target_melee
     - change_target_chase
   name: High Wizard Kathryne
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
+    - biolab
   size: medium
   stats:
     agi: 190
@@ -28960,6 +29194,8 @@
   mvp_exp: 1508832
   name: Lord Knight Seyren
   race: demon
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 165
@@ -29025,6 +29261,8 @@
   mvp_exp: 1360125
   name: Assassin Cross Eremes
   race: demon
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 338
@@ -29089,7 +29327,9 @@
       rate: 2000
   mvp_exp: 1155375
   name: Whitesmith Howard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 148
@@ -29154,7 +29394,9 @@
       rate: 2000
   mvp_exp: 1126125
   name: High Priest Margaretha
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 150
@@ -29219,7 +29461,9 @@
       rate: 2000
   mvp_exp: 1334736
   name: Sniper Cecil
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 258
@@ -29284,7 +29528,9 @@
       rate: 2000
   mvp_exp: 1053000
   name: High Wizard Kathryne
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 190
@@ -29338,7 +29584,9 @@
     - change_target_melee
     - change_target_chase
   name: Egnigem Cenia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 92
@@ -29392,7 +29640,9 @@
     - change_target_melee
     - change_target_chase
   name: Wickebine Tres
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 91
@@ -29446,7 +29696,9 @@
     - change_target_melee
     - change_target_chase
   name: Armeyer Dinze
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 59
@@ -29500,7 +29752,9 @@
     - change_target_melee
     - change_target_chase
   name: Errende Ebecee
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 66
@@ -29554,7 +29808,9 @@
     - change_target_melee
     - change_target_chase
   name: Kavach Icarus
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 109
@@ -29608,7 +29864,9 @@
     - change_target_melee
     - change_target_chase
   name: Laurell Weinder
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 79
@@ -29674,7 +29932,9 @@
       rate: 2000
   mvp_exp: 342680
   name: Egnigem Cenia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 177
@@ -29711,7 +29971,9 @@
     - change_target_melee
     - change_target_chase
   name: Wickebine Tres
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 91
@@ -29748,7 +30010,9 @@
     - change_target_melee
     - change_target_chase
   name: Armeyer Dinze
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 59
@@ -29785,7 +30049,9 @@
     - change_target_melee
     - change_target_chase
   name: Errende Ebecee
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 66
@@ -29822,7 +30088,9 @@
     - change_target_melee
     - change_target_chase
   name: Kavach Icarus
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 109
@@ -29859,7 +30127,9 @@
     - change_target_melee
     - change_target_chase
   name: Laurell Weinder
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 79
@@ -30071,7 +30341,7 @@
     - change_target_melee
     - change_target_chase
   name: Archdam
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 64
@@ -30962,7 +31232,9 @@
     - change_target_melee
     - change_target_chase
   name: Orc Baby
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 1
@@ -31109,7 +31381,7 @@
     - change_target_melee
     - change_target_chase
   name: White Lady
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 244
@@ -31883,6 +32155,8 @@
     - change_target_chase
   name: Odium of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: large
   stats:
     agi: 78
@@ -31938,6 +32212,8 @@
     - change_target_chase
   name: Despero of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: large
   stats:
     agi: 96
@@ -31993,6 +32269,8 @@
     - change_target_chase
   name: Maero of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: medium
   stats:
     agi: 111
@@ -32048,6 +32326,8 @@
     - change_target_chase
   name: Dolor of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: small
   stats:
     agi: 72
@@ -32113,6 +32393,8 @@
   mvp_exp: 389820
   name: Thanatos Phantom
   race: demon
+  race_groups:
+    - thanatos
   size: large
   stats:
     agi: 129
@@ -32156,6 +32438,8 @@
     - change_target_chase
   name: Odium of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: large
   stats:
     agi: 78
@@ -32199,6 +32483,8 @@
     - change_target_chase
   name: Despero of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: large
   stats:
     agi: 96
@@ -32242,6 +32528,8 @@
     - change_target_chase
   name: Maero of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: medium
   stats:
     agi: 111
@@ -32285,6 +32573,8 @@
     - change_target_chase
   name: Dolor of Thanatos
   race: undead
+  race_groups:
+    - thanatos
   size: small
   stats:
     agi: 72
@@ -32846,7 +33136,7 @@
     - change_target_chase
     - random_target
   name: Cecil Damon
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 145
@@ -33393,7 +33683,7 @@
     - cast_sensor_idle
     - can_attack
   name: Aliza
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 50
@@ -33551,7 +33841,7 @@
     - change_target_melee
     - change_target_chase
   name: Christmas Cookie
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 16
@@ -33728,7 +34018,7 @@
     - change_target_melee
     - change_target_chase
   name: Aliza
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 50
@@ -34665,6 +34955,8 @@
   mvp_exp: 702000
   name: Gloom Under Night
   race: formless
+  race_groups:
+    - rachel_sanctuary
   size: large
   stats:
     agi: 223
@@ -34719,7 +35011,9 @@
     - change_target_melee
     - change_target_chase
   name: Agav
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 66
@@ -34774,7 +35068,9 @@
     - change_target_melee
     - change_target_chase
   name: Echio
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 63
@@ -34828,7 +35124,9 @@
     - change_target_melee
     - change_target_chase
   name: Vanberk
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 70
@@ -34882,7 +35180,9 @@
     - change_target_melee
     - change_target_chase
   name: Isilla
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 65
@@ -34937,6 +35237,8 @@
     - change_target_chase
   name: Hodremlin
   race: demon
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 70
@@ -34990,6 +35292,8 @@
     - change_target_chase
   name: Seeker
   race: formless
+  race_groups:
+    - rachel_sanctuary
   size: small
   stats:
     agi: 90
@@ -35468,6 +35772,8 @@
     - change_target_melee
   name: Galion
   race: brute
+  race_groups:
+    - rockridge
   size: medium
   stats:
     agi: 79
@@ -35519,6 +35825,8 @@
     - can_attack
   name: Stapo
   race: formless
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 46
@@ -35621,7 +35929,7 @@
     - change_target_melee
     - change_target_chase
   name: Agav
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -35659,7 +35967,7 @@
     - change_target_melee
     - change_target_chase
   name: Echio
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 63
@@ -36040,7 +36348,7 @@
     - change_target_melee
     - change_target_chase
   name: Aunoe
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 63
@@ -36092,7 +36400,7 @@
     - change_target_melee
     - change_target_chase
   name: Fanat
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -36162,7 +36470,7 @@
     - change_target_melee
     - change_target_chase
   name: Lord Knight Seyren
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 110
@@ -36204,7 +36512,7 @@
     - change_target_melee
     - change_target_chase
   name: Assassin Cross Eremes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 181
@@ -36246,7 +36554,7 @@
     - change_target_melee
     - change_target_chase
   name: Mastersmith Howard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 73
@@ -36288,7 +36596,7 @@
     - change_target_melee
     - change_target_chase
   name: High Priest Margaretha
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 84
@@ -36330,7 +36638,7 @@
     - change_target_melee
     - change_target_chase
   name: Sniper Cecil
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 180
@@ -36372,7 +36680,7 @@
     - change_target_melee
     - change_target_chase
   name: High Wizard Kathryne
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 89
@@ -36414,7 +36722,7 @@
     - change_target_melee
     - change_target_chase
   name: Lord Knight Seyren
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -36456,7 +36764,7 @@
     - change_target_melee
     - change_target_chase
   name: Assassin Cross Eremes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -36498,7 +36806,7 @@
     - change_target_melee
     - change_target_chase
   name: Mastersmith Howard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -36540,7 +36848,7 @@
     - change_target_melee
     - change_target_chase
   name: High Priest Margaretha
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -36581,7 +36889,7 @@
     - change_target_melee
     - change_target_chase
   name: Sniper Cecil
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -36623,7 +36931,7 @@
     - change_target_melee
     - change_target_chase
   name: High Wizard Kathryne
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -37018,7 +37326,7 @@
     - change_target_melee
     - change_target_chase
   name: Bathory
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 38
@@ -37237,7 +37545,7 @@
     - can_move
     - can_attack
   name: Christmas Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 53
@@ -37410,7 +37718,7 @@
     - change_target_melee
     - change_target_chase
   name: Sword Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -37468,7 +37776,7 @@
     - change_target_chase
     - random_target
   name: Bow Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -37929,7 +38237,7 @@
     - change_target_melee
     - change_target_chase
   name: Byrogue
-  race: demihuman
+  race: demi_human
   size: medium
   skill_range: 14
   stats:
@@ -38372,7 +38680,7 @@
     - change_target_melee
     - change_target_chase
   name: Orc Hero
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 60
@@ -38408,7 +38716,7 @@
     - change_target_melee
     - change_target_chase
   name: Mobster
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 46
@@ -39808,7 +40116,7 @@
     - change_target_melee
     - change_target_chase
   name: Baba-Yaga
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 45
@@ -39862,7 +40170,7 @@
     - change_target_melee
     - change_target_chase
   name: Kikimora
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 14
@@ -40281,7 +40589,7 @@
     - change_target_melee
     - change_target_chase
   name: Abysmal Knight
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 55
@@ -40378,7 +40686,7 @@
   matk: 1200
   mdef: 74
   name: Kathryne Keyron
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 5
@@ -40468,7 +40776,7 @@
     - can_attack
     - change_target_chase
   name: Sword Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -40507,7 +40815,7 @@
     - change_target_melee
     - change_target_chase
   name: Archer Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -40670,6 +40978,8 @@
   level: 98
   name: Barricade
   race: formless
+  race_groups:
+    - gvg
   size: large
   stats:
     agi: 17
@@ -40725,6 +41035,8 @@
     - boss
   name: Guardian Stone
   race: formless
+  race_groups:
+    - gvg
   size: small
   skill_range: 0
   stats:
@@ -40756,6 +41068,8 @@
     - boss
   name: Guardian Stone
   race: formless
+  race_groups:
+    - gvg
   size: small
   skill_range: 0
   stats:
@@ -41633,7 +41947,7 @@
     - change_target_melee
     - change_target_chase
   name: Piamette
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 66
@@ -41903,6 +42217,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -41946,6 +42262,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -41989,6 +42307,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42032,6 +42352,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42075,6 +42397,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42118,6 +42442,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42161,6 +42487,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42204,6 +42532,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42247,6 +42577,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -42279,7 +42611,7 @@
     - no_random_walk
     - can_attack
   name: Piamette
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 66
@@ -42313,7 +42645,7 @@
     - change_target_melee
     - change_target_chase
   name: Egnigem Cenia
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 92
@@ -42347,7 +42679,7 @@
     - can_attack
     - change_target_chase
   name: Camp Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -42382,7 +42714,7 @@
     - can_attack
     - change_target_chase
   name: Camp Guardian
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -42915,7 +43247,7 @@
     - can_move
     - can_attack
   name: Christmas Thief
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -42947,7 +43279,7 @@
     - can_move
     - can_attack
   name: New Year Doll
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 65
@@ -43064,7 +43396,7 @@
   modes:
     - boss
   name: Egnigem Cenia
-  race: demihuman
+  race: demi_human
   size: medium
   sp: 200
   stats:
@@ -43691,7 +44023,7 @@
     - change_target_melee
     - change_target_chase
   name: Zakudam
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 66
@@ -43747,7 +44079,7 @@
       rate: 10000
   mvp_exp: 24750
   name: Kublin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 81
@@ -43783,7 +44115,7 @@
     - change_target_melee
     - change_target_chase
   name: Orc Elite Guard
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 16
@@ -43817,7 +44149,7 @@
     - change_target_melee
     - change_target_chase
   name: Orc Bowman
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 32
@@ -43887,7 +44219,7 @@
     - change_target_melee
     - change_target_chase
   name: Orc Lady
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 35
@@ -43922,7 +44254,7 @@
     - change_target_melee
     - change_target_chase
   name: Dandelion Member
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 19
@@ -43976,6 +44308,8 @@
     - change_target_melee
   name: Tatacho
   race: brute
+  race_groups:
+    - manuk
   size: medium
   stats:
     agi: 33
@@ -44032,6 +44366,8 @@
     - change_target_chase
   name: Centipede
   race: insect
+  race_groups:
+    - manuk
   size: medium
   stats:
     agi: 71
@@ -44082,6 +44418,8 @@
     - can_attack
   name: Nepenthes
   race: plant
+  race_groups:
+    - manuk
   size: medium
   stats:
     agi: 32
@@ -44136,6 +44474,8 @@
     - change_target_chase
   name: Hillthrion
   race: brute
+  race_groups:
+    - manuk
   size: small
   stats:
     agi: 69
@@ -44193,6 +44533,8 @@
     - change_target_chase
   name: Hardrock Mammoth
   race: brute
+  race_groups:
+    - manuk
   size: large
   stats:
     agi: 66
@@ -44250,6 +44592,8 @@
     - change_target_chase
   name: Tendrillion
   race: brute
+  race_groups:
+    - splendide
   size: medium
   stats:
     agi: 66
@@ -44302,6 +44646,8 @@
     - change_target_melee
   name: Cornus
   race: brute
+  race_groups:
+    - splendide
   size: medium
   stats:
     agi: 47
@@ -44359,6 +44705,8 @@
     - change_target_chase
   name: Naga
   race: brute
+  race_groups:
+    - splendide
   size: large
   stats:
     agi: 65
@@ -44413,6 +44761,8 @@
     - target_weak
   name: Luciola Vespa
   race: insect
+  race_groups:
+    - splendide
   size: medium
   stats:
     agi: 89
@@ -44467,6 +44817,8 @@
     - change_target_chase
   name: Pinguicula
   race: plant
+  race_groups:
+    - splendide
   size: medium
   stats:
     agi: 60
@@ -44500,6 +44852,8 @@
     - change_target_melee
   name: Tatacho
   race: brute
+  race_groups:
+    - manuk
   size: medium
   stats:
     agi: 33
@@ -44534,6 +44888,8 @@
     - change_target_chase
   name: Hillslion
   race: brute
+  race_groups:
+    - manuk
   size: small
   stats:
     agi: 69
@@ -44588,6 +44944,8 @@
     - change_target_chase
   name: Centipede Larva
   race: insect
+  race_groups:
+    - manuk
   size: small
   stats:
     agi: 62
@@ -44614,7 +44972,7 @@
   modes:
     - boss
   name: Male Game Master
-  race: demihuman
+  race: demi_human
   size: medium
   sp: 250
   stats:
@@ -44642,7 +45000,7 @@
   modes:
     - boss
   name: Female Game Master
-  race: demihuman
+  race: demi_human
   size: medium
   sp: 250
   stats:
@@ -44734,7 +45092,7 @@
     - change_target_melee
     - change_target_chase
   name: Talisman Ghost
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 244
@@ -45377,7 +45735,7 @@
     - change_target_melee
     - change_target_chase
   name: Rata
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 74
@@ -45432,7 +45790,7 @@
     - change_target_melee
     - change_target_chase
   name: Duneyrr
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 69
@@ -45749,6 +46107,8 @@
     - change_target_chase
   name: Bradium Golem
   race: formless
+  race_groups:
+    - golem
   size: large
   stats:
     agi: 25
@@ -45845,7 +46205,7 @@
     - change_target_melee
     - change_target_chase
   name: Runaway Dandelion Member
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -45948,7 +46308,7 @@
     - change_target_melee
     - change_target_chase
   name: Dandelion
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 19
@@ -46785,7 +47145,7 @@
     - cast_sensor_idle
     - can_attack
   name: Alice
-  race: demihuman
+  race: demi_human
   size: medium
   sp: 221
   stats:
@@ -47232,7 +47592,7 @@
     - can_attack
     - change_target_melee
   name: Curupira
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 23
@@ -47589,6 +47949,8 @@
     - change_target_melee
   name: One-Horned Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 59
@@ -47639,6 +48001,8 @@
     - change_target_melee
   name: Two-Horned Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 68
@@ -47693,6 +48057,8 @@
     - change_target_chase
   name: Antler Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 99
@@ -47747,6 +48113,8 @@
     - change_target_chase
   name: Rake Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 66
@@ -47810,6 +48178,8 @@
   mvp_exp: 133321
   name: Scaraba Queen
   race: insect
+  race_groups:
+    - scaraba
   size: large
   stats:
     agi: 88
@@ -47846,6 +48216,8 @@
   mdef: 55
   name: Scaraba Egg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -47882,6 +48254,8 @@
   mdef: 62
   name: Scaraba Egg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -47918,6 +48292,8 @@
   mdef: 180
   name: Antler Scaraba Egg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -47956,6 +48332,8 @@
   mdef: 44
   name: Rake Scaraba Egg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -48124,7 +48502,7 @@
       rate: 5000
   mvp_exp: 502
   name: Orc Hero
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 82
@@ -49222,7 +49600,7 @@
       rate: 2000
   mvp_exp: 653
   name: Whitesmith Howard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 148
@@ -49284,7 +49662,7 @@
       rate: 2000
   mvp_exp: 653
   name: Lord Knight Seyren
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 165
@@ -49349,7 +49727,7 @@
       rate: 2000
   mvp_exp: 653
   name: Assassin Cross Eremes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 181
@@ -49759,7 +50137,7 @@
     - change_target_melee
     - change_target_chase
   name: Little Fatum
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 66
@@ -50013,6 +50391,8 @@
     - can_attack
   name: Antler Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 99
@@ -50044,6 +50424,8 @@
     - can_attack
   name: Rake Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 66
@@ -50653,6 +51035,8 @@
     - change_target_chase
   name: Gold One-Horn Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 109
@@ -50709,6 +51093,8 @@
     - change_target_chase
   name: Gold Two-Horn Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 28
@@ -50765,6 +51151,8 @@
     - change_target_chase
   name: Gold Antler Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 59
@@ -50821,6 +51209,8 @@
     - change_target_chase
   name: Gold Rake Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 136
@@ -50884,6 +51274,8 @@
   mvp_exp: 302555
   name: Gold Queen Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: large
   stats:
     agi: 88
@@ -50922,6 +51314,8 @@
   mdef: 55
   name: Gold One-Horn Scaraba E
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -50960,6 +51354,8 @@
   mdef: 62
   name: Gold Two-Horn Scaraba Eg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -50998,6 +51394,8 @@
   mdef: 180
   name: Gold Antler Scaraba Egg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -51038,6 +51436,8 @@
   mdef: 44
   name: Gold Rake Scaraba Egg
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 1
@@ -51074,6 +51474,8 @@
     - change_target_chase
   name: Gold Antler Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 59
@@ -51110,6 +51512,8 @@
     - change_target_chase
   name: Gold Rake Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 136
@@ -51146,6 +51550,8 @@
     - change_target_chase
   name: Gold One-Horn Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 109
@@ -51182,6 +51588,8 @@
     - change_target_chase
   name: Gold Two-Horn Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 28
@@ -51236,6 +51644,8 @@
     - change_target_chase
   name: Deep Sea Vadon
   race: fish
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 91
@@ -51290,6 +51700,8 @@
     - change_target_chase
   name: Deep Sea Marse
   race: fish
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 37
@@ -51342,6 +51754,8 @@
     - change_target_chase
   name: Deep Sea Crab
   race: fish
+  race_groups:
+    - malangdo
   size: small
   skill_range: 7
   stats:
@@ -51397,6 +51811,8 @@
     - change_target_chase
   name: Deep Sea Cornutus
   race: fish
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 87
@@ -51451,6 +51867,8 @@
     - change_target_chase
   name: Deep Sea Shellfish
   race: fish
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 31
@@ -51505,6 +51923,8 @@
     - change_target_chase
   name: Deep Sea Kukre
   race: insect
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 80
@@ -51559,6 +51979,8 @@
     - change_target_chase
   name: Deep Sea Strouf
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 126
@@ -51613,6 +52035,8 @@
     - change_target_chase
   name: Deep Sea Sword Fish
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 156
@@ -51667,6 +52091,8 @@
     - change_target_chase
   name: Deep Sea Marc
   race: fish
+  race_groups:
+    - malangdo
   size: medium
   stats:
     agi: 145
@@ -51721,6 +52147,8 @@
     - change_target_chase
   name: Deep Sea Anolian
   race: fish
+  race_groups:
+    - malangdo
   size: medium
   stats:
     agi: 188
@@ -51775,6 +52203,8 @@
     - change_target_chase
   name: Deep Sea Obeaune
   race: demon
+  race_groups:
+    - malangdo
   size: medium
   stats:
     agi: 87
@@ -51829,6 +52259,8 @@
     - change_target_chase
   name: Deep Sea Kapha
   race: demon
+  race_groups:
+    - malangdo
   size: medium
   stats:
     agi: 209
@@ -51946,6 +52378,8 @@
       rate: 5500
   name: Gloomy Coelacanth
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 160
@@ -52006,6 +52440,8 @@
       rate: 5500
   name: Weird Coelacanth
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 160
@@ -52066,6 +52502,8 @@
       rate: 5500
   name: Mutant Coelacanth
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 260
@@ -52126,6 +52564,8 @@
       rate: 5500
   name: Violent Coelacanth
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 260
@@ -52204,6 +52644,8 @@
     - change_target_chase
   name: Octopus
   race: fish
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 91
@@ -52247,6 +52689,8 @@
     - can_attack
   name: Octopus Leg
   race: fish
+  race_groups:
+    - malangdo
   size: small
   stats:
     agi: 91
@@ -52305,6 +52749,8 @@
       rate: 5500
   name: Giant Octopus
   race: fish
+  race_groups:
+    - malangdo
   size: large
   stats:
     agi: 91
@@ -53439,7 +53885,9 @@
     - change_target_melee
     - change_target_chase
   name: Randel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 74
@@ -53493,7 +53941,9 @@
     - change_target_melee
     - change_target_chase
   name: Flamel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 78
@@ -53547,7 +53997,9 @@
     - change_target_melee
     - change_target_chase
   name: Celia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 99
@@ -53603,6 +54055,8 @@
     - change_target_chase
   name: Chen
   race: demon
+  race_groups:
+    - biolab
   size: medium
   sp: 25
   stats:
@@ -53659,6 +54113,8 @@
     - change_target_chase
   name: Gertie
   race: demon
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 125
@@ -53712,7 +54168,9 @@
     - change_target_melee
     - change_target_chase
   name: Alphoccio
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 97
@@ -53766,7 +54224,9 @@
     - change_target_melee
     - change_target_chase
   name: Trentini
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 81
@@ -53808,7 +54268,10 @@
     - change_target_melee
     - change_target_chase
   name: Paladin Randel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_swordman_thief
+    - biolab
   size: medium
   stats:
     agi: 155
@@ -53850,7 +54313,10 @@
     - change_target_melee
     - change_target_chase
   name: Creator Flamel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
+    - biolab
   size: medium
   stats:
     agi: 175
@@ -53892,7 +54358,10 @@
     - change_target_melee
     - change_target_chase
   name: Professor Celia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
+    - biolab
   size: medium
   stats:
     agi: 148
@@ -53934,7 +54403,10 @@
     - change_target_melee
     - change_target_chase
   name: Champion Chen
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
+    - biolab
   size: medium
   sp: 1553
   stats:
@@ -53978,6 +54450,9 @@
     - change_target_chase
   name: Stalker Gertie
   race: demon
+  race_groups:
+    - bio5_swordman_thief
+    - biolab
   size: medium
   stats:
     agi: 315
@@ -54019,7 +54494,10 @@
     - change_target_melee
     - change_target_chase
   name: Clown Alphoccio
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
+    - biolab
   size: medium
   stats:
     agi: 161
@@ -54061,7 +54539,10 @@
     - change_target_melee
     - change_target_chase
   name: Gypsy Trentini
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
+    - biolab
   size: medium
   stats:
     agi: 247
@@ -54124,7 +54605,9 @@
       rate: 5000
   mvp_exp: 1837244
   name: Paladin Randel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 155
@@ -54189,7 +54672,9 @@
       rate: 5000
   mvp_exp: 1305892
   name: Creator Flamel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 175
@@ -54250,7 +54735,9 @@
       rate: 5000
   mvp_exp: 1256827
   name: Professor Celia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 148
@@ -54314,6 +54801,8 @@
   mvp_exp: 1278392
   name: Champion Chen
   race: demon
+  race_groups:
+    - biolab
   size: medium
   sp: 1553
   stats:
@@ -54378,6 +54867,8 @@
   mvp_exp: 1105174
   name: Stalker Gertie
   race: demon
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 315
@@ -54438,7 +54929,9 @@
       rate: 5000
   mvp_exp: 1056509
   name: Clown Alphoccio
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 161
@@ -54501,7 +54994,9 @@
       rate: 5000
   mvp_exp: 1115939
   name: Gypsy Trentini
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - biolab
   size: medium
   stats:
     agi: 247
@@ -54635,7 +55130,7 @@
     - can_move
     - can_attack
   name: Experience Test
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -54689,7 +55184,7 @@
     - change_target_melee
     - change_target_chase
   name: Wootan Fighter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 14
@@ -54840,7 +55335,7 @@
       rate: 5000
   mvp_exp: 750061
   name: Angry Student Pyuriel
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 131
@@ -54897,7 +55392,7 @@
     - change_target_melee
     - change_target_chase
   name: Warrior Laura
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 92
@@ -55084,7 +55579,7 @@
       rate: 5000
   mvp_exp: 750780
   name: General Daehyun
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 123
@@ -55141,7 +55636,7 @@
     - change_target_melee
     - change_target_chase
   name: Samurai Soheon
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 244
@@ -55920,7 +56415,7 @@
     - change_target_melee
     - change_target_chase
   name: Warrior Laura
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 92
@@ -55994,7 +56489,7 @@
     - change_target_melee
     - change_target_chase
   name: Samurai Soheon
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 244
@@ -56235,7 +56730,7 @@
     - change_target_melee
     - change_target_chase
   name: Dark Axe Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 76
@@ -56284,7 +56779,7 @@
     - change_target_melee
     - change_target_chase
   name: Dark Hammer Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -56333,7 +56828,7 @@
     - change_target_melee
     - change_target_chase
   name: Dark Mace Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 64
@@ -56382,7 +56877,7 @@
     - can_attack
     - change_target_chase
   name: Dark Kobold Archer
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 39
@@ -56963,6 +57458,8 @@
   level: 0
   name: Queen Scaraba
   race: formless
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 0
@@ -57143,7 +57640,7 @@
     - change_target_melee
     - change_target_chase
   name: Bungisngis
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 32
@@ -57192,7 +57689,7 @@
     - change_target_melee
     - change_target_chase
   name: Engkanto
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 57
@@ -58284,6 +58781,8 @@
     - can_attack
   name: Monster
   race: insect
+  race_groups:
+    - ogh_hidden
   size: small
   skill_range: 12
   sp: 200
@@ -58509,6 +59008,8 @@
     - can_attack
   name: Hidden Mob
   race: insect
+  race_groups:
+    - ogh_hidden
   size: small
   skill_range: 12
   sp: 200
@@ -59290,7 +59791,7 @@
       rate: 5500
   mvp_exp: 813243
   name: Amon Ra (Nightmare)
-  race: demihuman
+  race: demi_human
   size: large
   skill_range: 14
   stats:
@@ -60578,7 +61079,7 @@
     - change_target_melee
     - change_target_chase
   name: Knight Seyren
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 62
@@ -60629,7 +61130,7 @@
     - change_target_melee
     - change_target_chase
   name: Assassin Eremes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 78
@@ -60680,7 +61181,7 @@
     - change_target_melee
     - change_target_chase
   name: Blacksmith Howard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 71
@@ -60731,7 +61232,7 @@
     - change_target_melee
     - change_target_chase
   name: Hunter Cecil
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 113
@@ -60782,7 +61283,7 @@
     - change_target_melee
     - change_target_chase
   name: Wizard Kathryne
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 70
@@ -60834,7 +61335,7 @@
     - change_target_melee
     - change_target_chase
   name: Priest Margaretha
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -60885,7 +61386,7 @@
     - change_target_melee
     - change_target_chase
   name: Crusader Egnigem
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 101
@@ -60936,7 +61437,7 @@
     - change_target_melee
     - change_target_chase
   name: Rogue Wickebine
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -60987,7 +61488,7 @@
     - change_target_melee
     - change_target_chase
   name: Alchemist Armeyer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 64
@@ -61038,7 +61539,7 @@
     - change_target_melee
     - change_target_chase
   name: Bard Kavach
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 119
@@ -61089,7 +61590,7 @@
     - change_target_melee
     - change_target_chase
   name: Dancer Josephina
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 119
@@ -61140,7 +61641,7 @@
     - change_target_melee
     - change_target_chase
   name: Sage Laurell
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -61191,7 +61692,7 @@
     - change_target_melee
     - change_target_chase
   name: Monk Errende
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 72
@@ -61240,7 +61741,7 @@
     - change_target_melee
     - change_target_chase
   name: Knight Seyren
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 62
@@ -61289,7 +61790,7 @@
     - change_target_melee
     - change_target_chase
   name: Assassin Eremes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 78
@@ -61338,7 +61839,7 @@
     - change_target_melee
     - change_target_chase
   name: Blacksmith Howard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 71
@@ -61387,7 +61888,7 @@
     - change_target_melee
     - change_target_chase
   name: Hunter Cecil
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 113
@@ -61436,7 +61937,7 @@
     - change_target_melee
     - change_target_chase
   name: Wizard Kathryne
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 70
@@ -61471,7 +61972,7 @@
     - change_target_melee
     - change_target_chase
   name: Priest Margaretha
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -61520,7 +62021,7 @@
     - change_target_melee
     - change_target_chase
   name: Crusader Egnigem
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 101
@@ -61569,7 +62070,7 @@
     - change_target_melee
     - change_target_chase
   name: Rogue Wickebine
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -61618,7 +62119,7 @@
     - change_target_melee
     - change_target_chase
   name: Alchemist Armeyer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 64
@@ -61667,7 +62168,7 @@
     - change_target_melee
     - change_target_chase
   name: Bard Kavach
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 119
@@ -61716,7 +62217,7 @@
     - change_target_melee
     - change_target_chase
   name: Dancer Josephina
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 119
@@ -61765,7 +62266,7 @@
     - change_target_melee
     - change_target_chase
   name: Sage Laurell
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -61799,7 +62300,7 @@
     - change_target_melee
     - change_target_chase
   name: Monk Errende
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 72
@@ -61857,7 +62358,7 @@
       rate: 5500
   mvp_exp: 53133
   name: The Last One
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 148
@@ -61913,7 +62414,7 @@
       rate: 5500
   mvp_exp: 54405
   name: King of the Alley
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 194
@@ -61959,7 +62460,7 @@
     - change_target_melee
     - change_target_chase
   name: Aira
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 62
@@ -62005,7 +62506,7 @@
     - change_target_melee
     - change_target_chase
   name: Kuluna
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 78
@@ -62051,7 +62552,7 @@
     - change_target_melee
     - change_target_chase
   name: Mallina
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 71
@@ -62097,7 +62598,7 @@
     - change_target_melee
     - change_target_chase
   name: Ezella
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 113
@@ -62143,7 +62644,7 @@
     - change_target_melee
     - change_target_chase
   name: Lune
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 70
@@ -62189,7 +62690,7 @@
     - change_target_melee
     - change_target_chase
   name: Morin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -62235,7 +62736,7 @@
     - change_target_melee
     - change_target_chase
   name: Nasarin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 101
@@ -62360,6 +62861,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62403,6 +62906,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62446,6 +62951,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62489,6 +62996,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62532,6 +63041,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62575,6 +63086,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62618,6 +63131,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62661,6 +63176,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62704,6 +63221,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62747,6 +63266,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -62790,6 +63311,8 @@
   level: 99
   name: Treasure Chest
   race: formless
+  race_groups:
+    - treasure
   size: small
   skill_range: 0
   stats:
@@ -63393,6 +63916,8 @@
       rate: 5500
   name: Corrupted Soul
   race: demon
+  race_groups:
+    - ogh_atk_def
   size: large
   stats:
     agi: 20
@@ -63452,6 +63977,8 @@
       rate: 5500
   name: Amdarais
   race: undead
+  race_groups:
+    - ogh_atk_def
   size: large
   stats:
     agi: 39
@@ -63554,6 +64081,8 @@
     - change_target_chase
   name: Nightmare Rideword
   race: formless
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 195
@@ -63603,6 +64132,8 @@
     - change_target_chase
   name: Nightmare Mimic
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 162
@@ -63906,6 +64437,8 @@
     - change_target_chase
   name: Faceworm
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 50
@@ -63964,6 +64497,8 @@
   mvp_exp: 90909
   name: Faceworm Queen
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 100
@@ -64011,6 +64546,8 @@
     - change_target_chase
   name: Dark Faceworm
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 100
@@ -64045,6 +64582,8 @@
     - can_attack
   name: Venom Bug
   race: insect
+  race_groups:
+    - faceworm
   size: small
   skill_range: 12
   stats:
@@ -64104,6 +64643,8 @@
   mvp_exp: 90909
   name: Red Faceworm Queen
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 100
@@ -64162,6 +64703,8 @@
   mvp_exp: 90909
   name: Green Faceworm Queen
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 100
@@ -64220,6 +64763,8 @@
   mvp_exp: 90909
   name: Blue Faceworm Queen
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 100
@@ -64278,6 +64823,8 @@
   mvp_exp: 90909
   name: Yellow Faceworm Queen
   race: insect
+  race_groups:
+    - faceworm
   size: large
   stats:
     agi: 400
@@ -64308,6 +64855,8 @@
     - can_attack
   name: Monster 3
   race: formless
+  race_groups:
+    - faceworm
   size: small
   skill_range: 12
   stats:
@@ -64339,6 +64888,8 @@
     - can_attack
   name: Monster 4
   race: formless
+  race_groups:
+    - faceworm
   size: small
   skill_range: 12
   stats:
@@ -64370,6 +64921,8 @@
     - can_attack
   name: Monster 5
   race: formless
+  race_groups:
+    - faceworm
   size: small
   skill_range: 12
   stats:
@@ -64406,6 +64959,8 @@
   mdef: 10
   name: Faceworm Egg
   race: insect
+  race_groups:
+    - faceworm
   size: medium
   stats:
     agi: 10
@@ -64454,6 +65009,8 @@
     - change_target_chase
   name: Faceworm Larva
   race: insect
+  race_groups:
+    - faceworm
   size: medium
   stats:
     agi: 50
@@ -64510,7 +65067,7 @@
     - change_target_chase
     - random_target
   name: Doyen Irene
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 36
@@ -64564,7 +65121,7 @@
     - change_target_melee
     - change_target_chase
   name: 1st Payon Soldier
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 46
@@ -64618,7 +65175,7 @@
     - change_target_melee
     - change_target_chase
   name: 2nd Payon Soldier
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 46
@@ -64762,7 +65319,7 @@
     - change_target_melee
     - change_target_chase
   name: Arhi
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 50
@@ -64802,7 +65359,7 @@
     - change_target_melee
     - change_target_chase
   name: Dio Anemos
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 40
@@ -64842,7 +65399,7 @@
     - change_target_melee
     - change_target_chase
   name: Geffen Shoplifter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 70
@@ -64882,7 +65439,7 @@
     - change_target_melee
     - change_target_chase
   name: Geffen Bully
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 50
@@ -64922,7 +65479,7 @@
     - change_target_melee
     - change_target_chase
   name: Geffen Gang Member
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 80
@@ -64962,7 +65519,7 @@
     - change_target_melee
     - change_target_chase
   name: Faymont
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 60
@@ -65002,7 +65559,7 @@
     - change_target_melee
     - change_target_chase
   name: Ordre
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 70
@@ -65042,7 +65599,7 @@
     - change_target_melee
     - change_target_chase
   name: Blut Hase
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 120
@@ -65082,7 +65639,7 @@
     - change_target_melee
     - change_target_chase
   name: Kuro Akuma
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65122,7 +65679,7 @@
     - change_target_melee
     - change_target_chase
   name: Ifodes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65162,7 +65719,7 @@
     - change_target_melee
     - change_target_chase
   name: Licheniyes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65202,7 +65759,7 @@
     - change_target_melee
     - change_target_chase
   name: Odoric
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 150
@@ -65242,7 +65799,7 @@
     - change_target_melee
     - change_target_chase
   name: Ju
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65283,7 +65840,7 @@
     - change_target_melee
     - change_target_chase
   name: Dwigh
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65324,7 +65881,7 @@
     - change_target_melee
     - change_target_chase
   name: Fay Kanavian
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65386,7 +65943,7 @@
     - item: Old_Violet_Box
       rate: 100
   name: Fenrir
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65420,7 +65977,7 @@
     - change_target_melee
     - change_target_chase
   name: Alphonse
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65454,7 +66011,7 @@
     - change_target_melee
     - change_target_chase
   name: Alphonse Jr
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -65490,7 +66047,7 @@
     - change_target_melee
     - change_target_chase
   name: Geffen Bully
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 14
@@ -65526,7 +66083,7 @@
     - change_target_melee
     - change_target_chase
   name: Geffen Gang Member
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 14
@@ -66951,7 +67508,7 @@
     - change_target_melee
     - change_target_chase
   name: Elusive Zakudam
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 66
@@ -67159,7 +67716,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Wootan Fighter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 18
@@ -67678,7 +68235,7 @@
     - can_attack
     - change_target_chase
   name: Elusive Violy
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -67731,7 +68288,7 @@
     - can_attack
     - change_target_chase
   name: Swift Violy
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -67784,7 +68341,7 @@
     - can_attack
     - change_target_chase
   name: Solid Violy
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -67946,7 +68503,7 @@
     - change_target_melee
     - change_target_chase
   name: Elusive Vavayaga
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 45
@@ -68000,7 +68557,9 @@
     - change_target_melee
     - change_target_chase
   name: Swift Vanberk
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 70
@@ -69945,7 +70504,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Shinobi
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 91
@@ -70103,7 +70662,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid Cecil Damon
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 126
@@ -70923,7 +71482,7 @@
     - cast_sensor_idle
     - can_attack
   name: Dumpling Child Ringleade
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 43
@@ -71145,7 +71704,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid Requiem
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 34
@@ -71303,7 +71862,7 @@
     - change_target_melee
     - change_target_chase
   name: Swift Raydric
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 87
@@ -71357,7 +71916,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid Raydric
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 87
@@ -71411,7 +71970,7 @@
     - change_target_melee
     - change_target_chase
   name: Laurell Weinder Ringlead
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 79
@@ -71464,6 +72023,8 @@
     - change_target_chase
   name: Furious Rake Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 85
@@ -72821,7 +73382,7 @@
     - change_target_melee
     - change_target_chase
   name: Swift Pasana
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 36
@@ -72982,7 +73543,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Orc Warrior
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 19
@@ -73136,7 +73697,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid Orc Lady
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 11
@@ -74778,7 +75339,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Merman
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 37
@@ -75091,7 +75652,7 @@
     - change_target_melee
     - change_target_chase
   name: Elusive Marduk
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 49
@@ -75801,7 +76362,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Little Fatum
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 85
@@ -76060,7 +76621,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Wickebine Tres
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 130
@@ -76111,7 +76672,7 @@
     - change_target_melee
     - change_target_chase
   name: Elusive Eremes
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 78
@@ -76163,7 +76724,7 @@
     - can_attack
     - change_target_chase
   name: Swift Kobold Archer
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 39
@@ -76217,7 +76778,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid Kobold
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 76
@@ -76530,7 +77091,9 @@
     - change_target_melee
     - change_target_chase
   name: Isilla Ringleader
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 65
@@ -76943,6 +77506,8 @@
     - change_target_melee
   name: Swift Uni-horn Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: small
   stats:
     agi: 59
@@ -77048,6 +77613,8 @@
     - change_target_chase
   name: Hodremlin Ringleader
   race: demon
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 70
@@ -77253,7 +77820,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid High Orc
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 16
@@ -77661,7 +78228,7 @@
     - change_target_melee
     - change_target_chase
   name: Elusive Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 54
@@ -77717,7 +78284,7 @@
     - change_target_melee
     - change_target_chase
   name: Swift Goblin
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 54
@@ -77866,7 +78433,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Dark Hammer Kobo
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 79
@@ -77915,7 +78482,7 @@
     - change_target_melee
     - change_target_chase
   name: Elusive Dark Hammer Kobo
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -79108,7 +79675,9 @@
     - change_target_melee
     - change_target_chase
   name: Echio Ringleader
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 63
@@ -80361,7 +80930,7 @@
     - cast_sensor_idle
     - can_attack
   name: Cookie Ringleader
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 23
@@ -80863,7 +81432,7 @@
     - change_target_melee
     - change_target_chase
   name: Celia Ringleader
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 99
@@ -81070,7 +81639,7 @@
     - change_target_melee
     - change_target_chase
   name: Solid Bungisngis
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 32
@@ -81393,7 +81962,7 @@
     - change_target_melee
     - change_target_chase
   name: Furious Bathory
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 49
@@ -81607,7 +82176,7 @@
     - change_target_melee
     - change_target_chase
   name: Assaulter Ringleader
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 92
@@ -81979,6 +82548,8 @@
     - change_target_chase
   name: Elusive Antler Scaraba
   race: insect
+  race_groups:
+    - scaraba
   size: medium
   stats:
     agi: 99
@@ -82579,7 +83150,7 @@
     - cast_sensor_idle
     - can_attack
   name: Aliza Ringleader
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 50
@@ -82742,7 +83313,9 @@
     - change_target_melee
     - change_target_chase
   name: Swift Agav
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rachel_sanctuary
   size: medium
   stats:
     agi: 66
@@ -82886,7 +83459,7 @@
     - change_target_melee
     - change_target_chase
   name: Geffen Shoplifter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 14
@@ -82938,6 +83511,8 @@
     - can_attack
   name: Big Ben
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 58
@@ -82994,6 +83569,8 @@
     - change_target_chase
   name: Big Bell
   race: formless
+  race_groups:
+    - clocktower
   size: medium
   stats:
     agi: 104
@@ -83045,6 +83622,8 @@
     - can_attack
   name: Time Keeper
   race: formless
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 60
@@ -83099,6 +83678,8 @@
     - change_target_chase
   name: Neo Punk
   race: plant
+  race_groups:
+    - clocktower
   size: small
   stats:
     agi: 39
@@ -83152,7 +83733,9 @@
     - change_target_melee
     - change_target_chase
   name: Arc Elder
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 63
@@ -83210,6 +83793,8 @@
     - change_target_chase
   name: Owl Viscount
   race: demon
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 51
@@ -83304,6 +83889,8 @@
     - change_target_chase
   name: Owl Marquis
   race: demon
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 65
@@ -83777,7 +84364,7 @@
   matk: 444
   mdef: 89
   name: M Loki
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -84087,7 +84674,7 @@
     - change_target_melee
     - change_target_chase
   name: Cursed Sentinel
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 65
@@ -84515,7 +85102,7 @@
     - change_target_melee
     - change_target_chase
   name: Torturous Redeemer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 76
@@ -84589,7 +85176,7 @@
     - change_target_melee
     - change_target_chase
   name: Torturous Redeemer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 1
@@ -85207,7 +85794,7 @@
     - change_target_melee
     - change_target_chase
   name: Morocc Necromancer
-  race: demihuman
+  race: demi_human
   size: medium
   skill_range: 12
   stats:
@@ -85262,7 +85849,7 @@
     - item: Seed_Of_Yggdrasil
       rate: 5000
   name: Morocc Necromancer
-  race: demihuman
+  race: demi_human
   size: medium
   skill_range: 12
   stats:
@@ -85603,7 +86190,7 @@
     - change_target_melee
     - change_target_chase
   name: Corrupt Orc Baby
-  race: demihuman
+  race: demi_human
   size: small
   stats:
     agi: 85
@@ -85765,7 +86352,7 @@
     - change_target_melee
     - change_target_chase
   name: Corrupt Orc Warrior
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 85
@@ -85927,7 +86514,7 @@
     - change_target_melee
     - change_target_chase
   name: Corrupt Orc Zombie
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 145
@@ -86860,6 +87447,8 @@
   mvp_exp: 2291250
   name: Time Holder
   race: demon
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 152
@@ -87289,7 +87878,7 @@
   matk: 51
   mdef: 36
   name: Mercenary
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 46
@@ -87316,7 +87905,7 @@
   matk: 444
   mdef: 89
   name: Guardian's Alter Ego
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 66
@@ -88434,7 +89023,7 @@
     - change_target_melee
     - change_target_chase
   name: Exploration Rover
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 63
@@ -88477,7 +89066,7 @@
     - change_target_melee
     - change_target_chase
   name: Ruin Grace Believer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -88520,7 +89109,7 @@
     - change_target_melee
     - change_target_chase
   name: Ruin Grace Believer
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 61
@@ -88604,7 +89193,7 @@
     - can_move
     - can_attack
   name: Shooting Target
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 0
@@ -88631,7 +89220,7 @@
     - can_move
     - can_attack
   name: Shooting Target
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 0
@@ -89015,7 +89604,7 @@
     - item: Old_Blue_Box
       rate: 5000
   name: Sarah Irene
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 161
@@ -89602,6 +90191,8 @@
     - change_target_chase
   name: Eremes Guille
   race: demon
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 190
@@ -89654,7 +90245,9 @@
     - change_target_melee
     - change_target_chase
   name: Margaretha Sorin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 80
@@ -89707,7 +90300,9 @@
     - change_target_melee
     - change_target_chase
   name: Kathryne Cheiron
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 80
@@ -89762,7 +90357,9 @@
     - change_target_melee
     - change_target_chase
   name: Shecil Damon
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 130
@@ -89817,7 +90414,9 @@
     - change_target_melee
     - change_target_chase
   name: Harword Alt-Eisen
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 80
@@ -89871,6 +90470,8 @@
     - change_target_chase
   name: Seyren Windsor
   race: demon
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 100
@@ -89908,6 +90509,8 @@
     - change_target_chase
   name: Guillotine Cross Eremes
   race: demon
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 380
@@ -89944,7 +90547,9 @@
     - change_target_melee
     - change_target_chase
   name: Arch Bishop Margaretha
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 160
@@ -89981,7 +90586,9 @@
     - change_target_melee
     - change_target_chase
   name: Warlock Kathryne
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 160
@@ -90018,7 +90625,9 @@
     - change_target_melee
     - change_target_chase
   name: Ranger Cecil
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 260
@@ -90055,7 +90664,9 @@
     - change_target_melee
     - change_target_chase
   name: Mechanic Howard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 160
@@ -90093,6 +90704,8 @@
     - change_target_chase
   name: Rune Knight Seyren
   race: demon
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 200
@@ -90156,7 +90769,9 @@
     - item: Soul_Of_Thief
       rate: 5000
   name: Guillotine Cross Eremes
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 380
@@ -90220,7 +90835,9 @@
     - item: Soul_Of_Acolyte
       rate: 5000
   name: Arch Bishop Margaretha
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 160
@@ -90284,7 +90901,9 @@
     - item: Soul_Of_Archer
       rate: 5000
   name: Ranger Cecil
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 260
@@ -90348,7 +90967,9 @@
     - item: Soul_Of_Merchant
       rate: 5000
   name: Mechanic Howard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 160
@@ -90412,7 +91033,9 @@
     - item: Soul_Of_Magicion
       rate: 5000
   name: Warlock Kathryne
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 160
@@ -90476,7 +91099,9 @@
     - item: Soul_Of_Swordman
       rate: 5000
   name: Rune Knight Seyren
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 200
@@ -90531,7 +91156,9 @@
     - change_target_melee
     - change_target_chase
   name: Randel Lawrence
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 80
@@ -90584,7 +91211,9 @@
     - change_target_melee
     - change_target_chase
   name: Flamel Emule
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 80
@@ -90637,7 +91266,9 @@
     - change_target_melee
     - change_target_chase
   name: Celia Alde
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 100
@@ -90691,6 +91322,8 @@
     - change_target_chase
   name: Chen Liu
   race: demon
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 80
@@ -90744,6 +91377,8 @@
     - change_target_chase
   name: Gertie Wie
   race: demon
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 130
@@ -90796,7 +91431,9 @@
     - change_target_melee
     - change_target_chase
   name: Alphoccio Basil
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 150
@@ -90849,7 +91486,9 @@
     - change_target_melee
     - change_target_chase
   name: Trentini
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 150
@@ -90886,7 +91525,9 @@
     - change_target_melee
     - change_target_chase
   name: Royal Guard Randel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 160
@@ -90923,7 +91564,9 @@
     - change_target_melee
     - change_target_chase
   name: Genetic Flamel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 160
@@ -90960,7 +91603,9 @@
     - change_target_melee
     - change_target_chase
   name: Sorcerer Celia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 200
@@ -90998,6 +91643,8 @@
     - change_target_chase
   name: Sura Chen
   race: demon
+  race_groups:
+    - bio5_acolyte_merchant
   size: medium
   stats:
     agi: 160
@@ -91035,6 +91682,8 @@
     - change_target_chase
   name: Shadow Chaser Gertie
   race: demon
+  race_groups:
+    - bio5_swordman_thief
   size: medium
   stats:
     agi: 260
@@ -91071,7 +91720,9 @@
     - change_target_melee
     - change_target_chase
   name: Minstrel Alphoccio
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 300
@@ -91108,7 +91759,9 @@
     - change_target_melee
     - change_target_chase
   name: Wanderer Trentini
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mage_archer
   size: medium
   stats:
     agi: 300
@@ -91172,7 +91825,9 @@
     - item: Soul_Of_Swordman
       rate: 5000
   name: Royal Guard Randel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 160
@@ -91236,7 +91891,9 @@
     - item: Soul_Of_Merchant
       rate: 5000
   name: Genetic Flamel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 160
@@ -91300,7 +91957,9 @@
     - item: Soul_Of_Magicion
       rate: 5000
   name: Sorcerer Celia
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 200
@@ -91364,7 +92023,9 @@
     - item: Soul_Of_Acolyte
       rate: 5000
   name: Sura Chen
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 160
@@ -91428,7 +92089,9 @@
     - item: Soul_Of_Thief
       rate: 5000
   name: Shadow Chaser Gertie
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 260
@@ -91492,7 +92155,9 @@
     - item: Soul_Of_Archer
       rate: 5000
   name: Minstrel Alphoccio
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 300
@@ -91556,7 +92221,9 @@
     - item: Soul_Of_Archer
       rate: 5000
   name: Wanderer Trentini
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - bio5_mvp
   size: medium
   stats:
     agi: 300
@@ -93215,6 +93882,8 @@
     - change_target_chase
   name: Golem
   race: formless
+  race_groups:
+    - golem
   size: large
   stats:
     agi: 70
@@ -93906,6 +94575,8 @@
     - change_target_chase
   name: Tri Joint
   race: insect
+  race_groups:
+    - rockridge
   size: small
   stats:
     agi: 83
@@ -94539,7 +95210,9 @@
       rate: 5000
   mvp_exp: 100000
   name: Infinite Orc Hero
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - clocktower
   size: large
   stats:
     agi: 82
@@ -94909,7 +95582,7 @@
     - change_target_melee
     - change_target_chase
   name: High Orc
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 16
@@ -95143,6 +95816,8 @@
     - change_target_chase
   name: Enchanted Archer Skelet
   race: undead
+  race_groups:
+    - ep16_def
   size: medium
   stats:
     agi: 60
@@ -95189,6 +95864,8 @@
     - change_target_chase
   name: Enchanted Skeleton
   race: undead
+  race_groups:
+    - ep16_def
   size: medium
   stats:
     agi: 60
@@ -95233,6 +95910,8 @@
     - change_target_chase
   name: Enchanted Soldier Skele
   race: undead
+  race_groups:
+    - ep16_def
   size: medium
   stats:
     agi: 60
@@ -95279,6 +95958,8 @@
     - change_target_chase
   name: Renovated Amdarais
   race: undead
+  race_groups:
+    - ep16_def
   size: large
   stats:
     agi: 50
@@ -95313,6 +95994,8 @@
     - change_target_chase
   name: Enhanced Amdarais
   race: undead
+  race_groups:
+    - ep16_def
   size: large
   stats:
     agi: 50
@@ -95374,6 +96057,8 @@
   mvp_exp: 2000
   name: Bijou
   race: undead
+  race_groups:
+    - ep16_def
   size: large
   stats:
     agi: 40
@@ -95428,6 +96113,8 @@
     - change_target_chase
   name: Immotal Corps
   race: demon
+  race_groups:
+    - ep16_def
   size: medium
   stats:
     agi: 75
@@ -95482,6 +96169,8 @@
     - change_target_chase
   name: Zombie Guard
   race: undead
+  race_groups:
+    - ep16_def
   size: medium
   stats:
     agi: 75
@@ -95517,7 +96206,9 @@
     - change_target_melee
     - change_target_chase
   name: Suspicious Intruder
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - hearthunter
   size: medium
   stats:
     agi: 53
@@ -96804,6 +97495,8 @@
     - can_attack
   name: Trans Spore
   race: plant
+  race_groups:
+    - lasagna
   size: medium
   stats:
     agi: 4
@@ -96856,6 +97549,8 @@
     - change_target_chase
   name: Scout Basilisk
   race: brute
+  race_groups:
+    - lasagna
   size: medium
   stats:
     agi: 13
@@ -96910,6 +97605,8 @@
     - change_target_chase
   name: Combat Basilisk
   race: brute
+  race_groups:
+    - lasagna
   size: medium
   stats:
     agi: 68
@@ -96964,6 +97661,8 @@
     - change_target_chase
   name: Combat Basilisk
   race: brute
+  race_groups:
+    - lasagna
   size: medium
   stats:
     agi: 74
@@ -97069,6 +97768,8 @@
     - can_attack
   name: Jungle Madragora
   race: plant
+  race_groups:
+    - lasagna
   size: medium
   stats:
     agi: 37
@@ -97123,6 +97824,8 @@
     - change_target_chase
   name: Fruits Pom Spider
   race: insect
+  race_groups:
+    - lasagna
   size: medium
   stats:
     agi: 87
@@ -97200,7 +97903,9 @@
     - change_target_melee
     - change_target_chase
   name: Temple Guard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 25
@@ -97249,7 +97954,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged Devotee
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 45
@@ -97298,7 +98005,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged Devotee
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 50
@@ -97348,6 +98057,8 @@
     - change_target_chase
   name: Enraged Dog
   race: brute
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 20
@@ -97399,7 +98110,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged High Priest
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 48
@@ -97432,6 +98145,8 @@
     - can_attack
   name: Frozen Heart
   race: formless
+  race_groups:
+    - edda_arunafeltz
   size: small
   stats:
     agi: 1
@@ -97488,7 +98203,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged Luwmin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 48
@@ -97568,7 +98285,9 @@
     - change_target_melee
     - change_target_chase
   name: Temple Guard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 110
@@ -97617,7 +98336,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged Devotee
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 80
@@ -97666,7 +98387,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged Devotee
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 75
@@ -97716,6 +98439,8 @@
     - change_target_chase
   name: Enraged Dog
   race: brute
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 30
@@ -97767,7 +98492,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged High Priest
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 73
@@ -97800,6 +98527,8 @@
     - can_attack
   name: Frozen Heart
   race: formless
+  race_groups:
+    - edda_arunafeltz
   size: small
   stats:
     agi: 1
@@ -97855,7 +98584,9 @@
     - change_target_melee
     - change_target_chase
   name: Enraged Luwmin
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - edda_arunafeltz
   size: medium
   stats:
     agi: 81
@@ -97889,6 +98620,8 @@
     - can_attack
   name: Ice Titan
   race: formless
+  race_groups:
+    - edda_arunafeltz
   size: large
   stats:
     agi: 25
@@ -97939,6 +98672,8 @@
     - change_target_chase
   name: Vision of Ktullanux
   race: formless
+  race_groups:
+    - edda_arunafeltz
   size: large
   stats:
     agi: 89
@@ -97965,7 +98700,7 @@
   level: 87
   mdef: 20
   name: Official Pope
-  race: demihuman
+  race: demi_human
   size: small
   sp: 190
   stats:
@@ -97993,7 +98728,7 @@
   level: 87
   mdef: 20
   name: Casual Pope
-  race: demihuman
+  race: demi_human
   size: small
   sp: 190
   stats:
@@ -98021,7 +98756,7 @@
   level: 120
   mdef: 105
   name: Casual Pope
-  race: demihuman
+  race: demi_human
   size: small
   sp: 380
   stats:
@@ -98049,7 +98784,7 @@
   level: 120
   mdef: 105
   name: Official Pope
-  race: demihuman
+  race: demi_human
   size: small
   sp: 380
   stats:
@@ -98116,6 +98851,8 @@
   mvp_exp: 5000
   name: Pet Child
   race: brute
+  race_groups:
+    - werner_lab
   size: large
   stats:
     agi: 70
@@ -98166,7 +98903,9 @@
     - change_target_melee
     - change_target_chase
   name: Special Guard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - werner_lab
   size: medium
   stats:
     agi: 64
@@ -98302,7 +99041,9 @@
     - change_target_melee
     - change_target_chase
   name: Upgraded Heart Hunter
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - hearthunter
   size: large
   stats:
     agi: 150
@@ -98356,7 +99097,9 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter Guard
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - hearthunter
   size: medium
   stats:
     agi: 106
@@ -98421,7 +99164,9 @@
       rate: 5000
   mvp_exp: 5000
   name: Heart Hunter Ebel
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - hearthunter
   size: medium
   stats:
     agi: 70
@@ -98490,7 +99235,7 @@
     - can_attack
     - change_target_chase
   name: Elena Bolkova
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 120
@@ -98545,6 +99290,8 @@
     - change_target_chase
   name: Human Kimera
   race: brute
+  race_groups:
+    - werner_lab
   size: medium
   stats:
     agi: 50
@@ -98599,6 +99346,8 @@
     - change_target_chase
   name: Material Kimera
   race: brute
+  race_groups:
+    - werner_lab
   size: medium
   stats:
     agi: 50
@@ -98664,6 +99413,8 @@
   mvp_exp: 5000
   name: Venomous Chimera
   race: brute
+  race_groups:
+    - werner_lab
   size: large
   stats:
     agi: 75
@@ -100343,7 +101094,9 @@
     - change_target_melee
     - change_target_chase
   name: Buffalo Bandit Sharpsho
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rockridge
   size: large
   stats:
     agi: 58
@@ -100393,7 +101146,9 @@
     - change_target_melee
     - change_target_chase
   name: Buffalo Bandit Duelist
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rockridge
   size: large
   stats:
     agi: 52
@@ -100443,7 +101198,9 @@
     - change_target_melee
     - change_target_chase
   name: Bowie Buffalo Bandit
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rockridge
   size: large
   stats:
     agi: 20
@@ -100490,6 +101247,8 @@
     - can_attack
   name: Coyote
   race: brute
+  race_groups:
+    - rockridge
   size: medium
   stats:
     agi: 79
@@ -100540,6 +101299,8 @@
     - can_attack
   name: Gaster
   race: formless
+  race_groups:
+    - rockridge
   size: medium
   stats:
     agi: 141
@@ -100631,6 +101392,8 @@
   mdef: 99
   name: Purple Ore
   race: formless
+  race_groups:
+    - rockridge
   size: small
   skill_range: 7
   stats:
@@ -100659,6 +101422,8 @@
   mdef: 99
   name: Sea Anemone
   race: formless
+  race_groups:
+    - rockridge
   size: small
   skill_range: 7
   stats:
@@ -100693,7 +101458,7 @@
     - change_target_melee
     - change_target_chase
   name: Buffalo Bandit
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 58
@@ -100727,7 +101492,7 @@
     - change_target_melee
     - change_target_chase
   name: Buffalo Bandit
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 52
@@ -100761,7 +101526,7 @@
     - change_target_melee
     - change_target_chase
   name: Buffalo Bandit
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 20
@@ -100815,7 +101580,9 @@
     - change_target_melee
     - change_target_chase
   name: Elite Buffalo Bandit
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rockridge
   size: large
   stats:
     agi: 55
@@ -100869,7 +101636,9 @@
     - change_target_melee
     - change_target_chase
   name: Elite Buffalo Bandit
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rockridge
   size: large
   stats:
     agi: 132
@@ -100923,7 +101692,9 @@
     - change_target_melee
     - change_target_chase
   name: Elite Buffalo Bandit
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - rockridge
   size: large
   stats:
     agi: 44
@@ -100974,6 +101745,8 @@
     - change_target_chase
   name: Matt Drainliar
   race: brute
+  race_groups:
+    - illusion_vampire
   size: small
   stats:
     agi: 129
@@ -101026,6 +101799,8 @@
     - change_target_chase
   name: Living Dead
   race: undead
+  race_groups:
+    - illusion_vampire
   size: medium
   stats:
     agi: 90
@@ -101074,6 +101849,8 @@
     - change_target_chase
   name: Starving Living Dead
   race: undead
+  race_groups:
+    - illusion_vampire
   size: medium
   stats:
     agi: 70
@@ -101128,6 +101905,8 @@
     - change_target_chase
   name: Living Dead
   race: undead
+  race_groups:
+    - illusion_vampire
   size: medium
   stats:
     agi: 42
@@ -101180,6 +101959,8 @@
     - change_target_chase
   name: Sweet Nightmare
   race: demon
+  race_groups:
+    - illusion_vampire
   size: large
   stats:
     agi: 94
@@ -101223,6 +102004,8 @@
   mdef: 76
   name: Black Mushroom
   race: plant
+  race_groups:
+    - illusion_vampire
   size: small
   skill_range: 0
   stats:
@@ -101280,7 +102063,9 @@
     - change_target_melee
     - change_target_chase
   name: Bomi
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - illusion_vampire
   size: medium
   stats:
     agi: 87
@@ -101344,6 +102129,8 @@
   mvp_exp: 1341376
   name: Dracula of Rage
   race: demon
+  race_groups:
+    - illusion_vampire
   size: large
   stats:
     agi: 239
@@ -101407,6 +102194,8 @@
   mvp_exp: 701619
   name: Angry Moonlight Flower
   race: demon
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 205
@@ -101461,6 +102250,8 @@
     - change_target_chase
   name: Angry Nine Tail
   race: brute
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 73
@@ -101513,6 +102304,8 @@
     - change_target_chase
   name: Resentful Munak
   race: undead
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 18
@@ -101565,6 +102358,8 @@
     - change_target_chase
   name: Resentful Bongun
   race: undead
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 52
@@ -101619,6 +102414,8 @@
     - change_target_chase
   name: Resentful Sohee
   race: demon
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 49
@@ -101673,6 +102470,8 @@
     - change_target_chase
   name: Resentful Soldier
   race: undead
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 61
@@ -101723,6 +102522,8 @@
     - can_attack
   name: Wizard of the Truth
   race: undead
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 89
@@ -101777,6 +102578,8 @@
     - change_target_chase
   name: Deranged Adventurer
   race: undead
+  race_groups:
+    - illusion_moonlight
   size: medium
   stats:
     agi: 42
@@ -101827,6 +102630,8 @@
     - change_target_chase
   name: Swamp Arclouze
   race: insect
+  race_groups:
+    - rockridge
   size: medium
   stats:
     agi: 73
@@ -101877,6 +102682,8 @@
     - change_target_chase
   name: Brown Rat
   race: brute
+  race_groups:
+    - rockridge
   size: small
   stats:
     agi: 43
@@ -101968,6 +102775,8 @@
     - change_target_chase
   name: Angry Gazeti
   race: demon
+  race_groups:
+    - illusion_frozen
   size: medium
   stats:
     agi: 54
@@ -102018,6 +102827,8 @@
     - change_target_chase
   name: Angry Snowier
   race: formless
+  race_groups:
+    - illusion_frozen
   size: large
   stats:
     agi: 88
@@ -102068,6 +102879,8 @@
     - change_target_chase
   name: Angry Ice Titan
   race: formless
+  race_groups:
+    - illusion_frozen
   size: large
   stats:
     agi: 70
@@ -102118,6 +102931,8 @@
     - can_attack
   name: Solid Icicle
   race: formless
+  race_groups:
+    - illusion_frozen
   size: small
   stats:
     agi: 1
@@ -102176,6 +102991,8 @@
       rate: 5000
   name: Awakened Ktullanux
   race: brute
+  race_groups:
+    - illusion_frozen
   size: large
   stats:
     agi: 156
@@ -102201,6 +103018,8 @@
   mdef: 99
   name: ILL_FROZEN_KN
   race: formless
+  race_groups:
+    - illusion_frozen
   size: medium
   stats:
     agi: 0
@@ -102226,6 +103045,8 @@
   mdef: 99
   name: ILL_FROZEN_GC
   race: formless
+  race_groups:
+    - illusion_frozen
   size: medium
   stats:
     agi: 0
@@ -102282,6 +103103,8 @@
     - change_target_chase
   name: Ominous Assulter
   race: demon
+  race_groups:
+    - illusion_turtle
   size: small
   stats:
     agi: 161
@@ -102338,6 +103161,8 @@
     - change_target_chase
   name: Ominous Permeter
   race: brute
+  race_groups:
+    - illusion_turtle
   size: small
   stats:
     agi: 60
@@ -102394,6 +103219,8 @@
     - change_target_chase
   name: Ominous Freezer
   race: brute
+  race_groups:
+    - illusion_turtle
   size: small
   stats:
     agi: 111
@@ -102450,6 +103277,8 @@
     - change_target_chase
   name: Ominous Solider
   race: brute
+  race_groups:
+    - illusion_turtle
   size: small
   stats:
     agi: 100
@@ -102506,6 +103335,8 @@
     - change_target_chase
   name: Ominous Heater
   race: brute
+  race_groups:
+    - illusion_turtle
   size: small
   stats:
     agi: 95
@@ -102570,6 +103401,8 @@
       rate: 2000
   name: Ominous Turtle General
   race: brute
+  race_groups:
+    - illusion_turtle
   size: large
   stats:
     agi: 246
@@ -103641,6 +104474,8 @@
     - change_target_melee
   name: Ancient Tri Joint
   race: insect
+  race_groups:
+    - illusion_luanda
   size: small
   stats:
     agi: 88
@@ -103695,6 +104530,8 @@
     - change_target_chase
   name: Ancient Stalactic Golem
   race: formless
+  race_groups:
+    - illusion_luanda
   size: large
   stats:
     agi: 98
@@ -103743,6 +104580,8 @@
     - can_attack
   name: Ancient Megalith
   race: formless
+  race_groups:
+    - illusion_luanda
   size: large
   stats:
     agi: 111
@@ -103807,6 +104646,8 @@
       rate: 6000
   name: Ancient Tao Gunka
   race: demon
+  race_groups:
+    - illusion_luanda
   size: large
   stats:
     agi: 216
@@ -103861,6 +104702,8 @@
     - change_target_chase
   name: Ancient Stone Shooter
   race: plant
+  race_groups:
+    - illusion_luanda
   size: medium
   stats:
     agi: 86
@@ -103912,7 +104755,9 @@
     - can_attack
     - change_target_chase
   name: Ancient Wootan Shooter
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - illusion_luanda
   size: medium
   stats:
     agi: 97
@@ -103966,7 +104811,9 @@
     - change_target_melee
     - change_target_chase
   name: Ancient Wootan Fighter
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - illusion_luanda
   size: medium
   stats:
     agi: 115
@@ -104030,7 +104877,9 @@
     - item: Oridecon
       rate: 6000
   name: Ancient Wootan Defender
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - illusion_luanda
   size: large
   stats:
     agi: 198
@@ -104062,6 +104911,8 @@
     - can_attack
   name: Ancient Megalith
   race: formless
+  race_groups:
+    - illusion_luanda
   size: large
   stats:
     agi: 111
@@ -104092,7 +104943,9 @@
     - no_random_walk
     - can_attack
   name: Ancient Wootan Shooter
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - illusion_luanda
   size: medium
   stats:
     agi: 97
@@ -104123,7 +104976,9 @@
     - no_random_walk
     - can_attack
   name: Ancient Wootan Fighter
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - illusion_luanda
   size: medium
   stats:
     agi: 115
@@ -104436,7 +105291,7 @@
     - item: Seed_Of_Yggdrasil
       rate: 5000
   name: Miguel
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 115
@@ -104473,7 +105328,7 @@
     - change_target_melee
     - change_target_chase
   name: Miguel G.
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 115
@@ -104523,7 +105378,7 @@
     - change_target_melee
     - change_target_chase
   name: A013 - Caput
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 85
@@ -104571,7 +105426,7 @@
     - can_attack
     - change_target_chase
   name: A013 - Dolor
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 45
@@ -104621,7 +105476,7 @@
     - can_attack
     - change_target_chase
   name: A013 - Bellare
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 82
@@ -104719,7 +105574,7 @@
     - can_attack
     - change_target_chase
   name: Sorrow Crob
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 77
@@ -104769,7 +105624,7 @@
     - can_attack
     - change_target_chase
   name: Heart Hunter Bellare
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 72
@@ -104821,7 +105676,7 @@
     - can_attack
     - change_target_chase
   name: High Hunter Bellare
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 101
@@ -104873,7 +105728,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter Sanare
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 51
@@ -105083,7 +105938,7 @@
     - can_attack
     - change_target_chase
   name: Dolor
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 71
@@ -105241,7 +106096,7 @@
     - change_target_melee
     - change_target_chase
   name: Mutant Venenum
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 91
@@ -105291,7 +106146,7 @@
     - change_target_melee
     - change_target_chase
   name: Twin Caput
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 45
@@ -105345,7 +106200,7 @@
     - change_target_melee
     - change_target_chase
   name: Mutant Twin Caput
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 90
@@ -105397,7 +106252,9 @@
     - change_target_melee
     - change_target_chase
   name: Contaminated Raydric
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 134
@@ -105443,7 +106300,9 @@
     - can_attack
     - change_target_chase
   name: Contaminated Raydric Ar
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 113
@@ -105496,6 +106355,8 @@
     - change_target_chase
   name: Frozen Gargoyle
   race: demon
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 109
@@ -105550,6 +106411,8 @@
     - change_target_chase
   name: Contaminated Sting
   race: formless
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 98
@@ -105599,7 +106462,9 @@
     - can_attack
     - change_target_chase
   name: Prison Breaker
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 71
@@ -106055,6 +106920,8 @@
     - change_target_chase
   name: Ice Ghost
   race: demon
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 103
@@ -106109,6 +106976,8 @@
     - change_target_chase
   name: Flame Ghost
   race: demon
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 99
@@ -106317,6 +107186,8 @@
     - change_target_chase
   name: Corrupted Wanderer
   race: demon
+  race_groups:
+    - glast_heim_abyss
   size: medium
   stats:
     agi: 121
@@ -106377,6 +107248,8 @@
       rate: 5000
   name: Corrupted Spider Queen
   race: demon
+  race_groups:
+    - glast_heim_abyss
   size: large
   stats:
     agi: 176
@@ -106433,6 +107306,8 @@
       rate: 6000
   name: Corrupted Dark Lord
   race: undead
+  race_groups:
+    - glast_heim_abyss
   size: large
   stats:
     agi: 151
@@ -106482,7 +107357,7 @@
     - change_target_melee
     - change_target_chase
   name: MD_ED_M_SCIENCE
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 88
@@ -107623,7 +108498,7 @@
     - change_target_melee
     - change_target_chase
   name: Manager Alpha
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 109
@@ -107668,7 +108543,7 @@
     - change_target_melee
     - change_target_chase
   name: Manager Beta
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 101
@@ -107929,6 +108804,8 @@
     - change_target_chase
   name: Broken Cleaner
   race: formless
+  race_groups:
+    - ep172bath
   size: medium
   stats:
     agi: 89
@@ -107981,7 +108858,7 @@
     - change_target_melee
     - change_target_chase
   name: Cleaning Robot
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 108
@@ -108088,7 +108965,9 @@
     - change_target_melee
     - change_target_chase
   name: Broken Warehouse Manager
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ep172alpha
   size: medium
   stats:
     agi: 98
@@ -108178,6 +109057,8 @@
     - change_target_chase
   name: Broken Beta Guards
   race: formless
+  race_groups:
+    - ep172alpha
   size: medium
   stats:
     agi: 76
@@ -108277,6 +109158,8 @@
     - change_target_chase
   name: Broken Cleaning Robot Ω
   race: formless
+  race_groups:
+    - ep172alpha
   size: small
   stats:
     agi: 90
@@ -108333,7 +109216,7 @@
       rate: 500
   mvp_exp: 15600000
   name: Sweety
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 120
@@ -108387,6 +109270,8 @@
     - change_target_chase
   name: Boiled Water Phen
   race: fish
+  race_groups:
+    - ep172bath
   size: medium
   stats:
     agi: 112
@@ -108440,6 +109325,8 @@
     - change_target_chase
   name: Boiled Water Marc
   race: fish
+  race_groups:
+    - ep172bath
   size: medium
   stats:
     agi: 104
@@ -108493,6 +109380,8 @@
     - change_target_chase
   name: Boiled Water Swordfish
   race: fish
+  race_groups:
+    - ep172bath
   size: large
   stats:
     agi: 109
@@ -108544,6 +109433,8 @@
     - change_target_chase
   name: Boiled Water Piranha
   race: fish
+  race_groups:
+    - ep172bath
   size: large
   stats:
     agi: 104
@@ -108652,6 +109543,8 @@
   mvp_exp: 20328244
   name: Boss Meow
   race: plant
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 86
@@ -108703,6 +109596,8 @@
     - change_target_chase
   name: Red Pitaya
   race: plant
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 122
@@ -108754,6 +109649,8 @@
     - change_target_chase
   name: Yellow Pitaya
   race: plant
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 164
@@ -108805,6 +109702,8 @@
     - change_target_chase
   name: Blue Pitaya
   race: plant
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 162
@@ -108856,6 +109755,8 @@
     - change_target_chase
   name: Violet Pitaya
   race: plant
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 98
@@ -108907,6 +109808,8 @@
     - change_target_chase
   name: Green Pitaya
   race: plant
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 132
@@ -110004,7 +110907,7 @@
     - change_target_melee
     - change_target_chase
   name: Aries
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 107
@@ -110053,7 +110956,7 @@
     - change_target_melee
     - change_target_chase
   name: Senior Aries
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 173
@@ -110136,7 +111039,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter Skirmisher
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 113
@@ -110170,7 +111073,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter Skirmisher
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 113
@@ -110226,7 +111129,9 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter Skirmisher
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ep172alpha
   size: medium
   stats:
     agi: 147
@@ -110380,6 +111285,8 @@
     - change_target_chase
   name: Sewage Venenum
   race: demon
+  race_groups:
+    - ep172beta
   size: large
   stats:
     agi: 97
@@ -110429,6 +111336,8 @@
     - change_target_chase
   name: Sewage Cramp
   race: brute
+  race_groups:
+    - ep172beta
   size: small
   stats:
     agi: 118
@@ -110478,6 +111387,8 @@
     - change_target_chase
   name: Sewage Waterfall
   race: formless
+  race_groups:
+    - ep172beta
   size: medium
   stats:
     agi: 111
@@ -110527,7 +111438,9 @@
     - can_attack
     - change_target_chase
   name: Elite Bellare
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ep172beta
   size: medium
   stats:
     agi: 121
@@ -110576,7 +111489,9 @@
     - change_target_melee
     - change_target_chase
   name: Spell Addicted Dolor
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ep172beta
   size: medium
   stats:
     agi: 103
@@ -110626,6 +111541,8 @@
     - change_target_chase
   name: Released Spell
   race: formless
+  race_groups:
+    - ep172beta
   size: medium
   stats:
     agi: 120
@@ -110677,6 +111594,8 @@
     - change_target_chase
   name: Spell Addicted Plaga
   race: demon
+  race_groups:
+    - ep172alpha
   size: large
   stats:
     agi: 177
@@ -110727,7 +111646,9 @@
     - change_target_melee
     - change_target_chase
   name: Spell Addicted Sanare
-  race: demihuman
+  race: demi_human
+  race_groups:
+    - ep172alpha
   size: medium
   stats:
     agi: 168
@@ -110779,6 +111700,8 @@
     - change_target_chase
   name: Powerful Spell
   race: formless
+  race_groups:
+    - ep172alpha
   size: medium
   stats:
     agi: 201
@@ -110830,6 +111753,8 @@
     - change_target_chase
   name: Sharp Spell
   race: formless
+  race_groups:
+    - ep172alpha
   size: medium
   stats:
     agi: 198
@@ -110957,7 +111882,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter Commander
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 121
@@ -111253,7 +112178,7 @@
     - change_target_melee
     - change_target_chase
   name: Deep Sea Merman
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 60
@@ -112147,7 +113072,7 @@
     - change_target_melee
     - change_target_chase
   name: Galensis
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 174
@@ -112255,7 +113180,7 @@
     - change_target_melee
     - change_target_chase
   name: Litus
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 153
@@ -112533,7 +113458,7 @@
     - change_target_melee
     - change_target_chase
   name: Dolorian
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 63
@@ -112641,7 +113566,7 @@
     - change_target_melee
     - change_target_chase
   name: Deadre
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 86
@@ -112913,7 +113838,7 @@
     - change_target_melee
     - change_target_chase
   name: Brutal Murderer
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 70
@@ -113245,7 +114170,7 @@
     - item: Old_Violet_Box
       rate: 4000
   name: Death Witch
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 236
@@ -113433,7 +114358,7 @@
   modes:
     - boss
   name: Training Dummy (Human)
-  race: demihuman
+  race: demi_human
   size: medium
   skill_range: 0
   stats:
@@ -114679,7 +115604,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 107
@@ -114713,7 +115638,7 @@
     - change_target_melee
     - change_target_chase
   name: Base Soldier
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 100
@@ -114747,7 +115672,7 @@
     - change_target_melee
     - change_target_chase
   name: Temple Guard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 118
@@ -114781,7 +115706,7 @@
     - change_target_melee
     - change_target_chase
   name: Traditional Temple Guard
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 135
@@ -114815,7 +115740,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 121
@@ -114849,7 +115774,7 @@
     - change_target_melee
     - change_target_chase
   name: Heart Hunter
-  race: demihuman
+  race: demi_human
   size: large
   stats:
     agi: 180
@@ -115073,7 +115998,7 @@
     - change_target_melee
     - change_target_chase
   name: Goddess Guardian
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 200
@@ -115105,7 +116030,7 @@
     - can_attack
     - change_target_chase
   name: Cottage Keeper
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 180
@@ -115439,7 +116364,7 @@
     - change_target_melee
     - change_target_chase
   name: Goddess Guardian
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 200
@@ -115471,7 +116396,7 @@
     - can_attack
     - change_target_chase
   name: Cottage Keeper
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 180
@@ -120786,7 +121711,7 @@
   modes:
     - boss
   name: Dummy (Human Race)
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 0
@@ -121036,7 +121961,7 @@
   modes:
     - boss
   name: Dummy (Human Race)
-  race: demihuman
+  race: demi_human
   size: medium
   stats:
     agi: 0

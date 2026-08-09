@@ -71,9 +71,6 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
 
   @spec convert(atom(), term()) :: term()
   defp convert(:size, v), do: String.to_atom(v)
-  # "demihuman" is the existing on-disk spelling (priv/db/mobs/mobs.yml); normalized
-  # here to :demi_human to match Combat.RaceModifiers without regenerating the YAML.
-  defp convert(:race, "demihuman"), do: :demi_human
   defp convert(:race, v), do: String.to_atom(v)
   defp convert(:race_groups, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:modes, v), do: Enum.map(v, &String.to_atom/1)
