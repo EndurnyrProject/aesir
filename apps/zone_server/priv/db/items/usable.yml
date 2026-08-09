@@ -44,6 +44,13 @@
   buy: 40
   id: 506
   name: Green Potion
+  on_use: |-
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 70
 - aegis_name: Red_Herb
@@ -169,6 +176,14 @@
   buy: 500
   id: 525
   name: Panacea
+  on_use: |-
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 100
 - aegis_name: Royal_Jelly
@@ -465,6 +480,15 @@
   buy: 10000
   id: 566
   name: Tom Yum Goong
+  on_use: |-
+    ctx = heal(ctx, hp: 244..350, sp: 10..30)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Prawn
@@ -512,6 +536,15 @@
   buy: 7000
   id: 573
   name: Chocolate Drink
+  on_use: |-
+    ctx = heal(ctx, hp: 330..410, sp: 45..65)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Egg
@@ -581,6 +614,15 @@
   buy: 7000
   id: 583
   name: Ketupat Sayur
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Fish_Ball_Soup
@@ -638,26 +680,71 @@
 - aegis_name: Caviar_Pancake
   id: 591
   name: Caviar Pancake
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Jam_Pancake
   id: 592
   name: Jam Pancake
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Honey_Pancake
   id: 593
   name: Honey Pancake
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Sour_Cream_Pancake
   id: 594
   name: Sour-Cream Pancake
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Mushroom_Pancake
   id: 595
   name: Mushroom Pancake
+  on_use: |-
+    ctx = heal(ctx, hp: 325..405, sp: 40..60)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: Cute_Strawberry_Choco
@@ -2116,6 +2203,15 @@
   buy: 10
   id: 11583
   name: Chocolate Drink
+  on_use: |-
+    ctx = heal(ctx, hp: 330..410, sp: 45..65)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 150
 - aegis_name: White_Chocolate_B
@@ -2266,6 +2362,15 @@
 - aegis_name: Crepe
   id: 11607
   name: Sweet Crepe
+  on_use: |-
+    ctx = specialeffect2(ctx, :heal3)
+    ctx = sc_end(ctx, :sc_poison)
+    ctx = sc_end(ctx, :sc_silence)
+    ctx = sc_end(ctx, :sc_blind)
+    ctx = sc_end(ctx, :sc_confusion)
+    ctx = sc_end(ctx, :sc_curse)
+    ctx = sc_end(ctx, :sc_hallucination)
+    ctx
   type: healing
   weight: 100
 - aegis_name: Chocolate_Egg

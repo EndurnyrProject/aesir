@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   """
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
@@ -239,6 +240,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   @spec broadcast_nearby(map(), struct()) :: :ok
   def broadcast_nearby(target, packet) do
     {x, y} = target.position
+    packet = Hallucination.maybe_garble(packet, Map.get(target, :unit_type))
     Broadcast.to_in_range(target.map_name, x, y, Config.view_range(), packet)
   end
 

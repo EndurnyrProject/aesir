@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
@@ -314,6 +315,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           dst_delay: dst_delay
         )
 
+      packet = Hallucination.maybe_garble(packet, target_type)
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
       apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
 
@@ -609,6 +611,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
        ) do
     with :ok <- apply_magic_damage(:skill_unit, target_pid, target_id, damage, hit_info, attacker) do
       {tx, ty} = target.position
+      packet = Hallucination.maybe_garble(packet, :skill_unit)
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
     end
   end
@@ -624,6 +627,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          packet
        ) do
     {tx, ty} = target.position
+    packet = Hallucination.maybe_garble(packet, target_type)
     Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
     apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, attacker)
   end
@@ -689,6 +693,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           damage
         )
 
+      packet = Hallucination.maybe_garble(packet, target_type)
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
       DamageApplication.apply_unit_damage(

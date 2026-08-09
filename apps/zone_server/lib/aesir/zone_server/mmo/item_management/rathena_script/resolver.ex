@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_FREEZE" => :sc_freeze,
     "SC_STONE" => :sc_stone,
     "SC_CONFUSION" => :sc_confusion,
+    "SC_HALLUCINATION" => :sc_hallucination,
     "SC_BLEEDING" => :sc_bleeding,
     "SC_STRFOOD" => :sc_strfood,
     "SC_AGIFOOD" => :sc_agifood,
@@ -305,8 +306,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Eff_Stone" => :sc_stone
   }
 
+  # Case-folded index of @statuses. rAthena treats script constants
+  # case-insensitively, so the item DB mixes casings for the same status
+  # (e.g. `SC_HALLUCINATION` and `SC_Hallucination`). Resolving on the folded
+  # key covers every casing without hand-listing each variant.
+  @statuses_folded Map.new(@statuses, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
+
   @spec resolve_status(String.t()) :: {:ok, atom()} | error()
-  def resolve_status(symbol) when is_binary(symbol), do: lookup(@statuses, symbol)
+  def resolve_status(symbol) when is_binary(symbol) do
+    case lookup(@statuses, symbol) do
+      {:ok, _} = ok -> ok
+      {:error, _} -> resolve_status_folded(symbol)
+    end
+  end
+
+  @spec resolve_status_folded(String.t()) :: {:ok, atom()} | error()
+  defp resolve_status_folded(symbol) do
+    case Map.fetch(@statuses_folded, String.downcase(symbol)) do
+      {:ok, atom} -> {:ok, atom}
+      :error -> unknown(symbol)
+    end
+  end
 
   @doc """
   Returns the full rAthena-symbol-to-status-atom map. Used by the
