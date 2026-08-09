@@ -144,6 +144,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bExpAddClass,Class_All,10;")
     end
 
+    test "bCRate and bSPDrainValue compile to their flat destinations" do
+      assert {:ok, [{:bonus, :crit_rate, 5}]} = compile("bonus bCRate,5;")
+      assert {:ok, [{:bonus, :sp_drain_value, 3}]} = compile("bonus bSPDrainValue,3;")
+    end
+
+    test "bNoSizeFix and bIntravision are argument-less flag bonuses (amount 1)" do
+      assert {:ok, [{:bonus, :no_size_fix, 1}]} = compile("bonus bNoSizeFix;")
+      assert {:ok, [{:bonus, :intravision, 1}]} = compile("bonus bIntravision;")
+    end
+
+    test "bDefRatioAtkClass is a single-arg class flag-param bonus" do
+      assert {:ok, [{:bonus, {:def_ratio_atk_class, :boss}, 1}]} =
+               compile("bonus bDefRatioAtkClass,Class_Boss;")
+    end
+
+    test "bSubSkill emits a skill-keyed damage-reduction bonus" do
+      assert {:ok, [{:bonus, {:sub_skill, 5}, 20}]} =
+               compile("bonus2 bSubSkill,\"SM_BASH\",20;")
+    end
+
+    test "bSubDefEle emits an element-keyed defensive bonus" do
+      assert {:ok, [{:bonus, {:sub_def_ele, :fire}, 10}]} =
+               compile("bonus2 bSubDefEle,Ele_Fire,10;")
+    end
+
     test "bHealPower2 and bMagicHPGainValue compile to their flat destinations" do
       assert {:ok, [{:bonus, :heal_power2, 10}]} = compile("bonus bHealPower2,10;")
       assert {:ok, [{:bonus, :magic_hp_gain_value, 30}]} = compile("bonus bMagicHPGainValue,30;")

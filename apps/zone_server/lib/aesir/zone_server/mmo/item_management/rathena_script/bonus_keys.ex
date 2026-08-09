@@ -89,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhit" => :hit,
     "bflee" => :flee,
     "bcritical" => :critical,
+    "bcrate" => :crit_rate,
     "bmaxhp" => :max_hp,
     "bmaxsp" => :max_sp,
     "bmaxhprate" => :max_hp_rate,
@@ -132,6 +133,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmagichpgainvalue" => :magic_hp_gain_value,
     "bmagicspgainvalue" => :magic_sp_gain_value,
     "blongspgainvalue" => :long_sp_gain_value,
+    "bspdrainvalue" => :sp_drain_value,
+    "bnosizefix" => :no_size_fix,
+    "bintravision" => :intravision,
     "bshortweapondamagereturn" => :short_weapon_damage_return,
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
@@ -180,7 +184,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
     "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
     "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
-    "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent}
+    "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},
+    "bsubskill" => %{family: :sub_skill, param: :skill, unit: :percent},
+    "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent}
   }
 
   @value_keys %{
@@ -201,7 +207,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @flag_param_keys %{
     "bignoredefrace" => %{family: :ignore_def_race, param: :race, amount: 100},
     "bignoremdefrace" => %{family: :ignore_mdef_race, param: :race, amount: 100},
-    "bignoredefclass" => %{family: :ignore_def_class, param: :class, amount: 100}
+    "bignoredefclass" => %{family: :ignore_def_class, param: :class, amount: 100},
+    "bdefratioatkclass" => %{family: :def_ratio_atk_class, param: :class, amount: 1}
   }
 
   # Periodic `bonus2` keys (`bHPRegenRate`/`bHPLossRate`/`bSPRegenRate`/

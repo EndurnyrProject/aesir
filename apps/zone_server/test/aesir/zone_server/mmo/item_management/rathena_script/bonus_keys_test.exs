@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :hit,
     :flee,
     :critical,
+    :crit_rate,
     :max_hp,
     :max_sp,
     :max_hp_rate,
@@ -68,6 +69,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :magic_hp_gain_value,
     :magic_sp_gain_value,
     :long_sp_gain_value,
+    :sp_drain_value,
+    :no_size_fix,
+    :intravision,
     :heal_power2,
     :short_weapon_damage_return,
     :fixcast_rate,
@@ -280,14 +284,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
     "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
     "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
-    "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent}
+    "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},
+    "bsubskill" => %{family: :sub_skill, param: :skill, unit: :percent},
+    "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent}
   }
 
   # Families reachable only through the single-argument flag-param keys
   # (`bonus bIgnoreDefRace,RC_Brute;`), which `families/0`/`family_param/1`
   # also expose but which carry no `bonus2` schema of their own. `ignore_def_class`
   # is no longer here — `bIgnoreDefClassRate` gives it a `bonus2` schema too.
-  @flag_only_families []
+  @flag_only_families [:def_ratio_atk_class]
 
   # Families reachable only through the periodic-interval keys
   # (`bHPRegenRate`/`bHPLossRate`), exposed by `families/0`/`family_param/1` as
@@ -419,6 +425,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
       assert BonusKeys.flag_param_schema("bIgnoreDefClass") ==
                {:ok, %{family: :ignore_def_class, param: :class, amount: 100}}
+
+      assert BonusKeys.flag_param_schema("bDefRatioAtkClass") ==
+               {:ok, %{family: :def_ratio_atk_class, param: :class, amount: 1}}
     end
 
     test "returns :error for numeric and parameterized keys" do

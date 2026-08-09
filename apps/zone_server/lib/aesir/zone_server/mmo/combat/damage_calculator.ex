@@ -783,8 +783,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     do: damage
 
   defp apply_size_modifier(damage, attacker, defender) do
-    modifier = SizeModifiers.get_modifier(attacker.weapon.type, defender.size, attacker.riding)
-    damage * modifier / 100
+    # `bNoSizeFix` on the attacker's equipment ignores the size modifier entirely,
+    # like the status-driven `ignore_size_penalty` above.
+    if Map.get(Map.get(attacker, :equip_modifiers, %{}), :no_size_fix, 0) > 0 do
+      damage
+    else
+      modifier = SizeModifiers.get_modifier(attacker.weapon.type, defender.size, attacker.riding)
+      damage * modifier / 100
+    end
   end
 
   defp apply_status_effect_damage_modifiers(damage, modifiers) do

@@ -1190,6 +1190,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
     end
 
+    test "equipment bNoSizeFix bypasses a dagger's large-target penalty" do
+      attacker =
+        CombatTestHelper.create_player_combatant(weapon_type: :dagger)
+        |> Map.put(:equip_modifiers, %{no_size_fix: 1})
+
+      defender = CombatTestHelper.create_mob_combatant(size: :large)
+
+      assert {:ok, 1_200.0} =
+               DamageCalculator.apply_modifier_pipeline(1_200, attacker, defender)
+    end
+
     test "max_weapon_damage always uses the true upper endpoint" do
       attacker = CombatTestHelper.create_player_combatant(str: 0, dex: 0, luk: 0, base_level: 0)
       attacker = %{attacker | combat_stats: %{attacker.combat_stats | atk: 100}}

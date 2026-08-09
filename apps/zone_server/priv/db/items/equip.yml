@@ -3323,6 +3323,7 @@
   locations:
     - right_hand
   name: Ice Pick
+  on_equip: bonus(ctx, {:def_ratio_atk_class, :all}, 1)
   range: 1
   refineable: true
   subtype: dagger
@@ -3457,6 +3458,10 @@
   locations:
     - right_hand
   name: Moonlight Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, :sp_drain_value, 3)
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -7273,6 +7278,10 @@
   locations:
     - right_hand
   name: Tjungkuletti
+  on_equip: |-
+    ctx = bonus(ctx, :sp_drain_value, 1)
+    ctx = bonus(ctx, :sp_gain_value, 5)
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -11364,6 +11373,19 @@
     - right_hand
   magic_attack: 5000
   name: Angra Manyu
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 50)
+    ctx = bonus(ctx, :hp_drain_rate, 1000)
+    ctx = bonus(ctx, :hp_drain_percent, 100)
+    ctx = bonus(ctx, :sp_drain_rate, 1000)
+    ctx = bonus(ctx, :sp_drain_percent, 20)
+    ctx = bonus(ctx, :heal_power, 200)
+    ctx = bonus(ctx, :aspd_rate, 100)
+    ctx = bonus(ctx, :no_size_fix, 1)
+    ctx = bonus(ctx, {:addclass, :all}, 100)
+    ctx = bonus(ctx, :hit, 100)
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx
   range: 2
   refineable: true
   subtype: mace
@@ -11723,6 +11745,10 @@
     - right_hand
   magic_attack: 100
   name: Mighty Staff
+  on_equip: |-
+    ctx = bonus(ctx, :str, 10)
+    ctx = bonus(ctx, :sp_drain_value, -2)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -15566,6 +15592,15 @@
   locations:
     - right_hand
   name: Spartacus
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:addclass, :all}, refine(ctx))
+    ctx = if (refine(ctx) > 9) do
+      bonus(ctx, :no_size_fix, 1)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -17872,6 +17907,10 @@
   locations:
     - right_hand
   name: Barbed Wire
+  on_equip: |-
+    ctx = bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+    ctx = bonus(ctx, :sp_drain_value, -3)
+    ctx
   range: 2
   refineable: true
   slots: 1
@@ -29506,6 +29545,7 @@
   locations:
     - both_accessory
   name: Ring of Water
+  on_equip: bonus(ctx, {:sub_def_ele, :water}, 5)
   type: armor
   weight: 100
 - aegis_name: Ring_Of_Fire
@@ -29517,6 +29557,7 @@
   locations:
     - both_accessory
   name: Ring of Fire
+  on_equip: bonus(ctx, {:sub_def_ele, :fire}, 5)
   type: armor
   weight: 100
 - aegis_name: Ring_Of_Wind
@@ -29528,6 +29569,7 @@
   locations:
     - both_accessory
   name: Ring of Wind
+  on_equip: bonus(ctx, {:sub_def_ele, :wind}, 5)
   type: armor
   weight: 100
 - aegis_name: Ring_Of_Earth
@@ -29539,6 +29581,7 @@
   locations:
     - both_accessory
   name: Ring of Earth
+  on_equip: bonus(ctx, {:sub_def_ele, :earth}, 5)
   type: armor
   weight: 100
 - aegis_name: Elven_Ears_C
@@ -48091,6 +48134,11 @@
     - head_mid
     - head_top
   name: Large Orc Hero Helm
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :no_size_fix, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48978,6 +49026,11 @@
   locations:
     - head_top
   name: Queen Anz Revenge
+  on_equip: |-
+    ctx = bonus(ctx, :str, 5)
+    ctx = bonus(ctx, {:addclass, :all}, (7 + if((refine(ctx) > 8), do: 4, else: if((refine(ctx) > 6), do: 3, else: if((refine(ctx) > 4), do: 2, else: 0)))))
+    ctx = bonus(ctx, :no_size_fix, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -50499,6 +50552,7 @@
   locations:
     - right_hand
   name: Ice Pick
+  on_equip: bonus(ctx, {:def_ratio_atk_class, :all}, 1)
   range: 1
   refineable: true
   slots: 1
@@ -50754,6 +50808,10 @@
   locations:
     - right_hand
   name: Moonlight Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, :sp_drain_value, 3)
+    ctx
   range: 1
   subtype: dagger
   type: weapon
@@ -51562,6 +51620,10 @@
   locations:
     - right_hand
   name: Moonlight Sword
+  on_equip: |-
+    ctx = bonus(ctx, :sp_drain_value, 3)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx
   range: 1
   subtype: dagger
   type: weapon
@@ -51593,6 +51655,14 @@
   locations:
     - right_hand
   name: Combat Knife
+  on_equip: |-
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 100)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 100)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, :sp_drain_value, 3)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx
   range: 1
   subtype: dagger
   type: weapon
@@ -57103,6 +57173,37 @@
     - right_hand
   magic_attack: 130
   name: Save the King
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx = if (skill_lv(ctx, 63) < 1) do
+      ctx = bonus(ctx, :no_size_fix, 1)
+      ctx = bonus(ctx, :flee, (2 * skill_lv(ctx, 258)))
+      ctx = bonus(ctx, :critical, (3 * skill_lv(ctx, 258)))
+      ctx = bonus(ctx, :aspd_rate, (3 * skill_lv(ctx, 258)))
+      ctx = bonus(ctx, {:skill_atk, 254}, (20 * refine(ctx)))
+      ctx = bonus(ctx, {:skill_atk, 5}, (20 * refine(ctx)))
+      ctx = bonus(ctx, {:skill_atk, 253}, (20 * refine(ctx)))
+      ctx = if (refine(ctx) >= 6) do
+        ctx = bonus(ctx, :heal_power, 40)
+        ctx = bonus(ctx, :heal_power2, 15)
+        ctx = bonus(ctx, :item_heal_rate, 15)
+        ctx = if (refine(ctx) >= 8) do
+          ctx = bonus(ctx, :heal_power, 40)
+          ctx = bonus(ctx, :heal_power2, 15)
+          ctx = bonus(ctx, :item_heal_rate, 15)
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -59089,6 +59190,12 @@
   locations:
     - armor
   name: Amesha Spenta
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 100)
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = set(ctx, :def_ele, :ghost)
+    ctx = bonus(ctx, :intravision, 1)
+    ctx
   type: armor
 - aegis_name: Engraved_Armor
   armor_level: 1
@@ -61517,6 +61624,29 @@
   locations:
     - armor
   name: Drake Coat
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 500)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, {:addclass, :all}, 3)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :max_hp, 1000)
+      ctx = bonus(ctx, :max_sp, 100)
+      ctx = bonus(ctx, {:addclass, :all}, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :max_hp, 1500)
+      ctx = bonus(ctx, :max_sp, 150)
+      ctx = bonus(ctx, {:addclass, :all}, 4)
+      ctx = bonus(ctx, :no_size_fix, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -71513,6 +71643,13 @@
   locations:
     - head_mid
   name: RTC Winner Hat
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 5)
+    ctx = bonus(ctx, :intravision, 1)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:subrace, :player_human}, 15)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 50)
+    ctx
   slots: 1
   type: armor
   view: 683
@@ -71525,6 +71662,13 @@
   locations:
     - head_mid
   name: RTC 2nd Winner Hat
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 3)
+    ctx = bonus(ctx, :intravision, 1)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 50)
+    ctx
   slots: 1
   type: armor
   view: 684
@@ -71537,6 +71681,13 @@
   locations:
     - head_mid
   name: RTC 3rd Winner Hat
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, :intravision, 1)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 5)
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 50)
+    ctx
   slots: 1
   type: armor
   view: 685
@@ -76783,6 +76934,7 @@
   locations:
     - head_mid
   name: Seagod Protector
+  on_equip: bonus(ctx, {:sub_def_ele, :water}, 5)
   type: armor
   view: 960
   weight: 100
@@ -76795,6 +76947,21 @@
   locations:
     - head_top
   name: Jolly Roger
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, {:sub_def_ele, :water}, 2)
+    ctx = bonus(ctx, {:addele, :water}, 2)
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, {:addele, :water}, 3)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, {:sub_def_ele, :water}, 3)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -77773,6 +77940,16 @@
   locations:
     - head_top
   name: Isabella Red Ear
+  on_equip: |-
+    ctx = bonus(ctx, :str, 5)
+    ctx = bonus(ctx, :max_hp_rate, 5)
+    ctx = bonus(ctx, {:sub_def_ele, :fire}, 10)
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :aspd, (1 + div((refine(ctx) - 9), 2)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79822,6 +79999,19 @@
   locations:
     - head_top
   name: Piamette Hood
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, 10)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 10)
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :no_size_fix, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -83241,6 +83431,20 @@
   locations:
     - head_top
   name: Research Team Hat
+  on_equip: |-
+    ctx = bonus(ctx, {:subsize, :all}, 5)
+    ctx = bonus(ctx, {:sub_skill, 173}, (10 * refine(ctx)))
+    ctx = if (refine(ctx) >= 6) do
+      bonus(ctx, {:subsize, :all}, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:subsize, :all}, 5)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -84406,6 +84610,24 @@
   locations:
     - head_top
   name: Phantom of Masquerade
+  on_equip: |-
+    ctx = bonus(ctx, :str, 5)
+    ctx = bonus(ctx, :agi, 5)
+    ctx = bonus(ctx, {:addrace, :all}, 10)
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 5000)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:addrace, :all}, 15)
+      ctx = bonus(ctx, :delay_rate, -20)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -115802,6 +116024,17 @@
   locations:
     - shadow_shield
   name: Infinity Shadow Shield
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, {:addsize, :all}, div(refine(ctx), 3))
+    ctx = bonus(ctx, {:magic_addsize, :all}, div(refine(ctx), 3))
+    ctx = bonus(ctx, {:subsize, :all}, div(refine(ctx), 3))
+    ctx = if (refine(ctx) == 10) do
+      bonus(ctx, :no_size_fix, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Durable_Weapon
@@ -116443,6 +116676,32 @@
   locations:
     - shadow_shield
   name: Mega Blitz Shadow Shield
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :critical, (5 + (2 * div(refine(ctx), 3))))
+    ctx = bonus(ctx, :crit_rate, div(refine(ctx), 3))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :critical, 3)
+      ctx = bonus(ctx, :aspd, 1)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :crit_atk_rate, 5)
+        ctx = bonus(ctx, :aspd_rate, 8)
+        ctx = if (refine(ctx) >= 10) do
+          ctx = bonus(ctx, :crit_atk_rate, 3)
+          ctx = bonus(ctx, :crit_rate, 3)
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Mega_Blitz_Weapon
@@ -117491,6 +117750,16 @@
   locations:
     - shadow_armor
   name: Full Rate Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :critical, 3)
+    ctx = bonus(ctx, :crit_atk_rate, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 10) do
+      bonus(ctx, :crit_rate, 2)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Full_Rate_Shoes
@@ -117499,6 +117768,16 @@
   locations:
     - shadow_shoes
   name: Full Rate Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :critical, 3)
+    ctx = bonus(ctx, :crit_atk_rate, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 10) do
+      bonus(ctx, :crit_rate, 2)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Focusing_Pendant
@@ -127402,6 +127681,10 @@
   locations:
     - right_hand
   name: Illusion Moonlight Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, :sp_drain_value, if((refine(ctx) >= 10), do: (3 + 4), else: 3))
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -167719,6 +168002,15 @@
   locations:
     - shoes
   name: Awakening Magic Curse Boots
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :all}, 5)
+    ctx = bonus(ctx, :max_hp_rate, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :intravision, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -167731,6 +168023,19 @@
   locations:
     - shoes
   name: Demon Hunting Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_shoes, 1)
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, :atk_rate, if((refine(ctx) >= 9), do: 40, else: if((refine(ctx) >= 7), do: 25, else: 10)))
+    ctx = bonus(ctx, {:subclass, :normal}, 5)
+    ctx = bonus(ctx, {:subclass, :boss}, 5)
+    ctx = bonus(ctx, :max_hp_rate, (4 * refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -170716,6 +171021,38 @@
   locations:
     - shoes
   name: Hollow Aggressor
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, {:subclass, :boss}, 5)
+    ctx = bonus(ctx, {:subclass, :normal}, 5)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, :all_stats, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :delay_rate, -15)
+      ctx = bonus(ctx, {:addclass, :all}, 15)
+      ctx = bonus(ctx, {:magic_addclass, :all}, 15)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :delay_rate, -25)
+        ctx = bonus(ctx, {:addclass, :all}, 25)
+        ctx = bonus(ctx, :matk_rate, 25)
+        ctx = if (refine(ctx) >= 10) do
+          ctx = bonus(ctx, {:addsize, :all}, 15)
+          ctx = bonus(ctx, {:magic_addsize, :all}, 15)
+          ctx = bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -173234,6 +173571,29 @@
   locations:
     - garment
   name: Valkyrie Curse Bright
+  on_equip: |-
+    ctx = bonus(ctx, {:subclass, :all}, 5)
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = bonus(ctx, :max_hp_rate, (2 * refine(ctx)))
+    ctx = bonus(ctx, :max_sp_rate, (2 * refine(ctx)))
+    ctx = bonus(ctx, {:subele, :ghost}, (7 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :all_stats, 10)
+      ctx = bonus(ctx, {:addele, :all}, 10)
+      ctx = bonus(ctx, {:magic_addele, :all}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addele, :all}, 15)
+      ctx = bonus(ctx, {:magic_addele, :all}, 15)
+      ctx = bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -187437,6 +187797,15 @@
   locations:
     - right_hand
   name: Awakened King Sword of Praising Glory
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, {:addsize, :all}, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :no_size_fix, 1)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -206282,6 +206651,19 @@
   locations:
     - shadow_armor
   name: Fatal Master Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :crit_rate, 1)
+    ctx = bonus(ctx, :critical, 1)
+    ctx = bonus(ctx, :crit_atk_rate, (2 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :patk, 1)
+      ctx = bonus(ctx, :critical, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Fatal_M_Shoes
@@ -206290,6 +206672,19 @@
   locations:
     - shadow_shoes
   name: Fatal Master Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :crit_rate, 1)
+    ctx = bonus(ctx, :critical, 1)
+    ctx = bonus(ctx, :crit_atk_rate, (2 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :patk, 1)
+      ctx = bonus(ctx, :critical, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Fatal_M_Earring
@@ -206298,6 +206693,19 @@
   locations:
     - shadow_right_accessory
   name: Fatal Master Shadow Earring
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :crit_rate, 1)
+    ctx = bonus(ctx, :critical, 1)
+    ctx = bonus(ctx, :crit_atk_rate, (2 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :patk, 1)
+      ctx = bonus(ctx, :critical, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Fatal_M_Pendant
@@ -206306,6 +206714,19 @@
   locations:
     - shadow_left_accessory
   name: Fatal Master Shadow Pendant
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :crit_rate, 1)
+    ctx = bonus(ctx, :critical, 1)
+    ctx = bonus(ctx, :crit_atk_rate, (2 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :patk, 1)
+      ctx = bonus(ctx, :critical, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_DK_DS_Earring
