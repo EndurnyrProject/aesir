@@ -87,6 +87,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bHPLossRate,10,5000;")
     end
 
+    test "bSPRegenRate and bSPLossRate emit interval-keyed SP bonuses" do
+      assert {:ok, [{:bonus, {:sp_regen_bonus, 10_000}, 3}]} =
+               compile("bonus2 bSPRegenRate,3,10000;")
+
+      assert {:ok, [{:bonus, {:sp_loss_bonus, 4_000}, 2}]} =
+               compile("bonus2 bSPLossRate,2,4000;")
+    end
+
     test "interval bonus accepts a refine-dependent amount" do
       assert {:ok, [{:bonus, {:hp_regen_bonus, 1_000}, {:*, :refine, 2}}]} =
                compile("bonus2 bHPRegenRate,getrefine()*2,1000;")
@@ -109,6 +117,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
     test "bSPGainValue compiles to the flat sp-gain destination" do
       assert {:ok, [{:bonus, :sp_gain_value, 5}]} = compile("bonus bSPGainValue,5;")
+    end
+
+    test "bMagicSPGainValue and bLongSPGainValue compile to flat sp-gain destinations" do
+      assert {:ok, [{:bonus, :magic_sp_gain_value, 20}]} = compile("bonus bMagicSPGainValue,20;")
+      assert {:ok, [{:bonus, :long_sp_gain_value, 15}]} = compile("bonus bLongSPGainValue,15;")
+    end
+
+    test "bAddDamageClass emits a monster-id-keyed damage bonus" do
+      assert {:ok, [{:bonus, {:add_damage_class, 1917}, 10}]} =
+               compile("bonus2 bAddDamageClass,1917,10;")
+    end
+
+    test "bAddDamageClass rejects a non-literal monster id" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus2 bAddDamageClass,RC_Brute,10;")
+    end
+
+    test "bSPGainRace emits a race-keyed sp-gain bonus" do
+      assert {:ok, [{:bonus, {:sp_gain_race, :undead}, 3}]} =
+               compile("bonus2 bSPGainRace,RC_Undead,3;")
+    end
+
+    test "bExpAddClass emits a class-keyed exp bonus" do
+      assert {:ok, [{:bonus, {:exp_add_class, :all}, 10}]} =
+               compile("bonus2 bExpAddClass,Class_All,10;")
     end
 
     test "bHealPower2 and bMagicHPGainValue compile to their flat destinations" do

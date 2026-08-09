@@ -931,6 +931,12 @@
   locations:
     - right_hand
   name: Solar Sword
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = bonus(ctx, :hp_drain_rate, 1000)
+    ctx = bonus(ctx, :hp_drain_percent, 1)
+    ctx = bonus(ctx, {:sp_loss_bonus, 10000}, 15)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -10422,6 +10428,7 @@
   locations:
     - right_hand
   name: Girl's Diary
+  on_equip: bonus(ctx, {:add_damage_class, 1188}, 150)
   range: 1
   refineable: true
   slots: 1
@@ -10441,6 +10448,11 @@
   locations:
     - right_hand
   name: Legacy of Dragon
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, {:ignore_def_race, :dragon}, 100)
+    ctx = bonus(ctx, {:sp_gain_race, :dragon}, 10)
+    ctx
   range: 1
   refineable: true
   subtype: book
@@ -11093,6 +11105,11 @@
   locations:
     - right_hand
   name: Legacy of Dragon
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, {:ignore_def_race, :dragon}, 100)
+    ctx = bonus(ctx, {:sp_gain_race, :dragon}, 10)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -12228,6 +12245,11 @@
     - right_hand
   magic_attack: 125
   name: Strong Recovery Wand
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, 14)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 5)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -12250,6 +12272,13 @@
     - right_hand
   magic_attack: 125
   name: Speedy Recovery Wand
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :delay_rate, -15)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 5)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -13188,6 +13217,12 @@
     - right_hand
   magic_attack: 125
   name: Half BF Staff4
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :delay_rate, -10)
+    ctx = bonus(ctx, {:sp_loss_bonus, 12000}, 5)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -13926,6 +13961,12 @@
   locations:
     - both_hand
   name: Bow
+  on_equip: |-
+    ctx = bonus(ctx, {:add_damage_class, 1002}, 500)
+    ctx = bonus(ctx, {:add_damage_class, 1113}, 500)
+    ctx = bonus(ctx, {:add_damage_class, 1031}, 500)
+    ctx = bonus(ctx, {:add_damage_class, 1242}, 500)
+    ctx
   range: 5
   refineable: true
   subtype: bow
@@ -27190,6 +27231,16 @@
   locations:
     - garment
   name: Diabolus Manteau
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 5)
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx = bonus(ctx, {:add_damage_class, 1916}, 10)
+    ctx = bonus(ctx, {:add_damage_class, 1917}, 10)
+    ctx = bonus(ctx, {:add_damage_class, 1922}, 10)
+    ctx = bonus(ctx, {:add_damage_class, 1923}, 10)
+    ctx = bonus(ctx, {:add_damage_class, 1924}, 10)
+    ctx = bonus(ctx, {:add_damage_class, 1925}, 10)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -30159,6 +30210,13 @@
   locations:
     - both_accessory
   name: Diabolus Ring
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx = bonus(ctx, :max_sp, 100)
+    ctx = bonus(ctx, :heal_power, 5)
+    ctx = bonus(ctx, {:add_damage_class, 1916}, 10)
+    ctx = bonus(ctx, {:add_damage_class, 1917}, 10)
+    ctx
   slots: 1
   type: armor
   weight: 50
@@ -33895,6 +33953,12 @@
   locations:
     - both_accessory
   name: Greed Brooch
+  on_equip: |-
+    ctx = bonus(ctx, :sp_gain_value, 2)
+    ctx = bonus(ctx, :long_sp_gain_value, 2)
+    ctx = bonus(ctx, :magic_sp_gain_value, 2)
+    ctx = bonus(ctx, {:hp_loss_bonus, 5000}, 10)
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -38711,6 +38775,10 @@
   locations:
     - head_top
   name: Soul Wing
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 2)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -40156,6 +40224,7 @@
   locations:
     - head_low
   name: Bubblegum
+  on_equip: bonus(ctx, {:exp_add_class, :all}, 100)
   type: armor
   view: 572
 - aegis_name: Tiraya_Bonnet
@@ -43327,6 +43396,17 @@
   locations:
     - head_top
   name: Mosquito Coil
+  on_equip: |-
+    ctx = bonus(ctx, {:add_damage_class, 1627}, 100)
+    ctx = bonus(ctx, {:add_damage_class, 1095}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1160}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1105}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1097}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1051}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1053}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1054}, 20)
+    ctx = bonus(ctx, {:add_damage_class, 1048}, 20)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -46962,6 +47042,11 @@
   locations:
     - head_top
   name: Red Ph.D Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 1)
+    ctx = bonus(ctx, :magic_sp_gain_value, 1)
+    ctx
   refineable: true
   type: armor
   view: 481
@@ -47078,6 +47163,7 @@
   locations:
     - head_top
   name: Gold Tulip Hairpin
+  on_equip: bonus(ctx, {:exp_add_class, :all}, 5)
   refineable: true
   type: armor
   view: 499
@@ -48604,6 +48690,21 @@
   locations:
     - head_top
   name: Flying Helmet
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = bonus(ctx, {:sp_gain_race, :dragon}, 5)
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, {:subrace, :dragon}, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :dragon}, 5)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48662,6 +48763,22 @@
   locations:
     - head_top
   name: Boitata Hat
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = bonus(ctx, {:sp_gain_race, :brute}, 5)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, {:subrace, :brute}, 5)
+      ctx = if (refine(ctx) >= 7) do
+        bonus(ctx, {:subrace, :brute}, 5)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48689,6 +48806,20 @@
   locations:
     - head_top
   name: Bandit Hood
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :demi_human}, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :demi_human}, 10)
+    else
+      if (refine(ctx) >= 5) do
+        bonus(ctx, {:subrace, :demi_human}, 5)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48714,6 +48845,20 @@
   locations:
     - head_top
   name: Drama Clockwork
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :formless}, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :formless}, 10)
+    else
+      if (refine(ctx) >= 5) do
+        bonus(ctx, {:subrace, :formless}, 5)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -55512,6 +55657,12 @@
   locations:
     - right_hand
   name: Solar Sword
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = bonus(ctx, {:sp_loss_bonus, 10000}, 15)
+    ctx = bonus(ctx, :hp_drain_rate, 1000)
+    ctx = bonus(ctx, :hp_drain_percent, 1)
+    ctx
   range: 1
   subtype: one_handed_sword
   type: weapon
@@ -61987,6 +62138,23 @@
   locations:
     - armor
   name: God's Armor
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_gain_race, :undead}, (5 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:subrace, :undead}, (5 + refine(ctx)))
+    ctx = bonus(ctx, {:subele, :shadow}, (15 + (2 * refine(ctx))))
+    ctx = if (refine(ctx) >= 8) do
+      ctx = grant_skill(ctx, 249, 3)
+      ctx = bonus(ctx, :unbreakable_armor, 1)
+      ctx = if (refine(ctx) >= 10) do
+        bonus(ctx, :no_knockback, 1)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -62206,6 +62374,32 @@
   locations:
     - armor
   name: Nature Suit
+  on_equip: |-
+    ctx = bonus(ctx, {:hp_regen_bonus, 5000}, 1500)
+    ctx = bonus(ctx, {:sp_regen_bonus, 5000}, 15)
+    ctx = bonus(ctx, :hp_gain_value, 50)
+    ctx = bonus(ctx, :sp_gain_value, 5)
+    ctx = bonus(ctx, :magic_hp_gain_value, 50)
+    ctx = bonus(ctx, :magic_sp_gain_value, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :hp_gain_value, 50)
+      ctx = bonus(ctx, :sp_gain_value, 5)
+      ctx = bonus(ctx, :magic_hp_gain_value, 50)
+      ctx = bonus(ctx, :magic_sp_gain_value, 5)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :hp_gain_value, 100)
+        ctx = bonus(ctx, :sp_gain_value, 10)
+        ctx = bonus(ctx, :magic_hp_gain_value, 100)
+        ctx = bonus(ctx, :magic_sp_gain_value, 10)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -71739,6 +71933,10 @@
     - head_low
     - head_mid
   name: Evil Mask
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_loss_bonus, 2000}, 1)
+    ctx = bonus(ctx, :aspd_rate, 1)
+    ctx
   type: armor
   view: 714
   weight: 1000
@@ -73909,6 +74107,11 @@
   locations:
     - head_top
   name: Planewing Hat
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 3)
+    ctx = bonus(ctx, :aspd_rate, 1)
+    ctx = bonus(ctx, {:sp_loss_bonus, 10000}, 5)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -77012,6 +77215,12 @@
   locations:
     - head_low
   name: Very Sweet Candy Bar
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 2)
+    ctx = bonus(ctx, :atk, 10)
+    ctx = bonus(ctx, :matk, 10)
+    ctx = bonus(ctx, {:exp_add_class, :all}, 2)
+    ctx
   type: armor
   view: 446
   weight: 10
@@ -78967,6 +79176,12 @@
   locations:
     - head_top
   name: Otto Hat
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :fish}, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = bonus(ctx, {:subrace, :fish}, if((refine(ctx) >= 7), do: 10, else: if((refine(ctx) >= 5), do: 5, else: 0)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79058,6 +79273,12 @@
   locations:
     - head_top
   name: Maneater Flower Hairpin
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :insect}, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = bonus(ctx, {:subrace, :insect}, if((refine(ctx) >= 7), do: 10, else: if((refine(ctx) >= 5), do: 5, else: 0)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79140,6 +79361,15 @@
   locations:
     - head_top
   name: Angeling Knit Cap
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_gain_race, :angel}, 5)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, {:subrace, :angel}, (5 + if((refine(ctx) >= 7), do: 5, else: 0)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79247,6 +79477,21 @@
   locations:
     - head_top
   name: Celestial Woman's Flower
+  on_equip: |-
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :undead}, 5)
+    ctx = if (refine(ctx) >= 5) do
+      bonus(ctx, {:subrace, :undead}, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :undead}, 5)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -80557,6 +80802,10 @@
   locations:
     - head_top
   name: RO Celebration Hat
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp, 140)
+    ctx = bonus(ctx, {:sp_regen_bonus, 4000}, 6)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -80619,6 +80868,39 @@
   locations:
     - head_top
   name: Magician Knit Hat
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, {:addrace, :undead}, 5)
+    ctx = bonus(ctx, {:magic_addrace, :undead}, 5)
+    ctx = bonus(ctx, {:subrace, :undead}, 2)
+    ctx = bonus(ctx, :sp_gain_value, 5)
+    ctx = bonus(ctx, :long_sp_gain_value, 5)
+    ctx = bonus(ctx, :magic_sp_gain_value, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :mdef, 5)
+      ctx = bonus(ctx, {:addrace, :undead}, 10)
+      ctx = bonus(ctx, {:magic_addrace, :undead}, 10)
+      ctx = bonus(ctx, {:subrace, :undead}, 3)
+      ctx = bonus(ctx, :sp_gain_value, 10)
+      ctx = bonus(ctx, :long_sp_gain_value, 10)
+      ctx = bonus(ctx, :magic_sp_gain_value, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :mdef, 5)
+      ctx = bonus(ctx, {:addrace, :undead}, 10)
+      ctx = bonus(ctx, {:magic_addrace, :undead}, 10)
+      ctx = bonus(ctx, {:subrace, :undead}, 5)
+      ctx = bonus(ctx, :sp_gain_value, 10)
+      ctx = bonus(ctx, :long_sp_gain_value, 10)
+      ctx = bonus(ctx, :magic_sp_gain_value, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -81831,6 +82113,13 @@
   locations:
     - head_low
   name: Open Air Headset
+  on_equip: |-
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, :sp_cost_rate, -5)
+    ctx = bonus(ctx, :sp_gain_value, 5)
+    ctx = bonus(ctx, :magic_sp_gain_value, 5)
+    ctx = bonus(ctx, :long_sp_gain_value, 5)
+    ctx
   type: armor
   view: 1655
   weight: 100
@@ -85104,6 +85393,7 @@
   locations:
     - costume_head_top
   name: Costume Cat Hat
+  on_equip: bonus(ctx, {:exp_add_class, :all}, 30)
   type: armor
   view: 182
 - aegis_name: C_Fallen_Angel_Lost_J
@@ -86455,6 +86745,7 @@
   locations:
     - costume_head_top
   name: Costume Panda Cap
+  on_equip: bonus(ctx, {:exp_add_class, :all}, 10)
   type: armor
   view: 115
 - aegis_name: C_Binoculars
@@ -86916,6 +87207,10 @@
   locations:
     - costume_head_top
   name: Costume Persika
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, {:exp_add_class, :all}, 10)
+    ctx
   type: armor
   view: 659
 - aegis_name: C_Rabbit_Ear_Knit_Hat
@@ -96208,6 +96503,25 @@
   locations:
     - garment
   name: Teleport Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 26, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96221,6 +96535,25 @@
   locations:
     - garment
   name: Heal Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 28, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96234,6 +96567,25 @@
   locations:
     - garment
   name: Greed Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 1013, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96247,6 +96599,25 @@
   locations:
     - garment
   name: Increase Agility Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 29, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96260,6 +96631,25 @@
   locations:
     - garment
   name: Magnum Break Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 7, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96273,6 +96663,25 @@
   locations:
     - garment
   name: Endure Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 8, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96286,6 +96695,25 @@
   locations:
     - garment
   name: Sight Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 10, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96299,6 +96727,25 @@
   locations:
     - garment
   name: Improve Concentration Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 45, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96312,6 +96759,25 @@
   locations:
     - garment
   name: Hiding Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 51, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :long_sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 11) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -96494,6 +96960,19 @@
   locations:
     - garment
   name: Curse-Spell Manteau
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :all}, 5)
+    ctx = bonus(ctx, :long_atk_def, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:subele, :water}, 30)
+      ctx = bonus(ctx, {:subele, :wind}, 30)
+      ctx = bonus(ctx, {:hp_regen_bonus, 10000}, 2000)
+      ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -97209,6 +97688,22 @@
   locations:
     - garment
   name: Medical Cape
+  on_equip: |-
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx = bonus(ctx, :magic_hp_gain_value, 100)
+    ctx = bonus(ctx, :sp_gain_value, 10)
+    ctx = bonus(ctx, :magic_sp_gain_value, 10)
+    ctx = bonus(ctx, {:add_monster_drop, 23360, :brute}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 23360, :fish}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 12791, :fish}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 12791, :insect}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 12016, :demon}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 12016, :demi_human}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 23361, :dragon}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 23361, :formless}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 678, :angel}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx = bonus(ctx, {:add_monster_drop, 678, :undead}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (50 + 50), else: 50) + 100), else: if((refine(ctx) >= 7), do: (50 + 50), else: 50)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -98668,6 +99163,33 @@
   locations:
     - garment
   name: Skin of Ladon
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 5)
+    ctx = bonus(ctx, {:subrace, :brute}, 5)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 5)
+    ctx = bonus(ctx, {:subele, :wind}, 5)
+    ctx = bonus(ctx, {:subele, :earth}, 5)
+    ctx = bonus(ctx, :agi, 5)
+    ctx = bonus(ctx, :vit, 5)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :sp_gain_value, 10)
+      ctx = bonus(ctx, :long_sp_gain_value, 10)
+      ctx = if (refine(ctx) >= 8) do
+        ctx = bonus(ctx, :atk, (15 * div((stat(ctx, :agi) + stat(ctx, :vit)), 20)))
+        ctx = bonus(ctx, :hit, (5 * div((stat(ctx, :agi) + stat(ctx, :vit)), 20)))
+        ctx
+      else
+        ctx
+      end
+      ctx = bonus(ctx, :sp_gain_value, if((refine(ctx) >= 8), do: if((refine(ctx) >= 9), do: (10 + 10), else: 10), else: 10))
+      ctx = bonus(ctx, :long_sp_gain_value, if((refine(ctx) >= 8), do: if((refine(ctx) >= 9), do: (10 + 10), else: 10), else: 10))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -98738,6 +99260,29 @@
   locations:
     - garment
   name: Skin of Typhon
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 5)
+    ctx = bonus(ctx, {:subrace, :fish}, 5)
+    ctx = bonus(ctx, {:subele, :neutral}, 5)
+    ctx = bonus(ctx, {:subele, :poison}, 5)
+    ctx = bonus(ctx, :agi, 5)
+    ctx = bonus(ctx, :vit, 5)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = if (refine(ctx) >= 8) do
+        ctx = bonus(ctx, :matk, (15 * div((stat(ctx, :agi) + stat(ctx, :vit)), 20)))
+        ctx = bonus(ctx, :def, (20 * div((stat(ctx, :agi) + stat(ctx, :vit)), 20)))
+        ctx
+      else
+        ctx
+      end
+      ctx = bonus(ctx, :magic_sp_gain_value, if((refine(ctx) >= 8), do: if((refine(ctx) >= 9), do: (10 + 10), else: 10), else: 10))
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -101866,6 +102411,11 @@
   locations:
     - shoes
   name: Red Eco-Friendly Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, {:hp_regen_bonus, 10000}, 4)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -122889,6 +123439,11 @@
   locations:
     - both_accessory
   name: Shining Holy Water
+  on_equip: |-
+    ctx = bonus(ctx, {:hp_regen_bonus, 10000}, 100)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 5)
+    ctx = bonus(ctx, {:subrace2, :ep16_def}, 20)
+    ctx
   slots: 1
   type: armor
   weight: 150
@@ -139629,6 +140184,32 @@
   locations:
     - head_top
   name: Runaway Accelerator
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, refine(ctx))
+    ctx = bonus(ctx, :matk_rate, refine(ctx))
+    ctx = bonus(ctx, {:subclass, :normal}, 10)
+    ctx = bonus(ctx, {:subclass, :boss}, 10)
+    ctx = bonus(ctx, {:hp_regen_bonus, 5000}, 250)
+    ctx = bonus(ctx, {:sp_regen_bonus, 5000}, 30)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 25)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 25)
+      ctx = bonus(ctx, {:subclass, :normal}, 5)
+      ctx = bonus(ctx, {:subclass, :boss}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 25)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 25)
+      ctx = bonus(ctx, {:subclass, :normal}, 5)
+      ctx = bonus(ctx, {:subclass, :boss}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -139833,6 +140414,7 @@
   locations:
     - costume_head_top
   name: Costume Shiny Santa Poring Hat
+  on_equip: bonus(ctx, {:exp_add_class, :all}, 10)
   type: armor
   view: 961
 - aegis_name: C_VIP_Hair_Female
@@ -148974,6 +149556,15 @@
   locations:
     - head_mid
   name: 7-Eleven Headphones
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 11)
+    ctx = bonus(ctx, :hp_gain_value, 150)
+    ctx = bonus(ctx, :magic_hp_gain_value, 150)
+    ctx = bonus(ctx, :sp_gain_value, 15)
+    ctx = bonus(ctx, :magic_sp_gain_value, 15)
+    ctx = bonus(ctx, :atk, base_level(ctx))
+    ctx = bonus(ctx, :matk, base_level(ctx))
+    ctx
   type: armor
   view: 1131
   weight: 200
@@ -148985,6 +149576,15 @@
   locations:
     - head_mid
   name: 7-Eleven Headphones
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 11)
+    ctx = bonus(ctx, :hp_gain_value, 150)
+    ctx = bonus(ctx, :magic_hp_gain_value, 150)
+    ctx = bonus(ctx, :sp_gain_value, 15)
+    ctx = bonus(ctx, :magic_sp_gain_value, 15)
+    ctx = bonus(ctx, :atk, base_level(ctx))
+    ctx = bonus(ctx, :matk, base_level(ctx))
+    ctx
   slots: 1
   type: armor
   view: 1131
@@ -149256,6 +149856,15 @@
   locations:
     - head_mid
   name: Floating Artifacts
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :hp_gain_value, 150)
+    ctx = bonus(ctx, :magic_hp_gain_value, 150)
+    ctx = bonus(ctx, :sp_gain_value, 15)
+    ctx = bonus(ctx, :magic_sp_gain_value, 15)
+    ctx = bonus(ctx, :atk, base_level(ctx))
+    ctx = bonus(ctx, :matk, base_level(ctx))
+    ctx
   type: armor
   view: 1996
   weight: 200
@@ -149268,6 +149877,15 @@
   locations:
     - head_mid
   name: Floating Artifacts
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :hp_gain_value, 150)
+    ctx = bonus(ctx, :magic_hp_gain_value, 150)
+    ctx = bonus(ctx, :sp_gain_value, 15)
+    ctx = bonus(ctx, :magic_sp_gain_value, 15)
+    ctx = bonus(ctx, :atk, base_level(ctx))
+    ctx = bonus(ctx, :matk, base_level(ctx))
+    ctx
   slots: 1
   type: armor
   view: 1996
@@ -153613,6 +154231,12 @@
   locations:
     - head_low
   name: Einherjar Manteau
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, {:hp_regen_bonus, 5000}, 150)
+    ctx = bonus(ctx, {:sp_regen_bonus, 5000}, 15)
+    ctx
   type: armor
   view: 2200
   weight: 100
@@ -155586,6 +156210,16 @@
   locations:
     - head_low
   name: Wireless Security Drone
+  on_equip: |-
+    ctx = bonus(ctx, :hp_drain_rate, 20)
+    ctx = bonus(ctx, :hp_drain_percent, 2)
+    ctx = bonus(ctx, :sp_drain_rate, 10)
+    ctx = bonus(ctx, :sp_drain_percent, 1)
+    ctx = bonus(ctx, :magic_hp_gain_value, 300)
+    ctx = bonus(ctx, :magic_sp_gain_value, 5)
+    ctx = bonus(ctx, :delay_rate, -3)
+    ctx = bonus(ctx, {:exp_add_race, :all}, 8)
+    ctx
   type: armor
   view: 1788
   weight: 450
@@ -156170,6 +156804,16 @@
   locations:
     - head_low
   name: Bat Von Blood
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 100)
+    ctx = bonus(ctx, :matk, 100)
+    ctx = bonus(ctx, :hp_gain_value, 700)
+    ctx = bonus(ctx, :sp_gain_value, 70)
+    ctx = bonus(ctx, :magic_hp_gain_value, 700)
+    ctx = bonus(ctx, :magic_sp_gain_value, 70)
+    ctx = grant_skill(ctx, 1013, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, 15)
+    ctx
   type: armor
   view: 2439
   weight: 200
@@ -166613,6 +167257,11 @@
   locations:
     - shoes
   name: Peep Toe Sandals
+  on_equip: |-
+    ctx = bonus(ctx, :atk, base_level(ctx))
+    ctx = bonus(ctx, :matk, base_level(ctx))
+    ctx = bonus(ctx, {:exp_add_class, :all}, if((refine(ctx) >= 11), do: (if((refine(ctx) >= 9), do: (5 + 5), else: 5) + 5), else: if((refine(ctx) >= 9), do: (5 + 5), else: 5)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -167380,6 +168029,19 @@
   locations:
     - shoes
   name: Hunting Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 1000)
+    ctx = bonus(ctx, :max_sp, 200)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:exp_add_class, :all}, 8)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, {:addrace, :brute}, if((refine(ctx) >= 11), do: (if((refine(ctx) >= 9), do: 15, else: 0) + 20), else: if((refine(ctx) >= 9), do: 15, else: 0)))
+    ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 11), do: (if((refine(ctx) >= 9), do: 15, else: 0) + 20), else: if((refine(ctx) >= 9), do: 15, else: 0)))
+    ctx = bonus(ctx, {:addrace, :brute}, if((refine(ctx) >= 11), do: (if((refine(ctx) >= 9), do: 15, else: 0) + 20), else: if((refine(ctx) >= 9), do: 15, else: 0)))
+    ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 11), do: (if((refine(ctx) >= 9), do: 15, else: 0) + 20), else: if((refine(ctx) >= 9), do: 15, else: 0)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -170940,6 +171602,20 @@
   locations:
     - garment
   name: Monarch Manteau
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :all}, 5)
+    ctx = bonus(ctx, {:subclass, :normal}, 5)
+    ctx = bonus(ctx, :long_atk_def, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:subele, :earth}, 30)
+      ctx = bonus(ctx, {:subele, :fire}, 30)
+      ctx = bonus(ctx, {:hp_regen_bonus, 10000}, 2000)
+      ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -172694,6 +173370,24 @@
   locations:
     - garment
   name: Heal Amistr Bag
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 28, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -172744,6 +173438,24 @@
   locations:
     - garment
   name: '[Not For Sale] Heal Amistr Bag'
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = grant_skill(ctx, 28, 1)
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :sp_gain_value, 3)
+      ctx = bonus(ctx, :magic_sp_gain_value, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :no_cast_cancel, 1)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor

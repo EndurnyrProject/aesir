@@ -30,12 +30,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   Each argument owns its own summing destination, so the codegen emits two
   ordinary `:bonus` instructions and no new IR shape is needed.
 
-  A fifth table, `@interval_keys`, covers the periodic HP-regen/loss `bonus2`
+  A fifth table, `@interval_keys`, covers the periodic HP/SP regen/loss `bonus2`
   keys whose arguments are an **amount and an interval** in milliseconds
-  (`bonus2 bHPRegenRate,n,t`). The interval becomes the destination param, so
-  equal-interval contributions across items sum into one `{family, interval}`
-  entry — mirroring how the periodic-regen tick accumulates and fires per
-  interval. `interval_family/1` exposes the family to the codegen.
+  (`bonus2 bHPRegenRate,n,t`, `bonus2 bSPLossRate,n,t`). The interval becomes the
+  destination param, so equal-interval contributions across items sum into one
+  `{family, interval}` entry — mirroring how the periodic-regen tick accumulates
+  and fires per interval. `interval_family/1` exposes the family to the codegen.
 
   Two per-destination rules also live here rather than in the evaluator, so the
   data table stays the single extension point:
@@ -53,7 +53,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @type destination :: atom()
   @type param ::
-          :race | :element | :size | :class | :skill | :status | :item | :race2 | :interval
+          :race
+          | :element
+          | :size
+          | :class
+          | :skill
+          | :status
+          | :item
+          | :race2
+          | :interval
+          | :monster
   @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
   @type value_schema :: %{dest: destination(), param: param()}
   @type pair_schema :: %{first: destination(), second: destination()}
@@ -121,6 +130,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhpgainvalue" => :hp_gain_value,
     "bspgainvalue" => :sp_gain_value,
     "bmagichpgainvalue" => :magic_hp_gain_value,
+    "bmagicspgainvalue" => :magic_sp_gain_value,
+    "blongspgainvalue" => :long_sp_gain_value,
     "bshortweapondamagereturn" => :short_weapon_damage_return,
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
@@ -166,7 +177,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent},
     "bignoremdefclassrate" => %{family: :ignore_mdef_class, param: :class, unit: :percent},
     "bsubrace2" => %{family: :subrace2, param: :race2, unit: :percent},
-    "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k}
+    "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
+    "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
+    "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
+    "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent}
   }
 
   @value_keys %{
@@ -190,13 +204,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bignoredefclass" => %{family: :ignore_def_class, param: :class, amount: 100}
   }
 
-  # Periodic `bonus2` keys `bonus2 bHPRegenRate,n,t` / `bonus2 bHPLossRate,n,t`
-  # whose arguments are an amount and an interval in milliseconds. The interval
-  # becomes the destination param, so equal-interval contributions sum into one
-  # `{family, interval}` entry the regen tick reads and fires per interval.
+  # Periodic `bonus2` keys (`bHPRegenRate`/`bHPLossRate`/`bSPRegenRate`/
+  # `bSPLossRate`) whose arguments are an amount and an interval in milliseconds.
+  # The interval becomes the destination param, so equal-interval contributions
+  # sum into one `{family, interval}` entry the regen tick reads and fires per
+  # interval.
   @interval_keys %{
     "bhpregenrate" => :hp_regen_bonus,
-    "bhplossrate" => :hp_loss_bonus
+    "bhplossrate" => :hp_loss_bonus,
+    "bspregenrate" => :sp_regen_bonus,
+    "bsplossrate" => :sp_loss_bonus
   }
 
   # `bonus3` keys whose third argument is a trigger-condition flag
@@ -318,8 +335,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     do: Map.fetch(@flag_param_keys, String.downcase(name))
 
   @doc """
-  Resolves a periodic HP-regen/loss `bonus2` key (`bonus2 bHPRegenRate,n,t`) to
-  the `modifiers.equipment` family its per-interval entries store into. The
+  Resolves a periodic HP/SP regen/loss `bonus2` key (`bonus2 bHPRegenRate,n,t`)
+  to the `modifiers.equipment` family its per-interval entries store into. The
   amount is the leading argument and the interval (the second argument, in
   milliseconds) becomes the destination param. Returns `:error` for keys outside
   that vocabulary.

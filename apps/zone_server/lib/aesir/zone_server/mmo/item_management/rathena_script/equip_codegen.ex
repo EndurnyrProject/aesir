@@ -500,6 +500,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp resolve_param(%{family: family, param: :item}, {:int, id}) when id > 0,
     do: {:ok, {family, id}}
 
+  # The `bAddDamageClass` param is a bare monster (mob database) id kept
+  # verbatim, in the same spirit as the item-id param: it names a specific
+  # monster the bonus applies against and is not validated against the mob
+  # catalog at transpile time.
+  defp resolve_param(%{family: family, param: :monster}, {:int, id}) when id > 0,
+    do: {:ok, {family, id}}
+
   defp resolve_param(_schema, param_ast), do: unsupported({:unresolved_param, param_ast})
 
   @spec race_dest(atom(), atom() | {:class, :boss}) ::

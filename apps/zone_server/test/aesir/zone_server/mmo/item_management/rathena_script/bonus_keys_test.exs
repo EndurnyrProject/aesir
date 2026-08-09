@@ -66,6 +66,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :hp_gain_value,
     :sp_gain_value,
     :magic_hp_gain_value,
+    :magic_sp_gain_value,
+    :long_sp_gain_value,
     :heal_power2,
     :short_weapon_damage_return,
     :fixcast_rate,
@@ -275,7 +277,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent},
     "bignoremdefclassrate" => %{family: :ignore_mdef_class, param: :class, unit: :percent},
     "bsubrace2" => %{family: :subrace2, param: :race2, unit: :percent},
-    "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k}
+    "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
+    "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
+    "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
+    "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent}
   }
 
   # Families reachable only through the single-argument flag-param keys
@@ -287,7 +292,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   # Families reachable only through the periodic-interval keys
   # (`bHPRegenRate`/`bHPLossRate`), exposed by `families/0`/`family_param/1` as
   # `:interval`-param destinations.
-  @interval_families [:hp_regen_bonus, :hp_loss_bonus]
+  @interval_families [:hp_regen_bonus, :hp_loss_bonus, :sp_regen_bonus, :sp_loss_bonus]
 
   describe "param_schema/1" do
     test "resolves every documented bonus2 parameterized key" do
@@ -378,6 +383,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "resolves the periodic-interval families to the :interval param kind" do
       assert BonusKeys.family_param(:hp_regen_bonus) == {:ok, :interval}
       assert BonusKeys.family_param(:hp_loss_bonus) == {:ok, :interval}
+      assert BonusKeys.family_param(:sp_regen_bonus) == {:ok, :interval}
+      assert BonusKeys.family_param(:sp_loss_bonus) == {:ok, :interval}
+    end
+
+    test "resolves the monster-id param family (bAddDamageClass)" do
+      assert BonusKeys.family_param(:add_damage_class) == {:ok, :monster}
     end
   end
 
@@ -387,6 +398,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.interval_family("bhpregenrate") == {:ok, :hp_regen_bonus}
       assert BonusKeys.interval_family("bHPLossRate") == {:ok, :hp_loss_bonus}
       assert BonusKeys.interval_family("BHPLOSSRATE") == {:ok, :hp_loss_bonus}
+      assert BonusKeys.interval_family("bSPRegenRate") == {:ok, :sp_regen_bonus}
+      assert BonusKeys.interval_family("bSPLossRate") == {:ok, :sp_loss_bonus}
     end
 
     test "returns :error for flat, param and pair keys" do

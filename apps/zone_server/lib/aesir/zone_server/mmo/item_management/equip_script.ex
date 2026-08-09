@@ -339,9 +339,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp validate_destination!({family, param} = dest) when is_atom(family) do
     case BonusKeys.family_param(family) do
-      {:ok, kind} when kind in [:skill, :item, :interval] -> validate_skill_param!(dest, param)
-      {:ok, domain} -> validate_domain_param!(dest, domain, param)
-      :error -> malformed!("bonus destination", dest)
+      {:ok, kind} when kind in [:skill, :item, :interval, :monster] ->
+        validate_skill_param!(dest, param)
+
+      {:ok, domain} ->
+        validate_domain_param!(dest, domain, param)
+
+      :error ->
+        malformed!("bonus destination", dest)
     end
   end
 
