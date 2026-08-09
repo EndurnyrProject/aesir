@@ -490,6 +490,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker, defender)
     end
 
+    test "magic_addclass applies class-specific and all bonuses" do
+      attacker =
+        c_attacker(100, %{{:magic_addclass, :boss} => 20, {:magic_addclass, :all} => 5})
+
+      boss = c_defender(0, 0, class: :boss)
+      normal = c_defender(0, 0, class: :normal)
+
+      assert {:ok, %{damage: 125}} = MagicDamageCalculator.calculate_magic_damage(attacker, boss)
+
+      assert {:ok, %{damage: 105}} =
+               MagicDamageCalculator.calculate_magic_damage(attacker, normal)
+    end
+
     test "magic_atk_ele boosts only spells cast with the keyed element" do
       attacker = c_attacker(100, %{{:magic_atk_ele, :fire} => 50})
       defender = c_defender(0, 0)

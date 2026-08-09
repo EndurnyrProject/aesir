@@ -64,7 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   # All-zero equipment rates used when a combatant is a bare test map rather than
   # a `%Combatant{}` (only real combatants carry a folded `equip_modifiers` map).
   @zero_equip_rates %{
-    attack: %{race: 0, element_target: 0, size: 0, atk_ele: 0, skill: 0},
+    attack: %{race: 0, class: 0, element_target: 0, size: 0, atk_ele: 0, skill: 0},
     taken: %{race_class: 0, element: 0, size: 0},
     ignore_mdef: 0
   }
@@ -217,6 +217,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
         RaceModifiers.dragonology_resist_rate(defender, Map.get(attacker, :race)) +
         equip_attack.race
 
+    class_bonus = equip_attack.class
+
     element_bonus =
       Map.get(modifiers, {:magic_addele, defender_element(defender)}, 0) +
         Map.get(modifiers, {:magic_addele, :all}, 0) +
@@ -225,6 +227,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     damage
     |> apply_cardfix(size_bonus)
     |> apply_cardfix(race_bonus)
+    |> apply_cardfix(class_bonus)
     |> apply_cardfix(element_bonus)
     |> apply_cardfix(equip_attack.atk_ele)
     |> apply_cardfix(equip_attack.skill)

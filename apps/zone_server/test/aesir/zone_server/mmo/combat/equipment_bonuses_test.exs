@@ -184,6 +184,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
         |> with_equip_modifiers(%{
           {:magic_addrace, :brute} => 12,
           {:magic_addrace, :all} => 3,
+          {:magic_addclass, :normal} => 8,
+          {:magic_addclass, :all} => 2,
           {:magic_addele, :earth} => 7,
           {:magic_addele, :all} => 1,
           {:magic_addsize, :medium} => 9,
@@ -198,11 +200,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, 200, :earth) == %{
                race: 15,
+               class: 10,
                element_target: 8,
                size: 11,
                atk_ele: 20,
                skill: 15
              }
+    end
+
+    test "sums class-specific and all magic damage bonuses" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:magic_addclass, :boss} => 12, {:magic_addclass, :all} => 3})
+
+      defender = CombatTestHelper.create_mob_combatant(class: :boss)
+
+      assert %{class: 15} = EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral)
     end
 
     test "skill_id nil returns 0 for the skill family" do
@@ -218,6 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
+               class: 0,
                element_target: 0,
                size: 0,
                atk_ele: 0,

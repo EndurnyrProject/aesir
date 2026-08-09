@@ -100,6 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   """
   @spec magic_attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom()) :: %{
           race: rate(),
+          class: rate(),
           element_target: rate(),
           size: rate(),
           atk_ele: rate(),
@@ -113,6 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
       ) do
     %{
       race: read(attacker, :magic_addrace, defender.race),
+      class: read(attacker, :magic_addclass, defender.class),
       element_target: read(attacker, :magic_addele, element_atom(defender.element)),
       size: read(attacker, :magic_addsize, defender.size),
       atk_ele: read(attacker, :magic_atk_ele, spell_element),
