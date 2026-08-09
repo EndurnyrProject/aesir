@@ -278,6 +278,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "to_combatant/1 race2" do
+    test "carries the mob's secondary groups" do
+      base = build_mob_state()
+      state = %MobState{base | mob_data: %{base.mob_data | race_groups: [:golem]}}
+
+      assert MobState.to_combatant(state).race2 == [:golem]
+    end
+  end
+
   describe "to_combatant/1 class and equip_modifiers" do
     test "a normal mob (no :boss mode) combatant has class :normal" do
       state = build_mob_state()

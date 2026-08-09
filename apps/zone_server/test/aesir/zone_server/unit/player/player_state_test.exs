@@ -540,8 +540,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.attack_range == 1
     end
 
-    test "resolves the player's race to :player_human", %{state: state} do
-      assert PlayerState.to_combatant(state).race == :player_human
+    test "resolves the player's race and leaves secondary groups empty", %{state: state} do
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.race == :player_human
+      assert combatant.race2 == []
     end
 
     test "adds the passive range bonus to the weapon's attack range", %{state: state} do

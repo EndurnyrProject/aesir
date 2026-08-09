@@ -381,6 +381,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       },
       element: Map.get(modifiers, :element_override, mob_data.element),
       race: mob_data.race,
+      race2: mob_data.race_groups,
       size: mob_data.size,
       weapon: %{
         type: :fist,

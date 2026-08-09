@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CombatantTest do
       assert {:ok, combatant} = Combatant.new(attrs)
       assert combatant.position == nil
       assert combatant.map_name == nil
+      assert combatant.race2 == []
     end
   end
 

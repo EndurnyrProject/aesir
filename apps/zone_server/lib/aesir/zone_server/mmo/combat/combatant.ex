@@ -72,8 +72,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # Element data (for damage calculation)
     element: nil,
 
-    # Race data (for modifier calculation)
+    # Race data (secondary groups apply only to mobs; players and homunculi use [])
     race: nil,
+    race2: [],
 
     # Size data (for modifier calculation)
     size: nil,
@@ -155,6 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           },
           element: tuple() | atom(),
           race: atom(),
+          race2: [atom()],
           size: atom(),
           weapon: %{
             type: atom(),
