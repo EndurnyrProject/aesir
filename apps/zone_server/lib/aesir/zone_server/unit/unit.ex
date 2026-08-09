@@ -119,7 +119,19 @@ defmodule Aesir.ZoneServer.Unit do
   """
   @callback corpse?(state :: any()) :: boolean()
 
-  @optional_callbacks [get_custom_immunities: 1, get_process_pid: 1, to_combatant: 1]
+  @doc """
+  Optional: whether this unit resists being blown away by knockback. Only unit
+  types that model equipment (players) implement it; unit types without it are
+  never immune.
+  """
+  @callback knockback_immune?(state :: any()) :: boolean()
+
+  @optional_callbacks [
+    get_custom_immunities: 1,
+    get_process_pid: 1,
+    to_combatant: 1,
+    knockback_immune?: 1
+  ]
 
   @doc """
   Whether `snapshot` is a consistent living unit, dispatched to the

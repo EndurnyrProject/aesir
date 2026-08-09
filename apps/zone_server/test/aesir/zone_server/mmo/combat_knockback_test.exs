@@ -8,8 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -84,6 +86,33 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     {from_x, from_y} = @from
     assert {:ok, {151, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
     assert {:ok, {151, 150}} = Combat.pull_to(:mob, @mob_id, 155, 150)
+    refute_received {:"$gen_cast", {:movement, _movement}}
+  end
+
+  test "a player with the no_knockback equipment flag is not blown away" do
+    player_id = 3001
+
+    player =
+      PlayerStateFixture.build(%{
+        character_id: player_id,
+        stats: %{modifiers: %{equipment: %{no_knockback: 1}}}
+      })
+
+    stub(SpatialIndex, :get_unit_position, fn :player, ^player_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+
+    stub(UnitRegistry, :get_unit, fn :player, ^player_id ->
+      {:ok, {PlayerState, player, self()}}
+    end)
+
+    reject(&Cell.step_traversable?/3)
+    reject(&Broadcast.to_in_range/5)
+
+    {from_x, from_y} = @from
+    assert {:ok, {151, 150}} = Combat.knockback(:player, player_id, from_x, from_y, 5)
     refute_received {:"$gen_cast", {:movement, _movement}}
   end
 

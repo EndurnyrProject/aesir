@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
          {:ok, {module, state, pid}} <- displacement_owner(unit_type, unit_id),
          :ok <- ensure_living(state),
          {:ok, _map} <- MapCache.get(map_name) do
-      if module.is_boss?(state) do
+      if module.is_boss?(state) or knockback_immune?(module, state) do
         {:ok, {x, y}}
       else
         {dx, dy} = {sign(x - from_x), sign(y - from_y)}
@@ -74,6 +74,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
       {:ok, {x, y}}
     end
+  end
+
+  # A unit carrying the `:no_knockback` equipment flag resists being blown away,
+  # the same way a boss does. Only unit types that model equipment implement the
+  # optional `knockback_immune?/1` callback; the rest are never immune. Pull
+  # effects are not gated here.
+  @spec knockback_immune?(module(), any()) :: boolean()
+  defp knockback_immune?(module, state) do
+    function_exported?(module, :knockback_immune?, 1) and module.knockback_immune?(state)
   end
 
   defp displacement_owner(unit_type, unit_id) do

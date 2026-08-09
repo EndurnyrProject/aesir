@@ -939,6 +939,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def is_boss?(%__MODULE__{}), do: false
 
   @impl Aesir.ZoneServer.Unit
+  def knockback_immune?(%__MODULE__{stats: stats}) do
+    PlayerStats.get_equipment_modifier(stats, :no_knockback) > 0
+  end
+
+  @impl Aesir.ZoneServer.Unit
   def get_size(%__MODULE__{}), do: :medium
 
   @impl Aesir.ZoneServer.Unit
