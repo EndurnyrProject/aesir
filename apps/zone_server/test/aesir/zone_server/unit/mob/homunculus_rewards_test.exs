@@ -78,7 +78,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
     )
 
     assert_receive {:"$gen_cast", {:homunculus, {:gain_exp, 20, 10, "prontera"}}}
-    assert_receive {:progression, {:mob_kill_exp, 50, 25, :brute}}
+    assert_receive {:progression, {:mob_kill_exp, 50, 25, :brute, _mob_class}}
+  end
+
+  test "typed grants carry the killed boss's class" do
+    Application.put_env(:zone_server, :exp_bonus_attacker, 0)
+    on_exit(fn -> Application.delete_env(:zone_server, :exp_bonus_attacker) end)
+
+    player = player_state(1, "prontera", 100)
+    UnitRegistry.register_unit(:player, 1, PlayerState, player, self())
+    PubSub.subscribe(Aesir.PubSub, "player:1")
+    expect(LevelPenalty, :exp, fn 25, 50 -> 100 end)
+
+    state = reward_mob_state()
+    state = %{state | no_exp: false, mob_data: %{state.mob_data | modes: [:boss]}}
+
+    KillExp.distribute_typed(
+      [entry({:player, 1}, 1, 100, 0)],
+      100,
+      50,
+      25,
+      "prontera",
+      :brute,
+      state
+    )
+
+    assert_receive {:progression, {:mob_kill_exp, 100, 50, :brute, :boss}}
   end
 
   test "party equal-share-only recipients grant no companion EXP" do
@@ -122,8 +147,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
       :brute
     )
 
-    assert_receive {:progression, {:mob_kill_exp, 20, 10, :brute}}
-    assert_receive {:progression, {:mob_kill_exp, 20, 10, :brute}}
+    assert_receive {:progression, {:mob_kill_exp, 20, 10, :brute, _mob_class}}
+    assert_receive {:progression, {:mob_kill_exp, 20, 10, :brute, _mob_class}}
     refute_receive {:"$gen_cast", {:homunculus, {:gain_exp, 20, _amount, "prontera"}}}, 50
   end
 
@@ -182,7 +207,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
       :brute
     )
 
-    assert_receive {:progression, {:mob_kill_exp, 50, 25, :brute}}
+    assert_receive {:progression, {:mob_kill_exp, 50, 25, :brute, _mob_class}}
   end
 
   test "a Homunculus lethal hit broadcasts ordinary root-owned loot with its exact final source" do

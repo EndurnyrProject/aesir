@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
   death penalty), each driven through its real consumer with the backing status
   applied in the shared `StatusStorage`:
 
-    1. `SC_EXPBOOST` (Battle Manual) - a `{:mob_kill_exp, base, job, race}` grant routed
+    1. `SC_EXPBOOST` (Battle Manual) - a `{:mob_kill_exp, base, job, race, mob_class}` grant routed
        into the player's session yields the boosted base/job EXP via
        `ExperienceHandler`, measurably above an unbuffed control receiving the
        same grant.
@@ -61,8 +61,8 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
       flush_packets()
 
       # Default test mob grants 10 base / 5 job.
-      send(buffed.pid, {:progression, {:mob_kill_exp, 10, 5, :formless}})
-      send(control.pid, {:progression, {:mob_kill_exp, 10, 5, :formless}})
+      send(buffed.pid, {:progression, {:mob_kill_exp, 10, 5, :formless, :normal}})
+      send(control.pid, {:progression, {:mob_kill_exp, 10, 5, :formless, :normal}})
 
       buffed_prog = get_player_state(buffed.pid).stats.progression
       control_prog = get_player_state(control.pid).stats.progression
@@ -169,7 +169,7 @@ defmodule Aesir.ZoneServer.Integration.ConsumableBuffsPhase2IntegrationTest do
     grant_base = div(Leveling.next_base_exp(progression0), 2)
     grant_job = div(Leveling.next_job_exp(progression0), 2)
 
-    send(player.pid, {:progression, {:mob_kill_exp, grant_base, grant_job, :formless}})
+    send(player.pid, {:progression, {:mob_kill_exp, grant_base, grant_job, :formless, :normal}})
 
     progression = get_player_state(player.pid).stats.progression
     assert progression.base_exp == grant_base

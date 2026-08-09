@@ -102,9 +102,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
     end
   end
 
-  # Same capture as `capture_grant/1`, but through the kill-sourced arity that
-  # carries the dead mob's race, with `equipment` bonuses worn.
-  defp capture_race_grant(equipment, mob_race, modifiers \\ %{}) do
+  # Same capture as `capture_grant/1`, but through the kill-sourced arity with
+  # the dead mob's race and class, with `equipment` bonuses worn.
+  defp capture_kill_grant(equipment, mob_race, mob_class \\ :normal, modifiers \\ %{}) do
     test_pid = self()
 
     stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> modifiers end)
@@ -114,7 +114,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       {progression, 0, 0}
     end)
 
-    ExperienceHandler.handle_gain_exp(100, 100, mob_race, state_wearing(equipment))
+    ExperienceHandler.handle_gain_exp(100, 100, mob_race, mob_class, state_wearing(equipment))
 
     assert_received {:granted, base, job}
     {base, job}
@@ -128,47 +128,57 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
     %{state | game_state: %{game_state | stats: stats}}
   end
 
-  describe "handle_gain_exp/4 per-race equipment EXP bonus" do
+  describe "handle_gain_exp/5 kill equipment EXP bonuses" do
+    test "a matching class bonus applies to base and job" do
+      assert {120, 120} == capture_kill_grant(%{{:exp_add_class, :boss} => 20}, :brute, :boss)
+    end
+
+    test "an :all class bonus stacks additively with the matching race bonus" do
+      equipment = %{{:exp_add_race, :brute} => 20, {:exp_add_class, :all} => 10}
+
+      assert {130, 130} == capture_kill_grant(equipment, :brute, :boss)
+    end
+
     test "applies to base and job when the killed mob's race matches" do
-      assert {120, 120} == capture_race_grant(%{{:exp_add_race, :brute} => 20}, :brute)
+      assert {120, 120} == capture_kill_grant(%{{:exp_add_race, :brute} => 20}, :brute)
     end
 
     test "does not apply when the killed mob is of another race" do
-      assert {100, 100} == capture_race_grant(%{{:exp_add_race, :brute} => 20}, :undead)
+      assert {100, 100} == capture_kill_grant(%{{:exp_add_race, :brute} => 20}, :undead)
     end
 
     test "an :all bonus applies to every race" do
       equipment = %{{:exp_add_race, :all} => 10}
 
       for race <- [:formless, :undead, :brute, :plant, :insect, :demon, :angel, :dragon] do
-        assert {110, 110} == capture_race_grant(equipment, race)
+        assert {110, 110} == capture_kill_grant(equipment, race)
       end
     end
 
     test "a race-specific bonus sums with the :all bonus" do
       equipment = %{{:exp_add_race, :brute} => 20, {:exp_add_race, :all} => 10}
 
-      assert {130, 130} == capture_race_grant(equipment, :brute)
-      assert {110, 110} == capture_race_grant(equipment, :fish)
+      assert {130, 130} == capture_kill_grant(equipment, :brute)
+      assert {110, 110} == capture_kill_grant(equipment, :fish)
     end
 
     test "a mob of the player race reads the :player_human bonus" do
-      assert {115, 115} == capture_race_grant(%{{:exp_add_race, :player_human} => 15}, :player)
+      assert {115, 115} == capture_kill_grant(%{{:exp_add_race, :player_human} => 15}, :player)
     end
 
     test "no equipment leaves the grant untouched" do
-      assert {100, 100} == capture_race_grant(%{}, :brute)
+      assert {100, 100} == capture_kill_grant(%{}, :brute)
     end
 
     test "stacks additively with the exp_rate status modifier, truncating once" do
       equipment = %{{:exp_add_race, :brute} => 25}
 
       assert {175, 195} ==
-               capture_race_grant(equipment, :brute, %{exp_rate: 50, job_exp_rate: 20})
+               capture_kill_grant(equipment, :brute, :normal, %{exp_rate: 50, job_exp_rate: 20})
     end
 
     test "a nil race grants no per-race bonus" do
-      assert {100, 100} == capture_race_grant(%{{:exp_add_race, :all} => 50}, nil)
+      assert {100, 100} == capture_kill_grant(%{{:exp_add_race, :all} => 50}, nil)
     end
   end
 

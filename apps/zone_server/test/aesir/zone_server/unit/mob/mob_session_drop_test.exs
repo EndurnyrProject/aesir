@@ -82,7 +82,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
                                                                   _job,
                                                                   _level,
                                                                   _map,
-                                                                  _race ->
+                                                                  _race,
+                                                                  _class_or_state ->
       :ok
     end)
 
@@ -126,7 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionDropTest do
   test "no_exp and no_drops suppress EXP distribution and drop generation" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
     stub(Coordinator, :mob_died, fn _map, _id, _killer -> :ok end)
-    reject(&Aesir.ZoneServer.Unit.Mob.KillExp.distribute_typed/6)
+    reject(&Aesir.ZoneServer.Unit.Mob.KillExp.distribute_typed/7)
 
     :ok = PubSub.subscribe(Aesir.PubSub, "player:42")
 

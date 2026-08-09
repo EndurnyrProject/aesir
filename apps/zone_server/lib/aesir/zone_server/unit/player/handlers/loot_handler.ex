@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
 
   @doc """
   EXP for the kill is granted separately, per eligible typed contributor, via
-  `{:progression, {:mob_kill_exp, base, job, mob_race}}`
-  (`Unit.Mob.KillExp.distribute_typed/6`); this handler only rolls and places
+  `{:progression, {:mob_kill_exp, base, job, mob_race, mob_class}}`
+  (`Unit.Mob.KillExp.distribute_typed/7`); this handler only rolls and places
   this reward-owner session's drops. Ore Discovery additionally requires an
   actual player final source.
   """

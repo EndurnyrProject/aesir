@@ -8,8 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   Recalculated stats, experience bars and skill points are pushed to the client
   and persisted.
 
-  Percent EXP sources — the `:exp_rate`/`:job_exp_rate` status modifiers and the
-  per-race equipment bonus of a mob kill — stack **additively** into a single
+  Percent EXP sources — the `:exp_rate`/`:job_exp_rate` status modifiers and
+  the per-race/per-class equipment bonuses of a mob kill — stack **additively** into a single
   percentage applied once to the incoming amount, rather than as successive
   multiplications. Two 10% sources therefore grant 20%, not 21%, and the amount
   is truncated exactly once instead of once per source.
@@ -28,32 +28,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   @doc """
   Applies gained base/job experience to the session, leveling up as needed.
 
-  Equivalent to `handle_gain_exp/4` with no source race: used by experience that
-  did not come from a kill (script rewards), which no per-race equipment bonus
-  applies to.
+  Equivalent to `handle_gain_exp/5` with no source race or class: used by
+  experience that did not come from a kill (script rewards), which no equipment
+  kill bonus applies to.
   """
   @spec handle_gain_exp(non_neg_integer(), non_neg_integer(), map()) :: {:noreply, map()}
   def handle_gain_exp(base_amount, job_amount, state) do
-    handle_gain_exp(base_amount, job_amount, nil, state)
+    handle_gain_exp(base_amount, job_amount, nil, nil, state)
   end
 
   @doc """
-  Applies gained base/job experience from killing a mob of race `mob_race`,
-  leveling up as needed.
+  Applies gained base/job experience from killing a mob of race `mob_race` and
+  class `mob_class`, leveling up as needed.
 
-  `mob_race` selects the player's `bonus2 bExpAddRace` equipment bonus, which is
-  summed with the wildcard `:all` entry and added to the flat `:exp_rate` /
-  `:job_exp_rate` status percentages before the single rate application. It
-  boosts base and job experience alike. A `nil` race grants no per-race bonus.
+  The matching and wildcard race/class equipment bonuses are added to the flat
+  `:exp_rate` / `:job_exp_rate` status percentages before the single rate
+  application. They boost base and job experience alike. A `nil` source axis
+  grants no equipment bonus.
   """
-  @spec handle_gain_exp(non_neg_integer(), non_neg_integer(), atom() | nil, map()) ::
-          {:noreply, map()}
-  def handle_gain_exp(base_amount, job_amount, mob_race, %{game_state: game_state} = state) do
+  @spec handle_gain_exp(
+          non_neg_integer(),
+          non_neg_integer(),
+          atom() | nil,
+          atom() | nil,
+          map()
+        ) :: {:noreply, map()}
+  def handle_gain_exp(
+        base_amount,
+        job_amount,
+        mob_race,
+        mob_class,
+        %{game_state: game_state} = state
+      ) do
     char_id = game_state.character_id
     old_base_level = game_state.stats.progression.base_level
 
     modifiers = ModifierCalculator.get_all_modifiers(:player, char_id)
-    exp_rate = Map.get(modifiers, :exp_rate, 0) + exp_add_race(game_state.stats, mob_race)
+
+    exp_rate =
+      Map.get(modifiers, :exp_rate, 0) +
+        exp_add_race(game_state.stats, mob_race) +
+        exp_add_class(game_state.stats, mob_class)
+
     job_exp_rate = Map.get(modifiers, :job_exp_rate, 0)
 
     base_amount = boost_exp(base_amount, 100 + exp_rate)
@@ -103,10 +119,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
       Map.get(equipment, {:exp_add_race, :all}, 0)
   end
 
-  # Mob definitions spell the player race `:player`, while the item-script race
+  # The mob data spells the player race `:player`, while the item-script race
   # vocabulary (and every other combat race read) spells it `:player_human`.
   defp bonus_race(:player), do: RaceModifiers.player_race()
   defp bonus_race(race) when is_atom(race), do: race
+
+  defp exp_add_class(_stats, nil), do: 0
+
+  defp exp_add_class(stats, mob_class) do
+    equipment = stats.modifiers.equipment
+
+    Map.get(equipment, {:exp_add_class, mob_class}, 0) +
+      Map.get(equipment, {:exp_add_class, :all}, 0)
+  end
 
   defp maybe_full_heal(stats, 0), do: stats
 

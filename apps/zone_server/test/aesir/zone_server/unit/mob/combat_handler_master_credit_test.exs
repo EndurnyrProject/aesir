@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerMasterCreditTest do
       CombatHandler.handle_apply_damage(900, {:mob, rootless_mob_id}, damaged)
 
     assert killed.is_dead
-    assert_receive {:progression, {:mob_kill_exp, 100, 50, :formless}}
+    assert_receive {:progression, {:mob_kill_exp, 100, 50, :formless, _mob_class}}
     refute_receive {:loot, _event}, 50
   end
 

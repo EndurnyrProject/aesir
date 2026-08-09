@@ -403,10 +403,10 @@ defmodule Aesir.ZoneServer.Integration.BossMonsterIntegrationTest do
 
   defp collect_mvp_exp_broadcasts(acc \\ []) do
     receive do
-      {:progression, {:mob_kill_exp, @mvp_exp, 0, _race}} ->
+      {:progression, {:mob_kill_exp, @mvp_exp, 0, _race, _mob_class}} ->
         collect_mvp_exp_broadcasts([{@mvp_exp, 0} | acc])
 
-      {:progression, {:mob_kill_exp, _base, _job, _race}} ->
+      {:progression, {:mob_kill_exp, _base, _job, _race, _mob_class}} ->
         collect_mvp_exp_broadcasts(acc)
     after
       200 -> acc

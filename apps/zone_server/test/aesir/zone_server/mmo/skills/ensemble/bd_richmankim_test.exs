@@ -109,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
     end)
 
     assert {:noreply, _state} =
-             ExperienceHandler.handle_gain_exp(100, 100, :brute, session_state(caster))
+             ExperienceHandler.handle_gain_exp(100, 100, :brute, :normal, session_state(caster))
 
     assert_received {:kill_experience, ^expected_experience, ^expected_experience}
   end

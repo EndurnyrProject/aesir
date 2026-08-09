@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   # Distributes typed EXP to every eligible contributor
-  # (`KillExp.distribute_typed/6`), grants the MVP reward for an MVP-tier boss,
+  # (`KillExp.distribute_typed/7`), grants the MVP reward for an MVP-tier boss,
   # then sends quest credit and drop rolling to the killing blow's reward-owner
   # session when one exists. A rootless final source still completes shared
   # rewards but has no session to receive kill-local rewards.
@@ -176,7 +176,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
         mob_data.job_exp,
         mob_data.level,
         state.map_name,
-        mob_data.race
+        mob_data.race,
+        state
       )
     end
 

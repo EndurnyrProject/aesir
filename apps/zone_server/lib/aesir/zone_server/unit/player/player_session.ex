@@ -706,11 +706,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # Progression: job change and stat/skill resets (ProgressionHandler), plus
   # each contributing attacker's final damage-based EXP grant for a mob kill
   # (already scaled by the damage/bonus/penalty math; only the killed mob's
-  # race is still ours to apply, through this session's per-race equipment EXP
-  # bonus).
+  # race and class are still ours to apply, through this session's equipment
+  # EXP bonuses).
   @impl true
-  def handle_info({:progression, {:mob_kill_exp, base, job, mob_race}}, state) do
-    ExperienceHandler.handle_gain_exp(base, job, mob_race, state)
+  def handle_info({:progression, {:mob_kill_exp, base, job, mob_race, mob_class}}, state) do
+    ExperienceHandler.handle_gain_exp(base, job, mob_race, mob_class, state)
   end
 
   @impl true
