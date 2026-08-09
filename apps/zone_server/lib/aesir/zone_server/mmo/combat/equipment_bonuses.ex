@@ -51,6 +51,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   Dragonology's `RaceModifiers.dragonology_resist_rate/2`, though Faith is read
   here so both damage classes get it from one place. Mobs and callers without
   statuses pass `%{}` and read equipment only.
+
+  The element resist family has two equipment channels that stack: `:subele`
+  keyed on the incoming attack's element, and `:sub_def_ele` keyed on the
+  attacker's own defensive element (its armor/innate element). Both read off
+  the defender's equipment.
   """
   @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom(), map()) :: %{
           race_class: rate(),
@@ -69,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
           status_subrace(status_modifiers, attacker.race),
       element:
         read(defender, :subele, attack_element) +
+          read(defender, :sub_def_ele, element_atom(attacker.element)) +
           status_subele(status_modifiers, attack_element) +
           faith_resist_rate(defender, attack_element) +
           skin_temper_resist_rate(defender, attack_element),

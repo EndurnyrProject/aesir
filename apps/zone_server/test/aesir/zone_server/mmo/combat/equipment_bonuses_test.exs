@@ -107,6 +107,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              }
     end
 
+    test "sub_def_ele resists by the attacker's defensive element, not the attack element" do
+      defender =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:sub_def_ele, :earth} => 12, {:sub_def_ele, :all} => 3})
+
+      # Attacker's own element is :earth while the incoming hit is :fire, so a
+      # match proves the key is read off the attacker's defensive element.
+      attacker = CombatTestHelper.create_mob_combatant(element: :earth)
+
+      assert %{element: 15} = EquipmentBonuses.damage_taken_rates(defender, attacker, :fire)
+    end
+
     test "empty equip_modifiers returns all zeros" do
       defender = CombatTestHelper.create_mob_combatant()
       attacker = CombatTestHelper.create_player_combatant()
