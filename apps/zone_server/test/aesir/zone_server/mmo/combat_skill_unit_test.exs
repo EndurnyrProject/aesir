@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, damage, nil ->
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id ->
       send(test_pid, {:damage, damage})
       :ok
     end)
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, damage, nil ->
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id ->
       send(test_pid, {:damage, damage})
       :ok
     end)
@@ -199,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, damage, nil ->
+    stub(MobSession, :apply_damage, fn ^test_pid, damage, @caster_id ->
       send(test_pid, {:damage, damage})
       :ok
     end)
@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     end)
 
     stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, _packet -> :ok end)
-    stub(MobSession, :apply_damage, fn ^test_pid, _damage, nil -> :ok end)
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id -> :ok end)
 
     stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, opts ->
       send(test_pid, {:skill_id, opts[:skill_id]})
@@ -290,7 +290,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       :ok
     end)
 
-    stub(MobSession, :apply_damage, fn ^test_pid, _damage, nil -> :ok end)
+    stub(MobSession, :apply_damage, fn ^test_pid, _damage, @caster_id -> :ok end)
     stub(MobSession, :apply_walk_delay, fn ^test_pid, 600 -> send(test_pid, :walk_delayed) end)
 
     assert :ok =
