@@ -151,4 +151,66 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
              ] = DropCalculator.roll(drops, 0, 1, 1, 0, "prontera", 150, 150)
     end
   end
+
+  describe "roll_equipment_drops/5" do
+    setup do
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", MapData.new("prontera", 300, 300)})
+
+      stub(ItemManagement, :get_item_by_id, fn
+        501 -> {:ok, %{id: 501, type: :healing}}
+        1201 -> {:ok, %{id: 1201, type: :weapon}}
+        _ -> {:error, :item_not_found}
+      end)
+
+      :ok
+    end
+
+    test "a guaranteed unconditional bonus drops its item" do
+      mods = %{{:add_monster_drop, 501} => 10_000}
+
+      assert [{501, 1, 150, 150, true}] =
+               DropCalculator.roll_equipment_drops(mods, :brute, "prontera", 150, 150)
+    end
+
+    test "a zero-chance bonus never drops" do
+      mods = %{{:add_monster_drop, 501} => 0}
+
+      assert [] = DropCalculator.roll_equipment_drops(mods, :brute, "prontera", 150, 150)
+    end
+
+    test "a race-gated bonus drops only when the mob race matches" do
+      mods = %{{:add_monster_drop, 501, :brute} => 10_000}
+
+      assert [{501, 1, _, _, true}] =
+               DropCalculator.roll_equipment_drops(mods, :brute, "prontera", 150, 150)
+
+      assert [] = DropCalculator.roll_equipment_drops(mods, :demon, "prontera", 150, 150)
+    end
+
+    test "an :all-race gated bonus drops against any mob race" do
+      mods = %{{:add_monster_drop, 501, :all} => 10_000}
+
+      assert [{501, 1, _, _, true}] =
+               DropCalculator.roll_equipment_drops(mods, :demon, "prontera", 150, 150)
+    end
+
+    test "a dropped weapon is unidentified" do
+      mods = %{{:add_monster_drop, 1201} => 10_000}
+
+      assert [{1201, 1, _, _, false}] =
+               DropCalculator.roll_equipment_drops(mods, :brute, "prontera", 150, 150)
+    end
+
+    test "an unresolvable item id is skipped" do
+      mods = %{{:add_monster_drop, 999_999} => 10_000}
+
+      assert [] = DropCalculator.roll_equipment_drops(mods, :brute, "prontera", 150, 150)
+    end
+
+    test "ignores non-drop equipment modifiers" do
+      mods = %{:str => 5, {:addrace, :brute} => 20}
+
+      assert [] = DropCalculator.roll_equipment_drops(mods, :brute, "prontera", 150, 150)
+    end
+  end
 end

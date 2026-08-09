@@ -65,6 +65,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :long_atk_def,
     :hp_gain_value,
     :sp_gain_value,
+    :magic_hp_gain_value,
+    :heal_power2,
     :short_weapon_damage_return,
     :fixcast_rate,
     :item_heal_rate,
@@ -270,7 +272,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
     "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent},
     "bmagicaddrace2" => %{family: :magic_addrace2, param: :race2, unit: :percent},
-    "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent}
+    "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent},
+    "bignoremdefclassrate" => %{family: :ignore_mdef_class, param: :class, unit: :percent},
+    "bsubrace2" => %{family: :subrace2, param: :race2, unit: :percent},
+    "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k}
   }
 
   # Families reachable only through the single-argument flag-param keys
@@ -406,6 +411,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "returns :error for numeric and parameterized keys" do
       assert BonusKeys.flag_param_schema("bStr") == :error
       assert BonusKeys.flag_param_schema("bAddRace") == :error
+    end
+  end
+
+  describe "bonus3_drop_key?/1" do
+    test "is true for the monster-drop key, any case" do
+      assert BonusKeys.bonus3_drop_key?("bAddMonsterDropItem")
+      assert BonusKeys.bonus3_drop_key?("baddmonsterdropitem")
+      assert BonusKeys.bonus3_drop_key?("BADDMONSTERDROPITEM")
+    end
+
+    test "is false for flag-arg and other keys" do
+      assert BonusKeys.bonus3_drop_key?("bAddEff") == false
+      assert BonusKeys.bonus3_drop_key?("bStr") == false
     end
   end
 

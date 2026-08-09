@@ -54,6 +54,49 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @doc """
+  Rolls the killer's equipment bonus item drops (`bAddMonsterDropItem`) and
+  returns the items that dropped, scattered around `{x, y}` like the mob's own
+  drops.
+
+  Reads the killer's merged equipment modifiers for `{:add_monster_drop, item_id}`
+  (unconditional) and `{:add_monster_drop, item_id, race}` (dropped only when
+  `mob_race` matches, or the entry's race is `:all`) entries. Each entry's value
+  is a chance out of 10_000 (`n/100 %`) rolled independently. Entries whose item
+  id no longer resolves are skipped.
+  """
+  @spec roll_equipment_drops(map(), atom() | nil, String.t(), integer(), integer()) :: [drop()]
+  def roll_equipment_drops(equip_modifiers, mob_race, map_name, x, y)
+      when is_map(equip_modifiers) do
+    equip_modifiers
+    |> Enum.flat_map(&roll_bonus_slot(&1, mob_race))
+    |> scatter(map_name, x, y)
+  end
+
+  @spec roll_bonus_slot({term(), term()}, atom() | nil) :: [{integer(), integer(), boolean()}]
+  defp roll_bonus_slot({{:add_monster_drop, nameid}, chance}, _mob_race)
+       when is_integer(nameid) and is_integer(chance),
+       do: maybe_bonus_drop(nameid, chance)
+
+  defp roll_bonus_slot({{:add_monster_drop, nameid, race}, chance}, mob_race)
+       when is_integer(nameid) and is_integer(chance) and (race == :all or race == mob_race),
+       do: maybe_bonus_drop(nameid, chance)
+
+  defp roll_bonus_slot(_entry, _mob_race), do: []
+
+  @spec maybe_bonus_drop(integer(), integer()) :: [{integer(), integer(), boolean()}]
+  defp maybe_bonus_drop(nameid, chance) do
+    case ItemManagement.get_item_by_id(nameid) do
+      {:ok, %{type: type}} ->
+        if :rand.uniform(@max_rate) <= chance,
+          do: [{nameid, 1, type not in [:weapon, :armor]}],
+          else: []
+
+      {:error, _reason} ->
+        []
+    end
+  end
+
+  @doc """
   Computes the final drop rate (out of 10_000) for a slot after the LUK hook,
   the caller-supplied drop bonus (applied before the cap, mirroring rAthena
   `mob.cpp:2837-2862`), the 90% cap, the renewal level penalty, and the

@@ -111,6 +111,46 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :sp_gain_value, 5}]} = compile("bonus bSPGainValue,5;")
     end
 
+    test "bHealPower2 and bMagicHPGainValue compile to their flat destinations" do
+      assert {:ok, [{:bonus, :heal_power2, 10}]} = compile("bonus bHealPower2,10;")
+      assert {:ok, [{:bonus, :magic_hp_gain_value, 30}]} = compile("bonus bMagicHPGainValue,30;")
+    end
+
+    test "bIgnoreMdefClassRate emits a class-keyed ignore-mdef bonus" do
+      assert {:ok, [{:bonus, {:ignore_mdef_class, :boss}, 50}]} =
+               compile("bonus2 bIgnoreMdefClassRate,Class_Boss,50;")
+    end
+
+    test "bSubRace2 emits a race2-keyed sub bonus" do
+      assert {:ok, [{:bonus, {:subrace2, :goblin}, 15}]} =
+               compile("bonus2 bSubRace2,RC2_Goblin,15;")
+    end
+
+    test "bAddMonsterDropItem bonus2 emits an item-keyed drop chance" do
+      assert {:ok, [{:bonus, {:add_monster_drop, 519}, 100}]} =
+               compile("bonus2 bAddMonsterDropItem,519,100;")
+    end
+
+    test "bAddMonsterDropItem bonus2 accepts a refine-scaled chance" do
+      assert {:ok, [{:bonus, {:add_monster_drop, 7060}, {:*, 10, :refine}}]} =
+               compile("bonus2 bAddMonsterDropItem,7060,10*getrefine();")
+    end
+
+    test "bAddMonsterDropItem bonus3 emits a race-gated {family, item, race} drop" do
+      assert {:ok, [{:bonus, {:add_monster_drop, 517, :brute}, 3000}]} =
+               compile("bonus3 bAddMonsterDropItem,517,RC_Brute,3000;")
+    end
+
+    test "bAddMonsterDropItem bonus3 rejects a non-literal item id" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus3 bAddMonsterDropItem,getrefine(),RC_Brute,3000;")
+    end
+
+    test "bAddMonsterDropItem bonus3 rejects the RC_Boss sentinel as a race" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus3 bAddMonsterDropItem,517,RC_Boss,3000;")
+    end
+
     test "bAtkEle compiles to a :set instruction carrying the element" do
       assert {:ok, [{:set, :atk_ele, :fire}]} = compile("bonus bAtkEle,Ele_Fire;")
     end
@@ -516,7 +556,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
     test "unsupported bonus3 keys, and bonus4/5, stay unsupported commands" do
       assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
-               compile("bonus3 bAddMonsterDropItem,501,2,100;")
+               compile("bonus3 bAddMonsterDropItemGroup,IG_Jewel,RC_Brute,100;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
                compile("bonus4 bAutoSpell,MG_FIREBOLT,5,20,0;")

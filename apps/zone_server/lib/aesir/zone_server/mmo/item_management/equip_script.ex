@@ -125,9 +125,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   tuple for parameterized `bonus2` keys — `param` is an atom drawn from the
   family's `BonusKeys` domain (race/element/size/class/race2), a positive
   integer skill or item id, or a positive-integer interval in milliseconds for
-  the periodic HP-regen/loss families.
+  the periodic HP-regen/loss families. The race-gated monster-drop bonus
+  (`bonus3 bAddMonsterDropItem,iid,r,n`) uses a three-element
+  `{family, item_id, race}` tuple.
   """
-  @type dest :: atom() | {atom(), atom() | pos_integer()}
+  @type dest :: atom() | {atom(), atom() | pos_integer()} | {atom(), pos_integer(), atom()}
 
   @typedoc """
   A constant-valued destination assignment, for the `bonus` keys whose argument
@@ -340,6 +342,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       {:ok, kind} when kind in [:skill, :item, :interval] -> validate_skill_param!(dest, param)
       {:ok, domain} -> validate_domain_param!(dest, domain, param)
       :error -> malformed!("bonus destination", dest)
+    end
+  end
+
+  # `bonus3 bAddMonsterDropItem,iid,r,n` renders as a three-element destination
+  # literal, which quotes to a `{:{}, _, elems}` node rather than a bare tuple.
+  defp validate_destination!({:{}, _, [family, id, race]})
+       when is_atom(family) and is_integer(id) and id > 0 and is_atom(race) do
+    with {:ok, :item} <- BonusKeys.family_param(family),
+         true <- race in BonusKeys.param_domain(:race) do
+      {family, id, race}
+    else
+      _ -> malformed!("bonus destination", {family, id, race})
     end
   end
 

@@ -491,6 +491,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert game_state.stats.current_state.hp == 80
     end
 
+    test "adds the equipment heal_power2 bonus to the received-heal scaling" do
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
+        %{received_heal_rate: 20}
+      end)
+
+      state =
+        50
+        |> build_state(:idle)
+        |> put_in(
+          [
+            Access.key!(:game_state),
+            Access.key!(:stats),
+            Access.key!(:modifiers),
+            Access.key!(:equipment)
+          ],
+          %{heal_power2: 30}
+        )
+
+      # 20 base * (100 + 20 status + 30 equip)/100 = 30 -> hp 50 + 30 = 80
+      {:noreply, %{game_state: game_state}} = HealthHandler.apply_heal(20, nil, state)
+
+      assert game_state.stats.current_state.hp == 80
+    end
+
     test "leaves the heal unchanged with no received_heal_rate" do
       {:noreply, %{game_state: game_state}} =
         HealthHandler.apply_heal(20, nil, build_state(50, :idle))

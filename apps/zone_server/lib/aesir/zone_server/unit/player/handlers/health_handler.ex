@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     stats = state.game_state.stats
     max_hp = stats.derived_stats.max_hp
     char_id = state.game_state.character_id
-    scaled = scale_received_heal(amount, char_id)
+    scaled = scale_received_heal(amount, char_id, stats)
     new_hp = min(stats.current_state.hp + scaled, max_hp)
 
     updated_stats = %{stats | current_state: %{stats.current_state | hp: new_hp}}
@@ -190,15 +190,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def apply_heal(_amount, _source_id, state), do: {:noreply, state}
 
   # Scales a heal by the target's `received_heal_rate` (SC_INCHEALRATE) percent
-  # delta before it is applied (rAthena `skill.cpp:671-675`). Natural regen is
-  # not routed here, so it never double-dips this bonus.
-  defp scale_received_heal(amount, char_id) do
-    rate =
+  # delta before it is applied. The status delta (`received_heal_rate`,
+  # SC_INCHEALRATE) and the equipment `heal_power2` bonus (heal received from
+  # skills) add together. Natural regen is not routed here, so it never
+  # double-dips this bonus.
+  defp scale_received_heal(amount, char_id, stats) do
+    status_rate =
       :player
       |> ModifierCalculator.get_all_modifiers(char_id)
       |> Map.get(:received_heal_rate, 0)
 
-    div(amount * (100 + rate), 100)
+    equip_rate = Map.get(stats.modifiers.equipment, :heal_power2, 0)
+
+    div(amount * (100 + status_rate + equip_rate), 100)
   end
 
   defp potion_recipient_terms(%{game_state: %{stats: stats}}) do

@@ -112,6 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bspeedrate" => :movement_speed,
     "bfixedcast" => :fixed_cast,
     "bhealpower" => :heal_power,
+    "bhealpower2" => :heal_power2,
     "bcritatkrate" => :crit_atk_rate,
     "bshortatkrate" => :short_atk_rate,
     "bperfecthitaddrate" => :perfect_hit,
@@ -119,6 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "blongatkdef" => :long_atk_def,
     "bhpgainvalue" => :hp_gain_value,
     "bspgainvalue" => :sp_gain_value,
+    "bmagichpgainvalue" => :magic_hp_gain_value,
     "bshortweapondamagereturn" => :short_weapon_damage_return,
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
@@ -161,7 +163,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
     "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent},
     "bmagicaddrace2" => %{family: :magic_addrace2, param: :race2, unit: :percent},
-    "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent}
+    "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent},
+    "bignoremdefclassrate" => %{family: :ignore_mdef_class, param: :class, unit: :percent},
+    "bsubrace2" => %{family: :subrace2, param: :race2, unit: :percent},
+    "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k}
   }
 
   @value_keys %{
@@ -211,6 +216,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
                       "bsubsize",
                       "bsubclass"
                     ])
+
+  # `bonus3` keys whose third argument is a genuine second param, not a droppable
+  # flag: `bonus3 bAddMonsterDropItem,iid,r,n` gates the drop on the slain mob's
+  # race. The transpiler emits a three-element `{family, item_id, race}`
+  # destination for these, distinct from the two-argument `bonus2` form's
+  # `{family, item_id}`.
+  @bonus3_drop_keys MapSet.new(["baddmonsterdropitem"])
 
   @race_domain [
     :formless,
@@ -325,6 +337,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @spec bonus3_flag_key?(String.t()) :: boolean()
   def bonus3_flag_key?(name) when is_binary(name),
     do: MapSet.member?(@bonus3_flag_keys, String.downcase(name))
+
+  @doc """
+  Whether a `bonus3` key's third argument is a race param gating a monster-drop
+  bonus (`bonus3 bAddMonsterDropItem,iid,r,n`) rather than a droppable flag. The
+  transpiler resolves such keys to a `{family, item_id, race}` destination.
+  Returns `false` for every other key (any case).
+  """
+  @spec bonus3_drop_key?(String.t()) :: boolean()
+  def bonus3_drop_key?(name) when is_binary(name),
+    do: MapSet.member?(@bonus3_drop_keys, String.downcase(name))
 
   @doc """
   The deduplicated set of family atoms every recognized `bonus2` and

@@ -70,7 +70,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     status-infliction family), whose third argument is a trigger-condition flag
     rather than a value: the leading `param, amount` pair is identical to the
     key's `bonus2` form, so it resolves through the same param schema and the
-    flag is dropped. Every other `bonus3` key, and `bonus4`/`bonus5`, parse as
+    flag is dropped.
+  - `bonus3 bAddMonsterDropItem,iid,r,n` — for the drop key in
+    `BonusKeys.bonus3_drop_key?/1`, whose third argument is a genuine race param
+    gating the bonus drop: emits a three-element `{family, item_id, race}`
+    destination. Every other `bonus3` key, and `bonus4`/`bonus5`, parse as
     ordinary commands and stay unsupported.
   - `skill <skill id>,<level>{,<flag>}` — `{:grant_skill, id, expr}`, granting the
     wearer a castable skill at `level` while the item is worn. The skill id
@@ -104,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @type detail :: term()
-  @type dest :: atom() | {atom(), atom() | integer()}
+  @type dest :: atom() | {atom(), atom() | integer()} | {atom(), integer(), atom()}
 
   @arith_ops [:+, :-, :*, :/]
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
@@ -263,11 +267,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # A `bonus3` key whose third argument is a trigger-condition flag has the same
   # leading `param, amount` pair as its `bonus2` form; it reuses that key's param
   # schema and drops the flag. Every other `bonus3` shape stays unsupported.
-  defp compile_instr({:cmd, "bonus3", [{:name, key}, param_ast, amount, _flag]}, env) do
-    if BonusKeys.bonus3_flag_key?(key) do
-      compile_param_bonus(key, param_ast, amount, env)
-    else
-      unsupported({:unsupported_command, "bonus3"})
+  defp compile_instr({:cmd, "bonus3", [{:name, key}, first_ast, second_ast, third_ast]}, env) do
+    cond do
+      BonusKeys.bonus3_drop_key?(key) ->
+        compile_drop_bonus3(key, first_ast, second_ast, third_ast, env)
+
+      BonusKeys.bonus3_flag_key?(key) ->
+        compile_param_bonus(key, first_ast, second_ast, env)
+
+      true ->
+        unsupported({:unsupported_command, "bonus3"})
     end
   end
 
@@ -284,6 +293,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
+
+  # `bonus3 bAddMonsterDropItem,iid,r,n` gates a bonus item drop on the slain
+  # mob's race: the item id is a verbatim positive literal, the race a race
+  # constant, and the chance an amount expression. Emits a three-element
+  # `{family, item_id, race}` destination the loot roll reads only when the mob's
+  # race matches. The `RC_Boss` sentinel is not a real race and is unsupported.
+  @spec compile_drop_bonus3(String.t(), term(), term(), term(), %{
+          String.t() => EquipScript.expr()
+        }) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_drop_bonus3(key, item_ast, race_ast, amount_ast, env) do
+    with {:ok, %{family: family, param: :item}} <- param_schema(key),
+         {:ok, item_id} <- drop_item_id(item_ast),
+         {:ok, race} <- resolve_drop_race(race_ast),
+         {:ok, expr} <- compile_expr(amount_ast, env) do
+      {:ok, {:bonus, {family, item_id, race}, expr}}
+    end
+  end
+
+  @spec drop_item_id(term()) :: {:ok, pos_integer()} | {:error, {:unsupported, detail()}}
+  defp drop_item_id({:int, id}) when id > 0, do: {:ok, id}
+  defp drop_item_id(other), do: unsupported({:unresolved_param, other})
+
+  @spec resolve_drop_race(term()) :: {:ok, atom()} | {:error, {:unsupported, detail()}}
+  defp resolve_drop_race({:name, const}) do
+    case resolve(&Resolver.resolve_race/1, const) do
+      {:ok, {:class, :boss}} -> unsupported({:unresolved_param, const})
+      {:ok, race} -> {:ok, race}
+      {:error, _} = error -> error
+    end
+  end
+
+  defp resolve_drop_race(other), do: unsupported({:unresolved_param, other})
 
   @spec compile_grant_skill(term(), term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}

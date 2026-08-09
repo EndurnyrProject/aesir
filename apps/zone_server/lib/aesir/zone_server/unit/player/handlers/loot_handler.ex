@@ -87,9 +87,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
     drop_bonus =
       :player |> ModifierCalculator.get_all_modifiers(char_id) |> Map.get(:drop_rate, 0)
 
+    equip_drops =
+      DropCalculator.roll_equipment_drops(
+        stats.modifiers.equipment,
+        Map.get(payload, :mob_race),
+        map,
+        x,
+        y
+      )
+
     items =
       drops
       |> DropCalculator.roll(luk, base_level, mob_level, drop_bonus, map, x, y)
+      |> Kernel.++(equip_drops)
       |> maybe_discover_ore(
         stats.progression.learned_skills,
         x,

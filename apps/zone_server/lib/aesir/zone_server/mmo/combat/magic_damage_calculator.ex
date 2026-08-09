@@ -286,7 +286,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
           element,
           combatant_modifiers(defender)
         ),
-      ignore_mdef: EquipmentBonuses.ignore_mdef_rate(attacker, defender.race)
+      ignore_mdef: EquipmentBonuses.ignore_mdef_rate(attacker, defender)
     }
   end
 

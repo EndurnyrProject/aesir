@@ -195,6 +195,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
               mob_id: mob_data.id,
               drops: mob_data.drops,
               mob_level: mob_data.level,
+              mob_race: mob_data.race,
               map: state.map_name,
               x: state.x,
               y: state.y,
