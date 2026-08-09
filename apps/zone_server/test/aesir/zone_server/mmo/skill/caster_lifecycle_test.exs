@@ -38,6 +38,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       assert Caster.Player.knows?(player(learned_skills: %{}), definition, 3, :completion) == :ok
     end
 
+    test "an equipment-granted skill is castable at its granted level, learned or not" do
+      definition = definition(id: 28)
+
+      caster =
+        [learned_skills: %{}]
+        |> player()
+        |> put_in([Access.key!(:stats), Access.key!(:granted_skills)], %{28 => 3})
+
+      assert Caster.Player.knows?(caster, definition, 3, :begin) == :ok
+
+      assert Caster.Player.knows?(caster, definition, 4, :begin) ==
+               {:error, :skill_not_learned}
+
+      assert Caster.Player.knows?(caster, definition, 3, :completion) == :ok
+    end
+
     test "has no interpreter-level caster state or status gate" do
       for phase <- [:begin, :completion], action_state <- [:idle, :casting, :dead] do
         assert Caster.Player.castable_state(

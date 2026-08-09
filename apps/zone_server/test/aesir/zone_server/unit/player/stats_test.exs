@@ -1455,6 +1455,31 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert leveled.modifiers.equipment.atk_rate == 10
     end
 
+    test "an on_equip skill grant fills granted_skills and stays out of the numeric bonus map" do
+      granting = %ItemDefinition{
+        id: 90_121,
+        aegis_name: "test_skill_grant",
+        name: "Skill Granter",
+        on_equip: [
+          {:grant_skill, 28, 3},
+          {:bonus, :heal_power, {:skill_lv, 5}}
+        ]
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 90_121 -> {:ok, granting} end)
+
+      base = swordman(%Equipment{}, %{})
+      base = %{base | progression: %{base.progression | learned_skills: %{5 => 2}}}
+
+      result = Stats.calculate_stats(base, nil, [equipped(90_121, @armor_pos)])
+
+      assert result.granted_skills == %{28 => 3}
+      # getskilllv(5) reads the wearer's learned level (2) into the numeric bonus
+      assert result.modifiers.equipment.heal_power == 2
+      # the granted-skill channel is partitioned out of the numeric bonus map
+      refute Map.has_key?(result.modifiers.equipment, {:granted_skill, 28})
+    end
+
     test "equipping Soul Staff (magic_attack 200, weapon_level 3) opens a +-15% MATK band" do
       staff = equipped(@soul_staff, @both_hand)
 

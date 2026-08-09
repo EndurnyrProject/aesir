@@ -28,16 +28,40 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   Corrupt stored data must fail loudly rather than silently degrade: `parse!/1`
   raises on any construct outside the vocabulary, any unknown bonus
   destination, or malformed shape.
+
+  ## Skill-aware constructs
+
+  Two constructs read/grant player skills rather than folding a stat:
+
+  - `{:skill_lv, id}` (source `skill_lv(ctx, id)`) is an expression that reads
+    the wearer's learned level of skill `id`, `0` when unlearned. It consults
+    the optional `:learned_skills` input; an item that never uses it needs no
+    such input.
+  - `{:grant_skill, id, expr}` (source `grant_skill(ctx, id, expr)`) grants the
+    wearer a castable skill at the evaluated level while the item is worn. It
+    folds into a reserved `{:granted_skill, id}` accumulator key with `max`
+    semantics (the strongest grant wins, both within one program and — via the
+    `Stats` cross-item merge — across worn items); `Stats` partitions those keys
+    out of the numeric bonus map into its own granted-skills channel.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
 
   @type arith_op :: :+ | :- | :* | :div
   @type compare_op :: :> | :< | :>= | :<= | :== | :!=
   @type logic_op :: :and | :or
 
-  @typedoc "The evaluation inputs: the item's refine and the wearer's levels."
-  @type inputs :: %{refine: integer(), base_level: integer(), job_level: integer()}
+  @typedoc """
+  The evaluation inputs: the item's refine and the wearer's levels, plus the
+  optional wearer learned-skills map read by `{:skill_lv, id}` expressions.
+  """
+  @type inputs :: %{
+          :refine => integer(),
+          :base_level => integer(),
+          :job_level => integer(),
+          optional(:learned_skills) => %{integer() => non_neg_integer()}
+        }
 
   @typedoc """
   An input-pure arithmetic expression evaluating to an integer. `{:ternary, c, a, b}`
@@ -51,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | :job_level
           | {arith_op(), expr(), expr()}
           | {:ternary, condition(), expr(), expr()}
+          | {:skill_lv, pos_integer()}
 
   @typedoc "An input-pure boolean condition gating an `:if` instruction or a ternary."
   @type condition ::
@@ -75,6 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type instr ::
           {:bonus, dest(), expr()}
           | {:set, dest(), value()}
+          | {:grant_skill, pos_integer(), expr()}
           | {:if, condition(), [instr()], [instr()]}
 
   @typedoc "A bonus program: an ordered list of instructions."
@@ -139,6 +165,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "set(ctx, #{inspect(dest)}, #{inspect(value)})"
   end
 
+  defp render_instr({:grant_skill, id, expr}) do
+    "grant_skill(ctx, #{id}, #{render_expr(expr)})"
+  end
+
   defp render_instr({:if, condition, then_branch, else_branch}) do
     "if #{render_cond(condition)} do\n" <>
       "#{indent(render_stmts(then_branch))}\nelse\n#{indent(render_stmts(else_branch))}\nend"
@@ -148,6 +178,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr(:refine), do: "refine(ctx)"
   defp render_expr(:base_level), do: "base_level(ctx)"
   defp render_expr(:job_level), do: "job_level(ctx)"
+  defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
 
   defp render_expr({:ternary, condition, then_expr, else_expr}) do
@@ -186,6 +217,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     validate_value!(dest, value)
   end
 
+  defp parse_instr!({:grant_skill, _, [{:ctx, _, c}, id, expr]}) when is_atom(c) do
+    {:grant_skill, validate_skill_id!(id), parse_expr!(expr)}
+  end
+
   defp parse_instr!({:if, _, [condition, [do: then_q, else: else_q]]}) do
     {:if, parse_cond!(condition), parse_stmts(then_q), parse_stmts(else_q)}
   end
@@ -201,6 +236,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:refine, _, [{:ctx, _, c}]}) when is_atom(c), do: :refine
   defp parse_expr!({:base_level, _, [{:ctx, _, c}]}) when is_atom(c), do: :base_level
   defp parse_expr!({:job_level, _, [{:ctx, _, c}]}) when is_atom(c), do: :job_level
+
+  defp parse_expr!({:skill_lv, _, [{:ctx, _, c}, id]}) when is_atom(c),
+    do: {:skill_lv, validate_skill_id!(id)}
 
   defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div] do
     {op, parse_expr!(l), parse_expr!(r)}
@@ -255,6 +293,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     if is_integer(param) and param > 0, do: dest, else: malformed!("bonus destination", dest)
   end
 
+  defp validate_skill_id!(id) when is_integer(id) and id > 0, do: id
+  defp validate_skill_id!(id), do: malformed!("skill id", id)
+
   defp validate_domain_param!(dest, domain, param) do
     if param in BonusKeys.param_domain(domain),
       do: dest,
@@ -277,6 +318,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_instr({:set, key, value}, _inputs, acc), do: Map.put(acc, key, value)
 
+  defp eval_instr({:grant_skill, skill_id, expr}, inputs, acc) do
+    level = eval_expr(expr, inputs)
+    Map.update(acc, {:granted_skill, skill_id}, level, &max(&1, level))
+  end
+
   defp eval_instr({:if, condition, then_branch, else_branch}, inputs, acc) do
     branch = if eval_cond(condition, inputs), do: then_branch, else: else_branch
     eval_instrs(branch, inputs, acc)
@@ -288,6 +334,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_expr(input, inputs) when input in [:refine, :base_level, :job_level],
     do: Map.fetch!(inputs, input)
+
+  defp eval_expr({:skill_lv, skill_id}, inputs),
+    do: inputs |> Map.get(:learned_skills, %{}) |> Learned.learned_level(skill_id)
 
   defp eval_expr({:+, a, b}, inputs), do: eval_expr(a, inputs) + eval_expr(b, inputs)
   defp eval_expr({:-, a, b}, inputs), do: eval_expr(a, inputs) - eval_expr(b, inputs)

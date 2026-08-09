@@ -151,6 +151,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     right_hand: nil,
     left_hand: nil,
 
+    # Skills granted by worn equipment (`skill <id>,<lv>` in an `on_equip`
+    # script), as `%{skill_id => level}`. Rebuilt alongside `modifiers.equipment`
+    # on every recompute; read by the skill-list view and player cast authority
+    # so an equip-granted skill is castable while worn.
+    granted_skills: %{},
+
     # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
     # single writer's authoritative in-memory value. `MountHandler` keeps this
     # field in sync with the option bit before triggering the status-driven
@@ -190,6 +196,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           ],
           right_hand: WeaponHand.t() | nil,
           left_hand: WeaponHand.t() | nil,
+          granted_skills: %{integer() => non_neg_integer()},
           riding: boolean()
         }
 
@@ -399,9 +406,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil), do: stats
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
-    equipment_bonuses = calculate_equipment_bonuses(stats.worn_items, stats.progression)
+    {equipment_bonuses, granted_skills} =
+      stats.worn_items
+      |> calculate_equipment_bonuses(stats.progression)
+      |> split_granted_skills()
 
-    %{stats | modifiers: %{stats.modifiers | equipment: equipment_bonuses}}
+    %{
+      stats
+      | granted_skills: granted_skills,
+        modifiers: %{stats.modifiers | equipment: equipment_bonuses}
+    }
     |> put_weapon_hands(stats.worn_items)
   end
 
@@ -422,12 +436,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         }
       )
 
-    equipment_bonuses = calculate_equipment_bonuses(worn_items, stats.progression)
+    {equipment_bonuses, granted_skills} =
+      worn_items
+      |> calculate_equipment_bonuses(stats.progression)
+      |> split_granted_skills()
 
     %{
       stats
       | equipment: equipment_from_inventory(equipped_items),
         worn_items: worn_items,
+        granted_skills: granted_skills,
         modifiers: %{stats.modifiers | equipment: equipment_bonuses}
     }
     |> put_weapon_hands(worn_items)
@@ -1308,13 +1326,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     inputs = %{
       refine: refine,
       base_level: progression.base_level,
-      job_level: progression.job_level
+      job_level: progression.job_level,
+      learned_skills: progression.learned_skills
     }
 
     program
     |> EquipScript.eval(inputs)
     |> Enum.reduce(acc, fn {key, value}, acc -> merge_equip_bonus(acc, key, value) end)
   end
+
+  defp merge_equip_bonus(acc, {:granted_skill, _} = key, level),
+    do: Map.update(acc, key, level, &max(&1, level))
 
   defp merge_equip_bonus(acc, key, value) when is_number(value) do
     if BonusKeys.max_destination?(key) do
@@ -1325,6 +1347,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   defp merge_equip_bonus(acc, key, value), do: Map.put(acc, key, value)
+
+  # Splits the folded equipment accumulator into its numeric bonus map (stored on
+  # `modifiers.equipment`) and the granted-skills map. `{:granted_skill, id}` is
+  # the reserved channel the `on_equip` `skill` command folds into with `max`
+  # semantics; these keys never reach the numeric bonus readers.
+  @spec split_granted_skills(map()) :: {map(), %{integer() => non_neg_integer()}}
+  defp split_granted_skills(accumulator) do
+    {granted_pairs, bonus_pairs} =
+      Enum.split_with(accumulator, fn
+        {{:granted_skill, _id}, _level} -> true
+        _ -> false
+      end)
+
+    granted = Map.new(granted_pairs, fn {{:granted_skill, id}, level} -> {id, level} end)
+    {Map.new(bonus_pairs), granted}
+  end
+
+  @doc """
+  The skills granted by the wearer's currently worn equipment (the `on_equip`
+  `skill` command), as `%{skill_id => level}`. Empty when nothing worn grants a
+  skill.
+  """
+  @spec granted_skills(t()) :: %{integer() => non_neg_integer()}
+  def granted_skills(%__MODULE__{granted_skills: granted}) when is_map(granted), do: granted
+  def granted_skills(%__MODULE__{}), do: %{}
 
   # Weapon MATK variance, verified vs rAthena status.cpp:6306-6316:
   # `variance = weapon.matk * weapon.wlv / 10` (integer div), then

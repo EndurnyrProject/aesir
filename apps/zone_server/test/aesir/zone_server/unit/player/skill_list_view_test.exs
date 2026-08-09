@@ -179,6 +179,31 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListViewTest do
              } = SkillListView.build(state) |> by_id(@mg_thunderstorm_id)
     end
 
+    test "includes an equipment-granted skill not in the tree as a castable entry" do
+      state = %PlayerState{
+        stats: %{progression: progression(skill_point: 0), granted_skills: %{@al_heal_id => 3}},
+        plagiarized: nil
+      }
+
+      assert %SkillInfo{skill_id: @al_heal_id, level: 3, upgradable: false, requires: []} =
+               SkillListView.build(state) |> by_id(@al_heal_id)
+    end
+
+    test "an equipment grant above the learned level bumps the tree entry in place" do
+      state = %PlayerState{
+        stats: %{
+          progression: progression(learned_skills: %{@sm_bash_id => 1}),
+          granted_skills: %{@sm_bash_id => 3}
+        },
+        plagiarized: nil
+      }
+
+      %SkillList{skills: skills} = list = SkillListView.build(state)
+
+      assert by_id(list, @sm_bash_id).level == 3
+      assert Enum.count(skills, &(&1.skill_id == @sm_bash_id)) == 1
+    end
+
     test "a non-area skill (SM_SWORD) reports splash_radius 0" do
       sword = SkillListView.build(progression(skill_point: 0)) |> by_id(@sm_sword_id)
       assert sword.splash_radius == 0

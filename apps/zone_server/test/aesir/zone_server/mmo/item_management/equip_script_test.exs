@@ -132,7 +132,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       ],
       ternary_on_levels: [
         {:bonus, :critical, {:ternary, {:>, :base_level, 99}, :refine, {:div, :refine, 2}}}
-      ]
+      ],
+      grant_skill: [{:grant_skill, 28, 3}],
+      grant_skill_refine_level: [{:grant_skill, 28, {:+, 1, :refine}}],
+      skill_lv_expr: [{:bonus, :heal_power, {:skill_lv, 87}}],
+      skill_lv_condition: [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}]
     ]
 
     for {name, program} <- programs do
@@ -467,6 +471,30 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert_raise KeyError, fn ->
         EquipScript.eval([{:bonus, :atk, :base_level}], %{refine: 0})
       end
+    end
+
+    test "grant_skill folds into a reserved granted-skill key" do
+      assert EquipScript.eval([{:grant_skill, 28, 3}], on(0)) == %{{:granted_skill, 28} => 3}
+    end
+
+    test "grant_skill evaluates a refine-dependent level and keeps the strongest" do
+      program = [{:grant_skill, 28, {:+, 1, :refine}}, {:grant_skill, 28, 2}]
+
+      assert EquipScript.eval(program, on(5)) == %{{:granted_skill, 28} => 6}
+      assert EquipScript.eval(program, on(0)) == %{{:granted_skill, 28} => 2}
+    end
+
+    test "skill_lv reads the wearer's learned level from the inputs" do
+      program = [{:bonus, :heal_power, {:skill_lv, 87}}]
+
+      assert EquipScript.eval(program, on(0, learned_skills: %{87 => 4})) == %{heal_power: 4}
+    end
+
+    test "skill_lv defaults to 0 when the learned-skills input is absent" do
+      program = [{:if, {:>, {:skill_lv, 87}, 0}, [{:bonus, :int, 3}], []}]
+
+      assert EquipScript.eval(program, on(0)) == %{}
+      assert EquipScript.eval(program, on(0, learned_skills: %{87 => 1})) == %{int: 3}
     end
   end
 end

@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     maybe_send_cart_info(connection_pid, game_state)
     send_own_status_sync(connection_pid, game_state.character_id)
 
-    skill_list = SkillListView.build(game_state.stats.progression)
+    skill_list = SkillListView.build(game_state)
     MessageRouter.send_to(connection_pid, skill_list)
 
     visible_skill_units = send_skill_unit_snapshot(game_state)

@@ -26,9 +26,19 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
   already filters these, so this is belt-and-suspenders).
   """
   @spec build(PlayerProgression.t() | PlayerState.t()) :: SkillList.t()
-  def build(%PlayerState{stats: %{progression: progression}, plagiarized: plagiarized}) do
-    %SkillList{skills: skills} = build(progression)
-    %SkillList{skills: skills ++ plagiarized_skill(plagiarized, progression.job_id)}
+  def build(%PlayerState{stats: %{progression: progression} = stats, plagiarized: plagiarized}) do
+    %SkillList{skills: tree_skills} = build(progression)
+    job_id = progression.job_id
+    granted = granted_skills(stats)
+
+    tree_skills = Enum.map(tree_skills, &bump_granted(&1, granted, job_id))
+
+    appended =
+      granted
+      |> Enum.reject(fn {id, _level} -> Enum.any?(tree_skills, &(&1.skill_id == id)) end)
+      |> Enum.flat_map(fn {id, level} -> standalone_skill_info(id, level, job_id) end)
+
+    %SkillList{skills: tree_skills ++ appended ++ plagiarized_skill(plagiarized, job_id)}
   end
 
   def build(%PlayerProgression{} = progression) do
@@ -45,9 +55,36 @@ defmodule Aesir.ZoneServer.Unit.Player.SkillListView do
     %SkillList{skills: skills}
   end
 
+  # Reads the equipment-granted skills off the stats, tolerating the bare-map
+  # `stats` shape used by fixtures (which lack the field) as no grants.
+  defp granted_skills(stats), do: Map.get(stats, :granted_skills) || %{}
+
+  # Overrides a tree entry with the equipment-granted level when the grant is
+  # higher than what the player has learned, so the list matches the level the
+  # cast authority (`Caster.Player.knows?`) will allow.
+  defp bump_granted(%SkillInfo{skill_id: id, level: level} = info, granted, job_id) do
+    case Map.get(granted, id, 0) do
+      granted_level when granted_level > level ->
+        case standalone_skill_info(id, granted_level, job_id) do
+          [bumped] -> bumped
+          [] -> info
+        end
+
+      _ ->
+        info
+    end
+  end
+
   defp plagiarized_skill(nil, _job_id), do: []
 
-  defp plagiarized_skill(%{skill_id: skill_id, level: level}, job_id) do
+  defp plagiarized_skill(%{skill_id: skill_id, level: level}, job_id),
+    do: standalone_skill_info(skill_id, level, job_id)
+
+  # A skill list entry for a skill not sourced from the job tree (a copied or
+  # equipment-granted skill): no prerequisites or level minimums, not upgradable.
+  @spec standalone_skill_info(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          [SkillInfo.t()]
+  defp standalone_skill_info(skill_id, level, job_id) do
     case Catalog.by_id(skill_id) do
       {:ok, definition} ->
         [

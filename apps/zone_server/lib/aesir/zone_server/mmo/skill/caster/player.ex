@@ -54,20 +54,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     %{caster | stats: %{stats | current_state: current_state}}
   end
 
+  # A skill granted by worn equipment is authoritative while equipped: it is
+  # castable at its granted level without a learned entry or quest lineage.
   @impl true
   def knows?(caster, definition, level, :begin) do
-    learned = caster.stats.progression.learned_skills
+    cond do
+      granted_level(caster, definition.id) >= level ->
+        :ok
 
-    with true <- Learned.learned_level(learned, definition.id) >= level,
-         true <- quest_lineage?(caster, definition) do
-      :ok
-    else
-      false -> {:error, :skill_not_learned}
+      learned_level(caster, definition.id) >= level and quest_lineage?(caster, definition) ->
+        :ok
+
+      true ->
+        {:error, :skill_not_learned}
     end
   end
 
   def knows?(caster, definition, _level, :completion) do
-    if quest_lineage?(caster, definition), do: :ok, else: {:error, :skill_not_learned}
+    if granted_level(caster, definition.id) >= 1 or quest_lineage?(caster, definition),
+      do: :ok,
+      else: {:error, :skill_not_learned}
+  end
+
+  defp learned_level(caster, skill_id),
+    do: Learned.learned_level(caster.stats.progression.learned_skills, skill_id)
+
+  # Reads the equipment-granted level, tolerating the bare-map `stats` shape used
+  # by handler fixtures (which lack the field) as no grant.
+  defp granted_level(caster, skill_id) do
+    caster.stats
+    |> Map.get(:granted_skills)
+    |> Kernel.||(%{})
+    |> Map.get(skill_id, 0)
   end
 
   @impl true

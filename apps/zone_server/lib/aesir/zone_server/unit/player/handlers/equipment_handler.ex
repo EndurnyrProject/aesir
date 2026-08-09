@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -149,6 +150,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         Enum.each(unequipped, &send_packet(state, unequip_success_result(&1, 0)))
 
         sync_after_change(updated_game_state, state)
+        maybe_refresh_skill_list(state, game_state.stats, updated_game_state)
         notify_appearance(state, old_equipment, updated_game_state)
         enforce_weapon_requirements(updated_game_state)
 
@@ -185,6 +187,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
         send_packet(state, unequip_success_result(server_index, mask))
         sync_after_change(updated_game_state, state)
+        maybe_refresh_skill_list(state, game_state.stats, updated_game_state)
         notify_appearance(state, old_equipment, updated_game_state)
         enforce_weapon_requirements(updated_game_state)
 
@@ -213,6 +216,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         stats: stats,
         walk_speed: StatusManager.walk_speed_for(stats)
     }
+  end
+
+  # Equip/unequip can add or drop an equipment-granted skill (`skill <id>,<lv>`
+  # in an `on_equip` script); when the granted set changes, resend the skill list
+  # so the client can (un)cast it.
+  defp maybe_refresh_skill_list(state, old_stats, game_state) do
+    if Stats.granted_skills(old_stats) != Stats.granted_skills(game_state.stats) do
+      send_packet(state, SkillListView.build(game_state))
+    end
   end
 
   defp sync_after_change(game_state, %{connection_pid: connection_pid}) do

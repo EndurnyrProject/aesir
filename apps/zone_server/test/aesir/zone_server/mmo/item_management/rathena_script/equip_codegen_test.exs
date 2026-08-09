@@ -593,4 +593,63 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus bStr,1,2;")
     end
   end
+
+  describe "skill grant command" do
+    test "skill by name resolves to a grant_skill instruction at the given level" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:grant_skill, ^heal_id, 5}]} = compile("skill AL_HEAL,5;")
+    end
+
+    test "skill by quoted name resolves like the bare-name form" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:grant_skill, ^heal_id, 5}]} = compile(~s(skill "AL_HEAL",5;))
+    end
+
+    test "skill by raw id resolves through the catalog" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:grant_skill, ^heal_id, 3}]} = compile("skill #{heal_id},3;")
+    end
+
+    test "the optional trigger flag is dropped" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:grant_skill, ^heal_id, 1}]} = compile("skill AL_HEAL,1,0;")
+    end
+
+    test "an unknown skill name is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "XX_NOTASKILL"}}} =
+               compile("skill XX_NOTASKILL,1;")
+    end
+  end
+
+  describe "getskilllv read" do
+    test "getskilllv by name resolves to a skill_lv expression" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:bonus, :heal_power, {:skill_lv, ^heal_id}}]} =
+               compile("bonus bHealPower,getskilllv(AL_HEAL);")
+    end
+
+    test "getskilllv by quoted name resolves like the bare-name form" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:bonus, :heal_power, {:skill_lv, ^heal_id}}]} =
+               compile("bonus bHealPower,getskilllv(\"AL_HEAL\");")
+    end
+
+    test "getskilllv is usable inside an input-pure condition" do
+      assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
+
+      assert {:ok, [{:if, {:>, {:skill_lv, ^heal_id}, 0}, [{:bonus, :int, 3}], []}]} =
+               compile("if (getskilllv(AL_HEAL)>0) bonus bInt,3;")
+    end
+
+    test "an unknown getskilllv skill is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "XX_NOTASKILL"}}} =
+               compile("bonus bInt,getskilllv(XX_NOTASKILL);")
+    end
+  end
 end

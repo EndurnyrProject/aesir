@@ -62,6 +62,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     key's `bonus2` form, so it resolves through the same param schema and the
     flag is dropped. Every other `bonus3` key, and `bonus4`/`bonus5`, parse as
     ordinary commands and stay unsupported.
+  - `skill <skill id>,<level>{,<flag>}` — `{:grant_skill, id, expr}`, granting the
+    wearer a castable skill at `level` while the item is worn. The skill id
+    resolves like a `bonus2` skill param (constant name, quoted name, or literal
+    id); the level is an ordinary amount expression; the optional trigger flag is
+    dropped, since an equip grant is always the worn-item temporary skill.
   - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is an
     input-pure boolean over comparisons / `&&` / `||`; a read outside the
     inputs, such as `BaseClass` or `eaclass()`, is unsupported.
@@ -69,7 +74,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     `getrefine()` -> `:refine`, `BaseLevel` -> `:base_level`, `JobLevel` ->
     `:job_level`, inlined `.@var`, `+ - * /` arithmetic (`/` -> `:div`, matching
     C/Elixir truncating integer division), and the `cond ? a : b` ternary ->
-    `{:ternary, cond, a, b}`. `rand(...)` and every other call are unsupported.
+    `{:ternary, cond, a, b}`, and `getskilllv(<skill>)` -> `{:skill_lv, id}`
+    (the wearer's learned level of a skill, resolved like a `bonus2` skill
+    param). `rand(...)` and every other call are unsupported.
 
   A program that compiles to zero instructions (script was only assignments) yields
   `{:ok, []}`, which the importer stores as no `on_equip`.
@@ -192,6 +199,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
+  # `skill <skill id>,<level>{,<flag>}` grants a castable skill while the item is
+  # worn. The optional trigger flag is dropped: in an equip context the grant is
+  # always the worn-item temporary skill. The level is an ordinary amount
+  # expression and the skill id resolves like a `bonus2` skill param (a constant
+  # name, a quoted name, or a literal id).
+  defp compile_instr({:cmd, "skill", [skill_ast, level_ast]}, env),
+    do: compile_grant_skill(skill_ast, level_ast, env)
+
+  defp compile_instr({:cmd, "skill", [skill_ast, level_ast, _flag]}, env),
+    do: compile_grant_skill(skill_ast, level_ast, env)
+
   defp compile_instr({:if, cond_expr, then_stmts, else_stmts}, env) do
     with {:ok, condition} <- compile_cond(cond_expr, env),
          {:ok, then_instrs} <- reduce_branch(then_stmts, env),
@@ -202,6 +220,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
+
+  @spec compile_grant_skill(term(), term(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_grant_skill(skill_ast, level_ast, env) do
+    with {:ok, id} <- resolve_skill_ref(skill_ast),
+         {:ok, expr} <- compile_expr(level_ast, env) do
+      {:ok, {:grant_skill, id, expr}}
+    end
+  end
+
+  # Resolves a skill reference in the shapes the corpus uses for skill ids: a
+  # constant name (`SM_BASH`), a quoted name (`"SM_BASH"`), or a literal id.
+  @spec resolve_skill_ref(term()) :: {:ok, pos_integer()} | {:error, {:unsupported, detail()}}
+  defp resolve_skill_ref({:name, const}), do: resolve(&Resolver.resolve_skill/1, const)
+  defp resolve_skill_ref({:str, name}), do: resolve(&Resolver.resolve_skill/1, name)
+  defp resolve_skill_ref({:int, id}), do: resolve(&Resolver.resolve_skill/1, id)
+  defp resolve_skill_ref(other), do: unsupported({:unresolved_param, other})
 
   @spec compile_param_bonus(String.t(), term(), term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
@@ -402,6 +437,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
          {:ok, r} <- compile_expr(rhs, env) do
       {:ok, {arith_op(op), l, r}}
     end
+  end
+
+  # `getskilllv(<skill>)` reads the wearer's learned level of a skill; the id
+  # resolves like a `bonus2` skill param and the runtime supplies the level from
+  # its learned-skills input.
+  defp compile_expr({:call, "getskilllv", [skill_ast]}, _env) do
+    with {:ok, id} <- resolve_skill_ref(skill_ast), do: {:ok, {:skill_lv, id}}
   end
 
   defp compile_expr({:call, name, _args}, _env), do: unsupported({:unsupported_call, name})
