@@ -137,6 +137,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
     end
   end
 
+  describe "after_hit/4 add_eff2 (attacker -> attacker)" do
+    test "targets the attacker with the attacker as source" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff2, :sc_curse} => 500})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+
+      assert_received {:applied, :player, 1001, :sc_curse, params}
+      assert params[:caster_id] == 1001
+      assert params[:source_type] == :player
+    end
+
+    test "a failed roll applies nothing" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_mods(%{{:add_eff2, :sc_curse} => 500})
+
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &never_hit/1)
+    end
+  end
+
   describe "after_hit/4 gates" do
     test "a zero-damage hit rolls nothing" do
       reject(&StatusInterpreter.apply_status/4)

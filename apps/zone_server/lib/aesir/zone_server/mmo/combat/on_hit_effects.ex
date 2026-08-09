@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
     inflict(attacker, defender, :add_eff, roll)
     inflict(defender, attacker, :add_eff_when_hit, roll)
+    inflict(attacker, attacker, :add_eff2, roll)
     :ok
   end
 
