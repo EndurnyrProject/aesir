@@ -1,20 +1,23 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   @moduledoc """
-  Maps a parsed rAthena `mob_db` entry (string-keyed map, CamelCase keys) into a
-  `MobDefinition`. Used by the one-time `mix aesir.import.mobs` task; not on any
-  runtime path.
+  Maps a parsed monster-database entry (string-keyed map, CamelCase keys) into
+  a `MobDefinition`. Used by the one-time `mix aesir.import.mobs` task; not on
+  any runtime path.
 
   Modes come from three sources, unioned and deduped: `Class: Boss` (`:boss`),
   an explicit `Modes.Aggressive` flag (`:aggressive`), and the mode set derived
   from the `Ai` value via `MobMode`. `MvpExp` and `MvpDrops` are parsed onto
   `mvp_exp`/`mvp_drops` and stay strictly separate from the normal `drops`
-  list. `RaceGroups`, resistances and `DamageTaken` are still dropped - they
-  have no consumer yet.
+  list. `RaceGroups` is parsed into `race_groups`; resistances and `DamageTaken`
+  are still dropped.
   """
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobManagement.MobMode
+
+  require Logger
 
   @sizes %{"small" => :small, "medium" => :medium, "large" => :large}
 
@@ -68,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   @spec encode_value(atom(), term()) :: term()
   defp encode_value(field, value) when field in [:size, :race], do: Atom.to_string(value)
   defp encode_value(:modes, value), do: Enum.map(value, &Atom.to_string/1)
+  defp encode_value(:race_groups, value), do: Enum.map(value, &Atom.to_string/1)
   defp encode_value(:stats, value), do: Map.new(value, fn {k, v} -> {Atom.to_string(k), v} end)
 
   defp encode_value(field, value) when field in [:drops, :mvp_drops],
@@ -109,6 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
          chase_range: Map.get(entry, "ChaseRange", 12),
          size: size,
          race: race,
+         race_groups: parse_race_groups(Map.get(entry, "RaceGroups")),
          element: {element, Map.get(entry, "ElementLevel", 1)},
          walk_speed: Map.get(entry, "WalkSpeed", 150),
          attack_delay: Map.get(entry, "AttackDelay", 0),
@@ -128,6 +133,26 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
   defp fetch_enum(table, value, error) do
     with :error <- Map.fetch(table, String.downcase(value)), do: {:error, {error, value}}
   end
+
+  @spec parse_race_groups(term()) :: [atom()]
+  defp parse_race_groups(groups) when is_map(groups) do
+    groups
+    |> Enum.filter(fn {_group, enabled?} -> enabled? == true end)
+    |> Enum.flat_map(fn {group, _enabled?} ->
+      case Map.fetch(Resolver.race2s(), "rc2_" <> String.downcase(group)) do
+        {:ok, race_group} ->
+          [race_group]
+
+        :error ->
+          Logger.warning("Unknown secondary monster group: #{group}")
+          []
+      end
+    end)
+    |> Enum.sort()
+    |> Enum.uniq()
+  end
+
+  defp parse_race_groups(_), do: []
 
   @spec parse_stats(map()) :: map()
   defp parse_stats(entry) do

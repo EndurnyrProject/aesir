@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
   use ExUnit.Case, async: true
 
+  import ExUnit.CaptureLog
+
   alias Aesir.ZoneServer.Mmo.MobManagement.Importer
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
@@ -42,6 +44,50 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.ImporterTest do
       {:ok, definition} = Importer.to_definition(entry(%{}))
 
       assert definition.modes == []
+    end
+  end
+
+  describe "to_definition/1 RaceGroups" do
+    test "resolves true groups into sorted atoms" do
+      {:ok, definition} =
+        Importer.to_definition(entry(%{"RaceGroups" => %{"Orc" => true, "Goblin" => true}}))
+
+      assert definition.race_groups == [:goblin, :orc]
+    end
+
+    test "excludes false groups" do
+      {:ok, definition} =
+        Importer.to_definition(entry(%{"RaceGroups" => %{"Goblin" => true, "Orc" => false}}))
+
+      assert definition.race_groups == [:goblin]
+    end
+
+    test "warns and skips unknown groups while resolving known groups" do
+      log =
+        capture_log(fn ->
+          assert {:ok, %{race_groups: [:goblin]}} =
+                   Importer.to_definition(
+                     entry(%{"RaceGroups" => %{"Goblin" => true, "Unknown" => true}})
+                   )
+        end)
+
+      assert log =~ "Unknown secondary monster group: Unknown"
+    end
+
+    test "ignores sibling flags when no RaceGroups map exists" do
+      {:ok, definition} = Importer.to_definition(entry(%{"Mvp" => true}))
+
+      assert definition.race_groups == []
+    end
+
+    test "encodes groups and omits the empty default" do
+      {:ok, definition} = Importer.to_definition(entry(%{}))
+
+      assert Importer.to_yaml_map(%{definition | race_groups: [:golem]})["race_groups"] == [
+               "golem"
+             ]
+
+      refute Map.has_key?(Importer.to_yaml_map(definition), "race_groups")
     end
   end
 
