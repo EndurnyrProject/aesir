@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
@@ -926,8 +927,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         derived_stats: %{max_hp: 1, max_sp: 1},
         equipment: %Equipment{},
         modifiers: %{
-          equipment: %{patk: 30, smatk: 30, res: 30, mres: 30, hplus: 30, crate: 30},
-          status_effects: %{patk: 20, smatk: 20, res: 20, mres: 20, hplus: 20, crate: 20},
+          equipment: %{patk: 30, smatk: 30, res: 30, mres: 30, hplus: 30, crit_rate: 30},
+          status_effects: %{patk: 20, smatk: 20, res: 20, mres: 20, hplus: 20, crit_rate: 20},
           job_bonuses: %{}
         }
       }
@@ -1058,6 +1059,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert result.combat_stats.hplus == 10
       assert result.combat_stats.crate == 3
+    end
+
+    test "critical damage equipment modifier adds to CRate after the trait contribution" do
+      stats =
+        @zero
+        |> Map.put(:crt, 10)
+        |> trait_stats()
+        |> Map.update!(:modifiers, &%{&1 | equipment: %{crit_rate: 20}})
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.crate == 23
+      assert CriticalHits.apply_critical_damage(1_000, result) == 1_630
     end
 
     test "row 11: CRT never feeds the classic critical stat" do
