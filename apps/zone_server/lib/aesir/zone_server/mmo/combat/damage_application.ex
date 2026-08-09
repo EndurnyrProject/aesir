@@ -185,6 +185,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   end
 
   @doc """
+  Restores SP to a player through that player's session.
+  """
+  @spec apply_sp_heal(:player, integer(), non_neg_integer()) :: :ok
+  def apply_sp_heal(:player, unit_id, amount) do
+    PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", {:combat, {:restore_sp, amount}})
+  end
+
+  @doc """
   Heals a living unit.
 
   For `:player` this broadcasts to the player's PubSub topic; an offline

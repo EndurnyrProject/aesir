@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.Combat.SpDrain
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -685,6 +686,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
       OnHitEffects.after_hit(attacker, target, damage_result)
       drain_hp(attacker, damage_result.damage)
+      drain_sp(attacker, damage_result.damage)
       splash_attack(attacker, target)
       :ok
     end
@@ -796,6 +798,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
       OnHitEffects.after_hit(attacker, target, damage_result)
       drain_hp(attacker, damage)
+      drain_sp(attacker, damage)
       splash_attack(attacker, target)
       {:snatcher, updated_player_state}
     end
@@ -866,6 +869,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     case HpDrain.roll(attacker, damage) do
       0 -> :ok
       heal -> DamageApplication.apply_heal(:player, attacker.unit_id, heal, attacker.unit_id)
+    end
+  end
+
+  defp drain_sp(attacker, damage) do
+    case SpDrain.roll(attacker, damage) do
+      0 -> :ok
+      sp -> DamageApplication.apply_sp_heal(:player, attacker.unit_id, sp)
     end
   end
 

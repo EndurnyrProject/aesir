@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.SpDrain
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Passives
@@ -152,6 +153,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
                        %{target_type: :mob, target_id: 2001, position: {150, 150}}}
 
       refute_received {:after_normal_hit, _, _}
+    end
+
+    test "restores SP after a normal hit when the drain is non-zero",
+         %{attacker: attacker, player_state: player_state} do
+      Mimic.copy(DamageApplication)
+      Mimic.copy(SpDrain)
+      stub(SpDrain, :roll, fn _attacker, _damage -> 7 end)
+      expect(DamageApplication, :apply_sp_heal, fn :player, 1001, 7 -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 2001)
+      end)
+    end
+
+    test "does not restore SP after a normal hit when the drain is zero",
+         %{attacker: attacker, player_state: player_state} do
+      Mimic.copy(DamageApplication)
+      Mimic.copy(SpDrain)
+      stub(SpDrain, :roll, fn _attacker, _damage -> 0 end)
+      reject(&DamageApplication.apply_sp_heal/3)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 2001)
+      end)
     end
 
     test "adds a stolen item when the Snatcher proc succeeds",

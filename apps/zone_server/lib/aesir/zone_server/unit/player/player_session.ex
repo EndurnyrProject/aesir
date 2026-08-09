@@ -663,6 +663,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:combat, {:restore_sp, amount}}, state) do
+    HealthHandler.restore_sp(amount, state)
+  end
+
+  @impl true
   def handle_info({:combat, {:auto_attack, target_id}}, state) do
     CombatActionHandler.handle_auto_attack(state, target_id)
   end

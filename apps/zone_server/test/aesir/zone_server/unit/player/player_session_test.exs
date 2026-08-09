@@ -1390,6 +1390,28 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
   end
 
+  describe "handle_info({:combat, {:restore_sp, amount}})" do
+    test "delegates to HealthHandler and restores SP", %{character: character} do
+      stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+
+      game_state = PlayerState.new(character)
+
+      game_state =
+        put_in(
+          game_state,
+          [Access.key!(:stats), Access.key!(:current_state), Access.key!(:sp)],
+          1
+        )
+
+      state = %{character: character, game_state: game_state, connection_pid: self()}
+
+      {:noreply, new_state} = PlayerSession.handle_info({:combat, {:restore_sp, 10}}, state)
+
+      assert new_state.game_state.stats.current_state.sp == 11
+    end
+  end
+
   describe "cross-session health commands" do
     test "resurrect revalidates and commits through the target session", %{character: character} do
       Mimic.copy(CharacterPersistence)

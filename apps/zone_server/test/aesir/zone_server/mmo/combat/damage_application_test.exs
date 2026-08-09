@@ -363,6 +363,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     assert settled.raw_total == 5
   end
 
+  test "broadcasts SP restoration to the player's topic" do
+    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:42")
+
+    assert :ok = DamageApplication.apply_sp_heal(:player, 42, 7)
+    assert_receive {:combat, {:restore_sp, 7}}
+  end
+
   defp death_session_loop(test_pid, mob) do
     receive do
       {:"$gen_cast", {:combat, {:apply_damage, damage, _attacker_id}}} ->
