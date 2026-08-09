@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -32,7 +33,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   def entered_view(other_char_id, state) do
     case UnitRegistry.get_unit(:player, other_char_id) do
       {:ok, {_module, %PlayerState{} = other_game_state, _pid}} ->
-        MessageRouter.send_to(state.connection_pid, SpawnView.build(other_game_state))
+        spawn_packet =
+          Concealment.reveal(
+            SpawnView.build(other_game_state),
+            PlayerState.intravision?(state.game_state)
+          )
+
+        MessageRouter.send_to(state.connection_pid, spawn_packet)
         send_active_icons(:player, other_char_id, state.game_state.character_id)
         maybe_send_vending_board(state.connection_pid, other_char_id)
 

@@ -12,10 +12,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  defp player(equipment) do
+    %PlayerState{stats: %Stats{modifiers: %Modifiers{equipment: equipment}}}
+  end
 
   defp definition(overrides) do
     Map.merge(
@@ -182,6 +190,64 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplayTest do
       StatusDisplay.on_applied(:mob, 50, :sc_poison, instance)
 
       assert_received {:broadcast, %UnitStateChange{unit_id: 50, health_state: 1, body_state: 0}}
+    end
+  end
+
+  describe "on_applied/4 concealed sprite state (intravision)" do
+    test "masks the concealment bit per-observer: revealed for intravision, self, unchanged otherwise" do
+      test_pid = self()
+      stub_position()
+
+      # subject 2_000 starts Hiding; observers are the subject, an intravision
+      # wearer (3_000) and a plain observer (4_000).
+      instance = timed_instance(:sc_hiding)
+      stub(Registry, :get_definition, fn :sc_hiding -> definition(option: :hide) end)
+      stub(StatusStorage, :get_unit_statuses, fn :player, 2_000 -> [instance] end)
+
+      stub(SpatialIndex, :get_players_in_range, fn "prontera", 100, 100, _range ->
+        [2_000, 3_000, 4_000]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 3_000 -> {:ok, {PlayerState, player(%{intravision: 1}), test_pid}}
+        :player, 4_000 -> {:ok, {PlayerState, player(%{}), test_pid}}
+      end)
+
+      stub(Broadcast, :to_player, fn char_id, packet ->
+        send(test_pid, {:sent, char_id, packet})
+        :ok
+      end)
+
+      reject(&Broadcast.to_in_range/6)
+
+      StatusDisplay.on_applied(:player, 2_000, :sc_hiding, instance)
+
+      # own owner keeps the true (concealed) sprite
+      assert_received {:sent, 2_000, %UnitStateChange{effect_state: 2}}
+      # intravision wearer sees the unit revealed
+      assert_received {:sent, 3_000, %UnitStateChange{effect_state: 0}}
+      # plain observer still sees it concealed
+      assert_received {:sent, 4_000, %UnitStateChange{effect_state: 2}}
+    end
+
+    test "a non-concealed opt state broadcasts to the whole area unchanged" do
+      test_pid = self()
+      stub_position()
+
+      instance = timed_instance(:sc_riding, val1: 3)
+      stub(Registry, :get_definition, fn :sc_riding -> definition(option: :riding) end)
+      stub(StatusStorage, :get_unit_statuses, fn :player, 2_000 -> [instance] end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet, _opts ->
+        send(test_pid, {:area, packet})
+        :ok
+      end)
+
+      reject(&Broadcast.to_player/2)
+
+      StatusDisplay.on_applied(:player, 2_000, :sc_riding, instance)
+
+      assert_received {:area, %UnitStateChange{unit_id: 2_000, effect_state: 32}}
     end
   end
 

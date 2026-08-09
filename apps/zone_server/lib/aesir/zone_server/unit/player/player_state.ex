@@ -943,6 +943,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     PlayerStats.get_equipment_modifier(stats, :no_knockback) > 0
   end
 
+  @doc """
+  Whether this player carries the intravision equipment flag, which lets them
+  see units concealed by Hiding/Cloaking/Chase Walk.
+  """
+  @spec intravision?(t()) :: boolean()
+  def intravision?(%__MODULE__{stats: stats}) do
+    PlayerStats.get_equipment_modifier(stats, :intravision) > 0
+  end
+
   @impl Aesir.ZoneServer.Unit
   def get_size(%__MODULE__{}), do: :medium
 

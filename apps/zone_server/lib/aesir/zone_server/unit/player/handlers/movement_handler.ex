@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
@@ -683,10 +684,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     now_visible_mobs = MapSet.difference(new_visible_mobs, old_visible_mobs)
     now_hidden_mobs = MapSet.difference(old_visible_mobs, new_visible_mobs)
 
-    # Send spawn packets for newly visible mobs
-    Enum.each(now_visible_mobs, fn mob_id ->
-      send_mob_spawn_packet_to(game_state.character_id, mob_id)
-    end)
+    # Send spawn packets for newly visible mobs.
+    broadcast_new_mob_spawns(game_state, now_visible_mobs)
 
     # Send despawn packets for now hidden mobs
     Enum.each(now_hidden_mobs, fn mob_id ->
@@ -881,7 +880,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp send_mob_spawn_packet_to(to_char_id, mob_id) do
+  # The observer is this session, so its intravision flag (reveal concealed mobs)
+  # comes straight off game_state; only read it when there is a mob to spawn.
+  defp broadcast_new_mob_spawns(game_state, now_visible_mobs) do
+    if Enum.empty?(now_visible_mobs) do
+      :ok
+    else
+      reveal_concealed? = PlayerState.intravision?(game_state)
+
+      Enum.each(now_visible_mobs, fn mob_id ->
+        send_mob_spawn_packet_to(game_state.character_id, mob_id, reveal_concealed?)
+      end)
+    end
+  end
+
+  defp send_mob_spawn_packet_to(to_char_id, mob_id, reveal_concealed?) do
     # Get the player session and mob data
     with {:ok, to_pid} <- UnitRegistry.get_player_pid(to_char_id),
          {:ok, {_module, mob_state, _pid}} <- UnitRegistry.get_unit(:mob, mob_id) do
@@ -928,7 +941,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         moving: false
       }
 
-      GenServer.cast(to_pid, {:send_packet, mob_packet})
+      GenServer.cast(to_pid, {:send_packet, Concealment.reveal(mob_packet, reveal_concealed?)})
 
       :mob
       |> StatusDisplay.active_icons(mob_state.instance_id)

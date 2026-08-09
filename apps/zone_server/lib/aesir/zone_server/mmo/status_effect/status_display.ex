@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
 
@@ -104,8 +105,47 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay do
   """
   @spec broadcast_state(Unit.unit_type(), integer()) :: :ok
   def broadcast_state(unit_type, unit_id) do
-    broadcast_area(unit_type, unit_id, state_packet(unit_type, unit_id))
+    packet = state_packet(unit_type, unit_id)
+
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} ->
+        broadcast_state_area(unit_type, unit_id, map_name, x, y, packet)
+
+      {:error, :not_found} ->
+        Logger.debug("StatusDisplay: unit #{inspect({unit_type, unit_id})} has no position")
+        :ok
+    end
   end
+
+  # A concealed sprite state (Hiding/Cloaking/Chase Walk) is masked per-observer
+  # so an intravision wearer still sees the unit; every other state broadcasts to
+  # the whole area unchanged (the common fast path).
+  defp broadcast_state_area(
+         unit_type,
+         unit_id,
+         map_name,
+         x,
+         y,
+         %UnitStateChange{
+           effect_state: effect_state
+         } = packet
+       ) do
+    if Concealment.concealed?(effect_state) do
+      map_name
+      |> SpatialIndex.get_players_in_range(x, y, Config.view_range())
+      |> Enum.each(&send_state_to_observer(&1, unit_type, unit_id, packet))
+    else
+      Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet, [])
+    end
+  end
+
+  # The concealed unit's own owner always sees its true (still-concealed) sprite;
+  # any other observer sees it revealed only when they carry intravision.
+  defp send_state_to_observer(char_id, :player, char_id, packet),
+    do: Broadcast.to_player(char_id, packet)
+
+  defp send_state_to_observer(char_id, _unit_type, _unit_id, packet),
+    do: Broadcast.to_player(char_id, Concealment.reveal_for(packet, char_id))
 
   @doc """
   Builds the unit's current sprite-state aggregate as a `UnitStateChange`
