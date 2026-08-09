@@ -1346,7 +1346,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       base_level: progression.base_level,
       job_level: progression.job_level,
       learned_skills: progression.learned_skills,
-      stats: stat_params
+      stats: stat_params,
+      job_id: progression.job_id
     }
 
     program

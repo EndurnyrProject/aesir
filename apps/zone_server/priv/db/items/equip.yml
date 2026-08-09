@@ -7430,6 +7430,19 @@
   locations:
     - right_hand
   name: Assaulter Spear
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 95)
+    ctx = bonus(ctx, {:addrace, :player_human}, 95)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if job_is(ctx, :base_job, :crusader) do
+      bonus(ctx, :aspd_rate, 20)
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -7697,6 +7710,19 @@
   locations:
     - right_hand
   name: Half BF Spear1
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 45)
+    ctx = bonus(ctx, {:addrace, :player_human}, 45)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if job_is(ctx, :base_job, :crusader) do
+      bonus(ctx, :aspd_rate, 20)
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -7806,11 +7832,6 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx
@@ -7878,11 +7899,6 @@
   name: Requiem Spear
   on_equip: |-
     ctx = bonus(ctx, :unbreakable_weapon, 1)
-    ctx = if (refine(ctx) >= 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:addrace2, :biolab}, if((refine(ctx) >= 5), do: (40 + (((refine(ctx) - 5) * 15) + 20)), else: 40))
     ctx
   range: 3
@@ -13029,13 +13045,7 @@
     ctx = bonus(ctx, {:magic_addrace, :undead}, 10)
     ctx = bonus(ctx, {:magic_addrace, :demon}, 10)
     ctx = if (refine(ctx) >= 9) do
-      ctx = if (refine(ctx) >= 12) do
-        ctx
-      else
-        ctx
-      end
-      ctx = bonus(ctx, :matk_rate, if((refine(ctx) >= 12), do: (5 + 7), else: 5))
-      ctx
+      bonus(ctx, :matk_rate, if((refine(ctx) >= 12), do: (5 + 7), else: 5))
     else
       ctx
     end
@@ -13455,11 +13465,6 @@
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:magic_addele, :water}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:magic_addrace, :fish}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx
@@ -14214,6 +14219,7 @@
   locations:
     - both_hand
   name: Luna Bow
+  on_equip: bonus(ctx, :def, ((2 + (3 * bool(ctx, (refine(ctx) > 5)))) + (5 * bool(ctx, (refine(ctx) > 8)))))
   range: 5
   refineable: true
   slots: 2
@@ -15510,11 +15516,6 @@
   magic_attack: 100
   name: Requiem Knuckle
   on_equip: |-
-    ctx = if (refine(ctx) >= 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:addrace2, :biolab}, if((refine(ctx) >= 5), do: (40 + (((refine(ctx) - 5) * 15) + 20)), else: 40))
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx
@@ -18164,6 +18165,24 @@
     - both_hand
   magic_attack: 70
   name: Upgrade Staff
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (refine(ctx) * 10))
+    ctx = bonus(ctx, :heal_power, refine(ctx))
+    ctx = if job_is(ctx, :base_job, :wizard) do
+      bonus(ctx, :matk, 30)
+    else
+      if job_is(ctx, :base_job, :sage) do
+        bonus(ctx, :matk, 20)
+      else
+        ctx
+      end
+    end
+    ctx = if (base_level(ctx) > 70) do
+      bonus(ctx, :matk, (div((base_level(ctx) - 70), 10) * 10))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -18257,6 +18276,23 @@
     - both_hand
   magic_attack: 70
   name: Metal Staff
+  on_equip: |-
+    ctx = if job_is(ctx, :base_job, :wizard) do
+      bonus(ctx, :matk, 15)
+    else
+      if job_is(ctx, :base_job, :sage) do
+        bonus(ctx, :matk, 10)
+      else
+        ctx
+      end
+    end
+    ctx = bonus(ctx, :matk, (refine(ctx) * 5))
+    ctx = if (min(div(base_level(ctx), 10), 12) > 2) do
+      bonus(ctx, :matk, ((min(div(base_level(ctx), 10), 12) - 2) * 5))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -18958,15 +18994,6 @@
     ctx = bonus(ctx, :int, 7)
     ctx = bonus(ctx, :matk_rate, div(refine(ctx), 2))
     ctx = bonus(ctx, :unbreakable_weapon, 1)
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = if (refine(ctx) >= 11) do
       bonus(ctx, {:subsize, :all}, 20)
     else
@@ -23538,6 +23565,19 @@
   locations:
     - armor
   name: Valkyrian Armor
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, {:res_eff, :sc_silence}, 5000)
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, {:res_eff, :sc_stun}, 5000)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -24734,6 +24774,18 @@
   locations:
     - shoes
   name: Valkyrian Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_shoes, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :max_hp, (base_level(ctx) * 5))
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :max_sp, (job_level(ctx) * 2))
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -26174,6 +26226,16 @@
   locations:
     - shoes
   name: Egir Shoes
+  on_equip: |-
+    if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :max_hp, (base_level(ctx) * 5))
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :max_sp, (job_level(ctx) * 2))
+      else
+        ctx
+      end
+    end
   refineable: true
   slots: 1
   type: armor
@@ -26659,6 +26721,18 @@
   locations:
     - garment
   name: Valkyrian Manteau
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_garment, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :perfect_dodge, ((5 + (min(refine(ctx), 10) * 2)) * 10))
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :short_weapon_damage_return, (5 + (min(refine(ctx), 10) * 2)))
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -30376,6 +30450,14 @@
   locations:
     - both_accessory
   name: Novice Figure
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 70)
+    ctx = if (job_is(ctx, :base_job, :novice) || job_is(ctx, :base_job, :super_novice)) do
+      bonus(ctx, :max_hp, 30)
+    else
+      ctx
+    end
+    ctx
   type: armor
   weight: 100
 - aegis_name: Swordman_Figure
@@ -30384,6 +30466,14 @@
   locations:
     - both_accessory
   name: Swordman Figure
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      bonus(ctx, :def, 2)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Acolyte_Figure
   armor_level: 1
@@ -30391,6 +30481,14 @@
   locations:
     - both_accessory
   name: Acolyte Figure
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = if job_is(ctx, :base_class, :acolyte) do
+      bonus(ctx, :max_sp, 50)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Mage_Figure
   armor_level: 1
@@ -30398,6 +30496,14 @@
   locations:
     - both_accessory
   name: Mage Figure
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = if job_is(ctx, :base_class, :mage) do
+      bonus(ctx, :sp_regen, 5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Archer_Figure
   armor_level: 1
@@ -30405,6 +30511,14 @@
   locations:
     - both_accessory
   name: Archer Figure
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = if job_is(ctx, :base_class, :archer) do
+      bonus(ctx, :atk, 10)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Thief_Figure
   armor_level: 1
@@ -30412,6 +30526,14 @@
   locations:
     - both_accessory
   name: Thief Figure
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = if job_is(ctx, :base_class, :thief) do
+      bonus(ctx, :aspd_rate, 3)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Merchant_Figure
   armor_level: 1
@@ -30419,6 +30541,14 @@
   locations:
     - both_accessory
   name: Merchant Figure
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = if job_is(ctx, :base_class, :merchant) do
+      bonus(ctx, :critical, 5)
+    else
+      ctx
+    end
+    ctx
   type: armor
 - aegis_name: Krieger_Ring1
   armor_level: 1
@@ -36330,6 +36460,14 @@
     - head_mid
     - head_top
   name: Bride Mask
+  on_equip: |-
+    if job_is(ctx, :base_class, :taekwon) do
+      ctx = bonus(ctx, :luk, 2)
+      ctx = bonus(ctx, :critical, 5)
+      ctx
+    else
+      ctx
+    end
   refineable: true
   slots: 1
   type: armor
@@ -36408,6 +36546,14 @@
   locations:
     - head_top
   name: Magistrate Hat
+  on_equip: |-
+    if job_is(ctx, :base_class, :taekwon) do
+      ctx = bonus(ctx, :agi, 1)
+      ctx = bonus(ctx, :hp_regen, 3)
+      ctx
+    else
+      ctx
+    end
   refineable: true
   slots: 1
   type: armor
@@ -36422,6 +36568,14 @@
   locations:
     - head_top
   name: Ayam
+  on_equip: |-
+    if job_is(ctx, :base_class, :taekwon) do
+      ctx = bonus(ctx, :int, 1)
+      ctx = bonus(ctx, :sp_regen, 3)
+      ctx
+    else
+      ctx
+    end
   refineable: true
   slots: 1
   type: armor
@@ -36452,6 +36606,14 @@
     - head_low
     - head_mid
   name: Hahoe Mask
+  on_equip: |-
+    if job_is(ctx, :base_class, :taekwon) do
+      ctx = bonus(ctx, :luk, 1)
+      ctx = bonus(ctx, :perfect_dodge, 20)
+      ctx
+    else
+      ctx
+    end
   type: armor
   view: 230
   weight: 100
@@ -36465,6 +36627,15 @@
     - head_mid
     - head_top
   name: Mythical Lion Mask
+  on_equip: |-
+    if job_is(ctx, :base_class, :taekwon) do
+      ctx = bonus(ctx, :dex, 2)
+      ctx = bonus(ctx, :atk, (2 * refine(ctx)))
+      ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
+      ctx
+    else
+      ctx
+    end
   refineable: true
   slots: 1
   type: armor
@@ -37743,6 +37914,24 @@
   locations:
     - head_top
   name: Silver Tiara
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = if job_is(ctx, :base_class, :mage) do
+      bonus(ctx, :matk_rate, div(job_level(ctx), 20))
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :acolyte) do
+      bonus(ctx, :sp_cost_rate, (0 - div(job_level(ctx), 10)))
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :archer) do
+      bonus(ctx, :max_sp, (job_level(ctx) * 2))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 218
@@ -37755,6 +37944,15 @@
   locations:
     - head_top
   name: Golden Tiara
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx = if ((stat(ctx, :dex) < 56) && ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief))) do
+      bonus(ctx, :dex, div(job_level(ctx), 7))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 232
@@ -39173,6 +39371,14 @@
   locations:
     - head_low
   name: Gangster Scarf
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = if job_is(ctx, :base_job, :rogue) do
+      grant_skill(ctx, 223, 1)
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 369
   weight: 100
@@ -42903,6 +43109,28 @@
   locations:
     - head_mid
   name: Sigrun's Wings
+  on_equip: |-
+    if (((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) || (job_is(ctx, :base_job, :taekwon) && job_is_not(ctx, :class, :soul_linker))) do
+      bonus(ctx, :aspd, 1)
+    else
+      if (((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :class, :ninja)) || job_is(ctx, :class, :soul_linker)) do
+        ctx = bonus(ctx, :matk, 5)
+        ctx = bonus(ctx, :heal_power, 2)
+        ctx
+      else
+        if (job_is(ctx, :base_class, :archer) || job_is(ctx, :base_class, :gunslinger)) do
+          bonus(ctx, :long_atk_rate, 2)
+        else
+          if (job_is(ctx, :base_job, :novice) || job_is(ctx, :base_job, :super_novice)) do
+            ctx = bonus(ctx, :max_hp, 120)
+            ctx = bonus(ctx, :max_sp, 60)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
   type: armor
   view: 568
   weight: 100
@@ -42954,6 +43182,26 @@
   locations:
     - head_top
   name: Eye Of Juno
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      ctx = bonus(ctx, :int, 2)
+      ctx = bonus(ctx, :dex, 2)
+      ctx = bonus(ctx, {:subele, :neutral}, div(job_level(ctx), 14))
+      ctx = bonus(ctx, {:subele, :water}, div(job_level(ctx), 14))
+      ctx
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        ctx = bonus(ctx, :agi, 2)
+        ctx = bonus(ctx, :vit, 2)
+        ctx = bonus(ctx, {:subele, :neutral}, div(job_level(ctx), 14))
+        ctx = bonus(ctx, {:subele, :water}, div(job_level(ctx), 14))
+        ctx
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -46024,6 +46272,30 @@
   locations:
     - head_mid
   name: 3D Glasses
+  on_equip: |-
+    ctx = if (((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :gunslinger)) do
+      bonus(ctx, :atk, (3 + div(base_level(ctx), 30)))
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :thief) do
+      bonus(ctx, :flee, (1 + div(base_level(ctx), 30)))
+    else
+      ctx
+    end
+    ctx = if (((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :class, :ninja)) || job_is(ctx, :class, :soul_linker)) do
+      bonus(ctx, :matk, (3 + div(base_level(ctx), 30)))
+    else
+      ctx
+    end
+    ctx = if ((job_is(ctx, :class, :novice) || job_is(ctx, :class, :super_novice)) || (job_is(ctx, :base_job, :taekwon) && job_is_not(ctx, :class, :soul_linker))) do
+      ctx = bonus(ctx, :max_hp, (100 + (div(base_level(ctx), 30) * 30)))
+      ctx = bonus(ctx, :max_sp, (50 + div(base_level(ctx), 30)))
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 661
   weight: 100
@@ -47670,11 +47942,6 @@
     - head_top
   name: Inconspicuous Hat
   on_equip: |-
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :matk_rate, (7 + if((refine(ctx) >= 9), do: 5, else: 0)))
     ctx = if (refine(ctx) >= 7) do
       bonus(ctx, :matk, (div(stat(ctx, :int), 5) * 2))
@@ -47920,6 +48187,16 @@
   locations:
     - head_top
   name: Paradise Bird Cage
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 5)
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = if job_is(ctx, :base_class, :ranger) do
+      bonus(ctx, {:skill_atk, 129}, (5 * refine(ctx)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48189,6 +48466,15 @@
   locations:
     - head_top
   name: Clergy Nurse Cap
+  on_equip: |-
+    ctx = if job_is(ctx, :base_class, :acolyte) do
+      bonus(ctx, :heal_power, 3)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :no_cast_cancel, 1)
+    ctx = bonus(ctx, :heal_power, if((refine(ctx) > 8), do: 12, else: if((refine(ctx) > 6), do: 9, else: if((refine(ctx) > 4), do: 6, else: 0))))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -50273,6 +50559,20 @@
   locations:
     - right_hand
   name: Brave Assassin's Damascus
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if ((job_is(ctx, :class, :ninja) || job_is(ctx, :class, :rogue)) || job_is(ctx, :class, :stalker)) do
+      bonus(ctx, :matk, 90)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -52047,13 +52347,7 @@
     ctx = bonus(ctx, {:addrace, :undead}, 10)
     ctx = bonus(ctx, {:addrace, :demon}, 10)
     ctx = if (refine(ctx) >= 9) do
-      ctx = if (refine(ctx) >= 12) do
-        ctx
-      else
-        ctx
-      end
-      ctx = bonus(ctx, :atk_rate, if((refine(ctx) >= 12), do: (5 + 7), else: 5))
-      ctx
+      bonus(ctx, :atk_rate, if((refine(ctx) >= 12), do: (5 + 7), else: 5))
     else
       ctx
     end
@@ -52698,11 +52992,6 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx
@@ -52731,11 +53020,6 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :fire)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addrace, :demi_human}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addrace, :insect}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addele, :earth}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
@@ -58132,6 +58416,18 @@
   locations:
     - armor
   name: Egir Armor
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, {:res_eff, :sc_silence}, 5000)
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, {:res_eff, :sc_stun}, 5000)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -58327,6 +58623,19 @@
   locations:
     - armor
   name: Valkyrian Robe
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, {:res_eff, :sc_silence}, 5000)
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, {:res_eff, :sc_stun}, 5000)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -58963,11 +59272,6 @@
     - armor
   name: Hunter Mail
   on_equip: |-
-    ctx = if (refine(ctx) > 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:addrace, :brute}, (3 + if((refine(ctx) > 5), do: (refine(ctx) - 5), else: 0)))
     ctx = bonus(ctx, {:magic_addrace, :brute}, (3 + if((refine(ctx) > 5), do: (refine(ctx) - 5), else: 0)))
     ctx = bonus(ctx, {:addrace, :player_doram}, (3 + if((refine(ctx) > 5), do: (refine(ctx) - 5), else: 0)))
@@ -59000,11 +59304,6 @@
     - armor
   name: Fisherman's Mail
   on_equip: |-
-    ctx = if (refine(ctx) > 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:addrace, :fish}, (3 + if((refine(ctx) > 5), do: (refine(ctx) - 5), else: 0)))
     ctx = bonus(ctx, {:magic_addrace, :fish}, (3 + if((refine(ctx) > 5), do: (refine(ctx) - 5), else: 0)))
     ctx
@@ -59942,15 +60241,6 @@
   name: Agenda Robe
   on_equip: |-
     ctx = grant_skill(ctx, 277, 1)
-    ctx = if (base_level(ctx) >= 140) do
-      ctx
-    else
-      if (base_level(ctx) >= 120) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :matk_rate, if((base_level(ctx) >= 140), do: 14, else: if((base_level(ctx) >= 120), do: 9, else: 5)))
     ctx
   refineable: true
@@ -60165,15 +60455,6 @@
     - armor
   name: Flame Dragon Armor
   on_equip: |-
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :all_stats, 1)
     ctx = bonus(ctx, :hit, (10 + if((refine(ctx) >= 9), do: 20, else: if((refine(ctx) >= 7), do: 10, else: 0))))
     ctx = bonus(ctx, {:addclass, :boss}, if((refine(ctx) >= 9), do: 20, else: if((refine(ctx) >= 7), do: 10, else: 0)))
@@ -60348,6 +60629,21 @@
   locations:
     - armor
   name: Kafra Uniform
+  on_equip: |-
+    ctx = bonus(ctx, {:exp_add_race, :all}, 5)
+    ctx = bonus(ctx, {:drop_add_race, :all}, 5)
+    ctx = bonus(ctx, :max_hp, (100 * refine(ctx)))
+    ctx = bonus(ctx, :max_sp, (20 * refine(ctx)))
+    ctx = bonus(ctx, :max_hp_rate, ((3 * bool(ctx, (refine(ctx) >= 7))) + (5 * bool(ctx, (refine(ctx) >= 9)))))
+    ctx = bonus(ctx, :max_sp_rate, ((3 * bool(ctx, (refine(ctx) >= 7))) + (5 * bool(ctx, (refine(ctx) >= 9)))))
+    ctx = if (refine(ctx) >= 12) do
+      ctx = bonus(ctx, :hp_regen, 100)
+      ctx = bonus(ctx, :sp_regen, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -60515,15 +60811,6 @@
     ctx = bonus(ctx, :unbreakable_armor, 1)
     ctx = set(ctx, :def_ele, :shadow)
     ctx = if (refine(ctx) >= 5) do
-      ctx = if (refine(ctx) >= 7) do
-        if (refine(ctx) >= 9) do
-          ctx
-        else
-          ctx
-        end
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addele, :shadow}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: ((10 + 15) + 15), else: (10 + 15)), else: 10))
       ctx = bonus(ctx, {:addele, :undead}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: ((10 + 15) + 15), else: (10 + 15)), else: 10))
       ctx = bonus(ctx, {:magic_addele, :shadow}, if((refine(ctx) >= 7), do: if((refine(ctx) >= 9), do: ((10 + 15) + 15), else: (10 + 15)), else: 10))
@@ -62248,13 +62535,7 @@
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = bonus(ctx, :atk, 15)
     ctx = if (refine(ctx) > 1) do
-      ctx = bonus(ctx, :crit_atk_rate, div(refine(ctx), 2))
-      ctx = if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-      ctx
+      bonus(ctx, :crit_atk_rate, div(refine(ctx), 2))
     else
       ctx
     end
@@ -62376,13 +62657,7 @@
   name: Upgrade Part - Plate
   on_equip: |-
     ctx = if (refine(ctx) > 6) do
-      ctx = bonus(ctx, {:subsize, :large}, 10)
-      ctx = if (refine(ctx) > 8) do
-        ctx
-      else
-        ctx
-      end
-      ctx
+      bonus(ctx, {:subsize, :large}, 10)
     else
       ctx
     end
@@ -62561,19 +62836,6 @@
     ctx = bonus(ctx, :no_knockback, 1)
     ctx = bonus(ctx, :unbreakable_armor, 1)
     ctx = set(ctx, :def_ele, :earth)
-    ctx = if (refine(ctx) > 8) do
-      ctx
-    else
-      if (refine(ctx) > 6) do
-        ctx
-      else
-        if (refine(ctx) >= 5) do
-          ctx
-        else
-          ctx
-        end
-      end
-    end
     ctx = bonus(ctx, {:addele, :earth}, if((refine(ctx) > 8), do: 40, else: if((refine(ctx) > 6), do: 25, else: if((refine(ctx) >= 5), do: 10, else: 0))))
     ctx = bonus(ctx, {:addele, :wind}, if((refine(ctx) > 8), do: 40, else: if((refine(ctx) > 6), do: 25, else: if((refine(ctx) >= 5), do: 10, else: 0))))
     ctx = bonus(ctx, {:magic_addele, :earth}, if((refine(ctx) > 8), do: 40, else: if((refine(ctx) > 6), do: 25, else: if((refine(ctx) >= 5), do: 10, else: 0))))
@@ -63630,19 +63892,6 @@
     ctx = bonus(ctx, :no_knockback, 1)
     ctx = bonus(ctx, :unbreakable_armor, 1)
     ctx = set(ctx, :def_ele, :water)
-    ctx = if (refine(ctx) > 8) do
-      ctx
-    else
-      if (refine(ctx) > 6) do
-        ctx
-      else
-        if (refine(ctx) >= 5) do
-          ctx
-        else
-          ctx
-        end
-      end
-    end
     ctx = bonus(ctx, {:addele, :fire}, if((refine(ctx) > 8), do: 40, else: if((refine(ctx) > 6), do: 25, else: if((refine(ctx) >= 5), do: 10, else: 0))))
     ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) > 8), do: 40, else: if((refine(ctx) > 6), do: 25, else: if((refine(ctx) >= 5), do: 10, else: 0))))
     ctx = bonus(ctx, {:magic_addele, :fire}, if((refine(ctx) > 8), do: 40, else: if((refine(ctx) > 6), do: 25, else: if((refine(ctx) >= 5), do: 10, else: 0))))
@@ -63800,6 +64049,59 @@
   locations:
     - armor
   name: Fierce Physique Armor
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :flee, 5)
+      ctx = bonus(ctx, :def, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :def, 10)
+      ctx = bonus(ctx, :mdef, 2)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :def, 15)
+      ctx = bonus(ctx, :mdef, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :atk, 10)
+      ctx = bonus(ctx, :mdef, 5)
+      ctx = bonus(ctx, {:subele, :earth}, 2)
+      ctx = bonus(ctx, {:subele, :fire}, 2)
+      ctx = bonus(ctx, {:subele, :water}, 2)
+      ctx = bonus(ctx, {:subele, :wind}, 2)
+      ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+      ctx = bonus(ctx, {:subrace, :player_human}, 1)
+      ctx = bonus(ctx, {:subrace, :player_doram}, 1)
+      ctx = if (job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) do
+        bonus(ctx, :max_hp, 600)
+      else
+        if (((job_is(ctx, :base_class, :archer) || job_is(ctx, :base_class, :thief)) || job_is(ctx, :base_class, :gunslinger)) || job_is(ctx, :base_job, :star_gladiator)) do
+          bonus(ctx, :max_hp, 800)
+        else
+          if ((((job_is(ctx, :base_class, :novice) || job_is(ctx, :base_class, :mage)) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :base_class, :ninja)) || job_is(ctx, :base_job, :soul_linker)) do
+            bonus(ctx, :max_hp, 1000)
+          else
+            ctx
+          end
+        end
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -63811,6 +64113,59 @@
   locations:
     - armor
   name: Fierce Magique Armor
+  on_equip: |-
+    ctx = bonus(ctx, :matk, 5)
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :flee, 5)
+      ctx = bonus(ctx, :def, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :def, 10)
+      ctx = bonus(ctx, :mdef, 2)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :def, 15)
+      ctx = bonus(ctx, :mdef, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :matk, 10)
+      ctx = bonus(ctx, :mdef, 5)
+      ctx = bonus(ctx, {:subele, :earth}, 2)
+      ctx = bonus(ctx, {:subele, :fire}, 2)
+      ctx = bonus(ctx, {:subele, :water}, 2)
+      ctx = bonus(ctx, {:subele, :wind}, 2)
+      ctx = bonus(ctx, {:subrace, :demi_human}, 1)
+      ctx = bonus(ctx, {:subrace, :player_human}, 1)
+      ctx = bonus(ctx, {:subrace, :player_doram}, 1)
+      ctx = if (job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) do
+        bonus(ctx, :max_hp, 600)
+      else
+        if (((job_is(ctx, :base_class, :archer) || job_is(ctx, :base_class, :thief)) || job_is(ctx, :base_class, :gunslinger)) || job_is(ctx, :base_job, :star_gladiator)) do
+          bonus(ctx, :max_hp, 800)
+        else
+          if ((((job_is(ctx, :base_class, :novice) || job_is(ctx, :base_class, :mage)) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :base_class, :ninja)) || job_is(ctx, :base_job, :soul_linker)) do
+            bonus(ctx, :max_hp, 1000)
+          else
+            ctx
+          end
+        end
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -64892,6 +65247,82 @@
   locations:
     - head_top
   name: Ceryne's Hat
+  on_equip: |-
+    if job_is(ctx, :base_job, :wizard) do
+      ctx = bonus(ctx, :atk, (2 * div(stat(ctx, :str), 9)))
+      ctx = bonus(ctx, :matk, (2 * div(stat(ctx, :int), 9)))
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :def, 10)
+        ctx = bonus(ctx, :mdef, 15)
+        ctx = bonus(ctx, {:skill_varcast_rate, 84}, 20)
+        ctx = if (refine(ctx) >= 8) do
+          ctx = bonus(ctx, :delay_rate, -10)
+          ctx = bonus(ctx, {:skill_use_sp, 84}, 5)
+          ctx = if (refine(ctx) >= 9) do
+            ctx = bonus(ctx, {:skill_atk, 84}, 30)
+            ctx = bonus(ctx, {:skill_atk, 80}, 30)
+            ctx = if (refine(ctx) >= 10) do
+              ctx = bonus(ctx, :all_stats, 2)
+              ctx = bonus(ctx, :max_hp_rate, 3)
+              ctx = bonus(ctx, :max_sp_rate, 3)
+              ctx
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      if job_is(ctx, :base_job, :sage) do
+        ctx = bonus(ctx, :atk, (2 * div(stat(ctx, :str), 9)))
+        ctx = bonus(ctx, :matk, (2 * div(stat(ctx, :int), 9)))
+        ctx = if (refine(ctx) >= 7) do
+          ctx = bonus(ctx, :def, 10)
+          ctx = bonus(ctx, :mdef, 15)
+          ctx = bonus(ctx, {:skill_varcast_rate, 91}, 30)
+          ctx = if (refine(ctx) >= 8) do
+            ctx = bonus(ctx, :delay_rate, -10)
+            ctx = bonus(ctx, {:skill_use_sp, 91}, 5)
+            ctx = if (refine(ctx) >= 9) do
+              ctx = bonus(ctx, {:skill_atk, 91}, 30)
+              ctx = bonus(ctx, {:skill_atk, 19}, 10)
+              ctx = bonus(ctx, {:skill_atk, 14}, 10)
+              ctx = bonus(ctx, {:skill_atk, 20}, 10)
+              ctx = if (refine(ctx) >= 10) do
+                ctx = bonus(ctx, :all_stats, 2)
+                ctx = bonus(ctx, :max_hp_rate, 3)
+                ctx = bonus(ctx, :max_sp_rate, 3)
+                ctx
+              else
+                ctx
+              end
+              ctx
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+    end
   refineable: true
   slots: 1
   type: armor
@@ -65609,11 +66040,6 @@
     - head_low
   name: Vassalage Necklace
   on_equip: |-
-    ctx = if (base_level(ctx) >= 175) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :short_atk_rate, if((base_level(ctx) >= 175), do: (div(base_level(ctx), 35) * 2), else: div(base_level(ctx), 35)))
     ctx = bonus(ctx, :hit, if((base_level(ctx) >= 175), do: ((2 * div(base_level(ctx), 35)) * 2), else: (2 * div(base_level(ctx), 35))))
     ctx
@@ -66030,6 +66456,28 @@
   locations:
     - head_mid
   name: "[Not For Sale] Sigrun's Wing"
+  on_equip: |-
+    if (((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) || (job_is(ctx, :base_job, :taekwon) && job_is_not(ctx, :class, :soul_linker))) do
+      bonus(ctx, :aspd, 1)
+    else
+      if (((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :class, :ninja)) || job_is(ctx, :class, :soul_linker)) do
+        ctx = bonus(ctx, :matk, 5)
+        ctx = bonus(ctx, :heal_power, 2)
+        ctx
+      else
+        if (job_is(ctx, :base_class, :archer) || job_is(ctx, :base_class, :gunslinger)) do
+          bonus(ctx, :long_atk_rate, 2)
+        else
+          if (job_is(ctx, :base_job, :novice) || job_is(ctx, :base_job, :super_novice)) do
+            ctx = bonus(ctx, :max_hp, 120)
+            ctx = bonus(ctx, :max_sp, 60)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
   type: armor
   view: 568
   weight: 100
@@ -67324,11 +67772,6 @@
     ctx = set(ctx, :atk_ele, :wind)
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx
@@ -67408,6 +67851,56 @@
   locations:
     - right_hand
   name: Valkyrie Hammer
+  on_equip: |-
+    ctx = bonus(ctx, :matk, 50)
+    ctx = if job_is(ctx, :base_job, :novice) do
+      ctx = bonus(ctx, :atk, 150)
+      ctx = bonus(ctx, :matk, 200)
+      ctx = bonus(ctx, :sp_cost_rate, -5)
+      ctx = bonus(ctx, :hit, 10)
+      ctx = bonus(ctx, :max_hp, (500 + (200 * refine(ctx))))
+      ctx = bonus(ctx, :max_sp, 400)
+      ctx = bonus(ctx, :vit, refine(ctx))
+      ctx = bonus(ctx, :perfect_dodge, (refine(ctx) * 10))
+      ctx = bonus(ctx, :aspd_rate, refine(ctx))
+      ctx = bonus(ctx, :varcast_rate, div((0 - refine(ctx)), 2))
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      ctx = bonus(ctx, :vit, refine(ctx))
+      ctx = bonus(ctx, :max_hp, 500)
+      ctx = bonus(ctx, :max_sp, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_job, :priest) do
+      ctx = bonus(ctx, :atk, 50)
+      ctx = bonus(ctx, :matk, 100)
+      ctx = bonus(ctx, :aspd_rate, refine(ctx))
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_job, :monk) do
+      ctx = bonus(ctx, :max_sp, 200)
+      ctx = bonus(ctx, :sp_cost_rate, -5)
+      ctx = bonus(ctx, :perfect_dodge, (refine(ctx) * 10))
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :merchant) do
+      ctx = bonus(ctx, :atk, 100)
+      ctx = bonus(ctx, :hit, 10)
+      ctx = bonus(ctx, :varcast_rate, div((0 - refine(ctx)), 2))
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 4
@@ -68416,6 +68909,20 @@
   locations:
     - both_hand
   name: Upgrade Bow
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (refine(ctx) * 7))
+    ctx = bonus(ctx, :long_atk_rate, (refine(ctx) * 2))
+    ctx = if job_is(ctx, :base_job, :hunter) do
+      bonus(ctx, :atk, 20)
+    else
+      ctx
+    end
+    ctx = if (base_level(ctx) > 70) do
+      bonus(ctx, :atk, (div((base_level(ctx) - 70), 10) * 10))
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   slots: 1
@@ -68848,11 +69355,6 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx
@@ -71562,11 +72064,6 @@
   name: Cat Ear Beret
   on_equip: |-
     ctx = bonus(ctx, {:addclass, :all}, 5)
-    ctx = if (refine(ctx) < 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:subrace, :demi_human}, (if((refine(ctx) < 5), do: 5, else: refine(ctx)) - 5))
     ctx = bonus(ctx, {:addrace, :demi_human}, (if((refine(ctx) < 5), do: 5, else: refine(ctx)) - 5))
     ctx = bonus(ctx, {:subrace, :player_human}, (if((refine(ctx) < 5), do: 5, else: refine(ctx)) - 5))
@@ -71585,11 +72082,6 @@
     - head_top
   name: Red Bread Hat
   on_equip: |-
-    ctx = if (refine(ctx) < 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :matk_rate, 5)
     ctx = bonus(ctx, {:subrace, :demi_human}, (if((refine(ctx) < 5), do: 5, else: refine(ctx)) - 5))
     ctx = bonus(ctx, {:subrace, :player_human}, (if((refine(ctx) < 5), do: 5, else: refine(ctx)) - 5))
@@ -74118,16 +74610,6 @@
   on_equip: |-
     ctx = bonus(ctx, :str, 3)
     ctx = bonus(ctx, :int, 2)
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :atk, (10 + (15 * if((refine(ctx) >= 9), do: 2, else: if((refine(ctx) >= 7), do: 1, else: 0)))))
     ctx = bonus(ctx, :matk, (10 + (15 * if((refine(ctx) >= 9), do: 2, else: if((refine(ctx) >= 7), do: 1, else: 0)))))
     ctx
@@ -74154,16 +74636,6 @@
   name: Enhanced Bone Helm
   on_equip: |-
     ctx = bonus(ctx, {:subele, :shadow}, -15)
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:subele, :neutral}, (2 + (2 * if((refine(ctx) >= 9), do: 2, else: if((refine(ctx) >= 7), do: 1, else: 0)))))
     ctx
   refineable: true
@@ -74466,11 +74938,6 @@
   name: Elder Devil Horn
   on_equip: |-
     ctx = bonus(ctx, :int, 2)
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:magic_addrace, :demi_human}, (5 + if((refine(ctx) >= 7), do: 5, else: 0)))
     ctx = bonus(ctx, {:magic_addrace, :player_human}, (5 + if((refine(ctx) >= 7), do: 5, else: 0)))
     ctx = bonus(ctx, {:magic_addrace, :player_doram}, (5 + if((refine(ctx) >= 7), do: 5, else: 0)))
@@ -74547,15 +75014,6 @@
   name: Starlight Scope
   on_equip: |-
     ctx = bonus(ctx, :dex, 1)
-    ctx = if (base_level(ctx) >= 100) do
-      if (base_level(ctx) >= 150) do
-        ctx
-      else
-        ctx
-      end
-    else
-      ctx
-    end
     ctx = bonus(ctx, :long_atk_rate, (1 + if((base_level(ctx) >= 100), do: if((base_level(ctx) >= 150), do: (1 + 1), else: 1), else: 0)))
     ctx
   type: armor
@@ -74883,14 +75341,7 @@
   locations:
     - head_top
   name: White Snake
-  on_equip: |-
-    ctx = if (refine(ctx) >= 6) do
-      ctx
-    else
-      ctx
-    end
-    ctx = bonus(ctx, {:add_eff, :sc_poison}, (10 * if((refine(ctx) >= 6), do: (refine(ctx) - 5), else: 0)))
-    ctx
+  on_equip: 'bonus(ctx, {:add_eff, :sc_poison}, (10 * if((refine(ctx) >= 6), do: (refine(ctx) - 5), else: 0)))'
   refineable: true
   slots: 1
   type: armor
@@ -75646,6 +76097,19 @@
   locations:
     - armor
   name: Exorcist Robe
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = if (refine(ctx) >= 3) do
+      bonus(ctx, {:subrace, :demon}, (div(refine(ctx), 3) * 5))
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :acolyte) do
+      bonus(ctx, {:subele, :shadow}, 10)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -76497,11 +76961,6 @@
     ctx = bonus(ctx, {:subrace, :player_human}, 5)
     ctx = bonus(ctx, {:subrace, :player_doram}, 5)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addrace, :demi_human}, if((refine(ctx) >= 9), do: (5 + 3), else: 5))
       ctx = bonus(ctx, {:addrace, :player_human}, if((refine(ctx) >= 9), do: (5 + 3), else: 5))
       ctx = bonus(ctx, {:addrace, :player_doram}, if((refine(ctx) >= 9), do: (5 + 3), else: 5))
@@ -77952,6 +78411,28 @@
   locations:
     - head_mid
   name: Rental Sigrun's Wing
+  on_equip: |-
+    if (((((job_is(ctx, :class, :swordman) || job_is(ctx, :class, :thief)) || job_is(ctx, :class, :merchant)) || job_is(ctx, :class, :taekwon)) || job_is(ctx, :class, :star_gladiator)) || job_is(ctx, :class, :star_gladiator2)) do
+      bonus(ctx, :aspd, 1)
+    else
+      if (((job_is(ctx, :class, :mage) || job_is(ctx, :class, :acolyte)) || job_is(ctx, :class, :ninja)) || job_is(ctx, :class, :soul_linker)) do
+        ctx = bonus(ctx, :matk, 5)
+        ctx = bonus(ctx, :heal_power, 2)
+        ctx
+      else
+        if (job_is(ctx, :class, :archer) || job_is(ctx, :class, :gunslinger)) do
+          bonus(ctx, :long_atk_rate, 2)
+        else
+          if (job_is(ctx, :class, :novice) || job_is(ctx, :class, :super_novice)) do
+            ctx = bonus(ctx, :max_hp, 120)
+            ctx = bonus(ctx, :max_sp, 60)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
   type: armor
   view: 568
 - aegis_name: Moon_Cat_Fighter
@@ -78063,6 +78544,30 @@
   locations:
     - head_mid
   name: Sigrun's Wings
+  on_equip: |-
+    if (((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) || (job_is(ctx, :base_job, :taekwon) && job_is_not(ctx, :class, :soul_linker))) do
+      ctx = bonus(ctx, :aspd, 1)
+      ctx = bonus(ctx, :agi, -2)
+      ctx
+    else
+      if (((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :class, :ninja)) || job_is(ctx, :class, :soul_linker)) do
+        ctx = bonus(ctx, :matk, 5)
+        ctx = bonus(ctx, :heal_power, 1)
+        ctx
+      else
+        if (job_is(ctx, :base_class, :archer) || job_is(ctx, :base_class, :gunslinger)) do
+          bonus(ctx, :long_atk_rate, 1)
+        else
+          if (job_is(ctx, :base_job, :novice) || job_is(ctx, :base_job, :super_novice)) do
+            ctx = bonus(ctx, :max_hp, 60)
+            ctx = bonus(ctx, :max_sp, 30)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
   slots: 1
   type: armor
   view: 568
@@ -78308,6 +78813,44 @@
   locations:
     - head_mid
   name: Dragon Emperor's Wing
+  on_equip: |-
+    if job_is(ctx, :base_class, :swordman) do
+      ctx = bonus(ctx, {:subsize, :medium}, 3)
+      ctx = bonus(ctx, {:subsize, :large}, 5)
+      ctx
+    else
+      if job_is(ctx, :base_class, :mage) do
+        bonus(ctx, {:subele, :all}, 5)
+      else
+        if job_is(ctx, :base_class, :archer) do
+          bonus(ctx, :long_atk_def, 10)
+        else
+          if job_is(ctx, :base_class, :acolyte) do
+            bonus(ctx, :heal_power, 10)
+          else
+            if job_is(ctx, :base_class, :thief) do
+              ctx = bonus(ctx, :flee, 10)
+              ctx = bonus(ctx, :perfect_dodge, 30)
+              ctx
+            else
+              if job_is(ctx, :base_class, :merchant) do
+                ctx = bonus(ctx, {:subclass, :normal}, 3)
+                ctx = bonus(ctx, {:subclass, :boss}, 5)
+                ctx
+              else
+                if (((job_is(ctx, :base_class, :novice) || job_is(ctx, :base_class, :taekwon)) || job_is(ctx, :class, :ninja)) || job_is(ctx, :class, :gunslinger)) do
+                  ctx = bonus(ctx, :max_hp, 1000)
+                  ctx = bonus(ctx, :max_sp, 100)
+                  ctx
+                else
+                  ctx
+                end
+              end
+            end
+          end
+        end
+      end
+    end
   type: armor
   view: 1413
   weight: 100
@@ -78465,19 +79008,7 @@
   locations:
     - head_top
   name: Republic Hat
-  on_equip: |-
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
-    ctx = bonus(ctx, :long_atk_rate, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (6 + 2), else: 6) + 4), else: if((refine(ctx) >= 7), do: (6 + 2), else: 6)))
-    ctx
+  on_equip: 'bonus(ctx, :long_atk_rate, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (6 + 2), else: 6) + 4), else: if((refine(ctx) >= 7), do: (6 + 2), else: 6)))'
   refineable: true
   slots: 1
   type: armor
@@ -79105,6 +79636,29 @@
     - head_mid
     - head_top
   name: Barrel Helm
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 5)
+    ctx = bonus(ctx, :hp_regen, -10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :def, 100)
+      ctx = grant_skill(ctx, 249, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 8) do
+      ctx = bonus(ctx, {:subrace, :demi_human}, 10)
+      ctx = bonus(ctx, {:subrace, :player_human}, 10)
+      ctx = if job_is(ctx, :base_job, :super_novice) do
+        grant_skill(ctx, 249, 5)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -93047,6 +93601,18 @@
   locations:
     - garment
   name: Egir Manteau
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_garment, 1)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :perfect_dodge, ((5 + (if((refine(ctx) > 10), do: 10, else: refine(ctx)) * 2)) * 10))
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :short_weapon_damage_return, (5 + (if((refine(ctx) > 10), do: 10, else: refine(ctx)) * 2)))
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -93261,6 +93827,16 @@
   locations:
     - garment
   name: Valkyrie Cape
+  on_equip: |-
+    if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :perfect_dodge, ((5 + (2 * div(min(10, refine(ctx)), 2))) * 10))
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :short_weapon_damage_return, (5 + (2 * div(min(10, refine(ctx)), 2))))
+      else
+        ctx
+      end
+    end
   refineable: true
   slots: 1
   type: armor
@@ -93887,16 +94463,6 @@
   on_equip: |-
     ctx = bonus(ctx, {:subele, :water}, 10)
     ctx = bonus(ctx, {:subele, :wind}, -10)
-    ctx = if (refine(ctx) >= 6) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 10) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:add_eff_when_hit, :sc_freeze}, (500 + if((refine(ctx) >= 10), do: (if((refine(ctx) >= 6), do: (refine(ctx) * 100), else: 0) + 1000), else: if((refine(ctx) >= 6), do: (refine(ctx) * 100), else: 0))))
     ctx = bonus(ctx, :unbreakable_garment, 1)
     ctx
@@ -95205,19 +95771,7 @@
   locations:
     - garment
   name: Drifter's Cape
-  on_equip: |-
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
-    ctx = bonus(ctx, {:subele, :neutral}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (20 + 5), else: 20) + 5), else: if((refine(ctx) >= 7), do: (20 + 5), else: 20)))
-    ctx
+  on_equip: 'bonus(ctx, {:subele, :neutral}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (20 + 5), else: 20) + 5), else: if((refine(ctx) >= 7), do: (20 + 5), else: 20)))'
   refineable: true
   type: armor
   weight: 400
@@ -96940,11 +97494,6 @@
     else
       ctx
     end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :varcast_rate, if((refine(ctx) >= 9), do: (-10 - 10), else: -10))
     ctx
   refineable: true
@@ -97048,13 +97597,7 @@
     ctx = bonus(ctx, :max_sp_rate, 10)
     ctx = bonus(ctx, :mdef, 5)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
-      ctx = bonus(ctx, :varcast_rate, if((refine(ctx) >= 9), do: (-10 - 10), else: -10))
-      ctx
+      bonus(ctx, :varcast_rate, if((refine(ctx) >= 9), do: (-10 - 10), else: -10))
     else
       ctx
     end
@@ -99691,22 +100234,7 @@
   locations:
     - shoes
   name: Heoric Nepenthes Shoes
-  on_equip: |-
-    ctx = if ((refine(ctx) >= 8) && (refine(ctx) <= 10)) do
-      ctx
-    else
-      if ((refine(ctx) >= 11) && (refine(ctx) <= 13)) do
-        ctx
-      else
-        if (refine(ctx) > 13) do
-          ctx
-        else
-          ctx
-        end
-      end
-    end
-    ctx = bonus(ctx, :varcast_rate, (-10 - if(((refine(ctx) >= 8) && (refine(ctx) <= 10)), do: (5 + (refine(ctx) - 8)), else: if(((refine(ctx) >= 11) && (refine(ctx) <= 13)), do: (5 + ((refine(ctx) * 3) - 28)), else: if((refine(ctx) > 13), do: 16, else: 0)))))
-    ctx
+  on_equip: 'bonus(ctx, :varcast_rate, (-10 - if(((refine(ctx) >= 8) && (refine(ctx) <= 10)), do: (5 + (refine(ctx) - 8)), else: if(((refine(ctx) >= 11) && (refine(ctx) <= 13)), do: (5 + ((refine(ctx) * 3) - 28)), else: if((refine(ctx) > 13), do: 16, else: 0)))))'
   refineable: true
   slots: 1
   type: armor
@@ -99720,18 +100248,7 @@
   locations:
     - shoes
   name: Heroic Silver Fox Leather Boots
-  on_equip: |-
-    ctx = if ((refine(ctx) >= 8) && (refine(ctx) <= 13)) do
-      ctx
-    else
-      if (refine(ctx) > 13) do
-        ctx
-      else
-        ctx
-      end
-    end
-    ctx = bonus(ctx, :long_atk_rate, (5 + if(((refine(ctx) >= 8) && (refine(ctx) <= 13)), do: (refine(ctx) - 7), else: if((refine(ctx) > 13), do: 6, else: 0))))
-    ctx
+  on_equip: 'bonus(ctx, :long_atk_rate, (5 + if(((refine(ctx) >= 8) && (refine(ctx) <= 13)), do: (refine(ctx) - 7), else: if((refine(ctx) > 13), do: 6, else: 0))))'
   refineable: true
   slots: 1
   type: armor
@@ -99745,18 +100262,7 @@
   locations:
     - shoes
   name: Heroic Ungoliant Upgrade Boots
-  on_equip: |-
-    ctx = if ((refine(ctx) >= 8) && (refine(ctx) <= 13)) do
-      ctx
-    else
-      if (refine(ctx) > 13) do
-        ctx
-      else
-        ctx
-      end
-    end
-    ctx = bonus(ctx, :sp_cost_rate, (-5 - if(((refine(ctx) >= 8) && (refine(ctx) <= 13)), do: (refine(ctx) - 7), else: if((refine(ctx) > 13), do: 6, else: 0))))
-    ctx
+  on_equip: 'bonus(ctx, :sp_cost_rate, (-5 - if(((refine(ctx) >= 8) && (refine(ctx) <= 13)), do: (refine(ctx) - 7), else: if((refine(ctx) > 13), do: 6, else: 0))))'
   refineable: true
   slots: 1
   type: armor
@@ -101254,16 +101760,6 @@
     - shoes
   name: Spurred Boots
   on_equip: |-
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :max_sp_rate, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (5 + 5), else: 5) + 5), else: if((refine(ctx) >= 7), do: (5 + 5), else: 5)))
     ctx = bonus(ctx, :movement_speed, 25)
     ctx
@@ -101928,15 +102424,6 @@
     - shoes
   name: Survivor's Shoes
   on_equip: |-
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      if (refine(ctx) >= 5) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :mdef, 15)
     ctx = bonus(ctx, {:subrace, :demi_human}, 5)
     ctx = bonus(ctx, :max_hp_rate, if((refine(ctx) >= 7), do: 20, else: if((refine(ctx) >= 5), do: 10, else: 3)))
@@ -107157,6 +107644,14 @@
   locations:
     - shadow_shoes
   name: Alchemist Shadow Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = if job_is(ctx, :base_job, :alchemist) do
+      bonus(ctx, :heal_power, (30 + (7 * refine(ctx))))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Priest_Shoes
@@ -107898,11 +108393,6 @@
   name: Hasty Shadow Shoes II
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :flee, 5)
     ctx = bonus(ctx, :atk_rate, if((refine(ctx) >= 7), do: (1 + 1), else: 1))
     ctx = bonus(ctx, :matk_rate, if((refine(ctx) >= 7), do: (1 + 1), else: 1))
@@ -107918,11 +108408,6 @@
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = bonus(ctx, :atk, 5)
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :max_hp_rate, if((refine(ctx) >= 7), do: 3, else: 1))
     ctx
   refineable: true
@@ -107935,11 +108420,6 @@
   name: Gemstone Shadow Earring II
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :matk, 5)
     ctx = bonus(ctx, :sp_cost_rate, (0 - if((refine(ctx) >= 7), do: 3, else: 2)))
     ctx
@@ -107951,6 +108431,11 @@
   locations:
     - shadow_shield
   name: Spellflow Shadow Shield II
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :matk_rate, (1 + bool(ctx, (refine(ctx) >= 7))))
+    ctx = bonus(ctx, :sp_cost_rate, -1)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S2_Spiritual_Weapon
@@ -107959,6 +108444,12 @@
   locations:
     - shadow_weapon
   name: Spiritual Shadow Weapon II
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = bonus(ctx, :sp_regen, 5)
+    ctx = bonus(ctx, :atk_rate, (1 + bool(ctx, (refine(ctx) >= 7))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S2_Malicious_Armor
@@ -107967,6 +108458,10 @@
   locations:
     - shadow_armor
   name: Malicious Shadow Armor II
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (100 + (refine(ctx) * 10)))
+    ctx = bonus(ctx, :atk_rate, (1 + bool(ctx, (refine(ctx) >= 7))))
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Sigrun_Armor
@@ -107975,6 +108470,30 @@
   locations:
     - shadow_armor
   name: Sigrun Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 1)
+    ctx = bonus(ctx, :hit, refine(ctx))
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :thief)) || (job_is(ctx, :base_class, :taekwon) && job_is_not(ctx, :base_job, :soul_linker))) do
+      bonus(ctx, :atk, 15)
+    else
+      if ((job_is(ctx, :base_class, :merchant) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :gunslinger)) do
+        bonus(ctx, :long_atk_rate, 3)
+      else
+        if (((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :base_class, :ninja)) || job_is(ctx, :base_job, :soul_linker)) do
+          bonus(ctx, :matk, 15)
+        else
+          if (job_is(ctx, :base_class, :novice) || job_is(ctx, :base_job, :summoner)) do
+            ctx = bonus(ctx, :aspd_rate, 5)
+            ctx = bonus(ctx, :max_hp, 1000)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Sigrun_Shield
@@ -107983,6 +108502,33 @@
   locations:
     - shadow_shield
   name: Sigrun Shadow Shield
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = bonus(ctx, :mdef, refine(ctx))
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :def, (5 * refine(ctx)))
+    ctx = if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :thief)) || (job_is(ctx, :base_class, :taekwon) && job_is_not(ctx, :base_job, :soul_linker))) do
+      bonus(ctx, :aspd, 1)
+    else
+      if ((job_is(ctx, :base_class, :merchant) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :gunslinger)) do
+        bonus(ctx, :flee, 15)
+      else
+        if (((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :acolyte)) || job_is(ctx, :base_class, :ninja)) || job_is(ctx, :base_job, :soul_linker)) do
+          ctx = bonus(ctx, :max_sp_rate, 2)
+          ctx = bonus(ctx, :heal_power, 3)
+          ctx
+        else
+          if (job_is(ctx, :base_class, :novice) || job_is(ctx, :base_job, :summoner)) do
+            ctx = bonus(ctx, :varcast_rate, -5)
+            ctx = bonus(ctx, :max_sp, 300)
+            ctx
+          else
+            ctx
+          end
+        end
+      end
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S2_Force_Ex_Weapon
@@ -108190,15 +108736,6 @@
   name: All Race Shadow Shoes
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, {:addrace, :all}, if((refine(ctx) >= 9), do: 5, else: if((refine(ctx) >= 7), do: 3, else: 2)))
     ctx = bonus(ctx, {:magic_addrace, :all}, if((refine(ctx) >= 9), do: 5, else: if((refine(ctx) >= 7), do: 3, else: 2)))
     ctx
@@ -108212,15 +108749,6 @@
   name: All Race Shadow Shield
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, {:subrace, :all}, if((refine(ctx) >= 9), do: 3, else: if((refine(ctx) >= 7), do: 2, else: 1)))
     ctx
   refineable: true
@@ -108537,13 +109065,7 @@
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = bonus(ctx, :matk, 10)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
-      ctx = bonus(ctx, :heal_power, if((refine(ctx) >= 9), do: (3 + 5), else: 3))
-      ctx
+      bonus(ctx, :heal_power, if((refine(ctx) >= 9), do: (3 + 5), else: 3))
     else
       ctx
     end
@@ -108560,13 +109082,7 @@
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
     ctx = bonus(ctx, :matk, 10)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
-      ctx = bonus(ctx, :heal_power, if((refine(ctx) >= 9), do: (3 + 5), else: 3))
-      ctx
+      bonus(ctx, :heal_power, if((refine(ctx) >= 9), do: (3 + 5), else: 3))
     else
       ctx
     end
@@ -108581,15 +109097,6 @@
   name: Restore Shadow Earring
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :hp_regen, if((refine(ctx) >= 9), do: 50, else: if((refine(ctx) >= 7), do: 30, else: 20)))
     ctx
   refineable: true
@@ -108602,15 +109109,6 @@
   name: Restore Shadow Pendant
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :sp_regen, if((refine(ctx) >= 9), do: 50, else: if((refine(ctx) >= 7), do: 30, else: 20)))
     ctx
   refineable: true
@@ -108624,15 +109122,6 @@
   on_equip: |-
     ctx = bonus(ctx, :atk, refine(ctx))
     ctx = bonus(ctx, :matk, refine(ctx))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :crit_atk_rate, if((refine(ctx) >= 9), do: 7, else: if((refine(ctx) >= 7), do: 4, else: 2)))
     ctx
   refineable: true
@@ -108645,15 +109134,6 @@
   name: Mortal Blow Shadow Earring
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :crit_atk_rate, if((refine(ctx) >= 9), do: 3, else: if((refine(ctx) >= 7), do: 2, else: 1)))
     ctx
   refineable: true
@@ -108666,15 +109146,6 @@
   name: Mortal Blow Shadow Pendant
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, :crit_atk_rate, if((refine(ctx) >= 9), do: 3, else: if((refine(ctx) >= 7), do: 2, else: 1)))
     ctx
   refineable: true
@@ -113018,16 +113489,6 @@
   name: Experience Shadow Shield
   on_equip: |-
     ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
-    ctx = if (base_level(ctx) < 175) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 10) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:exp_add_race, :all}, if((refine(ctx) >= 10), do: (if((base_level(ctx) < 175), do: (div(refine(ctx), 2) + 20), else: (div(refine(ctx), 2) + 10)) + 5), else: if((base_level(ctx) < 175), do: (div(refine(ctx), 2) + 20), else: (div(refine(ctx), 2) + 10))))
     ctx
   refineable: true
@@ -116953,19 +117414,7 @@
     - right_hand
   magic_attack: 150
   name: Elder Staff
-  on_equip: |-
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
-    ctx = bonus(ctx, :heal_power, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (10 + 5), else: 10) + 10), else: if((refine(ctx) >= 7), do: (10 + 5), else: 10)))
-    ctx
+  on_equip: 'bonus(ctx, :heal_power, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (10 + 5), else: 10) + 10), else: if((refine(ctx) >= 7), do: (10 + 5), else: 10)))'
   range: 1
   refineable: true
   slots: 3
@@ -117183,15 +117632,6 @@
     ctx = bonus(ctx, :int, 5)
     ctx = bonus(ctx, :matk, (15 * div(refine(ctx), 2)))
     ctx = bonus(ctx, :unbreakable_weapon, 1)
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, {:magic_atk_ele, :fire}, if((refine(ctx) >= 9), do: 15, else: if((refine(ctx) >= 7), do: 5, else: 0)))
     ctx = bonus(ctx, {:magic_atk_ele, :earth}, if((refine(ctx) >= 9), do: 15, else: if((refine(ctx) >= 7), do: 5, else: 0)))
     ctx
@@ -117223,15 +117663,6 @@
     ctx = bonus(ctx, :int, 5)
     ctx = bonus(ctx, :matk, (15 * div(refine(ctx), 2)))
     ctx = bonus(ctx, :unbreakable_weapon, 1)
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = bonus(ctx, {:magic_atk_ele, :water}, if((refine(ctx) >= 9), do: 15, else: if((refine(ctx) >= 7), do: 5, else: 0)))
     ctx = bonus(ctx, {:magic_atk_ele, :holy}, if((refine(ctx) >= 9), do: 15, else: if((refine(ctx) >= 7), do: 5, else: 0)))
     ctx
@@ -118409,13 +118840,7 @@
     ctx = bonus(ctx, {:addrace, :demon}, 10)
     ctx = bonus(ctx, {:addrace, :undead}, 10)
     ctx = if (refine(ctx) >= 9) do
-      ctx = if (refine(ctx) >= 12) do
-        ctx
-      else
-        ctx
-      end
-      ctx = bonus(ctx, :atk_rate, if((refine(ctx) >= 12), do: (5 + 7), else: 5))
-      ctx
+      bonus(ctx, :atk_rate, if((refine(ctx) >= 12), do: (5 + 7), else: 5))
     else
       ctx
     end
@@ -118942,11 +119367,6 @@
     ctx = bonus(ctx, :atk, (div(refine(ctx), 2) * 10))
     ctx = bonus(ctx, :crit_atk_rate, (div(refine(ctx), 3) * 4))
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 11) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addrace, :demi_human}, if((refine(ctx) >= 11), do: (15 + 20), else: 15))
       ctx = bonus(ctx, {:addrace, :player_human}, if((refine(ctx) >= 11), do: (15 + 20), else: 15))
       ctx = bonus(ctx, {:addrace, :brute}, if((refine(ctx) >= 11), do: (15 + 20), else: 15))
@@ -119153,11 +119573,6 @@
     ctx = bonus(ctx, :atk, (div(refine(ctx), 2) * 10))
     ctx = bonus(ctx, :crit_atk_rate, (div(refine(ctx), 3) * 4))
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 11) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addrace, :demi_human}, if((refine(ctx) >= 11), do: (15 + 20), else: 15))
       ctx = bonus(ctx, {:addrace, :player_human}, if((refine(ctx) >= 11), do: (15 + 20), else: 15))
       ctx = bonus(ctx, {:addrace, :brute}, if((refine(ctx) >= 11), do: (15 + 20), else: 15))
@@ -121757,6 +122172,16 @@
   locations:
     - both_accessory
   name: Mercenary Ring Type A
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 3)
+    ctx = if ((((job_is(ctx, :base_class, :gunslinger) || job_is(ctx, :base_job, :novice)) || job_is(ctx, :base_job, :super_novice)) || job_is(ctx, :base_class, :ninja)) || job_is(ctx, :base_class, :taekwon)) do
+      ctx = bonus(ctx, :max_hp, 1000)
+      ctx = bonus(ctx, :max_sp, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: armor
   weight: 200
 - aegis_name: Mercenary_Ring_B
@@ -121767,6 +122192,14 @@
   locations:
     - both_accessory
   name: Mercenary Ring Type B
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = if ((((job_is(ctx, :base_class, :gunslinger) || job_is(ctx, :base_job, :novice)) || job_is(ctx, :base_job, :super_novice)) || job_is(ctx, :base_class, :ninja)) || job_is(ctx, :base_class, :taekwon)) do
+      bonus(ctx, :varcast_rate, -30)
+    else
+      ctx
+    end
+    ctx
   type: armor
   weight: 200
 - aegis_name: Blue_4leaf_Necklace
@@ -123751,16 +124184,6 @@
   name: Elemental Origin
   on_equip: |-
     ctx = bonus(ctx, :int, 4)
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:skill_atk, 19}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (10 + 10), else: 10) + 10), else: if((refine(ctx) >= 7), do: (10 + 10), else: 10)))
     ctx = bonus(ctx, {:skill_atk, 14}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (10 + 10), else: 10) + 10), else: if((refine(ctx) >= 7), do: (10 + 10), else: 10)))
     ctx = bonus(ctx, {:skill_atk, 20}, if((refine(ctx) >= 9), do: (if((refine(ctx) >= 7), do: (10 + 10), else: 10) + 10), else: if((refine(ctx) >= 7), do: (10 + 10), else: 10)))
@@ -124005,15 +124428,6 @@
     ctx = bonus(ctx, :max_hp_rate, 5)
     ctx = bonus(ctx, :max_sp_rate, 5)
     ctx = bonus(ctx, :atk, (20 * div(refine(ctx), 2)))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      if (refine(ctx) >= 7) do
-        ctx
-      else
-        ctx
-      end
-    end
     ctx = if (refine(ctx) >= 11) do
       ctx = bonus(ctx, {:addele, :shadow}, 15)
       ctx = bonus(ctx, {:magic_addele, :shadow}, 15)
@@ -124284,11 +124698,6 @@
   name: Boltigin
   on_equip: |-
     ctx = bonus(ctx, :matk, (4 * refine(ctx)))
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = if (refine(ctx) >= 11) do
       ctx = bonus(ctx, {:skill_atk, 90}, 50)
       ctx = bonus(ctx, {:skill_atk, 91}, 50)
@@ -124620,11 +125029,6 @@
   on_equip: |-
     ctx = set(ctx, :atk_ele, :wind)
     ctx = if (refine(ctx) >= 7) do
-      ctx = if (refine(ctx) >= 9) do
-        ctx
-      else
-        ctx
-      end
       ctx = bonus(ctx, {:addele, :water}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx = bonus(ctx, {:addrace, :fish}, if((refine(ctx) >= 9), do: (10 + 15), else: 10))
       ctx
@@ -124875,6 +125279,62 @@
     - right_hand
   magic_attack: 50
   name: Valkyrie Knife
+  on_equip: |-
+    ctx = if job_is(ctx, :base_class, :novice) do
+      ctx = bonus(ctx, :max_hp, (300 + (200 * refine(ctx))))
+      ctx = bonus(ctx, :max_sp, (300 + (20 * refine(ctx))))
+      ctx = bonus(ctx, :atk, 100)
+      ctx = bonus(ctx, :matk, (150 + (15 * refine(ctx))))
+      ctx = bonus(ctx, :sp_cost_rate, -5)
+      ctx = bonus(ctx, :unbreakable_weapon, 1)
+      ctx = bonus(ctx, :int, (2 * refine(ctx)))
+      ctx = bonus(ctx, :dex, ((2 * refine(ctx)) - (refine(ctx) * div(stat(ctx, :dex), 10))))
+      ctx = bonus(ctx, :critical, (7 * refine(ctx)))
+      ctx = bonus(ctx, :aspd_rate, (10 * refine(ctx)))
+      ctx = bonus(ctx, :crit_atk_rate, refine(ctx))
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :thief) do
+      ctx = bonus(ctx, :max_sp, 100)
+      ctx = bonus(ctx, :matk, 150)
+      ctx = bonus(ctx, :crit_atk_rate, refine(ctx))
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :mage) do
+      ctx = bonus(ctx, :max_hp, (200 * refine(ctx)))
+      ctx = bonus(ctx, :max_sp, (20 * refine(ctx)))
+      ctx
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_job, :hunter) do
+      ctx = bonus(ctx, :max_hp, 200)
+      ctx = bonus(ctx, :sp_cost_rate, -5)
+      ctx = bonus(ctx, :int, (2 * refine(ctx)))
+      ctx = bonus(ctx, :dex, (2 * refine(ctx)))
+      ctx
+    else
+      ctx
+    end
+    ctx = if (job_is(ctx, :base_job, :bard) || job_is(ctx, :base_job, :dancer)) do
+      ctx = bonus(ctx, :atk, 100)
+      ctx = bonus(ctx, :aspd_rate, (10 * refine(ctx)))
+      ctx = bonus(ctx, :unbreakable_weapon, 1)
+      ctx = bonus(ctx, :dex, (-1 * (refine(ctx) * div(stat(ctx, :dex), 10))))
+      ctx
+    else
+      ctx
+    end
+    ctx = if ((refine(ctx) >= 7) && (job_is(ctx, :base_class, :novice) || job_is(ctx, :base_job, :mage))) do
+      bonus(ctx, {:subrace, :demi_human}, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 4
@@ -126373,11 +126833,6 @@
     - left_hand
   name: Bunker Shield
   on_equip: |-
-    ctx = if (refine(ctx) >= 5) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, {:addclass, :all}, (4 + if((refine(ctx) >= 5), do: (refine(ctx) - 4), else: 0)))
     ctx = bonus(ctx, :aspd_rate, -5)
     ctx
@@ -139157,24 +139612,7 @@
   locations:
     - head_top
   name: Paradise Cap
-  on_equip: |-
-    ctx = if (base_level(ctx) >= 30) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 45) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 85) do
-      ctx
-    else
-      ctx
-    end
-    ctx = bonus(ctx, :atk, (5 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))) + 15), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))))))
-    ctx
+  on_equip: 'bonus(ctx, :atk, (5 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))) + 15), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))))))'
   type: armor
 - aegis_name: 1Para_Cap_B
   armor_level: 1
@@ -139184,24 +139622,7 @@
   locations:
     - head_top
   name: Paradise Hat
-  on_equip: |-
-    ctx = if (base_level(ctx) >= 30) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 45) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 85) do
-      ctx
-    else
-      ctx
-    end
-    ctx = bonus(ctx, :matk, (5 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))) + 15), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))))))
-    ctx
+  on_equip: 'bonus(ctx, :matk, (5 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))) + 15), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5))) + 10), else: if((base_level(ctx) >= 30), do: ((2 * div(min(base_level(ctx), 100), 5)) + 5), else: (2 * div(min(base_level(ctx), 100), 5)))))))'
   type: armor
 - aegis_name: 2Para_Cap_A
   armor_level: 1
@@ -142126,6 +142547,16 @@
   locations:
     - head_top
   name: Heaven Cage
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 5)
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = if job_is(ctx, :base_job, :sniper) do
+      bonus(ctx, {:skill_atk, 129}, (5 * refine(ctx)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -142139,6 +142570,16 @@
   locations:
     - head_top
   name: '[Not For Sale] Heaven Cage'
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 5)
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = if job_is(ctx, :base_job, :sniper) do
+      bonus(ctx, {:skill_atk, 129}, (5 * refine(ctx)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -149181,11 +149622,6 @@
     - head_mid
   name: Rescue Binoculars
   on_equip: |-
-    ctx = if ((((((stat(ctx, :str) + stat(ctx, :agi)) + stat(ctx, :vit)) + stat(ctx, :int)) + stat(ctx, :dex)) + stat(ctx, :luk)) > 600) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :hit, (10 + if(((((((stat(ctx, :str) + stat(ctx, :agi)) + stat(ctx, :vit)) + stat(ctx, :int)) + stat(ctx, :dex)) + stat(ctx, :luk)) > 600), do: 10, else: 0)))
     ctx = bonus(ctx, {:addrace, :formless}, div(stat(ctx, :str), 20))
     ctx = bonus(ctx, {:addrace, :undead}, div(stat(ctx, :str), 20))
@@ -150950,6 +151386,17 @@
   locations:
     - head_low
   name: Spirit of Chun Yi
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 30)
+    ctx = bonus(ctx, :matk, 30)
+    ctx = if job_is(ctx, :base_class, :taekwon) do
+      ctx = bonus(ctx, :movement_speed, 25)
+      ctx = bonus(ctx, {:exp_add_race, :all}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 882
   weight: 100
@@ -152939,6 +153386,15 @@
   locations:
     - head_low
   name: Imperial Glory
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 3)
+    ctx = bonus(ctx, {:exp_add_race, :all}, 3)
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      bonus(ctx, :max_hp, 1000)
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 2056
   weight: 300
@@ -152949,6 +153405,15 @@
   locations:
     - head_low
   name: '[Not For Sale] Imperial Glory'
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 3)
+    ctx = bonus(ctx, {:exp_add_race, :all}, 3)
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      bonus(ctx, :max_hp, 1000)
+    else
+      ctx
+    end
+    ctx
   type: armor
   view: 2056
   weight: 300
@@ -159398,21 +159863,6 @@
     - armor
   name: Paradise Suit
   on_equip: |-
-    ctx = if (base_level(ctx) >= 30) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 45) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 85) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :max_hp, (150 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((30 * div(min(base_level(ctx), 100), 5)) + 80), else: (30 * div(min(base_level(ctx), 100), 5))) + 150), else: if((base_level(ctx) >= 30), do: ((30 * div(min(base_level(ctx), 100), 5)) + 80), else: (30 * div(min(base_level(ctx), 100), 5)))) + 250), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((30 * div(min(base_level(ctx), 100), 5)) + 80), else: (30 * div(min(base_level(ctx), 100), 5))) + 150), else: if((base_level(ctx) >= 30), do: ((30 * div(min(base_level(ctx), 100), 5)) + 80), else: (30 * div(min(base_level(ctx), 100), 5)))))))
     ctx = bonus(ctx, :max_sp, (20 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: 20, else: 0) + 30), else: if((base_level(ctx) >= 30), do: 20, else: 0)) + 50), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: 20, else: 0) + 30), else: if((base_level(ctx) >= 30), do: 20, else: 0)))))
     ctx
@@ -159426,21 +159876,6 @@
     - armor
   name: Paradise Robe
   on_equip: |-
-    ctx = if (base_level(ctx) >= 30) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 45) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (base_level(ctx) >= 85) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :max_hp, (100 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((20 * div(min(base_level(ctx), 100), 5)) + 60), else: (20 * div(min(base_level(ctx), 100), 5))) + 100), else: if((base_level(ctx) >= 30), do: ((20 * div(min(base_level(ctx), 100), 5)) + 60), else: (20 * div(min(base_level(ctx), 100), 5)))) + 150), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: ((20 * div(min(base_level(ctx), 100), 5)) + 60), else: (20 * div(min(base_level(ctx), 100), 5))) + 100), else: if((base_level(ctx) >= 30), do: ((20 * div(min(base_level(ctx), 100), 5)) + 60), else: (20 * div(min(base_level(ctx), 100), 5)))))))
     ctx = bonus(ctx, :max_sp, (50 + if((base_level(ctx) >= 85), do: (if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: 30, else: 0) + 50), else: if((base_level(ctx) >= 30), do: 30, else: 0)) + 70), else: if((base_level(ctx) >= 45), do: (if((base_level(ctx) >= 30), do: 30, else: 0) + 50), else: if((base_level(ctx) >= 30), do: 30, else: 0)))))
     ctx
@@ -168622,26 +169057,6 @@
   name: Arabian Manteau
   on_equip: |-
     ctx = bonus(ctx, :max_hp_rate, 10)
-    ctx = if (refine(ctx) >= 7) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 8) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
-    ctx = if (refine(ctx) >= 10) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :critical, if((refine(ctx) >= 10), do: (if((refine(ctx) >= 9), do: (if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (0 + 5), else: 0) + 10), else: if((refine(ctx) >= 7), do: (0 + 5), else: 0)) + 20), else: if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (0 + 5), else: 0) + 10), else: if((refine(ctx) >= 7), do: (0 + 5), else: 0))) + 30), else: if((refine(ctx) >= 9), do: (if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (0 + 5), else: 0) + 10), else: if((refine(ctx) >= 7), do: (0 + 5), else: 0)) + 20), else: if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (0 + 5), else: 0) + 10), else: if((refine(ctx) >= 7), do: (0 + 5), else: 0)))))
     ctx = bonus(ctx, :crit_atk_rate, if((refine(ctx) >= 10), do: (if((refine(ctx) >= 9), do: (if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (5 + 5), else: 5) + 20), else: if((refine(ctx) >= 7), do: (5 + 5), else: 5)) + 30), else: if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (5 + 5), else: 5) + 20), else: if((refine(ctx) >= 7), do: (5 + 5), else: 5))) + 50), else: if((refine(ctx) >= 9), do: (if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (5 + 5), else: 5) + 20), else: if((refine(ctx) >= 7), do: (5 + 5), else: 5)) + 30), else: if((refine(ctx) >= 8), do: (if((refine(ctx) >= 7), do: (5 + 5), else: 5) + 20), else: if((refine(ctx) >= 7), do: (5 + 5), else: 5)))))
     ctx
@@ -170949,11 +171364,6 @@
     else
       ctx
     end
-    ctx = if (refine(ctx) >= 9) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :varcast_rate, if((refine(ctx) >= 9), do: (-10 - 10), else: -10))
     ctx
   refineable: true
@@ -172210,6 +172620,16 @@
   locations:
     - garment
   name: Medical Cape
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx = bonus(ctx, :max_sp, 10)
+    ctx = bonus(ctx, :long_atk_def, (5 * refine(ctx)))
+    ctx = if job_is(ctx, :base_job, :alchemist) do
+      bonus(ctx, :heal_power, (2 * refine(ctx)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -172222,6 +172642,16 @@
   locations:
     - garment
   name: '[Not For Sale] Medical Cape'
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx = bonus(ctx, :max_sp, 10)
+    ctx = bonus(ctx, :long_atk_def, (5 * refine(ctx)))
+    ctx = if job_is(ctx, :base_job, :alchemist) do
+      bonus(ctx, :heal_power, (2 * refine(ctx)))
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -176920,6 +177350,23 @@
   locations:
     - left_accessory
   name: Garnet Brooch
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, :atk_rate, (5 + div(stat(ctx, :str), 16)))
+    ctx = bonus(ctx, :matk_rate, (5 + div(stat(ctx, :int), 16)))
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, {:subele, :all}, 5)
+    ctx = bonus(ctx, :long_atk_def, 5)
+    ctx = if job_is(ctx, :base_job, :super_novice) do
+      ctx = grant_skill(ctx, 157, 1)
+      ctx = bonus(ctx, :short_atk_rate, div((stat(ctx, :str) + stat(ctx, :luk)), 24))
+      ctx = bonus(ctx, :long_atk_rate, div((stat(ctx, :str) + stat(ctx, :luk)), 24))
+      ctx = bonus(ctx, {:magic_atk_ele, :all}, (2 * div((stat(ctx, :int) + stat(ctx, :dex)), 24)))
+      ctx
+    else
+      ctx
+    end
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -177215,6 +177662,24 @@
   locations:
     - both_accessory
   name: Pure Heart
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, :varcast_rate, (-5 - div(stat(ctx, :int), 16)))
+    ctx = bonus(ctx, :atk_rate, (5 + div(stat(ctx, :str), 16)))
+    ctx = bonus(ctx, :matk_rate, (5 + div(stat(ctx, :int), 16)))
+    ctx = bonus(ctx, :str, 5)
+    ctx = bonus(ctx, :int, 5)
+    ctx = bonus(ctx, {:addclass, :normal}, 5)
+    ctx = bonus(ctx, {:magic_addclass, :normal}, 5)
+    ctx = bonus(ctx, :delay_rate, (0 - div(stat(ctx, :str), 16)))
+    ctx = if job_is(ctx, :base_job, :merchant) do
+      ctx = bonus(ctx, :short_atk_rate, 10)
+      ctx = bonus(ctx, :long_atk_rate, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -177551,11 +178016,6 @@
     - left_accessory
   name: Vassalage Ring
   on_equip: |-
-    ctx = if (base_level(ctx) >= 175) do
-      ctx
-    else
-      ctx
-    end
     ctx = bonus(ctx, :atk_rate, if((base_level(ctx) >= 175), do: (5 * 2), else: 5))
     ctx = bonus(ctx, :crit_atk_rate, if((base_level(ctx) >= 175), do: (div(base_level(ctx), 35) * 2), else: div(base_level(ctx), 35)))
     ctx
@@ -177745,6 +178205,22 @@
   locations:
     - both_accessory
   name: Infinity Chip MAX
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :all_stats, 5)
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = bonus(ctx, :long_atk_rate, 5)
+    ctx = bonus(ctx, :short_atk_rate, 5)
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = if job_is(ctx, :base_job, :merchant) do
+      ctx = bonus(ctx, :atk_rate, 8)
+      ctx = bonus(ctx, {:addrace, :all}, 8)
+      ctx
+    else
+      ctx
+    end
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -180732,6 +181208,23 @@
   locations:
     - both_accessory
   name: Infinity Chip-EX
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :all_stats, 8)
+    ctx = bonus(ctx, :pow, 2)
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx = bonus(ctx, {:addclass, :all}, 8)
+    ctx = bonus(ctx, :short_atk_rate, 10)
+    ctx = bonus(ctx, :long_atk_rate, 10)
+    ctx = bonus(ctx, :delay_rate, -10)
+    ctx = if job_is(ctx, :base_job, :merchant) do
+      ctx = bonus(ctx, {:addclass, :all}, 8)
+      ctx = bonus(ctx, {:addsize, :all}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   slots: 1
   type: armor
   weight: 100

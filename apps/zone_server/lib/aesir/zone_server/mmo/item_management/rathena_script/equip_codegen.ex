@@ -74,8 +74,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     id); the level is an ordinary amount expression; the optional trigger flag is
     dropped, since an equip grant is always the worn-item temporary skill.
   - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is an
-    input-pure boolean over comparisons / `&&` / `||`; a read outside the
-    inputs, such as `BaseClass` or `eaclass()`, is unsupported.
+    input-pure boolean over comparisons / `&&` / `||`, or a job comparison:
+    `Class`/`BaseClass`/`BaseJob` `==`/`!=` a `Job_*` constant compiles to
+    `{:job_cmp, op, reader, job}`, resolved through `JobLineage` at runtime. A
+    read outside this vocabulary, such as `eaclass()`, is unsupported.
   - Expressions are input-pure only: integer literals (including negated),
     `getrefine()` -> `:refine`, `BaseLevel` -> `:base_level`, `JobLevel` ->
     `:job_level`, inlined `.@var`, `+ - * /` arithmetic (`/` -> `:div`, matching
@@ -85,7 +87,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     param), `readparam(<stat>)` -> `{:stat, atom}` (the wearer's base stat,
     for the base/trait stat constants only), and the pure two-argument integer
     combinators `min(a,b)`, `max(a,b)` and `pow(base,exp)` over the same
-    input-pure operands. `rand(...)` and every other call are unsupported.
+    input-pure operands, and a bare comparison used as an integer
+    (`2+3*(getrefine()>5)`) -> `{:bool, cond}` (1/0). `rand(...)` and every other
+    call are unsupported.
 
   A program that compiles to zero instructions (script was only assignments) yields
   `{:ok, []}`, which the importer stores as no `on_equip`.
@@ -489,6 +493,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
+  # A comparison used where an integer is expected is rAthena's C idiom of a
+  # boolean-as-int (`2+3*(getrefine()>5)`): it compiles to a `{:bool, cond}`
+  # expression evaluating to 1/0.
+  defp compile_expr({:bin, op, _lhs, _rhs} = ast, env) when op in @compare_ops do
+    with {:ok, condition} <- compile_cond(ast, env), do: {:ok, {:bool, condition}}
+  end
+
   # `getskilllv(<skill>)` reads the wearer's learned level of a skill; the id
   # resolves like a `bonus2` skill param and the runtime supplies the level from
   # its learned-skills input.
@@ -524,11 +535,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   @spec compile_cond(term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.condition()} | {:error, {:unsupported, detail()}}
-  defp compile_cond({:bin, op, lhs, rhs}, env) when op in @compare_ops do
-    with {:ok, l} <- compile_expr(lhs, env),
-         {:ok, r} <- compile_expr(rhs, env) do
-      {:ok, {op, l, r}}
+  # An equality/inequality between a job reader (`Class`/`BaseClass`/`BaseJob`)
+  # and a `Job_*` constant compiles to a `{:job_cmp, ...}` condition resolved
+  # through `JobLineage` at runtime; anything else is an ordinary numeric compare.
+  defp compile_cond({:bin, op, lhs, rhs}, env) when op in [:==, :!=] do
+    case job_operands(lhs, rhs) do
+      {:ok, reader, class_sym} ->
+        with {:ok, job} <- resolve(&Resolver.resolve_class/1, class_sym),
+             do: {:ok, {:job_cmp, op, reader, job}}
+
+      :not_job ->
+        compile_binary_cond(op, lhs, rhs, env)
     end
+  end
+
+  defp compile_cond({:bin, op, lhs, rhs}, env) when op in @compare_ops do
+    compile_binary_cond(op, lhs, rhs, env)
   end
 
   defp compile_cond({:bin, op, lhs, rhs}, env) when op in @logic_ops do
@@ -539,6 +561,46 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp compile_cond(other, _env), do: unsupported({:condition, other})
+
+  @spec compile_binary_cond(atom(), term(), term(), %{String.t() => EquipScript.expr()}) ::
+          {:ok, EquipScript.condition()} | {:error, {:unsupported, detail()}}
+  defp compile_binary_cond(op, lhs, rhs, env) do
+    with {:ok, l} <- compile_expr(lhs, env),
+         {:ok, r} <- compile_expr(rhs, env) do
+      {:ok, {op, l, r}}
+    end
+  end
+
+  # Classifies an `==`/`!=` operand pair as a job comparison when one side is a
+  # job reader name and the other a `Job_*` constant (either order); otherwise
+  # the pair is an ordinary numeric comparison.
+  @spec job_operands(term(), term()) :: {:ok, atom(), String.t()} | :not_job
+  defp job_operands({:name, a}, {:name, b}) do
+    case {job_reader(a), job_reader(b)} do
+      {reader, nil} when not is_nil(reader) -> job_pair(reader, b)
+      {nil, reader} when not is_nil(reader) -> job_pair(reader, a)
+      _ -> :not_job
+    end
+  end
+
+  defp job_operands(_lhs, _rhs), do: :not_job
+
+  defp job_pair(reader, const) do
+    if job_const?(const), do: {:ok, reader, const}, else: :not_job
+  end
+
+  @spec job_reader(String.t()) :: atom() | nil
+  defp job_reader(name) do
+    case String.downcase(name) do
+      "class" -> :class
+      "baseclass" -> :base_class
+      "basejob" -> :base_job
+      _ -> nil
+    end
+  end
+
+  @spec job_const?(String.t()) :: boolean()
+  defp job_const?(name), do: String.match?(name, ~r/^job_/i)
 
   @spec arith_op(atom()) :: EquipScript.arith_op()
   defp arith_op(:/), do: :div

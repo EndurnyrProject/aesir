@@ -143,7 +143,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       min_expr: [{:bonus, :atk, {:div, {:min, :base_level, 195}, 15}}],
       max_expr: [{:bonus, :atk, {:max, 1, :refine}}],
       pow_nested: [{:bonus, :atk, {:pow, {:min, :refine, 15}, 2}}],
-      pow_scaled: [{:bonus, :atk, {:div, {:*, {:pow, :refine, 2}, 125}, 100}}]
+      pow_scaled: [{:bonus, :atk, {:div, {:*, {:pow, :refine, 2}, 125}, 100}}],
+      job_cmp_eq: [{:if, {:job_cmp, :==, :base_class, :swordman}, [{:bonus, :str, 1}], []}],
+      job_cmp_ne: [{:if, {:job_cmp, :!=, :class, :soul_linker}, [{:bonus, :int, 1}], []}],
+      job_cmp_or: [
+        {:if, {:or, {:job_cmp, :==, :base_class, :mage}, {:job_cmp, :==, :base_class, :archer}},
+         [{:bonus, :max_hp, {:*, :base_level, 5}}], []}
+      ],
+      bool_as_int: [{:bonus, :def, {:+, 2, {:*, 3, {:bool, {:>, :refine, 5}}}}}]
     ]
 
     for {name, program} <- programs do
@@ -550,6 +557,34 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
     test "pow with a negative exponent truncates to zero" do
       assert EquipScript.eval([{:bonus, :atk, {:pow, 2, {:-, 0, :refine}}}], on(3)) == %{atk: 0}
+    end
+
+    test "a job_cmp gate matches on the current job and its lineage" do
+      # 7 = Knight, whose base_class is Swordman.
+      program = [{:if, {:job_cmp, :==, :base_class, :swordman}, [{:bonus, :str, 1}], []}]
+
+      assert EquipScript.eval(program, on(0, job_id: 7)) == %{str: 1}
+      assert EquipScript.eval(program, on(0, job_id: 9)) == %{}
+    end
+
+    test "a job_cmp inequality matches every job but the excluded one" do
+      program = [{:if, {:job_cmp, :!=, :class, :wizard}, [{:bonus, :int, 1}], []}]
+
+      assert EquipScript.eval(program, on(0, job_id: 7)) == %{int: 1}
+      assert EquipScript.eval(program, on(0, job_id: 9)) == %{}
+    end
+
+    test "an absent job_id input reads as Novice" do
+      program = [{:if, {:job_cmp, :==, :base_class, :novice}, [{:bonus, :str, 1}], []}]
+
+      assert EquipScript.eval(program, on(0)) == %{str: 1}
+    end
+
+    test "a bool-as-int expression yields 1 or 0" do
+      program = [{:bonus, :def, {:+, 2, {:*, 3, {:bool, {:>, :refine, 5}}}}}]
+
+      assert EquipScript.eval(program, on(9)) == %{def: 5}
+      assert EquipScript.eval(program, on(3)) == %{def: 2}
     end
   end
 end

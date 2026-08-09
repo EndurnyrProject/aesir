@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
   @typedoc "An unresolvable rAthena symbol, carried verbatim for the coverage report."
@@ -318,8 +319,32 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @spec resolve_element(String.t()) :: {:ok, atom()} | error()
   def resolve_element(symbol) when is_binary(symbol), do: lookup(@elements, symbol)
 
+  @doc """
+  Resolves an rAthena `Job_*` class constant to its job atom. The curated
+  `@classes` map carries the legacy CamelCase aliases (`Job_SuperNovice`); any
+  other `Job_*` name falls back to stripping the prefix, downcasing, and
+  validating the result against the live job table (`Job_Lord_Knight` ->
+  `:lord_knight`), so advanced/trans/expanded classes resolve without a
+  hand-maintained entry each. Lookup is case-insensitive on the fallback path.
+  """
   @spec resolve_class(String.t()) :: {:ok, atom()} | error()
-  def resolve_class(symbol) when is_binary(symbol), do: lookup(@classes, symbol)
+  def resolve_class(symbol) when is_binary(symbol) do
+    case lookup(@classes, symbol) do
+      {:ok, _} = ok -> ok
+      {:error, _} -> derive_class(symbol)
+    end
+  end
+
+  @spec derive_class(String.t()) :: {:ok, atom()} | error()
+  defp derive_class(symbol) do
+    with %{"name" => name} <- Regex.named_captures(~r/^job_(?<name>.+)$/i, symbol),
+         {:ok, atom} <- existing_atom(name),
+         {:ok, _id} <- AvailableJobs.job_name_to_id(atom) do
+      {:ok, atom}
+    else
+      _ -> unknown(symbol)
+    end
+  end
 
   @doc """
   Resolves an rAthena `RC_*` race constant to its combat race atom

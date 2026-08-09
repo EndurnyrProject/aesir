@@ -85,6 +85,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
       assert {:ok, :swordman} = Resolver.resolve_class("Job_Swordman")
     end
 
+    test "maps the legacy CamelCase alias Job_SuperNovice to :super_novice" do
+      assert {:ok, :super_novice} = Resolver.resolve_class("Job_SuperNovice")
+    end
+
+    test "derives an advanced job constant not in the curated map" do
+      assert {:ok, :lord_knight} = Resolver.resolve_class("Job_Lord_Knight")
+      assert {:ok, :whitesmith} = Resolver.resolve_class("Job_Whitesmith")
+    end
+
+    test "the derived fallback is case-insensitive" do
+      assert {:ok, :lord_knight} = Resolver.resolve_class("JOB_LORD_KNIGHT")
+    end
+
     test "unknown class is an unknown_symbol error" do
       assert {:error, {:unknown_symbol, "Job_Nope"}} = Resolver.resolve_class("Job_Nope")
     end

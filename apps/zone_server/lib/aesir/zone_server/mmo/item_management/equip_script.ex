@@ -14,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   and parsed back to the tuple form at load time through a closed vocabulary
   (`parse!/1`): `bonus/3`, `refine/1`, `base_level/1`, `job_level/1`,
-  `+ - *`, `div/2`, `min/2`, `max/2`, `pow/2`, comparisons, `&&`/`||`, `if/else` statements, and the
+  `+ - *`, `div/2`, `min/2`, `max/2`, `pow/2`, comparisons, `&&`/`||`,
+  `job_is/3`, `job_is_not/3`, `bool/2`, `if/else` statements, and the
   inline `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the
   source is never compiled to code — the equip corpus (~13k items) is far past
   the BEAM clause-count ceiling — so `eval/2` interprets the tuple program
@@ -53,14 +54,34 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   contribution so the read is non-circular); a stat the map lacks reads `0`. The
   supported atoms are the six base stats (`:str :agi :vit :int :dex :luk`) and
   the six trait stats (`:pow :sta :wis :spl :con :crt`).
+
+  ## Job-aware constructs
+
+  Two constructs gate on the wearer's job, reading the optional `:job_id` input
+  (an absent input reads as job `0`, Novice):
+
+  - `{:job_cmp, op, reader, job}` is a condition comparing a job reader against a
+    job atom (`op` is `:==` or `:!=`). `reader` is `:class` (the current job),
+    `:base_class` (the first-job lineage root, rAthena `BaseClass`) or
+    `:base_job` (the trans/baby-collapsed job, rAthena `BaseJob`), computed via
+    `JobLineage`. Source forms: `job_is(ctx, :base_class, :swordman)` and
+    `job_is_not(ctx, :class, :soul_linker)`.
+  - `{:bool, condition}` (source `bool(ctx, <cond>)`) is an expression yielding
+    `1` when the condition holds and `0` otherwise - rAthena's C idiom of using
+    a comparison as an integer term, e.g. `bonus bDef,2+3*(getrefine()>5)`.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Learned
 
   @type arith_op :: :+ | :- | :* | :div | :min | :max | :pow
   @type compare_op :: :> | :< | :>= | :<= | :== | :!=
   @type logic_op :: :and | :or
+
+  @typedoc "A wearer job reader: current job, first-job lineage, or trans/baby-collapsed job."
+  @type job_reader :: :class | :base_class | :base_job
 
   @typedoc """
   The evaluation inputs: the item's refine and the wearer's levels, plus the
@@ -71,7 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           :base_level => integer(),
           :job_level => integer(),
           optional(:learned_skills) => %{integer() => non_neg_integer()},
-          optional(:stats) => %{atom() => integer()}
+          optional(:stats) => %{atom() => integer()},
+          optional(:job_id) => integer()
         }
 
   @typedoc """
@@ -90,10 +112,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:ternary, condition(), expr(), expr()}
           | {:skill_lv, pos_integer()}
           | {:stat, atom()}
+          | {:bool, condition()}
 
   @typedoc "An input-pure boolean condition gating an `:if` instruction or a ternary."
   @type condition ::
-          {compare_op(), expr(), expr()} | {logic_op(), condition(), condition()}
+          {compare_op(), expr(), expr()}
+          | {logic_op(), condition(), condition()}
+          | {:job_cmp, :== | :!=, job_reader(), atom()}
 
   @typedoc """
   A bonus destination: a flat atom for section-3 keys, or a `{family, param}`
@@ -198,6 +223,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr(:job_level), do: "job_level(ctx)"
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
+  defp render_expr({:bool, condition}), do: "bool(ctx, #{render_cond(condition)})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
   defp render_expr({:min, l, r}), do: "min(#{render_expr(l)}, #{render_expr(r)})"
   defp render_expr({:max, l, r}), do: "max(#{render_expr(l)}, #{render_expr(r)})"
@@ -217,6 +243,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp render_cond({:and, l, r}), do: "(#{render_cond(l)} && #{render_cond(r)})"
   defp render_cond({:or, l, r}), do: "(#{render_cond(l)} || #{render_cond(r)})"
+
+  defp render_cond({:job_cmp, :==, reader, job}),
+    do: "job_is(ctx, #{inspect(reader)}, #{inspect(job)})"
+
+  defp render_cond({:job_cmp, :!=, reader, job}),
+    do: "job_is_not(ctx, #{inspect(reader)}, #{inspect(job)})"
 
   defp indent(source) do
     source
@@ -265,6 +297,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:stat, _, [{:ctx, _, c}, stat]}) when is_atom(c),
     do: {:stat, validate_stat!(stat)}
 
+  defp parse_expr!({:bool, _, [{:ctx, _, c}, condition]}) when is_atom(c),
+    do: {:bool, parse_cond!(condition)}
+
   defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div, :min, :max, :pow] do
     {op, parse_expr!(l), parse_expr!(r)}
   end
@@ -286,6 +321,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_cond!({op, _, [l, r]}) when op in [:||, :or] do
     {:or, parse_cond!(l), parse_cond!(r)}
   end
+
+  defp parse_cond!({:job_is, _, [{:ctx, _, c}, reader, job]}) when is_atom(c),
+    do: {:job_cmp, :==, validate_job_reader!(reader), validate_job!(job)}
+
+  defp parse_cond!({:job_is_not, _, [{:ctx, _, c}, reader, job]}) when is_atom(c),
+    do: {:job_cmp, :!=, validate_job_reader!(reader), validate_job!(job)}
 
   defp parse_cond!(other), do: malformed!("condition", other)
 
@@ -326,6 +367,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp validate_stat!(stat), do: malformed!("stat param", stat)
+
+  defp validate_job_reader!(reader) when reader in [:class, :base_class, :base_job], do: reader
+  defp validate_job_reader!(reader), do: malformed!("job reader", reader)
+
+  defp validate_job!(job) when is_atom(job) do
+    case AvailableJobs.job_name_to_id(job) do
+      {:ok, _id} -> job
+      _ -> malformed!("job", job)
+    end
+  end
+
+  defp validate_job!(job), do: malformed!("job", job)
 
   defp validate_domain_param!(dest, domain, param) do
     if param in BonusKeys.param_domain(domain),
@@ -372,6 +425,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_expr({:stat, stat}, inputs),
     do: inputs |> Map.get(:stats, %{}) |> Map.get(stat, 0)
 
+  defp eval_expr({:bool, condition}, inputs), do: if(eval_cond(condition, inputs), do: 1, else: 0)
+
   defp eval_expr({:+, a, b}, inputs), do: eval_expr(a, inputs) + eval_expr(b, inputs)
   defp eval_expr({:-, a, b}, inputs), do: eval_expr(a, inputs) - eval_expr(b, inputs)
   defp eval_expr({:*, a, b}, inputs), do: eval_expr(a, inputs) * eval_expr(b, inputs)
@@ -396,7 +451,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_cond({:!=, a, b}, inputs), do: eval_expr(a, inputs) != eval_expr(b, inputs)
   defp eval_cond({:and, a, b}, inputs), do: eval_cond(a, inputs) and eval_cond(b, inputs)
   defp eval_cond({:or, a, b}, inputs), do: eval_cond(a, inputs) or eval_cond(b, inputs)
+
+  defp eval_cond({:job_cmp, :==, reader, job}, inputs), do: reader_job(reader, inputs) == job
+  defp eval_cond({:job_cmp, :!=, reader, job}, inputs), do: reader_job(reader, inputs) != job
+
   defp eval_cond(other, _inputs), do: malformed!("condition", other)
+
+  # The wearer's job for a reader. An absent `:job_id` input reads as job 0
+  # (Novice); `JobLineage` normalizes trans/baby variants for the base readers.
+  defp reader_job(reader, inputs) do
+    job =
+      case AvailableJobs.job_id_to_name(Map.get(inputs, :job_id, 0)) do
+        {:ok, name} -> name
+        _ -> :novice
+      end
+
+    case reader do
+      :class -> job
+      :base_class -> JobLineage.base_class(job)
+      :base_job -> JobLineage.base_job(job)
+    end
+  end
 
   # rAthena's `pow` casts a C `double` result to `int`; a non-negative integer
   # exponent is exact via `Integer.pow/2`, and a negative exponent (a fractional

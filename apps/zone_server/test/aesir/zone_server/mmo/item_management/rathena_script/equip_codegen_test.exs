@@ -134,8 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
               ]} = compile(".@r = getrefine(); bonus bHit,.@r<7?1:(.@r<9?2:3);")
     end
 
-    test "BaseClass stays unsupported" do
-      assert {:error, {:unsupported, {:expression, {:name, "BaseClass"}}}} =
+    test "BaseClass gate resolves to a job comparison" do
+      assert {:ok, [{:if, {:job_cmp, :==, :base_class, :mage}, [{:bonus, :matk, 10}], []}]} =
                compile("if (BaseClass==Job_Mage) bonus bMatk,10;")
     end
 
@@ -566,8 +566,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "a conditional read outside the inputs is rejected" do
-      assert {:error, {:unsupported, {:expression, {:name, "BaseJob"}}}} =
-               compile("if (BaseJob==Job_Mage) bonus bStr,10;")
+      assert {:error, {:unsupported, {:unsupported_call, "getequiprefinerycnt"}}} =
+               compile("if (getequiprefinerycnt(EQI_HAND_R)>5) bonus bStr,10;")
     end
 
     test "unassigned variable is rejected" do
@@ -586,6 +586,62 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
     test "bonus with more than two args is rejected" do
       assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus bStr,1,2;")
+    end
+  end
+
+  describe "job comparisons" do
+    test "BaseClass equality resolves to a job_cmp condition" do
+      assert {:ok, [{:if, {:job_cmp, :==, :base_class, :swordman}, [{:bonus, :str, 1}], []}]} =
+               compile("if (BaseClass == Job_Swordman) bonus bStr,1;")
+    end
+
+    test "Class equality against an advanced job resolves via the derived class map" do
+      assert {:ok, [{:if, {:job_cmp, :==, :class, :lord_knight}, [{:bonus, :atk, 10}], []}]} =
+               compile("if (Class == Job_Lord_Knight) bonus bBaseAtk,10;")
+    end
+
+    test "inequality resolves to a negated job_cmp" do
+      assert {:ok, [{:if, {:job_cmp, :!=, :class, :soul_linker}, [{:bonus, :int, 1}], []}]} =
+               compile("if (Class!=Job_Soul_Linker) bonus bInt,1;")
+    end
+
+    test "BaseJob reader resolves the trans/baby-collapsed reader" do
+      assert {:ok, [{:if, {:job_cmp, :==, :base_job, :novice}, [{:bonus, :max_hp, 30}], []}]} =
+               compile("if (BaseJob == Job_Novice) bonus bMaxHP,30;")
+    end
+
+    test "a lowercase class reader is accepted" do
+      assert {:ok, [{:if, {:job_cmp, :==, :class, :ninja}, [{:bonus, :agi, 1}], []}]} =
+               compile("if (class == Job_Ninja) bonus bAgi,1;")
+    end
+
+    test "job comparisons combine under || into a logic condition" do
+      assert {:ok,
+              [
+                {:if,
+                 {:or, {:job_cmp, :==, :base_class, :mage},
+                  {:job_cmp, :==, :base_class, :archer}},
+                 [{:bonus, :max_hp, {:*, :base_level, 5}}], []}
+              ]} =
+               compile(
+                 "if (BaseClass == Job_Mage || BaseClass == Job_Archer) bonus bMaxHP,(BaseLevel*5);"
+               )
+    end
+
+    test "an unknown job constant is unresolved_param" do
+      assert {:error, {:unsupported, {:unresolved_param, "Job_NotAJob"}}} =
+               compile("if (Class == Job_NotAJob) bonus bStr,1;")
+    end
+  end
+
+  describe "comparison used as an integer" do
+    test "a bare comparison compiles to a bool expression" do
+      assert {:ok,
+              [
+                {:bonus, :def,
+                 {:+, {:+, 2, {:*, 3, {:bool, {:>, :refine, 5}}}},
+                  {:*, 2, {:bool, {:>, :refine, 8}}}}}
+              ]} = compile("bonus bDef,2+3*(getrefine()>5)+2*(getrefine()>8);")
     end
   end
 
