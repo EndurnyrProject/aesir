@@ -87,6 +87,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   def create_mob_combatant(opts \\ []) do
     defaults = [
       unit_id: 2001,
+      monster_id: 1002,
       base_level: 5,
       str: 10,
       agi: 8,
@@ -136,6 +137,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
       race: opts[:race],
       size: opts[:size],
       class: Keyword.get(opts, :class, :normal),
+      monster_id: opts[:monster_id],
       weapon: %{
         type: :claw,
         element: :neutral,

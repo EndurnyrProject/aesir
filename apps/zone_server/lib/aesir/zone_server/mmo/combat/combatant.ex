@@ -109,6 +109,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # are always :normal; mobs are :boss when tagged with the :boss mode.
     class: :normal,
 
+    # Monster database id (mob class), set only for mob defenders. Keys the
+    # per-monster physical damage bonus (add_damage_class); nil for players.
+    monster_id: nil,
+
     # Whether the attacker is mounted (Peco-Peco). Feeds the mounted-spear
     # size-modifier override; always false for mobs.
     riding: false,
@@ -170,6 +174,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           faith_level: integer(),
           skin_temper_level: integer(),
           class: :normal | :boss,
+          monster_id: integer() | nil,
           riding: boolean(),
           equip_modifiers: map()
         }

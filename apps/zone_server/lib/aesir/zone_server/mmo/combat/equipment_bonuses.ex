@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   def attack_rates(%Combatant{} = attacker, %Combatant{} = defender, skill_id, _attack_element) do
     %{
       race_class:
-        read(attacker, :addrace, defender.race) + read(attacker, :addclass, defender.class),
+        read(attacker, :addrace, defender.race) + read(attacker, :addclass, defender.class) +
+          add_damage_class_rate(attacker, defender),
       element: read(attacker, :addele, element_atom(defender.element)),
       size: read(attacker, :addsize, defender.size),
       skill: skill_rate(attacker, :skill_atk, skill_id)
@@ -237,6 +238,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @spec ignore_mdef_rate(Combatant.t(), Combatant.t()) :: rate()
   def ignore_mdef_rate(%Combatant{} = attacker, %Combatant{race: race, class: class}) do
     min(read(attacker, :ignore_mdef_race, race) + read(attacker, :ignore_mdef_class, class), 100)
+  end
+
+  # Per-monster physical damage bonus (`add_damage_class`), keyed on the target
+  # monster's database id. Only mob defenders carry a `monster_id`; against any
+  # other target the bonus is zero. Read exactly, with no `:all` fallback.
+  @spec add_damage_class_rate(Combatant.t(), Combatant.t()) :: rate()
+  defp add_damage_class_rate(_attacker, %Combatant{monster_id: nil}), do: 0
+
+  defp add_damage_class_rate(attacker, %Combatant{monster_id: monster_id}) do
+    Map.get(attacker.equip_modifiers, {:add_damage_class, monster_id}, 0)
   end
 
   @spec read(Combatant.t(), atom(), atom()) :: rate()

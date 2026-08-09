@@ -60,6 +60,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert %{race_class: 25} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
     end
 
+    test "add_damage_class adds physical damage against the target monster id" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:add_damage_class, 1002} => 25})
+
+      defender = CombatTestHelper.create_mob_combatant(monster_id: 1002)
+
+      assert %{race_class: 25} = EquipmentBonuses.attack_rates(attacker, defender, nil, :neutral)
+    end
+
+    test "add_damage_class does not apply to a different monster id or to players" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:add_damage_class, 1002} => 25})
+
+      other_mob = CombatTestHelper.create_mob_combatant(monster_id: 1099)
+      player = CombatTestHelper.create_player_combatant()
+
+      assert %{race_class: 0} = EquipmentBonuses.attack_rates(attacker, other_mob, nil, :neutral)
+      assert %{race_class: 0} = EquipmentBonuses.attack_rates(attacker, player, nil, :neutral)
+    end
+
     test "skill_id nil returns 0 for the skill family" do
       attacker =
         CombatTestHelper.create_player_combatant()
