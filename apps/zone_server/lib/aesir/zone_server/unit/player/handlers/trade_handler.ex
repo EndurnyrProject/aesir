@@ -3,19 +3,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   Owns the player-session side of trade invitations and accepted trade lifecycle events.
   """
 
+  alias Aesir.Commons.StatusParams
   alias Aesir.Net.TradeCancelled
+  alias Aesir.Net.TradeCompleted
+  alias Aesir.Net.TradeOfferUpdate
   alias Aesir.Net.TradeOpened
   alias Aesir.Net.TradeRequest
   alias Aesir.Net.TradeRequestReceived
   alias Aesir.Net.TradeResponse
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.Trade
   alias Aesir.ZoneServer.Unit.Trade.Session, as: TradeSession
   alias Aesir.ZoneServer.Unit.Trade.Supervisor, as: TradeSupervisor
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -129,6 +137,79 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
     end
   end
 
+  @spec handle_add_item(SessionState.t(), integer(), integer()) ::
+          {:noreply, SessionState.t()}
+  def handle_add_item(%{trade: nil} = state, _index, _amount), do: {:noreply, state}
+
+  def handle_add_item(state, client_index, amount) do
+    row =
+      PlayerState.get_by_index(state.game_state.inventory, PlayerState.server_index(client_index))
+
+    with %Aesir.Commons.Models.InventoryItem{} = row <- row,
+         true <- is_integer(row.id),
+         true <- is_integer(amount) and amount >= 1 and amount <= row.amount,
+         {:ok, %ItemDefinition{} = item_def} <- ItemManagement.get_item_by_id(row.nameid),
+         :ok <- Trade.offerable?(row, item_def) do
+      forward(state, &TradeSession.add_item(&1, row, amount))
+    else
+      _ -> {:noreply, state}
+    end
+  end
+
+  @spec handle_remove_item(SessionState.t(), integer()) :: {:noreply, SessionState.t()}
+  def handle_remove_item(%{trade: nil} = state, _index), do: {:noreply, state}
+
+  def handle_remove_item(state, client_index) do
+    case PlayerState.get_by_index(
+           state.game_state.inventory,
+           PlayerState.server_index(client_index)
+         ) do
+      %{id: row_id} when is_integer(row_id) ->
+        forward(state, &TradeSession.remove_item(&1, row_id))
+
+      _ ->
+        {:noreply, state}
+    end
+  end
+
+  @spec handle_set_zeny(SessionState.t(), integer()) :: {:noreply, SessionState.t()}
+  def handle_set_zeny(%{trade: nil} = state, _zeny), do: {:noreply, state}
+
+  def handle_set_zeny(state, zeny)
+      when is_integer(zeny) and zeny >= 0 and zeny <= state.game_state.zeny do
+    forward(state, &TradeSession.set_zeny(&1, zeny))
+  end
+
+  def handle_set_zeny(state, _zeny), do: {:noreply, state}
+
+  @spec handle_lock(SessionState.t()) :: {:noreply, SessionState.t()}
+  def handle_lock(%{trade: nil} = state), do: {:noreply, state}
+  def handle_lock(state), do: forward(state, &TradeSession.lock/1)
+
+  @spec handle_confirm(SessionState.t()) :: {:noreply, SessionState.t()}
+  def handle_confirm(%{trade: nil} = state), do: {:noreply, state}
+
+  def handle_confirm(state) do
+    snapshot = %{inventory: state.game_state.inventory, stats: state.game_state.stats}
+    forward(state, &TradeSession.confirm(&1, snapshot))
+  end
+
+  @spec handle_cancel(SessionState.t(), atom()) :: {:noreply, SessionState.t()}
+  def handle_cancel(%{trade: nil} = state, _reason), do: {:noreply, state}
+
+  def handle_cancel(state, reason) do
+    TradeSession.cancel(state.trade.pid, reason)
+    {:noreply, clear_trade(state, reason)}
+  end
+
+  @spec cancel_if_trading(SessionState.t(), atom()) :: SessionState.t()
+  def cancel_if_trading(%{trade: nil} = state, _reason), do: state
+
+  def cancel_if_trading(state, reason) do
+    TradeSession.cancel(state.trade.pid, reason)
+    clear_trade(state, reason)
+  end
+
   @spec handle_trade_event(SessionState.t(), term()) :: {:noreply, SessionState.t()}
   def handle_trade_event(state, {:opened, trade_pid, partner_char_id}) do
     with nil <- state.trade,
@@ -155,10 +236,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
     {:noreply, clear_trade(state, reason)}
   end
 
-  def handle_trade_event(state, {:offer_update, _view}), do: {:noreply, state}
+  def handle_trade_event(%{trade: nil} = state, {:offer_update, _view}),
+    do: {:noreply, state}
 
-  # Task 11 makes completion reachable and applies its inventory delta.
-  def handle_trade_event(state, {:completed, _delta}), do: {:noreply, state}
+  def handle_trade_event(state, {:offer_update, view}) do
+    MessageRouter.send_to(state.connection_pid, %TradeOfferUpdate{
+      own: encode_entries(view.own.entries, state.game_state.inventory, :own),
+      partner: encode_entries(view.partner.entries, state.game_state.inventory, :partner),
+      own_zeny: view.own.zeny,
+      partner_zeny: view.partner.zeny,
+      own_locked: view.own.locked,
+      partner_locked: view.partner.locked
+    })
+
+    {:noreply, state}
+  end
+
+  def handle_trade_event(%{trade: nil} = state, {:completed, _delta}),
+    do: {:noreply, state}
+
+  def handle_trade_event(state, {:completed, delta}) do
+    old_inventory = state.game_state.inventory
+    notify_item_changes(state.connection_pid, old_inventory, delta.inventory, delta.item_changes)
+    StatusSync.send_param(state.connection_pid, StatusParams.zeny(), delta.zeny)
+
+    game_state = %{state.game_state | inventory: delta.inventory, zeny: delta.zeny}
+    {:ok, game_state} = PlayerState.transition_to(game_state, :idle)
+    state = finish_trade(state, game_state)
+
+    MessageRouter.send_to(state.connection_pid, %TradeCompleted{})
+    {:noreply, state}
+  end
 
   @spec handle_trade_down(reference(), pid(), SessionState.t()) :: {:noreply, SessionState.t()}
   def handle_trade_down(
@@ -275,11 +383,62 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
 
   defp notify_invite_cancelled(pid, reason), do: send(pid, {:trade_invite_cancelled, reason})
 
+  defp forward(state, fun) do
+    case fun.(state.trade.pid) do
+      :ok -> {:noreply, state}
+      {:error, _reason} -> {:noreply, state}
+    end
+  catch
+    :exit, _reason -> {:noreply, clear_trade(state, :disconnected)}
+  end
+
+  defp encode_entries(entries, inventory, side) do
+    Enum.map(entries, fn %{row_id: row_id, amount: amount, snapshot: snapshot} ->
+      index = if side == :own, do: client_index_for_row(inventory, row_id), else: 0
+      InventoryView.trade_item(index, snapshot, amount)
+    end)
+  end
+
+  defp client_index_for_row(inventory, row_id) do
+    case Enum.find(inventory, fn {_index, row} -> row.id == row_id end) do
+      {index, _row} -> PlayerState.client_index(index)
+      nil -> 0
+    end
+  end
+
+  defp notify_item_changes(connection_pid, old_inventory, inventory, changes) do
+    Enum.each(changes, fn
+      {:removed, index} ->
+        MessageRouter.send_to(
+          connection_pid,
+          InventoryView.item_removed(index, PlayerState.get_by_index(old_inventory, index).amount)
+        )
+
+      {:reduced, index, left} ->
+        removed = PlayerState.get_by_index(old_inventory, index).amount - left
+        MessageRouter.send_to(connection_pid, InventoryView.item_removed(index, removed))
+
+      {:added, index, _item} ->
+        send_item_added(connection_pid, inventory, index)
+
+      {:stacked, index, _total} ->
+        send_item_added(connection_pid, inventory, index)
+
+      {:split, indices} ->
+        Enum.each(indices, fn {index, _amount} ->
+          send_item_added(connection_pid, inventory, index)
+        end)
+    end)
+  end
+
+  defp send_item_added(connection_pid, inventory, index) do
+    item = PlayerState.get_by_index(inventory, index)
+    MessageRouter.send_to(connection_pid, InventoryView.item_added(item, index))
+  end
+
   defp clear_trade(%{trade: nil} = state, _reason), do: state
 
-  defp clear_trade(%{trade: %{monitor: monitor}} = state, reason) do
-    Process.demonitor(monitor, [:flush])
-
+  defp clear_trade(state, reason) do
     game_state =
       case PlayerState.transition_to(state.game_state, :idle) do
         {:ok, game_state} -> game_state
@@ -287,9 +446,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
       end
 
     state
+    |> finish_trade(game_state)
+    |> send_cancelled(reason)
+  end
+
+  defp finish_trade(%{trade: %{monitor: monitor}} = state, game_state) do
+    Process.demonitor(monitor, [:flush])
+
+    state
     |> StateCommit.commit(game_state)
     |> Map.put(:trade, nil)
-    |> send_cancelled(reason)
   end
 
   defp send_cancelled(state, reason) do

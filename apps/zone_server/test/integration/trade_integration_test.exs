@@ -1,15 +1,200 @@
 defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.Models.Account
+  alias Aesir.Commons.Models.Character
+  alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemRemoved
   alias Aesir.Net.MoveRequest
+  alias Aesir.Net.ParamChange
+  alias Aesir.Net.TradeAddItem
+  alias Aesir.Net.TradeCancel
   alias Aesir.Net.TradeCancelled
+  alias Aesir.Net.TradeCompleted
+  alias Aesir.Net.TradeConfirm
+  alias Aesir.Net.TradeLock
+  alias Aesir.Net.TradeOfferUpdate
   alias Aesir.Net.TradeOpened
   alias Aesir.Net.TradeRequest
   alias Aesir.Net.TradeRequestReceived
   alias Aesir.Net.TradeResponse
+  alias Aesir.Net.TradeSetZeny
+  alias Aesir.Repo
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Trade.Supervisor, as: TradeSupervisor
+
+  test "both players exchange attributed items and zeny over the packet path" do
+    {a, [a_row]} =
+      persisted_player("TradeHappyA", {150, 150}, 1_000, [
+        %{nameid: 1101, amount: 1, identify: 1, refine: 7, card0: 4001}
+      ])
+
+    {b, [b_row]} =
+      persisted_player("TradeHappyB", {151, 150}, 2_000, [
+        %{nameid: 501, amount: 5, identify: 1}
+      ])
+
+    open_trade(a, b)
+    trade_pid = PlayerSession.get_state(a.pid).trade.pid
+    flush_packets()
+
+    simulate_incoming_message(a.pid, %TradeAddItem{
+      index: client_index(a.pid, a_row.id),
+      amount: 1
+    })
+
+    assert_offer_pair(fn update ->
+      Enum.any?(update.own, &(&1.refine == 7 and &1.cards == [4001, 0, 0, 0]))
+    end)
+
+    simulate_incoming_message(a.pid, %TradeSetZeny{amount: 100})
+    assert_offer_pair(fn update -> update.own_zeny == 100 or update.partner_zeny == 100 end)
+
+    simulate_incoming_message(b.pid, %TradeAddItem{
+      index: client_index(b.pid, b_row.id),
+      amount: 2
+    })
+
+    assert_offer_pair(fn update ->
+      Enum.any?(update.own ++ update.partner, &(&1.nameid == 501 and &1.amount == 2))
+    end)
+
+    simulate_incoming_message(b.pid, %TradeSetZeny{amount: 250})
+    assert_offer_pair(fn update -> update.own_zeny == 250 or update.partner_zeny == 250 end)
+
+    simulate_incoming_message(a.pid, %TradeLock{})
+    assert_offer_pair(fn update -> update.own_locked or update.partner_locked end)
+    simulate_incoming_message(b.pid, %TradeLock{})
+    assert_offer_pair(fn update -> update.own_locked and update.partner_locked end)
+
+    simulate_incoming_message(a.pid, %TradeConfirm{})
+    simulate_incoming_message(b.pid, %TradeConfirm{})
+
+    assert length(collect_packets_of_type(ItemRemoved, 100)) == 2
+    assert length(collect_packets_of_type(ItemAdded, 100)) == 2
+    assert length(collect_packets_of_type(ParamChange, 100)) == 2
+    assert length(collect_packets_of_type(TradeCompleted, 100)) == 2
+
+    assert_eventually(fn ->
+      a_state = PlayerSession.get_state(a.pid)
+      b_state = PlayerSession.get_state(b.pid)
+
+      a_state.trade == nil and b_state.trade == nil and
+        a_state.game_state.action_state == :idle and b_state.game_state.action_state == :idle and
+        not Process.alive?(trade_pid)
+    end)
+
+    a_state = PlayerSession.get_state(a.pid).game_state
+    b_state = PlayerSession.get_state(b.pid).game_state
+    assert a_state.zeny == 1_150
+    assert b_state.zeny == 1_850
+    assert Repo.get!(Character, a.character.id).zeny == 1_150
+    assert Repo.get!(Character, b.character.id).zeny == 1_850
+    assert inventory_rows(a_state.inventory) == persisted_rows(a.character.id)
+    assert inventory_rows(b_state.inventory) == persisted_rows(b.character.id)
+
+    assert Enum.any?(Map.values(b_state.inventory), fn item ->
+             item.nameid == 1101 and item.refine == 7 and item.card0 == 4001
+           end)
+  end
+
+  test "locked offers reject mutation and confirm waits for both locks" do
+    {a, [row]} =
+      persisted_player("TradeLockedA", {150, 150}, 500, [
+        %{nameid: 501, amount: 2, identify: 1}
+      ])
+
+    {b, []} = persisted_player("TradeLockedB", {151, 150}, 500, [])
+    open_trade(a, b)
+    flush_packets()
+
+    simulate_incoming_message(a.pid, %TradeLock{})
+    assert_offer_pair(fn update -> update.own_locked or update.partner_locked end)
+
+    simulate_incoming_message(a.pid, %TradeAddItem{index: client_index(a.pid, row.id), amount: 1})
+    simulate_incoming_message(a.pid, %TradeConfirm{})
+    refute_receive {:packet_sent, %TradeOfferUpdate{}, _}, 100
+    refute_receive {:packet_sent, %TradeCompleted{}, _}, 100
+
+    assert PlayerSession.get_state(a.pid).game_state.action_state == :trading
+    assert PlayerSession.get_state(b.pid).game_state.action_state == :trading
+
+    simulate_incoming_message(b.pid, %TradeSetZeny{amount: 1})
+
+    assert_offer_pair(fn update ->
+      update.own == [] and update.partner == [] and
+        (update.own_zeny == 1 or update.partner_zeny == 1)
+    end)
+  end
+
+  test "invalid local offers never change the trade offer" do
+    {a, [bound, plain]} =
+      persisted_player("TradeInvalidA", {150, 150}, 100, [
+        %{nameid: 501, amount: 1, identify: 1, bound: 1},
+        %{nameid: 502, amount: 2, identify: 1}
+      ])
+
+    {b, []} = persisted_player("TradeInvalidB", {151, 150}, 100, [])
+    open_trade(a, b)
+    flush_packets()
+
+    simulate_incoming_message(a.pid, %TradeAddItem{
+      index: client_index(a.pid, bound.id),
+      amount: 1
+    })
+
+    simulate_incoming_message(a.pid, %TradeAddItem{
+      index: client_index(a.pid, plain.id),
+      amount: 3
+    })
+
+    simulate_incoming_message(a.pid, %TradeSetZeny{amount: 101})
+    refute_receive {:packet_sent, %TradeOfferUpdate{}, _}, 100
+
+    simulate_incoming_message(a.pid, %TradeLock{})
+
+    assert_offer_pair(fn update ->
+      update.own == [] and update.partner == [] and update.own_zeny == 0 and
+        update.partner_zeny == 0
+    end)
+  end
+
+  test "explicit cancel mid-offer leaves inventories and balances unchanged" do
+    {a, [row]} =
+      persisted_player("TradeCancelA", {150, 150}, 700, [
+        %{nameid: 501, amount: 3, identify: 1}
+      ])
+
+    {b, []} = persisted_player("TradeCancelB", {151, 150}, 900, [])
+    before_a = persisted_rows(a.character.id)
+    before_b = persisted_rows(b.character.id)
+    open_trade(a, b)
+    flush_packets()
+
+    simulate_incoming_message(a.pid, %TradeAddItem{index: client_index(a.pid, row.id), amount: 2})
+    assert_offer_pair(fn update -> update.own != [] or update.partner != [] end)
+    simulate_incoming_message(a.pid, %TradeSetZeny{amount: 300})
+    assert_offer_pair(fn update -> update.own_zeny == 300 or update.partner_zeny == 300 end)
+    simulate_incoming_message(a.pid, %TradeCancel{})
+
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+
+    assert_eventually(fn ->
+      a_state = PlayerSession.get_state(a.pid)
+      b_state = PlayerSession.get_state(b.pid)
+
+      a_state.trade == nil and b_state.trade == nil and
+        a_state.game_state.action_state == :idle and b_state.game_state.action_state == :idle
+    end)
+
+    assert persisted_rows(a.character.id) == before_a
+    assert persisted_rows(b.character.id) == before_b
+    assert Repo.get!(Character, a.character.id).zeny == 700
+    assert Repo.get!(Character, b.character.id).zeny == 900
+  end
 
   test "request and accept opens one trade for both players" do
     requester = player("TradeReq", {150, 150})
@@ -210,6 +395,69 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
       PlayerSession.get_state(requester.pid).trade != nil and
         PlayerSession.get_state(target.pid).trade != nil
     end)
+  end
+
+  defp assert_offer_pair(predicate) do
+    updates = collect_packets_of_type(TradeOfferUpdate, 100)
+    assert length(updates) == 2
+    assert Enum.any?(updates, predicate)
+  end
+
+  defp client_index(pid, row_id) do
+    state = PlayerSession.get_state(pid).game_state
+    {index, _row} = Enum.find(state.inventory, fn {_index, row} -> row.id == row_id end)
+    index + 2
+  end
+
+  defp persisted_player(name, position, zeny, item_attrs) do
+    suffix = System.unique_integer([:positive])
+
+    {:ok, account} =
+      %Account{}
+      |> Account.changeset(%{
+        userid: "tr#{suffix}",
+        user_pass: "password",
+        sex: "M",
+        email: "tr#{suffix}@example.com"
+      })
+      |> Repo.insert()
+
+    {:ok, character} =
+      %{
+        account_id: account.id,
+        char_num: 0,
+        class: 0,
+        base_level: 1,
+        name: name,
+        zeny: zeny,
+        learned_skills: %{"1" => 1},
+        last_map: "prontera",
+        last_x: elem(position, 0),
+        last_y: elem(position, 1)
+      }
+      |> Character.new()
+      |> Repo.insert()
+
+    rows =
+      Enum.map(item_attrs, fn attrs ->
+        {:ok, row} = Persistence.insert_item(character.id, attrs)
+        row
+      end)
+
+    session = start_player_session(character: character, position: position)
+    {session, rows}
+  end
+
+  defp persisted_rows(char_id) do
+    char_id |> Persistence.load_inventory() |> Enum.map(&row_view/1) |> Enum.sort()
+  end
+
+  defp inventory_rows(inventory) do
+    inventory |> Map.values() |> Enum.map(&row_view/1) |> Enum.sort()
+  end
+
+  defp row_view(row) do
+    Map.take(row, [:id, :char_id, :nameid, :amount, :refine, :card0, :bound])
   end
 
   defp relocate(session, {x, y}) do

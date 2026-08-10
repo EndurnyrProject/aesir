@@ -78,6 +78,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.HomunculusResult{}), do: {:gameplay, :homunculus_result}
   def route(%Aesir.Net.TradeRequestReceived{}), do: {:gameplay, :trade_request_received}
   def route(%Aesir.Net.TradeOpened{}), do: {:gameplay, :trade_opened}
+  def route(%Aesir.Net.TradeOfferUpdate{}), do: {:gameplay, :trade_offer_update}
+  def route(%Aesir.Net.TradeCompleted{}), do: {:gameplay, :trade_completed}
   def route(%Aesir.Net.TradeCancelled{}), do: {:gameplay, :trade_cancelled}
 
   def route(%Aesir.Net.UnitSpawn{}), do: {:world, :unit_spawn}

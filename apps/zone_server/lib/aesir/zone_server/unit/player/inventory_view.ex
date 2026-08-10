@@ -66,6 +66,28 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   end
 
   @doc """
+  Builds the shared inventory-item wire representation for a trade offer.
+
+  `index` is already in the client index space. Partner offer rows use zero
+  because their inventory indices have no meaning to this client.
+  """
+  @spec trade_item(non_neg_integer(), InventoryItem.t(), pos_integer()) ::
+          Aesir.Net.InventoryItem.t()
+  def trade_item(index, %InventoryItem{} = item, amount) do
+    names = CreatorNames.names_for([item])
+
+    struct(
+      Aesir.Net.InventoryItem,
+      item_fields(%{item | amount: amount}, names)
+      |> Map.merge(%{
+        index: index,
+        bind_on_equip: item.bound,
+        favorite: item.favorite == 1
+      })
+    )
+  end
+
+  @doc """
   Builds the full `InventoryList` dump for an inventory map (sent on map load).
 
   Collapses the legacy 4-packet inventory dump (ZC_INVENTORY_START/ITEMLIST_NORMAL/

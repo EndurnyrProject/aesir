@@ -55,8 +55,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.StorageCloseRequest
   alias Aesir.Net.StorageDepositRequest
   alias Aesir.Net.StorageWithdrawRequest
+  alias Aesir.Net.TradeAddItem
+  alias Aesir.Net.TradeCancel
+  alias Aesir.Net.TradeConfirm
+  alias Aesir.Net.TradeLock
+  alias Aesir.Net.TradeRemoveItem
   alias Aesir.Net.TradeRequest
   alias Aesir.Net.TradeResponse
+  alias Aesir.Net.TradeSetZeny
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UseItem
   alias Aesir.Net.VendingBuy
@@ -326,6 +332,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   def handle_message(%TradeResponse{} = msg, state) do
     TradeHandler.handle_trade_response(state, msg)
   end
+
+  def handle_message(%TradeAddItem{index: index, amount: amount}, state) do
+    TradeHandler.handle_add_item(state, index, amount)
+  end
+
+  def handle_message(%TradeRemoveItem{index: index}, state) do
+    TradeHandler.handle_remove_item(state, index)
+  end
+
+  def handle_message(%TradeSetZeny{amount: amount}, state) do
+    TradeHandler.handle_set_zeny(state, amount)
+  end
+
+  def handle_message(%TradeLock{}, state), do: TradeHandler.handle_lock(state)
+  def handle_message(%TradeConfirm{}, state), do: TradeHandler.handle_confirm(state)
+  def handle_message(%TradeCancel{}, state), do: TradeHandler.handle_cancel(state, :cancelled)
 
   # PartyCreateRequest - Player creates a new party with themselves as leader.
   def handle_message(%PartyCreateRequest{} = msg, state) do
