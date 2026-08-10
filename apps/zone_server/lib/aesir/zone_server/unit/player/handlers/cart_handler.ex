@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Rental
 
   @status_id :sc_push_cart
   @mc_pushcart_id McPushcart.definition().id
@@ -323,11 +324,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   # equipped move would also implicitly unequip the item with no stat/appearance
   # recalc, desyncing the player. A missing slot is left to `CartOps` to reject.
   @spec ensure_movable_to_cart(%{non_neg_integer() => InventoryItem.t()}, non_neg_integer()) ::
-          :ok | {:error, :equipped | :favorite}
+          :ok | {:error, :equipped | :favorite | :rental}
   defp ensure_movable_to_cart(inventory, server_index) do
     case PlayerState.get_by_index(inventory, server_index) do
       %InventoryItem{equip: equip} when equip > 0 -> {:error, :equipped}
       %InventoryItem{favorite: 1} -> {:error, :favorite}
+      %InventoryItem{} = item -> if Rental.transferable?(item), do: :ok, else: {:error, :rental}
       _ -> :ok
     end
   end

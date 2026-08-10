@@ -256,6 +256,22 @@ defmodule Aesir.ZoneServer.Unit.ShopTest do
                Shop.compute_sell([{0, 1}], player(%{inventory: inv}))
     end
 
+    test "rejects rentals while selling otherwise-identical items" do
+      rental = item(nameid: @red_potion, amount: 3, expire_time: ~N[2030-01-01 00:00:00])
+      rental_inventory = inventory([rental])
+
+      assert {:error, :unsellable} =
+               Shop.compute_sell([{0, 1}], player(%{inventory: rental_inventory}))
+
+      assert PlayerState.get_by_index(rental_inventory, 0) == rental
+
+      assert {:ok, %{total_credit: 25, removals: [{0, 1}]}} =
+               Shop.compute_sell(
+                 [{0, 1}],
+                 player(%{inventory: inventory([%{rental | expire_time: nil}])})
+               )
+    end
+
     test "rejects an equipped item even when sellable by price" do
       inv = inventory([item(nameid: @sword, amount: 1, equip: 2)])
 

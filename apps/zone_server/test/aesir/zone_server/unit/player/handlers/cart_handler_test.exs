@@ -274,6 +274,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
 
       assert {:noreply, ^base} = CartHandler.move_to_cart(client_index, 4, base)
     end
+
+    test "rejects a rental source item while moving an otherwise-identical item" do
+      test_pid = self()
+      stub_item_definition()
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+
+      rental = %{item(501, 4) | expire_time: ~N[2030-01-01 00:00:00]}
+      base = state(cart_type: 1, inventory: %{0 => rental})
+      client_index = PlayerState.client_index(0)
+
+      stub(CartOps, :move_to_cart, fn @char_id, _inventory, _cart, 0, 4 ->
+        send(test_pid, :cart_move)
+        moved = %{rental | expire_time: nil}
+        {:ok, %{}, %{0 => moved}, {:removed, 0}, {:added, 0, moved}}
+      end)
+
+      assert {:noreply, ^base} = CartHandler.move_to_cart(client_index, 4, base)
+      assert base.game_state.inventory == %{0 => rental}
+      assert base.game_state.cart == %{}
+      refute_received :cart_move
+      refute_received {:send, :gameplay, {:item_removed, _}}
+      refute_received {:send, :gameplay, {:cart_item_added, _}}
+
+      non_rental = %{rental | expire_time: nil}
+      non_rental_base = state(cart_type: 1, inventory: %{0 => non_rental})
+
+      assert {:noreply, %{game_state: %{inventory: %{}, cart: %{0 => ^non_rental}}}} =
+               CartHandler.move_to_cart(client_index, 4, non_rental_base)
+
+      assert_received :cart_move
+    end
   end
 
   describe "move_to_inventory/3" do

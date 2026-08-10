@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Rental
   alias Aesir.ZoneServer.Unit.Storage.Persistence
 
   @max_storage 600
@@ -77,5 +78,5 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   party-bound (`3`), and character-bound (`4`) items are rejected.
   """
   @spec storable?(InventoryItem.t()) :: boolean()
-  def storable?(%InventoryItem{} = item), do: Bound.storable?(item)
+  def storable?(%InventoryItem{} = item), do: Bound.storable?(item) and Rental.transferable?(item)
 end

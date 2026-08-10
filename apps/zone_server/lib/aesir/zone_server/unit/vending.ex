@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Vending do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Rental
 
   @price_min 1
   @price_max 99_999_999
@@ -82,7 +83,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
              | :item_not_in_cart
              | :insufficient_stock
              | :item_unidentified
-             | :item_bound}
+             | :item_bound
+             | :item_rental}
   def validate_open(cart, entries, max_slots)
       when is_map(cart) and is_list(entries) and is_integer(max_slots) do
     if length(entries) > max_slots do
@@ -165,7 +167,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
          :ok <- check_price(price),
          {:ok, item} <- fetch_slot(cart, cart_index, amount),
          :ok <- check_identified(item),
-         :ok <- check_bound(item) do
+         :ok <- check_bound(item),
+         :ok <- check_rental(item) do
       {:ok, %ShopItem{cart_index: cart_index, nameid: item.nameid, amount: amount, price: price}}
     end
   end
@@ -192,6 +195,10 @@ defmodule Aesir.ZoneServer.Unit.Vending do
 
   defp check_bound(item) do
     if Bound.vendable?(item), do: :ok, else: {:error, :item_bound}
+  end
+
+  defp check_rental(item) do
+    if Rental.transferable?(item), do: :ok, else: {:error, :item_rental}
   end
 
   defp snapshot_row(%ShopItem{} = shop, %InventoryItem{} = item) do

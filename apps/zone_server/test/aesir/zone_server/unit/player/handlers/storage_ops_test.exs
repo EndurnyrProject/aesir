@@ -110,17 +110,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
       assert [%StorageItem{amount: 8}] = StoragePersistence.load_storage(account.id)
     end
 
-    test "preserves refine/cards/unique_id/enchant_grade/expire_time and does not merge a carded item with a plain stack",
+    test "preserves refine/cards/unique_id/enchant_grade and does not merge a carded item with a plain stack",
          %{account: account, character: char} do
       seed_storage(account.id, @potion, 5)
-      expire_time = ~N[2030-01-01 00:00:00]
 
       seed_inv(char.id, @potion, 1, %{
         refine: 7,
         card0: @poring_card,
         unique_id: 123_456,
-        enchant_grade: 2,
-        expire_time: expire_time
+        enchant_grade: 2
       })
 
       inventory = inv_map(char.id)
@@ -141,7 +139,48 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
       assert carded.refine == 7
       assert carded.unique_id == 123_456
       assert carded.enchant_grade == 2
-      assert carded.expire_time == expire_time
+    end
+
+    test "accepts non-rentals and rejects rentals without moving either item", %{
+      account: account,
+      character: char
+    } do
+      seed_inv(char.id, @potion, 1)
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @potion)
+
+      assert {:ok, %{}, %{0 => %InventoryItem{nameid: @potion, amount: 1}}, _, _} =
+               StorageOps.deposit(account.id, char.id, inventory, %{}, index, 1)
+
+      expire_time = ~N[2030-01-01 00:00:00]
+      rental = seed_inv(char.id, @potion, 1, %{expire_time: expire_time})
+      rental_inventory = inv_map(char.id)
+      rental_index = index_of(rental_inventory, @potion)
+
+      assert {:error, :not_storable} =
+               StorageOps.deposit(
+                 account.id,
+                 char.id,
+                 rental_inventory,
+                 %{0 => rental},
+                 rental_index,
+                 1
+               )
+
+      assert [
+               %InventoryItem{
+                 id: rental_id,
+                 nameid: @potion,
+                 amount: 1,
+                 expire_time: ^expire_time
+               }
+             ] =
+               InventoryPersistence.load_inventory(char.id)
+
+      assert rental_id == rental.id
+
+      assert [%StorageItem{nameid: @potion, amount: 1}] =
+               StoragePersistence.load_storage(account.id)
     end
 
     test "rejects an equipped item with :item_equipped and writes nothing", %{

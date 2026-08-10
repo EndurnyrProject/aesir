@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Rental
 
   @discount_skill_id 37
   @overcharge_skill_id 38
@@ -304,6 +305,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
 
   defp sellable(%InventoryItem{nameid: nameid} = item) do
     with true <- Bound.sellable?(item),
+         true <- Rental.transferable?(item),
          {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid),
          true <- ItemDefinition.sell_price(def) > 0 do
       {:ok, def}

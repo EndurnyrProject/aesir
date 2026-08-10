@@ -96,6 +96,17 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
       end
     end
 
+    test "rejects rentals while listing otherwise-identical cart items" do
+      rental = item(nameid: @red_potion, amount: 5, expire_time: ~N[2030-01-01 00:00:00])
+      rental_cart = cart([rental])
+
+      assert {:error, :item_rental} = Vending.validate_open(rental_cart, [{0, 5, 100}], 12)
+      assert PlayerState.get_by_index(rental_cart, 0) == rental
+
+      assert {:ok, [%ShopItem{nameid: @red_potion, amount: 5, price: 100}]} =
+               Vending.validate_open(cart([%{rental | expire_time: nil}]), [{0, 5, 100}], 12)
+    end
+
     test "rejects a line referencing an empty cart slot" do
       c = cart([item(nameid: @red_potion, amount: 3)])
 
