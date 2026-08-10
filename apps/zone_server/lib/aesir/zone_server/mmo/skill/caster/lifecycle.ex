@@ -13,11 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
   @type phase :: :begin | :completion
   @type prepared :: map()
   @type cast_stats :: %{
-          dex: integer(),
-          int: integer(),
-          varcast_reductions: [non_neg_integer()],
-          varcast_rate: integer(),
-          fixed_cast: integer()
+          :dex => integer(),
+          :int => integer(),
+          :varcast_reductions => [non_neg_integer()],
+          :varcast_rate => integer(),
+          :fixed_cast => integer(),
+          optional(:fixcast_rate) => integer()
         }
 
   @callback knows?(state(), Definition.t(), pos_integer(), phase()) ::
