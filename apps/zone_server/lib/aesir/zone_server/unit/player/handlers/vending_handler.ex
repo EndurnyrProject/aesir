@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
+  alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McVending
@@ -382,15 +384,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     with {:ok, {_module, %PlayerState{cart: cart}, _pid}} <-
            UnitRegistry.get_unit(:player, vendor_unit_id),
          {:ok, %{title: title, items: items}} <- Registry.get(vendor_unit_id) do
-      shop_items = Enum.map(Vending.build_snapshot(cart, items), &to_shop_item/1)
+      rows = Vending.build_snapshot(cart, items)
+      names = rows |> Enum.map(&%InventoryItem{craft: &1.craft}) |> CreatorNames.names_for()
+      shop_items = Enum.map(rows, &to_shop_item(&1, names))
       {:ok, %VendingList{vendor_unit_id: vendor_unit_id, title: title, items: shop_items}}
     else
       _ -> :error
     end
   end
 
-  @spec to_shop_item(Vending.snapshot_item()) :: VendingShopItem.t()
-  defp to_shop_item(row) do
+  @spec to_shop_item(Vending.snapshot_item(), %{non_neg_integer() => String.t()}) ::
+          VendingShopItem.t()
+  defp to_shop_item(row, names) do
+    {creator_kind, creator_id, signer_name} =
+      case ItemCraft.from_map(row.craft) do
+        {:ok, %ItemCraft{kind: :signed, creator_char_id: id}} ->
+          {:CREATOR_SIGNED, id, Map.get(names, id, "")}
+
+        {:ok, %ItemCraft{kind: :forged, creator_char_id: id}} ->
+          {:CREATOR_FORGED, id, Map.get(names, id, "")}
+
+        :error ->
+          {:CREATOR_NONE, 0, ""}
+      end
+
     %VendingShopItem{
       index: row.index,
       nameid: row.nameid,
@@ -400,7 +417,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
       attribute: row.attribute,
       refine: row.refine,
       cards: row.cards,
-      price: row.price
+      price: row.price,
+      signer_name: signer_name,
+      creator_id: creator_id,
+      creator_kind: creator_kind
     }
   end
 

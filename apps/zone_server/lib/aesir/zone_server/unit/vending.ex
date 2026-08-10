@@ -56,7 +56,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
           cards: [integer()],
           identify: integer(),
           attribute: integer(),
-          enchant_grade: integer()
+          enchant_grade: integer(),
+          craft: map() | nil
         }
 
   @typedoc "A computed purchase: total cost plus the cart/inventory deltas to apply."
@@ -211,7 +212,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
       cards: InventoryItem.cards(item),
       identify: item.identify,
       attribute: item.attribute,
-      enchant_grade: item.enchant_grade
+      enchant_grade: item.enchant_grade,
+      craft: item.craft
     }
   end
 

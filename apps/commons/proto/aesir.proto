@@ -212,6 +212,12 @@ enum FeatureCapability {
   FEATURE_CAPABILITY_SKILL_TEXT_INPUT = 1;
 }
 
+enum CreatorKind {
+  CREATOR_NONE = 0;
+  CREATOR_SIGNED = 1;
+  CREATOR_FORGED = 2;
+}
+
 // Client -> server, first message on the Control channel after connect.
 // Capabilities are optional and do not change the protocol-version baseline.
 message Hello {
@@ -811,6 +817,9 @@ message InventoryItem {
   uint32 look = 13;
   // Per-unit weight from the item database (multiply by amount for the stack).
   uint32 weight = 14;
+  string signer_name = 15;
+  uint32 creator_id = 16;
+  CreatorKind creator_kind = 17;
 }
 
 // Server -> client, the full inventory dump (collapses RO ZC_INVENTORY_START/
@@ -836,6 +845,9 @@ message ItemAdded {
   uint32 look = 12;
   // Per-unit weight from the item database.
   uint32 weight = 13;
+  string signer_name = 14;
+  uint32 creator_id = 15;
+  CreatorKind creator_kind = 16;
 }
 
 // Server -> client, an item was removed from the inventory (replaces RO ZC_DELETE_ITEM_FROM_BODY 0x07FA).
@@ -878,6 +890,9 @@ message CartItemAdded {
   uint32 look = 12;
   // Per-unit weight from the item database.
   uint32 weight = 13;
+  string signer_name = 14;
+  uint32 creator_id = 15;
+  CreatorKind creator_kind = 16;
 }
 
 // Server -> client, an item was removed from the cart. Mirrors ItemRemoved.
@@ -1013,6 +1028,9 @@ message VendingShopItem {
   uint32 refine = 7;
   repeated uint32 cards = 8;
   uint32 price = 9;
+  string signer_name = 10;
+  uint32 creator_id = 11;
+  CreatorKind creator_kind = 12;
 }
 
 // Server -> client, the full item list of a vendor's shop (reply to VendingListRequest).
@@ -1541,6 +1559,9 @@ message StorageItemAdded {
   uint32 look = 12;
   // Per-unit weight from the item database.
   uint32 weight = 13;
+  string signer_name = 14;
+  uint32 creator_id = 15;
+  CreatorKind creator_kind = 16;
 }
 
 // Server -> client, an item was removed from storage. Mirrors CartItemRemoved.

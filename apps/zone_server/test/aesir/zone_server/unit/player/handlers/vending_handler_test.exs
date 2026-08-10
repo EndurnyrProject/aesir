@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   alias Aesir.Net.VendingBoardShown
   alias Aesir.Net.VendingList
   alias Aesir.Net.VendingShopItem
+  alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -79,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       amount: amount,
       identify: Keyword.get(opts, :identify, 1),
       bound: Keyword.get(opts, :bound, 0),
+      craft: Keyword.get(opts, :craft),
       random_options: %{}
     }
   end
@@ -257,6 +260,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
                VendingHandler.build_list(@char_id)
 
       assert [%VendingShopItem{index: 0, nameid: 501, amount: 5, price: 100}] = items
+    end
+
+    test "includes a signed item's creator metadata" do
+      mount_cart()
+      signed = item(501, 10, craft: ItemCraft.to_map(ItemCraft.signed(10)))
+      base = state(learned_skills: learned(@vending_level), cart_map: %{0 => signed})
+      {:ok, opened} = VendingHandler.open_shop(base, "Cheap Pots", [{0, 5, 100}])
+      UnitRegistry.register_player(opened.game_state, self())
+      expect(Repo, :all, fn _query -> [{10, "Signer"}] end)
+
+      assert {:ok, %VendingList{items: [shop_item]}} = VendingHandler.build_list(@char_id)
+      assert %VendingShopItem{} = shop_item
+      assert shop_item.creator_kind == :CREATOR_SIGNED
+      assert shop_item.creator_id == 10
+      assert shop_item.signer_name == "Signer"
     end
 
     test "returns :error for a vendor with no open shop" do

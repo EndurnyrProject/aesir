@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   alias Aesir.Net.StorageOpened
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
+  alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Cart.Weight, as: CartWeight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -34,21 +36,13 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
   @spec item_added(InventoryItem.t(), non_neg_integer()) :: ItemAdded.t()
   def item_added(%InventoryItem{} = item, server_index) do
-    %ItemAdded{
-      index: PlayerState.client_index(server_index),
-      amount: item.amount,
-      nameid: item.nameid,
-      identified: item.identify == 1,
-      attribute: item.attribute,
-      refine: item.refine,
-      cards: [item.card0, item.card1, item.card2, item.card3],
-      location: item.equip,
-      type: client_type(item.nameid),
-      result: 0,
-      expire_time: encode_expire_time(item.expire_time),
-      look: item_view(item.nameid),
-      weight: item_weight(item.nameid)
-    }
+    names = CreatorNames.names_for([item])
+
+    struct(
+      ItemAdded,
+      item_fields(item, names)
+      |> Map.merge(%{index: PlayerState.client_index(server_index), result: 0})
+    )
   end
 
   @spec item_bound(non_neg_integer(), non_neg_integer()) :: ItemBound.t()
@@ -81,14 +75,13 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
   @spec inventory_list(%{non_neg_integer() => InventoryItem.t()}) :: InventoryList.t()
   def inventory_list(inventory) do
-    {equipped, stackable} =
-      inventory
-      |> Enum.sort_by(fn {index, _item} -> index end)
-      |> Enum.split_with(fn {_index, item} -> item.equip > 0 end)
+    items = Enum.sort_by(inventory, fn {index, _item} -> index end)
+    names = items |> Enum.map(&elem(&1, 1)) |> CreatorNames.names_for()
+    {equipped, stackable} = Enum.split_with(items, fn {_index, item} -> item.equip > 0 end)
 
     %InventoryList{
-      normal: Enum.map(stackable, fn {index, item} -> to_inventory_item(index, item) end),
-      equip: Enum.map(equipped, fn {index, item} -> to_inventory_item(index, item) end)
+      normal: Enum.map(stackable, fn {index, item} -> to_inventory_item(index, item, names) end),
+      equip: Enum.map(equipped, fn {index, item} -> to_inventory_item(index, item, names) end)
     }
   end
 
@@ -96,15 +89,14 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   Builds the full `CartInfo` dump for a cart map (sent on mount/login).
 
   Mirrors `inventory_list/1` but for the cart: each slot is reused through
-  `to_inventory_item/2`, so cart wire items carry the same +2 client index
+  `to_inventory_item/3`, so cart wire items carry the same +2 client index
   offset as inventory items.
   """
   @spec cart_info(%{non_neg_integer() => InventoryItem.t()}) :: CartInfo.t()
   def cart_info(cart) do
-    items =
-      cart
-      |> Enum.sort_by(fn {index, _item} -> index end)
-      |> Enum.map(fn {index, item} -> to_inventory_item(index, item) end)
+    cart_items = Enum.sort_by(cart, fn {index, _item} -> index end)
+    names = cart_items |> Enum.map(&elem(&1, 1)) |> CreatorNames.names_for()
+    items = Enum.map(cart_items, fn {index, item} -> to_inventory_item(index, item, names) end)
 
     %CartInfo{
       items: items,
@@ -118,21 +110,13 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
   @spec cart_item_added(InventoryItem.t(), non_neg_integer()) :: CartItemAdded.t()
   def cart_item_added(%InventoryItem{} = item, server_index) do
-    %CartItemAdded{
-      index: PlayerState.client_index(server_index),
-      amount: item.amount,
-      nameid: item.nameid,
-      identified: item.identify == 1,
-      attribute: item.attribute,
-      refine: item.refine,
-      cards: [item.card0, item.card1, item.card2, item.card3],
-      location: item.equip,
-      type: client_type(item.nameid),
-      result: 0,
-      expire_time: encode_expire_time(item.expire_time),
-      look: item_view(item.nameid),
-      weight: item_weight(item.nameid)
-    }
+    names = CreatorNames.names_for([item])
+
+    struct(
+      CartItemAdded,
+      item_fields(item, names)
+      |> Map.merge(%{index: PlayerState.client_index(server_index), result: 0})
+    )
   end
 
   @doc """
@@ -151,15 +135,14 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   @doc """
   Builds the full `StorageOpened` dump for a storage map (sent on window open).
 
-  Mirrors `cart_info/1`: each slot reuses `to_inventory_item/2`, so storage wire
+  Mirrors `cart_info/1`: each slot reuses `to_inventory_item/3`, so storage wire
   items carry the same +2 client index offset as inventory and cart items.
   """
   @spec storage_opened(%{non_neg_integer() => InventoryItem.t()}) :: StorageOpened.t()
   def storage_opened(storage) do
-    items =
-      storage
-      |> Enum.sort_by(fn {index, _item} -> index end)
-      |> Enum.map(fn {index, item} -> to_inventory_item(index, item) end)
+    storage_items = Enum.sort_by(storage, fn {index, _item} -> index end)
+    names = storage_items |> Enum.map(&elem(&1, 1)) |> CreatorNames.names_for()
+    items = Enum.map(storage_items, fn {index, item} -> to_inventory_item(index, item, names) end)
 
     %StorageOpened{capacity: Storage.capacity(), items: items}
   end
@@ -169,21 +152,13 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
   @spec storage_item_added(InventoryItem.t(), non_neg_integer()) :: StorageItemAdded.t()
   def storage_item_added(%InventoryItem{} = item, server_index) do
-    %StorageItemAdded{
-      index: PlayerState.client_index(server_index),
-      amount: item.amount,
-      nameid: item.nameid,
-      identified: item.identify == 1,
-      attribute: item.attribute,
-      refine: item.refine,
-      cards: [item.card0, item.card1, item.card2, item.card3],
-      location: item.equip,
-      type: client_type(item.nameid),
-      result: 0,
-      expire_time: encode_expire_time(item.expire_time),
-      look: item_view(item.nameid),
-      weight: item_weight(item.nameid)
-    }
+    names = CreatorNames.names_for([item])
+
+    struct(
+      StorageItemAdded,
+      item_fields(item, names)
+      |> Map.merge(%{index: PlayerState.client_index(server_index), result: 0})
+    )
   end
 
   @doc """
@@ -199,23 +174,49 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
     }
   end
 
-  @spec to_inventory_item(non_neg_integer(), InventoryItem.t()) :: Aesir.Net.InventoryItem.t()
-  defp to_inventory_item(index, %InventoryItem{} = item) do
-    %Aesir.Net.InventoryItem{
-      index: PlayerState.client_index(index),
-      nameid: item.nameid,
-      type: client_type(item.nameid),
+  @spec to_inventory_item(non_neg_integer(), InventoryItem.t(), %{non_neg_integer() => String.t()}) ::
+          Aesir.Net.InventoryItem.t()
+  defp to_inventory_item(index, %InventoryItem{} = item, names) do
+    struct(
+      Aesir.Net.InventoryItem,
+      item_fields(item, names)
+      |> Map.merge(%{
+        index: PlayerState.client_index(index),
+        bind_on_equip: item.bound,
+        favorite: item.favorite == 1
+      })
+    )
+  end
+
+  @spec item_fields(InventoryItem.t(), %{non_neg_integer() => String.t()}) :: map()
+  defp item_fields(%InventoryItem{} = item, names) do
+    {creator_kind, creator_id, signer_name} =
+      case ItemCraft.from_map(item.craft) do
+        {:ok, %ItemCraft{kind: :signed, creator_char_id: id}} ->
+          {:CREATOR_SIGNED, id, Map.get(names, id, "")}
+
+        {:ok, %ItemCraft{kind: :forged, creator_char_id: id}} ->
+          {:CREATOR_FORGED, id, Map.get(names, id, "")}
+
+        :error ->
+          {:CREATOR_NONE, 0, ""}
+      end
+
+    %{
       amount: item.amount,
-      location: item.equip,
+      nameid: item.nameid,
       identified: item.identify == 1,
       attribute: item.attribute,
       refine: item.refine,
       cards: [item.card0, item.card1, item.card2, item.card3],
+      location: item.equip,
+      type: client_type(item.nameid),
       expire_time: encode_expire_time(item.expire_time),
-      bind_on_equip: item.bound,
-      favorite: item.favorite == 1,
       look: item_view(item.nameid),
-      weight: item_weight(item.nameid)
+      weight: item_weight(item.nameid),
+      signer_name: signer_name,
+      creator_id: creator_id,
+      creator_kind: creator_kind
     }
   end
 
