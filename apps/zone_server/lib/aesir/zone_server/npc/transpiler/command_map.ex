@@ -42,6 +42,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     zero args → `name(ctx, true)`; one arg → `name(ctx, <n> != 0)` (a literal
     `0` dismounts, anything else mounts, matching rAthena); any longer form
     stays a stub.
+  - `%{shape: :rentitem3}` — an extended rental grant: preserves its fixed
+    refine/card attributes and folds three parallel option arrays into the
+    DSL's `random_options` map; any other arity stays a stub.
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
@@ -71,6 +74,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @commands %{
     "getitem" => %{dsl: "give_item", args: [:item, :int]},
+    "rentitem" => %{dsl: "give_item_rental", args: [:item, :int]},
+    "rentitem3" => %{shape: :rentitem3},
     "getitembound" => %{dsl: "give_item_bound", args: [:item, :int, :bound]},
     "delitem" => %{dsl: "delitem", args: [:item, :int]},
     "getexp" => %{dsl: "getexp", args: [:int, :int]},

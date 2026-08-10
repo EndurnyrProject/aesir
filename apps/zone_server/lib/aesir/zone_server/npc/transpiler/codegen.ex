@@ -947,6 +947,76 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx)"], :cont}
   end
 
+  defp emit_mapped(
+         _name,
+         %{shape: :rentitem3},
+         [
+           item,
+           seconds,
+           identify,
+           refine,
+           attribute,
+           card0,
+           card1,
+           card2,
+           card3,
+           option_ids,
+           option_values,
+           option_params
+         ],
+         env
+       ) do
+    {pre,
+     [
+       item,
+       seconds,
+       _,
+       refine,
+       _,
+       card0,
+       card1,
+       card2,
+       card3,
+       option_ids,
+       option_values,
+       option_params
+     ]} =
+      hoist_all(
+        [
+          item,
+          seconds,
+          identify,
+          refine,
+          attribute,
+          card0,
+          card1,
+          card2,
+          card3,
+          option_ids,
+          option_values,
+          option_params
+        ],
+        env
+      )
+
+    options = rental_random_options(option_ids, option_values, option_params, env)
+
+    call =
+      "ctx = give_item_rental(ctx, #{typed_arg(item, :item, env)}, " <>
+        "#{typed_arg(seconds, :int, env)}, refine: #{render(refine, env)}, " <>
+        "card0: #{render(card0, env)}, card1: #{render(card1, env)}, " <>
+        "card2: #{render(card2, env)}, card3: #{render(card3, env)}, " <>
+        "random_options: #{options})"
+
+    {pre ++ [call], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :rentitem3}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # Trailing/optional buildin args beyond the declared arity (e.g. `emotion`'s
   # target) are dropped, not padded onto the DSL call; all args are still
   # hoisted first so any side effect in a dropped arg is preserved.
@@ -960,6 +1030,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
 
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
+  end
+
+  defp rental_random_options(option_ids, option_values, option_params, env) do
+    ids = read_var(option_ids, "[]", env)
+    values = read_var(option_values, "[]", env)
+    params = read_var(option_params, "[]", env)
+
+    "Map.new(Enum.zip([#{ids}, #{values}, #{params}]), " <>
+      "fn {id, val, parm} -> {to_string(id), %{val: val, parm: parm}} end)"
   end
 
   defp monster_mob({:int, id}, _env), do: "mob_id: #{id}"
