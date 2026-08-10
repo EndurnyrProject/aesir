@@ -205,6 +205,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
       card1: item.card1,
       card2: item.card2,
       card3: item.card3,
+      craft: item.craft,
       random_options: item.random_options,
       expire_time: item.expire_time,
       bound: item.bound,

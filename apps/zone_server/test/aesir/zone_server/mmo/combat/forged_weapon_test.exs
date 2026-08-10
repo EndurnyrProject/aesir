@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.MaximizePower
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -105,8 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
     assert endow_damage < forged_damage
   end
 
-  test "corrupt forged cards are treated as unforged" do
-    corrupt = %{weapon(1101) | card0: 255, card1: 65_535, card2: 0, card3: 0}
+  test "corrupt forge metadata is treated as unforged" do
+    corrupt = %{weapon(1101) | craft: %{"kind" => "forged"}}
     combatant = combatant(corrupt)
 
     assert combatant.combat_stats.passive_atk == 0
@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   end
 
   defp forged_weapon(nameid, element, crumbs) do
-    Map.merge(weapon(nameid), ForgeStamp.encode(element, crumbs, 91_013))
+    %{weapon(nameid) | craft: ItemCraft.to_map(ItemCraft.forged(element, crumbs, 91_013))}
   end
 
   defp weapon(nameid) do

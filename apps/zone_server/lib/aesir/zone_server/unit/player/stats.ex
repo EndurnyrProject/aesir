@@ -44,8 +44,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
@@ -131,41 +131,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           }
   end
 
-  defstruct [
-    # Common stats from Unit.Stats
-    base_stats: nil,
-    derived_stats: nil,
-    combat_stats: nil,
-    current_state: nil,
+  defstruct base_stats: nil,
+            # Common stats from Unit.Stats
+            derived_stats: nil,
+            combat_stats: nil,
+            current_state: nil,
 
-    # Player-specific fields
-    progression: nil,
-    equipment: nil,
-    modifiers: %Modifiers{},
+            # Player-specific fields
+            progression: nil,
+            equipment: nil,
+            modifiers: %Modifiers{},
 
-    # Minimal identity of the worn items ({nameid, refine, card slots}), cached by
-    # `apply_equipment_modifiers/2` so a recompute without an equipped-items
-    # list can still re-evaluate the on_equip programs - their level inputs
-    # (BaseLevel/JobLevel) change without any equipment change.
-    worn_items: [],
-    right_hand: nil,
-    left_hand: nil,
+            # Minimal identity of the worn items (nameid, refine, cards, and craft), cached by
+            # `apply_equipment_modifiers/2` so a recompute without an equipped-items
+            # list can still re-evaluate the on_equip programs - their level inputs
+            # (BaseLevel/JobLevel) change without any equipment change.
+            worn_items: [],
+            right_hand: nil,
+            left_hand: nil,
 
-    # Skills granted by worn equipment (`skill <id>,<lv>` in an `on_equip`
-    # script), as `%{skill_id => level}`. Rebuilt alongside `modifiers.equipment`
-    # on every recompute; read by the skill-list view and player cast authority
-    # so an equip-granted skill is castable while worn.
-    granted_skills: %{},
+            # Skills granted by worn equipment (`skill <id>,<lv>` in an `on_equip`
+            # script), as `%{skill_id => level}`. Rebuilt alongside `modifiers.equipment`
+            # on every recompute; read by the skill-list view and player cast authority
+            # so an equip-granted skill is castable while worn.
+            granted_skills: %{},
 
-    # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
-    # single writer's authoritative in-memory value. `MountHandler` keeps this
-    # field in sync with the option bit before triggering the status-driven
-    # recalc that mount/dismount goes through, so `calculate_combat_stats/1`
-    # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
-    # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
-    # option bit through every `calculate_stats/3` call site.
-    riding: false
-  ]
+            # Denormalized copy of the `:riding` bit of `PlayerState.option`, the
+            # single writer's authoritative in-memory value. `MountHandler` keeps this
+            # field in sync with the option bit before triggering the status-driven
+            # recalc that mount/dismount goes through, so `calculate_combat_stats/1`
+            # (which only ever sees a `Stats` struct, never `PlayerState`) can gate
+            # mounted passive bonuses (e.g. `KnSpearmastery`) without threading the
+            # option bit through every `calculate_stats/3` call site.
+            riding: false
 
   @typedoc """
   Player-specific stats structure extending the base unit stats.
@@ -391,8 +389,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   When `equipped_items` is a list of `InventoryItem`s, this rebuilds the worn
   `Equipment` struct (so weapon-type/shield-dependent calculations such as
-  ASPD see the correct gear), caches the `{nameid, refine, card slots}` maps in
-  `worn_items`, and folds the flat `item_db` bonuses plus each item's
+  ASPD see the correct gear), caches item instance metadata in `worn_items`,
+  and folds the flat `item_db` bonuses plus each item's
   `on_equip` program into `modifiers.equipment`. When `nil`, the fold reruns
   from the cached `worn_items` instead - equipment cannot have changed, but the
   program level inputs (`BaseLevel`/`JobLevel`) follow the current progression,
@@ -432,7 +430,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           card0: &1.card0,
           card1: &1.card1,
           card2: &1.card2,
-          card3: &1.card3
+          card3: &1.card3,
+          craft: &1.craft
         }
       )
 
@@ -492,8 +491,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
        do: element
 
   defp weapon_element(_item_def, item) do
-    case ForgeStamp.decode(item) do
-      {:ok, %{element: element}} -> element
+    case ItemCraft.from_map(item.craft) do
+      {:ok, %ItemCraft{kind: :forged, element: element}} -> element
       _ -> :neutral
     end
   end
@@ -937,8 +936,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp forged_star_damage(worn_items) do
     Enum.reduce(worn_items, 0, fn item, damage ->
       with true <- :right_hand in EquipLocation.bitmask_to_location_atoms(item.equip),
-           {:ok, %{star_damage: star_damage}} <- ForgeStamp.decode(item) do
-        damage + star_damage
+           {:ok, %ItemCraft{kind: :forged} = craft} <- ItemCraft.from_map(item.craft) do
+        damage + ItemCraft.star_damage(craft)
       else
         _unforged_or_other_slot -> damage
       end

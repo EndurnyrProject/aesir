@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
   alias Aesir.Net.SkillMenu
   alias Aesir.Net.SkillMenuReply
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -52,8 +52,13 @@ defmodule Aesir.ZoneServer.Integration.BlacksmithForgeIntegrationTest do
     weapon = Enum.find_value(state.inventory, fn {_slot, item} -> item.nameid == 1101 && item end)
     character_id = character.id
 
-    assert {:ok, %{element: :fire, star_damage: 5, creator_id: ^character_id}} =
-             ForgeStamp.decode(weapon)
+    assert {:ok,
+            %ItemCraft{
+              kind: :forged,
+              element: :fire,
+              star_crumbs: 1,
+              creator_char_id: ^character_id
+            }} = ItemCraft.from_map(weapon.craft)
 
     assert weapon.identify == 1
   end

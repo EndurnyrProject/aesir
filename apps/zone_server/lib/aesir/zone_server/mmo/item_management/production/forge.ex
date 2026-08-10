@@ -7,9 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Anvil
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Catalysts
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -181,7 +181,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge do
     opts =
       if recipe.skill_id in @weapon_skill_ids do
         forged_element = if is_nil(element), do: :neutral, else: element
-        ForgeStamp.encode(forged_element, crumbs, caster.character_id)
+        craft = ItemCraft.forged(forged_element, crumbs, caster.character_id)
+        %{identify: 1, craft: ItemCraft.to_map(craft)}
       else
         %{identify: 1}
       end

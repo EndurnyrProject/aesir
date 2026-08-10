@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Forge
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeStamp
   alias Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes.Recipe
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -65,8 +65,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     output =
       Enum.find_value(forged.inventory, fn {_index, item} -> item.nameid == 1101 && item end)
 
-    assert Map.take(output, [:card0, :card1, :card2, :card3]) ==
-             ForgeStamp.encode(:fire, 1, caster.character_id)
+    assert ItemCraft.from_map(output.craft) ==
+             {:ok, ItemCraft.forged(:fire, 1, caster.character_id)}
 
     assert ItemContainer.held_amount(forged.inventory, 995) == 1
     assert forged.pending_production_result == %{success: true, item_id: 1101}
@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
       Enum.find_value(brewed.inventory, fn {_index, item} -> item.nameid == 501 && item end)
 
     assert output.amount == 1
-    assert ForgeStamp.decode(output) == :error
+    assert ItemCraft.from_map(output.craft) == :error
     assert brewed.pending_production_result == %{success: true, item_id: 501}
   end
 
@@ -167,7 +167,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.ForgeTest do
     output =
       Enum.find_value(forged.inventory, fn {_index, item} -> item.nameid == 1101 && item end)
 
-    assert {:ok, %{element: :neutral}} = ForgeStamp.decode(output)
+    assert {:ok, %ItemCraft{kind: :forged, element: :neutral}} =
+             ItemCraft.from_map(output.craft)
+
     assert forged.pending_production_result.success
 
     assert {:error, :no_materials} =
