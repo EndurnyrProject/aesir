@@ -165,6 +165,8 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.StorageWithdrawRequest
   alias Aesir.Net.TimeSync
   alias Aesir.Net.TimeSyncAck
+  alias Aesir.Net.TradeAddItem
+  alias Aesir.Net.TradeOfferUpdate
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UnequipResult
   alias Aesir.Net.UnitDespawn
@@ -188,6 +190,43 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert fields.homunculus_request.tag == 169
     assert fields.homunculus_result.tag == 170
     assert fields.homunculus_private_state.tag == 171
+  end
+
+  test "trade messages round-trip through reserved envelope fields" do
+    assert_round_trip(:trade_add_item, %TradeAddItem{index: 3, amount: 10})
+
+    assert_round_trip(:trade_offer_update, %TradeOfferUpdate{
+      own: [%InventoryItem{index: 3, nameid: 501, amount: 10, signer_name: "Odin", creator_id: 7}],
+      partner: [
+        %InventoryItem{
+          index: 5,
+          nameid: 1_201,
+          amount: 1,
+          refine: 7,
+          cards: [4_001, 0, 0, 0],
+          creator_kind: :CREATOR_FORGED
+        }
+      ],
+      own_zeny: 99_999,
+      partner_zeny: 1_000,
+      own_locked: true
+    })
+
+    fields = Envelope.schema().fields
+
+    assert fields.trade_request.tag == 173
+    assert fields.trade_response.tag == 174
+    assert fields.trade_add_item.tag == 175
+    assert fields.trade_remove_item.tag == 176
+    assert fields.trade_set_zeny.tag == 177
+    assert fields.trade_lock.tag == 178
+    assert fields.trade_confirm.tag == 179
+    assert fields.trade_cancel.tag == 180
+    assert fields.trade_request_received.tag == 181
+    assert fields.trade_opened.tag == 182
+    assert fields.trade_offer_update.tag == 183
+    assert fields.trade_completed.tag == 184
+    assert fields.trade_cancelled.tag == 185
   end
 
   test "every Homunculus command arm round-trips without an ownership selector" do

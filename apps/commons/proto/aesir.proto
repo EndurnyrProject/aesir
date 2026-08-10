@@ -203,6 +203,20 @@ message Envelope {
     HomunculusPrivateState homunculus_private_state = 171;
     // 172: inventory item binding update
     ItemBound item_bound = 172;
+    // 173-185: player trade (client intents + server-authoritative updates)
+    TradeRequest trade_request = 173;
+    TradeResponse trade_response = 174;
+    TradeAddItem trade_add_item = 175;
+    TradeRemoveItem trade_remove_item = 176;
+    TradeSetZeny trade_set_zeny = 177;
+    TradeLock trade_lock = 178;
+    TradeConfirm trade_confirm = 179;
+    TradeCancel trade_cancel = 180;
+    TradeRequestReceived trade_request_received = 181;
+    TradeOpened trade_opened = 182;
+    TradeOfferUpdate trade_offer_update = 183;
+    TradeCompleted trade_completed = 184;
+    TradeCancelled trade_cancelled = 185;
   }
 }
 
@@ -1047,6 +1061,84 @@ message VendingSaleReport {
   uint32 amount = 3;
   uint32 zeny_gained = 4;
   string buyer_name = 5;
+}
+
+// Client -> server, request a trade with the nearby unit identified by target_gid.
+message TradeRequest {
+  uint32 target_gid = 1;
+}
+
+// Client -> server, accept or decline a pending trade request.
+message TradeResponse {
+  bool accept = 1;
+}
+
+// Client -> server, add amount from an inventory index to the trade offer.
+message TradeAddItem {
+  uint32 index = 1;
+  uint32 amount = 2;
+}
+
+// Client -> server, remove an inventory index from the trade offer.
+message TradeRemoveItem {
+  uint32 index = 1;
+}
+
+// Client -> server, set the zeny offered in the trade.
+message TradeSetZeny {
+  uint64 amount = 1;
+}
+
+// Client -> server, lock the current trade offer.
+message TradeLock {}
+
+// Client -> server, confirm the locked trade offer.
+message TradeConfirm {}
+
+// Client -> server, cancel the current trade.
+message TradeCancel {}
+
+// Server -> client, a nearby character requested a trade.
+message TradeRequestReceived {
+  uint32 char_id = 1;
+  string name = 2;
+}
+
+// Server -> client, a trade opened with the named partner.
+message TradeOpened {
+  uint32 partner_char_id = 1;
+  string partner_name = 2;
+}
+
+// Server -> client, the current offers and locks for both trade participants.
+message TradeOfferUpdate {
+  repeated InventoryItem own = 1;
+  repeated InventoryItem partner = 2;
+  uint64 own_zeny = 3;
+  uint64 partner_zeny = 4;
+  bool own_locked = 5;
+  bool partner_locked = 6;
+}
+
+// Server -> client, the trade completed successfully.
+message TradeCompleted {}
+
+// Reason a trade ended without completing.
+enum TradeCancelReason {
+  TRADE_CANCEL_REASON_DECLINED = 0;
+  TRADE_CANCEL_REASON_TIMEOUT = 1;
+  TRADE_CANCEL_REASON_CANCELLED = 2;
+  TRADE_CANCEL_REASON_TOO_FAR = 3;
+  TRADE_CANCEL_REASON_BUSY = 4;
+  TRADE_CANCEL_REASON_DEAD = 5;
+  TRADE_CANCEL_REASON_DISCONNECTED = 6;
+  TRADE_CANCEL_REASON_CAPACITY = 7;
+  TRADE_CANCEL_REASON_INVALID = 8;
+}
+
+// Server -> client, the trade was cancelled with its reason.
+message TradeCancelled {
+  TradeCancelReason reason = 1;
 }
 
 // One item the NPC shop sells, shown in the buy window at its buy price.
