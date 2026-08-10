@@ -7,6 +7,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
   test "known commands return their rule, unknown return :error" do
     assert {:ok, %{dsl: "give_item", args: [:item, :int]}} = CommandMap.command("getitem")
 
+    assert {:ok, %{dsl: "get_named_item", args: [:item, :string]}} =
+             CommandMap.command("getnameditem")
+
     assert {:ok, %{dsl: "give_item_bound", args: [:item, :int, :bound]}} =
              CommandMap.command("getitembound")
 

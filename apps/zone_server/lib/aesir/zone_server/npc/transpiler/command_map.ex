@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @commands %{
     "getitem" => %{dsl: "give_item", args: [:item, :int]},
+    "getnameditem" => %{dsl: "get_named_item", args: [:item, :string]},
     "rentitem" => %{dsl: "give_item_rental", args: [:item, :int]},
     "rentitem3" => %{shape: :rentitem3},
     "getitembound" => %{dsl: "give_item_bound", args: [:item, :int, :bound]},

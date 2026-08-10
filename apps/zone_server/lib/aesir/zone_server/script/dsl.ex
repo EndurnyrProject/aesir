@@ -826,6 +826,16 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def give_item(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:give_item, item_id, qty})
 
   @doc """
+  Gives one identified item signed by an online character through the session seam.
+  Halts if the target is offline or unknown, or if the inventory cannot hold it.
+  """
+  @spec get_named_item(Ctx.t(), integer(), String.t() | integer()) :: Ctx.t()
+  def get_named_item(%Ctx{status: {:error, _}} = ctx, _item_id, _target), do: ctx
+
+  def get_named_item(%Ctx{} = ctx, item_id, target),
+    do: apply_op(ctx, {:get_named_item, item_id, target})
+
+  @doc """
   Gives one time-limited rental item through the session seam.
   """
   @spec give_item_rental(Ctx.t(), integer(), pos_integer(), keyword()) :: Ctx.t()

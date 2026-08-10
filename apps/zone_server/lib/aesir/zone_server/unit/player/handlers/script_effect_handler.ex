@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -46,6 +48,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           {:pay_zeny, non_neg_integer()}
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
+          | {:get_named_item, integer(), String.t() | integer()}
           | {:give_item_rental, integer(), pos_integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
           | {:delitem, integer(), pos_integer()}
@@ -134,6 +137,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     with {:ok, definition} <- fetch_definition(item_id),
          {:ok, persisted, change} <-
            InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty) do
+      push_added(state.connection_pid, persisted, change)
+      commit(state, %{gs | inventory: persisted})
+    else
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:get_named_item, item_id, target}, %{game_state: gs} = state) do
+    with {:ok, definition} <- fetch_definition(item_id),
+         {:ok, creator_char_id} <- CreatorNames.resolve_online_target(target),
+         craft = ItemCraft.to_map(ItemCraft.signed(creator_char_id)),
+         {:ok, persisted, change} <-
+           InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, 1, %{
+             identify: 1,
+             craft: craft
+           }) do
       push_added(state.connection_pid, persisted, change)
       commit(state, %{gs | inventory: persisted})
     else
