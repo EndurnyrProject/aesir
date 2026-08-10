@@ -78,6 +78,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       nameid: nameid,
       amount: amount,
       identify: Keyword.get(opts, :identify, 1),
+      bound: Keyword.get(opts, :bound, 0),
       random_options: %{}
     }
   end
@@ -184,6 +185,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
         state(
           learned_skills: learned(@vending_level),
           cart_map: %{0 => item(1101, 1, identify: 0)}
+        )
+
+      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result,
+                        %Aesir.Net.VendingOpenResult{result: :VEND_INVALID_STATE}}}
+    end
+
+    test "tells the vendor when a bound cart item is selected" do
+      mount_cart()
+
+      base =
+        state(
+          learned_skills: learned(@vending_level),
+          cart_map: %{0 => item(1101, 1, bound: 1)}
         )
 
       assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 1, 100}])

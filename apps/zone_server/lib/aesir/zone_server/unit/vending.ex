@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Vending do
   """
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @price_min 1
@@ -80,7 +81,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
              | :invalid_price
              | :item_not_in_cart
              | :insufficient_stock
-             | :item_unidentified}
+             | :item_unidentified
+             | :item_bound}
   def validate_open(cart, entries, max_slots)
       when is_map(cart) and is_list(entries) and is_integer(max_slots) do
     if length(entries) > max_slots do
@@ -162,7 +164,8 @@ defmodule Aesir.ZoneServer.Unit.Vending do
     with :ok <- check_amount(amount),
          :ok <- check_price(price),
          {:ok, item} <- fetch_slot(cart, cart_index, amount),
-         :ok <- check_identified(item) do
+         :ok <- check_identified(item),
+         :ok <- check_bound(item) do
       {:ok, %ShopItem{cart_index: cart_index, nameid: item.nameid, amount: amount, price: price}}
     end
   end
@@ -185,6 +188,10 @@ defmodule Aesir.ZoneServer.Unit.Vending do
 
   defp check_identified(item) do
     if InventoryItem.identified?(item), do: :ok, else: {:error, :item_unidentified}
+  end
+
+  defp check_bound(item) do
+    if Bound.vendable?(item), do: :ok, else: {:error, :item_bound}
   end
 
   defp snapshot_row(%ShopItem{} = shop, %InventoryItem{} = item) do
@@ -214,7 +221,11 @@ defmodule Aesir.ZoneServer.Unit.Vending do
     case PlayerState.get_by_index(cart, index) do
       %InventoryItem{nameid: nameid, amount: held} = item
       when nameid == shop.nameid and held >= amount ->
-        {:ok, amount * shop.price, {index, amount}, {item, amount}}
+        if Bound.vendable?(item) do
+          {:ok, amount * shop.price, {index, amount}, {item, amount}}
+        else
+          {:error, :sold_out}
+        end
 
       _ ->
         {:error, :sold_out}

@@ -88,6 +88,14 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
                Vending.validate_open(c, [{0, 5, 100}, {1, 1, 50_000}], 12)
     end
 
+    test "rejects bound cart items" do
+      for bound <- [1, 4] do
+        c = cart([item(nameid: @red_potion, amount: 5, bound: bound)])
+
+        assert {:error, :item_bound} = Vending.validate_open(c, [{0, 5, 100}], 12)
+      end
+    end
+
     test "rejects a line referencing an empty cart slot" do
       c = cart([item(nameid: @red_potion, amount: 3)])
 
@@ -136,6 +144,12 @@ defmodule Aesir.ZoneServer.Unit.VendingTest do
 
     test "returns :sold_out when the live cart slot is gone", %{shop: shop} do
       assert {:error, :sold_out} = Vending.compute_purchase(%{}, shop, [{0, 1}])
+    end
+
+    test "returns :sold_out when the live cart item becomes bound", %{shop: shop} do
+      live = cart([item(nameid: @red_potion, amount: 10, bound: 1)])
+
+      assert {:error, :sold_out} = Vending.compute_purchase(live, shop, [{0, 3}])
     end
 
     test "returns :bad_line for an index not on the shop", %{cart: c, shop: shop} do
