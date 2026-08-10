@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.EquipResult{}, {:gameplay, :equip_result}},
     {%Aesir.Net.UnequipResult{}, {:gameplay, :unequip_result}},
     {%Aesir.Net.ItemAdded{}, {:gameplay, :item_added}},
+    {%Aesir.Net.ItemBound{}, {:gameplay, :item_bound}},
     {%Aesir.Net.ItemRemoved{}, {:gameplay, :item_removed}},
     {%Aesir.Net.StatUpResult{}, {:gameplay, :stat_up_result}},
     {%Aesir.Net.LearnSkillResult{}, {:gameplay, :learn_skill_result}},

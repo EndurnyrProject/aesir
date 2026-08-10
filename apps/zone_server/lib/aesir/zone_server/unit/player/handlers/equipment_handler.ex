@@ -16,10 +16,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   import Bitwise
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.UnequipResult
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -30,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -123,7 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp commit_equip(
          server_index,
          new_inventory,
-         {:equipped, _idx, mask, unequipped} = change,
+         {:equipped, index, mask, unequipped} = change,
          state
        ) do
     %{game_state: game_state} = state
@@ -136,6 +140,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
            change
          ) do
       {:ok, persisted} ->
+        persisted = maybe_bind_on_equip(persisted, index, game_state.character_id, state)
+
         if weapon_unequipped?(game_state.inventory, unequipped) do
           remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
         end
@@ -200,6 +206,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
         send_packet(state, unequip_failure_result(server_index))
         {:noreply, state}
+    end
+  end
+
+  @spec maybe_bind_on_equip(InventoryOps.inventory(), non_neg_integer(), integer(), map()) ::
+          InventoryOps.inventory()
+  defp maybe_bind_on_equip(inventory, index, char_id, state) do
+    with %InventoryItem{bound: 0} = item <- Map.get(inventory, index),
+         {:ok, %ItemDefinition{bind_on_equip: true}} <- ItemManagement.get_item_by_id(item.nameid) do
+      case InventoryOps.set_slot(char_id, inventory, index, %{item | bound: 1}) do
+        {:ok, bound_inventory} ->
+          send_packet(state, InventoryView.item_bound(index, 1))
+          bound_inventory
+
+        {:error, reason} ->
+          Logger.warning("Bind-on-equip persist failed for #{char_id}: #{inspect(reason)}")
+          inventory
+      end
+    else
+      _ -> inventory
     end
   end
 

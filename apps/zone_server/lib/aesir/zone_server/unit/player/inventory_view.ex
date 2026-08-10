@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   alias Aesir.Net.CartItemRemoved
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemBound
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.StorageItemAdded
   alias Aesir.Net.StorageItemRemoved
@@ -48,6 +49,11 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       look: item_view(item.nameid),
       weight: item_weight(item.nameid)
     }
+  end
+
+  @spec item_bound(non_neg_integer(), non_neg_integer()) :: ItemBound.t()
+  def item_bound(server_index, bound) do
+    %ItemBound{index: PlayerState.client_index(server_index), bound: bound}
   end
 
   @doc """

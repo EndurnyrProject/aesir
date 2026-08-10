@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
+  alias Aesir.Net.ItemBound
+  alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
@@ -75,6 +78,106 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
              EquipmentHandler.handle_equip(0, 2, state)
 
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
+  end
+
+  test "binds an unbound bind-on-equip item and notifies the client" do
+    game_state = PlayerState.new(character())
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+    state = %{connection_pid: self(), game_state: %{game_state | inventory: %{0 => item}}}
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    stub(ItemManagement, :get_item_by_id, fn 1101 ->
+      {:ok, weapon_definition(1101, true)}
+    end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, new, {:equipped, 0, 2, []} ->
+      {:ok, new}
+    end)
+
+    expect(InventoryOps, :set_slot, fn 1000,
+                                       inventory,
+                                       0,
+                                       %InventoryItem{bound: 1} = bound_item ->
+      {:ok, Map.put(inventory, 0, bound_item)}
+    end)
+
+    expect(Stats, :calculate_stats, fn stats, 1000, [%InventoryItem{nameid: 1101, equip: 2}] ->
+      stats
+    end)
+
+    assert {:noreply, %{game_state: %{inventory: %{0 => %InventoryItem{bound: 1, equip: 2}}}}} =
+             EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:send, :gameplay, {:item_bound, %ItemBound{index: 2, bound: 1}}}
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
+  end
+
+  test "keeps the item equipped when bind persistence fails" do
+    game_state = PlayerState.new(character())
+    item = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+    state = %{connection_pid: self(), game_state: %{game_state | inventory: %{0 => item}}}
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    stub(ItemManagement, :get_item_by_id, fn 1101 ->
+      {:ok, weapon_definition(1101, true)}
+    end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, new, {:equipped, 0, 2, []} ->
+      {:ok, new}
+    end)
+
+    expect(InventoryOps, :set_slot, fn 1000, _inventory, 0, %InventoryItem{bound: 1} ->
+      {:error, :write_failed}
+    end)
+
+    expect(Stats, :calculate_stats, fn stats, 1000, [%InventoryItem{nameid: 1101, equip: 2}] ->
+      stats
+    end)
+
+    assert {:noreply, %{game_state: %{inventory: %{0 => %InventoryItem{bound: 0, equip: 2}}}}} =
+             EquipmentHandler.handle_equip(0, 2, state)
+
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
+    refute_receive {:send, :gameplay, {:item_bound, %ItemBound{}}}
+  end
+
+  test "does not bind non-flagged or already-bound items" do
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    stub(ItemManagement, :get_item_by_id, fn
+      1101 ->
+        {:ok, weapon_definition(1101)}
+
+      1102 ->
+        {:ok, weapon_definition(1102, true)}
+    end)
+
+    stub(InventoryOps, :apply_change, fn 1000, _old, new, {:equipped, _index, 2, []} ->
+      {:ok, new}
+    end)
+
+    reject(&InventoryOps.set_slot/4)
+    stub(Stats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+
+    for {nameid, bound} <- [{1101, 0}, {1102, 1}] do
+      game_state = PlayerState.new(character())
+      item = %InventoryItem{nameid: nameid, amount: 1, identify: 1, bound: bound}
+      state = %{connection_pid: self(), game_state: %{game_state | inventory: %{0 => item}}}
+
+      assert {:noreply, %{game_state: %{inventory: %{0 => %InventoryItem{bound: ^bound}}}}} =
+               EquipmentHandler.handle_equip(0, 2, state)
+
+      assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
+      refute_receive {:send, :gameplay, {:item_bound, %ItemBound{}}}
+    end
   end
 
   test "removes weapon-unequip statuses only after a successful weapon unequip" do
@@ -273,6 +376,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
 
     assert_receive {:params, params}
     assert params[StatusParams.speed()] == 112
+  end
+
+  defp weapon_definition(id, bind_on_equip \\ false) do
+    %ItemDefinition{
+      id: id,
+      aegis_name: "Sword#{id}",
+      name: "Sword",
+      type: :weapon,
+      locations: [:right_hand],
+      bind_on_equip: bind_on_equip
+    }
   end
 
   defp character do

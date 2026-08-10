@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.EquipResult{}), do: {:gameplay, :equip_result}
   def route(%Aesir.Net.UnequipResult{}), do: {:gameplay, :unequip_result}
   def route(%Aesir.Net.ItemAdded{}), do: {:gameplay, :item_added}
+  def route(%Aesir.Net.ItemBound{}), do: {:gameplay, :item_bound}
   def route(%Aesir.Net.ItemRemoved{}), do: {:gameplay, :item_removed}
   def route(%Aesir.Net.CartItemAdded{}), do: {:gameplay, :cart_item_added}
   def route(%Aesir.Net.CartItemRemoved{}), do: {:gameplay, :cart_item_removed}

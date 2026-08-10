@@ -43,6 +43,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
     end)
   end
 
+  @spec set_slot(integer(), inventory(), non_neg_integer(), InventoryItem.t()) ::
+          {:ok, inventory()} | {:error, term()}
+  def set_slot(_char_id, inventory, index, %InventoryItem{} = item) do
+    with {:ok, row} <- Persistence.update_item(item, %{bound: item.bound}) do
+      {:ok, PlayerState.put_item(inventory, index, row)}
+    end
+  end
+
   @doc """
   Adds `amount` of `item_def`, enforcing max weight, then persists.
 
