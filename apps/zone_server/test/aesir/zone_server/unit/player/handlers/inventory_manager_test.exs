@@ -75,6 +75,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
     assert [%InventoryItem{nameid: @sword, identify: 1}] = Persistence.load_inventory(char.id)
   end
 
+  test "bound item grants preserve their identify and bound values", %{
+    character: char,
+    stats: stats
+  } do
+    {:ok, item_def} = ItemManagement.get_item_by_id(@sword)
+
+    assert {:ok, %{game_state: %{inventory: %{0 => %InventoryItem{identify: 0, bound: 2}}}}} =
+             InventoryManager.handle_give_item(item_def, 1, state(char.id, stats), false, 2)
+
+    assert [%InventoryItem{nameid: @sword, identify: 0, bound: 2}] =
+             Persistence.load_inventory(char.id)
+  end
+
+  test "persists item attributes supplied through opts", %{character: char, stats: stats} do
+    {:ok, item_def} = ItemManagement.get_item_by_id(@sword)
+    expire_time = ~N[2026-08-11 12:00:00]
+    random_options = %{"1" => %{val: 10, parm: 2}}
+
+    assert {:ok, %{game_state: %{inventory: %{0 => item}}}} =
+             InventoryManager.handle_give_item(item_def, 1, state(char.id, stats), %{
+               expire_time: expire_time,
+               refine: 5,
+               card0: 1234,
+               random_options: random_options
+             })
+
+    assert %InventoryItem{
+             expire_time: ^expire_time,
+             refine: 5,
+             card0: 1234,
+             random_options: ^random_options,
+             identify: 1
+           } = item
+  end
+
+  test "opts grant leaves a full inventory unchanged", %{character: char, stats: stats} do
+    {:ok, item_def} = ItemManagement.get_item_by_id(@sword)
+
+    full_inventory =
+      for index <- 0..99, into: %{} do
+        {index, %InventoryItem{nameid: -index - 1, amount: 1}}
+      end
+
+    session = state(char.id, stats)
+    session = %{session | game_state: %{session.game_state | inventory: full_inventory}}
+
+    assert {:error, :inventory_full, ^session} =
+             InventoryManager.handle_give_item(item_def, 1, session, %{
+               expire_time: ~N[2026-08-11 12:00:00]
+             })
+
+    assert [] = Persistence.load_inventory(char.id)
+  end
+
   test "repairs one row and rejects a stale repeat", %{character: char, stats: stats} do
     broken =
       %InventoryItem{}

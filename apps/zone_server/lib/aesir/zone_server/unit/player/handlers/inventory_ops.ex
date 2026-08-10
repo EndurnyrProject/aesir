@@ -206,6 +206,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
       card2: item.card2,
       card3: item.card3,
       random_options: item.random_options,
+      expire_time: item.expire_time,
       bound: item.bound,
       favorite: item.favorite
     }

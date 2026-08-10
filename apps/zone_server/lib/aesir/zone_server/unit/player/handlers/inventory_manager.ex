@@ -69,8 +69,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
         ) ::
           {:ok, SessionState.t() | PlayerState.t()}
           | {:error, term(), SessionState.t() | PlayerState.t()}
-  def handle_give_item(item_def, amount, state, identified),
+  def handle_give_item(item_def, amount, state, identified) when is_boolean(identified),
     do: handle_give_item(item_def, amount, state, identified, 0)
+
+  @doc """
+  Gives `amount` of `item_def` with the attributes in `opts`.
+  """
+  @spec handle_give_item(
+          ItemDefinition.t(),
+          pos_integer(),
+          SessionState.t() | PlayerState.t(),
+          map()
+        ) ::
+          {:ok, SessionState.t() | PlayerState.t()}
+          | {:error, term(), SessionState.t() | PlayerState.t()}
+  def handle_give_item(%ItemDefinition{} = item_def, amount, state, opts) when is_map(opts) do
+    do_give_item(item_def, amount, state, Map.merge(%{identify: 1}, opts))
+  end
 
   @spec handle_give_item(
           ItemDefinition.t(),
@@ -84,17 +99,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   def handle_give_item(
         %ItemDefinition{} = item_def,
         amount,
-        %{game_state: game_state} = state,
+        state,
         identified,
         bound
       ) do
+    do_give_item(item_def, amount, state, %{
+      identify: if(identified, do: 1, else: 0),
+      bound: bound
+    })
+  end
+
+  defp do_give_item(%ItemDefinition{} = item_def, amount, %{game_state: game_state} = state, opts) do
     case InventoryOps.add(
            game_state.character_id,
            game_state.inventory,
            game_state.stats,
            item_def,
            amount,
-           %{identify: if(identified, do: 1, else: 0), bound: bound}
+           opts
          ) do
       {:ok, persisted, change} ->
         notify_added(state.connection_pid, persisted, change)
@@ -107,20 +129,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     end
   end
 
-  def handle_give_item(
-        %ItemDefinition{} = item_def,
-        amount,
-        %PlayerState{} = state,
-        identified,
-        bound
-      ) do
+  defp do_give_item(%ItemDefinition{} = item_def, amount, %PlayerState{} = state, opts) do
     case InventoryOps.add(
            state.character_id,
            state.inventory,
            state.stats,
            item_def,
            amount,
-           %{identify: if(identified, do: 1, else: 0), bound: bound}
+           opts
          ) do
       {:ok, persisted, change} ->
         {:ok,
