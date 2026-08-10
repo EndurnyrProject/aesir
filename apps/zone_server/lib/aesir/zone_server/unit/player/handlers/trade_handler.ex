@@ -203,11 +203,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   end
 
   @spec cancel_if_trading(SessionState.t(), atom()) :: SessionState.t()
-  def cancel_if_trading(%{trade: nil} = state, _reason), do: state
-
   def cancel_if_trading(state, reason) do
-    TradeSession.cancel(state.trade.pid, reason)
-    clear_trade(state, reason)
+    case Map.get(state, :trade) do
+      nil ->
+        cancel_pending_invite(state, reason)
+
+      %{pid: pid} ->
+        TradeSession.cancel(pid, reason)
+        state |> clear_trade(reason) |> cancel_pending_invite(reason)
+    end
   end
 
   @spec handle_trade_event(SessionState.t(), term()) :: {:noreply, SessionState.t()}
@@ -296,6 +300,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   defp expire_invite(invite, state) do
     notify_invite_cancelled(invite.requester_pid, :timeout)
     {:noreply, state}
+  end
+
+  defp cancel_pending_invite(state, reason) do
+    case Map.get(state, :pending_trade_invite) do
+      nil ->
+        state
+
+      %{requester_pid: requester_pid} ->
+        notify_invite_cancelled(requester_pid, reason)
+        Map.put(state, :pending_trade_invite, nil)
+    end
   end
 
   defp take_pending_invite(%{pending_trade_invite: nil}), do: :error

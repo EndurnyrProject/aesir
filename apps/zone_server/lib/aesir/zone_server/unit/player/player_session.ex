@@ -1262,6 +1262,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = %{state | game_state: game_state}
     Process.demonitor(connection_monitor_ref, [:flush])
     state = HomunculusCommandHandler.terminate(state)
+    state = TradeHandler.cancel_if_trading(state, :disconnected)
     game_state = state.game_state
 
     # Tear down an open vending shop so the registry entry + board don't leak;

@@ -214,6 +214,153 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
     assert Repo.get!(Character, b.character.id).zeny == 900
   end
 
+  test "death cancels an active trade without changing balances or inventory" do
+    {dying, [_row]} =
+      persisted_player("TradeDeathA", {150, 150}, 700, [
+        %{nameid: 501, amount: 3, identify: 1}
+      ])
+
+    {survivor, []} = persisted_player("TradeDeathB", {151, 150}, 900, [])
+    before_dying = persisted_rows(dying.character.id)
+    before_survivor = persisted_rows(survivor.character.id)
+    open_trade(dying, survivor)
+    trade_pid = PlayerSession.get_state(dying.pid).trade.pid
+    flush_packets()
+
+    hp = PlayerSession.get_state(dying.pid).game_state.stats.current_state.hp
+    PlayerSession.apply_damage(dying.pid, hp, nil)
+
+    assert_cancel(:TRADE_CANCEL_REASON_DEAD)
+    assert_cancel(:TRADE_CANCEL_REASON_DEAD)
+
+    assert_eventually(fn ->
+      dying_state = PlayerSession.get_state(dying.pid)
+      survivor_state = PlayerSession.get_state(survivor.pid)
+
+      dying_state.trade == nil and survivor_state.trade == nil and
+        dying_state.game_state.action_state == :dead and
+        survivor_state.game_state.action_state == :idle and not Process.alive?(trade_pid)
+    end)
+
+    assert persisted_rows(dying.character.id) == before_dying
+    assert persisted_rows(survivor.character.id) == before_survivor
+    assert Repo.get!(Character, dying.character.id).zeny == 700
+    assert Repo.get!(Character, survivor.character.id).zeny == 900
+  end
+
+  test "warp cancels an active trade without changing balances or inventory" do
+    {warping, [_row]} =
+      persisted_player("TradeWarpA", {150, 150}, 700, [
+        %{nameid: 501, amount: 3, identify: 1}
+      ])
+
+    {survivor, []} = persisted_player("TradeWarpB", {151, 150}, 900, [])
+    before_warping = persisted_rows(warping.character.id)
+    before_survivor = persisted_rows(survivor.character.id)
+    open_trade(warping, survivor)
+    trade_pid = PlayerSession.get_state(warping.pid).trade.pid
+    flush_packets()
+
+    PlayerSession.warp(warping.pid, "prontera", 149, 150)
+
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+
+    assert_eventually(fn ->
+      warping_state = PlayerSession.get_state(warping.pid)
+      survivor_state = PlayerSession.get_state(survivor.pid)
+
+      warping_state.trade == nil and survivor_state.trade == nil and
+        survivor_state.game_state.action_state == :idle and
+        {warping_state.game_state.x, warping_state.game_state.y} == {149, 150} and
+        not Process.alive?(trade_pid)
+    end)
+
+    assert persisted_rows(warping.character.id) == before_warping
+    assert persisted_rows(survivor.character.id) == before_survivor
+    assert Repo.get!(Character, warping.character.id).zeny == 700
+    assert Repo.get!(Character, survivor.character.id).zeny == 900
+  end
+
+  test "disconnect cancels an active trade without changing balances or inventory" do
+    {disconnecting, [_row]} =
+      persisted_player("TradeDisconnectA", {150, 150}, 700, [
+        %{nameid: 501, amount: 3, identify: 1}
+      ])
+
+    {survivor, []} = persisted_player("TradeDisconnectB", {151, 150}, 900, [])
+    before_disconnecting = persisted_rows(disconnecting.character.id)
+    before_survivor = persisted_rows(survivor.character.id)
+    open_trade(disconnecting, survivor)
+    trade_pid = PlayerSession.get_state(disconnecting.pid).trade.pid
+    flush_packets()
+
+    monitor = Process.monitor(disconnecting.pid)
+    :ok = GenServer.stop(disconnecting.pid, :normal)
+    assert_receive {:DOWN, ^monitor, :process, _, :normal}, 1_000
+
+    assert_cancel(:TRADE_CANCEL_REASON_DISCONNECTED)
+    assert_cancel(:TRADE_CANCEL_REASON_DISCONNECTED)
+
+    assert_eventually(fn ->
+      survivor_state = PlayerSession.get_state(survivor.pid)
+
+      survivor_state.trade == nil and survivor_state.game_state.action_state == :idle and
+        not Process.alive?(trade_pid)
+    end)
+
+    assert persisted_rows(disconnecting.character.id) == before_disconnecting
+    assert persisted_rows(survivor.character.id) == before_survivor
+    assert Repo.get!(Character, disconnecting.character.id).zeny == 700
+    assert Repo.get!(Character, survivor.character.id).zeny == 900
+  end
+
+  test "killing a participant cancels the survivor's trade without DB drift" do
+    {killed, [_row]} =
+      persisted_player("TradeKilledA", {150, 150}, 700, [
+        %{nameid: 501, amount: 3, identify: 1}
+      ])
+
+    {survivor, []} = persisted_player("TradeKilledB", {151, 150}, 900, [])
+    before_killed = persisted_rows(killed.character.id)
+    before_survivor = persisted_rows(survivor.character.id)
+    open_trade(killed, survivor)
+    trade_pid = PlayerSession.get_state(killed.pid).trade.pid
+    flush_packets()
+
+    Process.unlink(killed.pid)
+    monitor = Process.monitor(killed.pid)
+    Process.exit(killed.pid, :kill)
+    assert_receive {:DOWN, ^monitor, :process, _, :killed}, 1_000
+
+    assert_cancel(:TRADE_CANCEL_REASON_DISCONNECTED)
+
+    assert_eventually(fn ->
+      survivor_state = PlayerSession.get_state(survivor.pid)
+
+      survivor_state.trade == nil and survivor_state.game_state.action_state == :idle and
+        not Process.alive?(trade_pid)
+    end)
+
+    assert persisted_rows(killed.character.id) == before_killed
+    assert persisted_rows(survivor.character.id) == before_survivor
+    assert Repo.get!(Character, killed.character.id).zeny == 700
+    assert Repo.get!(Character, survivor.character.id).zeny == 900
+  end
+
+  test "warp cancels an incoming trade request" do
+    requester = player("TradePendingA", {150, 150})
+    target = player("TradePendingB", {151, 150})
+
+    request(requester, target)
+    assert_receive {:packet_sent, %TradeRequestReceived{}, _}, 1_000
+
+    PlayerSession.warp(target.pid, "prontera", 149, 150)
+
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+    assert_eventually(fn -> PlayerSession.get_state(target.pid).pending_trade_invite == nil end)
+  end
+
   test "request and accept opens one trade for both players" do
     requester = player("TradeReq", {150, 150})
     target = player("TradeTarget", {151, 150})
@@ -470,10 +617,15 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
     assert_eventually(fn -> position(trader.pid) == {149, 150} end)
   end
 
-  test "a trade process crash clears both participants" do
-    requester = player("CrashReq", {150, 150})
-    target = player("CrashTarget", {151, 150})
+  test "a trade process crash cancels without changing balances or inventory" do
+    {requester, [_row]} =
+      persisted_player("TradeCrashA", {150, 150}, 700, [
+        %{nameid: 501, amount: 3, identify: 1}
+      ])
 
+    {target, []} = persisted_player("TradeCrashB", {151, 150}, 900, [])
+    before_requester = persisted_rows(requester.character.id)
+    before_target = persisted_rows(target.character.id)
     open_trade(requester, target)
     trade_pid = PlayerSession.get_state(requester.pid).trade.pid
     Process.exit(trade_pid, :kill)
@@ -487,8 +639,34 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
 
       requester_state.trade == nil and target_state.trade == nil and
         requester_state.game_state.action_state == :idle and
-        target_state.game_state.action_state == :idle
+        target_state.game_state.action_state == :idle and not Process.alive?(trade_pid)
     end)
+
+    assert persisted_rows(requester.character.id) == before_requester
+    assert persisted_rows(target.character.id) == before_target
+    assert Repo.get!(Character, requester.character.id).zeny == 700
+    assert Repo.get!(Character, target.character.id).zeny == 900
+  end
+
+  test "a cancellation delivered after completion is ignored" do
+    {requester, []} = persisted_player("TradeCompleteA", {150, 150}, 700, [])
+    {target, []} = persisted_player("TradeCompleteB", {151, 150}, 900, [])
+    open_trade(requester, target)
+    flush_packets()
+
+    simulate_incoming_message(requester.pid, %TradeLock{})
+    simulate_incoming_message(target.pid, %TradeLock{})
+    simulate_incoming_message(requester.pid, %TradeConfirm{})
+    simulate_incoming_message(target.pid, %TradeConfirm{})
+
+    assert length(collect_packets_of_type(TradeCompleted, 100)) == 2
+    assert_eventually(fn -> PlayerSession.get_state(requester.pid).trade == nil end)
+    flush_packets()
+
+    send(requester.pid, {:trade, {:cancelled, :cancelled}})
+
+    refute_receive {:packet_sent, %TradeCancelled{}, _}, 100
+    assert PlayerSession.get_state(requester.pid).game_state.action_state == :idle
   end
 
   defp open_trade(requester, target) do

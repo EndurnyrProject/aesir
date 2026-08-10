@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -64,6 +65,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
 
     with :ok <- fetch_map(dest_map),
          {:ok, {fx, fy}} <- ensure_walkable(dest_map, x, y) do
+      state = TradeHandler.cancel_if_trading(state, :cancelled)
       state = state |> SkillTextInputHandler.clear() |> SkillHandler.cancel_deferred()
       game_state = state.game_state
       state = HomunculusCommandHandler.detach_for_warp(state, same_map?)
