@@ -201,6 +201,8 @@ message Envelope {
     HomunculusRequest homunculus_request = 169;
     HomunculusResult homunculus_result = 170;
     HomunculusPrivateState homunculus_private_state = 171;
+    // 172: inventory item binding update
+    ItemBound item_bound = 172;
   }
 }
 
@@ -841,6 +843,12 @@ message ItemRemoved {
   uint32 index = 1;
   uint32 amount = 2;
   uint32 reason = 3;
+}
+
+// Server -> client, an inventory item became bound (for example, on equip).
+message ItemBound {
+  uint32 index = 1; // Client inventory index.
+  uint32 bound = 2; // Bound type (1 = account, 4 = character).
 }
 
 // Server -> client, the full cart dump (sent on mount/login). Mirrors InventoryList

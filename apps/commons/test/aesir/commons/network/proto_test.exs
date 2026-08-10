@@ -78,6 +78,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.InventoryItem
   alias Aesir.Net.InventoryList
   alias Aesir.Net.ItemAdded
+  alias Aesir.Net.ItemBound
   alias Aesir.Net.ItemOnGround
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemUseResult
@@ -1319,6 +1320,15 @@ defmodule Aesir.Commons.Network.ProtoTest do
     {:ok, iodata, _size} = Envelope.encode(env)
 
     assert {:ok, %Envelope{body: {:item_removed, %ItemRemoved{index: 5, amount: 1, reason: 0}}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "item_bound round-trips through envelope oneof" do
+    env = %Envelope{seq: 1, body: {:item_bound, %ItemBound{index: 3, bound: 1}}}
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 1, body: {:item_bound, %ItemBound{index: 3, bound: 1}}}} =
              Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
