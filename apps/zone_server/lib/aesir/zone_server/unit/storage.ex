@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.StorageItem
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Storage.Persistence
 
@@ -76,5 +77,5 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   party-bound (`3`), and character-bound (`4`) items are rejected.
   """
   @spec storable?(InventoryItem.t()) :: boolean()
-  def storable?(%InventoryItem{bound: bound}), do: bound in [0, 1]
+  def storable?(%InventoryItem{} = item), do: Bound.storable?(item)
 end

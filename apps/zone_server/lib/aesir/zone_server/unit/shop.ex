@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Npc.Shop, as: ShopData
+  alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -297,12 +298,13 @@ defmodule Aesir.ZoneServer.Unit.Shop do
     end
   end
 
-  defp sellable(%InventoryItem{equip: equip, bound: bound, favorite: favorite})
-       when equip != 0 or bound != 0 or favorite != 0,
+  defp sellable(%InventoryItem{equip: equip, favorite: favorite})
+       when equip != 0 or favorite != 0,
        do: {:error, :unsellable}
 
-  defp sellable(%InventoryItem{nameid: nameid}) do
-    with {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid),
+  defp sellable(%InventoryItem{nameid: nameid} = item) do
+    with true <- Bound.sellable?(item),
+         {:ok, %ItemDefinition{} = def} <- ItemManagement.get_item_by_id(nameid),
          true <- ItemDefinition.sell_price(def) > 0 do
       {:ok, def}
     else
