@@ -129,6 +129,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
     assert [] = Persistence.load_inventory(char.id)
   end
 
+  test "purges expired rentals while loading inventory", %{character: char, stats: stats} do
+    now = NaiveDateTime.utc_now()
+    expired_at = NaiveDateTime.add(now, -1, :second)
+    expires_at = NaiveDateTime.add(now, 1, :day)
+
+    {:ok, expired} =
+      Persistence.insert_item(char.id, %{nameid: @sword, amount: 1, expire_time: expired_at})
+
+    {:ok, rental} =
+      Persistence.insert_item(char.id, %{nameid: @sword, amount: 1, expire_time: expires_at})
+
+    rental_expires_at = rental.expire_time
+    {:ok, ordinary} = Persistence.insert_item(char.id, %{nameid: 501, amount: 2})
+
+    assert {:ok, %{inventory: inventory}} =
+             InventoryManager.load_character_inventory(char, state(char.id, stats).game_state)
+
+    assert map_size(inventory) == 2
+    refute Enum.any?(inventory, fn {_index, item} -> item.id == expired.id end)
+
+    assert %{
+             0 => %InventoryItem{id: rental_id, expire_time: ^rental_expires_at},
+             1 => %InventoryItem{id: ordinary_id, amount: 2, expire_time: nil}
+           } = inventory
+
+    assert rental_id == rental.id
+    assert ordinary_id == ordinary.id
+    assert nil == Repo.get(InventoryItem, expired.id)
+
+    assert [%InventoryItem{id: ^rental_id}, %InventoryItem{id: ^ordinary_id}] =
+             Persistence.load_inventory(char.id)
+  end
+
   test "repairs one row and rejects a stale repeat", %{character: char, stats: stats} do
     broken =
       %InventoryItem{}

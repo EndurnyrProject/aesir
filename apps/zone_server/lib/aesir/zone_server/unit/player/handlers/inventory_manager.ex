@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Inventory
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Rental
 
   @doc """
   Loads inventory items for a character and sets up the initial game state.
@@ -35,7 +37,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   """
   def load_character_inventory(character, game_state) do
     inventory_items = Inventory.load_inventory(character.id)
-    inventory = PlayerState.from_list(inventory_items)
+    now = NaiveDateTime.utc_now()
+    {expired, active} = Enum.split_with(inventory_items, &Rental.expired?(&1, now))
+
+    Enum.each(expired, fn item ->
+      {:ok, _item} = Persistence.delete_item(item)
+    end)
+
+    inventory = PlayerState.from_list(active)
     equipped = Map.values(Inventory.equipped_items(inventory))
     stats = Stats.calculate_stats(game_state.stats, character.id, equipped)
 
