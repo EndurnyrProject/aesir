@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PickupHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.RentalExpiry
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
@@ -69,6 +70,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   # rAthena NATURAL_HEAL_INTERVAL
   @natural_heal_interval 500
+  @rental_expiry_interval 10_000
 
   @doc """
   Starts a player session linked to a connection process.
@@ -561,6 +563,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
         # Start the recurring natural-heal regen tick.
         Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
+        Process.send_after(self(), :rental_expiry_tick, @rental_expiry_interval)
 
         {:noreply, update_game_state(state, updated_game_state)}
 
@@ -598,6 +601,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     Process.send_after(self(), :natural_heal_tick, @natural_heal_interval)
     {:noreply, state} = EquipRegenHandler.handle_tick(state, @natural_heal_interval)
     NaturalHealHandler.handle_tick(state, @natural_heal_interval)
+  end
+
+  @impl true
+  def handle_info(:rental_expiry_tick, state) do
+    Process.send_after(self(), :rental_expiry_tick, @rental_expiry_interval)
+    {:noreply, RentalExpiry.sweep(state, NaiveDateTime.utc_now())}
   end
 
   # Movement: the self-armed walk tick, and the cross-domain movement_completed
