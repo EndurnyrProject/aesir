@@ -94,6 +94,34 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
       assert %{0 => %InventoryItem{amount: 5, bound: 1}} = new_c
     end
 
+    test "stores craft metadata on a newly added item" do
+      def_ = def!(@red_potion)
+      craft = %{"kind" => "signed", "creator_char_id" => 1}
+
+      assert {:ok, _c, {:added, 0, %InventoryItem{craft: ^craft}}} =
+               ItemContainer.add(%{}, def_, 1, @inventory_capacity, %{craft: craft})
+    end
+
+    test "craft-bearing and plain items occupy separate slots" do
+      def_ = def!(@red_potion)
+      craft = %{"kind" => "signed", "creator_char_id" => 1}
+
+      assert {:ok, crafted, {:added, 0, %InventoryItem{craft: ^craft}}} =
+               ItemContainer.add(%{}, def_, 1, @inventory_capacity, %{craft: craft})
+
+      assert {:ok, craft_then_plain, {:added, 1, %InventoryItem{craft: nil}}} =
+               ItemContainer.add(crafted, def_, 1, @inventory_capacity)
+
+      assert {:ok, plain, {:added, 0, %InventoryItem{craft: nil}}} =
+               ItemContainer.add(%{}, def_, 1, @inventory_capacity)
+
+      assert {:ok, plain_then_craft, {:added, 1, %InventoryItem{craft: ^craft}}} =
+               ItemContainer.add(plain, def_, 1, @inventory_capacity, %{craft: craft})
+
+      assert map_size(craft_then_plain) == 2
+      assert map_size(plain_then_craft) == 2
+    end
+
     test "does not stack onto an equipped item; creates a new slot" do
       def_ = def!(@red_potion)
       c = container([item(nameid: @red_potion, amount: 5, equip: 2)])
@@ -294,6 +322,17 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
              } = new_c
     end
 
+    test "craft metadata survives the transfer round-trip" do
+      def_ = def!(@red_potion)
+      craft = %{"kind" => "signed", "creator_char_id" => 1}
+      source = item(nameid: @red_potion, amount: 1, craft: craft)
+
+      assert {:ok, new_c, {:added, 0, %InventoryItem{craft: ^craft}}} =
+               ItemContainer.add_preserving(%{}, def_, 1, @inventory_capacity, source)
+
+      assert %{0 => %InventoryItem{craft: ^craft}} = new_c
+    end
+
     test "respects the destination's capacity parameter" do
       def_ = def!(@red_potion)
       full = container(for n <- 1..100, do: item(nameid: 600 + n, amount: 1, card0: 4001))
@@ -307,6 +346,12 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
   describe "plain?/1" do
     test "a default item is plain" do
       assert ItemContainer.plain?(item(nameid: @red_potion))
+    end
+
+    test "craft metadata makes an item not plain" do
+      refute ItemContainer.plain?(
+               item(nameid: @red_potion, craft: %{"kind" => "signed", "creator_char_id" => 1})
+             )
     end
 
     test "cards, refine, random options, bound, favorite, unique_id, enchant_grade, and expire_time all make an item not plain" do

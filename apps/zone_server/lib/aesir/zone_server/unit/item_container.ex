@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   slot-assignment logic.
 
   `add_preserving/5` is the public cross-container transfer API: it carries a
-  moved item's full attribute set (cards, refine, random options, bound,
+  moved item's full attribute set (cards, refine, random options, craft, bound,
   favorite, `unique_id`, `enchant_grade`, `expire_time`) across a move between
   two containers (inventory <-> cart, inventory <-> storage) and guarantees an
   item with any distinguishing attribute never merges into an anonymous plain
@@ -46,7 +46,8 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   Adds `amount` of `item_def` to `container`, whose slot cap is `capacity`.
 
   Stacks into an existing stackable item with the same `nameid` and binding
-  status (not equipped, no cards, no random options) up to `#{@max_stack}` and
+  status (not equipped, no cards, no random options, no craft metadata) up to
+  `#{@max_stack}` and
   spills the overflow into
   the lowest free index(es). With no stackable target it creates a new item at
   the lowest free index. The add is all-or-nothing: if any required slot is
@@ -60,7 +61,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
       when is_map(container) and is_integer(amount) and amount > 0 and is_integer(capacity) do
     bound = Map.get(opts, :bound, 0)
 
-    case find_stackable_index(container, item_def.id, bound) do
+    case find_stackable_index(container, item_def.id, bound, Map.get(opts, :craft)) do
       nil -> add_to_new_slots(container, item_def, amount, capacity, opts)
       index -> stack_onto(container, index, item_def, amount, capacity, opts)
     end
@@ -112,7 +113,8 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   Total quantity of item `nameid` held across all stackable slots.
 
   Sums the stackable stacks of `nameid` (unequipped, no cards, no random
-  options); equipped or carded copies do not count toward the stackable total.
+  options, no craft metadata); equipped, carded, or crafted copies do not count
+  toward the stackable total.
   """
   @spec held_amount(t(), integer()) :: non_neg_integer()
   def held_amount(container, nameid) when is_map(container) do
@@ -194,8 +196,8 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   True when `item` carries no distinguishing attribute and may stack anonymously.
 
   An item with a non-default refine, attribute, bound, card, random option,
-  favorite flag, `unique_id`, `enchant_grade`, or `expire_time` is not plain and
-  must always take a fresh slot on transfer.
+  favorite flag, `unique_id`, `enchant_grade`, `expire_time`, or craft metadata
+  is not plain and must always take a fresh slot on transfer.
   """
   @spec plain?(InventoryItem.t()) :: boolean()
   def plain?(%InventoryItem{} = item) do
@@ -212,7 +214,8 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
     ]
 
     item.identify == 1 and item.favorite == 0 and item.expire_time == nil and
-      map_size(item.random_options) == 0 and Enum.all?(zero_fields, &(&1 == 0))
+      is_nil(item.craft) and map_size(item.random_options) == 0 and
+      Enum.all?(zero_fields, &(&1 == 0))
   end
 
   defp find_stackable_index(container, nameid) do
@@ -221,16 +224,18 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
     end)
   end
 
-  defp find_stackable_index(container, nameid, bound) do
+  defp find_stackable_index(container, nameid, bound, nil) do
     Enum.find_value(container, fn {index, item} ->
       if stackable?(item, nameid) and item.bound == bound, do: index
     end)
   end
 
+  defp find_stackable_index(_container, _nameid, _bound, _craft), do: nil
+
   defp stackable?(%InventoryItem{} = item, nameid) do
     item.nameid == nameid and item.equip == 0 and
       item.card0 == 0 and item.card1 == 0 and item.card2 == 0 and item.card3 == 0 and
-      map_size(item.random_options) == 0
+      is_nil(item.craft) and map_size(item.random_options) == 0
   end
 
   defp stack_onto(container, index, item_def, amount, capacity, opts) do
@@ -288,6 +293,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
       card2: source.card2,
       card3: source.card3,
       random_options: source.random_options,
+      craft: source.craft,
       bound: source.bound,
       favorite: source.favorite,
       unique_id: source.unique_id,
@@ -309,6 +315,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
       card2: Map.get(opts, :card2, 0),
       card3: Map.get(opts, :card3, 0),
       random_options: Map.get(opts, :random_options, %{}),
+      craft: Map.get(opts, :craft),
       bound: Map.get(opts, :bound, 0),
       favorite: Map.get(opts, :favorite, 0),
       unique_id: Map.get(opts, :unique_id, 0),
@@ -327,6 +334,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
       card2: item.card2,
       card3: item.card3,
       random_options: item.random_options,
+      craft: item.craft,
       bound: item.bound,
       favorite: item.favorite,
       unique_id: item.unique_id,
