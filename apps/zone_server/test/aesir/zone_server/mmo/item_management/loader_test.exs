@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     locations:
       - right_hand
     refineable: true
+    bind_on_equip: true
   """
 
   defp write_yaml(dir, contents) do
@@ -43,7 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
                    subtype: :dagger,
                    jobs: [:swordman],
                    locations: [:right_hand],
-                   refineable: true
+                   refineable: true,
+                   bind_on_equip: true
                  }
                }
              } = Loader.load(dir)
@@ -56,7 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       write_yaml(dir, @items_yaml)
       Loader.load(dir)
 
-      assert File.exists?(Path.join([dir, ".cache", "items_v2.etf"]))
+      assert File.exists?(Path.join([dir, ".cache", "items_v3.etf"]))
     end
 
     @tag :tmp_dir
@@ -64,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "items_v2.etf"])
+      cache = Path.join([dir, ".cache", "items_v3.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(yaml, 1_000_000)
       File.touch!(cache, 2_000_000)
@@ -77,7 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "items_v2.etf"])
+      cache = Path.join([dir, ".cache", "items_v3.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)
@@ -206,13 +208,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
-    test "touching script_overrides.yml invalidates the items_v2.etf cache", %{tmp_dir: dir} do
+    test "touching script_overrides.yml invalidates the items_v3.etf cache", %{tmp_dir: dir} do
       items = write_yaml(dir, @items_yaml)
       overrides = Path.join(dir, "script_overrides.yml")
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 1)\"\n")
       Loader.load(dir)
 
-      cache = Path.join([dir, ".cache", "items_v2.etf"])
+      cache = Path.join([dir, ".cache", "items_v3.etf"])
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 2)\"\n")
       File.touch!(items, 1_000_000)
       File.touch!(cache, 2_000_000)

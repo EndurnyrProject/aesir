@@ -69,8 +69,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
                 jobs: [],
                 locations: [],
                 weapon_level: nil,
-                refineable: false
+                refineable: false,
+                bind_on_equip: false
               }} = Importer.to_definition(entry)
+    end
+
+    test "maps the account-binding flag" do
+      entry = %{
+        "Id" => 1201,
+        "AegisName" => "Knife",
+        "Name" => "Knife",
+        "Flags" => %{"BindOnEquip" => true}
+      }
+
+      assert {:ok, %ItemDefinition{bind_on_equip: true}} = Importer.to_definition(entry)
     end
 
     test "defaults missing Type to :etc (rAthena default)" do
@@ -280,6 +292,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       refute Map.has_key?(map, "magic_attack")
       refute Map.has_key?(map, "sell")
       refute Map.has_key?(map, "armor_level")
+    end
+
+    test "emits bind_on_equip only when true" do
+      binding = %ItemDefinition{id: 1201, aegis_name: "Knife", name: "Knife", bind_on_equip: true}
+      plain = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
+
+      assert %{"bind_on_equip" => true} = Importer.to_yaml_map(binding)
+      refute Map.has_key?(Importer.to_yaml_map(plain), "bind_on_equip")
     end
 
     test "encodes on_equip as DSL source via EquipScript.to_source/1 and omits it when nil" do

@@ -253,6 +253,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
          equip_level_min: Map.get(entry, "EquipLevelMin", 0),
          equip_level_max: Map.get(entry, "EquipLevelMax", 0),
          refineable: Map.get(entry, "Refineable", false),
+         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
          attack_element: parse_attack_element(Map.get(entry, "Script"))
        }}
     end

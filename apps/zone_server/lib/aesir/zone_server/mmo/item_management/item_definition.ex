@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             equip_level_min: 0,
             equip_level_max: 0,
             refineable: false,
+            bind_on_equip: false,
             on_use: nil,
             on_equip: nil,
             attack_element: nil
@@ -72,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           equip_level_min: integer(),
           equip_level_max: integer(),
           refineable: boolean(),
+          bind_on_equip: boolean(),
           on_use: String.t() | nil,
           on_equip: EquipScript.program() | nil,
           attack_element: atom()
