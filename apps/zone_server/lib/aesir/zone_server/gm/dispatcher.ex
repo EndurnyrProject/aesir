@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
   @commands %{
     "item" => Aesir.ZoneServer.Gm.Commands.Item,
     "itembound" => Aesir.ZoneServer.Gm.Commands.ItemBound,
+    "rentitem" => Aesir.ZoneServer.Gm.Commands.Rentitem,
     "warp" => Aesir.ZoneServer.Gm.Commands.Warp,
     "job" => Aesir.ZoneServer.Gm.Commands.Job,
     "baselevelup" => Aesir.ZoneServer.Gm.Commands.BaseLevel,
