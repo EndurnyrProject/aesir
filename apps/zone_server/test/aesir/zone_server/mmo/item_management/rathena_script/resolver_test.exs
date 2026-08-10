@@ -156,6 +156,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     end
   end
 
+  describe "resolve_bound/1" do
+    test "resolves account and char bound constants" do
+      assert {:ok, 1} = Resolver.resolve_bound("Bound_Account")
+      assert {:ok, 4} = Resolver.resolve_bound("Bound_Char")
+    end
+
+    test "does not resolve guild or party bound constants" do
+      assert {:error, {:unknown_symbol, "Bound_Guild"}} = Resolver.resolve_bound("Bound_Guild")
+      assert {:error, {:unknown_symbol, "Bound_Party"}} = Resolver.resolve_bound("Bound_Party")
+    end
+  end
+
   describe "resolve_stat_param/1" do
     test "maps a base stat constant to its stat atom" do
       assert {:ok, :str} = Resolver.resolve_stat_param("bStr")

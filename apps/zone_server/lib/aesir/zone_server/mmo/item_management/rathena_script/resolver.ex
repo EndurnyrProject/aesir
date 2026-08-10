@@ -215,6 +215,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Size_All" => :all
   }
 
+  @bounds %{
+    "Bound_Account" => 1,
+    "Bound_Char" => 4
+  }
+
   @mob_classes %{
     "Class_Normal" => :normal,
     "Class_Boss" => :boss,
@@ -412,6 +417,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   """
   @spec race2s() :: %{String.t() => atom()}
   def race2s, do: @race2
+
+  @doc """
+  Resolves a bound type constant to its numeric value.
+  """
+  @spec resolve_bound(String.t()) :: {:ok, 1 | 4} | error()
+  def resolve_bound(symbol) when is_binary(symbol), do: lookup(@bounds, symbol)
 
   @doc """
   Resolves an rAthena `Eff_*` status-infliction constant (`bAddEff` /

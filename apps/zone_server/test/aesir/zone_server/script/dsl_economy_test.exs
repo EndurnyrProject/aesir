@@ -119,6 +119,25 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
     end
   end
 
+  describe "give_item_bound/4" do
+    for {bound, value} <- [account: 1, char: 4] ++ [{1, 1}, {4, 4}] do
+      test "routes #{inspect(bound)}-bound items with value #{value}" do
+        ctx = build_ctx(session: ok_session(build_game_state()))
+
+        result = Dsl.give_item_bound(ctx, 7114, 1, unquote(bound))
+
+        assert result.status == :ok
+        assert_received {:script_apply, {:give_item_bound, 7114, 1, unquote(value)}}
+      end
+    end
+
+    test "rejects an unsupported bound value" do
+      ctx = build_ctx(session: ok_session(build_game_state()))
+
+      assert_raise FunctionClauseError, fn -> Dsl.give_item_bound(ctx, 7114, 1, 2) end
+    end
+  end
+
   describe "jobchange/2" do
     test "routes {:change_job, job_id} and folds the returned game_state" do
       gs = %{
@@ -238,6 +257,7 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
 
       assert Dsl.pay_zeny(ctx, 1) == ctx
       assert Dsl.give_item(ctx, 7114, 1) == ctx
+      assert Dsl.give_item_bound(ctx, 7114, 1, :account) == ctx
       assert Dsl.delitem(ctx, 7114, 1) == ctx
       assert Dsl.set_char_var(ctx, :k, 1) == ctx
       assert Dsl.jobchange(ctx, 1) == ctx

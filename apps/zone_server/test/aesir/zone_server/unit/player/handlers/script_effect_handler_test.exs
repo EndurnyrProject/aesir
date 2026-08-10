@@ -210,6 +210,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:give_item_bound, item_id, qty, bound}" do
+    for {bound, value} <- [account: 1, char: 4] do
+      test "adds a #{bound}-bound item" do
+        definition = item_definition(@sphmask_id)
+        stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+
+        added = %InventoryItem{nameid: @sphmask_id, amount: 1, bound: unquote(value)}
+
+        expect(InventoryOps, :add, fn 1000,
+                                      %{},
+                                      _stats,
+                                      ^definition,
+                                      1,
+                                      %{bound: unquote(value)} ->
+          {:ok, %{0 => added}, {:added, 0, added}}
+        end)
+
+        {reply, new_state} =
+          ScriptEffectHandler.apply_op(
+            {:give_item_bound, @sphmask_id, 1, unquote(value)},
+            base_state()
+          )
+
+        assert {:ok, game_state} = reply
+        assert game_state.inventory == %{0 => added}
+        assert new_state.game_state.inventory == %{0 => added}
+        assert_received {:send, _ch, {:item_added, %ItemAdded{}}}
+      end
+    end
+  end
+
   describe "{:delitem, item_id, qty}" do
     test "removes the held stack via InventoryOps, emits ItemRemoved, returns new game_state" do
       held = %InventoryItem{id: 1, nameid: @sphmask_id, amount: 3}

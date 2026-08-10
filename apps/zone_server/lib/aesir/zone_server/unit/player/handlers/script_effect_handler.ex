@@ -45,6 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           {:pay_zeny, non_neg_integer()}
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
+          | {:give_item_bound, integer(), pos_integer(), 1 | 4}
           | {:delitem, integer(), pos_integer()}
           | {:nude}
           | {:getexp, non_neg_integer(), non_neg_integer()}
@@ -131,6 +132,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     with {:ok, definition} <- fetch_definition(item_id),
          {:ok, persisted, change} <-
            InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty) do
+      push_added(state.connection_pid, persisted, change)
+      commit(state, %{gs | inventory: persisted})
+    else
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:give_item_bound, item_id, qty, bound}, %{game_state: gs} = state) do
+    with {:ok, definition} <- fetch_definition(item_id),
+         {:ok, persisted, change} <-
+           InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty, %{
+             bound: bound
+           }) do
       push_added(state.connection_pid, persisted, change)
       commit(state, %{gs | inventory: persisted})
     else

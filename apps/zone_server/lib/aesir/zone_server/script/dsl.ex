@@ -826,6 +826,21 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def give_item(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:give_item, item_id, qty})
 
   @doc """
+  Gives `qty` of item `item_id` through the session seam with an account or
+  character binding.
+  """
+  @spec give_item_bound(Ctx.t(), integer(), pos_integer(), :account | :char | 1 | 4) :: Ctx.t()
+  def give_item_bound(%Ctx{status: {:error, _}} = ctx, _item_id, _qty, _bound), do: ctx
+
+  def give_item_bound(%Ctx{} = ctx, item_id, qty, bound),
+    do: apply_op(ctx, {:give_item_bound, item_id, qty, bound_value(bound)})
+
+  defp bound_value(:account), do: 1
+  defp bound_value(:char), do: 4
+  defp bound_value(1), do: 1
+  defp bound_value(4), do: 4
+
+  @doc """
   Removes `qty` of item `item_id` through the session seam (persisting and
   emitting `ItemRemoved`). Halts `:not_enough_items` when the player holds fewer.
   """

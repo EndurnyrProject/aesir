@@ -2,6 +2,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Npc.Transpiler.Codegen
+  alias Aesir.ZoneServer.Script.Ctx
+
+  defmodule ScriptSession do
+    use GenServer
+
+    def start_link(test_pid), do: GenServer.start_link(__MODULE__, test_pid)
+
+    @impl true
+    def init(test_pid), do: {:ok, test_pid}
+
+    @impl true
+    def handle_call({:npc, {:script_apply, op}}, _from, test_pid) do
+      send(test_pid, {:script_apply, op})
+      {:reply, {:ok, :unchanged}, test_pid}
+    end
+  end
 
   defp gen!(body, opts \\ []) do
     opts =
@@ -127,6 +143,49 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "|> give_item(2278, 1)"
     assert src =~ "|> set_char_var(:sphmask_q, 1)"
     assert src =~ "_ ->"
+  end
+
+  test "getitembound resolves the supported bound constant" do
+    src =
+      gen!("""
+      getitembound 501, 2, Bound_Account;
+      close;
+      """)
+
+    assert src =~ "|> give_item_bound(501, 2, 1)"
+    refute src =~ "Todo.const!(:Bound_Account)"
+  end
+
+  test "transpiled getitembound executes its integer bounds through the DSL" do
+    module = Module.concat(__MODULE__, "TranspiledBound#{System.unique_integer([:positive])}")
+
+    src =
+      gen!(
+        """
+        getitembound 501, 2, Bound_Account;
+        getitembound 502, 3, Bound_Char;
+        close;
+        """,
+        module: inspect(module)
+      )
+
+    Code.compile_string(src)
+    on_exit(fn -> :code.delete(module) end)
+
+    session = start_supervised!({ScriptSession, self()})
+
+    ctx = %Ctx{
+      char_id: 1,
+      account_id: 100,
+      connection_pid: self(),
+      session_pid: session,
+      game_state: :unchanged,
+      source: {:npc, :test_npc}
+    }
+
+    assert %{status: :ok} = module.on_talk(ctx)
+    assert_received {:script_apply, {:give_item_bound, 501, 2, 1}}
+    assert_received {:script_apply, {:give_item_bound, 502, 3, 4}}
   end
 
   test "a leading default: clause sinks below the value clauses" do

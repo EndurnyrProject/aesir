@@ -1038,6 +1038,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp typed_arg({:name, s}, :bound, _env) do
+    case Resolver.bound(s) do
+      {:ok, value} -> to_string(value)
+      :error -> const_todo(s)
+    end
+  end
+
   defp typed_arg({:name, s}, :equip_slot, _env) do
     case Resolver.equip_slot(s) do
       {:ok, idx} -> to_string(idx)

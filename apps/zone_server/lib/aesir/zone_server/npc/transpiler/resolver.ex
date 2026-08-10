@@ -76,6 +76,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
     end
   end
 
+  @spec bound(String.t()) :: {:ok, 1 | 4} | :error
+  def bound(symbol) do
+    case ItemResolver.resolve_bound(symbol) do
+      {:ok, value} -> {:ok, value}
+      {:error, _} -> :error
+    end
+  end
+
   @spec skill(String.t() | integer()) :: {:ok, integer()} | :error
   def skill(symbol) do
     case ItemResolver.resolve_skill(symbol) do

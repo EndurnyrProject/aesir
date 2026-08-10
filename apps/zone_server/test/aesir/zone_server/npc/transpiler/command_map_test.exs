@@ -6,6 +6,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
 
   test "known commands return their rule, unknown return :error" do
     assert {:ok, %{dsl: "give_item", args: [:item, :int]}} = CommandMap.command("getitem")
+
+    assert {:ok, %{dsl: "give_item_bound", args: [:item, :int, :bound]}} =
+             CommandMap.command("getitembound")
+
     assert {:ok, %{shape: :warp}} = CommandMap.command("warp")
     assert :error = CommandMap.command("getpartymember")
   end
@@ -181,6 +185,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, :hunting} = Resolver.quest_mode("HUNTING")
       assert :error = Resolver.quest_mode("havequest")
       assert :error = Resolver.quest_mode("NOPE")
+    end
+
+    test "bound resolves supported bound constants" do
+      assert {:ok, 1} = Resolver.bound("Bound_Account")
+      assert {:ok, 4} = Resolver.bound("Bound_Char")
+      assert :error = Resolver.bound("Bound_Guild")
+      assert :error = Resolver.bound("Bound_Party")
     end
 
     test "equip_slot resolves EQI_* tokens to their ordinal, ints pass through" do
