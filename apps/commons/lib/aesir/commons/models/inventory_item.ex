@@ -28,6 +28,7 @@ defmodule Aesir.Commons.Models.InventoryItem do
           card2: integer(),
           card3: integer(),
           random_options: map(),
+          craft: map() | nil,
           expire_time: NaiveDateTime.t() | nil,
           favorite: integer(),
           bound: integer(),
@@ -53,6 +54,7 @@ defmodule Aesir.Commons.Models.InventoryItem do
     field :card2, :integer, default: 0
     field :card3, :integer, default: 0
     field :random_options, :map, default: %{}
+    field :craft, :map
     field :expire_time, :naive_datetime
     field :favorite, :integer, default: 0
     field :bound, :integer, default: 0
@@ -82,6 +84,7 @@ defmodule Aesir.Commons.Models.InventoryItem do
       :card2,
       :card3,
       :random_options,
+      :craft,
       :expire_time,
       :favorite,
       :bound,
