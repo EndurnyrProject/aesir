@@ -69,6 +69,31 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
       assert %{0 => %InventoryItem{amount: 8}} = new_c
     end
 
+    test "does not stack a bound grant onto an unbound stack" do
+      def_ = def!(@red_potion)
+      c = container([item(nameid: @red_potion, amount: 5)])
+
+      assert {:ok, new_c, {:added, 1, %InventoryItem{amount: 3, bound: 1}}} =
+               ItemContainer.add(c, def_, 3, @inventory_capacity, %{bound: 1})
+
+      assert %{
+               0 => %InventoryItem{amount: 5, bound: 0},
+               1 => %InventoryItem{amount: 3, bound: 1}
+             } = new_c
+    end
+
+    test "stacks grants with the same bound value" do
+      def_ = def!(@red_potion)
+
+      assert {:ok, c, {:added, 0, %InventoryItem{amount: 3, bound: 1}}} =
+               ItemContainer.add(%{}, def_, 3, @inventory_capacity, %{bound: 1})
+
+      assert {:ok, new_c, {:stacked, 0, 5}} =
+               ItemContainer.add(c, def_, 2, @inventory_capacity, %{bound: 1})
+
+      assert %{0 => %InventoryItem{amount: 5, bound: 1}} = new_c
+    end
+
     test "does not stack onto an equipped item; creates a new slot" do
       def_ = def!(@red_potion)
       c = container([item(nameid: @red_potion, amount: 5, equip: 2)])
@@ -171,6 +196,16 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
   describe "held_amount/2 and stackable_index/2" do
     test "held_amount sums stackable stacks of the nameid" do
       c = container([item(nameid: @red_potion, amount: 5), item(nameid: @red_potion, amount: 7)])
+
+      assert ItemContainer.held_amount(c, @red_potion) == 12
+    end
+
+    test "held_amount counts bound and unbound stacks of the nameid" do
+      c =
+        container([
+          item(nameid: @red_potion, amount: 5),
+          item(nameid: @red_potion, amount: 7, bound: 1)
+        ])
 
       assert ItemContainer.held_amount(c, @red_potion) == 12
     end

@@ -45,8 +45,9 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   @doc """
   Adds `amount` of `item_def` to `container`, whose slot cap is `capacity`.
 
-  Stacks into an existing stackable item (same `nameid`, not equipped, no
-  cards, no random options) up to `#{@max_stack}` and spills the overflow into
+  Stacks into an existing stackable item with the same `nameid` and binding
+  status (not equipped, no cards, no random options) up to `#{@max_stack}` and
+  spills the overflow into
   the lowest free index(es). With no stackable target it creates a new item at
   the lowest free index. The add is all-or-nothing: if any required slot is
   missing, `capacity` is already reached, the container is left untouched and
@@ -57,7 +58,9 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   @spec add(t(), ItemDefinition.t(), pos_integer(), pos_integer(), map()) :: op_result()
   def add(container, %ItemDefinition{} = item_def, amount, capacity, opts \\ %{})
       when is_map(container) and is_integer(amount) and amount > 0 and is_integer(capacity) do
-    case find_stackable_index(container, item_def.id) do
+    bound = Map.get(opts, :bound, 0)
+
+    case find_stackable_index(container, item_def.id, bound) do
       nil -> add_to_new_slots(container, item_def, amount, capacity, opts)
       index -> stack_onto(container, index, item_def, amount, capacity, opts)
     end
@@ -215,6 +218,12 @@ defmodule Aesir.ZoneServer.Unit.ItemContainer do
   defp find_stackable_index(container, nameid) do
     Enum.find_value(container, fn {index, item} ->
       if stackable?(item, nameid), do: index
+    end)
+  end
+
+  defp find_stackable_index(container, nameid, bound) do
+    Enum.find_value(container, fn {index, item} ->
+      if stackable?(item, nameid) and item.bound == bound, do: index
     end)
   end
 
