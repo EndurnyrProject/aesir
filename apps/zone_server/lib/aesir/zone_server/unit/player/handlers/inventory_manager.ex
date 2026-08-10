@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
           {:ok, SessionState.t() | PlayerState.t()}
           | {:error, term(), SessionState.t() | PlayerState.t()}
   def handle_give_item(item_def, amount, state),
-    do: handle_give_item(item_def, amount, state, true)
+    do: handle_give_item(item_def, amount, state, true, 0)
 
   @spec handle_give_item(
           ItemDefinition.t(),
@@ -69,11 +69,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
         ) ::
           {:ok, SessionState.t() | PlayerState.t()}
           | {:error, term(), SessionState.t() | PlayerState.t()}
+  def handle_give_item(item_def, amount, state, identified),
+    do: handle_give_item(item_def, amount, state, identified, 0)
+
+  @spec handle_give_item(
+          ItemDefinition.t(),
+          pos_integer(),
+          SessionState.t() | PlayerState.t(),
+          boolean(),
+          non_neg_integer()
+        ) ::
+          {:ok, SessionState.t() | PlayerState.t()}
+          | {:error, term(), SessionState.t() | PlayerState.t()}
   def handle_give_item(
         %ItemDefinition{} = item_def,
         amount,
         %{game_state: game_state} = state,
-        identified
+        identified,
+        bound
       ) do
     case InventoryOps.add(
            game_state.character_id,
@@ -81,7 +94,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
            game_state.stats,
            item_def,
            amount,
-           %{identify: if(identified, do: 1, else: 0)}
+           %{identify: if(identified, do: 1, else: 0), bound: bound}
          ) do
       {:ok, persisted, change} ->
         notify_added(state.connection_pid, persisted, change)
@@ -94,14 +107,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     end
   end
 
-  def handle_give_item(%ItemDefinition{} = item_def, amount, %PlayerState{} = state, identified) do
+  def handle_give_item(
+        %ItemDefinition{} = item_def,
+        amount,
+        %PlayerState{} = state,
+        identified,
+        bound
+      ) do
     case InventoryOps.add(
            state.character_id,
            state.inventory,
            state.stats,
            item_def,
            amount,
-           %{identify: if(identified, do: 1, else: 0)}
+           %{identify: if(identified, do: 1, else: 0), bound: bound}
          ) do
       {:ok, persisted, change} ->
         {:ok,
@@ -129,6 +148,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
           {:noreply, SessionState.t()}
   def handle_give_item_cast(item_def, amount, state) do
     case handle_give_item(item_def, amount, state) do
+      {:ok, new_state} -> {:noreply, new_state}
+      {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
+    end
+  end
+
+  @spec handle_give_item_cast(ItemDefinition.t(), pos_integer(), SessionState.t(), keyword()) ::
+          {:noreply, SessionState.t()}
+  def handle_give_item_cast(item_def, amount, state, opts) do
+    case handle_give_item(item_def, amount, state, true, Keyword.get(opts, :bound, 0)) do
       {:ok, new_state} -> {:noreply, new_state}
       {:error, _reason, unchanged_state} -> {:noreply, unchanged_state}
     end

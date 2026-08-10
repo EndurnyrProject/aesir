@@ -348,12 +348,25 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
         PlayerSession.handle_cast({:inventory, {:give_item, item_def, 5}}, state)
 
       items = PlayerState.to_list(new_state.game_state.inventory)
-      assert [%{nameid: 501, amount: 5}] = items
-      assert [%{nameid: 501, amount: 5}] = PlayerState.to_list(reload(character.id))
+      assert [%{nameid: 501, amount: 5, bound: 0}] = items
+      assert [%{nameid: 501, amount: 5, bound: 0}] = PlayerState.to_list(reload(character.id))
 
       added = receive_message_of_type(ItemAdded)
       assert added.nameid == 501
       assert added.amount == 5
+    end
+
+    test "adds a bound item and persists its bound type", %{character: character} do
+      {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
+      {:ok, item_def} = ItemManagement.get_item_by_id(501)
+
+      {:noreply, new_state} =
+        PlayerSession.handle_cast({:inventory, {:give_item, item_def, 5, [bound: 1]}}, state)
+
+      assert [%{nameid: 501, amount: 5, bound: 1}] =
+               PlayerState.to_list(new_state.game_state.inventory)
+
+      assert [%{nameid: 501, amount: 5, bound: 1}] = PlayerState.to_list(reload(character.id))
     end
 
     test "stacks onto an existing stack and notifies the affected slot", %{character: character} do

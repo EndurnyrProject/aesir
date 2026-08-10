@@ -385,6 +385,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:inventory, {:give_item, item_def, amount}})
   end
 
+  @spec give_item(pid(), ItemDefinition.t(), pos_integer(), keyword()) :: :ok
+  def give_item(pid, item_def, amount, opts) do
+    GenServer.cast(pid, {:inventory, {:give_item, item_def, amount, opts}})
+  end
+
   @doc """
   Breaks the equipment worn in `slot` on this player: a natural break on the
   attacker's own weapon, or (once PvP enables the enemy-break path) a landed
@@ -877,6 +882,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:inventory, {:give_item, item_def, amount}}, state) do
     InventoryManager.handle_give_item_cast(item_def, amount, state)
+  end
+
+  @impl true
+  def handle_cast({:inventory, {:give_item, item_def, amount, opts}}, state) do
+    InventoryManager.handle_give_item_cast(item_def, amount, state, opts)
   end
 
   @impl true
