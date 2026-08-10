@@ -106,6 +106,14 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       )
 
     Process.put({Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :server}, skill_unit)
+
+    trade_supervisor =
+      start_supervised!(
+        {Aesir.ZoneServer.Unit.Trade.Supervisor, name: nil},
+        []
+      )
+
+    Process.put({Aesir.ZoneServer.Unit.Trade.Supervisor, :server}, trade_supervisor)
     on_exit(fn -> clean_manager_servers() end)
 
     # NPC event/script coroutines (donpcevent, OnInit timers, on_talk) spawn as
@@ -163,6 +171,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   defp clean_manager_servers do
     Process.delete({Aesir.ZoneServer.Mmo.StatusTickManager, :server})
     Process.delete({Aesir.ZoneServer.Mmo.Skill.Unit.Manager, :server})
+    Process.delete({Aesir.ZoneServer.Unit.Trade.Supervisor, :server})
     Process.delete({Aesir.ZoneServer.Npc.InteractionSupervisor, :server})
     Process.delete({Aesir.ZoneServer.Npc.SessionRegistry, :server})
     Process.delete({Aesir.ZoneServer.Npc.SessionDynamicSupervisor, :server})

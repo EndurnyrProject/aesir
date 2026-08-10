@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Application do
         {Registry, keys: :unique, name: Aesir.ZoneServer.Npc.SessionRegistry},
         {Task.Supervisor, name: Aesir.ZoneServer.TaskSupervisor},
         {Task.Supervisor, name: Aesir.ZoneServer.Npc.InteractionSupervisor},
+        Aesir.ZoneServer.Unit.Trade.Supervisor,
         Aesir.ZoneServer.Npc.SessionSupervisor,
         Aesir.ZoneServer.MechanicsSupervisor,
         {DynamicSupervisor, name: Aesir.ZoneServer.QuicConnSup, strategy: :one_for_one},
