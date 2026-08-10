@@ -102,6 +102,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  defguardp trading?(state) when state.trade != nil
+
+  @trade_frozen [
+    MoveRequest,
+    ActionRequest,
+    SkillCast,
+    GroundSkillCast,
+    UseItem,
+    EquipItem,
+    UnequipItem,
+    PickupItemRequest,
+    StorageDepositRequest,
+    StorageWithdrawRequest,
+    VendingOpenRequest,
+    VendingPurchaseRequest,
+    NpcTalk,
+    TradeRequest
+  ]
+
   @doc """
   Processes a decoded protobuf message routed to the player session.
 
@@ -109,6 +128,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   else falls to a logging catch-all.
   """
   def handle_message(message, state)
+
+  def handle_message(message, state)
+      when is_struct(message) and message.__struct__ in @trade_frozen and trading?(state) do
+    {:noreply, state}
+  end
 
   def handle_message(%HomunculusRequest{} = request, state) do
     HomunculusCommandHandler.request(request, state)

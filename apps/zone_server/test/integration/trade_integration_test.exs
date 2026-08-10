@@ -3,10 +3,22 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
+  alias Aesir.Net.ActionRequest
+  alias Aesir.Net.ChatMessage
+  alias Aesir.Net.ChatRequest
+  alias Aesir.Net.EmoteRequest
+  alias Aesir.Net.Emotion
+  alias Aesir.Net.EquipItem
+  alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.ItemAdded
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.MoveRequest
+  alias Aesir.Net.NpcTalk
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.PickupItemRequest
+  alias Aesir.Net.SkillCast
+  alias Aesir.Net.StorageDepositRequest
+  alias Aesir.Net.StorageWithdrawRequest
   alias Aesir.Net.TradeAddItem
   alias Aesir.Net.TradeCancel
   alias Aesir.Net.TradeCancelled
@@ -19,7 +31,13 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
   alias Aesir.Net.TradeRequestReceived
   alias Aesir.Net.TradeResponse
   alias Aesir.Net.TradeSetZeny
+  alias Aesir.Net.UnequipItem
+  alias Aesir.Net.UseItem
+  alias Aesir.Net.VendingOpenRequest
+  alias Aesir.Net.VendingPurchaseRequest
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItem
+  alias Aesir.ZoneServer.Mmo.ItemDrop.GroundItemStore
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -324,6 +342,20 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
              first.character.id
   end
 
+  test "a player in an NPC dialog rejects a trade request" do
+    requester = player("DialogReq", {150, 150})
+    target = player("DialogTarget", {151, 150})
+
+    :sys.replace_state(target.pid, fn state ->
+      %{state | interaction_lock: {self(), make_ref(), 1}}
+    end)
+
+    request(requester, target)
+
+    assert_cancel(:TRADE_CANCEL_REASON_BUSY)
+    assert PlayerSession.get_state(target.pid).pending_trade_invite == nil
+  end
+
   test "a player in an open trade rejects a third player's request" do
     first = player("BusyOne", {150, 150})
     target = player("BusyTarget", {151, 150})
@@ -363,6 +395,79 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
 
     assert_eventually(fn -> get_player_state(requester.pid).x == 149 end)
     assert PlayerSession.get_state(target.pid).pending_trade_invite != nil
+  end
+
+  test "trading freezes deny-listed client intents until cancelled" do
+    {trader, [potion, sword, worn_sword]} =
+      persisted_player("FreezeTrader", {150, 150}, 100, [
+        %{nameid: 501, amount: 1, identify: 1},
+        %{nameid: 1101, amount: 1, identify: 1},
+        %{nameid: 1101, amount: 1, identify: 1, equip: 2}
+      ])
+
+    partner = player("FreezePartner", {151, 150})
+    third = player("FreezeThird", {150, 151})
+    ground_item = GroundItem.new(501, 1, 150, 150)
+    :ok = GroundItemStore.put("prontera", ground_item)
+    on_exit(fn -> GroundItemStore.claim("prontera", ground_item.id) end)
+
+    open_trade(trader, partner)
+    flush_packets()
+
+    simulate_incoming_message(trader.pid, %MoveRequest{dest_x: 149, dest_y: 150})
+    assert {150, 150} == position(trader.pid)
+
+    simulate_incoming_message(trader.pid, %UseItem{index: client_index(trader.pid, potion.id)})
+    assert inventory_item(trader.pid, potion.id).amount == 1
+
+    simulate_incoming_message(trader.pid, %EquipItem{
+      index: client_index(trader.pid, sword.id),
+      position: 2
+    })
+
+    assert inventory_item(trader.pid, sword.id).equip == 0
+
+    simulate_incoming_message(trader.pid, %PickupItemRequest{ground_id: ground_item.id})
+    assert {:ok, _} = GroundItemStore.get("prontera", ground_item.id)
+
+    simulate_incoming_message(trader.pid, %TradeRequest{target_gid: third.character.id})
+    _ = PlayerSession.get_state(trader.pid)
+    assert PlayerSession.get_state(third.pid).pending_trade_invite == nil
+
+    simulate_incoming_message(trader.pid, %ActionRequest{action: 2})
+    assert PlayerSession.get_state(trader.pid).game_state.action_state == :trading
+
+    for message <- [
+          %ActionRequest{target_id: partner.character.id, action: 0},
+          %SkillCast{skill_id: 1, level: 1, target_id: partner.character.id},
+          %GroundSkillCast{skill_id: 1, level: 1, x: 150, y: 150},
+          %UnequipItem{index: client_index(trader.pid, worn_sword.id)},
+          %StorageDepositRequest{inventory_index: client_index(trader.pid, potion.id), amount: 1},
+          %StorageWithdrawRequest{storage_index: 0, amount: 1},
+          %VendingOpenRequest{title: "Frozen", entries: []},
+          %VendingPurchaseRequest{vendor_unit_id: partner.character.id, items: []},
+          %NpcTalk{npc_id: 0}
+        ] do
+      simulate_incoming_message(trader.pid, message)
+      assert PlayerSession.get_state(trader.pid).game_state.action_state == :trading
+    end
+
+    refute_receive {:packet_sent, _, _}, 100
+
+    simulate_incoming_message(trader.pid, %ChatRequest{message: "FreezeTrader : still here"})
+    assert_receive {:packet_sent, %ChatMessage{message: "FreezeTrader : still here"}, _}, 1_000
+
+    simulate_incoming_message(trader.pid, %EmoteRequest{type: 0})
+    assert_receive {:packet_sent, %Emotion{}, _}, 1_000
+
+    simulate_incoming_message(trader.pid, %TradeCancel{})
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+    assert_cancel(:TRADE_CANCEL_REASON_CANCELLED)
+
+    assert_eventually(fn -> PlayerSession.get_state(trader.pid).trade == nil end)
+
+    simulate_incoming_message(trader.pid, %MoveRequest{dest_x: 149, dest_y: 150})
+    assert_eventually(fn -> position(trader.pid) == {149, 150} end)
   end
 
   test "a trade process crash clears both participants" do
@@ -407,6 +512,20 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
     state = PlayerSession.get_state(pid).game_state
     {index, _row} = Enum.find(state.inventory, fn {_index, row} -> row.id == row_id end)
     index + 2
+  end
+
+  defp inventory_item(pid, row_id) do
+    pid
+    |> PlayerSession.get_state()
+    |> Map.fetch!(:game_state)
+    |> Map.fetch!(:inventory)
+    |> Map.values()
+    |> Enum.find(&(&1.id == row_id))
+  end
+
+  defp position(pid) do
+    game_state = PlayerSession.get_state(pid).game_state
+    {game_state.x, game_state.y}
   end
 
   defp persisted_player(name, position, zeny, item_attrs) do

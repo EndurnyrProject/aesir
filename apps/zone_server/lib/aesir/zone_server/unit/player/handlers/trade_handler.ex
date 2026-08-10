@@ -318,12 +318,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
     }
   end
 
-  defp eligible?(%{trade: trade, pending_trade_invite: pending, game_state: game_state}) do
+  defp eligible?(%{trade: trade, pending_trade_invite: pending, game_state: game_state} = state) do
     with :ok <- ensure_living(game_state),
          :ok <- ensure_idle(game_state),
+         :ok <- ensure_no_dialog(state),
          :ok <- ensure_empty(trade, pending) do
       nv_basic(game_state)
     end
+  end
+
+  defp ensure_no_dialog(state) do
+    if SessionState.interaction_blocked?(state), do: {:error, :busy}, else: :ok
   end
 
   defp ensure_living(%PlayerState{} = game_state) do
