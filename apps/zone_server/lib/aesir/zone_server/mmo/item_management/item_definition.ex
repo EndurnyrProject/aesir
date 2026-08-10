@@ -3,8 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   Static item definition (the `item_db` record).
 
   Loaded as data from `priv/db/items/*.yml` into `:persistent_term`; never a
-  per-record module. Carries the loot/equip essentials only - scripts and the
-  nested Trade/NoUse/Delay/Stack restrictions are intentionally not modelled yet.
+  per-record module. Carries the loot/equip essentials only. The `NoTrade`
+  restriction is modelled (`no_trade`); the other nested Trade/NoUse/Delay/Stack
+  restrictions remain intentionally unmodelled.
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
@@ -47,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             equip_level_max: 0,
             refineable: false,
             bind_on_equip: false,
+            no_trade: false,
             on_use: nil,
             on_equip: nil,
             attack_element: nil
@@ -74,6 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           equip_level_max: integer(),
           refineable: boolean(),
           bind_on_equip: boolean(),
+          no_trade: boolean(),
           on_use: String.t() | nil,
           on_equip: EquipScript.program() | nil,
           attack_element: atom()

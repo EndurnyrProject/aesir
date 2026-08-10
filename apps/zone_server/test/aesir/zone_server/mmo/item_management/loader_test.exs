@@ -36,7 +36,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
 
       assert %{
                all: all,
-               by_id: %{501 => %ItemDefinition{aegis_name: "Red_Potion", type: :healing}},
+               by_id: %{
+                 501 => %ItemDefinition{
+                   aegis_name: "Red_Potion",
+                   type: :healing,
+                   no_trade: false
+                 }
+               },
                by_aegis: %{
                  "Knife" => %ItemDefinition{
                    id: 1201,

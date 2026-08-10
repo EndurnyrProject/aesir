@@ -85,6 +85,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert {:ok, %ItemDefinition{bind_on_equip: true}} = Importer.to_definition(entry)
     end
 
+    test "maps the no-trade restriction" do
+      entry = %{
+        "Id" => 1201,
+        "AegisName" => "Knife",
+        "Name" => "Knife",
+        "Trade" => %{"NoTrade" => true}
+      }
+
+      assert {:ok, definition = %ItemDefinition{no_trade: true}} = Importer.to_definition(entry)
+      assert %{"no_trade" => true} = Importer.to_yaml_map(definition)
+    end
+
+    test "defaults missing Trade restriction to false and omits it from YAML" do
+      entry = %{"Id" => 1201, "AegisName" => "Knife", "Name" => "Knife"}
+
+      assert {:ok, definition = %ItemDefinition{no_trade: false}} = Importer.to_definition(entry)
+      refute Map.has_key?(Importer.to_yaml_map(definition), "no_trade")
+    end
+
     test "defaults missing Type to :etc (rAthena default)" do
       entry = %{"Id" => 909, "AegisName" => "Jellopy", "Name" => "Jellopy", "Weight" => 1}
 
