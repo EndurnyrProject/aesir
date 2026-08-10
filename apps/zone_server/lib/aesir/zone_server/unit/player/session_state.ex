@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   The `PlayerSession` GenServer state: the authoritative `PlayerState` game
   state plus the process-level bookkeeping the session needs but the game state
   must not carry (connection wiring, the single-dialog interaction lock, and the
-  pending skill-menu/party/guild invite slots).
+  pending skill-menu/party/guild/trade invite slots, and accepted trade handle).
 
   All handlers thread this struct as their session state. Optional slots default
   to `nil` except `homunculus_runtime`, which starts as a fresh `Runtime`.
@@ -46,6 +46,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             pending_skill_menu: nil,
             deferred_skill_result: nil,
             pending_party_invite: nil,
+            pending_trade_invite: nil,
+            trade: nil,
             pending_guild_invite: nil,
             homunculus: nil,
             homunculus_runtime: %Runtime{private_dirty: false}
@@ -60,6 +62,17 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           pending_skill_menu: map() | nil,
           deferred_skill_result: map() | nil,
           pending_party_invite: map() | nil,
+          pending_trade_invite:
+            %{
+              requester_char_id: integer(),
+              requester_pid: pid(),
+              requester_name: String.t(),
+              expires_at: integer()
+            }
+            | nil,
+          trade:
+            %{pid: pid(), monitor: reference(), partner_char_id: integer()}
+            | nil,
           pending_guild_invite: map() | nil,
           homunculus: HomunculusState.t() | nil,
           homunculus_runtime: Runtime.t()

@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritSphereHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
@@ -324,6 +325,18 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec deliver_party_invite(pid(), map()) :: :ok | {:error, :invite_pending}
   def deliver_party_invite(pid, invite) do
     GenServer.call(pid, {:social, {:deliver_party_invite, invite}})
+  end
+
+  @doc "Delivers a pending trade request to this player's session."
+  @spec deliver_trade_request(pid(), map()) :: :ok | {:error, atom()}
+  def deliver_trade_request(pid, invite) do
+    GenServer.call(pid, {:trade_call, {:deliver_request, invite}})
+  end
+
+  @doc "Re-validates and starts an accepted trade in the requester's session."
+  @spec trade_accept(pid(), map()) :: :ok | {:error, atom()}
+  def trade_accept(pid, acceptor) do
+    GenServer.call(pid, {:trade_call, {:accept, acceptor}})
   end
 
   @doc """
@@ -795,6 +808,29 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillTextInputHandler.handle_timeout(state, request_id)
   end
 
+  @impl true
+  def handle_info({:trade, event}, state) do
+    TradeHandler.handle_trade_event(state, event)
+  end
+
+  @impl true
+  def handle_info({:trade_invite_expired, requester_char_id, expires_at}, state) do
+    TradeHandler.handle_invite_expiry(requester_char_id, expires_at, state)
+  end
+
+  @impl true
+  def handle_info({:trade_invite_cancelled, reason}, state) do
+    TradeHandler.handle_invite_cancelled(reason, state)
+  end
+
+  @impl true
+  def handle_info(
+        {:DOWN, ref, :process, pid, _reason},
+        %{trade: %{monitor: ref, pid: pid}} = state
+      ) do
+    TradeHandler.handle_trade_down(ref, pid, state)
+  end
+
   # The active NPC interaction ended (close / idle-timeout / crash). Clearing the
   # lock frees the player to talk to NPCs again; the session always survives
   # (this monitor never propagates the interaction's exit). Matched ahead of the
@@ -1191,6 +1227,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:social, {:deliver_guild_invite, invite}}, _from, state) do
     GuildHandler.handle_invite_delivery(invite, state)
+  end
+
+  @impl true
+  def handle_call({:trade_call, {:deliver_request, invite}}, _from, state) do
+    TradeHandler.handle_deliver_request(invite, state)
+  end
+
+  @impl true
+  def handle_call({:trade_call, {:accept, acceptor}}, _from, state) do
+    TradeHandler.handle_accept(acceptor, state)
   end
 
   # NPC: the single-writer script-effect seam. An NPC interaction process (or

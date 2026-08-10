@@ -55,6 +55,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.StorageCloseRequest
   alias Aesir.Net.StorageDepositRequest
   alias Aesir.Net.StorageWithdrawRequest
+  alias Aesir.Net.TradeRequest
+  alias Aesir.Net.TradeResponse
   alias Aesir.Net.UnequipItem
   alias Aesir.Net.UseItem
   alias Aesir.Net.VendingBuy
@@ -88,6 +90,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -120,7 +123,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # NV_BASIC gates (rAthena clif.cpp, gated by basic_skill_check, bypassed by
   # SU_BASIC_SKILL >= 1 which is not yet implemented):
   #   - sit/stand    >= 3  (clif.cpp:11739) -- implemented below
-  #   - trade        >= 1  (clif.cpp:12515) -- NOTE: no trade handler yet
   #   - emotion      >= 2  (clif.cpp:11636) -- NOTE: no emotion handler yet
   #   - chat room    >= 4  (clif.cpp:12378) -- NOTE: no chat-room creation yet
   #   - party create >= 7  (clif.cpp:13806) -- NOTE: no party handler yet
@@ -315,6 +317,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # CZ_REQNAME2 0x0368).
   def handle_message(%NameRequest{entity_id: entity_id}, state) do
     NameHandler.handle_name_request(entity_id, state)
+  end
+
+  def handle_message(%TradeRequest{} = msg, state) do
+    TradeHandler.handle_trade_request(state, msg)
+  end
+
+  def handle_message(%TradeResponse{} = msg, state) do
+    TradeHandler.handle_trade_response(state, msg)
   end
 
   # PartyCreateRequest - Player creates a new party with themselves as leader.
