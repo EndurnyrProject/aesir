@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   An NPC interaction runs in its own process and holds only a read snapshot of
   the player's `PlayerState`. Every state mutation it needs (`pay_zeny`,
-  `give_item`, `delitem`, `getexp`, `set_char_var`, `set_temp_var`, `jobchange`,
+  `give_item`, `give_item_rental`, `delitem`, `getexp`, `set_char_var`, `set_temp_var`, `jobchange`,
   `setquest`, `erasequest`, `completequest`, `changequest`) is routed here as a
   `{:npc, {:script_apply, op}}` `GenServer.call` so the player session stays the sole
   writer of its own state. This module applies the op to the authoritative
@@ -40,11 +40,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.QuestView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.Rental
 
   @type op ::
           {:pay_zeny, non_neg_integer()}
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
+          | {:give_item_rental, integer(), pos_integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
           | {:delitem, integer(), pos_integer()}
           | {:nude}
@@ -132,6 +134,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     with {:ok, definition} <- fetch_definition(item_id),
          {:ok, persisted, change} <-
            InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty) do
+      push_added(state.connection_pid, persisted, change)
+      commit(state, %{gs | inventory: persisted})
+    else
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:give_item_rental, item_id, seconds, opts}, %{game_state: gs} = state) do
+    with {:ok, definition} <- fetch_definition(item_id),
+         true <- seconds > 0 || {:error, :bad_duration},
+         true <- Rental.rentable_type?(definition) || {:error, :not_rentable},
+         {:ok, persisted, change} <-
+           InventoryOps.add(
+             gs.character_id,
+             gs.inventory,
+             gs.stats,
+             definition,
+             1,
+             opts
+             |> Map.new()
+             |> Map.take([:refine, :card0, :card1, :card2, :card3, :random_options])
+             |> Map.put(:expire_time, Rental.expire_at(seconds, NaiveDateTime.utc_now()))
+           ) do
       push_added(state.connection_pid, persisted, change)
       commit(state, %{gs | inventory: persisted})
     else

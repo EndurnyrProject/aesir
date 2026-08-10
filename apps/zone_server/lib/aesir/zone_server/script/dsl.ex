@@ -826,6 +826,17 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def give_item(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:give_item, item_id, qty})
 
   @doc """
+  Gives one time-limited rental item through the session seam.
+  """
+  @spec give_item_rental(Ctx.t(), integer(), pos_integer(), keyword()) :: Ctx.t()
+  def give_item_rental(ctx, item_id, seconds, opts \\ [])
+
+  def give_item_rental(%Ctx{status: {:error, _}} = ctx, _id, _secs, _opts), do: ctx
+
+  def give_item_rental(%Ctx{} = ctx, item_id, seconds, opts),
+    do: apply_op(ctx, {:give_item_rental, item_id, seconds, opts})
+
+  @doc """
   Gives `qty` of item `item_id` through the session seam with an account or
   character binding.
   """

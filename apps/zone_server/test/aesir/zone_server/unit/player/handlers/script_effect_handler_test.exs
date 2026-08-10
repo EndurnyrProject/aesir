@@ -210,6 +210,122 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:give_item_rental, item_id, seconds, opts}" do
+    test "adds one time-limited rental item" do
+      definition = item_definition(@sphmask_id, type: :weapon)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+
+      seconds = 60
+      expected_expiry = NaiveDateTime.add(NaiveDateTime.utc_now(), seconds, :second)
+
+      expect(InventoryOps, :add, fn 1000, %{}, _stats, ^definition, 1, %{expire_time: expiry} ->
+        assert abs(NaiveDateTime.diff(expiry, expected_expiry, :second)) <= 2
+
+        added = %InventoryItem{nameid: @sphmask_id, amount: 1, expire_time: expiry}
+        {:ok, %{0 => added}, {:added, 0, added}}
+      end)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, seconds, []}, base_state())
+
+      assert {:ok, game_state} = reply
+      assert map_size(game_state.inventory) == 1
+      assert %InventoryItem{expire_time: expire_time} = game_state.inventory[0]
+      assert expire_time != nil
+      assert new_state.game_state.inventory == game_state.inventory
+      assert_received {:send, _ch, {:item_added, %ItemAdded{}}}
+    end
+
+    test "rejects a non-positive duration without adding an item" do
+      definition = item_definition(@sphmask_id, type: :weapon)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+      reject(&InventoryOps.add/6)
+
+      state = base_state()
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, 0, []}, state)
+
+      assert reply == {:error, :bad_duration}
+      assert new_state == state
+      refute_received {:send, _ch, {:item_added, _}}
+    end
+
+    test "rejects a non-rentable item type without adding an item" do
+      definition = item_definition(@sphmask_id, type: :usable)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+      reject(&InventoryOps.add/6)
+
+      state = base_state()
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, 60, []}, state)
+
+      assert reply == {:error, :not_rentable}
+      assert new_state == state
+      refute_received {:send, _ch, {:item_added, _}}
+    end
+
+    test "passes rental item attributes to the inventory add" do
+      definition = item_definition(@sphmask_id, type: :armor)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+
+      random_options = %{"1" => %{val: 5, parm: 10}}
+
+      expect(InventoryOps, :add, fn 1000,
+                                    %{},
+                                    _stats,
+                                    ^definition,
+                                    1,
+                                    %{
+                                      expire_time: expiry,
+                                      refine: 7,
+                                      card0: 4001,
+                                      random_options: ^random_options
+                                    } ->
+        added = %InventoryItem{
+          nameid: @sphmask_id,
+          amount: 1,
+          expire_time: expiry,
+          refine: 7,
+          card0: 4001,
+          random_options: random_options
+        }
+
+        {:ok, %{0 => added}, {:added, 0, added}}
+      end)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op(
+          {:give_item_rental, @sphmask_id, 60,
+           [refine: 7, card0: 4001, random_options: random_options]},
+          base_state()
+        )
+
+      assert {:ok, game_state} = reply
+
+      assert %InventoryItem{refine: 7, card0: 4001, random_options: ^random_options} =
+               game_state.inventory[0]
+
+      assert new_state.game_state.inventory == game_state.inventory
+    end
+
+    test "rejects a full inventory without adding an item" do
+      definition = item_definition(@sphmask_id, type: :weapon)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+      stub(InventoryOps, :add, fn _, _, _, _, _, _ -> {:error, :inventory_full} end)
+
+      state = base_state()
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_item_rental, @sphmask_id, 60, []}, state)
+
+      assert reply == {:error, :inventory_full}
+      assert new_state == state
+      refute_received {:send, _ch, {:item_added, _}}
+    end
+  end
+
   describe "{:give_item_bound, item_id, qty, bound}" do
     for {bound, value} <- [account: 1, char: 4] do
       test "adds a #{bound}-bound item" do
@@ -626,7 +742,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     }
   end
 
-  defp item_definition(id) do
-    %ItemDefinition{id: id, aegis_name: "Item_#{id}", name: "Item #{id}", weight: 10}
+  defp item_definition(id, opts \\ []) do
+    %ItemDefinition{
+      id: id,
+      aegis_name: "Item_#{id}",
+      name: "Item #{id}",
+      weight: 10,
+      type: Keyword.get(opts, :type)
+    }
   end
 end
