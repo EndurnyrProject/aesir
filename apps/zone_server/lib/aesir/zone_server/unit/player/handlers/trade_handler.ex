@@ -491,5 +491,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler do
   defp cancel_reason(:dead), do: :TRADE_CANCEL_REASON_DEAD
   defp cancel_reason(:disconnected), do: :TRADE_CANCEL_REASON_DISCONNECTED
   defp cancel_reason(:capacity), do: :TRADE_CANCEL_REASON_CAPACITY
+  defp cancel_reason(:overweight), do: :TRADE_CANCEL_REASON_CAPACITY
+  defp cancel_reason(:inventory_full), do: :TRADE_CANCEL_REASON_CAPACITY
+  defp cancel_reason(:zeny_overflow), do: :TRADE_CANCEL_REASON_CAPACITY
   defp cancel_reason(_reason), do: :TRADE_CANCEL_REASON_INVALID
 end
