@@ -52,10 +52,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Vending
   alias Aesir.ZoneServer.Unit.Vending.Registry
   alias Aesir.ZoneServer.Unit.Vending.ShopItem
+  alias Aesir.ZoneServer.Unit.Zeny
 
   @push_cart_status :sc_push_cart
   @mc_vending_id McVending.definition().id
-  @max_zeny 1_000_000_000
 
   @typedoc "The live shop carried in `:vending` `state_context` and the registry."
   @type shop :: %{title: String.t(), owner_char_id: integer(), items: [ShopItem.t()]}
@@ -453,7 +453,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @spec ensure_seller_zeny_cap(non_neg_integer(), non_neg_integer()) ::
           :ok | {:error, :zeny_overflow}
   defp ensure_seller_zeny_cap(seller_zeny, cost) do
-    if seller_zeny + cost > @max_zeny, do: {:error, :zeny_overflow}, else: :ok
+    if seller_zeny + cost > Zeny.max_zeny(), do: {:error, :zeny_overflow}, else: :ok
   end
 
   @spec ensure_buyer_capacity(Inventory.t(), Stats.t(), [{InventoryItem.t(), pos_integer()}]) ::

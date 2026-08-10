@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Rental
+  alias Aesir.ZoneServer.Unit.Zeny
 
   @type op ::
           {:pay_zeny, non_neg_integer()}
@@ -71,8 +72,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:erasequest, QuestLog.quest_id()}
           | {:completequest, QuestLog.quest_id()}
           | {:changequest, QuestLog.quest_id(), QuestLog.quest_id()}
-
-  @max_zeny 1_000_000_000
 
   @type reply :: {:ok, PlayerState.t()} | RefineOps.result() | {:error, term()}
   @type state :: %{
@@ -124,7 +123,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   def apply_op({:credit_zeny, amount}, %{game_state: gs} = state) do
-    new_zeny = min(gs.zeny + amount, @max_zeny)
+    new_zeny = min(gs.zeny + amount, Zeny.max_zeny())
     new_gs = %{gs | zeny: new_zeny}
 
     StatusSync.send_param(state.connection_pid, StatusParams.zeny(), new_zeny)

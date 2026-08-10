@@ -19,10 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Aesir.ZoneServer.Unit.Zeny
 
   @behaviour Active
-
-  @max_zeny 1_000_000_000
 
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -39,7 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, _definition) do
     with {:ok, {_module, _state, pid}} <- UnitRegistry.get_unit(:mob, target_id),
          {:ok, zeny} <- MobSession.attempt_mug(pid, mug_caster(caster), level) do
-      {:ok, %{caster | zeny: min(caster.zeny + zeny, @max_zeny)}}
+      {:ok, %{caster | zeny: min(caster.zeny + zeny, Zeny.max_zeny())}}
     end
   end
 

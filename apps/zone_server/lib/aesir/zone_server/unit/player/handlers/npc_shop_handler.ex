@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Shop, as: ShopCore
+  alias Aesir.ZoneServer.Unit.Zeny
 
   # rAthena clicks NPCs within `AREA_SIZE + 1` cells (`npc_checknear`,
   # src/map/npc.cpp); `AREA_SIZE` defaults to 14, so the talk gate is 15 cells
@@ -50,8 +51,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   @result_no_slots 3
   @result_invalid 4
   @result_out_of_range 5
-
-  @max_zeny 1_000_000_000
 
   @type state :: %{
           required(:connection_pid) => pid(),
@@ -121,7 +120,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   Re-resolves the shop by gid and re-checks talk range (the player must be at a
   real shop, though selling itself is not restricted to the shop's buy list). On
   a valid, in-range request it commits every inventory removal and the zeny
-  credit (clamped to `#{@max_zeny}`) inside one `Repo.transact`, so a partial
+  credit (clamped to `Unit.Zeny.max_zeny/0`) inside one `Repo.transact`, so a partial
   sell can never persist; it then updates in-memory state, pushes one
   `ItemRemoved` per sold slot, a zeny `ParamChange`, and `NpcSellResult{ok}`. Any
   gate or transaction failure replies with the mapped result code and leaves
@@ -210,7 +209,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
           [{non_neg_integer(), pos_integer()}]
         ) :: {:ok, Inventory.t()} | {:error, term()}
   defp transact_sell(char_id, inventory, zeny, total_credit, removals) do
-    new_zeny = min(zeny + total_credit, @max_zeny)
+    new_zeny = min(zeny + total_credit, Zeny.max_zeny())
 
     result =
       Repo.transact(fn ->
@@ -247,7 +246,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
         ) ::
           state()
   defp finalize_sell(%{game_state: gs} = state, inventory, removals, total_credit) do
-    new_zeny = min(gs.zeny + total_credit, @max_zeny)
+    new_zeny = min(gs.zeny + total_credit, Zeny.max_zeny())
     new_gs = %{gs | inventory: inventory, zeny: new_zeny}
 
     notify_removed(state.connection_pid, removals)

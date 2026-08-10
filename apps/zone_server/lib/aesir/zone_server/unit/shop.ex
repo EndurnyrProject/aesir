@@ -28,10 +28,10 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Rental
+  alias Aesir.ZoneServer.Unit.Zeny
 
   @discount_skill_id 37
   @overcharge_skill_id 38
-  @max_zeny 1_000_000_000
 
   @typedoc "A buy-window row, shaped for `Aesir.Net.NpcShopBuyItem`."
   @type buy_item :: %{nameid: pos_integer(), type: non_neg_integer(), price: non_neg_integer()}
@@ -105,7 +105,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
   Computes a sell of `requests` against the player's inventory snapshot.
 
   Each `{inventory_index, amount}` must reference an owned slot holding at least
-  `amount` of a sellable item. Returns the summed credit (clamped to `#{@max_zeny}`)
+  `amount` of a sellable item. Returns the summed credit (clamped to `Unit.Zeny.max_zeny/0`)
   and the `{inventory_index, amount}` removals, or the first failing line:
   `:invalid_item`, `:insufficient_amount`, or `:unsellable`. Selling is not
   restricted to the shop's item list.
@@ -116,7 +116,7 @@ defmodule Aesir.ZoneServer.Unit.Shop do
       when is_list(requests) do
     with {:ok, total_credit, removals} <-
            resolve_sell_lines(inventory, requests, player_state) do
-      {:ok, %{total_credit: min(total_credit, @max_zeny), removals: removals}}
+      {:ok, %{total_credit: min(total_credit, Zeny.max_zeny()), removals: removals}}
     end
   end
 
