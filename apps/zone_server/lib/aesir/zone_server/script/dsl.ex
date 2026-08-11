@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -1034,6 +1035,87 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec delitem(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
   def delitem(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
   def delitem(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:delitem, item_id, qty})
+
+  @doc """
+  Removes the equipment worn in equip `slot` (rAthena `delequip`) through the
+  session seam: the item is unequipped first (appearance broadcast, stats
+  recompute), then its inventory row is deleted. An empty or unknown slot is a
+  no-op. Like the other granting/removing effects the value rAthena returns is
+  not exposed. Halts `:no_player` on a detached ctx.
+  """
+  @spec delequip(Ctx.t(), integer()) :: Ctx.t()
+  def delequip(%Ctx{status: {:error, _}} = ctx, _slot), do: ctx
+
+  def delequip(%Ctx{} = ctx, slot) do
+    case equipped_index(ctx, slot) do
+      {index, %InventoryItem{nameid: nameid}} -> apply_op(ctx, {:delequip, index, nameid})
+      nil -> ctx
+    end
+  end
+
+  @doc """
+  Gives `qty` of item `item_id` with explicit attributes through the session
+  seam (rAthena `getitem2`): `identify`, `refine`, and the four card values
+  (`card1`..`card4` map to `card0`..`card3`). The element attribute and its
+  second value have no Aesir inventory field and are accepted-but-ignored, as
+  documented. Halts `:no_player` on a detached ctx.
+  """
+  @spec getitem2(
+          Ctx.t(),
+          integer(),
+          pos_integer(),
+          0 | 1,
+          non_neg_integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer()
+        ) :: Ctx.t()
+  # The rAthena `getitem2` buildin carries ten positional args (id, count,
+  # identify, refine, attr, attr2, four cards); the arity is inherent.
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def getitem2(
+        %Ctx{status: {:error, _}} = ctx,
+        _item,
+        _qty,
+        _identify,
+        _refine,
+        _attr,
+        _attr2,
+        _card1,
+        _card2,
+        _card3,
+        _card4
+      ),
+      do: ctx
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def getitem2(
+        %Ctx{} = ctx,
+        item,
+        qty,
+        identify,
+        refine,
+        _attr,
+        _attr2,
+        card1,
+        card2,
+        card3,
+        card4
+      ) do
+    attrs = %{
+      identify: identify,
+      refine: refine,
+      card0: card1,
+      card1: card2,
+      card2: card3,
+      card3: card4
+    }
+
+    apply_op(ctx, {:give_item2, item, qty, attrs})
+  end
 
   @doc """
   Runs item `item_id`'s use script on the invoking player (rAthena
@@ -2244,6 +2326,314 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       if location in EquipLocation.bitmask_to_location_atoms(equip), do: item
     end)
   end
+
+  # The item worn in `slot` together with its definition, or `nil` when the
+  # slot is unknown/empty. Shared by every equip-read buildin below.
+  @spec fetch_equipped(Ctx.t(), integer()) :: {InventoryItem.t(), ItemDefinition.t()} | nil
+  defp fetch_equipped(%Ctx{game_state: gs}, slot) do
+    with location when not is_nil(location) <- Map.get(@equip_slot_locations, slot),
+         %InventoryItem{nameid: nameid} = item <- equipped_in_slot(gs.inventory, location),
+         {:ok, item_def} <- ItemManagement.get_item_by_id(nameid) do
+      {item, item_def}
+    else
+      _ -> nil
+    end
+  end
+
+  # The `{inventory_index, item}` worn in `slot`, or `nil` when the slot is
+  # unknown or empty. Used by `delequip` to address the session's row.
+  @spec equipped_index(Ctx.t(), integer()) :: {non_neg_integer(), InventoryItem.t()} | nil
+  defp equipped_index(%Ctx{game_state: gs}, slot) do
+    case Map.get(@equip_slot_locations, slot) do
+      nil -> nil
+      location -> find_equipped_entry(gs.inventory, location)
+    end
+  end
+
+  @spec find_equipped_entry(Inventory.t(), atom()) ::
+          {non_neg_integer(), InventoryItem.t()} | nil
+  defp find_equipped_entry(inventory, location) do
+    Enum.find_value(Inventory.equipped_items(inventory), fn {index,
+                                                             %InventoryItem{equip: equip} = item} ->
+      if location in EquipLocation.bitmask_to_location_atoms(equip), do: {index, item}
+    end)
+  end
+
+  @doc """
+  Whether the equip `slot` is occupied (rAthena `getequipisequiped`): `1` when
+  an item is worn there, else `0`. `slot` is the rAthena `equip_index` ordinal.
+  Pure read over the inventory snapshot.
+  """
+  @spec getequipisequiped(Ctx.t(), integer()) :: 0 | 1
+  def getequipisequiped(%Ctx{game_state: nil}, _slot), do: no_player!("getequipisequiped/2")
+
+  def getequipisequiped(%Ctx{} = ctx, slot) do
+    if fetch_equipped(ctx, slot), do: 1, else: 0
+  end
+
+  @doc """
+  The refine level of the item worn in equip `slot` (rAthena
+  `getequiprefinerycnt`), or `0` when the slot is empty or unknown. Pure read
+  over the inventory snapshot.
+  """
+  @spec getequiprefinerycnt(Ctx.t(), integer()) :: non_neg_integer()
+  def getequiprefinerycnt(%Ctx{game_state: nil}, _slot), do: no_player!("getequiprefinerycnt/2")
+
+  def getequiprefinerycnt(%Ctx{} = ctx, slot) do
+    case fetch_equipped(ctx, slot) do
+      {item, _item_def} -> item.refine
+      nil -> 0
+    end
+  end
+
+  @doc """
+  The display name of the item worn in equip `slot` (rAthena `getequipname`),
+  or `""` when the slot is empty or unknown. Uses the same `name` field as
+  `getitemname` for consistency with dialog display. Pure read over the
+  inventory snapshot.
+  """
+  @spec getequipname(Ctx.t(), integer()) :: String.t()
+  def getequipname(%Ctx{game_state: nil}, _slot), do: no_player!("getequipname/2")
+
+  def getequipname(%Ctx{} = ctx, slot) do
+    case fetch_equipped(ctx, slot) do
+      {_item, %ItemDefinition{name: name}} -> name
+      nil -> ""
+    end
+  end
+
+  @doc """
+  The weapon level of the item worn in equip `slot` (rAthena
+  `getequipweaponlv`), or `0` when the slot is empty, unknown, or the worn
+  item is not a weapon. Pure read over the inventory snapshot.
+  """
+  @spec getequipweaponlv(Ctx.t(), integer()) :: non_neg_integer()
+  def getequipweaponlv(%Ctx{game_state: nil}, _slot), do: no_player!("getequipweaponlv/2")
+
+  def getequipweaponlv(%Ctx{} = ctx, slot) do
+    case fetch_equipped(ctx, slot) do
+      {_item, %ItemDefinition{type: :weapon, weapon_level: level}} when is_integer(level) -> level
+      _ -> 0
+    end
+  end
+
+  @doc """
+  The armor level of the item worn in equip `slot` (rAthena
+  `getequiparmorlv`), or `0` when the slot is empty, unknown, or the worn
+  item is not an armor. Pure read over the inventory snapshot.
+  """
+  @spec getequiparmorlv(Ctx.t(), integer()) :: non_neg_integer()
+  def getequiparmorlv(%Ctx{game_state: nil}, _slot), do: no_player!("getequiparmorlv/2")
+
+  def getequiparmorlv(%Ctx{} = ctx, slot) do
+    case fetch_equipped(ctx, slot) do
+      {_item, %ItemDefinition{type: :armor, armor_level: level}} when is_integer(level) -> level
+      _ -> 0
+    end
+  end
+
+  @doc """
+  Whether the item worn in equip `slot` can be refined (rAthena
+  `getequipisenableref`): `1` when it is a refinable item and not rented,
+  else `0`. Pure read over the inventory snapshot.
+  """
+  @spec getequipisenableref(Ctx.t(), integer()) :: 0 | 1
+  def getequipisenableref(%Ctx{game_state: nil}, _slot), do: no_player!("getequipisenableref/2")
+
+  def getequipisenableref(%Ctx{} = ctx, slot) do
+    case fetch_equipped(ctx, slot) do
+      {%InventoryItem{expire_time: nil}, %ItemDefinition{refineable: true}} -> 1
+      _ -> 0
+    end
+  end
+
+  @doc """
+  The success rate, as a `0..100` percent, of the next refine attempt on the
+  item worn in equip `slot` (rAthena `getequippercentrefinery`): normal by
+  default, or enriched when `enriched != 0`. `0` when the slot is empty,
+  unknown, or the item is not currently refinable at its level. Pure read over
+  the inventory snapshot + refine tables.
+  """
+  @spec getequippercentrefinery(Ctx.t(), integer(), 0 | 1) :: 0..100
+  def getequippercentrefinery(ctx, slot, enriched \\ 0)
+
+  def getequippercentrefinery(%Ctx{game_state: nil}, _slot, _enriched),
+    do: no_player!("getequippercentrefinery/3")
+
+  def getequippercentrefinery(%Ctx{} = ctx, slot, enriched) do
+    cost_type = if enriched != 0, do: :enriched, else: :normal
+
+    with {item, item_def} <- fetch_equipped(ctx, slot),
+         {:ok, group, item_level} <- RefineDatabase.group_and_level(item_def),
+         %{chances: chances} <- RefineDatabase.level_info(group, item_level, item.refine + 1),
+         %{rate: rate} <- Map.get(chances, cost_type) do
+      div(rate, 100)
+    else
+      _ -> 0
+    end
+  end
+
+  @doc """
+  A refine cost field of the item worn in equip `slot` (rAthena
+  `getequiprefinecost`): `type` selects the cost variant (`:normal`, `:hd`,
+  `:enriched`) and `info` the field (`:material_id` the ore nameid,
+  `:zeny_cost` the zeny). Returns `-1` for an empty/unknown slot, a variant
+  that has no entry at the item's level, an unknown `type`/`info`, or an item
+  with no refine entry. Pure read over the inventory snapshot + refine tables.
+  """
+  @spec getequiprefinecost(Ctx.t(), integer(), atom(), :material_id | :zeny_cost) :: integer()
+  def getequiprefinecost(%Ctx{game_state: nil}, _slot, _type, _info),
+    do: no_player!("getequiprefinecost/4")
+
+  def getequiprefinecost(%Ctx{} = ctx, slot, type, info) do
+    with {item, item_def} <- fetch_equipped(ctx, slot),
+         {:ok, group, item_level} <- RefineDatabase.group_and_level(item_def),
+         %{chances: chances} <- RefineDatabase.level_info(group, item_level, item.refine + 1),
+         chance when not is_nil(chance) <- Map.get(chances, type) do
+      case info do
+        :material_id -> chance.material_nameid || -1
+        :zeny_cost -> chance.price
+        _ -> -1
+      end
+    else
+      _ -> -1
+    end
+  end
+
+  @doc """
+  Counts how many of the given item/card ids are currently equipped (rAthena
+  `isequippedcnt`): a non-card id counts the worn stack once per equipped
+  copy, a card id counts each equipped card slot holding that card (duplicate
+  ids are counted once, non-positive ids ignored). Pure read over the
+  inventory snapshot; player needed.
+  """
+  @spec isequippedcnt(Ctx.t(), [integer()]) :: non_neg_integer()
+  def isequippedcnt(%Ctx{game_state: nil}, _ids), do: no_player!("isequippedcnt/2")
+
+  def isequippedcnt(%Ctx{game_state: gs}, ids) when is_list(ids) do
+    equipped = gs.inventory |> Inventory.equipped_items() |> Map.values()
+
+    ids
+    |> Enum.uniq()
+    |> Enum.reject(&(&1 <= 0))
+    |> Enum.reduce(0, fn id, acc -> acc + equip_count(equipped, id) end)
+  end
+
+  defp equip_count(equipped, id) do
+    if card_item?(id) do
+      equipped
+      |> Enum.flat_map(&InventoryItem.cards/1)
+      |> Enum.count(&(&1 == id))
+    else
+      equipped
+      |> Enum.filter(&(&1.nameid == id))
+      |> Enum.sum_by(& &1.amount)
+    end
+  end
+
+  @spec card_item?(integer()) :: boolean()
+  defp card_item?(id) do
+    case ItemManagement.get_item_by_id(id) do
+      {:ok, %ItemDefinition{type: :card}} -> true
+      _ -> false
+    end
+  end
+
+  @doc """
+  A static field of an item by `type` code (rAthena `getiteminfo`): the
+  `ITEMINFO_*` integer field selector. `item` is a nameid or an Aegis/display
+  name. Fields Aesir does not model (item max-chance, gender, alias name)
+  return `-1`; `ITEMINFO_AEGISNAME` (`18`) returns the Aegis name string.
+  Unknown items return `""` for `ITEMINFO_AEGISNAME` and `-1` otherwise; an
+  unknown `type` code returns `-1` (both matching rAthena's defaults). A pure
+  read over the item database that never raises — no player is required.
+  """
+  @spec getiteminfo(Ctx.t(), integer() | String.t(), integer()) :: integer() | String.t()
+  def getiteminfo(%Ctx{}, item, type) do
+    case resolve_item(item) do
+      {:ok, %ItemDefinition{} = definition} -> iteminfo_value(definition, type)
+      {:error, _} -> iteminfo_missing(type)
+    end
+  end
+
+  # `getiteminfo` accepts a nameid or an Aegis name string.
+  @spec resolve_item(integer() | String.t()) :: {:ok, ItemDefinition.t()} | :error
+  defp resolve_item(item) when is_integer(item), do: ItemManagement.get_item_by_id(item)
+  defp resolve_item(item) when is_binary(item), do: ItemManagement.get_item_by_aegis(item)
+
+  # rAthena `enum weapon_type` ordinals, mapped from the importer's subtype
+  # atoms. `W_2HMACE` (9) is unused and has no atom; ammo/non-weapon subtypes
+  # have no `W_*` equivalent and return `-1`.
+  @weapon_subtypes %{
+    dagger: 1,
+    one_handed_sword: 2,
+    two_handed_sword: 3,
+    one_handed_spear: 4,
+    two_handed_spear: 5,
+    one_handed_axe: 6,
+    two_handed_axe: 7,
+    mace: 8,
+    staff: 10,
+    bow: 11,
+    knuckle: 12,
+    musical: 13,
+    whip: 14,
+    book: 15,
+    katar: 16,
+    revolver: 17,
+    rifle: 18,
+    gatling: 19,
+    shotgun: 20,
+    grenade: 21,
+    huuma: 22,
+    two_handed_staff: 23
+  }
+
+  defp weapon_subtype(%ItemDefinition{subtype: subtype}) when is_atom(subtype),
+    do: Map.get(@weapon_subtypes, subtype, -1)
+
+  defp weapon_subtype(%ItemDefinition{}), do: -1
+
+  defp iteminfo_fields do
+    %{
+      0 => & &1.buy,
+      1 => & &1.sell,
+      2 => &ClientItemType.to_client_type(&1.type),
+      3 => fn _ -> -1 end,
+      4 => fn _ -> -1 end,
+      5 => &EquipLocation.location_atoms_to_bitmask(&1.locations),
+      6 => & &1.weight,
+      7 => & &1.attack,
+      8 => & &1.defense,
+      9 => & &1.range,
+      10 => & &1.slots,
+      11 => & &1.view,
+      12 => & &1.equip_level_min,
+      # Weapon/armor level read as 0 unless the item is the matching type.
+      13 => fn definition ->
+        if definition.type == :weapon, do: definition.weapon_level || 0, else: 0
+      end,
+      14 => fn _ -> -1 end,
+      15 => & &1.equip_level_max,
+      16 => & &1.magic_attack,
+      17 => & &1.id,
+      18 => & &1.aegis_name,
+      19 => fn definition ->
+        if definition.type == :armor, do: definition.armor_level || 0, else: 0
+      end,
+      20 => &weapon_subtype/1
+    }
+  end
+
+  defp iteminfo_value(%ItemDefinition{} = definition, type) do
+    case Map.get(iteminfo_fields(), type) do
+      fun when is_function(fun, 1) -> fun.(definition)
+      nil -> -1
+    end
+  end
+
+  defp iteminfo_missing(18), do: ""
+  defp iteminfo_missing(_type), do: -1
 
   @doc """
   The number `n` with its English ordinal suffix (rAthena `F_GetNumSuffix`):

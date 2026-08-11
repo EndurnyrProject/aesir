@@ -413,6 +413,99 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:give_item2, item_id, qty, attrs}" do
+    test "adds via InventoryOps with the attribute map, emits ItemAdded, returns the new game_state" do
+      definition = item_definition(@sphmask_id)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+
+      attrs = %{identify: 1, refine: 4, card0: 4001}
+      added = %InventoryItem{nameid: @sphmask_id, amount: 1}
+
+      expect(InventoryOps, :add, fn 1000, %{}, _stats, ^definition, 1, ^attrs ->
+        {:ok, %{0 => added}, {:added, 0, added}}
+      end)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_item2, @sphmask_id, 1, attrs}, base_state())
+
+      assert {:ok, game_state} = reply
+      assert game_state.inventory == %{0 => added}
+      assert new_state.game_state.inventory == %{0 => added}
+      assert_received {:send, _ch, {:item_added, %ItemAdded{}}}
+    end
+
+    test "rejects :inventory_full and mutates nothing" do
+      definition = item_definition(@sphmask_id)
+      stub(Items, :by_id, fn @sphmask_id -> {:ok, definition} end)
+      stub(InventoryOps, :add, fn _, _, _, _, _, _ -> {:error, :inventory_full} end)
+
+      state = base_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:give_item2, @sphmask_id, 1, %{}}, state)
+
+      assert reply == {:error, :inventory_full}
+      assert new_state == state
+      refute_received {:send, _ch, {:item_added, _}}
+    end
+
+    test "rejects :item_not_found for an unknown item id" do
+      stub(Items, :by_id, fn _ -> :error end)
+      reject(&InventoryOps.add/6)
+
+      state = base_state()
+      {reply, new_state} = ScriptEffectHandler.apply_op({:give_item2, 9_999_999, 1, %{}}, state)
+
+      assert reply == {:error, :item_not_found}
+      assert new_state == state
+    end
+  end
+
+  describe "{:delequip, index, nameid}" do
+    test "unequips then removes the item, emits ItemRemoved, returns the new game_state" do
+      sword = %InventoryItem{id: 1, nameid: 1201, equip: 2, amount: 1}
+      state = base_state(inventory: %{0 => sword})
+
+      Mimic.copy(EquipmentHandler)
+
+      expect(EquipmentHandler, :handle_unequip, fn 0, st -> {:noreply, st} end)
+
+      expect(InventoryOps, :remove, fn 1000, %{0 => ^sword}, 0, 1 ->
+        {:ok, %{}, {:removed, 0}}
+      end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:delequip, 0, 1201}, state)
+
+      assert {:ok, game_state} = reply
+      assert game_state.inventory == %{}
+      assert new_state.game_state.inventory == %{}
+      assert_received {:send, _ch, {:item_removed, %ItemRemoved{amount: 1}}}
+    end
+
+    test "rejects :not_equipped when the item is not worn, mutating nothing" do
+      state =
+        base_state(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 0, amount: 1}})
+
+      reject(&InventoryOps.remove/4)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:delequip, 0, 1201}, state)
+
+      assert reply == {:error, :not_equipped}
+      assert new_state == state
+      refute_received {:send, _ch, {:item_removed, _}}
+    end
+
+    test "rejects :no_item when the slot is empty or the nameid changed" do
+      state =
+        base_state(inventory: %{0 => %InventoryItem{nameid: 1201, equip: 2, amount: 1}})
+
+      reject(&InventoryOps.remove/4)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:delequip, 0, 9999}, state)
+
+      assert reply == {:error, :no_item}
+      assert new_state == state
+    end
+  end
+
   describe "{:nude}" do
     test "unequips every worn slot by folding the single-item unequip, skipping bare items" do
       test_pid = self()

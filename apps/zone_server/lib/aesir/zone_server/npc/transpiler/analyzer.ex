@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
   # Statements and expression calls the codegen shapes directly.
   @native_cmds ~w(mes next close close2 close3 end select prompt input menu
                   setarray deletearray callsub callfunc getarg getargcount rand getnpctimer
-                  getnpcid playerattached strnpcinfo checkweight getarraysize
+                  getnpcid playerattached strnpcinfo checkweight isequippedcnt getarraysize
                   implode atoi compare preg_match sprintf getitemname getstrlen pow
                   charat strtoupper substr charisalpha countstr explode insertchar
                   replacestr strpos strtolower)

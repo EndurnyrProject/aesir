@@ -35,16 +35,93 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   # implements, emitted as its native atom rather than a char-var lookup.
   def constant("SKILL_PERM"), do: {:ok, ":permanent"}
 
+  # rAthena refine cost variants, emitted as the `RefineDatabase.cost_type`
+  # atoms `getequiprefinecost`/`getequippercentrefinery` select on.
+  def constant("REFINE_COST_NORMAL"), do: {:ok, ":normal"}
+  def constant("REFINE_COST_HD"), do: {:ok, ":hd"}
+  def constant("REFINE_COST_ENRICHED"), do: {:ok, ":enriched"}
+
+  # rAthena `getequiprefinecost` third-argument selectors, emitted as the
+  # atoms the DSL switches on.
+  def constant("REFINE_MATERIAL_ID"), do: {:ok, ":material_id"}
+  def constant("REFINE_ZENY_COST"), do: {:ok, ":zeny_cost"}
+
+  # rAthena `enum iteminfo` field selectors (`getiteminfo`'s second argument).
+  def constant("ITEMINFO_BUY"), do: {:ok, "0"}
+  def constant("ITEMINFO_SELL"), do: {:ok, "1"}
+  def constant("ITEMINFO_TYPE"), do: {:ok, "2"}
+  def constant("ITEMINFO_MAXCHANCE"), do: {:ok, "3"}
+  def constant("ITEMINFO_GENDER"), do: {:ok, "4"}
+  def constant("ITEMINFO_LOCATIONS"), do: {:ok, "5"}
+  def constant("ITEMINFO_WEIGHT"), do: {:ok, "6"}
+  def constant("ITEMINFO_ATTACK"), do: {:ok, "7"}
+  def constant("ITEMINFO_DEFENSE"), do: {:ok, "8"}
+  def constant("ITEMINFO_RANGE"), do: {:ok, "9"}
+  def constant("ITEMINFO_SLOT"), do: {:ok, "10"}
+  def constant("ITEMINFO_VIEW"), do: {:ok, "11"}
+  def constant("ITEMINFO_EQUIPLEVELMIN"), do: {:ok, "12"}
+  def constant("ITEMINFO_WEAPONLEVEL"), do: {:ok, "13"}
+  def constant("ITEMINFO_ALIASNAME"), do: {:ok, "14"}
+  def constant("ITEMINFO_EQUIPLEVELMAX"), do: {:ok, "15"}
+  def constant("ITEMINFO_MAGICATTACK"), do: {:ok, "16"}
+  def constant("ITEMINFO_ID"), do: {:ok, "17"}
+  def constant("ITEMINFO_AEGISNAME"), do: {:ok, "18"}
+  def constant("ITEMINFO_ARMORLEVEL"), do: {:ok, "19"}
+  def constant("ITEMINFO_SUBTYPE"), do: {:ok, "20"}
+
   def constant(symbol) do
-    with :error <- flag_constant(symbol) do
-      [
-        &ItemResolver.resolve_class/1,
-        &ItemResolver.resolve_status/1,
-        &ItemResolver.resolve_element/1
-      ]
-      |> Enum.find_value(:error, &atom_constant(&1, symbol))
+    case weapon_subtype_constant(symbol) do
+      {:ok, value} -> {:ok, Integer.to_string(value)}
+      :error -> constant_fallback(symbol)
     end
   end
+
+  defp constant_fallback(symbol) do
+    case flag_constant(symbol) do
+      {:ok, _} = ok ->
+        ok
+
+      :error ->
+        [
+          &ItemResolver.resolve_class/1,
+          &ItemResolver.resolve_status/1,
+          &ItemResolver.resolve_element/1
+        ]
+        |> Enum.find_value(:error, &atom_constant(&1, symbol))
+    end
+  end
+
+  # rAthena `enum weapon_type` ordinals, so `getiteminfo(.., ITEMINFO_SUBTYPE)
+  # == W_1HSWORD` comparisons render against integer literals.
+  @weapon_subtypes %{
+    "W_FIST" => 0,
+    "W_DAGGER" => 1,
+    "W_1HSWORD" => 2,
+    "W_2HSWORD" => 3,
+    "W_1HSPEAR" => 4,
+    "W_2HSPEAR" => 5,
+    "W_1HAXE" => 6,
+    "W_2HAXE" => 7,
+    "W_MACE" => 8,
+    "W_2HMACE" => 9,
+    "W_STAFF" => 10,
+    "W_BOW" => 11,
+    "W_KNUCKLE" => 12,
+    "W_MUSICAL" => 13,
+    "W_WHIP" => 14,
+    "W_BOOK" => 15,
+    "W_KATAR" => 16,
+    "W_REVOLVER" => 17,
+    "W_RIFLE" => 18,
+    "W_GATLING" => 19,
+    "W_SHOTGUN" => 20,
+    "W_GRENADE" => 21,
+    "W_HUUMA" => 22,
+    "W_2HSTAFF" => 23
+  }
+
+  defp weapon_subtype_constant(symbol) when is_binary(symbol),
+    do: Map.fetch(@weapon_subtypes, symbol)
 
   defp flag_constant(symbol) do
     case Flags.value(symbol) do

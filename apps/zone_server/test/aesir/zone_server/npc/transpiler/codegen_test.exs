@@ -1167,6 +1167,57 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:getequipcardid"
   end
 
+  test "equip/item reads emit DSL calls with resolved EQI_/refine/iteminfo constants" do
+    src =
+      gen!("""
+      .@worn = getequipisequiped(EQI_ARMOR);
+      .@r = getequiprefinerycnt(EQI_HAND_R);
+      .@n = getequipname(EQI_ARMOR);
+      .@wl = getequipweaponlv(EQI_HAND_R);
+      .@al = getequiparmorlv(EQI_ARMOR);
+      .@refable = getequipisenableref(EQI_ARMOR);
+      .@pct = getequippercentrefinery(.@p);
+      .@cost = getequiprefinecost(.@p, REFINE_COST_NORMAL, REFINE_MATERIAL_ID);
+      .@zeny = getequiprefinecost(.@p, REFINE_COST_ENRICHED, REFINE_ZENY_COST);
+      .@t = getiteminfo(.@id, ITEMINFO_TYPE);
+      .@isSword = getiteminfo(.@id, ITEMINFO_SUBTYPE) == W_1HSWORD;
+      .@cnt = isequippedcnt(1201, 4001);
+      close;
+      """)
+
+    assert src =~ "getequipisequiped(ctx, 7)"
+    assert src =~ "getequiprefinerycnt(ctx, 9)"
+    assert src =~ "getequipname(ctx, 7)"
+    assert src =~ "getequipweaponlv(ctx, 9)"
+    assert src =~ "getequiparmorlv(ctx, 7)"
+    assert src =~ "getequipisenableref(ctx, 7)"
+    assert src =~ "getequippercentrefinery(ctx, get_local(ctx, :p, 0)"
+    assert src =~ "getequiprefinecost(ctx, get_local(ctx, :p, 0), :normal, :material_id)"
+    assert src =~ "getequiprefinecost(ctx, get_local(ctx, :p, 0), :enriched, :zeny_cost)"
+    assert src =~ "getiteminfo(ctx, get_local(ctx, :id, 0), 2)"
+    assert src =~ "getiteminfo(ctx, get_local(ctx, :id, 0), 20) == 2"
+    assert src =~ "isequippedcnt(ctx, [1201, 4001])"
+
+    refute src =~ "Todo.call!(:getequipisequiped"
+    refute src =~ "Todo.call!(:getiteminfo"
+    refute src =~ "Todo.call!(:getequiprefinecost"
+    refute src =~ "Todo.call!(:isequippedcnt"
+  end
+
+  test "delequip and getitem2 emit as statement DSL calls" do
+    src =
+      gen!("""
+      delequip EQI_ARMOR;
+      getitem2 4001,1,1,0,0,0,4002,0,0,0;
+      close;
+      """)
+
+    assert src =~ "ctx |> delequip(7)"
+    assert src =~ "ctx |> delequip(7) |> getitem2(4001, 1, 1, 0, 0, 0, 4002, 0, 0, 0)"
+    refute src =~ "Todo.call!(:delequip"
+    refute src =~ "Todo.call!(:getitem2"
+  end
+
   test "pure helper buildins emit Elixir-native Rathena calls" do
     src =
       gen!("""

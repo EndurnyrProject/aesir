@@ -50,11 +50,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           {:pay_zeny, non_neg_integer()}
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
+          | {:give_item2, integer(), pos_integer(), map()}
           | {:give_items_atomic, [map()]}
           | {:get_named_item, integer(), String.t() | integer()}
           | {:give_item_rental, integer(), pos_integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
           | {:delitem, integer(), pos_integer()}
+          | {:delequip, non_neg_integer(), integer()}
           | {:nude}
           | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
@@ -127,7 +129,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       tag
       when tag in [
              :give_item,
+             :give_item2,
              :delitem,
+             :delequip,
              :give_item_bound,
              :give_item_rental,
              :get_named_item,
@@ -181,6 +185,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     with {:ok, definition} <- fetch_definition(item_id),
          {:ok, persisted, change} <-
            InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty) do
+      push_added(state.connection_pid, persisted, change)
+      commit(state, %{gs | inventory: persisted})
+    else
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  # rAthena `getitem2`: grants an item with explicit identify/refine/card
+  # attributes through `InventoryOps.add`'s opts map. `attr`/`attr2` (the
+  # element attribute) have no Aesir inventory field and are dropped by the
+  # DSL before this op is built.
+  def apply_op({:give_item2, item_id, qty, attrs}, %{game_state: gs} = state) do
+    with {:ok, definition} <- fetch_definition(item_id),
+         {:ok, persisted, change} <-
+           InventoryOps.add(gs.character_id, gs.inventory, gs.stats, definition, qty, attrs) do
       push_added(state.connection_pid, persisted, change)
       commit(state, %{gs | inventory: persisted})
     else
@@ -258,6 +277,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     else
       {:error, reason} -> {{:error, reason}, state}
       nil -> {{:error, :not_enough_items}, state}
+    end
+  end
+
+  # rAthena `delequip`: removes the equipped item at `index`. It is unequipped
+  # first (appearance broadcast, stat recompute) so the client and stat layer
+  # agree, then its row is deleted. The expected `nameid` is re-checked under
+  # the single-writer as a TOCTOU guard against the script's snapshot being
+  # stale; a non-equipped or missing item rejects the op.
+  def apply_op({:delequip, index, nameid}, %{game_state: gs} = state) do
+    case Map.get(gs.inventory, index) do
+      %InventoryItem{nameid: ^nameid, equip: equip} when equip > 0 ->
+        {:noreply, unequipped_state} = EquipmentHandler.handle_unequip(index, state)
+        new_gs = unequipped_state.game_state
+
+        case InventoryOps.remove(new_gs.character_id, new_gs.inventory, index, 1) do
+          {:ok, persisted, _change} ->
+            MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, 1))
+            commit(unequipped_state, %{new_gs | inventory: persisted})
+
+          {:error, reason} ->
+            {{:error, reason}, unequipped_state}
+        end
+
+      %InventoryItem{nameid: ^nameid} ->
+        {{:error, :not_equipped}, state}
+
+      _not_or_changed ->
+        {{:error, :no_item}, state}
     end
   end
 

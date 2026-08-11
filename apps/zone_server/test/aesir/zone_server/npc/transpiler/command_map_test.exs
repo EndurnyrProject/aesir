@@ -105,8 +105,40 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{dsl: "getequipcardid", args: [:equip_slot, :int]}} =
              CommandMap.call_read("getequipcardid")
 
+    for {name, dsl} <- [
+          {"getequipisequiped", "getequipisequiped"},
+          {"getequiprefinerycnt", "getequiprefinerycnt"},
+          {"getequipname", "getequipname"},
+          {"getequipweaponlv", "getequipweaponlv"},
+          {"getequiparmorlv", "getequiparmorlv"},
+          {"getequipisenableref", "getequipisenableref"}
+        ] do
+      assert {:ok, %{dsl: ^dsl, args: [:equip_slot]}} = CommandMap.call_read(name)
+      assert CommandMap.supported?(name)
+    end
+
+    assert {:ok, %{dsl: "getequippercentrefinery", args: [:equip_slot, :int]}} =
+             CommandMap.call_read("getequippercentrefinery")
+
+    assert {:ok, %{dsl: "getequiprefinecost", args: [:equip_slot, :int, :int]}} =
+             CommandMap.call_read("getequiprefinecost")
+
+    assert {:ok, %{dsl: "getiteminfo", args: [:item, :int]}} =
+             CommandMap.call_read("getiteminfo")
+
+    assert CommandMap.supported?("getequipisequiped")
     assert CommandMap.supported?("getequipid")
     assert CommandMap.supported?("getequipcardid")
+    assert CommandMap.supported?("getiteminfo")
+  end
+
+  test "delequip and getitem2 map as statement commands" do
+    assert {:ok, %{dsl: "delequip", args: [:equip_slot]}} = CommandMap.command("delequip")
+    assert CommandMap.supported?("delequip")
+
+    assert {:ok, %{dsl: "getitem2", args: args}} = CommandMap.command("getitem2")
+    assert length(args) == 10
+    assert CommandMap.supported?("getitem2")
   end
 
   test "F_GetNumSuffix maps to the num_suffix read function" do

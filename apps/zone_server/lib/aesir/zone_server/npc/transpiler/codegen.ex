@@ -2083,6 +2083,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "Todo.call!(:checkweight, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
   end
 
+  # rAthena isequippedcnt(eq1, eq2, ...): a variable list of item/card ids
+  # collected into the DSL's list argument.
+  defp render({:call, "isequippedcnt", args}, env) when args != [] do
+    ids = Enum.map_join(args, ", ", &typed_arg(&1, :item, env))
+    "isequippedcnt(ctx, [#{ids}])"
+  end
+
+  defp render({:call, "isequippedcnt", _args}, _env), do: "isequippedcnt(ctx, [])"
+
   defp render({:call, name, args}, env) do
     case CommandMap.call_read(name) do
       {:ok, %{shape: :nullary, dsl: dsl}} when args == [] ->
