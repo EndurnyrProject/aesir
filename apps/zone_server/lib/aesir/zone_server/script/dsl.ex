@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.SkillEffect
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.Announcement
@@ -57,6 +58,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
+  alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Todo
   alias Aesir.ZoneServer.Script.Vars
@@ -102,6 +104,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   @max_refine RefineDatabase.max_refine()
   @refine_ore_amount 1
+  @npcskill_min_stat 1
+  @npcskill_max_stat 255
 
   # Idle deadline for a blocking dialog suspension. The client freezes the
   # player during a dialog, so a `receive` that never returns means the player
@@ -334,6 +338,81 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   """
   @spec cure(Ctx.t(), atom()) :: Ctx.t()
   def cure(%Ctx{} = ctx, status), do: sc_end(ctx, status)
+
+  @doc """
+  Casts a supportive skill from the running NPC on the attached player.
+
+  `skill` accepts a catalog name, numeric id, or string name; `level` is
+  clamped to the skill's maximum (a non-positive level warns and no-ops). `stat_point` and `npc_level` supply the
+  synthetic caster stats, each clamped to `1..255`. A successful cast sends a
+  skill-effect visual sourced from the NPC. Unknown or unsupported skills, cast
+  failures, and a missing NPC leave the context unchanged; a detached ctx halts
+  `:no_player`.
+  """
+  @spec npcskill(Ctx.t(), atom() | integer() | String.t(), integer(), integer(), integer()) ::
+          Ctx.t()
+  def npcskill(%Ctx{status: {:error, _}} = ctx, _skill, _level, _stat_point, _npc_level), do: ctx
+
+  def npcskill(%Ctx{game_state: nil} = ctx, _skill, _level, _stat_point, _npc_level),
+    do: Ctx.halt(ctx, :no_player)
+
+  def npcskill(%Ctx{npc_gid: nil} = ctx, skill, _level, _stat_point, _npc_level) do
+    Logger.warning("npcskill called without an NPC for #{inspect(skill)}")
+    ctx
+  end
+
+  def npcskill(%Ctx{} = ctx, skill, level, stat_point, npc_level) do
+    with {:ok, definition} <- resolve_npcskill_definition(skill),
+         caster <-
+           SkillCaster.new(
+             ctx.npc_gid,
+             clamp_npcskill_stat(stat_point),
+             clamp_npcskill_stat(npc_level),
+             {ctx.game_state.x, ctx.game_state.y},
+             ctx.game_state.map_name
+           ),
+         {:ok, _} <- SkillInterpreter.npc_cast(caster, definition.id, level, {:unit, ctx.char_id}) do
+      Broadcast.to_in_range(
+        ctx.game_state.map_name,
+        ctx.game_state.x,
+        ctx.game_state.y,
+        Config.view_range(),
+        %SkillEffect{
+          skill_id: definition.id,
+          level: min(level, definition.max_level),
+          src_id: ctx.npc_gid,
+          target_id: ctx.char_id,
+          result: 1
+        }
+      )
+    else
+      :error ->
+        Logger.warning(
+          "npcskill failed for #{inspect(skill)} from NPC #{ctx.npc_gid}: unknown skill"
+        )
+
+      {:error, reason} ->
+        Logger.warning("npcskill failed for #{inspect(skill)} from NPC #{ctx.npc_gid}: #{reason}")
+    end
+
+    ctx
+  end
+
+  defp resolve_npcskill_definition(skill) when is_atom(skill), do: Catalog.by_name(skill)
+  defp resolve_npcskill_definition(skill) when is_integer(skill), do: Catalog.by_id(skill)
+
+  defp resolve_npcskill_definition(skill) when is_binary(skill) do
+    skill
+    |> String.downcase()
+    |> String.to_existing_atom()
+    |> Catalog.by_name()
+  rescue
+    ArgumentError -> :error
+  end
+
+  defp resolve_npcskill_definition(_skill), do: :error
+
+  defp clamp_npcskill_stat(value), do: value |> max(@npcskill_min_stat) |> min(@npcskill_max_stat)
 
   @doc """
   Plays a one-shot `EF_*` visual effect on the player, shown to every player in
