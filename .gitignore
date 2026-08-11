@@ -138,6 +138,7 @@ docs/superpowers
 
 # Generated data caches (rebuilt from priv/db/*/*.yml on boot)
 apps/zone_server/priv/db/items/.cache/
+apps/zone_server/priv/db/item_groups/.cache/
 apps/zone_server/priv/db/jobs/.cache/
 apps/zone_server/priv/db/mobs/.cache/
 apps/zone_server/priv/db/skills/.cache/

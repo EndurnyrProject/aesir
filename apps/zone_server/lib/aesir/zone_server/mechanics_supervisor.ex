@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs, as: HomunculusCatalogs
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   def init([]) do
     :ok = MapCache.init()
     :ok = Interpreter.init()
+    :ok = ItemGroups.reload()
     :ok = ScriptCompiler.compile_all!()
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
     :ok = NpcEvents.run_on_init()
