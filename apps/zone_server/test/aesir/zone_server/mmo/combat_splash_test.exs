@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   @caster_id 1000
