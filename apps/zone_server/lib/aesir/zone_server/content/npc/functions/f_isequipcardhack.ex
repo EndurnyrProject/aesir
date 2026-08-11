@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack do
         set_local(
           ctx,
           :card_chk,
-          Todo.call!(:getequipcardid, [get_local(ctx, :pos, 0), get_local(ctx, :i, 0)])
+          getequipcardid(ctx, get_local(ctx, :pos, 0), get_local(ctx, :i, 0))
         )
 
       ctx =

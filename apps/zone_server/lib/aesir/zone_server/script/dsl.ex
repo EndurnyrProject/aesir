@@ -2216,6 +2216,26 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     end
   end
 
+  @doc """
+  The value stored in card slot `card_slot` (`0..3`) of the item worn in equip
+  slot `equip_slot` (rAthena `getequipcardid`). Returns `0` when the equipment
+  slot is empty or unknown, or when the card slot is outside `0..3`.
+  """
+  @spec getequipcardid(Ctx.t(), integer(), integer()) :: integer()
+  def getequipcardid(%Ctx{game_state: nil}, _equip_slot, _card_slot),
+    do: no_player!("getequipcardid/3")
+
+  def getequipcardid(%Ctx{}, _equip_slot, card_slot) when card_slot not in 0..3, do: 0
+
+  def getequipcardid(%Ctx{game_state: gs}, equip_slot, card_slot) do
+    with location when not is_nil(location) <- Map.get(@equip_slot_locations, equip_slot),
+         %InventoryItem{} = item <- equipped_in_slot(gs.inventory, location) do
+      item |> InventoryItem.cards() |> Enum.at(card_slot)
+    else
+      _ -> 0
+    end
+  end
+
   @spec equipped_in_slot(Inventory.t(), atom()) :: InventoryItem.t() | nil
   defp equipped_in_slot(inventory, location) do
     inventory

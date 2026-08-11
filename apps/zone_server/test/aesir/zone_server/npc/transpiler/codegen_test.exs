@@ -1151,17 +1151,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :repair"
   end
 
-  test "getequipid resolves EQI_* slots to their ordinal and passes ints through" do
+  test "equipment reads resolve EQI_* slots to ordinals and pass dynamic values through" do
     src =
       gen!("""
       .@top = getequipid(EQI_HEAD_TOP);
       .@dyn = getequipid(.@slot);
+      .@card = getequipcardid(EQI_ARMOR, .@card_slot);
       close;
       """)
 
     assert src =~ "getequipid(ctx, 6)"
     assert src =~ "getequipid(ctx, get_local(ctx, :slot, 0))"
+    assert src =~ "getequipcardid(ctx, 7, get_local(ctx, :card_slot, 0))"
     refute src =~ "Todo.call!(:getequipid"
+    refute src =~ "Todo.call!(:getequipcardid"
   end
 
   test "killmonster maps map and event to its DSL op, dropping the type flag" do

@@ -179,6 +179,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     },
     "isequipped" => %{dsl: "is_equipped", args: [:item]},
     "getequipid" => %{dsl: "getequipid", args: [:equip_slot]},
+    "getequipcardid" => %{dsl: "getequipcardid", args: [:equip_slot, :int]},
     "strcharinfo" => %{dsl: "char_name", args: [:int]},
     "jobname" => %{dsl: "job_name", args: [:int]},
     "isbegin_quest" => %{dsl: "isbegin_quest", args: [:int]},

@@ -3795,7 +3795,7 @@
     "source_hash": "08b91a8b46759d1febb5d2b23a48460be56138114fd476d722e441fb0ae4ce35"
   },
   "other/Global_Functions.txt|function|F_IsEquipCardHack|-": {
-    "output_hash": "99738148f882092dff4ce24c8a1b905344a7a81f5a3069737c04973ad784984d",
+    "output_hash": "23c24749476130e14feacfe6e87564a4ef35bd0f39b729f83158c013c77a17af",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_isequipcardhack.ex",
     "source_hash": "bf2db8a40c348c1365ab434dfa411586c2c1d2fee2133da4a10edb2dd0639989"
   },

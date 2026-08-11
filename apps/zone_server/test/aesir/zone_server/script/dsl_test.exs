@@ -656,6 +656,36 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.getequipid(ctx, 99) == -1
     end
 
+    test "getequipcardid/3 returns each card value from the equipped item" do
+      ctx =
+        build_ctx(
+          inventory: %{
+            0 => %InventoryItem{
+              nameid: 2301,
+              equip: 0x10,
+              card0: 4001,
+              card1: 255,
+              card2: 254,
+              card3: -255
+            }
+          }
+        )
+
+      assert Dsl.getequipcardid(ctx, 7, 0) == 4001
+      assert Dsl.getequipcardid(ctx, 7, 1) == 255
+      assert Dsl.getequipcardid(ctx, 7, 2) == 254
+      assert Dsl.getequipcardid(ctx, 7, 3) == -255
+    end
+
+    test "getequipcardid/3 returns 0 for empty, unknown, or invalid slots" do
+      ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 2301, equip: 0x10, card0: 4001}})
+
+      assert Dsl.getequipcardid(ctx, 6, 0) == 0
+      assert Dsl.getequipcardid(ctx, 99, 0) == 0
+      assert Dsl.getequipcardid(ctx, 7, -1) == 0
+      assert Dsl.getequipcardid(ctx, 7, 4) == 0
+    end
+
     test "num_suffix/2 appends the English ordinal suffix (matching rAthena)" do
       ctx = build_ctx()
 

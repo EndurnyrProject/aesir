@@ -99,9 +99,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("Nude")
   end
 
-  test "getequipid maps to a read with an equip-slot arg" do
+  test "equipment reads map with equip-slot args" do
     assert {:ok, %{dsl: "getequipid", args: [:equip_slot]}} = CommandMap.call_read("getequipid")
+
+    assert {:ok, %{dsl: "getequipcardid", args: [:equip_slot, :int]}} =
+             CommandMap.call_read("getequipcardid")
+
     assert CommandMap.supported?("getequipid")
+    assert CommandMap.supported?("getequipcardid")
   end
 
   test "F_GetNumSuffix maps to the num_suffix read function" do
