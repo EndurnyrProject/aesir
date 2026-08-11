@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Script.Ctx
@@ -396,6 +397,51 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       id: id,
       color: color
     })
+
+    ctx
+  end
+
+  @doc """
+  Registers a quest-icon bubble on the running NPC (rAthena `questinfo`,
+  packet `ZC_QUEST_NOTIFY_EFFECT`). Called from an `OnInit` handler with no
+  player attached: it records the icon on the NPC's `npc_gid` rather than
+  sending anything, and `Aesir.ZoneServer.Unit.Player.QuestInfoView` later
+  evaluates it per player.
+
+  `icon` is an `e_questinfo_types` value (`QTYPE_*`, `9999` clears), `color` an
+  `e_questinfo_markcolor` value (`QMARK_*`, default `0`/none), and `condition`
+  an optional `(Ctx.t() -> boolean())` predicate evaluated against each
+  player's state (a bubble with no condition always shows). Multiple calls on
+  one NPC accumulate in declaration order; the first passing entry wins.
+
+  A no-op on a halted ctx or one with no NPC (`npc_gid` nil).
+  """
+  @spec questinfo(
+          Ctx.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          (Ctx.t() -> boolean()) | nil
+        ) :: Ctx.t()
+  def questinfo(ctx, icon, color \\ 0, condition \\ nil)
+  def questinfo(%Ctx{status: {:error, _}} = ctx, _icon, _color, _condition), do: ctx
+  def questinfo(%Ctx{npc_gid: nil} = ctx, _icon, _color, _condition), do: ctx
+
+  def questinfo(%Ctx{npc_gid: gid} = ctx, icon, color, condition) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} ->
+        NpcQuestInfo.register(
+          gid,
+          placement.map,
+          placement.x,
+          placement.y,
+          icon,
+          color,
+          condition
+        )
+
+      :error ->
+        :ok
+    end
 
     ctx
   end

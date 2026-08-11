@@ -1344,4 +1344,56 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert src =~ ~S{todo(:set_var, ["'progress", 1])}
   end
+
+  test "questinfo resolves icon/color constants and transpiles its condition" do
+    src =
+      gen!("""
+      mes "hi";
+      close;
+
+      OnInit:
+        questinfo QTYPE_QUEST,QMARK_YELLOW,"isbegin_quest(17017) == 1";
+        questinfo QTYPE_DAILYQUEST, QMARK_YELLOW, "illusion_moonlight > 6 && checkquest(7785,PLAYTIME) == 2";
+        end;
+      """)
+
+    assert src =~
+             ~S|questinfo(ctx, 0, 1, fn ctx -> isbegin_quest(ctx, 17017) == 1 end)|
+
+    assert src =~ "questinfo(ctx, 7, 1, fn ctx ->"
+    assert src =~ "get_char_var(ctx, :illusion_moonlight, 0) > 6"
+    assert src =~ "checkquest(ctx, 7785, :playtime) == 2"
+    refute src =~ "todo(ctx, :questinfo"
+  end
+
+  test "questinfo without a condition resolves the icon and optional color only" do
+    src =
+      gen!("""
+      mes "hi";
+      close;
+
+      OnInit:
+        questinfo QTYPE_JOB;
+        questinfo QTYPE_QUEST, QMARK_GREEN;
+        end;
+      """)
+
+    assert src =~ "questinfo(2)"
+    assert src =~ "questinfo(0, 2)"
+    refute src =~ "todo(ctx, :questinfo"
+  end
+
+  test "questinfo with a dynamic (non-literal) condition stays a stub" do
+    src =
+      gen!(~S"""
+      mes "hi";
+      close;
+
+      OnInit:
+        questinfo QTYPE_QUEST,QMARK_YELLOW,"isbegin_quest(17026) == 1 && isbegin_quest(" + .@qid + ") == 0";
+        end;
+      """)
+
+    assert src =~ "todo(ctx, :questinfo"
+  end
 end

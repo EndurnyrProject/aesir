@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
@@ -97,9 +98,52 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
         {:reply, reply, new_state}
 
       _ok_reply ->
+        announce_change(op, new_state.game_state.character_id)
         {:reply, reply, StateCommit.commit(new_state, new_state.game_state)}
     end
   end
+
+  # Announce the domain fact a successful script op represents, so reactors
+  # (quest-icon bubbles today) can respond without this handler naming them.
+  # Ops with no bearing on observable player state emit nothing.
+  defp announce_change(op, char_id) do
+    case op_fact(op) do
+      :quest_changed -> PlayerEvents.quest_changed(char_id)
+      :inventory_changed -> PlayerEvents.inventory_changed(char_id)
+      :progression_changed -> PlayerEvents.progression_changed(char_id)
+      :vars_changed -> PlayerEvents.vars_changed(char_id)
+      nil -> :ok
+    end
+  end
+
+  defp op_fact(op) when is_tuple(op) do
+    case elem(op, 0) do
+      tag when tag in [:setquest, :erasequest, :completequest, :changequest] ->
+        :quest_changed
+
+      tag when tag in [:change_job, :getexp] ->
+        :progression_changed
+
+      tag
+      when tag in [
+             :give_item,
+             :delitem,
+             :give_item_bound,
+             :give_item_rental,
+             :get_named_item,
+             :give_items_atomic
+           ] ->
+        :inventory_changed
+
+      tag when tag in [:set_char_var, :set_temp_var] ->
+        :vars_changed
+
+      _ ->
+        nil
+    end
+  end
+
+  defp op_fact(_op), do: nil
 
   @doc """
   Applies `op` to the session `state`, returning `{reply, new_state}`.

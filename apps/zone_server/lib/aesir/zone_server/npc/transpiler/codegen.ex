@@ -46,6 +46,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @arith %{+: "+", -: "-", *: "*"}
   @bitwise %{&: "band", |: "bor", ^: "bxor", shl: "bsl", shr: "bsr"}
 
+  # rAthena `e_questinfo_types` / `e_questinfo_markcolor` (script.hpp) → the
+  # client icon/color ints the `questinfo` bubble carries. `QTYPE_NONE` (9999)
+  # clears a bubble.
+  @quest_icons %{
+    "QTYPE_QUEST" => 0,
+    "QTYPE_QUEST2" => 1,
+    "QTYPE_JOB" => 2,
+    "QTYPE_JOB2" => 3,
+    "QTYPE_EVENT" => 4,
+    "QTYPE_EVENT2" => 5,
+    "QTYPE_WARG" => 6,
+    "QTYPE_CLICKME" => 6,
+    "QTYPE_DAILYQUEST" => 7,
+    "QTYPE_WARG2" => 8,
+    "QTYPE_EVENT3" => 8,
+    "QTYPE_JOBQUEST" => 9,
+    "QTYPE_JUMPING_PORING" => 10,
+    "QTYPE_NONE" => 9999
+  }
+  @quest_marks %{
+    "QMARK_NONE" => 0,
+    "QMARK_YELLOW" => 1,
+    "QMARK_GREEN" => 2,
+    "QMARK_PURPLE" => 3
+  }
+
   @script_end "throw({:script_end, ctx})"
 
   @pipe_rebind ~r/^ctx = ([a-z_][a-zA-Z0-9_]*[!?]?)\(ctx(?:, (.+))?\)$/
@@ -1033,6 +1059,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # Trailing/optional buildin args beyond the declared arity (e.g. `emotion`'s
   # target) are dropped, not padded onto the DSL call; all args are still
   # hoisted first so any side effect in a dropped arg is preserved.
+  # `questinfo <Icon>{,<Map Mark Color>{,"<condition>"}}` — an OnInit-only
+  # registration. The icon/mark-color constants resolve to their client ints;
+  # a string-literal condition transpiles into a `(ctx -> boolean)` predicate
+  # closure. A dynamic (non-literal) condition, an unknown icon/color constant,
+  # or an unexpected arity stays a stub.
+  defp emit_mapped(name, %{shape: :questinfo, dsl: dsl}, args, env) do
+    case questinfo_call(dsl, args, env) do
+      {:ok, line} ->
+        {[line], :cont}
+
+      :error ->
+        {pre, args} = hoist_all(args, env)
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+    end
+  end
+
   defp emit_mapped(_name, %{dsl: dsl, args: types}, args, env) do
     {pre, args} = hoist_all(args, env)
 
@@ -1043,6 +1086,55 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
 
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
+  end
+
+  defp questinfo_call(dsl, [icon], _env) do
+    with {:ok, icon_v} <- quest_const(@quest_icons, icon) do
+      {:ok, "ctx = #{dsl}(ctx, #{icon_v})"}
+    end
+  end
+
+  defp questinfo_call(dsl, [icon, color], _env) do
+    with {:ok, icon_v} <- quest_const(@quest_icons, icon),
+         {:ok, color_v} <- quest_const(@quest_marks, color) do
+      {:ok, "ctx = #{dsl}(ctx, #{icon_v}, #{color_v})"}
+    end
+  end
+
+  defp questinfo_call(dsl, [icon, color, {:str, condition}], env) do
+    with {:ok, icon_v} <- quest_const(@quest_icons, icon),
+         {:ok, color_v} <- quest_const(@quest_marks, color),
+         {:ok, closure} <- questinfo_condition(condition, env) do
+      {:ok, "ctx = #{dsl}(ctx, #{icon_v}, #{color_v}, #{closure})"}
+    end
+  end
+
+  defp questinfo_call(_dsl, _args, _env), do: :error
+
+  # An icon/mark argument is a named constant (`QTYPE_QUEST`) or a raw int.
+  defp quest_const(_table, {:int, n}), do: {:ok, to_string(n)}
+
+  defp quest_const(table, {:name, s}) do
+    case Map.fetch(table, String.upcase(s)) do
+      {:ok, v} -> {:ok, to_string(v)}
+      :error -> :error
+    end
+  end
+
+  defp quest_const(_table, _arg), do: :error
+
+  # Transpiles a questinfo condition string (rAthena parses it as its own
+  # script expression) into a `(ctx -> boolean)` closure, reusing the standard
+  # expression codegen. Parsed via a `set` wrapper so the whole string is read
+  # as one expression. Anything that fails to parse stays a stub.
+  defp questinfo_condition(condition, env) do
+    case Parser.parse_body("set .@qicond, " <> condition <> ";") do
+      {:ok, [{:assign, _target, cond_ast}]} ->
+        {:ok, "fn ctx -> #{cond_str(cond_ast, env)} end"}
+
+      _ ->
+        :error
+    end
   end
 
   defp rental_random_options(option_ids, option_values, option_params, env) do

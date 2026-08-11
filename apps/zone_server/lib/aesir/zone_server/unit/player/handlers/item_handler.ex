@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1, so
@@ -88,6 +89,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
           ok: true,
           reason: 0
         })
+
+        PlayerEvents.inventory_changed(char_id)
 
         {:noreply, committed}
 

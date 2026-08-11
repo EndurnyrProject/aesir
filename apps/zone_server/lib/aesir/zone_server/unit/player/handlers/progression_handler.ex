@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -567,6 +568,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     sync_client(new_state, progression)
     persist(game_state, extra_persist)
     new_state = StateCommit.commit(%{state | game_state: previous_game_state}, game_state)
+
+    PlayerEvents.progression_changed(game_state.character_id)
 
     {:noreply, new_state}
   end

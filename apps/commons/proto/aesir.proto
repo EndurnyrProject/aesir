@@ -217,6 +217,8 @@ message Envelope {
     TradeOfferUpdate trade_offer_update = 183;
     TradeCompleted trade_completed = 184;
     TradeCancelled trade_cancelled = 185;
+    // 186: per-player quest-icon bubble over an NPC (script questinfo buildin)
+    QuestInfoIcon quest_info_icon = 186;
   }
 }
 
@@ -569,6 +571,18 @@ message SpecialEffect {
 
 // Server -> client, a minimap/compass marker (replaces RO ZC_COMPASS 0x0144).
 // Sent only to the invoking player (script `viewpoint`).
+// Server -> client, a per-player quest-icon bubble shown over an NPC, with an
+// optional minimap mark (rAthena `questinfo` buildin, replaces
+// ZC_QUEST_NOTIFY_EFFECT 0x446). Sent only to the player who meets the NPC's
+// questinfo condition; re-sent as state changes (item/level/job/quest/map).
+message QuestInfoIcon {
+  uint32 npc_id = 1;   // the NPC that owns the bubble (rAthena bl->id)
+  uint32 x = 2;        // NPC cell x
+  uint32 y = 3;        // NPC cell y
+  uint32 icon = 4;     // e_questinfo_types (QTYPE_*): 0 quest .. 10 jumping-poring; 9999 QTYPE_NONE clears
+  uint32 color = 5;    // e_questinfo_markcolor (QMARK_*): 0 none / 1 yellow / 2 green / 3 purple
+}
+
 message Viewpoint {
   uint32 npc_id = 1;   // the NPC that owns the marker (rAthena st->oid)
   uint32 type = 2;     // action: 0 remove / 1 display / 2 display+remove-others

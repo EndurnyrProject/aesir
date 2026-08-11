@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatPoint
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -62,6 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
       ) do
     char_id = game_state.character_id
     old_base_level = game_state.stats.progression.base_level
+    old_job_level = game_state.stats.progression.job_level
 
     modifiers = ModifierCalculator.get_all_modifiers(:player, char_id)
 
@@ -99,6 +101,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler do
     sync_client(new_state, progression)
     persist(char_id, stats)
     new_state = StateCommit.commit(state, game_state)
+
+    # Announce a base/job level-up (skip the far more frequent no-level-change
+    # EXP ticks) so reactors like quest-icon bubbles can respond.
+    if progression.base_level != old_base_level or progression.job_level != old_job_level do
+      PlayerEvents.progression_changed(char_id)
+    end
 
     {:noreply, new_state}
   end

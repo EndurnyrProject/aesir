@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Shop, as: ShopCore
@@ -106,6 +107,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
            transact_buy(gs.character_id, gs.inventory, gs.zeny, total_cost, item_adds) do
       new_state = finalize_buy(state, inventory, changes, total_cost)
       reply(connection_pid, %NpcBuyResult{result: @result_ok})
+      PlayerEvents.inventory_changed(gs.character_id)
       {:noreply, new_state}
     else
       {:error, reason} ->
@@ -142,6 +144,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler do
            transact_sell(gs.character_id, gs.inventory, gs.zeny, total_credit, removals) do
       new_state = finalize_sell(state, inventory, removals, total_credit)
       reply(connection_pid, %NpcSellResult{result: @result_ok})
+      PlayerEvents.inventory_changed(gs.character_id)
       {:noreply, new_state}
     else
       {:error, reason} ->

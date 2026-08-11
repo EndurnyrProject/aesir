@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
+  alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -129,6 +130,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
          ) do
       {:ok, persisted, change} ->
         notify_added(state.connection_pid, persisted, change)
+        PlayerEvents.inventory_changed(game_state.character_id)
 
         {:ok, %{state | game_state: %{game_state | inventory: persisted}}}
 

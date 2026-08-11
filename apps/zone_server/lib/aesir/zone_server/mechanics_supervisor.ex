@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
+  alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.ShopVerifier
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = ItemGroups.reload()
     :ok = ScriptCompiler.compile_all!()
     :ok = NpcVerifier.verify!(NpcRegistry.reload().entries)
+    :ok = NpcQuestInfo.reload()
     :ok = NpcEvents.run_on_init()
     :ok = Warps.reload()
     :ok = Shops.reload()

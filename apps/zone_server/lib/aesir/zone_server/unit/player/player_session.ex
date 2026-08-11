@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.QuestInfoView
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -565,6 +566,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # we enter view of can read it to build our spawn packet.
     state = update_game_state(state, game_state)
 
+    # Show the map's quest-icon bubbles for this player after they load in.
+    QuestInfoView.request_refresh()
+
     case HomunculusCommandHandler.spawned(state) do
       {:noreply, state} ->
         # Check initial visibility for players and mobs
@@ -600,7 +604,28 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     state = update_game_state(state, game_state)
     updated_game_state = MovementHandler.handle_visibility_update(state.game_state)
     state = update_game_state(state, updated_game_state)
+
+    # Re-evaluate quest-icon bubbles for the destination map.
+    QuestInfoView.request_refresh()
+
     HomunculusCommandHandler.entered_after_warp(state)
+  end
+
+  # Player-state facts (PlayerEvents) that can flip a questinfo condition. The
+  # emitters (inventory/shop/experience/progression/script handlers) announce
+  # what they did without naming QuestInfo; the session reacts by re-evaluating
+  # this player's quest-icon bubbles.
+  @impl true
+  def handle_info(event, state)
+      when event in [:inventory_changed, :progression_changed, :quest_changed, :vars_changed] do
+    QuestInfoView.request_refresh()
+    {:noreply, state}
+  end
+
+  @impl true
+  def handle_info(:refresh_quest_info, state) do
+    QuestInfoView.coalesce()
+    {:noreply, QuestInfoView.refresh(state)}
   end
 
   @impl true

@@ -51,6 +51,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
+  - `%{shape: :questinfo, dsl: name}` — `questinfo <Icon>{,<Mark Color>{,"<cond>"}}`
+    (OnInit-only): the `QTYPE_*`/`QMARK_*` constants resolve to their client
+    ints and a string-literal condition transpiles into a `(ctx -> boolean)`
+    predicate closure; a dynamic condition, unknown constant, or unexpected
+    arity stays a stub.
   - `%{shape: :announce, dsl: name, fixed: n}` — the broadcast buildins
     (`announce`/`mapannounce`/`areaannounce`/`broadcast`, plus `dispbottom`,
     the self-scoped chat-box message): keep the `n` fixed prefix args plus an
@@ -129,6 +134,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "erasequest" => %{dsl: "erasequest", args: [:int]},
     "completequest" => %{dsl: "completequest", args: [:int]},
     "changequest" => %{dsl: "changequest", args: [:int, :int]},
+    "questinfo" => %{shape: :questinfo, dsl: "questinfo"},
     "repair" => %{dsl: "repair", args: [:int]},
     "repairall" => %{shape: :nullary, dsl: "repairall"},
     "skill" => %{dsl: "skill", args: [:skill, :int, :int]}
