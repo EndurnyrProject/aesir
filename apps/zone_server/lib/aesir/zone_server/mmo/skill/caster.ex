@@ -3,11 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   Identity and geometry interface shared by skill casters.
   """
 
+  alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  @type kind :: :player | :homunculus | :mob
+  @type kind :: :player | :homunculus | :mob | :npc
   @type state :: any()
 
   @callback kind() :: kind()
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   def for(%PlayerState{}), do: __MODULE__.Player
   def for(%HomunculusState{}), do: __MODULE__.Homunculus
   def for(%MobState{}), do: __MODULE__.Mob
+  def for(%SkillCaster{}), do: SkillCaster
 
   def for(%module{}) do
     raise ArgumentError, "unsupported skill caster struct: #{inspect(module)}"
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster do
   def for_kind(:player), do: __MODULE__.Player
   def for_kind(:homunculus), do: __MODULE__.Homunculus
   def for_kind(:mob), do: __MODULE__.Mob
+  def for_kind(:npc), do: SkillCaster
 
   def for_kind(other) do
     raise ArgumentError, "unsupported caster kind: #{inspect(other)}"

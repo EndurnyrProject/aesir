@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
   @type t() :: %__MODULE__{
           unit_id: integer(),
-          unit_type: :player | :mob | :homunculus | :skill_unit,
+          unit_type: :player | :mob | :npc | :homunculus | :skill_unit,
           social_root: Aesir.ZoneServer.Unit.Ref.t() | nil,
           reward_root: {:player, pos_integer()} | nil,
           party_id: non_neg_integer(),
@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       combatant.unit_id <= 0 ->
         {:error, "Invalid unit_id: must be positive integer"}
 
-      combatant.unit_type not in [:player, :mob, :homunculus, :skill_unit] ->
+      combatant.unit_type not in [:player, :mob, :npc, :homunculus, :skill_unit] ->
         {:error, "Invalid unit_type"}
 
       not is_map(combatant.base_stats) ->
@@ -249,7 +249,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   @doc """
   Gets the unit type for this combatant.
   """
-  @spec get_unit_type(t()) :: :player | :mob | :homunculus | :skill_unit
+  @spec get_unit_type(t()) :: :player | :mob | :npc | :homunculus | :skill_unit
   def get_unit_type(%__MODULE__{unit_type: unit_type}), do: unit_type
 
   @doc """
@@ -278,6 +278,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     |> Map.put_new(:reward_root, nil)
   end
 
+  defp with_roots(%{unit_type: :npc, unit_id: unit_id} = attrs) do
+    attrs
+    |> Map.put_new(:social_root, {:npc, unit_id})
+    |> Map.put_new(:reward_root, nil)
+  end
+
   defp with_roots(attrs), do: attrs
 
   defp valid_roots?(%__MODULE__{
@@ -293,6 +299,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
          unit_type: :mob,
          unit_id: unit_id,
          social_root: {:mob, unit_id},
+         reward_root: nil
+       })
+       when is_integer(unit_id) and unit_id > 0,
+       do: true
+
+  defp valid_roots?(%__MODULE__{
+         unit_type: :npc,
+         unit_id: unit_id,
+         social_root: {:npc, unit_id},
          reward_root: nil
        })
        when is_integer(unit_id) and unit_id > 0,
