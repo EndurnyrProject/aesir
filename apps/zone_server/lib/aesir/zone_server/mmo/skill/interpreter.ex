@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Castability
   alias Aesir.ZoneServer.Mmo.Skill.CastContext
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
@@ -42,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -482,6 +484,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def item_cast(%PlayerState{}, _skill_id, _level, _target), do: {:error, :invalid_level}
   def item_cast(_game_state, _skill_id, _level, _target), do: {:error, :unsupported_caster}
 
+  @doc """
+  Runs a scripted NPC support cast without player-cast costs or pacing.
+
+  This path skips learned level, SP/HP/zeny, catalysts, ammo, weight, cooldown,
+  cast time, range, and the act-delay gate. It arms neither cooldown nor act
+  delay because the command has no cooldown and its synthetic caster is one-shot.
+  """
+  @spec npc_cast(SkillCaster.t(), integer() | atom(), pos_integer(), {:unit, integer()}) ::
+          {:ok, SkillCaster.t()} | {:error, atom()}
+  def npc_cast(%SkillCaster{} = caster, skill, level, {:unit, target_id})
+      when is_integer(level) and level > 0 and is_integer(target_id) do
+    with {:ok, definition} <- fetch_definition(skill),
+         level = clamp_level(level, definition),
+         :ok <- check_castable(definition),
+         :ok <- check_support_target(definition),
+         :ok <- check_npc_facilities(definition),
+         {:ok, module} <- fetch_active_module(definition),
+         :ok <- module.validate(caster, {:unit, target_id}, level, definition) do
+      invoke_npc_cast(module, caster, {:unit, target_id}, level, definition)
+    end
+  end
+
+  def npc_cast(%SkillCaster{}, _skill, _level, _target), do: {:error, :invalid_level}
+  def npc_cast(_caster, _skill, _level, _target), do: {:error, :unsupported_caster}
+
   @doc "Resolves the committed after-cast duration, including Monk combo flooring."
   @spec resolved_after_cast_delay(PlayerState.t() | map(), Definition.t(), pos_integer()) ::
           non_neg_integer()
@@ -844,18 +871,50 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   defp instant_result(caster, %{instant_effects: effects}), do: {:instant, caster, effects}
   defp instant_result(caster, _prepared_cost), do: {:instant, caster}
 
-  defp fetch_definition(skill_id) do
+  defp fetch_definition(skill_id) when is_integer(skill_id) do
     case Catalog.by_id(skill_id) do
       {:ok, definition} -> {:ok, definition}
       :error -> {:error, :unknown_skill}
     end
   end
 
+  defp fetch_definition(skill_name) when is_atom(skill_name) do
+    case Catalog.by_name(skill_name) do
+      {:ok, definition} -> {:ok, definition}
+      :error -> {:error, :unknown_skill}
+    end
+  end
+
+  defp fetch_definition(_skill), do: {:error, :unknown_skill}
+
+  defp clamp_level(level, definition), do: min(level, definition.max_level)
+
   defp check_max_level(definition, level) when level <= definition.max_level, do: :ok
   defp check_max_level(_definition, _level), do: {:error, :invalid_level}
 
   defp check_castable(%{target_type: :passive}), do: {:error, :passive_skill}
   defp check_castable(_definition), do: :ok
+
+  defp check_support_target(%{target_type: type}) when type in [:target_ally, :target_any],
+    do: :ok
+
+  defp check_support_target(_definition), do: {:error, :unsupported_skill}
+
+  defp check_npc_facilities(definition) do
+    case Castability.check(definition, :npc) do
+      :ok -> :ok
+      {:error, {:missing, _requirements}} -> {:error, :missing_caster_facilities}
+    end
+  end
+
+  defp invoke_npc_cast(module, caster, target, level, definition) do
+    case module.cast(caster, target, level, definition) do
+      {:ok, _caster} -> {:ok, caster}
+      {:ok, _caster, :no_consume} -> {:ok, caster}
+      {:error, _reason} = error -> error
+      _other -> {:error, :unsupported_skill}
+    end
+  end
 
   defp check_weapon(_game_state, %{require_weapon: []}), do: :ok
 
