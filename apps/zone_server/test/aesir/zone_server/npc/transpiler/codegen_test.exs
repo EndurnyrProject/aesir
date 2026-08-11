@@ -536,6 +536,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "get_char_var(ctx, :SKILL_PERM"
   end
 
+  test "npcskill emits calls for named and numeric skills" do
+    named = gen!("npcskill \"AL_HEAL\",10,99,60;")
+    numeric = gen!("npcskill 28,10,99,60;")
+
+    assert named =~ "npcskill(ctx, 28, 10, 99, 60)"
+    assert numeric =~ "npcskill(ctx, 28, 10, 99, 60)"
+    refute named =~ "todo(ctx, :npcskill"
+    refute numeric =~ "todo(ctx, :npcskill"
+  end
+
   test "server and account scopes route to their store DSL ops" do
     src =
       gen!("""

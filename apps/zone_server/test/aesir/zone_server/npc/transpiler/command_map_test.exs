@@ -43,6 +43,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, ":permanent"} = Resolver.constant("SKILL_PERM")
   end
 
+  test "npcskill maps to the npcskill DSL op" do
+    assert {:ok, %{dsl: "npcskill", args: [:skill, :int, :int, :int]}} =
+             CommandMap.command("npcskill")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")
