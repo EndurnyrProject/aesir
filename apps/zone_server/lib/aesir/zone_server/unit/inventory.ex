@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Unit.Inventory do
   @moduledoc """
-  Pure domain core for a character's in-session inventory.
+  Domain core for a character's in-session inventory.
 
-  Operates purely on the indexed inventory map carried by `PlayerState`
-  (`%{non_neg_integer() => InventoryItem.t()}`) and returns a change descriptor
-  describing what happened. There is no database access, no socket, and no other
-  side effect here; persistence and packet emission are the orchestrator's job.
+  The single-item operations are pure over the indexed inventory map carried by
+  `PlayerState` (`%{non_neg_integer() => InventoryItem.t()}`) and return change
+  descriptors. `give_many/4` composes those operations for capacity prechecks and
+  delegates its atomic persistence to `InventoryOps`.
 
   Reading static item definitions through `ItemManagement.get_item_by_id/1` and
   the location/job lookup helpers are deterministic static reads, not side
@@ -15,12 +15,20 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
+  alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.ItemContainer
+  alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Rental
 
   import Bitwise
+
+  require Logger
 
   @max_inventory 100
 
@@ -79,6 +87,97 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
       when is_map(inventory) and is_integer(amount) and amount > 0 do
     ItemContainer.add(inventory, item_def, amount, @max_inventory, opts)
   end
+
+  @doc """
+  Gives a batch of concrete item-group grants atomically.
+
+  Weight and slot capacity are checked before persistence. All row writes run in
+  one transaction, so a failed grant leaves both persistence and the supplied
+  inventory unchanged. Item-group unique-id requests currently persist `0`
+  because Aesir has no durable item-serial generator.
+  """
+  @spec give_many(pos_integer(), t(), Stats.t(), [Group.grant()]) ::
+          {:ok, t()} | {:error, :insufficient_space}
+  def give_many(char_id, inventory, %Stats{} = stats, grants)
+      when is_integer(char_id) and char_id > 0 and is_map(inventory) and is_list(grants) do
+    now = NaiveDateTime.utc_now()
+
+    with {:ok, prepared} <- prepare_grants(char_id, grants, now),
+         :ok <- precheck_weight(inventory, stats, prepared),
+         {:ok, _preview} <- precheck_slots(inventory, prepared),
+         {:ok, persisted} <- InventoryOps.add_many(char_id, inventory, prepared) do
+      {:ok, persisted}
+    else
+      {:error, reason} when reason in [:overweight, :inventory_full] ->
+        {:error, :insufficient_space}
+
+      {:error, reason} ->
+        Logger.warning(
+          "Inventory.give_many for char #{char_id} dropped grants: #{inspect(reason)}"
+        )
+
+        {:error, :insufficient_space}
+    end
+  end
+
+  defp prepare_grants(char_id, grants, now) do
+    Enum.reduce_while(grants, {:ok, []}, fn grant, {:ok, prepared} ->
+      case ItemManagement.get_item_by_id(grant.item_id) do
+        {:ok, item_def} ->
+          entry = {item_def, grant.amount, grant_opts(char_id, grant, now)}
+          {:cont, {:ok, [entry | prepared]}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
+      end
+    end)
+    |> then(fn
+      {:ok, prepared} -> {:ok, Enum.reverse(prepared)}
+      {:error, reason} -> {:error, reason}
+    end)
+  end
+
+  defp precheck_weight(inventory, stats, prepared) do
+    added_weight =
+      Enum.reduce(prepared, 0, fn {item_def, amount, _opts}, total ->
+        total + item_def.weight * amount
+      end)
+
+    if Weight.would_exceed?(inventory, stats, added_weight),
+      do: {:error, :overweight},
+      else: :ok
+  end
+
+  defp precheck_slots(inventory, prepared) do
+    Enum.reduce_while(prepared, {:ok, inventory}, fn {item_def, amount, opts}, {:ok, inv} ->
+      case add(inv, item_def, amount, opts) do
+        {:ok, next, _change} -> {:cont, {:ok, next}}
+        {:error, reason} -> {:halt, {:error, reason}}
+      end
+    end)
+  end
+
+  defp grant_opts(char_id, grant, now) do
+    %{
+      identify: if(grant.identify?, do: 1, else: 0),
+      refine: grant.refine,
+      enchant_grade: grant.grade,
+      bound: bound_value(grant.bound),
+      unique_id: 0,
+      expire_time: expire_time(grant.duration_min, now),
+      craft: craft(grant.named?, char_id)
+    }
+  end
+
+  defp bound_value(:account), do: 1
+  defp bound_value(:char), do: 4
+  defp bound_value(nil), do: 0
+
+  defp expire_time(0, _now), do: nil
+  defp expire_time(minutes, now), do: Rental.expire_at(minutes * 60, now)
+
+  defp craft(true, char_id), do: char_id |> ItemCraft.signed() |> ItemCraft.to_map()
+  defp craft(false, _char_id), do: nil
 
   @doc """
   Total quantity of item `nameid` held across all stackable slots.

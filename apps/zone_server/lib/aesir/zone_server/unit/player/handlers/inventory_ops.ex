@@ -72,6 +72,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   end
 
   @doc """
+  Persists a prechecked batch of item additions in one transaction.
+
+  Each entry is applied against the inventory returned by the previous entry,
+  preserving stacking and stable session indices. Any failed row write rolls
+  back the entire batch.
+  """
+  @spec add_many(
+          integer(),
+          inventory(),
+          [{ItemDefinition.t(), pos_integer(), map()}]
+        ) :: {:ok, inventory()} | {:error, term()}
+  def add_many(char_id, inventory, entries) when is_list(entries) do
+    Persistence.transaction(fn ->
+      Enum.reduce_while(entries, {:ok, inventory}, &persist_add(char_id, &1, &2))
+    end)
+  end
+
+  defp persist_add(char_id, {item_def, amount, opts}, {:ok, current}) do
+    with {:ok, next, change} <- Inventory.add(current, item_def, amount, opts),
+         {:ok, persisted} <- persist_change(char_id, current, next, change) do
+      {:cont, {:ok, persisted}}
+    else
+      {:error, reason} -> {:halt, {:error, reason}}
+    end
+  end
+
+  @doc """
   Whether `amount` of `item_def` can be added without a write.
 
   Runs the same checks `add/6` enforces before its DB write — max weight first,
@@ -209,7 +236,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
       random_options: item.random_options,
       expire_time: item.expire_time,
       bound: item.bound,
-      favorite: item.favorite
+      favorite: item.favorite,
+      unique_id: item.unique_id,
+      enchant_grade: item.enchant_grade
     }
   end
 end
