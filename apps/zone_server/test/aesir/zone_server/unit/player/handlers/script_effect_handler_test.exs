@@ -210,6 +210,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:give_items_atomic, grants}" do
+    test "commits the batch inventory through the single-writer handler" do
+      added = %InventoryItem{nameid: 501, amount: 1}
+
+      expect(InventoryOps, :add_many, fn 1000, %{}, [{definition, 1, _opts}] ->
+        assert definition.id == 501
+        {:ok, %{0 => added}}
+      end)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:give_items_atomic, [group_grant(501)]}, base_state())
+
+      assert {:ok, game_state} = reply
+      assert game_state.inventory == %{0 => added}
+      assert new_state.game_state.inventory == %{0 => added}
+    end
+
+    test "surfaces insufficient_space and leaves state untouched" do
+      reject(&InventoryOps.add_many/3)
+      state = base_state()
+      grant = %{group_grant(1101) | amount: 101}
+
+      assert ScriptEffectHandler.apply_op({:give_items_atomic, [grant]}, state) ==
+               {{:error, :insufficient_space}, state}
+    end
+  end
+
   describe "{:give_item_rental, item_id, seconds, opts}" do
     test "adds one time-limited rental item" do
       definition = item_definition(@sphmask_id, type: :weapon)
@@ -728,6 +755,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
 
   defp stats do
     %Aesir.ZoneServer.Unit.Player.Stats{
+      base_stats: %Aesir.ZoneServer.Unit.Stats.BaseStats{
+        str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1
+      },
       current_state: %Aesir.ZoneServer.Unit.Stats.CurrentState{hp: 100, sp: 10},
       derived_stats: %Aesir.ZoneServer.Unit.Stats.DerivedStats{
         max_hp: 500,
@@ -738,7 +773,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
         base_level: 10,
         job_level: 3,
         job_id: 0
+      },
+      modifiers: %Aesir.ZoneServer.Unit.Player.Stats.Modifiers{
+        equipment: %{},
+        status_effects: %{},
+        job_bonuses: %{}
       }
+    }
+  end
+
+  defp group_grant(item_id) do
+    %{
+      item_id: item_id,
+      amount: 1,
+      identify?: false,
+      refine: 0,
+      grade: 0,
+      bound: nil,
+      unique_id?: false,
+      duration_min: 0,
+      named?: false,
+      announced?: false,
+      drawn: nil
     }
   end
 

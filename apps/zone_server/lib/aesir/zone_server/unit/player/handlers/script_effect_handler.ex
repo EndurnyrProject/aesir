@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           {:pay_zeny, non_neg_integer()}
           | {:credit_zeny, non_neg_integer()}
           | {:give_item, integer(), pos_integer()}
+          | {:give_items_atomic, [map()]}
           | {:get_named_item, integer(), String.t() | integer()}
           | {:give_item_rental, integer(), pos_integer(), keyword()}
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
@@ -140,6 +141,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       commit(state, %{gs | inventory: persisted})
     else
       {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:give_items_atomic, grants}, %{game_state: gs} = state) do
+    case Inventory.give_many(gs.character_id, gs.inventory, gs.stats, grants) do
+      {:ok, inventory} -> commit(state, %{gs | inventory: inventory})
+      {:error, :insufficient_space} -> {{:error, :insufficient_space}, state}
     end
   end
 

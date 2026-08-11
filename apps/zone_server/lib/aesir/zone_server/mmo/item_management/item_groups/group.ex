@@ -65,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group do
 
   @typedoc "A concrete item grant produced by an item-group roll."
   @type grant() :: %{
+          optional(:group_key) => atom(),
           item_id: pos_integer(),
           amount: pos_integer(),
           identify?: boolean(),

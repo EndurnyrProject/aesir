@@ -36,6 +36,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
@@ -824,6 +828,122 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @spec give_item(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
   def give_item(%Ctx{status: {:error, _}} = ctx, _item_id, _qty), do: ctx
   def give_item(%Ctx{} = ctx, item_id, qty), do: apply_op(ctx, {:give_item, item_id, qty})
+
+  @doc "Rolls and grants every result from an item group."
+  @spec get_group_item(Ctx.t(), atom()) :: Ctx.t()
+  def get_group_item(%Ctx{status: {:error, _}} = ctx, _group_key), do: ctx
+
+  def get_group_item(%Ctx{} = ctx, group_key) do
+    case ItemGroups.fetch(group_key) do
+      {:ok, group} ->
+        group
+        |> Roller.roll_full()
+        |> stamp_group_key(group_key)
+        |> then(&commit_grants(ctx, &1))
+
+      :error ->
+        Ctx.halt(ctx, :unknown_item_group)
+    end
+  end
+
+  @doc "Rolls and grants `qty` results from one item-group subgroup."
+  @spec get_rand_group_item(Ctx.t(), atom(), pos_integer(), non_neg_integer()) :: Ctx.t()
+  def get_rand_group_item(%Ctx{status: {:error, _}} = ctx, _group_key, _qty, _sub), do: ctx
+
+  def get_rand_group_item(%Ctx{} = ctx, group_key, qty, sub)
+      when is_integer(qty) and qty > 0 and is_integer(sub) and sub >= 0 do
+    case ItemGroups.fetch(group_key) do
+      {:ok, group} ->
+        group
+        |> Roller.roll_n(sub, qty)
+        |> stamp_group_key(group_key)
+        |> then(&commit_grants(ctx, &1))
+
+      :error ->
+        Ctx.halt(ctx, :unknown_item_group)
+    end
+  end
+
+  @doc "Returns one item id from a subgroup without depleting shared-pool state."
+  @spec group_rand_item(Ctx.t(), atom(), non_neg_integer()) :: pos_integer()
+  def group_rand_item(%Ctx{}, group_key, sub) do
+    with {:ok, group} <- ItemGroups.fetch(group_key),
+         {:ok, item_id} <- Roller.pick_id(group, sub) do
+      item_id
+    else
+      :error ->
+        raise ArgumentError,
+              "group_rand_item/3 cannot resolve item group #{inspect(group_key)} subgroup #{sub}"
+    end
+  end
+
+  @doc "Commits concrete item-group grants through the current script context."
+  @spec commit_grants(Ctx.t(), [Group.grant()]) :: Ctx.t()
+  def commit_grants(%Ctx{} = ctx, []), do: ctx
+  def commit_grants(%Ctx{status: {:error, _}} = ctx, _grants), do: ctx
+
+  def commit_grants(%Ctx{session_pid: session_pid} = ctx, grants) when is_pid(session_pid) do
+    case apply_op(ctx, {:give_items_atomic, grants}) do
+      %Ctx{status: {:error, :insufficient_space}} = halted ->
+        rollback_pool(grants)
+        Ctx.halt(halted, :inventory_full)
+
+      %Ctx{status: {:error, _reason}} = halted ->
+        rollback_pool(grants)
+        halted
+
+      %Ctx{} = committed ->
+        maybe_announce(committed, grants)
+    end
+  end
+
+  def commit_grants(%Ctx{session_pid: nil, game_state: nil} = ctx, _grants),
+    do: Ctx.halt(ctx, :no_player)
+
+  def commit_grants(%Ctx{session_pid: nil, game_state: game_state} = ctx, grants) do
+    case Inventory.give_many(
+           ctx.char_id,
+           game_state.inventory,
+           game_state.stats,
+           grants
+         ) do
+      {:ok, inventory} ->
+        maybe_announce(%{ctx | game_state: %{game_state | inventory: inventory}}, grants)
+
+      {:error, :insufficient_space} ->
+        rollback_pool(grants)
+        Ctx.halt(ctx, :inventory_full)
+    end
+  end
+
+  @spec stamp_group_key([Group.grant()], atom()) :: [Group.grant()]
+  defp stamp_group_key(grants, group_key),
+    do: Enum.map(grants, &Map.put(&1, :group_key, group_key))
+
+  @spec rollback_pool([Group.grant()]) :: :ok
+  defp rollback_pool(grants) do
+    Enum.each(grants, fn
+      %{group_key: group_key, drawn: {sub, item_ids}} ->
+        ItemGroupPool.rollback(group_key, sub, item_ids)
+
+      _grant ->
+        :ok
+    end)
+  end
+
+  @spec maybe_announce(Ctx.t(), [Group.grant()]) :: Ctx.t()
+  defp maybe_announce(ctx, grants) do
+    Enum.each(grants, fn
+      %{announced?: true, item_id: item_id} ->
+        opts = build_opts("Obtained item #{item_id}.", 0, :all)
+        dispatch_announce(ctx, :all, :pc, opts)
+
+      _grant ->
+        :ok
+    end)
+
+    ctx
+  end
 
   @doc """
   Gives one identified item signed by an online character through the session seam.
