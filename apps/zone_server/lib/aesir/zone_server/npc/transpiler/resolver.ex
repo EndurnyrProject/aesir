@@ -68,6 +68,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
     end
   end
 
+  @doc "Resolves an `IG_*` constant to a known item-group key."
+  @spec item_group(String.t()) :: {:ok, atom()} | :error
+  def item_group(symbol) do
+    case ItemResolver.resolve_item_group(symbol) do
+      {:ok, key} -> {:ok, key}
+      {:error, _} -> :error
+    end
+  end
+
   @spec status(String.t()) :: {:ok, atom()} | :error
   def status(symbol) do
     case ItemResolver.resolve_status(symbol) do

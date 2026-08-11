@@ -23,6 +23,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert :error = CommandMap.read("PartnerId")
   end
 
+  test "item-group buildins map statements and the optional read" do
+    assert {:ok, %{dsl: "get_group_item", args: [:item_group]}} =
+             CommandMap.command("getgroupitem")
+
+    assert {:ok,
+            %{shape: :item_group_optional, dsl: "get_rand_group_item", args: [:item_group, :int]}} =
+             CommandMap.command("getrandgroupitem")
+
+    assert {:ok, %{shape: :item_group_optional, dsl: "group_rand_item", args: [:item_group]}} =
+             CommandMap.call_read("groupranditem")
+  end
+
   test "skill maps to the permanent grant op; job lineage names are native reads" do
     assert {:ok, %{dsl: "skill", args: [:skill, :int, :int]}} = CommandMap.command("skill")
     assert CommandMap.supported?("skill")

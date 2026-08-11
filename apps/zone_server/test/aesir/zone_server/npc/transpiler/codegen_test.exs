@@ -145,6 +145,43 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "_ ->"
   end
 
+  test "item-group commands resolve optional subgroup forms" do
+    src =
+      gen!("""
+      getgroupitem IG_BlueBox;
+      getrandgroupitem IG_Ore, 2;
+      getrandgroupitem IG_Ore, 3, 1;
+      close;
+      """)
+
+    assert src =~ "get_group_item(:bluebox)"
+    assert src =~ "get_rand_group_item(:ore, 2, 0)"
+    assert src =~ "get_rand_group_item(:ore, 3, 1)"
+    refute src =~ "todo(ctx, :getgroupitem"
+    refute src =~ "todo(ctx, :getrandgroupitem"
+  end
+
+  test "groupranditem is hoisted above getitem and defaults its subgroup" do
+    src =
+      gen!("""
+      getitem groupranditem(IG_Ore), 1;
+      getitem groupranditem(IG_Ore, 2), 1;
+      close;
+      """)
+
+    assert src =~ "v1 = group_rand_item(ctx, :ore, 0)"
+    assert src =~ "give_item(ctx, v1, 1)"
+    assert src =~ "v2 = group_rand_item(ctx, :ore, 2)"
+    assert src =~ "give_item(v2, 1)"
+    refute src =~ "Todo.call!(:groupranditem"
+  end
+
+  test "an unknown item group emits the standard unresolved constant call" do
+    src = gen!("getgroupitem IG_Not_A_Group;")
+
+    assert src =~ "Todo.const!(:IG_Not_A_Group)"
+  end
+
   test "getitembound resolves the supported bound constant" do
     src =
       gen!("""

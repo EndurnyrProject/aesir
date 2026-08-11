@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Dewata.LazyYoungMan do
         dir: 6,
         sprite: 536,
         name: "Lazy Young Man",
+        unique_name: "Lazy Young Man#dew",
         trigger: {1, 1}
       }
     ]
@@ -63,8 +64,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Dewata.LazyYoungMan do
                 |> mes("[Lazy Young Man]")
                 |> mes("Really? For me?? I'll give you this in return... Thanks... Hehe~")
                 |> delitem(11534, 1)
+                |> get_group_item(:giftbox)
+                |> close()
 
-              ctx = ctx |> todo(:getgroupitem, [get_char_var(ctx, :IG_GiftBox, 0)]) |> close()
               throw({:script_end, ctx})
 
             2 ->

@@ -80,6 +80,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     end
   end
 
+  describe "resolve_item_group/1" do
+    test "strips IG_ and downcases the group token without changing underscores" do
+      assert {:ok, :ore} = Resolver.resolve_item_group("IG_Ore")
+
+      assert {:ok, :enchant_stone_box17} =
+               Resolver.resolve_item_group("IG_Enchant_Stone_Box17")
+    end
+
+    test "a non-group symbol is an unknown_symbol error" do
+      assert {:error, {:unknown_symbol, "Ore"}} = Resolver.resolve_item_group("Ore")
+    end
+  end
+
   describe "resolve_class/1" do
     test "maps Job_Swordman to :swordman" do
       assert {:ok, :swordman} = Resolver.resolve_class("Job_Swordman")

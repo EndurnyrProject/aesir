@@ -885,6 +885,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  defp emit_mapped(name, %{shape: :item_group_optional, dsl: dsl, args: types}, args, env) do
+    {pre, args} = hoist_all(args, env)
+
+    case item_group_optional_args(args, types, env) do
+      {:ok, rendered} ->
+        {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
+
+      :error ->
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+    end
+  end
+
   # `setriding {<n>}`: the bare form mounts; an explicit arg mounts unless it
   # evaluates to 0, which dismounts (rAthena's `setriding 0`).
   defp emit_mapped(_name, %{shape: :riding, dsl: dsl}, [], _env),
@@ -1076,6 +1089,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       other -> render(other, env)
     end
   end
+
+  defp typed_arg({:name, symbol}, :item_group, _env) do
+    case Resolver.item_group(symbol) do
+      {:ok, key} -> inspect(key)
+      :error -> const_todo(symbol)
+    end
+  end
+
+  defp typed_arg(arg, :item_group, env), do: render(arg, env)
 
   # A skill name the catalog doesn't know (an unimplemented skill) falls back
   # to its atom form rather than a raising const stub: the DSL answers `0`
@@ -1645,14 +1667,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp hoist_walk({:call, name, args}, env, pre) do
-    if MapSet.member?(env.a.local_functions, name) do
-      {args, pre} = hoist_list(args, env, pre)
-      rendered = Enum.map_join(args, ", ", &render(&1, env))
-      tmp = tmp_var()
-      {{:temp, tmp}, ["{ctx, #{tmp}} = #{local_fn_name(name)}(ctx, [#{rendered}])" | pre]}
-    else
-      {args, pre} = hoist_list(args, env, pre)
-      {{:call, name, args}, pre}
+    case CommandMap.call_read(name) do
+      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types}} ->
+        {args, pre} = hoist_list(args, env, pre)
+        tmp = tmp_var()
+
+        case item_group_optional_args(args, types, env) do
+          {:ok, rendered} ->
+            {{:temp, tmp}, ["#{tmp} = #{dsl}(ctx, #{Enum.join(rendered, ", ")})" | pre]}
+
+          :error ->
+            flag(:todo_mod)
+            rendered = Enum.map_join(args, ", ", &render(&1, env))
+            {{:temp, tmp}, ["#{tmp} = Todo.call!(#{atom_lit(name)}, [#{rendered}])" | pre]}
+        end
+
+      _other ->
+        hoist_regular_call(name, args, env, pre)
     end
   end
 
@@ -1694,6 +1725,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp hoist_walk(leaf, _env, pre), do: {leaf, pre}
+
+  defp hoist_regular_call(name, args, env, pre) do
+    if MapSet.member?(env.a.local_functions, name) do
+      {args, pre} = hoist_list(args, env, pre)
+      rendered = Enum.map_join(args, ", ", &render(&1, env))
+      tmp = tmp_var()
+      {{:temp, tmp}, ["{ctx, #{tmp}} = #{local_fn_name(name)}(ctx, [#{rendered}])" | pre]}
+    else
+      {args, pre} = hoist_list(args, env, pre)
+      {{:call, name, args}, pre}
+    end
+  end
 
   # A global read function (`F_CanChangeJob`, `F_GetNumSuffix`) as an expression:
   # the zero-arg form calls `dsl(ctx)`, an arg-bearing one `dsl(ctx, args…)`.
@@ -1899,6 +1942,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       {:ok, %{shape: :quest_check, dsl: dsl}} ->
         quest_check_call(dsl, name, args, env)
 
+      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types}} ->
+        case item_group_optional_args(args, types, env) do
+          {:ok, rendered} -> "#{dsl}(#{Enum.join(["ctx" | rendered], ", ")})"
+          :error -> unsupported_call(name, args, env)
+        end
+
       {:ok, %{dsl: dsl, args: types}} ->
         rendered =
           args
@@ -1917,6 +1966,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render(other, _env) do
     flag(:todo_mod)
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
+  end
+
+  defp item_group_optional_args(args, types, env) do
+    case length(args) - length(types) do
+      0 -> {:ok, Enum.zip_with(args, types, &typed_arg(&1, &2, env)) ++ ["0"]}
+      1 -> {:ok, Enum.zip_with(args, types ++ [:int], &typed_arg(&1, &2, env))}
+      _other -> :error
+    end
+  end
+
+  defp unsupported_call(name, args, env) do
+    flag(:todo_mod)
+    "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
   end
 
   # A global rAthena function (`F_GetNumSuffix`, `F_CanChangeJob`) invoked with

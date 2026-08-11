@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   """
 
   alias Aesir.ZoneServer.Mmo.EffectId
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -482,6 +483,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   end
 
   def resolve_effect(symbol) when is_binary(symbol), do: unknown(symbol)
+
+  @doc "Resolves an `IG_*` constant to a catalog item-group key."
+  @spec resolve_item_group(String.t()) :: {:ok, atom()} | error()
+  def resolve_item_group("IG_" <> group = symbol) when group != "" do
+    key = group |> String.downcase() |> String.to_atom()
+
+    case ItemGroups.fetch(key) do
+      {:ok, _group} -> {:ok, key}
+      :error -> unknown(symbol)
+    end
+  end
+
+  def resolve_item_group(symbol) when is_binary(symbol), do: unknown(symbol)
 
   @spec resolve_skill(String.t() | integer()) :: {:ok, integer()} | error()
   def resolve_skill(id) when is_integer(id) do

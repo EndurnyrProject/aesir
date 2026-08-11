@@ -186,6 +186,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
     end
   end
 
+  defp render_rule(%{shape: :item_group_optional, dsl: dsl, args: types}, args) do
+    with {:ok, rendered} <- render_item_group_optional(args, types) do
+      {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
+    end
+  end
+
   defp render_rule(%{shape: :announce, dsl: dsl, fixed: fixed}, args)
        when length(args) >= fixed do
     kept = Enum.take(args, fixed + 1)
@@ -197,6 +203,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   end
 
   defp render_rule(rule, args), do: unsupported({:arity, rule.dsl, args})
+
+  defp render_item_group_optional(args, types) when length(args) == length(types) do
+    types
+    |> render_args(args)
+    |> append_default_subgroup()
+  end
+
+  defp render_item_group_optional(args, types) when length(args) == length(types) + 1,
+    do: render_args(types ++ [:int], args)
+
+  defp render_item_group_optional(args, _types),
+    do: unsupported({:arity, :item_group_optional, args})
+
+  defp render_args(types, args),
+    do: map_ok(Enum.zip(types, args), fn {type, arg} -> render_arg(type, arg) end)
+
+  defp append_default_subgroup({:ok, rendered}), do: {:ok, rendered ++ ["0"]}
+  defp append_default_subgroup(error), do: error
 
   @spec render_announce_arg(term(), non_neg_integer(), pos_integer()) ::
           {:ok, String.t()} | {:error, {:unsupported, detail()}}
@@ -240,6 +264,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
 
   defp render_arg(:item, {:int, id}),
     do: resolved(Resolver.resolve_item(id), &Integer.to_string/1)
+
+  defp render_arg(:item, expr), do: render_expr(expr)
+
+  defp render_arg(:item_group, {:name, name}),
+    do: resolved(Resolver.resolve_item_group(name), &inspect/1)
 
   defp render_arg(:skill, {:name, name}),
     do: resolved(Resolver.resolve_skill(name), &Integer.to_string/1)
@@ -306,7 +335,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen do
   defp render_expr({:call, "countitem", [id]}),
     do: resolved(resolve_item_expr(id), &"count_item(ctx, #{&1})")
 
-  defp render_expr({:call, name, _args}), do: unsupported({:unknown_call, name})
+  defp render_expr({:call, name, args}) do
+    case CommandSet.call_read(name) do
+      {:ok, %{shape: :item_group_optional, dsl: dsl, args: types}} ->
+        with {:ok, rendered} <- render_item_group_optional(args, types) do
+          {:ok, "#{dsl}(ctx, #{Enum.join(rendered, ", ")})"}
+        end
+
+      :error ->
+        unsupported({:unknown_call, name})
+    end
+  end
 
   defp render_expr({:bin, op, lhs, rhs}) when op in @binary_ops do
     with {:ok, l} <- render_expr(lhs), {:ok, r} <- render_expr(rhs), do: {:ok, binop(op, l, r)}

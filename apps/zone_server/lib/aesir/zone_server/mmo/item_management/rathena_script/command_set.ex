@@ -18,6 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
   - `%{shape: :heal, dsl: name}` — the `itemheal`/`heal`/`percentheal` shape:
     `name(ctx, hp: …, sp: …)`, zero amounts omitted, `rand` rendered as a range.
   - `%{shape: :itemskill, dsl: name}` — `itemskill(ctx, skill, level: lv)`.
+  - `%{shape: :item_group_optional, dsl: name, args: types}` — an item-group
+    command/read with one optional trailing subgroup; omitted subgroups emit
+    the runtime default `0`.
   - `%{shape: :announce, dsl: name, fixed: n}` — the broadcast buildins
     (`announce`/`mapannounce`/`areaannounce`/`broadcast`): keep the `n` fixed
     prefix args (the flag is the last one, rendered via the `:flag` arg type)
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
           %{shape: :call, dsl: String.t(), args: [atom()]}
           | %{shape: :heal, dsl: String.t()}
           | %{shape: :itemskill, dsl: String.t()}
+          | %{shape: :item_group_optional, dsl: String.t(), args: [atom()]}
           | %{shape: :announce, dsl: String.t(), fixed: pos_integer()}
 
   @commands %{
@@ -44,6 +48,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     "sc_start" => %{shape: :call, dsl: "sc_start", args: [:status, :int, :int]},
     "sc_end" => %{shape: :call, dsl: "sc_end", args: [:status]},
     "getitem" => %{shape: :call, dsl: "give_item", args: [:item, :int]},
+    "getgroupitem" => %{shape: :call, dsl: "get_group_item", args: [:item_group]},
+    "getrandgroupitem" => %{
+      shape: :item_group_optional,
+      dsl: "get_rand_group_item",
+      args: [:item_group, :int]
+    },
     "delitem" => %{shape: :call, dsl: "delitem", args: [:item, :int]},
     "warp" => %{shape: :call, dsl: "warp", args: [:string, :int, :int]},
     "itemskill" => %{shape: :itemskill, dsl: "itemskill"},
@@ -72,6 +82,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
     "Zeny" => "zeny"
   }
 
+  @call_reads %{
+    "groupranditem" => %{
+      shape: :item_group_optional,
+      dsl: "group_rand_item",
+      args: [:item_group]
+    }
+  }
+
   @spec command(String.t()) :: {:ok, rule()} | :error
   def command(name) when is_binary(name), do: Map.fetch(@commands, name)
 
@@ -85,4 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CommandSet do
 
   @spec read(String.t()) :: {:ok, String.t()} | :error
   def read(name) when is_binary(name), do: Map.fetch(@reads, name)
+
+  @doc "Returns the emit rule for a supported call-style read."
+  @spec call_read(String.t()) :: {:ok, rule()} | :error
+  def call_read(name) when is_binary(name), do: Map.fetch(@call_reads, name)
 end

@@ -165,6 +165,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
       assert {:ok, "give_item(ctx, 501, 1)"} = compile("getitem Red_Potion,1;")
     end
 
+    test "item-group commands resolve keys and default the optional subgroup" do
+      assert {:ok, "get_group_item(ctx, :bluebox)"} = compile("getgroupitem IG_BlueBox;")
+
+      assert {:ok, "get_rand_group_item(ctx, :ore, 2, 0)"} =
+               compile("getrandgroupitem IG_Ore,2;")
+
+      assert {:ok, "get_rand_group_item(ctx, :ore, 2, 3)"} =
+               compile("getrandgroupitem IG_Ore,2,3;")
+    end
+
+    test "groupranditem works in getitem expression position" do
+      assert {:ok, "give_item(ctx, group_rand_item(ctx, :ore, 0), 1)"} =
+               compile("getitem groupranditem(IG_Ore),1;")
+
+      assert {:ok, "give_item(ctx, group_rand_item(ctx, :ore, 2), 1)"} =
+               compile("getitem groupranditem(IG_Ore,2),1;")
+    end
+
+    test "an unknown item-group constant follows the unsupported symbol path" do
+      assert {:error, {:unsupported, {:unknown_symbol, "IG_Not_A_Group"}}} =
+               compile("getgroupitem IG_Not_A_Group;")
+    end
+
     test "delitem resolves a numeric id" do
       assert {:ok, "delitem(ctx, 501, 2)"} = compile("delitem 501,2;")
     end

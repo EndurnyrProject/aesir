@@ -38,6 +38,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     (`setcart {<type>}`, `enablenpc {"name"}`): zero args → `name(ctx)` (the
     DSL default/self form), one arg → `name(ctx, arg)`; any longer form stays
     a stub.
+  - `%{shape: :item_group_optional, dsl: name, args: types}` — an item-group
+    command/read with one optional trailing subgroup; omitted subgroups emit
+    the runtime default `0`.
   - `%{shape: :riding, dsl: name}` — `setriding {<n>}` (rAthena mount/dismount):
     zero args → `name(ctx, true)`; one arg → `name(ctx, <n> != 0)` (a literal
     `0` dismounts, anything else mounts, matching rAthena); any longer form
@@ -74,6 +77,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @commands %{
     "getitem" => %{dsl: "give_item", args: [:item, :int]},
+    "getgroupitem" => %{dsl: "get_group_item", args: [:item_group]},
+    "getrandgroupitem" => %{
+      shape: :item_group_optional,
+      dsl: "get_rand_group_item",
+      args: [:item_group, :int]
+    },
     "getnameditem" => %{dsl: "get_named_item", args: [:item, :string]},
     "rentitem" => %{dsl: "give_item_rental", args: [:item, :int]},
     "rentitem3" => %{shape: :rentitem3},
@@ -157,6 +166,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   @call_reads %{
     "countitem" => %{dsl: "count_item", args: [:item]},
+    "groupranditem" => %{
+      shape: :item_group_optional,
+      dsl: "group_rand_item",
+      args: [:item_group]
+    },
     "isequipped" => %{dsl: "is_equipped", args: [:item]},
     "getequipid" => %{dsl: "getequipid", args: [:equip_slot]},
     "strcharinfo" => %{dsl: "char_name", args: [:int]},
