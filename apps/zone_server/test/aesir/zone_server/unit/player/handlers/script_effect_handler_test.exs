@@ -506,6 +506,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
     end
   end
 
+  describe "{:disable_items}" do
+    test "sets the item-use suppression flag on the game_state" do
+      state = base_state()
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:disable_items}, state)
+
+      assert {:ok, game_state} = reply
+      assert game_state.disable_item_use == true
+      assert new_state.game_state.disable_item_use == true
+    end
+  end
+
   describe "{:nude}" do
     test "unequips every worn slot by folding the single-item unequip, skipping bare items" do
       test_pid = self()

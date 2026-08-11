@@ -141,6 +141,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("getitem2")
   end
 
+  test "successrefitem/failedrefitem/disable_items map as statement commands" do
+    assert {:ok, %{dsl: "successrefitem", args: [:equip_slot, :int]}} =
+             CommandMap.command("successrefitem")
+
+    assert {:ok, %{dsl: "failedrefitem", args: [:equip_slot]}} =
+             CommandMap.command("failedrefitem")
+
+    assert {:ok, %{shape: :nullary, dsl: "disable_items"}} =
+             CommandMap.command("disable_items")
+
+    assert {:ok, %{shape: :nullary, dsl: "disable_items"}} =
+             CommandMap.command("disableitemuse")
+
+    for name <- ["successrefitem", "failedrefitem", "disable_items", "disableitemuse"] do
+      assert CommandMap.supported?(name)
+    end
+  end
+
   test "F_GetNumSuffix maps to the num_suffix read function" do
     assert {:ok, %{kind: :read, dsl: "num_suffix"}} = CommandMap.function("F_GetNumSuffix")
   end

@@ -163,6 +163,76 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRefineTest do
     end
   end
 
+  describe "successrefitem/4 (forced script refine success)" do
+    test "raises the equipped item's refine with no ore/zeny cost", %{
+      character: char,
+      stats: stats
+    } do
+      seed_inv(char.id, @sword, 1, %{refine: 3, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = base_state(char, stats, inventory)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op(
+          {:successrefitem, index, @sword, 1},
+          state
+        )
+
+      assert {:ok, game_state} = reply
+      assert game_state.inventory[index].refine == 4
+      assert new_state.game_state.inventory[index].refine == 4
+      assert new_state.game_state.zeny == char.zeny
+
+      assert [%InventoryItem{refine: 4}] =
+               InventoryPersistence.load_inventory(char.id) |> Enum.filter(&(&1.nameid == @sword))
+    end
+
+    test "passes through a rejected attempt untouched", %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 0})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = base_state(char, stats, inventory)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:successrefitem, index, @potion, 1}, state)
+
+      assert reply == {:error, :no_item}
+      assert new_state == state
+    end
+  end
+
+  describe "failedrefitem/3 (forced script refine failure)" do
+    test "destroys the equipped item and persists the removal", %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 7, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = base_state(char, stats, inventory)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:failedrefitem, index, @sword}, state)
+
+      assert {:ok, game_state} = reply
+      refute Map.has_key?(game_state.inventory, index)
+      assert new_state.game_state.inventory == %{}
+
+      assert InventoryPersistence.load_inventory(char.id) |> Enum.filter(&(&1.nameid == @sword)) ==
+               []
+    end
+
+    test "passes through a rejected attempt untouched", %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 0})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = base_state(char, stats, inventory)
+
+      {reply, new_state} =
+        ScriptEffectHandler.apply_op({:failedrefitem, index, @potion}, state)
+
+      assert reply == {:error, :no_item}
+      assert new_state == state
+    end
+  end
+
   defp seed_inv(char_id, nameid, amount, attrs \\ %{}) do
     InventoryPersistence.insert_item(char_id, Map.merge(%{nameid: nameid, amount: amount}, attrs))
   end

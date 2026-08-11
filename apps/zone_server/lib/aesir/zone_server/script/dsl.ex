@@ -1054,6 +1054,57 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Raises the equipment worn in equip `slot` by `up` refine levels (default `1`,
+  rAthena `successrefitem`), clamped to `MAX_REFINE`, through the session seam
+  with no ore/zeny cost. The item's refine is persisted and combat stats
+  recalculated when it was equipped. An empty/unknown slot is a no-op (the
+  value rAthena returns is not exposed, matching the other statement effects).
+  Halts `:no_player` on a detached ctx.
+  """
+  @spec successrefitem(Ctx.t(), integer(), pos_integer()) :: Ctx.t()
+  def successrefitem(ctx, slot, up \\ 1)
+
+  def successrefitem(%Ctx{status: {:error, _}} = ctx, _slot, _up), do: ctx
+
+  def successrefitem(%Ctx{} = ctx, slot, up) do
+    case equipped_index(ctx, slot) do
+      {index, %InventoryItem{nameid: nameid}} ->
+        apply_op(ctx, {:successrefitem, index, nameid, up})
+
+      nil ->
+        ctx
+    end
+  end
+
+  @doc """
+  Destroys the equipment worn in equip `slot` (rAthena `failedrefitem`) through
+  the session seam, as a forced refine failure irrecoverably breaks the item.
+  The removal is persisted and combat stats recalculated when it was equipped.
+  An empty/unknown slot is a no-op (the value rAthena returns is not exposed,
+  matching the other statement effects). Halts `:no_player` on a detached ctx.
+  """
+  @spec failedrefitem(Ctx.t(), integer()) :: Ctx.t()
+  def failedrefitem(%Ctx{status: {:error, _}} = ctx, _slot), do: ctx
+
+  def failedrefitem(%Ctx{} = ctx, slot) do
+    case equipped_index(ctx, slot) do
+      {index, %InventoryItem{nameid: nameid}} -> apply_op(ctx, {:failedrefitem, index, nameid})
+      nil -> ctx
+    end
+  end
+
+  @doc """
+  Suppresses inventory item use for the player through the session seam
+  (rAthena `disable_items` / `disableitemuse`): while active, item-use requests
+  are rejected until cleared by a later script or a fresh session. Used by
+  shop/item-exchange NPCs so the player cannot consume items mid-dialog. Haltst
+  `:no_player` on a detached ctx.
+  """
+  @spec disable_items(Ctx.t()) :: Ctx.t()
+  def disable_items(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def disable_items(%Ctx{} = ctx), do: apply_op(ctx, {:disable_items})
+
+  @doc """
   Gives `qty` of item `item_id` with explicit attributes through the session
   seam (rAthena `getitem2`): `identify`, `refine`, and the four card values
   (`card1`..`card4` map to `card0`..`card3`). The element attribute and its

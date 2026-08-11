@@ -57,6 +57,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:give_item_bound, integer(), pos_integer(), 1 | 4}
           | {:delitem, integer(), pos_integer()}
           | {:delequip, non_neg_integer(), integer()}
+          | {:successrefitem, non_neg_integer(), integer(), pos_integer()}
+          | {:failedrefitem, non_neg_integer(), integer()}
+          | {:disable_items}
           | {:nude}
           | {:getexp, non_neg_integer(), non_neg_integer()}
           | {:set_char_var, atom(), term()}
@@ -132,6 +135,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
              :give_item2,
              :delitem,
              :delequip,
+             :successrefitem,
+             :failedrefitem,
              :give_item_bound,
              :give_item_rental,
              :get_named_item,
@@ -306,6 +311,42 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       _not_or_changed ->
         {{:error, :no_item}, state}
     end
+  end
+
+  # rAthena `successrefitem`: force a script-driven refine success (+`up`)
+  # on the equipped item at `index` with no material cost. The level is
+  # mutated and stats recalculated in `RefineOps`; the owner's item view is
+  # re-sent for the new +N. Error replies are passed through untouched.
+  def apply_op({:successrefitem, index, nameid, up}, %{game_state: gs} = state) do
+    case RefineOps.success(gs, index, nameid, up) do
+      {new_gs, {:ok, _new_refine}} ->
+        push_item_view(state.connection_pid, new_gs, index)
+        commit(state, new_gs)
+
+      {_gs, {:error, reason}} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  # rAthena `failedrefitem`: force a script-driven refine failure that destroys
+  # the equipped item at `index`. The removal is persisted and stats recalculated
+  # in `RefineOps`; the owner's item view reflects the removal.
+  def apply_op({:failedrefitem, index, nameid}, %{game_state: gs} = state) do
+    case RefineOps.fail(gs, index, nameid) do
+      {new_gs, {:ok, :destroyed}} ->
+        MessageRouter.send_to(state.connection_pid, InventoryView.item_removed(index, 1))
+        commit(state, new_gs)
+
+      {_gs, {:error, reason}} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  # rAthena `disable_items` (disableitemuse): suppresses inventory item use for
+  # the player while the script runs; `ItemHandler` rejects use requests until
+  # the flag is cleared (a later script or a fresh session).
+  def apply_op({:disable_items}, %{game_state: gs} = state) do
+    commit(state, %{gs | disable_item_use: true})
   end
 
   def apply_op({:getexp, base_exp, job_exp}, state) do

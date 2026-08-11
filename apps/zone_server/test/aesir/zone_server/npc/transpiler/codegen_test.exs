@@ -1218,6 +1218,26 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:getitem2"
   end
 
+  test "refine script buildins resolve EQI slots and the nullary disable_items" do
+    src =
+      gen!("""
+      successrefitem EQI_HAND_R;
+      successrefitem .@part, 3;
+      failedrefitem EQI_ARMOR;
+      disable_items;
+      close;
+      """)
+
+    assert src =~ "ctx = successrefitem(ctx, 9)"
+    assert src =~ "successrefitem(get_local(ctx, :part, 0), 3)"
+    assert src =~ "|> failedrefitem(7)"
+    assert src =~ "|> disable_items()"
+
+    refute src =~ "Todo.call!(:successrefitem"
+    refute src =~ "Todo.call!(:failedrefitem"
+    refute src =~ "Todo.call!(:disable_items"
+  end
+
   test "pure helper buildins emit Elixir-native Rathena calls" do
     src =
       gen!("""

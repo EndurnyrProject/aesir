@@ -328,6 +328,43 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
       assert Dsl.delequip(ctx, @right_hand) == ctx
       refute_received {:script_apply, _}
     end
+
+    test "successrefitem routes a {:successrefitem, index, nameid, up} op (default up 1)" do
+      session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
+
+      ctx =
+        build_ctx(
+          session: session,
+          inventory: %{0 => %InventoryItem{nameid: @sword, equip: 0x02, amount: 1}}
+        )
+
+      Dsl.successrefitem(ctx, @right_hand)
+      assert_received {:script_apply, {:successrefitem, 0, @sword, 1}}
+
+      Dsl.successrefitem(ctx, @right_hand, 3)
+      assert_received {:script_apply, {:successrefitem, 0, @sword, 3}}
+    end
+
+    test "failedrefitem routes a {:failedrefitem, index, nameid} op" do
+      session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
+
+      ctx =
+        build_ctx(
+          session: session,
+          inventory: %{0 => %InventoryItem{nameid: @sword, equip: 0x02, amount: 1}}
+        )
+
+      Dsl.failedrefitem(ctx, @right_hand)
+      assert_received {:script_apply, {:failedrefitem, 0, @sword}}
+    end
+
+    test "disable_items routes a bare {:disable_items} op" do
+      session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
+      ctx = build_ctx(session: session)
+
+      Dsl.disable_items(ctx)
+      assert_received {:script_apply, {:disable_items}}
+    end
   end
 
   defp start_stub(reply_fun) do

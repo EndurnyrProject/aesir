@@ -104,6 +104,92 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOps do
     end
   end
 
+  @doc """
+  Script-driven forced refine success (rAthena `successrefitem`): raises the
+  equipped item at `index` by `up` levels (default `1`), clamped to
+  `MAX_REFINE`, consuming no ore/zeny. Re-reads `index` under the single-writer
+  against the expected `nameid` (TOCTOU guard). Returns the new refine level; an
+  already-maxed item returns its level unchanged. When the item is equipped and
+  the level changed, combat stats are recalculated in place (like a normal
+  refine success); broadcasting the new item view is the caller's job.
+  """
+  @spec success(PlayerState.t(), non_neg_integer(), integer(), pos_integer()) ::
+          {PlayerState.t(), {:ok, non_neg_integer()} | {:error, reason()}}
+  def success(%PlayerState{} = state, index, nameid, up \\ 1)
+      when is_integer(index) and index >= 0 and is_integer(nameid) and is_integer(up) and up > 0 do
+    case Map.get(state.inventory, index) do
+      %InventoryItem{nameid: ^nameid} = item ->
+        new_refine = min(item.refine + up, @max_refine)
+
+        if new_refine == item.refine do
+          {state, {:ok, new_refine}}
+        else
+          apply_success(state, index, item, new_refine)
+        end
+
+      _other ->
+        {state, {:error, :no_item}}
+    end
+  end
+
+  @spec apply_success(PlayerState.t(), non_neg_integer(), InventoryItem.t(), non_neg_integer()) ::
+          {PlayerState.t(), {:ok, non_neg_integer()} | {:error, reason()}}
+  defp apply_success(state, index, item, new_refine) do
+    case Persistence.transaction(fn ->
+           update_refine(state.inventory, index, item, new_refine)
+         end) do
+      {:ok, inventory} ->
+        {advance_state(state, inventory, state.zeny, item, {:success, new_refine}),
+         {:ok, new_refine}}
+
+      {:error, reason} ->
+        {state, {:error, reason}}
+    end
+  end
+
+  @doc """
+  Script-driven forced refine failure (rAthena `failedrefitem`): destroys the
+  equipped item at `index` outright (rAthena's `pc_delitem` after zeroing its
+  refine). Re-reads `index` under the single-writer against the expected
+  `nameid` (TOCTOU guard). Removing an equipped item recalculates combat stats
+  in place; broadcasting the removal is the caller's job.
+  """
+  @spec fail(PlayerState.t(), non_neg_integer(), integer()) ::
+          {PlayerState.t(), {:ok, :destroyed} | {:error, reason()}}
+  def fail(%PlayerState{} = state, index, nameid)
+      when is_integer(index) and index >= 0 and is_integer(nameid) do
+    case Map.get(state.inventory, index) do
+      %InventoryItem{nameid: ^nameid} = item ->
+        apply_fail(state, index, item)
+
+      _other ->
+        {state, {:error, :no_item}}
+    end
+  end
+
+  @spec apply_fail(PlayerState.t(), non_neg_integer(), InventoryItem.t()) ::
+          {PlayerState.t(), {:ok, :destroyed} | {:error, reason()}}
+  defp apply_fail(state, index, item) do
+    char_id = state.character_id
+
+    case Persistence.transaction(fn -> destroy_item(char_id, state.inventory, index, item) end) do
+      {:ok, inventory} ->
+        {advance_state(state, inventory, state.zeny, item, {:break}), {:ok, :destroyed}}
+
+      {:error, reason} ->
+        {state, {:error, reason}}
+    end
+  end
+
+  @spec destroy_item(integer(), Inventory.t(), non_neg_integer(), InventoryItem.t()) ::
+          {:ok, Inventory.t()} | {:error, term()}
+  defp destroy_item(char_id, inventory, index, item) do
+    case InventoryOps.remove(char_id, inventory, index, item.amount) do
+      {:ok, inventory, _change} -> {:ok, inventory}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   @spec validate(
           PlayerState.t(),
           non_neg_integer(),

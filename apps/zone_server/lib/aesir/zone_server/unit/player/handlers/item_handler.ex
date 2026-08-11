@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
     with {:ok, item} <- fetch_item(game_state.inventory, server_index),
          {:ok, definition} <- fetch_definition(item.nameid),
+         :ok <- item_use_enabled?(state),
          :ok <- usable?(definition) do
       run_effect(client_index, server_index, definition.id, state)
     else
@@ -134,10 +135,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   defp usable?(%{on_use: nil}), do: {:error, :not_usable}
   defp usable?(%{on_use: _source}), do: :ok
 
+  # The script `disable_items` buildin suppresses item use while active.
+  @spec item_use_enabled?(map()) :: :ok | {:error, :disabled}
+  defp item_use_enabled?(%{game_state: %PlayerState{disable_item_use: true}}),
+    do: {:error, :disabled}
+
+  defp item_use_enabled?(%{}), do: :ok
+
   # Stable uint32 reject codes mirrored by the Lifthrasir client (0 reserved for
   # ok / success, which the success path sends as ItemUseResult{ok: true}).
   @spec code(term()) :: pos_integer()
   defp code(:not_found), do: 1
   defp code(:not_usable), do: 2
+  defp code(:disabled), do: 4
   defp code(_reason), do: 3
 end

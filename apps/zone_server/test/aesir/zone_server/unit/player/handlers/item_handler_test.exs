@@ -192,6 +192,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
+  describe "handle_use_item/2 with item use disabled (script disable_items)" do
+    test "rejects the request, sends ItemUseResult{ok: false}, consumes nothing" do
+      definition = usable_definition(@red_potion_id, ~s|heal(ctx, hp: 45, sp: 0)|)
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      state = %{state_with_potion() | game_state: %{base_state() | disable_item_use: true}}
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result,
+                        %ItemUseResult{index: @red_potion_client_index, ok: false}}}
+
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+  end
+
   describe "handle_use_item/2 with an effect that halts" do
     test "sends ItemUseResult{ok: false}, consumes nothing" do
       warp_source = ~s|warp(ctx, "nowhere", 0, 0)|

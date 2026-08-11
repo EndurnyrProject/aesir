@@ -371,6 +371,80 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
     end
   end
 
+  describe "success/4 (forced script refine)" do
+    test "raises an equipped weapon's refine by up (default 1) and recalculates stats",
+         %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 3, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+
+      state = build_state(char, stats, inventory)
+      {new_state, result} = RefineOps.success(state, index, @sword)
+
+      assert result == {:ok, 4}
+      assert new_state.inventory[index].refine == 4
+      assert Repo.get!(InventoryItem, new_state.inventory[index].id).refine == 4
+    end
+
+    test "raises by an explicit up amount and clamps at MAX_REFINE",
+         %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 18, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      assert {new_state, {:ok, 20}} = RefineOps.success(state, index, @sword, 5)
+      assert new_state.inventory[index].refine == 20
+    end
+
+    test "is a no-op (unchanged level) for an item already at MAX_REFINE, consuming nothing",
+         %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 20, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      assert {^state, {:ok, 20}} = RefineOps.success(state, index, @sword)
+      assert new_state = state
+    end
+
+    test "rejects with :no_item on a missing/unexpected nameid",
+         %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 0, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      assert {^state, {:error, :no_item}} = RefineOps.success(state, index, 9_999_999)
+    end
+  end
+
+  describe "fail/3 (forced script refine failure)" do
+    test "destroys the equipped item and recalculates stats",
+         %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 7, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      {new_state, result} = RefineOps.fail(state, index, @sword)
+
+      assert result == {:ok, :destroyed}
+      refute Map.has_key?(new_state.inventory, index)
+      assert is_nil(Repo.get(InventoryItem, inventory[index].id))
+    end
+
+    test "rejects with :no_item on a missing/unexpected nameid",
+         %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 0, equip: @right_hand})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      assert {^state, {:error, :no_item}} = RefineOps.fail(state, index, 9_999_999)
+    end
+  end
+
   defp seed_inv(char_id, nameid, amount, attrs \\ %{}) do
     {:ok, item} =
       InventoryPersistence.insert_item(

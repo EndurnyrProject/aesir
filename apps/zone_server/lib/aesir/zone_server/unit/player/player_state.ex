@@ -244,6 +244,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
     # Inventory keyed by stable session index
     inventory: %{},
+    # Set by the script `disable_items` buildin (rAthena `disableitemuse`) to
+    # reject item-use requests while the NPC interaction runs.
+    disable_item_use: false,
     # Catalyst-consumption deltas staged by a skill cast for the handler to
     # write through, then cleared. Each entry is `{old_inventory, new_inventory,
     # change}` as produced by `Inventory.remove/3`.
