@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 29,
     name: :al_incagi,
-    requires: [:player_state],
+    requires: [],
     status: :sc_increaseagi,
     display_name: "Increase AGI",
     max_level: 10,
@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
   def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, target, level, definition) do
+  def cast(caster, target, level, definition) do
+    caster_id = Active.caster_unit_id(caster)
     {unit_type, target_id} = target_ref(caster, target)
     duration = Enum.at(definition.duration, level - 1)
 

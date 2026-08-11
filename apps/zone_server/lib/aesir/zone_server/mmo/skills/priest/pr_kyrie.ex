@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 73,
     name: :pr_kyrie,
-    requires: [:player_state],
+    requires: [],
     status: :sc_kyrie,
     display_name: "Kyrie Eleison",
     max_level: 10,
@@ -41,9 +41,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
   end
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, :invalid_target}
-  def cast(%{character_id: caster_id} = caster, target, level, definition) do
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, :invalid_target}
+  def cast(caster, target, level, definition) do
+    caster_id = Active.caster_unit_id(caster)
+
     with {:ok, target_id, target_state} <- resolve_player_target(caster, target),
          :ok <-
            StatusInterpreter.apply_status(:player, target_id, :sc_kyrie,

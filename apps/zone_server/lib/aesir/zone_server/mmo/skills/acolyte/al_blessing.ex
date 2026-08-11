@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 34,
     name: :al_blessing,
+    requires: [],
     status: :sc_blessing,
     display_name: "Blessing",
     max_level: 10,
@@ -32,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
@@ -54,9 +54,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
   def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, target, level, definition) do
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def cast(caster, target, level, definition) do
+    caster_id = Active.caster_unit_id(caster)
     target_id = Active.resolve_target_id(caster, target)
     duration = Enum.at(definition.duration, level - 1)
 

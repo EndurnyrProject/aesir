@@ -36,7 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   test "reload/0 rebuilds the requirement index" do
     assert :ok = Catalog.reload()
-    assert {:ok, [:player_state]} = Catalog.requirements_for(29)
+    assert {:ok, []} = Catalog.requirements_for(29)
     assert :error = Catalog.requirements_for(999_999)
   end
 

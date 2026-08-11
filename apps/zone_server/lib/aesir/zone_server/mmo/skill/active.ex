@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack.PreparedHit
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -27,8 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   @type target ::
           :self | {:unit, non_neg_integer() | Ref.t()} | {:ground, integer(), integer()}
 
-  @typedoc "A player, mob, or Homunculus caster state."
-  @type caster :: PlayerState.t() | MobState.t() | HomunculusState.t()
+  @typedoc "A player, mob, Homunculus, or NPC caster state."
+  @type caster :: PlayerState.t() | MobState.t() | HomunculusState.t() | SkillCaster.t()
 
   @typedoc "An aggregate-local effect returned without messaging the owner process."
   @type local_effect ::
@@ -153,6 +154,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
                       dynamic_cost: 4,
                       effective_range: 4,
                       dynamic_cast_time: 4
+
+  @doc "Returns a caster's unit id. Accepts bare `%{character_id: _}` maps from test fixtures."
+  @spec caster_unit_id(
+          PlayerState.t()
+          | MobState.t()
+          | SkillCaster.t()
+          | %{character_id: integer()}
+        ) :: integer()
+  def caster_unit_id(%PlayerState{character_id: id}), do: id
+  def caster_unit_id(%MobState{instance_id: id}), do: id
+  def caster_unit_id(%SkillCaster{npc_gid: id}), do: id
+  def caster_unit_id(%{character_id: id}), do: id
 
   @doc """
   Resolves a cast target to a unit id.

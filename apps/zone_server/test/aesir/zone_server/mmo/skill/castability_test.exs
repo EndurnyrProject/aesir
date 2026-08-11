@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastabilityTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.Skill.Castability
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
 
@@ -33,8 +34,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastabilityTest do
     end
   end
 
+  test "accepts the caster-generic support skills for NPCs and mobs" do
+    for skill_name <- [:al_blessing, :al_incagi, :al_cure, :pr_kyrie] do
+      assert {:ok, definition} = Catalog.by_name(skill_name)
+      assert :ok = Castability.check(definition, :npc)
+      assert :ok = Castability.check(definition, :mob)
+    end
+  end
+
   test "checks a catalog skill by id and reports an unknown id" do
-    assert {:error, {:missing, [:player_state]}} = Castability.check_by_id(29, :mob)
+    assert :ok = Castability.check_by_id(29, :mob)
     assert :error = Castability.check_by_id(999_999, :player)
   end
 

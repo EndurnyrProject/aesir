@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCure do
   use Aesir.ZoneServer.Mmo.Skill,
     id: 35,
     name: :al_cure,
+    requires: [],
     display_name: "Cure",
     max_level: 1,
     target_type: :target_ally,
@@ -19,7 +20,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCure do
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @behaviour Active
 
@@ -42,8 +42,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCure do
   def validate(_caster, _target, _level, _definition), do: :ok
 
   @impl Active
-  @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
-          {:ok, PlayerState.t()} | {:error, atom()}
+  @spec cast(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
+          {:ok, Active.caster()} | {:error, atom()}
   def cast(caster, target, _level, _definition) do
     {unit_type, target_id} = target_ref(caster, target)
 
