@@ -9,11 +9,9 @@ defmodule Mix.Tasks.Aesir.Import.Produce do
   """
   use Mix.Task
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
-
   @out_dir Path.join(~w(apps zone_server priv db produce))
   @recipes_source Path.join(~w(db re produce_db.txt))
-  @ore_source Path.join(~w(db re item_group_db.yml))
+  @ore_source Path.join(~w(apps zone_server priv db item_groups item_groups.yml))
 
   @doc "Imports production data from the optional source root."
   @spec run([String.t()]) :: :ok
@@ -28,8 +26,7 @@ defmodule Mix.Tasks.Aesir.Import.Produce do
       |> parse_recipes()
 
     ore_entries =
-      source_root
-      |> Path.join(@ore_source)
+      @ore_source
       |> YamlElixir.read_from_file!()
       |> ore_entries()
 
@@ -84,24 +81,18 @@ defmodule Mix.Tasks.Aesir.Import.Produce do
     |> Enum.map(fn [item_id, amount] -> %{"item_id" => item_id, "amount" => amount} end)
   end
 
-  @spec ore_entries(map()) :: [map()]
-  defp ore_entries(%{"Body" => groups}) do
+  @spec ore_entries([map()]) :: [map()]
+  defp ore_entries(groups) do
     groups
-    |> Enum.find(&(Map.fetch!(&1, "Group") == "ORE"))
-    |> Map.fetch!("SubGroups")
-    |> Enum.flat_map(&Map.fetch!(&1, "List"))
+    |> Enum.find(&(Map.fetch!(&1, "key") == "ore"))
+    |> Map.fetch!("subgroups")
+    |> Enum.flat_map(&Map.fetch!(&1, "entries"))
     |> Enum.map(&ore_entry/1)
     |> Enum.sort_by(& &1["item_id"])
   end
 
   @spec ore_entry(map()) :: map()
-  defp ore_entry(%{"Item" => aegis, "Rate" => rate}) do
-    %{"item_id" => item_id!(aegis), "rate" => rate}
-  end
-
-  @spec item_id!(String.t()) :: non_neg_integer()
-  defp item_id!(aegis) do
-    {:ok, item} = Items.by_aegis(aegis)
-    item.id
+  defp ore_entry(%{"item_id" => item_id, "rate" => rate}) do
+    %{"item_id" => item_id, "rate" => rate}
   end
 end
