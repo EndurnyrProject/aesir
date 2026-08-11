@@ -1167,6 +1167,72 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:getequipcardid"
   end
 
+  test "pure helper buildins emit Elixir-native Rathena calls" do
+    src =
+      gen!("""
+      .@a = compare("Bloody", "blood");
+      .@b = preg_match("^[a-z]", "apple", 0);
+      .@c$ = sprintf("%s %d%%", "rate", 5);
+      .@d$ = getitemname(501);
+      .@e = getstrlen("hello");
+      .@f = pow(2, 3);
+      .@g$ = charat("abc", 1);
+      .@h$ = strtoupper("abc");
+      .@i$ = substr("abcd", 1, 2);
+      .@j = charisalpha("a1", 0);
+      .@k = countstr("aaa", "a", 0);
+      .@l$ = insertchar("ac", "b", 1);
+      .@m$ = replacestr("aba", "a", "x", 1, 1);
+      .@n = strpos("abc", "b", 0);
+      .@o$ = strtolower("ABC");
+      close;
+      """)
+
+    assert src =~ ~S{Rathena.compare("Bloody", "blood")}
+    assert src =~ ~S{Rathena.preg_match("^[a-z]", "apple", 0)}
+    assert src =~ ~S{Rathena.format("%s %d%%", ["rate", 5])}
+    assert src =~ "Rathena.getitemname(501)"
+    assert src =~ ~S{Rathena.getstrlen("hello")}
+    assert src =~ "Rathena.pow(2, 3)"
+    assert src =~ ~S{Rathena.charat("abc", 1)}
+    assert src =~ ~S{Rathena.strtoupper("abc")}
+    assert src =~ ~S{Rathena.substr("abcd", 1, 2)}
+    assert src =~ ~S{Rathena.charisalpha("a1", 0)}
+    assert src =~ ~S{Rathena.countstr("aaa", "a", 0)}
+    assert src =~ ~S{Rathena.insertchar("ac", "b", 1)}
+    assert src =~ ~S{Rathena.replacestr("aba", "a", "x", 1, 1)}
+    assert src =~ ~S{Rathena.strpos("abc", "b", 0)}
+    assert src =~ ~S{Rathena.strtolower("ABC")}
+    refute src =~ "Todo.call!"
+  end
+
+  test "explode writes split values into the destination array" do
+    src =
+      gen!("""
+      setarray .@parts$[0], "old", "tail", "keep";
+      explode(.@parts$[1], "a:b", ":");
+      close;
+      """)
+
+    assert src =~
+             ~S{Rathena.put_many(get_local(ctx, :"parts$", []), 1, Rathena.explode("a:b", ":"), "")}
+
+    refute src =~ "todo(ctx, :explode"
+  end
+
+  test "getargcount reads the actual global-function argument list" do
+    src =
+      gen!("return getargcount();",
+        kind: :function,
+        module: "Aesir.ZoneServer.Content.Npc.Functions.FCount",
+        spawns: []
+      )
+
+    assert src =~ "def call(ctx, args) do"
+    assert src =~ "{ctx, length(args)}"
+    refute src =~ "Todo.call!(:getargcount"
+  end
+
   test "killmonster maps map and event to its DSL op, dropping the type flag" do
     src =
       gen!("""

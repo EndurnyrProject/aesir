@@ -42,6 +42,21 @@ defmodule Aesir.ZoneServer.Script.RathenaTest do
     end
   end
 
+  describe "array helpers" do
+    test "put_many/4 overwrites consecutive values without clearing the tail" do
+      assert Rathena.put_many(["old", "tail", "keep"], 0, ["a", "b"], "") ==
+               ["a", "b", "keep"]
+
+      assert Rathena.put_many([], 2, ["a", "b"], "") == ["", "", "a", "b"]
+    end
+
+    test "explode/2 uses the delimiter's first grapheme and preserves empty fields" do
+      assert Rathena.explode("a::b", ":ignored") == ["a", "", "b"]
+      assert Rathena.explode("a🙂b🙂", "🙂x") == ["a", "b", ""]
+      assert Rathena.explode("abc", "") == ["abc"]
+    end
+  end
+
   describe "delete_at/3" do
     test "removes count elements at index, shifting later values down" do
       assert Rathena.delete_at([1, 2, 3, 4, 5], 1, 2) == [1, 4, 5]
@@ -70,6 +85,93 @@ defmodule Aesir.ZoneServer.Script.RathenaTest do
 
     test "returns status 2 when too long (value unchanged)" do
       assert Rathena.input_str("toolong", 1, 5) == {2, "toolong"}
+    end
+  end
+
+  describe "string helpers" do
+    test "compare/2 performs a case-insensitive substring test" do
+      assert Rathena.compare("Bloody Murderer", "blood") == 1
+      assert Rathena.compare("Blood Butterfly", "bloody") == 0
+    end
+
+    test "length, indexing, alpha checks, and inclusive slices use Unicode graphemes" do
+      assert Rathena.getstrlen("hé🙂") == 3
+      assert Rathena.charat("hé🙂", 1) == "é"
+      assert Rathena.charat("hé🙂", -1) == ""
+      assert Rathena.charat("hé🙂", 3) == ""
+      assert Rathena.charisalpha("é1", 0) == 1
+      assert Rathena.charisalpha("é1", 1) == 0
+      assert Rathena.substr("aé🙂z", 1, 2) == "é🙂"
+      assert Rathena.substr("aé🙂z", 2, 1) == ""
+      assert Rathena.substr("aé🙂z", 0, 4) == ""
+    end
+
+    test "case conversion uses Unicode casing" do
+      assert Rathena.strtoupper("Olá!") == "OLÁ!"
+      assert Rathena.strtolower("ÉLAN") == "élan"
+    end
+
+    test "insertchar/3 inserts one grapheme and clamps the index" do
+      assert Rathena.insertchar("laughter", "snake", 0) == "slaughter"
+      assert Rathena.insertchar("a🙂c", "é", 2) == "a🙂éc"
+      assert Rathena.insertchar("abc", "!", -5) == "!abc"
+      assert Rathena.insertchar("abc", "!", 99) == "abc!"
+    end
+
+    test "strpos/3 returns Unicode grapheme positions from an optional offset" do
+      assert Rathena.strpos("aé🙂barbar", "bar") == 3
+      assert Rathena.strpos("aé🙂barbar", "bar", 4) == 6
+      assert Rathena.strpos("foobar", "baz") == -1
+      assert Rathena.strpos("foobar", "") == -1
+    end
+
+    test "countstr/3 counts non-overlapping matches with optional case folding" do
+      assert Rathena.countstr("test test Test", "test") == 2
+      assert Rathena.countstr("test test Test", "test", 0) == 3
+      assert Rathena.countstr("aaaa", "aa") == 2
+      assert Rathena.countstr("abc", "") == 0
+    end
+
+    test "replacestr supports case folding and a replacement limit" do
+      assert Rathena.replacestr("testing tester", "test", "dash") == "dashing dasher"
+      assert Rathena.replacestr("Donkey", "don", "mon", 0) == "monkey"
+
+      assert Rathena.replacestr("test test test test", "test", "yay", 0, 3) ==
+               "yay yay yay test"
+
+      assert Rathena.replacestr("abc", "", "x") == "abc"
+    end
+  end
+
+  describe "regex, math, item, and formatting helpers" do
+    test "preg_match/3 returns capture count, supports offsets, and safely rejects bad patterns" do
+      assert Rathena.preg_match("^[aeiou]", "apple") == 1
+      assert Rathena.preg_match("(a)(p)", "apple") == 3
+      assert Rathena.preg_match("apple", "xapple", 1) == 1
+      assert Rathena.preg_match("^apple", "xapple", 1) == 0
+      assert Rathena.preg_match("[", "apple") == 0
+      assert Rathena.preg_match("z", "apple") == 0
+    end
+
+    test "pow/2 raises integer values and truncates fractional results" do
+      assert Rathena.pow(2, 3) == 8
+      assert Rathena.pow(-1, 5) == -1
+      assert Rathena.pow(2, -2) == 0
+    end
+
+    test "getitemname/1 resolves ids and Aegis names and returns null when unknown" do
+      assert Rathena.getitemname(501) == "Red Potion"
+      assert Rathena.getitemname("Red_Potion") == "Red Potion"
+      assert Rathena.getitemname(-1) == "null"
+      assert Rathena.getitemname("Missing_Item") == "null"
+    end
+
+    test "format/2 interpolates sequential string/integer placeholders and escaped percents" do
+      assert Rathena.format("The %s contains %d monkeys (100%%)", ["zoo", 5]) ==
+               "The zoo contains 5 monkeys (100%)"
+
+      assert Rathena.format("%d %s", ["12", "apples"]) == "12 apples"
+      assert Rathena.format("missing %s", []) == ""
     end
   end
 end

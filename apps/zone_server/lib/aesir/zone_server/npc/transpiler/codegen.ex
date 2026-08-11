@@ -45,6 +45,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @comparisons %{==: "==", !=: "!=", <: "<", <=: "<=", >: ">", >=: ">="}
   @arith %{+: "+", -: "-", *: "*"}
   @bitwise %{&: "band", |: "bor", ^: "bxor", shl: "bsl", shr: "bsr"}
+  @rathena_calls %{
+    "compare" => [2],
+    "preg_match" => [2, 3],
+    "getstrlen" => [1],
+    "pow" => [2],
+    "charat" => [2],
+    "strtoupper" => [1],
+    "substr" => [3],
+    "charisalpha" => [2],
+    "countstr" => [2, 3],
+    "insertchar" => [3],
+    "replacestr" => [3, 4, 5],
+    "strpos" => [2, 3],
+    "strtolower" => [1]
+  }
 
   # rAthena `e_questinfo_types` / `e_questinfo_markcolor` (script.hpp) → the
   # client icon/color ints the `questinfo` bubble carries. `QTYPE_NONE` (9999)
@@ -794,6 +809,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  # `explode <string_array>,<string>,<delimiter>` writes consecutive split
+  # values into the destination array from its optional starting index.
+  defp emit_stmt({:cmd, "explode", [target, string, delimiter]}, env) do
+    {pre, [string, delimiter]} = hoist_all([string, delimiter], env)
+    {base, start} = explode_target(target)
+    flag(:rathena)
+
+    values = "Rathena.explode(#{render(string, env)}, #{render(delimiter, env)})"
+
+    updated =
+      "Rathena.put_many(#{read_var(base, "[]", env)}, #{render(start, env)}, #{values}, \"\")"
+
+    {pre ++ [set_var(base, updated, env)], :cont}
+  end
+
   defp emit_stmt({:cmd, "callsub", [{:name, label} | args]}, env) do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
@@ -839,6 +869,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp atom_lit(name), do: inspect(String.to_atom(name))
+
+  defp explode_target({:index, base, start}), do: {base, start}
+  defp explode_target(base), do: {base, {:int, 0}}
 
   # -- mapped commands ---------------------------------------------------------
 
@@ -1936,6 +1969,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render({:call, "getarg", args}, env) do
     flag(:todo_mod)
     "Todo.call!(:getarg, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  defp render({:call, "getargcount", []}, %{sub: true}), do: "length(args)"
+
+  defp render({:call, "getargcount", args}, env) do
+    flag(:todo_mod)
+    "Todo.call!(:getargcount, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+  end
+
+  defp render({:call, "sprintf", [template | args]}, env) do
+    flag(:rathena)
+    rendered_args = Enum.map_join(args, ", ", &render(&1, env))
+    "Rathena.format(#{render(template, env)}, [#{rendered_args}])"
+  end
+
+  defp render({:call, "getitemname", [item]}, env) do
+    flag(:rathena)
+    "Rathena.getitemname(#{typed_arg(item, :item, env)})"
+  end
+
+  defp render({:call, name, args}, env) when is_map_key(@rathena_calls, name) do
+    if length(args) in Map.fetch!(@rathena_calls, name) do
+      flag(:rathena)
+      "Rathena.#{name}(#{Enum.map_join(args, ", ", &render(&1, env))})"
+    else
+      flag(:todo_mod)
+      "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+    end
   end
 
   defp render({:call, "rand", [max]}, env),
