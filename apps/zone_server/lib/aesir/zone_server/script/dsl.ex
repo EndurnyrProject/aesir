@@ -2059,6 +2059,64 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     each_named(ctx, name, "hideoffnpc/2", &NpcSession.set_hidden(&1, false))
   end
 
+  @doc """
+  Cloaks the calling NPC, making it invisible (rAthena `cloakonnpc`/`cloakonnpcself`
+  without a name). Targets `ctx.npc_gid`; valid on both an attached and a detached
+  ctx. A ctx with no `npc_gid` logs a warning and no-ops.
+
+  rAthena distinguishes `OPTION_HIDE` (`hideonnpc`) from `OPTION_CLOAK`
+  (`cloakonnpc`); Aesir models both with the single `hidden` flag, so this is
+  equivalent to `hideonnpc/1`. See `Npc.Session`'s moduledoc.
+  """
+  @spec cloakonnpc(Ctx.t()) :: Ctx.t()
+  def cloakonnpc(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def cloakonnpc(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "cloakonnpc/1")
+
+  def cloakonnpc(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.set_hidden(gid, true)
+    ctx
+  end
+
+  @doc """
+  Cloaks every placement registered under `name` (rAthena `cloakonnpc("Name")`).
+  An unresolved name logs a warning and no-ops.
+  """
+  @spec cloakonnpc(Ctx.t(), String.t()) :: Ctx.t()
+  def cloakonnpc(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def cloakonnpc(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "cloakonnpc/2", &NpcSession.set_hidden(&1, true))
+  end
+
+  @doc """
+  Un-cloaks the calling NPC (rAthena `cloakoffnpcself` with no name). Targets
+  `ctx.npc_gid`; valid on both an attached and a detached ctx. A ctx with no
+  `npc_gid` logs a warning and no-ops. In rAthena `cloakoffnpcself` is a
+  per-player cloak targeted at the attached player; Aesir's single global
+  `hidden` flag collapses this to the same behaviour as `hideoffnpc/1`.
+  """
+  @spec cloakoffnpcself(Ctx.t()) :: Ctx.t()
+  def cloakoffnpcself(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def cloakoffnpcself(%Ctx{npc_gid: nil} = ctx), do: warn_no_npc_gid(ctx, "cloakoffnpcself/1")
+
+  def cloakoffnpcself(%Ctx{npc_gid: gid} = ctx) do
+    NpcSession.set_hidden(gid, false)
+    ctx
+  end
+
+  @doc """
+  Un-cloaks every placement registered under `name` (rAthena
+  `cloakoffnpcself("Name")` — the per-player target is dropped and the concern is
+  collapsed to the global `hidden` flag). An unresolved name logs a warning and
+  no-ops. Equivalent to `hideoffnpc/2`.
+  """
+  @spec cloakoffnpcself(Ctx.t(), String.t()) :: Ctx.t()
+  def cloakoffnpcself(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def cloakoffnpcself(%Ctx{} = ctx, name) do
+    each_named(ctx, name, "cloakoffnpcself/2", &NpcSession.set_hidden(&1, false))
+  end
+
   @spec dispatch_doevent(Ctx.t(), String.t(), String.t()) :: Ctx.t()
   defp dispatch_doevent(ctx, name, label) do
     case NpcRegistry.by_name(name) do

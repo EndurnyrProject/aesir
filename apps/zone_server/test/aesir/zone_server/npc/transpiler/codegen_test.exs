@@ -618,6 +618,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       hideoffnpc "Boss";
       enablenpc();
       disablenpc();
+      cloakonnpc "Boss";
+      cloakonnpcself;
+      cloakoffnpcself;
+      cloakoffnpcself "Boss";
       close;
       """)
 
@@ -634,6 +638,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S{|> hideoffnpc("Boss")}
     assert src =~ "|> enablenpc()"
     assert src =~ "|> disablenpc()"
+    assert src =~ ~S{|> cloakonnpc("Boss")}
+    assert src =~ "|> cloakonnpc()"
+    assert src =~ "|> cloakoffnpcself()"
+    assert src =~ ~S{|> cloakoffnpcself("Boss")}
     assert src =~ "|> close()"
   end
 

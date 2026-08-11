@@ -57,6 +57,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{shape: :opt1, dsl: "disablenpc"}} = CommandMap.command("disablenpc")
     assert {:ok, %{shape: :opt1, dsl: "hideonnpc"}} = CommandMap.command("hideonnpc")
     assert {:ok, %{shape: :opt1, dsl: "hideoffnpc"}} = CommandMap.command("hideoffnpc")
+    assert {:ok, %{shape: :opt1, dsl: "cloakonnpc"}} = CommandMap.command("cloakonnpc")
+    assert {:ok, %{shape: :opt1, dsl: "cloakonnpc"}} = CommandMap.command("cloakonnpcself")
+
+    assert {:ok, %{shape: :opt1, dsl: "cloakoffnpcself"}} = CommandMap.command("cloakoffnpcself")
+
     assert {:ok, %{shape: :timer, dsl: "initnpctimer"}} = CommandMap.command("initnpctimer")
     assert {:ok, %{shape: :timer, dsl: "stopnpctimer"}} = CommandMap.command("stopnpctimer")
     assert CommandMap.supported?("hideoffnpc")

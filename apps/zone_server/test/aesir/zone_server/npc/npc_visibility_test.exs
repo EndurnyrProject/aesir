@@ -153,6 +153,39 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     end
   end
 
+  describe "cloakonnpc/1 and cloakoffnpcself/1" do
+    test "cloakonnpc hides independent of enabled; cloakoffnpcself restores it" do
+      gid = gid_for(ToggleNpc)
+      ctx = npc_ctx(gid)
+
+      assert Dsl.cloakonnpc(ctx) == ctx
+      assert NpcSession.hidden?(gid)
+      assert NpcSession.enabled?(gid)
+      refute NpcSession.visible?(gid)
+
+      assert Dsl.cloakoffnpcself(ctx) == ctx
+      refute NpcSession.hidden?(gid)
+      assert NpcSession.visible?(gid)
+    end
+
+    test "a nil npc_gid warns and no-ops" do
+      ctx = npc_ctx(nil)
+
+      log = capture_log(fn -> assert Dsl.cloakonnpc(ctx) == ctx end)
+      assert log =~ "no npc_gid"
+
+      log = capture_log(fn -> assert Dsl.cloakoffnpcself(ctx) == ctx end)
+      assert log =~ "no npc_gid"
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      ctx = Ctx.halt(npc_ctx(gid_for(ToggleNpc)), :boom)
+
+      assert Dsl.cloakonnpc(ctx) == ctx
+      assert Dsl.cloakoffnpcself(ctx) == ctx
+    end
+  end
+
   describe "named-target arity: enablenpc/2, disablenpc/2, hideonnpc/2, hideoffnpc/2" do
     test "disablenpc/2 and enablenpc/2 apply to every placement sharing the name" do
       gid_a = gid_for(DupNpcA)
@@ -182,10 +215,24 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
       refute NpcSession.hidden?(gid_b)
     end
 
+    test "cloakonnpc/2 and cloakoffnpcself/2 apply to every placement sharing the name" do
+      gid_a = gid_for(DupNpcA)
+      gid_b = gid_for(DupNpcB)
+      ctx = npc_ctx(nil)
+
+      assert Dsl.cloakonnpc(ctx, "ToggleDup") == ctx
+      assert NpcSession.hidden?(gid_a)
+      assert NpcSession.hidden?(gid_b)
+
+      assert Dsl.cloakoffnpcself(ctx, "ToggleDup") == ctx
+      refute NpcSession.hidden?(gid_a)
+      refute NpcSession.hidden?(gid_b)
+    end
+
     test "an unknown name logs a warning and no-ops" do
       ctx = npc_ctx(nil)
 
-      for op <- [:enablenpc, :disablenpc, :hideonnpc, :hideoffnpc] do
+      for op <- [:enablenpc, :disablenpc, :hideonnpc, :hideoffnpc, :cloakonnpc, :cloakoffnpcself] do
         log = capture_log(fn -> assert apply(Dsl, op, [ctx, "Nowhere"]) == ctx end)
         assert log =~ "unknown name"
       end
