@@ -364,6 +364,107 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "mobcount/3" do
+    test "counts living mobs on the map by owner event" do
+      stub(MapCache, :exists?, fn "moro_vol" -> true end)
+      expect(MobSupervisor, :count_by_event, fn "moro_vol", "#f_boss_c::OnMobDead0" -> 2 end)
+
+      assert Dsl.mobcount(build_ctx(), "moro_vol", "#f_boss_c::OnMobDead0") == 2
+    end
+
+    test "the \"all\" label counts every living mob" do
+      stub(MapCache, :exists?, fn "prontera" -> true end)
+      expect(MobSupervisor, :count_by_event, fn "prontera", :all -> 5 end)
+
+      assert Dsl.mobcount(build_ctx(), "prontera", "all") == 5
+    end
+
+    test "\"this\" targets the attached player's map" do
+      stub(MapCache, :exists?, fn "prontera" -> true end)
+      expect(MobSupervisor, :count_by_event, fn "prontera", "E::OnDead" -> 1 end)
+
+      assert Dsl.mobcount(build_ctx(), "this", "E::OnDead") == 1
+    end
+
+    test "returns -1 for an unknown map" do
+      stub(MapCache, :exists?, fn "nope" -> false end)
+      reject(&MobSupervisor.count_by_event/2)
+
+      assert Dsl.mobcount(build_ctx(), "nope", "all") == -1
+    end
+
+    test "returns -1 for \"this\" on a detached ctx" do
+      reject(&MobSupervisor.count_by_event/2)
+      ctx = %{build_ctx() | game_state: nil}
+      assert Dsl.mobcount(ctx, "this", "all") == -1
+    end
+  end
+
+  describe "sleep2/2" do
+    test "pauses for the duration and returns the ctx unchanged" do
+      ctx = build_ctx()
+      started = System.monotonic_time(:millisecond)
+
+      assert Dsl.sleep2(ctx, 20) == ctx
+      assert System.monotonic_time(:millisecond) - started >= 20
+    end
+
+    test "halts :no_player when the session died while sleeping" do
+      pid = spawn(fn -> :ok end)
+      ref = Process.monitor(pid)
+      assert_receive {:DOWN, ^ref, :process, ^pid, _}
+
+      ctx = %{build_ctx() | session_pid: pid}
+      assert Dsl.sleep2(ctx, 1).status == {:error, :no_player}
+    end
+
+    test "halts :no_player on a detached ctx" do
+      ctx = %{build_ctx() | game_state: nil}
+      assert Dsl.sleep2(ctx, 10).status == {:error, :no_player}
+    end
+
+    test "a non-positive duration warns and skips the pause" do
+      ctx = build_ctx()
+
+      log = capture_log(fn -> assert Dsl.sleep2(ctx, 0) == ctx end)
+      assert log =~ "sleep2: non-positive duration"
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.sleep2(ctx, 10) == ctx
+    end
+  end
+
+  describe "getbrokenid/2" do
+    test "returns the nth broken item id in slot order" do
+      inventory = %{
+        0 => %InventoryItem{nameid: 1201, amount: 1, attribute: 0},
+        1 => %InventoryItem{nameid: 1101, amount: 1, attribute: 1},
+        3 => %InventoryItem{nameid: 2301, amount: 1, attribute: 1}
+      }
+
+      ctx = build_ctx(inventory: inventory)
+
+      assert Dsl.getbrokenid(ctx, 1) == 1101
+      assert Dsl.getbrokenid(ctx, 2) == 2301
+      assert Dsl.getbrokenid(ctx, 3) == 0
+    end
+
+    test "returns 0 when nothing is broken and for a non-positive index" do
+      ctx = build_ctx(inventory: %{0 => %InventoryItem{nameid: 1201, amount: 1, attribute: 0}})
+
+      assert Dsl.getbrokenid(ctx, 1) == 0
+      assert Dsl.getbrokenid(ctx, 0) == 0
+      assert Dsl.getbrokenid(ctx, -1) == 0
+    end
+
+    test "raises on a detached ctx" do
+      ctx = %{build_ctx() | game_state: nil}
+      assert_raise ArgumentError, fn -> Dsl.getbrokenid(ctx, 1) end
+    end
+  end
+
   describe "getnpcid/1" do
     test "returns the running NPC's gid" do
       ctx = %{build_ctx() | npc_gid: 7777}

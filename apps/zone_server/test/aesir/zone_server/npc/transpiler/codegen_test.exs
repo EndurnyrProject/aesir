@@ -1431,6 +1431,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :killmonster"
   end
 
+  test "mobcount is a call read and sleep2 a statement command" do
+    src =
+      gen!("""
+      sleep2 2000;
+      if (mobcount("force_4-1","force_01mob::OnMyMobDead") < 1)
+        mes "clear";
+      close;
+      """)
+
+    assert src =~ "sleep2(ctx, 2000)"
+    assert src =~ ~S|mobcount(ctx, "force_4-1", "force_01mob::OnMyMobDead")|
+    refute src =~ "todo(ctx, :sleep2"
+    refute src =~ "Todo.call!(:mobcount"
+  end
+
+  test "getbrokenid is a call read with an int arg" do
+    src =
+      gen!("""
+      mes "broken: " + getbrokenid(1);
+      close;
+      """)
+
+    assert src =~ "getbrokenid(ctx, 1)"
+    refute src =~ "Todo.call!(:getbrokenid"
+  end
+
   test "viewpoint maps to its DSL op with numeric args (color included)" do
     src =
       gen!("""

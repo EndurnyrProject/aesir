@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
@@ -1419,6 +1420,27 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def repairall(%Ctx{} = ctx), do: apply_op(ctx, {:repairall})
 
   @doc """
+  Item id of the `n`-th broken equipment in the player's inventory (1-indexed,
+  slot order; rAthena `getbrokenid`), or 0 when fewer than `n` items are
+  broken. Pure read over the snapshot.
+  """
+  @spec getbrokenid(Ctx.t(), integer()) :: non_neg_integer()
+  def getbrokenid(%Ctx{game_state: nil}, _n), do: no_player!("getbrokenid/2")
+
+  def getbrokenid(%Ctx{game_state: gs}, n) when is_integer(n) and n >= 1 do
+    gs.inventory
+    |> Enum.sort_by(fn {index, _item} -> index end)
+    |> Enum.filter(fn {_index, item} -> item.attribute == 1 end)
+    |> Enum.at(n - 1)
+    |> case do
+      {_index, item} -> item.nameid
+      nil -> 0
+    end
+  end
+
+  def getbrokenid(%Ctx{}, _n), do: 0
+
+  @doc """
   Kills every mob on `map` that was summoned with the event label `event`
   (rAthena `killmonster`); the special label `"All"` kills every
   script-summoned mob on the map (spawn-table mobs are spared). Killed mobs are
@@ -1438,6 +1460,54 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def killmonster(%Ctx{} = ctx, map, event) do
     MobSupervisor.kill_by_event(map, event)
+    ctx
+  end
+
+  @doc """
+  Number of living mobs on `map` that were summoned with the event label
+  `event` (rAthena `mobcount`); the special label `"all"` counts every living
+  mob on the map. The special map name `"this"` targets the attached player's
+  current map. Returns -1 for an unknown map, or for `"this"` on a detached
+  ctx. A known map without a running mob supervisor counts 0.
+  """
+  @spec mobcount(Ctx.t(), String.t(), String.t()) :: integer()
+  def mobcount(%Ctx{game_state: nil}, "this", _event), do: -1
+  def mobcount(%Ctx{game_state: gs} = ctx, "this", event), do: mobcount(ctx, gs.map_name, event)
+
+  def mobcount(%Ctx{}, map, event) do
+    if MapCache.exists?(map) do
+      MobSupervisor.count_by_event(map, mobcount_filter(event))
+    else
+      -1
+    end
+  end
+
+  defp mobcount_filter("all"), do: :all
+  defp mobcount_filter(event), do: event
+
+  @doc """
+  Pauses the running script for `ms` milliseconds while keeping the player
+  attached (rAthena `sleep2`), then resumes. Runs inside the interaction
+  coroutine, so only this script waits - the player session is untouched. If
+  the player session died while sleeping, halts `{:error, :no_player}` instead
+  of resuming. A non-positive duration warns and skips the pause.
+  """
+  @spec sleep2(Ctx.t(), integer()) :: Ctx.t()
+  def sleep2(%Ctx{status: {:error, _}} = ctx, _ms), do: ctx
+  def sleep2(%Ctx{game_state: nil} = ctx, _ms), do: Ctx.halt(ctx, :no_player)
+
+  def sleep2(%Ctx{} = ctx, ms) when is_integer(ms) and ms > 0 do
+    Process.sleep(ms)
+
+    if ctx.session_pid == nil or Process.alive?(ctx.session_pid) do
+      ctx
+    else
+      Ctx.halt(ctx, :no_player)
+    end
+  end
+
+  def sleep2(%Ctx{} = ctx, ms) do
+    Logger.warning("sleep2: non-positive duration #{inspect(ms)}, skipping")
     ctx
   end
 

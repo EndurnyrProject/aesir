@@ -116,6 +116,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "nude" => %{shape: :nullary, dsl: "nude"},
     "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},
     "killmonster" => %{dsl: "killmonster", args: [:string, :string]},
+    "sleep2" => %{dsl: "sleep2", args: [:int]},
     "warp" => %{shape: :warp},
     "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},
@@ -218,7 +219,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "basicskillcheck" => %{dsl: "basicskillcheck", args: []},
     "getskilllv" => %{dsl: "getskilllv", args: [:skill]},
     "getcharid" => %{dsl: "getcharid", args: [:int]},
-    "getlook" => %{dsl: "getlook", args: [:look]}
+    "getlook" => %{dsl: "getlook", args: [:look]},
+    "mobcount" => %{dsl: "mobcount", args: [:string, :string]},
+    "getbrokenid" => %{dsl: "getbrokenid", args: [:int]}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error

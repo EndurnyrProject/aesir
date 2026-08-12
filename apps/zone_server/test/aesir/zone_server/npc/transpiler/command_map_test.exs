@@ -60,6 +60,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("GetLook")
   end
 
+  test "sleep2 is a statement command; mobcount and getbrokenid are call reads" do
+    assert {:ok, %{dsl: "sleep2", args: [:int]}} = CommandMap.command("sleep2")
+    assert {:ok, %{dsl: "mobcount", args: [:string, :string]}} = CommandMap.call_read("mobcount")
+    assert {:ok, %{dsl: "getbrokenid", args: [:int]}} = CommandMap.call_read("getbrokenid")
+    assert CommandMap.supported?("sleep2")
+    assert CommandMap.supported?("MobCount")
+    assert CommandMap.supported?("getbrokenid")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")

@@ -55,6 +55,21 @@ defmodule Aesir.ZoneServer.Integration.MobSupervisorKillTest do
     assert Process.alive?(a.pid)
   end
 
+  test "count_by_event counts living mobs by owner event, and :all counts every mob" do
+    spawn_mob(owner_event: "E::OnA", respawn_time: 0)
+    spawn_mob(owner_event: "E::OnA", respawn_time: 0)
+    spawn_mob(owner_event: "E::OnB", respawn_time: 5_000)
+
+    assert MobSupervisor.count_by_event(@map, "E::OnA") == 2
+    assert MobSupervisor.count_by_event(@map, "E::OnB") == 1
+    assert MobSupervisor.count_by_event(@map, "E::OnMissing") == 0
+    assert MobSupervisor.count_by_event(@map, :all) == 3
+  end
+
+  test "count_by_event counts 0 on a map without a running mob supervisor" do
+    assert MobSupervisor.count_by_event("no_such_map_running", :all) == 0
+  end
+
   defp spawn_mob(opts) do
     unit_id = System.unique_integer([:positive])
     mob_state = build_mob_state(unit_id, opts)

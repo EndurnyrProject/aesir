@@ -160,6 +160,38 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   defp kill_match?(%MobState{}, _filter), do: false
 
   @doc """
+  Counts the living mobs on `map_name` matching `filter` (rAthena `mobcount`):
+  `:all` counts every living mob, and a binary event label counts mobs
+  summoned with that owner event. A map without a running mob supervisor
+  counts 0.
+
+  Runs in the caller's process; a mob that dies concurrently is skipped.
+  """
+  @spec count_by_event(String.t(), :all | String.t()) :: non_neg_integer()
+  def count_by_event(map_name, filter) do
+    case GenServer.whereis(server(map_name)) do
+      nil ->
+        0
+
+      _pid ->
+        map_name
+        |> get_mob_processes()
+        |> Enum.count(fn pid ->
+          try do
+            mob = MobSession.get_state(pid)
+            not mob.is_dead and count_match?(mob, filter)
+          catch
+            :exit, _ -> false
+          end
+        end)
+    end
+  end
+
+  defp count_match?(%MobState{}, :all), do: true
+  defp count_match?(%MobState{owner_event: event}, event) when is_binary(event), do: true
+  defp count_match?(%MobState{}, _filter), do: false
+
+  @doc """
   Stops the mob supervisor for a map, if running.
   """
   @spec stop(String.t()) :: :ok
