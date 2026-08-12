@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.LittleKid do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -62,13 +61,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.LittleKid do
           |> mes("I heard someone took Jejelings hat in Baryo Mahiwaga.")
           |> next()
           |> mes("[Little Kid]")
+
+        ctx =
+          ctx
           |> mes(
             Rathena.concat(
               Rathena.concat(
                 "Why would someone steal a monster's hat? ",
-                Todo.call!(:getd, [
-                  Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")
-                ])
+                getd(ctx, Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$"))
               ),
               " must be desperate."
             )

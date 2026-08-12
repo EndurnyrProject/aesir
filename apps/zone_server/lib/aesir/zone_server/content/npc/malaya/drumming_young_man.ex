@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.DrummingYoungMan do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -62,14 +61,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.DrummingYoungMan do
 
     ctx =
       if Enum.random(1..3) == 2 do
+        ctx = mes(ctx, "[Drumming Young Man]")
+
         ctx =
           ctx
-          |> mes("[Drumming Young Man]")
           |> mes(
             Rathena.concat(
-              Todo.call!(:getd, [
-                Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")
-              ]),
+              getd(ctx, Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")),
               " is said to have stopped Bakonawa from swallowing the moon. Isn't it awesome? I'm so relieved."
             )
           )

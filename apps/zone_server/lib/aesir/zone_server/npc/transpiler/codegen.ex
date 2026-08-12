@@ -760,6 +760,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     rendered = "[" <> Enum.map_join(values, ", ", &render(&1, env)) <> "]"
 
     case target do
+      # `setarray getd("$arr[0]"), …`: the name keeps its `[start]`; the DSL
+      # writes the list of values as consecutive elements from that index.
+      {:call, "getd", [name]} ->
+        {pre_dyn, name} = hoist(name, env)
+        {pre_dyn ++ pre ++ ["ctx = setd(ctx, #{render(name, env)}, #{rendered})"], :cont}
+
       {:index, base, {:int, 0}} ->
         {pre ++ [set_var(base, rendered, env)], :cont}
 
@@ -822,6 +828,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       "Rathena.put_many(#{read_var(base, "[]", env)}, #{render(start, env)}, #{values}, \"\")"
 
     {pre ++ [set_var(base, updated, env)], :cont}
+  end
+
+  # `setd "<name>",<value>{,"<char_id>"}`: write a variable whose full name
+  # (scope sigil + optional `[N]`) is built at runtime. The rare rAthena
+  # `char_id` tail is dropped; a malformed arity stays a stub.
+  defp emit_stmt({:cmd, "setd", [name, value | _rest]}, env) do
+    {pre, [name, value]} = hoist_all([name, value], env)
+    {pre ++ ["ctx = setd(ctx, #{render(name, env)}, #{render(value, env)})"], :cont}
+  end
+
+  defp emit_stmt({:cmd, "setd", args}, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, :setd, [#{rendered}])"], :cont}
   end
 
   defp emit_stmt({:cmd, "callsub", [{:name, label} | args]}, env) do
@@ -1601,6 +1621,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = credit_zeny(ctx, #{render(amount, env)})"], :cont}
   end
 
+  # `set getd("<name>"),<value>` is rAthena's long form of `setd`: the target
+  # is a runtime-built variable name.
+  defp emit_assign({:call, "getd", [name]}, expr, env) do
+    {pre, [name, expr]} = hoist_all([name, expr], env)
+    {pre ++ ["ctx = setd(ctx, #{render(name, env)}, #{render(expr, env)})"], :cont}
+  end
+
   defp emit_assign(target, expr, env) do
     {pre, expr} = hoist(expr, env)
 
@@ -2005,8 +2032,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render({:call, "rand", [lo, hi]}, env),
     do: "Enum.random(#{render(lo, env)}..#{render(hi, env)})"
 
+  # `getarraysize(getd("…"))` sizes the runtime-named array.
+  defp render({:call, "getarraysize", [{:call, "getd", [name]}]}, env),
+    do: "length(getd(ctx, #{render(name, env)}))"
+
   defp render({:call, "getarraysize", [array]}, env),
     do: "length(#{read_var(array, "[]", env)})"
+
+  # `getd("<name>")` reads a variable whose full name is built at runtime;
+  # any other arity stays a stub.
+  defp render({:call, "getd", args}, env) do
+    case args do
+      [name] -> "getd(ctx, #{render(name, env)})"
+      _ -> unsupported_call("getd", args, env)
+    end
+  end
 
   # rAthena atoi: C-style leading-integer parse, 0 when there are no digits.
   defp render({:call, "atoi", [value]}, env) do

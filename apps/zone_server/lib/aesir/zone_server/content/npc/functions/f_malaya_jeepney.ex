@@ -153,12 +153,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney do
   end
 
   defp loop_1(ctx, args) do
-    if get_local(ctx, :i, 0) < Todo.call!(:getargcount, []) do
+    if get_local(ctx, :i, 0) < length(args) do
       ctx =
-        todo(ctx, :setd, [
+        setd(
+          ctx,
           Rathena.concat(Rathena.concat(".@msgJeepneyInfo$[", get_local(ctx, :i, 0) - 5), "]"),
           Enum.at(args, get_local(ctx, :i, 0), 0)
-        ])
+        )
 
       ctx |> set_local(:i, get_local(ctx, :i, 0) + 1) |> loop_1(args)
     else
@@ -174,9 +175,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney do
         mes(
           ctx,
           to_string(
-            Todo.call!(:getd, [
+            getd(
+              ctx,
               Rathena.concat(Rathena.concat(".@msgJeepneyInfo$[", get_local(ctx, :i, 0)), "]")
-            ])
+            )
           )
         )
 

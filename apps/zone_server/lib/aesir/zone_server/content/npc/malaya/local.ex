@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.Local do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -63,7 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.Local do
       set_local(
         ctx,
         :"name$",
-        Todo.call!(:getd, [Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")])
+        getd(ctx, Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$"))
       )
 
     v1 = Enum.random(1..6)

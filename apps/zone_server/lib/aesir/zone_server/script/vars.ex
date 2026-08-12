@@ -96,4 +96,68 @@ defmodule Aesir.ZoneServer.Script.Vars do
     :ets.insert(EtsTable.table_for(:npc_vars), {{source, name}, value})
     :ok
   end
+
+  @typedoc "A scope recognized by `parse_name/1`."
+  @type scope ::
+          :server
+          | :server_temp
+          | :account
+          | :account_global
+          | :npc
+          | :local
+          | :temp
+          | :char
+          | :instance
+
+  @doc """
+  Parses a runtime-constructed variable name — the string argument of rAthena
+  `getd`/`setd` — into `{scope, key, index}`.
+
+  The name carries its scope sigil (`$`, `$@`, `#`, `##`, `.`, `.@`, `@`, `'`,
+  or none for a permanent char var) and an optional trailing `[N]` array
+  element. `key` is the store key in the same shape the static transpiler
+  uses (`scope_var_key`): server/temp/npc keys drop the sigil, account keys
+  keep `#`/`##`, and the trailing `$` of a string var is preserved.
+  `index` is the parsed array element, or `nil` when the name has no `[N]`
+  (whole-var access).
+  """
+  @spec parse_name(String.t()) :: {scope(), String.t(), integer() | nil}
+  def parse_name(name) when is_binary(name) do
+    {base, index} = split_index(name)
+    {scope_key(base), scope_name(base), index}
+  end
+
+  defp split_index(name) do
+    case String.split(name, "[", parts: 2) do
+      [base, index] -> {base, parse_index(index)}
+      [base] -> {base, nil}
+    end
+  end
+
+  defp parse_index(index) do
+    case index |> String.trim_trailing("]") |> Integer.parse() do
+      {value, _rest} -> value
+      :error -> 0
+    end
+  end
+
+  defp scope_key("$@" <> _), do: :server_temp
+  defp scope_key("##" <> _), do: :account_global
+  defp scope_key("#" <> _), do: :account
+  defp scope_key(".@" <> _), do: :local
+  defp scope_key("." <> _), do: :npc
+  defp scope_key("@" <> _), do: :temp
+  defp scope_key("'" <> _), do: :instance
+  defp scope_key("$" <> _), do: :server
+  defp scope_key(_), do: :char
+
+  defp scope_name("$@" <> rest), do: rest
+  defp scope_name("$" <> rest), do: rest
+  defp scope_name("##" <> rest), do: "##" <> rest
+  defp scope_name("#" <> rest), do: "#" <> rest
+  defp scope_name(".@" <> rest), do: rest
+  defp scope_name("." <> rest), do: rest
+  defp scope_name("@" <> rest), do: rest
+  defp scope_name("'" <> rest), do: rest
+  defp scope_name(name), do: name
 end

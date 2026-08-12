@@ -60,6 +60,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.SkillCaster
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Script.Todo
   alias Aesir.ZoneServer.Script.Vars
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -1695,6 +1696,178 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def set_npc_var(%Ctx{source: source} = ctx, name, value) do
     Vars.put_npc(source, name, value)
+    ctx
+  end
+
+  @doc """
+  Reads a variable whose full name — scope sigil and optional `[N]` array
+  element — is only known at runtime (rAthena `getd("…")`). The name
+  dispatches to the same backing store as static access, so a dynamically
+  built name reads exactly what a statically written one would. Unset whole
+  vars default to `0`/`""` by the name's trailing `$`; indexed names read the
+  element (padding when the base holds a non-list). Instance scope (`'`) has
+  no store and raises via `Todo`, matching static instance access.
+  """
+  @spec getd(Ctx.t(), String.t()) :: term()
+  def getd(%Ctx{} = ctx, name) do
+    {scope, key, index} = Vars.parse_name(name)
+    read_scope(ctx, scope, key, index)
+  end
+
+  @doc """
+  Writes a variable whose full name — scope sigil and optional `[N]` array
+  element — is only known at runtime (rAthena `setd "name", value`). The name
+  dispatches to the same stores as static writes. An indexed name updates the
+  element (padding the gap with `0`/`""` by the name's string marker); a list
+  value writes consecutive elements from the index (rAthena
+  `setarray getd(…), …`); a plain name replaces the whole value. The optional
+  rAthena `char_id` argument is dropped. Instance scope (`'`) has no store and
+  raises via `Todo`, matching static instance access.
+  """
+  @spec setd(Ctx.t(), String.t(), term()) :: Ctx.t()
+  def setd(%Ctx{status: {:error, _}} = ctx, _name, _value), do: ctx
+
+  def setd(%Ctx{} = ctx, name, value) do
+    {scope, key, index} = Vars.parse_name(name)
+    write_scope(ctx, scope, key, index, value)
+  end
+
+  # -- dynamic-variable helpers ------------------------------------------------
+
+  defp read_scope(_ctx, :server, key, index),
+    do: read_dyn(Vars.get_server(key, dyn_default(key, index)), index, key)
+
+  defp read_scope(_ctx, :server_temp, key, index),
+    do: read_dyn(Vars.get_server_temp(key, dyn_default(key, index)), index, key)
+
+  defp read_scope(ctx, :account, key, index), do: read_account(ctx, key, index)
+  defp read_scope(ctx, :account_global, key, index), do: read_account(ctx, key, index)
+
+  defp read_scope(ctx, :npc, key, index),
+    do: read_dyn(Vars.get_npc(ctx.source, key, dyn_default(key, index)), index, key)
+
+  defp read_scope(ctx, :local, key, index),
+    do: read_dyn(Map.get(ctx.vars, String.to_atom(key), dyn_default(key, index)), index, key)
+
+  defp read_scope(ctx, :temp, key, index),
+    do: read_player_var(ctx, key, index, &get_temp_var/3)
+
+  defp read_scope(ctx, :char, key, index),
+    do: read_player_var(ctx, key, index, &get_char_var/3)
+
+  defp read_scope(_ctx, :instance, key, _index), do: Todo.call!(:instance_var, [key])
+
+  defp write_scope(ctx, :server, key, index, value) do
+    Vars.put_server(key, array_write(Vars.get_server(key, []), index, value, key))
+    ctx
+  end
+
+  defp write_scope(ctx, :server_temp, key, index, value) do
+    Vars.put_server_temp(key, array_write(Vars.get_server_temp(key, []), index, value, key))
+    ctx
+  end
+
+  defp write_scope(ctx, :account, key, index, value), do: set_account(ctx, key, index, value)
+
+  defp write_scope(ctx, :account_global, key, index, value),
+    do: set_account(ctx, key, index, value)
+
+  defp write_scope(ctx, :npc, key, index, value) do
+    Vars.put_npc(
+      ctx.source,
+      key,
+      array_write(Vars.get_npc(ctx.source, key, []), index, value, key)
+    )
+
+    ctx
+  end
+
+  defp write_scope(ctx, :local, key, index, value) do
+    set_local(
+      ctx,
+      String.to_atom(key),
+      array_write(Map.get(ctx.vars, String.to_atom(key), []), index, value, key)
+    )
+  end
+
+  defp write_scope(ctx, :temp, key, index, value),
+    do: write_player_var(ctx, key, index, value, :temp)
+
+  defp write_scope(ctx, :char, key, index, value),
+    do: write_player_var(ctx, key, index, value, :char)
+
+  defp write_scope(_ctx, :instance, key, _index, _value) do
+    Todo.call!(:instance_var, [key])
+  end
+
+  defp read_account(%Ctx{account_id: nil}, key, index), do: dyn_default(key, index)
+
+  defp read_account(%Ctx{account_id: account_id}, key, index),
+    do: read_dyn(Vars.get_account(account_id, key, dyn_default(key, index)), index, key)
+
+  # Player-scope reads (`@`/bare) raise without a player, like the static
+  # `get_temp_var`/`get_char_var` reads they delegate to.
+  defp read_player_var(%Ctx{game_state: nil}, _key, _index, _fun), do: no_player!("getd/2")
+
+  defp read_player_var(%Ctx{} = ctx, key, index, fun),
+    do: read_dyn(fun.(ctx, String.to_atom(key), dyn_default(key, index)), index, key)
+
+  # Player-scope writes (`@`/bare) route through the session seam; without a
+  # player they halt `:no_player` like the static `set_temp_var`/`set_char_var`.
+  defp write_player_var(%Ctx{game_state: nil} = ctx, _key, _index, _value, _scope),
+    do: Ctx.halt(ctx, :no_player)
+
+  defp write_player_var(%Ctx{game_state: gs} = ctx, key, index, value, scope) do
+    current = Map.get(player_scope(gs, scope), key, [])
+
+    case scope do
+      :temp -> set_temp_var(ctx, String.to_atom(key), array_write(current, index, value, key))
+      :char -> set_char_var(ctx, String.to_atom(key), array_write(current, index, value, key))
+    end
+  end
+
+  defp player_scope(%{temp_vars: temp_vars}, :temp), do: temp_vars
+  defp player_scope(%{vars: vars}, :char), do: vars
+
+  # Whole-var reads default `0`/`""` by the string marker; indexed reads base
+  # the array access on an empty list.
+  defp dyn_default(key, nil), do: dyn_pad(key)
+  defp dyn_default(_key, _index), do: []
+
+  defp dyn_pad(key) when is_binary(key),
+    do: if(String.ends_with?(key, "$"), do: "", else: 0)
+
+  defp read_dyn(current, nil, _key), do: current
+
+  defp read_dyn(current, index, key) do
+    if is_list(current), do: Enum.at(current, index, dyn_pad(key)), else: dyn_pad(key)
+  end
+
+  # Indexed writes pad the gap (`0`/`""` by the string marker); a list value
+  # writes consecutive elements from the index (rAthena setarray-through-getd),
+  # a scalar a single element. A non-list base is treated as an empty array.
+  defp array_write(_current, nil, value, _key), do: value
+
+  defp array_write(current, index, value, key) do
+    current = if is_list(current), do: current, else: []
+    pad = dyn_pad(key)
+
+    if is_list(value) do
+      Rathena.put_many(current, index, value, pad)
+    else
+      Rathena.put_at(current, index, value, pad)
+    end
+  end
+
+  defp set_account(%Ctx{account_id: nil} = ctx, _key, _index, _value), do: ctx
+
+  defp set_account(%Ctx{account_id: account_id} = ctx, key, index, value) do
+    Vars.put_account(
+      account_id,
+      key,
+      array_write(Vars.get_account(account_id, key, []), index, value, key)
+    )
+
     ctx
   end
 

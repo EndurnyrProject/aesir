@@ -708,6 +708,67 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|todo(:monster, ["prontera", 155, 180])|
   end
 
+  test "setd renders a runtime variable write (literal and dynamic name)" do
+    src =
+      gen!("""
+      setd "$donate", 500;
+      setd ".@msg[" + .@i + "]", .@val;
+      close;
+      """)
+
+    assert src =~ ~S|setd(ctx, "$donate", 500)|
+    assert src =~ ~S|Rathena.concat(Rathena.concat(".@msg[", get_local(ctx, :i, 0)), "]")|
+    assert src =~ ~S|get_local(ctx, :val, 0)|
+  end
+
+  test "getd renders a runtime variable read in expression position" do
+    src =
+      gen!("""
+      if (getd("$donate") > 100) close;
+      mes getd("$name" + .@i + "$");
+      close;
+      """)
+
+    assert src =~ ~S|getd(ctx, "$donate") > 100|
+
+    assert src =~
+             ~S|getd(ctx, Rathena.concat(Rathena.concat("$name", get_local(ctx, :i, 0)), "$"))|
+  end
+
+  test "set getd(...) and setarray getd(...) render runtime writes" do
+    src =
+      gen!("""
+      set getd(".counter_" + .@n), 5;
+      setarray getd("$arr[0]"), 1, 2, 3;
+      close;
+      """)
+
+    assert src =~ ~S|setd(Rathena.concat(".counter_", get_local(ctx, :n, 0)), 5)|
+    assert src =~ ~S|setd("$arr[0]", [1, 2, 3])|
+  end
+
+  test "getarraysize(getd(...)) sizes the runtime-named array" do
+    src =
+      gen!("""
+      set .@n, getarraysize(getd("$arr"));
+      close;
+      """)
+
+    assert src =~ ~S|length(getd(ctx, "$arr"))|
+  end
+
+  test "malformed setd/getd arity stays a stub" do
+    src =
+      gen!("""
+      setd "$x";
+      set .@v, getd();
+      close;
+      """)
+
+    assert src =~ ~S|todo(:setd, ["$x"])|
+    assert src =~ ~S|Todo.call!(:getd, [])|
+  end
+
   test "spawn placements render optional trigger and unique_name" do
     src =
       gen!(

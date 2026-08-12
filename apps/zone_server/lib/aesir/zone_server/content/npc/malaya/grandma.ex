@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.Grandma do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -59,16 +58,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.Grandma do
 
     ctx =
       if Enum.random(1..3) == 2 do
+        ctx = mes(ctx, "[Grandma]")
+
         ctx =
           ctx
-          |> mes("[Grandma]")
           |> mes(
             Rathena.concat(
               Rathena.concat(
                 "Heard there is this ",
-                Todo.call!(:getd, [
-                  Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")
-                ])
+                getd(ctx, Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$"))
               ),
               " that follows Meoneonuncle around."
             )

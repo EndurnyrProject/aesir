@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.PortGuard do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -57,14 +56,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Malaya.PortGuard do
 
     ctx =
       if Enum.random(1..3) == 2 do
+        ctx = mes(ctx, "[Port Guard]")
+
         ctx =
           ctx
-          |> mes("[Port Guard]")
           |> mes(
             Rathena.concat(
-              Todo.call!(:getd, [
-                Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")
-              ]),
+              getd(ctx, Rathena.concat(Rathena.concat("$ma_name0", Enum.random(1..6)), "$")),
               " is said to escape from Buwaya alive after being captured. This person must be powerful."
             )
           )
