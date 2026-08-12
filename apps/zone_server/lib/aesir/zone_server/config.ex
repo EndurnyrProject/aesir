@@ -25,6 +25,12 @@ defmodule Aesir.ZoneServer.Config do
   @default_natural_break_rate 0
   @default_boss_respawn_delay_percentage 100
   @default_boss_respawn_reconcile_on_boot true
+  @default_exp_rate 100
+  @default_item_rate 100
+  @default_drop_min 1
+  @default_drop_max 10_000
+  @default_max_base_level 999
+  @default_max_job_level 999
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -202,4 +208,82 @@ defmodule Aesir.ZoneServer.Config do
         :boss_respawn_reconcile_on_boot,
         @default_boss_respawn_reconcile_on_boot
       )
+
+  @doc "Server base-EXP rate multiplier as a percentage (100 = 1x). Scales mob-kill base EXP."
+  @spec base_exp_rate() :: non_neg_integer()
+  def base_exp_rate, do: Application.get_env(:zone_server, :base_exp_rate, @default_exp_rate)
+
+  @doc "Server job-EXP rate multiplier as a percentage (100 = 1x). Scales mob-kill job EXP."
+  @spec job_exp_rate() :: non_neg_integer()
+  def job_exp_rate, do: Application.get_env(:zone_server, :job_exp_rate, @default_exp_rate)
+
+  @doc "Server MVP-EXP rate multiplier as a percentage (100 = 1x). Scales MVP bonus EXP."
+  @spec mvp_exp_rate() :: non_neg_integer()
+  def mvp_exp_rate, do: Application.get_env(:zone_server, :mvp_exp_rate, @default_exp_rate)
+
+  @doc "Server quest/script-EXP rate multiplier as a percentage (100 = 1x). Scales `getexp` grants."
+  @spec quest_exp_rate() :: non_neg_integer()
+  def quest_exp_rate, do: Application.get_env(:zone_server, :quest_exp_rate, @default_exp_rate)
+
+  @doc """
+  Maps a broad item type to its drop-rate category
+  (`:common | :heal | :use | :equip | :card`), following rAthena's classification.
+  """
+  @spec drop_category(atom()) :: :common | :heal | :use | :equip | :card
+  def drop_category(:healing), do: :heal
+  def drop_category(type) when type in [:usable, :cash], do: :use
+  def drop_category(type) when type in [:weapon, :armor, :pet_armor], do: :equip
+  def drop_category(:card), do: :card
+  def drop_category(_type), do: :common
+
+  @doc """
+  Drop-rate multiplier for a category as a percentage (100 = 1x). Categories are
+  the `drop_category/1` values plus `:mvp` and `:treasure`.
+  """
+  @spec item_drop_rate(:common | :heal | :use | :equip | :card | :mvp | :treasure) ::
+          non_neg_integer()
+  def item_drop_rate(:heal), do: rate(:item_rate_heal)
+  def item_drop_rate(:use), do: rate(:item_rate_use)
+  def item_drop_rate(:equip), do: rate(:item_rate_equip)
+  def item_drop_rate(:card), do: rate(:item_rate_card)
+  def item_drop_rate(:mvp), do: rate(:item_rate_mvp)
+  def item_drop_rate(:treasure), do: rate(:item_rate_treasure)
+  def item_drop_rate(_common), do: rate(:item_rate_common)
+
+  @doc """
+  Per-category drop-rate floor and ceiling `{min, max}` in 1/10000 units, applied
+  after the category rate multiplier and the level penalty.
+  """
+  @spec item_drop_bounds(:common | :heal | :use | :equip | :card | :mvp | :treasure) ::
+          {pos_integer(), pos_integer()}
+  def item_drop_bounds(:heal), do: bounds(:item_drop_heal_min, :item_drop_heal_max)
+  def item_drop_bounds(:use), do: bounds(:item_drop_use_min, :item_drop_use_max)
+  def item_drop_bounds(:equip), do: bounds(:item_drop_equip_min, :item_drop_equip_max)
+  def item_drop_bounds(:card), do: bounds(:item_drop_card_min, :item_drop_card_max)
+  def item_drop_bounds(:mvp), do: bounds(:item_drop_mvp_min, :item_drop_mvp_max)
+  def item_drop_bounds(:treasure), do: bounds(:item_drop_treasure_min, :item_drop_treasure_max)
+  def item_drop_bounds(_common), do: bounds(:item_drop_common_min, :item_drop_common_max)
+
+  @doc """
+  Absolute base-level ceiling enforced on top of each job's own max level table.
+  The effective cap is `min(job_table_max, this)`.
+  """
+  @spec max_base_level() :: pos_integer()
+  def max_base_level,
+    do: Application.get_env(:zone_server, :max_base_level, @default_max_base_level)
+
+  @doc """
+  Absolute job-level ceiling enforced on top of each job's own max level table.
+  The effective cap is `min(job_table_max, this)`.
+  """
+  @spec max_job_level() :: pos_integer()
+  def max_job_level,
+    do: Application.get_env(:zone_server, :max_job_level, @default_max_job_level)
+
+  defp rate(key), do: Application.get_env(:zone_server, key, @default_item_rate)
+
+  defp bounds(min_key, max_key) do
+    {Application.get_env(:zone_server, min_key, @default_drop_min),
+     Application.get_env(:zone_server, max_key, @default_drop_max)}
+  end
 end

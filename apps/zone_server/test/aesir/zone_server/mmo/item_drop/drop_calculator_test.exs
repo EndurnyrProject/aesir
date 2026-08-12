@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
@@ -75,6 +76,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
 
       # base 9500 > cap, so the cap is skipped; boost still applies.
       assert DropCalculator.drop_rate(9_500, 0, 1, 1, 5) == 9_975
+    end
+  end
+
+  describe "drop_rate/6 server category rates and bounds" do
+    setup do
+      stub(LevelPenalty, :drop, fn _, _ -> 100 end)
+      :ok
+    end
+
+    test ":common matches drop_rate/5 under default config" do
+      assert DropCalculator.drop_rate(4_000, 7, 50, 60, 50, :common) ==
+               DropCalculator.drop_rate(4_000, 7, 50, 60, 50)
+    end
+
+    test "scales the base rate by the category multiplier" do
+      stub(Config, :item_drop_rate, fn :equip -> 200 end)
+      stub(Config, :item_drop_bounds, fn :equip -> {1, 10_000} end)
+
+      assert DropCalculator.drop_rate(1_000, 0, 1, 1, 0, :equip) == 2_000
+    end
+
+    test "clamps to the configured per-category ceiling" do
+      stub(Config, :item_drop_rate, fn :card -> 100 end)
+      stub(Config, :item_drop_bounds, fn :card -> {1, 500} end)
+
+      assert DropCalculator.drop_rate(1_000, 0, 1, 1, 0, :card) == 500
+    end
+
+    test "clamps to the configured per-category floor" do
+      stub(Config, :item_drop_rate, fn :use -> 100 end)
+      stub(Config, :item_drop_bounds, fn :use -> {50, 10_000} end)
+
+      assert DropCalculator.drop_rate(1, 0, 1, 1, 0, :use) == 50
     end
   end
 

@@ -12,6 +12,7 @@ defmodule Aesir.CharServer.Characters do
   import Ecto.Query
 
   alias Aesir.CharServer.Auth
+  alias Aesir.CharServer.Config.NewCharacter
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
@@ -273,6 +274,9 @@ defmodule Aesir.CharServer.Characters do
   end
 
   defp create_character_record(repo, account_id, validated_data, char_data) do
+    {start_map, start_x, start_y} =
+      {NewCharacter.start_map(), NewCharacter.start_x(), NewCharacter.start_y()}
+
     character_attrs = %{
       account_id: account_id,
       char_num: validated_data.slot,
@@ -288,7 +292,14 @@ defmodule Aesir.CharServer.Characters do
       hair: char_data[:hair] || 1,
       hair_color: char_data[:hair_color] || 1,
       clothes_color: char_data[:clothes_color] || 1,
-      sex: Utils.int_to_sex(char_data[:sex])
+      sex: Utils.int_to_sex(char_data[:sex]),
+      zeny: NewCharacter.start_zeny(),
+      last_map: start_map,
+      last_x: start_x,
+      last_y: start_y,
+      save_map: start_map,
+      save_x: start_x,
+      save_y: start_y
     }
 
     %Character{}

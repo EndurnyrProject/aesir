@@ -2,10 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   @moduledoc """
   Pure drop-roll calculation for mob-death loot.
 
-  Each drop slot rolls independently against its renewal rate: the LUK hook
+  Each drop slot rolls independently against its renewal rate: the server
+  per-category rate multiplier (`Config.item_drop_rate/1`), the LUK hook
   (no-op today), the caller-supplied `drop_bonus` (e.g. Bubble Gum's SC_ITEMBOOST),
   the 90% drop-rate cap (only for items not already above it), the renewal
-  level-penalty modifier, and a floor at 1 (0.01%). Items that pass are scattered
+  level-penalty modifier, and the configured per-category floor/ceiling
+  (`Config.item_drop_bounds/1`, default 1..10000). Items that pass are scattered
   onto walkable cells around the death position (death cell first, then the
   rAthena SE -> W -> N cycle). Placement is guaranteed: a scatter cell whose
   spiral search finds no traversable cell falls back to the death cell, and
@@ -19,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   modifiers, so no status lookups happen here.
   """
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -97,19 +100,35 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @doc """
-  Computes the final drop rate (out of 10_000) for a slot after the LUK hook,
-  the caller-supplied drop bonus (applied before the cap, mirroring rAthena
-  `mob.cpp:2837-2862`), the 90% cap, the renewal level penalty, and the
-  floor-at-1 clamp.
+  Computes the final drop rate (out of 10_000) for a `:common`-category slot.
+  Delegates to `drop_rate/6`; the defaults reproduce the pre-config math.
   """
   @spec drop_rate(integer(), integer(), integer(), integer(), integer()) :: integer()
-  def drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus) do
+  def drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus),
+    do: drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus, :common)
+
+  @doc """
+  Computes the final drop rate (out of 10_000) for a slot of drop `category`,
+  after the server per-category rate multiplier, the LUK hook, the caller-supplied
+  drop bonus, the 90% cap, the renewal level penalty, and the per-category
+  floor/ceiling clamp.
+  """
+  @spec drop_rate(
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          :common | :heal | :use | :equip | :card
+        ) :: integer()
+  def drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus, category) do
     base
+    |> apply_rate(Config.item_drop_rate(category))
     |> apply_luk_bonus(killer_luk)
     |> apply_rate(100 + drop_bonus)
     |> cap_rate(base)
     |> apply_rate(LevelPenalty.drop(mob_level, killer_base_level))
-    |> clamp_rate()
+    |> clamp_rate(category)
   end
 
   @spec roll_slot(MobDrop.t(), integer(), integer(), integer(), integer()) ::
@@ -123,7 +142,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
        ) do
     case ItemManagement.get_item_by_aegis(aegis) do
       {:ok, %{id: nameid, type: type}} ->
-        rate = drop_rate(base, killer_luk, killer_base_level, mob_level, drop_bonus)
+        rate =
+          drop_rate(
+            base,
+            killer_luk,
+            killer_base_level,
+            mob_level,
+            drop_bonus,
+            Config.drop_category(type)
+          )
+
         identified = type not in [:weapon, :armor]
         if :rand.uniform(@max_rate) <= rate, do: [{nameid, 1, identified}], else: []
 
@@ -148,8 +176,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   defp apply_rate(val, 100), do: val
   defp apply_rate(val, pct), do: div(val * pct, 100)
 
-  @spec clamp_rate(integer()) :: integer()
-  defp clamp_rate(rate), do: rate |> max(1) |> min(@max_rate)
+  @spec clamp_rate(integer(), atom()) :: integer()
+  defp clamp_rate(rate, category) do
+    {min_rate, max_rate} = Config.item_drop_bounds(category)
+    rate |> max(min_rate) |> min(max_rate)
+  end
 
   @spec scatter([{integer(), integer(), boolean()}], String.t(), integer(), integer()) :: [drop()]
   defp scatter(items, map_name, x, y) do

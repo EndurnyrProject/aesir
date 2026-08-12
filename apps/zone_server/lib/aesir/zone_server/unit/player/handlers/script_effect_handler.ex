@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -350,7 +351,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   def apply_op({:getexp, base_exp, job_exp}, state) do
-    {:noreply, new_state} = ExperienceHandler.handle_gain_exp(base_exp, job_exp, state)
+    {:noreply, new_state} =
+      ExperienceHandler.handle_gain_exp(
+        apply_quest_exp_rate(base_exp),
+        apply_quest_exp_rate(job_exp),
+        state
+      )
+
     {{:ok, new_state.game_state}, new_state}
   end
 
@@ -617,4 +624,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   defp affected_indices({:split, [{topped_index, _}, {new_index, _}]}),
     do: [topped_index, new_index]
+
+  # Scales script/quest EXP grants by the server quest-EXP rate before the
+  # per-character status/equipment EXP bonuses are applied downstream.
+  @spec apply_quest_exp_rate(non_neg_integer()) :: non_neg_integer()
+  defp apply_quest_exp_rate(amount) do
+    case Config.quest_exp_rate() do
+      100 -> amount
+      rate -> div(amount * rate, 100)
+    end
+  end
 end

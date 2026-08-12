@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
@@ -109,6 +110,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
          modes: modes
        }) do
     rate = LevelPenalty.mvp_exp(level, base_level)
+    mvp_exp = apply_rate(mvp_exp, Config.mvp_exp_rate())
     mob_class = if :boss in modes, do: :boss, else: :normal
 
     PubSub.broadcast(
@@ -149,11 +151,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
 
   @spec roll([MobDrop.t()], integer(), integer()) :: non_neg_integer() | nil
   defp roll(drops, mob_level, base_level) do
-    rate = LevelPenalty.mvp_drop(mob_level, base_level)
+    penalty = LevelPenalty.mvp_drop(mob_level, base_level)
+    server_rate = Config.item_drop_rate(:mvp)
+    {min_rate, max_rate} = Config.item_drop_bounds(:mvp)
 
     Enum.find_value(drops, fn %MobDrop{item: aegis, rate: base} ->
+      rate =
+        base
+        |> apply_rate(server_rate)
+        |> apply_rate(penalty)
+        |> max(min_rate)
+        |> min(max_rate)
+
       with {:ok, %ItemDefinition{id: nameid}} <- Items.by_aegis(aegis),
-           true <- :rand.uniform(@max_rate) <= min(div(base * rate, 100), @max_rate) do
+           true <- :rand.uniform(@max_rate) <= rate do
         nameid
       else
         _ -> nil
@@ -257,4 +268,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MvpReward do
       scaled -> scaled
     end
   end
+
+  # Server rate multiplier (percentage) applied to an MVP reward amount. A 0
+  # amount or 0 rate yields 0.
+  @spec apply_rate(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  defp apply_rate(amount, 100), do: amount
+  defp apply_rate(amount, rate), do: div(amount * rate, 100)
 end

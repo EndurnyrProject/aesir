@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Leveling do
   `L + 1`.
   """
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression, as: Progression
@@ -100,9 +101,13 @@ defmodule Aesir.ZoneServer.Mmo.Leveling do
     end
   end
 
+  # Each job's own max level table is the primary ceiling; the server-wide caps
+  # (`Config.max_base_level/0`, `Config.max_job_level/0`) can only lower it.
   defp max_levels(job_name) do
     {:ok, job} = JobManagement.get_job_by_name(job_name)
-    {job.max_base_level, job.max_job_level}
+
+    {min(job.max_base_level, Config.max_base_level()),
+     min(job.max_job_level, Config.max_job_level())}
   end
 
   defp job_name!(%Progression{job_id: job_id}) do

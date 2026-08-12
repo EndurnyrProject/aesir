@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   MobSession to improve modularity and maintainability.
   """
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
@@ -178,8 +179,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     unless state.no_exp do
       KillExp.distribute_typed(
         MobState.typed_damage_log(state),
-        mob_data.base_exp,
-        mob_data.job_exp,
+        apply_rate(mob_data.base_exp, Config.base_exp_rate()),
+        apply_rate(mob_data.job_exp, Config.job_exp_rate()),
         mob_data.level,
         state.map_name,
         mob_data.race,
@@ -230,4 +231,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   defp announce_kill_gain(_reward_owner_id, _attacker_ref, _mob_race, _kill_bf), do: :ok
+
+  # Scales a mob's undivided reward by a server rate percentage before it is
+  # split across attackers. A 0 amount or 0 rate yields 0 (no EXP).
+  @spec apply_rate(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  defp apply_rate(amount, 100), do: amount
+  defp apply_rate(amount, rate), do: div(amount * rate, 100)
 end
