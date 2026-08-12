@@ -1258,6 +1258,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:getequipcardid"
   end
 
+  test "getlook/setlook emit their DSL ops, resolving LOOK_* and VAR_* look types" do
+    src =
+      gen!("""
+      setlook LOOK_HAIR, 5;
+      setlook VAR_HEADPALETTE, 8;
+      setlook 7, 0;
+      .@style = getlook(VAR_HEAD);
+      .@palette = getlook(LOOK_HAIR_COLOR);
+      .@head = getlook(LOOK_HEAD_MID);
+      close;
+      """)
+
+    assert src =~ "|> setlook(1, 5)"
+    assert src =~ "|> setlook(6, 8)"
+    assert src =~ "|> setlook(7, 0)"
+    assert src =~ "getlook(ctx, 1)"
+    assert src =~ "getlook(ctx, 6)"
+    assert src =~ "getlook(ctx, 5)"
+    refute src =~ "todo(ctx, :setlook"
+    refute src =~ "Todo.call!(:getlook"
+    refute src =~ "Todo.const!"
+  end
+
   test "equip/item reads emit DSL calls with resolved EQI_/refine/iteminfo constants" do
     src =
       gen!("""

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.Net.QuestAdded
   alias Aesir.Net.QuestRemoved
   alias Aesir.Net.QuestStateChanged
+  alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -100,6 +101,56 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert {:ok, game_state} = reply
       assert game_state.temp_vars == %{"quest_step" => 3}
       assert new_state.game_state.temp_vars == %{"quest_step" => 3}
+    end
+  end
+
+  describe "{:set_look, type, value}" do
+    test "writes and persists the appearance field, then pushes a SpriteChange to self and observers" do
+      test_pid = self()
+
+      expect(CharacterPersistence, :update_character, fn 1000, %{hair: 5}, async: true ->
+        send(test_pid, {:persisted_look, :hair})
+        {:ok, %Character{}}
+      end)
+
+      expect(Broadcast, :to_visible_players, fn _gs, %SpriteChange{type: 1, val: 5}, _opts ->
+        send(test_pid, :look_broadcast)
+        :ok
+      end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:set_look, 1, 5}, base_state())
+
+      assert {:ok, game_state} = reply
+      assert game_state.hair == 5
+      assert new_state.game_state.hair == 5
+
+      assert_received {:persisted_look, :hair}
+      assert_received :look_broadcast
+
+      assert_received {:send, _ch,
+                       {:sprite_change, %SpriteChange{gid: 1000, type: 1, val: 5, val2: 0}}}
+    end
+
+    test "maps each supported look type to its persisted appearance field" do
+      for {type, field, value} <- [
+            {1, :hair, 5},
+            {3, :head_bottom, 7},
+            {5, :head_mid, 4},
+            {6, :hair_color, 2},
+            {7, :clothes_color, 3},
+            {12, :robe, 6}
+          ] do
+        expect(CharacterPersistence, :update_character, fn 1000,
+                                                           %{^field => ^value},
+                                                           async: true ->
+          {:ok, %Character{}}
+        end)
+
+        {reply, new_state} = ScriptEffectHandler.apply_op({:set_look, type, value}, base_state())
+        assert {:ok, game_state} = reply
+        assert Map.get(game_state, field) == value
+        assert Map.get(new_state.game_state, field) == value
+      end
     end
   end
 

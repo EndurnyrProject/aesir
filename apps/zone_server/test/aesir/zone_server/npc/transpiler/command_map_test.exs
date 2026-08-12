@@ -53,6 +53,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
              CommandMap.command("skilleffect")
   end
 
+  test "setlook is a statement command and getlook is a call read, both with a look arg" do
+    assert {:ok, %{dsl: "setlook", args: [:look, :int]}} = CommandMap.command("setlook")
+    assert {:ok, %{dsl: "getlook", args: [:look]}} = CommandMap.call_read("getlook")
+    assert CommandMap.supported?("setlook")
+    assert CommandMap.supported?("GetLook")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")
@@ -286,6 +293,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       assert {:ok, 20} = Resolver.equip_slot("EQI_SHADOW_ACC_L")
       assert :error = Resolver.equip_slot("EQI_NOPE")
       assert {:ok, 3} = Resolver.equip_slot(3)
+    end
+
+    test "look resolves LOOK_* and VAR_* tokens to their enum ids, ints pass through" do
+      assert {:ok, 1} = Resolver.look("LOOK_HAIR")
+      assert {:ok, 3} = Resolver.look("LOOK_HEAD_BOTTOM")
+      assert {:ok, 4} = Resolver.look("LOOK_HEAD_TOP")
+      assert {:ok, 5} = Resolver.look("LOOK_HEAD_MID")
+      assert {:ok, 6} = Resolver.look("LOOK_HAIR_COLOR")
+      assert {:ok, 7} = Resolver.look("LOOK_CLOTHES_COLOR")
+      assert {:ok, 12} = Resolver.look("LOOK_ROBE")
+      assert {:ok, 13} = Resolver.look("LOOK_BODY2")
+      assert {:ok, 1} = Resolver.look("VAR_HEAD")
+      assert {:ok, 6} = Resolver.look("VAR_HEADPALETTE")
+      assert {:ok, 7} = Resolver.look("VAR_BODYPALETTE")
+      assert :error = Resolver.look("LOOK_NOPE")
+      assert {:ok, 3} = Resolver.look(3)
     end
 
     test "broadcast flag constants resolve to their integer value" do

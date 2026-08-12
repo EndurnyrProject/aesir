@@ -476,6 +476,75 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defp clamp_npcskill_stat(value), do: value |> max(@npcskill_min_stat) |> min(@npcskill_max_stat)
 
   @doc """
+  Returns the attached player's current look value for a rAthena look type
+  (rAthena `getlook`). Cosmetic slots read the persisted character
+  appearance (`hair`, `head_bottom`, `head_mid`, `hair_color`,
+  `clothes_color`, `robe`); the equipment-driven slots (`LOOK_WEAPON`,
+  `LOOK_HEAD_TOP`, `LOOK_SHIELD`) read the current equipment views. Look
+  types with no Aesir representation (`LOOK_SHOES`, `LOOK_BODY`,
+  `LOOK_BODY2`, unknown ids) return `-1`, matching rAthena's fallback for
+  unhandled types.
+  """
+  @spec getlook(Ctx.t(), non_neg_integer()) :: integer()
+  def getlook(%Ctx{game_state: nil}, _type), do: no_player!("getlook/2")
+
+  def getlook(%Ctx{game_state: gs}, type) do
+    case type do
+      2 -> PlayerStats.weapon_view(gs.stats.equipment)
+      4 -> PlayerStats.head_top_view(gs.stats.equipment)
+      8 -> PlayerStats.shield_view(gs.stats.equipment)
+      _ -> cosmetic_look(gs, type)
+    end
+  end
+
+  # Persisted appearance fields; any other look type has no Aesir state and
+  # reads as `-1` (rAthena's unhandled-type fallback).
+  defp cosmetic_look(gs, type) do
+    case type do
+      1 -> gs.hair
+      3 -> gs.head_bottom
+      5 -> gs.head_mid
+      6 -> gs.hair_color
+      7 -> gs.clothes_color
+      12 -> gs.robe
+      _ -> -1
+    end
+  end
+
+  @doc """
+  Sets one of the player's persisted look values (rAthena `setlook`),
+  routed through the single-writer session so the Character is persisted and
+  the new look is pushed to the player and nearby observers. Supported look
+  types are exactly the appearance fields the Character stores: `LOOK_HAIR`
+  (1), `LOOK_HEAD_BOTTOM` (3), `LOOK_HEAD_MID` (5), `LOOK_HAIR_COLOR` (6),
+  `LOOK_CLOTHES_COLOR` (7) and `LOOK_ROBE` (12). Hair/color values are
+  clamped to the rAthena battle-config defaults (style 0-23, hair color 0-9,
+  cloth color 0-4); other slots clamp to non-negative. Equipment-driven
+  slots and no-op types are ignored, mirroring rAthena's own `LOOK_SHOES`
+  no-op.
+  """
+  @spec setlook(Ctx.t(), non_neg_integer(), integer()) :: Ctx.t()
+  def setlook(%Ctx{status: {:error, _}} = ctx, _type, _value), do: ctx
+  def setlook(%Ctx{game_state: nil} = ctx, _type, _value), do: Ctx.halt(ctx, :no_player)
+
+  def setlook(%Ctx{} = ctx, type, value) when type in [1, 3, 5, 6, 7, 12],
+    do: apply_op(ctx, {:set_look, type, clamp_look(type, value)})
+
+  def setlook(%Ctx{} = ctx, type, _value) do
+    Logger.warning("setlook: no settable state for look type #{inspect(type)}, ignoring")
+    ctx
+  end
+
+  # rAthena clamps hair/color/cloth in `pc_changelook` to battle-config
+  # defaults; Aesir has no battle config, so the rAthena defaults stand in.
+  # The remaining settable slots have no upper bound but must be non-negative
+  # for the uint32 `SpriteChange` field.
+  defp clamp_look(1, value), do: clamp(value, 23)
+  defp clamp_look(6, value), do: clamp(value, 9)
+  defp clamp_look(7, value), do: clamp(value, 4)
+  defp clamp_look(_type, value), do: max(value, 0)
+
+  @doc """
   Plays a one-shot `EF_*` visual effect on the player, shown to every player in
   view range (rAthena `specialeffect2`).
 

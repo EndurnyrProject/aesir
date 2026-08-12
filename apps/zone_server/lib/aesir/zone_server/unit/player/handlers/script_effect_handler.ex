@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
+  alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.BreakOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -80,6 +82,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:erasequest, QuestLog.quest_id()}
           | {:completequest, QuestLog.quest_id()}
           | {:changequest, QuestLog.quest_id(), QuestLog.quest_id()}
+          | {:set_look, 1 | 3 | 5 | 6 | 7 | 12, non_neg_integer()}
 
   @type reply :: {:ok, PlayerState.t()} | RefineOps.result() | {:error, term()}
   @type state :: %{
@@ -389,6 +392,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
     commit(state, %{gs | temp_vars: Map.put(gs.temp_vars, to_string(key), value)})
   end
 
+  # rAthena `setlook`: writes one of the persisted appearance fields, persists
+  # it on the Character, then pushes the `SpriteChange` to the player (direct)
+  # and to every observer (excluding self, who already got the direct send),
+  # mirroring the equipment appearance path. The DSL pre-validates the look
+  # type and clamps the value, so an unknown type here is a programmer error.
+  def apply_op({:set_look, type, value}, %{game_state: gs} = state) do
+    field = look_field(type)
+    new_gs = %{gs | field => value}
+
+    CharacterPersistence.update_character(gs.character_id, %{field => value}, async: true)
+
+    sprite = %SpriteChange{gid: gs.character_id, type: type, val: value, val2: 0}
+    MessageRouter.send_to(state.connection_pid, sprite)
+    Broadcast.to_visible_players(new_gs, sprite, exclude_id: gs.character_id)
+
+    commit(state, new_gs)
+  end
+
   def apply_op({:change_job, job_id}, state) do
     case ProgressionHandler.apply_job_change(job_id, state) do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
@@ -574,6 +595,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   @spec commit(state(), PlayerState.t()) :: {reply(), state()}
   defp commit(state, new_gs), do: {{:ok, new_gs}, %{state | game_state: new_gs}}
+
+  # Maps a validated rAthena look-type id to the `PlayerState`/`Character`
+  # appearance field it writes. Only the fields the Character persists are
+  # settable; the DSL guarantees the id is one of these.
+  @spec look_field(1 | 3 | 5 | 6 | 7 | 12) :: atom()
+  defp look_field(1), do: :hair
+  defp look_field(3), do: :head_bottom
+  defp look_field(5), do: :head_mid
+  defp look_field(6), do: :hair_color
+  defp look_field(7), do: :clothes_color
+  defp look_field(12), do: :robe
 
   @spec fetch_definition(integer()) :: {:ok, term()} | {:error, :item_not_found}
   defp fetch_definition(item_id) do

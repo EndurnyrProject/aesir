@@ -252,6 +252,43 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def equip_slot(value) when is_integer(value), do: {:ok, value}
   def equip_slot(symbol) when is_binary(symbol), do: Map.fetch(@equip_slots, symbol)
 
+  # rAthena `enum _look` (`src/map/map.hpp`): the look-type ids `getlook`/
+  # `setlook` accept, plus the `VAR_*` aliases script_constants.hpp exports
+  # for the same enum. Only the integer look id travels through the transpiler.
+  @look_types %{
+    "LOOK_BASE" => 0,
+    "LOOK_HAIR" => 1,
+    "LOOK_WEAPON" => 2,
+    "LOOK_HEAD_BOTTOM" => 3,
+    "LOOK_HEAD_TOP" => 4,
+    "LOOK_HEAD_MID" => 5,
+    "LOOK_HAIR_COLOR" => 6,
+    "LOOK_CLOTHES_COLOR" => 7,
+    "LOOK_SHIELD" => 8,
+    "LOOK_SHOES" => 9,
+    "LOOK_BODY" => 10,
+    "LOOK_RESET_COSTUMES" => 11,
+    "LOOK_ROBE" => 12,
+    "LOOK_BODY2" => 13,
+    "VAR_HEAD" => 1,
+    "VAR_WEAPON" => 2,
+    "VAR_HEAD_BOTTOM" => 3,
+    "VAR_HEAD_TOP" => 4,
+    "VAR_HEAD_MID" => 5,
+    "VAR_HEADPALETTE" => 6,
+    "VAR_BODYPALETTE" => 7,
+    "VAR_SHOES" => 9
+  }
+
+  @doc """
+  Resolves a `getlook`/`setlook` look-type argument. A `LOOK_*` or `VAR_*`
+  token maps to its rAthena `enum _look` id; a bare integer passes through
+  unchanged (scripts also spell the look type as a literal/variable).
+  """
+  @spec look(String.t() | integer()) :: {:ok, non_neg_integer()} | :error
+  def look(value) when is_integer(value), do: {:ok, value}
+  def look(symbol) when is_binary(symbol), do: Map.fetch(@look_types, symbol)
+
   @quest_modes %{
     "HAVEQUEST" => :havequest,
     "PLAYTIME" => :playtime,

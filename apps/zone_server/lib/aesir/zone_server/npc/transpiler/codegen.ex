@@ -1298,6 +1298,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  defp typed_arg({:name, s}, :look, _env) do
+    case Resolver.look(s) do
+      {:ok, id} -> to_string(id)
+      :error -> const_todo(s)
+    end
+  end
+
   defp typed_arg(arg, :string, env), do: render_str(arg, env)
   defp typed_arg(arg, :skill_opts, env), do: render(arg, env)
   defp typed_arg(arg, _type, env), do: render(arg, env)
