@@ -48,6 +48,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
              CommandMap.command("npcskill")
   end
 
+  test "skilleffect maps to the skilleffect DSL op" do
+    assert {:ok, %{dsl: "skilleffect", args: [:skill, :int]}} =
+             CommandMap.command("skilleffect")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")

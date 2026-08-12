@@ -399,6 +399,66 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     ctx
   end
 
+  @doc """
+  Plays a skill's visual effect on the attached player, shown to every player
+  in view range (rAthena `skilleffect`). `skill` accepts a numeric id (sent
+  verbatim, matching an un-cataloged skill's client-side animation) or a
+  catalog name atom/string; `level` is passed through. The optional rAthena
+  target argument is dropped — the effect always plays on the invoking
+  player. Purely cosmetic, so a detached ctx or an unresolvable name is a
+  silent no-op rather than a halt.
+  """
+  @spec skilleffect(Ctx.t(), atom() | integer() | String.t(), integer()) :: Ctx.t()
+  def skilleffect(%Ctx{status: {:error, _}} = ctx, _skill, _level), do: ctx
+  def skilleffect(%Ctx{game_state: nil} = ctx, _skill, _level), do: ctx
+
+  def skilleffect(%Ctx{} = ctx, skill, level) do
+    case skilleffect_id(skill) do
+      {:ok, skill_id} ->
+        Broadcast.to_in_range(
+          ctx.game_state.map_name,
+          ctx.game_state.x,
+          ctx.game_state.y,
+          Config.view_range(),
+          %SkillEffect{
+            skill_id: skill_id,
+            level: max(level, 0),
+            src_id: ctx.char_id,
+            target_id: ctx.char_id,
+            result: 1
+          }
+        )
+
+      :error ->
+        Logger.warning("skilleffect: unknown skill #{inspect(skill)}, skipping")
+    end
+
+    ctx
+  end
+
+  # Numeric ids pass through so a skill the server has not implemented still
+  # shows its client-side animation; names resolve via the skill catalog.
+  defp skilleffect_id(skill) when is_integer(skill), do: {:ok, skill}
+  defp skilleffect_id(skill) when is_atom(skill), do: catalog_skill_id(skill)
+
+  defp skilleffect_id(skill) when is_binary(skill) do
+    skill
+    |> String.downcase()
+    |> String.to_existing_atom()
+    |> catalog_skill_id()
+  rescue
+    ArgumentError -> :error
+  end
+
+  defp skilleffect_id(_skill), do: :error
+
+  defp catalog_skill_id(name) do
+    case Catalog.by_name(name) do
+      {:ok, definition} -> {:ok, definition.id}
+      :error -> :error
+    end
+  end
+
   defp resolve_npcskill_definition(skill) when is_atom(skill), do: Catalog.by_name(skill)
   defp resolve_npcskill_definition(skill) when is_integer(skill), do: Catalog.by_id(skill)
 

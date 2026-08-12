@@ -546,6 +546,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute numeric =~ "todo(ctx, :npcskill"
   end
 
+  test "skilleffect emits calls for named, numeric, and 3-arg (target dropped) forms" do
+    named = gen!("skilleffect \"NPC_SELFDESTRUCTION\",1;")
+    numeric = gen!("skilleffect 34,0;")
+    targeted = gen!("skilleffect 28,5,.@target;")
+
+    assert named =~ "skilleffect(ctx, 173, 1)"
+    assert numeric =~ "skilleffect(ctx, 34, 0)"
+    assert targeted =~ "skilleffect(ctx, 28, 5)"
+    refute named =~ "todo(ctx, :skilleffect"
+    refute targeted =~ ".@target"
+  end
+
   test "server and account scopes route to their store DSL ops" do
     src =
       gen!("""
