@@ -31,7 +31,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
              Pathfinding.find_path(
                map_data,
                {state.x, state.y},
-               {x, y}
+               {x, y},
+               profile: :mob
              ) do
         updated_state = MobState.set_path(state, path)
 
@@ -174,7 +175,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   defp process_unblocked_movement_tick(%{movement_state: :moving} = state) do
     case state.walk_path do
       [{next_x, next_y} | _] = walk_path ->
-        if Cell.step_traversable?(state.map_name, {state.x, state.y}, {next_x, next_y}) do
+        if Cell.step_traversable?(state.map_name, {state.x, state.y}, {next_x, next_y},
+             profile: :mob
+           ) do
           step_mob(state, {next_x, next_y}, tl(walk_path))
         else
           handle_blocked_mob(state, List.last(walk_path))
@@ -229,7 +232,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   defp handle_blocked_mob(state, destination) do
     with {:ok, map_data} <- MapCache.get(state.map_name),
          {:ok, [_ | _] = path} <-
-           Pathfinding.find_path(map_data, {state.x, state.y}, destination) do
+           Pathfinding.find_path(map_data, {state.x, state.y}, destination, profile: :mob) do
       updated_state = MobState.set_path(state, path)
 
       first_delay = MovementEngine.step_delay(state.walk_speed, {state.x, state.y}, hd(path))
