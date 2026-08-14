@@ -64,6 +64,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
   alias Aesir.ZoneServer.Npc.SkillCaster
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Script.Todo
@@ -80,6 +82,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpecialEffect
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # CompiledItemScripts is created at runtime by ScriptCompiler.compile_all!/1
   # (it does not exist at compile time); `consumeitem/2` dispatches into it.
@@ -1553,6 +1556,20 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   defp mobcount_filter("all"), do: :all
   defp mobcount_filter(event), do: event
+
+  @doc """
+  Number of connected players currently on `map_name` (rAthena `getmapusers`),
+  or -1 when the map is unknown. Pure read over the unit registry; ignores the
+  ctx.
+  """
+  @spec getmapusers(Ctx.t(), String.t()) :: integer()
+  def getmapusers(%Ctx{}, map_name) do
+    if MapCache.exists?(map_name) do
+      UnitRegistry.count_players_on_map(map_name)
+    else
+      -1
+    end
+  end
 
   @doc """
   Pauses the running script for `ms` milliseconds while keeping the player
@@ -3501,6 +3518,27 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   def getcharid(%Ctx{game_state: gs}, 1), do: gs.party_id
   def getcharid(%Ctx{account_id: account_id}, 3), do: account_id
   def getcharid(%Ctx{}, _type), do: 0
+
+  @doc """
+  Whether the attached player is the leader of their party (rAthena
+  `is_party_leader`); with a `party_id`, whether they lead that party. Returns
+  `1` (leader) or `0` (not leader / no party / unknown party). Pure read that
+  consults the live party entry; a detached ctx raises.
+  """
+  @spec party_leader?(Ctx.t()) :: 0 | 1
+  def party_leader?(%Ctx{game_state: nil}), do: no_player!("party_leader?/1")
+
+  def party_leader?(%Ctx{game_state: gs} = ctx), do: party_leader?(ctx, gs.party_id)
+
+  @spec party_leader?(Ctx.t(), non_neg_integer()) :: 0 | 1
+  def party_leader?(%Ctx{game_state: nil}, _party_id), do: no_player!("party_leader?/2")
+
+  def party_leader?(%Ctx{game_state: gs}, party_id) do
+    case PartyManager.get(party_id) do
+      {:ok, %PartyState{leader_char_id: leader}} -> if leader == gs.character_id, do: 1, else: 0
+      {:error, _reason} -> 0
+    end
+  end
 
   @doc """
   A field of the running NPC's info as a string (rAthena `strnpcinfo`):

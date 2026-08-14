@@ -92,7 +92,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
   @impl true
   def on_event("OnEnable", ctx) do
     ev_onenable(ctx)
@@ -184,7 +183,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0 do
     ctx =
       if rem(get_local(ctx, :i, 0), 4) == 2 do
         ctx =
-          if Todo.call!(:is_party_leader, []) == 1 do
+          if party_leader?(ctx) == 1 do
             set_local(ctx, :pass, 1)
           else
             ctx

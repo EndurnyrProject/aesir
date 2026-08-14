@@ -82,6 +82,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
 
   - `%{shape: :nullary, dsl: name}` — a read with no supported arguments
     (`checkfalcon()`); any argument stays a stub.
+  - `%{shape: :opt_read, dsl: name}` — a read with one optional integer
+    argument (`is_party_leader({<party id>})`): zero args → `name(ctx)`, one
+    arg → `name(ctx, arg)`; any longer form stays a stub.
   - `%{shape: :quest_check, dsl: name}` — `checkquest(id)` /
     `checkquest(id, HUNTING)` (and `questprogress`, the same core aliased):
     the default args-truncation rule (above) would silently drop the
@@ -225,6 +228,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "strcharinfo" => %{dsl: "char_name", args: [:int]},
     "jobname" => %{dsl: "job_name", args: [:int]},
     "isbegin_quest" => %{dsl: "isbegin_quest", args: [:int]},
+    "is_party_leader" => %{shape: :opt_read, dsl: "party_leader?"},
     "checkquest" => %{shape: :quest_check, dsl: "checkquest"},
     "questprogress" => %{shape: :quest_check, dsl: "questprogress"},
     "getpartnerid" => %{dsl: "getpartnerid", args: []},
@@ -237,6 +241,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getskilllv" => %{dsl: "getskilllv", args: [:skill]},
     "getcharid" => %{dsl: "getcharid", args: [:int]},
     "getlook" => %{dsl: "getlook", args: [:look]},
+    "getmapusers" => %{dsl: "getmapusers", args: [:string]},
     "mobcount" => %{dsl: "mobcount", args: [:string, :string]},
     "getbrokenid" => %{dsl: "getbrokenid", args: [:int]},
     "eaclass" => %{dsl: "eaclass", args: [:int]},

@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney do
 
   import Aesir.ZoneServer.Script.Dsl, warn: false
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
@@ -45,7 +44,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney do
               Rathena.concat(
                 Rathena.concat(
                   "Board [Passenger ",
-                  Todo.call!(:getmapusers, [get_local(ctx, :"mapName$", "")])
+                  getmapusers(ctx, get_local(ctx, :"mapName$", ""))
                 ),
                 "/"
               ),
@@ -60,8 +59,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney do
     ctx =
       case v1 do
         1 ->
-          if Todo.call!(:getmapusers, [get_local(ctx, :"mapName$", "")]) >=
-               get_local(ctx, :passengers, 0) do
+          if getmapusers(ctx, get_local(ctx, :"mapName$", "")) >= get_local(ctx, :passengers, 0) do
             ctx =
               ctx
               |> mes("[Jeepney Driver]")

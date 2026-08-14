@@ -163,6 +163,22 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   end
 
   @doc """
+  Number of registered players whose current map is `map_name`. Players are only
+  registered while online, so this is the connected-user count on the map.
+  """
+  @spec count_players_on_map(String.t()) :: non_neg_integer()
+  def count_players_on_map(map_name) do
+    :player
+    |> list_units_by_type()
+    |> Enum.count(fn char_id ->
+      match?(
+        {:ok, {_module, %PlayerState{map_name: ^map_name}, _pid}},
+        get_unit(:player, char_id)
+      )
+    end)
+  end
+
+  @doc """
   Gets the total count of units by type.
   """
   @spec count_units_by_type(unit_type()) :: non_neg_integer()

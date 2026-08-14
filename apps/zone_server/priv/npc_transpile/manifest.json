@@ -4400,12 +4400,12 @@
     "source_hash": "09f4548c472d6ce6a07a58d5a109b0d1a34e4540e7c9c8155547221a7d8255c1"
   },
   "re/cities/malaya.txt|floating|Unidentified Creature#j|-": {
-    "output_hash": "60dccd52121f523fe8f71438a27cd665a3f97380ea31c34b3c23b99aa4183767",
+    "output_hash": "617014f3b7d8d1c4db701e00a0e1be145f508b6b2904c35f86912f69f561fb17",
     "output_path": "lib/aesir/zone_server/content/npc/floating/unidentified_creature_0.ex",
     "source_hash": "b6bcd93e552d2e851ef61ac1618239f49412fd1bc336814617d8917428241c2e"
   },
   "re/cities/malaya.txt|function|F_Malaya_Jeepney|-": {
-    "output_hash": "e9c8e669c9ec1f81f3703c8e39bd1fd15d671312743d327f1d2c1951a7479927",
+    "output_hash": "f06c5f6dd535e28081db601419af86399899c44690ea122081e222a86fb1ea74",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_malaya_jeepney.ex",
     "source_hash": "1473a3b01a8b6d50fbd122603077fd1536aab62142027e75b1919d2cc6127724"
   },

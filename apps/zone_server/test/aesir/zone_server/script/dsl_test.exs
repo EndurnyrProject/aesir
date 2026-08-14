@@ -24,6 +24,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+  alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -38,6 +40,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @sp_hp 5
   @sp_sp 7
@@ -575,6 +578,77 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "raises on a detached ctx" do
       ctx = %{build_ctx() | game_state: nil}
       assert_raise ArgumentError, fn -> Dsl.getbrokenid(ctx, 1) end
+    end
+  end
+
+  describe "getmapusers/2" do
+    test "returns the connected-player count for a known map" do
+      stub(MapCache, :exists?, fn "morocc" -> true end)
+      expect(UnitRegistry, :count_players_on_map, fn "morocc" -> 12 end)
+
+      assert Dsl.getmapusers(build_ctx(), "morocc") == 12
+    end
+
+    test "returns -1 for an unknown map" do
+      stub(MapCache, :exists?, fn "nope" -> false end)
+      reject(&UnitRegistry.count_players_on_map/1)
+
+      assert Dsl.getmapusers(build_ctx(), "nope") == -1
+    end
+  end
+
+  describe "party_leader?" do
+    test "returns 1 when the player leads their own party" do
+      ctx = build_ctx()
+
+      stub(PartyManager, :get, fn 7 ->
+        {:ok,
+         %PartyState{
+           party_id: 7,
+           name: "p",
+           leader_char_id: 1,
+           exp_share: false,
+           item_pickup_share: false
+         }}
+      end)
+
+      assert Dsl.party_leader?(%{ctx | game_state: %{ctx.game_state | party_id: 7}}) == 1
+    end
+
+    test "returns 0 when the player is not the leader" do
+      ctx = build_ctx()
+
+      stub(PartyManager, :get, fn 7 ->
+        {:ok,
+         %PartyState{
+           party_id: 7,
+           name: "p",
+           leader_char_id: 99,
+           exp_share: false,
+           item_pickup_share: false
+         }}
+      end)
+
+      assert Dsl.party_leader?(%{ctx | game_state: %{ctx.game_state | party_id: 7}}) == 0
+    end
+
+    test "returns 0 for an unknown party id" do
+      stub(PartyManager, :get, fn 999 -> {:error, :not_found} end)
+
+      assert Dsl.party_leader?(build_ctx(), 999) == 0
+    end
+
+    test "returns 0 when the player has no party" do
+      stub(PartyManager, :get, fn 0 -> {:error, :not_found} end)
+
+      assert Dsl.party_leader?(build_ctx()) == 0
+    end
+
+    test "raises on a detached ctx" do
+      ctx = %{build_ctx() | game_state: nil}
+
+      assert_raise ArgumentError, fn -> Dsl.party_leader?(ctx) end
+      assert_raise ArgumentError, fn -> Dsl.party_leader?(ctx, 7) end
     end
   end
 

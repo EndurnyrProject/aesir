@@ -1528,6 +1528,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:getbrokenid"
   end
 
+  test "getmapusers is a call read with a string arg" do
+    src =
+      gen!("""
+      if (getmapusers("morocc") >= 10)
+        mes "full";
+      close;
+      """)
+
+    assert src =~ ~S|getmapusers(ctx, "morocc")|
+    refute src =~ "Todo.call!(:getmapusers"
+  end
+
+  test "is_party_leader is an optional-arg read" do
+    src =
+      gen!("""
+      if (is_party_leader() == 1)
+        mes "leader";
+      if (is_party_leader(.@party_id) == true)
+        mes "leader2";
+      close;
+      """)
+
+    assert src =~ "party_leader?(ctx) == 1"
+    assert src =~ "party_leader?(ctx, "
+    refute src =~ "Todo.call!(:is_party_leader"
+  end
+
   test "viewpoint maps to its DSL op with numeric args (color included)" do
     src =
       gen!("""
