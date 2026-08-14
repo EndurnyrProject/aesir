@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     assert {:noreply, %{game_state: %{inventory: %{0 => %InventoryItem{bound: 1, equip: 2}}}}} =
              EquipmentHandler.handle_equip(0, 2, state)
 
-    assert_receive {:send, :gameplay, {:item_bound, %ItemBound{index: 2, bound: 1}}}
+    assert_receive {:send, :gameplay, {:item_bound, %ItemBound{index: 2, bound: :BOUND_ACCOUNT}}}
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
   end
 

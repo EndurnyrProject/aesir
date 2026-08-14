@@ -229,6 +229,15 @@ defmodule Aesir.Commons.Network.ProtoTest do
     assert fields.trade_cancelled.tag == 185
   end
 
+  test "inventory item bound round-trips as the BoundType enum" do
+    assert_round_trip(
+      :inventory_list,
+      %InventoryList{
+        normal: [%InventoryItem{index: 3, nameid: 501, amount: 1, bound: :BOUND_ACCOUNT}]
+      }
+    )
+  end
+
   test "every Homunculus command arm round-trips without an ownership selector" do
     commands = [
       inspect: %HomunculusInspectCommand{},
@@ -1363,11 +1372,12 @@ defmodule Aesir.Commons.Network.ProtoTest do
   end
 
   test "item_bound round-trips through envelope oneof" do
-    env = %Envelope{seq: 1, body: {:item_bound, %ItemBound{index: 3, bound: 1}}}
+    env = %Envelope{seq: 1, body: {:item_bound, %ItemBound{index: 3, bound: :BOUND_ACCOUNT}}}
 
     {:ok, iodata, _size} = Envelope.encode(env)
 
-    assert {:ok, %Envelope{seq: 1, body: {:item_bound, %ItemBound{index: 3, bound: 1}}}} =
+    assert {:ok,
+            %Envelope{seq: 1, body: {:item_bound, %ItemBound{index: 3, bound: :BOUND_ACCOUNT}}}} =
              Envelope.decode(IO.iodata_to_binary(iodata))
   end
 

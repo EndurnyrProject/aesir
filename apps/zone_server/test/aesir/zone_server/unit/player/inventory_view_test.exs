@@ -49,6 +49,15 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryViewTest do
     end
   end
 
+  test "projects the bound type on the inventory dump" do
+    %{normal: [unbound_view, account_view, char_view]} =
+      InventoryView.inventory_list(%{0 => item(), 1 => item(bound: 1), 2 => item(bound: 4)})
+
+    assert unbound_view.bound == :BOUND_NONE
+    assert account_view.bound == :BOUND_ACCOUNT
+    assert char_view.bound == :BOUND_CHAR
+  end
+
   defp item(attrs \\ []) do
     struct(
       InventoryItem,

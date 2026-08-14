@@ -47,8 +47,16 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
 
   @spec item_bound(non_neg_integer(), non_neg_integer()) :: ItemBound.t()
   def item_bound(server_index, bound) do
-    %ItemBound{index: PlayerState.client_index(server_index), bound: bound}
+    %ItemBound{index: PlayerState.client_index(server_index), bound: to_bound_type(bound)}
   end
+
+  @spec to_bound_type(non_neg_integer()) :: atom()
+  defp to_bound_type(0), do: :BOUND_NONE
+  defp to_bound_type(1), do: :BOUND_ACCOUNT
+  defp to_bound_type(2), do: :BOUND_GUILD
+  defp to_bound_type(3), do: :BOUND_PARTY
+  defp to_bound_type(4), do: :BOUND_CHAR
+  defp to_bound_type(_), do: :BOUND_NONE
 
   @doc """
   Builds an `ItemRemoved` for an item that left (or was reduced in) the inventory.
@@ -81,7 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       item_fields(%{item | amount: amount}, names)
       |> Map.merge(%{
         index: index,
-        bind_on_equip: item.bound,
+        bound: to_bound_type(item.bound),
         favorite: item.favorite == 1
       })
     )
@@ -204,7 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
       item_fields(item, names)
       |> Map.merge(%{
         index: PlayerState.client_index(index),
-        bind_on_equip: item.bound,
+        bound: to_bound_type(item.bound),
         favorite: item.favorite == 1
       })
     )

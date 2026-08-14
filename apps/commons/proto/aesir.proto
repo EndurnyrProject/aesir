@@ -234,6 +234,18 @@ enum CreatorKind {
   CREATOR_FORGED = 2;
 }
 
+// Bound state of an inventory item. Unbound items are BOUND_NONE. The server
+// currently assigns BOUND_ACCOUNT (on equip of a bind-on-equip item) and
+// BOUND_CHAR (script/quest-bound); BOUND_GUILD and BOUND_PARTY are reserved for
+// those transfer scopes.
+enum BoundType {
+  BOUND_NONE = 0;
+  BOUND_ACCOUNT = 1;
+  BOUND_GUILD = 2;
+  BOUND_PARTY = 3;
+  BOUND_CHAR = 4;
+}
+
 // Client -> server, first message on the Control channel after connect.
 // Capabilities are optional and do not change the protocol-version baseline.
 message Hello {
@@ -840,7 +852,7 @@ message InventoryItem {
   uint32 refine = 8;
   repeated uint32 cards = 9;
   uint64 expire_time = 10;
-  uint32 bind_on_equip = 11;
+  BoundType bound = 11;
   bool favorite = 12;
   uint32 look = 13;
   // Per-unit weight from the item database (multiply by amount for the stack).
@@ -888,7 +900,7 @@ message ItemRemoved {
 // Server -> client, an inventory item became bound (for example, on equip).
 message ItemBound {
   uint32 index = 1; // Client inventory index.
-  uint32 bound = 2; // Bound type (1 = account, 4 = character).
+  BoundType bound = 2;
 }
 
 // Server -> client, the full cart dump (sent on mount/login). Mirrors InventoryList
