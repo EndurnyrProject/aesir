@@ -17,11 +17,18 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   alias Aesir.ZoneServer.Constants.ObjectType
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
+  alias Aesir.ZoneServer.Npc.Session, as: NpcSession
 
   @doc "Builds the spawn packet for a placement, keyed by its entity id."
   @spec spawn_packet(Placement.t()) :: UnitSpawn.t()
   def spawn_packet(%Placement{} = placement) do
     entity_id = NpcRegistry.entity_id(placement)
+
+    {sprite, name, size} =
+      case NpcSession.display_override(entity_id) do
+        {s, n, sz} -> {s || placement.sprite, n || placement.name, sz}
+        nil -> {placement.sprite, placement.name, 0}
+      end
 
     %UnitSpawn{
       object_type: ObjectType.npc(),
@@ -31,7 +38,7 @@ defmodule Aesir.ZoneServer.Npc.Packets do
       body_state: 0,
       health_state: 0,
       effect_state: 0,
-      job: placement.sprite,
+      job: sprite,
       head: 0,
       weapon: 0,
       shield: 0,
@@ -51,10 +58,19 @@ defmodule Aesir.ZoneServer.Npc.Packets do
       max_hp: 0,
       hp: 0,
       is_boss: false,
-      name: placement.name,
+      name: name,
+      size: display_size(size),
       moving: false
     }
   end
+
+  # The runtime keeps the display size as rAthena's integer (0/1/2); it is
+  # converted to the wire enum at the packet boundary.
+  @spec display_size(non_neg_integer()) :: atom()
+  defp display_size(0), do: :DISPLAY_SIZE_NORMAL
+  defp display_size(1), do: :DISPLAY_SIZE_SMALL
+  defp display_size(2), do: :DISPLAY_SIZE_BIG
+  defp display_size(_), do: :DISPLAY_SIZE_NORMAL
 
   @doc "Builds the vanish packet for an NPC's entity id."
   @spec vanish_packet(non_neg_integer()) :: UnitDespawn.t()

@@ -61,6 +61,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     the self-scoped chat-box message): keep the `n` fixed prefix args plus an
     optional trailing color; the rAthena font tail
     (fontType/fontSize/fontAlign/fontY) has no DSL equivalent and is dropped.
+  - `%{shape: :setnpcdisplay}` — `setnpcdisplay`'s four arities, disambiguated
+    by argument count and the second argument's type: `("<npc>", <sprite>)` is
+    sprite-only, `("<npc>", "<display>")` name-only, the 3-arg form name +
+    sprite, the 4-arg form adds size. A sprite name constant (`4_M_THIEF_RUMIN`)
+    resolves via the `e_job_types` sprite table; an unknown constant or any
+    other shape stays a stub.
 
   ## Reads
 
@@ -154,7 +160,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "npcskill" => %{dsl: "npcskill", args: [:skill, :int, :int, :int]},
     "skilleffect" => %{dsl: "skilleffect", args: [:skill, :int]},
     "setlook" => %{dsl: "setlook", args: [:look, :int]},
-    "setcell" => %{dsl: "setcell", args: [:string, :int, :int, :int, :int, :cell_type, :int]}
+    "setcell" => %{dsl: "setcell", args: [:string, :int, :int, :int, :int, :cell_type, :int]},
+    "setnpcdisplay" => %{shape: :setnpcdisplay}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.

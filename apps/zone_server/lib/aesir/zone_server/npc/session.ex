@@ -71,6 +71,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   alias Aesir.ZoneServer.Unit.Broadcast
 
   @flags_table :npc_session_flags
+  @display_table :npc_display_overrides
   @interaction_supervisor Aesir.ZoneServer.Npc.InteractionSupervisor
   @session_registry Aesir.ZoneServer.Npc.SessionRegistry
   @session_dynamic_supervisor Aesir.ZoneServer.Npc.SessionDynamicSupervisor
@@ -93,7 +94,15 @@ defmodule Aesir.ZoneServer.Npc.Session do
             timer_ref: nil,
             on_fire: nil,
             enabled?: true,
-            hidden?: false
+            hidden?: false,
+            display: %{sprite: nil, name: nil, size: 0}
+
+  @typedoc "A per-NPC display override: `sprite`/`name` are `nil` when not overridden."
+  @type display_override() :: %{
+          sprite: non_neg_integer() | nil,
+          name: String.t() | nil,
+          size: non_neg_integer()
+        }
 
   @type t() :: %__MODULE__{
           gid: non_neg_integer(),
@@ -105,7 +114,8 @@ defmodule Aesir.ZoneServer.Npc.Session do
           timer_ref: reference() | nil,
           on_fire: (non_neg_integer(), String.t() -> any()),
           enabled?: boolean(),
-          hidden?: boolean()
+          hidden?: boolean(),
+          display: display_override()
         }
 
   # Public API
@@ -214,6 +224,35 @@ defmodule Aesir.ZoneServer.Npc.Session do
   end
 
   @doc """
+  Sets a partial display override for the NPC (sprite, display name, and/or
+  size), starting the session if needed. Each of `:sprite`, `:name`, and
+  `:size` present in `overrides` replaces the current value; absent keys keep
+  it. Mirrors the override to `:npc_display_overrides` and re-broadcasts the
+  NPC's spawn packet to players in range when it is currently visible, so a
+  standing player sees the change immediately.
+  """
+  @spec set_display(non_neg_integer(), map()) :: :ok
+  def set_display(gid, overrides) do
+    gid |> ensure_started() |> GenServer.call({:set_display, overrides})
+  end
+
+  @doc """
+  Reads the NPC's raw display override directly from ETS, no GenServer call.
+
+  Returns `{sprite, name, size}` where `sprite`/`name` are `nil` when not
+  overridden and `size` defaults to `0` (normal); returns `nil` when the NPC
+  has no override row. Callers merge these with the placement's defaults.
+  """
+  @spec display_override(non_neg_integer()) ::
+          {non_neg_integer() | nil, String.t() | nil, non_neg_integer()} | nil
+  def display_override(gid) do
+    case :ets.lookup(@display_table, gid) do
+      [{^gid, sprite, name, size}] -> {sprite, name, size}
+      [] -> nil
+    end
+  end
+
+  @doc """
   Starts a session for `gid`.
 
   Accepts `:on_fire` (defaults to `Aesir.ZoneServer.Npc.Events.trigger_gid/2`,
@@ -251,6 +290,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
     Process.flag(:trap_exit, true)
 
     clear_flags(gid)
+    clear_display(gid)
 
     state = %__MODULE__{
       gid: gid,
@@ -302,6 +342,13 @@ defmodule Aesir.ZoneServer.Npc.Session do
     {:reply, :ok, new_state}
   end
 
+  @impl GenServer
+  def handle_call({:set_display, overrides}, _from, state) do
+    new_state = %{state | display: merge_display(state.display, overrides)} |> mirror_display()
+    broadcast_display_change(state, new_state)
+    {:reply, :ok, new_state}
+  end
+
   # Only a fire whose ref still matches the currently-armed one, on a timer
   # that's still running, is honored. `Process.cancel_timer/1` cannot
   # guarantee an in-flight message isn't already in the process mailbox, so
@@ -318,6 +365,7 @@ defmodule Aesir.ZoneServer.Npc.Session do
   @impl GenServer
   def terminate(_reason, state) do
     clear_flags(state.gid)
+    clear_display(state.gid)
     :ok
   end
 
@@ -414,6 +462,30 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec clear_flags(non_neg_integer()) :: true
   defp clear_flags(gid), do: :ets.delete(@flags_table, gid)
+
+  @spec merge_display(display_override(), map()) :: display_override()
+  defp merge_display(current, overrides) do
+    %{
+      sprite: Map.get(overrides, :sprite, current.sprite),
+      name: Map.get(overrides, :name, current.name),
+      size: Map.get(overrides, :size, current.size)
+    }
+  end
+
+  @spec mirror_display(t()) :: t()
+  defp mirror_display(%{gid: gid, display: %{sprite: sprite, name: name, size: size}} = state) do
+    :ets.insert(@display_table, {gid, sprite, name, size})
+    state
+  end
+
+  @spec clear_display(non_neg_integer()) :: true
+  defp clear_display(gid), do: :ets.delete(@display_table, gid)
+
+  @spec broadcast_display_change(t(), t()) :: :ok
+  defp broadcast_display_change(_old_state, new_state) do
+    if effectively_visible?(new_state), do: broadcast_spawn(new_state.gid)
+    :ok
+  end
 
   # Broadcasts the immediate spawn/vanish delta when a flag change flips this
   # NPC's effective visibility (see the moduledoc's "Flags" section). A

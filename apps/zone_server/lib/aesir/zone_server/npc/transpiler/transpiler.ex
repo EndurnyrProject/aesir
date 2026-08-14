@@ -52,6 +52,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       out_root: out_root,
       force: Keyword.get(opts, :force, false),
       functions: Map.merge(manifest_functions(manifest), fn_modules),
+      sprites: sprites,
       written: [],
       skipped: 0,
       conflicts: [],
@@ -375,6 +376,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       kind: unit.kind,
       spawns: spawns,
       functions: state.functions,
+      sprites: state.sprites,
       source: "#{entry.file}:#{entry.line} (#{entry[:name]})"
     }
 

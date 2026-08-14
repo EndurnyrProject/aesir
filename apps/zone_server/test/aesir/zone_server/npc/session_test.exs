@@ -240,6 +240,24 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
     end
   end
 
+  describe "display_override/1 and set_display/2" do
+    test "reads nil from ETS with no session" do
+      gid = gid_for(NoTimerNpc)
+      assert Session.display_override(gid) == nil
+    end
+
+    test "set_display/2 merges partial overrides and mirrors them to ETS" do
+      gid = gid_for(NoTimerNpc)
+      start_via_dynamic_supervisor(gid)
+
+      :ok = Session.set_display(gid, %{sprite: 937})
+      assert Session.display_override(gid) == {937, nil, 0}
+
+      :ok = Session.set_display(gid, %{name: "Elite Guard", size: 2})
+      assert Session.display_override(gid) == {937, "Elite Guard", 2}
+    end
+  end
+
   describe "a crashed session" do
     @tag :capture_log
     test "restarts blank: timer stopped, flags reset" do
@@ -249,6 +267,7 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       :ok = Session.init_timer(gid)
       :ok = Session.set_enabled(gid, false)
       :ok = Session.set_hidden(gid, true)
+      :ok = Session.set_display(gid, %{sprite: 937})
 
       ref = Process.monitor(pid)
       GenServer.cast(pid, :boom)
@@ -260,6 +279,7 @@ defmodule Aesir.ZoneServer.Npc.SessionTest do
       assert Session.get_timer(gid) == 0
       assert Session.enabled?(gid)
       refute Session.hidden?(gid)
+      assert Session.display_override(gid) == nil
     end
   end
 

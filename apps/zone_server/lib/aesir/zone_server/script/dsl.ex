@@ -2427,6 +2427,34 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Changes the display of the named NPC (rAthena `setnpcdisplay`): its sprite,
+  display name, and/or size, applied to every placement registered under that
+  name.
+
+  `opts` accepts `:npc` (the target NPC name, required), `:sprite` (a view
+  class id), `:display_name` (the new displayed name), and `:size` (`0` normal,
+  `1` small, `2` big). Only the keys present are changed; the rest keep their
+  current value. Valid on an attached or detached ctx; an unresolved name logs
+  a warning and no-ops.
+  """
+  @spec set_npc_display(Ctx.t(), keyword()) :: Ctx.t()
+  def set_npc_display(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
+
+  def set_npc_display(%Ctx{} = ctx, opts) do
+    name = Keyword.fetch!(opts, :npc)
+
+    overrides =
+      opts
+      |> Keyword.take([:sprite, :display_name, :size])
+      |> Map.new(fn
+        {:display_name, value} -> {:name, value}
+        {key, value} -> {key, value}
+      end)
+
+    each_named(ctx, name, "set_npc_display/2", &NpcSession.set_display(&1, overrides))
+  end
+
+  @doc """
   Enables the calling NPC, restoring its visibility and clickability (rAthena
   `enablenpc`). Targets `ctx.npc_gid`; valid on both an attached and a
   detached ctx, since it mutates NPC state, not player state. A ctx with no

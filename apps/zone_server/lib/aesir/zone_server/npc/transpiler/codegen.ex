@@ -115,7 +115,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         sub: opts.kind == :function,
         break: nil,
         loop: nil,
-        catch_return: false
+        catch_return: false,
+        sprites: Map.get(opts, :sprites, %{})
       }
 
       source = build_module(ast, env, opts)
@@ -1032,6 +1033,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
   end
 
+  # `setnpcdisplay "<npc>",<sprite>` / `"<npc>","<display>"` /
+  # `"<npc>","<display>",<sprite>{,<size>}` — the second argument's type
+  # (string vs int/name) picks the name-only vs sprite-only 2-arg form. Emits
+  # one `set_npc_display(ctx, npc: ..., ...)` keyword call; any other shape
+  # stays a stub.
+  defp emit_mapped(_name, %{shape: :setnpcdisplay}, args, env) do
+    {pre, args} = hoist_all(args, env)
+
+    case build_npc_display(args, env) do
+      {:ok, rendered} ->
+        {pre ++ ["ctx = set_npc_display(ctx, #{rendered})"], :cont}
+
+      :error ->
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, :setnpcdisplay, [#{rendered}])"], :cont}
+    end
+  end
+
   # A no-argument effect (`nude`): any trailing rAthena arg (the optional char
   # id) is still hoisted so a side effect in it is preserved, then dropped.
   defp emit_mapped(_name, %{shape: :nullary, dsl: dsl}, args, env) do
@@ -1224,6 +1243,48 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp monster_event([], _env), do: []
   defp monster_event([{:str, ""}], _env), do: []
   defp monster_event([event], env), do: ["event: #{render_str(event, env)}"]
+
+  # `setnpcdisplay` disambiguation (see the emit_mapped clause): the second
+  # argument's type — string literal vs sprite (int or sprite name constant) —
+  # selects the name-only vs sprite-only 2-arg form. Sprite name constants
+  # (`4_M_THIEF_RUMIN`) resolve through the `e_job_types` sprite table threaded
+  # into `env.sprites`; an unresolved constant stays a stub.
+  defp build_npc_display([npc, {:str, display}], env) do
+    {:ok, "npc: #{render(npc, env)}, display_name: #{inspect(display)}"}
+  end
+
+  defp build_npc_display([npc, sprite], env) do
+    with {:ok, sprite_v} <- sprite_arg(sprite, env) do
+      {:ok, "npc: #{render(npc, env)}, sprite: #{sprite_v}"}
+    end
+  end
+
+  defp build_npc_display([npc, {:str, display}, sprite], env) do
+    with {:ok, sprite_v} <- sprite_arg(sprite, env) do
+      {:ok, "npc: #{render(npc, env)}, display_name: #{inspect(display)}, sprite: #{sprite_v}"}
+    end
+  end
+
+  defp build_npc_display([npc, {:str, display}, sprite, size], env) do
+    with {:ok, sprite_v} <- sprite_arg(sprite, env) do
+      {:ok,
+       "npc: #{render(npc, env)}, display_name: #{inspect(display)}, sprite: #{sprite_v}, " <>
+         "size: #{render(size, env)}"}
+    end
+  end
+
+  defp build_npc_display(_args, _env), do: :error
+
+  defp sprite_arg({:int, n}, _env), do: {:ok, to_string(n)}
+
+  defp sprite_arg({:name, s}, env) do
+    case Map.fetch(env.sprites, s) do
+      {:ok, id} -> {:ok, Integer.to_string(id)}
+      :error -> :error
+    end
+  end
+
+  defp sprite_arg(expr, env), do: {:ok, render(expr, env)}
 
   defp typed_arg({:int, n}, _type, _env), do: to_string(n)
 

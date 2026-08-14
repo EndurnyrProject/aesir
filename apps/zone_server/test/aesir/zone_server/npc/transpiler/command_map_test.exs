@@ -77,6 +77,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("SetCell")
   end
 
+  test "setnpcdisplay maps to its dedicated shape" do
+    assert {:ok, %{shape: :setnpcdisplay}} = CommandMap.command("setnpcdisplay")
+    assert CommandMap.supported?("setnpcdisplay")
+    assert CommandMap.supported?("SetNpcDisplay")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")

@@ -13,8 +13,8 @@ defmodule Aesir.ZoneServer.Npc.SessionSupervisor do
   use Supervisor
 
   @flags_table :npc_session_flags
+  @display_table :npc_display_overrides
   @dynamic_supervisor Aesir.ZoneServer.Npc.SessionDynamicSupervisor
-
   @doc "Starts the supervisor."
   @spec start_link(term()) :: Supervisor.on_start()
   def start_link(opts) do
@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Npc.SessionSupervisor do
   @impl Supervisor
   def init(_opts) do
     :ets.new(@flags_table, [:set, :public, :named_table, read_concurrency: true])
+    :ets.new(@display_table, [:set, :public, :named_table, read_concurrency: true])
 
     children = [
       {DynamicSupervisor,

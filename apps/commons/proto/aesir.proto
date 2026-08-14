@@ -500,6 +500,13 @@ message MoveStop {
 
 // Server -> client, an entity entered view (collapses RO ZC_NOTIFY_NEWENTRY 0x09FE,
 // ZC_NOTIFY_STANDENTRY 0x09FF and ZC_NOTIFY_MOVEENTRY 0x09FD). The `moving`, `dst_*` and
+// Display scale of a spawned unit (used by NPCs: setnpcdisplay's size argument).
+enum DisplaySize {
+  DISPLAY_SIZE_NORMAL = 0;
+  DISPLAY_SIZE_SMALL = 1;
+  DISPLAY_SIZE_BIG = 2;
+}
+
 // `move_start_time` fields carry the moveentry case.
 message UnitSpawn {
   uint32 gid = 1;
@@ -539,6 +546,7 @@ message UnitSpawn {
   uint32 emblem_id = 35;
   uint32 spirit_sphere_count = 36;
   uint64 spirit_sphere_revision = 37;
+  DisplaySize size = 38;
 }
 
 // Server -> client, authoritative absolute spirit-sphere state for a unit.

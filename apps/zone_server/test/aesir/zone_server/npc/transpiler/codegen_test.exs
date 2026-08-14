@@ -667,6 +667,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "|> close()"
   end
 
+  test "setnpcdisplay emits set_npc_display for its four arities" do
+    assert gen!("setnpcdisplay \"Guard\", 937;") =~
+             ~S{set_npc_display(ctx, npc: "Guard", sprite: 937)}
+
+    assert gen!("setnpcdisplay \"Guard\", \"Elite Guard\";") =~
+             ~S{set_npc_display(ctx, npc: "Guard", display_name: "Elite Guard")}
+
+    assert gen!("setnpcdisplay \"Guard\", \"Elite Guard\", 938;") =~
+             ~S{set_npc_display(ctx, npc: "Guard", display_name: "Elite Guard", sprite: 938)}
+
+    assert gen!("setnpcdisplay \"Guard\", \"Elite Guard\", 939, 2;") =~
+             ~S{set_npc_display(ctx, npc: "Guard", display_name: "Elite Guard", sprite: 939, size: 2)}
+  end
+
+  test "setnpcdisplay resolves sprite name constants and stubs unresolved ones" do
+    resolved =
+      gen!("setnpcdisplay \"Lumin\", 4_M_THIEF_RUMIN;",
+        sprites: %{"4_M_THIEF_RUMIN" => 42}
+      )
+
+    assert resolved =~ "sprite: 42"
+    refute resolved =~ "todo(ctx, :setnpcdisplay"
+
+    unresolved = gen!("setnpcdisplay \"Guard\", 4_NOPE;")
+    assert unresolved =~ "todo(ctx, :setnpcdisplay"
+  end
+
   test "getnpctimer type 0 reads elapsed ms; other types and arities stay stubs" do
     src =
       gen!("""

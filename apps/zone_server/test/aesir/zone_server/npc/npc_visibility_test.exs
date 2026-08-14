@@ -83,6 +83,7 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     on_exit(fn ->
       :persistent_term.erase(NpcRegistry)
       Enum.each(gids, &:ets.delete(:npc_session_flags, &1))
+      Enum.each(gids, &:ets.delete(:npc_display_overrides, &1))
     end)
 
     :ok
@@ -248,6 +249,36 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
     end
   end
 
+  describe "set_npc_display/2" do
+    test "applies the override to every placement sharing the name" do
+      gid_a = gid_for(DupNpcA)
+      gid_b = gid_for(DupNpcB)
+      ctx = npc_ctx(nil)
+
+      assert Dsl.set_npc_display(ctx, npc: "ToggleDup", sprite: 937) == ctx
+
+      assert NpcSession.display_override(gid_a) == {937, nil, 0}
+      assert NpcSession.display_override(gid_b) == {937, nil, 0}
+    end
+
+    test "an unknown name logs a warning and no-ops" do
+      ctx = npc_ctx(nil)
+
+      log =
+        capture_log(fn ->
+          assert Dsl.set_npc_display(ctx, npc: "Nowhere", sprite: 937) == ctx
+        end)
+
+      assert log =~ "unknown name"
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      ctx = Ctx.halt(npc_ctx(nil), :boom)
+
+      assert Dsl.set_npc_display(ctx, npc: "ToggleDup", sprite: 937) == ctx
+    end
+  end
+
   describe "visibility matrix" do
     test "visible iff enabled and not hidden, for every combination of the two flags" do
       gid = gid_for(ToggleNpc)
@@ -407,6 +438,27 @@ defmodule Aesir.ZoneServer.Npc.NpcVisibilityTest do
         NpcSession.handle_call({:set_hidden, true}, {self(), make_ref()}, disabled_state)
 
       refute_receive {:"$gen_cast", {:send_packet, _packet}}, 100
+    end
+
+    test "set_display re-broadcasts the spawn packet with the overridden appearance" do
+      gid = gid_for(ToggleNpc)
+      register_player(1, x: 302, y: 300)
+
+      {:reply, :ok, _state} =
+        NpcSession.handle_call(
+          {:set_display, %{sprite: 937, name: "New Toggle", size: 2}},
+          {self(), make_ref()},
+          session_state(gid)
+        )
+
+      assert_receive {:"$gen_cast",
+                      {:send_packet,
+                       %UnitSpawn{
+                         gid: ^gid,
+                         job: 937,
+                         name: "New Toggle",
+                         size: :DISPLAY_SIZE_BIG
+                       }}}
     end
   end
 
