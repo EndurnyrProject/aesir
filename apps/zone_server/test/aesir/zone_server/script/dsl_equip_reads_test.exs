@@ -294,7 +294,7 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
       session = start_stub(fn _op -> {:ok, %PlayerState{}} end)
       ctx = build_ctx(session: session)
 
-      Dsl.getitem2(ctx, @sword, 1, 1, 4, 0, 0, @poring_card, 0, 0, 0)
+      Dsl.getitem2(ctx, @sword, 1, 1, 4, 0, @poring_card, 0, 0, 0)
 
       assert_received {:script_apply,
                        {:give_item2, @sword, 1,

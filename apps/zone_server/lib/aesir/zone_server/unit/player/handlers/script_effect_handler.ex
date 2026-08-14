@@ -202,9 +202,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   end
 
   # rAthena `getitem2`: grants an item with explicit identify/refine/card
-  # attributes through `InventoryOps.add`'s opts map. `attr`/`attr2` (the
-  # element attribute) have no Aesir inventory field and are dropped by the
-  # DSL before this op is built.
+  # attributes through `InventoryOps.add`'s opts map. `attr` (the element
+  # attribute) has no Aesir inventory field and is dropped by the DSL before
+  # this op is built.
   def apply_op({:give_item2, item_id, qty, attrs}, %{game_state: gs} = state) do
     with {:ok, definition} <- fetch_definition(item_id),
          {:ok, persisted, change} <-

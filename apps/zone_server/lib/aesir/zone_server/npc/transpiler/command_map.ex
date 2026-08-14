@@ -109,7 +109,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getitembound" => %{dsl: "give_item_bound", args: [:item, :int, :bound]},
     "getitem2" => %{
       dsl: "getitem2",
-      args: [:item, :int, :int, :int, :int, :int, :item, :item, :item, :item]
+      args: [:item, :int, :int, :int, :int, :item, :item, :item, :item]
     },
     "delitem" => %{dsl: "delitem", args: [:item, :int]},
     "delequip" => %{dsl: "delequip", args: [:equip_slot]},

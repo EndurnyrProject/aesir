@@ -15502,6 +15502,176 @@
       }
     ]
   },
+  "re/jobs/1-1/acolyte.txt|script|Ascetic#2aco|moc_fild07:41:355": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic41355",
+    "output_hash": "b0a032f57eb8c653cf0282ae988ef03e0a78d0815c32128bd7a4ef68950f2db0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/ascetic_41_355.ex",
+    "source_hash": "3e48bf06ad8b49cd7da6fc572db8a06f61ee77739a200c9e2a06c6b317e7fcf3",
+    "spawns": [
+      {
+        "name": "Ascetic",
+        "x": 41,
+        "y": 355,
+        "map": "moc_fild07",
+        "dir": 4,
+        "sprite": 95,
+        "unique_name": "Ascetic#2aco"
+      }
+    ]
+  },
+  "re/jobs/1-1/acolyte.txt|script|Ascetic#3aco|prt_fild00:208:218": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic208218",
+    "output_hash": "cbb4021a6c9f566fb4df35d79967650f5f06c1dddf09c3cc86aebfa6bf96a5ef",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/ascetic_208_218.ex",
+    "source_hash": "ba4db99107f2eb28aca0c2d1d8813478960f1a01b4903a7e436c7fb06172d962",
+    "spawns": [
+      {
+        "name": "Ascetic",
+        "x": 208,
+        "y": 218,
+        "map": "prt_fild00",
+        "dir": 6,
+        "sprite": 98,
+        "unique_name": "Ascetic#3aco"
+      }
+    ]
+  },
+  "re/jobs/1-1/acolyte.txt|script|Ascetic#aco|prt_fild03:365:255": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic",
+    "output_hash": "03acf61679c462a67ee4985cd2ffb8cd792ae2faa2f5c4ae86d357189c453997",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/ascetic.ex",
+    "source_hash": "77e00562be41e6ff24611bccfa5c872f861e7eaf9a855b79f08aa957120279a9",
+    "spawns": [
+      {
+        "name": "Ascetic",
+        "x": 365,
+        "y": 255,
+        "map": "prt_fild03",
+        "dir": 2,
+        "sprite": 89,
+        "unique_name": "Ascetic#aco"
+      }
+    ]
+  },
+  "re/jobs/1-1/acolyte.txt|script|Cleric#aco|prt_church:184:41": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Cleric",
+    "output_hash": "7e32bdd5eae31635fbfb76f9a54315be0c866ad271e11d3b27fb8866cbec8744",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/cleric.ex",
+    "source_hash": "260f249d01be069f00ebc2bbfe797e7930b0cf5b32fb0010f7ee71426b1da23c",
+    "spawns": [
+      {
+        "name": "Cleric",
+        "x": 184,
+        "y": 41,
+        "map": "prt_church",
+        "dir": 4,
+        "sprite": 60,
+        "unique_name": "Cleric#aco"
+      }
+    ]
+  },
+  "re/jobs/1-1/archer.txt|script|Archer Guildsman#archer|payon_in02:64:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Archer.ArcherGuildsman",
+    "output_hash": "7a1ac0b0a4a9cd16b0e19bd8d481d472b10d05045783c1bb112abba6b2ce3142",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/archer/archer_guildsman.ex",
+    "source_hash": "28de51c2d7a194d4d0892770f3da3ab02e83671ec55ebf75f03be7ca72903cbd",
+    "spawns": [
+      {
+        "name": "Archer Guildsman",
+        "x": 64,
+        "y": 71,
+        "map": "payon_in02",
+        "dir": 4,
+        "sprite": 85,
+        "unique_name": "Archer Guildsman#archer"
+      }
+    ]
+  },
+  "re/jobs/1-1/mage.txt|script|Mage Guildsman#mage|geffen_in:164:124": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman",
+    "output_hash": "50e254558cec1f1d621e4a8d56059236bc8a9511caa8be04fc509a3f59e39ee6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/mage/mage_guildsman.ex",
+    "source_hash": "bd5115ef5a3380f51fa553428318e7b95b8b37198b0e462c394fe6b3e25bda30",
+    "spawns": [
+      {
+        "name": "Mage Guildsman",
+        "x": 164,
+        "y": 124,
+        "map": "geffen_in",
+        "dir": 4,
+        "sprite": 123,
+        "unique_name": "Mage Guildsman#mage"
+      }
+    ]
+  },
+  "re/jobs/1-1/merchant.txt|script|Merchant#mer|alberta_in:53:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Merchant.Merchant",
+    "output_hash": "172f3bdf6825f2a6426f317a03ebf395fde62cb55b809d560642cd0be56a65eb",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/merchant/merchant.ex",
+    "source_hash": "031341953a381fdb38cda70c9fc9a1cfb32f82ed58f7fcd5000de3dad194ec2b",
+    "spawns": [
+      {
+        "name": "Merchant",
+        "x": 53,
+        "y": 43,
+        "map": "alberta_in",
+        "dir": 6,
+        "sprite": 86,
+        "unique_name": "Merchant#mer"
+      }
+    ]
+  },
+  "re/jobs/1-1/swordman.txt|script|Swordman#swd|izlude_in:74:172": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.Swordman",
+    "output_hash": "f527a66ab6bd6dacdfcb41a116b846e9beb0b34d925e71db2c5e033dbfd69137",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/swordman/swordman.ex",
+    "source_hash": "7134990afe72529151832ddf0ab40013122ce330f1a8dd15e999258182b18e58",
+    "spawns": [
+      {
+        "name": "Swordman",
+        "x": 74,
+        "y": 172,
+        "map": "izlude_in",
+        "dir": 4,
+        "sprite": 119,
+        "unique_name": "Swordman#swd"
+      }
+    ]
+  },
+  "re/jobs/1-1/thief.txt|script|Thief Guide#thief|moc_prydb1:39:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuide",
+    "output_hash": "85378f391657da716426d887f849426e5414bccf228e4b92e6ea7b9a0d3029bc",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/thief/thief_guide.ex",
+    "source_hash": "7129ff717e87835cb70301272a8f6804d2ed512b1ed33ccfe3978e95bfc78622",
+    "spawns": [
+      {
+        "name": "Thief Guide",
+        "x": 39,
+        "y": 129,
+        "map": "moc_prydb1",
+        "dir": 2,
+        "sprite": 69,
+        "unique_name": "Thief Guide#thief"
+      }
+    ]
+  },
+  "re/jobs/1-1/thief.txt|script|Thief Guildsman#thief|moc_prydb1:42:133": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuildsman",
+    "output_hash": "4743786d2ede4caa144eaec853a1a5cf3f7473b09bf72cd05e82fa81b59a691d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/thief/thief_guildsman.ex",
+    "source_hash": "e4af6b9ac552e79b34b902894ec44ef17d07865f78f95e859d05807900d41058",
+    "spawns": [
+      {
+        "name": "Thief Guildsman",
+        "x": 42,
+        "y": 133,
+        "map": "moc_prydb1",
+        "dir": 2,
+        "sprite": 118,
+        "unique_name": "Thief Guildsman#thief"
+      }
+    ]
+  },
   "re/jobs/novice/academy.txt|floating|::ac_board|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.AcBoard",
     "output_hash": "7c52009e518d54625104dc2597959a558a39fb3995c3b7fa8978ceea1c1d2226",

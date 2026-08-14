@@ -1379,12 +1379,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     src =
       gen!("""
       delequip EQI_ARMOR;
-      getitem2 4001,1,1,0,0,0,4002,0,0,0;
+      getitem2 4001,1,1,0,0,4002,0,0,0;
       close;
       """)
 
     assert src =~ "ctx |> delequip(7)"
-    assert src =~ "ctx |> delequip(7) |> getitem2(4001, 1, 1, 0, 0, 0, 4002, 0, 0, 0)"
+    assert src =~ "ctx |> delequip(7) |> getitem2(4001, 1, 1, 0, 0, 4002, 0, 0, 0)"
     refute src =~ "Todo.call!(:delequip"
     refute src =~ "Todo.call!(:getitem2"
   end

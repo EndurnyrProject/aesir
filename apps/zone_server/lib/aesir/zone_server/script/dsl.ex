@@ -1364,9 +1364,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   @doc """
   Gives `qty` of item `item_id` with explicit attributes through the session
   seam (rAthena `getitem2`): `identify`, `refine`, and the four card values
-  (`card1`..`card4` map to `card0`..`card3`). The element attribute and its
-  second value have no Aesir inventory field and are accepted-but-ignored, as
-  documented. Halts `:no_player` on a detached ctx.
+  (`card1`..`card4` map to `card0`..`card3`). The element attribute has no
+  Aesir inventory field and is accepted-but-ignored, as documented. Halts
+  `:no_player` on a detached ctx.
   """
   @spec getitem2(
           Ctx.t(),
@@ -1378,11 +1378,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
           integer(),
           integer(),
           integer(),
-          integer(),
           integer()
         ) :: Ctx.t()
-  # The rAthena `getitem2` buildin carries ten positional args (id, count,
-  # identify, refine, attr, attr2, four cards); the arity is inherent.
+  # The rAthena `getitem2` buildin carries nine positional args (id, count,
+  # identify, refine, attr, four cards); the arity is inherent.
   # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
   def getitem2(
         %Ctx{status: {:error, _}} = ctx,
@@ -1391,7 +1390,6 @@ defmodule Aesir.ZoneServer.Script.Dsl do
         _identify,
         _refine,
         _attr,
-        _attr2,
         _card1,
         _card2,
         _card3,
@@ -1407,7 +1405,6 @@ defmodule Aesir.ZoneServer.Script.Dsl do
         identify,
         refine,
         _attr,
-        _attr2,
         card1,
         card2,
         card3,

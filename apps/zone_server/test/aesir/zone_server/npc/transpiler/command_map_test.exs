@@ -206,7 +206,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("delequip")
 
     assert {:ok, %{dsl: "getitem2", args: args}} = CommandMap.command("getitem2")
-    assert length(args) == 10
+    assert length(args) == 9
     assert CommandMap.supported?("getitem2")
   end
 
