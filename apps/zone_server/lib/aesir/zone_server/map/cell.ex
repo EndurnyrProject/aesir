@@ -24,7 +24,8 @@ defmodule Aesir.ZoneServer.Map.Cell do
           optional(:blocks_movement) => boolean(),
           optional(:blocks_projectiles) => boolean(),
           optional(:consumable_water) => non_neg_integer() | {:water_ball, non_neg_integer()},
-          optional(:exclusive) => boolean()
+          optional(:exclusive) => boolean(),
+          optional(:icewall) => boolean()
         }
 
   @doc "Adds or replaces one source-owned terrain contribution."
@@ -38,11 +39,60 @@ defmodule Aesir.ZoneServer.Map.Cell do
     key = {map_name, x, y, source_kind, source_id}
 
     transaction(fn ->
-      :ets.insert(table_for(:dynamic_cell_contributions), {key, contribution})
-      :ets.insert(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
-      :ets.insert(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
+      write_contribution(key, source_kind, source_id, map_name, x, y, contribution)
       :ok
     end)
+  end
+
+  @doc "Merges traits into a source-owned terrain contribution."
+  @spec put_traits(String.t(), integer(), integer(), atom(), non_neg_integer(), keyword()) :: :ok
+  def put_traits(map_name, x, y, source_kind, source_id, traits)
+      when is_binary(map_name) and is_integer(x) and x >= 0 and is_integer(y) and y >= 0 and
+             is_atom(source_kind) and is_integer(source_id) and source_id >= 0 do
+    map_name = canonical_map_name(map_name)
+    key = {map_name, x, y, source_kind, source_id}
+
+    transaction(fn ->
+      merged = Map.merge(current_contribution(key), Map.new(traits))
+      validate_contribution!(merged)
+      write_contribution(key, source_kind, source_id, map_name, x, y, merged)
+      :ok
+    end)
+  end
+
+  @doc "Removes trait keys from a source-owned contribution, deleting it when it empties."
+  @spec remove_traits(String.t(), integer(), integer(), atom(), non_neg_integer(), [atom()]) ::
+          :ok
+  def remove_traits(map_name, x, y, source_kind, source_id, keys)
+      when is_binary(map_name) and is_integer(x) and x >= 0 and is_integer(y) and y >= 0 and
+             is_atom(source_kind) and is_integer(source_id) and source_id >= 0 do
+    map_name = canonical_map_name(map_name)
+    key = {map_name, x, y, source_kind, source_id}
+
+    transaction(fn ->
+      apply_traits_removal(
+        key,
+        current_contribution(key),
+        keys,
+        source_kind,
+        source_id,
+        map_name,
+        x,
+        y
+      )
+
+      :ok
+    end)
+  end
+
+  defp apply_traits_removal(key, contribution, keys, source_kind, source_id, map_name, x, y) do
+    case Map.drop(contribution, keys) do
+      remaining when map_size(remaining) == 0 ->
+        delete_contribution(key, source_kind, source_id, map_name, x, y)
+
+      remaining ->
+        write_contribution(key, source_kind, source_id, map_name, x, y, remaining)
+    end
   end
 
   @doc "Removes one contribution without changing the immutable base GAT cell."
@@ -158,6 +208,15 @@ defmodule Aesir.ZoneServer.Map.Cell do
     |> Enum.any?(&Map.get(&1, :blocks_movement, false))
   end
 
+  @doc "Returns whether an active terrain contribution marks the cell as an icewall fence."
+  @spec icewall?(String.t(), integer(), integer()) :: boolean()
+  def icewall?(map_name, x, y) do
+    map_name
+    |> canonical_map_name()
+    |> contributions(x, y)
+    |> Enum.any?(&Map.get(&1, :icewall, false))
+  end
+
   @doc "Returns a permanent, temporary, or Water Ball token source at the cell."
   @spec water_source(String.t(), integer(), integer()) :: WaterSource.t() | nil
   def water_source(map_name, x, y) do
@@ -226,9 +285,7 @@ defmodule Aesir.ZoneServer.Map.Cell do
     key = {map_name, x, y, source_kind, source_id}
 
     transaction(fn ->
-      :ets.delete(table_for(:dynamic_cell_contributions), key)
-      :ets.delete_object(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
-      :ets.delete_object(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
+      delete_contribution(key, source_kind, source_id, map_name, x, y)
       :ok
     end)
   end
@@ -243,6 +300,27 @@ defmodule Aesir.ZoneServer.Map.Cell do
       :ets.delete_object(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
     end)
 
+    :ok
+  end
+
+  defp current_contribution(key) do
+    case :ets.lookup(table_for(:dynamic_cell_contributions), key) do
+      [{^key, contribution}] -> contribution
+      [] -> %{}
+    end
+  end
+
+  defp write_contribution(key, source_kind, source_id, map_name, x, y, contribution) do
+    :ets.insert(table_for(:dynamic_cell_contributions), {key, contribution})
+    :ets.insert(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
+    :ets.insert(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
+    :ok
+  end
+
+  defp delete_contribution(key, source_kind, source_id, map_name, x, y) do
+    :ets.delete(table_for(:dynamic_cell_contributions), key)
+    :ets.delete_object(table_for(:dynamic_cell_source_index), {{source_kind, source_id}, key})
+    :ets.delete_object(table_for(:dynamic_cell_coordinate_index), {{map_name, x, y}, key})
     :ok
   end
 
@@ -263,10 +341,12 @@ defmodule Aesir.ZoneServer.Map.Cell do
 
   defp validate_contribution!(contribution) do
     unless Map.keys(contribution) --
-             [:blocks_movement, :blocks_projectiles, :consumable_water, :exclusive] == [] and
+             [:blocks_movement, :blocks_projectiles, :consumable_water, :exclusive, :icewall] ==
+             [] and
              is_boolean(Map.get(contribution, :blocks_movement, false)) and
              is_boolean(Map.get(contribution, :blocks_projectiles, false)) and
              is_boolean(Map.get(contribution, :exclusive, false)) and
+             is_boolean(Map.get(contribution, :icewall, false)) and
              valid_consumable_water?(Map.get(contribution, :consumable_water)) do
       raise ArgumentError, "invalid dynamic terrain contribution"
     end

@@ -249,4 +249,56 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     assert [] == :ets.tab2list(source_index)
     assert [] == :ets.tab2list(contribution_index)
   end
+
+  test "icewall? reflects the icewall trait across contributions" do
+    refute Cell.icewall?("cell_test", 0, 0)
+
+    :ok = Cell.put_traits("cell_test", 0, 0, :npc_script, 0, icewall: true)
+
+    assert Cell.icewall?("cell_test", 0, 0)
+  end
+
+  test "put_traits merges traits and is idempotent" do
+    :ok = Cell.put("cell_test", 0, 0, :npc_script, 0, blocks_movement: true)
+    :ok = Cell.put_traits("cell_test", 0, 0, :npc_script, 0, icewall: true)
+    :ok = Cell.put_traits("cell_test", 0, 0, :npc_script, 0, icewall: true)
+
+    refute Cell.traversable?("cell_test", 0, 0)
+    assert Cell.icewall?("cell_test", 0, 0)
+
+    contribution_index = EtsTable.table_for(:dynamic_cell_contributions)
+
+    assert :ets.lookup(contribution_index, {"cell_test", 0, 0, :npc_script, 0}) == [
+             {{"cell_test", 0, 0, :npc_script, 0}, %{blocks_movement: true, icewall: true}}
+           ]
+  end
+
+  test "remove_traits drops keys and deletes the contribution when empty" do
+    :ok = Cell.put_traits("cell_test", 0, 0, :npc_script, 0, icewall: true, blocks_movement: true)
+    assert Cell.icewall?("cell_test", 0, 0)
+    refute Cell.traversable?("cell_test", 0, 0)
+
+    :ok = Cell.remove_traits("cell_test", 0, 0, :npc_script, 0, [:icewall])
+    refute Cell.icewall?("cell_test", 0, 0)
+    refute Cell.traversable?("cell_test", 0, 0)
+
+    :ok = Cell.remove_traits("cell_test", 0, 0, :npc_script, 0, [:blocks_movement])
+    refute Cell.icewall?("cell_test", 0, 0)
+    refute Cell.dynamically_blocked?("cell_test", 0, 0)
+    assert Cell.traversable?("cell_test", 0, 0)
+
+    contribution_index = EtsTable.table_for(:dynamic_cell_contributions)
+    source_index = EtsTable.table_for(:dynamic_cell_source_index)
+    coordinate_index = EtsTable.table_for(:dynamic_cell_coordinate_index)
+
+    assert [] == :ets.lookup(contribution_index, {"cell_test", 0, 0, :npc_script, 0})
+    assert [] == :ets.lookup(source_index, {:npc_script, 0})
+    assert [] == :ets.lookup(coordinate_index, {"cell_test", 0, 0})
+  end
+
+  test "put_traits rejects a non-boolean icewall trait" do
+    assert_raise ArgumentError, fn ->
+      Cell.put_traits("cell_test", 0, 0, :npc_script, 0, icewall: 1)
+    end
+  end
 end
