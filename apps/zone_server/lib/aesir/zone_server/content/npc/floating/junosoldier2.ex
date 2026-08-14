@@ -7,7 +7,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier2 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "yuno",
+        x: 165,
+        y: 283,
+        dir: 4,
+        sprite: 852,
+        name: "Juno Soldier",
+        unique_name: "Juno Soldier#2juno"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

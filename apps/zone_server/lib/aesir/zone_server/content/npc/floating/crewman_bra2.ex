@@ -7,7 +7,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CrewmanBra2 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 246,
+        y: 82,
+        dir: 3,
+        sprite: 100,
+        name: "Crewman",
+        unique_name: "Crewman#bra2"
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true

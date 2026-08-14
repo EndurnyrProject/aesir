@@ -7,7 +7,55 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "izlude",
+        x: 140,
+        y: 186,
+        dir: 4,
+        sprite: 97,
+        name: "Kylick",
+        unique_name: "Kylick#izlude"
+      },
+      %{
+        map: "izlude_a",
+        x: 140,
+        y: 186,
+        dir: 4,
+        sprite: 97,
+        name: "Kylick",
+        unique_name: "Kylick#izlude_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 140,
+        y: 186,
+        dir: 4,
+        sprite: 97,
+        name: "Kylick",
+        unique_name: "Kylick#izlude_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 140,
+        y: 186,
+        dir: 4,
+        sprite: 97,
+        name: "Kylick",
+        unique_name: "Kylick#izlude_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 140,
+        y: 186,
+        dir: 4,
+        sprite: 97,
+        name: "Kylick",
+        unique_name: "Kylick#izlude_d"
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true

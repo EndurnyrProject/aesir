@@ -9,9 +9,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
 
   use Aesir.ZoneServer.Npc,
     spawn: [
-      %{map: "prontera", x: 223, y: 99, dir: 1, sprite: 105, name: "Guard"},
-      %{map: "prontera", x: 229, y: 104, dir: 5, sprite: 105, name: "Guard"},
-      %{map: "prontera", x: 47, y: 339, dir: 5, sprite: 105, name: "Guard"}
+      %{
+        map: "prontera",
+        x: 223,
+        y: 99,
+        dir: 1,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#2pront"
+      },
+      %{
+        map: "prontera",
+        x: 229,
+        y: 104,
+        dir: 5,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#3pront"
+      },
+      %{
+        map: "prontera",
+        x: 47,
+        y: 339,
+        dir: 5,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#4pront"
+      },
+      %{
+        map: "prontera",
+        x: 52,
+        y: 344,
+        dir: 5,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#1pront"
+      }
     ]
 
   @impl true

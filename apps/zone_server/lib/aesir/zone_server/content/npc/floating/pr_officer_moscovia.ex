@@ -7,7 +7,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PrOfficerMoscovia do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 246,
+        y: 51,
+        dir: 4,
+        sprite: 960,
+        name: "Moscovia P.R. Officer",
+        unique_name: "Moscovia P.R. Officer#1"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

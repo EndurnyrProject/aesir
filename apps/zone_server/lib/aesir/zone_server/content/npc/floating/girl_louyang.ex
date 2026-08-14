@@ -7,7 +7,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GirlLouyang do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 246,
+        y: 40,
+        dir: 3,
+        sprite: 815,
+        name: "Girl",
+        unique_name: "Girl#0lou"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

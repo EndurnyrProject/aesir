@@ -9,9 +9,33 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Npc do
 
   use Aesir.ZoneServer.Npc,
     spawn: [
-      %{map: "mora", x: 140, y: 72, dir: 4, sprite: 513, name: "Traveler"},
-      %{map: "mora", x: 138, y: 72, dir: 6, sprite: 513, name: "Traveler"},
-      %{map: "mora", x: 139, y: 73, dir: 4, sprite: 513, name: "Traveler"}
+      %{
+        map: "mora",
+        x: 140,
+        y: 72,
+        dir: 4,
+        sprite: 513,
+        name: "Traveler",
+        unique_name: "Traveler#ep14_1_1"
+      },
+      %{
+        map: "mora",
+        x: 138,
+        y: 72,
+        dir: 6,
+        sprite: 513,
+        name: "Traveler",
+        unique_name: "Traveler#ep14_1_2"
+      },
+      %{
+        map: "mora",
+        x: 139,
+        y: 73,
+        dir: 4,
+        sprite: 513,
+        name: "Traveler",
+        unique_name: "Traveler#ep14_1_3"
+      }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena

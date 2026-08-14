@@ -7,7 +7,54 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "izlude",
+        x: 202,
+        y: 75,
+        dir: 3,
+        sprite: 90,
+        name: "Airship Staff",
+        unique_name: "Airship Staff#izlude"
+      },
+      %{
+        map: "izlude_a",
+        x: 202,
+        y: 75,
+        dir: 3,
+        sprite: 90,
+        name: "Airship Staff",
+        unique_name: "Airship Staff#izlude_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 202,
+        y: 75,
+        dir: 3,
+        sprite: 90,
+        name: "Airship Staff",
+        unique_name: "Airship Staff#izlude_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 202,
+        y: 75,
+        dir: 3,
+        sprite: 90,
+        name: "Airship Staff",
+        unique_name: "Airship Staff#izlude_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 202,
+        y: 75,
+        dir: 3,
+        sprite: 90,
+        name: "Airship Staff",
+        unique_name: "Airship Staff#izlude_d"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

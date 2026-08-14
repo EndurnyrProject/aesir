@@ -7,7 +7,55 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "izlude",
+        x: 180,
+        y: 224,
+        dir: 3,
+        sprite: 71,
+        name: "Honeymoon Helper",
+        unique_name: "Honeymoon Helper#Izlude"
+      },
+      %{
+        map: "izlude_a",
+        x: 180,
+        y: 224,
+        dir: 3,
+        sprite: 71,
+        name: "Honeymoon Helper",
+        unique_name: "Honeymoon Helper#Iz_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 180,
+        y: 224,
+        dir: 3,
+        sprite: 71,
+        name: "Honeymoon Helper",
+        unique_name: "Honeymoon Helper#Iz_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 180,
+        y: 224,
+        dir: 3,
+        sprite: 71,
+        name: "Honeymoon Helper",
+        unique_name: "Honeymoon Helper#Iz_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 180,
+        y: 224,
+        dir: 3,
+        sprite: 71,
+        name: "Honeymoon Helper",
+        unique_name: "Honeymoon Helper#Iz_d"
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true

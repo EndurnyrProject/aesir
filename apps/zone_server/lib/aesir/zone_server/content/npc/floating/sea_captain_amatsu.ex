@@ -7,7 +7,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeaCaptainAmatsu do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 246,
+        y: 74,
+        dir: 3,
+        sprite: 709,
+        name: "Sea Captain",
+        unique_name: "Sea Captain#ama1"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

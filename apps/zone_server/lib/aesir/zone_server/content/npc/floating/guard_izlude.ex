@@ -9,11 +9,51 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GuardIzlude do
 
   use Aesir.ZoneServer.Npc,
     spawn: [
-      %{map: "prt_fild08", x: 350, y: 219, dir: 4, sprite: 105, name: "Guard"},
-      %{map: "prt_fild08a", x: 350, y: 219, dir: 4, sprite: 105, name: "Guard"},
-      %{map: "prt_fild08b", x: 350, y: 219, dir: 4, sprite: 105, name: "Guard"},
-      %{map: "prt_fild08c", x: 350, y: 219, dir: 4, sprite: 105, name: "Guard"},
-      %{map: "prt_fild08d", x: 350, y: 219, dir: 4, sprite: 105, name: "Guard"}
+      %{
+        map: "prt_fild08",
+        x: 350,
+        y: 219,
+        dir: 4,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#izlude"
+      },
+      %{
+        map: "prt_fild08a",
+        x: 350,
+        y: 219,
+        dir: 4,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#izlude_a"
+      },
+      %{
+        map: "prt_fild08b",
+        x: 350,
+        y: 219,
+        dir: 4,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#izlude_b"
+      },
+      %{
+        map: "prt_fild08c",
+        x: 350,
+        y: 219,
+        dir: 4,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#izlude_c"
+      },
+      %{
+        map: "prt_fild08d",
+        x: 350,
+        y: 219,
+        dir: 4,
+        sprite: 105,
+        name: "Guard",
+        unique_name: "Guard#izlude_d"
+      }
     ]
 
   @impl true

@@ -9,10 +9,42 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
 
   use Aesir.ZoneServer.Npc,
     spawn: [
-      %{map: "mosk_in", x: 118, y: 66, dir: 5, sprite: 966, name: "Soldier"},
-      %{map: "mosk_in", x: 133, y: 110, dir: 3, sprite: 966, name: "Soldier"},
-      %{map: "mosk_in", x: 133, y: 73, dir: 3, sprite: 966, name: "Soldier"},
-      %{map: "mosk_in", x: 113, y: 124, dir: 5, sprite: 966, name: "Soldier"}
+      %{
+        map: "mosk_in",
+        x: 118,
+        y: 66,
+        dir: 5,
+        sprite: 966,
+        name: "Soldier",
+        unique_name: "Soldier#mosk02"
+      },
+      %{
+        map: "mosk_in",
+        x: 133,
+        y: 110,
+        dir: 3,
+        sprite: 966,
+        name: "Soldier",
+        unique_name: "Soldier#mosk03"
+      },
+      %{
+        map: "mosk_in",
+        x: 133,
+        y: 73,
+        dir: 3,
+        sprite: 966,
+        name: "Soldier",
+        unique_name: "Soldier#mosk04"
+      },
+      %{
+        map: "mosk_in",
+        x: 113,
+        y: 124,
+        dir: 5,
+        sprite: 966,
+        name: "Soldier",
+        unique_name: "Soldier#mosk05"
+      }
     ]
 
   @impl true

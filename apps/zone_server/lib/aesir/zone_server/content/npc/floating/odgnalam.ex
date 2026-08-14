@@ -9,12 +9,60 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Odgnalam do
 
   use Aesir.ZoneServer.Npc,
     spawn: [
-      %{map: "alberta", x: 200, y: 151, dir: 4, sprite: 554, name: "Odgnalam"},
-      %{map: "izlude", x: 182, y: 218, dir: 4, sprite: 554, name: "Odgnalam"},
-      %{map: "izlude_a", x: 182, y: 218, dir: 4, sprite: 554, name: "Odgnalam"},
-      %{map: "izlude_b", x: 182, y: 218, dir: 4, sprite: 554, name: "Odgnalam"},
-      %{map: "izlude_c", x: 182, y: 218, dir: 4, sprite: 554, name: "Odgnalam"},
-      %{map: "izlude_d", x: 182, y: 218, dir: 4, sprite: 554, name: "Odgnalam"}
+      %{
+        map: "alberta",
+        x: 200,
+        y: 151,
+        dir: 4,
+        sprite: 554,
+        name: "Odgnalam",
+        unique_name: "Odgnalam#albe"
+      },
+      %{
+        map: "izlude",
+        x: 182,
+        y: 218,
+        dir: 4,
+        sprite: 554,
+        name: "Odgnalam",
+        unique_name: "Odgnalam#iz"
+      },
+      %{
+        map: "izlude_a",
+        x: 182,
+        y: 218,
+        dir: 4,
+        sprite: 554,
+        name: "Odgnalam",
+        unique_name: "Odgnalam#iz_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 182,
+        y: 218,
+        dir: 4,
+        sprite: 554,
+        name: "Odgnalam",
+        unique_name: "Odgnalam#iz_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 182,
+        y: 218,
+        dir: 4,
+        sprite: 554,
+        name: "Odgnalam",
+        unique_name: "Odgnalam#iz_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 182,
+        y: 218,
+        dir: 4,
+        sprite: 554,
+        name: "Odgnalam",
+        unique_name: "Odgnalam#iz_d"
+      }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena

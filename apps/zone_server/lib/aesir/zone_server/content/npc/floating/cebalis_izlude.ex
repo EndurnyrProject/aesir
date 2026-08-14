@@ -7,7 +7,54 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "izlude",
+        x: 55,
+        y: 159,
+        dir: 2,
+        sprite: 98,
+        name: "Cebalis",
+        unique_name: "Cebalis#izlude"
+      },
+      %{
+        map: "izlude_a",
+        x: 55,
+        y: 159,
+        dir: 2,
+        sprite: 98,
+        name: "Cebalis",
+        unique_name: "Cebalis#izlude_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 55,
+        y: 159,
+        dir: 2,
+        sprite: 98,
+        name: "Cebalis",
+        unique_name: "Cebalis#izlude_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 55,
+        y: 159,
+        dir: 2,
+        sprite: 98,
+        name: "Cebalis",
+        unique_name: "Cebalis#izlude_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 55,
+        y: 159,
+        dir: 2,
+        sprite: 98,
+        name: "Cebalis",
+        unique_name: "Cebalis#izlude_d"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do
@@ -76,7 +123,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
     ctx =
       if v1 == 1 do
         ctx =
-          if get_char_var(ctx, :BaseClass, 0) == :swordman do
+          if base_class(ctx) == :swordman do
             ctx =
               ctx
               |> mes("[Red]")
@@ -115,7 +162,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
       end
 
     ctx =
-      if get_char_var(ctx, :BaseClass, 0) == :swordman do
+      if base_class(ctx) == :swordman do
         ctx =
           ctx
           |> mes("[Cebalis]")

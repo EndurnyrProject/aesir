@@ -7,7 +7,54 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "izlude",
+        x: 71,
+        y: 92,
+        dir: 2,
+        sprite: 90,
+        name: "Bonne",
+        unique_name: "Bonne#izlude"
+      },
+      %{
+        map: "izlude_a",
+        x: 71,
+        y: 92,
+        dir: 2,
+        sprite: 90,
+        name: "Bonne",
+        unique_name: "Bonne#izlude_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 71,
+        y: 92,
+        dir: 2,
+        sprite: 90,
+        name: "Bonne",
+        unique_name: "Bonne#izlude_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 71,
+        y: 92,
+        dir: 2,
+        sprite: 90,
+        name: "Bonne",
+        unique_name: "Bonne#izlude_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 71,
+        y: 92,
+        dir: 2,
+        sprite: 90,
+        name: "Bonne",
+        unique_name: "Bonne#izlude_d"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

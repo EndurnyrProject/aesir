@@ -7,7 +7,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.MrClaus do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "aldebaran",
+        x: 168,
+        y: 168,
+        dir: 4,
+        sprite: 718,
+        name: "Mr. Claus",
+        unique_name: "Mr. Claus#1"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

@@ -7,7 +7,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KunlunEnvoyGonryun do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 246,
+        y: 62,
+        dir: 3,
+        sprite: 776,
+        name: "Kunlun Envoy",
+        unique_name: "Kunlun Envoy#gon"
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

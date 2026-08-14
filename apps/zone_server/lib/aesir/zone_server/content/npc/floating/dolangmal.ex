@@ -9,19 +9,90 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Dolangmal do
 
   use Aesir.ZoneServer.Npc,
     spawn: [
-      %{map: "prontera", x: 114, y: 77, dir: 6, sprite: 553, name: "Dolangmal"},
-      %{map: "geffen", x: 109, y: 61, dir: 6, sprite: 553, name: "Dolangmal"},
-      %{map: "payon", x: 200, y: 106, dir: 4, sprite: 553, name: "Dolangmal"},
-      %{map: "aldebaran", x: 170, y: 104, dir: 4, sprite: 553, name: "Dolangmal"},
-      %{map: "morocc", x: 168, y: 275, dir: 4, sprite: 553, name: "Dolangmal"},
-      %{map: "yuno", x: 165, y: 122, dir: 4, sprite: 553, name: "Dolangmal"},
-      %{map: "rachel", x: 121, y: 126, dir: 4, sprite: 553, name: "Dolangmal"},
-      %{map: "lighthalzen", x: 254, y: 83, dir: 5, sprite: 553, name: "Dolangmal"},
-      %{map: "mora", x: 57, y: 150, dir: 4, sprite: 553, name: "Dolangmal"}
+      %{
+        map: "prontera",
+        x: 114,
+        y: 77,
+        dir: 6,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#1"
+      },
+      %{
+        map: "geffen",
+        x: 109,
+        y: 61,
+        dir: 6,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#2"
+      },
+      %{
+        map: "payon",
+        x: 200,
+        y: 106,
+        dir: 4,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#3"
+      },
+      %{
+        map: "aldebaran",
+        x: 170,
+        y: 104,
+        dir: 4,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#4"
+      },
+      %{
+        map: "morocc",
+        x: 168,
+        y: 275,
+        dir: 4,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#5"
+      },
+      %{
+        map: "yuno",
+        x: 165,
+        y: 122,
+        dir: 4,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#6"
+      },
+      %{
+        map: "rachel",
+        x: 121,
+        y: 126,
+        dir: 4,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#7"
+      },
+      %{
+        map: "lighthalzen",
+        x: 254,
+        y: 83,
+        dir: 5,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#8"
+      },
+      %{
+        map: "mora",
+        x: 57,
+        y: 150,
+        dir: 4,
+        sprite: 553,
+        name: "Dolangmal",
+        unique_name: "Dolangmal#9"
+      }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -38,7 +109,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Dolangmal do
           |> mes("[Dolangmal]")
           |> set_local(:"s$", "Why don't you go to ^A2314BMalangdo^000000?")
 
-        v1 = Todo.call!(:atoi, [strnpcinfo(ctx, 2)])
+        v1 = Rathena.atoi(strnpcinfo(ctx, 2))
 
         ctx =
           case v1 do
