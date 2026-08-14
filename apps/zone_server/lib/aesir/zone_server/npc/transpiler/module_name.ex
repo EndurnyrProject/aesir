@@ -3,12 +3,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   Derives module names, file slugs and output paths for transpiled NPC
   entries.
 
-  Placed scripts follow the hand-written convention
-  (`Content.Npc.<Map>.<Name>` under `content/npc/<map>/<slug>.ex`); floating
-  scripts and global functions get their own namespaces. rAthena names are
-  sanitized (the `#hidden` suffix and `::exported` prefix stripped for
-  display, everything non-alphanumeric squashed for slugs); map names like
-  `1@mcd` gain an `m` prefix to stay valid Elixir aliases.
+  Placed scripts mirror the rAthena source path — directory plus file basename
+  (`Content.Npc.<Dir…>.<File>.<Name>` under `content/npc/<dir>/<file>/<slug>.ex`),
+  so every NPC in one source file shares a folder and module parent; floating
+  scripts and global functions keep their own namespaces. rAthena names are
+  sanitized (the `#hidden` suffix and `::exported` prefix stripped for display,
+  everything non-alphanumeric squashed for slugs); directory/map names like
+  `1-1` or `1@mcd` gain an `M` prefix to stay valid Elixir aliases.
   """
 
   @root "Aesir.ZoneServer.Content.Npc"
@@ -49,19 +50,37 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
     end
   end
 
-  @doc "Module name for an entry kind + map/name pair."
-  @spec module(:script | :floating | :function, String.t() | nil, String.t()) :: String.t()
-  def module(:script, map, slug), do: "#{@root}.#{camelize(map)}.#{camelize(slug)}"
-  def module(:floating, _map, slug), do: "#{@root}.Floating.#{camelize(slug)}"
-  def module(:function, _map, slug), do: "#{@root}.Functions.#{camelize(slug)}"
+  @doc "Module name for an entry kind + entry/name pair."
+  @spec module(:script | :floating | :function, map() | nil, String.t()) :: String.t()
+  def module(:script, entry, slug), do: "#{@root}.#{namespace(entry)}.#{camelize(slug)}"
+
+  def module(:floating, _entry, slug), do: "#{@root}.Floating.#{camelize(slug)}"
+  def module(:function, _entry, slug), do: "#{@root}.Functions.#{camelize(slug)}"
 
   @doc "Output path (relative to the zone_server app root) for an entry."
-  @spec path(:script | :floating | :function, String.t() | nil, String.t()) :: String.t()
-  def path(:script, map, slug),
-    do: "lib/aesir/zone_server/content/npc/#{slug(map)}/#{slug}.ex"
+  @spec path(:script | :floating | :function, map() | nil, String.t()) :: String.t()
+  def path(:script, entry, slug),
+    do: "lib/aesir/zone_server/content/npc/#{dir_slug(entry)}/#{slug}.ex"
 
-  def path(:floating, _map, slug), do: "lib/aesir/zone_server/content/npc/floating/#{slug}.ex"
-  def path(:function, _map, slug), do: "lib/aesir/zone_server/content/npc/functions/#{slug}.ex"
+  def path(:floating, _entry, slug), do: "lib/aesir/zone_server/content/npc/floating/#{slug}.ex"
+  def path(:function, _entry, slug), do: "lib/aesir/zone_server/content/npc/functions/#{slug}.ex"
+
+  @doc """
+  The slugged output folder for a placed script: its rAthena source directory
+  plus file basename (e.g. `cities/morocc.txt` → `cities/morocc`).
+  """
+  @spec dir_slug(map()) :: String.t()
+  def dir_slug(entry), do: entry.file |> dir_segments() |> Enum.join("/")
+
+  defp namespace(entry) do
+    dir_slug(entry) |> String.split("/") |> Enum.map_join(".", &camelize/1)
+  end
+
+  defp dir_segments(file) do
+    dirs = file |> Path.dirname() |> Path.split() |> Enum.reject(&(&1 in [".", "", "/"]))
+
+    Enum.map(dirs ++ [Path.basename(file, Path.extname(file))], &slug/1)
+  end
 
   @doc "Conflict-namespaced variant of a module name and path."
   @spec conflict(String.t(), String.t()) :: {String.t(), String.t()}

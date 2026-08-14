@@ -74,6 +74,10 @@ External-store vars are read/written directly by the interaction Task, not via
 
 `mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]` transpiles rAthena
 `npc/**/*.txt` into DSL modules (rathena checkout: `~/Development/personal/rathena`).
+Output mirrors the rAthena source path — directory plus file basename
+(`content/npc/<dir>/<file>/<slug>.ex`, module `Content.Npc.<Dir…>.<File>.<Name>`), so every
+NPC in one source file shares a folder and module parent; distinct from hand-written NPCs at
+`content/npc/<map>/<name>.ex`.
 Pipeline lives under `npc/transpiler/`; state in `priv/npc_transpile/manifest.json`; stub
 report at `priv/npc_transpile/_transpile_report.md`.
 

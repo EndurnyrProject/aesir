@@ -150,20 +150,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   defp script_units(scripts, dup_index, sprites, owners) do
     path_fun = fn entry, slug ->
-      ModuleName.path(unit_kind(entry), entry[:map], slug)
+      ModuleName.path(unit_kind(entry), entry, slug)
     end
 
     dedupe_slugs(scripts, owners, path_fun, fn entry, slug ->
       kind = unit_kind(entry)
-      map = entry[:map]
 
       {spawns, unresolved} = build_spawns(entry, Map.get(dup_index, ref_name(entry), []), sprites)
 
       %{
         entry: entry,
         kind: kind,
-        module: ModuleName.module(kind, map, slug),
-        rel_path: ModuleName.path(kind, map, slug),
+        module: ModuleName.module(kind, entry, slug),
+        rel_path: ModuleName.path(kind, entry, slug),
         spawns: spawns,
         unresolved_sprites: unresolved
       }
@@ -223,16 +222,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
         |> Stream.concat(Stream.map(0..1_000_000//1, &"#{base}_#{&1}"))
         |> Enum.find(&slug_free?(&1, entry, seen, owners, path_fun))
 
-      {[build.(entry, slug) | units], MapSet.put(seen, {entry[:map], slug})}
+      {[build.(entry, slug) | units], MapSet.put(seen, {dedupe_key(entry), slug})}
     end)
     |> elem(0)
     |> Enum.reverse()
   end
 
   defp slug_free?(slug, entry, seen, owners, path_fun) do
-    not MapSet.member?(seen, {entry[:map], slug}) and
+    not MapSet.member?(seen, {dedupe_key(entry), slug}) and
       Map.get(owners, path_fun.(entry, slug), :free) in [:free, Manifest.key(entry)]
   end
+
+  defp dedupe_key(%{kind: :script} = entry), do: ModuleName.dir_slug(entry)
+  defp dedupe_key(_entry), do: nil
 
   defp coord_slug(%{x: x, y: y}, base), do: "#{base}_#{x}_#{y}"
   defp coord_slug(_entry, _base), do: nil

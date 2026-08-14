@@ -98,40 +98,50 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
   end
 
   @tag :tmp_dir
-  test "a cross-run name collision takes a coordinate suffix instead of conflicting", %{
+  test "same-named NPCs in one file take a coordinate suffix instead of conflicting", %{
     tmp_dir: tmp_dir
   } do
     npc_dir = Path.join(tmp_dir, "npc")
-    File.mkdir_p!(npc_dir)
+    File.mkdir_p!(Path.join(npc_dir, "cities"))
 
-    File.write!(Path.join(npc_dir, "a.txt"), """
+    File.write!(Path.join(npc_dir, "cities/kafra.txt"), """
     prontera,150,150,4\tscript\tKafra Service#a\t113,{
     mes "A";
     close;
     }
-    """)
-
-    out_root = Path.join(tmp_dir, "out")
-    first = Transpiler.run(tmp_dir, out_root: out_root)
-    assert ["lib/aesir/zone_server/content/npc/prontera/kafra_service.ex" = owned] = first.written
-
-    File.write!(Path.join(npc_dir, "b.txt"), """
     prontera,160,160,4\tscript\tKafra Service\t113,{
     mes "B";
     close;
     }
     """)
 
-    second = Transpiler.run(tmp_dir, out_root: out_root)
+    out_root = Path.join(tmp_dir, "out")
+    result = Transpiler.run(tmp_dir, out_root: out_root)
 
-    assert second.conflicts == []
-    assert second.skipped == 1
+    assert result.failures == []
+    assert result.conflicts == []
 
-    assert second.written == [
-             "lib/aesir/zone_server/content/npc/prontera/kafra_service_160_160.ex"
-           ]
+    assert Enum.sort(result.written) ==
+             Enum.sort([
+               "lib/aesir/zone_server/content/npc/cities/kafra/kafra_service.ex",
+               "lib/aesir/zone_server/content/npc/cities/kafra/kafra_service_160_160.ex"
+             ])
 
-    refute File.read!(Path.join(out_root, owned)) =~ ~S{mes("B")}
+    first =
+      File.read!(
+        Path.join(out_root, "lib/aesir/zone_server/content/npc/cities/kafra/kafra_service.ex")
+      )
+
+    second =
+      File.read!(
+        Path.join(
+          out_root,
+          "lib/aesir/zone_server/content/npc/cities/kafra/kafra_service_160_160.ex"
+        )
+      )
+
+    assert first =~ ~S{mes("A")}
+    assert second =~ ~S{mes("B")}
   end
 
   @tag :tmp_dir
@@ -172,5 +182,53 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
     third = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**")
     assert third.skipped == 1
     assert third.written == []
+  end
+
+  @tag :tmp_dir
+  test "a placed script mirrors its rAthena source path", %{tmp_dir: tmp_dir} do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "cities"))
+
+    File.write!(Path.join(npc_dir, "cities/morocc.txt"), """
+    prontera,150,150,4\tscript\tTurban Thief\t54,{
+    mes "Hi";
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    result = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert result.failures == []
+
+    assert ["lib/aesir/zone_server/content/npc/cities/morocc/turban_thief.ex" = rel_path] =
+             result.written
+
+    source = File.read!(Path.join(out_root, rel_path))
+    assert source =~ "defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.TurbanThief do"
+  end
+
+  @tag :tmp_dir
+  test "nested source directories are preserved and slugged", %{tmp_dir: tmp_dir} do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "re/jobs/1-1"))
+
+    File.write!(Path.join(npc_dir, "re/jobs/1-1/swordman.txt"), """
+    izlude,150,150,4\tscript\tJob Master\t54,{
+    mes "Hi";
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    result = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert result.failures == []
+
+    assert ["lib/aesir/zone_server/content/npc/re/jobs/1_1/swordman/job_master.ex" = rel_path] =
+             result.written
+
+    source = File.read!(Path.join(out_root, rel_path))
+    assert source =~ "defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.JobMaster do"
   end
 end
