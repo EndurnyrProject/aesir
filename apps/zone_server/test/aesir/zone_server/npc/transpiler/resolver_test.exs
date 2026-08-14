@@ -53,4 +53,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ResolverTest do
       assert Resolver.cell_type("nope") == :error
     end
   end
+
+  describe "EAJ_*/EAJL_* constants" do
+    test "resolve job-system flags, masks and job mapids to integer literals" do
+      assert Resolver.constant("EAJL_2") == {:ok, "768"}
+      assert Resolver.constant("EAJL_THIRD") == {:ok, "4096"}
+      assert Resolver.constant("EAJL_UPPER") == {:ok, "1048576"}
+      assert Resolver.constant("EAJ_THIRDMASK") == {:ok, "65535"}
+      assert Resolver.constant("EAJ_RUNE_KNIGHT") == {:ok, "4353"}
+      assert Resolver.constant("EAJ_KAGEROUOBORO") == {:ok, "265"}
+      assert Resolver.constant("EAJ_SUPERNOVICE") == {:ok, "256"}
+    end
+
+    test "returns :error for unknown job constants" do
+      assert Resolver.constant("EAJ_NOPE") == :error
+    end
+  end
 end

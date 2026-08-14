@@ -164,7 +164,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "Job_Change" => %{kind: :command, dsl: "jobchange"},
     "F_CanChangeJob" => %{kind: :read, dsl: "can_change_job?"},
     "F_GetNumSuffix" => %{kind: :read, dsl: "num_suffix"},
-    "F_InsertComma" => %{kind: :read, dsl: "insert_comma"}
+    "F_InsertComma" => %{kind: :read, dsl: "insert_comma"},
+    "F_getpositionname" => %{kind: :read, dsl: "equip_position_name"}
   }
 
   @warp_targets %{
@@ -222,7 +223,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getcharid" => %{dsl: "getcharid", args: [:int]},
     "getlook" => %{dsl: "getlook", args: [:look]},
     "mobcount" => %{dsl: "mobcount", args: [:string, :string]},
-    "getbrokenid" => %{dsl: "getbrokenid", args: [:int]}
+    "getbrokenid" => %{dsl: "getbrokenid", args: [:int]},
+    "eaclass" => %{dsl: "eaclass", args: [:int]},
+    "roclass" => %{dsl: "roclass", args: [:int, :int]}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error

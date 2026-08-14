@@ -1109,6 +1109,42 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "mapid job reads" do
+    test "eaclass/1 reads the player's job mapid, -1 when detached" do
+      assert Dsl.eaclass(build_ctx(job_id: 4054)) == 0x1101
+      assert Dsl.eaclass(%{build_ctx() | game_state: nil}) == -1
+    end
+
+    test "eaclass/2 converts a job id or atom, -1 for unknown or mounted forms" do
+      assert Dsl.eaclass(build_ctx(), 4054) == 0x1101
+      assert Dsl.eaclass(build_ctx(), :rune_knight) == 0x1101
+      assert Dsl.eaclass(build_ctx(), :lord_knight2) == -1
+      assert Dsl.eaclass(build_ctx(), 99_999) == -1
+    end
+
+    test "roclass/2 resolves the mapid with the player's sex (male when detached)" do
+      assert Dsl.roclass(build_ctx(sex: "M"), 0x203) == 19
+      assert Dsl.roclass(build_ctx(sex: "F"), 0x203) == 20
+      assert Dsl.roclass(%{build_ctx() | game_state: nil}, 0x203) == 19
+    end
+
+    test "roclass/3 uses the explicit sex, -1 for an unknown mapid" do
+      assert Dsl.roclass(build_ctx(), 0x203, 1) == 19
+      assert Dsl.roclass(build_ctx(), 0x203, 0) == 20
+      assert Dsl.roclass(build_ctx(), 0x999_999, 1) == -1
+    end
+
+    test "equip_position_name/2 maps an equip_index ordinal to a display name" do
+      ctx = build_ctx()
+
+      assert Dsl.equip_position_name(ctx, 0) == "Accessory 1"
+      assert Dsl.equip_position_name(ctx, 6) == "Head"
+      assert Dsl.equip_position_name(ctx, 20) == "Shadow Accessory 1"
+      assert Dsl.equip_position_name(ctx, 99) == "Unknown"
+      assert Dsl.equip_position_name(%{ctx | game_state: nil}, 2) == "Shoes"
+    end
+  end
+
   defp build_ctx(opts \\ []) do
     %Ctx{
       char_id: 1,

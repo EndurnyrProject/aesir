@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
@@ -2790,6 +2791,31 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     name |> to_string() |> String.split("_") |> Enum.map_join(" ", &String.capitalize/1)
   end
 
+  @doc """
+  The "eA job number" (mapid) for the attached player's class, or for an
+  explicit job atom/id when one is given (rAthena `eaclass`). Returns `-1` for
+  an unknown job or a detached context with no class to read.
+  """
+  @spec eaclass(Ctx.t()) :: integer()
+  def eaclass(%Ctx{game_state: nil}), do: -1
+  def eaclass(%Ctx{game_state: gs}), do: JobMapid.from_job(gs.stats.progression.job_id)
+
+  @spec eaclass(Ctx.t(), atom() | integer()) :: integer()
+  def eaclass(%Ctx{}, job), do: JobMapid.from_job(job)
+
+  @doc """
+  The numeric job id for a mapid, resolved against the attached player's sex
+  (or male when detached), or against an explicit `sex` (rAthena `roclass`).
+  Returns `-1` for an unknown mapid.
+  """
+  @spec roclass(Ctx.t(), integer()) :: integer()
+  def roclass(%Ctx{game_state: nil}, mapid), do: JobMapid.to_job(mapid, 1)
+  def roclass(%Ctx{game_state: %{sex: "M"}}, mapid), do: JobMapid.to_job(mapid, 1)
+  def roclass(%Ctx{game_state: %{}}, mapid), do: JobMapid.to_job(mapid, 0)
+
+  @spec roclass(Ctx.t(), integer(), integer()) :: integer()
+  def roclass(%Ctx{}, mapid, sex), do: JobMapid.to_job(mapid, sex)
+
   @doc "The player's sex as rAthena's `Sex`: `1` male, `0` female."
   @spec sex(Ctx.t()) :: 0 | 1
   def sex(%Ctx{game_state: nil}), do: no_player!("sex/1")
@@ -2987,6 +3013,38 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       nil -> ""
     end
   end
+
+  @doc """
+  The display name of an equip slot, given its rAthena `equip_index` ordinal
+  (`F_getpositionname`): `0` → "Accessory 1", … Unknown indices read "Unknown".
+  Pure, needs no player state.
+  """
+  @equip_position_names %{
+    0 => "Accessory 1",
+    1 => "Accessory 2",
+    2 => "Shoes",
+    3 => "Robe",
+    4 => "Head 3",
+    5 => "Head 2",
+    6 => "Head",
+    7 => "Body",
+    8 => "Left hand",
+    9 => "Right hand",
+    10 => "Upper Costume Headgear",
+    11 => "Middle Costume Headgear",
+    12 => "Lower Costume Headgear",
+    13 => "Costume Garment",
+    14 => "Arrow/Ammunition",
+    15 => "Shadow Armor",
+    16 => "Shadow Weapon",
+    17 => "Shadow Shield",
+    18 => "Shadow Shoes",
+    19 => "Shadow Accessory 2",
+    20 => "Shadow Accessory 1"
+  }
+
+  @spec equip_position_name(Ctx.t(), integer()) :: String.t()
+  def equip_position_name(%Ctx{}, index), do: Map.get(@equip_position_names, index, "Unknown")
 
   @doc """
   The weapon level of the item worn in equip `slot` (rAthena

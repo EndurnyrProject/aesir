@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Mmo.Emotion
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver, as: ItemResolver
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
 
   @doc """
   Resolves a bare constant to an Elixir literal source string: booleans to
@@ -70,11 +71,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("ITEMINFO_SUBTYPE"), do: {:ok, "20"}
 
   def constant(symbol) do
-    case weapon_subtype_constant(symbol) do
-      {:ok, value} -> {:ok, Integer.to_string(value)}
-      :error -> constant_fallback(symbol)
+    case job_mapid_constant(symbol) do
+      {:ok, value} ->
+        {:ok, Integer.to_string(value)}
+
+      :error ->
+        case weapon_subtype_constant(symbol) do
+          {:ok, value} -> {:ok, Integer.to_string(value)}
+          :error -> constant_fallback(symbol)
+        end
     end
   end
+
+  # `EAJ_*`/`EAJL_*` job-system constants, delegated to `JobMapid`.
+  defp job_mapid_constant(symbol), do: JobMapid.constant(symbol)
 
   defp constant_fallback(symbol) do
     case flag_constant(symbol) do

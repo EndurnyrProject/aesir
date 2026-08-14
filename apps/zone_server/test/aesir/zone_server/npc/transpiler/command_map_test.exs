@@ -202,6 +202,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{kind: :read, dsl: "num_suffix"}} = CommandMap.function("F_GetNumSuffix")
   end
 
+  test "F_getpositionname maps to the equip_position_name read function" do
+    assert {:ok, %{kind: :read, dsl: "equip_position_name"}} =
+             CommandMap.function("F_getpositionname")
+  end
+
+  test "eaclass/roclass map as call reads with int args" do
+    assert {:ok, %{dsl: "eaclass", args: [:int]}} = CommandMap.call_read("eaclass")
+    assert {:ok, %{dsl: "roclass", args: [:int, :int]}} = CommandMap.call_read("roclass")
+    assert CommandMap.supported?("eaclass")
+    assert CommandMap.supported?("RoClass")
+  end
+
   test "broadcast buildins map to the announce shape" do
     assert {:ok, %{shape: :announce, dsl: "announce", fixed: 2}} = CommandMap.command("announce")
 
