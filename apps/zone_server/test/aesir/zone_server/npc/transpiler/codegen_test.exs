@@ -1580,6 +1580,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute direct =~ "Todo.call!(:F_InsertComma"
   end
 
+  test "F_getpositionname direct call maps to equip_position_name with its slot index" do
+    src =
+      gen!("""
+      mes F_getpositionname(.@i);
+      close;
+      """)
+
+    assert src =~ "equip_position_name(ctx, get_local(ctx, :i, 0))"
+    refute src =~ "Todo.call!(:F_getpositionname"
+  end
+
+  test "a :command global called directly (Job_Change(job)) maps like its callfunc form" do
+    src =
+      gen!("""
+      Job_Change(.@class);
+      close;
+      """)
+
+    assert src =~ "jobchange("
+    assert src =~ "get_local(ctx, :class, 0)"
+    refute src =~ "todo(ctx, :Job_Change"
+  end
+
   test "input with min/max clamps the entry back into range (statement form)" do
     src =
       gen!("""

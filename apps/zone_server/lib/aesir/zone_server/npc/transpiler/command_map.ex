@@ -263,10 +263,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   @spec warp_target(String.t()) :: {:ok, String.t()} | :error
   def warp_target(name) when is_binary(name), do: Map.fetch(@warp_targets, name)
 
-  @doc "Every supported buildin name (commands + call reads), for the analyzer."
+  @doc """
+  Every supported buildin name (commands + call reads + mapped global
+  functions), for the analyzer.
+  """
   @spec supported?(String.t()) :: boolean()
   def supported?(name) when is_binary(name) do
     key = String.downcase(name)
-    Map.has_key?(@commands, key) or Map.has_key?(@call_reads, key)
+
+    Map.has_key?(@commands, key) or Map.has_key?(@call_reads, key) or
+      match?({:ok, _}, function(name))
   end
 end

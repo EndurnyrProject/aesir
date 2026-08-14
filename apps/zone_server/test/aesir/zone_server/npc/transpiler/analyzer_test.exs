@@ -96,4 +96,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
     assert MapSet.member?(a.local_functions, "GuardianData")
     assert a.stubs == %{}
   end
+
+  test "mapped global functions (callfunc and direct) do not count as stubs" do
+    a =
+      analyze!("""
+      mes F_getpositionname(.@i);
+      mes callfunc("F_GetNumSuffix", .@n);
+      Job_Change(.@class);
+      """)
+
+    assert a.stubs == %{}
+  end
 end

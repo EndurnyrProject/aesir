@@ -225,6 +225,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
   test "F_getpositionname maps to the equip_position_name read function" do
     assert {:ok, %{kind: :read, dsl: "equip_position_name"}} =
              CommandMap.function("F_getpositionname")
+
+    assert CommandMap.supported?("F_getpositionname")
+  end
+
+  test "supported? covers mapped global functions" do
+    for name <- [
+          "Job_Change",
+          "F_CanChangeJob",
+          "F_GetNumSuffix",
+          "F_InsertComma",
+          "F_getpositionname"
+        ] do
+      assert CommandMap.supported?(name)
+    end
   end
 
   test "eaclass/roclass map as call reads with int args" do

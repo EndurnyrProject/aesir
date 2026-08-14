@@ -895,6 +895,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         {:ok, rule} = CommandMap.command(name)
         emit_mapped(name, rule, args, env)
 
+      match?({:ok, %{kind: :command}}, CommandMap.function(name)) ->
+        {:ok, %{dsl: dsl}} = CommandMap.function(name)
+        {pre, args} = hoist_all(args, env)
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
+
       true ->
         {pre, args} = hoist_all(args, env)
         rendered = Enum.map_join(args, ", ", &render(&1, env))
