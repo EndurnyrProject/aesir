@@ -15501,5 +15501,6943 @@
         "unique_name": "Wounded Rafflesia#ep14_1"
       }
     ]
+  },
+  "re/jobs/novice/academy.txt|floating|::ac_board|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.AcBoard",
+    "output_hash": "7c52009e518d54625104dc2597959a558a39fb3995c3b7fa8978ceea1c1d2226",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/ac_board.ex",
+    "source_hash": "189bdab9a6e9725c710ceb9287d7a88e4d0647a9d7457d55c2a619956e367a9f",
+    "spawns": [
+      {
+        "name": "[Armory]",
+        "x": 93,
+        "y": 76,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Armory]#ac"
+      },
+      {
+        "name": "[Armory]",
+        "x": 93,
+        "y": 76,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Armory]#ac_a"
+      },
+      {
+        "name": "[Armory]",
+        "x": 93,
+        "y": 76,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Armory]#ac_b"
+      },
+      {
+        "name": "[Armory]",
+        "x": 93,
+        "y": 76,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Armory]#ac_c"
+      },
+      {
+        "name": "[Armory]",
+        "x": 93,
+        "y": 76,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Armory]#ac_d"
+      },
+      {
+        "name": "[Library]",
+        "x": 106,
+        "y": 76,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Library]#ac"
+      },
+      {
+        "name": "[Library]",
+        "x": 106,
+        "y": 76,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Library]#ac_a"
+      },
+      {
+        "name": "[Library]",
+        "x": 106,
+        "y": 76,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Library]#ac_b"
+      },
+      {
+        "name": "[Library]",
+        "x": 106,
+        "y": 76,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Library]#ac_c"
+      },
+      {
+        "name": "[Library]",
+        "x": 106,
+        "y": 76,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Library]#ac_d"
+      },
+      {
+        "name": "[Cafeteria]",
+        "x": 106,
+        "y": 44,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Cafeteria]#ac"
+      },
+      {
+        "name": "[Cafeteria]",
+        "x": 106,
+        "y": 44,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Cafeteria]#ac_a"
+      },
+      {
+        "name": "[Cafeteria]",
+        "x": 106,
+        "y": 44,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Cafeteria]#ac_b"
+      },
+      {
+        "name": "[Cafeteria]",
+        "x": 106,
+        "y": 44,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Cafeteria]#ac_c"
+      },
+      {
+        "name": "[Cafeteria]",
+        "x": 106,
+        "y": 44,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Cafeteria]#ac_d"
+      },
+      {
+        "name": "[Dispensary]",
+        "x": 93,
+        "y": 44,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Dispensary]#ac"
+      },
+      {
+        "name": "[Dispensary]",
+        "x": 93,
+        "y": 44,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Dispensary]#ac_a"
+      },
+      {
+        "name": "[Dispensary]",
+        "x": 93,
+        "y": 44,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Dispensary]#ac_b"
+      },
+      {
+        "name": "[Dispensary]",
+        "x": 93,
+        "y": 44,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Dispensary]#ac_c"
+      },
+      {
+        "name": "[Dispensary]",
+        "x": 93,
+        "y": 44,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Dispensary]#ac_d"
+      },
+      {
+        "name": "[Great Hall]",
+        "x": 103,
+        "y": 89,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Great Hall]#ac"
+      },
+      {
+        "name": "[Great Hall]",
+        "x": 103,
+        "y": 89,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Great Hall]#ac_a"
+      },
+      {
+        "name": "[Great Hall]",
+        "x": 103,
+        "y": 89,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Great Hall]#ac_b"
+      },
+      {
+        "name": "[Great Hall]",
+        "x": 103,
+        "y": 89,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Great Hall]#ac_c"
+      },
+      {
+        "name": "[Great Hall]",
+        "x": 103,
+        "y": 89,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Great Hall]#ac_d"
+      },
+      {
+        "name": "[Merchant Classroom]",
+        "x": 202,
+        "y": 110,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Merchant Classroom]#2"
+      },
+      {
+        "name": "[Merchant Classroom]",
+        "x": 202,
+        "y": 110,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Merchant Classroom]#2_a"
+      },
+      {
+        "name": "[Merchant Classroom]",
+        "x": 202,
+        "y": 110,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Merchant Classroom]#2_b"
+      },
+      {
+        "name": "[Merchant Classroom]",
+        "x": 202,
+        "y": 110,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Merchant Classroom]#2_c"
+      },
+      {
+        "name": "[Merchant Classroom]",
+        "x": 202,
+        "y": 110,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Merchant Classroom]#2_d"
+      },
+      {
+        "name": "[Acolyte Classroom]",
+        "x": 213,
+        "y": 110,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Acolyte Classroom]#2"
+      },
+      {
+        "name": "[Acolyte Classroom]",
+        "x": 213,
+        "y": 110,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Acolyte Classroom]#2_a"
+      },
+      {
+        "name": "[Acolyte Classroom]",
+        "x": 213,
+        "y": 110,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Acolyte Classroom]#2_b"
+      },
+      {
+        "name": "[Acolyte Classroom]",
+        "x": 213,
+        "y": 110,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Acolyte Classroom]#2_c"
+      },
+      {
+        "name": "[Acolyte Classroom]",
+        "x": 213,
+        "y": 110,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Acolyte Classroom]#2_d"
+      },
+      {
+        "name": "[Thief Classroom]",
+        "x": 202,
+        "y": 94,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Thief Classroom]#ac"
+      },
+      {
+        "name": "[Thief Classroom]",
+        "x": 202,
+        "y": 94,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Thief Classroom]#ac_a"
+      },
+      {
+        "name": "[Thief Classroom]",
+        "x": 202,
+        "y": 94,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Thief Classroom]#ac_b"
+      },
+      {
+        "name": "[Thief Classroom]",
+        "x": 202,
+        "y": 94,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Thief Classroom]#ac_c"
+      },
+      {
+        "name": "[Thief Classroom]",
+        "x": 202,
+        "y": 94,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Thief Classroom]#ac_d"
+      },
+      {
+        "name": "[Ninja Classroom]",
+        "x": 213,
+        "y": 94,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Ninja Classroom]#ac"
+      },
+      {
+        "name": "[Ninja Classroom]",
+        "x": 213,
+        "y": 94,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Ninja Classroom]#ac_a"
+      },
+      {
+        "name": "[Ninja Classroom]",
+        "x": 213,
+        "y": 94,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Ninja Classroom]#ac_b"
+      },
+      {
+        "name": "[Ninja Classroom]",
+        "x": 213,
+        "y": 94,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Ninja Classroom]#ac_c"
+      },
+      {
+        "name": "[Ninja Classroom]",
+        "x": 213,
+        "y": 94,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Ninja Classroom]#ac_d"
+      },
+      {
+        "name": "[Archer Classroom]",
+        "x": 202,
+        "y": 78,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Archer Classroom]#ac"
+      },
+      {
+        "name": "[Archer Classroom]",
+        "x": 202,
+        "y": 78,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Archer Classroom]#ac_a"
+      },
+      {
+        "name": "[Archer Classroom]",
+        "x": 202,
+        "y": 78,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Archer Classroom]#ac_b"
+      },
+      {
+        "name": "[Archer Classroom]",
+        "x": 202,
+        "y": 78,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Archer Classroom]#ac_c"
+      },
+      {
+        "name": "[Archer Classroom]",
+        "x": 202,
+        "y": 78,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Archer Classroom]#ac_d"
+      },
+      {
+        "name": "[Mage Classroom]",
+        "x": 213,
+        "y": 78,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Mage Classroom]#ac"
+      },
+      {
+        "name": "[Mage Classroom]",
+        "x": 213,
+        "y": 78,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Mage Classroom]#ac_a"
+      },
+      {
+        "name": "[Mage Classroom]",
+        "x": 213,
+        "y": 78,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Mage Classroom]#ac_b"
+      },
+      {
+        "name": "[Mage Classroom]",
+        "x": 213,
+        "y": 78,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Mage Classroom]#ac_c"
+      },
+      {
+        "name": "[Mage Classroom]",
+        "x": 213,
+        "y": 78,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Mage Classroom]#ac_d"
+      },
+      {
+        "name": "[Taekwon Classroom]",
+        "x": 202,
+        "y": 62,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Taekwon Classroom]#2"
+      },
+      {
+        "name": "[Taekwon Classroom]",
+        "x": 202,
+        "y": 62,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Taekwon Classroom]#2_a"
+      },
+      {
+        "name": "[Taekwon Classroom]",
+        "x": 202,
+        "y": 62,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Taekwon Classroom]#2_b"
+      },
+      {
+        "name": "[Taekwon Classroom]",
+        "x": 202,
+        "y": 62,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Taekwon Classroom]#2_c"
+      },
+      {
+        "name": "[Taekwon Classroom]",
+        "x": 202,
+        "y": 62,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Taekwon Classroom]#2_d"
+      },
+      {
+        "name": "[Gunslinger Classroom]",
+        "x": 213,
+        "y": 62,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Gunslinger Classroom]#0"
+      },
+      {
+        "name": "[Gunslinger Classroom]",
+        "x": 213,
+        "y": 62,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Gunslinger Classroom]#a"
+      },
+      {
+        "name": "[Gunslinger Classroom]",
+        "x": 213,
+        "y": 62,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Gunslinger Classroom]#b"
+      },
+      {
+        "name": "[Gunslinger Classroom]",
+        "x": 213,
+        "y": 62,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Gunslinger Classroom]#c"
+      },
+      {
+        "name": "[Gunslinger Classroom]",
+        "x": 213,
+        "y": 62,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Gunslinger Classroom]#d"
+      },
+      {
+        "name": "[Swordman Classroom]",
+        "x": 202,
+        "y": 46,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Swordman Classroom]#2"
+      },
+      {
+        "name": "[Swordman Classroom]",
+        "x": 202,
+        "y": 46,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Swordman Classroom]#2_a"
+      },
+      {
+        "name": "[Swordman Classroom]",
+        "x": 202,
+        "y": 46,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Swordman Classroom]#2_b"
+      },
+      {
+        "name": "[Swordman Classroom]",
+        "x": 202,
+        "y": 46,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Swordman Classroom]#2_c"
+      },
+      {
+        "name": "[Swordman Classroom]",
+        "x": 202,
+        "y": 46,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 837,
+        "unique_name": "[Swordman Classroom]#2_d"
+      },
+      {
+        "name": "[Lounge]",
+        "x": 213,
+        "y": 46,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Lounge]#ac"
+      },
+      {
+        "name": "[Lounge]",
+        "x": 213,
+        "y": 46,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Lounge]#ac_a"
+      },
+      {
+        "name": "[Lounge]",
+        "x": 213,
+        "y": 46,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Lounge]#ac_b"
+      },
+      {
+        "name": "[Lounge]",
+        "x": 213,
+        "y": 46,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Lounge]#ac_c"
+      },
+      {
+        "name": "[Lounge]",
+        "x": 213,
+        "y": 46,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Lounge]#ac_d"
+      },
+      {
+        "name": "[Principal's Office]",
+        "x": 211,
+        "y": 118,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Principal's Office]#a"
+      },
+      {
+        "name": "[Principal's Office]",
+        "x": 211,
+        "y": 118,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Principal's Office]#aa"
+      },
+      {
+        "name": "[Principal's Office]",
+        "x": 211,
+        "y": 118,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Principal's Office]#ab"
+      },
+      {
+        "name": "[Principal's Office]",
+        "x": 211,
+        "y": 118,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Principal's Office]#ac"
+      },
+      {
+        "name": "[Principal's Office]",
+        "x": 211,
+        "y": 118,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 837,
+        "unique_name": "[Principal's Office]#ad"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|floating|::izludeWagjak|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak",
+    "output_hash": "a8deb6276d6cdae0636fee6d14883e22cebb33a67a42845150d76dea4195ec6d",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/izludewagjak.ex",
+    "source_hash": "2c01141ace6868459921f92307ec311ecee525efb18c630c0149e30dbd1613d2",
+    "spawns": [
+      {
+        "name": "Refining Machine Wagjak::iz",
+        "x": 153,
+        "y": 121,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 406,
+        "unique_name": "iz"
+      },
+      {
+        "name": "Refining Machine Wagjak::iz_a",
+        "x": 153,
+        "y": 121,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 406,
+        "unique_name": "iz_a"
+      },
+      {
+        "name": "Refining Machine Wagjak::iz_b",
+        "x": 153,
+        "y": 121,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 406,
+        "unique_name": "iz_b"
+      },
+      {
+        "name": "Refining Machine Wagjak::iz_c",
+        "x": 153,
+        "y": 121,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 406,
+        "unique_name": "iz_c"
+      },
+      {
+        "name": "Refining Machine Wagjak::iz_d",
+        "x": 153,
+        "y": 121,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 406,
+        "unique_name": "iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|#acKick|iz_ac01:54:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc",
+    "output_hash": "005825842f175bc9dabe820d51025d02c5650dc2865c536d0619c16417d736fb",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc.ex",
+    "source_hash": "6d28760003ba7ec7d097044974c42e8b1d84cf9d45d51ffde8dac716c39a2da6",
+    "spawns": [
+      {
+        "name": "",
+        "x": 54,
+        "y": 49,
+        "map": "iz_ac01",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "",
+        "x": 54,
+        "y": 49,
+        "map": "iz_ac01_a",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_a",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "",
+        "x": 54,
+        "y": 49,
+        "map": "iz_ac01_b",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_b",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "",
+        "x": 54,
+        "y": 49,
+        "map": "iz_ac01_c",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_c",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "",
+        "x": 54,
+        "y": 49,
+        "map": "iz_ac01_d",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "#acKick_d",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|#acmageguide|gef_fild07:90:208": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc90208",
+    "output_hash": "78ded9b568544bd8c1024a9c8f30ac0069c90f6bba8405559c47b5d6bfa7afe5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc_90_208.ex",
+    "source_hash": "a5b8e96f960589fea93bf37baaecee68afed60a4b46edd9baac726a6f03779f7",
+    "spawns": [
+      {
+        "name": "",
+        "x": 90,
+        "y": 208,
+        "map": "gef_fild07",
+        "dir": 6,
+        "sprite": 111,
+        "unique_name": "#acmageguide",
+        "trigger": [
+          7,
+          7
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|#nbacStone01|iz_ac02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc11",
+    "output_hash": "649c11020dbb0888498d16b8ec7a9938223c700c23f3a0b51982b055c43a310b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc_1_1.ex",
+    "source_hash": "523b2e5fc06fe90a551cd066c707fa6290a389bb1f43bde6d6f11346865528e3",
+    "spawns": [
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone01"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_a",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone01_a"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_b",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone01_b"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_c",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone01_c"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_d",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone01_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|#nbacStone02|iz_ac02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc0",
+    "output_hash": "484d91bc8a7d042b5f278ad9e5f4682a7fab01a49886b1e33c2f145a229f4b7d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc_0.ex",
+    "source_hash": "f42e7c50d1d62b408a6722e48580594eb3e12702a493fc090e121b7822b0fd84",
+    "spawns": [
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone02"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_a",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone02_a"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_b",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone02_b"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_c",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone02_c"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_d",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone02_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|#nbacStone03|iz_ac02:1:1": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc1",
+    "output_hash": "b560dc1bb4b4ff74335c56694a2b1c0e6093a78098a0593168df123b69a0c893",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc_1.ex",
+    "source_hash": "6a013be6ae0aee80fafe56335133f6bbf763a3b77dad4600a2a5e774257a05a0",
+    "spawns": [
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone03"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_a",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone03_a"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_b",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone03_b"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_c",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone03_c"
+      },
+      {
+        "name": "",
+        "x": 1,
+        "y": 1,
+        "map": "iz_ac02_d",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#nbacStone03_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|A Nun#2|iz_ac02:152:165": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun",
+    "output_hash": "ad437596f763455d4b889ff3fe53648f07cc6ff74a06854977eb0922314fa033",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/a_nun.ex",
+    "source_hash": "a7a64d3ac931aebdbbc4fa9732c69d5d116d8ab4eae8a367358b7ea98a1fac7a",
+    "spawns": [
+      {
+        "name": "A Nun",
+        "x": 152,
+        "y": 165,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 95,
+        "unique_name": "A Nun#2"
+      },
+      {
+        "name": "A Nun",
+        "x": 152,
+        "y": 165,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 95,
+        "unique_name": "A Nun#2_a"
+      },
+      {
+        "name": "A Nun",
+        "x": 152,
+        "y": 165,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 95,
+        "unique_name": "A Nun#2_b"
+      },
+      {
+        "name": "A Nun",
+        "x": 152,
+        "y": 165,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 95,
+        "unique_name": "A Nun#2_c"
+      },
+      {
+        "name": "A Nun",
+        "x": 152,
+        "y": 165,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 95,
+        "unique_name": "A Nun#2_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Academy Receptionist#1|iz_ac01:100:39": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionist",
+    "output_hash": "e4e1cb14c0c86883b82ec540e4f1dfddadb7be7d8777a3c027d746ed9d78db2e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_receptionist.ex",
+    "source_hash": "a6efd1120746a27c25408733db816567ebcf072ee97f1a6b2568a3bb3f684f39",
+    "spawns": [
+      {
+        "name": "Academy Receptionist",
+        "x": 100,
+        "y": 39,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 90,
+        "unique_name": "Academy Receptionist#1"
+      },
+      {
+        "name": "Academy Receptionist",
+        "x": 100,
+        "y": 39,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 90,
+        "unique_name": "Academy Receptionist#1_a"
+      },
+      {
+        "name": "Academy Receptionist",
+        "x": 100,
+        "y": 39,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 90,
+        "unique_name": "Academy Receptionist#1_b"
+      },
+      {
+        "name": "Academy Receptionist",
+        "x": 100,
+        "y": 39,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 90,
+        "unique_name": "Academy Receptionist#1_c"
+      },
+      {
+        "name": "Academy Receptionist",
+        "x": 100,
+        "y": 39,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 90,
+        "unique_name": "Academy Receptionist#1_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Academy Student#0|izlude:140:249": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent",
+    "output_hash": "41a4a1b0456c54d478bee8b2ea210105f65d30bfda4d382532c246b9b22d10c3",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_student.ex",
+    "source_hash": "f3df377a3af2da46a6b390cecaa7252d307a5e6f499104f9938a3ebe52536d46",
+    "spawns": [
+      {
+        "name": "Academy Student",
+        "x": 140,
+        "y": 249,
+        "map": "izlude",
+        "dir": 7,
+        "sprite": 639,
+        "unique_name": "Academy Student#0"
+      },
+      {
+        "name": "Academy Student",
+        "x": 140,
+        "y": 249,
+        "map": "izlude_a",
+        "dir": 7,
+        "sprite": 639,
+        "unique_name": "Academy Student#a"
+      },
+      {
+        "name": "Academy Student",
+        "x": 140,
+        "y": 249,
+        "map": "izlude_b",
+        "dir": 7,
+        "sprite": 639,
+        "unique_name": "Academy Student#b"
+      },
+      {
+        "name": "Academy Student",
+        "x": 140,
+        "y": 249,
+        "map": "izlude_c",
+        "dir": 7,
+        "sprite": 639,
+        "unique_name": "Academy Student#c"
+      },
+      {
+        "name": "Academy Student",
+        "x": 140,
+        "y": 249,
+        "map": "izlude_d",
+        "dir": 7,
+        "sprite": 639,
+        "unique_name": "Academy Student#d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Acolyte Leader Alice#2|iz_ac02:156:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice",
+    "output_hash": "43b6c532887cc72954218ab2e65f6cfdf6d5cc6933b7c346c57ccd599d2e99c8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/acolyte_leader_alice.ex",
+    "source_hash": "e8561ae7d792b71790b1148222286f9a911cfd5aa88ca02554122c3dc945814d",
+    "spawns": [
+      {
+        "name": "Acolyte Leader Alice",
+        "x": 156,
+        "y": 169,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 641,
+        "unique_name": "Acolyte Leader Alice#2"
+      },
+      {
+        "name": "Acolyte Leader Alice",
+        "x": 156,
+        "y": 169,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 641,
+        "unique_name": "Acolyte Leader Alice#2_a"
+      },
+      {
+        "name": "Acolyte Leader Alice",
+        "x": 156,
+        "y": 169,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 641,
+        "unique_name": "Acolyte Leader Alice#2_b"
+      },
+      {
+        "name": "Acolyte Leader Alice",
+        "x": 156,
+        "y": 169,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 641,
+        "unique_name": "Acolyte Leader Alice#2_c"
+      },
+      {
+        "name": "Acolyte Leader Alice",
+        "x": 156,
+        "y": 169,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 641,
+        "unique_name": "Acolyte Leader Alice#2_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Adept Adventurer#ac|iz_ac01:45:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer",
+    "output_hash": "ea4f50b9000c61eb43500e8700e613e845f725a8c5f34e8dc6f59d4a61747c9b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/adept_adventurer.ex",
+    "source_hash": "e9f0d64911fe44e08f1e24842bbc9e3059354ffef2e1f63a2633311e29df4f25",
+    "spawns": [
+      {
+        "name": "Adept Adventurer",
+        "x": 45,
+        "y": 80,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 731,
+        "unique_name": "Adept Adventurer#ac"
+      },
+      {
+        "name": "Adept Adventurer",
+        "x": 45,
+        "y": 80,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 731,
+        "unique_name": "Adept Adventurer#ac_a"
+      },
+      {
+        "name": "Adept Adventurer",
+        "x": 45,
+        "y": 80,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 731,
+        "unique_name": "Adept Adventurer#ac_b"
+      },
+      {
+        "name": "Adept Adventurer",
+        "x": 45,
+        "y": 80,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 731,
+        "unique_name": "Adept Adventurer#ac_c"
+      },
+      {
+        "name": "Adept Adventurer",
+        "x": 45,
+        "y": 80,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 731,
+        "unique_name": "Adept Adventurer#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Adept Adventurer#new_1-3|new_1-3:92:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer92169",
+    "output_hash": "c794bacbad962455ec40e11c3772c32e02d8b90999e27a328fb3d0b9da231177",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/adept_adventurer_92_169.ex",
+    "source_hash": "c26bd0437fc997b8e3f309c3be9aee010062b686e6dc3bb2b873e372ab760684",
+    "spawns": [
+      {
+        "name": "Adept Adventurer",
+        "x": 92,
+        "y": 169,
+        "map": "new_1-3",
+        "dir": 5,
+        "sprite": 731,
+        "unique_name": "Adept Adventurer#new_1-3"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Adventurer's Pet#ac|iz_ac01:43:80": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet",
+    "output_hash": "8db43f6251948e34bedf231fabdb6d6e5b788e9cf2c1cbb3e83e7fb02a2186d8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/adventurer_s_pet.ex",
+    "source_hash": "42854a3a96a9fe4f47195b411e7e0af64dbbcb5423d7e9f13720f2de1b74b074",
+    "spawns": [
+      {
+        "name": "Adventurer's Pet",
+        "x": 43,
+        "y": 80,
+        "map": "iz_ac01",
+        "dir": 7,
+        "sprite": 738,
+        "unique_name": "Adventurer's Pet#ac"
+      },
+      {
+        "name": "Adventurer's Pet",
+        "x": 43,
+        "y": 80,
+        "map": "iz_ac01_a",
+        "dir": 7,
+        "sprite": 738,
+        "unique_name": "Adventurer's Pet#ac_a"
+      },
+      {
+        "name": "Adventurer's Pet",
+        "x": 43,
+        "y": 80,
+        "map": "iz_ac01_b",
+        "dir": 7,
+        "sprite": 738,
+        "unique_name": "Adventurer's Pet#ac_b"
+      },
+      {
+        "name": "Adventurer's Pet",
+        "x": 43,
+        "y": 80,
+        "map": "iz_ac01_c",
+        "dir": 7,
+        "sprite": 738,
+        "unique_name": "Adventurer's Pet#ac_c"
+      },
+      {
+        "name": "Adventurer's Pet",
+        "x": 43,
+        "y": 80,
+        "map": "iz_ac01_d",
+        "dir": 7,
+        "sprite": 738,
+        "unique_name": "Adventurer's Pet#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Airship#iz|izlude:179:75": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship",
+    "output_hash": "f5ef34a649186858a219ea36dc9c4c23ae6a89ffb8eca8d9f38a5e41fca32085",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/airship.ex",
+    "source_hash": "bd7c9d05d7d73ae0db30cec93bd74a40dbd823cec932bfc24b06e6ca45d4083b",
+    "spawns": [
+      {
+        "name": "Airship",
+        "x": 179,
+        "y": 75,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Airship",
+        "x": 179,
+        "y": 75,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_a",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Airship",
+        "x": 179,
+        "y": 75,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_b",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Airship",
+        "x": 179,
+        "y": 75,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_c",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Airship",
+        "x": 179,
+        "y": 75,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Airship#iz_d",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Arang#ac|iz_ac02:70:85": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang",
+    "output_hash": "aacb0c09f093507014cc4becca7e1440e868bf89b99a909aeff14d0a4a7e0f0f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arang.ex",
+    "source_hash": "bf90e83237c12a00c85ec994f57d4abf000df4246f20c9c2ad8868a7863b68cb",
+    "spawns": [
+      {
+        "name": "Arang",
+        "x": 70,
+        "y": 85,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 644,
+        "unique_name": "Arang#ac"
+      },
+      {
+        "name": "Arang",
+        "x": 70,
+        "y": 85,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 644,
+        "unique_name": "Arang#ac_a"
+      },
+      {
+        "name": "Arang",
+        "x": 70,
+        "y": 85,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 644,
+        "unique_name": "Arang#ac_b"
+      },
+      {
+        "name": "Arang",
+        "x": 70,
+        "y": 85,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 644,
+        "unique_name": "Arang#ac_c"
+      },
+      {
+        "name": "Arang",
+        "x": 70,
+        "y": 85,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 644,
+        "unique_name": "Arang#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Archer Teacher#ac|iz_ac02:65:109": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher",
+    "output_hash": "166be22c6fd3707e3cf47c8a2a7a0af341a4c6b6be67105c9d1979ff04a4bff5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/archer_teacher.ex",
+    "source_hash": "54047668e913f7d117a7fcd8f7cfa85ceb5793b69a8fff3253b78775bd970dec",
+    "spawns": [
+      {
+        "name": "Archer Teacher",
+        "x": 65,
+        "y": 109,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 634,
+        "unique_name": "Archer Teacher#ac"
+      },
+      {
+        "name": "Archer Teacher",
+        "x": 65,
+        "y": 109,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 634,
+        "unique_name": "Archer Teacher#ac_a"
+      },
+      {
+        "name": "Archer Teacher",
+        "x": 65,
+        "y": 109,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 634,
+        "unique_name": "Archer Teacher#ac_b"
+      },
+      {
+        "name": "Archer Teacher",
+        "x": 65,
+        "y": 109,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 634,
+        "unique_name": "Archer Teacher#ac_c"
+      },
+      {
+        "name": "Archer Teacher",
+        "x": 65,
+        "y": 109,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 634,
+        "unique_name": "Archer Teacher#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Arena#iz|izlude:207:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena",
+    "output_hash": "e2fd44befbd258a26d3a4fd5e225e07791b1cad39aff89b3a3be385f065bec65",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arena.ex",
+    "source_hash": "ebc3a6ab4219b2abbe62fcf8d9c92c5107f213c9081c6e9477c71a6290792997",
+    "spawns": [
+      {
+        "name": "Arena",
+        "x": 207,
+        "y": 167,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Arena",
+        "x": 207,
+        "y": 167,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_a",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Arena",
+        "x": 207,
+        "y": 167,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_b",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Arena",
+        "x": 207,
+        "y": 167,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_c",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Arena",
+        "x": 207,
+        "y": 167,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Arena#iz_d",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Attribute Expert#ac|iz_ac01:53:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert",
+    "output_hash": "bc9933f51f23fa06ce6c4a152edc12054425e1affa1a951fcf7c7288ff7d5310",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/attribute_expert.ex",
+    "source_hash": "236c03bd39d2fb45ea5227f7ce11236ca60881ef4afe84640a02ea8e0745fc9d",
+    "spawns": [
+      {
+        "name": "Attribute Expert",
+        "x": 53,
+        "y": 74,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 64,
+        "unique_name": "Attribute Expert#ac"
+      },
+      {
+        "name": "Attribute Expert",
+        "x": 53,
+        "y": 74,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 64,
+        "unique_name": "Attribute Expert#ac_a"
+      },
+      {
+        "name": "Attribute Expert",
+        "x": 53,
+        "y": 74,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 64,
+        "unique_name": "Attribute Expert#ac_b"
+      },
+      {
+        "name": "Attribute Expert",
+        "x": 53,
+        "y": 74,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 64,
+        "unique_name": "Attribute Expert#ac_c"
+      },
+      {
+        "name": "Attribute Expert",
+        "x": 53,
+        "y": 74,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 64,
+        "unique_name": "Attribute Expert#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Battle Instructor#08|iz_ac01:59:83": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor",
+    "output_hash": "3740d65df14ab0f913d5f89cedeb1c9bdaa6cb2fb07d72812b61cc338b9814e6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/battle_instructor.ex",
+    "source_hash": "bc7fa34b597de326eedf5fae8d23be468f16c5851402ef62b9f5da695df20198",
+    "spawns": [
+      {
+        "name": "Battle Instructor",
+        "x": 59,
+        "y": 83,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 642,
+        "unique_name": "Battle Instructor#08"
+      },
+      {
+        "name": "Battle Instructor",
+        "x": 59,
+        "y": 83,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 642,
+        "unique_name": "Battle Instructor#08a"
+      },
+      {
+        "name": "Battle Instructor",
+        "x": 59,
+        "y": 83,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 642,
+        "unique_name": "Battle Instructor#08b"
+      },
+      {
+        "name": "Battle Instructor",
+        "x": 59,
+        "y": 83,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 642,
+        "unique_name": "Battle Instructor#08c"
+      },
+      {
+        "name": "Battle Instructor",
+        "x": 59,
+        "y": 83,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 642,
+        "unique_name": "Battle Instructor#08d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Broke Trainee#ac|iz_ac01:133:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BrokeTrainee",
+    "output_hash": "a35ebdb301fd6801d00bb07a995afdd712abee2958a842de9783392d31fdb5f8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/broke_trainee.ex",
+    "source_hash": "3c575e7815caef06046aaddd6dbcb1cc699ea8a98982000ce5ade5e49e9b32c4",
+    "spawns": [
+      {
+        "name": "Broke Trainee",
+        "x": 133,
+        "y": 34,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Broke Trainee#ac"
+      },
+      {
+        "name": "Broke Trainee",
+        "x": 133,
+        "y": 34,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Broke Trainee#ac_a"
+      },
+      {
+        "name": "Broke Trainee",
+        "x": 133,
+        "y": 34,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Broke Trainee#ac_b"
+      },
+      {
+        "name": "Broke Trainee",
+        "x": 133,
+        "y": 34,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Broke Trainee#ac_c"
+      },
+      {
+        "name": "Broke Trainee",
+        "x": 133,
+        "y": 34,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Broke Trainee#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Bulletin Board#iz|izlude:45:94": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BulletinBoard",
+    "output_hash": "5f1c1245dffd63f204019cd161f920c796a677e763f61c0d8bdad3f9705905f5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/bulletin_board.ex",
+    "source_hash": "4b390938520613ce060e52b3f8fcc9f509cade0b85d20d4bfc8ba4d7ddd4b136",
+    "spawns": [
+      {
+        "name": "Bulletin Board",
+        "x": 45,
+        "y": 94,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 45,
+        "y": 94,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_a",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 45,
+        "y": 94,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_b",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 45,
+        "y": 94,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_c",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 45,
+        "y": 94,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 858,
+        "unique_name": "Bulletin Board#iz_d",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Captain Carocc#intro_npc03|int_land:78:103": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc",
+    "output_hash": "053ad0201ad8b5444d44b927f47375367c3936f06de5c99ec1e2e7b1dc4c83ad",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc.ex",
+    "source_hash": "2c3676a19ed094995f93143323818c50d2a499591c28786d8dd9b7a345101677",
+    "spawns": [
+      {
+        "name": "Captain Carocc",
+        "x": 78,
+        "y": 103,
+        "map": "int_land",
+        "dir": 5,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#intro_npc03"
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 78,
+        "y": 103,
+        "map": "int_land01",
+        "dir": 5,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#intro_npc03_01"
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 78,
+        "y": 103,
+        "map": "int_land02",
+        "dir": 5,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#intro_npc03_02"
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 78,
+        "y": 103,
+        "map": "int_land03",
+        "dir": 5,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#intro_npc03_03"
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 78,
+        "y": 103,
+        "map": "int_land04",
+        "dir": 5,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#intro_npc03_04"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Captain Carocc#iz|izlude:198:213": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc198213",
+    "output_hash": "eb34f7c6eee25364c2c92f5da90576ca402c369bc0800d5160e9a6966570ded7",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc_198_213.ex",
+    "source_hash": "79524869c0390c980be7754d20072dba4db514b21baa739551467b5d1d078014",
+    "spawns": [
+      {
+        "name": "Captain Carocc",
+        "x": 198,
+        "y": 213,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 198,
+        "y": 213,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_a",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 198,
+        "y": 213,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_b",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 198,
+        "y": 213,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_c",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Captain Carocc",
+        "x": 198,
+        "y": 213,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 873,
+        "unique_name": "Captain Carocc#iz_d",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Chef#ac|iz_ac01:160:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Chef",
+    "output_hash": "1c6391b5bff171fe6f76aede4542a456c09bbfd170979d383fee0bd3a375f0f1",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/chef.ex",
+    "source_hash": "bef091346fe9fc8dfd5691050368cad2d07708ab408f0147917c84562827c4a8",
+    "spawns": [
+      {
+        "name": "Chef",
+        "x": 160,
+        "y": 50,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 701,
+        "unique_name": "Chef#ac"
+      },
+      {
+        "name": "Chef",
+        "x": 160,
+        "y": 50,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 701,
+        "unique_name": "Chef#ac_a"
+      },
+      {
+        "name": "Chef",
+        "x": 160,
+        "y": 50,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 701,
+        "unique_name": "Chef#ac_b"
+      },
+      {
+        "name": "Chef",
+        "x": 160,
+        "y": 50,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 701,
+        "unique_name": "Chef#ac_c"
+      },
+      {
+        "name": "Chef",
+        "x": 160,
+        "y": 50,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 701,
+        "unique_name": "Chef#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Cowardly Poring#pet_1|new_1-3:105:165": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CowardlyPoring",
+    "output_hash": "506c08b6702d8e056cfd243e836fc8e51c4887bd4a4978358995946dc48bd83f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cowardly_poring.ex",
+    "source_hash": "b30b0684b100ab18fb98cdbe08ea4a2978fd8a647f7c1dee2834c65f73234224",
+    "spawns": [
+      {
+        "name": "Cowardly Poring",
+        "x": 105,
+        "y": 165,
+        "map": "new_1-3",
+        "dir": 5,
+        "sprite": 2398,
+        "unique_name": "Cowardly Poring#pet_1"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Cream Puff#ac|iz_ac02:143:55": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff",
+    "output_hash": "0ac454cc742b4391e448170dea5248ef359cfe9159edc7794ff40de2cbda3191",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cream_puff.ex",
+    "source_hash": "0c696d3189010a793cb78149ba072f0d8488f0fc71e6244943c8a46dc3621339",
+    "spawns": [
+      {
+        "name": "Cream Puff",
+        "x": 143,
+        "y": 55,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 706,
+        "unique_name": "Cream Puff#ac"
+      },
+      {
+        "name": "Cream Puff",
+        "x": 143,
+        "y": 55,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 706,
+        "unique_name": "Cream Puff#ac_a"
+      },
+      {
+        "name": "Cream Puff",
+        "x": 143,
+        "y": 55,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 706,
+        "unique_name": "Cream Puff#ac_b"
+      },
+      {
+        "name": "Cream Puff",
+        "x": 143,
+        "y": 55,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 706,
+        "unique_name": "Cream Puff#ac_c"
+      },
+      {
+        "name": "Cream Puff",
+        "x": 143,
+        "y": 55,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 706,
+        "unique_name": "Cream Puff#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Criatura Academy Staff#0|izlude:122:207": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademyStaff",
+    "output_hash": "6227b170683ad91bda43a27c2ebf1b121e1f194836dcfff21eff5f97ddb7c568",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/criatura_academy_staff.ex",
+    "source_hash": "e0d694a7b3c62aa16556b1e80f2ca68c1883c1bfeb2018edbaf9221ea057d2aa",
+    "spawns": [
+      {
+        "name": "Criatura Academy Staff",
+        "x": 122,
+        "y": 207,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#0",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Criatura Academy Staff",
+        "x": 122,
+        "y": 207,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#a",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Criatura Academy Staff",
+        "x": 122,
+        "y": 207,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#b",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Criatura Academy Staff",
+        "x": 122,
+        "y": 207,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#c",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Criatura Academy Staff",
+        "x": 122,
+        "y": 207,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 903,
+        "unique_name": "Criatura Academy Staff#d",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Cultivated Red Plant#0|izlude:141:251": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant",
+    "output_hash": "ce5487403cf9f799e3fb82960b452532cdc46fc3bd14f6684a90b2e124704ad6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cultivated_red_plant.ex",
+    "source_hash": "64aab070cabaff4fc451e8e72af4c9d84dabc97aed4a4f295b9fe73026e9bae7",
+    "spawns": [
+      {
+        "name": "Cultivated Red Plant",
+        "x": 141,
+        "y": 251,
+        "map": "izlude",
+        "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#0",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Cultivated Red Plant",
+        "x": 141,
+        "y": 251,
+        "map": "izlude_a",
+        "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#a",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Cultivated Red Plant",
+        "x": 141,
+        "y": 251,
+        "map": "izlude_b",
+        "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#b",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Cultivated Red Plant",
+        "x": 141,
+        "y": 251,
+        "map": "izlude_c",
+        "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#c",
+        "trigger": [
+          3,
+          3
+        ]
+      },
+      {
+        "name": "Cultivated Red Plant",
+        "x": 141,
+        "y": 251,
+        "map": "izlude_d",
+        "dir": 0,
+        "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#d",
+        "trigger": [
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Dacquoise#ac|iz_ac01:147:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise",
+    "output_hash": "39c1f06145723dad2a65f882918111ea1d77bc1c9fde48fb4645a70c59f9d143",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/dacquoise.ex",
+    "source_hash": "1bf71d03dda1360166dda9681ef948f75bab083965cc060950cddc76394bf305",
+    "spawns": [
+      {
+        "name": "Dacquoise",
+        "x": 147,
+        "y": 50,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 886,
+        "unique_name": "Dacquoise#ac"
+      },
+      {
+        "name": "Dacquoise",
+        "x": 147,
+        "y": 50,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 886,
+        "unique_name": "Dacquoise#ac_a"
+      },
+      {
+        "name": "Dacquoise",
+        "x": 147,
+        "y": 50,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 886,
+        "unique_name": "Dacquoise#ac_b"
+      },
+      {
+        "name": "Dacquoise",
+        "x": 147,
+        "y": 50,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 886,
+        "unique_name": "Dacquoise#ac_c"
+      },
+      {
+        "name": "Dacquoise",
+        "x": 147,
+        "y": 50,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 886,
+        "unique_name": "Dacquoise#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Dad#iz|izlude:97:147": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dad",
+    "output_hash": "71da85c54d15b56db1721ba95abf91309150538069b2173498641d3cb2e79cd0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/dad.ex",
+    "source_hash": "5a4883d0aeb2d6a9904b4386f4252a6bb5c292132559287aa20325dfd1ee1851",
+    "spawns": [
+      {
+        "name": "Dad",
+        "x": 97,
+        "y": 147,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 54,
+        "unique_name": "Dad#iz"
+      },
+      {
+        "name": "Dad",
+        "x": 97,
+        "y": 147,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 54,
+        "unique_name": "Dad#iz_a"
+      },
+      {
+        "name": "Dad",
+        "x": 97,
+        "y": 147,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 54,
+        "unique_name": "Dad#iz_b"
+      },
+      {
+        "name": "Dad",
+        "x": 97,
+        "y": 147,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 54,
+        "unique_name": "Dad#iz_c"
+      },
+      {
+        "name": "Dad",
+        "x": 97,
+        "y": 147,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 54,
+        "unique_name": "Dad#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Eclaire#ac|iz_ac01:149:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Eclaire",
+    "output_hash": "a2eada907ce3d953899644d0031745e930ab149002993160ea925eeeb148a709",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/eclaire.ex",
+    "source_hash": "b42b82413527152a5a05cbdaa0ca6dbc2e1cce874cfa87b4ee05d74969b20479",
+    "spawns": [
+      {
+        "name": "Eclaire",
+        "x": 149,
+        "y": 46,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 721,
+        "unique_name": "Eclaire#ac"
+      },
+      {
+        "name": "Eclaire",
+        "x": 149,
+        "y": 46,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 721,
+        "unique_name": "Eclaire#ac_a"
+      },
+      {
+        "name": "Eclaire",
+        "x": 149,
+        "y": 46,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 721,
+        "unique_name": "Eclaire#ac_b"
+      },
+      {
+        "name": "Eclaire",
+        "x": 149,
+        "y": 46,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 721,
+        "unique_name": "Eclaire#ac_c"
+      },
+      {
+        "name": "Eclaire",
+        "x": 149,
+        "y": 46,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 721,
+        "unique_name": "Eclaire#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Enchanter Almond J#iz|izlude:108:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ",
+    "output_hash": "8a5aa019ea1fc69c5ad404710c2040649845fd2a37d98ba08ecd1ece3daf5db8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_almond_j.ex",
+    "source_hash": "12dadd9a6da656a6968ffab05e29383728cd689a062303e90d14d0031116a51e",
+    "spawns": [
+      {
+        "name": "Enchanter Almond J",
+        "x": 108,
+        "y": 139,
+        "map": "izlude",
+        "dir": 7,
+        "sprite": 546,
+        "unique_name": "Enchanter Almond J#iz"
+      },
+      {
+        "name": "Enchanter Almond J",
+        "x": 108,
+        "y": 139,
+        "map": "izlude_a",
+        "dir": 7,
+        "sprite": 546,
+        "unique_name": "Enchanter Almond J#iz_a"
+      },
+      {
+        "name": "Enchanter Almond J",
+        "x": 108,
+        "y": 139,
+        "map": "izlude_b",
+        "dir": 7,
+        "sprite": 546,
+        "unique_name": "Enchanter Almond J#iz_b"
+      },
+      {
+        "name": "Enchanter Almond J",
+        "x": 108,
+        "y": 139,
+        "map": "izlude_c",
+        "dir": 7,
+        "sprite": 546,
+        "unique_name": "Enchanter Almond J#iz_c"
+      },
+      {
+        "name": "Enchanter Almond J",
+        "x": 108,
+        "y": 139,
+        "map": "izlude_d",
+        "dir": 7,
+        "sprite": 546,
+        "unique_name": "Enchanter Almond J#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Enchanter Mounds#iz|izlude:96:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds",
+    "output_hash": "c1745d770a6d2a4182bc7faa1ff5cff6e214b7adf69d2e688010cb8be3afe948",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_mounds.ex",
+    "source_hash": "60a6407aff09626599f45167a4ec170d2fc61dfdd6a38f9169dc1faa75a5d009",
+    "spawns": [
+      {
+        "name": "Enchanter Mounds",
+        "x": 96,
+        "y": 125,
+        "map": "izlude",
+        "dir": 7,
+        "sprite": 545,
+        "unique_name": "Enchanter Mounds#iz"
+      },
+      {
+        "name": "Enchanter Mounds",
+        "x": 96,
+        "y": 125,
+        "map": "izlude_a",
+        "dir": 7,
+        "sprite": 545,
+        "unique_name": "Enchanter Mounds#iz_a"
+      },
+      {
+        "name": "Enchanter Mounds",
+        "x": 96,
+        "y": 125,
+        "map": "izlude_b",
+        "dir": 7,
+        "sprite": 545,
+        "unique_name": "Enchanter Mounds#iz_b"
+      },
+      {
+        "name": "Enchanter Mounds",
+        "x": 96,
+        "y": 125,
+        "map": "izlude_c",
+        "dir": 7,
+        "sprite": 545,
+        "unique_name": "Enchanter Mounds#iz_c"
+      },
+      {
+        "name": "Enchanter Mounds",
+        "x": 96,
+        "y": 125,
+        "map": "izlude_d",
+        "dir": 7,
+        "sprite": 545,
+        "unique_name": "Enchanter Mounds#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Etinifni#iz|izlude:97:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni",
+    "output_hash": "6bf0322192f16b29d714e5a6104ebd9405df45ab701ad419dc4b3614636d1800",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/etinifni.ex",
+    "source_hash": "25076e95766b407d37fd6b99eec025f0d5882092bf244868240f313057e244a1",
+    "spawns": [
+      {
+        "name": "Etinifni",
+        "x": 97,
+        "y": 144,
+        "map": "izlude",
+        "dir": 1,
+        "sprite": 538,
+        "unique_name": "Etinifni#iz"
+      },
+      {
+        "name": "Etinifni",
+        "x": 97,
+        "y": 144,
+        "map": "izlude_a",
+        "dir": 1,
+        "sprite": 538,
+        "unique_name": "Etinifni#iz_a"
+      },
+      {
+        "name": "Etinifni",
+        "x": 97,
+        "y": 144,
+        "map": "izlude_b",
+        "dir": 1,
+        "sprite": 538,
+        "unique_name": "Etinifni#iz_b"
+      },
+      {
+        "name": "Etinifni",
+        "x": 97,
+        "y": 144,
+        "map": "izlude_c",
+        "dir": 1,
+        "sprite": 538,
+        "unique_name": "Etinifni#iz_c"
+      },
+      {
+        "name": "Etinifni",
+        "x": 97,
+        "y": 144,
+        "map": "izlude_d",
+        "dir": 1,
+        "sprite": 538,
+        "unique_name": "Etinifni#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Foolish Poring#pet_3|new_1-3:105:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FoolishPoring",
+    "output_hash": "00ead8aca760f9a15c69a67e4d6955ca216bf4b09e33e37a31cc5e9fe87c3c21",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/foolish_poring.ex",
+    "source_hash": "75dbff92543dfc98ca7e2de87788934902f84c79a13cd0438fd1c652111cab50",
+    "spawns": [
+      {
+        "name": "Foolish Poring",
+        "x": 105,
+        "y": 163,
+        "map": "new_1-3",
+        "dir": 5,
+        "sprite": 2398,
+        "unique_name": "Foolish Poring#pet_3"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Friendly Poring#ac|new_1-3:99:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FriendlyPoring",
+    "output_hash": "85cdbae5b34b96bdc1683b33e0dd6d3679f91313fdecef43c49f1410828d42d4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/friendly_poring.ex",
+    "source_hash": "ab86bd91c9cc7dd1fbe9d45ab59dc64d374871c6f39c1f592e95b655f5da7bf5",
+    "spawns": [
+      {
+        "name": "Friendly Poring",
+        "x": 99,
+        "y": 169,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 909,
+        "unique_name": "Friendly Poring#ac"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Frightened Trainee#ac|iz_ac02:159:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FrightenedTrainee",
+    "output_hash": "9b40d7d43c1539ddb2cb984f1daa66d1ad4190f12cbd160db2022c93d0603b1f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/frightened_trainee.ex",
+    "source_hash": "d190fda5ce7b2e5dc753899be720a0f65693fb780489a31e11b4f8e25078af8f",
+    "spawns": [
+      {
+        "name": "Frightened Trainee",
+        "x": 159,
+        "y": 79,
+        "map": "iz_ac02",
+        "dir": 7,
+        "sprite": 891,
+        "unique_name": "Frightened Trainee#ac"
+      },
+      {
+        "name": "Frightened Trainee",
+        "x": 159,
+        "y": 79,
+        "map": "iz_ac02_a",
+        "dir": 7,
+        "sprite": 891,
+        "unique_name": "Frightened Trainee#ac_a"
+      },
+      {
+        "name": "Frightened Trainee",
+        "x": 159,
+        "y": 79,
+        "map": "iz_ac02_b",
+        "dir": 7,
+        "sprite": 891,
+        "unique_name": "Frightened Trainee#ac_b"
+      },
+      {
+        "name": "Frightened Trainee",
+        "x": 159,
+        "y": 79,
+        "map": "iz_ac02_c",
+        "dir": 7,
+        "sprite": 891,
+        "unique_name": "Frightened Trainee#ac_c"
+      },
+      {
+        "name": "Frightened Trainee",
+        "x": 159,
+        "y": 79,
+        "map": "iz_ac02_d",
+        "dir": 7,
+        "sprite": 891,
+        "unique_name": "Frightened Trainee#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|General Store Owner#ac|iz_ac01:68:49": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner",
+    "output_hash": "e54e2b7cd97cf108e475ac8977c859df0799fbcc7b06912a1c0f0fa5afbe1537",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/general_store_owner.ex",
+    "source_hash": "ff41b70ce654df9fef3396ca4d9e18c9648ae9ac0e5d86b9da67b6eefcaaa0e1",
+    "spawns": [
+      {
+        "name": "General Store Owner",
+        "x": 68,
+        "y": 49,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "General Store Owner#ac"
+      },
+      {
+        "name": "General Store Owner",
+        "x": 68,
+        "y": 49,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "General Store Owner#ac_a"
+      },
+      {
+        "name": "General Store Owner",
+        "x": 68,
+        "y": 49,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "General Store Owner#ac_b"
+      },
+      {
+        "name": "General Store Owner",
+        "x": 68,
+        "y": 49,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "General Store Owner#ac_c"
+      },
+      {
+        "name": "General Store Owner",
+        "x": 68,
+        "y": 49,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "General Store Owner#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Ghostring#cupet|new_1-3:108:165": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Ghostring",
+    "output_hash": "3984ae0a3ba9b2b8106a0f96cc80e750c60929ba8ad990274e0d65b3f4c2fbd8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/ghostring.ex",
+    "source_hash": "ff3ae926641ed3b4526eae4f781557f29a5a8a5fd26dde25591a415c5abfca75",
+    "spawns": [
+      {
+        "name": "Ghostring",
+        "x": 108,
+        "y": 165,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 950,
+        "unique_name": "Ghostring#cupet"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Guest Lecturer Mayssel#0|iz_ac02:52:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayssel",
+    "output_hash": "40712b2d6b65c4250f6f8886d33c74a08e64ab8f8424864db8c5b324ffa24c4b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/guest_lecturer_mayssel.ex",
+    "source_hash": "862a025b4340f2f3b4982f1f302e11979af4c7db47a4e784adfee2f57a0a8a87",
+    "spawns": [
+      {
+        "name": "Guest Lecturer Mayssel",
+        "x": 52,
+        "y": 136,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 640,
+        "unique_name": "Guest Lecturer Mayssel#0"
+      },
+      {
+        "name": "Guest Lecturer Mayssel",
+        "x": 52,
+        "y": 136,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 640,
+        "unique_name": "Guest Lecturer Mayssel#a"
+      },
+      {
+        "name": "Guest Lecturer Mayssel",
+        "x": 52,
+        "y": 136,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 640,
+        "unique_name": "Guest Lecturer Mayssel#b"
+      },
+      {
+        "name": "Guest Lecturer Mayssel",
+        "x": 52,
+        "y": 136,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 640,
+        "unique_name": "Guest Lecturer Mayssel#c"
+      },
+      {
+        "name": "Guest Lecturer Mayssel",
+        "x": 52,
+        "y": 136,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 640,
+        "unique_name": "Guest Lecturer Mayssel#d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Guild Staff#ac|iz_ac02:162:86": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuildStaff",
+    "output_hash": "774b20a4c6718b161cd71ed165137b8637facacf5eaf6a83b3fd385a24731ed8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/guild_staff.ex",
+    "source_hash": "4912c47028b323c85a5ec26af184b41c5827f0ae86d3eb916467c3fb6787be59",
+    "spawns": [
+      {
+        "name": "Guild Staff",
+        "x": 162,
+        "y": 86,
+        "map": "iz_ac02",
+        "dir": 4,
+        "sprite": 98,
+        "unique_name": "Guild Staff#ac"
+      },
+      {
+        "name": "Guild Staff",
+        "x": 162,
+        "y": 86,
+        "map": "iz_ac02_a",
+        "dir": 4,
+        "sprite": 98,
+        "unique_name": "Guild Staff#ac_a"
+      },
+      {
+        "name": "Guild Staff",
+        "x": 162,
+        "y": 86,
+        "map": "iz_ac02_b",
+        "dir": 4,
+        "sprite": 98,
+        "unique_name": "Guild Staff#ac_b"
+      },
+      {
+        "name": "Guild Staff",
+        "x": 162,
+        "y": 86,
+        "map": "iz_ac02_c",
+        "dir": 4,
+        "sprite": 98,
+        "unique_name": "Guild Staff#ac_c"
+      },
+      {
+        "name": "Guild Staff",
+        "x": 162,
+        "y": 86,
+        "map": "iz_ac02_d",
+        "dir": 4,
+        "sprite": 98,
+        "unique_name": "Guild Staff#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Hungry Trainee#ac|iz_ac01:159:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.HungryTrainee",
+    "output_hash": "67668eececa9dacf103926444bb01581908670dbf8cbe5d7d481ec3b39f31ab0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/hungry_trainee.ex",
+    "source_hash": "01f370163ec5343a2df56374417a5007c6ec75efe3c02f1176b93b6d4076545d",
+    "spawns": [
+      {
+        "name": "Hungry Trainee",
+        "x": 159,
+        "y": 32,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Hungry Trainee#ac"
+      },
+      {
+        "name": "Hungry Trainee",
+        "x": 159,
+        "y": 32,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Hungry Trainee#ac_a"
+      },
+      {
+        "name": "Hungry Trainee",
+        "x": 159,
+        "y": 32,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Hungry Trainee#ac_b"
+      },
+      {
+        "name": "Hungry Trainee",
+        "x": 159,
+        "y": 32,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Hungry Trainee#ac_c"
+      },
+      {
+        "name": "Hungry Trainee",
+        "x": 159,
+        "y": 32,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Hungry Trainee#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Information Staff#0|izlude:120:207": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff",
+    "output_hash": "f477cf4ee50eb421c65ae10f2ae0bfec54b1493ce5ba1042c9b43878cb571394",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/information_staff.ex",
+    "source_hash": "b70df4e355726670ece7957f896266c32f57a6a320d47b8bdd0b7f4c4dfc42c6",
+    "spawns": [
+      {
+        "name": "Information Staff",
+        "x": 120,
+        "y": 207,
+        "map": "izlude",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Information Staff#0"
+      },
+      {
+        "name": "Information Staff",
+        "x": 120,
+        "y": 207,
+        "map": "izlude_a",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Information Staff#a"
+      },
+      {
+        "name": "Information Staff",
+        "x": 120,
+        "y": 207,
+        "map": "izlude_b",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Information Staff#b"
+      },
+      {
+        "name": "Information Staff",
+        "x": 120,
+        "y": 207,
+        "map": "izlude_c",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Information Staff#c"
+      },
+      {
+        "name": "Information Staff",
+        "x": 120,
+        "y": 207,
+        "map": "izlude_d",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Information Staff#d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Instructor Argos#iz|izlude:140:260": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos",
+    "output_hash": "66cad7c38951256a837dc88462b6260bc58bd7d3aa662ad619a883d6af4ebd40",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/instructor_argos.ex",
+    "source_hash": "3f6359fbf66b2e027223950a2dc9237e6e03dc3e1fa5072fb3c03822a3b8a371",
+    "spawns": [
+      {
+        "name": "Instructor Argos",
+        "x": 140,
+        "y": 260,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 887,
+        "unique_name": "Instructor Argos#iz"
+      },
+      {
+        "name": "Instructor Argos",
+        "x": 140,
+        "y": 260,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 887,
+        "unique_name": "Instructor Argos#iz_a"
+      },
+      {
+        "name": "Instructor Argos",
+        "x": 140,
+        "y": 260,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 887,
+        "unique_name": "Instructor Argos#iz_b"
+      },
+      {
+        "name": "Instructor Argos",
+        "x": 140,
+        "y": 260,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 887,
+        "unique_name": "Instructor Argos#iz_c"
+      },
+      {
+        "name": "Instructor Argos",
+        "x": 140,
+        "y": 260,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 887,
+        "unique_name": "Instructor Argos#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Kafra Guide Trainer#ac|iz_ac01:95:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer",
+    "output_hash": "a8fddf11adad349428b928d390e3b94ce7e9d5881f5b218fd4d7bb587b4ea13f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/kafra_guide_trainer.ex",
+    "source_hash": "ae68268ad75a6db5564dc61c82f6e6c7bca7cacb51a182f786f19d717d89e268",
+    "spawns": [
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 95,
+        "y": 46,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#ac"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 95,
+        "y": 46,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#ac_a"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 95,
+        "y": 46,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#ac_b"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 95,
+        "y": 46,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#ac_c"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 95,
+        "y": 46,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#ac_d"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 89,
+        "y": 103,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#01"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 89,
+        "y": 103,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#01_a"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 89,
+        "y": 103,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#01_b"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 89,
+        "y": 103,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#01_c"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 89,
+        "y": 103,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#01_d"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 204,
+        "y": 115,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#02"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 204,
+        "y": 115,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#02_a"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 204,
+        "y": 115,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#02_b"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 204,
+        "y": 115,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#02_c"
+      },
+      {
+        "name": "Kafra Guide Trainer",
+        "x": 204,
+        "y": 115,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Guide Trainer#02_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Lady Harvesting Herbs#2|pay_fild08:153:83": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LadyHarvestingHerbs",
+    "output_hash": "d5a1f6429415ada3a2103ff1266f44c188942a86584b52afd53686a6e986be0e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lady_harvesting_herbs.ex",
+    "source_hash": "b8a109310da5f907184d99b6bad4e148011d93edf0e8ff6f79b11df6eefa3ff1",
+    "spawns": [
+      {
+        "name": "Lady Harvesting Herbs",
+        "x": 153,
+        "y": 83,
+        "map": "pay_fild08",
+        "dir": 1,
+        "sprite": 76,
+        "unique_name": "Lady Harvesting Herbs#2"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Lady#ac|iz_ac01:138:69": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lady",
+    "output_hash": "cfa61c63840c8be161b536162ea123b75e6ee210743c5c965b55e69a78a31ae2",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lady.ex",
+    "source_hash": "882570d85f2101ad1185c6aff607b7e223e681e8012736c3bc43afbb62617121",
+    "spawns": [
+      {
+        "name": "Lady",
+        "x": 138,
+        "y": 69,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 76,
+        "unique_name": "Lady#ac"
+      },
+      {
+        "name": "Lady",
+        "x": 138,
+        "y": 69,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 76,
+        "unique_name": "Lady#ac_a"
+      },
+      {
+        "name": "Lady",
+        "x": 138,
+        "y": 69,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 76,
+        "unique_name": "Lady#ac_b"
+      },
+      {
+        "name": "Lady",
+        "x": 138,
+        "y": 69,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 76,
+        "unique_name": "Lady#ac_c"
+      },
+      {
+        "name": "Lady",
+        "x": 138,
+        "y": 69,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 76,
+        "unique_name": "Lady#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Locas#iz|izlude:155:132": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas",
+    "output_hash": "78cec0bbaecf1226f059c972a560217db0fd54dcbec3e93f2d72503b53e81722",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/locas.ex",
+    "source_hash": "af1299c5fe4213a2b0d16f834d5a0d290cc7dba00e044b9938a538fb2cd2d1c1",
+    "spawns": [
+      {
+        "name": "Locas",
+        "x": 155,
+        "y": 132,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 84,
+        "unique_name": "Locas#iz"
+      },
+      {
+        "name": "Locas",
+        "x": 155,
+        "y": 132,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 84,
+        "unique_name": "Locas#iz_a"
+      },
+      {
+        "name": "Locas",
+        "x": 155,
+        "y": 132,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 84,
+        "unique_name": "Locas#iz_b"
+      },
+      {
+        "name": "Locas",
+        "x": 155,
+        "y": 132,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 84,
+        "unique_name": "Locas#iz_c"
+      },
+      {
+        "name": "Locas",
+        "x": 155,
+        "y": 132,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 84,
+        "unique_name": "Locas#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Lumin#ac|iz_ac02:62:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin62139",
+    "output_hash": "7e3e98c2d170cabc2f33d6ed98c9820a6d04a84eded189314957f09425a3c8a4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lumin_62_139.ex",
+    "source_hash": "6c7627032c94dd406772728b3ea39387cec13234cdd888331a09250d4bba4036",
+    "spawns": [
+      {
+        "name": "Lumin",
+        "x": 62,
+        "y": 139,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#ac"
+      },
+      {
+        "name": "Lumin",
+        "x": 62,
+        "y": 139,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#ac_a"
+      },
+      {
+        "name": "Lumin",
+        "x": 62,
+        "y": 139,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#ac_b"
+      },
+      {
+        "name": "Lumin",
+        "x": 62,
+        "y": 139,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#ac_c"
+      },
+      {
+        "name": "Lumin",
+        "x": 62,
+        "y": 139,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Lumin#new_ship|int_land:73:100": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin",
+    "output_hash": "6929410fdf4aea631c55b3c89492449d0a17c6e4f5e00df23261f7bd7d878a6e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lumin.ex",
+    "source_hash": "0649b0354c69a52a1f5afe27ff30afcd875b21135c1a02e03276c63a841122f9",
+    "spawns": [
+      {
+        "name": "Lumin",
+        "x": 73,
+        "y": 100,
+        "map": "int_land",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#new_ship"
+      },
+      {
+        "name": "Lumin",
+        "x": 73,
+        "y": 100,
+        "map": "int_land01",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#new_ship01"
+      },
+      {
+        "name": "Lumin",
+        "x": 73,
+        "y": 100,
+        "map": "int_land02",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#new_ship02"
+      },
+      {
+        "name": "Lumin",
+        "x": 73,
+        "y": 100,
+        "map": "int_land03",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#new_ship03"
+      },
+      {
+        "name": "Lumin",
+        "x": 73,
+        "y": 100,
+        "map": "int_land04",
+        "dir": 3,
+        "sprite": 639,
+        "unique_name": "Lumin#new_ship04"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Lusa#ac|iz_ac02:142:85": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa",
+    "output_hash": "f769864f48d868645f68fcc2cf810af219fcf4f728067f814883779b748d646d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lusa.ex",
+    "source_hash": "77f5956cf52a086d897a2103bcc9ec5db9c6fbb902f8238f00c992d4346c5810",
+    "spawns": [
+      {
+        "name": "Lusa",
+        "x": 142,
+        "y": 85,
+        "map": "iz_ac02",
+        "dir": 6,
+        "sprite": 633,
+        "unique_name": "Lusa#ac"
+      },
+      {
+        "name": "Lusa",
+        "x": 142,
+        "y": 85,
+        "map": "iz_ac02_a",
+        "dir": 6,
+        "sprite": 633,
+        "unique_name": "Lusa#ac_a"
+      },
+      {
+        "name": "Lusa",
+        "x": 142,
+        "y": 85,
+        "map": "iz_ac02_b",
+        "dir": 6,
+        "sprite": 633,
+        "unique_name": "Lusa#ac_b"
+      },
+      {
+        "name": "Lusa",
+        "x": 142,
+        "y": 85,
+        "map": "iz_ac02_c",
+        "dir": 6,
+        "sprite": 633,
+        "unique_name": "Lusa#ac_c"
+      },
+      {
+        "name": "Lusa",
+        "x": 142,
+        "y": 85,
+        "map": "iz_ac02_d",
+        "dir": 6,
+        "sprite": 633,
+        "unique_name": "Lusa#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Lusa's Desk#ac|iz_ac02:131:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk",
+    "output_hash": "2a8d1956f34dcd0f455976b6ef5b68ce847074f4c788b1cb38c6f5b895898654",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lusa_s_desk.ex",
+    "source_hash": "f420d7e8ee1ba458e5dc78c592a9b093484b66479c4099e5578a1c0ceb4f4f6a",
+    "spawns": [
+      {
+        "name": "Lusa's Desk",
+        "x": 131,
+        "y": 82,
+        "map": "iz_ac02",
+        "dir": 4,
+        "sprite": 844,
+        "unique_name": "Lusa's Desk#ac"
+      },
+      {
+        "name": "Lusa's Desk",
+        "x": 131,
+        "y": 82,
+        "map": "iz_ac02_a",
+        "dir": 4,
+        "sprite": 844,
+        "unique_name": "Lusa's Desk#ac_a"
+      },
+      {
+        "name": "Lusa's Desk",
+        "x": 131,
+        "y": 82,
+        "map": "iz_ac02_b",
+        "dir": 4,
+        "sprite": 844,
+        "unique_name": "Lusa's Desk#ac_b"
+      },
+      {
+        "name": "Lusa's Desk",
+        "x": 131,
+        "y": 82,
+        "map": "iz_ac02_c",
+        "dir": 4,
+        "sprite": 844,
+        "unique_name": "Lusa's Desk#ac_c"
+      },
+      {
+        "name": "Lusa's Desk",
+        "x": 131,
+        "y": 82,
+        "map": "iz_ac02_d",
+        "dir": 4,
+        "sprite": 844,
+        "unique_name": "Lusa's Desk#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Mage Chuck#ac|iz_ac02:148:110": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck",
+    "output_hash": "eb8c8ef0bb2b0774f2dba0e877644af91213da15fefdc4780a08045a505516ac",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/mage_chuck.ex",
+    "source_hash": "84c8d6e0c1ca8c324da53d004b3fffd9507e4f3d19ccc0bc54a898749b687183",
+    "spawns": [
+      {
+        "name": "Mage Chuck",
+        "x": 148,
+        "y": 110,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 735,
+        "unique_name": "Mage Chuck#ac"
+      },
+      {
+        "name": "Mage Chuck",
+        "x": 148,
+        "y": 110,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 735,
+        "unique_name": "Mage Chuck#ac_a"
+      },
+      {
+        "name": "Mage Chuck",
+        "x": 148,
+        "y": 110,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 735,
+        "unique_name": "Mage Chuck#ac_b"
+      },
+      {
+        "name": "Mage Chuck",
+        "x": 148,
+        "y": 110,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 735,
+        "unique_name": "Mage Chuck#ac_c"
+      },
+      {
+        "name": "Mage Chuck",
+        "x": 148,
+        "y": 110,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 735,
+        "unique_name": "Mage Chuck#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Magician's Guild Guide#1|gef_fild07:89:208": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MagicianSGuildGuide",
+    "output_hash": "8d169264fe96af5e242c6d24d1ccf5f313a3d85a4669418ec16071428006f8ff",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/magician_s_guild_guide.ex",
+    "source_hash": "1f668844ea0b290a85c5e518b25df296bb2bc3f6f41610377203ff26411b5ac9",
+    "spawns": [
+      {
+        "name": "Magician's Guild Guide",
+        "x": 89,
+        "y": 208,
+        "map": "gef_fild07",
+        "dir": 6,
+        "sprite": 123,
+        "unique_name": "Magician's Guild Guide#1"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Magician's Guild Guide#2|geffen:43:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MagicianSGuildGuide43123",
+    "output_hash": "928bb06f3fd038f91e13e5f387169b9a465ac001e8ddf09597b026e72c105257",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/magician_s_guild_guide_43_123.ex",
+    "source_hash": "3b6e492debaf1837104e5c2ca4dfe676a2d1836f6c53c5b69c185f2736dd516c",
+    "spawns": [
+      {
+        "name": "Magician's Guild Guide",
+        "x": 43,
+        "y": 123,
+        "map": "geffen",
+        "dir": 6,
+        "sprite": 123,
+        "unique_name": "Magician's Guild Guide#2"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Manufacturing Maniac#0|izlude:93:143": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingManiac",
+    "output_hash": "a74a32aa61f91cd7656a7a223762de06b6f433cd24f1c4ff94a02a547577eae7",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/manufacturing_maniac.ex",
+    "source_hash": "ffb1e5bfe0112188231143224440dc9b82879d30d631b1aa002a316d978383ca",
+    "spawns": [
+      {
+        "name": "Manufacturing Maniac",
+        "x": 93,
+        "y": 143,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 740,
+        "unique_name": "Manufacturing Maniac#a"
+      },
+      {
+        "name": "Manufacturing Maniac",
+        "x": 93,
+        "y": 143,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 740,
+        "unique_name": "Manufacturing Maniac#b"
+      },
+      {
+        "name": "Manufacturing Maniac",
+        "x": 93,
+        "y": 143,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 740,
+        "unique_name": "Manufacturing Maniac#c"
+      },
+      {
+        "name": "Manufacturing Maniac",
+        "x": 93,
+        "y": 143,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 740,
+        "unique_name": "Manufacturing Maniac#d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Mille Feuille#ac|iz_ac01:150:50": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MilleFeuille",
+    "output_hash": "3cf100921d359ff2b869253617c777679b2c37fc94f47226b033f8ab125a8974",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/mille_feuille.ex",
+    "source_hash": "6d8f29f798f8c1252606e7ccb82123016202d6f209740f9208cb3196748d03a8",
+    "spawns": [
+      {
+        "name": "Mille Feuille",
+        "x": 150,
+        "y": 50,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 860,
+        "unique_name": "Mille Feuille#ac"
+      },
+      {
+        "name": "Mille Feuille",
+        "x": 150,
+        "y": 50,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 860,
+        "unique_name": "Mille Feuille#ac_a"
+      },
+      {
+        "name": "Mille Feuille",
+        "x": 150,
+        "y": 50,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 860,
+        "unique_name": "Mille Feuille#ac_b"
+      },
+      {
+        "name": "Mille Feuille",
+        "x": 150,
+        "y": 50,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 860,
+        "unique_name": "Mille Feuille#ac_c"
+      },
+      {
+        "name": "Mille Feuille",
+        "x": 150,
+        "y": 50,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 860,
+        "unique_name": "Mille Feuille#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Mom#iz|izlude:95:146": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom",
+    "output_hash": "e52adf7654ebacfeb593bbfa11c42b3d81a6f6bf3ed305c2a2bd5cc444fdb05a",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/mom.ex",
+    "source_hash": "db6e6b93ebc492418985f9242ba3c585bbc03a5ce6a7adb9178469789634741c",
+    "spawns": [
+      {
+        "name": "Mom",
+        "x": 95,
+        "y": 146,
+        "map": "izlude",
+        "dir": 5,
+        "sprite": 979,
+        "unique_name": "Mom#iz"
+      },
+      {
+        "name": "Mom",
+        "x": 95,
+        "y": 146,
+        "map": "izlude_a",
+        "dir": 5,
+        "sprite": 979,
+        "unique_name": "Mom#iz_a"
+      },
+      {
+        "name": "Mom",
+        "x": 95,
+        "y": 146,
+        "map": "izlude_b",
+        "dir": 5,
+        "sprite": 979,
+        "unique_name": "Mom#iz_b"
+      },
+      {
+        "name": "Mom",
+        "x": 95,
+        "y": 146,
+        "map": "izlude_c",
+        "dir": 5,
+        "sprite": 979,
+        "unique_name": "Mom#iz_c"
+      },
+      {
+        "name": "Mom",
+        "x": 95,
+        "y": 146,
+        "map": "izlude_d",
+        "dir": 5,
+        "sprite": 979,
+        "unique_name": "Mom#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Ninja Guide#ac|iz_ac02:140:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide",
+    "output_hash": "221d67ee5b9907aadad8498cdf4f544a5cd3a28c4d03453ff6be8393918f5035",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/ninja_guide.ex",
+    "source_hash": "e1cc8d32da4b6296e4ab74f95d8d090d13ec015f040f05421df9f6104b3f8537",
+    "spawns": [
+      {
+        "name": "Ninja Guide",
+        "x": 140,
+        "y": 139,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 637,
+        "unique_name": "Ninja Guide#ac"
+      },
+      {
+        "name": "Ninja Guide",
+        "x": 140,
+        "y": 139,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 637,
+        "unique_name": "Ninja Guide#ac_a"
+      },
+      {
+        "name": "Ninja Guide",
+        "x": 140,
+        "y": 139,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 637,
+        "unique_name": "Ninja Guide#ac_b"
+      },
+      {
+        "name": "Ninja Guide",
+        "x": 140,
+        "y": 139,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 637,
+        "unique_name": "Ninja Guide#ac_c"
+      },
+      {
+        "name": "Ninja Guide",
+        "x": 140,
+        "y": 139,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 637,
+        "unique_name": "Ninja Guide#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Noisy Trainee#ac|iz_ac02:152:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee",
+    "output_hash": "515b838861b7196e95d4f1bb8ebfc4fdf406573130b33a24766383b5f2702bfb",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/noisy_trainee.ex",
+    "source_hash": "cb61a2b35729e7688b2d23fd9c96068397f690acfebe3721154cee929cf0bfe3",
+    "spawns": [
+      {
+        "name": "Noisy Trainee",
+        "x": 152,
+        "y": 79,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 896,
+        "unique_name": "Noisy Trainee#ac"
+      },
+      {
+        "name": "Noisy Trainee",
+        "x": 152,
+        "y": 79,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 896,
+        "unique_name": "Noisy Trainee#ac_a"
+      },
+      {
+        "name": "Noisy Trainee",
+        "x": 152,
+        "y": 79,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 896,
+        "unique_name": "Noisy Trainee#ac_b"
+      },
+      {
+        "name": "Noisy Trainee",
+        "x": 152,
+        "y": 79,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 896,
+        "unique_name": "Noisy Trainee#ac_c"
+      },
+      {
+        "name": "Noisy Trainee",
+        "x": 152,
+        "y": 79,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 896,
+        "unique_name": "Noisy Trainee#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Odd Novice#ac|iz_ac01:36:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OddNovice",
+    "output_hash": "62622e6cd407cceae606e99c61a71a4d832b416124fe15c9d761c76ddc01cc67",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/odd_novice.ex",
+    "source_hash": "380497b7b606434d95ec582daf30f44b8cfbba6bfdb8bac874ac0b359fb99c08",
+    "spawns": [
+      {
+        "name": "Odd Novice",
+        "x": 36,
+        "y": 52,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Odd Novice#ac"
+      },
+      {
+        "name": "Odd Novice",
+        "x": 36,
+        "y": 52,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Odd Novice#ac_a"
+      },
+      {
+        "name": "Odd Novice",
+        "x": 36,
+        "y": 52,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Odd Novice#ac_b"
+      },
+      {
+        "name": "Odd Novice",
+        "x": 36,
+        "y": 52,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Odd Novice#ac_c"
+      },
+      {
+        "name": "Odd Novice",
+        "x": 36,
+        "y": 52,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 567,
+        "unique_name": "Odd Novice#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Otter Samssoon#ac|iz_ac01:69:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OtterSamssoon",
+    "output_hash": "9423e3b84d382eb3a92072fc13b629c5b411bfe3a91bd6c991562b51c0096d2c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/otter_samssoon.ex",
+    "source_hash": "288514f1c2be65e6cdf18280e0b84e70ef9abde5d72dce00329f69a116eb2970",
+    "spawns": [
+      {
+        "name": "Otter Samssoon",
+        "x": 69,
+        "y": 36,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 100,
+        "unique_name": "Otter Samssoon#ac"
+      },
+      {
+        "name": "Otter Samssoon",
+        "x": 69,
+        "y": 36,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 100,
+        "unique_name": "Otter Samssoon#ac_a"
+      },
+      {
+        "name": "Otter Samssoon",
+        "x": 69,
+        "y": 36,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 100,
+        "unique_name": "Otter Samssoon#ac_b"
+      },
+      {
+        "name": "Otter Samssoon",
+        "x": 69,
+        "y": 36,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 100,
+        "unique_name": "Otter Samssoon#ac_c"
+      },
+      {
+        "name": "Otter Samssoon",
+        "x": 69,
+        "y": 36,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 100,
+        "unique_name": "Otter Samssoon#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Quite Trainee#ac|iz_ac02:143:77": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.QuiteTrainee",
+    "output_hash": "85ecaec971024fb36ea227af65e3891c5dc977da82c894d4ecbb5bef104ce846",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/quite_trainee.ex",
+    "source_hash": "cff453ed098b4c8ca181749981f01133e264d3e0cd210701001030f7076ed5ae",
+    "spawns": [
+      {
+        "name": "Quite Trainee",
+        "x": 143,
+        "y": 77,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 703,
+        "unique_name": "Quite Trainee#ac"
+      },
+      {
+        "name": "Quite Trainee",
+        "x": 143,
+        "y": 77,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 703,
+        "unique_name": "Quite Trainee#ac_a"
+      },
+      {
+        "name": "Quite Trainee",
+        "x": 143,
+        "y": 77,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 703,
+        "unique_name": "Quite Trainee#ac_b"
+      },
+      {
+        "name": "Quite Trainee",
+        "x": 143,
+        "y": 77,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 703,
+        "unique_name": "Quite Trainee#ac_c"
+      },
+      {
+        "name": "Quite Trainee",
+        "x": 143,
+        "y": 77,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 703,
+        "unique_name": "Quite Trainee#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Ragie#ac|iz_ac02:149:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Ragie",
+    "output_hash": "b7341f2fbfb269464d7d2aae52e80844ce766eaf10e982816738c4ae65d51a93",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/ragie.ex",
+    "source_hash": "6919316237309e1f356f1be318fd3919e20a4a95b7a1830e9ad8351101d4a7ca",
+    "spawns": [
+      {
+        "name": "Ragie",
+        "x": 149,
+        "y": 43,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 51,
+        "unique_name": "Ragie#ac"
+      },
+      {
+        "name": "Ragie",
+        "x": 149,
+        "y": 43,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 51,
+        "unique_name": "Ragie#ac_a"
+      },
+      {
+        "name": "Ragie",
+        "x": 149,
+        "y": 43,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 51,
+        "unique_name": "Ragie#ac_b"
+      },
+      {
+        "name": "Ragie",
+        "x": 149,
+        "y": 43,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 51,
+        "unique_name": "Ragie#ac_c"
+      },
+      {
+        "name": "Ragie",
+        "x": 149,
+        "y": 43,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 51,
+        "unique_name": "Ragie#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Refinery Owner Han#iz|izlude:153:126": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan",
+    "output_hash": "86123cb813d108f8529ec87a9a6a71724a80c13eee52244c660392735240a3ef",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/refinery_owner_han.ex",
+    "source_hash": "e362ee94aad70152e427f2cadc2d85959fe47aea367ee8cc8e62d75f89a1e4c5",
+    "spawns": [
+      {
+        "name": "Refinery Owner Han",
+        "x": 153,
+        "y": 126,
+        "map": "izlude",
+        "dir": 1,
+        "sprite": 84,
+        "unique_name": "Refinery Owner Han#iz"
+      },
+      {
+        "name": "Refinery Owner Han",
+        "x": 153,
+        "y": 126,
+        "map": "izlude_a",
+        "dir": 1,
+        "sprite": 84,
+        "unique_name": "Refinery Owner Han#iz_a"
+      },
+      {
+        "name": "Refinery Owner Han",
+        "x": 153,
+        "y": 126,
+        "map": "izlude_b",
+        "dir": 1,
+        "sprite": 84,
+        "unique_name": "Refinery Owner Han#iz_b"
+      },
+      {
+        "name": "Refinery Owner Han",
+        "x": 153,
+        "y": 126,
+        "map": "izlude_c",
+        "dir": 1,
+        "sprite": 84,
+        "unique_name": "Refinery Owner Han#iz_c"
+      },
+      {
+        "name": "Refinery Owner Han",
+        "x": 153,
+        "y": 126,
+        "map": "izlude_d",
+        "dir": 1,
+        "sprite": 84,
+        "unique_name": "Refinery Owner Han#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Refining Maniac#iz|izlude:148:122": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac",
+    "output_hash": "2957c8d73518478c4733f234d96dc730c84209c69eef468220db50f19f436f9d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/refining_maniac.ex",
+    "source_hash": "73e71ea883327a0930cfd536e68e1cb52825e8ae6526ce0cda5270dd5e2974fa",
+    "spawns": [
+      {
+        "name": "Refining Maniac",
+        "x": 148,
+        "y": 122,
+        "map": "izlude",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Refining Maniac#iz"
+      },
+      {
+        "name": "Refining Maniac",
+        "x": 148,
+        "y": 122,
+        "map": "izlude_a",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Refining Maniac#iz_a"
+      },
+      {
+        "name": "Refining Maniac",
+        "x": 148,
+        "y": 122,
+        "map": "izlude_b",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Refining Maniac#iz_b"
+      },
+      {
+        "name": "Refining Maniac",
+        "x": 148,
+        "y": 122,
+        "map": "izlude_c",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Refining Maniac#iz_c"
+      },
+      {
+        "name": "Refining Maniac",
+        "x": 148,
+        "y": 122,
+        "map": "izlude_d",
+        "dir": 5,
+        "sprite": 881,
+        "unique_name": "Refining Maniac#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Repair Man#iz|izlude:158:130": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan",
+    "output_hash": "f069efb33705400e5f23cd16976d094d0a891deff58b824073156b9a46ca478a",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/repair_man.ex",
+    "source_hash": "b4d941431628a6f628145c7773296ac0419806a3dc294463401d8c8dd392a1b0",
+    "spawns": [
+      {
+        "name": "Repair Man",
+        "x": 158,
+        "y": 130,
+        "map": "izlude",
+        "dir": 4,
+        "sprite": 86,
+        "unique_name": "Repair Man#iz"
+      },
+      {
+        "name": "Repair Man",
+        "x": 158,
+        "y": 130,
+        "map": "izlude_a",
+        "dir": 4,
+        "sprite": 86,
+        "unique_name": "Repair Man#iz_a"
+      },
+      {
+        "name": "Repair Man",
+        "x": 158,
+        "y": 130,
+        "map": "izlude_b",
+        "dir": 4,
+        "sprite": 86,
+        "unique_name": "Repair Man#iz_b"
+      },
+      {
+        "name": "Repair Man",
+        "x": 158,
+        "y": 130,
+        "map": "izlude_c",
+        "dir": 4,
+        "sprite": 86,
+        "unique_name": "Repair Man#iz_c"
+      },
+      {
+        "name": "Repair Man",
+        "x": 158,
+        "y": 130,
+        "map": "izlude_d",
+        "dir": 4,
+        "sprite": 86,
+        "unique_name": "Repair Man#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Repairing Blacksmith#0|izlude:147:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmith",
+    "output_hash": "8d8fc8141e85150f5a755bd6dfc95d5586f57ecf4145e26e8e9cdeb1914ada9e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/repairing_blacksmith.ex",
+    "source_hash": "6d14b2149871838f57f2a13e7847dc456a4ccafd8487a82d356d6ed8039bdccb",
+    "spawns": [
+      {
+        "name": "Repairing Blacksmith",
+        "x": 147,
+        "y": 131,
+        "map": "izlude",
+        "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#0",
+        "trigger": [
+          5,
+          7
+        ]
+      },
+      {
+        "name": "Repairing Blacksmith",
+        "x": 147,
+        "y": 131,
+        "map": "izlude_a",
+        "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#a",
+        "trigger": [
+          5,
+          7
+        ]
+      },
+      {
+        "name": "Repairing Blacksmith",
+        "x": 147,
+        "y": 131,
+        "map": "izlude_b",
+        "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#b",
+        "trigger": [
+          5,
+          7
+        ]
+      },
+      {
+        "name": "Repairing Blacksmith",
+        "x": 147,
+        "y": 131,
+        "map": "izlude_c",
+        "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#c",
+        "trigger": [
+          5,
+          7
+        ]
+      },
+      {
+        "name": "Repairing Blacksmith",
+        "x": 147,
+        "y": 131,
+        "map": "izlude_d",
+        "dir": 5,
+        "sprite": 726,
+        "unique_name": "Repairing Blacksmith#d",
+        "trigger": [
+          5,
+          7
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Romantic Female#iz|izlude:97:138": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale",
+    "output_hash": "0f1019fd6731338f9198637c9f3c1f649ad3d116091dd386f888714324fe7e52",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/romantic_female.ex",
+    "source_hash": "b0e199f14b82e1a7804b736ee4cb0e5911e2470683bd4662bf848a033c9fb358",
+    "spawns": [
+      {
+        "name": "Romantic Female",
+        "x": 97,
+        "y": 138,
+        "map": "izlude",
+        "dir": 5,
+        "sprite": 882,
+        "unique_name": "Romantic Female#iz"
+      },
+      {
+        "name": "Romantic Female",
+        "x": 97,
+        "y": 138,
+        "map": "izlude_a",
+        "dir": 5,
+        "sprite": 882,
+        "unique_name": "Romantic Female#iz_a"
+      },
+      {
+        "name": "Romantic Female",
+        "x": 97,
+        "y": 138,
+        "map": "izlude_b",
+        "dir": 5,
+        "sprite": 882,
+        "unique_name": "Romantic Female#iz_b"
+      },
+      {
+        "name": "Romantic Female",
+        "x": 97,
+        "y": 138,
+        "map": "izlude_c",
+        "dir": 5,
+        "sprite": 882,
+        "unique_name": "Romantic Female#iz_c"
+      },
+      {
+        "name": "Romantic Female",
+        "x": 97,
+        "y": 138,
+        "map": "izlude_d",
+        "dir": 5,
+        "sprite": 882,
+        "unique_name": "Romantic Female#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Romantic Male#iz|izlude:99:138": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticMale",
+    "output_hash": "a8c8a0e0fa12a131381bb9adf0de04809c990e5afcaa26e423be83624da6eb48",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/romantic_male.ex",
+    "source_hash": "32d0bb15617c85d0fbbe022d7bda9287d01407132f5d34dcdacb24e4f21329c9",
+    "spawns": [
+      {
+        "name": "Romantic Male",
+        "x": 99,
+        "y": 138,
+        "map": "izlude",
+        "dir": 3,
+        "sprite": 881,
+        "unique_name": "Romantic Male#iz"
+      },
+      {
+        "name": "Romantic Male",
+        "x": 99,
+        "y": 138,
+        "map": "izlude_a",
+        "dir": 3,
+        "sprite": 881,
+        "unique_name": "Romantic Male#iz_a"
+      },
+      {
+        "name": "Romantic Male",
+        "x": 99,
+        "y": 138,
+        "map": "izlude_b",
+        "dir": 3,
+        "sprite": 881,
+        "unique_name": "Romantic Male#iz_b"
+      },
+      {
+        "name": "Romantic Male",
+        "x": 99,
+        "y": 138,
+        "map": "izlude_c",
+        "dir": 3,
+        "sprite": 881,
+        "unique_name": "Romantic Male#iz_c"
+      },
+      {
+        "name": "Romantic Male",
+        "x": 99,
+        "y": 138,
+        "map": "izlude_d",
+        "dir": 3,
+        "sprite": 881,
+        "unique_name": "Romantic Male#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Sailor#intro_npc04|int_land:58:69": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor",
+    "output_hash": "76846df503a3a13d4dde1518815d6683aa403b1c7c8ba6c4874655257c2543f8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/sailor.ex",
+    "source_hash": "b48fdba4a13b6bf49c2890293e85b073bada32ce9fa1990b5318dbd595e71a12",
+    "spawns": [
+      {
+        "name": "Sailor",
+        "x": 58,
+        "y": 69,
+        "map": "int_land",
+        "dir": 5,
+        "sprite": 100,
+        "unique_name": "Sailor#intro_npc04"
+      },
+      {
+        "name": "Sailor",
+        "x": 58,
+        "y": 69,
+        "map": "int_land01",
+        "dir": 5,
+        "sprite": 100,
+        "unique_name": "Sailor#intro_npc04_01"
+      },
+      {
+        "name": "Sailor",
+        "x": 58,
+        "y": 69,
+        "map": "int_land02",
+        "dir": 5,
+        "sprite": 100,
+        "unique_name": "Sailor#intro_npc04_02"
+      },
+      {
+        "name": "Sailor",
+        "x": 58,
+        "y": 69,
+        "map": "int_land03",
+        "dir": 5,
+        "sprite": 100,
+        "unique_name": "Sailor#intro_npc04_03"
+      },
+      {
+        "name": "Sailor",
+        "x": 58,
+        "y": 69,
+        "map": "int_land04",
+        "dir": 5,
+        "sprite": 100,
+        "unique_name": "Sailor#intro_npc04_04"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Salim Hamid#ac|iz_ac02:50:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid",
+    "output_hash": "7dcd1097d2f8a91a2120e01073a6a3cc76c2d6d40ef45c5c8842df7347171578",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/salim_hamid.ex",
+    "source_hash": "75152fc6e6b9c15b6bd60c3d3865c979705571e50d826f9f0983bb817a928dc7",
+    "spawns": [
+      {
+        "name": "Salim Hamid",
+        "x": 50,
+        "y": 169,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 58,
+        "unique_name": "Salim Hamid#ac"
+      },
+      {
+        "name": "Salim Hamid",
+        "x": 50,
+        "y": 169,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 58,
+        "unique_name": "Salim Hamid#ac_a"
+      },
+      {
+        "name": "Salim Hamid",
+        "x": 50,
+        "y": 169,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 58,
+        "unique_name": "Salim Hamid#ac_b"
+      },
+      {
+        "name": "Salim Hamid",
+        "x": 50,
+        "y": 169,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 58,
+        "unique_name": "Salim Hamid#ac_c"
+      },
+      {
+        "name": "Salim Hamid",
+        "x": 50,
+        "y": 169,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 58,
+        "unique_name": "Salim Hamid#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Scholarship Trainee#ac|iz_ac01:164:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ScholarshipTrainee",
+    "output_hash": "2fada40f661213eee39bc8b4093979299686089072aecbddac2278318c74af88",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/scholarship_trainee.ex",
+    "source_hash": "464a31137b18e7e631b3f3e0fde69bd848446c53c70f26814e76f61d0178813b",
+    "spawns": [
+      {
+        "name": "Scholarship Trainee",
+        "x": 164,
+        "y": 36,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 80,
+        "unique_name": "Scholarship Trainee#ac"
+      },
+      {
+        "name": "Scholarship Trainee",
+        "x": 164,
+        "y": 36,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 80,
+        "unique_name": "Scholarship Trainee#ac_a"
+      },
+      {
+        "name": "Scholarship Trainee",
+        "x": 164,
+        "y": 36,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 80,
+        "unique_name": "Scholarship Trainee#ac_b"
+      },
+      {
+        "name": "Scholarship Trainee",
+        "x": 164,
+        "y": 36,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 80,
+        "unique_name": "Scholarship Trainee#ac_c"
+      },
+      {
+        "name": "Scholarship Trainee",
+        "x": 164,
+        "y": 36,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 80,
+        "unique_name": "Scholarship Trainee#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Shop Helper#iz|izlude:115:181": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper",
+    "output_hash": "588d38df87176eac2a24cb9af15665c72e11384f19b1599d703f7477c0eded37",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/shop_helper.ex",
+    "source_hash": "e4fef7aed540dadefec706dd740af355bde919baf39188ac693b58d97e002b93",
+    "spawns": [
+      {
+        "name": "Shop Helper",
+        "x": 115,
+        "y": 181,
+        "map": "izlude",
+        "dir": 5,
+        "sprite": 894,
+        "unique_name": "Shop Helper#iz"
+      },
+      {
+        "name": "Shop Helper",
+        "x": 115,
+        "y": 181,
+        "map": "izlude_a",
+        "dir": 5,
+        "sprite": 894,
+        "unique_name": "Shop Helper#iz_a"
+      },
+      {
+        "name": "Shop Helper",
+        "x": 115,
+        "y": 181,
+        "map": "izlude_b",
+        "dir": 5,
+        "sprite": 894,
+        "unique_name": "Shop Helper#iz_b"
+      },
+      {
+        "name": "Shop Helper",
+        "x": 115,
+        "y": 181,
+        "map": "izlude_c",
+        "dir": 5,
+        "sprite": 894,
+        "unique_name": "Shop Helper#iz_c"
+      },
+      {
+        "name": "Shop Helper",
+        "x": 115,
+        "y": 181,
+        "map": "izlude_d",
+        "dir": 5,
+        "sprite": 894,
+        "unique_name": "Shop Helper#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Steward Aydin#ac|iz_ac02:53:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin",
+    "output_hash": "0fe58679027b51ce76a24efa10597d9402507136f48c7f9a9bbc92d46dd4fb65",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/steward_aydin.ex",
+    "source_hash": "425a9ce32b8c4492e37b5b558def56cd3ffc89d03f5e53b5a006c899d8af4c3a",
+    "spawns": [
+      {
+        "name": "Steward Aydin",
+        "x": 53,
+        "y": 171,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 109,
+        "unique_name": "Steward Aydin#ac"
+      },
+      {
+        "name": "Steward Aydin",
+        "x": 53,
+        "y": 171,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 109,
+        "unique_name": "Steward Aydin#ac_a"
+      },
+      {
+        "name": "Steward Aydin",
+        "x": 53,
+        "y": 171,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 109,
+        "unique_name": "Steward Aydin#ac_b"
+      },
+      {
+        "name": "Steward Aydin",
+        "x": 53,
+        "y": 171,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 109,
+        "unique_name": "Steward Aydin#ac_c"
+      },
+      {
+        "name": "Steward Aydin",
+        "x": 53,
+        "y": 171,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 109,
+        "unique_name": "Steward Aydin#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Swordman Assistant#ac|iz_ac02:53:48": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant",
+    "output_hash": "4f9fa83cf254c7d943fb53c752384db97a6c255465ad1f0bbcffc4121b076caa",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/swordman_assistant.ex",
+    "source_hash": "3896fb12564c13d76104a021e46178997c253d8fb900961dcd77a32cacdcbf17",
+    "spawns": [
+      {
+        "name": "Swordman Assistant",
+        "x": 53,
+        "y": 48,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Swordman Assistant#ac"
+      },
+      {
+        "name": "Swordman Assistant",
+        "x": 53,
+        "y": 48,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Swordman Assistant#ac_a"
+      },
+      {
+        "name": "Swordman Assistant",
+        "x": 53,
+        "y": 48,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Swordman Assistant#ac_b"
+      },
+      {
+        "name": "Swordman Assistant",
+        "x": 53,
+        "y": 48,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Swordman Assistant#ac_c"
+      },
+      {
+        "name": "Swordman Assistant",
+        "x": 53,
+        "y": 48,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Swordman Assistant#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Swordman Trainer#ac|iz_ac02:60:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer",
+    "output_hash": "3ecdd6bb98cc86a6d0a352d42975fb5e04138a6cf92562141d95841be128acf6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/swordman_trainer.ex",
+    "source_hash": "e294f5a552139a22aa2593acd31df871bf30edacf0114f79fc94d8da4775ea7c",
+    "spawns": [
+      {
+        "name": "Swordman Trainer",
+        "x": 60,
+        "y": 51,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 635,
+        "unique_name": "Swordman Trainer#ac"
+      },
+      {
+        "name": "Swordman Trainer",
+        "x": 60,
+        "y": 51,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 635,
+        "unique_name": "Swordman Trainer#ac_a"
+      },
+      {
+        "name": "Swordman Trainer",
+        "x": 60,
+        "y": 51,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 635,
+        "unique_name": "Swordman Trainer#ac_b"
+      },
+      {
+        "name": "Swordman Trainer",
+        "x": 60,
+        "y": 51,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 635,
+        "unique_name": "Swordman Trainer#ac_c"
+      },
+      {
+        "name": "Swordman Trainer",
+        "x": 60,
+        "y": 51,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 635,
+        "unique_name": "Swordman Trainer#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Tadde#iz|izlude:145:122": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde",
+    "output_hash": "b88b719e128dc9e85e41af782d8191e93e98ac9e373f7acddff08f26a718d737",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/tadde.ex",
+    "source_hash": "6e5055b15549c40675ee0f8dbf8caf3f395501ff70f8c1599634f867d2c77b28",
+    "spawns": [
+      {
+        "name": "Tadde",
+        "x": 145,
+        "y": 122,
+        "map": "izlude",
+        "dir": 7,
+        "sprite": 86,
+        "unique_name": "Tadde#iz"
+      },
+      {
+        "name": "Tadde",
+        "x": 145,
+        "y": 122,
+        "map": "izlude_a",
+        "dir": 7,
+        "sprite": 86,
+        "unique_name": "Tadde#iz_a"
+      },
+      {
+        "name": "Tadde",
+        "x": 145,
+        "y": 122,
+        "map": "izlude_b",
+        "dir": 7,
+        "sprite": 86,
+        "unique_name": "Tadde#iz_b"
+      },
+      {
+        "name": "Tadde",
+        "x": 145,
+        "y": 122,
+        "map": "izlude_c",
+        "dir": 7,
+        "sprite": 86,
+        "unique_name": "Tadde#iz_c"
+      },
+      {
+        "name": "Tadde",
+        "x": 145,
+        "y": 122,
+        "map": "izlude_d",
+        "dir": 7,
+        "sprite": 86,
+        "unique_name": "Tadde#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Therapist#ac|iz_ac01:59:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist",
+    "output_hash": "5781ed3939967799f17c6f3e165e5341948712c8721c91249ef69a822910c453",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/therapist.ex",
+    "source_hash": "91e955a3a6e28df787a5da10b24a6818778ea0b61c5a5fa40f5e1a5806348be6",
+    "spawns": [
+      {
+        "name": "Therapist",
+        "x": 59,
+        "y": 43,
+        "map": "iz_ac01",
+        "dir": 3,
+        "sprite": 993,
+        "unique_name": "Therapist#ac"
+      },
+      {
+        "name": "Therapist",
+        "x": 59,
+        "y": 43,
+        "map": "iz_ac01_a",
+        "dir": 3,
+        "sprite": 993,
+        "unique_name": "Therapist#ac_a"
+      },
+      {
+        "name": "Therapist",
+        "x": 59,
+        "y": 43,
+        "map": "iz_ac01_b",
+        "dir": 3,
+        "sprite": 993,
+        "unique_name": "Therapist#ac_b"
+      },
+      {
+        "name": "Therapist",
+        "x": 59,
+        "y": 43,
+        "map": "iz_ac01_c",
+        "dir": 3,
+        "sprite": 993,
+        "unique_name": "Therapist#ac_c"
+      },
+      {
+        "name": "Therapist",
+        "x": 59,
+        "y": 43,
+        "map": "iz_ac01_d",
+        "dir": 3,
+        "sprite": 993,
+        "unique_name": "Therapist#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Trainer Mainz#ac|iz_ac01:134:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz",
+    "output_hash": "3479bd7570fdbf53016d56a54164cee37d565d976dedf0a643443e040d58a73d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/trainer_mainz.ex",
+    "source_hash": "7b842953dddf54d392d81799b8ecbbb04b2eface3a7ea35340c4797b121ed80b",
+    "spawns": [
+      {
+        "name": "Trainer Mainz",
+        "x": 134,
+        "y": 47,
+        "map": "iz_ac01",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac",
+        "trigger": [
+          4,
+          4
+        ]
+      },
+      {
+        "name": "Trainer Mainz",
+        "x": 134,
+        "y": 47,
+        "map": "iz_ac01_a",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_a",
+        "trigger": [
+          4,
+          4
+        ]
+      },
+      {
+        "name": "Trainer Mainz",
+        "x": 134,
+        "y": 47,
+        "map": "iz_ac01_b",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_b",
+        "trigger": [
+          4,
+          4
+        ]
+      },
+      {
+        "name": "Trainer Mainz",
+        "x": 134,
+        "y": 47,
+        "map": "iz_ac01_c",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_c",
+        "trigger": [
+          4,
+          4
+        ]
+      },
+      {
+        "name": "Trainer Mainz",
+        "x": 134,
+        "y": 47,
+        "map": "iz_ac01_d",
+        "dir": 5,
+        "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_d",
+        "trigger": [
+          4,
+          4
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Training Instructor#1a|new_1-1:53:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor",
+    "output_hash": "7dd6e2f576b5eb44117540abd38c4073dd3c087db9e964fe2ac634ddea4d2d26",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/training_instructor.ex",
+    "source_hash": "9833c6caf024f7f0a192b30feaa7152c4a4c054c5a642ac379ddad7ccd6b1125",
+    "spawns": [
+      {
+        "name": "Training Instructor",
+        "x": 53,
+        "y": 114,
+        "map": "new_1-1",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#1a"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#1b"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 105,
+        "map": "new_1-2",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#1c"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_1-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Training Instructor#1d"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 33,
+        "y": 172,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#1e"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_1-4",
+        "dir": 1,
+        "sprite": 92,
+        "unique_name": "Training Instructor#1f"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 53,
+        "y": 114,
+        "map": "new_2-1",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2a"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2b"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 105,
+        "map": "new_2-2",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2c"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_2-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2d"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 33,
+        "y": 172,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2e"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 96,
+        "y": 30,
+        "map": "new_2-3",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2f"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_2-4",
+        "dir": 1,
+        "sprite": 92,
+        "unique_name": "Training Instructor#2g"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 53,
+        "y": 114,
+        "map": "new_3-1",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3a"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3b"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 105,
+        "map": "new_3-2",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3c"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_3-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3d"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 33,
+        "y": 172,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3e"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 96,
+        "y": 30,
+        "map": "new_3-3",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3f"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_3-4",
+        "dir": 1,
+        "sprite": 92,
+        "unique_name": "Training Instructor#3g"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 53,
+        "y": 114,
+        "map": "new_4-1",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4a"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 53,
+        "y": 114,
+        "map": "new_4-2",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4b"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 105,
+        "map": "new_4-2",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4c"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_4-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4d"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 33,
+        "y": 172,
+        "map": "new_4-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4e"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 96,
+        "y": 30,
+        "map": "new_4-3",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4f"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_4-4",
+        "dir": 1,
+        "sprite": 92,
+        "unique_name": "Training Instructor#4g"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 53,
+        "y": 114,
+        "map": "new_5-1",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5a"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5b"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 105,
+        "map": "new_5-2",
+        "dir": 3,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5c"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_5-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5d"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 33,
+        "y": 172,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5e"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 96,
+        "y": 30,
+        "map": "new_5-3",
+        "dir": 4,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5f"
+      },
+      {
+        "name": "Training Instructor",
+        "x": 100,
+        "y": 29,
+        "map": "new_5-4",
+        "dir": 1,
+        "sprite": 92,
+        "unique_name": "Training Instructor#5g"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Unskilled Poring#pet_2|new_1-3:105:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.UnskilledPoring",
+    "output_hash": "4ae7c7806354b48f8ff368ef3437dd85cb88b7c5b8c9ca4001e72346871b9a5b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/unskilled_poring.ex",
+    "source_hash": "09ac49b56527a366bf1c70704bde5efcec3eaae666cead7f98b639b38869119e",
+    "spawns": [
+      {
+        "name": "Unskilled Poring",
+        "x": 105,
+        "y": 164,
+        "map": "new_1-3",
+        "dir": 5,
+        "sprite": 2398,
+        "unique_name": "Unskilled Poring#pet_2"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Verkhasel#ac|iz_ac02:55:134": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Verkhasel",
+    "output_hash": "4a05d121c4efa9965a333380ecedffccdbe57bbd841c86d46cacbc88d696ab4b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/verkhasel.ex",
+    "source_hash": "2f1c2fec628dd54f6a34798ba2f07dbb83ef411f8e1dbaaf3adc6d7edd5a7b27",
+    "spawns": [
+      {
+        "name": "Verkhasel",
+        "x": 55,
+        "y": 134,
+        "map": "iz_ac02",
+        "dir": 3,
+        "sprite": 467,
+        "unique_name": "Verkhasel#ac"
+      },
+      {
+        "name": "Verkhasel",
+        "x": 55,
+        "y": 134,
+        "map": "iz_ac02_a",
+        "dir": 3,
+        "sprite": 467,
+        "unique_name": "Verkhasel#ac_a"
+      },
+      {
+        "name": "Verkhasel",
+        "x": 55,
+        "y": 134,
+        "map": "iz_ac02_b",
+        "dir": 3,
+        "sprite": 467,
+        "unique_name": "Verkhasel#ac_b"
+      },
+      {
+        "name": "Verkhasel",
+        "x": 55,
+        "y": 134,
+        "map": "iz_ac02_c",
+        "dir": 3,
+        "sprite": 467,
+        "unique_name": "Verkhasel#ac_c"
+      },
+      {
+        "name": "Verkhasel",
+        "x": 55,
+        "y": 134,
+        "map": "iz_ac02_d",
+        "dir": 3,
+        "sprite": 467,
+        "unique_name": "Verkhasel#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Vicente#ac|iz_ac02:49:134": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Vicente",
+    "output_hash": "419887526acaf2a743a656256646e9be3b842f9f1ebc4803858101236a1494bc",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/vicente.ex",
+    "source_hash": "d86e7b3d3cd15cc89989f17176ff86d7c46000ed6604c99e2d1537b28fd21824",
+    "spawns": [
+      {
+        "name": "Vicente",
+        "x": 49,
+        "y": 134,
+        "map": "iz_ac02",
+        "dir": 5,
+        "sprite": 899,
+        "unique_name": "Vicente#ac"
+      },
+      {
+        "name": "Vicente",
+        "x": 49,
+        "y": 134,
+        "map": "iz_ac02_a",
+        "dir": 5,
+        "sprite": 899,
+        "unique_name": "Vicente#ac_a"
+      },
+      {
+        "name": "Vicente",
+        "x": 49,
+        "y": 134,
+        "map": "iz_ac02_b",
+        "dir": 5,
+        "sprite": 899,
+        "unique_name": "Vicente#ac_b"
+      },
+      {
+        "name": "Vicente",
+        "x": 49,
+        "y": 134,
+        "map": "iz_ac02_c",
+        "dir": 5,
+        "sprite": 899,
+        "unique_name": "Vicente#ac_c"
+      },
+      {
+        "name": "Vicente",
+        "x": 49,
+        "y": 134,
+        "map": "iz_ac02_d",
+        "dir": 5,
+        "sprite": 899,
+        "unique_name": "Vicente#ac_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Wedding Secretary#iz|izlude:102:150": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary",
+    "output_hash": "b5fd4547da73b04359377133ecf57558654e621f24dacbe26a1325920b41f017",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wedding_secretary.ex",
+    "source_hash": "84161004388cf0744509cdf6d89039c309c71a0b12c8ac8ee30e7fe2f32a5a93",
+    "spawns": [
+      {
+        "name": "Wedding Secretary",
+        "x": 102,
+        "y": 150,
+        "map": "izlude",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Wedding Secretary#iz"
+      },
+      {
+        "name": "Wedding Secretary",
+        "x": 102,
+        "y": 150,
+        "map": "izlude_a",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Wedding Secretary#iz_a"
+      },
+      {
+        "name": "Wedding Secretary",
+        "x": 102,
+        "y": 150,
+        "map": "izlude_b",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Wedding Secretary#iz_b"
+      },
+      {
+        "name": "Wedding Secretary",
+        "x": 102,
+        "y": 150,
+        "map": "izlude_c",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Wedding Secretary#iz_c"
+      },
+      {
+        "name": "Wedding Secretary",
+        "x": 102,
+        "y": 150,
+        "map": "izlude_d",
+        "dir": 5,
+        "sprite": 71,
+        "unique_name": "Wedding Secretary#iz_d"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Wounded Swordsman#intro_npc01_iz_int|iz_int:56:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman",
+    "output_hash": "10a340f485505de6ffdfc039a1ddcde846626077b6603fc63f78f501619901af",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wounded_swordsman.ex",
+    "source_hash": "6101c57a23203e255f7008fb695998273d8604560c11fd11825223780eda4fb1",
+    "spawns": [
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int",
+        "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int01",
+        "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int02",
+        "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int03",
+        "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03",
+        "trigger": [
+          5,
+          5
+        ]
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int04",
+        "dir": 3,
+        "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|Wounded Swordsman#intro_npc02_iz_int|iz_int:56:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman5632",
+    "output_hash": "f5199c55c2a84efacb12518fccb9e6e4a1ca4238a80c23705943295c6efb0872",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wounded_swordsman_56_32.ex",
+    "source_hash": "d529dfbc798adccd6282ff898a47802180c9346b1206fcec0e1ca6d52f24fa25",
+    "spawns": [
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int",
+        "dir": 3,
+        "sprite": 688,
+        "unique_name": "Wounded Swordsman#intro_npc02_iz_int"
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int01",
+        "dir": 3,
+        "sprite": 688,
+        "unique_name": "Wounded Swordsman#intro_npc02_iz_int01"
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int02",
+        "dir": 3,
+        "sprite": 688,
+        "unique_name": "Wounded Swordsman#intro_npc02_iz_int02"
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int03",
+        "dir": 3,
+        "sprite": 688,
+        "unique_name": "Wounded Swordsman#intro_npc02_iz_int03"
+      },
+      {
+        "name": "Wounded Swordsman",
+        "x": 56,
+        "y": 32,
+        "map": "iz_int04",
+        "dir": 3,
+        "sprite": 688,
+        "unique_name": "Wounded Swordsman#intro_npc02_iz_int04"
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|iz_int#intro_evt02|iz_int:51:30": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt5130",
+    "output_hash": "902b4b591d5a61526b8675d3d75516531887f71691e0554e96fd3e0f8ed9af7c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/iz_int_51_30.ex",
+    "source_hash": "72729617a1a9509dc7ef2678ac569d824c401403283cad58ba93936bcd865234",
+    "spawns": [
+      {
+        "name": "iz_int",
+        "x": 51,
+        "y": 30,
+        "map": "iz_int",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int#intro_evt02",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "iz_int01",
+        "x": 51,
+        "y": 30,
+        "map": "iz_int01",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int01#intro_evt02",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "iz_int02",
+        "x": 51,
+        "y": 30,
+        "map": "iz_int02",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int02#intro_evt02",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "iz_int03",
+        "x": 51,
+        "y": 30,
+        "map": "iz_int03",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int03#intro_evt02",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "iz_int04",
+        "x": 51,
+        "y": 30,
+        "map": "iz_int04",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int04#intro_evt02",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/academy.txt|script|iz_int#intro_start|iz_int:18:30": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt",
+    "output_hash": "3f54a667fbbb652970b468995db245b58bb4d08e22d4392728e6b9c73d1ff3f8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/iz_int.ex",
+    "source_hash": "03f3a8c8c15cec312c03cc281130db80918d6470e770c38f15c5c1058dce9045",
+    "spawns": [
+      {
+        "name": "iz_int",
+        "x": 18,
+        "y": 30,
+        "map": "iz_int",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int#intro_start",
+        "trigger": [
+          6,
+          6
+        ]
+      },
+      {
+        "name": "iz_int01",
+        "x": 18,
+        "y": 30,
+        "map": "iz_int01",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int01#intro_start",
+        "trigger": [
+          6,
+          6
+        ]
+      },
+      {
+        "name": "iz_int02",
+        "x": 18,
+        "y": 30,
+        "map": "iz_int02",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int02#intro_start",
+        "trigger": [
+          6,
+          6
+        ]
+      },
+      {
+        "name": "iz_int03",
+        "x": 18,
+        "y": 30,
+        "map": "iz_int03",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int03#intro_start",
+        "trigger": [
+          6,
+          6
+        ]
+      },
+      {
+        "name": "iz_int04",
+        "x": 18,
+        "y": 30,
+        "map": "iz_int04",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "iz_int04#intro_start",
+        "trigger": [
+          6,
+          6
+        ]
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|::NvBrutus|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Nvbrutus",
+    "output_hash": "ac5ca317bdbdc1093247b1914589828a0075e13925d4cf9b026c0bc0857968eb",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/nvbrutus.ex",
+    "source_hash": "12074bbaad50f19ee3871545b59362c3888f1f6857dc655181c6b32b3ad0b6f0",
+    "spawns": [
+      {
+        "name": "Level 1 Trainer",
+        "x": 103,
+        "y": 50,
+        "map": "new_1-3",
+        "dir": 4,
+        "sprite": 84,
+        "unique_name": "Level 1 Trainer#nv1"
+      },
+      {
+        "name": "Level 2 Trainer",
+        "x": 103,
+        "y": 50,
+        "map": "new_2-3",
+        "dir": 4,
+        "sprite": 84,
+        "unique_name": "Level 2 Trainer#nv2"
+      },
+      {
+        "name": "Level 3 Trainer",
+        "x": 103,
+        "y": 50,
+        "map": "new_3-3",
+        "dir": 4,
+        "sprite": 84,
+        "unique_name": "Level 3 Trainer#nv3"
+      },
+      {
+        "name": "Level 4 Trainer",
+        "x": 103,
+        "y": 50,
+        "map": "new_4-3",
+        "dir": 4,
+        "sprite": 84,
+        "unique_name": "Level 4 Trainer#nv4"
+      },
+      {
+        "name": "Level 5 Trainer",
+        "x": 103,
+        "y": 50,
+        "map": "new_5-3",
+        "dir": 4,
+        "sprite": 84,
+        "unique_name": "Level 5 Trainer#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Acolyte Guide#newbe10::NvAcolyte|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.AcolyteGuide",
+    "output_hash": "a78b5efa6b300f59239fff38029920adf18f035b0b4e445ee122e8f565060a56",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/acolyte_guide.ex",
+    "source_hash": "72a3a860cd031b0067db46aec0bafba8cddf4d984de92e291972b50c7b656a77",
+    "spawns": [
+      {
+        "name": "Acolyte Guide",
+        "x": 101,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 95,
+        "unique_name": "Acolyte Guide#nv1"
+      },
+      {
+        "name": "Acolyte Guide",
+        "x": 101,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 95,
+        "unique_name": "Acolyte Guide#nv2"
+      },
+      {
+        "name": "Acolyte Guide",
+        "x": 101,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 95,
+        "unique_name": "Acolyte Guide#nv3"
+      },
+      {
+        "name": "Acolyte Guide",
+        "x": 101,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 95,
+        "unique_name": "Acolyte Guide#nv4"
+      },
+      {
+        "name": "Acolyte Guide",
+        "x": 101,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 95,
+        "unique_name": "Acolyte Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Archer Guide#newbe10::NvArcher|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.ArcherGuide",
+    "output_hash": "2c497bebe1ad15f2e3c4e486d4bd147ff312d2c5f33f86797ed79cff09a1db00",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/archer_guide.ex",
+    "source_hash": "ccdd99e6a61d8238f4ed3dc606658970d6c39421ab98d75d50fa412df3a774ef",
+    "spawns": [
+      {
+        "name": "Archer Guide",
+        "x": 113,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 727,
+        "unique_name": "Archer Guide#nv1"
+      },
+      {
+        "name": "Archer Guide",
+        "x": 113,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 727,
+        "unique_name": "Archer Guide#nv2"
+      },
+      {
+        "name": "Archer Guide",
+        "x": 113,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 727,
+        "unique_name": "Archer Guide#nv3"
+      },
+      {
+        "name": "Archer Guide",
+        "x": 113,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 727,
+        "unique_name": "Archer Guide#nv4"
+      },
+      {
+        "name": "Archer Guide",
+        "x": 113,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 727,
+        "unique_name": "Archer Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Brade#newbe02::NvBradeA|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Brade",
+    "output_hash": "0b92d6a3f44ffdb47a37a8b8658bf58712f43a3ca944c4845992613e5958e1d8",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/brade.ex",
+    "source_hash": "e5e26db4cdb02a06b6bf807cc2fc4b28e11a8ac29d67031de89c8031e690f0b4",
+    "spawns": [
+      {
+        "name": "Brade",
+        "x": 100,
+        "y": 105,
+        "map": "new_1-2",
+        "dir": 3,
+        "sprite": 733,
+        "unique_name": "Brade#nv1a"
+      },
+      {
+        "name": "Brade",
+        "x": 100,
+        "y": 105,
+        "map": "new_2-2",
+        "dir": 3,
+        "sprite": 733,
+        "unique_name": "Brade#nv2a"
+      },
+      {
+        "name": "Brade",
+        "x": 100,
+        "y": 105,
+        "map": "new_3-2",
+        "dir": 3,
+        "sprite": 733,
+        "unique_name": "Brade#nv3a"
+      },
+      {
+        "name": "Brade",
+        "x": 100,
+        "y": 105,
+        "map": "new_4-2",
+        "dir": 3,
+        "sprite": 733,
+        "unique_name": "Brade#nv4a"
+      },
+      {
+        "name": "Brade",
+        "x": 100,
+        "y": 105,
+        "map": "new_5-2",
+        "dir": 3,
+        "sprite": 733,
+        "unique_name": "Brade#nv5a"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Brade#newbe04::NvBradeB|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Brade0",
+    "output_hash": "e9dd685f68b1e45e79dd743b13c0ab157c1b4fc813dcda1b067f91e6ce49f5fa",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/brade_0.ex",
+    "source_hash": "ea432cc261c3b4f9cc1ab1b827e118736d357deef27cc33924256a9ce94b9ca7",
+    "spawns": [
+      {
+        "name": "Brade",
+        "x": 96,
+        "y": 30,
+        "map": "new_1-3",
+        "dir": 4,
+        "sprite": 733,
+        "unique_name": "Brade#nv1b"
+      },
+      {
+        "name": "Brade",
+        "x": 96,
+        "y": 30,
+        "map": "new_2-3",
+        "dir": 4,
+        "sprite": 733,
+        "unique_name": "Brade#nv2b"
+      },
+      {
+        "name": "Brade",
+        "x": 96,
+        "y": 30,
+        "map": "new_3-3",
+        "dir": 4,
+        "sprite": 733,
+        "unique_name": "Brade#nv3b"
+      },
+      {
+        "name": "Brade",
+        "x": 96,
+        "y": 30,
+        "map": "new_4-3",
+        "dir": 4,
+        "sprite": 733,
+        "unique_name": "Brade#nv4b"
+      },
+      {
+        "name": "Brade",
+        "x": 96,
+        "y": 30,
+        "map": "new_5-3",
+        "dir": 4,
+        "sprite": 733,
+        "unique_name": "Brade#nv5b"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Bruce#nv::NvBruce|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Bruce",
+    "output_hash": "de704827d186b5875b0c86ba85c56aafe7639f596e2c6c9ebcc0d9d4baa567a2",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/bruce.ex",
+    "source_hash": "f20865e3271007e567d6e29cc31518e32b3aa4d95ae67a0cb869d88b94ed420e",
+    "spawns": [
+      {
+        "name": "Bruce",
+        "x": 121,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 57,
+        "unique_name": "Bruce#nv1"
+      },
+      {
+        "name": "Bruce",
+        "x": 121,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 57,
+        "unique_name": "Bruce#nv2"
+      },
+      {
+        "name": "Bruce",
+        "x": 121,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 57,
+        "unique_name": "Bruce#nv3"
+      },
+      {
+        "name": "Bruce",
+        "x": 121,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 57,
+        "unique_name": "Bruce#nv4"
+      },
+      {
+        "name": "Bruce",
+        "x": 121,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 57,
+        "unique_name": "Bruce#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Bulletin Board::NvBulletin|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.BulletinBoardNvbulletin",
+    "output_hash": "874935e15c09f3e1812ad6aa366c763b1864b089a418b02b20b913384caff162",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/bulletin_board_nvbulletin.ex",
+    "source_hash": "51a20e0ebc81c2fc1ef7f120d96d827624c8815c7e4298cb1db630c2070a63c3",
+    "spawns": [
+      {
+        "name": "Bulletin Board",
+        "x": 66,
+        "y": 114,
+        "map": "new_1-1",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Bulletin Board#nv1"
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 66,
+        "y": 114,
+        "map": "new_2-1",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Bulletin Board#nv2"
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 66,
+        "y": 114,
+        "map": "new_3-1",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Bulletin Board#nv3"
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 66,
+        "y": 114,
+        "map": "new_4-1",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Bulletin Board#nv4"
+      },
+      {
+        "name": "Bulletin Board",
+        "x": 66,
+        "y": 114,
+        "map": "new_5-1",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Bulletin Board#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Chocolat#newbe06::NvChocolat|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Chocolat",
+    "output_hash": "3f0f102814123a65ff85cc742dfa19315000c7e42f86af0aa18becd5ef40c998",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/chocolat.ex",
+    "source_hash": "903c6260a2f8d4d3201ebbe37b6a54af2582f79d499be896ac65245920218827",
+    "spawns": [
+      {
+        "name": "Chocolat",
+        "x": 33,
+        "y": 172,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 96,
+        "unique_name": "Chocolat#nv1"
+      },
+      {
+        "name": "Chocolat",
+        "x": 33,
+        "y": 172,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 96,
+        "unique_name": "Chocolat#nv2"
+      },
+      {
+        "name": "Chocolat",
+        "x": 33,
+        "y": 172,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 96,
+        "unique_name": "Chocolat#nv3"
+      },
+      {
+        "name": "Chocolat",
+        "x": 33,
+        "y": 172,
+        "map": "new_4-2",
+        "dir": 4,
+        "sprite": 96,
+        "unique_name": "Chocolat#nv4"
+      },
+      {
+        "name": "Chocolat",
+        "x": 33,
+        "y": 172,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 96,
+        "unique_name": "Chocolat#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Cool Event Corp. Staff::NvCool|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.CoolEventCorpStaffNvcool",
+    "output_hash": "5590b61bf33501d5ad0f0b7729da0cb73435f6ed36a52bcc4d3dfd100bd39b15",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/cool_event_corp_staff_nvcool.ex",
+    "source_hash": "b6f305d60c359b2d6d5d9c95c6179041ee79bd711a1ff7b5103cdafe4221d895",
+    "spawns": [
+      {
+        "name": "Cool Event Corp. Staff::NvCool1",
+        "x": 33,
+        "y": 176,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 874,
+        "unique_name": "NvCool1"
+      },
+      {
+        "name": "Cool Event Corp. Staff::NvCool2",
+        "x": 33,
+        "y": 176,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 874,
+        "unique_name": "NvCool2"
+      },
+      {
+        "name": "Cool Event Corp. Staff::NvCool3",
+        "x": 33,
+        "y": 176,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 874,
+        "unique_name": "NvCool3"
+      },
+      {
+        "name": "Cool Event Corp. Staff::NvCool4",
+        "x": 33,
+        "y": 176,
+        "map": "new_4-2",
+        "dir": 4,
+        "sprite": 874,
+        "unique_name": "NvCool4"
+      },
+      {
+        "name": "Cool Event Corp. Staff::NvCool5",
+        "x": 33,
+        "y": 176,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 874,
+        "unique_name": "NvCool5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Final Tester::NvHanson|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.FinalTesterNvhanson",
+    "output_hash": "1d89435558e7bb5b0acf58c886f1529ef4b64ec7a80a18b2df1ebfca1bb71b1f",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/final_tester_nvhanson.ex",
+    "source_hash": "b2875b231b5b05c306b87c3175f71e8d0595ff57d702cb0cc0bde3ca82b13d3b",
+    "spawns": [
+      {
+        "name": "Final Tester",
+        "x": 100,
+        "y": 29,
+        "map": "new_1-4",
+        "dir": 1,
+        "sprite": 46,
+        "unique_name": "Final Tester#nv1"
+      },
+      {
+        "name": "Final Tester",
+        "x": 100,
+        "y": 29,
+        "map": "new_2-4",
+        "dir": 1,
+        "sprite": 46,
+        "unique_name": "Final Tester#nv2"
+      },
+      {
+        "name": "Final Tester",
+        "x": 100,
+        "y": 29,
+        "map": "new_3-4",
+        "dir": 1,
+        "sprite": 46,
+        "unique_name": "Final Tester#nv3"
+      },
+      {
+        "name": "Final Tester",
+        "x": 100,
+        "y": 29,
+        "map": "new_4-4",
+        "dir": 1,
+        "sprite": 46,
+        "unique_name": "Final Tester#nv4"
+      },
+      {
+        "name": "Final Tester",
+        "x": 100,
+        "y": 29,
+        "map": "new_5-4",
+        "dir": 1,
+        "sprite": 46,
+        "unique_name": "Final Tester#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Guard::NvGuardA|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.GuardNvguarda",
+    "output_hash": "ed266ba272112e8a606198b886eb29df895c7c582bffc3c65dd249b0f3571a02",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/guard_nvguarda.ex",
+    "source_hash": "fb4dad9eaf4f73b1eb6ec3a41975a8b5ce2cf7d7b8ae1e62aa545ccd8ce914f5",
+    "spawns": [
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 116,
+        "map": "new_1-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv1a"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 116,
+        "map": "new_2-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv2a"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 116,
+        "map": "new_3-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv3a"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 116,
+        "map": "new_4-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv4a"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 116,
+        "map": "new_5-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv5a"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Guard::NvGuardB|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.GuardNvguardb",
+    "output_hash": "6bb8b81929896731f39620c6f08f641a6263c1b272fbff7cec88e97cb27a6ebf",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/guard_nvguardb.ex",
+    "source_hash": "075e3d7b65da38ca8f7f1e72df58ec8b0a7ca0b2019d7ed00996d1cda63d9ca2",
+    "spawns": [
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 107,
+        "map": "new_1-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv1b"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 107,
+        "map": "new_2-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv2b"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 107,
+        "map": "new_3-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv3b"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 107,
+        "map": "new_4-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv4b"
+      },
+      {
+        "name": "Guard",
+        "x": 144,
+        "y": 107,
+        "map": "new_5-1",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Guard#nv5b"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Guide::NvGuide|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.GuideNvguide",
+    "output_hash": "8b696feaf51388fe7898418863b43798aadae31894dcbaf8232be084839636cc",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/guide_nvguide.ex",
+    "source_hash": "46b70184fa61eca78def7dbdc785ac7cf29e1fc48193df3dbae2ff78e56d44be",
+    "spawns": [
+      {
+        "name": "Guide",
+        "x": 36,
+        "y": 176,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Guide#nv1"
+      },
+      {
+        "name": "Guide",
+        "x": 36,
+        "y": 176,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Guide#nv2"
+      },
+      {
+        "name": "Guide",
+        "x": 36,
+        "y": 176,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Guide#nv3"
+      },
+      {
+        "name": "Guide",
+        "x": 36,
+        "y": 176,
+        "map": "new_4-2",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Guide#nv4"
+      },
+      {
+        "name": "Guide",
+        "x": 36,
+        "y": 176,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Instructor#Edwin::NvEdwin|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Instructor",
+    "output_hash": "c7523886479b4514dc2b2e41ddb4f0a215595a88f7d727840eb723fa95d82866",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/instructor.ex",
+    "source_hash": "2a63f698e9bb0526485f5afc637814b032bb576e8847bf1c4a547d29e1e3b269",
+    "spawns": [
+      {
+        "name": "Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_1-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Instructor#nv1"
+      },
+      {
+        "name": "Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_2-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Instructor#nv2"
+      },
+      {
+        "name": "Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_3-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Instructor#nv3"
+      },
+      {
+        "name": "Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_4-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Instructor#nv4"
+      },
+      {
+        "name": "Instructor",
+        "x": 161,
+        "y": 182,
+        "map": "new_5-2",
+        "dir": 5,
+        "sprite": 92,
+        "unique_name": "Instructor#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Jinha#newbe03::NvJinha|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Jinha",
+    "output_hash": "d4ba25f0b724537a5b9bc02d84c094656c8af26018b779e0f3bf2a723103069b",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/jinha.ex",
+    "source_hash": "cc76fb29a1966229f43d59b79fec4dcdbfa260882fbe9df37f5df5d8f6803313",
+    "spawns": [
+      {
+        "name": "Jinha",
+        "x": 115,
+        "y": 120,
+        "map": "new_1-2",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Jinha#nv1"
+      },
+      {
+        "name": "Jinha",
+        "x": 115,
+        "y": 120,
+        "map": "new_2-2",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Jinha#nv2"
+      },
+      {
+        "name": "Jinha",
+        "x": 115,
+        "y": 120,
+        "map": "new_3-2",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Jinha#nv3"
+      },
+      {
+        "name": "Jinha",
+        "x": 115,
+        "y": 120,
+        "map": "new_4-2",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Jinha#nv4"
+      },
+      {
+        "name": "Jinha",
+        "x": 115,
+        "y": 120,
+        "map": "new_5-2",
+        "dir": 3,
+        "sprite": 59,
+        "unique_name": "Jinha#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Job Guide Lark::NvLark|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.JobGuideLarkNvlark",
+    "output_hash": "d3771f0448ee5b1c626fd68ae57488eee5e19d7a572e2c31b9d16f454f666f6a",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/job_guide_lark_nvlark.ex",
+    "source_hash": "80d30741787e7b24a7bcc49ed486ac5555e4d132e008aa45671a1aa2f86ae2be",
+    "spawns": [
+      {
+        "name": "Job Guide Lark",
+        "x": 106,
+        "y": 50,
+        "map": "new_1-3",
+        "dir": 4,
+        "sprite": 706,
+        "unique_name": "Job Guide Lark#01"
+      },
+      {
+        "name": "Job Guide Lark",
+        "x": 106,
+        "y": 50,
+        "map": "new_2-3",
+        "dir": 4,
+        "sprite": 706,
+        "unique_name": "Job Guide Lark#02"
+      },
+      {
+        "name": "Job Guide Lark",
+        "x": 106,
+        "y": 50,
+        "map": "new_3-3",
+        "dir": 4,
+        "sprite": 706,
+        "unique_name": "Job Guide Lark#03"
+      },
+      {
+        "name": "Job Guide Lark",
+        "x": 106,
+        "y": 50,
+        "map": "new_4-3",
+        "dir": 4,
+        "sprite": 706,
+        "unique_name": "Job Guide Lark#04"
+      },
+      {
+        "name": "Job Guide Lark",
+        "x": 106,
+        "y": 50,
+        "map": "new_5-3",
+        "dir": 4,
+        "sprite": 706,
+        "unique_name": "Job Guide Lark#05"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Kafra Employee#newbe07::NvKafra|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.KafraEmployee",
+    "output_hash": "831a0adcac8655a14fe483d7180e396fc0cd07f2aa3bd04342f0000656eea9ff",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/kafra_employee.ex",
+    "source_hash": "6ec7a67802171f8f26a357ac7de3b41f91ad8aa9af780d62f8967ae3b6b0905e",
+    "spawns": [
+      {
+        "name": "Kafra Employee",
+        "x": 30,
+        "y": 176,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 117,
+        "unique_name": "Kafra Employee#nv1"
+      },
+      {
+        "name": "Kafra Employee",
+        "x": 30,
+        "y": 176,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 117,
+        "unique_name": "Kafra Employee#nv2"
+      },
+      {
+        "name": "Kafra Employee",
+        "x": 30,
+        "y": 176,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 117,
+        "unique_name": "Kafra Employee#nv3"
+      },
+      {
+        "name": "Kafra Employee",
+        "x": 30,
+        "y": 176,
+        "map": "new_4-2",
+        "dir": 4,
+        "sprite": 117,
+        "unique_name": "Kafra Employee#nv4"
+      },
+      {
+        "name": "Kafra Employee",
+        "x": 30,
+        "y": 176,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 117,
+        "unique_name": "Kafra Employee#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Mage Guide#newbe10::NvMage|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.MageGuide",
+    "output_hash": "5b7caca3e036080abd8a6ec9aea7679ab0b19ed0c0aa5b7778bdfc96ec373aa4",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/mage_guide.ex",
+    "source_hash": "89517be28dfa2bc071ee31a679f0ec3b16e9604e514bcd97a56c57cb3bc5ee02",
+    "spawns": [
+      {
+        "name": "Mage Guide",
+        "x": 117,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 123,
+        "unique_name": "Mage Guide#nv1"
+      },
+      {
+        "name": "Mage Guide",
+        "x": 117,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 123,
+        "unique_name": "Mage Guide#nv2"
+      },
+      {
+        "name": "Mage Guide",
+        "x": 117,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 123,
+        "unique_name": "Mage Guide#nv3"
+      },
+      {
+        "name": "Mage Guide",
+        "x": 117,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 123,
+        "unique_name": "Mage Guide#nv4"
+      },
+      {
+        "name": "Mage Guide",
+        "x": 117,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 123,
+        "unique_name": "Mage Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Merchant Guide#newbe10::NvMerchant|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.MerchantGuide",
+    "output_hash": "7babf45dee34c7945b2442fe811c7eeafa91012ad8ebeab3850b04993408bd54",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/merchant_guide.ex",
+    "source_hash": "ec706620f9dadaf431d663618499d54e2187f9d9016ce5f59c414628dcbdb1ab",
+    "spawns": [
+      {
+        "name": "Merchant Guide",
+        "x": 109,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 97,
+        "unique_name": "Merchant Guide#nv1"
+      },
+      {
+        "name": "Merchant Guide",
+        "x": 109,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 97,
+        "unique_name": "Merchant Guide#nv2"
+      },
+      {
+        "name": "Merchant Guide",
+        "x": 109,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 97,
+        "unique_name": "Merchant Guide#nv3"
+      },
+      {
+        "name": "Merchant Guide",
+        "x": 109,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 97,
+        "unique_name": "Merchant Guide#nv4"
+      },
+      {
+        "name": "Merchant Guide",
+        "x": 109,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 97,
+        "unique_name": "Merchant Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Sprakki#newbe01::NvSprakkiA|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Sprakki",
+    "output_hash": "2024562c9dae4ac8d8861426568b851aa2ba50098b1edc533baf33305b00eb4c",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/sprakki.ex",
+    "source_hash": "67331ac089a9acb6057ac63f73c346726b977ee8d5cd6dbc5d5a77a5865b7a38",
+    "spawns": [
+      {
+        "name": "Sprakki",
+        "x": 53,
+        "y": 114,
+        "map": "new_1-1",
+        "dir": 3,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv1a"
+      },
+      {
+        "name": "Sprakki",
+        "x": 53,
+        "y": 114,
+        "map": "new_2-1",
+        "dir": 3,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv2a"
+      },
+      {
+        "name": "Sprakki",
+        "x": 53,
+        "y": 114,
+        "map": "new_3-1",
+        "dir": 3,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv3a"
+      },
+      {
+        "name": "Sprakki",
+        "x": 53,
+        "y": 114,
+        "map": "new_4-1",
+        "dir": 3,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv4a"
+      },
+      {
+        "name": "Sprakki",
+        "x": 53,
+        "y": 114,
+        "map": "new_5-1",
+        "dir": 3,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv5a"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Sprakki#newbe05::NvSprakkiB|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Sprakki0",
+    "output_hash": "6cf771e940587260b14d597c860c7492d0d52b11f0ba3d66994778accb2fafb4",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/sprakki_0.ex",
+    "source_hash": "1b5205a73a54594dfd030216ecca435565f538e3e1dd558781527d84db1d1a2b",
+    "spawns": [
+      {
+        "name": "Sprakki",
+        "x": 100,
+        "y": 29,
+        "map": "new_1-2",
+        "dir": 4,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv1b"
+      },
+      {
+        "name": "Sprakki",
+        "x": 100,
+        "y": 29,
+        "map": "new_2-2",
+        "dir": 4,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv2b"
+      },
+      {
+        "name": "Sprakki",
+        "x": 100,
+        "y": 29,
+        "map": "new_3-2",
+        "dir": 4,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv3b"
+      },
+      {
+        "name": "Sprakki",
+        "x": 100,
+        "y": 29,
+        "map": "new_4-2",
+        "dir": 4,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv4b"
+      },
+      {
+        "name": "Sprakki",
+        "x": 100,
+        "y": 29,
+        "map": "new_5-2",
+        "dir": 4,
+        "sprite": 90,
+        "unique_name": "Sprakki#nv5b"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Swordman Guide#newbe10::NvSwordman|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.SwordmanGuide",
+    "output_hash": "2a98559ad6e36fb78c0d80c64d9544d69f10bd16baad519f89d343d7bf8701b2",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/swordman_guide.ex",
+    "source_hash": "4d16288540fa5c6f0445d5c1f0d67421004a234dc723e6f6161086c0e2aa5639",
+    "spawns": [
+      {
+        "name": "Swordman Guide",
+        "x": 97,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Swordman Guide#nv1"
+      },
+      {
+        "name": "Swordman Guide",
+        "x": 97,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Swordman Guide#nv2"
+      },
+      {
+        "name": "Swordman Guide",
+        "x": 97,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Swordman Guide#nv3"
+      },
+      {
+        "name": "Swordman Guide",
+        "x": 97,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Swordman Guide#nv4"
+      },
+      {
+        "name": "Swordman Guide",
+        "x": 97,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 728,
+        "unique_name": "Swordman Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|floating|Thief Guide#newbe10::NvThief|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.ThiefGuide",
+    "output_hash": "c12dad20249510011066db1f81f0185e0b511784d436e273bdcc8bea4bb28708",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/thief_guide.ex",
+    "source_hash": "cd84025071f23506ebaaada02577cfcc80ee103882145bbda5a9f50406bd82c8",
+    "spawns": [
+      {
+        "name": "Thief Guide",
+        "x": 105,
+        "y": 41,
+        "map": "new_1-3",
+        "dir": 3,
+        "sprite": 118,
+        "unique_name": "Thief Guide#nv1"
+      },
+      {
+        "name": "Thief Guide",
+        "x": 105,
+        "y": 41,
+        "map": "new_2-3",
+        "dir": 3,
+        "sprite": 118,
+        "unique_name": "Thief Guide#nv2"
+      },
+      {
+        "name": "Thief Guide",
+        "x": 105,
+        "y": 41,
+        "map": "new_3-3",
+        "dir": 3,
+        "sprite": 118,
+        "unique_name": "Thief Guide#nv3"
+      },
+      {
+        "name": "Thief Guide",
+        "x": 105,
+        "y": 41,
+        "map": "new_4-3",
+        "dir": 3,
+        "sprite": 118,
+        "unique_name": "Thief Guide#nv4"
+      },
+      {
+        "name": "Thief Guide",
+        "x": 105,
+        "y": 41,
+        "map": "new_5-3",
+        "dir": 3,
+        "sprite": 118,
+        "unique_name": "Thief Guide#nv5"
+      }
+    ]
+  },
+  "re/jobs/novice/novice.txt|function|F_NvErase|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FNverase",
+    "output_hash": "b425151eacf1514d94c511f8d3c4ddd480aa3025e66e69bad4946f49c180f082",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_nverase.ex",
+    "source_hash": "6d495784662160c57cb29e1106aefaaf638469ea40aacd856d1a0460e7a9b822",
+    "spawns": []
+  },
+  "re/jobs/novice/supernovice_ex.txt|function|Esseray_Ex|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.EsserayEx",
+    "output_hash": "3d40c53400e109f8dfe208bd456fa0aaeb33832fb2ba8a0ad364d7db500a93e1",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/esseray_ex.ex",
+    "source_hash": "539dd0188cf0bb6ae4d6a4e60985ccc0e34e5ef7058a0b06b796ab1ddf3586c5",
+    "spawns": []
+  },
+  "re/jobs/novice/supernovice_ex.txt|script|Fishing Novice#sp2|beach_dun2:119:92": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovice",
+    "output_hash": "f9e013b4007d13d8785b76599bd1d28cb255c0e57b8591393bc656569a4551d8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/supernovice_ex/fishing_novice.ex",
+    "source_hash": "f5c914bec0a65c42035cd1901c14790bb734586b345d73e79f56fa008fb03cb3",
+    "spawns": [
+      {
+        "name": "Fishing Novice",
+        "x": 119,
+        "y": 92,
+        "map": "beach_dun2",
+        "dir": 4,
+        "sprite": 567,
+        "unique_name": "Fishing Novice#sp2"
+      }
+    ]
+  },
+  "re/jobs/novice/supernovice_ex.txt|script|Nudor#sp2|airplane:33:47": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.Nudor",
+    "output_hash": "f76c1afde6bdadbf00a7874c1d465c46e1f400178d3b7b7b641e0e1cda3df664",
+    "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/supernovice_ex/nudor.ex",
+    "source_hash": "fbe8ee1d246699c449d5cc954d7e759ff809676db5e4e436c02c75ea069a97da",
+    "spawns": [
+      {
+        "name": "Nudor",
+        "x": 33,
+        "y": 47,
+        "map": "airplane",
+        "dir": 5,
+        "sprite": 729,
+        "unique_name": "Nudor#sp2"
+      }
+    ]
   }
 }
