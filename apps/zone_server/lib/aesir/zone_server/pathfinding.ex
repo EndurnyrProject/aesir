@@ -27,8 +27,18 @@ defmodule Aesir.ZoneServer.Pathfinding do
   Finds the shortest path from start to goal using A* algorithm.
   Returns {:ok, path} where path is a list of {x, y} coordinates,
   or {:error, :no_path} if no valid path exists.
+
+  Options are forwarded to `Cell.step_traversable?/4`, e.g. `profile: :mob`
+  fences a mob against icewall band crossings.
   """
-  def find_path(map_data, {start_x, start_y}, {goal_x, goal_y}) do
+  @spec find_path(
+          Aesir.ZoneServer.Map.MapData.t(),
+          {integer(), integer()},
+          {integer(), integer()},
+          keyword()
+        ) ::
+          {:ok, [{integer(), integer()}]} | {:error, atom()}
+  def find_path(map_data, {start_x, start_y} = start, {goal_x, goal_y} = goal, opts \\ []) do
     cond do
       not valid_position?(map_data, start_x, start_y) ->
         {:error, :invalid_start}
@@ -45,15 +55,15 @@ defmodule Aesir.ZoneServer.Pathfinding do
       true ->
         start_node = Node.new(start_x, start_y, 0, heuristic(start_x, start_y, goal_x, goal_y))
 
-        open_set = :gb_sets.singleton({start_node.f_score, {start_x, start_y}, start_node})
+        open_set = :gb_sets.singleton({start_node.f_score, start, start_node})
         closed_set = MapSet.new()
-        g_scores = %{{start_x, start_y} => 0}
+        g_scores = %{start => 0}
 
-        a_star_loop(map_data, open_set, closed_set, g_scores, {goal_x, goal_y})
+        a_star_loop(map_data, open_set, closed_set, g_scores, goal, opts)
     end
   end
 
-  defp a_star_loop(map_data, open_set, closed_set, g_scores, {goal_x, goal_y} = goal) do
+  defp a_star_loop(map_data, open_set, closed_set, g_scores, {goal_x, goal_y} = goal, opts) do
     if :gb_sets.is_empty(open_set) do
       {:error, :no_path}
     else
@@ -68,10 +78,10 @@ defmodule Aesir.ZoneServer.Pathfinding do
           get_neighbors(current.x, current.y)
           |> Enum.reduce(
             {open_set, g_scores},
-            &process_neighbor(&1, &2, map_data, closed_set, current, goal)
+            &process_neighbor(&1, &2, map_data, closed_set, current, goal, opts)
           )
 
-        a_star_loop(map_data, open_set, closed_set, g_scores, goal)
+        a_star_loop(map_data, open_set, closed_set, g_scores, goal, opts)
       end
     end
   end
@@ -82,11 +92,12 @@ defmodule Aesir.ZoneServer.Pathfinding do
          map_data,
          closed_set,
          current,
-         {goal_x, goal_y}
+         {goal_x, goal_y},
+         opts
        ) do
     neighbor_pos = {nx, ny}
 
-    if should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny) do
+    if should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny, opts) do
       {open_acc, g_acc}
     else
       update_neighbor_if_better(
@@ -100,10 +111,10 @@ defmodule Aesir.ZoneServer.Pathfinding do
     end
   end
 
-  defp should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny) do
+  defp should_skip_neighbor?(neighbor_pos, closed_set, map_data, current, nx, ny, opts) do
     MapSet.member?(closed_set, neighbor_pos) or
       not valid_position?(map_data, nx, ny) or
-      not Cell.step_traversable?(map_data.name, {current.x, current.y}, {nx, ny})
+      not Cell.step_traversable?(map_data.name, {current.x, current.y}, {nx, ny}, opts)
   end
 
   defp update_neighbor_if_better(

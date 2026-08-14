@@ -147,6 +147,63 @@ defmodule Aesir.ZoneServer.PathfindingTest do
     end
   end
 
+  describe "find_path/4 with movement profile" do
+    setup :setup_ets_tables
+
+    test "mob detours around an icewall band while the player crosses" do
+      map_data = MapData.new("fence_map", 10, 10)
+      cache(map_data)
+
+      for y <- 2..7 do
+        :ok = Cell.put_traits("fence_map", 5, y, :npc_script, 0, icewall: true)
+      end
+
+      assert {:ok, player_path} = Pathfinding.find_path(map_data, {0, 5}, {9, 5})
+      assert Enum.any?(player_path, fn {x, y} -> x == 5 and y in 2..7 end)
+
+      assert {:ok, mob_path} = Pathfinding.find_path(map_data, {0, 5}, {9, 5}, profile: :mob)
+      assert List.last(mob_path) == {9, 5}
+      refute Enum.any?(mob_path, fn {x, y} -> Cell.icewall?("fence_map", x, y) end)
+
+      steps = Enum.zip([{0, 5} | mob_path], mob_path)
+
+      assert Enum.all?(steps, fn {from, to} ->
+               Cell.step_traversable?("fence_map", from, to, profile: :mob)
+             end)
+    end
+
+    test "mob paths stay within an icewall band" do
+      map_data = MapData.new("fence_band", 10, 10)
+      cache(map_data)
+
+      for x <- 3..7, y <- 3..7 do
+        :ok = Cell.put_traits("fence_band", x, y, :npc_script, 0, icewall: true)
+      end
+
+      assert {:ok, in_band_path} =
+               Pathfinding.find_path(map_data, {4, 4}, {6, 6}, profile: :mob)
+
+      assert Enum.all?(in_band_path, fn {x, y} -> Cell.icewall?("fence_band", x, y) end)
+    end
+
+    test "mob cannot escape a closed icewall ring" do
+      map_data = MapData.new("fence_ring", 10, 10)
+      cache(map_data)
+
+      for x <- 3..7 do
+        :ok = Cell.put_traits("fence_ring", x, 3, :npc_script, 0, icewall: true)
+        :ok = Cell.put_traits("fence_ring", x, 7, :npc_script, 0, icewall: true)
+      end
+
+      for y <- 3..7 do
+        :ok = Cell.put_traits("fence_ring", 3, y, :npc_script, 0, icewall: true)
+        :ok = Cell.put_traits("fence_ring", 7, y, :npc_script, 0, icewall: true)
+      end
+
+      assert {:error, :no_path} = Pathfinding.find_path(map_data, {5, 5}, {0, 0}, profile: :mob)
+    end
+  end
+
   describe "simplify_path/1" do
     setup :setup_ets_tables
 
