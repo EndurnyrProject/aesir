@@ -74,6 +74,32 @@ defmodule Aesir.ZoneServer.Map.CellTest do
     refute Cell.step_traversable?("cell_test", {0, 1}, {1, 2})
   end
 
+  test "step_traversable? fences only the mob profile against icewall boundaries" do
+    :ets.insert(
+      EtsTable.table_for(:map_cache),
+      {"icewall_test", MapData.new("icewall_test", 5, 5)}
+    )
+
+    for x <- 1..2, y <- 1..2 do
+      :ok = Cell.put_traits("icewall_test", x, y, :npc_script, 0, icewall: true)
+    end
+
+    # :player ignores the fence entirely (explicit and default arity)
+    assert Cell.step_traversable?("icewall_test", {0, 2}, {1, 2})
+    assert Cell.step_traversable?("icewall_test", {0, 2}, {1, 2}, profile: :player)
+
+    # :mob cannot cross the boundary in either direction
+    refute Cell.step_traversable?("icewall_test", {0, 2}, {1, 2}, profile: :mob)
+    refute Cell.step_traversable?("icewall_test", {1, 2}, {0, 2}, profile: :mob)
+
+    # :mob moves freely within and outside the band
+    assert Cell.step_traversable?("icewall_test", {1, 1}, {1, 2}, profile: :mob)
+    assert Cell.step_traversable?("icewall_test", {0, 0}, {0, 1}, profile: :mob)
+
+    # diagonal step across the band's corner: both cells out-of-band, so allowed
+    assert Cell.step_traversable?("icewall_test", {0, 1}, {1, 0}, profile: :mob)
+  end
+
   test "merges independent source contributions and restores exact base terrain", %{map: map} do
     :ok = Cell.put("cell_test", 0, 0, :wall, 1, blocks_movement: true)
     :ok = Cell.put("cell_test", 0, 0, :barrier, 2, blocks_projectiles: true)

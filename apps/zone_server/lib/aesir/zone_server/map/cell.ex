@@ -162,9 +162,19 @@ defmodule Aesir.ZoneServer.Map.Cell do
   traversable, matching rAthena's no-corner-cut rule (`path.cpp`): a unit may
   not slip between two diagonally-adjacent blocked cells (e.g. a diagonal
   Ice Wall).
+
+  With `profile: :mob`, a step is additionally rejected when the source and
+  destination cells disagree on the icewall trait, fencing mobs on either side
+  of a script icewall band. The default `:player` profile ignores the trait.
   """
-  @spec step_traversable?(String.t(), {integer(), integer()}, {integer(), integer()}) :: boolean()
-  def step_traversable?(map_name, {from_x, from_y}, {to_x, to_y}) do
+  @spec step_traversable?(String.t(), {integer(), integer()}, {integer(), integer()}, keyword()) ::
+          boolean()
+  def step_traversable?(map_name, from, to, opts \\ []) do
+    base_step_traversable?(map_name, from, to) and
+      fence_ok?(map_name, from, to, Keyword.get(opts, :profile, :player))
+  end
+
+  defp base_step_traversable?(map_name, {from_x, from_y}, {to_x, to_y}) do
     dx = to_x - from_x
     dy = to_y - from_y
 
@@ -172,6 +182,12 @@ defmodule Aesir.ZoneServer.Map.Cell do
       (dx == 0 or dy == 0 or
          (traversable?(map_name, from_x + dx, from_y) and
             traversable?(map_name, from_x, from_y + dy)))
+  end
+
+  defp fence_ok?(_map_name, _from, _to, :player), do: true
+
+  defp fence_ok?(map_name, {from_x, from_y}, {to_x, to_y}, :mob) do
+    icewall?(map_name, from_x, from_y) == icewall?(map_name, to_x, to_y)
   end
 
   @doc "Returns whether a skill-unit may be placed on base terrain."
