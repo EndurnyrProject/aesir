@@ -130,6 +130,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("SpecialEffect2")
   end
 
+  test "progressbar maps to its DSL op with a string color and int seconds" do
+    assert {:ok, %{dsl: "progressbar", args: [:string, :int]}} =
+             CommandMap.command("progressbar")
+
+    assert CommandMap.supported?("progressbar")
+    assert CommandMap.supported?("ProgressBar")
+  end
+
   test "consumeitem/nude/viewpoint/killmonster map to their DSL ops" do
     assert {:ok, %{dsl: "consumeitem", args: [:item]}} = CommandMap.command("consumeitem")
     assert {:ok, %{shape: :nullary, dsl: "nude"}} = CommandMap.command("nude")

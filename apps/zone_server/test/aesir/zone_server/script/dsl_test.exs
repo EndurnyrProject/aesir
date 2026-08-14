@@ -6,7 +6,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.NpcInteract
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.ProgressBar
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Cell
@@ -460,6 +462,45 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "short-circuits on an already-halted ctx" do
       ctx = Ctx.halt(build_ctx(), :boom)
       assert Dsl.sleep2(ctx, 10) == ctx
+    end
+  end
+
+  describe "progressbar/3" do
+    test "sends a ProgressBar and blocks until the client reports completion" do
+      test_pid = self()
+      npc_gid = 42
+
+      expect(Broadcast, :to_player, fn 1, %ProgressBar{seconds: 5} = packet ->
+        send(test_pid, {:progress_bar, packet})
+
+        send(
+          test_pid,
+          {:npc_interact, %NpcInteract{npc_id: npc_gid, response: {:progress, true}}}
+        )
+
+        :ok
+      end)
+
+      ctx = %{build_ctx() | npc_gid: npc_gid}
+      assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
+      assert_received {:progress_bar, %ProgressBar{seconds: 5}}
+    end
+
+    test "halts :no_player on a detached ctx" do
+      ctx = %{build_ctx() | game_state: nil}
+      assert Dsl.progressbar(ctx, "ffff00", 5).status == {:error, :no_player}
+    end
+
+    test "a non-positive duration warns and skips" do
+      ctx = build_ctx()
+
+      log = capture_log(fn -> assert Dsl.progressbar(ctx, "ffff00", 0) == ctx end)
+      assert log =~ "progressbar: non-positive duration"
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
     end
   end
 

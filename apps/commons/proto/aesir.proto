@@ -219,6 +219,8 @@ message Envelope {
     TradeCancelled trade_cancelled = 185;
     // 186: per-player quest-icon bubble over an NPC (script questinfo buildin)
     QuestInfoIcon quest_info_icon = 186;
+    // 187: progress bar over the attached character (script `progressbar` buildin)
+    ProgressBar progress_bar = 187;
   }
 }
 
@@ -624,6 +626,13 @@ message Cutin {
 message SoundEffect {
   string name = 1;    // wav filename played from the client's data/wav directory
   uint32 type = 2;    // playback type (0 = data/wav)
+}
+
+// Server -> client, a progress bar over the attached character's head. The bar runs
+// for `seconds`; on completion the client reports NpcInteract.progress, and
+// cancel-on-move reuses NpcInteract.cancel. Sent only to the invoking player.
+message ProgressBar {
+  uint32 seconds = 1;
 }
 
 // Client -> server, request an entity's name (replaces RO CZ_REQNAME2 0x0368).
@@ -1323,6 +1332,7 @@ message NpcInteract {
     sint64 number = 4;
     string input = 5;
     bool cancel = 6;
+    bool progress = 7;  // progress bar completed (script `progressbar`)
   }
 }
 

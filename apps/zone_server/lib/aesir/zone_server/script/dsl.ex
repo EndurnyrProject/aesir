@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
+  alias Aesir.Net.ProgressBar
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
@@ -1535,6 +1536,30 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def sleep2(%Ctx{} = ctx, ms) do
     Logger.warning("sleep2: non-positive duration #{inspect(ms)}, skipping")
+    ctx
+  end
+
+  @doc """
+  Displays a progress bar over the attached character's head for `seconds`
+  then blocks until the client reports completion.
+  Blocks like the other dialog primitives: the interaction suspends on a
+  `receive` until the client signals completion (`NpcInteract.progress`); a
+  moving character makes the client cancel instead, ending the script (the same
+  cancel path `select`'s ESC uses). Halts `:no_player` on a detached ctx.
+  """
+  @spec progressbar(Ctx.t(), String.t(), integer()) :: Ctx.t()
+  def progressbar(%Ctx{status: {:error, _}} = ctx, _color, _seconds), do: ctx
+  def progressbar(%Ctx{game_state: nil} = ctx, _color, _seconds), do: Ctx.halt(ctx, :no_player)
+
+  def progressbar(%Ctx{char_id: char_id} = ctx, _color, seconds)
+      when is_integer(seconds) and seconds > 0 do
+    Broadcast.to_player(char_id, %ProgressBar{seconds: seconds})
+    await(ctx, :progress)
+    ctx
+  end
+
+  def progressbar(%Ctx{} = ctx, _color, seconds) do
+    Logger.warning("progressbar: non-positive duration #{inspect(seconds)}, skipping")
     ctx
   end
 
