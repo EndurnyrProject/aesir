@@ -221,6 +221,8 @@ message Envelope {
     QuestInfoIcon quest_info_icon = 186;
     // 187: progress bar over the attached character (script `progressbar` buildin)
     ProgressBar progress_bar = 187;
+    // 188: open the navigation window / start navigation (script `navigateto` buildin)
+    NavigateTo navigate_to = 188;
   }
 }
 
@@ -633,6 +635,21 @@ message SoundEffect {
 // cancel-on-move reuses NpcInteract.cancel. Sent only to the invoking player.
 message ProgressBar {
   uint32 seconds = 1;
+}
+
+// Server -> client, open the navigation window / start navigation toward a map
+// coordinate or a tracked monster (replaces RO ZC_NAVIGATION 0x08e2, script
+// `navigateto`). Sent only to the invoking player. The client derives the
+// navigation target the same way the original packet does: monster_id > 0
+// targets that monster; else x > 0 && y > 0 targets those coordinates; else
+// it is map-only (fails client-side if the player is already on the map).
+message NavigateTo {
+  string map = 1;        // destination map name
+  uint32 x = 2;          // destination cell x (0 when map-only or monster)
+  uint32 y = 3;          // destination cell y (0 when map-only or monster)
+  uint32 flag = 4;       // allowed transport services (0 none, 1 airship, 10 scroll, 100 kafra)
+  bool hide_window = 5;  // true = navigate silently without opening the window
+  uint32 monster_id = 6; // optional tracked monster id
 }
 
 // Client -> server, request an entity's name (replaces RO CZ_REQNAME2 0x0368).

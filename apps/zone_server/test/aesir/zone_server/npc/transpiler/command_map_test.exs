@@ -138,6 +138,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("ProgressBar")
   end
 
+  test "navigateto maps to its variadic DSL op shape" do
+    assert {:ok, %{shape: :navigateto, dsl: "navigateto"}} = CommandMap.command("navigateto")
+    assert CommandMap.supported?("navigateto")
+    assert CommandMap.supported?("NavigateTo")
+  end
+
   test "consumeitem/nude/viewpoint/killmonster map to their DSL ops" do
     assert {:ok, %{dsl: "consumeitem", args: [:item]}} = CommandMap.command("consumeitem")
     assert {:ok, %{shape: :nullary, dsl: "nude"}} = CommandMap.command("nude")

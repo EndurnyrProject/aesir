@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ChatMessage
   alias Aesir.Net.Cutin
+  alias Aesir.Net.NavigateTo
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ProgressBar
@@ -696,6 +697,46 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def soundeffect(%Ctx{char_id: char_id} = ctx, name, type) do
     Broadcast.to_player(char_id, %SoundEffect{name: name, type: type})
+    ctx
+  end
+
+  @doc """
+  Opens the navigation window / starts navigation toward a map coordinate or
+  tracked monster (rAthena `navigateto`, packet `ZC_NAVIGATION`). `flag` is the
+  allowed-transport-services value (`0` none, `1` airship, `10` scroll, `100`
+  kafra); `hide_window` suppresses the window when true. With `monster_id` set,
+  the coordinates are ignored and the client tracks that monster instead.
+
+  Sent only to the invoking player, so a detached ctx (no player to send to) is
+  a silent no-op rather than a halt — a missing navigation target must never
+  abort the surrounding script. The navigation itself is entirely client-side;
+  the script continues immediately.
+  """
+  @spec navigateto(
+          Ctx.t(),
+          String.t(),
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer(),
+          boolean(),
+          non_neg_integer()
+        ) :: Ctx.t()
+  def navigateto(%Ctx{status: {:error, _}} = ctx, _map, _x, _y, _flag, _hide_window, _monster_id),
+    do: ctx
+
+  def navigateto(%Ctx{char_id: nil} = ctx, _map, _x, _y, _flag, _hide_window, _monster_id),
+    do: ctx
+
+  def navigateto(%Ctx{char_id: char_id} = ctx, map, x, y, flag, hide_window, monster_id) do
+    Broadcast.to_player(char_id, %NavigateTo{
+      map: map,
+      x: x,
+      y: y,
+      flag: flag,
+      hide_window: hide_window,
+      monster_id: monster_id
+    })
+
     ctx
   end
 

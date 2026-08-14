@@ -87,6 +87,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "QMARK_PURPLE" => 3
   }
 
+  # rAthena `navigateto` service flags (`NAV_*`) → the client int. The
+  # default when the flag is omitted is NAV_KAFRA_AND_AIRSHIP (101).
+  @nav_flags %{
+    "NAV_NONE" => 0,
+    "NAV_AIRSHIP_ONLY" => 1,
+    "NAV_SCROLL_ONLY" => 10,
+    "NAV_AIRSHIP_AND_SCROLL" => 11,
+    "NAV_KAFRA_ONLY" => 100,
+    "NAV_KAFRA_AND_AIRSHIP" => 101,
+    "NAV_KAFRA_AND_SCROLL" => 110,
+    "NAV_ALL" => 111
+  }
+
   @script_end "throw({:script_end, ctx})"
 
   @pipe_rebind ~r/^ctx = ([a-z_][a-zA-Z0-9_]*[!?]?)\(ctx(?:, (.+))?\)$/
@@ -1016,6 +1029,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `navigateto "<map>"{,<x>,<y>,<flag>,<hide_window>,<monster_id>}` — open the
+  # client navigation window toward a map coordinate or a tracked monster. The
+  # map is required; the trailing args default to (0,0), NAV_KAFRA_AND_AIRSHIP,
+  # hidden, and no monster, matching rAthena. `hide_window` folds any nonzero to
+  # a bool, and the optional `<char_id>` tail (target another character) is
+  # dropped.
+  defp emit_mapped(_name, %{shape: :navigateto, dsl: dsl}, [map | rest], env) do
+    {pre, [map | rest]} = hoist_all([map | Enum.take(rest, 5)], env)
+    [x, y, flag, hide, mob] = pad_nav(rest)
+
+    parts = [
+      render(map, env),
+      render(x, env),
+      render(y, env),
+      nav_flag_arg(flag, env),
+      nav_hide_arg(hide, env),
+      render(mob, env)
+    ]
+
+    {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(parts, ", ")})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :navigateto}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # `savepoint "map",x,y{,rx,ry}` — the optional range args are dropped.
   defp emit_mapped(_name, %{shape: :savepoint}, args, env) do
     {pre, [map, x, y | _rest]} = hoist_all(args, env)
@@ -1194,6 +1235,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp quest_const(_table, _arg), do: :error
+
+  # `navigateto` trailing args: pad the optional x/y/flag/hide_window/monster_id
+  # with their rAthena defaults (0,0,NAV_KAFRA_AND_AIRSHIP,hidden,no monster).
+  defp pad_nav(args) do
+    defaults = [{:int, 0}, {:int, 0}, {:name, "NAV_KAFRA_AND_AIRSHIP"}, {:int, 1}, {:int, 0}]
+
+    defaults
+    |> Enum.with_index()
+    |> Enum.map(fn {default, i} -> Enum.at(args, i, default) end)
+  end
+
+  # A NAV_* flag resolves through `@nav_flags`; a raw int renders as-is.
+  defp nav_flag_arg({:name, symbol}, _env) do
+    case Map.fetch(@nav_flags, String.upcase(symbol)) do
+      {:ok, value} -> to_string(value)
+      :error -> const_todo(symbol)
+    end
+  end
+
+  defp nav_flag_arg(arg, env), do: render(arg, env)
+
+  defp nav_hide_arg(arg, env), do: "(#{render(arg, env)}) != 0"
 
   # Transpiles a questinfo condition string (rAthena parses it as its own
   # script expression) into a `(ctx -> boolean)` closure, reusing the standard

@@ -67,6 +67,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     sprite, the 4-arg form adds size. A sprite name constant (`4_M_THIEF_RUMIN`)
     resolves via the `e_job_types` sprite table; an unknown constant or any
     other shape stays a stub.
+  - `%{shape: :navigateto, dsl: name}` — `navigateto "<map>"{,<x>,<y>,<flag>,
+    <hide_window>,<monster_id>}`: the map is required; the trailing args default
+    to (0,0), `NAV_KAFRA_AND_AIRSHIP`, hidden, and no monster, matching rAthena.
+    A `NAV_*` flag constant resolves to its service int, `hide_window` folds any
+    nonzero to a boolean, and the optional `<char_id>` tail (target another
+    character) is dropped.
 
   ## Reads
 
@@ -119,6 +125,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "cutin" => %{dsl: "cutin", args: [:string, :int]},
     "soundeffect" => %{dsl: "soundeffect", args: [:string, :int]},
     "progressbar" => %{dsl: "progressbar", args: [:string, :int]},
+    "navigateto" => %{shape: :navigateto, dsl: "navigateto"},
     "consumeitem" => %{dsl: "consumeitem", args: [:item]},
     "nude" => %{shape: :nullary, dsl: "nude"},
     "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},

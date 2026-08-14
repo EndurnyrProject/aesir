@@ -962,6 +962,36 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :emotion"
   end
 
+  test "navigateto transpiles to its DSL op, padding optional args with rAthena defaults" do
+    src =
+      gen!("""
+      navigateto("ba_pw01",14,115);
+      navigateto("einbroch",267,268,NAV_NONE,1);
+      navigateto("prontera");
+      navigateto("morocc",10,20,NAV_ALL,0,1234);
+      close;
+      """)
+
+    assert src =~ ~S|navigateto("ba_pw01", 14, 115, 101, 1 != 0, 0)|
+    assert src =~ ~S|navigateto("einbroch", 267, 268, 0, 1 != 0, 0)|
+    assert src =~ ~S|navigateto("prontera", 0, 0, 101, 1 != 0, 0)|
+    assert src =~ ~S|navigateto("morocc", 10, 20, 111, 0 != 0, 1234)|
+    refute src =~ "todo(ctx, :navigateto"
+  end
+
+  test "navigateto drops the optional char_id tail and resolves an unknown flag as a const todo" do
+    src =
+      gen!("""
+      navigateto("einbroch",267,268,NAV_NONE,1,0,getcharid(0));
+      navigateto("einbroch",267,268,NAV_NOPE,1);
+      close;
+      """)
+
+    assert src =~ ~S|navigateto("einbroch", 267, 268, 0, 1 != 0, 0)|
+    refute src =~ "getcharid"
+    assert src =~ "navigateto(\"einbroch\", 267, 268, Todo.const!(:NAV_NOPE)"
+  end
+
   test "an unresolvable ET_* token becomes a const todo" do
     src =
       gen!("""

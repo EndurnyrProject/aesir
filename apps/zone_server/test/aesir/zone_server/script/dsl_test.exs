@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.NavigateTo
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ParamChange
   alias Aesir.Net.ProgressBar
@@ -501,6 +502,50 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     test "short-circuits on an already-halted ctx" do
       ctx = Ctx.halt(build_ctx(), :boom)
       assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
+    end
+  end
+
+  describe "navigateto/7" do
+    test "sends a NavigateTo to the invoking player" do
+      test_pid = self()
+
+      expect(Broadcast, :to_player, fn 1, %NavigateTo{} = packet ->
+        send(test_pid, {:navigate_to, packet})
+        :ok
+      end)
+
+      assert Dsl.navigateto(build_ctx(), "einbroch", 267, 268, 0, true, 0) == build_ctx()
+    end
+
+    test "forwards the monster_id target when present" do
+      test_pid = self()
+
+      expect(Broadcast, :to_player, fn 1, %NavigateTo{} = packet ->
+        send(test_pid, {:navigate_to, packet})
+        :ok
+      end)
+
+      Dsl.navigateto(build_ctx(), "einbroch", 0, 0, 101, false, 1234)
+
+      assert_received {:navigate_to,
+                       %NavigateTo{
+                         map: "einbroch",
+                         flag: 101,
+                         hide_window: false,
+                         monster_id: 1234
+                       }}
+    end
+
+    test "is a no-op on a detached ctx (no player to send to)" do
+      reject(&Broadcast.to_player/2)
+      ctx = %{build_ctx() | char_id: nil}
+      assert Dsl.navigateto(ctx, "einbroch", 267, 268, 0, true, 0) == ctx
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      reject(&Broadcast.to_player/2)
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.navigateto(ctx, "einbroch", 267, 268, 0, true, 0) == ctx
     end
   end
 
