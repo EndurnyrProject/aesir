@@ -1446,6 +1446,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "Todo.call!(:mobcount"
   end
 
+  test "setcell emits the statement rebind form with a resolved cell_type atom" do
+    src =
+      gen!("""
+      setcell "iz_ac02",58,142,63,144,cell_icewall,1;
+      if (mobcount("force_4-1","force_01mob::OnMyMobDead") < 1)
+        mes "clear";
+      close;
+      """)
+
+    assert src =~ ~S|setcell(ctx, "iz_ac02", 58, 142, 63, 144, :icewall, 1)|
+    refute src =~ "|> setcell("
+    refute src =~ "todo(ctx, :setcell"
+  end
+
   test "getbrokenid is a call read with an int arg" do
     src =
       gen!("""

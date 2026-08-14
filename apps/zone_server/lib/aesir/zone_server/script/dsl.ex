@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.ScriptCells
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
@@ -1460,6 +1461,31 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def killmonster(%Ctx{} = ctx, map, event) do
     MobSupervisor.kill_by_event(map, event)
+    ctx
+  end
+
+  @doc """
+  Applies the rAthena `setcell` buildin over a rectangular region: `type` is one
+  of `:walkable`, `:shootable`, or `:icewall` (other rAthena cell constants warn
+  and no-op), and `flag` sets (`1`) or clears (`0`) the trait. A world-effect
+  that does not touch player state: the context is returned unchanged and it
+  runs even on a detached ctx.
+  """
+  @spec setcell(
+          Ctx.t(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          atom(),
+          integer()
+        ) ::
+          Ctx.t()
+  def setcell(%Ctx{status: {:error, _}} = ctx, _map, _x1, _y1, _x2, _y2, _type, _flag), do: ctx
+
+  def setcell(%Ctx{} = ctx, map, x1, y1, x2, y2, type, flag) do
+    ScriptCells.set(map, {x1, y1}, {x2, y2}, type, flag)
     ctx
   end
 

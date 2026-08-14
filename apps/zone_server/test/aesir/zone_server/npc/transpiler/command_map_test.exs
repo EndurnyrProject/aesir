@@ -69,6 +69,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert CommandMap.supported?("getbrokenid")
   end
 
+  test "setcell is a statement command with a cell_type arg" do
+    assert {:ok, %{dsl: "setcell", args: [:string, :int, :int, :int, :int, :cell_type, :int]}} =
+             CommandMap.command("setcell")
+
+    assert CommandMap.supported?("setcell")
+    assert CommandMap.supported?("SetCell")
+  end
+
   test "supported? covers commands and call reads" do
     assert CommandMap.supported?("getitem")
     assert CommandMap.supported?("countitem")

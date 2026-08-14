@@ -289,6 +289,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def look(value) when is_integer(value), do: {:ok, value}
   def look(symbol) when is_binary(symbol), do: Map.fetch(@look_types, symbol)
 
+  # The rAthena `cell_*` constants a `setcell` type argument accepts, mapped to
+  # the trait atom the Script DSL consumes. The unsupported members still
+  # resolve (ScriptCells warns and no-ops on them at runtime, per spec).
+  @cell_types %{
+    "cell_walkable" => :walkable,
+    "cell_shootable" => :shootable,
+    "cell_water" => :water,
+    "cell_npc" => :npc,
+    "cell_basilica" => :basilica,
+    "cell_landprotector" => :landprotector,
+    "cell_novending" => :novending,
+    "cell_nochat" => :nochat,
+    "cell_maelstrom" => :maelstrom,
+    "cell_icewall" => :icewall,
+    "cell_nobuyingstore" => :nobuyingstore
+  }
+
+  @doc """
+  Resolves a `setcell` cell-type constant (`cell_*`) to its trait atom,
+  case-insensitively (scripts spell both `cell_icewall` and `CELL_WALKABLE`).
+  Unknown strings return `:error`.
+  """
+  @spec cell_type(String.t()) :: {:ok, atom()} | :error
+  def cell_type(symbol) when is_binary(symbol) do
+    Map.fetch(@cell_types, String.downcase(symbol))
+  end
+
   @quest_modes %{
     "HAVEQUEST" => :havequest,
     "PLAYTIME" => :playtime,

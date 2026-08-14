@@ -37,4 +37,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ResolverTest do
       assert Resolver.constant("W_2HSTAFF") == {:ok, "23"}
     end
   end
+
+  describe "cell_* constants" do
+    test "resolve to trait atoms case-insensitively" do
+      assert Resolver.cell_type("cell_icewall") == {:ok, :icewall}
+      assert Resolver.cell_type("CELL_ICEWALL") == {:ok, :icewall}
+      assert Resolver.cell_type("CELL_WALKABLE") == {:ok, :walkable}
+      assert Resolver.cell_type("cell_shootable") == {:ok, :shootable}
+      assert Resolver.cell_type("cell_basilica") == {:ok, :basilica}
+      assert Resolver.cell_type("cell_nobuyingstore") == {:ok, :nobuyingstore}
+    end
+
+    test "returns :error for unknown strings" do
+      assert Resolver.cell_type("cell_unknown") == :error
+      assert Resolver.cell_type("nope") == :error
+    end
+  end
 end

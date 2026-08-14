@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.ScriptCells
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     Mimic.copy(Cell)
     Mimic.copy(MapCache)
     Mimic.copy(MapData)
+    Mimic.copy(ScriptCells)
     Mimic.copy(SpecialEffect)
     Mimic.copy(Emote)
     Mimic.copy(ModifierCalculator)
@@ -361,6 +363,31 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       reject(&MobSupervisor.kill_by_event/2)
       ctx = Ctx.halt(build_ctx(), :boom)
       assert Dsl.killmonster(ctx, "prontera", "All") == ctx
+    end
+  end
+
+  describe "setcell/8" do
+    test "delegates to ScriptCells and returns the ctx unchanged" do
+      ctx = build_ctx()
+
+      expect(ScriptCells, :set, fn "iz_ac02", {58, 142}, {63, 144}, :icewall, 1 -> :ok end)
+
+      assert Dsl.setcell(ctx, "iz_ac02", 58, 142, 63, 144, :icewall, 1) == ctx
+    end
+
+    test "runs on a detached ctx" do
+      ctx = %{build_ctx() | game_state: nil}
+
+      expect(ScriptCells, :set, fn "iz_ac02", {58, 142}, {63, 144}, :icewall, 1 -> :ok end)
+
+      assert Dsl.setcell(ctx, "iz_ac02", 58, 142, 63, 144, :icewall, 1) == ctx
+    end
+
+    test "is a passthrough on an already-halted ctx" do
+      reject(&ScriptCells.set/5)
+
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.setcell(ctx, "iz_ac02", 58, 142, 63, 144, :icewall, 1) == ctx
     end
   end
 
