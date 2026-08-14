@@ -44,8 +44,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
     dup_index = Enum.group_by(duplicates, & &1.source)
     owners = Map.new(manifest, fn {key, rec} -> {rec.output_path, key} end)
+    manifest_scripts = manifest_scripts(manifest)
     {fn_modules, fn_units} = function_units(functions, owners)
     script_units = script_units(scripts, dup_index, sprites, owners)
+    cross_units = cross_run_units(scripts, dup_index, manifest_scripts, sprites, rathena_root)
 
     state = %{
       manifest: manifest,
@@ -61,11 +63,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       unresolved_sprites: MapSet.new()
     }
 
-    state = Enum.reduce(fn_units ++ script_units, state, &process_unit/2)
+    state = Enum.reduce(fn_units ++ script_units ++ cross_units, state, &process_unit/2)
 
     Manifest.save(state.manifest, manifest_path)
 
-    orphans = Map.keys(dup_index) -- Enum.map(scripts, &ref_name/1)
+    orphans =
+      Map.keys(dup_index) -- (Enum.map(scripts, &ref_name/1) ++ Map.keys(manifest_scripts))
 
     %{
       written: Enum.reverse(state.written),
@@ -186,6 +189,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     |> Map.new()
   end
 
+  # Script/floating NPCs transpiled by earlier runs, recovered from the manifest
+  # (keyed by their reference/export name), so a `duplicate(X)` in a later batch
+  # attaches to the already-transpiled source instead of being reported orphaned.
+  defp manifest_scripts(manifest) do
+    manifest
+    |> Enum.flat_map(fn {key, rec} ->
+      case String.split(key, "|") do
+        [_file, kind, name | _] when kind in ["script", "floating"] ->
+          [{ref_name(name), {key, rec}}]
+
+        _other ->
+          []
+      end
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+  end
+
   # Slugs collide (same display name on one map, or across files); append the
   # placement coordinates, then an index, deterministically. A candidate is
   # also rejected when its output path is already owned by a *different*
@@ -220,10 +240,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   # `duplicate(X)` references the source NPC's export name: the part after
   # `::` (even with an empty display prefix, as in `::Guard_izlude`);
   # scripts without one are referenced by their full name.
-  defp ref_name(entry) do
-    case String.split(entry.name, "::", parts: 2) do
+  defp ref_name(%{name: name}), do: ref_name(name)
+
+  defp ref_name(name) do
+    case String.split(name, "::", parts: 2) do
       [_prefix, exname] -> exname
-      _ -> entry.name
+      _ -> name
     end
   end
 
@@ -237,6 +259,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
         Enum.filter([entry | duplicates], &placed?/1)
       end
 
+    resolve_placements(placements, sprites)
+  end
+
+  # Resolves a cross-run source's new `duplicate()` placements alone; the source
+  # entry's own placement was already resolved and stored by the earlier run.
+  defp resolve_duplicate_spawns(entry, duplicates, sprites) do
+    if entry[:flag] do
+      {[], MapSet.new()}
+    else
+      resolve_placements(Enum.filter(duplicates, &placed?/1), sprites)
+    end
+  end
+
+  defp resolve_placements(placements, sprites) do
     Enum.map_reduce(placements, MapSet.new(), fn placement, unresolved ->
       {sprite, unresolved} = resolve_sprite(placement.sprite, sprites, unresolved)
 
@@ -286,6 +322,87 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     end
   end
 
+  # -- cross-run duplicate resolution -------------------------------------------
+
+  # Sources transpiled by an earlier run are not in this run's script list, but
+  # their `duplicate()` placements still need to land on them. For each such
+  # source, re-parse its recorded source file to recover the body, resolve the
+  # new duplicates, merge them with the stored spawns, and hand the resulting
+  # unit to the normal regen pipeline.
+  defp cross_run_units(scripts, dup_index, manifest_scripts, sprites, rathena_root) do
+    local_refs = MapSet.new(Enum.map(scripts, &ref_name/1))
+
+    manifest_scripts
+    |> Enum.flat_map(fn {source, manifest_entries} ->
+      cross_run_units_for(source, manifest_entries, local_refs, dup_index, sprites, rathena_root)
+    end)
+  end
+
+  defp cross_run_units_for(source, manifest_entries, local_refs, dup_index, sprites, rathena_root) do
+    duplicates = Map.get(dup_index, source, [])
+
+    if duplicates == [] or MapSet.member?(local_refs, source) do
+      []
+    else
+      Enum.flat_map(manifest_entries, fn {key, rec} ->
+        build_cross_run_unit(key, rec, duplicates, sprites, rathena_root)
+      end)
+    end
+  end
+
+  defp build_cross_run_unit(key, rec, duplicates, sprites, rathena_root) do
+    with true <- is_binary(rec.module),
+         {:ok, entry} <- recover_entry(rathena_root, key) do
+      {new_spawns, unresolved} = resolve_duplicate_spawns(entry, duplicates, sprites)
+
+      [
+        %{
+          entry: entry,
+          kind: unit_kind(entry),
+          module: rec.module,
+          rel_path: rec.output_path,
+          spawns: merge_spawns(rec.spawns, new_spawns),
+          unresolved_sprites: unresolved
+        }
+      ]
+    else
+      _ -> []
+    end
+  end
+
+  # Re-parses the source file recorded in a manifest key and returns the entry
+  # that reproduced that exact key, recovering the body codegen needs without
+  # persisting it in the manifest.
+  defp recover_entry(rathena_root, key) do
+    with [file | _] <- String.split(key, "|"),
+         {:ok, source} <- File.read(Path.join([rathena_root, "npc", file])),
+         {:ok, entries} <- FileParser.parse(source, file) do
+      case Enum.find(entries, &(Manifest.key(&1) == key)) do
+        nil -> {:error, :entry_not_found}
+        entry -> {:ok, entry}
+      end
+    else
+      _ -> {:error, :source_unavailable}
+    end
+  end
+
+  # Merges stored spawns with newly resolved duplicates, keeping the first
+  # placement per {map, x, y} so re-running the same batch stays idempotent.
+  defp merge_spawns(prior, new) do
+    {merged, _seen} =
+      Enum.reduce(prior ++ new, {[], MapSet.new()}, fn spawn, {acc, seen} ->
+        key = {spawn.map, spawn.x, spawn.y}
+
+        if MapSet.member?(seen, key) do
+          {acc, seen}
+        else
+          {[spawn | acc], MapSet.put(seen, key)}
+        end
+      end)
+
+    Enum.reverse(merged)
+  end
+
   # -- per-unit processing -----------------------------------------------------
 
   defp process_unit(unit, state) do
@@ -333,7 +450,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
         record = %{
           source_hash: source_hash,
           output_path: unit.rel_path,
-          output_hash: Manifest.hash(source)
+          output_hash: Manifest.hash(source),
+          spawns: unit.spawns,
+          module: unit.module
         }
 
         %{

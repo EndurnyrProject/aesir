@@ -3,7 +3,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ManifestTest do
 
   alias Aesir.ZoneServer.Npc.Transpiler.Manifest
 
-  @record %{source_hash: "src1", output_path: "a.ex", output_hash: "out1"}
+  @record %{
+    source_hash: "src1",
+    output_path: "a.ex",
+    output_hash: "out1",
+    spawns: [],
+    module: "Aesir.ZoneServer.Content.Npc.Functions.Test"
+  }
 
   test "decision table covers all regen situations" do
     # new entry

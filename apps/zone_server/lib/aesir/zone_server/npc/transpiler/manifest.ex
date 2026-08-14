@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
   @type entry_record :: %{
           source_hash: String.t(),
           output_path: String.t(),
-          output_hash: String.t()
+          output_hash: String.t(),
+          spawns: [map()],
+          module: String.t() | nil
         }
   @type t :: %{String.t() => entry_record()}
   @type output_state :: :missing | {:present, String.t()}
@@ -34,7 +36,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
          %{
            source_hash: rec["source_hash"],
            output_path: rec["output_path"],
-           output_hash: rec["output_hash"]
+           output_hash: rec["output_hash"],
+           spawns: decode_spawns(rec["spawns"]),
+           module: rec["module"]
          }}
       end)
     else
@@ -52,9 +56,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
       |> Enum.map(fn {key, rec} ->
         {key,
          Jason.OrderedObject.new(
+           module: rec.module,
            output_hash: rec.output_hash,
            output_path: rec.output_path,
-           source_hash: rec.source_hash
+           source_hash: rec.source_hash,
+           spawns: Enum.map(rec.spawns, &encode_spawn/1)
          )}
       end)
       |> Jason.OrderedObject.new()
@@ -77,6 +83,36 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
 
   @spec hash(binary()) :: String.t()
   def hash(content), do: :sha256 |> :crypto.hash(content) |> Base.encode16(case: :lower)
+
+  # Spawn maps round-trip through JSON as string-keyed objects with `trigger`
+  # tuples serialized to arrays; decode them back to the exact atom-keyed shape
+  # `resolve_placements` produces so regen hashes stay stable across runs.
+  defp decode_spawns(nil), do: []
+
+  defp decode_spawns(spawns) when is_list(spawns) do
+    Enum.map(spawns, fn spawn ->
+      %{
+        map: spawn["map"],
+        x: spawn["x"],
+        y: spawn["y"],
+        dir: spawn["dir"],
+        sprite: spawn["sprite"],
+        name: spawn["name"]
+      }
+      |> put_present(:unique_name, spawn["unique_name"])
+      |> put_present(:trigger, decode_trigger(spawn["trigger"]))
+    end)
+  end
+
+  defp put_present(map, _key, nil), do: map
+  defp put_present(map, key, value), do: Map.put(map, key, value)
+
+  defp decode_trigger(nil), do: nil
+  defp decode_trigger([tx, ty]), do: {tx, ty}
+
+  # Inverse of `decode_trigger`: `trigger` tuples become JSON arrays.
+  defp encode_spawn(%{trigger: {tx, ty}} = spawn), do: %{spawn | trigger: [tx, ty]}
+  defp encode_spawn(spawn), do: spawn
 
   @doc """
   Regen decision for one entry given its manifest record (or `nil` for a new

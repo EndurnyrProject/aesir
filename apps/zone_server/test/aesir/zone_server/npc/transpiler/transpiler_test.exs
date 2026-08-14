@@ -133,4 +133,44 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
 
     refute File.read!(Path.join(out_root, owned)) =~ ~S{mes("B")}
   end
+
+  @tag :tmp_dir
+  test "a duplicate in a later batch attaches to a source transpiled earlier", %{tmp_dir: tmp_dir} do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "cities"))
+    File.mkdir_p!(Path.join(npc_dir, "re"))
+
+    File.write!(Path.join(npc_dir, "cities/guard.txt"), """
+    -\tscript\t::GuardFloat\t-1,{
+    mes "Halt";
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "cities/**")
+
+    assert first.orphan_duplicates == []
+    assert [source_path] = first.written
+    refute File.read!(Path.join(out_root, source_path)) =~ "x: 100"
+
+    File.write!(Path.join(npc_dir, "re/guard_dup.txt"), """
+    izlude,100,100,4\tduplicate(GuardFloat)\tGuard#iz1\t105
+    """)
+
+    second = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**")
+
+    assert second.orphan_duplicates == []
+    assert second.failures == []
+    assert [^source_path] = second.written
+
+    source = File.read!(Path.join(out_root, source_path))
+    assert source =~ ~S{map: "izlude"}
+    assert source =~ "x: 100"
+
+    # Re-running the same batch is idempotent: nothing new to merge.
+    third = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**")
+    assert third.skipped == 1
+    assert third.written == []
+  end
 end
