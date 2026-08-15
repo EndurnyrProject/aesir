@@ -1508,6 +1508,24 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Kills every mob on `map`, spawn-table mobs included (rAthena
+  `killmonsterall`). Unlike `killmonster/3`, no event filter applies and
+  regular map spawns are not spared. Killed mobs are removed without firing
+  their death event or scheduling a respawn.
+
+  A map-management effect that does not touch player state: the context is
+  returned unchanged, and it runs even on a detached ctx. An unloaded map is
+  a no-op, matching rAthena.
+  """
+  @spec killmonsterall(Ctx.t(), String.t()) :: Ctx.t()
+  def killmonsterall(%Ctx{status: {:error, _}} = ctx, _map), do: ctx
+
+  def killmonsterall(%Ctx{} = ctx, map) do
+    MobSupervisor.kill_all(map)
+    ctx
+  end
+
+  @doc """
   Applies the rAthena `setcell` buildin over a rectangular region: `type` is one
   of `:walkable`, `:shootable`, or `:icewall` (other rAthena cell constants warn
   and no-op), and `flag` sets (`1`) or clears (`0`) the trait. A world-effect

@@ -1488,6 +1488,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :killmonster"
   end
 
+  test "killmonsterall maps the map to its DSL op, dropping the type flag" do
+    src =
+      gen!("""
+      killmonsterall "job_wiz";
+      killmonsterall "job_prist", 1;
+      close;
+      """)
+
+    assert src =~ ~S|killmonsterall("job_wiz")|
+    assert src =~ ~S|killmonsterall("job_prist")|
+    refute src =~ "todo(ctx, :killmonsterall"
+  end
+
   test "mobcount is a call read and sleep2 a statement command" do
     src =
       gen!("""

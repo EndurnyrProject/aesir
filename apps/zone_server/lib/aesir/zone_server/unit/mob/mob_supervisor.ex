@@ -160,6 +160,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   defp kill_match?(%MobState{}, _filter), do: false
 
   @doc """
+  Kills every mob on `map_name`, spawn-table mobs included (rAthena
+  `killmonsterall`), without firing their death event or scheduling a
+  respawn — the registry entry is cleared and the process terminated, exactly
+  as `kill_by_event/2` but with no spawn-type filter.
+
+  Runs in the caller's process; a mob that dies concurrently is skipped.
+  """
+  @spec kill_all(String.t()) :: :ok
+  def kill_all(map_name) do
+    map_name
+    |> get_mob_processes()
+    |> Enum.each(fn pid ->
+      try do
+        mob = MobSession.get_state(pid)
+
+        UnitRegistry.unregister_unit(:mob, mob.instance_id)
+        terminate_mob(map_name, pid)
+      catch
+        :exit, _ -> :ok
+      end
+    end)
+
+    :ok
+  end
+
+  @doc """
   Counts the living mobs on `map_name` matching `filter` (rAthena `mobcount`):
   `:all` counts every living mob, and a binary event label counts mobs
   summoned with that owner event. A map without a running mob supervisor

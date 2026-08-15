@@ -372,6 +372,27 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "killmonsterall/2" do
+    test "kills every mob on the map" do
+      test_pid = self()
+
+      expect(MobSupervisor, :kill_all, fn "job_wiz" ->
+        send(test_pid, :killed_all)
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.killmonsterall(ctx, "job_wiz") == ctx
+      assert_received :killed_all
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      reject(&MobSupervisor.kill_all/1)
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.killmonsterall(ctx, "job_wiz") == ctx
+    end
+  end
+
   describe "setcell/8" do
     test "delegates to ScriptCells and returns the ctx unchanged" do
       ctx = build_ctx()

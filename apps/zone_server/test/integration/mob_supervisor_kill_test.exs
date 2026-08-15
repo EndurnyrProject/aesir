@@ -47,6 +47,18 @@ defmodule Aesir.ZoneServer.Integration.MobSupervisorKillTest do
     assert UnitRegistry.get_unit(:mob, summoned.unit_id) == {:error, :not_found}
   end
 
+  test "kill_all kills spawn-table and summoned mobs alike, without respawn" do
+    summoned = spawn_mob(owner_event: "E::OnA", respawn_time: 0)
+    permanent = spawn_mob(owner_event: nil, respawn_time: 5_000)
+
+    MobSupervisor.kill_all(@map)
+
+    refute Process.alive?(summoned.pid)
+    refute Process.alive?(permanent.pid)
+    assert UnitRegistry.get_unit(:mob, summoned.unit_id) == {:error, :not_found}
+    assert UnitRegistry.get_unit(:mob, permanent.unit_id) == {:error, :not_found}
+  end
+
   test "a non-matching event label kills nothing" do
     a = spawn_mob(owner_event: "E::OnA", respawn_time: 0)
 

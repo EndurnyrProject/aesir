@@ -133,6 +133,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "nude" => %{shape: :nullary, dsl: "nude"},
     "viewpoint" => %{dsl: "viewpoint", args: [:int, :int, :int, :int, :int]},
     "killmonster" => %{dsl: "killmonster", args: [:string, :string]},
+    "killmonsterall" => %{dsl: "killmonsterall", args: [:string]},
     "sleep2" => %{dsl: "sleep2", args: [:int]},
     "warp" => %{shape: :warp},
     "savepoint" => %{shape: :savepoint},

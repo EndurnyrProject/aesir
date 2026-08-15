@@ -164,6 +164,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{dsl: "killmonster", args: [:string, :string]}} =
              CommandMap.command("killmonster")
 
+    assert {:ok, %{dsl: "killmonsterall", args: [:string]}} =
+             CommandMap.command("killmonsterall")
+
     assert CommandMap.supported?("consumeitem")
     assert CommandMap.supported?("Nude")
   end
