@@ -430,4 +430,35 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
       refute Map.has_key?(sprites, "NPC_RANGE1_START")
     end
   end
+
+  test "waiting-room buildins map to their DSL ops" do
+    assert {:ok, %{dsl: "waitingroom"}} = CommandMap.command("waitingroom")
+    assert {:ok, %{shape: :opt1, dsl: "delwaitingroom"}} = CommandMap.command("delwaitingroom")
+
+    assert {:ok, %{shape: :opt1, dsl: "enablewaitingroomevent"}} =
+             CommandMap.command("enablewaitingroomevent")
+
+    assert {:ok, %{shape: :opt1, dsl: "disablewaitingroomevent"}} =
+             CommandMap.command("disablewaitingroomevent")
+
+    assert {:ok, %{shape: :warp_waitingpc, dsl: "warpwaitingpc"}} =
+             CommandMap.command("warpwaitingpc")
+
+    assert {:ok, %{dsl: "waitingroomkick", args: [:string, :string]}} =
+             CommandMap.command("waitingroomkick")
+
+    assert {:ok, %{shape: :opt1, dsl: "kickwaitingroomall"}} =
+             CommandMap.command("kickwaitingroomall")
+
+    assert {:ok, %{shape: :opt1, dsl: "getwaitingroomusers"}} =
+             CommandMap.command("getwaitingroomusers")
+
+    assert {:ok, %{dsl: "getwaitingroomstate"}} = CommandMap.call_read("getwaitingroomstate")
+
+    for name <- ~w(waitingroom delwaitingroom enablewaitingroomevent disablewaitingroomevent
+                   warpwaitingpc waitingroomkick kickwaitingroomall getwaitingroomusers
+                   getwaitingroomstate) do
+      assert CommandMap.supported?(name), "expected #{name} to be supported"
+    end
+  end
 end

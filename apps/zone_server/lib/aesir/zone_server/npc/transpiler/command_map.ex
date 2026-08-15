@@ -179,7 +179,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "skilleffect" => %{dsl: "skilleffect", args: [:skill, :int]},
     "setlook" => %{dsl: "setlook", args: [:look, :int]},
     "setcell" => %{dsl: "setcell", args: [:string, :int, :int, :int, :int, :cell_type, :int]},
-    "setnpcdisplay" => %{shape: :setnpcdisplay}
+    "setnpcdisplay" => %{shape: :setnpcdisplay},
+    "waitingroom" => %{dsl: "waitingroom", args: [:string, :int, :string, :int, :int, :int, :int]},
+    "delwaitingroom" => %{shape: :opt1, dsl: "delwaitingroom"},
+    "enablewaitingroomevent" => %{shape: :opt1, dsl: "enablewaitingroomevent"},
+    "disablewaitingroomevent" => %{shape: :opt1, dsl: "disablewaitingroomevent"},
+    "warpwaitingpc" => %{shape: :warp_waitingpc, dsl: "warpwaitingpc"},
+    "waitingroomkick" => %{dsl: "waitingroomkick", args: [:string, :string]},
+    "kickwaitingroomall" => %{shape: :opt1, dsl: "kickwaitingroomall"},
+    "getwaitingroomusers" => %{shape: :opt1, dsl: "getwaitingroomusers"}
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
@@ -252,7 +260,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "mobcount" => %{dsl: "mobcount", args: [:string, :string]},
     "getbrokenid" => %{dsl: "getbrokenid", args: [:int]},
     "eaclass" => %{dsl: "eaclass", args: [:int]},
-    "roclass" => %{dsl: "roclass", args: [:int, :int]}
+    "roclass" => %{dsl: "roclass", args: [:int, :int]},
+    "getwaitingroomstate" => %{dsl: "getwaitingroomstate", args: [:int, :string]}
   }
 
   @spec command(String.t()) :: {:ok, rule()} | :error

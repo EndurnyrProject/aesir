@@ -2751,32 +2751,51 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   @doc """
   Opens a waiting room above the calling NPC. `limit` counts the NPC itself, so
-  a limit of 8 admits 7 players. `opts` accepts `:event_ref` (`"Name::OnLabel"`
-  to fire), `:trigger` (defaults to `limit`), `:zeny` (entry fee, checked at
-  join and paid on warp), `:min_lvl`, and `:max_lvl`. Valid on a detached ctx; a
-  second room on the same NPC no-ops.
+  a limit of 8 admits 7 players. The optional trailing arguments are the event
+  label (`"Name::OnLabel"`), the trigger count (defaults to `limit`), an entry
+  fee (checked at join and paid on warp), and the minimum/maximum base level.
+  Valid on a detached ctx; a second room on the same NPC no-ops.
   """
-  @spec waitingroom(Ctx.t(), String.t(), pos_integer(), keyword()) :: Ctx.t()
-  def waitingroom(%Ctx{status: {:error, _}} = ctx, _title, _limit, _opts), do: ctx
-
-  def waitingroom(%Ctx{npc_gid: nil} = ctx, _title, _limit, _opts),
-    do: warn_no_npc_gid(ctx, "waitingroom/3")
-
-  def waitingroom(%Ctx{npc_gid: gid} = ctx, title, limit, opts) do
-    event_ref = Keyword.get(opts, :event_ref, "")
-    trigger = Keyword.get(opts, :trigger, limit)
-    zeny = Keyword.get(opts, :zeny, 0)
-    min_lvl = Keyword.get(opts, :min_lvl, 1)
-    max_lvl = Keyword.get(opts, :max_lvl, Config.max_base_level())
-
-    case WaitingRoom.create(gid, title, limit, trigger, event_ref, zeny, min_lvl, max_lvl) do
-      :ok ->
-        broadcast_room_info(gid)
+  @spec waitingroom(
+          Ctx.t(),
+          String.t(),
+          pos_integer(),
+          String.t(),
+          non_neg_integer() | nil,
+          non_neg_integer(),
+          non_neg_integer(),
+          non_neg_integer() | nil
+        ) :: Ctx.t()
+  def waitingroom(
+        %Ctx{} = ctx,
+        title,
+        limit,
+        event_ref \\ "",
+        trigger \\ nil,
+        zeny \\ 0,
+        min_lvl \\ 1,
+        max_lvl \\ nil
+      ) do
+    case {ctx.status, ctx.npc_gid} do
+      {{:error, _}, _} ->
         ctx
 
-      {:error, :already_exists} ->
-        Logger.warning("npc waitingroom/3: gid #{gid} already has a room, no-op")
-        ctx
+      {:ok, nil} ->
+        warn_no_npc_gid(ctx, "waitingroom/3")
+
+      {:ok, gid} ->
+        trigger = trigger || limit
+        max_lvl = max_lvl || Config.max_base_level()
+
+        case WaitingRoom.create(gid, title, limit, trigger, event_ref, zeny, min_lvl, max_lvl) do
+          :ok ->
+            broadcast_room_info(gid)
+            ctx
+
+          {:error, :already_exists} ->
+            Logger.warning("npc waitingroom/3: gid #{gid} already has a room, no-op")
+            ctx
+        end
     end
   end
 
@@ -2948,6 +2967,25 @@ defmodule Aesir.ZoneServer.Script.Dsl do
         ctx
         |> set_local(:waitingroom_users, account_ids)
         |> set_local(:waitingroom_usercount, length(account_ids))
+    end
+  end
+
+  @doc """
+  Reads the calling NPC's waiting-room state for the given info `type` (0 users,
+  1 limit, 2 trigger, 3 disabled, 4 title, 5 password, 16 event label, 32 full,
+  33 over-trigger), or `-1` when the NPC has no room.
+  """
+  @spec getwaitingroomstate(Ctx.t(), integer()) :: term()
+  def getwaitingroomstate(%Ctx{npc_gid: nil}, _type), do: -1
+
+  def getwaitingroomstate(%Ctx{npc_gid: gid}, type), do: WaitingRoom.state(gid, type)
+
+  @doc "Reads the named NPC's waiting-room state."
+  @spec getwaitingroomstate(Ctx.t(), integer(), String.t()) :: term()
+  def getwaitingroomstate(%Ctx{} = ctx, type, npc_name) do
+    case room_gid_for(ctx, npc_name) do
+      nil -> -1
+      gid -> WaitingRoom.state(gid, type)
     end
   end
 

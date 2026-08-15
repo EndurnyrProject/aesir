@@ -940,6 +940,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `warpwaitingpc "<map>",<x>,<y>{,<n>}` — like `warp` but with coordinates and
+  # an optional count. The map target resolves "Random"/"SavePoint" to the
+  # atom form; a non-string-literal target stays a stub.
+  defp emit_mapped(_name, %{shape: :warp_waitingpc, dsl: dsl}, [{:str, target} | rest], env) do
+    dest =
+      case CommandMap.warp_target(target) do
+        {:ok, atom_form} -> atom_form
+        :error -> inspect(target)
+      end
+
+    {pre, rest} = hoist_all(rest, env)
+    coords = Enum.map_join(rest, ", ", &render(&1, env))
+    {pre ++ ["ctx = #{dsl}(ctx, #{dest}, #{coords})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :warp_waitingpc}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # A single-argument buildin (event ref, NPC name): any other arity is a
   # form the DSL cannot express, so it stays a stub.
   defp emit_mapped(_name, %{shape: :ref1, dsl: dsl}, [arg], env) do

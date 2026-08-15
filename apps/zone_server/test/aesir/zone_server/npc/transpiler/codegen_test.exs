@@ -1828,4 +1828,36 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert src =~ "todo(ctx, :questinfo"
   end
+
+  test "waiting-room buildins emit native DSL calls" do
+    src =
+      gen!("""
+      waitingroom "W", 8;
+      waitingroom "Full", 8, "B::OnStart", 7, 5000, 50, 99;
+      waitingroomkick "Bouncer", "player1";
+      kickwaitingroomall;
+      getwaitingroomusers;
+      set .@n, getwaitingroomstate(0, "Bouncer");
+      warpwaitingpc "Random", 0, 0;
+      warpwaitingpc "SavePoint", 0, 0, 3;
+      delwaitingroom;
+      """)
+
+    assert src =~ ~S{waitingroom("W", 8)}
+    assert src =~ ~S{waitingroom("Full", 8, "B::OnStart", 7, 5000, 50, 99)}
+    assert src =~ ~S{waitingroomkick("Bouncer", "player1")}
+    assert src =~ "kickwaitingroomall()"
+    assert src =~ "getwaitingroomusers()"
+    assert src =~ ~S{getwaitingroomstate(ctx, 0, "Bouncer")}
+    assert src =~ ~S{warpwaitingpc(:random, 0, 0)}
+    assert src =~ ~S{warpwaitingpc(:save_point, 0, 0, 3)}
+    assert src =~ "delwaitingroom()"
+
+    refute src =~ "todo(ctx, :waitingroom"
+    refute src =~ "todo(ctx, :waitingroomkick"
+    refute src =~ "todo(ctx, :kickwaitingroomall"
+    refute src =~ "todo(ctx, :getwaitingroomusers"
+    refute src =~ "todo(ctx, :warpwaitingpc"
+    refute src =~ "todo(ctx, :delwaitingroom"
+  end
 end
