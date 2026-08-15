@@ -223,6 +223,16 @@ message Envelope {
     ProgressBar progress_bar = 187;
     // 188: open the navigation window / start navigation (script `navigateto` buildin)
     NavigateTo navigate_to = 188;
+    // 189-191: NPC waiting room (chat room) client intents
+    WaitingRoomJoinRequest waiting_room_join_request = 189;
+    WaitingRoomLeaveRequest waiting_room_leave_request = 190;
+    WaitingRoomChatRequest waiting_room_chat_request = 191;
+    // 192-196: NPC waiting room authoritative state (nearby / members / joiner)
+    WaitingRoomInfo waiting_room_info = 192;
+    WaitingRoomRemoved waiting_room_removed = 193;
+    WaitingRoomJoinResult waiting_room_join_result = 194;
+    WaitingRoomMemberUpdate waiting_room_member_update = 195;
+    WaitingRoomChat waiting_room_chat = 196;
   }
 }
 
@@ -2200,4 +2210,67 @@ message HomunculusResult {
   bool success = 2;
   HomunculusError error = 3;
   HomunculusPrivateState state = 4;
+}
+
+// Client -> server, join an NPC waiting room (the owner NPC gid is the room id).
+// The password is always empty for NPC-owned rooms but is carried for fidelity.
+message WaitingRoomJoinRequest {
+  uint32 room_id = 1;   // the owner NPC gid
+  string password = 2;  // always empty for NPC rooms
+}
+
+// Client -> server, leave the waiting room the player is currently in.
+message WaitingRoomLeaveRequest {}
+
+// Client -> server, chat inside the waiting room the player is currently in.
+message WaitingRoomChatRequest {
+  string message = 1;
+}
+
+// A waiting-room member (roster entry).
+message WaitingRoomMember {
+  uint32 char_id = 1;
+  string name = 2;
+}
+
+// Server -> client, a waiting room appeared or its member count changed.
+// Broadcast to nearby players.
+message WaitingRoomInfo {
+  uint32 room_id = 1;       // the owner NPC gid
+  string title = 2;
+  uint32 member_count = 3;  // players in the room (the owner NPC is not counted)
+  uint32 limit = 4;         // the room limit (the owner NPC occupies one slot)
+  bool public = 5;          // always true for NPC rooms
+}
+
+// Server -> client, a waiting room disappeared. Broadcast to nearby players.
+message WaitingRoomRemoved {
+  uint32 room_id = 1;
+}
+
+// Server -> client, the outcome of a join attempt. Sent only to the joiner;
+// `members` is the full roster on success.
+message WaitingRoomJoinResult {
+  uint32 room_id = 1;
+  // 0 ok, 1 full, 2 wrong password, 3 too low level, 4 too high level, 5 no zeny, 6 kicked
+  uint32 result = 2;
+  repeated WaitingRoomMember members = 3;
+}
+
+// Server -> client, a member joined or left the room. Sent to the room's
+// members; a `kicked` leave is additionally sent to the kicked player.
+message WaitingRoomMemberUpdate {
+  uint32 room_id = 1;
+  bool joined = 2;
+  bool kicked = 3;
+  uint32 char_id = 4;
+  string name = 5;
+}
+
+// Server -> client, a chat message inside a waiting room. Sent to the room's members.
+message WaitingRoomChat {
+  uint32 room_id = 1;
+  uint32 char_id = 2;
+  string name = 3;
+  string message = 4;
 }

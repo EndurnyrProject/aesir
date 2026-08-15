@@ -53,6 +53,11 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.SkillMenu{}, {:world, :skill_menu}},
     {%Aesir.Net.ProductionResult{}, {:world, :production_result}},
     {%Aesir.Net.SkillTextInputRequest{}, {:world, :skill_text_input_request}},
+    {%Aesir.Net.WaitingRoomInfo{}, {:world, :waiting_room_info}},
+    {%Aesir.Net.WaitingRoomRemoved{}, {:world, :waiting_room_removed}},
+    {%Aesir.Net.WaitingRoomJoinResult{}, {:world, :waiting_room_join_result}},
+    {%Aesir.Net.WaitingRoomMemberUpdate{}, {:world, :waiting_room_member_update}},
+    {%Aesir.Net.WaitingRoomChat{}, {:world, :waiting_room_chat}},
     {%Aesir.Net.HomunculusResult{}, {:gameplay, :homunculus_result}},
     {%Aesir.Net.TradeRequestReceived{}, {:gameplay, :trade_request_received}},
     {%Aesir.Net.TradeOpened{}, {:gameplay, :trade_opened}},
@@ -73,16 +78,18 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
   end
 
   describe "delivery_scope/1" do
-    test "marks both Homunculus owner-private messages structurally" do
+    test "marks owner-private messages structurally" do
       assert MessageRouter.delivery_scope(%Aesir.Net.HomunculusResult{}) == :owner_only
       assert MessageRouter.delivery_scope(%Aesir.Net.HomunculusPrivateState{}) == :owner_only
+      assert MessageRouter.delivery_scope(%Aesir.Net.WaitingRoomJoinResult{}) == :owner_only
     end
 
     test "keeps existing public messages area-scoped" do
       for {struct, _route} <- @routes,
           struct.__struct__ not in [
             Aesir.Net.HomunculusResult,
-            Aesir.Net.HomunculusPrivateState
+            Aesir.Net.HomunculusPrivateState,
+            Aesir.Net.WaitingRoomJoinResult
           ] do
         assert MessageRouter.delivery_scope(struct) == :area
       end

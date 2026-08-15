@@ -113,6 +113,11 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.SkillMenu{}), do: {:world, :skill_menu}
   def route(%Aesir.Net.ProductionResult{}), do: {:world, :production_result}
   def route(%Aesir.Net.SkillTextInputRequest{}), do: {:world, :skill_text_input_request}
+  def route(%Aesir.Net.WaitingRoomInfo{}), do: {:world, :waiting_room_info}
+  def route(%Aesir.Net.WaitingRoomRemoved{}), do: {:world, :waiting_room_removed}
+  def route(%Aesir.Net.WaitingRoomJoinResult{}), do: {:world, :waiting_room_join_result}
+  def route(%Aesir.Net.WaitingRoomMemberUpdate{}), do: {:world, :waiting_room_member_update}
+  def route(%Aesir.Net.WaitingRoomChat{}), do: {:world, :waiting_room_chat}
 
   def route(%Aesir.Net.SkillList{}), do: {:bulk, :skill_list}
   def route(%Aesir.Net.InventoryList{}), do: {:bulk, :inventory_list}
@@ -128,6 +133,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   @spec delivery_scope(struct()) :: :owner_only | :area
   def delivery_scope(%Aesir.Net.HomunculusResult{}), do: :owner_only
   def delivery_scope(%Aesir.Net.HomunculusPrivateState{}), do: :owner_only
+  def delivery_scope(%Aesir.Net.WaitingRoomJoinResult{}), do: :owner_only
   def delivery_scope(_message), do: :area
 
   @doc """
