@@ -1860,4 +1860,72 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :warpwaitingpc"
     refute src =~ "todo(ctx, :delwaitingroom"
   end
+
+  test "ismounting is a nullary read over the riding bit" do
+    src =
+      gen!("""
+      if (ismounting()) close;
+      close;
+      """)
+
+    assert src =~ "Rathena.truthy?(ismounting(ctx))"
+    refute src =~ "Todo.call!(:ismounting"
+  end
+
+  test "getvariableofnpc reads another NPC's . variable" do
+    src =
+      gen!("""
+      set .@n, getvariableofnpc(.counter, "Target");
+      if (getvariableofnpc(.flag$, "Target")) close;
+      .@t = getvariableofnpc(.list[.@i], "Target");
+      close;
+      """)
+
+    assert src =~ ~S{get_npc_var_of(ctx, "counter", "Target", 0)}
+    assert src =~ ~S{get_npc_var_of(ctx, "flag$", "Target", "")}
+
+    assert src =~
+             ~S{Enum.at(get_npc_var_of(ctx, "list", "Target", []), get_local(ctx, :i, 0), 0)}
+
+    refute src =~ "Todo.call!(:getvariableofnpc"
+  end
+
+  test "set getvariableofnpc writes another NPC's . variable" do
+    src =
+      gen!("""
+      set getvariableofnpc(.counter, "Target"), 0;
+      set getvariableofnpc(.name$, "Target"), "x";
+      close;
+      """)
+
+    assert src =~ ~S{set_npc_var_of("counter", "Target", 0)}
+    assert src =~ ~S{set_npc_var_of("name$", "Target", "x")}
+    refute src =~ "todo(ctx, :getvariableofnpc"
+  end
+
+  test "getvariableofnpc with a dynamic ref stays a stub" do
+    src =
+      gen!("""
+      set .@n, getvariableofnpc(getd(".x"), "Target");
+      close;
+      """)
+
+    assert src =~ ~S|Todo.call!(:getvariableofnpc|
+  end
+
+  test "attachrid re-attaches in statement and expression position" do
+    src =
+      gen!("""
+      attachrid 2000001;
+      attachrid .@aid, true;
+      if (attachrid(.@origin)) close;
+      close;
+      """)
+
+    assert src =~ ~S{attachrid(ctx, 2_000_001)}
+    assert src =~ ~S{attachrid(ctx, get_local(ctx, :aid, 0), 1)}
+    assert src =~ ~r|\{ctx, v\d+\} = attachrid\(ctx, get_local\(ctx, :origin, 0\)\)|
+    refute src =~ "todo(ctx, :attachrid"
+    refute src =~ "Todo.call!(:attachrid"
+  end
 end

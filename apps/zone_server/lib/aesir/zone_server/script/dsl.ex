@@ -2164,6 +2164,38 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Reads another NPC's `.` variable by NPC name (rAthena `getvariableofnpc`).
+  Resolves `npc_name` through `Npc.Registry.by_name/1` (first placement) and
+  reads the variable keyed by that NPC's source tag; an unresolved name
+  returns `default`. Pure read, valid on both an attached and a detached ctx.
+  """
+  @spec get_npc_var_of(Ctx.t(), String.t(), String.t(), term()) :: term()
+  def get_npc_var_of(%Ctx{}, name, npc_name, default \\ 0) do
+    case NpcRegistry.by_name(npc_name) do
+      [{module, _placement} | _] -> Vars.get_npc({:npc, module.npc_id()}, name, default)
+      [] -> default
+    end
+  end
+
+  @doc """
+  Writes another NPC's `.` variable by NPC name (rAthena `getvariableofnpc` as
+  an assignment target). Resolves `npc_name` through `Npc.Registry.by_name/1`
+  and writes the variable keyed by that NPC's source tag; an unresolved name
+  logs a warning and no-ops. Never persists.
+  """
+  @spec set_npc_var_of(Ctx.t(), String.t(), String.t(), term()) :: Ctx.t()
+  def set_npc_var_of(%Ctx{status: {:error, _}} = ctx, _name, _npc_name, _value), do: ctx
+
+  def set_npc_var_of(%Ctx{} = ctx, name, npc_name, value) do
+    case NpcRegistry.by_name(npc_name) do
+      [{module, _placement} | _] -> Vars.put_npc({:npc, module.npc_id()}, name, value)
+      [] -> Logger.warning("npc getvariableofnpc: unknown npc #{inspect(npc_name)}")
+    end
+
+    ctx
+  end
+
+  @doc """
   Reads a variable whose full name — scope sigil and optional `[N]` array
   element — is only known at runtime (rAthena `getd("…")`). The name
   dispatches to the same backing store as static access, so a dynamically
@@ -2455,6 +2487,64 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   def checkfalcon(%Ctx{game_state: gs}) do
     if (gs.option &&& Option.id(:falcon)) != 0, do: 1, else: 0
+  end
+
+  @doc """
+  Whether the attached player is mounted (rAthena `ismounting`): `1` when the
+  riding option bit is set, else `0`. Aesir models only the Peco-Peco mount
+  (`set_riding/2`) and has no separate cash-mount concept, so this reads the
+  riding bit. Detached contexts report `0`.
+  """
+  @spec ismounting(Ctx.t()) :: 0 | 1
+  def ismounting(%Ctx{game_state: nil}), do: 0
+
+  def ismounting(%Ctx{game_state: gs}) do
+    if (gs.option &&& Option.id(:riding)) != 0, do: 1, else: 0
+  end
+
+  @doc """
+  Re-attaches the script to a different online player by account id (rAthena
+  `attachrid`), so subsequent commands and reads target that player.
+
+  Returns `{ctx, 1}` on success — ctx re-pointed at the target's session and
+  game state — or `{ctx, 0}` when the account is offline or has no character
+  in this zone. `force` is accepted for rAthena compatibility but has no
+  effect: Aesir has no notion of a player being attached to another script,
+  so an online target can always be re-attached.
+
+  The interaction coroutine still monitors its original session (its
+  `session_ref` is untouched), and `connection_pid` is left `nil` since the
+  target's connection is not tracked in the unit registry. `attachrid` is
+  intended for server-side state mutations (`give_item`, `set_char_var`,
+  `warp`, …) routed through `apply_op` on the re-pointed `session_pid`, not
+  for dialog or direct client sends to the target.
+  """
+  @spec attachrid(Ctx.t(), integer(), boolean()) :: {Ctx.t(), 0 | 1}
+  def attachrid(%Ctx{} = ctx, account_id), do: attachrid(ctx, account_id, true)
+
+  def attachrid(%Ctx{status: {:error, _}} = ctx, _account_id, _force), do: {ctx, 0}
+
+  def attachrid(%Ctx{} = ctx, account_id, _force) do
+    case UnitRegistry.get_char_id_by_account(account_id) do
+      {:ok, char_id} ->
+        case UnitRegistry.get_unit(:player, char_id) do
+          {:ok, {_module, game_state, pid}} when is_pid(pid) ->
+            {%{
+               ctx
+               | char_id: char_id,
+                 account_id: account_id,
+                 game_state: game_state,
+                 session_pid: pid,
+                 connection_pid: nil
+             }, 1}
+
+          _ ->
+            {ctx, 0}
+        end
+
+      {:error, _} ->
+        {ctx, 0}
+    end
   end
 
   @doc """

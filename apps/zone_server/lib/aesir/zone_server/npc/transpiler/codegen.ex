@@ -865,6 +865,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["{ctx, _} = #{fn_name(env, label)}(ctx, [#{rendered}])"], :cont}
   end
 
+  # `attachrid <account_id>{,<force>}` re-attaches the script to another player.
+  # The DSL returns `{ctx, success}`; statement position discards the flag.
+  defp emit_stmt({:cmd, "attachrid", args}, env) do
+    {pre, args} = hoist_all(args, env)
+
+    call =
+      case args do
+        [account_id] ->
+          "{ctx, _} = attachrid(ctx, #{render(account_id, env)})"
+
+        [account_id, force] ->
+          "{ctx, _} = attachrid(ctx, #{render(account_id, env)}, #{render(force, env)})"
+
+        _other ->
+          flag(:todo_fun)
+          "ctx = todo(ctx, :attachrid, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
+      end
+
+    {pre ++ [call], :cont}
+  end
+
   # A CommandMap-mapped function (hand-curated DSL primitive) wins over a
   # transpiled function module of the same name; anything else resolves to
   # the module transpiled in this or an earlier import run.
@@ -1794,6 +1815,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = setd(ctx, #{render(name, env)}, #{render(expr, env)})"], :cont}
   end
 
+  # `set getvariableofnpc(.var, "<npc>"), <value>` writes another NPC's `.`
+  # variable. Only a plain `.` var is writable this way; an indexed or dynamic
+  # ref stays a stub.
+  defp emit_assign({:call, "getvariableofnpc", [var_ref, npc_name]}, expr, env) do
+    {pre, expr} = hoist(expr, env)
+
+    case npc_var_of_key(var_ref) do
+      {:ok, key} ->
+        {pre ++
+           [
+             "ctx = set_npc_var_of(ctx, #{key}, #{render_str(npc_name, env)}, #{render(expr, env)})"
+           ], :cont}
+
+      :error ->
+        flag(:todo_fun)
+
+        {pre ++
+           [
+             "ctx = todo(ctx, :getvariableofnpc, [#{render(var_ref, env)}, #{render_str(npc_name, env)}, #{render(expr, env)}])"
+           ], :cont}
+    end
+  end
+
   defp emit_assign(target, expr, env) do
     {pre, expr} = hoist(expr, env)
 
@@ -1982,6 +2026,31 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp hoist_walk({:call, "input", [target | bounds]}, env, pre) do
     {status, lines} = input_lines(target, bounds, env)
     {{:temp, status}, Enum.reverse(lines) ++ pre}
+  end
+
+  # `attachrid(account_id{,force})` in expression position: hoist the
+  # re-attachment into a `{ctx, success}` binding so the success flag (1/0) is
+  # the expression's value.
+  defp hoist_walk({:call, "attachrid", args}, env, pre) do
+    {args, pre} = hoist_list(args, env, pre)
+    tmp = tmp_var()
+
+    case args do
+      [account_id] ->
+        {{:temp, tmp}, ["{ctx, #{tmp}} = attachrid(ctx, #{render(account_id, env)})" | pre]}
+
+      [account_id, force] ->
+        {{:temp, tmp},
+         [
+           "{ctx, #{tmp}} = attachrid(ctx, #{render(account_id, env)}, #{render(force, env)})"
+           | pre
+         ]}
+
+      _other ->
+        flag(:todo_mod)
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {{:temp, tmp}, ["#{tmp} = Todo.call!(:attachrid, [#{rendered}])" | pre]}
+    end
   end
 
   defp hoist_walk({:call, name, args}, env, pre) do
@@ -2213,6 +2282,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       _ -> unsupported_call("getd", args, env)
     end
   end
+
+  # `getvariableofnpc(<.var>, "<npc>")` reads another NPC's `.` variable by
+  # name; an indexed ref reads an array element. Any other ref shape (a dynamic
+  # `getd` name or a non-npc scope) stays a stub.
+  defp render({:call, "getvariableofnpc", [var_ref, npc_name]}, env) do
+    case npc_var_of_read(var_ref, render_str(npc_name, env), env) do
+      {:ok, expr} -> expr
+      :error -> unsupported_call("getvariableofnpc", [var_ref, npc_name], env)
+    end
+  end
+
+  defp npc_var_of_read({:var, :npc, name, type}, npc_name, _env) do
+    default = pad_default({:var, :npc, name, type})
+    {:ok, "get_npc_var_of(ctx, #{scope_var_key(name, type)}, #{npc_name}, #{default})"}
+  end
+
+  defp npc_var_of_read({:index, {:var, :npc, name, type}, index}, npc_name, env) do
+    default = pad_default({:var, :npc, name, type})
+
+    {:ok,
+     "Enum.at(get_npc_var_of(ctx, #{scope_var_key(name, type)}, #{npc_name}, []), " <>
+       "#{render(index, env)}, #{default})"}
+  end
+
+  defp npc_var_of_read(_ref, _npc_name, _env), do: :error
+
+  defp npc_var_of_key({:var, :npc, name, type}), do: {:ok, scope_var_key(name, type)}
+  defp npc_var_of_key(_ref), do: :error
 
   # rAthena atoi: C-style leading-integer parse, 0 when there are no digits.
   defp render({:call, "atoi", [value]}, env) do

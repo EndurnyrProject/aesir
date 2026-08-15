@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
                   getnpcid playerattached strnpcinfo checkweight isequippedcnt getarraysize
                   implode atoi compare preg_match sprintf getitemname getstrlen pow
                   charat delchar strtoupper substr charisalpha countstr explode insertchar
-                  replacestr strpos strtolower setd getd)
+                  replacestr strpos strtolower setd getd getvariableofnpc attachrid)
 
   @type analysis :: %{
           labels: [String.t()],
