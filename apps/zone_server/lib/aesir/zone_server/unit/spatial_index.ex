@@ -173,6 +173,48 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
+  Gets units of a specific type within a rectangular area.
+  Returns list of unit IDs.
+  """
+  @spec get_units_in_area(atom(), String.t(), integer(), integer(), integer(), integer()) ::
+          [integer()]
+  def get_units_in_area(unit_type, map_name, x1, y1, x2, y2) do
+    x_min = min(x1, x2)
+    x_max = max(x1, x2)
+    y_min = min(y1, y2)
+    y_max = max(y1, y2)
+
+    units =
+      map_name
+      |> cells_in_area(x_min, y_min, x_max, y_max)
+      |> Enum.flat_map(fn cell ->
+        case :ets.lookup(spatial_index_table(), cell) do
+          [{^cell, units_map}] ->
+            units_map
+            |> Map.get(unit_type, MapSet.new())
+            |> MapSet.to_list()
+
+          [] ->
+            []
+        end
+      end)
+      |> Enum.uniq()
+
+    units
+    |> Enum.filter(fn unit_id ->
+      key = {unit_type, unit_id}
+
+      case :ets.lookup(unit_positions_table(), key) do
+        [{^key, {^map_name, ux, uy}}] ->
+          ux >= x_min and ux <= x_max and uy >= y_min and uy <= y_max
+
+        _ ->
+          false
+      end
+    end)
+  end
+
+  @doc """
   Gets all units (of any type) in range of a position.
   Returns list of {unit_type, unit_id} tuples.
   """
@@ -299,6 +341,17 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
+  Gets all players within a rectangular area.
+  Returns list of character IDs.
+  This is a wrapper for backward compatibility.
+  """
+  @spec get_players_in_area(String.t(), integer(), integer(), integer(), integer()) ::
+          [integer()]
+  def get_players_in_area(map_name, x1, y1, x2, y2) do
+    get_units_in_area(:player, map_name, x1, y1, x2, y2)
+  end
+
+  @doc """
   Gets all players in a specific grid cell.
   This is a wrapper for backward compatibility.
   """
@@ -360,6 +413,13 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
 
     for cx <- (center_cx - cell_range)..(center_cx + cell_range),
         cy <- (center_cy - cell_range)..(center_cy + cell_range) do
+      {map_name, cx, cy}
+    end
+  end
+
+  defp cells_in_area(map_name, x_min, y_min, x_max, y_max) do
+    for cx <- div(x_min, @cell_size)..div(x_max, @cell_size),
+        cy <- div(y_min, @cell_size)..div(y_max, @cell_size) do
       {map_name, cx, cy}
     end
   end

@@ -81,6 +81,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -1014,6 +1015,123 @@ defmodule Aesir.ZoneServer.Script.Dsl do
       {:ok, %{game_state: new_game_state}} -> %{ctx | game_state: new_game_state}
       {:error, reason} -> Ctx.halt(ctx, reason)
     end
+  end
+
+  @doc """
+  Warps every player inside the rectangle `{x1,y1}`–`{x2,y2}` on `from_map` to
+  `to_map` at `{x3,y3}` (rAthena `areawarp`). The area-destination form
+  (adding `x4,y4`) relocates each player to a random cell inside that
+  rectangle instead of a fixed point.
+
+  A world effect that does not touch the attached player's state: the context
+  is returned unchanged and it runs even on a detached ctx. An offline or
+  unknown target is skipped, matching rAthena's success-on-absence.
+  """
+  @spec areawarp(
+          Ctx.t(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: Ctx.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def areawarp(%Ctx{status: {:error, _}} = ctx, _from, _x1, _y1, _x2, _y2, _to, _x3, _y3),
+    do: ctx
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def areawarp(%Ctx{} = ctx, from_map, x1, y1, x2, y2, to_map, x3, y3) do
+    warp_players_in_area(from_map, x1, y1, x2, y2, fn _ -> {to_map, x3, y3} end)
+    ctx
+  end
+
+  @spec areawarp(
+          Ctx.t(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer()
+        ) :: Ctx.t()
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def areawarp(
+        %Ctx{status: {:error, _}} = ctx,
+        _from,
+        _x1,
+        _y1,
+        _x2,
+        _y2,
+        _to,
+        _x3,
+        _y3,
+        _x4,
+        _y4
+      ),
+      do: ctx
+
+  # credo:disable-for-next-line Credo.Check.Refactor.FunctionArity
+  def areawarp(%Ctx{} = ctx, from_map, x1, y1, x2, y2, to_map, x3, y3, x4, y4) do
+    dx_min = min(x3, x4)
+    dx_max = max(x3, x4)
+    dy_min = min(y3, y4)
+    dy_max = max(y3, y4)
+
+    warp_players_in_area(from_map, x1, y1, x2, y2, fn _ ->
+      {to_map, Enum.random(dx_min..dx_max), Enum.random(dy_min..dy_max)}
+    end)
+
+    ctx
+  end
+
+  @doc """
+  Warps a specific player by character id (rAthena `warpchar`). The three-arg
+  form targets the attached player (equivalent to `warp/4`); the four-arg form
+  targets `char_id`, casting a warp to that player's session when they are
+  online and no-oping otherwise (rAthena returns success for an offline
+  target). "Random"/"SavePoint" string targets are not supported.
+  """
+  @spec warpchar(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
+  def warpchar(%Ctx{status: {:error, _}} = ctx, _map, _x, _y), do: ctx
+  def warpchar(%Ctx{} = ctx, map, x, y), do: warp(ctx, map, x, y)
+
+  @spec warpchar(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          Ctx.t()
+  def warpchar(%Ctx{status: {:error, _}} = ctx, _map, _x, _y, _char_id), do: ctx
+
+  def warpchar(%Ctx{} = ctx, map, x, y, char_id) do
+    if char_id == ctx.char_id do
+      warp(ctx, map, x, y)
+    else
+      case UnitRegistry.get_player_pid(char_id) do
+        {:ok, pid} -> PlayerSession.warp(pid, map, x, y)
+        {:error, :not_found} -> :ok
+      end
+
+      ctx
+    end
+  end
+
+  defp warp_players_in_area(from_map, x1, y1, x2, y2, destination) do
+    from_map
+    |> SpatialIndex.get_players_in_area(x1, y1, x2, y2)
+    |> Enum.each(fn char_id ->
+      case UnitRegistry.get_player_pid(char_id) do
+        {:ok, pid} ->
+          {map, x, y} = destination.(char_id)
+          PlayerSession.warp(pid, map, x, y)
+
+        {:error, :not_found} ->
+          :ok
+      end
+    end)
   end
 
   @doc """

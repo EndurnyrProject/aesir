@@ -249,4 +249,22 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
       assert SpatialIndex.get_units_on_map(:mob, "prontera") == []
     end
   end
+
+  describe "get_players_in_area" do
+    test "returns players inside the rectangle, excluding those outside" do
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+      SpatialIndex.add_player(1002, 60, 60, "prontera")
+      SpatialIndex.add_player(1003, 80, 80, "prontera")
+
+      assert Enum.sort(SpatialIndex.get_players_in_area("prontera", 45, 45, 65, 65)) ==
+               [1001, 1002]
+    end
+
+    test "normalizes reversed corners and is map-scoped" do
+      SpatialIndex.add_player(1001, 50, 50, "prontera")
+      SpatialIndex.add_player(1002, 50, 50, "geffen")
+
+      assert SpatialIndex.get_players_in_area("prontera", 60, 60, 40, 40) == [1001]
+    end
+  end
 end

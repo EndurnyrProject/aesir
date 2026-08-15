@@ -34,9 +34,11 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
   alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
@@ -867,6 +869,110 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = Ctx.halt(build_ctx(), :boom)
 
       assert Dsl.warp(ctx, :save_point) == ctx
+    end
+  end
+
+  describe "areawarp/9" do
+    test "warps every online player in the rectangle to the destination point" do
+      test_pid = self()
+
+      expect(SpatialIndex, :get_players_in_area, fn "que_god02", 15, 125, 185, 131 ->
+        [10_001, 10_002]
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn _ -> {:ok, test_pid} end)
+
+      stub(PlayerSession, :warp, fn _pid, map, x, y ->
+        send(test_pid, {:warped, map, x, y})
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.areawarp(ctx, "que_god02", 15, 125, 185, 131, "geffen", 120, 100) == ctx
+      assert_received {:warped, "geffen", 120, 100}
+      assert_received {:warped, "geffen", 120, 100}
+    end
+
+    test "skips players without a live session" do
+      expect(SpatialIndex, :get_players_in_area, fn "m", 0, 0, 10, 10 -> [101] end)
+      expect(UnitRegistry, :get_player_pid, fn 101 -> {:error, :not_found} end)
+      reject(&PlayerSession.warp/4)
+
+      ctx = build_ctx()
+      assert Dsl.areawarp(ctx, "m", 0, 0, 10, 10, "geffen", 1, 1) == ctx
+    end
+
+    test "short-circuits on an already-halted ctx" do
+      reject(&SpatialIndex.get_players_in_area/5)
+      ctx = Ctx.halt(build_ctx(), :boom)
+      assert Dsl.areawarp(ctx, "m", 0, 0, 10, 10, "geffen", 1, 1) == ctx
+    end
+  end
+
+  describe "areawarp/11" do
+    test "relocates each player to a random cell in the destination rectangle" do
+      test_pid = self()
+
+      expect(SpatialIndex, :get_players_in_area, fn "m", 0, 0, 10, 10 -> [101] end)
+      expect(UnitRegistry, :get_player_pid, fn _ -> {:ok, test_pid} end)
+
+      expect(PlayerSession, :warp, fn _pid, map, x, y ->
+        send(test_pid, {:warped, map, x, y})
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.areawarp(ctx, "m", 0, 0, 10, 10, "geffen", 5, 5, 8, 9) == ctx
+      assert_received {:warped, "geffen", x, y}
+      assert x in 5..8
+      assert y in 5..9
+    end
+  end
+
+  describe "warpchar/4" do
+    test "three-arg form delegates to warp on the attached player" do
+      relocated = %{build_game_state() | map_name: "prontera", x: 20, y: 145}
+
+      expect(WarpHandler, :warp, fn _session, "in_moc_16", 20, 145 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = Dsl.warpchar(build_ctx(), "in_moc_16", 20, 145)
+      assert Dsl.position(ctx) == {20, 145, "prontera"}
+    end
+
+    test "four-arg form with the attached char id delegates to warp" do
+      relocated = %{build_game_state() | map_name: "prontera", x: 20, y: 145}
+
+      expect(WarpHandler, :warp, fn _session, "in_moc_16", 20, 145 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = Dsl.warpchar(build_ctx(), "in_moc_16", 20, 145, 1)
+      assert Dsl.position(ctx) == {20, 145, "prontera"}
+    end
+
+    test "four-arg form with another char id casts to that session" do
+      test_pid = self()
+
+      expect(UnitRegistry, :get_player_pid, fn 999 -> {:ok, :pid} end)
+
+      expect(PlayerSession, :warp, fn pid, map, x, y ->
+        send(test_pid, {:warped, pid, map, x, y})
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.warpchar(ctx, "in_moc_16", 20, 145, 999) == ctx
+      assert_received {:warped, :pid, "in_moc_16", 20, 145}
+    end
+
+    test "offline target no-ops" do
+      expect(UnitRegistry, :get_player_pid, fn 999 -> {:error, :not_found} end)
+      reject(&PlayerSession.warp/4)
+
+      ctx = build_ctx()
+      assert Dsl.warpchar(ctx, "in_moc_16", 20, 145, 999) == ctx
     end
   end
 

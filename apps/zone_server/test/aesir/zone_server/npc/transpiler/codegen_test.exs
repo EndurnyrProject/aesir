@@ -1501,6 +1501,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :killmonsterall"
   end
 
+  test "areawarp maps point and area destinations, warpchar keeps the char id" do
+    src =
+      gen!("""
+      areawarp "que_god02",15,125,185,131,"geffen",120,100;
+      areawarp "bat_a01",0,0,10,10,"bat_a01",1,1,20,20;
+      warpchar "in_moc_16",20,145;
+      warpchar "in_moc_16",20,145,getcharid(0);
+      close;
+      """)
+
+    assert src =~ ~S|areawarp("que_god02", 15, 125, 185, 131, "geffen", 120, 100)|
+    assert src =~ ~S|areawarp("bat_a01", 0, 0, 10, 10, "bat_a01", 1, 1, 20, 20)|
+    assert src =~ ~S|warpchar("in_moc_16", 20, 145)|
+    assert src =~ ~S|warpchar("in_moc_16", 20, 145, getcharid(ctx, 0))|
+    refute src =~ "todo(ctx, :areawarp"
+    refute src =~ "todo(ctx, :warpchar"
+  end
+
   test "mobcount is a call read and sleep2 a statement command" do
     src =
       gen!("""

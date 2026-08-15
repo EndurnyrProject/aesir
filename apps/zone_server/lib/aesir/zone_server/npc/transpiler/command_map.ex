@@ -136,6 +136,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "killmonsterall" => %{dsl: "killmonsterall", args: [:string]},
     "sleep2" => %{dsl: "sleep2", args: [:int]},
     "warp" => %{shape: :warp},
+    "warpchar" => %{dsl: "warpchar", args: [:string, :int, :int, :int]},
+    "areawarp" => %{
+      dsl: "areawarp",
+      args: [:string, :int, :int, :int, :int, :string, :int, :int, :int, :int]
+    },
     "savepoint" => %{shape: :savepoint},
     "jobchange" => %{dsl: "jobchange", args: [:int]},
     "itemskill" => %{dsl: "itemskill", args: [:skill_opts]},
