@@ -396,6 +396,33 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:movement, {:warp, map_name, x, y}})
   end
 
+  @doc """
+  Warps this player after collecting `zeny` as an entry fee — the
+  `warpwaitingpc` path. `map_name` may be a map name, `:random` (a random cell
+  on the player's current map), or `:save_point`.
+  """
+  @spec warp_with_fee(
+          pid(),
+          String.t() | :random | :save_point,
+          integer(),
+          integer(),
+          non_neg_integer()
+        ) ::
+          :ok
+  def warp_with_fee(pid, map_name, x, y, zeny) do
+    GenServer.cast(pid, {:movement, {:warp_with_fee, map_name, x, y, zeny}})
+  end
+
+  @doc """
+  Clears this player's waiting-room binding when an NPC kicks them or deletes
+  the room. The cast is gid-validated: a binding that no longer matches
+  `room_gid` is left untouched.
+  """
+  @spec kick_from_waiting_room(pid(), non_neg_integer()) :: :ok
+  def kick_from_waiting_room(pid, room_gid) do
+    GenServer.cast(pid, {:waiting_room, {:kick, room_gid}})
+  end
+
   @doc "Gives `amount` of `item_def` to this player's inventory."
   @spec give_item(pid(), ItemDefinition.t(), pos_integer()) :: :ok
   def give_item(pid, item_def, amount) do
@@ -946,6 +973,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
     WarpHandler.handle_warp(map_name, x, y, state)
+  end
+
+  @impl true
+  def handle_cast({:movement, {:warp_with_fee, map_name, x, y, zeny}}, state) do
+    WarpHandler.handle_warp_with_fee(map_name, x, y, zeny, state)
+  end
+
+  @impl true
+  def handle_cast({:waiting_room, {:kick, room_gid}}, state) do
+    WaitingRoomHandler.handle_kick(state, room_gid)
   end
 
   # Inventory: item grants (GM @item, NPC/quest rewards), and the break/repair

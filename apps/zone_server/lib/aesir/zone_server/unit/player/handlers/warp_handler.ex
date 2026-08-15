@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
@@ -124,6 +125,60 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         )
 
         {:noreply, state}
+    end
+  end
+
+  @doc """
+  Warps this player after collecting an entry fee — the `warpwaitingpc` path.
+
+  Resolves `dest` (a map name, `:random` for a random cell on the current map,
+  or `:save_point` for the save point), debits `zeny` when the player can
+  afford it, then warps. A player who cannot pay is left in place, matching the
+  reference behavior of stopping at the first unaffordable member.
+  """
+  @spec handle_warp_with_fee(
+          String.t() | :random | :save_point,
+          integer(),
+          integer(),
+          non_neg_integer(),
+          session_state()
+        ) :: {:noreply, session_state()}
+  def handle_warp_with_fee(dest, x, y, zeny, %{game_state: game_state} = state) do
+    case resolve_destination(dest, x, y, game_state) do
+      {:ok, map, fx, fy} ->
+        {reply, state} =
+          if zeny > 0 do
+            ScriptEffectHandler.apply_op({:pay_zeny, zeny}, state)
+          else
+            {:ok, state}
+          end
+
+        case reply do
+          {:error, _reason} -> {:noreply, state}
+          _ok -> handle_warp(map, fx, fy, state)
+        end
+
+      {:error, reason} ->
+        Logger.warning("warp_with_fee failed for #{game_state.character_id}: #{inspect(reason)}")
+        {:noreply, state}
+    end
+  end
+
+  defp resolve_destination(:random, _x, _y, game_state) do
+    case Cell.random_traversable(game_state.map_name) do
+      {:ok, {x, y}} -> {:ok, game_state.map_name, x, y}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp resolve_destination(:save_point, _x, _y, game_state) do
+    {:ok, game_state.save_map, game_state.save_x, game_state.save_y}
+  end
+
+  defp resolve_destination(map, x, y, _game_state) do
+    case fetch_map(map) do
+      :ok -> {:ok, map, x, y}
+      {:error, reason} -> {:error, reason}
     end
   end
 

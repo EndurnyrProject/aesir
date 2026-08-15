@@ -29,6 +29,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.Net.SkillEffect
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
+  alias Aesir.Net.WaitingRoomInfo
+  alias Aesir.Net.WaitingRoomRemoved
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.CharacterPersistence
@@ -58,6 +60,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
@@ -2747,6 +2750,208 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Opens a waiting room above the calling NPC. `limit` counts the NPC itself, so
+  a limit of 8 admits 7 players. `opts` accepts `:event_ref` (`"Name::OnLabel"`
+  to fire), `:trigger` (defaults to `limit`), `:zeny` (entry fee, checked at
+  join and paid on warp), `:min_lvl`, and `:max_lvl`. Valid on a detached ctx; a
+  second room on the same NPC no-ops.
+  """
+  @spec waitingroom(Ctx.t(), String.t(), pos_integer(), keyword()) :: Ctx.t()
+  def waitingroom(%Ctx{status: {:error, _}} = ctx, _title, _limit, _opts), do: ctx
+
+  def waitingroom(%Ctx{npc_gid: nil} = ctx, _title, _limit, _opts),
+    do: warn_no_npc_gid(ctx, "waitingroom/3")
+
+  def waitingroom(%Ctx{npc_gid: gid} = ctx, title, limit, opts) do
+    event_ref = Keyword.get(opts, :event_ref, "")
+    trigger = Keyword.get(opts, :trigger, limit)
+    zeny = Keyword.get(opts, :zeny, 0)
+    min_lvl = Keyword.get(opts, :min_lvl, 1)
+    max_lvl = Keyword.get(opts, :max_lvl, Config.max_base_level())
+
+    case WaitingRoom.create(gid, title, limit, trigger, event_ref, zeny, min_lvl, max_lvl) do
+      :ok ->
+        broadcast_room_info(gid)
+        ctx
+
+      {:error, :already_exists} ->
+        Logger.warning("npc waitingroom/3: gid #{gid} already has a room, no-op")
+        ctx
+    end
+  end
+
+  @doc "Deletes the calling NPC's waiting room."
+  @spec delwaitingroom(Ctx.t()) :: Ctx.t()
+  def delwaitingroom(%Ctx{} = ctx), do: delwaitingroom(ctx, nil)
+
+  @doc "Deletes the named NPC's waiting room."
+  @spec delwaitingroom(Ctx.t(), String.t()) :: Ctx.t()
+  def delwaitingroom(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def delwaitingroom(%Ctx{} = ctx, name) do
+    case room_gid_for(ctx, name) do
+      nil ->
+        ctx
+
+      gid ->
+        members = WaitingRoom.members(gid)
+        WaitingRoom.delete(gid)
+        Enum.each(members, &kick_member(&1, gid))
+        broadcast_room_removed(gid)
+        ctx
+    end
+  end
+
+  @doc "Re-enables the calling NPC's waiting-room event, firing immediately if already met."
+  @spec enablewaitingroomevent(Ctx.t()) :: Ctx.t()
+  def enablewaitingroomevent(%Ctx{} = ctx), do: enablewaitingroomevent(ctx, nil)
+
+  @doc "Re-enables the named NPC's waiting-room event."
+  @spec enablewaitingroomevent(Ctx.t(), String.t()) :: Ctx.t()
+  def enablewaitingroomevent(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def enablewaitingroomevent(%Ctx{} = ctx, name) do
+    case room_gid_for(ctx, name) do
+      nil ->
+        ctx
+
+      gid ->
+        refire_if_due(gid)
+        ctx
+    end
+  end
+
+  @doc "Disables the calling NPC's waiting-room event."
+  @spec disablewaitingroomevent(Ctx.t()) :: Ctx.t()
+  def disablewaitingroomevent(%Ctx{} = ctx), do: disablewaitingroomevent(ctx, nil)
+
+  @doc "Disables the named NPC's waiting-room event."
+  @spec disablewaitingroomevent(Ctx.t(), String.t()) :: Ctx.t()
+  def disablewaitingroomevent(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def disablewaitingroomevent(%Ctx{} = ctx, name) do
+    case room_gid_for(ctx, name) do
+      nil ->
+        ctx
+
+      gid ->
+        WaitingRoom.disable_event(gid)
+        ctx
+    end
+  end
+
+  @doc """
+  Warps up to `n` members (default: the trigger count) out of the calling NPC's
+  waiting room, longest-waiting first. `map` may be a map name, `:random`, or
+  `:save_point`. Each warped account id is recorded in `$@warpwaitingpc` and the
+  count in `$@warpwaitingpcnum`.
+  """
+  @spec warpwaitingpc(Ctx.t(), String.t() | :random | :save_point, integer(), integer()) ::
+          Ctx.t()
+  def warpwaitingpc(%Ctx{status: {:error, _}} = ctx, _map, _x, _y), do: ctx
+  def warpwaitingpc(%Ctx{} = ctx, map, x, y), do: warpwaitingpc(ctx, map, x, y, nil)
+
+  @spec warpwaitingpc(
+          Ctx.t(),
+          String.t() | :random | :save_point,
+          integer(),
+          integer(),
+          non_neg_integer() | nil
+        ) :: Ctx.t()
+  def warpwaitingpc(%Ctx{status: {:error, _}} = ctx, _map, _x, _y, _n), do: ctx
+
+  def warpwaitingpc(%Ctx{npc_gid: nil} = ctx, _map, _x, _y, _n),
+    do: warn_no_npc_gid(ctx, "warpwaitingpc/4")
+
+  def warpwaitingpc(%Ctx{npc_gid: gid} = ctx, map, x, y, n) do
+    case WaitingRoom.get(gid) do
+      {:ok, room} ->
+        count = n || room.trigger
+
+        account_ids =
+          room.members
+          |> Enum.take(count)
+          |> Enum.map(fn member ->
+            warp_member(member, map, x, y, room.zeny)
+            member.account_id
+          end)
+
+        Vars.put_server_temp("warpwaitingpc", account_ids)
+        Vars.put_server_temp("warpwaitingpcnum", length(account_ids))
+        ctx
+
+      :error ->
+        ctx
+    end
+  end
+
+  @doc "Kicks the named character from the named NPC's waiting room."
+  @spec waitingroomkick(Ctx.t(), String.t(), String.t()) :: Ctx.t()
+  def waitingroomkick(%Ctx{status: {:error, _}} = ctx, _npc_name, _char_name), do: ctx
+
+  def waitingroomkick(%Ctx{} = ctx, npc_name, char_name) do
+    case room_gid_for(ctx, npc_name) do
+      nil ->
+        ctx
+
+      gid ->
+        case Enum.find(WaitingRoom.members(gid), &(&1.name == char_name)) do
+          nil -> :ok
+          member -> kick_member(member, gid)
+        end
+
+        WaitingRoom.kick(gid, char_name)
+        ctx
+    end
+  end
+
+  @doc "Kicks everyone out of the calling NPC's waiting room."
+  @spec kickwaitingroomall(Ctx.t()) :: Ctx.t()
+  def kickwaitingroomall(%Ctx{} = ctx), do: kickwaitingroomall(ctx, nil)
+
+  @doc "Kicks everyone out of the named NPC's waiting room."
+  @spec kickwaitingroomall(Ctx.t(), String.t()) :: Ctx.t()
+  def kickwaitingroomall(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def kickwaitingroomall(%Ctx{} = ctx, name) do
+    case room_gid_for(ctx, name) do
+      nil ->
+        ctx
+
+      gid ->
+        members = WaitingRoom.members(gid)
+        WaitingRoom.kick_all(gid)
+        Enum.each(members, &kick_member(&1, gid))
+        broadcast_room_info(gid)
+        ctx
+    end
+  end
+
+  @doc """
+  Stores the calling NPC's waiting-room members' account ids in
+  `.@waitingroom_users` and their count in `.@waitingroom_usercount`.
+  """
+  @spec getwaitingroomusers(Ctx.t()) :: Ctx.t()
+  def getwaitingroomusers(%Ctx{} = ctx), do: getwaitingroomusers(ctx, nil)
+
+  @spec getwaitingroomusers(Ctx.t(), String.t()) :: Ctx.t()
+  def getwaitingroomusers(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
+
+  def getwaitingroomusers(%Ctx{} = ctx, name) do
+    case room_gid_for(ctx, name) do
+      nil ->
+        ctx
+
+      gid ->
+        account_ids = Enum.map(WaitingRoom.members(gid), & &1.account_id)
+
+        ctx
+        |> set_local(:waitingroom_users, account_ids)
+        |> set_local(:waitingroom_usercount, length(account_ids))
+    end
+  end
+
+  @doc """
   Hides the calling NPC, making it invisible and unclickable regardless of
   its `enabled` flag (rAthena `hideonnpc`). Targets `ctx.npc_gid`; valid on
   both an attached and a detached ctx. A ctx with no `npc_gid` logs a
@@ -2902,6 +3107,76 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     case String.split(ref, "::", parts: 2) do
       [name, label] -> {:ok, name, label}
       _malformed -> :error
+    end
+  end
+
+  defp room_gid_for(ctx, nil), do: ctx.npc_gid
+
+  defp room_gid_for(_ctx, name) do
+    case NpcRegistry.by_name(name) do
+      [] ->
+        Logger.warning("npc waiting room: unknown name #{inspect(name)}")
+        nil
+
+      [{_module, placement} | _] ->
+        NpcRegistry.entity_id(placement)
+    end
+  end
+
+  defp refire_if_due(gid) do
+    case WaitingRoom.enable_event(gid) do
+      {:ok, room} ->
+        if WaitingRoom.fire_event?(room), do: NpcEvents.trigger(room.event_ref)
+
+      :error ->
+        :ok
+    end
+  end
+
+  defp broadcast_room_info(gid) do
+    with {:ok, room} <- WaitingRoom.get(gid),
+         {:ok, {_module, placement}} <- NpcRegistry.module_for_unit(gid) do
+      packet = %WaitingRoomInfo{
+        room_id: gid,
+        title: room.title,
+        member_count: length(room.members),
+        limit: room.limit,
+        public: true
+      }
+
+      Broadcast.to_in_range(placement.map, placement.x, placement.y, Config.view_range(), packet)
+    else
+      _not_found -> :ok
+    end
+  end
+
+  defp broadcast_room_removed(gid) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} ->
+        Broadcast.to_in_range(
+          placement.map,
+          placement.x,
+          placement.y,
+          Config.view_range(),
+          %WaitingRoomRemoved{room_id: gid}
+        )
+
+      :error ->
+        :ok
+    end
+  end
+
+  defp warp_member(%WaitingRoom.Member{char_id: char_id}, map, x, y, zeny) do
+    case UnitRegistry.get_player_pid(char_id) do
+      {:ok, pid} -> PlayerSession.warp_with_fee(pid, map, x, y, zeny)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  defp kick_member(%WaitingRoom.Member{char_id: char_id}, room_gid) do
+    case UnitRegistry.get_player_pid(char_id) do
+      {:ok, pid} -> PlayerSession.kick_from_waiting_room(pid, room_gid)
+      {:error, :not_found} -> :ok
     end
   end
 

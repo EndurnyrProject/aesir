@@ -112,6 +112,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
     %{game_state | waiting_room: nil}
   end
 
+  @doc """
+  Clears the player's room binding when an NPC kicks them or deletes the room,
+  notifying the player. The room itself was already removed from the shared
+  store by the caller, so this only fixes this player's single-writer field. A
+  binding that no longer matches `room_id` (the player already left) is left
+  untouched.
+  """
+  @spec handle_kick(session_state(), non_neg_integer()) :: {:noreply, session_state()}
+  def handle_kick(
+        %{game_state: %PlayerState{waiting_room: room_id} = game_state} = state,
+        room_id
+      ) do
+    MessageRouter.send_to(state.connection_pid, kick_packet(room_id, game_state))
+    {:noreply, StateCommit.commit(state, %{game_state | waiting_room: nil})}
+  end
+
+  def handle_kick(%{game_state: %PlayerState{}} = state, _room_id), do: {:noreply, state}
+
+  defp kick_packet(room_id, game_state) do
+    %WaitingRoomMemberUpdate{
+      room_id: room_id,
+      joined: false,
+      kicked: true,
+      char_id: game_state.character_id,
+      name: game_state.character_name
+    }
+  end
+
   defp member(game_state) do
     %WaitingRoom.Member{
       char_id: game_state.character_id,
