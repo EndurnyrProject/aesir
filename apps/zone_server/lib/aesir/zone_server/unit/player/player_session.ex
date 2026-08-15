@@ -56,6 +56,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -1310,6 +1311,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
       GuildSync.sync(game_state, online: false)
     end
 
+    game_state = WaitingRoomHandler.leave_if_in_room(game_state)
     WarpHandler.leave_current_map(game_state, DespawnReason.logged_out())
 
     unless game_state.action_state == :dead do

@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           process_pid: pid() | nil,
           party_id: non_neg_integer(),
           guild_id: non_neg_integer(),
+          waiting_room: non_neg_integer() | nil,
           sex: String.t(),
           hair: integer(),
           hair_color: integer(),
@@ -307,6 +308,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # kept current by Guild.Manager pushes (`characters.guild_id` is the
     # source of truth; this mirrors it for the session's lifetime).
     guild_id: 0,
+
+    # NPC waiting room the player is currently in (the owner NPC gid), or nil.
+    # Single-writer field: only WaitingRoomHandler mutates it.
+    waiting_room: nil,
 
     # Marriage partner char id (0 = unmarried), sourced from the Character at
     # spawn. Read-only for now (no marriage system); backs the `getpartnerid`

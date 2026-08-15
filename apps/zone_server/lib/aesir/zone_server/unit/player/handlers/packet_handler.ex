@@ -71,6 +71,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.VendingListRequest
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingPurchaseRequest
+  alias Aesir.Net.WaitingRoomChatRequest
+  alias Aesir.Net.WaitingRoomJoinRequest
+  alias Aesir.Net.WaitingRoomLeaveRequest
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -98,6 +101,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -485,6 +489,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # the sole writer, so the handler runs the sell transaction inline in this session.
   def handle_message(%NpcSellRequest{} = msg, state) do
     NpcShopHandler.sell(state, msg)
+  end
+
+  # WaitingRoomJoinRequest - Player joins an NPC waiting room (clicks its bubble).
+  def handle_message(%WaitingRoomJoinRequest{room_id: room_id}, state) do
+    WaitingRoomHandler.join(state, room_id)
+  end
+
+  # WaitingRoomLeaveRequest - Player leaves the waiting room they are currently in.
+  def handle_message(%WaitingRoomLeaveRequest{}, state) do
+    WaitingRoomHandler.leave(state)
+  end
+
+  # WaitingRoomChatRequest - Player chats inside their current waiting room.
+  def handle_message(%WaitingRoomChatRequest{message: message}, state) do
+    WaitingRoomHandler.chat(state, message)
   end
 
   def handle_message(message, state) do
