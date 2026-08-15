@@ -129,6 +129,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{shape: :monster}} = CommandMap.command("monster")
   end
 
+  test "areamonster maps to its dedicated shape" do
+    assert {:ok, %{shape: :areamonster}} = CommandMap.command("areamonster")
+    assert CommandMap.supported?("areamonster")
+    assert CommandMap.supported?("AreaMonster")
+  end
+
   test "emotion maps to the emotion DSL op with an emote arg" do
     assert {:ok, %{dsl: "emotion", args: [:emote]}} = CommandMap.command("emotion")
   end

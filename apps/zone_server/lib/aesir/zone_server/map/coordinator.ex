@@ -63,6 +63,7 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # mob comes back as soon as the blocker clears instead of after a possibly
   # long respawn window.
   @spawn_retry_delay 5_000
+  @spawn_position_attempts 100
 
   defstruct [
     :map_name,
@@ -253,6 +254,32 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @doc """
+  Spawns a single monster at a random walkable cell inside a rectangle, the
+  `areamonster` script-command path. Like `summon_mob/5` the mob is attackable,
+  carries a respawn time of 0 and is not re-spawned on death; unlike it, the
+  spawn cell is picked uniformly from the (normalized) `{x1, y1, x2, y2}` box
+  each call, so a `:amount` loop lands each instance on its own cell.
+  """
+  @spec summon_mob_area(
+          String.t(),
+          integer(),
+          {integer(), integer(), integer(), integer()},
+          keyword()
+        ) ::
+          {:ok, integer()} | {:error, term()}
+  def summon_mob_area(map_name, mob_id, area, opts \\ []) do
+    clean_name = String.replace_suffix(map_name, ".gat", "")
+
+    case lookup_server(clean_name) do
+      [{_pid, _}] ->
+        GenServer.call(server(clean_name), {:summon_mob_area, mob_id, area, opts})
+
+      [] ->
+        {:error, :map_not_found}
+    end
+  end
+
+  @doc """
   Gets information about all mobs on the map.
   """
   def get_mob_info(map_name) do
@@ -410,6 +437,23 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     case MobManagement.get_mob_by_id(mob_id) do
       {:ok, mob_data} ->
         case summon_position({x, y}, state.map_data) do
+          {:ok, position} ->
+            {result, new_state} = place_mob(mob_data, position, opts, state)
+            {:reply, result, new_state}
+
+          {:error, :no_walkable_cell} = error ->
+            {:reply, error, state}
+        end
+
+      {:error, reason} ->
+        {:reply, {:error, reason}, state}
+    end
+  end
+
+  def handle_call({:summon_mob_area, mob_id, area, opts}, _from, state) do
+    case MobManagement.get_mob_by_id(mob_id) do
+      {:ok, mob_data} ->
+        case random_rect_cell(area, state.map_data, @spawn_position_attempts) do
           {:ok, position} ->
             {result, new_state} = place_mob(mob_data, position, opts, state)
             {:reply, result, new_state}
@@ -894,7 +938,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   # random walkable cell anywhere on the map (the common case in imported spawn
   # data), `xs`/`ys` > 0 a random walkable cell in the area around `{x, y}`, and
   # a bare `{x, y}` the exact cell.
-  @spawn_position_attempts 100
 
   defp calculate_spawn_position(%MobSpawn.SpawnArea{x: 0, y: 0}, %MapData{} = map_data) do
     random_walkable_cell(map_data, @spawn_position_attempts)
@@ -944,6 +987,22 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       not match?(%MapData{}, map_data) -> {:error, :no_walkable_cell}
       Cell.traversable?(map_data.name, x, y) -> {:ok, {x, y}}
       attempts > 1 -> random_area_cell(spawn_area, map_data, attempts - 1)
+      true -> {:error, :no_walkable_cell}
+    end
+  end
+
+  # A random walkable cell inside a normalized rectangle (`areamonster`), the
+  # coordinate counterpart of `random_area_cell/3` for center+radius spawns.
+  defp random_rect_cell(_area, _map_data, 0), do: {:error, :no_walkable_cell}
+
+  defp random_rect_cell({x1, y1, x2, y2}, map_data, attempts) do
+    x = min(x1, x2) + :rand.uniform(abs(x2 - x1) + 1) - 1
+    y = min(y1, y2) + :rand.uniform(abs(y2 - y1) + 1) - 1
+
+    cond do
+      not match?(%MapData{}, map_data) -> {:error, :no_walkable_cell}
+      Cell.traversable?(map_data.name, x, y) -> {:ok, {x, y}}
+      attempts > 1 -> random_rect_cell({x1, y1, x2, y2}, map_data, attempts - 1)
       true -> {:error, :no_walkable_cell}
     end
   end

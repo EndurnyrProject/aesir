@@ -747,6 +747,41 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S|todo(:monster, ["prontera", 155, 180])|
   end
 
+  test "areamonster maps onto summon_mob_area with map, rect, amount and event" do
+    src =
+      gen!("""
+      areamonster "job_duncer",68,105,70,107,"Poring",1002,1,"dance#poring::OnMyMobDead";
+      areamonster "this",68,105,70,107,"P",PORING,2;
+      close;
+      """)
+
+    assert src =~ ~S|summon_mob_area(|
+    assert src =~ ~S|mob_id: 1002|
+    assert src =~ ~S|map: "job_duncer"|
+    assert src =~ ~S|area: {68, 105, 70, 107}|
+    assert src =~ ~S|event: "dance#poring::OnMyMobDead"|
+
+    assert src =~ ~S|mob_name: "PORING"|
+    assert src =~ ~S|amount: 2|
+    refute src =~ ~S|map: "this"|
+  end
+
+  test "areamonster dynamic args render; wrong arity stays a stub" do
+    src =
+      gen!("""
+      AreaMonster .@map$,.@x1,.@y1,.@x2,.@y2," ",1002,.@n;
+      areamonster "prontera",68,105,70,107,"Poring",1002;
+      close;
+      """)
+
+    assert src =~ ~S|get_local(ctx, :x1, 0)|
+    assert src =~ ~S|get_local(ctx, :y1, 0)|
+    assert src =~ ~S|get_local(ctx, :x2, 0)|
+    assert src =~ ~S|get_local(ctx, :y2, 0)|
+    assert src =~ ~S|amount: get_local(ctx, :n, 0)|
+    assert src =~ ~S|todo(:areamonster, ["prontera", 68, 105, 70, 107, "Poring", 1002])|
+  end
+
   test "setd renders a runtime variable write (literal and dynamic name)" do
     src =
       gen!("""

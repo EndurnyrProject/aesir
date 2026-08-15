@@ -1242,6 +1242,30 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Spawns monsters at random walkable cells inside a rectangle — the
+  `areamonster` script-command path.
+
+  `opts` accepts `:mob_id` or `:mob_name` (one is required; `:mob_name` is the
+  AEGIS name, matching `MobManagement.get_mob_by_name/1`), `:area` as a
+  `{x1, y1, x2, y2}` rectangle (required), `:map` to spawn on an explicit map
+  (defaults to the player's map; rAthena `areamonster "map",...` with `"this"`
+  meaning the player's map is handled by omitting `:map`), `:amount` (spawn
+  count, default 1), `:aggressive` (accepted but deferred), and `:event`
+  (optional OnMyMobDead ref, validated like `summon_mob/2`). Each instance
+  lands on its own random walkable cell inside the rectangle; an unknown mob,
+  map, or spawn failure halts the context.
+  """
+  @spec summon_mob_area(Ctx.t(), keyword()) :: Ctx.t()
+  def summon_mob_area(%Ctx{status: {:error, _}} = ctx, _opts), do: ctx
+
+  def summon_mob_area(%Ctx{} = ctx, opts) do
+    case resolve_mob(opts) do
+      {:ok, mob_data} -> spawn_mob_area(ctx, mob_data.id, opts)
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  @doc """
   The player's current zeny. Pure read over the ctx snapshot.
   """
   @spec zeny(Ctx.t()) :: non_neg_integer()
@@ -4299,6 +4323,39 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
     Enum.reduce_while(1..amount//1, ctx, fn _n, acc ->
       case Coordinator.summon_mob(map_name, mob_id, x, y, summon_opts(opts)) do
+        {:ok, _instance_id} -> {:cont, acc}
+        {:error, reason} -> {:halt, Ctx.halt(acc, reason)}
+      end
+    end)
+  end
+
+  defp spawn_mob_area(%Ctx{} = ctx, mob_id, opts) do
+    case Keyword.get(opts, :map) do
+      nil -> spawn_mob_area_here(ctx, mob_id, opts)
+      map -> do_summon_area(ctx, map, mob_id, opts)
+    end
+  end
+
+  defp spawn_mob_area_here(%Ctx{game_state: gs} = ctx, mob_id, opts) when not is_nil(gs) do
+    do_summon_area(ctx, gs.map_name, mob_id, opts)
+  end
+
+  defp spawn_mob_area_here(%Ctx{npc_gid: nil} = ctx, _mob_id, _opts),
+    do: Ctx.halt(ctx, :no_player)
+
+  defp spawn_mob_area_here(%Ctx{npc_gid: gid} = ctx, mob_id, opts) do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} -> do_summon_area(ctx, placement.map, mob_id, opts)
+      :error -> Ctx.halt(ctx, :no_player)
+    end
+  end
+
+  defp do_summon_area(ctx, map_name, mob_id, opts) do
+    area = Keyword.fetch!(opts, :area)
+    amount = Keyword.get(opts, :amount, 1)
+
+    Enum.reduce_while(1..amount//1, ctx, fn _n, acc ->
+      case Coordinator.summon_mob_area(map_name, mob_id, area, summon_opts(opts)) do
         {:ok, _instance_id} -> {:cont, acc}
         {:error, reason} -> {:halt, Ctx.halt(acc, reason)}
       end

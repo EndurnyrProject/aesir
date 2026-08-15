@@ -198,6 +198,33 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
       assert {:error, :map_not_found} =
                Coordinator.summon_mob("no_such_map_registered", @poring_id, 10, 10)
     end
+
+    test "handle_call({:summon_mob_area, ...}) spawns at a random walkable cell inside the rectangle" do
+      stub(MobSupervisor, :spawn_mob, fn _map, %MobState{}, _opts -> {:ok, self()} end)
+
+      map_data = MapData.new("prontera", 40, 40)
+      :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map_data})
+
+      state = %Coordinator{map_name: "prontera", map_data: map_data, next_mob_id: 1}
+
+      {:reply, {:ok, instance_id}, _new_state} =
+        Coordinator.handle_call(
+          {:summon_mob_area, @poring_id, {10, 10, 15, 20}, []},
+          {self(), nil},
+          state
+        )
+
+      assert {:ok, {MobState, %MobState{} = mob, _pid}} =
+               UnitRegistry.get_unit(:mob, instance_id)
+
+      assert mob.x in 10..15
+      assert mob.y in 10..20
+    end
+
+    test "summon_mob_area/4 returns :map_not_found when no coordinator runs for the map" do
+      assert {:error, :map_not_found} =
+               Coordinator.summon_mob_area("no_such_map_registered", @poring_id, {10, 10, 20, 20})
+    end
   end
 
   describe "mob instance id allocation" do

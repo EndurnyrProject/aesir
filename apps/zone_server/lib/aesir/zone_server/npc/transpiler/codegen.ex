@@ -1078,6 +1078,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `areamonster "<map>",<x1>,<y1>,<x2>,<y2>,"<display name>",<mob>,<amount>{,"<event>"{,...}}}`
+  # → summon_mob_area. Same drops as `monster` (display name, size/ai tail);
+  # the four coordinates become the `:area` rectangle and `"this"` still maps to
+  # the attached map.
+  defp emit_mapped(
+         _name,
+         %{shape: :areamonster},
+         [map, x1, y1, x2, y2, _display, mob, amount | rest],
+         env
+       ) do
+    {pre, [map, x1, y1, x2, y2, mob, amount | rest]} =
+      hoist_all([map, x1, y1, x2, y2, mob, amount | Enum.take(rest, 1)], env)
+
+    parts =
+      [monster_mob(mob, env), monster_map(map, env), area_arg(x1, y1, x2, y2, env)] ++
+        monster_amount(amount, env) ++ monster_event(rest, env)
+
+    {pre ++
+       ["ctx = summon_mob_area(ctx, #{parts |> List.flatten() |> Enum.join(", ")})"], :cont}
+  end
+
+  defp emit_mapped(name, %{shape: :areamonster}, args, env) do
+    {pre, args} = hoist_all(args, env)
+    rendered = Enum.map_join(args, ", ", &render(&1, env))
+    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+  end
+
   # `navigateto "<map>"{,<x>,<y>,<flag>,<hide_window>,<monster_id>}` — open the
   # client navigation window toward a map coordinate or a tracked monster. The
   # map is required; the trailing args default to (0,0), NAV_KAFRA_AND_AIRSHIP,
@@ -1344,6 +1371,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       _ -> "at: {#{render(x, env)}, #{render(y, env)}}"
     end
   end
+
+  defp area_arg(x1, y1, x2, y2, env),
+    do: "area: {#{render(x1, env)}, #{render(y1, env)}, #{render(x2, env)}, #{render(y2, env)}}"
 
   defp literal_coord({:int, n}), do: n
   defp literal_coord({:neg, {:int, n}}), do: -n
@@ -2293,24 +2323,6 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
-  defp npc_var_of_read({:var, :npc, name, type}, npc_name, _env) do
-    default = pad_default({:var, :npc, name, type})
-    {:ok, "get_npc_var_of(ctx, #{scope_var_key(name, type)}, #{npc_name}, #{default})"}
-  end
-
-  defp npc_var_of_read({:index, {:var, :npc, name, type}, index}, npc_name, env) do
-    default = pad_default({:var, :npc, name, type})
-
-    {:ok,
-     "Enum.at(get_npc_var_of(ctx, #{scope_var_key(name, type)}, #{npc_name}, []), " <>
-       "#{render(index, env)}, #{default})"}
-  end
-
-  defp npc_var_of_read(_ref, _npc_name, _env), do: :error
-
-  defp npc_var_of_key({:var, :npc, name, type}), do: {:ok, scope_var_key(name, type)}
-  defp npc_var_of_key(_ref), do: :error
-
   # rAthena atoi: C-style leading-integer parse, 0 when there are no digits.
   defp render({:call, "atoi", [value]}, env) do
     flag(:rathena)
@@ -2432,6 +2444,26 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     flag(:todo_mod)
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
   end
+
+  # `getvariableofnpc(.var, "<npc>")` read/write helpers. Defined outside the
+  # `render/2` clause group so that group stays contiguous.
+  defp npc_var_of_read({:var, :npc, name, type}, npc_name, _env) do
+    default = pad_default({:var, :npc, name, type})
+    {:ok, "get_npc_var_of(ctx, #{scope_var_key(name, type)}, #{npc_name}, #{default})"}
+  end
+
+  defp npc_var_of_read({:index, {:var, :npc, name, type}, index}, npc_name, env) do
+    default = pad_default({:var, :npc, name, type})
+
+    {:ok,
+     "Enum.at(get_npc_var_of(ctx, #{scope_var_key(name, type)}, #{npc_name}, []), " <>
+       "#{render(index, env)}, #{default})"}
+  end
+
+  defp npc_var_of_read(_ref, _npc_name, _env), do: :error
+
+  defp npc_var_of_key({:var, :npc, name, type}), do: {:ok, scope_var_key(name, type)}
+  defp npc_var_of_key(_ref), do: :error
 
   defp item_group_optional_args(args, types, env) do
     case length(args) - length(types) do

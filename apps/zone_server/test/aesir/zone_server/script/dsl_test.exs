@@ -1278,6 +1278,108 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "summon_mob_area/2" do
+    test "summons the mob in the requested rectangle on the player's map" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob_area, fn map, mob_id, area, _opts ->
+        send(test_pid, {:summoned, map, mob_id, area})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob_area(build_ctx(), mob_id: @poring_id, area: {68, 105, 70, 107})
+
+      assert ctx.status == :ok
+      assert_received {:summoned, "prontera", @poring_id, {68, 105, 70, 107}}
+    end
+
+    test ":map overrides the player's map" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob_area, fn map, _mob_id, _area, _opts ->
+        send(test_pid, {:summoned, map})
+        {:ok, 12_345}
+      end)
+
+      ctx =
+        Dsl.summon_mob_area(build_ctx(), mob_id: @poring_id, map: "gef_dun00", area: {1, 2, 3, 4})
+
+      assert ctx.status == :ok
+      assert_received {:summoned, "gef_dun00"}
+    end
+
+    test ":amount summons the mob once per count" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob_area, 3, fn _map, mob_id, _area, _opts ->
+        send(test_pid, {:summoned, mob_id})
+        {:ok, 12_345}
+      end)
+
+      ctx = Dsl.summon_mob_area(build_ctx(), mob_id: @poring_id, area: {1, 2, 3, 4}, amount: 3)
+
+      assert ctx.status == :ok
+      assert_received {:summoned, @poring_id}
+      assert_received {:summoned, @poring_id}
+      assert_received {:summoned, @poring_id}
+    end
+
+    test "halts :map_not_found when the target map has no coordinator" do
+      stub(Coordinator, :summon_mob_area, fn _map, _mob_id, _area, _opts ->
+        {:error, :map_not_found}
+      end)
+
+      ctx =
+        Dsl.summon_mob_area(build_ctx(),
+          mob_id: @poring_id,
+          map: "no_such_map",
+          area: {1, 2, 3, 4}
+        )
+
+      assert ctx.status == {:error, :map_not_found}
+    end
+
+    test "halts on an unknown mob id without summoning" do
+      stub(Coordinator, :summon_mob_area, fn _map, _mob_id, _area, _opts ->
+        flunk("summon_mob_area should not be called for an unknown mob")
+      end)
+
+      ctx = Dsl.summon_mob_area(build_ctx(), mob_id: 9_999_999, area: {1, 2, 3, 4})
+
+      assert ctx.status == {:error, :mob_not_found}
+    end
+
+    test "returns a halted ctx unchanged without summoning" do
+      stub(Coordinator, :summon_mob_area, fn _map, _mob_id, _area, _opts ->
+        flunk("summon_mob_area should not be called on a halted ctx")
+      end)
+
+      ctx = Ctx.halt(build_ctx(), :already_dead)
+
+      assert Dsl.summon_mob_area(ctx, mob_id: @poring_id, area: {1, 2, 3, 4}) == ctx
+    end
+
+    test "threads a well-formed :event ref into the coordinator opts" do
+      test_pid = self()
+
+      expect(Coordinator, :summon_mob_area, fn _map, _mob_id, _area, opts ->
+        send(test_pid, {:summon_opts, opts})
+        {:ok, 12_345}
+      end)
+
+      ctx =
+        Dsl.summon_mob_area(build_ctx(),
+          mob_id: @poring_id,
+          area: {1, 2, 3, 4},
+          event: "Guard::OnDead"
+        )
+
+      assert ctx.status == :ok
+      assert_received {:summon_opts, opts}
+      assert Keyword.get(opts, :event) == "Guard::OnDead"
+    end
+  end
+
   describe "summon_random_mob/2" do
     test "summons a valid catalog mob at the player's position" do
       test_pid = self()

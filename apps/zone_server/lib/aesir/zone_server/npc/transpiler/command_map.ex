@@ -51,6 +51,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :monster}` — `monster "map",x,y,"name",id,amount{,"event"...}`
     → `summon_mob(ctx, mob_id: _, map: _, at: _, ...)`; the display name and
     the size/ai tail are dropped.
+  - `%{shape: :areamonster}` — `areamonster "map",x1,y1,x2,y2,"name",id,
+    amount{,"event"...}` → `summon_mob_area(ctx, mob_id: _, map: _, area: _,
+    ...)`; the display name and the size/ai tail are dropped like `monster`.
   - `%{shape: :questinfo, dsl: name}` — `questinfo <Icon>{,<Mark Color>{,"<cond>"}}`
     (OnInit-only): the `QTYPE_*`/`QMARK_*` constants resolve to their client
     ints and a string-literal condition transpiles into a `(ctx -> boolean)`
@@ -157,6 +160,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "initnpctimer" => %{shape: :timer, dsl: "initnpctimer"},
     "stopnpctimer" => %{shape: :timer, dsl: "stopnpctimer"},
     "monster" => %{shape: :monster},
+    "areamonster" => %{shape: :areamonster},
     "announce" => %{shape: :announce, dsl: "announce", fixed: 2},
     "broadcast" => %{shape: :announce, dsl: "broadcast", fixed: 2},
     "mapannounce" => %{shape: :announce, dsl: "mapannounce", fixed: 3},
