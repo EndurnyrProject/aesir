@@ -141,6 +141,15 @@ defmodule Aesir.ZoneServer.Script.RathenaTest do
 
       assert Rathena.replacestr("abc", "", "x") == "abc"
     end
+
+    test "delchar/2 removes one grapheme at the index, out-of-range unchanged" do
+      assert Rathena.delchar("hello", 1) == "hllo"
+      assert Rathena.delchar("aé🙂z", 2) == "aéz"
+      assert Rathena.delchar("abc", 0) == "bc"
+      assert Rathena.delchar("abc", -1) == "abc"
+      assert Rathena.delchar("abc", 3) == "abc"
+      assert Rathena.delchar("abc", 99) == "abc"
+    end
   end
 
   describe "regex, math, item, and formatting helpers" do

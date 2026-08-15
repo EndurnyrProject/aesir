@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Analyzer do
                   setarray deletearray callsub callfunc getarg getargcount rand getnpctimer
                   getnpcid playerattached strnpcinfo checkweight isequippedcnt getarraysize
                   implode atoi compare preg_match sprintf getitemname getstrlen pow
-                  charat strtoupper substr charisalpha countstr explode insertchar
+                  charat delchar strtoupper substr charisalpha countstr explode insertchar
                   replacestr strpos strtolower setd getd)
 
   @type analysis :: %{

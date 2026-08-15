@@ -177,6 +177,18 @@ defmodule Aesir.ZoneServer.Script.Rathena do
     left <> character <> right
   end
 
+  @doc "Removes the grapheme at `index`, returning the string unchanged when out of range."
+  @spec delchar(term(), integer()) :: String.t()
+  def delchar(value, index) do
+    string = stringify(value)
+
+    if index >= 0 and index < String.length(string) do
+      String.slice(string, 0, index) <> String.slice(string, index + 1, String.length(string))
+    else
+      string
+    end
+  end
+
   @doc "Returns the grapheme index of `needle` at or after `offset`, or `-1`."
   @spec strpos(term(), term(), integer()) :: integer()
   def strpos(haystack, needle, offset \\ 0)

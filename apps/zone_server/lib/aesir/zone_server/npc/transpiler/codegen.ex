@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "strtoupper" => [1],
     "substr" => [3],
     "charisalpha" => [2],
+    "delchar" => [2],
     "countstr" => [2, 3],
     "insertchar" => [3],
     "replacestr" => [3, 4, 5],

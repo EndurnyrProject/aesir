@@ -162,6 +162,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "mapannounce" => %{shape: :announce, dsl: "mapannounce", fixed: 3},
     "areaannounce" => %{shape: :announce, dsl: "areaannounce", fixed: 7},
     "dispbottom" => %{shape: :announce, dsl: "dispbottom", fixed: 1},
+    "logmes" => %{dsl: "logmes", args: [:string]},
     "setcart" => %{shape: :opt1, dsl: "setcart"},
     "setfalcon" => %{shape: :riding, dsl: "setfalcon"},
     "setriding" => %{shape: :riding, dsl: "set_riding"},

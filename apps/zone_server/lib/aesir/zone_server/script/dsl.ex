@@ -974,6 +974,25 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   @doc """
+  Logs `message` to the server log (rAthena `logmes`), prefixed with the
+  invoking player's identity when attached, or the running NPC's gid when
+  detached. Purely observational: the context is returned unchanged and it runs
+  even on a detached ctx (rAthena logs via the NPC when no player is present).
+  """
+  @spec logmes(Ctx.t(), String.t()) :: Ctx.t()
+  def logmes(%Ctx{status: {:error, _}} = ctx, _message), do: ctx
+
+  def logmes(%Ctx{game_state: nil, npc_gid: gid} = ctx, message) do
+    Logger.info("[npc log] npc=#{gid}: #{message}")
+    ctx
+  end
+
+  def logmes(%Ctx{game_state: gs} = ctx, message) do
+    Logger.info("[npc log] #{gs.character_name}[#{gs.account_id}]: #{message}")
+    ctx
+  end
+
+  @doc """
   Relocates the player.
 
   - `{map, x, y}` — to an explicit cell. Halts on `:map_not_found`.
