@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.EtsTable do
     vending_registry_tables(seed)
     ground_item_tables(seed)
     script_var_tables(seed)
+    waiting_room_tables(seed)
 
     :ok
   end
@@ -234,6 +235,14 @@ defmodule Aesir.ZoneServer.EtsTable do
     # across every placement of an NPC script for the server's lifetime.
     :ets.new(
       table_for(:npc_vars, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
+  end
+
+  defp waiting_room_tables(seed) do
+    # NPC waiting rooms keyed by owner NPC gid: {npc_gid, WaitingRoom.t()}
+    :ets.new(
+      table_for(:npc_waiting_rooms, seed),
       [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
     )
   end
