@@ -127,982 +127,24 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
             |> next()
             |> mes("[Claytos Verdo]")
 
-          ctx =
-            ctx
-            |> mes(
-              Rathena.concat(Rathena.concat("Let's see, your name is ", char_name(ctx, 0)), "...")
-            )
-            |> mes("Okay, let's get started!")
-            |> next()
-            |> mes("[Claytos Verdo]")
-            |> mes(
-              "The test that I am going to give you will test your knowledge on all of the academic subjects in the world."
-            )
-            |> mes(
-              "I will give you 20 questions, with each question being worth 5 points. When you earn a grade of 80 points, you will pass the test."
-            )
-            |> next()
-            |> mes("[Claytos Verdo]")
-            |> mes("Okay, there's no need to wait. Let's start right away")
-            |> mes("Oh, and if you don't answer immediately, the test will be cancelled.")
-            |> next()
-
-          v61 = Enum.random(1..3)
-
-          ctx =
-            case v61 do
-              1 ->
-                {ctx, v1} =
-                  ctx
-                  |> mes("1. Choose an item that the Gift merchant in Prontera does not sell.")
-                  |> next()
-                  |> select(["China", "Red Frame", "Bouquet", "Glass Bead"])
-
-                ctx =
-                  if v1 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v2} =
-                  ctx
-                  |> mes("2. Choose a city where you cannot purchase a Stiletto.")
-                  |> next()
-                  |> select(["Prontera", "Morocc", "Geffen", "Lutie"])
-
-                ctx =
-                  if v2 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v3} =
-                  ctx
-                  |> mes("3. Choose the closest city to Turtle Island.")
-                  |> next()
-                  |> select(["Al De Baran", "Alberta", "Comodo", "Izlude"])
-
-                ctx =
-                  if v3 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v4} =
-                  ctx
-                  |> mes("4. Choose the monster that is a different type than the others.")
-                  |> next()
-                  |> select(["Raggler", "Pest", "Frilldora", "Aster"])
-
-                ctx =
-                  if v4 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v5} =
-                  ctx
-                  |> mes("5. Choose the monster that has a different attribute than the others.")
-                  |> next()
-                  |> select(["Mantis", "Metaller", "Rocker", "Horn"])
-
-                ctx =
-                  if v5 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v6} =
-                  ctx
-                  |> mes("6. Choose the monster that is different sized than the others.")
-                  |> next()
-                  |> select(["Raydric", "Raydric Archer", "Wanderer", "Dark Frame"])
-
-                ctx =
-                  if v6 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v7} =
-                  ctx
-                  |> mes("7. Choose the monster which doesn't drop 'Alcohol'.")
-                  |> next()
-                  |> select(["Horong", "Plankton", "Poison Spore", "Toad"])
-
-                ctx =
-                  if v7 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v8} =
-                  ctx
-                  |> mes("8. Choose the NPC that is irrelevant to the Knight job change quest.")
-                  |> next()
-                  |> select(["Sir Siracuse", "Thomas Servantes", "Sir Windsor", "Lady Amy"])
-
-                ctx =
-                  if v8 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v9} =
-                  ctx
-                  |> mes("9. Choose the NPC that is not a citizen of Prontera.")
-                  |> next()
-                  |> select(["Tono", "Pina", "YuPi", "Hollgrehenn"])
-
-                ctx =
-                  if v9 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v10} =
-                  ctx
-                  |> mes("10. Choose the right name for the Kafra lady who wears glasses.")
-                  |> next()
-                  |> select(["Pavianne", "Roxie", "Leilah", "Curly Sue"])
-
-                ctx =
-                  if v10 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v11} =
-                  ctx
-                  |> mes("11. How much SP is spent to use lvl 7 Thunderstorm?")
-                  |> next()
-                  |> select(["49", "59", "69", "74"])
-
-                ctx =
-                  if v11 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v12} =
-                  ctx
-                  |> mes(
-                    "12. Choose the right amount of damage reduction and SP consumption of the Energy Coat skill when the caster's remaining SP is 50%."
-                  )
-                  |> next()
-                  |> select([
-                    "Damage -24% SP1.5%",
-                    "Damage -24% SP2%",
-                    "Damage -18% SP1.5%",
-                    "Damage -18% SP2%"
-                  ])
-
-                ctx =
-                  if v12 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v13} =
-                  ctx
-                  |> mes(
-                    "13. Choose the property that is irrelevant to 'Bolt' type skills for the Mage class."
-                  )
-                  |> next()
-                  |> select(["Water", "Earth", "Fire", "Wind"])
-
-                ctx =
-                  if v13 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v14} =
-                  ctx
-                  |> mes(
-                    "14. Choose the right chance and attack strength for lvl 7 Double Attack, the Thief skill."
-                  )
-                  |> next()
-                  |> select(["35% / 120%", "35% / 140%", "40% / 120%", "40% / 140%"])
-
-                ctx =
-                  if v14 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v15} =
-                  ctx
-                  |> mes(
-                    "15. Choose the skill that is irrelevant to learning Magnus Exorcismus, the Priest skill."
-                  )
-                  |> next()
-                  |> select(["Divine Protection", "Heal", "Ruwach", "Aqua Benedicta"])
-
-                ctx =
-                  if v15 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v16} =
-                  ctx
-                  |> mes("16. Choose the correct defense and ability of the Bunny Band.")
-                  |> next()
-                  |> select(["1 / LUK +2", "1 / LUK +5", "2 / LUK +2", "2 / LUK +5"])
-
-                ctx =
-                  if v16 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v17} =
-                  ctx
-                  |> mes("17. Choose the class that cannot equip Padded Armor.")
-                  |> next()
-                  |> select(["Swordman", "Merchant", "Thief", "Archer"])
-
-                ctx =
-                  if v17 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v18} =
-                  ctx
-                  |> mes(
-                    "18. Choose the item that cures all abnormal status and restores full HP and SP at the same time."
-                  )
-                  |> next()
-                  |> select(["Royal Jelly", "Yggdrasil Seed", "Yggdrasilberry", "Mastella Fruit"])
-
-                ctx =
-                  if v18 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v19} =
-                  ctx
-                  |> mes("19. Who rules the Rune-Midgarts kingdom right now?")
-                  |> next()
-                  |> select([
-                    "Tristun the 3rd",
-                    "Tristram the 3rd",
-                    "Tristar the 3rd",
-                    "Trast the 3rd"
-                  ])
-
-                ctx =
-                  if v19 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v20} =
-                  ctx
-                  |> mes("20. Choose the god of Crusaders.")
-                  |> next()
-                  |> select(["Odin", "Loki", "Thor", "Venadin"])
-
-                ctx =
-                  if v20 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                ctx
-
-              2 ->
-                {ctx, v21} =
-                  ctx
-                  |> mes("1. Choose the jewel that the Morocc Jewel Merchant does not sell.")
-                  |> next()
-                  |> select(["Topaz", "Garnet", "Diamond", "Sapphire"])
-
-                ctx =
-                  if v21 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v22} =
-                  ctx
-                  |> mes(
-                    "2. Choose the city where users cannot purchase Monster's Feed from an NPC."
-                  )
-                  |> next()
-                  |> select(["Prontera", "Morocc", "Al De Baran", "Alberta"])
-
-                ctx =
-                  if v22 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v23} =
-                  ctx
-                  |> mes("3. Choose the closest city to the Maze.")
-                  |> next()
-                  |> select(["Prontera", "Morocc", "Geffen", "Payon"])
-
-                ctx =
-                  if v23 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v24} =
-                  ctx
-                  |> mes("4. Choose the monster that is a different type than the others.")
-                  |> next()
-                  |> select(["Muka", "Drops", "Plankton", "Penomena"])
-
-                ctx =
-                  if v24 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v25} =
-                  ctx
-                  |> mes("5. Choose the monster with the different attribute.")
-                  |> next()
-                  |> select(["Dokebi", "Isis", "Giearth", "Deviruchi"])
-
-                ctx =
-                  if v25 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v26} =
-                  ctx
-                  |> mes("6. Choose the monster that is different in size.")
-                  |> next()
-                  |> select(["Thiefbug (Aggressive)", "Horn", "Metaller", "Argos"])
-
-                ctx =
-                  if v26 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v27} =
-                  ctx
-                  |> mes("7. Choose the monster which does not drop 'Yggdrasil Leaf'.")
-                  |> next()
-                  |> select(["Marduk", "Baphomet Jr.", "Angeling", "Wanderer"])
-
-                ctx =
-                  if v27 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v28} =
-                  ctx
-                  |> mes("8. Choose the NPC that is irrelevant to the Priest job change quest.")
-                  |> next()
-                  |> select(["Paul", "Sir Windsor", "Peter S. Alberto", "Cecilia"])
-
-                ctx =
-                  if v28 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v29} =
-                  ctx
-                  |> mes("9. Choose the NPC that is not a citizen of Morocc.")
-                  |> next()
-                  |> select(["Syvia", "Akira", "Antonio", "Dmitrii"])
-
-                ctx =
-                  if v29 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v30} =
-                  ctx
-                  |> mes("10. Choose the Kafra lady who has gorgeous blue hair.")
-                  |> next()
-                  |> select(["Pavianne", "Roxie", "Leilah", "Curly Sue"])
-
-                ctx =
-                  if v30 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v31} =
-                  ctx
-                  |> mes(
-                    "11. Choose the skill that is irrelevant to learning Fire Wall, the Mage skill."
-                  )
-                  |> next()
-                  |> select([
-                    "lvl 4 Fire Bolt",
-                    "lvl 4 Napalm Beat",
-                    "lvl 5 Fire Ball",
-                    "lvl 1 Sight"
-                  ])
-
-                ctx =
-                  if v31 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v32} =
-                  ctx
-                  |> mes(
-                    "12. How much SP can be restored when learning SP recovery at lvl 6 (without being affected by INT)?"
-                  )
-                  |> next()
-                  |> select(["14", "16", "18", "21"])
-
-                ctx =
-                  if v32 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v33} =
-                  ctx
-                  |> mes("13. How many INT points does a Mage receive as a bonus at job lvl 33?")
-                  |> next()
-                  |> select(["7", "6", "5", "4"])
-
-                ctx =
-                  if v33 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v34} =
-                  ctx
-                  |> mes(
-                    "14. Choose the correct SP consumption and the skill duration for Improve Concentration lvl 5 (Archer skill)."
-                  )
-                  |> next()
-                  |> select(["45 / 80 sec", "50 / 80 sec", "45 / 90 sec", "50 / 90 sec"])
-
-                ctx =
-                  if v34 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v35} =
-                  ctx
-                  |> mes(
-                    "15. Choose the skill that is irrelevant to learning Maximize Power, the Blacksmith skill."
-                  )
-                  |> next()
-                  |> select([
-                    "Hilt Binding",
-                    "Skin Tempering",
-                    "Hammer Fall",
-                    "Weapon Perfection"
-                  ])
-
-                ctx =
-                  if v35 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v36} =
-                  ctx
-                  |> mes("16. What is the correct defense rate and ability of Cute Ribbon?")
-                  |> next()
-                  |> select(["0 / SP +20", "0 / SP +30", "1 / SP +20", "1 / SP +30"])
-
-                ctx =
-                  if v36 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v37} =
-                  ctx
-                  |> mes("17. Choose the class that cannot equip Saint Robe.")
-                  |> next()
-                  |> select(["Swordman", "Merchant", "Thief", "Acolyte"])
-
-                ctx =
-                  if v37 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v38} =
-                  ctx
-                  |> mes("18. Choose the abnormal status that cannot be cured by Green Potion.")
-                  |> next()
-                  |> select(["Silence", "Chaos", "Blind", "Curse"])
-
-                ctx =
-                  if v38 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v39} =
-                  ctx
-                  |> mes(
-                    "19. Choose the correct name for the ancient kingdom that disappeared somewhere in Geffen."
-                  )
-                  |> next()
-                  |> select(["Geffayon", "Geffenia", "Gefenn", "Jaffen"])
-
-                ctx =
-                  if v39 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v40} =
-                  ctx
-                  |> mes(
-                    "20. Choose the correct name for the tree that has become the root of this world."
-                  )
-                  |> next()
-                  |> select(["Yggdrasil", "Iggdrassil", "Mastella", "Dead Branch"])
-
-                ctx =
-                  if v40 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                ctx
-
-              3 ->
-                {ctx, v41} =
-                  ctx
-                  |> mes(
-                    "1. Choose the item that the Magical Tool merchant in Geffen does not sell."
-                  )
-                  |> next()
-                  |> select(["Mantle", "Wand", "Circlet", "Silver Robe"])
-
-                ctx =
-                  if v41 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v42} =
-                  ctx
-                  |> mes("2. Choose the city where users cannot purchase Blade from an NPC.")
-                  |> next()
-                  |> select(["Prontera", "Izlude", "Al De Baran", "Payon"])
-
-                ctx =
-                  if v42 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v43} =
-                  ctx
-                  |> mes("3. Choose the closest city to Glast Heim.")
-                  |> next()
-                  |> select(["Prontera", "Geffen", "Morocc", "Payon"])
-
-                ctx =
-                  if v43 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v44} =
-                  ctx
-                  |> mes("4. Choose the monster that is a different type than the others.")
-                  |> next()
-                  |> select(["Aster", "Marc", "Marse", "Marin"])
-
-                ctx =
-                  if v44 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v45} =
-                  ctx
-                  |> mes("5. Choose the monster that has a different attribute.")
-                  |> next()
-                  |> select(["Baby Desert Wolf", "Smokie", "Picky", "Choco"])
-
-                ctx =
-                  if v45 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v46} =
-                  ctx
-                  |> mes("6. Choose the monster that is different sized.")
-                  |> next()
-                  |> select(["Drake", "Wraith", "Evil Druid", "Khalitzburg"])
-
-                ctx =
-                  if v46 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v47} =
-                  ctx
-                  |> mes("7. Choose the monster that does not drop 'Phracon'.")
-                  |> next()
-                  |> select(["Pupa", "Peco Peco Egg", "Savage Bebe", "Baby Desert Wolf"])
-
-                ctx =
-                  if v47 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v48} =
-                  ctx
-                  |> mes(
-                    "8. Choose the NPC that is irrelevant to the Blacksmith job change quest."
-                  )
-                  |> next()
-                  |> select(["Altiregen", "Geschupenschte", "Barcadi", "Baisulist"])
-
-                ctx =
-                  if v48 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v49} =
-                  ctx
-                  |> mes("9. Choose the NPC that is not a citizen of Al De Baran.")
-                  |> next()
-                  |> select(["RS125", "GOD-POING", "Stromme", "Chemirre"])
-
-                ctx =
-                  if v49 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v50} =
-                  ctx
-                  |> mes("10. Choose the Kafra lady who is the youngest among the staff.")
-                  |> next()
-                  |> select(["Pavianne", "Roxie", "Leilah", "Curly Sue"])
-
-                ctx =
-                  if v50 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v51} =
-                  ctx
-                  |> mes(
-                    "11. Choose the correct SP consumption and the number of evasions when using Safety Wall lvl 6."
-                  )
-                  |> next()
-                  |> select([
-                    "SP 40, 6 times",
-                    "SP 35, 6 times",
-                    "SP 40, 7 times",
-                    "SP 35, 7 times"
-                  ])
-
-                ctx =
-                  if v51 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v52} =
-                  ctx
-                  |> mes("12. Choose the correct amount of magic attack for Napalm Beat lvl 6.")
-                  |> next()
-                  |> select(["MATK * 1.2", "MATK * 1.3", "MATK * 1.4", "MATK * 1.5"])
-
-                ctx =
-                  if v52 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v53} =
-                  ctx
-                  |> mes(
-                    "13. Choose the catalyst stone for Mage Solution no. 4 that is used for the Mage job change quest."
-                  )
-                  |> next()
-                  |> select([
-                    "Blue Gemstone",
-                    "Red Gemstone",
-                    "Yellow Gemstone",
-                    "1 carat Diamond"
-                  ])
-
-                ctx =
-                  if v53 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v54} =
-                  ctx
-                  |> mes(
-                    "14. Choose the correct attack strength and SP consumption for Bash lvl 6, the Swordman skill."
-                  )
-                  |> next()
-                  |> select(["250% / 8", "280% / 8", "280% / 15", "310% / 15"])
-
-                ctx =
-                  if v54 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v55} =
-                  ctx
-                  |> mes(
-                    "15. Choose the skill that is irrelevant to learning Claymore Trap, the Hunter skill."
-                  )
-                  |> next()
-                  |> select(["Remove Trap", "Land Mine", "Ankle Snare", "Flasher"])
-
-                ctx =
-                  if v55 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v56} =
-                  ctx
-                  |> mes("16. Choose the correct defense and ability of Wedding Veil.")
-                  |> next()
-                  |> select(["0 / MDEF +3", "0 / MDEF +5", "1 / MDEF +3", "1 / MDEF +5"])
-
-                ctx =
-                  if v56 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v57} =
-                  ctx
-                  |> mes("17. Choose the class that cannot equip Coat.")
-                  |> next()
-                  |> select(["Swordman", "Merchant", "Thief", "Novice"])
-
-                ctx =
-                  if v57 == 4 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v58} =
-                  ctx
-                  |> mes("18. Choose the item that is not an ingredient for Blue Dyestuffs.")
-                  |> next()
-                  |> select(["Alcohol", "Detrimindexta", "Karvodailnirol", "Blue Herb"])
-
-                ctx =
-                  if v58 == 3 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v59} =
-                  ctx
-                  |> mes(
-                    "19. When the world was created by the god Odin, what did he use for the material?"
-                  )
-                  |> next()
-                  |> select([
-                    "The heart of Ymir",
-                    "The nail of Ymir",
-                    "The tooth of Ymir",
-                    "The memento of Ymir"
-                  ])
-
-                ctx =
-                  if v59 == 1 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                {ctx, v60} =
-                  ctx
-                  |> mes(
-                    "20. Choose the metal that has rumored to bring fortune and fame to a person with the destiny."
-                  )
-                  |> next()
-                  |> select(["Empelium Gold", "Emperium", "Emperor", "Phracon"])
-
-                ctx =
-                  if v60 == 2 do
-                    set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
-                  else
-                    ctx
-                  end
-
-                ctx
-
-              _ ->
-                ctx
-            end
-
-          ctx = mes(ctx, "[Claytos Verdo]")
-
-          ctx =
-            if get_char_var(ctx, :SAGE_Q, 0) == 4 do
-              ctx
-              |> mes("Well, you answered all 20 of the questions.")
-              |> mes("Okay, let me check your answers and add up your score.")
-            else
-              ctx
-              |> mes("Well, we finished all 20 questions.")
-              |> mes("Now, let's check how many points you got.")
-            end
-
-          ctx =
-            ctx
-            |> next()
-            |> mes("[Claytos Verdo]")
-            |> mes("Let's see...")
-            |> mes("Hmm... hmm...")
-            |> next()
-            |> mes("[Claytos Verdo]")
-
-          ctx =
-            mes(
-              ctx,
-              Rathena.concat(Rathena.concat("You got ", get_local(ctx, :sage_t, 0)), " points.")
-            )
-
-          ctx =
-            if get_local(ctx, :sage_t, 0) == 100 do
-              ctx =
-                if get_char_var(ctx, :SAGE_Q, 0) == 4 do
-                  mes(ctx, "Excellent! You seem fully qualified to become a Sage!")
-                else
-                  mes(ctx, "Excellent! You must have studed really hard for this test!")
-                end
-
-              ctx
-              |> set_char_var(:SAGE_Q, 6)
-              |> changequest(2041, 2046)
-              |> next()
-              |> mes("[Claytos Verdo]")
-              |> mes("You have passed the written test.")
-              |> mes("Go visit Professor Hermes for the practical examination.")
-            else
-              ctx =
-                if get_local(ctx, :sage_t, 0) >= 80 do
-                  ctx
-                  |> set_char_var(:SAGE_Q, 6)
-                  |> changequest(2041, 2046)
-                  |> mes(
-                    "Yeah, not bad. I assume that you will at least understand what you're going to learn in class."
-                  )
-                  |> next()
-                  |> mes("[Claytos Verdo]")
-                  |> mes("You passed the written test.")
-                  |> mes("Go visit Professor Hermes for the practical examination.")
-                else
-                  ctx =
-                    if get_char_var(ctx, :SAGE_Q, 0) == 4 do
-                      ctx
-                      |> set_char_var(:SAGE_Q, 5)
-                      |> mes("Oh well...what a shame: You failed.")
-                      |> next()
-                      |> mes("[Claytos Verdo]")
-                      |> mes("But I'll give you another chance to take the written test,")
-                      |> mes("Go study harder and come back later.")
-                    else
-                      ctx
-                      |> mes("Oh what a shame: You failed.")
-                      |> next()
-                      |> mes("[Claytos Verdo]")
-                      |> mes("But I'll give you another chance,")
-                      |> mes("Go study even harder and come back.")
-                    end
-
-                  ctx
-                end
-
-              ctx
-            end
-
-          ctx = close(ctx)
-          throw({:script_end, ctx})
+          ctx
+          |> mes(
+            Rathena.concat(Rathena.concat("Let's see, your name is ", char_name(ctx, 0)), "...")
+          )
+          |> mes("Okay, let's get started!")
+          |> next()
+          |> mes("[Claytos Verdo]")
+          |> mes(
+            "The test that I am going to give you will test your knowledge on all of the academic subjects in the world."
+          )
+          |> mes(
+            "I will give you 20 questions, with each question being worth 5 points. When you earn a grade of 80 points, you will pass the test."
+          )
+          |> next()
+          |> mes("[Claytos Verdo]")
+          |> mes("Okay, there's no need to wait. Let's start right away")
+          |> mes("Oh, and if you don't answer immediately, the test will be cancelled.")
+          |> l_l_askquestions()
         else
           if get_char_var(ctx, :SAGE_Q, 0) == 5 do
             ctx
@@ -1165,5 +207,931 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
     end
   catch
     :throw, {:script_end, ctx} -> ctx
+  end
+
+  defp l_l_askquestions(ctx) do
+    ctx = next(ctx)
+    v61 = Enum.random(1..3)
+
+    ctx =
+      case v61 do
+        1 ->
+          {ctx, v1} =
+            ctx
+            |> mes("1. Choose an item that the Gift merchant in Prontera does not sell.")
+            |> next()
+            |> select(["China", "Red Frame", "Bouquet", "Glass Bead"])
+
+          ctx =
+            if v1 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v2} =
+            ctx
+            |> mes("2. Choose a city where you cannot purchase a Stiletto.")
+            |> next()
+            |> select(["Prontera", "Morocc", "Geffen", "Lutie"])
+
+          ctx =
+            if v2 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v3} =
+            ctx
+            |> mes("3. Choose the closest city to Turtle Island.")
+            |> next()
+            |> select(["Al De Baran", "Alberta", "Comodo", "Izlude"])
+
+          ctx =
+            if v3 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v4} =
+            ctx
+            |> mes("4. Choose the monster that is a different type than the others.")
+            |> next()
+            |> select(["Raggler", "Pest", "Frilldora", "Aster"])
+
+          ctx =
+            if v4 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v5} =
+            ctx
+            |> mes("5. Choose the monster that has a different attribute than the others.")
+            |> next()
+            |> select(["Mantis", "Metaller", "Rocker", "Horn"])
+
+          ctx =
+            if v5 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v6} =
+            ctx
+            |> mes("6. Choose the monster that is different sized than the others.")
+            |> next()
+            |> select(["Raydric", "Raydric Archer", "Wanderer", "Dark Frame"])
+
+          ctx =
+            if v6 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v7} =
+            ctx
+            |> mes("7. Choose the monster which doesn't drop 'Alcohol'.")
+            |> next()
+            |> select(["Horong", "Plankton", "Poison Spore", "Toad"])
+
+          ctx =
+            if v7 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v8} =
+            ctx
+            |> mes("8. Choose the NPC that is irrelevant to the Knight job change quest.")
+            |> next()
+            |> select(["Sir Siracuse", "Thomas Servantes", "Sir Windsor", "Lady Amy"])
+
+          ctx =
+            if v8 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v9} =
+            ctx
+            |> mes("9. Choose the NPC that is not a citizen of Prontera.")
+            |> next()
+            |> select(["Tono", "Pina", "YuPi", "Hollgrehenn"])
+
+          ctx =
+            if v9 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v10} =
+            ctx
+            |> mes("10. Choose the right name for the Kafra lady who wears glasses.")
+            |> next()
+            |> select(["Pavianne", "Roxie", "Leilah", "Curly Sue"])
+
+          ctx =
+            if v10 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v11} =
+            ctx
+            |> mes("11. How much SP is spent to use lvl 7 Thunderstorm?")
+            |> next()
+            |> select(["49", "59", "69", "74"])
+
+          ctx =
+            if v11 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v12} =
+            ctx
+            |> mes(
+              "12. Choose the right amount of damage reduction and SP consumption of the Energy Coat skill when the caster's remaining SP is 50%."
+            )
+            |> next()
+            |> select([
+              "Damage -24% SP1.5%",
+              "Damage -24% SP2%",
+              "Damage -18% SP1.5%",
+              "Damage -18% SP2%"
+            ])
+
+          ctx =
+            if v12 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v13} =
+            ctx
+            |> mes(
+              "13. Choose the property that is irrelevant to 'Bolt' type skills for the Mage class."
+            )
+            |> next()
+            |> select(["Water", "Earth", "Fire", "Wind"])
+
+          ctx =
+            if v13 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v14} =
+            ctx
+            |> mes(
+              "14. Choose the right chance and attack strength for lvl 7 Double Attack, the Thief skill."
+            )
+            |> next()
+            |> select(["35% / 120%", "35% / 140%", "40% / 120%", "40% / 140%"])
+
+          ctx =
+            if v14 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v15} =
+            ctx
+            |> mes(
+              "15. Choose the skill that is irrelevant to learning Magnus Exorcismus, the Priest skill."
+            )
+            |> next()
+            |> select(["Divine Protection", "Heal", "Ruwach", "Aqua Benedicta"])
+
+          ctx =
+            if v15 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v16} =
+            ctx
+            |> mes("16. Choose the correct defense and ability of the Bunny Band.")
+            |> next()
+            |> select(["1 / LUK +2", "1 / LUK +5", "2 / LUK +2", "2 / LUK +5"])
+
+          ctx =
+            if v16 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v17} =
+            ctx
+            |> mes("17. Choose the class that cannot equip Padded Armor.")
+            |> next()
+            |> select(["Swordman", "Merchant", "Thief", "Archer"])
+
+          ctx =
+            if v17 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v18} =
+            ctx
+            |> mes(
+              "18. Choose the item that cures all abnormal status and restores full HP and SP at the same time."
+            )
+            |> next()
+            |> select(["Royal Jelly", "Yggdrasil Seed", "Yggdrasilberry", "Mastella Fruit"])
+
+          ctx =
+            if v18 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v19} =
+            ctx
+            |> mes("19. Who rules the Rune-Midgarts kingdom right now?")
+            |> next()
+            |> select(["Tristun the 3rd", "Tristram the 3rd", "Tristar the 3rd", "Trast the 3rd"])
+
+          ctx =
+            if v19 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v20} =
+            ctx
+            |> mes("20. Choose the god of Crusaders.")
+            |> next()
+            |> select(["Odin", "Loki", "Thor", "Venadin"])
+
+          ctx =
+            if v20 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          ctx
+
+        2 ->
+          {ctx, v21} =
+            ctx
+            |> mes("1. Choose the jewel that the Morocc Jewel Merchant does not sell.")
+            |> next()
+            |> select(["Topaz", "Garnet", "Diamond", "Sapphire"])
+
+          ctx =
+            if v21 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v22} =
+            ctx
+            |> mes("2. Choose the city where users cannot purchase Monster's Feed from an NPC.")
+            |> next()
+            |> select(["Prontera", "Morocc", "Al De Baran", "Alberta"])
+
+          ctx =
+            if v22 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v23} =
+            ctx
+            |> mes("3. Choose the closest city to the Maze.")
+            |> next()
+            |> select(["Prontera", "Morocc", "Geffen", "Payon"])
+
+          ctx =
+            if v23 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v24} =
+            ctx
+            |> mes("4. Choose the monster that is a different type than the others.")
+            |> next()
+            |> select(["Muka", "Drops", "Plankton", "Penomena"])
+
+          ctx =
+            if v24 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v25} =
+            ctx
+            |> mes("5. Choose the monster with the different attribute.")
+            |> next()
+            |> select(["Dokebi", "Isis", "Giearth", "Deviruchi"])
+
+          ctx =
+            if v25 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v26} =
+            ctx
+            |> mes("6. Choose the monster that is different in size.")
+            |> next()
+            |> select(["Thiefbug (Aggressive)", "Horn", "Metaller", "Argos"])
+
+          ctx =
+            if v26 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v27} =
+            ctx
+            |> mes("7. Choose the monster which does not drop 'Yggdrasil Leaf'.")
+            |> next()
+            |> select(["Marduk", "Baphomet Jr.", "Angeling", "Wanderer"])
+
+          ctx =
+            if v27 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v28} =
+            ctx
+            |> mes("8. Choose the NPC that is irrelevant to the Priest job change quest.")
+            |> next()
+            |> select(["Paul", "Sir Windsor", "Peter S. Alberto", "Cecilia"])
+
+          ctx =
+            if v28 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v29} =
+            ctx
+            |> mes("9. Choose the NPC that is not a citizen of Morocc.")
+            |> next()
+            |> select(["Syvia", "Akira", "Antonio", "Dmitrii"])
+
+          ctx =
+            if v29 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v30} =
+            ctx
+            |> mes("10. Choose the Kafra lady who has gorgeous blue hair.")
+            |> next()
+            |> select(["Pavianne", "Roxie", "Leilah", "Curly Sue"])
+
+          ctx =
+            if v30 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v31} =
+            ctx
+            |> mes(
+              "11. Choose the skill that is irrelevant to learning Fire Wall, the Mage skill."
+            )
+            |> next()
+            |> select(["lvl 4 Fire Bolt", "lvl 4 Napalm Beat", "lvl 5 Fire Ball", "lvl 1 Sight"])
+
+          ctx =
+            if v31 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v32} =
+            ctx
+            |> mes(
+              "12. How much SP can be restored when learning SP recovery at lvl 6 (without being affected by INT)?"
+            )
+            |> next()
+            |> select(["14", "16", "18", "21"])
+
+          ctx =
+            if v32 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v33} =
+            ctx
+            |> mes("13. How many INT points does a Mage receive as a bonus at job lvl 33?")
+            |> next()
+            |> select(["7", "6", "5", "4"])
+
+          ctx =
+            if v33 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v34} =
+            ctx
+            |> mes(
+              "14. Choose the correct SP consumption and the skill duration for Improve Concentration lvl 5 (Archer skill)."
+            )
+            |> next()
+            |> select(["45 / 80 sec", "50 / 80 sec", "45 / 90 sec", "50 / 90 sec"])
+
+          ctx =
+            if v34 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v35} =
+            ctx
+            |> mes(
+              "15. Choose the skill that is irrelevant to learning Maximize Power, the Blacksmith skill."
+            )
+            |> next()
+            |> select(["Hilt Binding", "Skin Tempering", "Hammer Fall", "Weapon Perfection"])
+
+          ctx =
+            if v35 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v36} =
+            ctx
+            |> mes("16. What is the correct defense rate and ability of Cute Ribbon?")
+            |> next()
+            |> select(["0 / SP +20", "0 / SP +30", "1 / SP +20", "1 / SP +30"])
+
+          ctx =
+            if v36 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v37} =
+            ctx
+            |> mes("17. Choose the class that cannot equip Saint Robe.")
+            |> next()
+            |> select(["Swordman", "Merchant", "Thief", "Acolyte"])
+
+          ctx =
+            if v37 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v38} =
+            ctx
+            |> mes("18. Choose the abnormal status that cannot be cured by Green Potion.")
+            |> next()
+            |> select(["Silence", "Chaos", "Blind", "Curse"])
+
+          ctx =
+            if v38 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v39} =
+            ctx
+            |> mes(
+              "19. Choose the correct name for the ancient kingdom that disappeared somewhere in Geffen."
+            )
+            |> next()
+            |> select(["Geffayon", "Geffenia", "Gefenn", "Jaffen"])
+
+          ctx =
+            if v39 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v40} =
+            ctx
+            |> mes(
+              "20. Choose the correct name for the tree that has become the root of this world."
+            )
+            |> next()
+            |> select(["Yggdrasil", "Iggdrassil", "Mastella", "Dead Branch"])
+
+          ctx =
+            if v40 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          ctx
+
+        3 ->
+          {ctx, v41} =
+            ctx
+            |> mes("1. Choose the item that the Magical Tool merchant in Geffen does not sell.")
+            |> next()
+            |> select(["Mantle", "Wand", "Circlet", "Silver Robe"])
+
+          ctx =
+            if v41 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v42} =
+            ctx
+            |> mes("2. Choose the city where users cannot purchase Blade from an NPC.")
+            |> next()
+            |> select(["Prontera", "Izlude", "Al De Baran", "Payon"])
+
+          ctx =
+            if v42 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v43} =
+            ctx
+            |> mes("3. Choose the closest city to Glast Heim.")
+            |> next()
+            |> select(["Prontera", "Geffen", "Morocc", "Payon"])
+
+          ctx =
+            if v43 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v44} =
+            ctx
+            |> mes("4. Choose the monster that is a different type than the others.")
+            |> next()
+            |> select(["Aster", "Marc", "Marse", "Marin"])
+
+          ctx =
+            if v44 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v45} =
+            ctx
+            |> mes("5. Choose the monster that has a different attribute.")
+            |> next()
+            |> select(["Baby Desert Wolf", "Smokie", "Picky", "Choco"])
+
+          ctx =
+            if v45 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v46} =
+            ctx
+            |> mes("6. Choose the monster that is different sized.")
+            |> next()
+            |> select(["Drake", "Wraith", "Evil Druid", "Khalitzburg"])
+
+          ctx =
+            if v46 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v47} =
+            ctx
+            |> mes("7. Choose the monster that does not drop 'Phracon'.")
+            |> next()
+            |> select(["Pupa", "Peco Peco Egg", "Savage Bebe", "Baby Desert Wolf"])
+
+          ctx =
+            if v47 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v48} =
+            ctx
+            |> mes("8. Choose the NPC that is irrelevant to the Blacksmith job change quest.")
+            |> next()
+            |> select(["Altiregen", "Geschupenschte", "Barcadi", "Baisulist"])
+
+          ctx =
+            if v48 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v49} =
+            ctx
+            |> mes("9. Choose the NPC that is not a citizen of Al De Baran.")
+            |> next()
+            |> select(["RS125", "GOD-POING", "Stromme", "Chemirre"])
+
+          ctx =
+            if v49 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v50} =
+            ctx
+            |> mes("10. Choose the Kafra lady who is the youngest among the staff.")
+            |> next()
+            |> select(["Pavianne", "Roxie", "Leilah", "Curly Sue"])
+
+          ctx =
+            if v50 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v51} =
+            ctx
+            |> mes(
+              "11. Choose the correct SP consumption and the number of evasions when using Safety Wall lvl 6."
+            )
+            |> next()
+            |> select(["SP 40, 6 times", "SP 35, 6 times", "SP 40, 7 times", "SP 35, 7 times"])
+
+          ctx =
+            if v51 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v52} =
+            ctx
+            |> mes("12. Choose the correct amount of magic attack for Napalm Beat lvl 6.")
+            |> next()
+            |> select(["MATK * 1.2", "MATK * 1.3", "MATK * 1.4", "MATK * 1.5"])
+
+          ctx =
+            if v52 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v53} =
+            ctx
+            |> mes(
+              "13. Choose the catalyst stone for Mage Solution no. 4 that is used for the Mage job change quest."
+            )
+            |> next()
+            |> select(["Blue Gemstone", "Red Gemstone", "Yellow Gemstone", "1 carat Diamond"])
+
+          ctx =
+            if v53 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v54} =
+            ctx
+            |> mes(
+              "14. Choose the correct attack strength and SP consumption for Bash lvl 6, the Swordman skill."
+            )
+            |> next()
+            |> select(["250% / 8", "280% / 8", "280% / 15", "310% / 15"])
+
+          ctx =
+            if v54 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v55} =
+            ctx
+            |> mes(
+              "15. Choose the skill that is irrelevant to learning Claymore Trap, the Hunter skill."
+            )
+            |> next()
+            |> select(["Remove Trap", "Land Mine", "Ankle Snare", "Flasher"])
+
+          ctx =
+            if v55 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v56} =
+            ctx
+            |> mes("16. Choose the correct defense and ability of Wedding Veil.")
+            |> next()
+            |> select(["0 / MDEF +3", "0 / MDEF +5", "1 / MDEF +3", "1 / MDEF +5"])
+
+          ctx =
+            if v56 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v57} =
+            ctx
+            |> mes("17. Choose the class that cannot equip Coat.")
+            |> next()
+            |> select(["Swordman", "Merchant", "Thief", "Novice"])
+
+          ctx =
+            if v57 == 4 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v58} =
+            ctx
+            |> mes("18. Choose the item that is not an ingredient for Blue Dyestuffs.")
+            |> next()
+            |> select(["Alcohol", "Detrimindexta", "Karvodailnirol", "Blue Herb"])
+
+          ctx =
+            if v58 == 3 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v59} =
+            ctx
+            |> mes(
+              "19. When the world was created by the god Odin, what did he use for the material?"
+            )
+            |> next()
+            |> select([
+              "The heart of Ymir",
+              "The nail of Ymir",
+              "The tooth of Ymir",
+              "The memento of Ymir"
+            ])
+
+          ctx =
+            if v59 == 1 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          {ctx, v60} =
+            ctx
+            |> mes(
+              "20. Choose the metal that has rumored to bring fortune and fame to a person with the destiny."
+            )
+            |> next()
+            |> select(["Empelium Gold", "Emperium", "Emperor", "Phracon"])
+
+          ctx =
+            if v60 == 2 do
+              set_local(ctx, :sage_t, get_local(ctx, :sage_t, 0) + 5)
+            else
+              ctx
+            end
+
+          ctx
+
+        _ ->
+          ctx
+      end
+
+    ctx = mes(ctx, "[Claytos Verdo]")
+
+    ctx =
+      if get_char_var(ctx, :SAGE_Q, 0) == 4 do
+        ctx
+        |> mes("Well, you answered all 20 of the questions.")
+        |> mes("Okay, let me check your answers and add up your score.")
+      else
+        ctx
+        |> mes("Well, we finished all 20 questions.")
+        |> mes("Now, let's check how many points you got.")
+      end
+
+    ctx =
+      ctx
+      |> next()
+      |> mes("[Claytos Verdo]")
+      |> mes("Let's see...")
+      |> mes("Hmm... hmm...")
+      |> next()
+      |> mes("[Claytos Verdo]")
+
+    ctx =
+      mes(ctx, Rathena.concat(Rathena.concat("You got ", get_local(ctx, :sage_t, 0)), " points."))
+
+    ctx =
+      if get_local(ctx, :sage_t, 0) == 100 do
+        ctx =
+          if get_char_var(ctx, :SAGE_Q, 0) == 4 do
+            mes(ctx, "Excellent! You seem fully qualified to become a Sage!")
+          else
+            mes(ctx, "Excellent! You must have studed really hard for this test!")
+          end
+
+        ctx
+        |> set_char_var(:SAGE_Q, 6)
+        |> changequest(2041, 2046)
+        |> next()
+        |> mes("[Claytos Verdo]")
+        |> mes("You have passed the written test.")
+        |> mes("Go visit Professor Hermes for the practical examination.")
+      else
+        ctx =
+          if get_local(ctx, :sage_t, 0) >= 80 do
+            ctx
+            |> set_char_var(:SAGE_Q, 6)
+            |> changequest(2041, 2046)
+            |> mes(
+              "Yeah, not bad. I assume that you will at least understand what you're going to learn in class."
+            )
+            |> next()
+            |> mes("[Claytos Verdo]")
+            |> mes("You passed the written test.")
+            |> mes("Go visit Professor Hermes for the practical examination.")
+          else
+            ctx =
+              if get_char_var(ctx, :SAGE_Q, 0) == 4 do
+                ctx
+                |> set_char_var(:SAGE_Q, 5)
+                |> mes("Oh well...what a shame: You failed.")
+                |> next()
+                |> mes("[Claytos Verdo]")
+                |> mes("But I'll give you another chance to take the written test,")
+                |> mes("Go study harder and come back later.")
+              else
+                ctx
+                |> mes("Oh what a shame: You failed.")
+                |> next()
+                |> mes("[Claytos Verdo]")
+                |> mes("But I'll give you another chance,")
+                |> mes("Go study even harder and come back.")
+              end
+
+            ctx
+          end
+
+        ctx
+      end
+
+    ctx = close(ctx)
+    throw({:script_end, ctx})
   end
 end

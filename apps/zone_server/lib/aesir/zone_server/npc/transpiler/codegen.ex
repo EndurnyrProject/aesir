@@ -121,11 +121,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     with {:ok, ast} <- Parser.parse_body(body) do
       analysis = Analyzer.analyze(ast)
       reset_state()
+      {ast, unresolvable} = hoist_nested_labels(ast, analysis)
 
       env = %{
         a: analysis,
         fns: Map.get(opts, :functions, %{}),
-        labels: label_fns(analysis),
+        labels: label_fns(analysis, unresolvable),
         sub: opts.kind == :function,
         break: nil,
         loop: nil,
@@ -472,6 +473,125 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     end
   end
 
+  # -- nested-label hoisting ----------------------------------------------------
+
+  defp hoist_nested_labels(ast, analysis) do
+    {body, hoisted, unresolvable} = hoist_list(ast, analysis, true, [], [], MapSet.new())
+
+    appended =
+      hoisted
+      |> Enum.reverse()
+      |> Enum.flat_map(fn {label, stmts} -> [{:label, label} | stmts] end)
+
+    {body ++ appended, unresolvable}
+  end
+
+  defp hoist_list([], _analysis, _is_top, acc, hoisted, unresolvable),
+    do: {Enum.reverse(acc), hoisted, unresolvable}
+
+  defp hoist_list([{:label, label} | rest], analysis, is_top, acc, hoisted, unresolvable) do
+    if is_top or not hoistable?(label, analysis) do
+      hoist_list(rest, analysis, is_top, [{:label, label} | acc], hoisted, unresolvable)
+    else
+      if terminates?(rest) do
+        {rest, hoisted, unresolvable} =
+          hoist_list(rest, analysis, false, [], hoisted, unresolvable)
+
+        hoist_list(
+          [],
+          analysis,
+          is_top,
+          [{:goto, label} | acc],
+          [{label, rest} | hoisted],
+          unresolvable
+        )
+      else
+        hoist_list(
+          rest,
+          analysis,
+          is_top,
+          [{:label, label} | acc],
+          hoisted,
+          MapSet.put(unresolvable, String.downcase(label))
+        )
+      end
+    end
+  end
+
+  defp hoist_list([stmt | rest], analysis, is_top, acc, hoisted, unresolvable) do
+    {stmt, hoisted, unresolvable} = hoist_stmt(stmt, analysis, hoisted, unresolvable)
+    hoist_list(rest, analysis, is_top, [stmt | acc], hoisted, unresolvable)
+  end
+
+  defp hoist_stmt({:if, cond_expr, then_stmts, else_stmts}, analysis, hoisted, unresolvable) do
+    {then_stmts, hoisted, unresolvable} =
+      hoist_list(then_stmts, analysis, false, [], hoisted, unresolvable)
+
+    {else_stmts, hoisted, unresolvable} =
+      hoist_list(else_stmts, analysis, false, [], hoisted, unresolvable)
+
+    {{:if, cond_expr, then_stmts, else_stmts}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt({:switch, expr, clauses}, analysis, hoisted, unresolvable) do
+    {clauses, {hoisted, unresolvable}} =
+      Enum.map_reduce(clauses, {hoisted, unresolvable}, fn {values, stmts},
+                                                           {hoisted, unresolvable} ->
+        {stmts, hoisted, unresolvable} =
+          hoist_list(stmts, analysis, false, [], hoisted, unresolvable)
+
+        {{values, stmts}, {hoisted, unresolvable}}
+      end)
+
+    {{:switch, expr, clauses}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt({:while, cond_expr, body}, analysis, hoisted, unresolvable) do
+    {body, hoisted, unresolvable} = hoist_list(body, analysis, false, [], hoisted, unresolvable)
+    {{:while, cond_expr, body}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt({:do_while, body, cond_expr}, analysis, hoisted, unresolvable) do
+    {body, hoisted, unresolvable} = hoist_list(body, analysis, false, [], hoisted, unresolvable)
+    {{:do_while, body, cond_expr}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt({:for, init, cond_expr, step, body}, analysis, hoisted, unresolvable) do
+    {init, hoisted, unresolvable} = hoist_list(init, analysis, false, [], hoisted, unresolvable)
+    {step, hoisted, unresolvable} = hoist_list(step, analysis, false, [], hoisted, unresolvable)
+    {body, hoisted, unresolvable} = hoist_list(body, analysis, false, [], hoisted, unresolvable)
+    {{:for, init, cond_expr, step, body}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt({:function, name, stmts}, analysis, hoisted, unresolvable) do
+    {stmts, hoisted, unresolvable} = hoist_list(stmts, analysis, false, [], hoisted, unresolvable)
+    {{:function, name, stmts}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt({:block, stmts}, analysis, hoisted, unresolvable) do
+    {stmts, hoisted, unresolvable} = hoist_list(stmts, analysis, false, [], hoisted, unresolvable)
+    {{:block, stmts}, hoisted, unresolvable}
+  end
+
+  defp hoist_stmt(other, _analysis, hoisted, unresolvable), do: {other, hoisted, unresolvable}
+
+  defp hoistable?(label, analysis) do
+    key = String.downcase(label)
+    MapSet.member?(analysis.jump_targets, key) or MapSet.member?(analysis.callsub_targets, key)
+  end
+
+  defp terminates?(stmts) do
+    case List.last(stmts) do
+      {:cmd, name, _} when name in ["close", "end", "close2", "close3"] -> true
+      {:goto, _} -> true
+      {:menu, _} -> true
+      {:return, _} -> true
+      {:break} -> true
+      {:continue} -> true
+      _ -> false
+    end
+  end
+
   defp emit_segments(segments, env) do
     segments
     |> Enum.with_index()
@@ -572,8 +692,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # Label → emitted function name. Keyed by downcased label, so references
   # resolve case-insensitively like rAthena's own label lookup.
-  defp label_fns(analysis) do
+  defp label_fns(analysis, unresolvable) do
     analysis.labels
+    |> Enum.reject(&MapSet.member?(unresolvable, String.downcase(&1)))
     |> Enum.reduce({%{}, MapSet.new()}, fn label, {map, taken} ->
       prefix =
         cond do

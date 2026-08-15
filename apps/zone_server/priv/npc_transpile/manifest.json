@@ -19,11 +19,11 @@
         "map": "airplane",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "#AirshipWarp-1",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "#AirshipWarp-1"
+        ]
       },
       {
         "name": "",
@@ -32,11 +32,11 @@
         "map": "airplane",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "#AirshipWarp-2",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "#AirshipWarp-2"
+        ]
       }
     ]
   },
@@ -53,11 +53,11 @@
         "map": "airplane_01",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "#AirshipWarp-3",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "#AirshipWarp-3"
+        ]
       },
       {
         "name": "",
@@ -66,11 +66,11 @@
         "map": "airplane_01",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "#AirshipWarp-4",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "#AirshipWarp-4"
+        ]
       }
     ]
   },
@@ -205,11 +205,11 @@
         "map": "airplane_01",
         "dir": 2,
         "sprite": 72,
+        "unique_name": "Dianne#01airplane_01",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Dianne#01airplane_01"
+        ]
       }
     ]
   },
@@ -362,11 +362,11 @@
         "map": "airplane_01",
         "dir": 4,
         "sprite": 49,
+        "unique_name": "Nils#ein",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Nils#ein"
+        ]
       }
     ]
   },
@@ -589,11 +589,11 @@
         "map": "hugel",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "toairplane#hugel",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "toairplane#hugel"
+        ]
       }
     ]
   },
@@ -733,11 +733,11 @@
         "map": "ra_fild12",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "toairplane#rachel",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "toairplane#rachel"
+        ]
       }
     ]
   },
@@ -5297,11 +5297,11 @@
         "map": "lhz_in03",
         "dir": 6,
         "sprite": 869,
+        "unique_name": "Bad Drunk#amano06",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Bad Drunk#amano06"
+        ]
       }
     ]
   },
@@ -5420,11 +5420,11 @@
         "map": "lighthalzen",
         "dir": 3,
         "sprite": 777,
+        "unique_name": "Beggar#lhz_02",
         "trigger": [
           3,
           1
-        ],
-        "unique_name": "Beggar#lhz_02"
+        ]
       }
     ]
   },
@@ -6358,11 +6358,11 @@
         "map": "lhz_in01",
         "dir": 3,
         "sprite": 98,
+        "unique_name": "Jorje#zero",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Jorje#zero"
+        ]
       }
     ]
   },
@@ -7016,11 +7016,11 @@
         "map": "lhz_in01",
         "dir": 3,
         "sprite": 867,
+        "unique_name": "Rekenber Guard#li02",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Rekenber Guard#li02"
+        ]
       }
     ]
   },
@@ -7037,11 +7037,11 @@
         "map": "lhz_in01",
         "dir": 3,
         "sprite": 867,
+        "unique_name": "Rekenber Guard#li03",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Rekenber Guard#li03"
+        ]
       }
     ]
   },
@@ -8761,11 +8761,11 @@
         "map": "morocc",
         "dir": 5,
         "sprite": 707,
+        "unique_name": "MocSoldier",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "MocSoldier"
+        ]
       }
     ]
   },
@@ -9090,11 +9090,11 @@
         "map": "niflheim",
         "dir": 6,
         "sprite": 796,
+        "unique_name": "Gigantia#nif",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Gigantia#nif"
+        ]
       }
     ]
   },
@@ -9213,11 +9213,11 @@
         "map": "payon_in03",
         "dir": 3,
         "sprite": 708,
+        "unique_name": "Chief Guardsman#payon",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Chief Guardsman#payon"
+        ]
       }
     ]
   },
@@ -9234,11 +9234,11 @@
         "map": "payon_in03",
         "dir": 4,
         "sprite": 107,
+        "unique_name": "Chief#payon",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Chief#payon"
+        ]
       }
     ]
   },
@@ -9289,11 +9289,11 @@
         "map": "payon",
         "dir": 3,
         "sprite": 708,
+        "unique_name": "Guardsman#payon",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Guardsman#payon"
+        ]
       }
     ]
   },
@@ -9361,11 +9361,11 @@
         "map": "payon",
         "dir": 5,
         "sprite": 66,
+        "unique_name": "Woman#2payon",
         "trigger": [
           0,
           0
-        ],
-        "unique_name": "Woman#2payon"
+        ]
       }
     ]
   },
@@ -12254,11 +12254,11 @@
         "map": "in_moc_16",
         "dir": 2,
         "sprite": 725,
+        "unique_name": "Barcardi#ASN",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Barcardi#ASN"
+        ]
       }
     ]
   },
@@ -12289,11 +12289,11 @@
         "map": "in_moc_16",
         "dir": 4,
         "sprite": 106,
+        "unique_name": "Guildmaster#ASN2",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Guildmaster#ASN2"
+        ]
       }
     ]
   },
@@ -12310,11 +12310,11 @@
         "map": "in_moc_16",
         "dir": 1,
         "sprite": 730,
+        "unique_name": "Guildsman#ASN2",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Guildsman#ASN2"
+        ]
       }
     ]
   },
@@ -12348,11 +12348,11 @@
         "map": "in_moc_16",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "Keeper of the Door#ASN",
         "trigger": [
           2,
           1
-        ],
-        "unique_name": "Keeper of the Door#ASN"
+        ]
       }
     ]
   },
@@ -12426,11 +12426,11 @@
         "map": "in_moc_16",
         "dir": 2,
         "sprite": 725,
+        "unique_name": "Test Guide#ASN",
         "trigger": [
           4,
           4
-        ],
-        "unique_name": "Test Guide#ASN"
+        ]
       }
     ]
   },
@@ -12447,11 +12447,11 @@
         "map": "in_moc_16",
         "dir": 1,
         "sprite": 118,
+        "unique_name": "Thomas#ASNTEST",
         "trigger": [
           5,
           1
-        ],
-        "unique_name": "Thomas#ASNTEST"
+        ]
       }
     ]
   },
@@ -12705,11 +12705,11 @@
         "map": "job_hunte",
         "dir": 1,
         "sprite": 107,
+        "unique_name": "Guide#hnt",
         "trigger": [
           5,
           2
-        ],
-        "unique_name": "Guide#hnt"
+        ]
       }
     ]
   },
@@ -12837,11 +12837,11 @@
         "map": "job_hunte",
         "dir": 1,
         "sprite": 723,
+        "unique_name": "Switch#hnt",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Switch#hnt"
+        ]
       }
     ]
   },
@@ -12875,11 +12875,11 @@
         "map": "job_hunte",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "exit#hnttest",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "exit#hnttest"
+        ]
       }
     ]
   },
@@ -13070,11 +13070,11 @@
         "map": "job_knt",
         "dir": 1,
         "sprite": 107,
+        "unique_name": "Warp#knt",
         "trigger": [
           22,
           22
-        ],
-        "unique_name": "Warp#knt"
+        ]
       }
     ]
   },
@@ -13143,11 +13143,11 @@
         "map": "job_prist",
         "dir": 4,
         "sprite": 736,
+        "unique_name": "Baphomet#prst",
         "trigger": [
           8,
           1
-        ],
-        "unique_name": "Baphomet#prst"
+        ]
       }
     ]
   },
@@ -13164,11 +13164,11 @@
         "map": "job_prist",
         "dir": 4,
         "sprite": 1272,
+        "unique_name": "Dark Lord#prst",
         "trigger": [
           8,
           1
-        ],
-        "unique_name": "Dark Lord#prst"
+        ]
       }
     ]
   },
@@ -13185,11 +13185,11 @@
         "map": "job_prist",
         "dir": 4,
         "sprite": 1109,
+        "unique_name": "Deviruchi#prst",
         "trigger": [
           8,
           1
-        ],
-        "unique_name": "Deviruchi#prst"
+        ]
       }
     ]
   },
@@ -13206,11 +13206,11 @@
         "map": "job_prist",
         "dir": 4,
         "sprite": 1046,
+        "unique_name": "Doppelganger#prst",
         "trigger": [
           8,
           1
-        ],
-        "unique_name": "Doppelganger#prst"
+        ]
       }
     ]
   },
@@ -14182,7 +14182,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk",
     "output_hash": "7653db8da09ff3671b87363a4b2021da897aa9adbe9dbb2ab1296b0cbfcc0a69",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/guarding_monk.ex",
-    "source_hash": "536dbe69fba8286a3f7ff585187a31fcd7529d544f16a469fc59c574e88e22a7",
+    "source_hash": "a9b34cc47d612769c2f3c4b9a74152bf2ee22f40a7ca6b2a9ab6bf5759ec9099",
     "spawns": [
       {
         "name": "Guarding Monk",
@@ -14191,11 +14191,11 @@
         "map": "prt_monk",
         "dir": 1,
         "sprite": 120,
+        "unique_name": "Guarding Monk#mk",
         "trigger": [
           6,
           2
-        ],
-        "unique_name": "Guarding Monk#mk"
+        ]
       }
     ]
   },
@@ -14305,7 +14305,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Supervisor",
     "output_hash": "0e238f8151b7da4bdb3dc219c2fab5c00017e924c546de3d79027e33994548d3",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/supervisor.ex",
-    "source_hash": "00401fce1ccc6cb7b6609df8549c27c826cf6bbcf10a12c23b52e4243b2aa5c2",
+    "source_hash": "0842cd26f101edf16dcf597c558a673c2fdc765d38ea86e03a53e617bef8fac4",
     "spawns": [
       {
         "name": "Supervisor",
@@ -14314,11 +14314,11 @@
         "map": "monk_test",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "Supervisor#race_monk",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Supervisor#race_monk"
+        ]
       }
     ]
   },
@@ -14367,7 +14367,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.ExitMonk",
     "output_hash": "d07260aed1d9bde855016cae18860118341b7d6fa092ebf0e32877c1cece7281",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/exit_monk.ex",
-    "source_hash": "49069222311154e36a7f4fc627b0bee1dae77d63c0c396650bcd8d0d4d5d75a0",
+    "source_hash": "5bd490eaf9c2dd42a43ff0f7a4dbb04f1faf918c1a9559369b2e2f7e7f82c886",
     "spawns": [
       {
         "name": "exit_monk",
@@ -14376,11 +14376,11 @@
         "map": "monk_test",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "exit_monk#1",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "exit_monk#1"
+        ]
       }
     ]
   },
@@ -14388,7 +14388,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.ExitMonk166178",
     "output_hash": "518ec7e4254c62f2e3e53abe784c80d099f3d7c7fad7432e35d065c40bbcdd2f",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/exit_monk_166_178.ex",
-    "source_hash": "aa7678ef081670cdc88fceaee6fd2e8bb0f726c1e57df0463cdb5548036d8a49",
+    "source_hash": "e303d47ea990477c6eb5a38b56dcbc2e639690cefed802ba100a7e677bee368d",
     "spawns": [
       {
         "name": "exit_monk",
@@ -14397,11 +14397,11 @@
         "map": "monk_test",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "exit_monk#2",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "exit_monk#2"
+        ]
       }
     ]
   },
@@ -14409,7 +14409,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.ExitMonk270278",
     "output_hash": "4285e7b47f8446b059a55ee1d0e4763bf875fe0616e14b892af74e7e8f42c9e0",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/exit_monk_270_278.ex",
-    "source_hash": "f8eb3717b9ae73b54810d7a6547fcc5c8344c90ff11aae6f35b9c8a63884b451",
+    "source_hash": "aa061bfa49a0b3c6263731a146712d55a3ec8b3300f577938a2cc75ddd3734d8",
     "spawns": [
       {
         "name": "exit_monk",
@@ -14418,11 +14418,11 @@
         "map": "monk_test",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "exit_monk#3",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "exit_monk#3"
+        ]
       }
     ]
   },
@@ -14678,7 +14678,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp",
     "output_hash": "735b940aa596683ffa73a2f2095b88de0b872dc724c38248f40ed932ea30fd36",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/warp.ex",
-    "source_hash": "7c733cd891ef041f00de8977a33112f4e7fa39f9057a92eaa3a8dacfde9467ca",
+    "source_hash": "7e71fefb3e358c1ee1a5f892b09402694fffe3438d57ae736d081a640fc1930c",
     "spawns": [
       {
         "name": "Warp",
@@ -14687,11 +14687,11 @@
         "map": "cmd_fild09",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "Warp#1",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Warp#1"
+        ]
       }
     ]
   },
@@ -14699,7 +14699,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp335143",
     "output_hash": "32d997ee5911ab37bbfe9937995584dc6be60c22f326e42b2ca336746d6b6286",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/warp_335_143.ex",
-    "source_hash": "b3ca7ff50b4d358cb494f198ef7f8557248a85eca4feb2ba40818674f91e0409",
+    "source_hash": "debe39e04ff033139a9d86b8e35447f64e1183078db16de28fc9caaacdf3fecc",
     "spawns": [
       {
         "name": "Warp",
@@ -14708,11 +14708,11 @@
         "map": "cmd_fild09",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "Warp#2",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Warp#2"
+        ]
       }
     ]
   },
@@ -14720,7 +14720,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp304180",
     "output_hash": "2ef9a3649f95693849112a415de6508bb0f286ef12e4210fd33a853af613506c",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/warp_304_180.ex",
-    "source_hash": "6e03051122be8facf119ac5b0a0d2fd00220b9e23c87b160696c68662590488a",
+    "source_hash": "59bb46121a8424f7bbcbef739d61d292599ee6c7a171822ab6c5841d3024c163",
     "spawns": [
       {
         "name": "Warp",
@@ -14729,11 +14729,11 @@
         "map": "cmd_fild04",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "Warp#3",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Warp#3"
+        ]
       }
     ]
   },
@@ -14769,7 +14769,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HeToRogue",
     "output_hash": "aa1a9dd47ec5d814c575fd4222bf0dc1bf7fc09703314213d481f0ee3e57d050",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/he_to_rogue.ex",
-    "source_hash": "653eaa91bffc6c1553093b7b82ea55ff2700b29de7dc0af57121d94bf42de603",
+    "source_hash": "0e7c9131a3287e61d32f18129f445a4b86095e47954b52fe01f4e8f8afa0bfb3",
     "spawns": [
       {
         "name": "he_to_rogue",
@@ -14778,11 +14778,11 @@
         "map": "in_rogue",
         "dir": 0,
         "sprite": 45,
+        "unique_name": "he_to_rogue#rg",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "he_to_rogue#rg"
+        ]
       }
     ]
   },
@@ -15134,7 +15134,7 @@
   },
   "jobs/2-2/sage.txt|script|Written Test Professor#s|yuno_in03:105:177": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor",
-    "output_hash": "8bb1000cce6f431a0bbeb0e6b02065509bec0b236e0e58f36cc67f3c9d250d5a",
+    "output_hash": "4a603b681c86fc4c8d1aa9fa06acc7a016dfc6cd0e45893558144f86cf7513aa",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/written_test_professor.ex",
     "source_hash": "07f9233975eeca9123cba5e3ab96ed1bc0faa65eb4025e8f0c161e9b9c5fdae6",
     "spawns": [
@@ -15593,11 +15593,11 @@
         "map": "dewata",
         "dir": 6,
         "sprite": 536,
+        "unique_name": "Lazy Young Man#dew",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "Lazy Young Man#dew"
+        ]
       }
     ]
   },
@@ -15614,11 +15614,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 538,
+        "unique_name": "Little Kid in Town#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Little Kid in Town#dew"
+        ]
       }
     ]
   },
@@ -15635,11 +15635,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 536,
+        "unique_name": "Lodge Employee#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Lodge Employee#dew"
+        ]
       }
     ]
   },
@@ -15656,11 +15656,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 534,
+        "unique_name": "Lodge Owner#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Lodge Owner#dew"
+        ]
       }
     ]
   },
@@ -15677,11 +15677,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 538,
+        "unique_name": "Majya#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Majya#dew"
+        ]
       }
     ]
   },
@@ -15698,11 +15698,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 703,
+        "unique_name": "Missing Child#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Missing Child#dew"
+        ]
       }
     ]
   },
@@ -15838,11 +15838,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 101,
+        "unique_name": "Mum#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Mum#dew"
+        ]
       }
     ]
   },
@@ -15859,11 +15859,11 @@
         "map": "dewata",
         "dir": 6,
         "sprite": 97,
+        "unique_name": "Poppa#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Poppa#dew"
+        ]
       }
     ]
   },
@@ -15913,11 +15913,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 538,
+        "unique_name": "Sarr#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Sarr#dew"
+        ]
       }
     ]
   },
@@ -15985,11 +15985,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 538,
+        "unique_name": "Sipo#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Sipo#dew"
+        ]
       }
     ]
   },
@@ -16006,11 +16006,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 539,
+        "unique_name": "Siyak#dew",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Siyak#dew"
+        ]
       }
     ]
   },
@@ -16071,11 +16071,11 @@
         "map": "dewata",
         "dir": 8,
         "sprite": 828,
+        "unique_name": "Sweet Married Couple#1",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Sweet Married Couple#1"
+        ]
       }
     ]
   },
@@ -16092,11 +16092,11 @@
         "map": "dewata",
         "dir": 8,
         "sprite": 727,
+        "unique_name": "Sweet Married Couple#2",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Sweet Married Couple#2"
+        ]
       }
     ]
   },
@@ -16130,11 +16130,11 @@
         "map": "dewata",
         "dir": 4,
         "sprite": 887,
+        "unique_name": "Tourist#dew-2",
         "trigger": [
           2,
           3
-        ],
-        "unique_name": "Tourist#dew-2"
+        ]
       }
     ]
   },
@@ -17428,11 +17428,11 @@
         "map": "malangdo",
         "dir": 3,
         "sprite": 558,
+        "unique_name": "Cat Trainer#mal1",
         "trigger": [
           0,
           8
-        ],
-        "unique_name": "Cat Trainer#mal1"
+        ]
       }
     ]
   },
@@ -17517,11 +17517,11 @@
         "map": "malangdo",
         "dir": 5,
         "sprite": 485,
+        "unique_name": "Wanderer#mal",
         "trigger": [
           5,
           1
-        ],
-        "unique_name": "Wanderer#mal"
+        ]
       }
     ]
   },
@@ -17538,11 +17538,11 @@
         "map": "ma_fild01",
         "dir": 6,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#01",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#01"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17551,11 +17551,11 @@
         "map": "ma_fild02",
         "dir": 4,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#05",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#05"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17564,11 +17564,11 @@
         "map": "ma_scene01",
         "dir": 4,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#09",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#09"
+        ]
       }
     ]
   },
@@ -17585,11 +17585,11 @@
         "map": "ma_fild01",
         "dir": 4,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#02",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#02"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17598,11 +17598,11 @@
         "map": "ma_fild01",
         "dir": 6,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#03",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#03"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17611,11 +17611,11 @@
         "map": "ma_fild01",
         "dir": 6,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#04",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#04"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17624,11 +17624,11 @@
         "map": "ma_fild02",
         "dir": 4,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#06",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#06"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17637,11 +17637,11 @@
         "map": "ma_fild02",
         "dir": 6,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#07",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#07"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17650,11 +17650,11 @@
         "map": "ma_fild02",
         "dir": 4,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#08",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#08"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17663,11 +17663,11 @@
         "map": "ma_scene01",
         "dir": 4,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#10",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#10"
+        ]
       },
       {
         "name": "Unidentified Creature",
@@ -17676,11 +17676,11 @@
         "map": "ma_scene01",
         "dir": 6,
         "sprite": 572,
+        "unique_name": "Unidentified Creature#11",
         "trigger": [
           2,
           2
-        ],
-        "unique_name": "Unidentified Creature#11"
+        ]
       }
     ]
   },
@@ -19641,11 +19641,11 @@
         "map": "iz_ac01",
         "dir": 0,
         "sprite": 111,
+        "unique_name": "#acKick",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "#acKick"
+        ]
       },
       {
         "name": "",
@@ -19654,11 +19654,11 @@
         "map": "iz_ac01_a",
         "dir": 0,
         "sprite": 111,
+        "unique_name": "#acKick_a",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "#acKick_a"
+        ]
       },
       {
         "name": "",
@@ -19667,11 +19667,11 @@
         "map": "iz_ac01_b",
         "dir": 0,
         "sprite": 111,
+        "unique_name": "#acKick_b",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "#acKick_b"
+        ]
       },
       {
         "name": "",
@@ -19680,11 +19680,11 @@
         "map": "iz_ac01_c",
         "dir": 0,
         "sprite": 111,
+        "unique_name": "#acKick_c",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "#acKick_c"
+        ]
       },
       {
         "name": "",
@@ -19693,11 +19693,11 @@
         "map": "iz_ac01_d",
         "dir": 0,
         "sprite": 111,
+        "unique_name": "#acKick_d",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "#acKick_d"
+        ]
       }
     ]
   },
@@ -19714,11 +19714,11 @@
         "map": "gef_fild07",
         "dir": 6,
         "sprite": 111,
+        "unique_name": "#acmageguide",
         "trigger": [
           7,
           7
-        ],
-        "unique_name": "#acmageguide"
+        ]
       }
     ]
   },
@@ -20229,11 +20229,11 @@
         "map": "izlude",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Airship#iz",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Airship#iz"
+        ]
       },
       {
         "name": "Airship",
@@ -20242,11 +20242,11 @@
         "map": "izlude_a",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Airship#iz_a",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Airship#iz_a"
+        ]
       },
       {
         "name": "Airship",
@@ -20255,11 +20255,11 @@
         "map": "izlude_b",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Airship#iz_b",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Airship#iz_b"
+        ]
       },
       {
         "name": "Airship",
@@ -20268,11 +20268,11 @@
         "map": "izlude_c",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Airship#iz_c",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Airship#iz_c"
+        ]
       },
       {
         "name": "Airship",
@@ -20281,11 +20281,11 @@
         "map": "izlude_d",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Airship#iz_d",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Airship#iz_d"
+        ]
       }
     ]
   },
@@ -20408,11 +20408,11 @@
         "map": "izlude",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Arena#iz",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Arena#iz"
+        ]
       },
       {
         "name": "Arena",
@@ -20421,11 +20421,11 @@
         "map": "izlude_a",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Arena#iz_a",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Arena#iz_a"
+        ]
       },
       {
         "name": "Arena",
@@ -20434,11 +20434,11 @@
         "map": "izlude_b",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Arena#iz_b",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Arena#iz_b"
+        ]
       },
       {
         "name": "Arena",
@@ -20447,11 +20447,11 @@
         "map": "izlude_c",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Arena#iz_c",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Arena#iz_c"
+        ]
       },
       {
         "name": "Arena",
@@ -20460,11 +20460,11 @@
         "map": "izlude_d",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Arena#iz_d",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Arena#iz_d"
+        ]
       }
     ]
   },
@@ -20640,11 +20640,11 @@
         "map": "izlude",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Bulletin Board#iz",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Bulletin Board#iz"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -20653,11 +20653,11 @@
         "map": "izlude_a",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Bulletin Board#iz_a",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Bulletin Board#iz_a"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -20666,11 +20666,11 @@
         "map": "izlude_b",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Bulletin Board#iz_b",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Bulletin Board#iz_b"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -20679,11 +20679,11 @@
         "map": "izlude_c",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Bulletin Board#iz_c",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Bulletin Board#iz_c"
+        ]
       },
       {
         "name": "Bulletin Board",
@@ -20692,11 +20692,11 @@
         "map": "izlude_d",
         "dir": 3,
         "sprite": 858,
+        "unique_name": "Bulletin Board#iz_d",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Bulletin Board#iz_d"
+        ]
       }
     ]
   },
@@ -20766,11 +20766,11 @@
         "map": "izlude",
         "dir": 3,
         "sprite": 873,
+        "unique_name": "Captain Carocc#iz",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Captain Carocc#iz"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -20779,11 +20779,11 @@
         "map": "izlude_a",
         "dir": 3,
         "sprite": 873,
+        "unique_name": "Captain Carocc#iz_a",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Captain Carocc#iz_a"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -20792,11 +20792,11 @@
         "map": "izlude_b",
         "dir": 3,
         "sprite": 873,
+        "unique_name": "Captain Carocc#iz_b",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Captain Carocc#iz_b"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -20805,11 +20805,11 @@
         "map": "izlude_c",
         "dir": 3,
         "sprite": 873,
+        "unique_name": "Captain Carocc#iz_c",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Captain Carocc#iz_c"
+        ]
       },
       {
         "name": "Captain Carocc",
@@ -20818,11 +20818,11 @@
         "map": "izlude_d",
         "dir": 3,
         "sprite": 873,
+        "unique_name": "Captain Carocc#iz_d",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Captain Carocc#iz_d"
+        ]
       }
     ]
   },
@@ -20962,11 +20962,11 @@
         "map": "izlude",
         "dir": 3,
         "sprite": 903,
+        "unique_name": "Criatura Academy Staff#0",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Criatura Academy Staff#0"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -20975,11 +20975,11 @@
         "map": "izlude_a",
         "dir": 3,
         "sprite": 903,
+        "unique_name": "Criatura Academy Staff#a",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Criatura Academy Staff#a"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -20988,11 +20988,11 @@
         "map": "izlude_b",
         "dir": 3,
         "sprite": 903,
+        "unique_name": "Criatura Academy Staff#b",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Criatura Academy Staff#b"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -21001,11 +21001,11 @@
         "map": "izlude_c",
         "dir": 3,
         "sprite": 903,
+        "unique_name": "Criatura Academy Staff#c",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Criatura Academy Staff#c"
+        ]
       },
       {
         "name": "Criatura Academy Staff",
@@ -21014,11 +21014,11 @@
         "map": "izlude_d",
         "dir": 3,
         "sprite": 903,
+        "unique_name": "Criatura Academy Staff#d",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Criatura Academy Staff#d"
+        ]
       }
     ]
   },
@@ -21035,11 +21035,11 @@
         "map": "izlude",
         "dir": 0,
         "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#0",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Cultivated Red Plant#0"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -21048,11 +21048,11 @@
         "map": "izlude_a",
         "dir": 0,
         "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#a",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Cultivated Red Plant#a"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -21061,11 +21061,11 @@
         "map": "izlude_b",
         "dir": 0,
         "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#b",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Cultivated Red Plant#b"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -21074,11 +21074,11 @@
         "map": "izlude_c",
         "dir": 0,
         "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#c",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Cultivated Red Plant#c"
+        ]
       },
       {
         "name": "Cultivated Red Plant",
@@ -21087,11 +21087,11 @@
         "map": "izlude_d",
         "dir": 0,
         "sprite": 1078,
+        "unique_name": "Cultivated Red Plant#d",
         "trigger": [
           3,
           3
-        ],
-        "unique_name": "Cultivated Red Plant#d"
+        ]
       }
     ]
   },
@@ -23040,11 +23040,11 @@
         "map": "izlude",
         "dir": 5,
         "sprite": 726,
+        "unique_name": "Repairing Blacksmith#0",
         "trigger": [
           5,
           7
-        ],
-        "unique_name": "Repairing Blacksmith#0"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -23053,11 +23053,11 @@
         "map": "izlude_a",
         "dir": 5,
         "sprite": 726,
+        "unique_name": "Repairing Blacksmith#a",
         "trigger": [
           5,
           7
-        ],
-        "unique_name": "Repairing Blacksmith#a"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -23066,11 +23066,11 @@
         "map": "izlude_b",
         "dir": 5,
         "sprite": 726,
+        "unique_name": "Repairing Blacksmith#b",
         "trigger": [
           5,
           7
-        ],
-        "unique_name": "Repairing Blacksmith#b"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -23079,11 +23079,11 @@
         "map": "izlude_c",
         "dir": 5,
         "sprite": 726,
+        "unique_name": "Repairing Blacksmith#c",
         "trigger": [
           5,
           7
-        ],
-        "unique_name": "Repairing Blacksmith#c"
+        ]
       },
       {
         "name": "Repairing Blacksmith",
@@ -23092,11 +23092,11 @@
         "map": "izlude_d",
         "dir": 5,
         "sprite": 726,
+        "unique_name": "Repairing Blacksmith#d",
         "trigger": [
           5,
           7
-        ],
-        "unique_name": "Repairing Blacksmith#d"
+        ]
       }
     ]
   },
@@ -23696,11 +23696,11 @@
         "map": "iz_ac01",
         "dir": 5,
         "sprite": 418,
+        "unique_name": "Trainer Mainz#ac",
         "trigger": [
           4,
           4
-        ],
-        "unique_name": "Trainer Mainz#ac"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -23709,11 +23709,11 @@
         "map": "iz_ac01_a",
         "dir": 5,
         "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_a",
         "trigger": [
           4,
           4
-        ],
-        "unique_name": "Trainer Mainz#ac_a"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -23722,11 +23722,11 @@
         "map": "iz_ac01_b",
         "dir": 5,
         "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_b",
         "trigger": [
           4,
           4
-        ],
-        "unique_name": "Trainer Mainz#ac_b"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -23735,11 +23735,11 @@
         "map": "iz_ac01_c",
         "dir": 5,
         "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_c",
         "trigger": [
           4,
           4
-        ],
-        "unique_name": "Trainer Mainz#ac_c"
+        ]
       },
       {
         "name": "Trainer Mainz",
@@ -23748,11 +23748,11 @@
         "map": "iz_ac01_d",
         "dir": 5,
         "sprite": 418,
+        "unique_name": "Trainer Mainz#ac_d",
         "trigger": [
           4,
           4
-        ],
-        "unique_name": "Trainer Mainz#ac_d"
+        ]
       }
     ]
   },
@@ -24259,11 +24259,11 @@
         "map": "iz_int",
         "dir": 3,
         "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -24272,11 +24272,11 @@
         "map": "iz_int01",
         "dir": 3,
         "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int01"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -24285,11 +24285,11 @@
         "map": "iz_int02",
         "dir": 3,
         "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int02"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -24298,11 +24298,11 @@
         "map": "iz_int03",
         "dir": 3,
         "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int03"
+        ]
       },
       {
         "name": "Wounded Swordsman",
@@ -24311,11 +24311,11 @@
         "map": "iz_int04",
         "dir": 3,
         "sprite": 687,
+        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04",
         "trigger": [
           5,
           5
-        ],
-        "unique_name": "Wounded Swordsman#intro_npc01_iz_int04"
+        ]
       }
     ]
   },
@@ -24385,11 +24385,11 @@
         "map": "iz_int",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "iz_int#intro_evt02"
+        ]
       },
       {
         "name": "iz_int01",
@@ -24398,11 +24398,11 @@
         "map": "iz_int01",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int01#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "iz_int01#intro_evt02"
+        ]
       },
       {
         "name": "iz_int02",
@@ -24411,11 +24411,11 @@
         "map": "iz_int02",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int02#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "iz_int02#intro_evt02"
+        ]
       },
       {
         "name": "iz_int03",
@@ -24424,11 +24424,11 @@
         "map": "iz_int03",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int03#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "iz_int03#intro_evt02"
+        ]
       },
       {
         "name": "iz_int04",
@@ -24437,11 +24437,11 @@
         "map": "iz_int04",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int04#intro_evt02",
         "trigger": [
           1,
           1
-        ],
-        "unique_name": "iz_int04#intro_evt02"
+        ]
       }
     ]
   },
@@ -24458,11 +24458,11 @@
         "map": "iz_int",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "unique_name": "iz_int#intro_start"
+        ]
       },
       {
         "name": "iz_int01",
@@ -24471,11 +24471,11 @@
         "map": "iz_int01",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int01#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "unique_name": "iz_int01#intro_start"
+        ]
       },
       {
         "name": "iz_int02",
@@ -24484,11 +24484,11 @@
         "map": "iz_int02",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int02#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "unique_name": "iz_int02#intro_start"
+        ]
       },
       {
         "name": "iz_int03",
@@ -24497,11 +24497,11 @@
         "map": "iz_int03",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int03#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "unique_name": "iz_int03#intro_start"
+        ]
       },
       {
         "name": "iz_int04",
@@ -24510,11 +24510,11 @@
         "map": "iz_int04",
         "dir": 0,
         "sprite": 139,
+        "unique_name": "iz_int04#intro_start",
         "trigger": [
           6,
           6
-        ],
-        "unique_name": "iz_int04#intro_start"
+        ]
       }
     ]
   },
