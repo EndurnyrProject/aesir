@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       account_id: 100,
       partner_id: Keyword.get(opts, :partner_id, 0),
       cart_type: Keyword.get(opts, :cart_type, 0),
-      party_id: Keyword.get(opts, :party_id, 0)
+      party_id: Keyword.get(opts, :party_id, 0),
+      guild_id: Keyword.get(opts, :guild_id, 0)
     }
   end
 
@@ -55,8 +56,13 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.getcharid(ctx(), 1) == 0
     end
 
-    test "guild (2) and unknown types return 0" do
+    test "type 2 is the guild id, 0 when guildless" do
+      assert Dsl.getcharid(ctx(guild_id: 55), 2) == 55
       assert Dsl.getcharid(ctx(), 2) == 0
+      assert Dsl.getcharid(ctx(guild_id: nil), 2) == 0
+    end
+
+    test "unknown types return 0" do
       assert Dsl.getcharid(ctx(), 9) == 0
     end
 

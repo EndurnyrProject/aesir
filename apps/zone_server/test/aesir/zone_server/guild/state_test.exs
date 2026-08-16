@@ -17,7 +17,8 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
       name: "Test Guild",
       master_char_id: Keyword.get(opts, :master_char_id, 1),
       positions: Keyword.get(opts, :positions, %{}),
-      members: Map.new(members, &{&1.char_id, &1})
+      members: Map.new(members, &{&1.char_id, &1}),
+      learned_skills: Keyword.get(opts, :learned_skills, %{})
     }
   end
 
@@ -38,6 +39,31 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
       members = for id <- 1..(@max_members - 1), do: member(id, 19)
 
       refute State.full?(state(members))
+    end
+
+    test "extension raises the cap by 6 per level" do
+      members = for id <- 1..@max_members, do: member(id, 19)
+
+      refute State.full?(state(members, learned_skills: %{10_004 => 1}))
+
+      members_22 = for id <- 1..(@max_members + 6), do: member(id, 19)
+      assert State.full?(state(members_22, learned_skills: %{10_004 => 1}))
+    end
+  end
+
+  describe "max_members/1" do
+    test "is 16 without extension and 76 at extension 10" do
+      assert State.max_members(state([])) == 16
+      assert State.max_members(state([], learned_skills: %{10_004 => 10})) == 76
+    end
+  end
+
+  describe "skill_level/2" do
+    test "reads learned levels, defaulting to 0" do
+      s = state([], learned_skills: %{10_004 => 3})
+
+      assert State.skill_level(s, 10_004) == 3
+      assert State.skill_level(s, 10_000) == 0
     end
   end
 

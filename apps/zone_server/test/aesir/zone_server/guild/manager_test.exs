@@ -158,6 +158,25 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       {_master, created} = guild_fixture("AlreadyUp")
       assert {:ok, ^created} = Manager.ensure_started(created.guild_id)
     end
+
+    test "hydrates progression fields, integer-keying jsonb learned skills" do
+      {_master, created} = guild_fixture("ProgressionHydrate")
+
+      {1, nil} =
+        from(g in GuildModel, where: g.id == ^created.guild_id)
+        |> Repo.update_all(
+          set: [level: 3, exp: 500_000, skill_points: 2, learned_skills: %{"10004" => 3}]
+        )
+
+      ClusterTestHelper.clear_all()
+
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+      assert rebuilt.level == 3
+      assert rebuilt.exp == 500_000
+      assert rebuilt.skill_points == 2
+      assert rebuilt.learned_skills == %{10_004 => 3}
+      assert rebuilt.skill_cooldowns == %{}
+    end
   end
 
   describe "add_member/2" do

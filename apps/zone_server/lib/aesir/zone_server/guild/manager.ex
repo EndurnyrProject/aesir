@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
 
   @doc """
   Adds `character` to `guild_id`, re-validating inside the entry that the guild
-  is not at the fixed cap of 16 (`State.full?/1`). Persists the member's
+  is not at its current member capacity (`State.full?/1`). Persists the member's
   `guild_id` + `guild_position: 19` (Newbie), broadcasts
   `{:social, {:guild_updated, state}}` on success, and leaves the state and
   the character's row untouched on failure.
@@ -755,8 +755,20 @@ defmodule Aesir.ZoneServer.Guild.Manager do
       emblem_id: guild.emblem_id,
       notice: %{subject: guild.notice_subject || "", body: guild.notice_body || ""},
       positions: positions,
-      members: Map.new(members, &{&1.char_id, &1})
+      members: Map.new(members, &{&1.char_id, &1}),
+      level: guild.level,
+      exp: guild.exp,
+      skill_points: guild.skill_points,
+      learned_skills: decode_learned_skills(guild.learned_skills)
     }
+  end
+
+  # jsonb map keys come back as strings; runtime state keys skills by integer id.
+  defp decode_learned_skills(skills) do
+    Map.new(skills, fn
+      {key, level} when is_binary(key) -> {String.to_integer(key), level}
+      {key, level} -> {key, level}
+    end)
   end
 
   defp map_guild_error(changeset) do

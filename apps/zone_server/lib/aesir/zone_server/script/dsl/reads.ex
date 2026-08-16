@@ -699,14 +699,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
 
   @doc """
   An id of the attached player by `type` (rAthena `getcharid`): `0` the char
-  id, `1` the party id (`0` when partyless), `2` the guild id (no guild
-  system yet, always `0`), `3` the account id. Any other type returns `0`,
-  matching rAthena. Pure read over the ctx snapshot.
+  id, `1` the party id (`0` when partyless), `2` the guild id (`0` when
+  guildless), `3` the account id. Any other type returns `0`, matching
+  rAthena. Pure read over the ctx snapshot.
   """
   @spec getcharid(Ctx.t(), integer()) :: non_neg_integer()
   def getcharid(%Ctx{game_state: nil}, _type), do: no_player!("getcharid/2")
   def getcharid(%Ctx{char_id: char_id}, 0), do: char_id
   def getcharid(%Ctx{game_state: gs}, 1), do: gs.party_id
+  def getcharid(%Ctx{game_state: gs}, 2), do: gs.guild_id || 0
   def getcharid(%Ctx{account_id: account_id}, 3), do: account_id
   def getcharid(%Ctx{}, _type), do: 0
 
