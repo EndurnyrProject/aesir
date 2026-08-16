@@ -115,7 +115,6 @@ defmodule Aesir.ZoneServer.Script.Dsl do
           blessing_amount: non_neg_integer()
         }
 
-  @max_refine RefineDatabase.max_refine()
   @refine_ore_amount 1
   @npcskill_min_stat 1
   @npcskill_max_stat 255
@@ -2027,7 +2026,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
          %InventoryItem{refine: refine},
          %ItemDefinition{refineable: true} = item_def
        ) do
-    refine < @max_refine and
+    refine < RefineDatabase.max_refine() and
       match?({:ok, _group, _item_level}, RefineDatabase.group_and_level(item_def))
   end
 
@@ -4244,7 +4243,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   end
 
   # Scales the healed HP delta (never SP) by the target's `received_heal_rate`
-  # (SC_INCHEALRATE) before it is applied (rAthena `pc.cpp:10719-10720`). Only
+  # (SC_INCHEALRATE) before it is applied. Only
   # positive deltas are scaled; item/script heals never subtract HP here.
   defp scale_received_heal(delta, _char_id) when delta <= 0, do: delta
 
