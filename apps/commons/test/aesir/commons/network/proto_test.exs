@@ -45,12 +45,15 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.GuildInviteRequest
   alias Aesir.Net.GuildInviteResponse
   alias Aesir.Net.GuildLeaveRequest
+  alias Aesir.Net.GuildLevelUp
   alias Aesir.Net.GuildMember
   alias Aesir.Net.GuildMemberPositionRequest
   alias Aesir.Net.GuildMemberUpdate
   alias Aesir.Net.GuildNoticeEditRequest
   alias Aesir.Net.GuildPosition
   alias Aesir.Net.GuildPositionEditRequest
+  alias Aesir.Net.GuildSkillEntry
+  alias Aesir.Net.GuildSkillUpRequest
   alias Aesir.Net.Hello
   alias Aesir.Net.HelloAck
   alias Aesir.Net.HomunculusAiConfig
@@ -2562,6 +2565,53 @@ defmodule Aesir.Commons.Network.ProtoTest do
                    ]
                  }}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_info progression fields round-trip through envelope oneof" do
+    info = %GuildInfo{
+      guild_id: 5,
+      name: "Aesir",
+      master_char_id: 10_001,
+      level: 12,
+      exp: 3_000_000_000,
+      next_exp: 14_400_000,
+      skill_points: 2,
+      skills: [
+        %GuildSkillEntry{skill_id: 10_004, level: 3, max_level: 10},
+        %GuildSkillEntry{skill_id: 10_000, level: 1, max_level: 1}
+      ]
+    }
+
+    env = %Envelope{seq: 3, body: {:guild_info, info}}
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 3, body: {:guild_info, ^info}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_skill_up_request round-trips through envelope oneof" do
+    env = %Envelope{
+      seq: 4,
+      body: {:guild_skill_up_request, %GuildSkillUpRequest{skill_id: 10_004}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              seq: 4,
+              body: {:guild_skill_up_request, %GuildSkillUpRequest{skill_id: 10_004}}
+            }} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_level_up round-trips through envelope oneof" do
+    up = %GuildLevelUp{guild_id: 5, level: 13, skill_points: 3}
+    env = %Envelope{seq: 5, body: {:guild_level_up, up}}
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok, %Envelope{seq: 5, body: {:guild_level_up, ^up}}} =
+             Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
   test "guild_member_update round-trips through envelope oneof" do

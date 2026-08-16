@@ -65,4 +65,53 @@ defmodule Aesir.Commons.Models.GuildTest do
       assert changeset.valid?
     end
   end
+
+  describe "progression fields" do
+    test "insert defaults to level 1 with no exp, points, or skills" do
+      assert {:ok, guild} =
+               %Guild{}
+               |> Guild.changeset(valid_attrs())
+               |> Repo.insert()
+
+      assert guild.level == 1
+      assert guild.exp == 0
+      assert guild.skill_points == 0
+      assert guild.learned_skills == %{}
+    end
+
+    test "persists exp beyond the int4 range" do
+      assert {:ok, guild} =
+               %Guild{}
+               |> Guild.changeset(
+                 valid_attrs(%{
+                   level: 50,
+                   exp: 3_000_000_000,
+                   skill_points: 3,
+                   learned_skills: %{"10004" => 3}
+                 })
+               )
+               |> Repo.insert()
+
+      reloaded = Repo.get!(Guild, guild.id)
+      assert reloaded.exp == 3_000_000_000
+      assert reloaded.learned_skills == %{"10004" => 3}
+    end
+
+    test "rejects explicit nil progression values" do
+      assert %{level: _} = errors_on(Guild.changeset(%Guild{}, valid_attrs(%{level: nil})))
+      assert %{exp: _} = errors_on(Guild.changeset(%Guild{}, valid_attrs(%{exp: nil})))
+    end
+
+    test "rejects out-of-range level" do
+      assert %{level: _} = errors_on(Guild.changeset(%Guild{}, valid_attrs(%{level: 0})))
+      assert %{level: _} = errors_on(Guild.changeset(%Guild{}, valid_attrs(%{level: 51})))
+    end
+
+    test "rejects negative exp and skill points" do
+      assert %{exp: _} = errors_on(Guild.changeset(%Guild{}, valid_attrs(%{exp: -1})))
+
+      assert %{skill_points: _} =
+               errors_on(Guild.changeset(%Guild{}, valid_attrs(%{skill_points: -1})))
+    end
+  end
 end

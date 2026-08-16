@@ -233,6 +233,10 @@ message Envelope {
     WaitingRoomJoinResult waiting_room_join_result = 194;
     WaitingRoomMemberUpdate waiting_room_member_update = 195;
     WaitingRoomChat waiting_room_chat = 196;
+    // 197: guild progression client intent (master spends a guild skill point)
+    GuildSkillUpRequest guild_skill_up_request = 197;
+    // 198: guild progression authoritative level-up notification
+    GuildLevelUp guild_level_up = 198;
   }
 }
 
@@ -1656,6 +1660,36 @@ message GuildInfo {
   string notice_body = 6;
   repeated GuildPosition positions = 7;
   repeated GuildMember members = 8;
+  // Guild progression: current level (1-50) and exp progress toward the next.
+  uint32 level = 9;
+  // Exp accumulated toward next_exp; next_exp is 0 at the level cap.
+  uint64 exp = 10;
+  uint64 next_exp = 11;
+  // Unspent guild skill points (one granted per level-up).
+  uint32 skill_points = 12;
+  // Learned guild skills with their current and maximum levels.
+  repeated GuildSkillEntry skills = 13;
+}
+
+// One learned (or learnable) guild skill in a GuildInfo snapshot.
+message GuildSkillEntry {
+  uint32 skill_id = 1;
+  uint32 level = 2;
+  uint32 max_level = 3;
+}
+
+// Client -> server, guild master spends one guild skill point on skill_id.
+// Rejections come back as GuildActionResult.
+message GuildSkillUpRequest {
+  uint32 skill_id = 1;
+}
+
+// Server -> client, broadcast to online members when the guild levels up.
+message GuildLevelUp {
+  uint32 guild_id = 1;
+  uint32 level = 2;
+  // Unspent skill points after the level-up.
+  uint32 skill_points = 3;
 }
 
 // Server -> client, complete current snapshot for one guild member.

@@ -12,3 +12,15 @@ config :zone_server,
   job_exp_rate: 100,
   mvp_exp_rate: 100,
   quest_exp_rate: 100
+
+# Guild progression.
+#
+#   * guild_exp_rate           -> multiplier on taxed member EXP contributions (100 = 1x)
+#   * guild_exp_limit          -> max per-position EXP tax percentage
+#   * guild_skills_gvg_only    -> restrict guild actives to GvG ground (false until WoE lands)
+#   * guild_aura_affects_master -> whether the master receives his own guild auras
+config :zone_server,
+  guild_exp_rate: 100,
+  guild_exp_limit: 50,
+  guild_skills_gvg_only: false,
+  guild_aura_affects_master: false

@@ -225,6 +225,29 @@ defmodule Aesir.ZoneServer.Config do
   @spec quest_exp_rate() :: non_neg_integer()
   def quest_exp_rate, do: Application.get_env(:zone_server, :quest_exp_rate, @default_exp_rate)
 
+  @doc "Guild-EXP rate multiplier as a percentage (100 = 1x). Scales taxed member contributions."
+  @spec guild_exp_rate() :: non_neg_integer()
+  def guild_exp_rate, do: Application.get_env(:zone_server, :guild_exp_rate, @default_exp_rate)
+
+  @doc "Maximum per-position guild EXP tax, as a percentage of member base EXP."
+  @spec guild_exp_limit() :: non_neg_integer()
+  def guild_exp_limit, do: Application.get_env(:zone_server, :guild_exp_limit, 50)
+
+  @doc """
+  Whether guild active skills are castable only on GvG ground.
+
+  Defaults to `false` until WoE exists; flip to the faithful restriction once
+  GvG maps land.
+  """
+  @spec guild_skills_gvg_only() :: boolean()
+  def guild_skills_gvg_only,
+    do: Application.get_env(:zone_server, :guild_skills_gvg_only, false)
+
+  @doc "Whether guild auras also buff the guild master (excluded by default)."
+  @spec guild_aura_affects_master() :: boolean()
+  def guild_aura_affects_master,
+    do: Application.get_env(:zone_server, :guild_aura_affects_master, false)
+
   @doc """
   Maps a broad item type to its drop-rate category
   (`:common | :heal | :use | :equip | :card`), following rAthena's classification.
