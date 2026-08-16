@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster
   @behaviour Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle
 
+  alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -19,6 +22,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   @waivable_gemstone_ids [715, 716, 717]
+
+  # Guild skills (GD_*) are learned by the guild, not the character: rank and
+  # cooldowns resolve against the guild entry, never against the caster's
+  # progression or per-character cooldown map.
+  @guild_skill_range 10_000..10_019
 
   @impl true
   def kind, do: :player
@@ -57,6 +65,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   # A skill granted by worn equipment is authoritative while equipped: it is
   # castable at its granted level without a learned entry or quest lineage.
   @impl true
+  def knows?(caster, %{id: skill_id} = _definition, level, _phase)
+      when skill_id in @guild_skill_range do
+    guild_knows?(caster, skill_id, level)
+  end
+
   def knows?(caster, definition, level, :begin) do
     cond do
       granted_level(caster, definition.id) >= level ->
@@ -78,6 +91,38 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   defp learned_level(caster, skill_id),
     do: Learned.learned_level(caster.stats.progression.learned_skills, skill_id)
+
+  defp guild_knows?(%PlayerState{guild_id: guild_id}, _skill_id, _level)
+       when guild_id in [nil, 0],
+       do: {:error, :skill_not_learned}
+
+  defp guild_knows?(%PlayerState{} = caster, skill_id, level) do
+    with {:ok, guild} <- fetch_guild(caster.guild_id),
+         :ok <- check_guild_master(guild, caster.character_id),
+         :ok <- check_gvg_gate() do
+      if GuildState.skill_level(guild, skill_id) >= level,
+        do: :ok,
+        else: {:error, :skill_not_learned}
+    end
+  end
+
+  defp fetch_guild(guild_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, guild} -> {:ok, guild}
+      {:error, :not_found} -> {:error, :skill_not_learned}
+    end
+  end
+
+  defp check_guild_master(%GuildState{master_char_id: char_id}, char_id), do: :ok
+  defp check_guild_master(%GuildState{}, _char_id), do: {:error, :not_guild_master}
+
+  # Faithful shape for the GvG-only restriction on guild actives; the shipped
+  # default is relaxed (castable anywhere) until WoE ground exists.
+  defp check_gvg_gate do
+    if Config.guild_skills_gvg_only(),
+      do: {:error, :not_gvg_ground},
+      else: :ok
+  end
 
   # Reads the equipment-granted level, tolerating the bare-map `stats` shape used
   # by handler fixtures (which lack the field) as no grant.
@@ -153,6 +198,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
+  def cooldown_ready?(%PlayerState{guild_id: guild_id}, skill_id, now, :begin)
+      when skill_id in @guild_skill_range do
+    case GuildManager.get(guild_id || 0) do
+      {:ok, %GuildState{skill_cooldowns: cooldowns}} ->
+        case Map.get(cooldowns, skill_id) do
+          expiry when is_integer(expiry) -> expiry <= now
+          nil -> true
+        end
+
+      {:error, :not_found} ->
+        true
+    end
+  end
+
   def cooldown_ready?(%PlayerState{skill_cooldowns: cooldowns}, skill_id, now, :begin) do
     Cooldown.ready?(cooldowns, skill_id, now)
   end
@@ -161,6 +220,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
 
   @impl true
   def put_cooldown(caster, _skill_id, 0), do: caster
+
+  def put_cooldown(%PlayerState{guild_id: guild_id} = caster, skill_id, expires_at)
+      when skill_id in @guild_skill_range do
+    duration = max(expires_at - System.monotonic_time(:millisecond), 0)
+
+    # The arm result is deliberately ignored: only one master exists per guild
+    # and a session serializes its own casts, so a concurrent losing arm has no
+    # real interleaving - and effects have already run by cooldown-write time.
+    _result = GuildManager.check_and_arm_skill_cooldown(guild_id || 0, skill_id, duration)
+    caster
+  end
 
   def put_cooldown(%PlayerState{skill_cooldowns: cooldowns} = caster, skill_id, expires_at) do
     %{caster | skill_cooldowns: Cooldown.put(cooldowns, skill_id, expires_at)}

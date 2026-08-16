@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Guild.Member, as: GuildMember
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Guild.View, as: GuildView
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member, as: PartyMember
@@ -280,10 +281,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
         %GuildState{guild_id: guild_id} = guild_state,
         %{game_state: %{guild_id: guild_id}} = state
       ) do
+    refresh_guild_aura(state, guild_state)
     {:noreply, refresh_guild_tax(state, guild_state)}
   end
 
   def guild_skills_updated(%GuildState{}, state), do: {:noreply, state}
+
+  # (Re-)applies the ticking aura source on the guild master when any aura
+  # skill is learned; removes it when none are (or for non-masters, where a
+  # stale carrier can only exist after a master change). Runs in the session
+  # that received the guild broadcast, targeting its own unit.
+  defp refresh_guild_aura(%{game_state: game_state}, %GuildState{} = guild_state) do
+    char_id = game_state.character_id
+    levels = aura_levels(guild_state)
+
+    if guild_state.master_char_id == char_id and levels != {0, 0, 0, 0} do
+      {leadership, glorywounds, soulcold, hawkeyes} = levels
+
+      StatusInterpreter.apply_status(:player, char_id, :sc_guild_aura_source,
+        val1: leadership,
+        val2: glorywounds,
+        val3: soulcold,
+        val4: hawkeyes
+      )
+    else
+      StatusInterpreter.remove_status(:player, char_id, :sc_guild_aura_source)
+    end
+
+    :ok
+  end
+
+  defp aura_levels(%GuildState{} = guild_state) do
+    {
+      GuildState.skill_level(guild_state, 10_006),
+      GuildState.skill_level(guild_state, 10_007),
+      GuildState.skill_level(guild_state, 10_008),
+      GuildState.skill_level(guild_state, 10_009)
+    }
+  end
 
   # Commits the member's current position tax (clamped by config) onto
   # PlayerState.guild_tax so the EXP tax seam reads a local cache.
@@ -408,6 +443,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
     case GuildManager.get(guild_id) do
       {:ok, guild_state} ->
         MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
+        refresh_guild_aura(state, guild_state)
         refresh_guild_tax(state, guild_state)
 
       {:error, _reason} ->

@@ -200,6 +200,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,
       Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView,
+      Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea,
+      Aesir.ZoneServer.Mmo.Skills.Guild.Recall,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Trap,
       Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,

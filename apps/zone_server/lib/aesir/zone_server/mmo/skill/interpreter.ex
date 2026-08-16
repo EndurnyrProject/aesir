@@ -1282,6 +1282,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       0 ->
         game_state
 
+      duration when skill_id in 10_000..10_019 ->
+        # Guild skills are guild-cooldown-scoped on every entry point,
+        # including item casts; the adapter arms the guild entry and leaves
+        # the per-character map untouched.
+        Caster.Player.put_cooldown(game_state, skill_id, now + duration)
+
       duration ->
         cooldowns = Cooldown.put(game_state.skill_cooldowns, skill_id, now + duration)
         %{game_state | skill_cooldowns: cooldowns}
