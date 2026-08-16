@@ -535,7 +535,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def delwaitingroom(%Ctx{} = ctx), do: delwaitingroom(ctx, nil)
 
   @doc "Deletes the named NPC's waiting room."
-  @spec delwaitingroom(Ctx.t(), String.t()) :: Ctx.t()
+  @spec delwaitingroom(Ctx.t(), String.t() | nil) :: Ctx.t()
   def delwaitingroom(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def delwaitingroom(%Ctx{} = ctx, name) do
@@ -557,7 +557,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def enablewaitingroomevent(%Ctx{} = ctx), do: enablewaitingroomevent(ctx, nil)
 
   @doc "Re-enables the named NPC's waiting-room event."
-  @spec enablewaitingroomevent(Ctx.t(), String.t()) :: Ctx.t()
+  @spec enablewaitingroomevent(Ctx.t(), String.t() | nil) :: Ctx.t()
   def enablewaitingroomevent(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def enablewaitingroomevent(%Ctx{} = ctx, name) do
@@ -576,7 +576,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def disablewaitingroomevent(%Ctx{} = ctx), do: disablewaitingroomevent(ctx, nil)
 
   @doc "Disables the named NPC's waiting-room event."
-  @spec disablewaitingroomevent(Ctx.t(), String.t()) :: Ctx.t()
+  @spec disablewaitingroomevent(Ctx.t(), String.t() | nil) :: Ctx.t()
   def disablewaitingroomevent(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def disablewaitingroomevent(%Ctx{} = ctx, name) do
@@ -660,7 +660,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   def kickwaitingroomall(%Ctx{} = ctx), do: kickwaitingroomall(ctx, nil)
 
   @doc "Kicks everyone out of the named NPC's waiting room."
-  @spec kickwaitingroomall(Ctx.t(), String.t()) :: Ctx.t()
+  @spec kickwaitingroomall(Ctx.t(), String.t() | nil) :: Ctx.t()
   def kickwaitingroomall(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def kickwaitingroomall(%Ctx{} = ctx, name) do
@@ -684,7 +684,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   @spec getwaitingroomusers(Ctx.t()) :: Ctx.t()
   def getwaitingroomusers(%Ctx{} = ctx), do: getwaitingroomusers(ctx, nil)
 
-  @spec getwaitingroomusers(Ctx.t(), String.t()) :: Ctx.t()
+  @spec getwaitingroomusers(Ctx.t(), String.t() | nil) :: Ctx.t()
   def getwaitingroomusers(%Ctx{status: {:error, _}} = ctx, _name), do: ctx
 
   def getwaitingroomusers(%Ctx{} = ctx, name) do

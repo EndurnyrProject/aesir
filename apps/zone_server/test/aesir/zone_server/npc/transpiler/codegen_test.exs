@@ -1024,10 +1024,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ ~S|navigateto("ba_pw01", 14, 115, 101, 1 != 0, 0)|
-    assert src =~ ~S|navigateto("einbroch", 267, 268, 0, 1 != 0, 0)|
-    assert src =~ ~S|navigateto("prontera", 0, 0, 101, 1 != 0, 0)|
-    assert src =~ ~S|navigateto("morocc", 10, 20, 111, 0 != 0, 1234)|
+    assert src =~ ~S|navigateto("ba_pw01", 14, 115, 101, true, 0)|
+    assert src =~ ~S|navigateto("einbroch", 267, 268, 0, true, 0)|
+    assert src =~ ~S|navigateto("prontera", 0, 0, 101, true, 0)|
+    assert src =~ ~S|navigateto("morocc", 10, 20, 111, false, 1234)|
     refute src =~ "todo(ctx, :navigateto"
   end
 
@@ -1039,7 +1039,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       close;
       """)
 
-    assert src =~ ~S|navigateto("einbroch", 267, 268, 0, 1 != 0, 0)|
+    assert src =~ ~S|navigateto("einbroch", 267, 268, 0, true, 0)|
     refute src =~ "getcharid"
     assert src =~ "navigateto(\"einbroch\", 267, 268, Todo.const!(:NAV_NOPE)"
   end

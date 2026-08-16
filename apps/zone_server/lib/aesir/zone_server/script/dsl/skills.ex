@@ -210,7 +210,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
   definition without quest-grant metadata) without mutation; halts
   `:no_player` on a detached ctx.
   """
-  @spec skill(Ctx.t(), integer() | atom(), pos_integer(), integer() | atom()) :: Ctx.t()
+  @spec skill(Ctx.t(), integer() | atom(), integer(), integer() | atom()) :: Ctx.t()
   def skill(%Ctx{status: {:error, _}} = ctx, _skill, _level, _flag), do: ctx
 
   def skill(%Ctx{} = ctx, skill_id_or_name, level, _flag),

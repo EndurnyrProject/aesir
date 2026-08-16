@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
   end
 
   def ev_ontouch(ctx) do
-    ctx = navigateto(ctx, "iz_int", 52, 30, 0, 1 != 0, 0)
+    ctx = navigateto(ctx, "iz_int", 52, 30, 0, true, 0)
 
     ctx =
       if getd(ctx, Rathena.concat(".start", strnpcinfo(ctx, 1))) == 0 do

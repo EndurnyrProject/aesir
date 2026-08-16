@@ -503,7 +503,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   end
 
   # `getiteminfo` accepts a nameid or an Aegis name string.
-  @spec resolve_item(integer() | String.t()) :: {:ok, ItemDefinition.t()} | :error
+  @spec resolve_item(integer() | String.t()) ::
+          {:ok, ItemDefinition.t()} | {:error, :item_not_found}
   defp resolve_item(item) when is_integer(item), do: ItemManagement.get_item_by_id(item)
   defp resolve_item(item) when is_binary(item), do: ItemManagement.get_item_by_aegis(item)
 

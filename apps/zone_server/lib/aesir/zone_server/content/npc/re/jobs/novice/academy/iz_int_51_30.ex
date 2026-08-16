@@ -69,6 +69,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt5130 do
   end
 
   def ev_ontouch(ctx) do
-    navigateto(ctx, "int_land", 75, 100, 0, 1 != 0, 0)
+    navigateto(ctx, "int_land", 75, 100, 0, true, 0)
   end
 end

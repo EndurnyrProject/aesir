@@ -89,7 +89,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   unknown, `level` is out of range, or the definition lacks quest-grant
   metadata (see `Mmo.Skill.Grant.reason/0`).
   """
-  @spec grant_skill(integer() | atom(), pos_integer(), map()) ::
+  @spec grant_skill(integer() | atom(), integer(), map()) ::
           {:ok, map()} | {:error, Grant.reason()}
   def grant_skill(skill_id_or_name, level, %{game_state: game_state} = state) do
     progression = game_state.stats.progression

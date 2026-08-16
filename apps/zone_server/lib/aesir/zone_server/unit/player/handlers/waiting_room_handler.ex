@@ -165,7 +165,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   defp failure_code(:too_low_level), do: 3
   defp failure_code(:too_high_level), do: 4
   defp failure_code(:no_zeny), do: 5
-  defp failure_code(_other), do: 1
 
   defp broadcast_member_update(room_id, member, opts) do
     packet = %WaitingRoomMemberUpdate{

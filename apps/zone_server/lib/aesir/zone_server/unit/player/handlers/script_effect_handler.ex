@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
           | {:reset_skills}
-          | {:grant_skill, integer() | atom(), pos_integer()}
+          | {:grant_skill, integer() | atom(), integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
           | {:setcart, non_neg_integer()}
@@ -155,8 +155,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
         nil
     end
   end
-
-  defp op_fact(_op), do: nil
 
   @doc """
   Applies `op` to the session `state`, returning `{reply, new_state}`.

@@ -1453,6 +1453,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp nav_flag_arg(arg, env), do: render(arg, env)
 
+  defp nav_hide_arg({:int, 0}, _env), do: "false"
+  defp nav_hide_arg({:int, _nonzero}, _env), do: "true"
+  defp nav_hide_arg({:neg, {:int, _nonzero}}, _env), do: "true"
   defp nav_hide_arg(arg, env), do: "(#{render(arg, env)}) != 0"
 
   # Transpiles a questinfo condition string (rAthena parses it as its own
