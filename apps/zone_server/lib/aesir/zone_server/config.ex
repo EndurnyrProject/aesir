@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Config do
   @default_drop_max 10_000
   @default_max_base_level 999
   @default_max_job_level 999
+  @default_woe_emperium_respawn_ms 3000
+  @default_woe_schedule [{2, {21, 0}, {23, 0}}, {4, {21, 0}, {23, 0}}, {6, {16, 0}, {18, 0}}]
 
   @doc """
   Player view range (rAthena `AREA_SIZE`): the cell radius a client is told about.
@@ -302,6 +304,29 @@ defmodule Aesir.ZoneServer.Config do
   @spec max_job_level() :: pos_integer()
   def max_job_level,
     do: Application.get_env(:zone_server, :max_job_level, @default_max_job_level)
+
+  @doc """
+  Delay before a captured castle's Emperium respawns, in milliseconds.
+  """
+  @spec woe_emperium_respawn_ms() :: pos_integer()
+  def woe_emperium_respawn_ms,
+    do:
+      Application.get_env(
+        :zone_server,
+        :woe_emperium_respawn_ms,
+        @default_woe_emperium_respawn_ms
+      )
+
+  @doc """
+  Weekly WoE auto start/stop windows, as `{day, {h, m}, {h, m}}` tuples where
+  `day` is the ISO weekday (1 = Monday, 7 = Sunday). A window is active from
+  its start time (inclusive) until its stop time (exclusive); a stop at or
+  before the start wraps past midnight. Consumed by
+  `Woe.Scheduler.desired_state/2`.
+  """
+  @spec woe_schedule() :: [{1..7, {0..23, 0..59}, {0..23, 0..59}}]
+  def woe_schedule,
+    do: Application.get_env(:zone_server, :woe_schedule, @default_woe_schedule)
 
   defp rate(key), do: Application.get_env(:zone_server, key, @default_item_rate)
 
