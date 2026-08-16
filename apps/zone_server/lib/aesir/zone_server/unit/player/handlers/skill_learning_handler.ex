@@ -33,8 +33,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
 
-  @kn_cavaliermastery_id KnCavaliermastery.definition().id
-
   @doc """
   Processes a learn-skill request for the player session.
   """
@@ -70,8 +68,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
   end
 
   @spec maybe_recompute_riding(map(), non_neg_integer()) :: map()
-  defp maybe_recompute_riding(state, @kn_cavaliermastery_id), do: MountHandler.recompute(state)
-  defp maybe_recompute_riding(state, _skill_id), do: state
+  defp maybe_recompute_riding(state, skill_id) do
+    if skill_id == KnCavaliermastery.definition().id,
+      do: MountHandler.recompute(state),
+      else: state
+  end
 
   @doc """
   Grants `skill_id_or_name` permanently at `level` through the session

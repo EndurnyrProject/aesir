@@ -55,7 +55,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Zeny
 
   @push_cart_status :sc_push_cart
-  @mc_vending_id McVending.definition().id
 
   @typedoc "The live shop carried in `:vending` `state_context` and the registry."
   @type shop :: %{title: String.t(), owner_char_id: integer(), items: [ShopItem.t()]}
@@ -650,7 +649,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   @spec ensure_vending_learned(PlayerState.t()) ::
           {:ok, pos_integer()} | {:error, :skill_not_learned}
   defp ensure_vending_learned(%{stats: %{progression: %{learned_skills: learned}}}) do
-    case Learned.learned_level(learned, @mc_vending_id) do
+    case Learned.learned_level(learned, McVending.definition().id) do
       level when level > 0 -> {:ok, level}
       _ -> {:error, :skill_not_learned}
     end

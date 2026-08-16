@@ -45,8 +45,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @status_id :sc_riding
-  @kn_riding_id KnRiding.definition().id
-  @kn_cavaliermastery_id KnCavaliermastery.definition().id
   @riding_bit Option.id(:riding)
 
   @doc """
@@ -239,12 +237,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MountHandler do
 
   @spec riding_learned?(map()) :: boolean()
   defp riding_learned?(game_state) do
-    learned_level(game_state, @kn_riding_id) > 0
+    learned_level(game_state, KnRiding.definition().id) > 0
   end
 
   @spec cavalier_level(map()) :: non_neg_integer()
   defp cavalier_level(game_state) do
-    learned_level(game_state, @kn_cavaliermastery_id)
+    learned_level(game_state, KnCavaliermastery.definition().id)
   end
 
   @spec learned_level(map(), integer()) :: non_neg_integer()

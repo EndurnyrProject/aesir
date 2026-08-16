@@ -50,7 +50,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
   alias Aesir.ZoneServer.Unit.Rental
 
   @status_id :sc_push_cart
-  @mc_pushcart_id McPushcart.definition().id
   @first_tier 1
 
   # rAthena `clif_parse_ChangeCart` base-level gates (strict `>`). Tiers 4-5 are
@@ -336,7 +335,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
 
   @spec pushcart_level(map()) :: non_neg_integer()
   defp pushcart_level(%{stats: %{progression: %{learned_skills: learned}}}) do
-    Learned.learned_level(learned, @mc_pushcart_id)
+    Learned.learned_level(learned, McPushcart.definition().id)
   end
 
   @spec persist_cart_type(integer(), non_neg_integer()) :: :ok

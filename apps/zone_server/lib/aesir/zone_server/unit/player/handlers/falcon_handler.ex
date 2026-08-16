@@ -40,7 +40,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @status_id :sc_falcon
-  @ht_falcon_id HtFalcon.definition().id
   @falcon_bit Option.id(:falcon)
 
   @doc """
@@ -172,6 +171,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler do
 
   @spec falconry_level(map()) :: non_neg_integer()
   defp falconry_level(%{stats: %{progression: %{learned_skills: learned}}}) do
-    Learned.learned_level(learned, @ht_falcon_id)
+    Learned.learned_level(learned, HtFalcon.definition().id)
   end
 end

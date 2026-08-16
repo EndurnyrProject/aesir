@@ -57,10 +57,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
 
-  @mc_pushcart_id McPushcart.definition().id
-  @kn_riding_id KnRiding.definition().id
-  @ht_falcon_id HtFalcon.definition().id
-
   # Job ids that require a specific character sex to change into.
   @required_sex %{19 => "M", 20 => "F"}
 
@@ -195,7 +191,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   """
   @spec cart_blocks_job_change?(map(), non_neg_integer()) :: boolean()
   def cart_blocks_job_change?(%{cart_type: cart_type}, job_id) do
-    cart_type > 0 and @mc_pushcart_id not in Map.keys(SkillTree.tree_for(job_id))
+    cart_type > 0 and McPushcart.definition().id not in Map.keys(SkillTree.tree_for(job_id))
   end
 
   @doc """
@@ -426,7 +422,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   # runs the dismount side effect before the caller's stats recompute.
   @spec dismount_if_losing_riding(map(), [non_neg_integer()]) :: map()
   defp dismount_if_losing_riding(state, dropped_ids) do
-    if @kn_riding_id in dropped_ids and MountHandler.riding?(state) do
+    if KnRiding.definition().id in dropped_ids and MountHandler.riding?(state) do
       MountHandler.force_dismount(state)
     else
       state
@@ -438,7 +434,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   # display mirror move.
   @spec dismiss_falcon_if_losing_mastery(map(), [non_neg_integer()]) :: map()
   defp dismiss_falcon_if_losing_mastery(state, dropped_ids) do
-    if @ht_falcon_id in dropped_ids and FalconHandler.falcon?(state) do
+    if HtFalcon.definition().id in dropped_ids and FalconHandler.falcon?(state) do
       FalconHandler.force_dismiss(state)
     else
       state
