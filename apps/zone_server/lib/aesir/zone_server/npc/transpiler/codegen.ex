@@ -1701,7 +1701,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # An all-stop switch (every clause exits, default present) yields no value
   # anything could read; binding it would leave a dead `ctx =`.
-  defp switch_body(case_lines, true, _terminal, id),
+  defp switch_body(case_lines, true, :stop, id),
+    do: ["try do"] ++ case_lines ++ ["catch", ":throw, {:brk_#{id}, ctx} -> ctx", "end"]
+
+  defp switch_body(case_lines, true, :cont, id),
     do: ["ctx =", "try do"] ++ case_lines ++ ["catch", ":throw, {:brk_#{id}, ctx} -> ctx", "end"]
 
   defp switch_body(case_lines, false, :stop, _id), do: case_lines

@@ -346,6 +346,23 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute thrown =~ "if true do"
   end
 
+  test "an all-stop switch with a nested break drops the dead ctx binding" do
+    src =
+      gen!("""
+      switch (.@w) {
+      case 1:
+        if (.@x) break;
+        close;
+      default:
+        close;
+      }
+      """)
+
+    assert src =~ "throw({:brk_1, ctx})"
+    assert src =~ ":throw, {:brk_1, ctx} -> ctx"
+    refute src =~ ~r/ctx =\s*try do/
+  end
+
   test "a blocking loop condition re-evaluates inside the loop function" do
     looped =
       gen!("""

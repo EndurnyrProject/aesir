@@ -13729,7 +13729,7 @@
   },
   "jobs/2-2/bard.txt|script|Wandering Bard|comodo:226:123": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard",
-    "output_hash": "c784c39960a3f39fe02d43d2efb2615430faa33b29be2b53c1619e002f72d1df",
+    "output_hash": "16dfb9b1953f1a219b332b0e86651bc1545e1dea54afff391aa8f4e20ec939a8",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/bard/wandering_bard.ex",
     "source_hash": "4033debea95c31db3595a2eaeddbc0d66a42fd489881f6a7aa501f87fbf78e88",
     "spawns": [

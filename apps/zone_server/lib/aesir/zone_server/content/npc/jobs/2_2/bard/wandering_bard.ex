@@ -1604,125 +1604,124 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
                                 else
                                   v37 = get_char_var(ctx, :BARD_Q, 0)
 
-                                  ctx =
-                                    try do
-                                      case v37 do
-                                        5 ->
-                                          ctx =
-                                            if count_item(ctx, 1019) > 59 do
-                                              {ctx, _} = s_s_changejob(ctx, [1019, 1901])
-                                              ctx
-                                            else
-                                              ctx =
-                                                if count_item(ctx, 1068) > 59 do
-                                                  {ctx, _} = s_s_changejob(ctx, [1068, 1903])
-                                                  ctx
-                                                else
-                                                  ctx =
-                                                    if count_item(ctx, 1067) > 59 do
-                                                      {ctx, _} = s_s_changejob(ctx, [1067, 1903])
-                                                      ctx
-                                                    else
-                                                      ctx =
-                                                        if count_item(ctx, 1066) > 59 do
-                                                          ctx =
-                                                            if job_level(ctx) > 49 do
-                                                              {ctx, _} =
-                                                                s_s_changejob(ctx, [1066, 1910])
-
-                                                              ctx
-                                                            else
-                                                              {ctx, _} =
-                                                                s_s_changejob(ctx, [1066, 1905])
-
-                                                              ctx
-                                                            end
-
-                                                          ctx
-                                                        else
-                                                          ctx
-                                                        end
-
-                                                      ctx
-                                                    end
-
-                                                  ctx
-                                                end
-
-                                              ctx
-                                            end
-
-                                          {ctx, v36} =
+                                  try do
+                                    case v37 do
+                                      5 ->
+                                        ctx =
+                                          if count_item(ctx, 1019) > 59 do
+                                            {ctx, _} = s_s_changejob(ctx, [1019, 1901])
                                             ctx
-                                            |> cutin("job_bard_aiolo01", 2)
-                                            |> mes("[Lalo]")
-                                            |> mes(
-                                              "Mmm? Seems like you haven't prepared all trunks the yet? "
-                                            )
-                                            |> mes("Do you want to just change jobs anyways?")
-                                            |> next()
-                                            |> select([
-                                              "Yes, just change my job already.",
-                                              "No, I'll go prepare them."
-                                            ])
+                                          else
+                                            ctx =
+                                              if count_item(ctx, 1068) > 59 do
+                                                {ctx, _} = s_s_changejob(ctx, [1068, 1903])
+                                                ctx
+                                              else
+                                                ctx =
+                                                  if count_item(ctx, 1067) > 59 do
+                                                    {ctx, _} = s_s_changejob(ctx, [1067, 1903])
+                                                    ctx
+                                                  else
+                                                    ctx =
+                                                      if count_item(ctx, 1066) > 59 do
+                                                        ctx =
+                                                          if job_level(ctx) > 49 do
+                                                            {ctx, _} =
+                                                              s_s_changejob(ctx, [1066, 1910])
 
-                                          ctx =
-                                            if v36 == 2 do
-                                              throw({:brk_3, ctx})
-                                            else
-                                              ctx
-                                            end
+                                                            ctx
+                                                          else
+                                                            {ctx, _} =
+                                                              s_s_changejob(ctx, [1066, 1905])
 
-                                          {ctx, _} =
+                                                            ctx
+                                                          end
+
+                                                        ctx
+                                                      else
+                                                        ctx
+                                                      end
+
+                                                    ctx
+                                                  end
+
+                                                ctx
+                                              end
+
                                             ctx
-                                            |> completequest(3003)
-                                            |> jobchange(:bard)
-                                            |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call(
-                                              []
-                                            )
+                                          end
 
-                                          ctx =
+                                        {ctx, v36} =
+                                          ctx
+                                          |> cutin("job_bard_aiolo01", 2)
+                                          |> mes("[Lalo]")
+                                          |> mes(
+                                            "Mmm? Seems like you haven't prepared all trunks the yet? "
+                                          )
+                                          |> mes("Do you want to just change jobs anyways?")
+                                          |> next()
+                                          |> select([
+                                            "Yes, just change my job already.",
+                                            "No, I'll go prepare them."
+                                          ])
+
+                                        ctx =
+                                          if v36 == 2 do
+                                            throw({:brk_3, ctx})
+                                          else
                                             ctx
-                                            |> mes("[Lalo]")
-                                            |> mes(
-                                              "Very well! Hope you sing happy enjoyable songs."
-                                            )
-                                            |> mes("Live like the wind and the clouds!")
-                                            |> next()
-                                            |> mes("[Lalo]")
-                                            |> mes("See you again next time!")
-                                            |> close()
-                                            |> cutin("job_bard_aiolo01", 255)
+                                          end
 
-                                          throw({:script_end, ctx})
+                                        {ctx, _} =
+                                          ctx
+                                          |> completequest(3003)
+                                          |> jobchange(:bard)
+                                          |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call(
+                                            []
+                                          )
 
-                                        _ ->
-                                          {ctx, _} =
-                                            ctx
-                                            |> completequest(3003)
-                                            |> jobchange(:bard)
-                                            |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call(
-                                              []
-                                            )
+                                        ctx =
+                                          ctx
+                                          |> mes("[Lalo]")
+                                          |> mes(
+                                            "Very well! Hope you sing happy enjoyable songs."
+                                          )
+                                          |> mes("Live like the wind and the clouds!")
+                                          |> next()
+                                          |> mes("[Lalo]")
+                                          |> mes("See you again next time!")
+                                          |> close()
+                                          |> cutin("job_bard_aiolo01", 255)
 
-                                          ctx =
-                                            ctx
-                                            |> mes("[Lalo]")
-                                            |> mes(
-                                              "Very well! Hope you sing happy enjoyable songs."
-                                            )
-                                            |> mes("Live like the wind and the clouds!")
-                                            |> next()
-                                            |> mes("[Lalo]")
-                                            |> mes("See you again next time!")
-                                            |> close()
-                                            |> cutin("job_bard_aiolo01", 255)
+                                        throw({:script_end, ctx})
 
-                                          throw({:script_end, ctx})
-                                      end
-                                    catch
-                                      :throw, {:brk_3, ctx} -> ctx
+                                      _ ->
+                                        {ctx, _} =
+                                          ctx
+                                          |> completequest(3003)
+                                          |> jobchange(:bard)
+                                          |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call(
+                                            []
+                                          )
+
+                                        ctx =
+                                          ctx
+                                          |> mes("[Lalo]")
+                                          |> mes(
+                                            "Very well! Hope you sing happy enjoyable songs."
+                                          )
+                                          |> mes("Live like the wind and the clouds!")
+                                          |> next()
+                                          |> mes("[Lalo]")
+                                          |> mes("See you again next time!")
+                                          |> close()
+                                          |> cutin("job_bard_aiolo01", 255)
+
+                                        throw({:script_end, ctx})
                                     end
+                                  catch
+                                    :throw, {:brk_3, ctx} -> ctx
+                                  end
                                 end
                               else
                                 ctx
