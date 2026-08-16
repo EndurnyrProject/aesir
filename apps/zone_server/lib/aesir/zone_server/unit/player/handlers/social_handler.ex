@@ -18,8 +18,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
 
   alias Aesir.Net.GuildDisbanded
   alias Aesir.Net.GuildEmblemChanged
+  alias Aesir.Net.GuildLevelUp
   alias Aesir.Net.PartyDisbanded
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Member, as: GuildMember
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -64,6 +66,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
     do: guild_emblem_changed(guild_id, emblem_id, state)
 
   def info(:guild_invite_expired, state), do: guild_invite_expired(state)
+
+  def info({:guild_level_up, guild_state}, state), do: guild_leveled_up(guild_state, state)
+
+  def info({:guild_skill_update, guild_state}, state),
+    do: guild_skills_updated(guild_state, state)
 
   @doc """
   Subscribes the calling session to a party it just created or joined
@@ -232,7 +239,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
       ) do
     if Map.has_key?(guild_state.members, char_id) do
       MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
-      {:noreply, state}
+      {:noreply, refresh_guild_tax(state, guild_state)}
     else
       PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
       {:noreply, StateCommit.commit(state, %{game_state | guild_id: 0})}
@@ -240,6 +247,59 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   end
 
   def guild_updated(%GuildState{}, state), do: {:noreply, state}
+
+  @doc """
+  A level-up on our own live guild: push the `GuildLevelUp` notification and
+  the refreshed `GuildInfo` snapshot, then refresh the cached tax. A stale
+  broadcast for another guild is a no-op.
+  """
+  @spec guild_leveled_up(GuildState.t(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def guild_leveled_up(
+        %GuildState{guild_id: guild_id} = guild_state,
+        %{game_state: %{guild_id: guild_id}} = state
+      ) do
+    MessageRouter.send_to(state.connection_pid, %GuildLevelUp{
+      guild_id: guild_id,
+      level: guild_state.level,
+      skill_points: guild_state.skill_points
+    })
+
+    MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
+    {:noreply, refresh_guild_tax(state, guild_state)}
+  end
+
+  def guild_leveled_up(%GuildState{}, state), do: {:noreply, state}
+
+  @doc """
+  A guild-skill allocation on our own live guild: refresh the cached tax.
+  Master-aura re-application hooks in here once the aura effects land. A stale
+  broadcast for another guild is a no-op.
+  """
+  @spec guild_skills_updated(GuildState.t(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def guild_skills_updated(
+        %GuildState{guild_id: guild_id} = guild_state,
+        %{game_state: %{guild_id: guild_id}} = state
+      ) do
+    {:noreply, refresh_guild_tax(state, guild_state)}
+  end
+
+  def guild_skills_updated(%GuildState{}, state), do: {:noreply, state}
+
+  # Commits the member's current position tax (clamped by config) onto
+  # PlayerState.guild_tax so the EXP tax seam reads a local cache.
+  defp refresh_guild_tax(%{game_state: game_state} = state, %GuildState{} = guild_state) do
+    tax =
+      case GuildState.position_of(guild_state, game_state.character_id) do
+        nil -> 0
+        position -> min(position.tax || 0, Config.guild_exp_limit())
+      end
+
+    if tax == game_state.guild_tax do
+      state
+    else
+      StateCommit.commit(state, %{game_state | guild_tax: tax})
+    end
+  end
 
   @doc """
   Relays a single member's update for our current guild; a stale update for
@@ -348,7 +408,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
     case GuildManager.get(guild_id) do
       {:ok, guild_state} ->
         MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
-        state
+        refresh_guild_tax(state, guild_state)
 
       {:error, _reason} ->
         state

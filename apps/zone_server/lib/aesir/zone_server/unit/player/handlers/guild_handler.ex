@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.Net.GuildMemberPositionRequest
   alias Aesir.Net.GuildNoticeEditRequest
   alias Aesir.Net.GuildPositionEditRequest
+  alias Aesir.Net.GuildSkillUpRequest
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.EmblemValidator
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -194,7 +195,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           index: index,
           name: name,
           can_invite: can_invite,
-          can_expel: can_expel
+          can_expel: can_expel,
+          tax: tax
         },
         state
       ) do
@@ -206,7 +208,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           index: index,
           name: name,
           can_invite: can_invite,
-          can_expel: can_expel
+          can_expel: can_expel,
+          tax: tax
         })
       end
 
@@ -434,6 +437,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
 
   defp ack_and_attach(state, action, result), do: ack_result(state, action, result)
 
+  @doc """
+  The guild master spends one guild skill point (`GuildSkillUpRequest`).
+
+  Delegates validation to `GuildManager.allocate_skill_point/3`; the refreshed
+  `GuildInfo` reaches every member (including the requester) through the
+  guild-updated broadcast, so the reply here is only the `GuildActionResult`.
+  """
+  @spec handle_skill_up_request(GuildSkillUpRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_skill_up_request(%GuildSkillUpRequest{skill_id: skill_id}, state) do
+    char_id = requester_char_id(state)
+
+    result =
+      with {:ok, requester} <- fetch_character(char_id) do
+        GuildManager.allocate_skill_point(requester.guild_id, char_id, skill_id)
+      end
+
+    ack_result(state, "skill_up", result)
+  end
+
   defp ack_result(state, action, :ok), do: ack(state, action, true, :GUILD_ERR_NONE)
   defp ack_result(state, action, {:ok, _}), do: ack(state, action, true, :GUILD_ERR_NONE)
 
@@ -463,6 +486,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   defp map_error(:target_offline), do: :GUILD_ERR_TARGET_OFFLINE
   defp map_error(:invite_pending), do: :GUILD_ERR_TARGET_OFFLINE
   defp map_error(:not_member), do: :GUILD_ERR_NOT_MEMBER
+  defp map_error(:not_master), do: :GUILD_ERR_NO_PERMISSION
+  defp map_error(:no_skill_points), do: :GUILD_ERR_NO_SKILL_POINTS
+  defp map_error(:prerequisite_not_met), do: :GUILD_ERR_SKILL_REQUIREMENT
+  defp map_error(:unknown_skill), do: :GUILD_ERR_SKILL_REQUIREMENT
+  defp map_error(:max_level_reached), do: :GUILD_ERR_SKILL_MAXED
   defp map_error(:not_found), do: :GUILD_ERR_NOT_MEMBER
 
   defp map_error(other) do

@@ -7,8 +7,10 @@ defmodule Aesir.ZoneServer.Guild.View do
   alias Aesir.Net.GuildMember
   alias Aesir.Net.GuildMemberUpdate
   alias Aesir.Net.GuildPosition
+  alias Aesir.Net.GuildSkillEntry
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
+  alias Aesir.ZoneServer.Guild.Progression.Data
   alias Aesir.ZoneServer.Guild.State
 
   @doc "Converts one complete guild member snapshot to its Protobuf message."
@@ -59,8 +61,34 @@ defmodule Aesir.ZoneServer.Guild.View do
         |> Map.values()
         |> Enum.sort_by(& &1.index)
         |> Enum.map(&position/1),
-      members: guild.members |> Map.values() |> Enum.map(&member/1)
+      members: guild.members |> Map.values() |> Enum.map(&member/1),
+      level: guild.level,
+      exp: guild.exp,
+      next_exp: next_exp(guild.level),
+      skill_points: guild.skill_points,
+      skills: skills(guild.learned_skills)
     }
+  end
+
+  defp next_exp(level) do
+    case Data.exp_for_next(level) do
+      {:ok, exp} -> exp
+      :max_level -> 0
+    end
+  end
+
+  defp skills(learned_skills) do
+    learned_skills
+    |> Enum.sort()
+    |> Enum.map(fn {skill_id, level} ->
+      max_level =
+        case Data.skill_entry(skill_id) do
+          {:ok, %{max_level: max_level}} -> max_level
+          :error -> level
+        end
+
+      %GuildSkillEntry{skill_id: skill_id, level: level, max_level: max_level}
+    end)
   end
 
   @doc "Builds a complete single-member update for a guild."

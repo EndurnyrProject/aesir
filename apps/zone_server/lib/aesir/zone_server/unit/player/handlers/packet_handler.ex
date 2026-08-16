@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.GuildMemberPositionRequest
   alias Aesir.Net.GuildNoticeEditRequest
   alias Aesir.Net.GuildPositionEditRequest
+  alias Aesir.Net.GuildSkillUpRequest
   alias Aesir.Net.HomunculusRequest
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MapLoaded
@@ -451,6 +452,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # GuildMemberPositionRequest - Master assigns a member to a position slot.
   def handle_message(%GuildMemberPositionRequest{} = msg, state) do
     GuildHandler.handle_member_position_request(msg, state)
+  end
+
+  # GuildSkillUpRequest - Master spends one guild skill point.
+  def handle_message(%GuildSkillUpRequest{} = msg, state) do
+    GuildHandler.handle_skill_up_request(msg, state)
   end
 
   # GuildEmblemUploadRequest - Master uploads a new 24x24 BMP emblem.

@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   use Aesir.DataCase, async: false
+
+  import Ecto.Query
   use Mimic
 
   import Aesir.TestEtsSetup
@@ -24,6 +26,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   alias Aesir.Net.GuildMemberPositionRequest
   alias Aesir.Net.GuildNoticeEditRequest
   alias Aesir.Net.GuildPositionEditRequest
+  alias Aesir.Net.GuildSkillUpRequest
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
@@ -594,6 +597,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                           success: false,
                           error: :GUILD_ERR_NO_PERMISSION
                         }}}
+    end
+  end
+
+  describe "handle_skill_up_request/2" do
+    defp grant_points(guild_id, points) do
+      {1, nil} =
+        from(g in GuildModel, where: g.id == ^guild_id)
+        |> Repo.update_all(set: [skill_points: points])
+
+      ClusterTestHelper.clear_all()
+      {:ok, _} = GuildManager.ensure_started(guild_id)
+      :ok
+    end
+
+    test "the master learns a guild skill and gets a success ack" do
+      {master, guild} = guild_fixture("SkillMaster")
+      :ok = grant_points(guild.guild_id, 1)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_skill_up_request(
+                 %GuildSkillUpRequest{skill_id: 10_000},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "skill_up",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+
+      {:ok, live} = GuildManager.get(guild.guild_id)
+      assert live.learned_skills == %{10_000 => 1}
+      assert live.skill_points == 0
+    end
+
+    test "a non-master member is rejected without mutation" do
+      {_master, guild} = guild_fixture("SkillBoss")
+      newbie = add_member(guild.guild_id, "SkillPeon")
+      :ok = grant_points(guild.guild_id, 1)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_skill_up_request(
+                 %GuildSkillUpRequest{skill_id: 10_000},
+                 state_for(newbie)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "skill_up",
+                          success: false,
+                          error: :GUILD_ERR_NO_PERMISSION
+                        }}}
+
+      {:ok, live} = GuildManager.get(guild.guild_id)
+      assert live.learned_skills == %{}
+    end
+
+    test "spending without points reports NO_SKILL_POINTS" do
+      {master, guild} = guild_fixture("SkillBroke")
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_skill_up_request(
+                 %GuildSkillUpRequest{skill_id: 10_000},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "skill_up",
+                          success: false,
+                          error: :GUILD_ERR_NO_SKILL_POINTS
+                        }}}
+
+      {:ok, live} = GuildManager.get(guild.guild_id)
+      assert live.learned_skills == %{}
     end
   end
 

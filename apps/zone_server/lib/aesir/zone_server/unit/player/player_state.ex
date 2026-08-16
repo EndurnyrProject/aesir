@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           process_pid: pid() | nil,
           party_id: non_neg_integer(),
           guild_id: non_neg_integer(),
+          guild_tax: non_neg_integer(),
           waiting_room: non_neg_integer() | nil,
           sex: String.t(),
           hair: integer(),
@@ -308,6 +309,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # kept current by Guild.Manager pushes (`characters.guild_id` is the
     # source of truth; this mirrors it for the session's lifetime).
     guild_id: 0,
+    # Cached guild-position EXP tax %% (0 = untaxed); refreshed by the social
+    # handler on guild attach and on guild broadcasts.
+    guild_tax: 0,
 
     # NPC waiting room the player is currently in (the owner NPC gid), or nil.
     # Single-writer field: only WaitingRoomHandler mutates it.

@@ -68,6 +68,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def route(%Aesir.Net.GuildEmblemChanged{}), do: {:gameplay, :guild_emblem_changed}
   def route(%Aesir.Net.GuildEmblemData{}), do: {:gameplay, :guild_emblem_data}
   def route(%Aesir.Net.GuildDisbanded{}), do: {:gameplay, :guild_disbanded}
+  def route(%Aesir.Net.GuildLevelUp{}), do: {:gameplay, :guild_level_up}
   def route(%Aesir.Net.StorageItemAdded{}), do: {:gameplay, :storage_item_added}
   def route(%Aesir.Net.StorageItemRemoved{}), do: {:gameplay, :storage_item_removed}
   def route(%Aesir.Net.StorageResult{}), do: {:gameplay, :storage_result}

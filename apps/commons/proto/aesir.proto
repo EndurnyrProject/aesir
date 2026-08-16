@@ -1563,6 +1563,10 @@ message GuildPositionEditRequest {
   string name = 2;
   bool can_invite = 3;
   bool can_expel = 4;
+  // Per-position guild EXP tax percentage; clamped server-side to the
+  // configured guild_exp_limit. Absent = leave the position's tax unchanged
+  // (old clients cannot reset a tax they do not know about).
+  optional uint32 tax = 5;
 }
 
 // Client -> server, master-only request to assign a member to a position slot.
@@ -1603,6 +1607,9 @@ enum GuildError {
   GUILD_ERR_INVALID_EMBLEM = 8;
   GUILD_ERR_CANNOT_TARGET_MASTER = 9;
   GUILD_ERR_INVALID_POSITION = 10;
+  GUILD_ERR_NO_SKILL_POINTS = 11;
+  GUILD_ERR_SKILL_REQUIREMENT = 12;
+  GUILD_ERR_SKILL_MAXED = 13;
 }
 
 // Server -> client, acknowledgement of a guild request. `action` names the

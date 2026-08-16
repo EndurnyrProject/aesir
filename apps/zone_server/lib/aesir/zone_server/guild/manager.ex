@@ -27,9 +27,11 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.GuildPosition
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Permissions
   alias Aesir.ZoneServer.Guild.Position
+  alias Aesir.ZoneServer.Guild.Progression.Data
   alias Aesir.ZoneServer.Guild.State
 
   @master_index 0
@@ -418,6 +420,217 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   end
 
   @doc """
+  Credits taxed member base EXP to the guild, scaled by `Config.guild_exp_rate/0`.
+
+  Runs the level-up loop inside the entry (one skill point per level, exp reset
+  to progress-toward-next on each level, frozen at the level cap), persists the
+  progression columns, and broadcasts `{:social, {:guild_level_up, state}}` only
+  when the level changed. Contributions to unknown/dead guilds are dropped;
+  the return is always `:ok` so callers never branch on it. Synchronous - EXP
+  producers should invoke it off their own process (e.g. `Task.start/1`).
+  """
+  @spec contribute_exp(non_neg_integer(), pos_integer()) :: :ok
+  def contribute_exp(guild_id, amount) when is_integer(amount) and amount > 0 do
+    case lookup_pid({:guild, guild_id}) do
+      {:ok, pid} ->
+        try do
+          case Entry.get_and_update(pid, &contribute_exp_reply(amount, &1)) do
+            {:leveled, state} ->
+              broadcast(guild_id, {:guild_level_up, state})
+              :ok
+
+            _other ->
+              :ok
+          end
+        catch
+          :exit, _ -> :ok
+        end
+
+      :error ->
+        :ok
+    end
+  end
+
+  defp contribute_exp_reply(amount, %State{} = state) do
+    case div(amount * Config.guild_exp_rate(), 100) do
+      0 -> {{:ok, state}, state}
+      scaled -> level_and_persist(scaled, state)
+    end
+  end
+
+  defp level_and_persist(scaled, %State{} = state) do
+    {level, exp, levels_gained} = apply_exp(state.level, state.exp + scaled, 0)
+
+    new_state = %State{
+      state
+      | level: level,
+        exp: exp,
+        skill_points: state.skill_points + levels_gained
+    }
+
+    case persist_progression(new_state) do
+      :ok ->
+        reply = if levels_gained > 0, do: :leveled, else: :ok
+        {{reply, new_state}, new_state}
+
+      {:error, reason} ->
+        {{:error, reason}, state}
+    end
+  end
+
+  defp apply_exp(level, exp, levels_gained) do
+    case Data.exp_for_next(level) do
+      {:ok, needed} when exp >= needed -> apply_exp(level + 1, exp - needed, levels_gained + 1)
+      {:ok, _needed} -> {level, exp, levels_gained}
+      :max_level -> {level, 0, levels_gained}
+    end
+  end
+
+  # Rescued so a DB outage during a background contribution drops that
+  # contribution (old state kept) instead of crashing the guild entry.
+  defp persist_progression(%State{} = state) do
+    persist_guild(state.guild_id, %{
+      level: state.level,
+      exp: state.exp,
+      skill_points: state.skill_points
+    })
+  rescue
+    error -> {:error, error}
+  end
+
+  @doc """
+  Master-only guild skill point allocation.
+
+  Validates against the imported guild skill tree (`Progression.Data`): the
+  caller must be the guild master, a point must be available, the skill must be
+  a tree skill below its max level with all prerequisite levels met. Persists
+  `skill_points`/`learned_skills` and broadcasts both
+  `{:social, {:guild_updated, state}}` and `{:social, {:guild_skill_update,
+  state}}` (the latter drives master-aura re-application).
+  """
+  @spec allocate_skill_point(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          {:ok, State.t()}
+          | {:error,
+             :not_master
+             | :no_skill_points
+             | :prerequisite_not_met
+             | :max_level_reached
+             | :unknown_skill
+             | :not_found
+             | term()}
+  def allocate_skill_point(guild_id, char_id, skill_id) do
+    case mutate(guild_id, &allocate_reply(char_id, skill_id, &1)) do
+      {:ok, state} = ok ->
+        broadcast(guild_id, {:guild_skill_update, state})
+        ok
+
+      error ->
+        error
+    end
+  end
+
+  defp allocate_reply(char_id, skill_id, %State{} = state) do
+    case validate_allocation(char_id, skill_id, state) do
+      :ok -> learn_and_persist(skill_id, state)
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  defp learn_and_persist(skill_id, %State{} = state) do
+    new_level = State.skill_level(state, skill_id) + 1
+
+    new_state = %State{
+      state
+      | skill_points: state.skill_points - 1,
+        learned_skills: Map.put(state.learned_skills, skill_id, new_level)
+    }
+
+    case persist_learned_skills(new_state) do
+      :ok -> {{:ok, new_state}, new_state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  defp validate_allocation(char_id, skill_id, %State{} = state) do
+    if state.master_char_id == char_id do
+      case Data.skill_entry(skill_id) do
+        {:ok, entry} -> validate_tree_entry(entry, skill_id, state)
+        :error -> {:error, :unknown_skill}
+      end
+    else
+      {:error, :not_master}
+    end
+  end
+
+  defp validate_tree_entry(entry, skill_id, %State{} = state) do
+    cond do
+      state.skill_points < 1 ->
+        {:error, :no_skill_points}
+
+      State.skill_level(state, skill_id) >= entry.max_level ->
+        {:error, :max_level_reached}
+
+      not Enum.all?(entry.prerequisites, fn {req_id, req_level} ->
+        State.skill_level(state, req_id) >= req_level
+      end) ->
+        {:error, :prerequisite_not_met}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp persist_learned_skills(%State{} = state) do
+    persist_guild(state.guild_id, %{
+      skill_points: state.skill_points,
+      learned_skills:
+        Map.new(state.learned_skills, fn {id, level} -> {Integer.to_string(id), level} end)
+    })
+  rescue
+    error -> {:error, error}
+  end
+
+  @doc """
+  Atomically checks and arms the guild-scoped cooldown for a guild skill.
+
+  Cooldowns live in the entry's runtime state (never persisted; a master relog
+  must not reset them, but an entry restart forgives them). Returns
+  `{:error, {:cooldown, remaining_ms}}` while armed.
+  """
+  @spec check_and_arm_skill_cooldown(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          :ok | {:error, {:cooldown, pos_integer()} | :not_found}
+  def check_and_arm_skill_cooldown(guild_id, skill_id, duration_ms) do
+    case lookup_pid({:guild, guild_id}) do
+      {:ok, pid} ->
+        try do
+          Entry.get_and_update(pid, &cooldown_reply(skill_id, duration_ms, &1))
+        catch
+          :exit, _ -> {:error, :not_found}
+        end
+
+      :error ->
+        {:error, :not_found}
+    end
+  end
+
+  defp cooldown_reply(skill_id, duration_ms, %State{} = state) do
+    now = System.monotonic_time(:millisecond)
+
+    case Map.get(state.skill_cooldowns, skill_id) do
+      expiry when is_integer(expiry) and expiry > now ->
+        {{:error, {:cooldown, expiry - now}}, state}
+
+      _expired_or_absent ->
+        new_state = %State{
+          state
+          | skill_cooldowns: Map.put(state.skill_cooldowns, skill_id, now + duration_ms)
+        }
+
+        {:ok, new_state}
+    end
+  end
+
+  @doc """
   Master-only (`:notice`) guild-notice update. Persists `notice_subject`/
   `notice_body`, updates the entry's `notice`, and broadcasts
   `{:social, {:guild_updated, state}}`.
@@ -449,26 +662,38 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   Position-editing (`:positions`) update of one non-zero slot's `name`,
   `can_invite` and `can_expel`. Index 0 (the master slot) is protected and
   returns `{:error, :no_permission}`; an index outside `0..19` returns
-  `{:error, :invalid_position}`. The inert `can_storage`/`tax` fields are
+  `{:error, :invalid_position}`. `tax` (the position's guild EXP tax, clamped
+  to `Config.guild_exp_limit/0`) is applied; the inert `can_storage` field is
   preserved. Broadcasts `{:social, {:guild_updated, state}}`.
   """
   @spec edit_position(non_neg_integer(), non_neg_integer(), %{
-          index: non_neg_integer(),
-          name: String.t(),
-          can_invite: boolean(),
-          can_expel: boolean()
+          :index => non_neg_integer(),
+          :name => String.t(),
+          :can_invite => boolean(),
+          :can_expel => boolean(),
+          optional(:tax) => non_neg_integer()
         }) ::
           {:ok, State.t()} | {:error, :no_permission | :invalid_position | :not_found | term()}
-  def edit_position(guild_id, char_id, %{
-        index: index,
-        name: name,
-        can_invite: can_invite,
-        can_expel: can_expel
-      }) do
-    mutate(guild_id, &edit_position_reply(char_id, index, name, can_invite, can_expel, &1))
+  def edit_position(
+        guild_id,
+        char_id,
+        %{
+          index: index,
+          name: name,
+          can_invite: can_invite,
+          can_expel: can_expel
+        } = changes
+      ) do
+    tax =
+      case Map.get(changes, :tax) do
+        nil -> nil
+        tax -> min(tax, Config.guild_exp_limit())
+      end
+
+    mutate(guild_id, &edit_position_reply(char_id, index, name, can_invite, can_expel, tax, &1))
   end
 
-  defp edit_position_reply(char_id, index, name, can_invite, can_expel, %State{} = state) do
+  defp edit_position_reply(char_id, index, name, can_invite, can_expel, tax, %State{} = state) do
     cond do
       not Permissions.can?(state, char_id, :positions) ->
         {{:error, :no_permission}, state}
@@ -480,17 +705,18 @@ defmodule Aesir.ZoneServer.Guild.Manager do
         {{:error, :invalid_position}, state}
 
       true ->
-        changes = %{name: name, can_invite: can_invite, can_expel: can_expel}
+        %Position{} = existing = Map.get(state.positions, index, %Position{index: index})
+        tax = tax || existing.tax
+        changes = %{name: name, can_invite: can_invite, can_expel: can_expel, tax: tax}
 
         case persist_position(state.guild_id, index, changes) do
           :ok ->
-            %Position{} = existing = Map.get(state.positions, index, %Position{index: index})
-
             updated = %Position{
               existing
               | name: name,
                 can_invite: can_invite,
-                can_expel: can_expel
+                can_expel: can_expel,
+                tax: tax
             }
 
             new_state = %State{state | positions: Map.put(state.positions, index, updated)}

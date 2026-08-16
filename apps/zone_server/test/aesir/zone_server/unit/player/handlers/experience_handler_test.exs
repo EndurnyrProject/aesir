@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Guild.Tax
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Party.Manager
@@ -78,6 +79,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       job_level: 50,
       class: 1
     }
+  end
+
+  defp taxed_state(tax) do
+    base = PlayerState.new(character())
+    game_state = %{base | character_id: 1000, guild_id: 5, guild_tax: tax}
+    %{connection_pid: self(), game_state: game_state}
+  end
+
+  defp capture_taxed_grant(amount, tax, modifiers) do
+    test_pid = self()
+
+    stub(Tax, :contribute_async, fn guild_id, taxed ->
+      send(test_pid, {:taxed, guild_id, taxed})
+      :ok
+    end)
+
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1000 -> modifiers end)
+
+    stub(Leveling, :apply_exp, fn progression, base, job ->
+      send(test_pid, {:granted, base, job})
+      {progression, 0, 0}
+    end)
+
+    ExperienceHandler.handle_gain_exp(amount, amount, taxed_state(tax))
+  end
+
+  describe "guild tax seam" do
+    test "diverts the taxed share of base exp only, before leveling" do
+      capture_taxed_grant(100, 30, %{})
+
+      assert_received {:granted, 70, 100}
+      assert_received {:taxed, 5, 30}
+    end
+
+    test "tax deducts before personal EXP boosts, which apply to the remainder" do
+      capture_taxed_grant(100, 30, %{exp_rate: 50})
+
+      assert_received {:granted, 105, 150}
+      assert_received {:taxed, 5, 30}
+    end
+
+    test "an untaxed guild member contributes nothing" do
+      capture_taxed_grant(100, 0, %{})
+
+      assert_received {:granted, 100, 100}
+      assert_received {:taxed, 5, 0}
+    end
   end
 
   describe "handle_gain_exp/3 EXP-rate boost" do
