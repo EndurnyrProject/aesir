@@ -20,6 +20,8 @@ defmodule Aesir.ZoneServer.EtsTable do
     ground_item_tables(seed)
     script_var_tables(seed)
     waiting_room_tables(seed)
+    map_flag_tables(seed)
+    castle_tables(seed)
 
     :ok
   end
@@ -243,6 +245,24 @@ defmodule Aesir.ZoneServer.EtsTable do
     # NPC waiting rooms keyed by owner NPC gid: {npc_gid, WaitingRoom.t()}
     :ets.new(
       table_for(:npc_waiting_rooms, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
+  end
+
+  defp map_flag_tables(seed) do
+    # Runtime mapflag overlay: {{map_name, flag}, boolean} on top of the static
+    # persistent_term flags (WoE's `gvg` lives here).
+    :ets.new(
+      table_for(:map_flag_overrides, seed),
+      [:set, :public, :named_table, read_concurrency: true]
+    )
+  end
+
+  defp castle_tables(seed) do
+    # WoE castle runtime state: {castle_id, owner_guild_id, siege_active?, epoch, emperium_unit_id}.
+    # Flat tuple so `CastleStore.capture/3` can CAS the whole row with select_replace.
+    :ets.new(
+      table_for(:castle_states, seed),
       [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
     )
   end

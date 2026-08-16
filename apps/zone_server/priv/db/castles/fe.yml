@@ -1,0 +1,201 @@
+---
+- id: 0
+  name: Neuschwanstein
+  map: aldeg_cas01
+  client_id: 6
+  emperium:
+    - 216
+    - 23
+  respawn:
+    - 212
+    - 175
+- id: 1
+  name: Hohenschwangau
+  map: aldeg_cas02
+  client_id: 7
+  emperium:
+    - 213
+    - 23
+  respawn:
+    - 82
+    - 71
+- id: 2
+  name: Nuernberg
+  map: aldeg_cas03
+  client_id: 8
+  emperium:
+    - 205
+    - 31
+  respawn:
+    - 109
+    - 112
+- id: 3
+  name: Wuerzburg
+  map: aldeg_cas04
+  client_id: 9
+  emperium:
+    - 36
+    - 217
+  respawn:
+    - 60
+    - 116
+- id: 4
+  name: Rothenburg
+  map: aldeg_cas05
+  client_id: 10
+  emperium:
+    - 27
+    - 101
+  respawn:
+    - 61
+    - 185
+- id: 5
+  name: Repherion
+  map: gefg_cas01
+  client_id: 11
+  emperium:
+    - 197
+    - 181
+  respawn:
+    - 40
+    - 43
+- id: 6
+  name: Eeyolbriggar
+  map: gefg_cas02
+  client_id: 12
+  emperium:
+    - 176
+    - 178
+  respawn:
+    - 22
+    - 66
+- id: 7
+  name: Yesnelph
+  map: gefg_cas03
+  client_id: 13
+  emperium:
+    - 244
+    - 166
+  respawn:
+    - 112
+    - 23
+- id: 8
+  name: Bergel
+  map: gefg_cas04
+  client_id: 14
+  emperium:
+    - 174
+    - 177
+  respawn:
+    - 58
+    - 46
+- id: 9
+  name: Mersetzdeitz
+  map: gefg_cas05
+  client_id: 15
+  emperium:
+    - 194
+    - 184
+  respawn:
+    - 66
+    - 48
+- id: 10
+  name: Bright Arbor
+  map: payg_cas01
+  client_id: 16
+  emperium:
+    - 139
+    - 139
+  respawn:
+    - 115
+    - 57
+- id: 11
+  name: Scarlet Palace
+  map: payg_cas02
+  client_id: 17
+  emperium:
+    - 38
+    - 25
+  respawn:
+    - 26
+    - 265
+- id: 12
+  name: Holy Shadow
+  map: payg_cas03
+  client_id: 18
+  emperium:
+    - 269
+    - 265
+  respawn:
+    - 43
+    - 264
+- id: 13
+  name: Sacred Altar
+  map: payg_cas04
+  client_id: 19
+  emperium:
+    - 270
+    - 28
+  respawn:
+    - 36
+    - 272
+- id: 14
+  name: Bamboo Grove Hill
+  map: payg_cas05
+  client_id: 20
+  emperium:
+    - 30
+    - 30
+  respawn:
+    - 274
+    - 246
+- id: 15
+  name: Kriemhild
+  map: prtg_cas01
+  client_id: 1
+  emperium:
+    - 197
+    - 197
+  respawn:
+    - 107
+    - 180
+- id: 16
+  name: Swanhild
+  map: prtg_cas02
+  client_id: 2
+  emperium:
+    - 157
+    - 174
+  respawn:
+    - 94
+    - 56
+- id: 17
+  name: Fadhgridh
+  map: prtg_cas03
+  client_id: 3
+  emperium:
+    - 16
+    - 220
+  respawn:
+    - 46
+    - 97
+- id: 18
+  name: Skoegul
+  map: prtg_cas04
+  client_id: 4
+  emperium:
+    - 291
+    - 14
+  respawn:
+    - 260
+    - 262
+- id: 19
+  name: Gondul
+  map: prtg_cas05
+  client_id: 5
+  emperium:
+    - 266
+    - 266
+  respawn:
+    - 26
+    - 38
