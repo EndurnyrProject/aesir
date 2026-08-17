@@ -357,13 +357,19 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   end
 
   defp if_statement(tokens) do
-    with {:ok, rest} <- expect(tokens, {:punct, :lparen}),
-         {:ok, cond_expr, rest} <- expression(rest),
-         {:ok, rest} <- expect(rest, {:punct, :rparen}),
+    with {:ok, cond_expr, rest} <- paren_condition(tokens),
          {:ok, then_stmts, rest} <- branch(rest) do
       else_branch(cond_expr, then_stmts, rest)
     end
   end
+
+  # rAthena's `if`/`while`/`switch` require a leading `(` and then parse a full
+  # expression starting at that `(` (see `parse_expr` in script.cpp). The paren
+  # is an ordinary grouping primary, not a condition delimiter, so a condition
+  # like `(a) && (b)` is legal and must be parsed whole rather than truncated at
+  # the first matching `)`.
+  defp paren_condition([{:punct, :lparen} | _] = tokens), do: expression(tokens)
+  defp paren_condition(tokens), do: {:error, unexpected(tokens)}
 
   defp else_branch(cond_expr, then_stmts, [{:ident, "else"} | rest]) do
     with {:ok, else_stmts, rest} <- branch(rest),
@@ -385,9 +391,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp unblock(stmt), do: [stmt]
 
   defp while_statement(tokens) do
-    with {:ok, rest} <- expect(tokens, {:punct, :lparen}),
-         {:ok, cond_expr, rest} <- expression(rest),
-         {:ok, rest} <- expect(rest, {:punct, :rparen}),
+    with {:ok, cond_expr, rest} <- paren_condition(tokens),
          {:ok, body, rest} <- branch(rest) do
       {:ok, {:while, cond_expr, body}, rest}
     end
@@ -396,9 +400,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp do_while_statement(tokens) do
     with {:ok, body, rest} <- branch(tokens),
          {:ok, rest} <- expect(rest, {:ident, "while"}),
-         {:ok, rest} <- expect(rest, {:punct, :lparen}),
-         {:ok, cond_expr, rest} <- expression(rest),
-         {:ok, rest} <- expect(rest, {:punct, :rparen}) do
+         {:ok, cond_expr, rest} <- paren_condition(rest) do
       terminated({:do_while, body, cond_expr}, rest)
     end
   end
@@ -434,9 +436,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Parser do
   defp for_clause_tail(stmt, rest, _stop), do: {:ok, unblock(stmt), rest}
 
   defp switch_statement(tokens) do
-    with {:ok, rest} <- expect(tokens, {:punct, :lparen}),
-         {:ok, expr, rest} <- expression(rest),
-         {:ok, rest} <- expect(rest, {:punct, :rparen}),
+    with {:ok, expr, rest} <- paren_condition(tokens),
          {:ok, rest} <- expect(rest, {:punct, :lbrace}),
          {:ok, clauses, rest} <- switch_clauses(rest, []) do
       {:ok, {:switch, expr, clauses}, rest}

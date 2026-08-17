@@ -91,6 +91,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ParserTest do
       assert [{:if, _, [{:cmd, "next", []}], [{:cmd, "end", []}]}] = else_stmts
     end
 
+    test "if condition is a full expression, not just the first paren group" do
+      assert {:ok, [{:if, cond_expr, [then_stmt], []}]} =
+               Parser.parse_body("if (countitem(7201) > 499) && (moza_tal == 1) close;")
+
+      assert cond_expr ==
+               {:bin, :&&, {:bin, :>, {:call, "countitem", [{:int, 7201}]}, {:int, 499}},
+                {:bin, :==, {:name, "moza_tal"}, {:int, 1}}}
+
+      assert then_stmt == {:cmd, "close", []}
+    end
+
     test "switch with fall-through case labels and default" do
       assert {:ok, [{:switch, {:call, "select", _}, clauses}]} =
                Parser.parse_body("""
