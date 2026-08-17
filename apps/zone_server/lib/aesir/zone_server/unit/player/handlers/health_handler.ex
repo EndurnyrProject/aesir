@@ -9,7 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   On death the player is marked `:dead` and nearby players receive a
   `UnitDespawn` with the died reason, while the corpse remains spatially present
   for observer delivery and corpse-targeted skills. Respawn revives the player
-  and warps them to their save point; if that warp fails (e.g. the save map is
+  and warps them to their save point — or, on a gvg-active castle map, to the
+  castle's same-map respawn point; if that warp fails (e.g. the save map is
   unknown) it falls back to resurrecting in place and standing the sprite back
   up via a `Resurrect`.
   """
@@ -22,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.PotionRecovery
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -29,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -522,7 +525,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
       async: true
     )
 
-    warp_to_save_point(state, idle_state)
+    respawn_warp(state, idle_state)
+  end
+
+  # On a gvg-active castle map the revived player respawns on the same map at
+  # the castle's respawn point; otherwise they warp to the town save point.
+  defp respawn_warp(state, idle_state) do
+    map = idle_state.map_name
+
+    with true <- MapFlags.get(map, :gvg),
+         {:ok, castle} <- CastleDb.by_map(map) do
+      {rx, ry} = castle.respawn
+
+      case WarpHandler.warp(state, map, rx, ry) do
+        {:ok, warped_state} -> {:noreply, warped_state}
+        {:error, _reason} -> warp_to_save_point(state, idle_state)
+      end
+    else
+      _ -> warp_to_save_point(state, idle_state)
+    end
   end
 
   # Warp the revived player to their save point. On failure (unknown save map)

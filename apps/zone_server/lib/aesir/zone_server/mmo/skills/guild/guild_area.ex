@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -23,11 +24,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   def validate_master(%PlayerState{guild_id: guild_id}) when guild_id in [nil, 0],
     do: {:error, :not_guild_master}
 
-  def validate_master(%PlayerState{guild_id: guild_id, character_id: char_id}) do
+  def validate_master(%PlayerState{guild_id: guild_id, character_id: char_id, map_name: map_name}) do
     cond do
-      Config.guild_skills_gvg_only() -> {:error, :not_gvg_ground}
-      match?({:ok, %{master_char_id: ^char_id}}, GuildManager.get(guild_id)) -> :ok
-      true -> {:error, :not_guild_master}
+      Config.guild_skills_gvg_only() and not MapFlags.get(map_name, :gvg) ->
+        {:error, :not_gvg_ground}
+
+      match?({:ok, %{master_char_id: ^char_id}}, GuildManager.get(guild_id)) ->
+        :ok
+
+      true ->
+        {:error, :not_guild_master}
     end
   end
 

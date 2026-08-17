@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
 
   # Registered commands keyed by their lowercase token.
   @commands %{
+    "agitend" => Aesir.ZoneServer.Gm.Commands.AgitEnd,
+    "agitstart" => Aesir.ZoneServer.Gm.Commands.AgitStart,
     "item" => Aesir.ZoneServer.Gm.Commands.Item,
     "itembound" => Aesir.ZoneServer.Gm.Commands.ItemBound,
     "rentitem" => Aesir.ZoneServer.Gm.Commands.Rentitem,

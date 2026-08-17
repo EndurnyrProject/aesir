@@ -1,10 +1,15 @@
 defmodule Aesir.ZoneServer.Gm.DispatcherTest do
   use Aesir.DataCase, async: true
+  use Mimic
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Net.ChatMessage
   alias Aesir.ZoneServer.Gm.Dispatcher
+  alias Aesir.ZoneServer.Mmo.Woe.Server
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  setup :verify_on_exit!
+  setup :set_mimic_private
 
   defmodule StubCommand do
     @behaviour Aesir.ZoneServer.Gm.Command
@@ -105,5 +110,32 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
     Dispatcher.dispatch("@fail", ctx, %{"fail" => FailingStubCommand})
 
     assert %ChatMessage{gid: 1000, message: "boom"} = receive_chat_message()
+  end
+
+  test "routes @agitstart to AgitStart, which starts WoE and replies" do
+    ctx = ctx_for(seed_account(99))
+    expect(Server, :start, fn -> :ok end)
+
+    Dispatcher.dispatch("@agitstart", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "WoE started."} = receive_chat_message()
+  end
+
+  test "routes @agitend to AgitEnd, which stops WoE and replies" do
+    ctx = ctx_for(seed_account(99))
+    expect(Server, :stop, fn -> :ok end)
+
+    Dispatcher.dispatch("@agitend", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "WoE ended."} = receive_chat_message()
+  end
+
+  test "denies @agitstart below GM level 99 without invoking Woe.Server" do
+    ctx = ctx_for(seed_account(10))
+    reject(&Server.start/0)
+
+    Dispatcher.dispatch("@agitstart", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
   end
 end

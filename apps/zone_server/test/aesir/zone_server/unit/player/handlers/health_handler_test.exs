@@ -15,12 +15,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -815,6 +818,80 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       assert_received {:send, _channel, {_tag, %ParamChange{var_id: @sp_hp, value: 100}}}
       assert_received {:warp_called, "save_map", 60, 70}
       refute_received {:send, _res_channel, {_res_tag, %Resurrect{}}}
+    end
+
+    test "warps a dead player on a gvg-active castle map to the castle respawn point on the same map" do
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+
+      stub(CastleDb, :by_map, fn "prontera" ->
+        {:ok,
+         %Castle{
+           id: 0,
+           map: "prontera",
+           name: "Neuschwanstein",
+           client_id: 6,
+           emperium: {216, 23},
+           respawn: {32, 30}
+         }}
+      end)
+
+      stub(WarpHandler, :warp, fn warp_state, dest_map, x, y ->
+        send(self(), {:warp_called, dest_map, x, y})
+        {:ok, warp_state}
+      end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.handle_restart(0, build_state(0, :dead))
+
+      assert game_state.action_state == :idle
+      assert game_state.stats.current_state.hp == 100
+      assert game_state.map_name == "prontera"
+      assert_received {:warp_called, "prontera", 32, 30}
+      refute_received {:warp_called, "save_map", 60, 70}
+    end
+
+    test "falls back to the save point when a gvg-active map has no castle" do
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      stub(CastleDb, :by_map, fn "prontera" -> :error end)
+
+      stub(WarpHandler, :warp, fn warp_state, dest_map, x, y ->
+        send(self(), {:warp_called, dest_map, x, y})
+        {:ok, warp_state}
+      end)
+
+      {:noreply, _state} = HealthHandler.handle_restart(0, build_state(0, :dead))
+
+      assert_received {:warp_called, "save_map", 60, 70}
+      refute_received {:warp_called, "prontera", 32, 30}
+    end
+
+    test "falls back to the save point when the castle respawn warp fails" do
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+
+      stub(CastleDb, :by_map, fn "prontera" ->
+        {:ok,
+         %Castle{
+           id: 0,
+           map: "prontera",
+           name: "Neuschwanstein",
+           client_id: 6,
+           emperium: {216, 23},
+           respawn: {32, 30}
+         }}
+      end)
+
+      stub(WarpHandler, :warp, fn warp_state, dest_map, x, y ->
+        send(self(), {:warp_called, dest_map, x, y})
+        if dest_map == "prontera", do: {:error, :map_not_found}, else: {:ok, warp_state}
+      end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.handle_restart(0, build_state(0, :dead))
+
+      assert game_state.action_state == :idle
+      assert game_state.stats.current_state.hp == 100
+      assert_received {:warp_called, "prontera", 32, 30}
+      assert_received {:warp_called, "save_map", 60, 70}
     end
 
     test "falls back to resurrecting in place when the save-point warp fails" do
