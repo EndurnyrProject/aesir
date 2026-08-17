@@ -1,9 +1,10 @@
 defmodule Mix.Tasks.Aesir.Import.Warps do
   @shortdoc "Imports rAthena warp scripts into priv/db/warps/*.yml"
   @moduledoc """
-  One-time importer: converts the rAthena warp scripts listed in
-  `npc/scripts_warps.conf` into our own-schema YAML under
-  `apps/zone_server/priv/db/warps/`, one file per source map.
+  One-time importer: converts the rAthena warp scripts listed in the shared
+  `npc/scripts_warps.conf` and the renewal `npc/re/scripts_warps.conf` into our
+  own-schema YAML under `apps/zone_server/priv/db/warps/`, one file per source
+  map. We target renewal, so the pre-renewal conf is intentionally ignored.
 
       mix aesir.import.warps [<rathena_root>]
 
@@ -21,7 +22,10 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
   alias Aesir.ZoneServer.Npc.Warps.Importer
 
   @out_dir Path.join(~w(apps zone_server priv db warps))
-  @conf Path.join(~w(npc scripts_warps.conf))
+  @confs [
+    Path.join(~w(npc scripts_warps.conf)),
+    Path.join(~w(npc re scripts_warps.conf))
+  ]
 
   @impl Mix.Task
   def run(args) do
@@ -48,8 +52,14 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
 
   @spec warp_files(Path.t()) :: [Path.t()]
   defp warp_files(rathena) do
-    conf = Path.join(rathena, @conf)
+    @confs
+    |> Enum.map(&Path.join(rathena, &1))
+    |> Enum.flat_map(&conf_files(&1, rathena))
+    |> Enum.uniq()
+  end
 
+  @spec conf_files(Path.t(), Path.t()) :: [Path.t()]
+  defp conf_files(conf, rathena) do
     conf
     |> File.read!()
     |> String.split("\n")
@@ -89,10 +99,17 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
   end
 
   @spec skip_reason(Importer.warp_map()) :: atom() | nil
-  defp skip_reason(%{"map" => map, "x" => x, "y" => y, "to" => %{"map" => to_map}}) do
+  defp skip_reason(%{
+         "map" => map,
+         "x" => x,
+         "y" => y,
+         "xs" => xs,
+         "ys" => ys,
+         "to" => %{"map" => to_map}
+       }) do
     cond do
       not map_known?(map) -> :unknown_source_map
-      not MapCache.walkable?(map, x, y) -> :blocked_source_cell
+      not span_walkable?(map, x, y, xs, ys) -> :blocked_source_cell
       not map_known?(to_map) -> :unknown_dest_map
       true -> nil
     end
@@ -100,6 +117,17 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
 
   @spec map_known?(String.t()) :: boolean()
   defp map_known?(map), do: match?({:ok, _}, MapCache.get(map))
+
+  # A warp fires from anywhere in its `(2*xs+1) x (2*ys+1)` trigger box, so it is
+  # reachable as long as at least one cell in that box is walkable. Requiring the
+  # exact centre cell to be walkable wrongly drops warps whose centre sits on a
+  # door threshold / wall while the approach cells are open (e.g. prontera prt08).
+  @spec span_walkable?(String.t(), integer(), integer(), integer(), integer()) :: boolean()
+  defp span_walkable?(map, x, y, xs, ys) do
+    Enum.any?((y - ys)..(y + ys), fn cy ->
+      Enum.any?((x - xs)..(x + xs), fn cx -> MapCache.walkable?(map, cx, cy) end)
+    end)
+  end
 
   @spec write!([Importer.warp_map()]) :: :ok
   defp write!(kept) do

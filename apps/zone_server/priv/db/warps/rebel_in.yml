@@ -1,0 +1,61 @@
+---
+- id: '#negoin02'
+  map: rebel_in
+  name: ''
+  sprite: 45
+  to:
+    map: rebel_in
+    x: 21
+    'y': 41
+  x: 34
+  xs: 5
+  'y': 43
+  ys: 2
+- id: einbech_south
+  map: rebel_in
+  name: ''
+  sprite: 45
+  to:
+    map: einbech
+    x: 215
+    'y': 80
+  x: 18
+  xs: 1
+  'y': 43
+  ys: 1
+- id: '#162gmroom2_1'
+  map: rebel_in
+  name: ''
+  sprite: 45
+  to:
+    map: rebel_in
+    x: 209
+    'y': 82
+  x: 88
+  xs: 1
+  'y': 80
+  ys: 1
+- id: '#162gmroom2_2'
+  map: rebel_in
+  name: ''
+  sprite: 45
+  to:
+    map: rebel_in
+    x: 87
+    'y': 75
+  x: 209
+  xs: 1
+  'y': 77
+  ys: 1
+- id: '#162gmroom2_3'
+  map: rebel_in
+  name: ''
+  sprite: 45
+  to:
+    map: rebel_in
+    x: 119
+    'y': 41
+  x: 155
+  xs: 1
+  'y': 84
+  ys: 1

@@ -23,6 +23,18 @@
   xs: 1
   'y': 160
   ys: 1
+- id: ama_warrior1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 34
+    'y': 99
+  x: 168
+  xs: 1
+  'y': 182
+  ys: 1
 - id: ama_deluxe1-1
   map: amatsu
   name: ''
@@ -34,6 +46,18 @@
   x: 52
   xs: 1
   'y': 148
+  ys: 1
+- id: ama_tools1-1
+  map: amatsu
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 30
+    'y': 24
+  x: 94
+  xs: 1
+  'y': 117
   ys: 1
 - id: ama_weapon1-1
   map: amatsu

@@ -1,0 +1,13 @@
+---
+- id: wiz_out
+  map: job_wiz
+  name: ''
+  sprite: 45
+  to:
+    map: gef_tower
+    x: 108
+    'y': 29
+  x: 49
+  xs: 1
+  'y': 154
+  ys: 1

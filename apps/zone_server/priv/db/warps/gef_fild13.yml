@@ -119,3 +119,27 @@
   xs: 1
   'y': 83
   ys: 1
+- id: geff18
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild09
+    x: 27
+    'y': 56
+  x: 380
+  xs: 1
+  'y': 56
+  ys: 1
+- id: geff13-1
+  map: gef_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild07
+    x: 40
+    'y': 23
+  x: 41
+  xs: 1
+  'y': 373
+  ys: 1

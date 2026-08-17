@@ -1,0 +1,13 @@
+---
+- id: '#wami3'
+  map: amicitia2
+  name: ''
+  sprite: 45
+  to:
+    map: amicitia1
+    x: 149
+    'y': 27
+  x: 146
+  xs: 2
+  'y': 281
+  ys: 2

@@ -35,6 +35,18 @@
   xs: 1
   'y': 115
   ys: 1
+- id: monk19
+  map: monk_test
+  name: ''
+  sprite: 45
+  to:
+    map: monk_test
+    x: 301
+    'y': 127
+  x: 272
+  xs: 1
+  'y': 125
+  ys: 1
 - id: monk20
   map: monk_test
   name: ''

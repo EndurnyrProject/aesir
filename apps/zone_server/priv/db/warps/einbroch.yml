@@ -191,3 +191,15 @@
   xs: 1
   'y': 199
   ys: 1
+- id: ein_to_pub
+  map: einbroch
+  name: ''
+  sprite: 45
+  to:
+    map: pub_cat
+    x: 49
+    'y': 27
+  x: 302
+  xs: 1
+  'y': 331
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: '#ep172_bath_out'
+  map: ba_bath
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 382
+    'y': 38
+  x: 159
+  xs: 1
+  'y': 22
+  ys: 1

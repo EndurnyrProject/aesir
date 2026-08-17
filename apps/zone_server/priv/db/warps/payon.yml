@@ -95,6 +95,18 @@
   xs: 2
   'y': 127
   ys: 2
+- id: payonwarp030
+  map: payon
+  name: ''
+  sprite: 45
+  to:
+    map: payon_in03
+    x: 98
+    'y': 117
+  x: 155
+  xs: 4
+  'y': 248
+  ys: 1
 - id: payonwarp038
   map: payon
   name: ''

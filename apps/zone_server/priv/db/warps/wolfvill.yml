@@ -1,0 +1,13 @@
+---
+- id: wolfvill_to_gw_fild01
+  map: wolfvill
+  name: ''
+  sprite: 45
+  to:
+    map: gw_fild01
+    x: 25
+    'y': 101
+  x: 276
+  xs: 1
+  'y': 25
+  ys: 1

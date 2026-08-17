@@ -1,0 +1,157 @@
+---
+- id: prtg-2-01_prtg-2#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prt_gld
+    x: 240
+    'y': 128
+  x: 43
+  xs: 1
+  'y': 233
+  ys: 1
+- id: prtg-2-02_prtg-2-22#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 206
+    'y': 41
+  x: 88
+  xs: 1
+  'y': 215
+  ys: 1
+- id: prtg-2-03_prtg-2-21#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 165
+    'y': 41
+  x: 53
+  xs: 1
+  'y': 202
+  ys: 1
+- id: prtg-2-04_prtg-2-12#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 98
+    'y': 25
+  x: 64
+  xs: 1
+  'y': 164
+  ys: 1
+- id: prtg-2-05_prtg-2-11#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 71
+    'y': 82
+  x: 35
+  xs: 1
+  'y': 183
+  ys: 1
+- id: prtg-2-11_prtg-2-05#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 35
+    'y': 187
+  x: 71
+  xs: 1
+  'y': 86
+  ys: 1
+- id: prtg-2-12_prtg-2-04#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 64
+    'y': 168
+  x: 98
+  xs: 1
+  'y': 21
+  ys: 1
+- id: prtg-2-13_prtg-2-24#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 203
+    'y': 25
+  x: 45
+  xs: 1
+  'y': 21
+  ys: 1
+- id: prtg-2-21_prtg-2-03#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 57
+    'y': 202
+  x: 161
+  xs: 1
+  'y': 41
+  ys: 1
+- id: prtg-2-22_prtg-2-02#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 84
+    'y': 215
+  x: 210
+  xs: 1
+  'y': 41
+  ys: 1
+- id: prtg-2-23_prtg-2-31#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 157
+    'y': 140
+  x: 184
+  xs: 1
+  'y': 44
+  ys: 1
+- id: prtg-2-24_prtg-2-13#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 45
+    'y': 25
+  x: 203
+  xs: 1
+  'y': 21
+  ys: 1
+- id: prtg-2-31_prtg-2-23#te
+  map: te_prtcas02
+  name: ''
+  sprite: 45
+  to:
+    map: te_prtcas02
+    x: 184
+    'y': 40
+  x: 157
+  xs: 1
+  'y': 135
+  ys: 1

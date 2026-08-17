@@ -11,3 +11,15 @@
   xs: 2
   'y': 296
   ys: 2
+- id: mocf28
+  map: moc_fild16
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild17
+    x: 366
+    'y': 272
+  x: 16
+  xs: 2
+  'y': 179
+  ys: 6

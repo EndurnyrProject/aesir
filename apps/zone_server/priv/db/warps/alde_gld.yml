@@ -71,3 +71,15 @@
   xs: 1
   'y': 90
   ys: 1
+- id: to_kafragarten
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: te_alde_gld
+    x: 228
+    'y': 185
+  x: 225
+  xs: 1
+  'y': 188
+  ys: 1

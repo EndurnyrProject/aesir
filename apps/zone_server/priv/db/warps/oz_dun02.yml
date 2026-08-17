@@ -1,0 +1,13 @@
+---
+- id: to_oz_dun01
+  map: oz_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: oz_dun01
+    x: 112
+    'y': 34
+  x: 142
+  xs: 1
+  'y': 284
+  ys: 1

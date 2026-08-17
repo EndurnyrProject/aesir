@@ -83,3 +83,39 @@
   xs: 1
   'y': 71
   ys: 1
+- id: sign05
+  map: um_in
+  name: ''
+  sprite: 45
+  to:
+    map: um_in
+    x: 89
+    'y': 11
+  x: 33
+  xs: 1
+  'y': 18
+  ys: 1
+- id: sign05a
+  map: um_in
+  name: ''
+  sprite: 45
+  to:
+    map: um_in
+    x: 33
+    'y': 16
+  x: 89
+  xs: 1
+  'y': 9
+  ys: 1
+- id: sign06a
+  map: um_in
+  name: ''
+  sprite: 45
+  to:
+    map: umbala
+    x: 111
+    'y': 121
+  x: 11
+  xs: 1
+  'y': 18
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: malaya_mal_fild01
+  map: malaya
+  name: ''
+  sprite: 45
+  to:
+    map: ma_fild01
+    x: 40
+    'y': 272
+  x: 370
+  xs: 1
+  'y': 277
+  ys: 1
+- id: malaya_ship_mal_in_ship
+  map: malaya
+  name: ''
+  sprite: 45
+  to:
+    map: ma_in01
+    x: 108
+    'y': 92
+  x: 309
+  xs: 1
+  'y': 70
+  ys: 1

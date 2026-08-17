@@ -1,0 +1,25 @@
+---
+- id: fr_ver03_to_ver04_1
+  map: verus03
+  name: ''
+  sprite: 45
+  to:
+    map: verus04
+    x: 121
+    'y': 264
+  x: 122
+  xs: 1
+  'y': 17
+  ys: 1
+- id: fr_ver03_to_ver04_2
+  map: verus03
+  name: ''
+  sprite: 45
+  to:
+    map: verus04
+    x: 44
+    'y': 264
+  x: 44
+  xs: 1
+  'y': 17
+  ys: 1

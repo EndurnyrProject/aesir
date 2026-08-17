@@ -1,0 +1,13 @@
+---
+- id: '#ep172_pw03_out'
+  map: ba_pw03
+  name: ''
+  sprite: 45
+  to:
+    map: ba_maison
+    x: 88
+    'y': 268
+  x: 10
+  xs: 1
+  'y': 115
+  ys: 1

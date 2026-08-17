@@ -1,0 +1,13 @@
+---
+- id: bknw_tofild01
+  map: ma_scene01
+  name: ''
+  sprite: 45
+  to:
+    map: ma_fild01
+    x: 288
+    'y': 55
+  x: 140
+  xs: 1
+  'y': 80
+  ys: 1

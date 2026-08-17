@@ -1,0 +1,13 @@
+---
+- id: dun_q_dun01
+  map: lasa_dun_q
+  name: ''
+  sprite: 45
+  to:
+    map: lasa_dun01
+    x: 152
+    'y': 98
+  x: 190
+  xs: 1
+  'y': 14
+  ys: 1

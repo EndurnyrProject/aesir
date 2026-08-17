@@ -1,0 +1,49 @@
+---
+- id: cmd_fild09-1
+  map: cmd_fild09
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild07
+    x: 382
+    'y': 184
+  x: 12
+  xs: 1
+  'y': 170
+  ys: 4
+- id: cmd_fild09-2
+  map: cmd_fild09
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild18
+    x: 55
+    'y': 170
+  x: 369
+  xs: 2
+  'y': 164
+  ys: 2
+- id: cmd_fild09-3
+  map: cmd_fild09
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild08
+    x: 309
+    'y': 60
+  x: 309
+  xs: 2
+  'y': 381
+  ys: 1
+- id: cmd_fild09-4
+  map: cmd_fild09
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild08
+    x: 75
+    'y': 42
+  x: 75
+  xs: 2
+  'y': 382
+  ys: 1

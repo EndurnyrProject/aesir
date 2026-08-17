@@ -1,0 +1,37 @@
+---
+- id: '#ep172_2whs02_out'
+  map: ba_2whs02
+  name: ''
+  sprite: 45
+  to:
+    map: ba_2whs01
+    x: 275
+    'y': 291
+  x: 337
+  xs: 1
+  'y': 337
+  ys: 1
+- id: '#172wh01_'
+  map: ba_2whs02
+  name: ''
+  sprite: 45
+  to:
+    map: ba_2whs02
+    x: 69
+    'y': 300
+  x: 63
+  xs: 2
+  'y': 300
+  ys: 2
+- id: '#ba2whslab_to_ba2whs02-1'
+  map: ba_2whs02
+  name: ''
+  sprite: 45
+  to:
+    map: ba_2whs02
+    x: 69
+    'y': 325
+  x: 63
+  xs: 2
+  'y': 325
+  ys: 2

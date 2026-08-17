@@ -1,0 +1,13 @@
+---
+- id: '#archout'
+  map: job3_arch01
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem02
+    x: 282
+    'y': 263
+  x: 29
+  xs: 1
+  'y': 24
+  ys: 1

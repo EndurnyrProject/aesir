@@ -1,0 +1,37 @@
+---
+- id: in02-1_hub1-2
+  map: ecl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_hub01
+    x: 23
+    'y': 107
+  x: 98
+  xs: 1
+  'y': 4
+  ys: 1
+- id: in02-2_in02-3
+  map: ecl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in02
+    x: 157
+    'y': 66
+  x: 80
+  xs: 1
+  'y': 18
+  ys: 1
+- id: in02-3_in02-2
+  map: ecl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in02
+    x: 83
+    'y': 18
+  x: 157
+  xs: 1
+  'y': 68
+  ys: 1

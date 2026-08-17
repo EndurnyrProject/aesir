@@ -1,0 +1,13 @@
+---
+- id: dewata0001
+  map: dewata
+  name: ''
+  sprite: 45
+  to:
+    map: dew_fild01
+    x: 373
+    'y': 212
+  x: 44
+  xs: 1
+  'y': 252
+  ys: 1

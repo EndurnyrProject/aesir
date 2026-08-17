@@ -119,3 +119,15 @@
   xs: 2
   'y': 221
   ys: 2
+- id: Room_Entrance#alberta-01
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 69
+    'y': 141
+  x: 45
+  xs: 1
+  'y': 145
+  ys: 1

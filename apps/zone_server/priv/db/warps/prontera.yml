@@ -95,6 +95,18 @@
   xs: 2
   'y': 267
   ys: 2
+- id: prt08
+  map: prontera
+  name: ''
+  sprite: 45
+  to:
+    map: prt_in
+    x: 68
+    'y': 134
+  x: 204
+  xs: 2
+  'y': 192
+  ys: 2
 - id: prt09
   map: prontera
   name: ''
@@ -215,3 +227,39 @@
   xs: 2
   'y': 279
   ys: 2
+- id: prt_to_cas_cas_out
+  map: prontera
+  name: ''
+  sprite: 45
+  to:
+    map: prt_cas
+    x: 216
+    'y': 146
+  x: 156
+  xs: 1
+  'y': 358
+  ys: 1
+- id: illusion123
+  map: prontera
+  name: ''
+  sprite: 45
+  to:
+    map: prt_in
+    x: 128
+    'y': 40
+  x: 50
+  xs: 2
+  'y': 228
+  ys: 2
+- id: s_atelier0005
+  map: prontera
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 13
+    'y': 119
+  x: 272
+  xs: 1
+  'y': 108
+  ys: 1

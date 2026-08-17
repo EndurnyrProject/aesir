@@ -1,0 +1,13 @@
+---
+- id: malangdo0028
+  map: mal_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: malangdo
+    x: 75
+    'y': 236
+  x: 30
+  xs: 1
+  'y': 230
+  ys: 1

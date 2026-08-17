@@ -1,0 +1,13 @@
+---
+- id: bifrost_field0002
+  map: bif_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 271
+    'y': 382
+  x: 318
+  xs: 1
+  'y': 48
+  ys: 1

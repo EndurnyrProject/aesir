@@ -1,0 +1,49 @@
+---
+- id: prtf021
+  map: prt_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild11
+    x: 374
+    'y': 293
+  x: 17
+  xs: 2
+  'y': 281
+  ys: 4
+- id: prtf022
+  map: prt_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild03
+    x: 312
+    'y': 19
+  x: 302
+  xs: 5
+  'y': 301
+  ys: 2
+- id: prtf20-1
+  map: prt_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild10
+    x: 23
+    'y': 196
+  x: 361
+  xs: 2
+  'y': 184
+  ys: 5
+- id: prtf19-1
+  map: prt_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild10
+    x: 23
+    'y': 122
+  x: 362
+  xs: 2
+  'y': 111
+  ys: 6

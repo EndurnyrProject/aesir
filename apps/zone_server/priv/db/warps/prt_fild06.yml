@@ -1,0 +1,25 @@
+---
+- id: prtf003
+  map: prt_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: prontera
+    x: 285
+    'y': 203
+  x: 23
+  xs: 2
+  'y': 193
+  ys: 3
+- id: prtf06-1
+  map: prt_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild02
+    x: 305
+    'y': 22
+  x: 277
+  xs: 10
+  'y': 320
+  ys: 2

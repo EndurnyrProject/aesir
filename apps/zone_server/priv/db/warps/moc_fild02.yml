@@ -11,3 +11,75 @@
   xs: 1
   'y': 272
   ys: 1
+- id: mocf03
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild13
+    x: 298
+    'y': 367
+  x: 228
+  xs: 4
+  'y': 29
+  ys: 2
+- id: mocf04
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild03
+    x: 70
+    'y': 336
+  x: 332
+  xs: 5
+  'y': 19
+  ys: 3
+- id: mocf012
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild04
+    x: 194
+    'y': 20
+  x: 350
+  xs: 6
+  'y': 339
+  ys: 2
+- id: mocf02-3
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild01
+    x: 315
+    'y': 25
+  x: 67
+  xs: 11
+  'y': 342
+  ys: 3
+- id: mocf05
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild13
+    x: 146
+    'y': 365
+  x: 71
+  xs: 4
+  'y': 18
+  ys: 2
+- id: mocf02-4
+  map: moc_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild01
+    x: 315
+    'y': 25
+  x: 92
+  xs: 11
+  'y': 342
+  ys: 3

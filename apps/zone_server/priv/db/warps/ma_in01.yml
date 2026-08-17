@@ -1,0 +1,85 @@
+---
+- id: mal_in_ws
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 115
+    'y': 212
+  x: 86
+  xs: 1
+  'y': 16
+  ys: 1
+- id: mal_in_inn
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 178
+    'y': 208
+  x: 24
+  xs: 1
+  'y': 77
+  ys: 1
+- id: mal_in_house01
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 52
+    'y': 75
+  x: 33
+  xs: 1
+  'y': 152
+  ys: 1
+- id: mal_in_ship_malaya_ship
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 310
+    'y': 67
+  x: 105
+  xs: 1
+  'y': 92
+  ys: 1
+- id: mal_in_ts
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 296
+    'y': 167
+  x: 9
+  xs: 1
+  'y': 24
+  ys: 1
+- id: mal_in_shop_malaya_shop
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 261
+    'y': 237
+  x: 126
+  xs: 1
+  'y': 17
+  ys: 1
+- id: mf_in_minga_mf_minga
+  map: ma_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ma_fild01
+    x: 248
+    'y': 190
+  x: 105
+  xs: 1
+  'y': 160
+  ys: 1

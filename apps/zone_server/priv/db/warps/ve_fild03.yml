@@ -11,3 +11,15 @@
   xs: 1
   'y': 240
   ys: 1
+- id: ve_fild3-1
+  map: ve_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild04
+    x: 49
+    'y': 249
+  x: 355
+  xs: 1
+  'y': 223
+  ys: 1

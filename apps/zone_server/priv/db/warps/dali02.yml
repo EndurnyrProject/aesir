@@ -1,0 +1,13 @@
+---
+- id: '#dali02_to_dali'
+  map: dali02
+  name: ''
+  sprite: 45
+  to:
+    map: dali
+    x: 64
+    'y': 125
+  x: 66
+  xs: 1
+  'y': 97
+  ys: 1

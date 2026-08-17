@@ -1,4 +1,16 @@
 ---
+- id: payg-1-01_payg-1-12
+  map: payg_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas01
+    x: 102
+    'y': 21
+  x: 201
+  xs: 1
+  'y': 126
+  ys: 1
 - id: payg-1-02_payg-1-11
   map: payg_cas01
   name: ''

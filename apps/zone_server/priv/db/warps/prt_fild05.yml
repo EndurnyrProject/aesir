@@ -1,0 +1,97 @@
+---
+- id: prtf013
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_09
+    x: 106
+    'y': 34
+  x: 105
+  xs: 5
+  'y': 381
+  ys: 2
+- id: prtf08-1
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild04
+    x: 374
+    'y': 73
+  x: 13
+  xs: 2
+  'y': 63
+  ys: 15
+- id: prtf11
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild07
+    x: 129
+    'y': 374
+  x: 134
+  xs: 14
+  'y': 14
+  ys: 3
+- id: prtf09-1
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild04
+    x: 380
+    'y': 158
+  x: 14
+  xs: 2
+  'y': 141
+  ys: 18
+- id: prtf10-1
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild04
+    x: 380
+    'y': 332
+  x: 15
+  xs: 2
+  'y': 333
+  ys: 8
+- id: prtf12
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild07
+    x: 248
+    'y': 369
+  x: 255
+  xs: 12
+  'y': 14
+  ys: 2
+- id: prtf014
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_09
+    x: 305
+    'y': 33
+  x: 292
+  xs: 4
+  'y': 385
+  ys: 2
+- id: prtf002
+  map: prt_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: prontera
+    x: 26
+    'y': 203
+  x: 373
+  xs: 3
+  'y': 205
+  ys: 3

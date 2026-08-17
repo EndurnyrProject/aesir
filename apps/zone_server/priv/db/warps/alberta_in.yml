@@ -35,6 +35,18 @@
   xs: 2
   'y': 141
   ys: 3
+- id: alb01-1
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 117
+    'y': 42
+  x: 180
+  xs: 2
+  'y': 34
+  ys: 2
 - id: alb06-1
   map: alberta_in
   name: ''
@@ -275,3 +287,15 @@
   xs: 3
   'y': 170
   ys: 2
+- id: Room_Exit#alberta-01
+  map: alberta_in
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 48
+    'y': 145
+  x: 73
+  xs: 1
+  'y': 142
+  ys: 1

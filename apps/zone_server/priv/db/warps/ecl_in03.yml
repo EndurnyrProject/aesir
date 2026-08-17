@@ -1,0 +1,13 @@
+---
+- id: in03_hub3-2
+  map: ecl_in03
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_hub01
+    x: 40
+    'y': 11
+  x: 144
+  xs: 1
+  'y': 14
+  ys: 1

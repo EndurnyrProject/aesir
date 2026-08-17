@@ -1,0 +1,13 @@
+---
+- id: rekenber_to_lhz
+  map: rgsr_in
+  name: ''
+  sprite: 45
+  to:
+    map: lighthalzen
+    x: 53
+    'y': 275
+  x: 127
+  xs: 1
+  'y': 32
+  ys: 1

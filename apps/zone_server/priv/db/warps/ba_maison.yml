@@ -1,0 +1,133 @@
+---
+- id: '#ep172_2whs01_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_2whs01
+    x: 156
+    'y': 32
+  x: 305
+  xs: 1
+  'y': 322
+  ys: 1
+- id: '#ep172_lab2_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 15
+    'y': 321
+  x: 78
+  xs: 1
+  'y': 146
+  ys: 1
+- id: '#ep172_tearoom_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 223
+    'y': 116
+  x: 99
+  xs: 1
+  'y': 65
+  ys: 1
+- id: '#ep172_sroom1_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 37
+    'y': 137
+  x: 103
+  xs: 1
+  'y': 323
+  ys: 1
+- id: '#ep172_sroom2_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 39
+    'y': 9
+  x: 87
+  xs: 1
+  'y': 324
+  ys: 1
+- id: '#ep172_hall_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 234
+    'y': 35
+  x: 53
+  xs: 1
+  'y': 131
+  ys: 1
+- id: '#ep172_in01_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 271
+    'y': 269
+  x: 197
+  xs: 1
+  'y': 279
+  ys: 1
+- id: '#ep173_library_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 211
+    'y': 163
+  x: 197
+  xs: 1
+  'y': 105
+  ys: 1
+- id: '#ep172_restaurant_a_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 80
+    'y': 367
+  x: 140
+  xs: 1
+  'y': 96
+  ys: 1
+- id: '#ep172_restaurant_a_in_'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 23
+    'y': 375
+  x: 140
+  xs: 1
+  'y': 108
+  ys: 1
+- id: '#ep172_pw03_in'
+  map: ba_maison
+  name: ''
+  sprite: 45
+  to:
+    map: ba_pw03
+    x: 13
+    'y': 115
+  x: 88
+  xs: 1
+  'y': 272
+  ys: 1

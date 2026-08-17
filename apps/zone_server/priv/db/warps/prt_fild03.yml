@@ -1,0 +1,25 @@
+---
+- id: prtf07-1
+  map: prt_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild02
+    x: 373
+    'y': 353
+  x: 16
+  xs: 2
+  'y': 249
+  ys: 10
+- id: prtf006
+  map: prt_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: prt_monk
+    x: 25
+    'y': 248
+  x: 371
+  xs: 2
+  'y': 256
+  ys: 2

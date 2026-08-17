@@ -23,3 +23,27 @@
   xs: 1
   'y': 286
   ys: 1
+- id: cmd_fild07-1
+  map: cmd_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild06
+    x: 147
+    'y': 36
+  x: 149
+  xs: 10
+  'y': 379
+  ys: 1
+- id: cmd_fild07-2
+  map: cmd_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild09
+    x: 18
+    'y': 170
+  x: 389
+  xs: 1
+  'y': 186
+  ys: 3

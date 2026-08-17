@@ -1,0 +1,13 @@
+---
+- id: sage_out
+  map: job_sage
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in03
+    x: 169
+    'y': 171
+  x: 55
+  xs: 1
+  'y': 154
+  ys: 1

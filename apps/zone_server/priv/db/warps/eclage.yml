@@ -1,0 +1,25 @@
+---
+- id: eclageS_EclEnter
+  map: eclage
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_fild01
+    x: 99
+    'y': 317
+  x: 98
+  xs: 1
+  'y': 26
+  ys: 1
+- id: eclageN_in01s
+  map: eclage
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in01
+    x: 47
+    'y': 11
+  x: 299
+  xs: 1
+  'y': 309
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: lasadun_out
+  map: lasa_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lasa_fild02
+    x: 344
+    'y': 243
+  x: 18
+  xs: 1
+  'y': 143
+  ys: 1
+- id: lasadun01_to2f
+  map: lasa_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: lasa_dun02
+    x: 22
+    'y': 171
+  x: 157
+  xs: 1
+  'y': 98
+  ys: 1

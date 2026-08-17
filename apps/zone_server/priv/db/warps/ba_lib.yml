@@ -1,0 +1,13 @@
+---
+- id: '#ep173_lib_dun_out'
+  map: ba_lib
+  name: ''
+  sprite: 45
+  to:
+    map: ba_in01
+    x: 211
+    'y': 178
+  x: 159
+  xs: 1
+  'y': 4
+  ys: 1

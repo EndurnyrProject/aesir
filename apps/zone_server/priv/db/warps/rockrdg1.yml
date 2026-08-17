@@ -1,0 +1,25 @@
+---
+- id: rockrdg1#harboro1
+  map: rockrdg1
+  name: ''
+  sprite: 45
+  to:
+    map: harboro1
+    x: 358
+    'y': 206
+  x: 33
+  xs: 1
+  'y': 246
+  ys: 1
+- id: rockrdg1#rockrdg2
+  map: rockrdg1
+  name: ''
+  sprite: 45
+  to:
+    map: rockrdg2
+    x: 31
+    'y': 207
+  x: 371
+  xs: 1
+  'y': 206
+  ys: 1

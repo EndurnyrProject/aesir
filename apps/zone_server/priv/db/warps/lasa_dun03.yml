@@ -1,0 +1,13 @@
+---
+- id: lasadun03_to2f
+  map: lasa_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: lasa_dun02
+    x: 146
+    'y': 54
+  x: 190
+  xs: 1
+  'y': 15
+  ys: 1

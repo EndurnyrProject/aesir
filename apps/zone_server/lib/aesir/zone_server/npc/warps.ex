@@ -125,16 +125,29 @@ defmodule Aesir.ZoneServer.Npc.Warps do
 
   @spec check_own_cell(Warp.t(), MapData.t()) :: :ok | :drop
   defp check_own_cell(%Warp{} = warp, map_data) do
-    if MapData.walkable?(map_data, warp.x, warp.y) do
+    if span_walkable?(warp, map_data) do
       :ok
     else
       Logger.warning(
-        "warp #{inspect(warp.id)} on map #{inspect(warp.map)} sits on a non-walkable " <>
-          "cell (#{warp.x}, #{warp.y}); dropping"
+        "warp #{inspect(warp.id)} on map #{inspect(warp.map)} trigger area around " <>
+          "non-walkable cell (#{warp.x}, #{warp.y}) has no walkable cell; dropping"
       )
 
       :drop
     end
+  end
+
+  # A warp fires from anywhere in its `(2*xs+1) x (2*ys+1)` trigger box, so it is
+  # reachable as long as at least one cell in that box is walkable. Checking only
+  # the centre cell wrongly drops warps whose centre sits on a wall/door threshold
+  # while the approach cells are open (e.g. prontera prt08).
+  @spec span_walkable?(Warp.t(), MapData.t()) :: boolean()
+  defp span_walkable?(%Warp{} = warp, map_data) do
+    Enum.any?((warp.y - warp.ys)..(warp.y + warp.ys), fn cy ->
+      Enum.any?((warp.x - warp.xs)..(warp.x + warp.xs), fn cx ->
+        MapData.walkable?(map_data, cx, cy)
+      end)
+    end)
   end
 
   @spec warn_blocked_destination(Warp.t(), MapData.t()) :: :ok

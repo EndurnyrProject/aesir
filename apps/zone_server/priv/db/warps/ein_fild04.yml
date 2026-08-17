@@ -47,3 +47,15 @@
   xs: 1
   'y': 205
   ys: 1
+- id: hugel001
+  map: ein_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild05
+    x: 80
+    'y': 294
+  x: 343
+  xs: 1
+  'y': 293
+  ys: 1

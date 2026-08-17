@@ -1,0 +1,61 @@
+---
+- id: dun2pay_to_gld
+  map: gld2_pay
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 53
+    'y': 141
+  x: 33
+  xs: 1
+  'y': 105
+  ys: 1
+- id: dun2pay_to_gld#2
+  map: gld2_pay
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 53
+    'y': 141
+  x: 119
+  xs: 1
+  'y': 21
+  ys: 1
+- id: dun2pay_to_gld#3
+  map: gld2_pay
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 53
+    'y': 141
+  x: 205
+  xs: 1
+  'y': 105
+  ys: 1
+- id: dun2pay_to_gld#4
+  map: gld2_pay
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 53
+    'y': 141
+  x: 175
+  xs: 1
+  'y': 215
+  ys: 1
+- id: dun2pay_to_gld#5
+  map: gld2_pay
+  name: ''
+  sprite: 45
+  to:
+    map: pay_gld
+    x: 53
+    'y': 141
+  x: 61
+  xs: 1
+  'y': 215
+  ys: 1

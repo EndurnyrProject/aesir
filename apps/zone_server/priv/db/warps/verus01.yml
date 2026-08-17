@@ -1,0 +1,13 @@
+---
+- id: verus01_to_verus03
+  map: verus01
+  name: ''
+  sprite: 45
+  to:
+    map: verus03
+    x: 55
+    'y': 251
+  x: 247
+  xs: 1
+  'y': 58
+  ys: 1

@@ -1,0 +1,49 @@
+---
+- id: mal_fild01_malaya
+  map: ma_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: malaya
+    x: 367
+    'y': 277
+  x: 37
+  xs: 1
+  'y': 272
+  ys: 1
+- id: mafild01_to02
+  map: ma_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ma_fild02
+    x: 248
+    'y': 36
+  x: 266
+  xs: 1
+  'y': 359
+  ys: 1
+- id: mafild01_tobknw
+  map: ma_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ma_scene01
+    x: 142
+    'y': 78
+  x: 288
+  xs: 1
+  'y': 52
+  ys: 1
+- id: mf_minga_mf_in_minga
+  map: ma_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ma_in01
+    x: 108
+    'y': 160
+  x: 251
+  xs: 1
+  'y': 190
+  ys: 1

@@ -59,6 +59,18 @@
   xs: 1
   'y': 100
   ys: 1
+- id: aldeg-4-6_aldeg-4-7
+  map: aldeg_cas04
+  name: ''
+  sprite: 45
+  to:
+    map: aldeg_cas04
+    x: 49
+    'y': 57
+  x: 196
+  xs: 1
+  'y': 86
+  ys: 1
 - id: aldeg-4-7_aldeg-4-6
   map: aldeg_cas04
   name: ''

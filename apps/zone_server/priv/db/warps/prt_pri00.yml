@@ -1,0 +1,13 @@
+---
+- id: prt_pri_to_prt_cas
+  map: prt_pri00
+  name: ''
+  sprite: 45
+  to:
+    map: prt_cas
+    x: 182
+    'y': 258
+  x: 54
+  xs: 1
+  'y': 139
+  ys: 1

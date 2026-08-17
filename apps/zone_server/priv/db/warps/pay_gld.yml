@@ -47,6 +47,18 @@
   xs: 1
   'y': 116
   ys: 1
+- id: payg-3_payg-3-07
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas03
+    x: 226
+    'y': 26
+  x: 323
+  xs: 1
+  'y': 293
+  ys: 1
 - id: payg-4_payg-4-01
   map: pay_gld
   name: ''
@@ -58,4 +70,16 @@
   x: 140
   xs: 1
   'y': 156
+  ys: 1
+- id: payg-5_payg-5-03
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas05
+    x: 62
+    'y': 227
+  x: 204
+  xs: 1
+  'y': 270
   ys: 1

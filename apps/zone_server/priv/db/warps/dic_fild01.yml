@@ -1,0 +1,25 @@
+---
+- id: dic_field0002
+  map: dic_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 366
+    'y': 45
+  x: 24
+  xs: 1
+  'y': 79
+  ys: 1
+- id: dic_field0003
+  map: dic_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_fild02
+    x: 70
+    'y': 373
+  x: 69
+  xs: 1
+  'y': 23
+  ys: 1

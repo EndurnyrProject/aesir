@@ -1,0 +1,85 @@
+---
+- id: '#gate_to_guil02'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: veins
+    x: 254
+    'y': 255
+  x: 6
+  xs: 1
+  'y': 93
+  ys: 1
+- id: '#gate_to_guil03'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 68
+    'y': 91
+  x: 18
+  xs: 1
+  'y': 48
+  ys: 1
+- id: '#gate_to_guil04'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 18
+    'y': 53
+  x: 67
+  xs: 1
+  'y': 95
+  ys: 1
+- id: '#gate_to_guil06'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 83
+    'y': 77
+  x: 65
+  xs: 1
+  'y': 50
+  ys: 1
+- id: '#gate_to_guil08'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 51
+    'y': 50
+  x: 11
+  xs: 1
+  'y': 4
+  ys: 1
+- id: '#gate_to_guil10'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 51
+    'y': 50
+  x: 79
+  xs: 1
+  'y': 27
+  ys: 1
+- id: '#gate_to_guil11'
+  map: job3_guil01
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 51
+    'y': 50
+  x: 143
+  xs: 1
+  'y': 61
+  ys: 1

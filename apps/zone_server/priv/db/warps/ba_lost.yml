@@ -1,0 +1,13 @@
+---
+- id: '#ep172_lost_out'
+  map: ba_lost
+  name: ''
+  sprite: 45
+  to:
+    map: ba_maison
+    x: 311
+    'y': 203
+  x: 162
+  xs: 1
+  'y': 33
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: fr_eju_to_ju
+  map: ver_eju
+  name: ''
+  sprite: 45
+  to:
+    map: juperos_01
+    x: 242
+    'y': 87
+  x: 10
+  xs: 1
+  'y': 148
+  ys: 1
+- id: fr_eju_to_tun
+  map: ver_eju
+  name: ''
+  sprite: 45
+  to:
+    map: ver_tunn
+    x: 84
+    'y': 82
+  x: 107
+  xs: 2
+  'y': 36
+  ys: 3

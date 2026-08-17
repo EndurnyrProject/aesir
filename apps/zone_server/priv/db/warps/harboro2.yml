@@ -1,0 +1,13 @@
+---
+- id: harboro2#harboro1
+  map: harboro2
+  name: ''
+  sprite: 45
+  to:
+    map: harboro1
+    x: 318
+    'y': 124
+  x: 284
+  xs: 1
+  'y': 104
+  ys: 1

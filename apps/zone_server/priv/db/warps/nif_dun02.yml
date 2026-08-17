@@ -1,0 +1,25 @@
+---
+- id: nifdun02a_nifdun01a
+  map: nif_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: nif_dun01
+    x: 146
+    'y': 39
+  x: 162
+  xs: 1
+  'y': 15
+  ys: 1
+- id: nifdun02a_nifdun01a_
+  map: nif_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: nif_dun01
+    x: 146
+    'y': 39
+  x: 137
+  xs: 1
+  'y': 15
+  ys: 1

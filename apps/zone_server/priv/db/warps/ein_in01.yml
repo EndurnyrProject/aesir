@@ -371,3 +371,15 @@
   xs: 1
   'y': 85
   ys: 1
+- id: roomB_roomBGate
+  map: ein_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 274
+    'y': 243
+  x: 273
+  xs: 1
+  'y': 273
+  ys: 1

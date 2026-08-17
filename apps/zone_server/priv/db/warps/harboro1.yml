@@ -1,0 +1,37 @@
+---
+- id: harboro1#har_in01
+  map: harboro1
+  name: ''
+  sprite: 45
+  to:
+    map: har_in01
+    x: 18
+    'y': 18
+  x: 241
+  xs: 1
+  'y': 218
+  ys: 1
+- id: harboro1_2#har_in01
+  map: harboro1
+  name: ''
+  sprite: 45
+  to:
+    map: har_in01
+    x: 26
+    'y': 87
+  x: 312
+  xs: 1
+  'y': 193
+  ys: 1
+- id: harboro1#rockrdg1
+  map: harboro1
+  name: ''
+  sprite: 45
+  to:
+    map: rockrdg1
+    x: 37
+    'y': 246
+  x: 362
+  xs: 1
+  'y': 206
+  ys: 1

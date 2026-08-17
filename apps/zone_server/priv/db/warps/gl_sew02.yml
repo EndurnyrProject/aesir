@@ -1,4 +1,16 @@
 ---
+- id: gl19-1
+  map: gl_sew02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew01
+    x: 19
+    'y': 24
+  x: 109
+  xs: 1
+  'y': 294
+  ys: 1
 - id: gl11
   map: gl_sew02
   name: ''

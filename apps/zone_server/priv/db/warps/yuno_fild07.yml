@@ -35,3 +35,51 @@
   xs: 1
   'y': 76
   ys: 1
+- id: newjun04
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild11
+    x: 92
+    'y': 369
+  x: 92
+  xs: 1
+  'y': 12
+  ys: 1
+- id: newjun09a
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild08
+    x: 22
+    'y': 278
+  x: 354
+  xs: 1
+  'y': 291
+  ys: 1
+- id: newjun10a
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild08
+    x: 33
+    'y': 58
+  x: 360
+  xs: 1
+  'y': 72
+  ys: 1
+- id: newjun11
+  map: yuno_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 179
+    'y': 17
+  x: 179
+  xs: 1
+  'y': 354
+  ys: 1

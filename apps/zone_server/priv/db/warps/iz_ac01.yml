@@ -1,0 +1,37 @@
+---
+- id: '#to_ac01-1'
+  map: iz_ac01
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 127
+    'y': 253
+  x: 100
+  xs: 2
+  'y': 24
+  ys: 2
+- id: '#to_ac2f01'
+  map: iz_ac01
+  name: ''
+  sprite: 45
+  to:
+    map: iz_ac02
+    x: 207
+    'y': 27
+  x: 78
+  xs: 2
+  'y': 25
+  ys: 2
+- id: '#to_ac2f02'
+  map: iz_ac01
+  name: ''
+  sprite: 45
+  to:
+    map: iz_ac02
+    x: 207
+    'y': 27
+  x: 122
+  xs: 2
+  'y': 25
+  ys: 2

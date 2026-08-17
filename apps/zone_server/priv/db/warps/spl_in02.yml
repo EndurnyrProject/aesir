@@ -11,6 +11,78 @@
   xs: 1
   'y': 232
   ys: 1
+- id: splendide2-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 228
+    'y': 299
+  x: 207
+  xs: 1
+  'y': 193
+  ys: 1
+- id: splendide3-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 214
+    'y': 308
+  x: 180
+  xs: 1
+  'y': 221
+  ys: 1
+- id: splendide4-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 157
+    'y': 314
+  x: 108
+  xs: 1
+  'y': 211
+  ys: 1
+- id: splendide5-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 119
+    'y': 322
+  x: 62
+  xs: 1
+  'y': 227
+  ys: 1
+- id: splendide6-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 284
+    'y': 129
+  x: 234
+  xs: 1
+  'y': 64
+  ys: 1
+- id: splendide7-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 259
+    'y': 114
+  x: 187
+  xs: 1
+  'y': 42
+  ys: 1
 - id: splendide8-2
   map: spl_in02
   name: ''
@@ -34,4 +106,16 @@
   x: 139
   xs: 1
   'y': 91
+  ys: 1
+- id: splendide10-2
+  map: spl_in02
+  name: ''
+  sprite: 45
+  to:
+    map: splendide
+    x: 133
+    'y': 70
+  x: 44
+  xs: 1
+  'y': 54
   ys: 1

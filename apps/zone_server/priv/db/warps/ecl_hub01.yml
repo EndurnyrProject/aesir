@@ -1,0 +1,85 @@
+---
+- id: hub1-1_in01w
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in01
+    x: 11
+    'y': 67
+  x: 40
+  xs: 1
+  'y': 95
+  ys: 1
+- id: hub1-2_in02-1
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in02
+    x: 99
+    'y': 7
+  x: 22
+  xs: 1
+  'y': 109
+  ys: 1
+- id: hub2-1_in01e
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in01
+    x: 82
+    'y': 68
+  x: 107
+  xs: 1
+  'y': 110
+  ys: 1
+- id: hub2-2_hub3-1
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_hub01
+    x: 18
+    'y': 32
+  x: 127
+  xs: 1
+  'y': 95
+  ys: 1
+- id: hub3-2_in03
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in03
+    x: 144
+    'y': 17
+  x: 40
+  xs: 1
+  'y': 14
+  ys: 1
+- id: hub4-1_in01e
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_in01
+    x: 82
+    'y': 68
+  x: 105
+  xs: 1
+  'y': 36
+  ys: 1
+- id: hub4-2_hub3-1
+  map: ecl_hub01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_hub01
+    x: 18
+    'y': 32
+  x: 138
+  xs: 1
+  'y': 17
+  ys: 1

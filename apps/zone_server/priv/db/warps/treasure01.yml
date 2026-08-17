@@ -71,6 +71,18 @@
   xs: 1
   'y': 164
   ys: 4
+- id: tre10
+  map: treasure01
+  name: ''
+  sprite: 45
+  to:
+    map: treasure01
+    x: 100
+    'y': 111
+  x: 76
+  xs: 1
+  'y': 111
+  ys: 3
 - id: tre04-1
   map: treasure01
   name: ''

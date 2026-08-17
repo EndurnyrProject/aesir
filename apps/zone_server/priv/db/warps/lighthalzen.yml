@@ -131,6 +131,18 @@
   xs: 1
   'y': 301
   ys: 1
+- id: lhz_house1_1-1
+  map: lighthalzen
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_in03
+    x: 14
+    'y': 218
+  x: 347
+  xs: 1
+  'y': 261
+  ys: 1
 - id: lhz_pub1-1
   map: lighthalzen
   name: ''
@@ -202,4 +214,28 @@
   x: 188
   xs: 1
   'y': 204
+  ys: 1
+- id: '#lighttogen'
+  map: lighthalzen
+  name: ''
+  sprite: 45
+  to:
+    map: job3_gen01
+    x: 45
+    'y': 50
+  x: 52
+  xs: 1
+  'y': 132
+  ys: 1
+- id: s_atelier0010
+  map: lighthalzen
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 18
+    'y': 72
+  x: 41
+  xs: 1
+  'y': 52
   ys: 1

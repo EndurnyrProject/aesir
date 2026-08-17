@@ -1,0 +1,13 @@
+---
+- id: sp_cor_to_sp_os
+  map: sp_cor
+  name: ''
+  sprite: 45
+  to:
+    map: sp_os
+    x: 260
+    'y': 357
+  x: 162
+  xs: 1
+  'y': 41
+  ys: 1

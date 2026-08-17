@@ -1,0 +1,61 @@
+---
+- id: dun2gef_to_gld#6
+  map: gld2_ald
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 242
+    'y': 121
+  x: 172
+  xs: 1
+  'y': 46
+  ys: 1
+- id: dun2gef_to_gld#7
+  map: gld2_ald
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 229
+    'y': 185
+  x: 77
+  xs: 1
+  'y': 58
+  ys: 1
+- id: dun2gef_to_gld#8
+  map: gld2_ald
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 242
+    'y': 121
+  x: 46
+  xs: 1
+  'y': 122
+  ys: 1
+- id: dun2gef_to_gld#9
+  map: gld2_ald
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 229
+    'y': 185
+  x: 104
+  xs: 1
+  'y': 250
+  ys: 1
+- id: dun2gef_to_gld#10
+  map: gld2_ald
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 242
+    'y': 121
+  x: 247
+  xs: 1
+  'y': 156
+  ys: 1

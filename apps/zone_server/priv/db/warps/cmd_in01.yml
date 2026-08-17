@@ -71,3 +71,15 @@
   xs: 1
   'y': 81
   ys: 1
+- id: sign01
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 187
+    'y': 164
+  x: 17
+  xs: 1
+  'y': 34
+  ys: 1

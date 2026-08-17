@@ -1,0 +1,25 @@
+---
+- id: rudus2_to_rudus1
+  map: sp_rudus2
+  name: ''
+  sprite: 45
+  to:
+    map: sp_rudus
+    x: 185
+    'y': 258
+  x: 180
+  xs: 1
+  'y': 258
+  ys: 1
+- id: rudus2_to_rudus3
+  map: sp_rudus2
+  name: ''
+  sprite: 45
+  to:
+    map: sp_rudus3
+    x: 366
+    'y': 207
+  x: 359
+  xs: 1
+  'y': 206
+  ys: 1

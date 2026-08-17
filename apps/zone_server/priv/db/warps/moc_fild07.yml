@@ -1,0 +1,13 @@
+---
+- id: mocf001
+  map: moc_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 160
+    'y': 294
+  x: 198
+  xs: 2
+  'y': 21
+  ys: 2

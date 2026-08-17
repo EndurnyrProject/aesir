@@ -71,3 +71,51 @@
   xs: 1
   'y': 240
   ys: 1
+- id: gld_to_cas_way_to_gld
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prt_cas
+    x: 82
+    'y': 171
+  x: 159
+  xs: 1
+  'y': 24
+  ys: 1
+- id: prt_cas_D#prt_cas_C
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prt_cas
+    x: 82
+    'y': 171
+  x: 159
+  xs: 1
+  'y': 24
+  ys: 1
+- id: to_gloria
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: te_prt_gld
+    x: 120
+    'y': 149
+  x: 120
+  xs: 1
+  'y': 153
+  ys: 1
+- id: prtg01_NorthField#te
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild01
+    x: 199
+    'y': 30
+  x: 159
+  xs: 1
+  'y': 298
+  ys: 1

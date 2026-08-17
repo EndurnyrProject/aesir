@@ -1,0 +1,25 @@
+---
+- id: in01s_eclageN
+  map: ecl_in01
+  name: ''
+  sprite: 45
+  to:
+    map: eclage
+    x: 297
+    'y': 307
+  x: 47
+  xs: 1
+  'y': 8
+  ys: 1
+- id: in01w_hub1-1
+  map: ecl_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_hub01
+    x: 38
+    'y': 94
+  x: 8
+  xs: 1
+  'y': 67
+  ys: 1

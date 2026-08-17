@@ -131,6 +131,30 @@
   xs: 1
   'y': 150
   ys: 2
+- id: geft06-1
+  map: gef_tower
+  name: ''
+  sprite: 45
+  to:
+    map: gef_tower
+    x: 158
+    'y': 153
+  x: 158
+  xs: 2
+  'y': 128
+  ys: 1
+- id: geft07
+  map: gef_tower
+  name: ''
+  sprite: 45
+  to:
+    map: gef_tower
+    x: 52
+    'y': 140
+  x: 158
+  xs: 2
+  'y': 174
+  ys: 1
 - id: geft07-1
   map: gef_tower
   name: ''

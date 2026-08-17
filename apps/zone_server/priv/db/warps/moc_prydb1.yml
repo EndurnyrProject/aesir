@@ -83,3 +83,15 @@
   xs: 2
   'y': 115
   ys: 6
+- id: mocp12-1
+  map: moc_prydb1
+  name: ''
+  sprite: 45
+  to:
+    map: moc_prydb1
+    x: 56
+    'y': 115
+  x: 87
+  xs: 2
+  'y': 115
+  ys: 6

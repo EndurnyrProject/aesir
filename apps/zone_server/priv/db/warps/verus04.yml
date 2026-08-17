@@ -1,0 +1,37 @@
+---
+- id: fr_ver04_to_tun
+  map: verus04
+  name: ''
+  sprite: 45
+  to:
+    map: ver_tunn
+    x: 13
+    'y': 35
+  x: 204
+  xs: 1
+  'y': 163
+  ys: 1
+- id: fr_ver04_to_ver03_1
+  map: verus04
+  name: ''
+  sprite: 45
+  to:
+    map: verus03
+    x: 121
+    'y': 20
+  x: 121
+  xs: 1
+  'y': 267
+  ys: 1
+- id: fr_ver04_to_ver03_2
+  map: verus04
+  name: ''
+  sprite: 45
+  to:
+    map: verus03
+    x: 44
+    'y': 20
+  x: 44
+  xs: 1
+  'y': 267
+  ys: 1

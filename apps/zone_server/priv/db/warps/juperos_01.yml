@@ -11,3 +11,15 @@
   xs: 1
   'y': 250
   ys: 1
+- id: fr_ju_to_eju
+  map: juperos_01
+  name: ''
+  sprite: 45
+  to:
+    map: ver_eju
+    x: 13
+    'y': 148
+  x: 245
+  xs: 1
+  'y': 87
+  ys: 1

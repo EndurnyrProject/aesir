@@ -59,6 +59,18 @@
   xs: 1
   'y': 203
   ys: 1
+- id: um_houseB1-1
+  map: umbala
+  name: ''
+  sprite: 45
+  to:
+    map: um_in
+    x: 99
+    'y': 66
+  x: 107
+  xs: 1
+  'y': 130
+  ys: 1
 - id: um_fild4-3
   map: umbala
   name: ''
@@ -70,4 +82,28 @@
   x: 130
   xs: 1
   'y': 79
+  ys: 1
+- id: ygGate_yg1
+  map: umbala
+  name: ''
+  sprite: 45
+  to:
+    map: yggdrasil01
+    x: 39
+    'y': 63
+  x: 106
+  xs: 1
+  'y': 285
+  ys: 1
+- id: sign06
+  map: umbala
+  name: ''
+  sprite: 45
+  to:
+    map: um_in
+    x: 15
+    'y': 20
+  x: 107
+  xs: 1
+  'y': 118
   ys: 1

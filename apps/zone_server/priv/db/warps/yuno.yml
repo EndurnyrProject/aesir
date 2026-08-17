@@ -59,6 +59,18 @@
   xs: 1
   'y': 180
   ys: 1
+- id: yun11
+  map: yuno
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in01
+    x: 32
+    'y': 33
+  x: 196
+  xs: 1
+  'y': 138
+  ys: 1
 - id: yun13
   map: yuno
   name: ''
@@ -190,4 +202,16 @@
   x: 13
   xs: 1
   'y': 126
+  ys: 1
+- id: s_atelier0015
+  map: yuno
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 111
+    'y': 122
+  x: 278
+  xs: 1
+  'y': 66
   ys: 1

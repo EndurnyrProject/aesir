@@ -1,0 +1,25 @@
+---
+- id: lasadun01_in
+  map: lasa_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: lasa_dun01
+    x: 24
+    'y': 143
+  x: 348
+  xs: 1
+  'y': 244
+  ys: 1
+- id: lasagna_in03#01
+  map: lasa_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: lasagna
+    x: 355
+    'y': 92
+  x: 16
+  xs: 1
+  'y': 98
+  ys: 1

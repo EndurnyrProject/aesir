@@ -323,3 +323,15 @@
   xs: 2
   'y': 15
   ys: 2
+- id: illusion124
+  map: prt_in
+  name: ''
+  sprite: 45
+  to:
+    map: prontera
+    x: 47
+    'y': 228
+  x: 128
+  xs: 2
+  'y': 45
+  ys: 2

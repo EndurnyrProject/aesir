@@ -191,3 +191,15 @@
   xs: 1
   'y': 71
   ys: 1
+- id: kh_vila_10
+  map: kh_vila
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild02
+    x: 74
+    'y': 215
+  x: 191
+  xs: 1
+  'y': 19
+  ys: 1

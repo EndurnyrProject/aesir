@@ -1,0 +1,13 @@
+---
+- id: scarabahole0007
+  map: dic_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 290
+    'y': 99
+  x: 102
+  xs: 1
+  'y': 148
+  ys: 1

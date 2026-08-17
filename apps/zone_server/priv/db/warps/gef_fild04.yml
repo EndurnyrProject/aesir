@@ -1,0 +1,49 @@
+---
+- id: gef015
+  map: gef_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: geffen
+    x: 119
+    'y': 210
+  x: 187
+  xs: 4
+  'y': 39
+  ys: 2
+- id: gef016
+  map: gef_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_01
+    x: 284
+    'y': 21
+  x: 261
+  xs: 4
+  'y': 362
+  ys: 2
+- id: gef017
+  map: gef_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_06
+    x: 21
+    'y': 331
+  x: 362
+  xs: 2
+  'y': 322
+  ys: 4
+- id: geff06
+  map: gef_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild05
+    x: 361
+    'y': 309
+  x: 16
+  xs: 2
+  'y': 309
+  ys: 6

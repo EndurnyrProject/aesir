@@ -1,0 +1,13 @@
+---
+- id: shadowc1
+  map: job3_sha01
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t01
+    x: 149
+    'y': 224
+  x: 71
+  xs: 1
+  'y': 19
+  ys: 1

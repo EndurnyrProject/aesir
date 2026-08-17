@@ -1,0 +1,13 @@
+---
+- id: '#prt_q_tp_lib_q'
+  map: prt_q
+  name: ''
+  sprite: 45
+  to:
+    map: prt_lib_q
+    x: 89
+    'y': 43
+  x: 155
+  xs: 1
+  'y': 358
+  ys: 1

@@ -1,0 +1,61 @@
+---
+- id: dg001
+  map: dali
+  name: ''
+  sprite: 45
+  to:
+    map: mid_camp
+    x: 210
+    'y': 289
+  x: 149
+  xs: 2
+  'y': 82
+  ys: 2
+- id: dg002
+  map: dali
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild22b
+    x: 227
+    'y': 200
+  x: 122
+  xs: 2
+  'y': 48
+  ys: 2
+- id: dg003
+  map: dali
+  name: ''
+  sprite: 45
+  to:
+    map: bif_fild01
+    x: 318
+    'y': 155
+  x: 38
+  xs: 2
+  'y': 87
+  ys: 2
+- id: dg004
+  map: dali
+  name: ''
+  sprite: 45
+  to:
+    map: dic_fild02
+    x: 237
+    'y': 32
+  x: 34
+  xs: 2
+  'y': 139
+  ys: 2
+- id: '#dali_to_dali02'
+  map: dali
+  name: ''
+  sprite: 45
+  to:
+    map: dali02
+    x: 66
+    'y': 101
+  x: 64
+  xs: 1
+  'y': 129
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: mocf021
+  map: moc_fild22
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild20
+    x: 349
+    'y': 179
+  x: 32
+  xs: 1
+  'y': 196
+  ys: 1

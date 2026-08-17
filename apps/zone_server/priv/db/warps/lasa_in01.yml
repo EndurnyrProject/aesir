@@ -1,0 +1,13 @@
+---
+- id: dining_lasa
+  map: lasa_in01
+  name: ''
+  sprite: 45
+  to:
+    map: lasagna
+    x: 68
+    'y': 202
+  x: 159
+  xs: 1
+  'y': 61
+  ys: 1

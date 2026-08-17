@@ -1,0 +1,25 @@
+---
+- id: teg_dun02a_aldega#te
+  map: teg_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: te_alde_gld
+    x: 229
+    'y': 185
+  x: 20
+  xs: 1
+  'y': 160
+  ys: 1
+- id: teg_dun02b_aldegb#te
+  map: teg_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: te_alde_gld
+    x: 242
+    'y': 121
+  x: 180
+  xs: 1
+  'y': 112
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: '#ep172_pw1_to_pw2'
+  map: ba_pw01
+  name: ''
+  sprite: 45
+  to:
+    map: ba_pw02
+    x: 10
+    'y': 149
+  x: 10
+  xs: 1
+  'y': 115
+  ys: 1

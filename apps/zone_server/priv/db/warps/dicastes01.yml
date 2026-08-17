@@ -1,0 +1,85 @@
+---
+- id: eldicastes0001
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_in01
+    x: 45
+    'y': 30
+  x: 283
+  xs: 1
+  'y': 285
+  ys: 1
+- id: eldicastes0003
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_in01
+    x: 371
+    'y': 101
+  x: 163
+  xs: 1
+  'y': 297
+  ys: 1
+- id: eldicastes0005
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_in01
+    x: 390
+    'y': 53
+  x: 94
+  xs: 1
+  'y': 259
+  ys: 1
+- id: eldicastes0007
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_in01
+    x: 26
+    'y': 98
+  x: 136
+  xs: 1
+  'y': 103
+  ys: 1
+- id: eldicastes0009
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_in01
+    x: 344
+    'y': 272
+  x: 255
+  xs: 1
+  'y': 175
+  ys: 1
+- id: eldicastes0011
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dicastes02
+    x: 120
+    'y': 80
+  x: 198
+  xs: 1
+  'y': 353
+  ys: 1
+- id: dic_field0005
+  map: dicastes01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_fild01
+    x: 149
+    'y': 279
+  x: 199
+  xs: 1
+  'y': 34
+  ys: 1

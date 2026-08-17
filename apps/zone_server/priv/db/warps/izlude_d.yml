@@ -1,0 +1,73 @@
+---
+- id: iz001_d
+  map: izlude_d
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild08d
+    x: 367
+    'y': 212
+  x: 20
+  xs: 3
+  'y': 98
+  ys: 3
+- id: iz01_d
+  map: izlude_d
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 65
+    'y': 87
+  x: 110
+  xs: 2
+  'y': 182
+  ys: 2
+- id: iz04_d
+  map: izlude_d
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 74
+    'y': 161
+  x: 52
+  xs: 2
+  'y': 172
+  ys: 2
+- id: '#to_dc01_d'
+  map: izlude_d
+  name: ''
+  sprite: 45
+  to:
+    map: iz_ac01_d
+    x: 99
+    'y': 29
+  x: 125
+  xs: 2
+  'y': 257
+  ys: 2
+- id: '#to_dc02_d'
+  map: izlude_d
+  name: ''
+  sprite: 45
+  to:
+    map: iz_ac01_d
+    x: 99
+    'y': 29
+  x: 130
+  xs: 2
+  'y': 257
+  ys: 2
+- id: welcome_arena_d
+  map: izlude_d
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 100
+    'y': 30
+  x: 213
+  xs: 1
+  'y': 161
+  ys: 1

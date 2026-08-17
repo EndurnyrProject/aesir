@@ -1,0 +1,13 @@
+---
+- id: '#ep172_2whs01_out'
+  map: ba_2whs01
+  name: ''
+  sprite: 45
+  to:
+    map: ba_maison
+    x: 305
+    'y': 319
+  x: 156
+  xs: 1
+  'y': 29
+  ys: 1

@@ -143,3 +143,15 @@
   xs: 1
   'y': 361
   ys: 1
+- id: '#gate_to_guil01'
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: job3_guil01
+    x: 9
+    'y': 93
+  x: 257
+  xs: 1
+  'y': 256
+  ys: 1

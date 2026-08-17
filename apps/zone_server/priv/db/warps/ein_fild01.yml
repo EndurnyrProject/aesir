@@ -1,0 +1,13 @@
+---
+- id: EinF01Dn01_EinF05Up01
+  map: ein_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild05
+    x: 172
+    'y': 366
+  x: 106
+  xs: 1
+  'y': 34
+  ys: 1

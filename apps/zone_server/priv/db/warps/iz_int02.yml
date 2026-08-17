@@ -1,0 +1,25 @@
+---
+- id: '#room_out02'
+  map: iz_int02
+  name: ''
+  sprite: 45
+  to:
+    map: iz_int02
+    x: 51
+    'y': 30
+  x: 27
+  xs: 1
+  'y': 30
+  ys: 1
+- id: '#room_in02'
+  map: iz_int02
+  name: ''
+  sprite: 45
+  to:
+    map: iz_int02
+    x: 22
+    'y': 30
+  x: 47
+  xs: 1
+  'y': 30
+  ys: 1

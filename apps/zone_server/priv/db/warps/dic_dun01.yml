@@ -1,0 +1,109 @@
+---
+- id: scarabahole0001
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 169
+    'y': 227
+  x: 87
+  xs: 1
+  'y': 212
+  ys: 1
+- id: scarabahole0002
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 83
+    'y': 212
+  x: 165
+  xs: 1
+  'y': 227
+  ys: 1
+- id: scarabahole0003
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 32
+    'y': 156
+  x: 371
+  xs: 1
+  'y': 228
+  ys: 1
+- id: scarabahole0004
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 367
+    'y': 228
+  x: 28
+  xs: 1
+  'y': 156
+  ys: 1
+- id: scarabahole0005
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 32
+    'y': 100
+  x: 371
+  xs: 1
+  'y': 172
+  ys: 1
+- id: scarabahole0006
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 367
+    'y': 172
+  x: 28
+  xs: 1
+  'y': 100
+  ys: 1
+- id: scarabahole0008
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 33
+    'y': 43
+  x: 371
+  xs: 1
+  'y': 100
+  ys: 1
+- id: scarabahole0009
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_dun01
+    x: 367
+    'y': 100
+  x: 29
+  xs: 1
+  'y': 43
+  ys: 1
+- id: dic_field0001
+  map: dic_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: dic_fild01
+    x: 28
+    'y': 79
+  x: 371
+  xs: 1
+  'y': 44
+  ys: 1

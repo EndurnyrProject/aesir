@@ -1,0 +1,25 @@
+---
+- id: fr_tun_to_eju
+  map: ver_tunn
+  name: ''
+  sprite: 45
+  to:
+    map: ver_eju
+    x: 113
+    'y': 38
+  x: 84
+  xs: 1
+  'y': 86
+  ys: 1
+- id: fr_tun_to_ver04
+  map: ver_tunn
+  name: ''
+  sprite: 45
+  to:
+    map: verus04
+    x: 202
+    'y': 165
+  x: 10
+  xs: 1
+  'y': 36
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: out_to_dun02
+  map: ein_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun02
+    x: 24
+    'y': 250
+  x: 268
+  xs: 1
+  'y': 283
+  ys: 1

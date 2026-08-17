@@ -23,3 +23,15 @@
   xs: 1
   'y': 222
   ys: 1
+- id: ra016
+  map: lhz_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild06
+    x: 298
+    'y': 25
+  x: 296
+  xs: 1
+  'y': 382
+  ys: 1

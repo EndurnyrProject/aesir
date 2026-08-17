@@ -1,0 +1,13 @@
+---
+- id: biffild_fild01-1
+  map: bif_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_fild01
+    x: 205
+    'y': 76
+  x: 292
+  xs: 1
+  'y': 351
+  ys: 1

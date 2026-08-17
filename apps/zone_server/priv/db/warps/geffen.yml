@@ -119,3 +119,15 @@
   xs: 2
   'y': 141
   ys: 2
+- id: sign02
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 165
+    'y': 50
+  x: 140
+  xs: 1
+  'y': 99
+  ys: 1

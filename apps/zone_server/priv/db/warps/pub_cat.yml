@@ -1,0 +1,25 @@
+---
+- id: pub_to_ein
+  map: pub_cat
+  name: ''
+  sprite: 45
+  to:
+    map: einbroch
+    x: 302
+    'y': 326
+  x: 44
+  xs: 1
+  'y': 27
+  ys: 1
+- id: backroom_exit
+  map: pub_cat
+  name: ''
+  sprite: 45
+  to:
+    map: pub_cat
+    x: 100
+    'y': 106
+  x: 146
+  xs: 1
+  'y': 105
+  ys: 1

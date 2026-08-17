@@ -131,3 +131,15 @@
   xs: 1
   'y': 126
   ys: 1
+- id: bye_arena
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 209
+    'y': 161
+  x: 99
+  xs: 2
+  'y': 24
+  ys: 2

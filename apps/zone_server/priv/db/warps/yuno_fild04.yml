@@ -11,3 +11,39 @@
   xs: 1
   'y': 21
   ys: 1
+- id: yunfild04-1
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 21
+    'y': 79
+  x: 375
+  xs: 1
+  'y': 84
+  ys: 1
+- id: yunfild05-1
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 22
+    'y': 155
+  x: 375
+  xs: 1
+  'y': 150
+  ys: 1
+- id: yunfild-yun
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 158
+    'y': 17
+  x: 231
+  xs: 1
+  'y': 288
+  ys: 1

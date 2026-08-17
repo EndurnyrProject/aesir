@@ -1,0 +1,13 @@
+---
+- id: '#ep172_pw2_to_cor'
+  map: ba_pw02
+  name: ''
+  sprite: 45
+  to:
+    map: sp_cor
+    x: 257
+    'y': 285
+  x: 275
+  xs: 1
+  'y': 15
+  ys: 1

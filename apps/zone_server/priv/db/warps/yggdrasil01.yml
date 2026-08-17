@@ -1,0 +1,37 @@
+---
+- id: nwarp5
+  map: yggdrasil01
+  name: ''
+  sprite: 45
+  to:
+    map: nif_fild01
+    x: 315
+    'y': 66
+  x: 249
+  xs: 1
+  'y': 262
+  ys: 1
+- id: nwarp3
+  map: yggdrasil01
+  name: ''
+  sprite: 45
+  to:
+    map: yggdrasil01
+    x: 26
+    'y': 196
+  x: 271
+  xs: 1
+  'y': 51
+  ys: 1
+- id: nwarp4
+  map: yggdrasil01
+  name: ''
+  sprite: 45
+  to:
+    map: yggdrasil01
+    x: 269
+    'y': 53
+  x: 26
+  xs: 1
+  'y': 193
+  ys: 1

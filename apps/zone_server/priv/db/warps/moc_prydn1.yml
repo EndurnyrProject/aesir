@@ -1,0 +1,13 @@
+---
+- id: PyramidsN1-2
+  map: moc_prydn1
+  name: ''
+  sprite: 45
+  to:
+    map: moc_prydn2
+    x: 192
+    'y': 8
+  x: 223
+  xs: 2
+  'y': 9
+  ys: 2

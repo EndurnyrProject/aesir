@@ -59,6 +59,18 @@
   xs: 1
   'y': 259
   ys: 1
+- id: um_dun5-1
+  map: um_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: um_dun02
+    x: 233
+    'y': 253
+  x: 26
+  xs: 1
+  'y': 244
+  ys: 1
 - id: um_dun5-2
   map: um_dun02
   name: ''
@@ -94,6 +106,18 @@
   x: 177
   xs: 1
   'y': 38
+  ys: 1
+- id: um_dun7-1
+  map: um_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: um_dun02
+    x: 117
+    'y': 208
+  x: 32
+  xs: 1
+  'y': 249
   ys: 1
 - id: um_dun7-2
   map: um_dun02

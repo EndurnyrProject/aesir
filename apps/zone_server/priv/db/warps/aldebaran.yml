@@ -155,3 +155,27 @@
   xs: 1
   'y': 140
   ys: 1
+- id: alde-yunfild
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild01
+    x: 208
+    'y': 19
+  x: 140
+  xs: 1
+  'y': 244
+  ys: 1
+- id: alde-a_aldeg01
+  map: aldebaran
+  name: ''
+  sprite: 45
+  to:
+    map: te_alde_gld
+    x: 280
+    'y': 160
+  x: 35
+  xs: 1
+  'y': 140
+  ys: 1

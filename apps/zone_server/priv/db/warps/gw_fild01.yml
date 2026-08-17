@@ -1,0 +1,13 @@
+---
+- id: gw_fild01_to_gw_fild02
+  map: gw_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: gw_fild02
+    x: 122
+    'y': 385
+  x: 135
+  xs: 1
+  'y': 9
+  ys: 1

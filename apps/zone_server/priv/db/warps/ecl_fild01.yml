@@ -1,0 +1,37 @@
+---
+- id: fild01-1_biffild
+  map: ecl_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: bif_fild02
+    x: 294
+    'y': 350
+  x: 207
+  xs: 1
+  'y': 72
+  ys: 1
+- id: Tenter_TOut
+  map: ecl_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_tdun01
+    x: 60
+    'y': 13
+  x: 182
+  xs: 1
+  'y': 82
+  ys: 1
+- id: ttop_tdun4-1
+  map: ecl_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_tdun04
+    x: 33
+    'y': 19
+  x: 183
+  xs: 1
+  'y': 70
+  ys: 1

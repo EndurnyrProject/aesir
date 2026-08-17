@@ -1,0 +1,13 @@
+---
+- id: '#out_slbw'
+  map: slabw01
+  name: ''
+  sprite: 45
+  to:
+    map: que_swat
+    x: 155
+    'y': 58
+  x: 10
+  xs: 1
+  'y': 88
+  ys: 1

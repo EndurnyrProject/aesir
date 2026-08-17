@@ -1,0 +1,13 @@
+---
+- id: prt_prison_OUT
+  map: prt_prison
+  name: ''
+  sprite: 45
+  to:
+    map: prt_pri00
+    x: 50
+    'y': 120
+  x: 155
+  xs: 2
+  'y': 290
+  ys: 2

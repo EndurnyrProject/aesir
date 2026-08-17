@@ -35,6 +35,18 @@
   xs: 1
   'y': 223
   ys: 1
+- id: payg-5-04_payg-5-13
+  map: payg_cas05
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas05
+    x: 237
+    'y': 231
+  x: 39
+  xs: 1
+  'y': 264
+  ys: 1
 - id: payg-5-11_payg-5-01
   map: payg_cas05
   name: ''

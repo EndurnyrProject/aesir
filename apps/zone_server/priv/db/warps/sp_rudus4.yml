@@ -1,0 +1,13 @@
+---
+- id: '#b_hw1'
+  map: sp_rudus4
+  name: ''
+  sprite: 45
+  to:
+    map: sp_rudus3
+    x: 375
+    'y': 45
+  x: 380
+  xs: 2
+  'y': 156
+  ys: 2

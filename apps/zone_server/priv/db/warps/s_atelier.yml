@@ -1,0 +1,145 @@
+---
+- id: s_atelier0002
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: rachel
+    x: 180
+    'y': 118
+  x: 131
+  xs: 1
+  'y': 75
+  ys: 1
+- id: s_atelier0003
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 169
+    'y': 72
+  x: 117
+  xs: 1
+  'y': 71
+  ys: 1
+- id: s_atelier0004
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 117
+    'y': 68
+  x: 166
+  xs: 1
+  'y': 72
+  ys: 1
+- id: s_atelier0006
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: prontera
+    x: 269
+    'y': 108
+  x: 9
+  xs: 1
+  'y': 119
+  ys: 1
+- id: s_atelier0007
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 76
+    'y': 125
+  x: 31
+  xs: 1
+  'y': 128
+  ys: 1
+- id: s_atelier0008
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 28
+    'y': 128
+  x: 76
+  xs: 1
+  'y': 128
+  ys: 1
+- id: s_atelier0009
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: lighthalzen
+    x: 41
+    'y': 58
+  x: 19
+  xs: 1
+  'y': 79
+  ys: 1
+- id: s_atelier0011
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 80
+    'y': 59
+  x: 32
+  xs: 1
+  'y': 65
+  ys: 1
+- id: s_atelier0012
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 32
+    'y': 56
+  x: 80
+  xs: 1
+  'y': 66
+  ys: 1
+- id: s_atelier0013
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 159
+    'y': 125
+  x: 109
+  xs: 1
+  'y': 129
+  ys: 1
+- id: s_atelier0014
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: s_atelier
+    x: 114
+    'y': 129
+  x: 160
+  xs: 1
+  'y': 130
+  ys: 1
+- id: s_atelier0016
+  map: s_atelier
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 274
+    'y': 66
+  x: 107
+  xs: 1
+  'y': 122
+  ys: 1

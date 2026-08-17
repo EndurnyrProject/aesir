@@ -1,0 +1,37 @@
+---
+- id: mocf05-1
+  map: moc_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild02
+    x: 71
+    'y': 21
+  x: 146
+  xs: 5
+  'y': 368
+  ys: 2
+- id: mocf03-1
+  map: moc_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild02
+    x: 228
+    'y': 32
+  x: 298
+  xs: 4
+  'y': 370
+  ys: 2
+- id: mocf06-1
+  map: moc_fild13
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild03
+    x: 20
+    'y': 37
+  x: 308
+  xs: 2
+  'y': 49
+  ys: 4

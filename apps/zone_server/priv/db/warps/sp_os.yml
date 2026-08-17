@@ -1,0 +1,13 @@
+---
+- id: sp_os_exit
+  map: sp_os
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild03
+    x: 284
+    'y': 267
+  x: 188
+  xs: 1
+  'y': 30
+  ys: 1

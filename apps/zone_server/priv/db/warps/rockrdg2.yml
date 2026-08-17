@@ -1,0 +1,25 @@
+---
+- id: rockrdg2#rockmi1
+  map: rockrdg2
+  name: ''
+  sprite: 45
+  to:
+    map: rockmi1
+    x: 247
+    'y': 19
+  x: 304
+  xs: 1
+  'y': 350
+  ys: 1
+- id: rockrdg2#rockrdg1
+  map: rockrdg2
+  name: ''
+  sprite: 45
+  to:
+    map: rockrdg1
+    x: 367
+    'y': 206
+  x: 27
+  xs: 1
+  'y': 207
+  ys: 1

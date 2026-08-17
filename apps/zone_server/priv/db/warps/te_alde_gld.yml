@@ -1,0 +1,25 @@
+---
+- id: to_luina
+  map: te_alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 228
+    'y': 185
+  x: 225
+  xs: 1
+  'y': 188
+  ys: 1
+- id: aldeg01_alde-a
+  map: te_alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldebaran
+    x: 39
+    'y': 140
+  x: 284
+  xs: 1
+  'y': 160
+  ys: 1

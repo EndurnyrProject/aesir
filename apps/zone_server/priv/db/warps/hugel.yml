@@ -143,3 +143,15 @@
   xs: 1
   'y': 230
   ys: 1
+- id: hugelwarp1051
+  map: hugel
+  name: ''
+  sprite: 45
+  to:
+    map: que_bingo
+    x: 49
+    'y': 9
+  x: 55
+  xs: 1
+  'y': 208
+  ys: 1

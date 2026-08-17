@@ -1,0 +1,61 @@
+---
+- id: dun2prt_to_gld
+  map: gld2_prt
+  name: ''
+  sprite: 45
+  to:
+    map: prt_gld
+    x: 252
+    'y': 247
+  x: 10
+  xs: 1
+  'y': 22
+  ys: 1
+- id: dun2prt_to_gld#2
+  map: gld2_prt
+  name: ''
+  sprite: 45
+  to:
+    map: prt_gld
+    x: 63
+    'y': 66
+  x: 14
+  xs: 1
+  'y': 252
+  ys: 1
+- id: dun2prt_to_gld#3
+  map: gld2_prt
+  name: ''
+  sprite: 45
+  to:
+    map: prt_gld
+    x: 252
+    'y': 247
+  x: 266
+  xs: 1
+  'y': 236
+  ys: 1
+- id: dun2prt_to_gld#4
+  map: gld2_prt
+  name: ''
+  sprite: 45
+  to:
+    map: prt_gld
+    x: 63
+    'y': 66
+  x: 226
+  xs: 1
+  'y': 21
+  ys: 1
+- id: dun2prt_to_gld#5
+  map: gld2_prt
+  name: ''
+  sprite: 45
+  to:
+    map: prt_gld
+    x: 252
+    'y': 247
+  x: 103
+  xs: 1
+  'y': 11
+  ys: 1

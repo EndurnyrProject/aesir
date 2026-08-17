@@ -1,0 +1,145 @@
+---
+- id: monk03
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 161
+    'y': 38
+  x: 128
+  xs: 1
+  'y': 46
+  ys: 3
+- id: monk04
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 161
+    'y': 90
+  x: 128
+  xs: 1
+  'y': 84
+  ys: 3
+- id: monk03-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 126
+    'y': 46
+  x: 159
+  xs: 1
+  'y': 38
+  ys: 3
+- id: monk04-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 126
+    'y': 84
+  x: 159
+  xs: 1
+  'y': 90
+  ys: 3
+- id: monk05
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 71
+    'y': 46
+  x: 40
+  xs: 1
+  'y': 38
+  ys: 3
+- id: monk06
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 71
+    'y': 84
+  x: 40
+  xs: 1
+  'y': 92
+  ys: 3
+- id: monk05-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 38
+    'y': 38
+  x: 69
+  xs: 1
+  'y': 46
+  ys: 3
+- id: monk06-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 38
+    'y': 92
+  x: 69
+  xs: 1
+  'y': 84
+  ys: 3
+- id: monk02-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: prt_monk
+    x: 245
+    'y': 139
+  x: 98
+  xs: 3
+  'y': 186
+  ys: 2
+- id: monk01-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: prt_monk
+    x: 245
+    'y': 104
+  x: 98
+  xs: 5
+  'y': 27
+  ys: 2
+- id: monk07
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 99
+    'y': 143
+  x: 99
+  xs: 5
+  'y': 102
+  ys: 1
+- id: monk07-1
+  map: monk_in
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 99
+    'y': 100
+  x: 99
+  xs: 3
+  'y': 141
+  ys: 1

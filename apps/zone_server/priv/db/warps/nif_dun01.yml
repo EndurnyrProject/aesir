@@ -1,0 +1,13 @@
+---
+- id: nifdun01a_nifla
+  map: nif_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 146
+    'y': 122
+  x: 145
+  xs: 1
+  'y': 82
+  ys: 1

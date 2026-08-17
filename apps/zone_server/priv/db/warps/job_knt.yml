@@ -1,0 +1,13 @@
+---
+- id: knt_out
+  map: job_knt
+  name: ''
+  sprite: 45
+  to:
+    map: prt_in
+    x: 77
+    'y': 99
+  x: 89
+  xs: 1
+  'y': 98
+  ys: 1

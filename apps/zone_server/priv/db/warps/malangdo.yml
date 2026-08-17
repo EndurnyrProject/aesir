@@ -1,0 +1,97 @@
+---
+- id: malangdo0001
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in01
+    x: 11
+    'y': 17
+  x: 240
+  xs: 1
+  'y': 150
+  ys: 1
+- id: malangdo0005
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in01
+    x: 17
+    'y': 163
+  x: 112
+  xs: 1
+  'y': 167
+  ys: 1
+- id: malangdo0011
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in01
+    x: 28
+    'y': 118
+  x: 113
+  xs: 1
+  'y': 151
+  ys: 1
+- id: malangdo0015
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in01
+    x: 36
+    'y': 216
+  x: 119
+  xs: 1
+  'y': 137
+  ys: 1
+- id: malangdo0021
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in01
+    x: 19
+    'y': 76
+  x: 135
+  xs: 1
+  'y': 109
+  ys: 1
+- id: malangdo0025
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in01
+    x: 164
+    'y': 15
+  x: 135
+  xs: 1
+  'y': 276
+  ys: 1
+- id: malangdo0027
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_dun01
+    x: 33
+    'y': 230
+  x: 73
+  xs: 1
+  'y': 239
+  ys: 1
+- id: malangdo_ship0001
+  map: malangdo
+  name: ''
+  sprite: 45
+  to:
+    map: mal_in02
+    x: 58
+    'y': 61
+  x: 162
+  xs: 1
+  'y': 163
+  ys: 1

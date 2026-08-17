@@ -1,0 +1,25 @@
+---
+- id: teg_dun01a_prtg#te
+  map: teg_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: te_prt_gld
+    x: 252
+    'y': 247
+  x: 238
+  xs: 1
+  'y': 274
+  ys: 1
+- id: teg_dun01b_prtg#te
+  map: teg_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: te_prt_gld
+    x: 63
+    'y': 66
+  x: 42
+  xs: 1
+  'y': 30
+  ys: 1

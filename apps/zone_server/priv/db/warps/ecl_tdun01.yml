@@ -1,0 +1,25 @@
+---
+- id: TOut_Tenter
+  map: ecl_tdun01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_fild01
+    x: 182
+    'y': 85
+  x: 61
+  xs: 1
+  'y': 11
+  ys: 1
+- id: tdun1up_tdun2dn
+  map: ecl_tdun01
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_tdun02
+    x: 60
+    'y': 88
+  x: 67
+  xs: 1
+  'y': 106
+  ys: 1

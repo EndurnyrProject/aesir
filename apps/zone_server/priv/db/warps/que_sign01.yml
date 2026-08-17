@@ -1,0 +1,25 @@
+---
+- id: sign07
+  map: que_sign01
+  name: ''
+  sprite: 45
+  to:
+    map: nif_in
+    x: 117
+    'y': 173
+  x: 113
+  xs: 1
+  'y': 132
+  ys: 1
+- id: sign08
+  map: que_sign01
+  name: ''
+  sprite: 45
+  to:
+    map: niflheim
+    x: 146
+    'y': 245
+  x: 45
+  xs: 1
+  'y': 15
+  ys: 1

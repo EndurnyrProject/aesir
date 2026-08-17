@@ -1,0 +1,37 @@
+---
+- id: '#m101'
+  map: un_myst
+  name: ''
+  sprite: 45
+  to:
+    map: un_myst
+    x: 171
+    'y': 197
+  x: 124
+  xs: 1
+  'y': 189
+  ys: 1
+- id: '#m102'
+  map: un_myst
+  name: ''
+  sprite: 45
+  to:
+    map: un_myst
+    x: 259
+    'y': 200
+  x: 171
+  xs: 1
+  'y': 183
+  ys: 1
+- id: '#way'
+  map: un_myst
+  name: ''
+  sprite: 45
+  to:
+    map: un_myst
+    x: 209
+    'y': 33
+  x: 108
+  xs: 1
+  'y': 38
+  ys: 1

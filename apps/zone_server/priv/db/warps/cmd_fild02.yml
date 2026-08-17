@@ -1,0 +1,37 @@
+---
+- id: cmd_fild02-1
+  map: cmd_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild01
+    x: 222
+    'y': 30
+  x: 222
+  xs: 1
+  'y': 376
+  ys: 1
+- id: cmd_fild02-2
+  map: cmd_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild04
+    x: 25
+    'y': 275
+  x: 382
+  xs: 1
+  'y': 269
+  ys: 1
+- id: cmd_fild02-3
+  map: cmd_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild04
+    x: 35
+    'y': 94
+  x: 358
+  xs: 1
+  'y': 95
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: tdun2dn_tdun1up
+  map: ecl_tdun02
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_tdun01
+    x: 70
+    'y': 105
+  x: 60
+  xs: 1
+  'y': 90
+  ys: 1
+- id: tdun2up_tdun3dn
+  map: ecl_tdun02
+  name: ''
+  sprite: 45
+  to:
+    map: ecl_tdun03
+    x: 47
+    'y': 13
+  x: 52
+  xs: 1
+  'y': 9
+  ys: 1
