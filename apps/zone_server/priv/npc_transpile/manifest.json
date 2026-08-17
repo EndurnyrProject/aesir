@@ -15345,6 +15345,986 @@
     "source_hash": "0172cc8d8318240a27b7fcefe862dbc33756b390817687ee74ad2b8f9f11a3b0",
     "spawns": []
   },
+  "quests/first_class/tu_acolyte.txt|script|#tu_monk|prt_monk:217:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Npc",
+    "output_hash": "fddb6967affda9ebfa677b95df313ab83a6b759af9272b7e232dd6e769bd6a09",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/npc.ex",
+    "source_hash": "948b738867e67251ce447e89b7de986593414b7443205d284938ae1c60e41523",
+    "spawns": [
+      {
+        "name": "",
+        "x": 217,
+        "y": 123,
+        "map": "prt_monk",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "#tu_monk",
+        "trigger": [
+          10,
+          10
+        ]
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|1st Job Quest Reset|sec_in02:17:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.M1stJobQuestReset",
+    "output_hash": "069522bfa94e9e72cce83b6fcbe71708003ddd052ce08549eb4805e563a966bb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/1st_job_quest_reset.ex",
+    "source_hash": "80d75b006c582e63cadf7f1ca38315e88ef103dbadf4083ae4851a9cce4650a7",
+    "spawns": [
+      {
+        "name": "1st Job Quest Reset",
+        "x": 17,
+        "y": 156,
+        "map": "sec_in02",
+        "dir": 3,
+        "sprite": 726
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Asthe#tu|prt_monk:230:106": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Asthe",
+    "output_hash": "7052b64fed5486d4d48f8a3b55a759a76486c2c00615bae8cd16bbb6f477ee40",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/asthe.ex",
+    "source_hash": "9018c1a2925f5bb9998ff0548738b9579c953aa3e6e7081732482de542250301",
+    "spawns": [
+      {
+        "name": "Asthe",
+        "x": 230,
+        "y": 106,
+        "map": "prt_monk",
+        "dir": 3,
+        "sprite": 79,
+        "unique_name": "Asthe#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Boy#boy_voi|prt_monk:243:238": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Boy",
+    "output_hash": "a3ff0c5b3c09475584375048db395e29ea417141d0f714c896670b22b2153a67",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/boy.ex",
+    "source_hash": "b77ee9f467eb53c5647c66aae4c544a5501892935f766ae81c108c46e98f2741",
+    "spawns": [
+      {
+        "name": "Boy",
+        "x": 243,
+        "y": 238,
+        "map": "prt_monk",
+        "dir": 5,
+        "sprite": 139,
+        "unique_name": "Boy#boy_voi",
+        "trigger": [
+          5,
+          5
+        ]
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Cleope Verce|prt_monk:153:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.CleopeVerce",
+    "output_hash": "edb06e530b86077c71d6b922728230fbafada3dfdfe8c471c732e68a8f2ecd01",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/cleope_verce.ex",
+    "source_hash": "84d8027eaa0855be46b463b29402ed0bef8918cad3b8b48cafb356fde7d1008c",
+    "spawns": [
+      {
+        "name": "Cleope Verce",
+        "x": 153,
+        "y": 210,
+        "map": "prt_monk",
+        "dir": 3,
+        "sprite": 95
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Dog#tu|prt_monk:235:245": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Dog",
+    "output_hash": "73e2348385d6c52c9646e5f0a12071838d5d0f2214f63ba17dfeea84c0600c25",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/dog.ex",
+    "source_hash": "e745aaa07e14ef424f0b2b861b609e8ef41387e8ade822e03b96656626ccce52",
+    "spawns": [
+      {
+        "name": "Dog",
+        "x": 235,
+        "y": 245,
+        "map": "prt_monk",
+        "dir": 5,
+        "sprite": 81,
+        "unique_name": "Dog#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Eavesdrop#tu|prt_monk:223:123": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Eavesdrop",
+    "output_hash": "7116f6bd1756c3f080ba9a5799dcc43ec3d076934b9ec59b27aeba029c8f0906",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/eavesdrop.ex",
+    "source_hash": "cbfcc717aa58d9dbe519222b3ccb399456d2da3c4d37166bc5948066688afb6c",
+    "spawns": [
+      {
+        "name": "Eavesdrop",
+        "x": 223,
+        "y": 123,
+        "map": "prt_monk",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Eavesdrop#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Gloria#tu|prt_monk:219:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Gloria",
+    "output_hash": "2610f36905cb6dd7efc263cfb00fd41ee1f668d1f0d7946ef01f7e52c46a2c51",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/gloria.ex",
+    "source_hash": "884aa9eead313db16d283bbd8fbfe2486cf751377b92d961c97cc74bb1bfaef3",
+    "spawns": [
+      {
+        "name": "Gloria",
+        "x": 219,
+        "y": 164,
+        "map": "prt_monk",
+        "dir": 3,
+        "sprite": 95,
+        "unique_name": "Gloria#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Hedrick|prt_monk:28:260": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Hedrick",
+    "output_hash": "422f16692f7b5006794a661eb2d415a1b61806149261b0deabda4fd67b4180f8",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/hedrick.ex",
+    "source_hash": "34f7c51b1675e5dda188b275b7be360c3bb896be01c2a44ed95ef9c5b37bcb62",
+    "spawns": [
+      {
+        "name": "Hedrick",
+        "x": 28,
+        "y": 260,
+        "map": "prt_monk",
+        "dir": 5,
+        "sprite": 50
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Ill Girl#tu|prt_monk:226:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.IllGirl",
+    "output_hash": "e2fe5dfc995761d3f8ad1e0cbeb1d9a218c6d032f0dec95a425058f0670feadb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/ill_girl.ex",
+    "source_hash": "4915e85ee98fe133a57bbec583b90b5c9cd68393722807ca09d25ac96470bbd3",
+    "spawns": [
+      {
+        "name": "Ill Girl",
+        "x": 226,
+        "y": 257,
+        "map": "prt_monk",
+        "dir": 6,
+        "sprite": 93,
+        "unique_name": "Ill Girl#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Karven|monk_in:103:176": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Karven",
+    "output_hash": "71c31d434977ab58ffa05875996b47f2f853df6c5303f7fdbf4508db7e645295",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/karven.ex",
+    "source_hash": "97dcccbc392235bd046d5b4ab249828dd3b38a2fbea551a61359cdc5e4d68f35",
+    "spawns": [
+      {
+        "name": "Karven",
+        "x": 103,
+        "y": 176,
+        "map": "monk_in",
+        "dir": 7,
+        "sprite": 60
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Priest Gardron#tu|monk_in:18:38": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.PriestGardron",
+    "output_hash": "db51df26e14acdc4280b9ef0f9131b3e9642ea7aeb060622871ce88888a7be30",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/priest_gardron.ex",
+    "source_hash": "024af02b993d1310ad3656f829175f41e01af421f023aa942f642237daa64b7d",
+    "spawns": [
+      {
+        "name": "Priest Gardron",
+        "x": 18,
+        "y": 38,
+        "map": "monk_in",
+        "dir": 6,
+        "sprite": 110,
+        "unique_name": "Priest Gardron#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Priest Praupin|prt_church:179:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.PriestPraupin",
+    "output_hash": "c7c3e171edce3708015f57061def6bb7d7860b966a29b8f3dcc51b07841d8e90",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/priest_praupin.ex",
+    "source_hash": "e64dde0c7113fbf519249002028287c40f5792affe99cd40122f951522e87d1d",
+    "spawns": [
+      {
+        "name": "Priest Praupin",
+        "x": 179,
+        "y": 15,
+        "map": "prt_church",
+        "dir": 1,
+        "sprite": 110
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Veiner|prt_monk:197:228": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.Veiner",
+    "output_hash": "32d66c364c67756174db86b07e1cc7c30e2fcc377562919327a2692812c156e0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/veiner.ex",
+    "source_hash": "706c88b7678d1e5dab847a411fc51acf768afcb33a1a24b797b8b87b6f160862",
+    "spawns": [
+      {
+        "name": "Veiner",
+        "x": 197,
+        "y": 228,
+        "map": "prt_monk",
+        "dir": 3,
+        "sprite": 89
+      }
+    ]
+  },
+  "quests/first_class/tu_acolyte.txt|script|Weapon Merchant#tu|prt_monk:136:261": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuAcolyte.WeaponMerchant",
+    "output_hash": "8fd53a7ee6b9b1034e8aa4e322230511b8d4801f9b322d4e0175dc46bf44b4ea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_acolyte/weapon_merchant.ex",
+    "source_hash": "3d9e310f0feca5b277dade80846c5511ae74b6c7fa8a56fa50400ea01f25c9ae",
+    "spawns": [
+      {
+        "name": "Weapon Merchant",
+        "x": 136,
+        "y": 261,
+        "map": "prt_monk",
+        "dir": 0,
+        "sprite": 139,
+        "unique_name": "Weapon Merchant#tu",
+        "trigger": [
+          9,
+          9
+        ]
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|floating|#sound_tu_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Npc1",
+    "output_hash": "100a6d5cd6467507357740868e11a238ea5d967374c59c511703db20c08ac3cd",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/npc_1.ex",
+    "source_hash": "d820f19a29af372b081a3821970a59bc2ee371073c1bd00281457c0b8e808ab6",
+    "spawns": []
+  },
+  "quests/first_class/tu_archer.txt|floating|::Acolyte_Tu|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.AcolyteTu",
+    "output_hash": "8f8c9ccaf4ab7566423cd781b2f635bb2e31e662b1b4cda4aeec1284166feb56",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/acolyte_tu.ex",
+    "source_hash": "acd075b259efcedb3d4750826963ea872845303fb8391ab5bc00b63ce43c43d0",
+    "spawns": []
+  },
+  "quests/first_class/tu_archer.txt|floating|Minister#tu_|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Minister",
+    "output_hash": "3cd2fb87718f7677c0b2477b65b5084c196524c7e65b5485c6d3dd9de65ed902",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/minister.ex",
+    "source_hash": "9644e9784f691f2c264906b5f0f364379e37747187ef21b055de4e9e94aa9524",
+    "spawns": []
+  },
+  "quests/first_class/tu_archer.txt|script|#Target|pay_arche:76:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Npc",
+    "output_hash": "0c290caad0e8bd3582d54f5cb66345015569754ac2ba10788a4d9615d720f235",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/npc.ex",
+    "source_hash": "cd140ac4c4ef59aec271197190a9736f6f87a531cc7ad6b977fa1284962b66d0",
+    "spawns": [
+      {
+        "name": "",
+        "x": 76,
+        "y": 135,
+        "map": "pay_arche",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "#Target"
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Alchemist Guildmember#tu|pay_arche:130:113": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.AlchemistGuildmember",
+    "output_hash": "257abde6d549087e801bf90e19a96144e896b1a3177f387e401f9bc3fc2e229d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/alchemist_guildmember.ex",
+    "source_hash": "0cda831d9b2181e1b27bf8d0d5b149a1c6bc408f5c82be2352d1b2aa9aff5cf1",
+    "spawns": [
+      {
+        "name": "Alchemist Guildmember",
+        "x": 130,
+        "y": 113,
+        "map": "pay_arche",
+        "dir": 3,
+        "sprite": 740,
+        "unique_name": "Alchemist Guildmember#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Arthail|prontera:126:335": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Arthail",
+    "output_hash": "94ed71f11dcaedb1a1cbee1c9e8f3ebb9270e6f911cca6bc4fedcf5f8e9b674e",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/arthail.ex",
+    "source_hash": "b6d4074aa7d2ad31dfeb87251ba03f51dfd45c46b11e0969c401e8c51474537f",
+    "spawns": [
+      {
+        "name": "Arthail",
+        "x": 126,
+        "y": 335,
+        "map": "prontera",
+        "dir": 5,
+        "sprite": 51
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Bard Jet#tu|payon_in02:67:65": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.BardJet",
+    "output_hash": "a983e69444445ab5656c6278eea1c8e7b1495c77be5555d6afb57714c5c783d5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/bard_jet.ex",
+    "source_hash": "b1c2ac3c2b0bfcdc5d6acd0f458ac3c9c2deaacd9539062c692dd5b2c40b3e92",
+    "spawns": [
+      {
+        "name": "Bard Jet",
+        "x": 67,
+        "y": 65,
+        "map": "payon_in02",
+        "dir": 3,
+        "sprite": 51,
+        "unique_name": "Bard Jet#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Bishop Maugins|monk_in:19:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.BishopMaugins",
+    "output_hash": "fef560008a488f9fdacf7e15f9c9d9d4b9d0d0a7cd8569819a036faf17bc4f1d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/bishop_maugins.ex",
+    "source_hash": "5cb2bd51f4d74f76d21b93530137f2a7e59bbd35cf49a6dd4b988d7475cf67d1",
+    "spawns": [
+      {
+        "name": "Bishop Maugins",
+        "x": 19,
+        "y": 43,
+        "map": "monk_in",
+        "dir": 1,
+        "sprite": 60
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Mage#tu|prontera:144:301": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Mage",
+    "output_hash": "82547657911b95242c8714f3f5342e061d65ca307b0323dfe9ad1f2dd6b7073f",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/mage.ex",
+    "source_hash": "65ab59420b8d14338276b34cdac3c80e73df8525ae9d30cf92c77fb3a9658d39",
+    "spawns": [
+      {
+        "name": "Mage",
+        "x": 144,
+        "y": 301,
+        "map": "prontera",
+        "dir": 5,
+        "sprite": 123,
+        "unique_name": "Mage#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Master Kavaruk|payon_in02:54:13": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.MasterKavaruk",
+    "output_hash": "5f6544a8d2ea5c91113da352ef9aaeafc8e77adcadee12f714fbc153d79918f3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/master_kavaruk.ex",
+    "source_hash": "8b2a2705d907b830976fcccbe95e648b410292647cec6aabf34d0341847760e8",
+    "spawns": [
+      {
+        "name": "Master Kavaruk",
+        "x": 54,
+        "y": 13,
+        "map": "payon_in02",
+        "dir": 3,
+        "sprite": 55
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|New Guild Master#tu|prontera:167:281": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.NewGuildMaster",
+    "output_hash": "c365ac25de9645c314d26b1b1e93c8821301d0d135bdb37c22da1b194c676b3d",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/new_guild_master.ex",
+    "source_hash": "965bbe74630092ffbb8fd7864588cec6e30e89d935619c46ab07b5efecdb5bab",
+    "spawns": [
+      {
+        "name": "New Guild Master",
+        "x": 167,
+        "y": 281,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 753,
+        "unique_name": "New Guild Master#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Reidin Corse#tu|pay_arche:103:165": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.ReidinCorse",
+    "output_hash": "4fdfe0eafec75e231a1a9d2941bb3041df519a51f40ff6b069a6ed66dce6e843",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/reidin_corse.ex",
+    "source_hash": "f7dc892dd01aaa7c9d02c423e583370ec634a83f6ac9b78ff77ad522c9f62100",
+    "spawns": [
+      {
+        "name": "Reidin Corse",
+        "x": 103,
+        "y": 165,
+        "map": "pay_arche",
+        "dir": 5,
+        "sprite": 832,
+        "unique_name": "Reidin Corse#tu"
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Seisner|pay_arche:84:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Seisner",
+    "output_hash": "49b5ffe882f8a6bef1cea0442d74279d2aadb0fe0ceb4efd6e08971b6ac9119b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/seisner.ex",
+    "source_hash": "b44110fff356b6f3bccacede6170def225b825803b6f06fb1f8a02526bd96fe9",
+    "spawns": [
+      {
+        "name": "Seisner",
+        "x": 84,
+        "y": 139,
+        "map": "pay_arche",
+        "dir": 3,
+        "sprite": 727
+      }
+    ]
+  },
+  "quests/first_class/tu_archer.txt|script|Sign#arc|pay_arche:127:154": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuArcher.Sign",
+    "output_hash": "61b26d8f09dbd7e6145af2ff987fe6a4d4aaecd2388ef104243c07de42778e64",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_archer/sign.ex",
+    "source_hash": "e880cb3772b0f29bacdcb7a7e05112d95abc15176365c07435065e5e5573d512",
+    "spawns": [
+      {
+        "name": "Sign",
+        "x": 127,
+        "y": 154,
+        "map": "pay_arche",
+        "dir": 4,
+        "sprite": 835,
+        "unique_name": "Sign#arc"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#10|moc_fild17:34:292": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle34292",
+    "output_hash": "32d67ce554272be9f9069b38180539114dc71abf4d157e84e81da4e16d3f1ffb",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_34_292.ex",
+    "source_hash": "eab4937f2d460c06d3138341ed231efc6b57bd877d6b25de4875fb8aff07ddfb",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 34,
+        "y": 292,
+        "map": "moc_fild17",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#10"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#11|moc_fild18:346:296": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle346296",
+    "output_hash": "5a9aa0e60b5b78d04a1b5ce6fbd081cc872381f002c71dfe6a7142bea29e21b3",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_346_296.ex",
+    "source_hash": "81312d60342051397b25aa790eb4a54ba0fe439e7f8b480028b6aad637258ab0",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 346,
+        "y": 296,
+        "map": "moc_fild18",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#11"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#12|moc_fild18:309:257": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle309257",
+    "output_hash": "c972e0bdc219a1c904bef69a9290ff9ef960722f31258fd5dbae77d5c7a565fd",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_309_257.ex",
+    "source_hash": "cadb36260f2daed8cb0de72429dd1320b4cea46b0ec4e06647acbdb3d304b27f",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 309,
+        "y": 257,
+        "map": "moc_fild18",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#12"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#13|moc_fild18:177:333": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle177333",
+    "output_hash": "d8fb8ce2ef3debf12030f514fe1dfa8f7ad89851dad7a6dfc68c33eddf276ec0",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_177_333.ex",
+    "source_hash": "42c0b131683b3e41bdc139c8c9069750421feb71997b7abb577c76a6e0f96a9a",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 177,
+        "y": 333,
+        "map": "moc_fild18",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#13"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#14|moc_fild18:111:303": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle111303",
+    "output_hash": "73adeb4b980fd947ddcfafddd2edffb75654d1a9a8e7ff8c091d93b62b94bd56",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_111_303.ex",
+    "source_hash": "e3671dea25b445bc125a0906c7b9d743fe6df114dfb9694b7e897610b2d45ba1",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 111,
+        "y": 303,
+        "map": "moc_fild18",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#14"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#15|moc_fild18:109:197": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle109197",
+    "output_hash": "183a2a106548645ec8cbc09df45a664f041e98e5d33dd4e46fb8cf9a43cf12a6",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_109_197.ex",
+    "source_hash": "747fef6225fb0ca62cda7a52860f1ab98ec6d7110b22da3d0d2ed06bd48f4bf2",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 109,
+        "y": 197,
+        "map": "moc_fild18",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#15"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#16|moc_fild18:156:96": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle15696",
+    "output_hash": "7e6ff62da792914738861c6aef1183f38a9097e57276f1846c5e1acf264db884",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_156_96.ex",
+    "source_hash": "d26a67cdfb4ebb05ec79355f994b51ea227d8fc61ccbcc1315d0195687b30367",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 156,
+        "y": 96,
+        "map": "moc_fild18",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#16"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#1|moc_fild12:166:369": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle",
+    "output_hash": "883b2ae57dd7c3671368391c11cd71ecc9cb6dc34dc77b2b6dbe342bd50f2d53",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle.ex",
+    "source_hash": "84c53d5ebe7ab466cb8be8ce46e62128e44ee61478273d063a193daddedec88b",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 166,
+        "y": 369,
+        "map": "moc_fild12",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#1"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#2|moc_fild12:173:215": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle173215",
+    "output_hash": "f60fce2b660496951527d99c332e03410ec9496af0febdcc6da3f0aa9c4d6952",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_173_215.ex",
+    "source_hash": "9fde935d6c0b184bff21fa6b140d8f3337dd9c401be5c0b060a82c2144017485",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 173,
+        "y": 215,
+        "map": "moc_fild12",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#2"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#3|moc_fild12:276:165": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle276165",
+    "output_hash": "d3982e2734ccbc2d4be5c80aa48bd2cd6b2ce6a553e10c98ebdba5e697525ad4",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_276_165.ex",
+    "source_hash": "34f2c4db8fb3c1ed2341b0307ddbebfab21ab7264f688c8a5a58fe9ed47f7edb",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 276,
+        "y": 165,
+        "map": "moc_fild12",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#3"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#4|moc_fild11:39:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle39163",
+    "output_hash": "3037e42283d0a2214578a170d7c880fcc72f15b78e47c62a53a56d40c12b5b20",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_39_163.ex",
+    "source_hash": "af3b6396007546fc2504f876c7af1c6379732e11015d31b2e04a5fab4a462308",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 39,
+        "y": 163,
+        "map": "moc_fild11",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#4"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#5|moc_fild11:205:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle20552",
+    "output_hash": "cddc67b0d236bf42881b62f2e65cebae6ad92368574ed4dee24e6ae9fd244a85",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_205_52.ex",
+    "source_hash": "4dd52f57ace6086f0eecbcfd179feebe88c3f5386e2508113a04bd33e7eeb702",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 205,
+        "y": 52,
+        "map": "moc_fild11",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#5"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#6|moc_fild11:226:235": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle226235",
+    "output_hash": "51763be8694cbf30af934bc4b7d20db765a8592ec8adc6519bc767deb97e6645",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_226_235.ex",
+    "source_hash": "b2d17cedb7b4afb6df22c430a31e11ccadf169748d1e5b3f6b15470ff380668d",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 226,
+        "y": 235,
+        "map": "moc_fild11",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#6"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#7|moc_fild11:184:342": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle184342",
+    "output_hash": "0e4770df07e8853783a6437e016d705aaddaec83a6706c345afc45027e23d66b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_184_342.ex",
+    "source_hash": "7cfed77fbf6bdf6b4abd9979082f875a41c2ad6512740054661aa392571987c1",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 184,
+        "y": 342,
+        "map": "moc_fild11",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#7"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#8|moc_fild17:213:358": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle213358",
+    "output_hash": "f1d056c767cdda00f207921d38b7a6b13e0ea6c1b226b6c27abb791a55f37ae9",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_213_358.ex",
+    "source_hash": "ad6b1fc3cda57dbdf8fda54f4f2d8d8f1e7464b54b8e247d813a897b8e5afae2",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 213,
+        "y": 358,
+        "map": "moc_fild17",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#8"
+      }
+    ]
+  },
+  "quests/first_class/tu_ma_th01.txt|script|Trace of Battle#9|moc_fild17:228:274": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMaTh01.TraceOfBattle228274",
+    "output_hash": "751ef7620c36084ec1835e40542aa2033fcb978c2fe5710368daa43b93686df7",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_ma_th01/trace_of_battle_228_274.ex",
+    "source_hash": "98448a62c537b8c32e02d62e33e898cbdc42483039abd04fbeea7fe1e4574fc8",
+    "spawns": [
+      {
+        "name": "Trace of Battle",
+        "x": 228,
+        "y": 274,
+        "map": "moc_fild17",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Trace of Battle#9"
+      }
+    ]
+  },
+  "quests/first_class/tu_magician01.txt|script|New Mage Manager#M|geffen:67:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMagician01.NewMageManager",
+    "output_hash": "8ccdc4242a703586d8ecb9f629cc95025791229efed24dd954433b1d85dfe799",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_magician01/new_mage_manager.ex",
+    "source_hash": "defc80f810cc1601d8e44cdd1eec214a9aa1a224dbb2155f2ffcb64eed8ffe42",
+    "spawns": [
+      {
+        "name": "New Mage Manager",
+        "x": 67,
+        "y": 180,
+        "map": "geffen",
+        "dir": 4,
+        "sprite": 102,
+        "unique_name": "New Mage Manager#M"
+      }
+    ]
+  },
+  "quests/first_class/tu_magician01.txt|script|Sign#M|geffen:61:174": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMagician01.Sign",
+    "output_hash": "c122ea405e86d057346a82dbd7f14142d6996b773c18b5f7b4ad9b50dc98665c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_magician01/sign.ex",
+    "source_hash": "a22588da5a673348126251a017f35a342c34c070fde6c610b0b7cbb4ac4f443b",
+    "spawns": [
+      {
+        "name": "Sign",
+        "x": 61,
+        "y": 174,
+        "map": "geffen",
+        "dir": 4,
+        "sprite": 111,
+        "unique_name": "Sign#M"
+      }
+    ]
+  },
+  "quests/first_class/tu_merchant.txt|script|Aigie|prt_in:169:11": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Aigie",
+    "output_hash": "fe68d00461e455eacde943016d736e27c8171a20f7049b0e41597ae25c360402",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_merchant/aigie.ex",
+    "source_hash": "d171e63575c2b111265f839fdd30ee82006573a1c56272ce0351d63f5907b270",
+    "spawns": [
+      {
+        "name": "Aigie",
+        "x": 169,
+        "y": 11,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 92
+      }
+    ]
+  },
+  "quests/first_class/tu_merchant.txt|script|Guarnien|alberta_in:70:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Guarnien",
+    "output_hash": "65332ccb34a00893d2dae3004900395655584a39d03201c8b1fdaa553821960b",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_merchant/guarnien.ex",
+    "source_hash": "bc86d6bcd300595fed69e80a52de17d51ce97dd99486b21cb20edcd37c6f9b5f",
+    "spawns": [
+      {
+        "name": "Guarnien",
+        "x": 70,
+        "y": 51,
+        "map": "alberta_in",
+        "dir": 5,
+        "sprite": 98
+      }
+    ]
+  },
+  "quests/first_class/tu_merchant.txt|script|Jayon|prontera:247:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Jayon",
+    "output_hash": "4ae490423fc6437fa6d5362d4e24535d86d9261aff306970f8f0503fc822e136",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_merchant/jayon.ex",
+    "source_hash": "b4d6b12973c2c3360fe60310ffbb2d2625f9b9fcd7c162ab0b0b70c4de0bb70b",
+    "spawns": [
+      {
+        "name": "Jayon",
+        "x": 247,
+        "y": 129,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 85
+      }
+    ]
+  },
+  "quests/first_class/tu_merchant.txt|script|Kellion|prontera:93:330": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Kellion",
+    "output_hash": "bc5a2987ffc168ba5b227cf9a02cfe5e9d187db96317f73d41c0f3eca8064814",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_merchant/kellion.ex",
+    "source_hash": "b5e9113a7de2f303343fe4521603ee4a6fd544c80ba2c4fe1124eb647fbe5c3d",
+    "spawns": [
+      {
+        "name": "Kellion",
+        "x": 93,
+        "y": 330,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/first_class/tu_merchant.txt|script|Maos|prt_in:251:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Maos",
+    "output_hash": "94ce8e90b445093946120843ea44061eec94ea00e3fc22e54322015445bfd2ea",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_merchant/maos.ex",
+    "source_hash": "43f88a59fec4daf705066a248e204193dd8f0fd56fea3bdebed9091c43a468e8",
+    "spawns": [
+      {
+        "name": "Maos",
+        "x": 251,
+        "y": 129,
+        "map": "prt_in",
+        "dir": 3,
+        "sprite": 709
+      }
+    ]
+  },
+  "quests/first_class/tu_merchant.txt|script|Sagle|prontera:66:111": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuMerchant.Sagle",
+    "output_hash": "5663f928197e1b5bac1b08fc425061566fb1904f08a74fcc5a011ef4d8ba2f7a",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_merchant/sagle.ex",
+    "source_hash": "e35b8d06ebe218f0f92a1c17005e092e57545538252d8b4139eca723db6f8860",
+    "spawns": [
+      {
+        "name": "Sagle",
+        "x": 66,
+        "y": 111,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 82
+      }
+    ]
+  },
+  "quests/first_class/tu_sword.txt|script|Bankley|morocc_in:12:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Bankley",
+    "output_hash": "20ecc518b890656e4c2a1b7210b2455b92d5bb0cfa40d92050714b922f6310fe",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_sword/bankley.ex",
+    "source_hash": "5bf931acba347aec6e01dc1fc65cb42e5a66aca11647831e36faf7059167a73c",
+    "spawns": [
+      {
+        "name": "Bankley",
+        "x": 12,
+        "y": 156,
+        "map": "morocc_in",
+        "dir": 3,
+        "sprite": 97
+      }
+    ]
+  },
+  "quests/first_class/tu_sword.txt|script|Dequ'ee|geffen:154:143": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.DequEe",
+    "output_hash": "53efe430fd10536a1542c859343508fd71a372a3b9bf1c69d143f4e6dacf41a5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_sword/dequ_ee.ex",
+    "source_hash": "bb4c78b806d3215f1159c966eac394f4ca7009ad7da696ad78f69c6a21500327",
+    "spawns": [
+      {
+        "name": "Dequ'ee",
+        "x": 154,
+        "y": 143,
+        "map": "geffen",
+        "dir": 3,
+        "sprite": 734
+      }
+    ]
+  },
+  "quests/first_class/tu_sword.txt|script|Geil|morocc_in:51:101": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Geil",
+    "output_hash": "20dfa704bb39b9a46324ce8799d53c4d68e76aa1b565dd4c1cd114810830ec61",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_sword/geil.ex",
+    "source_hash": "933aaa612eb341350ea3a31807ec3a79495cecfa88e676463cd9d345aed121db",
+    "spawns": [
+      {
+        "name": "Geil",
+        "x": 51,
+        "y": 101,
+        "map": "morocc_in",
+        "dir": 3,
+        "sprite": 89
+      }
+    ]
+  },
+  "quests/first_class/tu_sword.txt|script|Hans|morocc:240:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Hans",
+    "output_hash": "9437b41cebb61a7f9ae3366cf2c8fb8961db8ae1495e170dd327d187e3c5d4c5",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_sword/hans.ex",
+    "source_hash": "4853fc78f8186cd59ab46331b9d4d2cce59a907fb4f5236281cbf754f1694428",
+    "spawns": [
+      {
+        "name": "Hans",
+        "x": 240,
+        "y": 72,
+        "map": "morocc",
+        "dir": 3,
+        "sprite": 86
+      }
+    ]
+  },
+  "quests/first_class/tu_sword.txt|script|Muetro|morocc:82:292": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Muetro",
+    "output_hash": "6156a19302fa690059076902992c125ddf5e8b578a8923db7bf899a79a5a7407",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_sword/muetro.ex",
+    "source_hash": "fd2076b6b77c6f5cacdc5bbef9cbdb8d27761a4fa64fea87a69ae03baa9eab8d",
+    "spawns": [
+      {
+        "name": "Muetro",
+        "x": 82,
+        "y": 292,
+        "map": "morocc",
+        "dir": 5,
+        "sprite": 84
+      }
+    ]
+  },
+  "quests/first_class/tu_sword.txt|script|Shurank|izlude_in:82:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuSword.Shurank",
+    "output_hash": "4707f3d02f9ac542ddb91361364a3d3709c326654daa1aa81578f8b973452f55",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_sword/shurank.ex",
+    "source_hash": "099903d15f36debe9aef3ccffe4ed957830251018fe0b2a18f28d6169d3595a1",
+    "spawns": [
+      {
+        "name": "Shurank",
+        "x": 82,
+        "y": 163,
+        "map": "izlude_in",
+        "dir": 3,
+        "sprite": 733
+      }
+    ]
+  },
+  "quests/first_class/tu_thief01.txt|script|Thief Trainer#T|moc_ruins:66:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Quests.FirstClass.TuThief01.ThiefTrainer",
+    "output_hash": "aca5e42dafa54baae3edb7941c1f46bf7ff72c3d23c78fae46a2df4fe5a6fa0c",
+    "output_path": "lib/aesir/zone_server/content/npc/quests/first_class/tu_thief01/thief_trainer.ex",
+    "source_hash": "3769cf622cbbb54fe7612b59bf439fdf6f94afeb04f226f48def47a34fedd782",
+    "spawns": [
+      {
+        "name": "Thief Trainer",
+        "x": 66,
+        "y": 164,
+        "map": "moc_ruins",
+        "dir": 4,
+        "sprite": 84,
+        "unique_name": "Thief Trainer#T"
+      }
+    ]
+  },
   "re/cities/comodo.txt|script|Adventurer#pa0829_01|cmd_fild07:50:271": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Adventurer",
     "output_hash": "2ab7f739d3fc0eac66e6319f6a59be7e906d7bfc9bc6ccb50c6b39226530479d",
