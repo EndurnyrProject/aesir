@@ -194,9 +194,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   def progressbar(%Ctx{status: {:error, _}} = ctx, _color, _seconds), do: ctx
   def progressbar(%Ctx{game_state: nil} = ctx, _color, _seconds), do: Ctx.halt(ctx, :no_player)
 
-  def progressbar(%Ctx{char_id: char_id} = ctx, _color, seconds)
+  def progressbar(%Ctx{char_id: char_id} = ctx, color, seconds)
       when is_integer(seconds) and seconds > 0 do
-    Broadcast.to_player(char_id, %ProgressBar{seconds: seconds})
+    Broadcast.to_player(char_id, %ProgressBar{
+      seconds: seconds,
+      color: parse_color(color),
+      npc_id: ctx.npc_gid
+    })
+
     await(ctx, :progress)
     ctx
   end
@@ -205,4 +210,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
     Logger.warning("progressbar: non-positive duration #{inspect(seconds)}, skipping")
     ctx
   end
+
+  @spec parse_color(term()) :: non_neg_integer()
+  defp parse_color(color) when is_binary(color) do
+    case Integer.parse(color, 16) do
+      {value, ""} when value >= 0 -> value
+      _ -> 0
+    end
+  end
+
+  defp parse_color(color) when is_integer(color) and color >= 0, do: color
+  defp parse_color(_color), do: 0
 end

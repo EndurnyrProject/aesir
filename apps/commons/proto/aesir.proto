@@ -649,6 +649,12 @@ message SoundEffect {
 // cancel-on-move reuses NpcInteract.cancel. Sent only to the invoking player.
 message ProgressBar {
   uint32 seconds = 1;
+  // Bar fill colour as 0xRRGGBB, parsed from the script's hex string; rendered
+  // verbatim (color == 0 is a black bar, no default fallback).
+  uint32 color = 2;
+  // Owning NPC gid, so the client can address the Progress/Cancel ack to the
+  // exact NPC even for a bare progressbar with no open dialog window.
+  uint32 npc_id = 3;
 }
 
 // Server -> client, open the navigation window / start navigation toward a map

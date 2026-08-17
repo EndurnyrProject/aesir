@@ -497,7 +497,9 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       test_pid = self()
       npc_gid = 42
 
-      expect(Broadcast, :to_player, fn 1, %ProgressBar{seconds: 5} = packet ->
+      expect(Broadcast, :to_player, fn 1,
+                                       %ProgressBar{seconds: 5, color: 0xFFFF00, npc_id: ^npc_gid} =
+                                         packet ->
         send(test_pid, {:progress_bar, packet})
 
         send(
@@ -510,7 +512,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       ctx = %{build_ctx() | npc_gid: npc_gid}
       assert Dsl.progressbar(ctx, "ffff00", 5) == ctx
-      assert_received {:progress_bar, %ProgressBar{seconds: 5}}
+      assert_received {:progress_bar, %ProgressBar{seconds: 5, color: 0xFFFF00, npc_id: ^npc_gid}}
     end
 
     test "halts :no_player on a detached ctx" do
