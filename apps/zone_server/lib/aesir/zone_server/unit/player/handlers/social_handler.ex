@@ -326,7 +326,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
     tax =
       case GuildState.position_of(guild_state, game_state.character_id) do
         nil -> 0
-        position -> min(position.tax || 0, Config.guild_exp_limit())
+        position -> min(position.tax, Config.guild_exp_limit())
       end
 
     if tax == game_state.guild_tax do
