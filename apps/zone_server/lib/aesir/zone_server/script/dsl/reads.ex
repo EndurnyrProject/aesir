@@ -666,6 +666,33 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   end
 
   @doc """
+  A calendar-date component in server local time (rAthena `gettime`), selected
+  by `type` (the `DT_*` constants, 1-8): `1` second, `2` minute, `3` hour,
+  `4` day of week (`0` Sunday .. `6` Saturday), `5` day of month (`1`-`31`),
+  `6` month (`1`-`12`), `7` full year, `8` day of year (`0`-based, Jan 1 is
+  `0`), matching the C `struct tm` fields rAthena reads. Any other type returns
+  `-1`, like rAthena's out-of-range guard. Pure read; the ctx is ignored.
+  """
+  @spec gettime(Ctx.t(), integer()) :: integer()
+  def gettime(%Ctx{}, type) when type in 1..8 do
+    now = NaiveDateTime.local_now()
+
+    %{
+      1 => now.second,
+      2 => now.minute,
+      3 => now.hour,
+      4 => Date.day_of_week(now, :sunday) - 1,
+      5 => now.day,
+      6 => now.month,
+      7 => now.year,
+      8 => Date.day_of_year(now) - 1
+    }
+    |> Map.fetch!(type)
+  end
+
+  def gettime(%Ctx{}, _type), do: -1
+
+  @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0
   form). A pure read that does not raise on a detached ctx — the NPC identity
   is not player state — and returns `0` when there is no `npc_gid` (e.g. an

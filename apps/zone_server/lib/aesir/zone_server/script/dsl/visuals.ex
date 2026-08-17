@@ -16,12 +16,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   alias Aesir.Net.NavigateTo
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
 
   @doc """
@@ -243,6 +245,47 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   def soundeffect(%Ctx{char_id: char_id} = ctx, name, type) do
     Broadcast.to_player(char_id, %SoundEffect{name: name, type: type})
     ctx
+  end
+
+  @doc """
+  Plays a one-shot sound effect for every player in view range of the origin
+  unit (rAthena `soundeffectall`, area-around form — the trailing map-name and
+  bounding-box arguments are dropped, so the map-wide and sub-area variants are
+  approximated by the local broadcast). `name` is the `.wav` filename; `type`
+  selects the playback source (`0` = `data/wav`).
+
+  The origin is the invoking player when one is attached, otherwise the NPC
+  running the script, matching rAthena's rid-then-oid fallback. Purely cosmetic,
+  so the context is returned unchanged and a detached ctx with no origin (no
+  player and no `npc_gid`) is a silent no-op — a missing sound must never abort
+  the surrounding script.
+  """
+  @spec soundeffectall(Ctx.t(), String.t(), non_neg_integer()) :: Ctx.t()
+  def soundeffectall(%Ctx{status: {:error, _}} = ctx, _name, _type), do: ctx
+
+  def soundeffectall(%Ctx{} = ctx, name, type) do
+    packet = %SoundEffect{name: name, type: type}
+
+    case origin_unit(ctx) do
+      {:ok, unit_type, unit_id} -> broadcast_area(unit_type, unit_id, packet)
+      :error -> :ok
+    end
+
+    ctx
+  end
+
+  defp origin_unit(%Ctx{char_id: char_id}) when is_integer(char_id), do: {:ok, :player, char_id}
+  defp origin_unit(%Ctx{npc_gid: gid}) when is_integer(gid), do: {:ok, :npc, gid}
+  defp origin_unit(%Ctx{}), do: :error
+
+  defp broadcast_area(unit_type, unit_id, packet) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, map_name}} ->
+        Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet, [])
+
+      {:error, :not_found} ->
+        :ok
+    end
   end
 
   @doc """

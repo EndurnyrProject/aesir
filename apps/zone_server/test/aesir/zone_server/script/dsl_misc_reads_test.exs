@@ -124,6 +124,40 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
     end
   end
 
+  describe "gettime/2" do
+    test "reads the local-time calendar components by DT_* type" do
+      now = NaiveDateTime.local_now()
+
+      assert Dsl.gettime(ctx(), 3) == now.hour
+      assert Dsl.gettime(ctx(), 5) == now.day
+      assert Dsl.gettime(ctx(), 6) == now.month
+      assert Dsl.gettime(ctx(), 7) == now.year
+    end
+
+    test "day of week is 0=Sunday..6=Saturday (rAthena tm_wday)" do
+      dow = Dsl.gettime(ctx(), 4)
+
+      assert dow in 0..6
+      assert dow == Date.day_of_week(NaiveDateTime.local_now(), :sunday) - 1
+    end
+
+    test "day of year is 0-based (Jan 1 is 0)" do
+      doy = Dsl.gettime(ctx(), 8)
+
+      assert doy in 0..365
+      assert doy == Date.day_of_year(NaiveDateTime.local_now()) - 1
+    end
+
+    test "an out-of-range type returns -1" do
+      assert Dsl.gettime(ctx(), 0) == -1
+      assert Dsl.gettime(ctx(), 99) == -1
+    end
+
+    test "ignores the ctx (works detached)" do
+      assert is_integer(Dsl.gettime(%{ctx() | game_state: nil}, 3))
+    end
+  end
+
   describe "getpartnerid/1" do
     test "reads game_state.partner_id" do
       assert Dsl.getpartnerid(ctx(partner_id: 4242)) == 4242
@@ -149,10 +183,16 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.soundeffect(c, "bragis_poem.wav", 0) == c
     end
 
+    test "soundeffectall/3 is a no-op with no origin unit (no player, no npc_gid)" do
+      c = %{ctx() | char_id: nil, npc_gid: nil}
+      assert Dsl.soundeffectall(c, "election.wav", 0) == c
+    end
+
     test "both are no-ops on an errored ctx" do
       c = Ctx.halt(ctx(), :boom)
       assert Dsl.cutin(c, "img", 1) == c
       assert Dsl.soundeffect(c, "s.wav", 0) == c
+      assert Dsl.soundeffectall(c, "s.wav", 0) == c
     end
   end
 end

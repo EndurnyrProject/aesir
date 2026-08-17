@@ -102,6 +102,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate questinfo(ctx, icon, color, condition), to: Visuals
   defdelegate cutin(ctx, image, type), to: Visuals
   defdelegate soundeffect(ctx, name, type), to: Visuals
+  defdelegate soundeffectall(ctx, name, type), to: Visuals
   defdelegate navigateto(ctx, map, x, y, flag, hide_window, monster_id), to: Visuals
   defdelegate emotion(ctx, emote), to: Visuals
   defdelegate nude(ctx), to: Visuals
@@ -269,6 +270,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate checkre(ctx, type), to: Reads
   defdelegate vip_status(ctx, type), to: Reads
   defdelegate gettimetick(ctx, type), to: Reads
+  defdelegate gettime(ctx, type), to: Reads
   defdelegate getnpcid(ctx), to: Reads
   defdelegate getnpcid(ctx, name), to: Reads
   defdelegate playerattached(ctx), to: Reads

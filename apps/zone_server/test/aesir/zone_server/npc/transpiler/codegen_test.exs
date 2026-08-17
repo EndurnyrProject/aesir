@@ -1757,6 +1757,33 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :soundeffect"
   end
 
+  test "soundeffectall maps to its broadcast op, dropping the area arguments" do
+    src =
+      gen!("""
+      soundeffectall "election.wav",0;
+      soundeffectall "election.wav",0,0,"prontera";
+      close;
+      """)
+
+    assert src =~ ~S{soundeffectall("election.wav", 0)}
+    refute src =~ "todo(ctx, :soundeffectall"
+    refute src =~ ~S{"prontera"}
+  end
+
+  test "gettime maps to its read, resolving DT_* date-type constants" do
+    src =
+      gen!("""
+      if (gettime(DT_HOUR) >= 22 || gettime(DT_HOUR) < 2) close;
+      set .@dow, gettime(DT_DAYOFWEEK);
+      close;
+      """)
+
+    assert src =~ "gettime(ctx, 3)"
+    assert src =~ "gettime(ctx, 4)"
+    refute src =~ "Todo.call!(:gettime"
+    refute src =~ "Todo.const!"
+  end
+
   test "getpartnerid maps to a nullary read without a trailing comma" do
     src =
       gen!("""

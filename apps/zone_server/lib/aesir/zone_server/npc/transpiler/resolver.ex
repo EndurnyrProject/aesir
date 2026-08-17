@@ -70,6 +70,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("ITEMINFO_ARMORLEVEL"), do: {:ok, "19"}
   def constant("ITEMINFO_SUBTYPE"), do: {:ok, "20"}
 
+  # rAthena `enum e_date_type` selectors (`gettime`'s argument), matching the
+  # `DT_*` order in `src/map/date.hpp` (DT_MIN is 0, the first real type is 1).
+  def constant("DT_SECOND"), do: {:ok, "1"}
+  def constant("DT_MINUTE"), do: {:ok, "2"}
+  def constant("DT_HOUR"), do: {:ok, "3"}
+  def constant("DT_DAYOFWEEK"), do: {:ok, "4"}
+  def constant("DT_DAYOFMONTH"), do: {:ok, "5"}
+  def constant("DT_MONTH"), do: {:ok, "6"}
+  def constant("DT_YEAR"), do: {:ok, "7"}
+  def constant("DT_DAYOFYEAR"), do: {:ok, "8"}
+
   def constant(symbol) do
     case job_mapid_constant(symbol) do
       {:ok, value} ->
