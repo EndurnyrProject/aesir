@@ -43,7 +43,6 @@ defmodule Aesir.ZoneServer.Integration.StorageIntegrationTest do
   alias Aesir.Net.StorageWithdrawRequest
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -322,7 +321,8 @@ defmodule Aesir.ZoneServer.Integration.StorageIntegrationTest do
 
   defp talk_to_kafra(pid) do
     {x, y} = @kafra_pos
-    gid = NpcRegistry.entity_id(%Placement{map: @map, x: x, y: y, sprite: 117})
+    {:ok, {_module, npc_placement}} = NpcRegistry.module_at(@map, x, y)
+    gid = NpcRegistry.entity_id(npc_placement)
     simulate_incoming_message(pid, %NpcTalk{npc_id: gid})
   end
 

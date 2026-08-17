@@ -42,8 +42,8 @@ defmodule Aesir.ZoneServer.Npc.Shop.Registry do
   @moduledoc """
   Lookup helpers over the per-map shop index held by `Npc.Shops`.
 
-  `entity_id/1` is a pure function of the placement cell, mirroring
-  `Npc.Warp.Registry.entity_id/1` and `Npc.Registry.entity_id/1`; the remaining
+  `entity_id/1` is a pure function of the placement cell and shop `id`, mirroring
+  `Npc.Registry.entity_id/1`'s `{map, x, y, unique_name}` keying; the remaining
   helpers (`fetch/1`, `for_map/1`, `by_cell/3`, `entries/0`) read the
   `:persistent_term` index owned by `Npc.Shops`, the way `Npc.Registry`'s
   `module_for_unit/1` and `module_at/3` read its own registry.
@@ -61,13 +61,16 @@ defmodule Aesir.ZoneServer.Npc.Shop.Registry do
   @doc """
   Derives a stable synthetic `gid` for a shop placement.
 
-  A pure function of `{map, x, y}` in the reserved shop range: the same
+  A pure function of `{map, x, y, id}` in the reserved shop range: the same
   placement always resolves to the same gid across runs and nodes, with no
-  process or registry write.
+  process or registry write. Including `id` — the shop's unique identity, e.g.
+  `"Tool Dealer#yuno"` — means two shops legitimately sharing a cell (rAthena's
+  base vendor plus its `#Extended_*` twin) each get their own gid and stay
+  independently clickable rather than collapsing onto one.
   """
   @spec entity_id(Shop.t()) :: non_neg_integer()
   def entity_id(%Shop{} = shop) do
-    @shop_entity_id_base + :erlang.phash2({shop.map, shop.x, shop.y})
+    @shop_entity_id_base + :erlang.phash2({shop.map, shop.x, shop.y, shop.id})
   end
 
   @doc """

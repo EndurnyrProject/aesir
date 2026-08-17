@@ -13,9 +13,12 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifier do
     * `{:unknown_item, shop, nameid}` — a buy-list item does not resolve in the
       item DB (a phantom item is a data bug).
 
-  A shop cell that collides with an NPC placement, a warp, or another shop is a
-  **non-fatal** warning: the synthetic gids overlap and the entities would shadow
-  each other, but boot continues.
+  Two shops sharing a cell **and** `id` are a **non-fatal** warning: they derive
+  the same synthetic gid and shadow each other on a click, so only the last-loaded
+  survives. Shops keyed on distinct ids — including a base vendor stacked with its
+  `#Extended_*` twin — get distinct gids and coexist fine, as do a shop and an NPC
+  or warp on the same cell (their gid ranges are disjoint). Boot continues either
+  way.
 
   `verify/1` returns `:ok` or the list of fatal errors; `verify!/1` logs the
   collision warnings and then raises `ArgumentError` on any fatal error.
@@ -25,11 +28,7 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifier do
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemManagement
-  alias Aesir.ZoneServer.Npc.Placement
-  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shop
-  alias Aesir.ZoneServer.Npc.Warp
-  alias Aesir.ZoneServer.Npc.Warps
 
   @type shops :: %{String.t() => [Shop.t()]} | [Shop.t()]
   @type cell :: {String.t(), non_neg_integer(), non_neg_integer()}
@@ -92,36 +91,16 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifier do
 
   @spec warn_collisions([Shop.t()]) :: :ok
   defp warn_collisions(shops) do
-    (shop_occupants(shops) ++ npc_occupants() ++ warp_occupants())
-    |> Enum.group_by(fn {cell, _label} -> cell end, fn {_cell, label} -> label end)
-    |> Enum.filter(fn {_cell, labels} -> shop_collision?(labels) end)
-    |> Enum.each(fn {cell, labels} ->
-      Logger.warning("NPC shop cell #{inspect(cell)} collides with #{inspect(labels)}")
+    shops
+    |> Enum.group_by(fn shop -> {shop.map, shop.x, shop.y, shop.id} end)
+    |> Enum.filter(fn {_key, group} -> length(group) > 1 end)
+    |> Enum.each(fn {{map, x, y, id}, group} ->
+      Logger.warning(
+        "NPC shop cell #{inspect({map, x, y})} has #{length(group)} shops sharing id " <>
+          "#{inspect(id)}; only the last loaded is reachable, the rest are shadowed."
+      )
     end)
 
     :ok
-  end
-
-  @spec shop_collision?([term()]) :: boolean()
-  defp shop_collision?(labels) do
-    length(labels) > 1 and Enum.any?(labels, &match?({:shop, _}, &1))
-  end
-
-  @spec shop_occupants([Shop.t()]) :: [{cell(), {:shop, String.t()}}]
-  defp shop_occupants(shops) do
-    for %Shop{} = shop <- shops, do: {{shop.map, shop.x, shop.y}, {:shop, shop.id}}
-  end
-
-  @spec npc_occupants() :: [{cell(), {:npc, module()}}]
-  defp npc_occupants do
-    for {module, %Placement{} = p} <- NpcRegistry.entries(),
-        do: {{p.map, p.x, p.y}, {:npc, module}}
-  end
-
-  @spec warp_occupants() :: [{cell(), {:warp, String.t()}}]
-  defp warp_occupants do
-    for {_map, warps} <- Warps.all(),
-        %Warp{} = w <- warps,
-        do: {{w.map, w.x, w.y}, {:warp, w.id}}
   end
 end

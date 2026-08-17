@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
 
   @hunter_class 11
@@ -192,7 +191,8 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
     assert before_reset.learned_skills[phantasmic] == 1
     assert before_reset.skill_point == 3
 
-    gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: x, y: y, sprite: 58})
+    {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", x, y)
+    gid = NpcRegistry.entity_id(npc_placement)
     simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
     assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
@@ -224,7 +224,8 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
     assert StatusStorage.has_status?(:player, character.id, @status_id)
     flush_packets()
 
-    gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: x, y: y, sprite: 58})
+    {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", x, y)
+    gid = NpcRegistry.entity_id(npc_placement)
     simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
     assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
@@ -261,7 +262,8 @@ defmodule Aesir.ZoneServer.Integration.HunterProgressionIntegrationTest do
     assert StatusStorage.has_status?(:player, character.id, @status_id)
     flush_packets()
 
-    gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: x, y: y, sprite: 58})
+    {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", x, y)
+    gid = NpcRegistry.entity_id(npc_placement)
     simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
     assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000

@@ -34,6 +34,25 @@ defmodule Aesir.ZoneServer.Npc.VerifierTest do
       assert {:error, errors} = Verifier.verify(entries)
       assert Enum.any?(errors, &match?({:cell_collision, {"prontera", 150, 150}, _mods}, &1))
     end
+
+    test "allows two NPCs on one cell when their unique_names differ" do
+      entries = [
+        {ModA, placement(x: 150, y: 150, unique_name: "Guide#a")},
+        {ModB, placement(x: 150, y: 150, unique_name: "Controller#b")}
+      ]
+
+      assert :ok = Verifier.verify(entries)
+    end
+
+    test "flags two NPCs sharing a cell and unique_name" do
+      entries = [
+        {ModA, placement(x: 150, y: 150, unique_name: "Dup#x")},
+        {ModB, placement(x: 150, y: 150, unique_name: "Dup#x")}
+      ]
+
+      assert {:error, errors} = Verifier.verify(entries)
+      assert Enum.any?(errors, &match?({:cell_collision, {"prontera", 150, 150}, _mods}, &1))
+    end
   end
 
   describe "verify!/1" do

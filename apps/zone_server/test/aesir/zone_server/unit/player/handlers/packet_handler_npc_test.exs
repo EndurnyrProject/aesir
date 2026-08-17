@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcTalk
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -27,7 +26,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerNpcTest do
 
   setup do
     Registry.reload([TalkNpc])
-    gid = Registry.entity_id(%Placement{map: "prontera", x: 150, y: 150, sprite: 58})
+    {:ok, {_module, npc_placement}} = Registry.module_at("prontera", 150, 150)
+    gid = Registry.entity_id(npc_placement)
     {:ok, gid: gid}
   end
 

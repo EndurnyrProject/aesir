@@ -28,7 +28,6 @@ defmodule Aesir.ZoneServer.Integration.FalconLifecycleTest do
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -205,7 +204,8 @@ defmodule Aesir.ZoneServer.Integration.FalconLifecycleTest do
       assert falcon?(get_player_state(session.pid))
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: x, y: y, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", x, y)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
@@ -241,7 +241,8 @@ defmodule Aesir.ZoneServer.Integration.FalconLifecycleTest do
       assert falcon?(get_player_state(session.pid))
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: x, y: y, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", x, y)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000

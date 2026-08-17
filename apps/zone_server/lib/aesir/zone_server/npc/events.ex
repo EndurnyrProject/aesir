@@ -79,13 +79,8 @@ defmodule Aesir.ZoneServer.Npc.Events do
   @spec trigger_all(String.t()) :: :ok
   def trigger_all(label) do
     label
-    |> Registry.gids_for_label()
-    |> Enum.each(fn gid ->
-      case Registry.module_for_unit(gid) do
-        {:ok, {module, _placement}} -> spawn_detached(module, gid, label)
-        :error -> :ok
-      end
-    end)
+    |> Registry.entries_for_label()
+    |> Enum.each(fn {module, gid} -> spawn_detached(module, gid, label) end)
   end
 
   @doc """
@@ -118,8 +113,9 @@ defmodule Aesir.ZoneServer.Npc.Events do
 
   Meant to be called once at boot, right after the NPC registry loads, and
   again by `@reloadscript` after `Registry.reload/1` — rAthena semantics.
-  Every gid in `Registry.gids_for_label("OnInit")` gets its own detached task
-  (the same isolated body `trigger_gid/2` uses), then this waits up to
+  Every `{module, gid}` in `Registry.entries_for_label("OnInit")` gets its own
+  detached task dispatched straight to the declaring module (so a cell shared by
+  a non-`OnInit` NPC cannot misroute the event), then this waits up to
   `:timeout` (default #{@on_init_timeout}ms; a test seam, not a production
   knob) total for all of them via `Task.yield_many/2`. A handler that raises
   is logged and does not stop the others; a handler still running past the
@@ -131,9 +127,8 @@ defmodule Aesir.ZoneServer.Npc.Events do
     timeout = Keyword.get(opts, :timeout, @on_init_timeout)
 
     "OnInit"
-    |> Registry.gids_for_label()
+    |> Registry.entries_for_label()
     |> Enum.map(&start_on_init_task/1)
-    |> Enum.reject(&is_nil/1)
     |> await_on_init(timeout)
 
     :ok
@@ -197,21 +192,14 @@ defmodule Aesir.ZoneServer.Npc.Events do
     end
   end
 
-  @spec start_on_init_task(non_neg_integer()) :: {non_neg_integer(), Task.t()} | nil
-  defp start_on_init_task(gid) do
-    case Registry.module_for_unit(gid) do
-      {:ok, {module, _placement}} ->
-        task =
-          Task.Supervisor.async_nolink(supervisor(), fn ->
-            run_detached(module, gid, "OnInit")
-          end)
+  @spec start_on_init_task({module(), non_neg_integer()}) :: {non_neg_integer(), Task.t()}
+  defp start_on_init_task({module, gid}) do
+    task =
+      Task.Supervisor.async_nolink(supervisor(), fn ->
+        run_detached(module, gid, "OnInit")
+      end)
 
-        {gid, task}
-
-      :error ->
-        Logger.warning("npc OnInit: unresolved gid #{inspect(gid)}")
-        nil
-    end
+    {gid, task}
   end
 
   @spec await_on_init([{non_neg_integer(), Task.t()}], timeout()) :: :ok

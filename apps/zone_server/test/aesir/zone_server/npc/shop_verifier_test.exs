@@ -4,12 +4,9 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
   import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Map.MapCache
-  alias Aesir.ZoneServer.Npc.Placement
-  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Npc.ShopVerifier
-  alias Aesir.ZoneServer.Npc.Warps
 
   setup :verify_on_exit!
 
@@ -30,11 +27,6 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
         overrides
       )
     )
-  end
-
-  defp stub_no_collisions do
-    stub(NpcRegistry, :entries, fn -> [] end)
-    stub(Warps, :all, fn -> %{} end)
   end
 
   describe "verify/1" do
@@ -58,7 +50,6 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
     test "passes the real prontera.yml shops" do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
-      stub_no_collisions()
 
       assert :ok = ShopVerifier.verify!(Shops.all())
     end
@@ -66,7 +57,6 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
     test "raises when a shop is on an unknown map" do
       stub(MapCache, :exists?, fn _ -> false end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
-      stub_no_collisions()
 
       assert_raise ArgumentError, fn -> ShopVerifier.verify!([shop([])]) end
     end
@@ -74,7 +64,6 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
     test "raises when a shop cell is not walkable" do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
-      stub_no_collisions()
 
       assert_raise ArgumentError, fn -> ShopVerifier.verify!([shop([])]) end
     end
@@ -82,25 +71,33 @@ defmodule Aesir.ZoneServer.Npc.ShopVerifierTest do
     test "raises when a shop sells an item that does not resolve" do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
-      stub_no_collisions()
 
       assert_raise ArgumentError, fn ->
         ShopVerifier.verify!([shop(items: [%{nameid: 99_999_999, price: nil}])])
       end
     end
 
-    test "warns but does not raise when a shop cell collides with an NPC placement" do
+    test "does not warn when two shops share a cell but have distinct ids" do
       stub(MapCache, :exists?, fn _ -> true end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
-      stub(Warps, :all, fn -> %{} end)
 
-      stub(NpcRegistry, :entries, fn ->
-        [{SomeNpc, struct!(Placement, map: "prontera", x: 150, y: 60, sprite: 1)}]
-      end)
+      shops = [shop(id: "Tool Dealer#yuno"), shop(id: "Tool Dealer#Extended_Yuno")]
 
-      log = capture_log(fn -> assert :ok = ShopVerifier.verify!([shop([])]) end)
+      log = capture_log(fn -> assert :ok = ShopVerifier.verify!(shops) end)
 
-      assert log =~ "collides"
+      refute log =~ "shadowed"
+    end
+
+    test "warns but does not raise when two shops share a cell and id" do
+      stub(MapCache, :exists?, fn _ -> true end)
+      stub(MapCache, :walkable?, fn _, _, _ -> true end)
+
+      shops = [shop(id: "dup"), shop(id: "dup")]
+
+      log = capture_log(fn -> assert :ok = ShopVerifier.verify!(shops) end)
+
+      assert log =~ "sharing id"
+      assert log =~ "shadowed"
     end
   end
 end

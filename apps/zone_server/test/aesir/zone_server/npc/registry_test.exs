@@ -19,7 +19,9 @@ defmodule Aesir.ZoneServer.Npc.RegistryTest do
 
   defmodule CollidingNpc do
     use Aesir.ZoneServer.Npc,
-      spawn: [%{map: "prontera", x: 199, y: 201, dir: 0, sprite: 58, name: "C"}]
+      spawn: [
+        %{map: "prontera", x: 199, y: 201, dir: 0, sprite: 58, name: "C", unique_name: "T"}
+      ]
 
     @impl true
     def on_talk(ctx), do: ctx

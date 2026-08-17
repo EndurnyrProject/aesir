@@ -5,9 +5,12 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   Given the registry's `{module, placement}` entries:
 
     * `{:cell_collision, {map, x, y}, modules}` — two or more NPCs sharing one
-      cell. NPC unit gids are derived deterministically from the cell, so
-      colliding NPCs collapse onto one gid and only the registry's last-write
-      survives on a click; the rest are shadowed and unreachable.
+      cell **and** one `unique_name`. NPC unit gids are derived from
+      `{map, x, y, unique_name}`, so stacked NPCs with distinct unique names each
+      get their own gid and stay independently addressable (a visible guide plus
+      an invisible `waitingroom` controller on the same cell is normal and fine).
+      Only a shared cell *and* unique name collapses onto one gid, shadowing all
+      but the registry's last write on a click — that is the real data problem.
 
   A cell collision is a data problem worth surfacing, but it must **not** take
   the zone server down: one bad NPC (often an auto-imported duplicate) should
@@ -57,8 +60,8 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   defp warn_collisions(entries) do
     for {:cell_collision, {map, x, y}, modules} <- collision_errors(entries) do
       Logger.debug(
-        "NPC cell collision at #{inspect({map, x, y})}: #{inspect(modules)} share one cell; " <>
-          "only one will be reachable, the rest are shadowed."
+        "NPC cell collision at #{inspect({map, x, y})}: #{inspect(modules)} share a cell " <>
+          "and unique_name; only one will be reachable, the rest are shadowed."
       )
     end
 
@@ -68,8 +71,13 @@ defmodule Aesir.ZoneServer.Npc.Verifier do
   @spec collision_errors([entry()]) :: [error()]
   defp collision_errors(entries) do
     entries
-    |> Enum.group_by(fn {_module, p} -> {p.map, p.x, p.y} end, &elem(&1, 0))
-    |> Enum.filter(fn {_cell, modules} -> length(modules) > 1 end)
-    |> Enum.map(fn {cell, modules} -> {:cell_collision, cell, modules} end)
+    |> Enum.group_by(
+      fn {_module, p} -> {p.map, p.x, p.y, p.unique_name} end,
+      &elem(&1, 0)
+    )
+    |> Enum.filter(fn {_key, modules} -> length(modules) > 1 end)
+    |> Enum.map(fn {{map, x, y, _unique_name}, modules} ->
+      {:cell_collision, {map, x, y}, modules}
+    end)
   end
 end

@@ -30,7 +30,6 @@ defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
   alias Aesir.Net.NpcTalk
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -158,7 +157,8 @@ defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
 
   defp talk_to_npc(pid) do
     {x, y} = @npc_pos
-    gid = NpcRegistry.entity_id(%Placement{map: @map, x: x, y: y, sprite: 117})
+    {:ok, {_module, npc_placement}} = NpcRegistry.module_at(@map, x, y)
+    gid = NpcRegistry.entity_id(npc_placement)
     simulate_incoming_message(pid, %NpcTalk{npc_id: gid})
   end
 

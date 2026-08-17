@@ -40,8 +40,10 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   # floor item ids (hex *strings*, never integers), and warp entities
   # (`0x4000_0000` base, see `Npc.Warp.Registry`). `:erlang.phash2/1` yields
   # 0..2^27-1, so NPC gids span `0x5000_0000..0x57FF_FFFF`, within `uint32`
-  # (the `UnitSpawn.gid` width). Two cells hashing to the same gid is the same
-  # collision risk warps accept; the `Verifier` cell-collision check is separate.
+  # (the `UnitSpawn.gid` width). The gid keys on `{map, x, y, unique_name}`, so
+  # NPCs stacked on one cell stay distinct as long as their unique names differ
+  # (they always do — that is what `#name` targeting is for); the `Verifier`
+  # surfaces only the degenerate case of a shared cell *and* unique name.
   @npc_entity_id_base 0x5000_0000
 
   @typedoc "A discovered NPC module paired with one of its placements."
@@ -56,8 +58,14 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   @typedoc "Maps a unique name to every placement registered under it."
   @type by_name :: %{String.t() => [entry()]}
 
-  @typedoc "Maps an event label to every gid whose module declares it in `events/0`."
-  @type by_label :: %{String.t() => [non_neg_integer()]}
+  @typedoc """
+  Maps an event label to every `{module, gid}` whose module declares it in
+  `events/0`. The declaring module is stored alongside the gid so dispatch
+  never has to round-trip the gid back through `by_unit`, which collapses
+  colliding cells (last placement at a `{map, x, y}` wins) and would otherwise
+  route a label to the wrong module.
+  """
+  @type by_label :: %{String.t() => [{module(), non_neg_integer()}]}
 
   @typedoc "A touch-area rect: the owning gid plus its x and y ranges."
   @type touch_rect :: {non_neg_integer(), Range.t(), Range.t()}
@@ -120,13 +128,19 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   @doc """
   Derives a stable synthetic unit id (`gid`) for a placement.
 
-  A pure function of `{map, x, y}` in the reserved NPC range, mirroring
-  `Npc.Warp.Registry.entity_id/1`: the same placement always resolves to the
-  same gid across runs and nodes, with no process or registry write.
+  A pure function of `{map, x, y, unique_name}` in the reserved NPC range: the
+  same placement always resolves to the same gid across runs and nodes, with no
+  process or registry write. Including `unique_name` — rAthena's per-NPC
+  identity, the target of `donpcevent "Name#unique::OnLabel"` — means two NPCs
+  legitimately stacked on the same cell (a visible guide plus an invisible
+  `waitingroom` controller, say) each get their own gid and stay independently
+  addressable, mirroring rAthena's running-counter ids rather than collapsing
+  onto one.
   """
   @spec entity_id(Placement.t()) :: non_neg_integer()
   def entity_id(%Placement{} = placement) do
-    @npc_entity_id_base + :erlang.phash2({placement.map, placement.x, placement.y})
+    @npc_entity_id_base +
+      :erlang.phash2({placement.map, placement.x, placement.y, placement.unique_name})
   end
 
   @doc """
@@ -150,9 +164,31 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   @doc """
   Returns every gid whose module declares `label` in its `events/0`, or `[]`
   if no module does.
+
+  Gids are de-duplicated: when two colliding placements at the same cell both
+  declare `label`, their shared gid appears once. Callers that must dispatch to
+  the specific declaring module (not the one `by_unit` collapsed the cell to)
+  should use `entries_for_label/1` instead.
   """
   @spec gids_for_label(String.t()) :: [non_neg_integer()]
-  def gids_for_label(label), do: Map.get(registry().by_label, label, [])
+  def gids_for_label(label) do
+    registry().by_label
+    |> Map.get(label, [])
+    |> Enum.map(fn {_module, gid} -> gid end)
+    |> Enum.uniq()
+  end
+
+  @doc """
+  Returns every `{module, gid}` whose module declares `label` in its
+  `events/0`, or `[]` if none does.
+
+  Unlike `gids_for_label/1`, this preserves the declaring module for each gid,
+  so event dispatch goes straight to the module that owns the label rather than
+  re-resolving the gid through `by_unit` (which collapses colliding cells to a
+  single module and would misroute the event).
+  """
+  @spec entries_for_label(String.t()) :: [{module(), non_neg_integer()}]
+  def entries_for_label(label), do: Map.get(registry().by_label, label, [])
 
   @doc """
   Returns every distinct event label declared by a registered module's
@@ -234,12 +270,12 @@ defmodule Aesir.ZoneServer.Npc.Registry do
     by_label =
       for {module, placement} <- entries,
           label <- module.events(),
-          do: {label, entity_id(placement)}
+          do: {label, {module, entity_id(placement)}}
 
     by_label =
       by_label
-      |> Enum.group_by(fn {label, _gid} -> label end, fn {_label, gid} -> gid end)
-      |> Map.new(fn {label, gids} -> {label, Enum.uniq(gids)} end)
+      |> Enum.group_by(fn {label, _entry} -> label end, fn {_label, entry} -> entry end)
+      |> Map.new(fn {label, entries} -> {label, Enum.uniq(entries)} end)
 
     touch_rects =
       entries

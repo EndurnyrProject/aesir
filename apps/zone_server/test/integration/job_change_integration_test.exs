@@ -27,7 +27,6 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
 
   @novice_class 0
@@ -136,7 +135,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       on_exit(fn -> end_player_session(session) end)
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 160, y: 160, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 160, 160)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE, text: text}, _}, 1_000
@@ -178,7 +178,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       on_exit(fn -> end_player_session(session) end)
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 164, y: 160, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 164, 160)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
@@ -236,7 +237,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       on_exit(fn -> end_player_session(session) end)
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 161, y: 160, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 161, 160)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE, text: text}, _}, 1_000
@@ -267,7 +269,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       on_exit(fn -> end_player_session(session) end)
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 162, y: 160, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 162, 160)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
@@ -297,7 +300,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       on_exit(fn -> end_player_session(session) end)
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 163, y: 160, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 163, 160)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000
@@ -335,7 +339,8 @@ defmodule Aesir.ZoneServer.Integration.JobChangeIntegrationTest do
       assert StatusStorage.has_status?(:player, character.id, :sc_increaseagi)
       flush_packets()
 
-      gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 162, y: 160, sprite: 58})
+      {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 162, 160)
+      gid = NpcRegistry.entity_id(npc_placement)
       simulate_incoming_message(session.pid, %NpcTalk{npc_id: gid})
 
       assert_receive {:packet_sent, %NpcDialog{expect: :CLOSE}, _}, 1_000

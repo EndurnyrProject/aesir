@@ -61,6 +61,49 @@ defmodule Aesir.ZoneServer.Npc.OnInitTest do
     end
   end
 
+  defmodule CollidingInitNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{
+          map: "prontera",
+          x: 60,
+          y: 60,
+          sprite: 58,
+          name: "CollideInit",
+          unique_name: "CollideRoom"
+        }
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnInit", ctx) do
+      send(:on_init_test_probe, {:initialized, ctx.npc_gid})
+      ctx
+    end
+  end
+
+  defmodule CollidingShadowNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [
+        %{
+          map: "prontera",
+          x: 60,
+          y: 60,
+          sprite: 58,
+          name: "CollideShadow",
+          unique_name: "CollideRoom"
+        }
+      ]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+
+    @impl true
+    def on_event("OnTouch", ctx), do: ctx
+  end
+
   setup do
     Aesir.TestProbe.register!(:on_init_test_probe)
     on_exit(fn -> :persistent_term.erase(Registry) end)
@@ -86,6 +129,25 @@ defmodule Aesir.ZoneServer.Npc.OnInitTest do
     assert :ok = Events.run_on_init()
 
     refute_receive {:initialized, _gid}
+  end
+
+  test "OnInit routes to the declaring module when a colliding cell shadows it in by_unit" do
+    # Both NPCs share {prontera, 60, 60} *and* unique_name "CollideRoom", so they
+    # resolve to one gid; CollidingShadowNpc is reloaded last, so `by_unit`
+    # collapses that gid to it. OnInit must still dispatch to CollidingInitNpc
+    # (the declaring module, via by_label) rather than misrouting to the shadow
+    # and crashing on a FunctionClauseError.
+    Registry.reload([CollidingInitNpc, CollidingShadowNpc])
+
+    {CollidingInitNpc, placement} =
+      Enum.find(Registry.entries(), fn {module, _placement} -> module == CollidingInitNpc end)
+
+    gid = Registry.entity_id(placement)
+
+    log = capture_log(fn -> assert :ok = Events.run_on_init() end)
+
+    assert_receive {:initialized, ^gid}
+    refute log =~ "npc event crashed"
   end
 
   test "a raising OnInit is logged and does not block other NPCs' OnInit" do

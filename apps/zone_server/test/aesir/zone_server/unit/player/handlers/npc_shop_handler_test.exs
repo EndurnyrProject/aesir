@@ -15,7 +15,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandlerTest do
   alias Aesir.Net.NpcShopOpen
   alias Aesir.Net.NpcShopSellItem
   alias Aesir.Net.NpcTalk
-  alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
@@ -101,7 +100,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandlerTest do
 
   test "clicking a scripted NPC still starts the dialog interaction (no shop branch)" do
     NpcRegistry.reload([TalkNpc])
-    gid = NpcRegistry.entity_id(%Placement{map: "prontera", x: 200, y: 200, sprite: 58})
+    {:ok, {_module, npc_placement}} = NpcRegistry.module_at("prontera", 200, 200)
+    gid = NpcRegistry.entity_id(npc_placement)
     stub(Shops, :all, fn -> %{} end)
 
     {:noreply, new_state} = PacketHandler.handle_message(%NpcTalk{npc_id: gid}, state(200, 200))
