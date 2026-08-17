@@ -134,9 +134,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
 
   @doc """
   Places a marker on the invoking player's minimap (rAthena `viewpoint`,
-  packet `ZC_COMPASS`). `type` is the action (`0` remove / `1` display /
-  `2` display and clear other markers), `x`/`y` the cell, `id` the marker
-  slot, and `color` a `0xRRGGBB` value.
+  packet `ZC_COMPASS`). `type` is the action (`0` display the mark for 15
+  seconds / `1` display the mark until dead or teleported / `2` remove the
+  mark), `x`/`y` the cell, `id` the marker slot, and `color` a `0xRRGGBB`
+  value.
 
   Sent only to the invoking player, so a detached ctx (no player to send to)
   is a silent no-op rather than a halt — a missing marker must never abort the

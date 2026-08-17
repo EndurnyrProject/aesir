@@ -607,8 +607,6 @@ message SpecialEffect {
   uint32 effect_id = 2;      // rAthena EF_* id
 }
 
-// Server -> client, a minimap/compass marker (replaces RO ZC_COMPASS 0x0144).
-// Sent only to the invoking player (script `viewpoint`).
 // Server -> client, a per-player quest-icon bubble shown over an NPC, with an
 // optional minimap mark (rAthena `questinfo` buildin, replaces
 // ZC_QUEST_NOTIFY_EFFECT 0x446). Sent only to the player who meets the NPC's
@@ -621,9 +619,11 @@ message QuestInfoIcon {
   uint32 color = 5;    // e_questinfo_markcolor (QMARK_*): 0 none / 1 yellow / 2 green / 3 purple
 }
 
+// Server -> client, a minimap/compass marker (replaces RO ZC_COMPASS 0x0144).
+// Sent only to the invoking player (script `viewpoint`).
 message Viewpoint {
   uint32 npc_id = 1;   // the NPC that owns the marker (rAthena st->oid)
-  uint32 type = 2;     // action: 0 remove / 1 display / 2 display+remove-others
+  uint32 type = 2;     // action (rAthena ZC_COMPASS): 0 display for 15s / 1 display until dead or teleported / 2 remove mark
   uint32 x = 3;
   uint32 y = 4;
   uint32 id = 5;       // marker slot / point number
