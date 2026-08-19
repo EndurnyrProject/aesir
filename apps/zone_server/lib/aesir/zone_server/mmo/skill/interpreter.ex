@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Npc.SkillCaster
@@ -980,12 +981,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   # without a `Targeting.validate_enemy` call: `unit_type_of/1` only reports
   # `:skill_unit` for a cell the registry already confirmed is targetable, so
   # it is a valid enemy target by construction.
-  defp check_default_target(_game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
+  defp check_default_target(game_state, {:unit, target_id}, %{target_type: :target_enemy}) do
     with :ok <- ensure_living_target(target_id) do
       case unit_type_of(target_id) do
         :mob -> :ok
         :skill_unit -> :ok
-        :player -> {:error, :invalid_target}
+        :player -> validate_enemy_player(game_state, target_id)
         :not_found -> :ok
       end
     end
@@ -1118,6 +1119,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
       {:error, _reason} ->
         :ok
+    end
+  end
+
+  # A target that vanishes between position resolution and the typed re-resolution
+  # rejects like a non-enemy instead of crashing.
+  defp validate_enemy_player(game_state, target_id) do
+    case TargetResolver.resolve(:player, target_id) do
+      {:ok, _pid, target_state, :player} -> Targeting.validate_enemy(game_state, target_state)
+      _ -> {:error, :invalid_target}
     end
   end
 

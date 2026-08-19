@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.ItemManagement
@@ -228,6 +229,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     stub(TargetResolver, :resolve, fn ^target_id ->
       {:ok, self(), struct(MobState, instance_id: target_id, hp: 1, max_hp: 1), :mob}
     end)
+  end
+
+  defp register_player(id, attrs \\ %{}) do
+    state =
+      Map.merge(
+        %PlayerState{
+          character_id: id,
+          map_name: "prontera",
+          x: 14,
+          y: 10,
+          party_id: 0,
+          guild_id: 0,
+          action_state: :idle,
+          stats: %{current_state: %{hp: 100}}
+        },
+        attrs
+      )
+
+    :ok = UnitRegistry.register_unit(:player, id, PlayerState, state, self())
+    :ok = SpatialIndex.add_unit(:player, id, 14, 10, "prontera")
+    state
   end
 
   defp resurrection_game_state do
@@ -1097,6 +1119,60 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       gs = game_state(100, %{6 => 1})
       assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 9999})
+    end
+  end
+
+  describe "versus player targets for :target_enemy" do
+    setup do
+      stub(Catalog, :by_id, fn 6 -> {:ok, enemy_definition(9)} end)
+      :ok
+    end
+
+    test "accepts a hostile player when the runtime :pvp flag is set" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :pvp) end)
+
+      register_player(7001)
+      stub(StatusInterpreter, :apply_status, fn _type, _id, _status, _params -> :ok end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:ok, _} = Interpreter.cast(gs, 6, 1, {:unit, 7001})
+    end
+
+    test "rejects a player on a non-versus map" do
+      register_player(7001)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 7001})
+    end
+
+    test "rejects a party-protected player on a :pvp map" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :pvp) end)
+
+      register_player(7001, %{party_id: 10})
+
+      gs = %{game_state(100, %{6 => 1}) | party_id: 10}
+      assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 7001})
+    end
+
+    test "rejects a guild-protected player on a :pvp map" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      on_exit(fn -> :ok = MapFlags.clear_runtime("prontera", :pvp) end)
+
+      register_player(7001, %{guild_id: 20})
+
+      gs = %{game_state(100, %{6 => 1}) | guild_id: 20}
+      assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 7001})
+    end
+
+    test "fails cleanly when the player vanishes before typed re-resolution" do
+      stub(Combat, :resolve_target_position, fn 7001 ->
+        {:ok, :player, {14, 10, "prontera"}}
+      end)
+
+      gs = game_state(100, %{6 => 1})
+      assert {:error, :invalid_target} = Interpreter.cast(gs, 6, 1, {:unit, 7001})
     end
   end
 
