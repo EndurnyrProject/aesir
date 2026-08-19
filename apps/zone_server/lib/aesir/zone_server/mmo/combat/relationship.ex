@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   @moduledoc """
-  Pure PvE relationship decisions over typed combatants and unit references.
+  Pure relationship decisions over typed combatants and unit references, with
+  an explicit versus context for player-versus-player hostility.
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -37,17 +38,41 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
       else: raise(ArgumentError, "invalid reward root")
   end
 
+  @typedoc "Versus context for player-vs-player hostility."
+  @type versus :: :off | :gvg | {:pvp, noparty :: boolean(), noguild :: boolean()}
+
   @doc "Returns whether two combatants are enemies on a PvE map."
   @spec enemy?(Combatant.t(), Combatant.t()) :: boolean()
   def enemy?(%Combatant{} = attacker, %Combatant{} = target) do
+    enemy?(attacker, target, :off)
+  end
+
+  @doc """
+  Returns whether two combatants are enemies under an explicit versus context.
+
+  `:off` reproduces PvE behavior: player sides are never enemies. Under `:gvg`
+  player sides are enemies unless they share a nonzero party or guild. Under
+  `{:pvp, noparty, noguild}` party/guild protection applies unless the matching
+  override is set. Mob and homunculus-vs-mob branches are identical across all
+  contexts.
+  """
+  @spec enemy?(Combatant.t(), Combatant.t(), versus()) :: boolean()
+  def enemy?(%Combatant{} = attacker, %Combatant{} = target, versus) do
     attacker_root = social_root(attacker)
     target_root = social_root(target)
 
     cond do
-      Ref.equal?(attacker_root, target_root) -> false
-      player_side?(attacker_root) and player_side?(target_root) -> false
-      player_side?(attacker_root) or player_side?(target_root) -> true
-      true -> false
+      Ref.equal?(attacker_root, target_root) ->
+        false
+
+      player_side?(attacker_root) and player_side?(target_root) ->
+        versus_enemy?(attacker, target, versus)
+
+      player_side?(attacker_root) or player_side?(target_root) ->
+        true
+
+      true ->
+        false
     end
   end
 
@@ -73,4 +98,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
 
   defp player_side?({:player, _unit_id}), do: true
   defp player_side?(_root), do: false
+
+  defp versus_enemy?(_attacker, _target, :off), do: false
+
+  defp versus_enemy?(attacker, target, :gvg),
+    do: not (same_party?(attacker, target) or same_guild?(attacker, target))
+
+  defp versus_enemy?(attacker, target, {:pvp, noparty, noguild}) do
+    party_protected? = same_party?(attacker, target) and not noparty
+    guild_protected? = same_guild?(attacker, target) and not noguild
+    not (party_protected? or guild_protected?)
+  end
+
+  defp same_party?(%{party_id: party_id}, %{party_id: party_id}) when party_id > 0, do: true
+  defp same_party?(_attacker, _target), do: false
+
+  defp same_guild?(%{guild_id: guild_id}, %{guild_id: guild_id}) when guild_id > 0, do: true
+  defp same_guild?(_attacker, _target), do: false
 end
