@@ -11,8 +11,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   Only `@flags` are accepted. The WoE-consumed subset (`gvg`, `gvg_castle`,
   `nosave`, `noteleport`, `nowarp`, `noreturn`) drives behavior this phase;
-  `pvp` is stored but unconsumed, and any other atom is rejected so typos
-  stay inert.
+  `pvp`, `pvp_noparty`, and `pvp_noguild` are stored but unconsumed, and
+  any other atom is rejected so typos stay inert.
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -22,10 +22,29 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   @pt_key __MODULE__
 
   @typedoc "A map flag. Only the WoE set is behaviorally meaningful."
-  @type flag :: :gvg | :gvg_castle | :nosave | :noteleport | :nowarp | :noreturn | :pvp
+  @type flag ::
+          :gvg
+          | :gvg_castle
+          | :nosave
+          | :noteleport
+          | :nowarp
+          | :noreturn
+          | :pvp
+          | :pvp_noparty
+          | :pvp_noguild
   @type map_name :: String.t()
 
-  @flags [:gvg, :gvg_castle, :nosave, :noteleport, :nowarp, :noreturn, :pvp]
+  @flags [
+    :gvg,
+    :gvg_castle,
+    :nosave,
+    :noteleport,
+    :nowarp,
+    :noreturn,
+    :pvp,
+    :pvp_noparty,
+    :pvp_noguild
+  ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 
   @doc """

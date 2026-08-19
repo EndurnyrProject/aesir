@@ -67,12 +67,24 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
     end
 
     test "unknown flags are ignored: set_runtime/clear_runtime are no-ops" do
-      assert :ok = MapFlags.set_runtime("aldeg_cas01", :gvg_castel, true)
-      refute MapFlags.get("aldeg_cas01", :gvg_castel)
+      assert :ok = MapFlags.set_runtime("aldeg_cas01", :flying, true)
+      refute MapFlags.get("aldeg_cas01", :flying)
       assert MapFlags.get("aldeg_cas01", :gvg_castle) == true
 
-      assert :ok = MapFlags.clear_runtime("aldeg_cas01", :gvg_castel)
-      refute MapFlags.get("aldeg_cas01", :gvg_castel)
+      assert :ok = MapFlags.clear_runtime("aldeg_cas01", :flying)
+      refute MapFlags.get("aldeg_cas01", :flying)
+    end
+
+    test "pvp_noparty/pvp_noguild roundtrip through set_runtime/get/clear_runtime to static false" do
+      for flag <- [:pvp_noparty, :pvp_noguild] do
+        refute MapFlags.get("prontera", flag)
+
+        :ok = MapFlags.set_runtime("prontera", flag, true)
+        assert MapFlags.get("prontera", flag) == true
+
+        :ok = MapFlags.clear_runtime("prontera", flag)
+        refute MapFlags.get("prontera", flag)
+      end
     end
   end
 
