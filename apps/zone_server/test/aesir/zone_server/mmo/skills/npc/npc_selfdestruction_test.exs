@@ -103,7 +103,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestructionTest do
       {:ok, player_pid, %{character_id: 21}, :player}
     end)
 
-    stub(DamageApplication, :apply_unit_damage, fn :player, ^player_pid, 21, 500, _hit_info, 10 ->
+    stub(DamageApplication, :apply_unit_damage, fn :player,
+                                                   ^player_pid,
+                                                   21,
+                                                   500,
+                                                   _hit_info,
+                                                   {:mob, 10} ->
       send(test_pid, :damaged_player)
       :ok
     end)

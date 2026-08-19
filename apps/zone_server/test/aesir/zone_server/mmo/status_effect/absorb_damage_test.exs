@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       target_pid = setup_player_mock(target_id)
       :ok = Interpreter.apply_status(:player, target_id, :sc_aeterna)
 
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 300, 99 -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 300, {:player, 99} -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
@@ -124,7 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       :ok =
         Interpreter.apply_status(:player, target_id, :sc_kyrie, val2: 1_000, val3: 5)
 
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, 99 -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99} -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       :ok = Interpreter.apply_status(:player, target_id, :sc_energycoat)
 
       expect(PlayerSession, :consume_sp, fn ^target_pid, 3 -> :ok end)
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 105, 99 -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 105, {:player, 99} -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       start_safetywall(%{hits_remaining: 6, shield_hp: 9_500})
 
       :ok = Interpreter.apply_status(:player, target_id, :sc_safetywall, val2: 42)
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, 99 -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 99} -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 

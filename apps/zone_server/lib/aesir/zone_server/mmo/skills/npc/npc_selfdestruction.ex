@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
         target_id,
         caster.hp,
         hit_info,
-        source_id(caster)
+        damage_source(caster, unit_type)
       )
 
       Combat.knockback(unit_type, target_id, caster.x, caster.y, definition.knockback)
@@ -110,6 +110,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
         :ok
     end
   end
+
+  defp damage_source(%MobState{owner_player_id: nil, instance_id: instance_id}, :player),
+    do: {:mob, instance_id}
+
+  defp damage_source(%MobState{owner_player_id: owner_player_id}, :player),
+    do: {:player, owner_player_id}
+
+  defp damage_source(caster, _target_type), do: source_id(caster)
 
   defp source_id(%MobState{owner_player_id: nil, instance_id: instance_id}), do: instance_id
   defp source_id(%MobState{owner_player_id: owner_player_id}), do: owner_player_id

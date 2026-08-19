@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 75, 20 ->
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 75, {:player, 20} ->
       send(test_pid, :delivered)
       :ok
     end)
@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:player, 20} -> :ok end)
 
     {settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -140,7 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 150, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 150, {:player, 20} -> :ok end)
 
     {_settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -156,8 +156,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     refute_received {:after_damage_taken, _hit_info}
   end
 
-  test "dispatches post-damage for positive ranged magic with a typed attacker" do
-    target_id = 18
+  test "dispatches post-damage for positive ranged magic with a typed mob attacker" do
+    # The mob instance id equals the victim character id: the delivery must
+    # carry the exact {:mob, 20} ref, proving no char/mob id-space collision.
+    target_id = 20
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     stub_unit_info(target_id)
     Registry.register_module(AfterDamage)
@@ -167,7 +169,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, {:mob, 20} -> :ok end)
 
     assert :ok =
              DamageApplication.apply_unit_damage(
@@ -193,7 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
     target_pid = spawn(fn -> Process.sleep(:infinity) end)
     stub_unit_info(target_id)
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 40, {:player, 20} -> :ok end)
     expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
 
     assert :ok =
@@ -224,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 0, {:mob, 20} -> :ok end)
 
     {_settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -318,7 +320,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 50, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 50, {:player, 20} -> :ok end)
 
     {settled, :ok} =
       DamageApplication.apply_weapon_swing(
@@ -346,7 +348,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
         state: %{test_pid: self()}
       )
 
-    expect(PlayerSession, :apply_damage, fn ^target_pid, 2, 20 -> :ok end)
+    expect(PlayerSession, :apply_damage, fn ^target_pid, 2, {:player, 20} -> :ok end)
 
     {settled, :ok} =
       DamageApplication.apply_weapon_swing(

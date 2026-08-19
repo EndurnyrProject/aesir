@@ -246,7 +246,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         damage
       end)
 
-      stub(PlayerSession, :apply_damage, fn ^target_player, damage, @caster_id ->
+      stub(PlayerSession, :apply_damage, fn ^target_player, damage, {:mob, @caster_id} ->
         send(test_pid, {:damage, damage})
         :ok
       end)

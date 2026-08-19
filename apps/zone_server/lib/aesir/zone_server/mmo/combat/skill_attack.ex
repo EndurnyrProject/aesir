@@ -987,6 +987,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     end
   end
 
+  defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, :player),
+    do: {unit_type, unit_id}
+
   defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, target_type)
        when unit_type == :homunculus or target_type == :homunculus,
        do: {unit_type, unit_id}

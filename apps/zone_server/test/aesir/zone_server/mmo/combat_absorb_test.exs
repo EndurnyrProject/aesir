@@ -221,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatAbsorbTest do
 
       :ok = StatusInterpreter.apply_status(:player, @player_id, :sc_kyrie, val2: 10_000, val3: 2)
 
-      stub(PlayerSession, :apply_damage, fn ^target_pid, damage, _attacker_id ->
+      stub(PlayerSession, :apply_damage, fn ^target_pid, damage, {:mob, @caster_id} ->
         send(test_pid, {:damage_applied, damage})
         :ok
       end)

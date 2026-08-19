@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Aesir.ZoneServer.Unit.Vending
@@ -92,6 +93,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @doc """
   Applies combat damage to this player, updating HP and handling death.
   """
+  @spec apply_damage(pid(), integer(), Ref.t() | integer() | nil) :: :ok
   def apply_damage(pid, damage, attacker_id \\ nil) do
     GenServer.cast(pid, {:unit, {:apply_damage, damage, attacker_id}})
   end

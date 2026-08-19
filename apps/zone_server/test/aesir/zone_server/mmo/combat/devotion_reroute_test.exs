@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
       assert settled.raw_total == 150
       assert settled.primary.damage == 0
       assert settled.secondary.damage == 0
-      assert_receive {:crusader, 150, @attacker_id}
+      assert_receive {:crusader, 150, {:player, @attacker_id}}
       refute_receive {:crusader, _, _}
       refute_receive {:devotee, _, _}
     end
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
       assert settled.secondary.damage == 50
       assert StatusStorage.get_status(:player, @devotee_id, :sc_devotion) == nil
       assert StatusStorage.get_status(:player, @crusader_id, :sc_devoted_by) == nil
-      assert_receive {:devotee, 150, @attacker_id}
+      assert_receive {:devotee, 150, {:player, @attacker_id}}
       refute_receive {:devotee, _, _}
       refute_receive {:crusader, _, _}
     end
@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
       assert final == 0
       assert hit_info.pre_delivery_prepared? == true
 
-      assert_receive {:crusader, 100, @attacker_id}
+      assert_receive {:crusader, 100, {:player, @attacker_id}}
 
       DamageApplication.apply_unit_damage(
         :player,
@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
         @attacker_id
       )
 
-      assert_receive {:devotee, 0, @attacker_id}
+      assert_receive {:devotee, 0, {:player, @attacker_id}}
       refute_receive {:crusader, _, _}
     end
 
@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DevotionRerouteTest do
         )
 
       assert final == 0
-      assert_receive {:crusader, 200, @attacker_id}
+      assert_receive {:crusader, 200, {:player, @attacker_id}}
     end
 
     test "does not reroute self-damage (attacker equals target)" do

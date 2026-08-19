@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       assert_receive {:attacker, 50, nil}
     end
 
@@ -139,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
 
@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
 
@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
 
@@ -193,7 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
 
@@ -217,7 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
                  @attacker_id
                )
 
-      assert_receive {:unit, 100, @attacker_id}
+      assert_receive {:unit, 100, {:player, @attacker_id}}
       assert_receive {:unit, 50, nil}
     end
 
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AfterDamageTakenTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
   end

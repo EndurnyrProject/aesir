@@ -499,12 +499,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
          attacker
        )
        when is_integer(skill_id) and is_integer(skill_level) do
-    PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
+    PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker))
     PlayerSession.record_skill_hit(target_pid, skill_id, skill_level)
   end
 
   defp deliver_unit_damage(:player, target_pid, _target_id, damage, _hit_info, attacker) do
-    PlayerSession.apply_damage(target_pid, damage, attacker_id(attacker))
+    PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker))
   end
 
   # Classifies a hit for the on-kill HP/SP gain equipment bonuses: a physical

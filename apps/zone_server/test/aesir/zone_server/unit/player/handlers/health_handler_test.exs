@@ -173,6 +173,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
       refute_receive {:unit_lifecycle, ^event}
     end
 
+    test "normalizes a legacy integer attacker id to a typed player ref for death" do
+      previous_level = :logger.get_primary_config().level
+      :ok = :logger.set_primary_config(:level, :info)
+
+      log =
+        try do
+          ExUnit.CaptureLog.capture_log(fn ->
+            HealthHandler.apply_damage(150, 2001, build_state(100, :idle))
+          end)
+        after
+          :logger.set_primary_config(:level, previous_level)
+        end
+
+      assert log =~ "killed by {:player, 2001}"
+    end
+
     test "death clears the pending skill text timer and a stale timeout preserves a later prompt" do
       timer_ref = Process.send_after(self(), {:skill_text_input_timeout, 41}, 60_000)
 

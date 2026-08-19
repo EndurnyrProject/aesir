@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       assert_receive {:attacker, 13, nil}
     end
 
@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       assert_receive {:attacker, 40, nil}
     end
 
@@ -272,7 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
 
@@ -292,7 +292,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       refute_receive {:attacker, _, _}
     end
 
@@ -310,7 +310,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 0, @attacker_id}
+      assert_receive {:victim, 0, {:player, @attacker_id}}
     end
 
     test "a redirected hit plays no effect" do
@@ -327,7 +327,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
     end
 
     test "reflected damage is not itself reflected when both sides carry the status" do
@@ -353,7 +353,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshieldTest do
         @attacker_id
       )
 
-      assert_receive {:victim, 100, @attacker_id}
+      assert_receive {:victim, 100, {:player, @attacker_id}}
       assert_receive {:attacker, 25, nil}
       refute_receive {:victim, _, _}
     end

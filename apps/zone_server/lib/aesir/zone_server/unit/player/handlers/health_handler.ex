@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
+  alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -69,7 +70,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   HP and triggers death handling when HP reaches 0. Damage on an already-dead
   player (or non-positive damage) is ignored.
   """
-  @spec apply_damage(integer(), integer() | nil, SessionState.t()) :: {:noreply, SessionState.t()}
+  @spec apply_damage(integer(), Ref.t() | integer() | nil, SessionState.t()) ::
+          {:noreply, SessionState.t()}
   def apply_damage(_damage, _attacker_id, %{game_state: %{action_state: :dead}} = state) do
     {:noreply, state}
   end
@@ -96,13 +98,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     })
 
     if new_hp == 0 do
-      handle_death(attacker_id, state)
+      handle_death(normalize_attacker(attacker_id), state)
     else
       {:noreply, SkillHandler.interrupt_cast_on_damage(state)}
     end
   end
 
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
+
+  # Legacy callers (mostly tests) hand death attribution a bare character id;
+  # production paths send typed refs or nil. Normalize at this boundary so
+  # handle_death/2 always sees a typed ref or nil.
+  defp normalize_attacker({_unit_type, _unit_id} = ref), do: ref
+  defp normalize_attacker(nil), do: nil
+  defp normalize_attacker(attacker_id) when is_integer(attacker_id), do: {:player, attacker_id}
 
   @doc """
   Records a plagiarism copy when a copyable skill hits this player, pushing a

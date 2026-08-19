@@ -831,7 +831,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 3001) == :ok
       end)
 
-      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}}
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}}}}}
       assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
       refute_received {:relayed, {:"$gen_cast", {:inventory, {:break_equip, _}}}}
     end
@@ -857,7 +857,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 3001) == :ok
       end)
 
-      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}}
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}}}}}
       assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
     end
 
@@ -881,7 +881,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 3001) == :ok
       end)
 
-      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}}
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}}}}}
       assert_receive {:relayed, {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}}
     end
   end
@@ -951,7 +951,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       # The primary swing lands on the mob; the equipment splash reaches the
       # player exactly once.
       assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
-      assert_receive {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}
+      assert_receive {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}}}}
       refute_received {:"$gen_cast", {:unit, {:apply_damage, _, _}}}
     end
   end
@@ -1388,7 +1388,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         3
       end)
 
-      expect(PlayerSession, :apply_damage, fn _pid, damage, 3001 ->
+      expect(PlayerSession, :apply_damage, fn _pid, damage, {:mob, 3001} ->
         send(test_pid, {:applied, damage})
         :ok
       end)
