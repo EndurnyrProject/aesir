@@ -138,4 +138,29 @@ defmodule Aesir.ZoneServer.Gm.DispatcherTest do
 
     assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
   end
+
+  test "routes @PVPON case-insensitively to PvpOn; a bogus arg yields the usage reply" do
+    ctx = ctx_for(seed_account(99))
+
+    Dispatcher.dispatch("@PVPON bogus", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "Usage: @pvpon [noparty] [noguild]"} =
+             receive_chat_message()
+  end
+
+  test "denies @pvpon below GM level 99 without invoking PvpOn" do
+    ctx = ctx_for(seed_account(10))
+
+    Dispatcher.dispatch("@pvpon noparty", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
+  end
+
+  test "denies @pvpoff below GM level 99 without invoking PvpOff" do
+    ctx = ctx_for(seed_account(10))
+
+    Dispatcher.dispatch("@pvpoff", ctx)
+
+    assert %ChatMessage{gid: 1000, message: "Insufficient permission"} = receive_chat_message()
+  end
 end

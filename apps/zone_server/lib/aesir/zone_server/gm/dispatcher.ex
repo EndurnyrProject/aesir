@@ -24,7 +24,9 @@ defmodule Aesir.ZoneServer.Gm.Dispatcher do
     "resetstat" => Aesir.ZoneServer.Gm.Commands.ResetStat,
     "broadcast" => Aesir.ZoneServer.Gm.Commands.Broadcast,
     "repairall" => Aesir.ZoneServer.Gm.Commands.RepairAll,
-    "mount" => Aesir.ZoneServer.Gm.Commands.Mount
+    "mount" => Aesir.ZoneServer.Gm.Commands.Mount,
+    "pvpon" => Aesir.ZoneServer.Gm.Commands.PvpOn,
+    "pvpoff" => Aesir.ZoneServer.Gm.Commands.PvpOff
   }
 
   @spec dispatch(String.t(), Aesir.ZoneServer.Gm.Command.ctx()) :: :ok
