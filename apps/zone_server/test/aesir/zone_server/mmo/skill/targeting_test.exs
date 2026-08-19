@@ -64,7 +64,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.TargetingTest do
     :ok = UnitRegistry.register_unit(:player, owner_id, PlayerState, state, self())
   end
 
-  test "versus maps are disabled until map modes exist" do
+  test "a binary map with :pvp set is a versus map" do
+    :ok = MapFlags.set_runtime("prontera", :pvp, true)
+    assert Targeting.versus_map?("prontera")
+  end
+
+  test "a binary map with :gvg set is a versus map" do
+    :ok = MapFlags.set_runtime("prontera", :gvg, true)
+    assert Targeting.versus_map?("prontera")
+  end
+
+  test "a binary map with no versus flag set is not a versus map" do
+    refute Targeting.versus_map?("prontera")
+  end
+
+  test "a non-binary input is never a versus map" do
     refute Targeting.versus_map?(:prontera)
   end
 

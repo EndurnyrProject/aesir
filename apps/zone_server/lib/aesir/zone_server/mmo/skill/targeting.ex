@@ -63,7 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
 
   @doc "Returns whether `map` is a versus map."
   @spec versus_map?(term()) :: boolean()
-  def versus_map?(_map), do: false
+  def versus_map?(map_name) when is_binary(map_name),
+    do: MapFlags.get(map_name, :pvp) or MapFlags.get(map_name, :gvg)
+
+  def versus_map?(_map_name), do: false
 
   defp versus_context(map_name) when is_binary(map_name) do
     cond do

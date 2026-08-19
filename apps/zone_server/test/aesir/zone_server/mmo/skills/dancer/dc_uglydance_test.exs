@@ -4,11 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
-  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
 
   setup do
     Catalog.reload()
+    MapFlags.reload()
 
     stub(ItemManagement, :get_item_by_id, fn @whip_id ->
       {:ok,
@@ -59,15 +60,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
     assert Catalog.performance?(325)
   end
 
-  test "is rejected on every map until the versus-map seam is enabled" do
+  test "is rejected on a map without a versus flag" do
     assert {:error, :versus_map_only} =
              DcUglydance.validate(player_state(), :self, 1, DcUglydance.definition())
   end
 
   test "drains every enemy in radius and remembers the completed performance on versus maps" do
-    Mimic.copy(Targeting)
+    :ok = MapFlags.set_runtime("prontera", :pvp, true)
     Mimic.copy(Resource)
-    stub(Targeting, :versus_map?, fn "prontera" -> true end)
+
+    assert :ok = DcUglydance.validate(player_state(), :self, 1, DcUglydance.definition())
 
     for {amount, level} <- Enum.with_index([12, 14, 16, 18, 20], 1) do
       caster = player_state()
