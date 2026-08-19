@@ -1,22 +1,36 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @moduledoc """
-  Shared PvE target relations for skills and combat.
+  Shared target relations for skills and combat.
 
   Existing callers may keep passing player and mob state maps. New relationship
   callers use typed combatants and unit references.
+
+  Versus hostility is resolved in `validate_enemy/2`; a homunculus whose owner
+  has vanished from the unit registry is treated as unaffiliated (party/guild
+  0) for that single check.
   """
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc "Validates that `target` is a living enemy of `attacker`."
   @spec validate_enemy(map(), map()) :: :ok | {:error, :invalid_target | :target_dead}
   def validate_enemy(attacker, target) do
     if alive?(target) do
-      if enemy?(relationship_combatant(attacker), relationship_combatant(target)),
-        do: :ok,
-        else: {:error, :invalid_target}
+      attacker_combatant = relationship_combatant(attacker)
+      target_combatant = relationship_combatant(target)
+      versus = versus_context(target_combatant.map_name)
+
+      if Relationship.enemy?(
+           enrich_homunculus(attacker_combatant, versus),
+           enrich_homunculus(target_combatant, versus),
+           versus
+         ),
+         do: :ok,
+         else: {:error, :invalid_target}
     else
       {:error, :target_dead}
     end
@@ -51,18 +65,55 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   @spec versus_map?(term()) :: boolean()
   def versus_map?(_map), do: false
 
+  defp versus_context(map_name) when is_binary(map_name) do
+    cond do
+      MapFlags.get(map_name, :gvg) ->
+        :gvg
+
+      MapFlags.get(map_name, :pvp) ->
+        {:pvp, MapFlags.get(map_name, :pvp_noparty), MapFlags.get(map_name, :pvp_noguild)}
+
+      true ->
+        :off
+    end
+  end
+
+  defp versus_context(_map_name), do: :off
+
   defp relationship_combatant(unit) do
     attrs = %{
       unit_id: unit_id(unit),
       unit_type: unit_type(unit),
       party_id: Map.get(unit, :party_id, 0),
-      guild_id: Map.get(unit, :guild_id, 0)
+      guild_id: Map.get(unit, :guild_id, 0),
+      map_name: Map.get(unit, :map_name)
     }
 
     unit
     |> relationship_roots(attrs)
     |> Combatant.new!()
   end
+
+  defp enrich_homunculus(combatant, versus)
+
+  defp enrich_homunculus(
+         %Combatant{unit_type: :homunculus, social_root: {:player, owner_id}} = combatant,
+         versus
+       )
+       when versus != :off do
+    {party_id, guild_id} =
+      case UnitRegistry.get_unit(:player, owner_id) do
+        {:ok, {_module, owner_state, _pid}} ->
+          {Map.get(owner_state, :party_id, 0), Map.get(owner_state, :guild_id, 0)}
+
+        {:error, :not_found} ->
+          {0, 0}
+      end
+
+    %{combatant | party_id: party_id, guild_id: guild_id}
+  end
+
+  defp enrich_homunculus(combatant, _versus), do: combatant
 
   defp relationship_roots(%{owner_character_id: owner_id}, attrs) do
     Map.merge(attrs, %{social_root: {:player, owner_id}, reward_root: {:player, owner_id}})

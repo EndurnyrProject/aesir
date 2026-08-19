@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
@@ -209,6 +210,62 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
           StatusStorage.has_status?(:player, master_id, :sc_battleorder)
         end)
       end)
+    end
+  end
+
+  describe "versus hostility" do
+    test ":gvg runtime flag makes differently-guilded players enemies and same-guild players allies" do
+      start_per_test_map(castle().map)
+
+      {attacker_on_prontera, guild_id} = create_guild("GvgGuildA", "GvgAttacker")
+
+      attacker = relocate_character(attacker_on_prontera, castle().map, castle().respawn)
+
+      {rx, ry} = castle().respawn
+
+      same_character =
+        character_fixture("GvgSame", %{
+          last_map: castle().map,
+          last_x: rx,
+          last_y: ry
+        })
+
+      {:ok, _guild_state} = GuildManager.add_member(guild_id, same_character)
+
+      same_character = Repo.get!(Character, same_character.id)
+
+      same =
+        start_player_session(
+          character: same_character,
+          map_name: castle().map,
+          position: {rx, ry}
+        )
+
+      {different_on_prontera, different_guild_id} = create_guild("GvgGuildB", "GvgDifferent")
+
+      different = relocate_character(different_on_prontera, castle().map, castle().respawn)
+
+      assert guild_id > 0
+      assert different_guild_id > 0
+      assert guild_id != different_guild_id
+
+      assert get_player_state(attacker.pid).guild_id == guild_id
+      assert get_player_state(same.pid).guild_id == guild_id
+      assert get_player_state(different.pid).guild_id == different_guild_id
+
+      :ok = MapFlags.set_runtime(castle().map, :gvg, true)
+
+      assert :ok =
+               Targeting.validate_enemy(
+                 get_player_state(attacker.pid),
+                 get_player_state(different.pid)
+               )
+
+      assert {:error, :invalid_target} =
+               Targeting.validate_enemy(
+                 get_player_state(attacker.pid),
+                 get_player_state(same.pid)
+               )
     end
   end
 
