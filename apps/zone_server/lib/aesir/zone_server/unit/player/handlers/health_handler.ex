@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
+  alias Phoenix.PubSub
 
   @plagiarism_skill_id 225
 
@@ -423,7 +424,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     state = SkillHandler.cancel_deferred(state)
     state = SkillTextInputHandler.clear(state)
     state = SpiritSphereHandler.clear(state)
-    state = apply_death_penalty(state)
+    state = apply_death_rules(death_context(game_state.map_name), attacker_id, state)
     had_statuses? = StatusStorage.get_unit_statuses(:player, game_state.character_id) != []
 
     inactive_state =
@@ -451,6 +452,70 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     state = HomunculusCommandHandler.owner_died(state)
     {:noreply, SkillMenuHandler.clear(state)}
   end
+
+  defp death_context(map_name) do
+    cond do
+      MapFlags.get(map_name, :gvg) -> :gvg
+      MapFlags.get(map_name, :pvp) -> :pvp
+      true -> :normal
+    end
+  end
+
+  defp apply_death_rules(:gvg, _attacker, state), do: state
+
+  defp apply_death_rules(:normal, _attacker, state), do: apply_death_penalty(state)
+
+  defp apply_death_rules(:pvp, attacker, state) do
+    state = apply_death_penalty(state)
+    {state, loss_accepted?} = record_pvp_loss(state, attacker)
+
+    if loss_accepted? do
+      credit_player_killer(attacker)
+    end
+
+    state
+  end
+
+  defp record_pvp_loss(%{game_state: game_state} = state, attacker) do
+    pvp_point = game_state.pvp_point - 5
+    pvp_lost = game_state.pvp_lost + 1
+
+    # Self-credit is queued after this write. Complete the loss first so its
+    # absolute -5 value cannot race and overwrite the later net -4 value.
+    async? = attacker != {:player, game_state.character_id}
+
+    game_state = %{game_state | pvp_point: pvp_point, pvp_lost: pvp_lost}
+    state = StatsManager.update_game_state(state, game_state)
+
+    result =
+      CharacterPersistence.update_character(
+        game_state.character_id,
+        %{pvp_point: pvp_point, pvp_lost: pvp_lost},
+        async: async?
+      )
+
+    case result do
+      {:error, reason} ->
+        Logger.error(
+          "Failed to persist PvP loss for character #{game_state.character_id}: #{inspect(reason)}"
+        )
+
+        {state, false}
+
+      _accepted ->
+        {state, true}
+    end
+  end
+
+  defp credit_player_killer({:player, killer_id}) do
+    PubSub.broadcast(
+      Aesir.PubSub,
+      "player:#{killer_id}",
+      {:combat, {:pvp_kill_credit, killer_id}}
+    )
+  end
+
+  defp credit_player_killer(_attacker), do: :ok
 
   defp cancel_cast_timer(%PlayerState{casting: %{timer_ref: timer_ref}} = game_state)
        when is_reference(timer_ref) do

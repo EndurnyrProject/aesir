@@ -1412,6 +1412,30 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
   end
 
+  describe "handle_info({:combat, {:pvp_kill_credit, killer_id}})" do
+    test "applies queued self-kill credit to reach the durable net value", %{
+      character: character
+    } do
+      test_pid = self()
+      stub(UnitRegistry, :update_unit_state, fn _, _, _ -> :ok end)
+
+      stub(CharacterPersistence, :update_character, fn id, fields, opts ->
+        send(test_pid, {:update_character, id, fields, opts})
+        {:ok, %Character{}}
+      end)
+
+      game_state = %{PlayerState.new(character) | pvp_point: -5, pvp_won: 0}
+      state = %{character: character, game_state: game_state, connection_pid: self()}
+
+      {:noreply, new_state} =
+        PlayerSession.handle_info({:combat, {:pvp_kill_credit, character.id}}, state)
+
+      assert new_state.game_state.pvp_point == -4
+      assert new_state.game_state.pvp_won == 1
+      assert_received {:update_character, 1, %{pvp_point: -4, pvp_won: 1}, [async: true]}
+    end
+  end
+
   describe "cross-session health commands" do
     test "resurrect revalidates and commits through the target session", %{character: character} do
       Mimic.copy(CharacterPersistence)

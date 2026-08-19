@@ -793,6 +793,154 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "PvP death rules" do
+    test "gvg takes precedence over pvp and skips penalties and counters" do
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      reject(&Leveling.death_penalty/3)
+      reject(&CharacterPersistence.update_character/3)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          {:player, 2001},
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        )
+
+      assert game_state.action_state == :dead
+      assert game_state.stats.progression.base_exp == 100
+      assert game_state.stats.progression.job_exp == 40
+      assert game_state.pvp_point == 0
+      assert game_state.pvp_lost == 0
+    end
+
+    test "pvp lethal death by a player applies the penalty, records the loss, and credits the killer" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:2001")
+      test_pid = self()
+
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {10, 5} end)
+
+      stub(CharacterPersistence, :update_character, fn id, fields, opts ->
+        send(test_pid, {:update_character, id, fields, opts})
+        {:ok, %Character{}}
+      end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(
+          150,
+          {:player, 2001},
+          build_state(100, :idle, %{base_exp: 100, job_exp: 40})
+        )
+
+      assert game_state.action_state == :dead
+      assert game_state.stats.progression.base_exp == 90
+      assert game_state.stats.progression.job_exp == 35
+      assert game_state.pvp_point == -5
+      assert game_state.pvp_lost == 1
+
+      assert_received {:update_character, 1, %{base_exp: 90, job_exp: 35}, [async: true]}
+      assert_received {:update_character, 1, %{pvp_point: -5, pvp_lost: 1}, [async: true]}
+      assert_received {:combat, {:pvp_kill_credit, 2001}}
+    end
+
+    test "self-kill persists the loss before queuing own credit" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:1")
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
+
+      expect(CharacterPersistence, :update_character, fn 1,
+                                                         %{pvp_point: -5, pvp_lost: 1},
+                                                         [async: false] ->
+        {:ok, %Character{}}
+      end)
+
+      assert {:noreply, %{game_state: %{pvp_point: -5, pvp_lost: 1}}} =
+               HealthHandler.apply_damage(150, {:player, 1}, build_state(100, :idle))
+
+      assert_received {:combat, {:pvp_kill_credit, 1}}
+    end
+
+    test "failed self-loss persistence logs and suppresses credit" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:1")
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
+
+      expect(CharacterPersistence, :update_character, fn 1,
+                                                         %{pvp_point: -5, pvp_lost: 1},
+                                                         [async: false] ->
+        {:error, :database_unavailable}
+      end)
+
+      log =
+        ExUnit.CaptureLog.capture_log(fn ->
+          assert {:noreply, %{game_state: %{pvp_point: -5, pvp_lost: 1}}} =
+                   HealthHandler.apply_damage(150, {:player, 1}, build_state(100, :idle))
+
+          refute_received {:combat, {:pvp_kill_credit, 1}}
+        end)
+
+      assert log =~ "Failed to persist PvP loss for character 1: :database_unavailable"
+    end
+
+    test "pvp lethal death by a mob records the loss but credits nobody" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      :ok = PubSub.subscribe(Aesir.PubSub, "player:99")
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
+
+      expect(CharacterPersistence, :update_character, fn 1,
+                                                         %{pvp_point: -5, pvp_lost: 1},
+                                                         [
+                                                           async: true
+                                                         ] ->
+        {:ok, %Character{}}
+      end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(150, {:mob, 99}, build_state(100, :idle))
+
+      assert game_state.pvp_point == -5
+      assert game_state.pvp_lost == 1
+      refute_received {:combat, {:pvp_kill_credit, _}}
+    end
+
+    test "pvp lethal death with no attacker records the loss but credits nobody" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
+
+      expect(CharacterPersistence, :update_character, fn 1,
+                                                         %{pvp_point: -5, pvp_lost: 1},
+                                                         [
+                                                           async: true
+                                                         ] ->
+        {:ok, %Character{}}
+      end)
+
+      {:noreply, %{game_state: game_state}} =
+        HealthHandler.apply_damage(150, nil, build_state(100, :idle))
+
+      assert game_state.pvp_point == -5
+      assert game_state.pvp_lost == 1
+      refute_received {:combat, {:pvp_kill_credit, _}}
+    end
+
+    test "pvp kill credit is a no-op when the killer has no live subscriber" do
+      :ok = MapFlags.set_runtime("prontera", :pvp, true)
+      stub(Leveling, :death_penalty, fn _prog, _b, _j -> {0, 0} end)
+
+      expect(CharacterPersistence, :update_character, fn 1,
+                                                         %{pvp_point: -5, pvp_lost: 1},
+                                                         [
+                                                           async: true
+                                                         ] ->
+        {:ok, %Character{}}
+      end)
+
+      assert {:noreply, %{game_state: %{action_state: :dead, pvp_point: -5, pvp_lost: 1}}} =
+               HealthHandler.apply_damage(150, {:player, 999}, build_state(100, :idle))
+    end
+  end
+
   describe "handle_restart/2" do
     test "publishes full restored HP/SP before the save-point warp" do
       stub(WarpHandler, :warp, fn warp_state, _save_map, _save_x, _save_y ->

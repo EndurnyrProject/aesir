@@ -750,6 +750,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:combat, {:pvp_kill_credit, _killer_id}}, state) do
+    game_state = state.game_state
+
+    updated_game_state = %{
+      game_state
+      | pvp_point: game_state.pvp_point + 1,
+        pvp_won: game_state.pvp_won + 1
+    }
+
+    state = StatsManager.update_game_state(state, updated_game_state)
+
+    CharacterPersistence.update_character(
+      game_state.character_id,
+      %{pvp_point: updated_game_state.pvp_point, pvp_won: updated_game_state.pvp_won},
+      async: true
+    )
+
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info({:combat, {:auto_attack, target_id}}, state) do
     CombatActionHandler.handle_auto_attack(state, target_id)
   end
