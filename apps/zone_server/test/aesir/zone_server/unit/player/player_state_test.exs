@@ -112,6 +112,27 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
     end
   end
 
+  describe "new/1 pvp counters" do
+    test "copies explicit counters and defaults unset ones to zero" do
+      assert %PlayerState{pvp_point: 0, pvp_won: 0, pvp_lost: 0} = %PlayerState{}
+
+      character = %Character{
+        id: 1,
+        name: "PvpHero",
+        account_id: 1,
+        pvp_point: -5,
+        pvp_won: 3,
+        pvp_lost: 1
+      }
+
+      assert %PlayerState{pvp_point: -5, pvp_won: 3, pvp_lost: 1} = PlayerState.new(character)
+
+      defaulted = %Character{id: 2, name: "PvpZero", account_id: 1}
+
+      assert %PlayerState{pvp_point: 0, pvp_won: 0, pvp_lost: 0} = PlayerState.new(defaulted)
+    end
+  end
+
   describe "state transitions" do
     setup do
       character = %Character{

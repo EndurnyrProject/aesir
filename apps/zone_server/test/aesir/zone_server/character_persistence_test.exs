@@ -113,6 +113,33 @@ defmodule Aesir.ZoneServer.CharacterPersistenceTest do
       assert %Character{pow: 30, trait_point: 12, max_ap: 50} =
                Repo.get!(Character, character.id)
     end
+
+    test "async mode persists pvp counters via the inline seam", %{character: character} do
+      prev_inline = Application.get_env(:zone_server, :inline_persistence)
+      Application.put_env(:zone_server, :inline_persistence, true)
+
+      try do
+        assert :ok =
+                 CharacterPersistence.update_character(
+                   character.id,
+                   %{
+                     pvp_point: -5,
+                     pvp_won: 0,
+                     pvp_lost: 1
+                   },
+                   async: true
+                 )
+
+        assert %Character{pvp_point: -5, pvp_won: 0, pvp_lost: 1} =
+                 Repo.get!(Character, character.id)
+      after
+        if is_nil(prev_inline) do
+          Application.delete_env(:zone_server, :inline_persistence)
+        else
+          Application.put_env(:zone_server, :inline_persistence, prev_inline)
+        end
+      end
+    end
   end
 
   describe "update_position/5" do

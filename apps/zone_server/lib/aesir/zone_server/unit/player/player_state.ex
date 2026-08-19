@@ -51,6 +51,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           process_pid: pid() | nil,
           party_id: non_neg_integer(),
           guild_id: non_neg_integer(),
+          pvp_point: integer(),
+          pvp_won: non_neg_integer(),
+          pvp_lost: non_neg_integer(),
           guild_tax: non_neg_integer(),
           waiting_room: non_neg_integer() | nil,
           sex: String.t(),
@@ -309,6 +312,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # kept current by Guild.Manager pushes (`characters.guild_id` is the
     # source of truth; this mirrors it for the session's lifetime).
     guild_id: 0,
+    pvp_point: 0,
+    pvp_won: 0,
+    pvp_lost: 0,
     # Cached guild-position EXP tax %% (0 = untaxed); refreshed by the social
     # handler on guild attach and on guild broadcasts.
     guild_tax: 0,
@@ -335,6 +341,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       process_pid: nil,
       party_id: character.party_id,
       guild_id: character.guild_id,
+      pvp_point: character.pvp_point,
+      pvp_won: character.pvp_won,
+      pvp_lost: character.pvp_lost,
       partner_id: character.partner_id,
       sex: character.sex,
       hair: character.hair,

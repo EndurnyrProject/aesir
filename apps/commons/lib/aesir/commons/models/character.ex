@@ -41,6 +41,9 @@ defmodule Aesir.Commons.Models.Character do
           cart: integer(),
           karma: integer(),
           manner: integer(),
+          pvp_point: integer(),
+          pvp_won: integer(),
+          pvp_lost: integer(),
           party_id: integer(),
           guild_id: integer(),
           guild_position: integer(),
@@ -124,6 +127,9 @@ defmodule Aesir.Commons.Models.Character do
     field :cart, :integer, default: 0
     field :karma, :integer, default: 0
     field :manner, :integer, default: 0
+    field :pvp_point, :integer, default: 0
+    field :pvp_won, :integer, default: 0
+    field :pvp_lost, :integer, default: 0
     field :party_id, :integer, default: 0
     field :guild_id, :integer, default: 0
     field :guild_position, :integer, default: 0
@@ -206,6 +212,9 @@ defmodule Aesir.Commons.Models.Character do
       :cart,
       :karma,
       :manner,
+      :pvp_point,
+      :pvp_won,
+      :pvp_lost,
       :party_id,
       :guild_id,
       :guild_position,
@@ -299,6 +308,9 @@ defmodule Aesir.Commons.Models.Character do
       option: 0,
       karma: 0,
       manner: 0,
+      pvp_point: 0,
+      pvp_won: 0,
+      pvp_lost: 0,
       party_id: 0,
       guild_id: 0,
       delete_date: nil,

@@ -53,6 +53,42 @@ defmodule Aesir.Commons.Models.CharacterTest do
     end
   end
 
+  describe "changeset/2 pvp counters" do
+    test "defaults the pvp counters to zero at the database layer" do
+      account = account!()
+      now = NaiveDateTime.utc_now() |> NaiveDateTime.truncate(:second)
+
+      assert {1, nil} =
+               Repo.insert_all(Character, [
+                 %{
+                   account_id: account.id,
+                   char_num: 0,
+                   name: "PvpDefaultHero",
+                   class: 0,
+                   inserted_at: now,
+                   updated_at: now
+                 }
+               ])
+
+      assert %Character{pvp_point: 0, pvp_won: 0, pvp_lost: 0} =
+               Repo.get_by!(Character, name: "PvpDefaultHero")
+    end
+
+    test "casts and round-trips a signed pvp_point through the repo" do
+      account = account!()
+
+      assert {:ok, character} =
+               %Character{}
+               |> Character.changeset(
+                 valid_attrs(account, %{pvp_point: -5, pvp_won: 0, pvp_lost: 1})
+               )
+               |> Repo.insert()
+
+      assert %Character{pvp_point: -5, pvp_won: 0, pvp_lost: 1} =
+               Repo.get!(Character, character.id)
+    end
+  end
+
   describe "changeset/2 trait stats" do
     test "defaults the ten trait columns to zero on a freshly inserted character" do
       account = account!()
