@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -239,6 +240,72 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
     end
   end
 
+  describe "player vs player combat" do
+    test "a hostile player takes primary auto-attack damage on a :pvp map" do
+      attacker_opts = [
+        character:
+          create_test_character(
+            id: 1001,
+            name: "Attacker",
+            str: 50,
+            dex: 50,
+            base_level: 10
+          )
+      ]
+
+      {attacker, defender} = create_pvp_scenario(attacker_opts)
+
+      MapFlags.set_runtime("prontera", :pvp, true)
+      on_exit(fn -> MapFlags.clear_runtime("prontera", :pvp) end)
+
+      flush_packets()
+
+      stats = get_player_stats(attacker.pid)
+      attacker_state = get_player_state(attacker.pid)
+      hp_before = get_player_state(defender.pid).stats.current_state.hp
+
+      assert :ok = Combat.execute_attack(stats, attacker_state, defender.character.id)
+
+      packet =
+        DamageDealt
+        |> collect_packets_of_type(200)
+        |> Enum.find(&(&1.target_id == defender.character.id and &1.damage > 0))
+
+      assert packet, "no positive-damage packet for the defender"
+      assert packet.src_id == attacker.character.id
+      assert packet.target_id == defender.character.id
+
+      assert_eventually(fn ->
+        get_player_state(defender.pid).stats.current_state.hp < hp_before
+      end)
+    end
+
+    test "a player attack on a non-versus map is rejected cleanly" do
+      attacker_opts = [
+        character:
+          create_test_character(
+            id: 1001,
+            name: "Attacker",
+            str: 50,
+            dex: 50,
+            base_level: 10
+          )
+      ]
+
+      {attacker, defender} = create_pvp_scenario(attacker_opts)
+
+      flush_packets()
+
+      stats = get_player_stats(attacker.pid)
+      attacker_state = get_player_state(attacker.pid)
+
+      assert {:error, :invalid_target} =
+               Combat.execute_attack(stats, attacker_state, defender.character.id)
+
+      refute_packet_sent(DamageDealt, 100)
+    end
+  end
+
   describe "combat range validation" do
     test "attack fails when target is out of range" do
       # Setup player
@@ -345,7 +412,7 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       # Test mob at range 1 (should be in attack range)
       mob_in_range = start_mob_session(position: {151, 150})
 
-      # Test mob at range 2 (should be out of attack range) 
+      # Test mob at range 2 (should be out of attack range)
       mob_out_range = start_mob_session(position: {152, 150})
 
       # Clear spawn packets

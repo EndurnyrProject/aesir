@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.SpiritSphereUpdate
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Cost
@@ -241,6 +242,9 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       monk = monk_fixture(3_001, position: {150, 150})
       arm_root_wait(monk.character_id, 5)
       attacker = plain_player_fixture(3_101, {151, 150})
+
+      MapFlags.set_runtime(@map, :pvp, true)
+      on_exit(fn -> MapFlags.clear_runtime(@map, :pvp) end)
 
       assert :intercepted = Combat.execute_attack(attacker.stats, attacker, monk.character_id)
 

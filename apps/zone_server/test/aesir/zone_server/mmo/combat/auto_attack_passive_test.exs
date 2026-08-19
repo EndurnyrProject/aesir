@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
   use Mimic
   import ExUnit.CaptureLog
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -210,6 +211,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
       stub(UnitRegistry, :get_unit, fn :player, 3001 ->
         {:ok, {PlayerState, target_state, self()}}
+      end)
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
       end)
 
       reject(&Passives.steal_proc/1)

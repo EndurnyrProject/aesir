@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -163,19 +164,31 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
 
       attacker = %{
         unit_id: attacker_id,
+        unit_type: :player,
         class: :normal,
         position: {150, 150},
         attack_range: 1,
-        weapon: %{element: :neutral}
+        weapon: %{element: :neutral},
+        map_name: "prontera"
       }
 
-      target = %{unit_id: monk_id, class: :normal, position: {150, 150}, attack_range: 1}
+      target = %{
+        unit_id: monk_id,
+        unit_type: :player,
+        class: :normal,
+        position: {150, 150},
+        attack_range: 1,
+        map_name: "prontera"
+      }
+
       player_state = %FakeCombatUnit{combatant: attacker}
       target_state = %FakeCombatUnit{combatant: target}
 
       stub(TargetResolver, :resolve, fn ^monk_id -> {:ok, self(), target_state, :player} end)
       stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
       stub(AttackValidator, :validate, fn _attacker, _target, _opts -> :ok end)
+
+      MapFlags.set_runtime("prontera", :pvp, true)
 
       assert :intercepted = AutoAttack.execute_attack(stats, player_state, monk_id)
 

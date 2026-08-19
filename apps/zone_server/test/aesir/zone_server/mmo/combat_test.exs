@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.Net.DamageDealt
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -758,13 +759,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end
     end
 
-    # PvP damage is a no-op today (handle_player_attack_hit returns
-    # {:error, :pvp_not_implemented} and applies nothing), so the break roll must
-    # be skipped for player targets: resolve is never called and no cast fires.
-    test "a player target is not rolled for breaks while PvP is unimplemented",
+    # A player target is validated through the same versus funnel as every other
+    # combat path; on a non-versus map two players are never enemies, so the
+    # attack fails before damage is dealt or a break is rolled.
+    test "a player target is rejected on a non-versus map",
          %{player_state: player_state, stats: stats} do
       test_pid = self()
       target_state = %{player_state | character_id: 3001}
+
+      stub(MapFlags, :get, fn _map_name, _flag -> false end)
 
       stub(UnitRegistry, :get_unit, fn
         :mob, 3001 -> {:error, :not_found}
@@ -779,20 +782,194 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       capture_log(fn ->
-        assert Combat.execute_attack(stats, player_state, 3001) == :ok
+        assert {:error, :invalid_target} = Combat.execute_attack(stats, player_state, 3001)
       end)
 
       refute_received {:resolve_called, _}
       refute_received {:"$gen_cast", {:inventory, {:break_equip, _}}}
+      refute_received {:"$gen_cast", {:unit, {:apply_damage, _, _}}}
     end
   end
 
-  # Forwards a single received message back to the test process so a cast sent to
-  # a distinct target pid can be asserted without the test process being the sink.
-  defp relay_once(test_pid) do
+  describe "execute_attack/3 versus player targets" do
+    setup do
+      {stats, player_state} = dagger_player()
+      target_state = %{player_state | character_id: 3001}
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(self(), {:packet, packet})
+        :ok
+      end)
+
+      %{player_state: player_state, stats: stats, target_state: target_state}
+    end
+
+    test "a hostile player takes primary-swing damage on a :pvp map",
+         %{player_state: player_state, stats: stats, target_state: target_state} do
+      test_pid = self()
+      target_pid = spawn(fn -> relay_once(test_pid) end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 3001 -> {:error, :not_found}
+        :player, 3001 -> {:ok, {PlayerState, target_state, target_pid}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, target_pid} end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 3001) == :ok
+      end)
+
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}}
+      assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
+      refute_received {:relayed, {:"$gen_cast", {:inventory, {:break_equip, _}}}}
+    end
+
+    test "differently-affiliated players fight on a :gvg map",
+         %{player_state: player_state, stats: stats, target_state: target_state} do
+      test_pid = self()
+      target_pid = spawn(fn -> relay_once(test_pid) end)
+
+      stub(MapFlags, :get, fn
+        "prontera", :gvg -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 3001 -> {:error, :not_found}
+        :player, 3001 -> {:ok, {PlayerState, target_state, target_pid}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, target_pid} end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 3001) == :ok
+      end)
+
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}}
+      assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
+    end
+
+    test "a target break decision for a player victim casts to the victim session",
+         %{player_state: player_state, stats: stats, target_state: target_state} do
+      test_pid = self()
+      target_pid = spawn(fn -> relay(test_pid, 2) end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 3001 -> {:error, :not_found}
+        :player, 3001 -> {:ok, {PlayerState, target_state, target_pid}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, target_pid} end)
+
+      stub(EquipBreak, :resolve, fn _attacker, {:player, 3001, _victim_stats} ->
+        [{:target, :weapon}]
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 3001) == :ok
+      end)
+
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}}
+      assert_receive {:relayed, {:"$gen_cast", {:inventory, {:break_equip, :right_hand}}}}
+    end
+  end
+
+  describe "execute_attack/3 splash player hits" do
+    test "a splash second hit damages a nearby player and broadcasts its attack packet" do
+      test_pid = self()
+
+      {stats, player_state} = dagger_player()
+
+      stats = %{
+        stats
+        | modifiers: %{
+            stats.modifiers
+            | equipment: %{splash_range: 3}
+          }
+      }
+
+      player_state = %{player_state | stats: stats}
+
+      target_state = %{player_state | character_id: 3001}
+      mob_target = combatant(2001, :mob)
+      mob_state = living_mob_state(mob_target, 150, 150)
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {FakeUnit, mob_state, test_pid}}
+        :player, 3001 -> {:ok, {PlayerState, target_state, test_pid}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        3001 -> {:ok, test_pid}
+        _ -> {:error, :not_found}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 ->
+        {:ok, {150, 150, "prontera"}}
+      end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map_name, _cx, _cy, _radius ->
+        [{:player, 3001}]
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert Combat.execute_attack(stats, player_state, 2001) == :ok
+      end)
+
+      # The primary swing lands on the mob; the equipment splash reaches the
+      # player exactly once.
+      assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
+      assert_receive {:"$gen_cast", {:unit, {:apply_damage, 50, 1001}}}
+      refute_received {:"$gen_cast", {:unit, {:apply_damage, _, _}}}
+    end
+  end
+
+  # Forwards received messages back to the test process so casts sent to a
+  # distinct target pid can be asserted without the test process being the sink.
+  defp relay_once(test_pid), do: relay(test_pid, 1)
+
+  defp relay(_test_pid, 0), do: :ok
+
+  defp relay(test_pid, remaining) do
     receive do
       msg -> send(test_pid, {:relayed, msg})
+    after
+      1_000 -> :ok
     end
+
+    relay(test_pid, remaining - 1)
   end
 
   describe "apply_heal/4" do

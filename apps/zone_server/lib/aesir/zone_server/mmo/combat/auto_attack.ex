@@ -737,20 +737,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp resolve_player_weapon_swing(
-         %HandedAttack{},
-         _player_state,
-         _target_state,
-         attacker,
-         _target,
-         _target_pid,
-         :player,
-         target_id
-       ) do
-    Logger.warning("PvP combat not yet implemented for #{attacker.unit_id} against #{target_id}")
-    :ok
-  end
-
-  defp resolve_player_weapon_swing(
          %HandedAttack{} = swing,
          player_state,
          target_state,
@@ -934,22 +920,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     |> maybe_roll(player_state, target_pid)
   end
 
-  # The `:player` clauses below are intentionally unreachable until PvP lands
-  # (see the NOTE), so their dead-clause warnings are suppressed.
-  @dialyzer {:no_match, break_target: 3, maybe_roll: 3}
-
   defp break_target(:player, target_id, target_state),
     do: {:player, target_id, target_state.stats}
 
   defp break_target(target_type, _target_id, target_state), do: {target_type, target_state}
-
-  # NOTE: player victims are skipped entirely: `handle_player_attack_hit/7`
-  # returns `{:error, :pvp_not_implemented}` and applies no damage, so rolling a
-  # break here would silently destroy another player's gear with no hit dealt.
-  # The enemy-break wiring (the `{:player, ...}` tuple above and the `:target`
-  # dispatch below) stays built but unreachable; whoever implements PvP removes
-  # the damage stub in `handle_player_attack_hit/7` AND this gate together.
-  defp maybe_roll({:player, _target_id, _victim_stats}, _player_state, _target_pid), do: :ok
 
   defp maybe_roll(target, player_state, target_pid) do
     player_state.stats
@@ -1065,8 +1039,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         broadcast_basic_attack(attacker_combatant, target_combatant, damage_result, prepared_hits)
 
       :player ->
-        Logger.warning("PvP combat not yet implemented")
-        {:error, :pvp_not_implemented}
+        hit_info = %{
+          dmg_type: :physical,
+          is_short: true,
+          element: attacker_combatant.weapon.element,
+          skill_id: nil,
+          skill_level: nil,
+          from_caster?: true,
+          basic_attack?: true
+        }
+
+        {final_damage, prepared_hit_info} =
+          DamageApplication.prepare_unit_damage(
+            :player,
+            target_id,
+            damage,
+            hit_info,
+            {:player, attacker_combatant.unit_id}
+          )
+
+        DamageApplication.broadcast_nearby(
+          target_combatant,
+          PacketFactory.build_attack_packet(
+            attacker_combatant,
+            target_combatant,
+            %{damage_result | damage: final_damage}
+          )
+        )
+
+        DamageApplication.apply_unit_damage(
+          :player,
+          target_pid,
+          target_id,
+          final_damage,
+          prepared_hit_info,
+          {:player, attacker_combatant.unit_id}
+        )
 
       :homunculus ->
         hit_info = %{
@@ -1341,6 +1349,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp mob_damage_source(_target_type, attacker_id), do: {:mob, attacker_id}
 
   defp validate_player_target(attacker, target, :homunculus),
+    do: Targeting.validate_enemy(attacker, target)
+
+  defp validate_player_target(attacker, target, :player),
     do: Targeting.validate_enemy(attacker, target)
 
   defp validate_player_target(_attacker, _target, _target_type), do: :ok
