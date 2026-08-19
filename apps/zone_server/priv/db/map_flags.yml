@@ -1,0 +1,19 @@
+# Static per-map PvP flags loaded by MapFlags.StaticFlags at boot.
+# The classic PvP room maps ship as `[pvp]`; pvp_2vs2 and pvp_room are
+# deliberately omitted.
+- map: pvp_y_1-2
+  flags: [pvp]
+- map: pvp_y_2-2
+  flags: [pvp]
+- map: pvp_y_3-2
+  flags: [pvp]
+- map: pvp_y_4-2
+  flags: [pvp]
+- map: pvp_y_5-2
+  flags: [pvp]
+- map: pvp_y_6-2
+  flags: [pvp]
+- map: pvp_y_7-2
+  flags: [pvp]
+- map: pvp_y_8-2
+  flags: [pvp]

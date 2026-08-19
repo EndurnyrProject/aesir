@@ -3,11 +3,12 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   General per-map flag layer.
 
   Static per-map flags are loaded once into `:persistent_term` from
-  `Aesir.ZoneServer.Mmo.Woe.CastleDb` — every castle map carries
-  `gvg_castle`, `nosave`, `noteleport`, `nowarp`, and `noreturn` — and a
+  `Aesir.ZoneServer.Mmo.Woe.CastleDb` (every castle map carries
+  `gvg_castle`, `nosave`, `noteleport`, `nowarp`, and `noreturn`) and
+  `StaticFlags` (per-map PvP flags from `priv/db/map_flags.yml`), plus a
   small runtime ETS overlay (`:map_flag_overrides`) carries flags toggled at
   runtime (WoE's `gvg`). `get/2` merges overlay over static; `reload/0`
-  rebuilds the static index after the castle data changes.
+  rebuilds the static index after the castle or flag data changes.
 
   Only `@flags` are accepted. The WoE-consumed subset (`gvg`, `gvg_castle`,
   `nosave`, `noteleport`, `nowarp`, `noreturn`) drives behavior this phase;
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
+  alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
 
   @pt_key __MODULE__
@@ -49,7 +51,17 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 
   @doc """
-  Rebuilds the static `:persistent_term` index from `CastleDb`.
+  Returns the canonical set of accepted map flags.
+
+  Exposed for `StaticFlags` so the YAML loader validates against the same
+  `@flags` whitelist the runtime overlay enforces — one source only.
+  """
+  @spec whitelist() :: [flag()]
+  def whitelist, do: @flags
+
+  @doc """
+  Rebuilds the static `:persistent_term` index from `CastleDb` and
+  `StaticFlags`.
   """
   @spec reload() :: :ok
   def reload do
@@ -118,9 +130,16 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   @spec build_static() :: %{map_name() => %{flag() => true}}
   defp build_static do
-    Map.new(CastleDb.all(), fn castle ->
-      {castle.map, Map.new(@static_woe_flags, fn flag -> {flag, true} end)}
-    end)
+    castle_flags =
+      Map.new(CastleDb.all(), fn castle ->
+        {castle.map, Map.new(@static_woe_flags, fn flag -> {flag, true} end)}
+      end)
+
+    Map.merge(
+      castle_flags,
+      StaticFlags.load(),
+      fn _map, woe, extra -> Map.merge(woe, extra) end
+    )
   end
 
   @spec static_index() :: %{map_name() => %{flag() => true}}

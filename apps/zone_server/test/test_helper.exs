@@ -94,6 +94,7 @@ Mimic.copy(Aesir.ZoneServer.Mmo.Woe.CastleVerifier)
 Mimic.copy(Aesir.ZoneServer.Mmo.Woe.Persistence)
 Mimic.copy(Aesir.ZoneServer.Mmo.Woe.Server)
 Mimic.copy(Aesir.ZoneServer.Map.MapFlags)
+Mimic.copy(Aesir.ZoneServer.Map.MapFlags.StaticFlags)
 Mimic.copy(Aesir.ZoneServer.Config)
 Mimic.copy(Aesir.Repo)
 

@@ -1,7 +1,15 @@
 defmodule Aesir.ZoneServer.Map.MapFlagsTest do
   use ExUnit.Case, async: false
+  use Mimic
 
+  alias Aesir.ZoneServer.Map.CacheLoader
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
+
+  @cache_path Path.join(:code.priv_dir(:zone_server), "maps.mcache")
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
@@ -24,6 +32,13 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
       refute MapFlags.get("prontera", :noreturn)
       refute MapFlags.get("prontera", :gvg)
       refute MapFlags.get("prontera", :pvp)
+    end
+
+    test "loads static PvP flags for the production PvP rooms alongside castle flags" do
+      assert MapFlags.get("pvp_y_1-2", :pvp) == true
+      assert MapFlags.get("pvp_y_8-2", :pvp) == true
+      refute MapFlags.get("pvp_y_1-2", :gvg_castle)
+      assert MapFlags.get("aldeg_cas01", :gvg_castle) == true
     end
 
     test "is idempotent" do
@@ -117,6 +132,97 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
 
     test "non-castle map has no flags" do
       assert MapFlags.flags("prontera") == %{}
+    end
+  end
+
+  describe "StaticFlags.load/1" do
+    @tag :tmp_dir
+    test "parses a valid map-flags file into a static index", %{tmp_dir: dir} do
+      path = Path.join(dir, "map_flags.yml")
+
+      File.write!(path, """
+      - map: pvp_y_1-2
+        flags: [pvp]
+      - map: arena
+        flags: [pvp, pvp_noparty, pvp_noguild]
+      """)
+
+      assert StaticFlags.load(path) == %{
+               "pvp_y_1-2" => %{pvp: true},
+               "arena" => %{pvp: true, pvp_noparty: true, pvp_noguild: true}
+             }
+    end
+
+    @tag :tmp_dir
+    test "merges repeated rows for the same map into one flag set", %{tmp_dir: dir} do
+      path = Path.join(dir, "map_flags.yml")
+
+      File.write!(path, """
+      - map: pvp_y_1-2
+        flags: [pvp]
+      - map: pvp_y_1-2
+        flags: [pvp_noparty]
+      """)
+
+      assert StaticFlags.load(path) == %{
+               "pvp_y_1-2" => %{pvp: true, pvp_noparty: true}
+             }
+    end
+
+    @tag :tmp_dir
+    test "raises ArgumentError on an unknown flag", %{tmp_dir: dir} do
+      path = Path.join(dir, "map_flags.yml")
+
+      File.write!(path, """
+      - map: pvp_y_1-2
+        flags: [pvpp]
+      """)
+
+      assert_raise ArgumentError, fn -> StaticFlags.load(path) end
+    end
+
+    @tag :tmp_dir
+    test "raises ArgumentError on a row that is not a map", %{tmp_dir: dir} do
+      path = Path.join(dir, "map_flags.yml")
+
+      File.write!(path, """
+      - not_a_map_row
+      """)
+
+      assert_raise ArgumentError, fn -> StaticFlags.load(path) end
+    end
+
+    @tag :tmp_dir
+    test "raises YamlElixir.ParsingError on malformed YAML", %{tmp_dir: dir} do
+      path = Path.join(dir, "map_flags.yml")
+
+      File.write!(path, """
+      - map: pvp_y_1-2
+        flags: *unmatched_alias
+      """)
+
+      assert_raise YamlElixir.ParsingError, fn -> StaticFlags.load(path) end
+    end
+  end
+
+  describe "same-map static merge" do
+    test "castle flags and a loader-supplied pvp flag coexist on one map" do
+      on_exit(&MapFlags.reload/0)
+      stub(StaticFlags, :load, fn -> %{"aldeg_cas01" => %{pvp: true}} end)
+      :ok = MapFlags.reload()
+
+      assert MapFlags.get("aldeg_cas01", :pvp) == true
+      assert MapFlags.get("aldeg_cas01", :gvg_castle) == true
+    end
+  end
+
+  describe "production static file maps exist in maps.mcache" do
+    test "every map named by StaticFlags.load/0 exists in the production cache" do
+      {:ok, cache_maps} = CacheLoader.load_cache(@cache_path)
+
+      for map_name <- Map.keys(StaticFlags.load()) do
+        assert Map.has_key?(cache_maps, map_name), "missing map #{map_name}"
+      end
     end
   end
 end
