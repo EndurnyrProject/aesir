@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   currently ships zero global rows.
   """
 
+  alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
 
   @pt_key __MODULE__
@@ -100,7 +101,11 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
 
   @spec build() :: index()
   defp build do
-    {globals, mobs} = data_path() |> YamlElixir.read_from_file!() |> Map.split(@global_keys)
+    {globals, mobs} =
+      "mob_skills/mob_skills.yml"
+      |> Source.sources()
+      |> Enum.reduce(%{}, &Map.merge(&2, YamlElixir.read_from_file!(&1)))
+      |> Map.split(@global_keys)
 
     %{
       by_id: Map.new(mobs, fn {key, rows} -> {String.to_integer(key), coerce_rows(rows)} end),
@@ -146,7 +151,4 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   @spec coerce_value(integer() | binary() | nil) :: integer() | atom()
   defp coerce_value(value) when is_binary(value), do: String.to_atom(value)
   defp coerce_value(value), do: value
-
-  @spec data_path() :: Path.t()
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/mob_skills/mob_skills.yml")
 end

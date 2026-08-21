@@ -8,6 +8,9 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
   Same shape as `QuestManagement.Quests`.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
+
   @pt_key __MODULE__
 
   @typedoc "A learnable guild skill's tree entry."
@@ -84,13 +87,17 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
 
   defp build do
     exp_by_level =
-      "exp.yml"
-      |> read!()
+      "guild/exp.yml"
+      |> Source.sources()
+      |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+      |> DataLoader.merge_by_key(& &1["level"])
       |> Map.new(fn %{"level" => level, "exp" => exp} -> {level, exp} end)
 
     skills_by_id =
-      "skill_tree.yml"
-      |> read!()
+      "guild/skill_tree.yml"
+      |> Source.sources()
+      |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+      |> DataLoader.merge_by_key(& &1["id"])
       |> Map.new(fn %{"id" => id} = entry ->
         {id,
          %{
@@ -107,12 +114,5 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
       max_level: Enum.max(Map.keys(exp_by_level)) + 1,
       skills_by_id: skills_by_id
     }
-  end
-
-  defp read!(file) do
-    :zone_server
-    |> Application.app_dir("priv/db/re/guild")
-    |> Path.join(file)
-    |> YamlElixir.read_from_file!()
   end
 end

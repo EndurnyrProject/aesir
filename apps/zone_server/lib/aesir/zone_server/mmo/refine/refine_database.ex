@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
 
   require Logger
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
@@ -111,7 +113,12 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
 
   @spec build() :: %{{group(), integer(), integer()} => level_info()}
   defp build do
-    raw = YamlElixir.read_from_file!(data_file())
+    raw =
+      "refine/refine.yml"
+      |> Source.sources()
+      |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+      |> DataLoader.merge_by_key(& &1["group"])
+
     materials = raw |> collect_materials() |> resolve_materials()
 
     raw
@@ -210,7 +217,4 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   defp to_cost_type("normal"), do: :normal
   defp to_cost_type("hd"), do: :hd
   defp to_cost_type("enriched"), do: :enriched
-
-  @spec data_file() :: Path.t()
-  defp data_file, do: Application.app_dir(:zone_server, "priv/db/re/refine/refine.yml")
 end

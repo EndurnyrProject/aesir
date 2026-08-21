@@ -67,6 +67,106 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.DbTest do
     end
   end
 
+  describe "import overlay" do
+    setup context do
+      on_exit(&Db.reload/0)
+      Aesir.ZoneServer.DbTestSetup.configure_root(context, "mob_skills")
+    end
+
+    @tag :tmp_dir
+    test "reload replaces a mob's rows, adds a mob, and keeps other rows", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "mob_skills.yml"), """
+      '1001':
+        - state: attack
+          level: 1
+          target: target
+          delay: 0
+          skill: BASE
+          cancelable: false
+          cast_time: 0
+          condition:
+            type: always
+            value: 0
+            val1:
+            val2:
+            val3:
+            val4:
+            val5:
+          emotion:
+          rate: 100
+          skill_id: 1
+      '1002':
+        - state: attack
+          level: 1
+          target: target
+          delay: 0
+          skill: UNTOUCHED
+          cancelable: false
+          cast_time: 0
+          condition:
+            type: always
+            value: 0
+            val1:
+            val2:
+            val3:
+            val4:
+            val5:
+          emotion:
+          rate: 100
+          skill_id: 2
+      """)
+
+      import = Path.join([dir, "..", "..", "import", "mob_skills", "mob_skills.yml"])
+      File.mkdir_p!(Path.dirname(import))
+
+      File.write!(import, """
+      '1001':
+        - state: attack
+          level: 1
+          target: target
+          delay: 0
+          skill: OVERRIDE
+          cancelable: false
+          cast_time: 0
+          condition:
+            type: always
+            value: 0
+            val1:
+            val2:
+            val3:
+            val4:
+            val5:
+          emotion:
+          rate: 100
+          skill_id: 3
+      '1004':
+        - state: attack
+          level: 1
+          target: target
+          delay: 0
+          skill: ADDED
+          cancelable: false
+          cast_time: 0
+          condition:
+            type: always
+            value: 0
+            val1:
+            val2:
+            val3:
+            val4:
+            val5:
+          emotion:
+          rate: 100
+          skill_id: 4
+      """)
+
+      assert :ok = Db.reload()
+      assert [%{skill: "OVERRIDE"}] = Db.rows_for(1001)
+      assert [%{skill: "UNTOUCHED"}] = Db.rows_for(1002)
+      assert [%{skill: "ADDED"}] = Db.rows_for(1004)
+    end
+  end
+
   describe "reload/0 and lazy index" do
     test "reload/0 rebuilds the cache" do
       :persistent_term.erase(@pt_key)

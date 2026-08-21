@@ -59,4 +59,60 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabaseTest do
 
     assert RefineDatabase.level_info(:weapon, 1, 1).bonus == 200
   end
+
+  describe "import overlay" do
+    setup context do
+      on_exit(&RefineDatabase.reload/0)
+      Aesir.ZoneServer.DbTestSetup.configure_root(context, "refine")
+    end
+
+    @tag :tmp_dir
+    test "reload replaces an imported refine group without changing other groups", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "refine.yml"), """
+      - group: armor
+        levels:
+          - level: 1
+            refine_levels:
+              - level: 1
+                bonus: 100
+                random_bonus: 0
+                blacksmith_blessing_amount: 0
+                broadcast_success: false
+                broadcast_failure: false
+                chances: []
+      - group: weapon
+        levels:
+          - level: 1
+            refine_levels:
+              - level: 1
+                bonus: 200
+                random_bonus: 0
+                blacksmith_blessing_amount: 0
+                broadcast_success: false
+                broadcast_failure: false
+                chances: []
+      """)
+
+      import = Path.join([dir, "..", "..", "import", "refine", "refine.yml"])
+      File.mkdir_p!(Path.dirname(import))
+
+      File.write!(import, """
+      - group: armor
+        levels:
+          - level: 1
+            refine_levels:
+              - level: 1
+                bonus: 999
+                random_bonus: 0
+                blacksmith_blessing_amount: 0
+                broadcast_success: false
+                broadcast_failure: false
+                chances: []
+      """)
+
+      assert :ok = RefineDatabase.reload()
+      assert %{bonus: 999} = RefineDatabase.level_info(:armor, 1, 1)
+      assert %{bonus: 200} = RefineDatabase.level_info(:weapon, 1, 1)
+    end
+  end
 end

@@ -1,5 +1,5 @@
 defmodule Aesir.ZoneServer.Guild.Progression.DataTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Guild.Progression.Data
 
@@ -34,6 +34,33 @@ defmodule Aesir.ZoneServer.Guild.Progression.DataTest do
 
     test "clamps at the level cap" do
       assert Data.level_for_exp(999_999_999_999) == {50, 0}
+    end
+  end
+
+  describe "import overlay" do
+    setup context do
+      on_exit(&Data.reload/0)
+      Aesir.ZoneServer.DbTestSetup.configure_root(context, "guild")
+    end
+
+    @tag :tmp_dir
+    test "reload replaces an imported exp level without changing other levels", %{tmp_dir: dir} do
+      File.write!(Path.join(dir, "exp.yml"), """
+      - level: 1
+        exp: 100
+      - level: 2
+        exp: 200
+      """)
+
+      File.write!(Path.join(dir, "skill_tree.yml"), "[]\n")
+
+      import = Path.join([dir, "..", "..", "import", "guild", "exp.yml"])
+      File.mkdir_p!(Path.dirname(import))
+      File.write!(import, "- level: 1\n  exp: 999\n")
+
+      assert :ok = Data.reload()
+      assert Data.exp_for_next(1) == {:ok, 999}
+      assert Data.exp_for_next(2) == {:ok, 200}
     end
   end
 
