@@ -33,6 +33,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     path
   end
 
+  defp write_import_yaml(dir, contents) do
+    path = Path.join([dir, "..", "..", "import", "items", "custom.yml"])
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, contents)
+    path
+  end
+
   describe "load/1" do
     @tag :tmp_dir
     test "parses our-schema YAML into an index by id and aegis", %{tmp_dir: dir} do
@@ -61,6 +68,41 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
              } = Loader.load()
 
       assert length(all) == 2
+    end
+
+    @tag :tmp_dir
+    test "import entries replace existing ids after script overrides", %{tmp_dir: dir} do
+      write_yaml(dir, @items_yaml)
+
+      File.write!(Path.join(dir, "script_overrides.yml"), """
+      - id: 501
+        on_use: "heal(ctx, hp: 999)"
+      """)
+
+      write_import_yaml(dir, """
+      - id: 501
+        aegis_name: Custom_Potion
+        name: Custom Potion
+        type: usable
+      """)
+
+      assert %{all: [%ItemDefinition{id: 501, name: "Custom Potion", on_use: nil} | _]} =
+               Loader.load()
+    end
+
+    @tag :tmp_dir
+    test "import entries with new ids append after base entries", %{tmp_dir: dir} do
+      write_yaml(dir, @items_yaml)
+
+      write_import_yaml(dir, """
+      - id: 502
+        aegis_name: Orange_Potion
+        name: Orange Potion
+        type: healing
+      """)
+
+      assert %{all: all, by_id: %{502 => %ItemDefinition{name: "Orange Potion"}}} = Loader.load()
+      assert Enum.map(all, & &1.id) == [501, 1201, 502]
     end
 
     @tag :tmp_dir

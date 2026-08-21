@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
   Plain functions only - no process.
   """
 
+  alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -39,9 +40,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
     overrides = parse_overrides(override_sources)
 
     def_sources
-    |> Enum.flat_map(&DataLoader.parse_file/1)
-    |> Enum.map(&to_struct!/1)
-    |> Enum.map(&apply_override(&1, overrides))
+    |> Enum.flat_map(fn source ->
+      source
+      |> DataLoader.parse_file()
+      |> Enum.map(&to_struct!(&1, source))
+      |> Enum.map(&apply_override(&1, overrides, source))
+    end)
+    |> DataLoader.merge_by_key(& &1.id)
   end
 
   @spec parse_overrides([Path.t()]) :: %{integer() => String.t()}
@@ -51,11 +56,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
     |> Map.new(fn %{"id" => id, "on_use" => on_use} -> {id, on_use} end)
   end
 
-  @spec apply_override(ItemDefinition.t(), %{integer() => String.t()}) :: ItemDefinition.t()
-  defp apply_override(definition, overrides) do
-    case Map.fetch(overrides, definition.id) do
-      {:ok, on_use} -> %{definition | on_use: on_use}
-      :error -> definition
+  @spec apply_override(ItemDefinition.t(), %{integer() => String.t()}, Path.t()) ::
+          ItemDefinition.t()
+  defp apply_override(definition, overrides, source) do
+    if Path.dirname(source) == Source.base_dir("items") do
+      case Map.fetch(overrides, definition.id) do
+        {:ok, on_use} -> %{definition | on_use: on_use}
+        :error -> definition
+      end
+    else
+      definition
     end
   end
 
@@ -68,8 +78,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
     }
   end
 
-  @spec to_struct!(map()) :: ItemDefinition.t()
-  defp to_struct!(yaml_map) do
+  @spec to_struct!(map(), Path.t()) :: ItemDefinition.t()
+  defp to_struct!(yaml_map, source) do
     attrs =
       Map.new(yaml_map, fn {k, v} ->
         key = Map.fetch!(@field_names, k)
@@ -77,6 +87,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
       end)
 
     struct!(ItemDefinition, attrs)
+  rescue
+    error in KeyError ->
+      reraise %KeyError{
+                error
+                | message:
+                    (error.message || "key #{inspect(error.key)} not found") <> " (in #{source})"
+              },
+              __STACKTRACE__
   end
 
   @spec convert(atom(), term()) :: term()

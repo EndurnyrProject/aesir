@@ -36,7 +36,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Loader do
 
   @spec build([Path.t()]) :: [Group.t()]
   defp build(sources) do
-    sources |> Enum.flat_map(&DataLoader.parse_file/1) |> Enum.map(&to_group!/1)
+    sources
+    |> Enum.flat_map(&DataLoader.parse_file/1)
+    |> Enum.map(&to_group!/1)
+    |> DataLoader.merge_by_key(& &1.key)
   end
 
   @spec index([Group.t()]) :: index()

@@ -34,7 +34,10 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
 
   @spec build([Path.t()]) :: [Job.t()]
   defp build(sources) do
-    sources |> Enum.flat_map(&DataLoader.parse_file/1) |> Enum.map(&to_struct!/1)
+    sources
+    |> Enum.flat_map(&DataLoader.parse_file/1)
+    |> Enum.map(&to_struct!/1)
+    |> DataLoader.merge_by_key(& &1.name)
   end
 
   @spec index([Job.t()]) :: index()

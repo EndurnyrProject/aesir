@@ -28,7 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
 
   @spec build([Path.t()]) :: [QuestDefinition.t()]
   defp build(sources) do
-    sources |> Enum.flat_map(&DataLoader.parse_file/1) |> Enum.map(&to_struct!/1)
+    sources
+    |> Enum.flat_map(&DataLoader.parse_file/1)
+    |> Enum.map(&to_struct!/1)
+    |> DataLoader.merge_by_key(& &1.id)
   end
 
   @spec index([QuestDefinition.t()]) :: index()
