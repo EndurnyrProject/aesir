@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
   @moduledoc """
-  Builds the job index from our-schema YAML files in a data directory.
+  Builds the job index from our-schema YAML files in the jobs domain.
 
-  Parses every `*.yml` into `Job` structs and indexes them by id and name. Level
+  Parses every source into `Job` structs and indexes them by id and name. Level
   tables are stored as plain lists from level 1 in the YAML and rehydrated into
   level-keyed maps here. Cache mechanics live in `Aesir.ZoneServer.Mmo.DataLoader`.
   Plain functions only - no process.
@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Loader do
 
   @bonus_stat_fields [:str, :agi, :vit, :int, :dex, :luk, :pow, :sta, :wis, :spl, :con, :crt]
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "jobs" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [Job.t()]
   defp build(sources) do

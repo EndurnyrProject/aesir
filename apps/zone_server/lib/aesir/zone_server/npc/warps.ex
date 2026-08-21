@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Npc.Warps do
 
   @spec load() :: Loader.index()
   defp load do
-    sanitized = data_dir() |> Loader.load() |> sanitize()
+    sanitized = Loader.load() |> sanitize()
     count = sanitized.by_map |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
     Logger.info("Loaded #{count} warps across #{map_size(sanitized.by_map)} maps")
     sanitized
@@ -184,7 +184,4 @@ defmodule Aesir.ZoneServer.Npc.Warps do
     a.x - a.xs <= b.x + b.xs and b.x - b.xs <= a.x + a.xs and
       a.y - a.ys <= b.y + b.ys and b.y - b.ys <= a.y + a.ys
   end
-
-  @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/warps")
 end

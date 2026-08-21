@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Loader do
   @moduledoc """
-  Builds the item-group index from our-schema YAML files in a data directory.
+  Builds the item-group index from our-schema YAML files in the item_groups domain.
 
   Cache mechanics live in `Aesir.ZoneServer.Mmo.DataLoader`. Plain functions
   only - no process.
@@ -31,8 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Loader do
     "unique_id" => :unique_id?
   }
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "item_groups" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [Group.t()]
   defp build(sources) do

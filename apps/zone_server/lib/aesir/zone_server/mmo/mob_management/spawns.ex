@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns do
 
   @spec load() :: Loader.index()
   defp load do
-    loaded = Loader.load(data_dir())
+    loaded = Loader.load()
     validate_mob_refs!(loaded)
     loaded
   end
@@ -72,7 +72,4 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns do
 
     :ok
   end
-
-  @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/spawns")
 end

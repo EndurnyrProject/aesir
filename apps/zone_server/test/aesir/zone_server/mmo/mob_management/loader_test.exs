@@ -1,8 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.LoaderTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Mmo.MobManagement.Loader
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+
+  setup context do
+    Aesir.ZoneServer.DbTestSetup.configure_root(context, "mobs")
+  end
 
   @mob_yaml """
   - id: 1
@@ -53,13 +57,13 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.LoaderTest do
   test "decodes race_groups from YAML", %{tmp_dir: dir} do
     write_yaml(dir, @mob_yaml <> "  race_groups:\n    - golem\n")
 
-    assert %{by_id: %{1 => %MobDefinition{race_groups: [:golem]}}} = Loader.load(dir)
+    assert %{by_id: %{1 => %MobDefinition{race_groups: [:golem]}}} = Loader.load()
   end
 
   @tag :tmp_dir
   test "defaults race_groups when YAML omits it", %{tmp_dir: dir} do
     write_yaml(dir, @mob_yaml)
 
-    assert %{by_id: %{1 => %MobDefinition{race_groups: []}}} = Loader.load(dir)
+    assert %{by_id: %{1 => %MobDefinition{race_groups: []}}} = Loader.load()
   end
 end

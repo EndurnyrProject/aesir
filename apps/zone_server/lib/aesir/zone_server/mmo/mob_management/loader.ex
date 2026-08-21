@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
   @moduledoc """
-  Builds the mob index from our-schema YAML files in a data directory.
+  Builds the mob index from our-schema YAML files in the mobs domain.
 
-  Parses every `*.yml` into `MobDefinition` structs and indexes them by id and
+  Parses every source into `MobDefinition` structs and indexes them by id and
   aegis name. Cache mechanics live in `Aesir.ZoneServer.Mmo.DataLoader`. Plain
   functions only - no process.
   """
@@ -28,8 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Loader do
                |> Map.keys()
                |> Map.new(&{Atom.to_string(&1), &1})
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "mobs" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [MobDefinition.t()]
   defp build(sources) do

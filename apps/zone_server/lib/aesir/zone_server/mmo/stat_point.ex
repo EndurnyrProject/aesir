@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
 
   @spec load() :: %{pos_integer() => {non_neg_integer(), non_neg_integer()}}
   defp load do
-    DataLoader.load(data_dir(), @cache_file, &build/1)
+    DataLoader.load("statpoint", @cache_file, &build/1)
   end
 
   @spec build([Path.t()]) :: %{pos_integer() => {non_neg_integer(), non_neg_integer()}}
@@ -147,7 +147,4 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
       {level, {points, trait_points}}
     end)
   end
-
-  @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/statpoint")
 end

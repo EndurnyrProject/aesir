@@ -54,12 +54,9 @@ defmodule Aesir.ZoneServer.Npc.Shops do
 
   @spec load() :: Loader.index()
   defp load do
-    index = Loader.load(data_dir())
+    index = Loader.load()
     count = index.by_map |> Map.values() |> Enum.map(&length/1) |> Enum.sum()
     Logger.info("Loaded #{count} shops across #{map_size(index.by_map)} maps")
     index
   end
-
-  @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/shops")
 end

@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
   @moduledoc """
-  Builds the item index from our-schema YAML files in a data directory.
+  Builds the item index from our-schema YAML files in the items domain.
 
-  Parses every `*.yml` in the directory into `ItemDefinition` structs and indexes
+  Parses every source into `ItemDefinition` structs and indexes
   them by id and aegis name. Cache mechanics live in `Aesir.ZoneServer.Mmo.DataLoader`.
   Plain functions only - no process.
   """
@@ -28,8 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
                |> Map.keys()
                |> Map.new(&{Atom.to_string(&1), &1})
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "items" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [ItemDefinition.t()]
   defp build(sources) do

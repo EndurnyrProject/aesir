@@ -1,9 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Loader
+
+  setup context do
+    Aesir.ZoneServer.DbTestSetup.configure_root(context, "items")
+  end
 
   describe "to_definition/1" do
     test "maps a weapon, converting Type/SubType/Jobs/Locations to atoms" do
@@ -345,7 +349,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
-      assert %{by_id: %{490_160 => ^definition}} = Loader.load(dir)
+      assert %{by_id: %{490_160 => ^definition}} = Loader.load()
     end
 
     @tag :tmp_dir
@@ -366,7 +370,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
-      assert %{by_id: %{1201 => ^definition}} = Loader.load(dir)
+      assert %{by_id: %{1201 => ^definition}} = Loader.load()
     end
 
     @tag :tmp_dir
@@ -385,7 +389,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
-      assert %{by_id: %{1752 => ^definition}} = Loader.load(dir)
+      assert %{by_id: %{1752 => ^definition}} = Loader.load()
     end
   end
 end

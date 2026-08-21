@@ -1,8 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.QuestManagement.LoaderTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Mmo.QuestManagement.Loader
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
+
+  setup context do
+    Aesir.ZoneServer.DbTestSetup.configure_root(context, "quests")
+  end
 
   @quests_yaml """
   - id: 1000
@@ -27,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.LoaderTest do
     test "parses our-schema YAML into an index by id", %{tmp_dir: dir} do
       write_yaml(dir, @quests_yaml)
 
-      assert %{all: all, by_id: by_id} = Loader.load(dir)
+      assert %{all: all, by_id: by_id} = Loader.load()
       assert length(all) == 2
 
       assert %QuestDefinition{id: 1000, title: "Transcend", targets: [], drops: []} =
@@ -38,14 +42,14 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.LoaderTest do
     test "a quest with no targets loads an empty targets list", %{tmp_dir: dir} do
       write_yaml(dir, @quests_yaml)
 
-      assert %{by_id: %{1000 => %QuestDefinition{targets: []}}} = Loader.load(dir)
+      assert %{by_id: %{1000 => %QuestDefinition{targets: []}}} = Loader.load()
     end
 
     @tag :tmp_dir
     test "a quest with multiple targets parses mob_id and count for each", %{tmp_dir: dir} do
       write_yaml(dir, @quests_yaml)
 
-      assert %{by_id: %{7393 => %QuestDefinition{targets: targets}}} = Loader.load(dir)
+      assert %{by_id: %{7393 => %QuestDefinition{targets: targets}}} = Loader.load()
 
       assert targets == [
                %{mob_id: 2314, count: 10},
@@ -78,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.LoaderTest do
             mobs_allowed: [1001, 1002]
       """)
 
-      assert %{by_id: by_id} = Loader.load(dir)
+      assert %{by_id: by_id} = Loader.load()
 
       assert %QuestDefinition{
                time_limit: "24h",
@@ -106,13 +110,13 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.LoaderTest do
     test "time_limit defaults to nil when not present", %{tmp_dir: dir} do
       write_yaml(dir, @quests_yaml)
 
-      assert %{by_id: %{1000 => %QuestDefinition{time_limit: nil}}} = Loader.load(dir)
+      assert %{by_id: %{1000 => %QuestDefinition{time_limit: nil}}} = Loader.load()
     end
 
     @tag :tmp_dir
     test "writes a reusable .etf cache", %{tmp_dir: dir} do
       write_yaml(dir, @quests_yaml)
-      Loader.load(dir)
+      Loader.load()
 
       assert File.exists?(Path.join([dir, ".cache", "quests.etf"]))
     end
@@ -120,33 +124,33 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.LoaderTest do
     @tag :tmp_dir
     test "reuses the cache while it is newer than the sources", %{tmp_dir: dir} do
       yaml = write_yaml(dir, @quests_yaml)
-      Loader.load(dir)
+      Loader.load()
 
       cache = Path.join([dir, ".cache", "quests.etf"])
       File.write!(yaml, String.replace(@quests_yaml, "Transcend", "Renamed"))
       File.touch!(yaml, 1_000_000)
       File.touch!(cache, 2_000_000)
 
-      assert %{by_id: %{1000 => %QuestDefinition{title: "Transcend"}}} = Loader.load(dir)
+      assert %{by_id: %{1000 => %QuestDefinition{title: "Transcend"}}} = Loader.load()
     end
 
     @tag :tmp_dir
     test "rebuilds when a source is newer than the cache", %{tmp_dir: dir} do
       yaml = write_yaml(dir, @quests_yaml)
-      Loader.load(dir)
+      Loader.load()
 
       cache = Path.join([dir, ".cache", "quests.etf"])
       File.write!(yaml, String.replace(@quests_yaml, "Transcend", "Renamed"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)
 
-      assert %{by_id: %{1000 => %QuestDefinition{title: "Renamed"}}} = Loader.load(dir)
+      assert %{by_id: %{1000 => %QuestDefinition{title: "Renamed"}}} = Loader.load()
     end
 
     @tag :tmp_dir
-    test "raises a helpful error when there are no data files", %{tmp_dir: dir} do
-      assert_raise RuntimeError, ~r/no data files in .*#{Path.basename(dir)}/, fn ->
-        Loader.load(dir)
+    test "raises when the domain has no base data", %{tmp_dir: _dir} do
+      assert_raise RuntimeError, ~r/no renewal data for db "quests"/, fn ->
+        Loader.load()
       end
     end
   end

@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
   @moduledoc """
-  Builds the quest index from our-schema YAML files in a data directory.
+  Builds the quest index from our-schema YAML files in the quests domain.
 
-  Parses every `*.yml` in the directory into `QuestDefinition` structs and
+  Parses every source into `QuestDefinition` structs and
   indexes them by id. Cache mechanics live in `Aesir.ZoneServer.Mmo.DataLoader`.
   Plain functions only - no process.
   """
@@ -23,8 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Loader do
                |> Map.keys()
                |> Map.new(&{Atom.to_string(&1), &1})
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "quests" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [QuestDefinition.t()]
   defp build(sources) do

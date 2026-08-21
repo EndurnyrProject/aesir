@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Npc.Shops.Loader do
   @moduledoc """
-  Builds the per-map shop index from our-schema YAML files in a data directory.
+  Builds the per-map shop index from our-schema YAML files in the shops domain.
 
   Each YAML document is a flat list of shop placements; every shop carries its
   own `map` field, so the index groups them by map. An item's YAML `id` maps to
@@ -16,8 +16,8 @@ defmodule Aesir.ZoneServer.Npc.Shops.Loader do
 
   @cache_file "shops.etf"
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "shops" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [Shop.t()]
   defp build(sources) do

@@ -1,9 +1,13 @@
 defmodule Mix.Tasks.Aesir.Import.QuestsTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Mmo.QuestManagement.Importer
   alias Aesir.ZoneServer.Mmo.QuestManagement.Loader
   alias Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition
+
+  setup context do
+    Aesir.ZoneServer.DbTestSetup.configure_root(context, "quests")
+  end
 
   @fixture [
     %{"Id" => 100, "Title" => "Timed Quest", "TimeLimit" => "4h"},
@@ -69,7 +73,7 @@ defmodule Mix.Tasks.Aesir.Import.QuestsTest do
       yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
       File.write!(Path.join(dir, "quests.yml"), yaml)
 
-      assert %{by_id: by_id} = Loader.load(dir)
+      assert %{by_id: by_id} = Loader.load()
 
       assert %QuestDefinition{id: 100, time_limit: "4h"} = Map.fetch!(by_id, 100)
 

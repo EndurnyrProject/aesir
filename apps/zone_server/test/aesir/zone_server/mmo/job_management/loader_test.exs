@@ -1,8 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.JobManagement.Loader
+
+  setup context do
+    Aesir.ZoneServer.DbTestSetup.configure_root(context, "jobs")
+  end
 
   @jobs_yaml """
   - id: 0
@@ -80,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
                  }
                },
                by_name: %{swordman: %Job{id: 1, base_hp: %{1 => 60, 2 => 70}}}
-             } = Loader.load(dir)
+             } = Loader.load()
 
       assert length(all) == 2
     end
@@ -92,14 +96,14 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
       assert %{
                by_id: %{0 => %Job{bonus_stats: %{2 => %Job.BonusStats{level: 2, luk: 1, str: 0}}}}
              } =
-               Loader.load(dir)
+               Loader.load()
     end
 
     @tag :tmp_dir
     test "accumulates sparse bonus_stats into a dense per-level running total", %{tmp_dir: dir} do
       write_yaml(dir, @cumulative_yaml)
 
-      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load(dir)
+      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load()
 
       assert %Job.BonusStats{level: 1, str: 0, vit: 0, dex: 0} = bonus_stats[1]
       assert %Job.BonusStats{level: 2, str: 1, vit: 0, dex: 0} = bonus_stats[2]
@@ -112,7 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
          %{tmp_dir: dir} do
       write_yaml(dir, @cumulative_yaml)
 
-      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load(dir)
+      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load()
 
       assert %Job.BonusStats{level: 7, str: 1, vit: 1, dex: 0} = bonus_stats[7]
     end
@@ -122,7 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
          %{tmp_dir: dir} do
       write_yaml(dir, @cumulative_yaml)
 
-      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load(dir)
+      %{by_id: %{5 => %Job{bonus_stats: bonus_stats}}} = Loader.load()
 
       assert %Job.BonusStats{level: 12, str: 2, vit: 1, dex: 1} = bonus_stats[12]
       refute Map.has_key?(bonus_stats, 13)
@@ -133,13 +137,13 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
       write_yaml(dir, @jobs_yaml)
 
       assert %{by_id: %{0 => %Job{base_aspd: %Job.BaseAspd{fist: 40, dagger: 55, katar: nil}}}} =
-               Loader.load(dir)
+               Loader.load()
     end
 
     @tag :tmp_dir
     test "writes a reusable .etf cache", %{tmp_dir: dir} do
       write_yaml(dir, @jobs_yaml)
-      Loader.load(dir)
+      Loader.load()
 
       assert File.exists?(Path.join([dir, ".cache", "jobs_v2.etf"]))
     end
@@ -147,20 +151,20 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
     @tag :tmp_dir
     test "rebuilds when a source is newer than the cache", %{tmp_dir: dir} do
       yaml = write_yaml(dir, @jobs_yaml)
-      Loader.load(dir)
+      Loader.load()
 
       cache = Path.join([dir, ".cache", "jobs_v2.etf"])
       File.write!(yaml, String.replace(@jobs_yaml, "max_weight: 20000", "max_weight: 99999"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)
 
-      assert %{by_id: %{0 => %Job{max_weight: 99999}}} = Loader.load(dir)
+      assert %{by_id: %{0 => %Job{max_weight: 99999}}} = Loader.load()
     end
 
     @tag :tmp_dir
-    test "raises a helpful error when there are no data files", %{tmp_dir: dir} do
-      assert_raise RuntimeError, ~r/no data files in .*#{Path.basename(dir)}/, fn ->
-        Loader.load(dir)
+    test "raises when the domain has no base data", %{tmp_dir: _dir} do
+      assert_raise RuntimeError, ~r/no renewal data for db "jobs"/, fn ->
+        Loader.load()
       end
     end
   end

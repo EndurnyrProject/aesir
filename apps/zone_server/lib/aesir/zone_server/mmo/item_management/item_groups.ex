@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
   @doc "Rebuilds the cached index after editing the data files in a running session."
   @spec reload() :: :ok
   def reload do
-    :persistent_term.put(@pt_key, Loader.load(data_dir()))
+    :persistent_term.put(@pt_key, Loader.load())
     :ok
   end
 
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
   defp index do
     case :persistent_term.get(@pt_key, nil) do
       nil ->
-        built = Loader.load(data_dir())
+        built = Loader.load()
         :persistent_term.put(@pt_key, built)
         built
 
@@ -34,7 +34,4 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
         built
     end
   end
-
-  @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/item_groups")
 end

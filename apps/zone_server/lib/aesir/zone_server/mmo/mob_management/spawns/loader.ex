@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Loader do
   @moduledoc """
-  Builds the spawn index from our-schema YAML files in a data directory.
+  Builds the spawn index from our-schema YAML files in the spawns domain.
 
   Each YAML document is a list of `{map, spawns}` entries; spawns reference mobs
   by numeric id. Cache mechanics live in `Aesir.ZoneServer.Mmo.DataLoader`. Plain
@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Loader do
 
   @cache_file "spawns_v2.etf"
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "spawns" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [%{map: String.t(), spawns: [MobSpawn.t()]}]
   defp build(sources) do

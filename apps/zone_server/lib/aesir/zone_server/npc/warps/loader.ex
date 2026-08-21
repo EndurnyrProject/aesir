@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Npc.Warps.Loader do
   @moduledoc """
-  Builds the per-map warp index from our-schema YAML files in a data directory.
+  Builds the per-map warp index from our-schema YAML files in the warps domain.
 
   Each YAML document is a flat list of warp placements; every warp carries its
   own `map` field, so the index groups them by map. Cache mechanics live in
@@ -14,8 +14,8 @@ defmodule Aesir.ZoneServer.Npc.Warps.Loader do
 
   @cache_file "warps.etf"
 
-  @spec load(Path.t()) :: index()
-  def load(dir), do: dir |> DataLoader.load(@cache_file, &build/1) |> index()
+  @spec load() :: index()
+  def load, do: "warps" |> DataLoader.load(@cache_file, &build/1) |> index()
 
   @spec build([Path.t()]) :: [Warp.t()]
   defp build(sources) do

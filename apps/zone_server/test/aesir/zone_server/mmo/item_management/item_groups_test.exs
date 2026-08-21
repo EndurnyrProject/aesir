@@ -27,9 +27,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
             announced: true
   """
 
-  setup do
+  setup context do
     :persistent_term.erase(ItemGroups)
     on_exit(fn -> :persistent_term.erase(ItemGroups) end)
+    Aesir.ZoneServer.DbTestSetup.configure_root(context, "item_groups")
   end
 
   test "fetch resolves the ORE group from the runtime catalog" do
@@ -76,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
                  }
                ]
              }
-           } = Loader.load(dir)
+           } = Loader.load()
 
     write_yaml(dir, """
     - key: defaults
@@ -89,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
 
     File.rm_rf!(Path.join(dir, ".cache"))
 
-    assert %{defaults: %Group{subgroups: [%{entries: [%Entry{} = entry]}]}} = Loader.load(dir)
+    assert %{defaults: %Group{subgroups: [%{entries: [%Entry{} = entry]}]}} = Loader.load()
     assert entry.rate == 0
     assert entry.amount == 1
     refute entry.identify?
@@ -99,27 +100,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
   @tag :tmp_dir
   test "loader reuses a fresh ETF cache", %{tmp_dir: dir} do
     yaml = write_yaml(dir, @group_yaml)
-    assert %{test_group: %Group{}} = Loader.load(dir)
+    assert %{test_group: %Group{}} = Loader.load()
 
     cache = Path.join([dir, ".cache", "item_groups_v1.etf"])
     File.write!(yaml, String.replace(@group_yaml, "test_group", "changed_group"))
     File.touch!(yaml, 1_000_000)
     File.touch!(cache, 2_000_000)
 
-    assert %{test_group: %Group{}} = Loader.load(dir)
+    assert %{test_group: %Group{}} = Loader.load()
   end
 
   @tag :tmp_dir
   test "loader rebuilds when YAML is newer than the ETF cache", %{tmp_dir: dir} do
     yaml = write_yaml(dir, @group_yaml)
-    assert %{test_group: %Group{}} = Loader.load(dir)
+    assert %{test_group: %Group{}} = Loader.load()
 
     cache = Path.join([dir, ".cache", "item_groups_v1.etf"])
     File.write!(yaml, String.replace(@group_yaml, "test_group", "changed_group"))
     File.touch!(cache, 1_000_000)
     File.touch!(yaml, 2_000_000)
 
-    assert %{changed_group: %Group{}} = Loader.load(dir)
+    assert %{changed_group: %Group{}} = Loader.load()
   end
 
   defp write_yaml(dir, contents) do
