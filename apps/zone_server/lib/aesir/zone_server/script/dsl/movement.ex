@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
 
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Script.Ctx
+  alias Aesir.ZoneServer.Script.Dsl.Internal
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -62,7 +63,13 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   def warp(%Ctx{} = ctx, save, _x, _y) when save in ["SavePoint", "Save"],
     do: warp(ctx, :save_point)
 
-  def warp(%Ctx{} = ctx, map, x, y) do
+  # An NPC interaction runs in its own process and only holds a read snapshot of
+  # the player state, so the warp is routed to the session (the single writer of
+  # map/coordinates); relocating the snapshot would leave the session standing on
+  # the origin cell and snap the player back on its next step. An item script
+  # (`session_pid: nil`) already runs inline on the session, where the ctx state
+  # it returns *is* the state that gets committed, so it warps directly.
+  def warp(%Ctx{session_pid: nil} = ctx, map, x, y) do
     session = %{game_state: ctx.game_state, connection_pid: ctx.connection_pid}
 
     case WarpHandler.warp(session, map, x, y) do
@@ -70,6 +77,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
       {:error, reason} -> Ctx.halt(ctx, reason)
     end
   end
+
+  def warp(%Ctx{} = ctx, map, x, y), do: Internal.apply_op(ctx, {:warp, map, x, y})
 
   @doc """
   Warps every player inside the rectangle `{x1,y1}`–`{x2,y2}` on `from_map` to

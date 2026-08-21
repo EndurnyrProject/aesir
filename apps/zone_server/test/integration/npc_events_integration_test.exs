@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ChatMessage
+  alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MoveRequest
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.MobManagement
@@ -38,7 +40,6 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
-  alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -156,15 +157,6 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
         :ets.delete(:npc_session_flags, gid)
       end)
 
-      stub(SpatialIndex, :get_players_in_range, fn _, _, _, _ -> [] end)
-      stub(SpatialIndex, :get_units_in_range, fn _, _, _, _, _ -> [] end)
-      stub(SpatialIndex, :update_visibility, fn _, _, _ -> :ok end)
-      stub(SpatialIndex, :get_visible_players, fn _ -> [] end)
-      stub(SpatialIndex, :remove_player, fn _ -> :ok end)
-      stub(SpatialIndex, :clear_visibility, fn _ -> :ok end)
-      stub(Broadcast, :to_players, fn _, _, _ -> :ok end)
-      stub(Broadcast, :subscribe_mob_despawns, fn _ -> :ok end)
-      stub(Broadcast, :unsubscribe_mob_despawns, fn _ -> :ok end)
       stub(Warps, :for_map, fn _ -> :error end)
 
       {:ok, gid: gid}
@@ -173,53 +165,55 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
     test "walking into the rect warps via on_talk; walking back after the warp fires again", %{
       gid: gid
     } do
-      char_id = 9101
+      player = start_toucher()
 
-      game_state =
-        char_id
-        |> character()
-        |> PlayerState.new()
-        |> Map.put(:x, 117)
-        |> Map.put(:y, 60)
-        |> Map.put(:walk_path, [{118, 60}, {119, 60}])
-        |> Map.put(:movement_state, :moving)
+      simulate_incoming_message(player.pid, %MoveRequest{dest_x: 121, dest_y: 60})
 
-      register_moving_player(char_id, game_state)
+      assert_receive :warped, 1_000
 
-      state = %{game_state: game_state, connection_pid: self(), interaction_lock: nil}
+      # The session itself — the single writer of map/coordinates — must be the
+      # one that moved; an interaction relocating only its own read snapshot
+      # would leave the player pathing from the origin cell on its next step.
+      assert_eventually(fn ->
+        match?(%{map_name: "prontera", x: 150, y: 150}, get_player_state(player.pid))
+      end)
 
-      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
-      refute_receive :warped, 50
-      refute MapSet.member?(state.game_state.inside_npc_areas, gid)
-
-      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
-      assert_receive :warped
-      assert {_pid, ref, ^gid} = state.interaction_lock
-
-      assert_receive {:DOWN, ^ref, :process, pid, reason}
-      {:noreply, state} = PlayerSession.handle_info({:DOWN, ref, :process, pid, reason}, state)
-      assert state.interaction_lock == nil
-
-      {:ok, {PlayerState, warped_gs, _pid}} = UnitRegistry.get_unit(:player, char_id)
-      assert warped_gs.map_name == "prontera"
-      assert {warped_gs.x, warped_gs.y} == {150, 150}
+      warped_gs = get_player_state(player.pid)
+      assert warped_gs.pending_map_load == :warp
       refute MapSet.member?(warped_gs.inside_npc_areas, gid)
 
-      return_gs =
-        warped_gs
-        |> Map.put(:x, 117)
-        |> Map.put(:y, 60)
-        |> Map.put(:walk_path, [{118, 60}, {119, 60}])
-        |> Map.put(:movement_state, :moving)
+      simulate_incoming_message(player.pid, %MapLoaded{})
+      walk_back_to_origin(player)
 
-      state = %{state | game_state: return_gs}
+      simulate_incoming_message(player.pid, %MoveRequest{dest_x: 121, dest_y: 60})
 
-      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
-      refute_receive :warped, 50
+      assert_receive :warped, 1_000
 
-      {:noreply, state} = PlayerSession.handle_info({:movement, :movement_tick}, state)
-      assert_receive :warped
-      assert MapSet.member?(state.game_state.inside_npc_areas, gid)
+      assert_eventually(fn ->
+        match?(%{x: 150, y: 150}, get_player_state(player.pid))
+      end)
+    end
+
+    defp start_toucher do
+      player =
+        start_player_session(
+          id: System.unique_integer([:positive]),
+          name: "Toucher",
+          position: {117, 60}
+        )
+
+      on_exit(fn -> end_player_session(player) end)
+      player
+    end
+
+    defp walk_back_to_origin(player) do
+      PlayerSession.warp(player.pid, "prontera", 117, 60)
+
+      assert_eventually(fn ->
+        match?(%{x: 117, y: 60}, get_player_state(player.pid))
+      end)
+
+      simulate_incoming_message(player.pid, %MapLoaded{})
     end
   end
 
@@ -386,12 +380,6 @@ defmodule Aesir.ZoneServer.NpcEventsIntegrationTest do
   defp gid_for(module) do
     {^module, placement} = Enum.find(NpcRegistry.entries(), fn {mod, _} -> mod == module end)
     NpcRegistry.entity_id(placement)
-  end
-
-  defp register_moving_player(char_id, game_state) do
-    UnitRegistry.register_unit(:player, char_id, PlayerState, game_state, self())
-    SpatialIndex.add_unit(:player, char_id, game_state.x, game_state.y, game_state.map_name)
-    Movement.drain_dirty(game_state.map_name)
   end
 
   defp register_observer(char_id, x, y) do

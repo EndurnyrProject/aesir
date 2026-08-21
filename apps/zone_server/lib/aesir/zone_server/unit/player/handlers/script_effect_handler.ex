@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -71,6 +72,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:reset_skills}
           | {:grant_skill, integer() | atom(), integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
+          | {:warp, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
           | {:setcart, non_neg_integer()}
           | {:set_riding, boolean()}
@@ -424,6 +426,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:grant_skill, skill_id_or_name, level}, state) do
     case SkillLearningHandler.grant_skill(skill_id_or_name, level, state) do
+      {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  # Scripted warp of the attached player. Runs here, in the session process,
+  # so the authoritative `PlayerState` (map, coordinates, `pending_map_load`)
+  # is the one that moves — an NPC interaction runs in its own process and
+  # cannot relocate the player by mutating its read snapshot.
+  def apply_op({:warp, map, x, y}, state) do
+    case WarpHandler.warp(state, map, x, y) do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
       {:error, reason} -> {{:error, reason}, state}
     end
