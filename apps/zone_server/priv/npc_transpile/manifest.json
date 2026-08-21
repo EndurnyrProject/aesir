@@ -18047,7 +18047,7 @@
   },
   "re/cities/izlude.txt|function|F_IzludeChannel|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FIzludechannel",
-    "output_hash": "35bfe6b9264dd2f745e240dafc92a0046f298f89b820d74b391047713cba3d09",
+    "output_hash": "11ef6efc3db6a1926c4d0e483505d6d5432d3543ea6bcaa99af8843c2db0f53d",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_izludechannel.ex",
     "source_hash": "80d09aab8eead9e4be39dca27fb5099557599a98a72086d00bd3a8c5ff1decd6",
     "spawns": []
@@ -18560,7 +18560,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature",
     "output_hash": "6f7b929be158eacd252b8bca43c9537749be1e9cfd05f5ee19c39f1f944768d0",
     "output_path": "lib/aesir/zone_server/content/npc/floating/unidentified_creature.ex",
-    "source_hash": "09f4548c472d6ce6a07a58d5a109b0d1a34e4540e7c9c8155547221a7d8255c1",
+    "source_hash": "962838b3bd0d70017b728900192b80e2586b00e5d7f792626787ffb4f2a843d5",
     "spawns": [
       {
         "name": "Unidentified Creature",
@@ -18607,7 +18607,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Floating.UnidentifiedCreature0",
     "output_hash": "617014f3b7d8d1c4db701e00a0e1be145f508b6b2904c35f86912f69f561fb17",
     "output_path": "lib/aesir/zone_server/content/npc/floating/unidentified_creature_0.ex",
-    "source_hash": "b6bcd93e552d2e851ef61ac1618239f49412fd1bc336814617d8917428241c2e",
+    "source_hash": "cfdf5ab8db35a9ef6e1f7b52172fa541d170a65277fbbfecb52597bf591d567a",
     "spawns": [
       {
         "name": "Unidentified Creature",
@@ -18717,7 +18717,7 @@
   },
   "re/cities/malaya.txt|function|F_Malaya_Jeepney|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney",
-    "output_hash": "f06c5f6dd535e28081db601419af86399899c44690ea122081e222a86fb1ea74",
+    "output_hash": "79c82770b2b2b9aeddf951aa7f6bf25006d5d303bd4b907dc72658966946fe67",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_malaya_jeepney.ex",
     "source_hash": "1473a3b01a8b6d50fbd122603077fd1536aab62142027e75b1919d2cc6127724",
     "spawns": []
@@ -20663,7 +20663,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc",
     "output_hash": "005825842f175bc9dabe820d51025d02c5650dc2865c536d0619c16417d736fb",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc.ex",
-    "source_hash": "6d28760003ba7ec7d097044974c42e8b1d84cf9d45d51ffde8dac716c39a2da6",
+    "source_hash": "64741ede9fcf04dbb516e760ee34807dba7d2b4291d5e281967c8f398f23b142",
     "spawns": [
       {
         "name": "",
@@ -20736,7 +20736,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc90208",
     "output_hash": "78ded9b568544bd8c1024a9c8f30ac0069c90f6bba8405559c47b5d6bfa7afe5",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/npc_90_208.ex",
-    "source_hash": "a5b8e96f960589fea93bf37baaecee68afed60a4b46edd9baac726a6f03779f7",
+    "source_hash": "d1104b535e03ae16598da9c6490cbc18a9bd5b16accf996884fda7b090676d82",
     "spawns": [
       {
         "name": "",
@@ -21251,7 +21251,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship",
     "output_hash": "f5ef34a649186858a219ea36dc9c4c23ae6a89ffb8eca8d9f38a5e41fca32085",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/airship.ex",
-    "source_hash": "bd7c9d05d7d73ae0db30cec93bd74a40dbd823cec932bfc24b06e6ca45d4083b",
+    "source_hash": "fcf3afef28fba544199d5076aa717503fb8868e6b40cbed3c60ffda5f047fee2",
     "spawns": [
       {
         "name": "Airship",
@@ -21430,7 +21430,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena",
     "output_hash": "e2fd44befbd258a26d3a4fd5e225e07791b1cad39aff89b3a3be385f065bec65",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arena.ex",
-    "source_hash": "ebc3a6ab4219b2abbe62fcf8d9c92c5107f213c9081c6e9477c71a6290792997",
+    "source_hash": "758fbced5fff85e3fe9899cc8d0ab2a57e073196e48228bff9e03e838172f6be",
     "spawns": [
       {
         "name": "Arena",
@@ -21554,7 +21554,7 @@
   },
   "re/jobs/novice/academy.txt|script|Battle Instructor#08|iz_ac01:59:83": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor",
-    "output_hash": "3740d65df14ab0f913d5f89cedeb1c9bdaa6cb2fb07d72812b61cc338b9814e6",
+    "output_hash": "65f7857af491d3a6c827e8db9777b544e9763c45f43875b9e5541b73111bf2b8",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/battle_instructor.ex",
     "source_hash": "bc7fa34b597de326eedf5fae8d23be468f16c5851402ef62b9f5da695df20198",
     "spawns": [
@@ -21662,7 +21662,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BulletinBoard",
     "output_hash": "5f1c1245dffd63f204019cd161f920c796a677e763f61c0d8bdad3f9705905f5",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/bulletin_board.ex",
-    "source_hash": "4b390938520613ce060e52b3f8fcc9f509cade0b85d20d4bfc8ba4d7ddd4b136",
+    "source_hash": "1ce8688516fb019ce2f08dd84bb093e96d47edee66a623ad54572780570ee91d",
     "spawns": [
       {
         "name": "Bulletin Board",
@@ -21788,7 +21788,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc198213",
     "output_hash": "eb34f7c6eee25364c2c92f5da90576ca402c369bc0800d5160e9a6966570ded7",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc_198_213.ex",
-    "source_hash": "79524869c0390c980be7754d20072dba4db514b21baa739551467b5d1d078014",
+    "source_hash": "175c8a14778d7ce71fabd3895bb77f7930be469ab63cc333663f7d89c91306cf",
     "spawns": [
       {
         "name": "Captain Carocc",
@@ -21984,7 +21984,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademyStaff",
     "output_hash": "6227b170683ad91bda43a27c2ebf1b121e1f194836dcfff21eff5f97ddb7c568",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/criatura_academy_staff.ex",
-    "source_hash": "e0d694a7b3c62aa16556b1e80f2ca68c1883c1bfeb2018edbaf9221ea057d2aa",
+    "source_hash": "311ecd6ac1a30a822380eb266a28e80d23a3d3370db691df07008051dedea2a7",
     "spawns": [
       {
         "name": "Criatura Academy Staff",
@@ -22057,7 +22057,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant",
     "output_hash": "ce5487403cf9f799e3fb82960b452532cdc46fc3bd14f6684a90b2e124704ad6",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cultivated_red_plant.ex",
-    "source_hash": "64aab070cabaff4fc451e8e72af4c9d84dabc97aed4a4f295b9fe73026e9bae7",
+    "source_hash": "afdbd3ec7edf64b588df198f3999612569b50d68e33600324da46b20f45c07e7",
     "spawns": [
       {
         "name": "Cultivated Red Plant",
@@ -24062,7 +24062,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmith",
     "output_hash": "8d8fc8141e85150f5a755bd6dfc95d5586f57ecf4145e26e8e9cdeb1914ada9e",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/repairing_blacksmith.ex",
-    "source_hash": "6d14b2149871838f57f2a13e7847dc456a4ccafd8487a82d356d6ed8039bdccb",
+    "source_hash": "493145a138cc0897c597bc7b87b5357d6a9f57e9072fa035a86e81cf44222cbd",
     "spawns": [
       {
         "name": "Repairing Blacksmith",
@@ -24718,7 +24718,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz",
     "output_hash": "3479bd7570fdbf53016d56a54164cee37d565d976dedf0a643443e040d58a73d",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/trainer_mainz.ex",
-    "source_hash": "7b842953dddf54d392d81799b8ecbbb04b2eface3a7ea35340c4797b121ed80b",
+    "source_hash": "8f4513cbc26124be8902f151aeb8d31d8809e05a7d83c5dc3b814483f44c7a40",
     "spawns": [
       {
         "name": "Trainer Mainz",
@@ -24789,7 +24789,7 @@
   },
   "re/jobs/novice/academy.txt|script|Training Instructor#1a|new_1-1:53:114": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor",
-    "output_hash": "7dd6e2f576b5eb44117540abd38c4073dd3c087db9e964fe2ac634ddea4d2d26",
+    "output_hash": "b2c82faf647ab9ae66208c3e69f518be07ca298190379dae59dcce1e83887a3b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/training_instructor.ex",
     "source_hash": "9833c6caf024f7f0a192b30feaa7152c4a4c054c5a642ac379ddad7ccd6b1125",
     "spawns": [
@@ -25281,7 +25281,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman",
     "output_hash": "0a345da22d3c43e199fed9b3c19dbefacf82380f522a66d8188f61013e137a24",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wounded_swordsman.ex",
-    "source_hash": "6101c57a23203e255f7008fb695998273d8604560c11fd11825223780eda4fb1",
+    "source_hash": "8d2f724d1558018f9e374b4f341686f7f04857dc0d0e3ebb5971d3043975dc8c",
     "spawns": [
       {
         "name": "Wounded Swordsman",
@@ -25407,7 +25407,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt5130",
     "output_hash": "55735b4992b784113a816c3064db94a1a9bf81bb399a33b4767cd4222cc0c28c",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/iz_int_51_30.ex",
-    "source_hash": "72729617a1a9509dc7ef2678ac569d824c401403283cad58ba93936bcd865234",
+    "source_hash": "60e4a987bd8707460276013f3331fdaf8d0e146eead98ae4bbc14f4439864396",
     "spawns": [
       {
         "name": "iz_int",
@@ -25480,7 +25480,7 @@
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt",
     "output_hash": "b10d7850e097e771356c31a68909950678b80978da1918b2a510b572cf2ca4bb",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/iz_int.ex",
-    "source_hash": "03f3a8c8c15cec312c03cc281130db80918d6470e770c38f15c5c1058dce9045",
+    "source_hash": "7b3d62e51ef45d42b4e3e1f73bc57c9e45ad365c0c3d3f23ccb873cd978a967c",
     "spawns": [
       {
         "name": "iz_int",
@@ -25551,7 +25551,7 @@
   },
   "re/jobs/novice/novice.txt|floating|::NvBrutus|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Nvbrutus",
-    "output_hash": "ac5ca317bdbdc1093247b1914589828a0075e13925d4cf9b026c0bc0857968eb",
+    "output_hash": "cde55d316904fea651fc7917d002ff9a257e1cdc837afdbb0af1a587f40c30a3",
     "output_path": "lib/aesir/zone_server/content/npc/floating/nvbrutus.ex",
     "source_hash": "12074bbaad50f19ee3871545b59362c3888f1f6857dc655181c6b32b3ad0b6f0",
     "spawns": [
@@ -25710,7 +25710,7 @@
   },
   "re/jobs/novice/novice.txt|floating|Brade#newbe02::NvBradeA|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Brade",
-    "output_hash": "0b92d6a3f44ffdb47a37a8b8658bf58712f43a3ca944c4845992613e5958e1d8",
+    "output_hash": "84d41d25b030d3a28af8e19d387fd0006605fbf43a51918500196ecd5b3182db",
     "output_path": "lib/aesir/zone_server/content/npc/floating/brade.ex",
     "source_hash": "e5e26db4cdb02a06b6bf807cc2fc4b28e11a8ac29d67031de89c8031e690f0b4",
     "spawns": [
@@ -25763,7 +25763,7 @@
   },
   "re/jobs/novice/novice.txt|floating|Brade#newbe04::NvBradeB|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Brade0",
-    "output_hash": "e9dd685f68b1e45e79dd743b13c0ab157c1b4fc813dcda1b067f91e6ce49f5fa",
+    "output_hash": "bbb892f3293d18b3d4e360de04af352dbeb6ef66f92bba8606ac1c8c9e6e4c3a",
     "output_path": "lib/aesir/zone_server/content/npc/floating/brade_0.ex",
     "source_hash": "ea432cc261c3b4f9cc1ab1b827e118736d357deef27cc33924256a9ce94b9ca7",
     "spawns": [
@@ -25922,7 +25922,7 @@
   },
   "re/jobs/novice/novice.txt|floating|Chocolat#newbe06::NvChocolat|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Chocolat",
-    "output_hash": "3f0f102814123a65ff85cc742dfa19315000c7e42f86af0aa18becd5ef40c998",
+    "output_hash": "c0d3011d5ff191a857e1c48f47659b279bacfa37bc7cce7766b89d79945a8c6e",
     "output_path": "lib/aesir/zone_server/content/npc/floating/chocolat.ex",
     "source_hash": "903c6260a2f8d4d3201ebbe37b6a54af2582f79d499be896ac65245920218827",
     "spawns": [
@@ -26240,7 +26240,7 @@
   },
   "re/jobs/novice/novice.txt|floating|Instructor#Edwin::NvEdwin|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Instructor",
-    "output_hash": "c7523886479b4514dc2b2e41ddb4f0a215595a88f7d727840eb723fa95d82866",
+    "output_hash": "db799c0cb035e53ca9b2675b541caa1ccdb237e06e3ea731561707a3bdb9e7ec",
     "output_path": "lib/aesir/zone_server/content/npc/floating/instructor.ex",
     "source_hash": "2a63f698e9bb0526485f5afc637814b032bb576e8847bf1c4a547d29e1e3b269",
     "spawns": [
@@ -26293,7 +26293,7 @@
   },
   "re/jobs/novice/novice.txt|floating|Jinha#newbe03::NvJinha|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Jinha",
-    "output_hash": "d4ba25f0b724537a5b9bc02d84c094656c8af26018b779e0f3bf2a723103069b",
+    "output_hash": "4579fd783eb3149e59806b394e77fb80fe8c580aac0a4b12897c1934b2608c23",
     "output_path": "lib/aesir/zone_server/content/npc/floating/jinha.ex",
     "source_hash": "cc76fb29a1966229f43d59b79fec4dcdbfa260882fbe9df37f5df5d8f6803313",
     "spawns": [
@@ -26611,7 +26611,7 @@
   },
   "re/jobs/novice/novice.txt|floating|Sprakki#newbe05::NvSprakkiB|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Sprakki0",
-    "output_hash": "6cf771e940587260b14d597c860c7492d0d52b11f0ba3d66994778accb2fafb4",
+    "output_hash": "0e1928e0481a9bdd2778a19854c84fdfd26865e525d81df8804f3976c369bcd8",
     "output_path": "lib/aesir/zone_server/content/npc/floating/sprakki_0.ex",
     "source_hash": "1b5205a73a54594dfd030216ecca435565f538e3e1dd558781527d84db1d1a2b",
     "spawns": [
@@ -27041,7 +27041,7 @@
   },
   "re/warps/cities/izlude.txt|script|#intro_to_izlude|int_land:49:57": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Izlude.Npc4957",
-    "output_hash": "32af94452ff8de15c38eebbbf5b4b5fbfaa67dfdb33c44b789792e25ccc3948c",
+    "output_hash": "7ab4db92ad1fabd141c33e29e6b737fe68f9a42100979174efe5cb7e833b8f7a",
     "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/izlude/npc_49_57.ex",
     "source_hash": "5c4d76b4db1753b484eabd8cb3b24c108383f2180175539ba643865d1a90a598",
     "spawns": [
@@ -27114,7 +27114,7 @@
   },
   "re/warps/cities/izlude.txt|script|#ship_out|iz_int:56:15": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Izlude.Npc",
-    "output_hash": "22be97ce721504627395eb7b19672ab4d64b4ad9352d0256041a0520611b6e9d",
+    "output_hash": "537f226dcaa40fe6fb0a335b984366114d92322a5932107ecb7d4177e7008d91",
     "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/izlude/npc.ex",
     "source_hash": "d05cfd7665649b0f12d73860bbc41c443964810913cd3aeb200e56adcb218cac",
     "spawns": [
@@ -27810,7 +27810,7 @@
   },
   "re/warps/guildcastles.txt|floating|warp_TE_castle|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.WarpTeCastle",
-    "output_hash": "b52626cb165535c61a373095723827e93c3d0409d753cba1851325ef76a8c1e2",
+    "output_hash": "84c00691f47c4af964e0f0baae2504a856aa3756d3518ec50acbcd729e0c0a19",
     "output_path": "lib/aesir/zone_server/content/npc/floating/warp_te_castle.ex",
     "source_hash": "d0f3f4682b72bb52376d38476d5a4685b24107d56104e2f525db19b314ab1a17",
     "spawns": [
@@ -28020,7 +28020,7 @@
   },
   "re/warps/other/TrainingZone123.txt|script|Training Ground Manager#fild01_1|tra_fild01:204:117": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone123.TrainingGroundManager",
-    "output_hash": "213e5ae2a5c86ff463772538b7f443c377590efe432ba8e9ebe7623bf88f4e9b",
+    "output_hash": "e5e1926d3557f04f194a34c04941e8a0a8696cd5f7eac5d28bcc305c95a3a21f",
     "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone123/training_ground_manager.ex",
     "source_hash": "7fc8fb94f1a7218cdb1037fbdee3257270c6f10c7d2ea80f51d19ad6eadf8f6d",
     "spawns": [

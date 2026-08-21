@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Chocolat do
                     |> mes("Instructor Brade will start your basic training.")
                     |> close()
 
-                  ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+                  ctx = warp(ctx, strnpcinfo(ctx, 4), 100, 100)
                   throw({:script_end, ctx})
 
                 2 ->
@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Chocolat do
                     |> mes("I will see you later.")
                     |> close()
 
-                  ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+                  ctx = warp(ctx, strnpcinfo(ctx, 4), 100, 100)
                   throw({:script_end, ctx})
 
                 _ ->
@@ -327,7 +327,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Chocolat do
                               )
 
                             ctx = savepoint(ctx, get_local(ctx, :"map$", ""), 96, 21)
-                            ctx = todo(ctx, :warp, [get_local(ctx, :"map$", ""), 96, 21])
+                            ctx = warp(ctx, get_local(ctx, :"map$", ""), 96, 21)
                             throw({:script_end, ctx})
                           else
                             {ctx, v3} =
@@ -373,7 +373,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Chocolat do
                                     )
 
                                   ctx = savepoint(ctx, get_local(ctx, :"map$", ""), 96, 21)
-                                  ctx = todo(ctx, :warp, [get_local(ctx, :"map$", ""), 96, 21])
+                                  ctx = warp(ctx, get_local(ctx, :"map$", ""), 96, 21)
                                   throw({:script_end, ctx})
 
                                 _ ->

@@ -27,8 +27,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :nullary, dsl: name}` — a no-argument effect (`nude`) → `name(ctx)`;
     any trailing rAthena arg (e.g. the optional char id) is dropped.
   - `%{shape: :heal, dsl: name}` — `heal <hp>,<sp>` → `name(ctx, hp: _, sp: _)`.
-  - `%{shape: :warp}` — `warp "map",x,y` with `"Random"`/`"SavePoint"`
-    special targets.
+  - `%{shape: :warp}` — `warp "map",x,y`: a literal `"Random"`/`"SavePoint"`
+    target folds to the one-argument DSL form, any other map expression
+    (literal or runtime) passes through to `warp/4`; other arities stay a stub.
   - `%{shape: :ref1, dsl: name}` — a single-argument buildin (an event ref or
     an NPC name) → `name(ctx, arg)`; any other arg count stays a stub.
   - `%{shape: :npctalk, dsl: name}` — `npctalk "<msg>"{,"<npc>"{,<flag>{,<color>}}}`:

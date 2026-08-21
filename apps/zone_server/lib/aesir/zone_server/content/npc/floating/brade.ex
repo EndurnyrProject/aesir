@@ -403,7 +403,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Brade do
                                     |> mes("Hahahaha...")
                                     |> close()
 
-                                  ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 41, 172])
+                                  ctx = warp(ctx, strnpcinfo(ctx, 4), 41, 172)
                                   throw({:script_end, ctx})
 
                                 _ ->
@@ -434,7 +434,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Brade do
                                     |> close()
 
                                   ctx =
-                                    todo(ctx, :warp, [
+                                    warp(
+                                      ctx,
                                       Rathena.concat(
                                         Rathena.concat(
                                           "new_",
@@ -444,7 +445,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Brade do
                                       ),
                                       96,
                                       21
-                                    ])
+                                    )
 
                                   throw({:script_end, ctx})
 
@@ -461,7 +462,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Brade do
                                     )
                                     |> close()
 
-                                  ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 41, 172])
+                                  ctx = warp(ctx, strnpcinfo(ctx, 4), 41, 172)
                                   throw({:script_end, ctx})
 
                                 _ ->

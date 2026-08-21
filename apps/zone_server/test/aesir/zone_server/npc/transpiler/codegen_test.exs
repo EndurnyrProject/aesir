@@ -1589,6 +1589,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :warpchar"
   end
 
+  test "warp passes a dynamic map target through instead of stubbing it" do
+    src =
+      gen!("""
+      .@map$ = "int_land" + .@num$;
+      warp .@map$,85,107;
+      warp strnpcinfo(4),100,100;
+      warp "Random",0,0;
+      warp "SavePoint",0,0;
+      close;
+      """)
+
+    assert src =~ ~S|warp(ctx, get_local(ctx, :"map$", ""), 85, 107)|
+    assert src =~ ~S{|> warp(strnpcinfo(ctx, 4), 100, 100)}
+    assert src =~ "warp(:random)"
+    assert src =~ "warp(:save_point)"
+    refute src =~ "todo(ctx, :warp"
+  end
+
   test "mobcount is a call read and sleep2 a statement command" do
     src =
       gen!("""

@@ -70,6 +70,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Instructor do
       |> close()
 
     ctx = savepoint(ctx, strnpcinfo(ctx, 4), 100, 100)
-    todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+    warp(ctx, strnpcinfo(ctx, 4), 100, 100)
   end
 end

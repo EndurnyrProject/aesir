@@ -795,7 +795,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                   |> mes("Be sure you know how to get back.")
                   |> close()
 
-                ctx = todo(ctx, :warp, [Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213])
+                ctx = warp(ctx, Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213)
                 throw({:script_end, ctx})
 
               2 ->
@@ -806,7 +806,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
                   |> mes("Be sure you know how to get back.")
                   |> close()
 
-                ctx = todo(ctx, :warp, [Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213])
+                ctx = warp(ctx, Rathena.concat("prt_fild", strnpcinfo(ctx, 2)), 344, 213)
                 throw({:script_end, ctx})
 
               3 ->

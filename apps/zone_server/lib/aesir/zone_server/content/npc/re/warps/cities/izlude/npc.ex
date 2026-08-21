@@ -73,6 +73,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Izlude.Npc do
     ctx = set_local(ctx, :"num$", Rathena.replacestr(strnpcinfo(ctx, 2), "ship_out", ""))
     ctx = set_local(ctx, :"map$", Rathena.concat("int_land", get_local(ctx, :"num$", "")))
     ctx = savepoint(ctx, get_local(ctx, :"map$", ""), 77, 101)
-    todo(ctx, :warp, [get_local(ctx, :"map$", ""), 85, 107])
+    warp(ctx, get_local(ctx, :"map$", ""), 85, 107)
   end
 end

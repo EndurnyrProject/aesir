@@ -123,7 +123,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Izlude.Npc4957 do
         Rathena.concat("izlude", Rathena.replacestr(strnpcinfo(ctx, 2), "intro_to_izlude", ""))
       )
 
-    ctx = todo(ctx, :warp, [get_local(ctx, :"map$", ""), 196, 209])
+    ctx = warp(ctx, get_local(ctx, :"map$", ""), 196, 209)
     savepoint(ctx, get_local(ctx, :"map$", ""), 128, 142)
   end
 end

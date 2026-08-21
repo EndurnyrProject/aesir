@@ -1065,23 +1065,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = #{dsl}(ctx, hp: #{render(hp, env)}, sp: #{render(sp, env)})"], :cont}
   end
 
-  defp emit_mapped(_name, %{shape: :warp}, [{:str, target} | rest], env) do
+  # `warp "<map>",<x>,<y>` — a literal "Random"/"SavePoint" target resolves to
+  # the one-argument DSL form at transpile time. Every other map expression,
+  # literal or dynamic (`.@map$`, `strnpcinfo(4)`, a concat), is passed through
+  # to `warp/4`, which resolves a special target a runtime string may carry.
+  defp emit_mapped(name, %{shape: :warp}, [{:str, target} | _rest] = args, env) do
     case CommandMap.warp_target(target) do
-      {:ok, atom_form} ->
-        {["ctx = warp(ctx, #{atom_form})"], :cont}
-
-      :error ->
-        {pre, rest} = hoist_all(rest, env)
-        coords = Enum.map_join(rest, ", ", &render(&1, env))
-        {pre ++ ["ctx = warp(ctx, #{inspect(target)}, #{coords})"], :cont}
+      {:ok, atom_form} -> {["ctx = warp(ctx, #{atom_form})"], :cont}
+      :error -> emit_warp(name, args, env)
     end
   end
 
-  defp emit_mapped(name, %{shape: :warp}, args, env) do
-    {pre, args} = hoist_all(args, env)
-    rendered = Enum.map_join(args, ", ", &render(&1, env))
-    {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
-  end
+  defp emit_mapped(name, %{shape: :warp}, args, env), do: emit_warp(name, args, env)
 
   # `warpwaitingpc "<map>",<x>,<y>{,<n>}` — like `warp` but with coordinates and
   # an optional count. The map target resolves "Random"/"SavePoint" to the
@@ -1413,6 +1408,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       |> Enum.map(fn {arg, type} -> typed_arg(arg, type, env) end)
 
     {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join(rendered, ", ")})"], :cont}
+  end
+
+  defp emit_warp(name, args, env) do
+    {pre, args} = hoist_all(args, env)
+
+    case args do
+      [map, x, y] ->
+        call = "ctx = warp(ctx, #{render(map, env)}, #{render(x, env)}, #{render(y, env)})"
+        {pre ++ [call], :cont}
+
+      _ ->
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+        {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
+    end
   end
 
   defp questinfo_call(dsl, [icon], _env) do

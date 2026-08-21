@@ -153,7 +153,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Sprakki0 do
                     |> close()
 
                   ctx = savepoint(ctx, strnpcinfo(ctx, 4), 100, 100)
-                  ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+                  ctx = warp(ctx, strnpcinfo(ctx, 4), 100, 100)
                   throw({:script_end, ctx})
 
                 2 ->
@@ -227,7 +227,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Sprakki0 do
               |> close()
 
             ctx = savepoint(ctx, strnpcinfo(ctx, 4), 100, 100)
-            ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+            ctx = warp(ctx, strnpcinfo(ctx, 4), 100, 100)
             throw({:script_end, ctx})
           end
 

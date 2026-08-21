@@ -874,6 +874,48 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "warp/4 runtime special targets" do
+    test "a \"Random\" map name warps to a random cell, ignoring the coordinates" do
+      relocated = %{build_game_state() | map_name: "prontera", x: 33, y: 44}
+
+      expect(Cell, :random_traversable, fn "prontera" -> {:ok, {33, 44}} end)
+
+      expect(WarpHandler, :warp, fn _session, "prontera", 33, 44 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = Dsl.warp(build_ctx(), "Random", 85, 107)
+
+      assert ctx.status == :ok
+      assert Dsl.position(ctx) == {33, 44, "prontera"}
+    end
+
+    test "\"SavePoint\" and \"Save\" map names warp to the save point" do
+      game_state = %{build_game_state() | save_map: "izlude", save_x: 90, save_y: 105}
+      relocated = %{game_state | map_name: "izlude", x: 90, y: 105}
+
+      stub(WarpHandler, :warp, fn _session, "izlude", 90, 105 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      ctx = %{build_ctx() | game_state: game_state}
+
+      for target <- ["SavePoint", "Save"] do
+        assert Dsl.position(Dsl.warp(ctx, target, 85, 107)) == {90, 105, "izlude"}
+      end
+    end
+
+    test "an ordinary runtime map name warps to the given cell" do
+      relocated = %{build_game_state() | map_name: "int_land", x: 85, y: 107}
+
+      expect(WarpHandler, :warp, fn _session, "int_land", 85, 107 ->
+        {:ok, %{game_state: relocated}}
+      end)
+
+      assert Dsl.position(Dsl.warp(build_ctx(), "int_land", 85, 107)) == {85, 107, "int_land"}
+    end
+  end
+
   describe "areawarp/9" do
     test "warps every online player in the rectangle to the destination point" do
       test_pid = self()

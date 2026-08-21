@@ -244,13 +244,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.WarpTeCastle do
     ctx =
       if Rathena.truthy?(get_local(ctx, :guild_id, 0)) and
            get_local(ctx, :guild_id, 0) == get_local(ctx, :my_guild_id, 0) do
-        ctx =
-          todo(ctx, :warp, [
-            get_local(ctx, :"castle$", ""),
-            Enum.at(args, 1, 0),
-            Enum.at(args, 2, 0)
-          ])
-
+        ctx = warp(ctx, get_local(ctx, :"castle$", ""), Enum.at(args, 1, 0), Enum.at(args, 2, 0))
         throw({:script_end, ctx})
       else
         ctx
@@ -291,9 +285,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.WarpTeCastle do
         ctx
       end
 
-    ctx =
-      todo(ctx, :warp, [get_local(ctx, :"castle$", ""), Enum.at(args, 1, 0), Enum.at(args, 2, 0)])
-
+    ctx = warp(ctx, get_local(ctx, :"castle$", ""), Enum.at(args, 1, 0), Enum.at(args, 2, 0))
     throw({:script_end, ctx})
   end
 end

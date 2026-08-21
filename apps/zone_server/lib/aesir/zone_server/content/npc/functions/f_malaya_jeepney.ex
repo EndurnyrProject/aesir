@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney do
             throw({:script_end, ctx})
           else
             ctx = ctx |> mes("[Jeepney Driver]") |> mes("Have a nice day.") |> close()
-            ctx = todo(ctx, :warp, [get_local(ctx, :"mapName$", ""), 29, 24])
+            ctx = warp(ctx, get_local(ctx, :"mapName$", ""), 29, 24)
             throw({:script_end, ctx})
           end
 

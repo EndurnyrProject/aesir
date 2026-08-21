@@ -369,7 +369,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
       end
 
     ctx = savepoint(ctx, get_local(ctx, :"warp$", ""), 98, 88)
-    todo(ctx, :warp, [get_local(ctx, :"warp$", ""), 98, 88])
+    warp(ctx, get_local(ctx, :"warp$", ""), 98, 88)
   end
 
   defp loop_1(ctx) do

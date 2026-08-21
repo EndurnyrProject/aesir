@@ -69,13 +69,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIzludechannel do
             98
           )
 
-        ctx =
-          todo(ctx, :warp, [
-            Enum.at(get_local(ctx, :"maps$", []), get_local(ctx, :i, 0), ""),
-            128,
-            98
-          ])
-
+        ctx = warp(ctx, Enum.at(get_local(ctx, :"maps$", []), get_local(ctx, :i, 0), ""), 128, 98)
         throw({:script_end, ctx})
       else
         ctx

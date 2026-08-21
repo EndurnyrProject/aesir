@@ -97,11 +97,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Nvbrutus do
 
           ctx =
             if get_local(ctx, :i, 0) < 7 do
-              todo(ctx, :warp, [
+              warp(
+                ctx,
                 Rathena.concat(Rathena.concat("new_", get_local(ctx, :i, 0)), "-3"),
                 96,
                 21
-              ])
+              )
             else
               ctx
             end

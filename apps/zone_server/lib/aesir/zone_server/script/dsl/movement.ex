@@ -45,9 +45,22 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
     warp(ctx, game_state.save_map, game_state.save_x, game_state.save_y)
   end
 
+  @doc """
+  Relocates the player to `{map, x, y}`.
+
+  The map name is often a runtime value in transpiled scripts (`.@map$`,
+  `strnpcinfo(4)`, a concat), so the rAthena special targets are resolved here
+  too: `"Random"` warps to a random walkable cell and `"SavePoint"`/`"Save"`
+  to the save point, both ignoring the coordinates (matching `buildin_warp`).
+  """
   @spec warp(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def warp(%Ctx{status: {:error, _}} = ctx, _map, _x, _y), do: ctx
   def warp(%Ctx{game_state: nil} = ctx, _map, _x, _y), do: Ctx.halt(ctx, :no_player)
+
+  def warp(%Ctx{} = ctx, "Random", _x, _y), do: warp(ctx, :random)
+
+  def warp(%Ctx{} = ctx, save, _x, _y) when save in ["SavePoint", "Save"],
+    do: warp(ctx, :save_point)
 
   def warp(%Ctx{} = ctx, map, x, y) do
     session = %{game_state: ctx.game_state, connection_pid: ctx.connection_pid}
@@ -137,7 +150,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   form targets the attached player (equivalent to `warp/4`); the four-arg form
   targets `char_id`, casting a warp to that player's session when they are
   online and no-oping otherwise (rAthena returns success for an offline
-  target). "Random"/"SavePoint" string targets are not supported.
+  target). "Random"/"SavePoint" string targets are resolved only by the
+  three-arg (attached player) form, through `warp/4`.
   """
   @spec warpchar(Ctx.t(), String.t(), non_neg_integer(), non_neg_integer()) :: Ctx.t()
   def warpchar(%Ctx{status: {:error, _}} = ctx, _map, _x, _y), do: ctx

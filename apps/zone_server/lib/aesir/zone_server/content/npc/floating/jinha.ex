@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jinha do
           )
           |> close()
 
-        ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+        ctx = warp(ctx, strnpcinfo(ctx, 4), 100, 100)
         throw({:script_end, ctx})
       else
         ctx =
@@ -175,7 +175,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Jinha do
                         |> mes("I will send you to Instructor Brade.")
                         |> close()
 
-                      ctx = todo(ctx, :warp, [strnpcinfo(ctx, 4), 100, 100])
+                      ctx = warp(ctx, strnpcinfo(ctx, 4), 100, 100)
                       throw({:script_end, ctx})
 
                     _ ->

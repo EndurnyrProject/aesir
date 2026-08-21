@@ -254,16 +254,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone123.TrainingGr
     ctx =
       case v2 do
         1 ->
-          todo(ctx, :warp, [char_name(ctx, 3), 109, 94])
+          warp(ctx, char_name(ctx, 3), 109, 94)
 
         2 ->
-          todo(ctx, :warp, [char_name(ctx, 3), 198, 114])
+          warp(ctx, char_name(ctx, 3), 198, 114)
 
         3 ->
-          todo(ctx, :warp, [char_name(ctx, 3), 22, 114])
+          warp(ctx, char_name(ctx, 3), 22, 114)
 
         4 ->
-          todo(ctx, :warp, [char_name(ctx, 3), 109, 41])
+          warp(ctx, char_name(ctx, 3), 109, 41)
 
         5 ->
           warp(ctx, "prontera", 246, 60)

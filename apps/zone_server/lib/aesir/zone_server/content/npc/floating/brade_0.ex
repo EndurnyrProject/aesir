@@ -86,14 +86,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Brade0 do
                     |> close()
 
                   ctx =
-                    todo(ctx, :warp, [
+                    warp(
+                      ctx,
                       Rathena.concat(
                         Rathena.concat("new_", Rathena.charat(strnpcinfo(ctx, 4), 4)),
                         "-2"
                       ),
                       100,
                       100
-                    ])
+                    )
 
                   throw({:script_end, ctx})
 
@@ -128,14 +129,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Brade0 do
                   ctx = ctx |> mes("[Brade]") |> mes("Ok. I'll send you to Chocolat.") |> close()
 
                   ctx =
-                    todo(ctx, :warp, [
+                    warp(
+                      ctx,
                       Rathena.concat(
                         Rathena.concat("new_", Rathena.charat(strnpcinfo(ctx, 4), 4)),
                         "-2"
                       ),
                       41,
                       172
-                    ])
+                    )
 
                   throw({:script_end, ctx})
 
