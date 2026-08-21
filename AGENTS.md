@@ -166,7 +166,7 @@ Recent major work. NPCs are declarative Elixir modules with no compile-time coup
 - **`Npc.Registry`** - Boot-time index (in `:persistent_term`) of placements, with cell and
   unit-id lookups. NPC gids are synthetic, deterministically derived from `{map, x, y}`.
 - **`Npc.Verifier`** - Fails on cell collisions, warns on placements on unmapped maps.
-- **`Npc.Warps`** - Warp NPCs loaded from `priv/db/warps/*.yml` (imported from rAthena).
+- **`Npc.Warps`** - Warp NPCs loaded from `priv/db/re/warps/*.yml` (imported from rAthena).
 - **`Script.Dsl`** - The DSL: effect ops `(ctx, args) -> ctx` (`heal`, `sc_start`, `warp`,
   `give_item`, `delitem`, `pay_zeny`, `set_char_var`, ...), read ops `(ctx) -> value` (`zeny`,
   `count_item`, `get_char_var`, `base_level`, `class`, ...), and blocking dialog primitives
@@ -204,13 +204,19 @@ boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deter
 
 - `mix aesir.gen.constants [<rathena_root>]` - Generates `mmo/constants/*.ex` from rAthena headers
   (`status.hpp`, `script.hpp`).
-- `mix aesir.import.items [<rathena_root>]` - rAthena `item_db_*` -> `priv/db/items/*.yml`.
-- `mix aesir.import.jobs [<rathena_root>]` - Merges rAthena job tables -> `priv/db/jobs/*.yml`.
-- `mix aesir.import.mobs [<rathena_root>]` - rAthena `mob_db` -> `priv/db/mobs/mobs.yml`.
-- `mix aesir.import.spawns [<rathena_root>]` - rAthena mob-spawn scripts -> `priv/db/spawns/<map>.yml`.
-- `mix aesir.import.warps [<rathena_root>]` - rAthena warp scripts -> `priv/db/warps/<map>.yml`.
-- `mix aesir.import.quests [<rathena_root>]` - rAthena `quest_db` -> `priv/db/quests/quests.yml`.
+- `mix aesir.import.items [<rathena_root>]` - rAthena `item_db_*` -> `priv/db/re/items/*.yml`.
+- `mix aesir.import.jobs [<rathena_root>]` - Merges rAthena job tables -> `priv/db/re/jobs/*.yml`.
+- `mix aesir.import.mobs [<rathena_root>]` - rAthena `mob_db` -> `priv/db/re/mobs/mobs.yml`.
+- `mix aesir.import.spawns [<rathena_root>]` - rAthena mob-spawn scripts -> `priv/db/re/spawns/<map>.yml`.
+- `mix aesir.import.warps [<rathena_root>]` - rAthena warp scripts -> `priv/db/re/warps/<map>.yml`.
+- `mix aesir.import.quests [<rathena_root>]` - rAthena `quest_db` -> `priv/db/re/quests/quests.yml`.
 - `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
+
+Zone DBs use `:zone_server, :db_mode`: renewal is the default (`re/`), while the empty
+`pre-re/` seam awaits future data (`AESIR_DB_MODE=pre_renewal` selects it). Local
+`priv/db/import/` YAML is gitignored and loads after shipped data: keyed rows override, maps merge,
+and spawns append-only per map (base spawns kept, import spawns added); warps and shops append. Restart
+after edits, or call the relevant catalog's `reload/0`.
 
 ## Testing Approach
 

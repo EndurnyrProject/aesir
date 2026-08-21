@@ -7,10 +7,10 @@ description: How to work on items in Aesir - the YAML item DB and its importer, 
 
 ## The item database
 
-- `apps/zone_server/priv/db/items/{equip,usable,etc}.yml` are **fully regenerated** by
+- `apps/zone_server/priv/db/re/items/{equip,usable,etc}.yml` are **fully regenerated** by
   `mix aesir.import.items [<rathena_root>]` — any hand-edit is erased on the next reimport.
 - The seam for hand-authored scripts is
-  `apps/zone_server/priv/db/items/script_overrides.yml`: keyed by item id, merged over the
+  `apps/zone_server/priv/db/re/items/script_overrides.yml`: keyed by item id, merged over the
   generated `on_use` at load time by `ItemManagement.Loader`, never touched by the importer.
   Use it only for scripts the transpiler genuinely cannot emit — if the transpiler *should*
   handle it, fix the transpiler instead.
@@ -68,6 +68,6 @@ case-insensitive; `:item` params pass verbatim.
 - **Bootstrap hazard**: the importer loads the *existing* item DB while regenerating it, so
   an on-disk format older than the loader crashes the import. Migrate formats with a
   standalone `mix run --no-start` transform first, then rerun the importer canonically.
-- **Stale ETF caches**: `priv/db/*/.cache/*.etf` invalidates on YAML mtime only — after an
+- **Stale ETF caches**: `priv/db/re/*/.cache/*.etf` tracks source paths and YAML mtimes — after an
   `ItemDefinition` struct-shape change, delete the caches or boots poison silently.
 - Run importers from the repo root (CWD-relative output paths).

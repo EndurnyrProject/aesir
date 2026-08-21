@@ -33,7 +33,7 @@ end
   auto-derived from `on_event/2` **literal** clause heads (non-literal head = CompileError).
 - `Npc.Registry` (`:persistent_term`) indexes placements at boot with deterministic
   synthetic gids from `{map, x, y}`; `Npc.Verifier` fails boot on cell collisions.
-- Warp portals are data, not modules: `apps/zone_server/priv/db/warps/*.yml`.
+- Warp portals are data, not modules: `apps/zone_server/priv/db/re/warps/*.yml`.
 
 ## The Script DSL (`script/dsl.ex`)
 
