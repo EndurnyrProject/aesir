@@ -63,7 +63,9 @@ defmodule Aesir.ZoneServer.Mmo.ImportOverlayTest do
     assert Enum.map(Items.all(), & &1.id) == [501, 502]
   end
 
-  test "spawns reload appends imported maps without removing base maps", %{tmp_dir: items_dir} do
+  test "spawns reload appends imports to existing maps without removing base spawns", %{
+    tmp_dir: items_dir
+  } do
     root = root(items_dir)
 
     write_yaml(root, "re/spawns/base.yml", """
@@ -78,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.ImportOverlayTest do
     """)
 
     write_yaml(root, "import/spawns/custom.yml", """
-    - map: custom_map
+    - map: base_map
       spawns:
         - mob: 1002
           amount: 2
@@ -86,11 +88,22 @@ defmodule Aesir.ZoneServer.Mmo.ImportOverlayTest do
           area:
             x: 20
             y: 20
+    - map: custom_map
+      spawns:
+        - mob: 1002
+          amount: 3
+          respawn_time: 3000
+          area:
+            x: 30
+            y: 30
     """)
 
     assert :ok = Spawns.reload()
-    assert {:ok, [%{mob: 1002, amount: 1}]} = Spawns.for_map("base_map")
-    assert {:ok, [%{mob: 1002, amount: 2}]} = Spawns.for_map("custom_map")
+
+    assert {:ok, [%{mob: 1002, amount: 1}, %{mob: 1002, amount: 2}]} =
+             Spawns.for_map("base_map")
+
+    assert {:ok, [%{mob: 1002, amount: 3}]} = Spawns.for_map("custom_map")
   end
 
   test "items reload names an import file with unknown YAML keys", %{tmp_dir: items_dir} do

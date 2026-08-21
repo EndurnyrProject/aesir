@@ -23,7 +23,14 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns.Loader do
   end
 
   @spec index([%{map: String.t(), spawns: [MobSpawn.t()]}]) :: index()
-  defp index(maps), do: %{by_map: Map.new(maps, &{&1.map, &1.spawns})}
+  defp index(maps) do
+    by_map =
+      Enum.reduce(maps, %{}, fn entry, acc ->
+        Map.update(acc, entry.map, entry.spawns, &(&1 ++ entry.spawns))
+      end)
+
+    %{by_map: by_map}
+  end
 
   @spec to_map_spawns!(map()) :: %{map: String.t(), spawns: [MobSpawn.t()]}
   defp to_map_spawns!(%{"map" => map, "spawns" => spawns}) do
