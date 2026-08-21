@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   @moduledoc """
-  Runtime store for mob skill rows, loaded from `priv/db/mob_skills/mob_skills.yml`.
+  Runtime store for mob skill rows, loaded from `priv/db/re/mob_skills/mob_skills.yml`.
 
   The importer (`mix aesir.import.mob_skills`) writes rows grouped by mob id
   (string keys) plus the three global groups under reserved keys
@@ -148,5 +148,5 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Db do
   defp coerce_value(value), do: value
 
   @spec data_path() :: Path.t()
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/mob_skills/mob_skills.yml")
+  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/mob_skills/mob_skills.yml")
 end

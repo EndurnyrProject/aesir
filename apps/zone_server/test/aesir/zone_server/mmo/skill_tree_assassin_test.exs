@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/skill_tree"), "assassin.yml")
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "assassin.yml")
 
     [%{"job" => "assassin", "inherit" => ["novice", "thief"], "tree" => tree}] =
       DataLoader.parse_file(path)

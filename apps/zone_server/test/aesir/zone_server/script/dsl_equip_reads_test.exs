@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Script.DslEquipReadsTest do
 
   Uses the real item catalog and refine tables (loaded at zone boot, as in
   `dsl_refine_test.exs`); `ItemManagement` is the Mimic-copied real module, so
-  lookups resolve against `priv/db/items` and `priv/db/refine`.
+  lookups resolve against `priv/db/re/items` and `priv/db/re/refine`.
   """
 
   use ExUnit.Case, async: true

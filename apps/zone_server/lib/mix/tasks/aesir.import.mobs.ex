@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.Mobs do
-  @shortdoc "Imports rAthena renewal mob_db into priv/db/mobs/mobs.yml"
+  @shortdoc "Imports rAthena renewal mob_db into priv/db/re/mobs/mobs.yml"
   @moduledoc """
   One-time importer: converts rAthena's renewal `mob_db.yml` into our own-schema
-  YAML at `apps/zone_server/priv/db/mobs/mobs.yml`.
+  YAML at `apps/zone_server/priv/db/re/mobs/mobs.yml`.
 
       mix aesir.import.mobs [<rathena_root>]
 

@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Cart.WeightTest do
   Pure-domain tests for `Aesir.ZoneServer.Unit.Cart.Weight`.
 
   No DB, no sockets. Cart maps are built with real `%InventoryItem{}` structs
-  via `PlayerState.from_list/1` using real item ids from `priv/db/items/`
+  via `PlayerState.from_list/1` using real item ids from `priv/db/re/items/`
   (loaded into `:persistent_term` at app boot). The cart cap is a flat 80_000
   (rAthena's 8000 display weight in the internal `×10` unit Aesir stores weights in).
 

@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Integration.CastSweepTest do
 
   skills =
     :zone_server
-    |> Application.app_dir("priv/db/mob_skills/mob_skills.yml")
+    |> Application.app_dir("priv/db/re/mob_skills/mob_skills.yml")
     |> YamlElixir.read_from_file!()
     |> Map.values()
     |> List.flatten()

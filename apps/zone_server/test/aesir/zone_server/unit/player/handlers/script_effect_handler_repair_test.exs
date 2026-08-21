@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerRepairTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  # Real item ids from priv/db/items (same fixtures as RefineOpsTest).
+  # Real item ids from priv/db/re/items (same fixtures as RefineOpsTest).
   @sword 1101
   @armor 2302
   @potion 501

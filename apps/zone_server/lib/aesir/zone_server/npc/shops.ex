@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Npc.Shops do
   @moduledoc """
-  Registry of per-map NPC shops, loaded as data from `priv/db/shops/*.yml`.
+  Registry of per-map NPC shops, loaded as data from `priv/db/re/shops/*.yml`.
 
   The map-name index is built once via `Loader` and cached in `:persistent_term`.
   It is warmed at boot by `Aesir.ZoneServer.MechanicsSupervisor`; the first
@@ -61,5 +61,5 @@ defmodule Aesir.ZoneServer.Npc.Shops do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/shops")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/shops")
 end

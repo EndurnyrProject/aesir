@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Inventory.WeightTest do
 
   No DB, no sockets. Inventory maps are built with real `%InventoryItem{}`
   structs via `PlayerState.from_list/1` using real item ids from
-  `priv/db/items/` (loaded into `:persistent_term` at app boot). Stats are
+  `priv/db/re/items/` (loaded into `:persistent_term` at app boot). Stats are
   built as real `%Stats{}` structs with populated sub-structs.
 
   Reference values (loaded db):

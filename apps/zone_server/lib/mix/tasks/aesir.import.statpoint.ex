@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.Statpoint do
-  @shortdoc "Imports the rAthena renewal statpoint.yml into priv/db/statpoint/statpoint.yml"
+  @shortdoc "Imports the rAthena renewal statpoint.yml into priv/db/re/statpoint/statpoint.yml"
   @moduledoc """
   One-time importer: converts rAthena's renewal `db/re/statpoint.yml` (schema v2)
-  into our own-schema `apps/zone_server/priv/db/statpoint/statpoint.yml`.
+  into our own-schema `apps/zone_server/priv/db/re/statpoint/statpoint.yml`.
 
       mix aesir.import.statpoint [<rathena_root>]
 

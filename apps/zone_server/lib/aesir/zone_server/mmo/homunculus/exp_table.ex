@@ -47,5 +47,5 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
 
   defp table, do: Catalogs.state(:exp_table)
 
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/homunculus/exp.yml")
+  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
 end

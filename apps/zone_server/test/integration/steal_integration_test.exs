@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Integration.StealIntegrationTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Unit.Mob.MobSession
 
-  # Jellopy, Empty Bottle, Apple - real ids from priv/db/items.
+  # Jellopy, Empty Bottle, Apple - real ids from priv/db/re/items.
   @jellopy_id 909
   @apple_id 512
 

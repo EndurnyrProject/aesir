@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeSageTest do
   end
 
   defp tree_entry_names do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/skill_tree"), "sage.yml")
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "sage.yml")
     [%{"tree" => tree}] = DataLoader.parse_file(path)
     Enum.map(tree, & &1["name"])
   end

@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Npc.Warps do
   @moduledoc """
-  Registry of per-map NPC warps, loaded as data from `priv/db/warps/*.yml`.
+  Registry of per-map NPC warps, loaded as data from `priv/db/re/warps/*.yml`.
 
   The map-name index is built once via `Loader`, sanitized against `MapCache`
   (see `sanitize/1`) and cached in `:persistent_term`. It is warmed at boot by
@@ -186,5 +186,5 @@ defmodule Aesir.ZoneServer.Npc.Warps do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/warps")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/warps")
 end

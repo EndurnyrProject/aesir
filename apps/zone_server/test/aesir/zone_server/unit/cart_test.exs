@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Unit.CartTest do
   Pure-domain tests for `Aesir.ZoneServer.Unit.Cart`.
 
   No DB, no sockets: cart maps are built with real `%InventoryItem{}` structs
-  via `PlayerState.from_list/1` and item definitions come from `priv/db/items/`
+  via `PlayerState.from_list/1` and item definitions come from `priv/db/re/items/`
   resolved through `ItemManagement.get_item_by_id/1`. The cart reuses the pure
   `Inventory` storage core, so these mirror the inventory core tests.
   """

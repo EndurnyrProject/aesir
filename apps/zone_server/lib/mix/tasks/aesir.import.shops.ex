@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Aesir.Import.Shops do
-  @shortdoc "Imports merchant shops into priv/db/shops/*.yml"
+  @shortdoc "Imports merchant shops into priv/db/re/shops/*.yml"
   @moduledoc """
   One-time importer: converts the upstream renewal merchant shop scripts under
   `npc/merchants/` and `npc/re/merchants/` into our own-schema YAML under
-  `apps/zone_server/priv/db/shops/`, one file per source map.
+  `apps/zone_server/priv/db/re/shops/`, one file per source map.
 
       mix aesir.import.shops [<rathena_root>]
 

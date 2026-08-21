@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Aesir.Import.ItemGroups do
-  @shortdoc "Imports Renewal item groups into priv/db/item_groups/item_groups.yml"
+  @shortdoc "Imports Renewal item groups into priv/db/re/item_groups/item_groups.yml"
   @moduledoc """
   Imports Renewal item-group data into the local item-group database.
 

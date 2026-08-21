@@ -209,7 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/skill_tree"), "bard.yml")
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "bard.yml")
 
     [%{"job" => "bard", "inherit" => ["novice", "archer"], "tree" => tree}] =
       DataLoader.parse_file(path)

@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   Status-point table and renewal cost formula.
 
   The cumulative status-point table (`points_at/1`, `gain/2`) is loaded as data
-  from `priv/db/statpoint/statpoint.yml` and cached in `:persistent_term`,
+  from `priv/db/re/statpoint/statpoint.yml` and cached in `:persistent_term`,
   mirroring `JobManagement.Jobs`. The spend cost (`cost_to_raise/1`,
   `points_needed/2`, `max_increase/3`) is the pure rAthena renewal formula.
   Plain functions only - no process.
@@ -149,5 +149,5 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/statpoint")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/statpoint")
 end

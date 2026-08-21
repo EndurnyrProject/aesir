@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
 
   No DB, no sockets: inventory maps are built with real `%InventoryItem{}`
   structs via `PlayerState.from_list/1` and equip uses real item ids from
-  `priv/db/items/equip.yml` resolved through `ItemManagement.get_item_by_id/1`.
+  `priv/db/re/items/equip.yml` resolved through `ItemManagement.get_item_by_id/1`.
   """
   use ExUnit.Case, async: true
 

@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.QuestManagement.Quests do
   @moduledoc """
-  Registry of quest definitions, loaded as data from `priv/db/quests/*.yml`.
+  Registry of quest definitions, loaded as data from `priv/db/re/quests/*.yml`.
 
   The id index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data files change in a long-running session.
@@ -41,5 +41,5 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.Quests do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/quests")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/quests")
 end

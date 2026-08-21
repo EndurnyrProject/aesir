@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.Quests do
-  @shortdoc "Imports rAthena renewal quest_db into priv/db/quests/quests.yml"
+  @shortdoc "Imports rAthena renewal quest_db into priv/db/re/quests/quests.yml"
   @moduledoc """
   One-time importer: converts rAthena's renewal `quest_db.yml` into our
-  own-schema YAML at `apps/zone_server/priv/db/quests/quests.yml`.
+  own-schema YAML at `apps/zone_server/priv/db/re/quests/quests.yml`.
 
       mix aesir.import.quests [<rathena_root>]
 

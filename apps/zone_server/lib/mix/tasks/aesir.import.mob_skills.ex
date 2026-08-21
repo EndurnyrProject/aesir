@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.MobSkills do
-  @shortdoc "Imports rAthena mob_skill_db into priv/db/mob_skills/mob_skills.yml"
+  @shortdoc "Imports rAthena mob_skill_db into priv/db/re/mob_skills/mob_skills.yml"
   @moduledoc """
   One-time importer: converts rAthena's renewal `mob_skill_db.txt` into our own
-  YAML at `apps/zone_server/priv/db/mob_skills/mob_skills.yml`, grouped by mob id.
+  YAML at `apps/zone_server/priv/db/re/mob_skills/mob_skills.yml`, grouped by mob id.
 
       mix aesir.import.mob_skills [<rathena_root>]
 

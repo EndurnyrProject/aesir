@@ -1,5 +1,5 @@
 defmodule Mix.Tasks.Aesir.Import.Homunculi do
-  @shortdoc "Imports Renewal Homunculus data into priv/db/homunculus"
+  @shortdoc "Imports Renewal Homunculus data into priv/db/re/homunculus"
   @moduledoc """
   Imports original and evolved Homunculus species, levels 1 through 99 EXP, and
   skill trees from a local rAthena checkout.

@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.CastleDb do
   @moduledoc """
   Catalog of the 20 WoE First-Edition castles, loaded as data from
-  `priv/db/castles/fe.yml`.
+  `priv/db/re/castles/fe.yml`.
 
   The id/map index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data file changes in a long-running session.
@@ -53,5 +53,5 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleDb do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/castles")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/castles")
 end

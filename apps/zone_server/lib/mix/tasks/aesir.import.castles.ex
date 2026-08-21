@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.Castles do
-  @shortdoc "Imports WoE First-Edition castle data into priv/db/castles/"
+  @shortdoc "Imports WoE First-Edition castle data into priv/db/re/castles/"
   @moduledoc """
   One-time importer: converts the reference `castle_db.yml` First-Edition
-  castles into our-schema YAML at `apps/zone_server/priv/db/castles/fe.yml`.
+  castles into our-schema YAML at `apps/zone_server/priv/db/re/castles/fe.yml`.
 
       mix aesir.import.castles [<rathena_root>]
 

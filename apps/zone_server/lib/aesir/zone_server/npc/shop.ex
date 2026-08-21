@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Npc.Shop do
 
   A shop renders to the client as an NPC unit at `(x, y)`; clicking it opens a
   server-authoritative buy/sell window. Shops are pure data, authored as YAML
-  under `priv/db/shops/*.yml` and loaded at boot, mirroring `Npc.Warp`.
+  under `priv/db/re/shops/*.yml` and loaded at boot, mirroring `Npc.Warp`.
 
   `items` is the buy list: each entry pairs an item `nameid` with an optional
   per-shop buy-price override (`price: nil` falls back to `ItemDefinition.buy`).

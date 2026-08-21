@@ -65,7 +65,7 @@ defmodule Mix.Tasks.Aesir.Import.ShopsTest do
       :ok
     end
 
-    test "loads from priv/db/shops and passes the fatal boot verifier" do
+    test "loads from priv/db/re/shops and passes the fatal boot verifier" do
       stub(NpcRegistry, :entries, fn -> [] end)
       stub(Warps, :all, fn -> %{} end)
 

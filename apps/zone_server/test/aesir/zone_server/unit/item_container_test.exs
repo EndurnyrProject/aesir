@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Unit.ItemContainerTest do
   Pure-domain tests for `Aesir.ZoneServer.Unit.ItemContainer`.
 
   No DB, no sockets: container maps are built with real `%InventoryItem{}`
-  structs and item definitions come from `priv/db/items/` resolved through
+  structs and item definitions come from `priv/db/re/items/` resolved through
   `ItemManagement.get_item_by_id/1`.
   """
   use ExUnit.Case, async: true

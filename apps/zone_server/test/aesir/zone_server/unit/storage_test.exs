@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
 
   No DB, no sockets: storage maps are built with real `%InventoryItem{}`
   structs via `PlayerState.from_list/1` and item definitions come from
-  `priv/db/items/` resolved through `ItemManagement.get_item_by_id/1`.
+  `priv/db/re/items/` resolved through `ItemManagement.get_item_by_id/1`.
   Storage reuses the pure `ItemContainer` core, so these mirror the cart core
   tests aside from the `storable?/1` policy check.
   """

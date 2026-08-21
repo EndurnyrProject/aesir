@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Aesir.Import.Guild do
-  @shortdoc "Imports renewal guild exp and skill-tree data into priv/db/guild/"
+  @shortdoc "Imports renewal guild exp and skill-tree data into priv/db/re/guild/"
   @moduledoc """
   One-time importer: converts the reference renewal `exp_guild.yml` and
   `guild_skill_tree.yml` into our-schema YAML at
-  `apps/zone_server/priv/db/guild/{exp.yml,skill_tree.yml}`.
+  `apps/zone_server/priv/db/re/guild/{exp.yml,skill_tree.yml}`.
 
       mix aesir.import.guild [<rathena_root>]
 

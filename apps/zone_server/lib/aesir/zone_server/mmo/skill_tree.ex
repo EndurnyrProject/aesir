@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   Skill-tree data: per-job learnable skills, their caps, level minimums and
   prerequisites.
 
-  Authored as aegis-named YAML under `priv/db/skill_tree/*.yml` (mirroring
+  Authored as aegis-named YAML under `priv/db/re/skill_tree/*.yml` (mirroring
   rAthena's `db/re/skill_tree.yml`, including `inherit`) and loaded the same way
   as `JobManagement.Jobs` / `StatPoint`: built once and cached in
   `:persistent_term`, with `reload/0` to rebuild after a data change.
@@ -475,5 +475,5 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/skill_tree")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/skill_tree")
 end

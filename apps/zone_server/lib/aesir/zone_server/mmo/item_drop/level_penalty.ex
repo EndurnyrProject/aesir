@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   @moduledoc """
-  Renewal level-penalty tables, loaded as data from `priv/db/level_penalty.yml`
-  (item drops), `priv/db/level_penalty_exp.yml` (experience),
-  `priv/db/level_penalty_mvp_drop.yml` (MVP item drops) and
-  `priv/db/level_penalty_mvp_exp.yml` (MVP experience).
+  Renewal level-penalty tables, loaded as data from `priv/db/re/level_penalty.yml`
+  (item drops), `priv/db/re/level_penalty_exp.yml` (experience),
+  `priv/db/re/level_penalty_mvp_drop.yml` (MVP item drops) and
+  `priv/db/re/level_penalty_mvp_exp.yml` (MVP experience).
 
   Each `level_difference => percent` map is cached once in `:persistent_term`;
   `reload/0` rebuilds all four after the data files change in a long-running
@@ -96,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   @spec load(String.t()) :: %{integer() => integer()}
   defp load(file) do
     :zone_server
-    |> Application.app_dir(Path.join("priv/db", file))
+    |> Application.app_dir(Path.join("priv/db/re", file))
     |> YamlElixir.read_from_file!()
   end
 end

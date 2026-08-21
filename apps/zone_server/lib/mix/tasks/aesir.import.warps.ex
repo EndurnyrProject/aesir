@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Aesir.Import.Warps do
-  @shortdoc "Imports rAthena warp scripts into priv/db/warps/*.yml"
+  @shortdoc "Imports rAthena warp scripts into priv/db/re/warps/*.yml"
   @moduledoc """
   One-time importer: converts the rAthena warp scripts listed in the shared
   `npc/scripts_warps.conf` and the renewal `npc/re/scripts_warps.conf` into our
-  own-schema YAML under `apps/zone_server/priv/db/warps/`, one file per source
+  own-schema YAML under `apps/zone_server/priv/db/re/warps/`, one file per source
   map. We target renewal, so the pre-renewal conf is intentionally ignored.
 
       mix aesir.import.warps [<rathena_root>]

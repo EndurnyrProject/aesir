@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
   defp build do
     recipes =
       :zone_server
-      |> Application.app_dir("priv/db/produce/recipes.yml")
+      |> Application.app_dir("priv/db/re/produce/recipes.yml")
       |> YamlElixir.read_from_file!()
       |> Enum.map(&to_recipe/1)
 

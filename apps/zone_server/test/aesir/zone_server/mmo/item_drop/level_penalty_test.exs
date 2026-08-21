@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.drop(100, 100) == 100
   end
 
-  test "drop/2 works through reload/0 + the priv/db/level_penalty.yml file" do
+  test "drop/2 works through reload/0 + the priv/db/re/level_penalty.yml file" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.drop(116, 100) == 50
@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.exp(100, 100) == 100
   end
 
-  test "exp/2 works through reload/0 + the priv/db/level_penalty_exp.yml file" do
+  test "exp/2 works through reload/0 + the priv/db/re/level_penalty_exp.yml file" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.exp(100, 100) == 100
@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.mvp_drop(85, 100) == 60
   end
 
-  test "mvp_drop/2 works through reload/0 + the priv/db/level_penalty_mvp_drop.yml file" do
+  test "mvp_drop/2 works through reload/0 + the priv/db/re/level_penalty_mvp_drop.yml file" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.mvp_drop(100, 100) == 100
@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.mvp_exp(70, 100) == 80
   end
 
-  test "mvp_exp/2 works through reload/0 + the priv/db/level_penalty_mvp_exp.yml file" do
+  test "mvp_exp/2 works through reload/0 + the priv/db/re/level_penalty_mvp_exp.yml file" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.mvp_exp(100, 100) == 100

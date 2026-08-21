@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Guild.Progression.Data do
   @moduledoc """
-  Static guild progression data, loaded from `priv/db/guild/*.yml`.
+  Static guild progression data, loaded from `priv/db/re/guild/*.yml`.
 
   Serves the guild exp table (exp required per level) and the guild skill
   tree (max levels and prerequisites). Built once and cached in
@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
 
   defp read!(file) do
     :zone_server
-    |> Application.app_dir("priv/db/guild")
+    |> Application.app_dir("priv/db/re/guild")
     |> Path.join(file)
     |> YamlElixir.read_from_file!()
   end

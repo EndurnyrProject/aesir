@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       """)
 
       File.cp!(
-        Application.app_dir(:zone_server, "priv/db/items/script_overrides.yml"),
+        Application.app_dir(:zone_server, "priv/db/re/items/script_overrides.yml"),
         Path.join(dir, "script_overrides.yml")
       )
 

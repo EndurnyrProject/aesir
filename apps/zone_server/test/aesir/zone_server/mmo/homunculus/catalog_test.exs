@@ -164,9 +164,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   end
 
   test "orchestrated reload replaces data only after successful validation" do
-    path = Application.app_dir(:zone_server, "priv/db/homunculus/species.yml")
-    exp_path = Application.app_dir(:zone_server, "priv/db/homunculus/exp.yml")
-    trees_path = Application.app_dir(:zone_server, "priv/db/homunculus/skill_trees.yml")
+    path = Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
+    exp_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
+    trees_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
     rows = YamlElixir.read_from_file!(path)
     changed = put_in(hd(rows)["food"], "Fresh_Test_Food")
 
@@ -195,15 +195,17 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   test "malformed and incomplete corpora fail explicit validation" do
     species =
       YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/homunculus/species.yml")
+        Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
       )
 
     exp =
-      YamlElixir.read_from_file!(Application.app_dir(:zone_server, "priv/db/homunculus/exp.yml"))
+      YamlElixir.read_from_file!(
+        Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
+      )
 
     trees =
       YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/homunculus/skill_trees.yml")
+        Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
       )
 
     assert_raise ArgumentError, ~r/expected 16/, fn -> Catalog.validate!(tl(species)) end
@@ -292,9 +294,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
 
   @tag :tmp_dir
   test "failed orchestrated reload preserves all three installed catalogs", %{tmp_dir: dir} do
-    species_path = Application.app_dir(:zone_server, "priv/db/homunculus/species.yml")
-    exp_path = Application.app_dir(:zone_server, "priv/db/homunculus/exp.yml")
-    trees_path = Application.app_dir(:zone_server, "priv/db/homunculus/skill_trees.yml")
+    species_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
+    exp_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
+    trees_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
 
     prior = {Catalogs.generation(), Catalog.all(), ExpTable.all(), SkillTree.all()}
     species = YamlElixir.read_from_file!(species_path)
@@ -312,12 +314,12 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   test "runtime cross-validation rejects unknown and missing species skills" do
     species =
       YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/homunculus/species.yml")
+        Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
       )
 
     trees =
       YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/homunculus/skill_trees.yml")
+        Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
       )
 
     inconsistent = put_in(species, [Access.at(0), "skills", Access.at(0)], 9999)
@@ -333,17 +335,17 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
 
   defp write_changed_triplet(dir) do
     species =
-      Application.app_dir(:zone_server, "priv/db/homunculus/species.yml")
+      Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
       |> YamlElixir.read_from_file!()
       |> put_in([Access.at(0), "food"], "Atomic_Test_Food")
 
     exp =
-      Application.app_dir(:zone_server, "priv/db/homunculus/exp.yml")
+      Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
       |> YamlElixir.read_from_file!()
       |> put_in([Access.at(0), "exp"], 102)
 
     trees =
-      Application.app_dir(:zone_server, "priv/db/homunculus/skill_trees.yml")
+      Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
       |> YamlElixir.read_from_file!()
       |> put_in([Access.at(0), "skill"], "HLIF_HEAL_TEST")
 

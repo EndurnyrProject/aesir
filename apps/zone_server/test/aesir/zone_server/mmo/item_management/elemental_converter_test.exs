@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ElementalConverterTest do
   @moduledoc """
   The four Elemental Converters (12114-12117) endow the user's weapon.
 
-  Runs each converter's real `on_use` source out of `priv/db/items/usable.yml`
+  Runs each converter's real `on_use` source out of `priv/db/re/items/usable.yml`
   through the real script compiler, DSL and status storage, then attacks and
   asserts the element the damage pipeline hands the element table. Asserting the
   applied status alone would not catch an endow that no combat code reads -

@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns do
   @moduledoc """
-  Registry of per-map mob spawns, loaded as data from `priv/db/spawns/*.yml`.
+  Registry of per-map mob spawns, loaded as data from `priv/db/re/spawns/*.yml`.
 
   The map-name index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data files change in a long-running session.
@@ -74,5 +74,5 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Spawns do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/spawns")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/spawns")
 end

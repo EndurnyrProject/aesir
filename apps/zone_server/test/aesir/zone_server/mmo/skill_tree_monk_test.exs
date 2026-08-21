@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/skill_tree"), "monk.yml")
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "monk.yml")
 
     [%{"job" => "monk", "inherit" => ["novice", "acolyte"], "tree" => tree}] =
       DataLoader.parse_file(path)

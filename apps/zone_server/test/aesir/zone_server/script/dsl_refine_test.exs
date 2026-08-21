@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Script.DslRefineTest do
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  # Real item ids from priv/db/items (same fixtures as RefineOpsTest).
+  # Real item ids from priv/db/re/items (same fixtures as RefineOpsTest).
   # Sword: weapon_level 1, refineable.
   @sword 1101
   # Phracon: the weapon-lv1 "normal" ore (refine.yml).

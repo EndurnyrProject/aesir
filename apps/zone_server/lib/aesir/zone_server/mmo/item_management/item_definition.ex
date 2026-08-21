@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   @moduledoc """
   Static item definition (the `item_db` record).
 
-  Loaded as data from `priv/db/items/*.yml` into `:persistent_term`; never a
+  Loaded as data from `priv/db/re/items/*.yml` into `:persistent_term`; never a
   per-record module. Carries the loot/equip essentials only. The `NoTrade`
   restriction is modelled (`no_trade`); the other nested Trade/NoUse/Delay/Stack
   restrictions remain intentionally unmodelled.

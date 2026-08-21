@@ -5,7 +5,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
   dismount), driving the real `PlayerSession`/`MountHandler`/`StatusStorage`
   stack, mirroring the cart integration coverage style.
 
-  The real Knight skill tree (`priv/db/skill_tree/knight.yml`) backs every
+  The real Knight skill tree (`priv/db/re/skill_tree/knight.yml`) backs every
   phase: it inherits Swordman and adds the 10 KN_ entries, including
   `KN_RIDING` (requires `SM_ENDURE` 1) and `KN_CAVALIERMASTERY` (requires
   `KN_RIDING` 1). Each Knight fixture seeds that full prerequisite chain

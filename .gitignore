@@ -137,16 +137,9 @@ docs/superpowers
 .worktrees
 
 # Generated data caches (rebuilt from priv/db/*/*.yml on boot)
-apps/zone_server/priv/db/items/.cache/
-apps/zone_server/priv/db/item_groups/.cache/
-apps/zone_server/priv/db/jobs/.cache/
-apps/zone_server/priv/db/mobs/.cache/
-apps/zone_server/priv/db/skills/.cache/
-apps/zone_server/priv/db/spawns/.cache/
-apps/zone_server/priv/db/statpoint/.cache/
-apps/zone_server/priv/db/warps/.cache/
-apps/zone_server/priv/db/shops/.cache/
-apps/zone_server/priv/db/quests/.cache/
+apps/zone_server/priv/db/**/.cache/
+apps/zone_server/priv/db/import/*
+!apps/zone_server/priv/db/import/README.md
 
 _transpile_report.md
 

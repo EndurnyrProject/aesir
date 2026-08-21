@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation do
   bitmask stored on item rows and sent in inventory/equip packets.
 
   Bit values are taken verbatim from rAthena's `enum equip_pos` (src/common/mmo.hpp).
-  The atoms match what the item loader produces from `priv/db/items/equip.yml`
+  The atoms match what the item loader produces from `priv/db/re/items/equip.yml`
   (rAthena `item_db` Location flag names), including the composite aggregates
   `:both_hand` (`EQP_ARMS`) and `:both_accessory` (`EQP_ACC_RL`).
   """

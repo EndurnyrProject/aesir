@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
   @moduledoc """
-  Registry of item groups loaded from `priv/db/item_groups/*.yml`.
+  Registry of item groups loaded from `priv/db/re/item_groups/*.yml`.
 
   The key index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data files change in a long-running session.
@@ -36,5 +36,5 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/item_groups")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/item_groups")
 end

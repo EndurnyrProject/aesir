@@ -184,5 +184,5 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   defp positive?(value), do: is_integer(value) and value > 0
   defp require!(true, _message), do: :ok
   defp require!(false, message), do: raise(ArgumentError, message)
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/homunculus/species.yml")
+  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
 end

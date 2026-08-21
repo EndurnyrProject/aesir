@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Storage.Persistence, as: StoragePersistence
 
-  # Real item ids from priv/db/items (loaded into :persistent_term at boot).
+  # Real item ids from priv/db/re/items (loaded into :persistent_term at boot).
   @potion 501
   @sword 1101
   @poring_card 4001

@@ -134,7 +134,7 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
 
   describe "run/1" do
     test "raises on a missing input file without touching the output file" do
-      out = Path.join([__DIR__, "..", "..", "..", "priv", "db", "castles", "fe.yml"])
+      out = Path.join([__DIR__, "..", "..", "..", "priv", "db", "re", "castles", "fe.yml"])
       before = File.read!(out)
 
       assert_raise Mix.Error, ~r/missing input file/, fn ->

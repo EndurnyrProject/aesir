@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Aesir.Import.Spawns do
-  @shortdoc "Imports rAthena mob-spawn scripts into priv/db/spawns/*.yml"
+  @shortdoc "Imports rAthena mob-spawn scripts into priv/db/re/spawns/*.yml"
   @moduledoc """
   One-time importer: converts the rAthena mob-spawn scripts listed in
   `npc/re/scripts_monsters.conf` into our own-schema YAML under
-  `apps/zone_server/priv/db/spawns/`, one file per source map.
+  `apps/zone_server/priv/db/re/spawns/`, one file per source map.
 
       mix aesir.import.spawns [<rathena_root>]
 

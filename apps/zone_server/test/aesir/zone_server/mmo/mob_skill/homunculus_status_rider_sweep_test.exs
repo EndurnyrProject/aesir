@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
   end
 
   test "all eight rider skills occur in the current imported mob rows" do
-    path = Application.app_dir(:zone_server, "priv/db/mob_skills/mob_skills.yml")
+    path = Application.app_dir(:zone_server, "priv/db/re/mob_skills/mob_skills.yml")
 
     imported_ids =
       path

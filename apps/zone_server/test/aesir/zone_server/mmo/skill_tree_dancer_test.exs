@@ -184,7 +184,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/skill_tree"), "dancer.yml")
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "dancer.yml")
 
     [%{"job" => "dancer", "inherit" => ["novice", "archer"], "tree" => tree}] =
       DataLoader.parse_file(path)

@@ -1,9 +1,9 @@
 defmodule Mix.Tasks.Aesir.Import.Jobs do
-  @shortdoc "Imports rAthena renewal job databases into priv/db/jobs/*.yml"
+  @shortdoc "Imports rAthena renewal job databases into priv/db/re/jobs/*.yml"
   @moduledoc """
   One-time importer: merges rAthena's renewal `job_stats.yml`, `job_basepoints.yml`,
   `job_aspd.yml` and `job_exp.yml` into our own-schema YAML under
-  `apps/zone_server/priv/db/jobs/`, split by class tier.
+  `apps/zone_server/priv/db/re/jobs/`, split by class tier.
 
       mix aesir.import.jobs [<rathena_root>]
 

@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.RequirementManifestTest do
   test "every resolving mob-row skill explicitly declares its requirements" do
     rows =
       :zone_server
-      |> Application.app_dir("priv/db/mob_skills/mob_skills.yml")
+      |> Application.app_dir("priv/db/re/mob_skills/mob_skills.yml")
       |> YamlElixir.read_from_file!()
       |> Map.values()
       |> List.flatten()
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.RequirementManifestTest do
   test "every imported Assassin row is explicitly mob-compatible" do
     rows =
       :zone_server
-      |> Application.app_dir("priv/db/mob_skills/mob_skills.yml")
+      |> Application.app_dir("priv/db/re/mob_skills/mob_skills.yml")
       |> YamlElixir.read_from_file!()
       |> Enum.flat_map(fn {mob_id, rows} ->
         Enum.map(rows, &{mob_id, &1})

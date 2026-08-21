@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   @moduledoc """
-  Renewal refine tables, loaded as data from `priv/db/refine/refine.yml`.
+  Renewal refine tables, loaded as data from `priv/db/re/refine/refine.yml`.
 
   Indexes each `(group, item_level, refine_level)` triple to its bonus/rate
   data and resolves ore material aegis names to nameids against
@@ -212,5 +212,5 @@ defmodule Aesir.ZoneServer.Mmo.Refine.RefineDatabase do
   defp to_cost_type("enriched"), do: :enriched
 
   @spec data_file() :: Path.t()
-  defp data_file, do: Application.app_dir(:zone_server, "priv/db/refine/refine.yml")
+  defp data_file, do: Application.app_dir(:zone_server, "priv/db/re/refine/refine.yml")
 end

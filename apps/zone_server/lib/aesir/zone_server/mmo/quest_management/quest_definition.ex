@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.QuestManagement.QuestDefinition do
   @moduledoc """
   Static quest definition (the rAthena `quest_db` record).
 
-  Loaded as data from `priv/db/quests/*.yml` into `:persistent_term`; never a
+  Loaded as data from `priv/db/re/quests/*.yml` into `:persistent_term`; never a
   per-quest module. `time_limit`, the target filter fields beyond `mob_id`/
   `count`, and `drops` are carried through unused this iteration - only exact-mob
   hunt counters are interpreted so far.

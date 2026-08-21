@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.Refine do
-  @shortdoc "Imports the rAthena renewal refine.yml into priv/db/refine/refine.yml"
+  @shortdoc "Imports the rAthena renewal refine.yml into priv/db/re/refine/refine.yml"
   @moduledoc """
   One-time importer: converts rAthena's renewal `db/re/refine.yml` (schema v2)
-  into our own-schema `apps/zone_server/priv/db/refine/refine.yml`.
+  into our own-schema `apps/zone_server/priv/db/re/refine/refine.yml`.
 
       mix aesir.import.refine [<rathena_root>]
 

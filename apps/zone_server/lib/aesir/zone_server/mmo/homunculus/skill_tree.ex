@@ -142,5 +142,5 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
   defp non_negative?(value), do: is_integer(value) and value >= 0
   defp require!(true, _message), do: :ok
   defp require!(false, message), do: raise(ArgumentError, message)
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/homunculus/skill_trees.yml")
+  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
 end

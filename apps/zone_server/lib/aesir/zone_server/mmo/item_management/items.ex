@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Items do
   @moduledoc """
-  Registry of item definitions, loaded as data from `priv/db/items/*.yml`.
+  Registry of item definitions, loaded as data from `priv/db/re/items/*.yml`.
 
   The id/aegis index is built once via `Loader` and cached in `:persistent_term`;
   `reload/0` rebuilds it after the data files change in a long-running session.
@@ -42,5 +42,5 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Items do
   end
 
   @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/items")
+  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/items")
 end

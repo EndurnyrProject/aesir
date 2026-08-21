@@ -3,10 +3,10 @@ defmodule Mix.Tasks.Aesir.Import.LevelPenalty do
   @moduledoc """
   One-time importer: extracts the `Type: Drop`, `Type: Exp`, `Type: Mvp_Drop`
   and `Type: Mvp_Exp` penalties from rAthena's renewal `db/re/level_penalty.yml`
-  and writes them as our own-schema `apps/zone_server/priv/db/level_penalty.yml`,
-  `apps/zone_server/priv/db/level_penalty_exp.yml`,
-  `apps/zone_server/priv/db/level_penalty_mvp_drop.yml` and
-  `apps/zone_server/priv/db/level_penalty_mvp_exp.yml`, flat `level_difference
+  and writes them as our own-schema `apps/zone_server/priv/db/re/level_penalty.yml`,
+  `apps/zone_server/priv/db/re/level_penalty_exp.yml`,
+  `apps/zone_server/priv/db/re/level_penalty_mvp_drop.yml` and
+  `apps/zone_server/priv/db/re/level_penalty_mvp_exp.yml`, flat `level_difference
   => percent` mappings consumed by `Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty`.
 
       mix aesir.import.level_penalty [<rathena_root>]

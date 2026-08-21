@@ -1,8 +1,8 @@
 defmodule Mix.Tasks.Aesir.Import.Items do
-  @shortdoc "Imports rAthena renewal item_db into priv/db/items/*.yml"
+  @shortdoc "Imports rAthena renewal item_db into priv/db/re/items/*.yml"
   @moduledoc """
   One-time importer: converts rAthena's renewal `item_db_{usable,equip,etc}.yml`
-  into our own-schema YAML under `apps/zone_server/priv/db/items/`.
+  into our own-schema YAML under `apps/zone_server/priv/db/re/items/`.
 
       mix aesir.import.items [<rathena_root>]
 

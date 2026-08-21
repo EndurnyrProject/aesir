@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.BreakOpsTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  # Real item ids from priv/db/items (loaded into :persistent_term at boot).
+  # Real item ids from priv/db/re/items (loaded into :persistent_term at boot).
   # Sword: weapon_level 1, refineable, subtype one_handed_sword.
   @sword 1101
 

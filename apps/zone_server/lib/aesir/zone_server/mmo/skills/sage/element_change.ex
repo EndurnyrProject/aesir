@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange do
   return;` - a player-cast lands only on a monster that is not status immune.
   Aesir's mob importer maps rAthena's `Class: Boss` to the `:boss` mode but does
   not union in the `MD_STATUSIMMUNE` bit that `mob.cpp:5543` adds for that
-  class, and no mob in `priv/db/mobs/mobs.yml` carries `:status_immune`, so
+  class, and no mob in `priv/db/re/mobs/mobs.yml` carries `:status_immune`, so
   `MobState.is_boss?/1` is the faithful stand-in for the reference's check.
 
   A blocked cast still returns `{:ok, caster}`: the reference's early return does
