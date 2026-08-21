@@ -26815,5 +26815,4759 @@
         "unique_name": "Nudor#sp2"
       }
     ]
+  },
+  "re/warps/cities/dicastes.txt|floating|Elevator#main|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.Elevator",
+    "output_hash": "1d4c45c06fbef0ba619252839cc1a42a33a402bfbc173f86f681cd7ec93bfec2",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/elevator.ex",
+    "source_hash": "abe88c2f6ea408c5ee31b45a9a4e763f0a73c5a96b7e9bb20de092f5364e6f49",
+    "spawns": [
+      {
+        "name": "Elevator",
+        "x": 46,
+        "y": 288,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#1"
+      },
+      {
+        "name": "Elevator",
+        "x": 122,
+        "y": 284,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#2"
+      },
+      {
+        "name": "Elevator",
+        "x": 121,
+        "y": 203,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#3"
+      },
+      {
+        "name": "Elevator",
+        "x": 35,
+        "y": 214,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#4"
+      },
+      {
+        "name": "Elevator",
+        "x": 44,
+        "y": 116,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#5"
+      },
+      {
+        "name": "Elevator",
+        "x": 112,
+        "y": 108,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#6"
+      },
+      {
+        "name": "Elevator",
+        "x": 180,
+        "y": 108,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#7"
+      },
+      {
+        "name": "Elevator",
+        "x": 261,
+        "y": 115,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#8"
+      },
+      {
+        "name": "Elevator",
+        "x": 57,
+        "y": 48,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#9"
+      },
+      {
+        "name": "Elevator",
+        "x": 137,
+        "y": 46,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#10"
+      },
+      {
+        "name": "Elevator",
+        "x": 222,
+        "y": 46,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#11"
+      },
+      {
+        "name": "Elevator",
+        "x": 388,
+        "y": 272,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#12"
+      },
+      {
+        "name": "Elevator",
+        "x": 389,
+        "y": 208,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Elevator#13"
+      }
+    ]
+  },
+  "re/warps/cities/dicastes.txt|script|#eldicastes0016|dic_in01:242:182": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Dicastes.Npc",
+    "output_hash": "59d5298cfa9a478ee5ea251402456842bf8e946f29f51d1a5191ab04479a3344",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/dicastes/npc.ex",
+    "source_hash": "26107b26c31ce44760926c6ed51bf48c1fe8f7bfd814ad83c9f98a60e5097ce5",
+    "spawns": [
+      {
+        "name": "",
+        "x": 242,
+        "y": 182,
+        "map": "dic_in01",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "#eldicastes0016"
+      }
+    ]
+  },
+  "re/warps/cities/eclage.txt|script|hub3-1_hub2-2|ecl_hub01:18:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Eclage.Hub31Hub22",
+    "output_hash": "f2b88f419e33cd78d244f9bed3ca514830b266ab6bc81c93e48d14ecd76b3df5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/eclage/hub3_1_hub2_2.ex",
+    "source_hash": "4e1a0f1650c2a0bd2238e5d90706601960e01409cc636dbc4fec4e0fc93646cc",
+    "spawns": [
+      {
+        "name": "hub3-1_hub2-2",
+        "x": 18,
+        "y": 34,
+        "map": "ecl_hub01",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/eclage.txt|script|in01e_hub2-1|ecl_in01:84:68": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Eclage.In01eHub21",
+    "output_hash": "65dccc5b4d153b6531f1afd56e8bb18bf0d86f6a79d12d89ec3d426c3e647073",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/eclage/in01e_hub2_1.ex",
+    "source_hash": "834c664118df1003bc55da5470a159b989f9afb1ede57147644d0f8cc09e8618",
+    "spawns": [
+      {
+        "name": "in01e_hub2-1",
+        "x": 84,
+        "y": 68,
+        "map": "ecl_in01",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/einbech.txt|script|nemi|einbech:215:84": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Einbech.Nemi",
+    "output_hash": "e0aef42b39b225a4dca7307d499c9929a9233b2a84d3eba7b98cfec2e63889c5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/einbech/nemi.ex",
+    "source_hash": "2daf8a7bf564ec794142e1a2fb44edeb1a80ce05f0a94c13bb5fe923d64a2589",
+    "spawns": [
+      {
+        "name": "nemi",
+        "x": 215,
+        "y": 84,
+        "map": "einbech",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/einbroch.txt|script|#ep162_warp01|ein_in01:274:246": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Einbroch.Npc",
+    "output_hash": "f96095928fa94dd4f85b8bc842cf159bd19a8e7a324a92579d4e41c21114a4fd",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/einbroch/npc.ex",
+    "source_hash": "bef2a740a05bbe0fbd47938d766ab5133fce38b280853d196ff1281c4faf631f",
+    "spawns": [
+      {
+        "name": "",
+        "x": 274,
+        "y": 246,
+        "map": "ein_in01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep162_warp01",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/izlude.txt|script|#intro_to_izlude|int_land:49:57": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Izlude.Npc4957",
+    "output_hash": "32af94452ff8de15c38eebbbf5b4b5fbfaa67dfdb33c44b789792e25ccc3948c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/izlude/npc_49_57.ex",
+    "source_hash": "5c4d76b4db1753b484eabd8cb3b24c108383f2180175539ba643865d1a90a598",
+    "spawns": [
+      {
+        "name": "",
+        "x": 49,
+        "y": 57,
+        "map": "int_land",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#intro_to_izlude",
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "",
+        "x": 49,
+        "y": 57,
+        "map": "int_land01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#intro_to_izlude_a",
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "",
+        "x": 49,
+        "y": 57,
+        "map": "int_land02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#intro_to_izlude_b",
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "",
+        "x": 49,
+        "y": 57,
+        "map": "int_land03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#intro_to_izlude_c",
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "",
+        "x": 49,
+        "y": 57,
+        "map": "int_land04",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#intro_to_izlude_d",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/izlude.txt|script|#ship_out|iz_int:56:15": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Izlude.Npc",
+    "output_hash": "22be97ce721504627395eb7b19672ab4d64b4ad9352d0256041a0520611b6e9d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/izlude/npc.ex",
+    "source_hash": "d05cfd7665649b0f12d73860bbc41c443964810913cd3aeb200e56adcb218cac",
+    "spawns": [
+      {
+        "name": "",
+        "x": 56,
+        "y": 15,
+        "map": "iz_int",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ship_out",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 56,
+        "y": 15,
+        "map": "iz_int01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ship_out01",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 56,
+        "y": 15,
+        "map": "iz_int02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ship_out02",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 56,
+        "y": 15,
+        "map": "iz_int03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ship_out03",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 56,
+        "y": 15,
+        "map": "iz_int04",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ship_out04",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|function|F_Malaya_Warp|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.FMalayaWarp",
+    "output_hash": "cbe5786ef96247f77de983a9a56585d7dc4c9c4e7590267ead165d6a5ac04b27",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/f_malaya_warp.ex",
+    "source_hash": "7059140c05e5ec853976ed54cef8d9aca88f32f04e29c3cf08c0635142b907d8",
+    "spawns": []
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif01|ma_zif01:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp",
+    "output_hash": "5978a632c419ef6d210bed71f807e02ad275813b416f06392c279a0d3d82d74c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp.ex",
+    "source_hash": "57c4705f99548dfcca4877b3674c9af1533dd41cb443768bdf374ca46fa734e6",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif01",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif02|ma_zif02:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp3022",
+    "output_hash": "7f9376cdad9946f015177db5e79cf5a31230101620601543112bdc9906ffb893",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_30_22.ex",
+    "source_hash": "1dbd585348f24c80b51d814f3d2fdd94cc19c1ec670a99fe4424280ad76a20ff",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif02",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif03|ma_zif03:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp0",
+    "output_hash": "7fa3d5d7f440996690f2145982980befadb256b813d36e91175c2ef65940c7e2",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_0.ex",
+    "source_hash": "a553a923f4dcb1077bc161c36e854288ef84cb9f7784c9b0443eda842ce8f891",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif03",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif04|ma_zif04:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp1",
+    "output_hash": "34cd80b86924a8e50c6d06bc6a7c2c8756bc7c94d43d42d9ce2c969e6d235398",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_1.ex",
+    "source_hash": "b1e6ce04ae575a842c346f1bae208b5ed3f4647a2ba28d93bf0a7658b18f4ed8",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif04",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif04",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif05|ma_zif05:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp2",
+    "output_hash": "7076efc44b098b6a622ee087fbaf0a56200e663abca91f093b8dbe9589180c2a",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_2.ex",
+    "source_hash": "f2329b02832d4af3f39fda46b0b9071b1fa751360ee39ca61cf1b31e1c95296f",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif05",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif06|ma_zif06:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp3",
+    "output_hash": "c91c3ef624f0c524ef9558196f1a2dc4eaaec26923ed59fd003fcf6eec51bef3",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_3.ex",
+    "source_hash": "04b4f4916f62fbb4822ae5ecde0805acf984cfb823116f60b6e81687bf7642ef",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif06",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif06",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif07|ma_zif07:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp4",
+    "output_hash": "e6543e7864e7cfe9d8e1d19c4f254f55470e3dc33048ebf4072030bc84f1c89d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_4.ex",
+    "source_hash": "446e376941bd66997b46649cf6d5025d4e445b6fd9c311de7a5cc2e49dfc1691",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif07",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif07",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif08|ma_zif08:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp5",
+    "output_hash": "1eaf87e495cb21f24dc0702400b2c0b4c1bcc8e6afa4e7349ce33b8398ce4f2b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_5.ex",
+    "source_hash": "17bf74918c813d8ff2317c3479b2ec02765e2b9f620b10beac64ca74305a1ee7",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif08",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif08",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|Town Warp#zif09|ma_zif09:30:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.TownWarp6",
+    "output_hash": "e4763e995aeca0205d2852d8ff5655a1a70d602736558cf2dc9f1dec686b6914",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/town_warp_6.ex",
+    "source_hash": "0f9ceec39d255c7d5aff129bc1394c3f19e6ce60fe76e14c2e2a54a96b9c4bfb",
+    "spawns": [
+      {
+        "name": "Town Warp",
+        "x": 30,
+        "y": 22,
+        "map": "ma_zif09",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Town Warp#zif09",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|malaya_house01|malaya:300:211": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.MalayaHouse01",
+    "output_hash": "746f58e38700e6dc27a7ba7dda61915addccaf94a84ca2c2e1bed59624a884b3",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/malaya_house01.ex",
+    "source_hash": "4f04dd2d504519e7af04e9543777a1d19d9520143d4d29261bfeceaed4870db6",
+    "spawns": [
+      {
+        "name": "malaya_house01",
+        "x": 300,
+        "y": 211,
+        "map": "malaya",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|malaya_inn|malaya:178:211": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.MalayaInn",
+    "output_hash": "9ec48ec1e116182fc870208e3cf58502104949484e0f81af29126d64e0628ff9",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/malaya_inn.ex",
+    "source_hash": "51d2cbd0ac95e7bb0b83996384f049454b443ef7c0bd983efa62edb04f445577",
+    "spawns": [
+      {
+        "name": "malaya_inn",
+        "x": 178,
+        "y": 211,
+        "map": "malaya",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|malaya_shop|malaya:261:240": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.MalayaShop",
+    "output_hash": "67c8975ee94b49bef005e52c96c7f6be247aaa0f3ebb8bddb61ed91013b2b826",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/malaya_shop.ex",
+    "source_hash": "595d9dfbcde378a54b7e0d68770073926d516490709477741eefada6590bff02",
+    "spawns": [
+      {
+        "name": "malaya_shop",
+        "x": 261,
+        "y": 240,
+        "map": "malaya",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|malaya_ts|malaya:299:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.MalayaTs",
+    "output_hash": "03017b331650f9824b677ed6eba2348bad4cce4637155a96a02aaa8b63252d70",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/malaya_ts.ex",
+    "source_hash": "00e2932815fd8a5e1f3e1d4598c506f02d8d1c714194fc7ec2a83a3ea8af1d40",
+    "spawns": [
+      {
+        "name": "malaya_ts",
+        "x": 299,
+        "y": 167,
+        "map": "malaya",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/malaya.txt|script|malaya_ws|malaya:112:212": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Malaya.MalayaWs",
+    "output_hash": "81b2d5552dc5b3a581bb59d44c5a3339dee4844ed41f140b7a38844b06479404",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/malaya/malaya_ws.ex",
+    "source_hash": "e416b35e14457e378fd33262219fb30816ddc8b3cb8271b61627276fe0ca5210",
+    "spawns": [
+      {
+        "name": "malaya_ws",
+        "x": 112,
+        "y": 212,
+        "map": "malaya",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|lib_q_to_pprt|prt_lib_q:9:25": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.LibQToPprt",
+    "output_hash": "8ff91d80fe53d2c52520965a5b3cfee1e997776beee69b3a2d2d971fff884f80",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/lib_q_to_pprt.ex",
+    "source_hash": "b7a0131a58e9e7ca1f4560bb351fd806bf0afb6e3f2b956c2109a90cdb1a10e5",
+    "spawns": [
+      {
+        "name": "lib_q_to_pprt",
+        "x": 9,
+        "y": 25,
+        "map": "prt_lib_q",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|lib_to_prt_prison|prt_lib:9:24": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.LibToPrtPrison",
+    "output_hash": "04aa8176dacd144a9184ff4930acd98a321740900119e9a6c1b5d417493c99d9",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/lib_to_prt_prison.ex",
+    "source_hash": "e53e26718f67b96da2376880d3f076a7b5bd89d40343214288cf7fb22f30df1c",
+    "spawns": [
+      {
+        "name": "lib_to_prt_prison",
+        "x": 9,
+        "y": 24,
+        "map": "prt_lib",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|prt_cas_to_prt_pri00|prt_cas:188:258": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.PrtCasToPrtPri00",
+    "output_hash": "9401de8dcd1160d7733e0710c4b9c762fb2aca65d24b63bff0ebcbc6d715f5db",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/prt_cas_to_prt_pri00.ex",
+    "source_hash": "d438fb131c213868c0d5b54a318413f2f2760cc6c784884756d91a83a6c17c5a",
+    "spawns": [
+      {
+        "name": "prt_cas_to_prt_pri00",
+        "x": 188,
+        "y": 258,
+        "map": "prt_cas",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|qroom_heine_in_qroom_heine_out|prt_cas_q:130:32": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.QroomHeineInQroomHeineOut",
+    "output_hash": "300159faefed9ac9c16aa716a3fb7d72683cae7051bcb5990d71c2294824ebb5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/qroom_heine_in_qroom_heine_out.ex",
+    "source_hash": "6023ca894b54403615ded0470f3b4ee20f8fd0141469d5ff656805d92dad666a",
+    "spawns": [
+      {
+        "name": "qroom_heine_in_qroom_heine_out",
+        "x": 130,
+        "y": 32,
+        "map": "prt_cas_q",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|qroom_nerius_in_qroom_nerius_out|prt_cas_q:130:56": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.QroomNeriusInQroomNeriusOut",
+    "output_hash": "a32cd0b76c4b1427861b53845609d2c0c7e9e05d9bf6a48c39ec29d93e7018a4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/qroom_nerius_in_qroom_nerius_out.ex",
+    "source_hash": "dcdc939cb846aa8eda9dbd09495a41d1c6eccc6c847d0fc8e02f10ca5ab81c83",
+    "spawns": [
+      {
+        "name": "qroom_nerius_in_qroom_nerius_out",
+        "x": 130,
+        "y": 56,
+        "map": "prt_cas_q",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|way_to_qroom_L_qroom_L_to_way|prt_cas:152:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.WayToQroomLQroomLToWay",
+    "output_hash": "40a730644e27c078e6a0ec961a69936fb43249571071d0ccd2ec5c048af8dca4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/way_to_qroom_l_qroom_l_to_way.ex",
+    "source_hash": "e8c8b0ea8acca1f87fa3cc839a7c0d3394a075fce4e4cd28ea81587993412c7e",
+    "spawns": [
+      {
+        "name": "way_to_qroom_L_qroom_L_to_way",
+        "x": 152,
+        "y": 163,
+        "map": "prt_cas",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/cities/prontera.txt|script|way_to_qroom_R_qroom_R_to_way|prt_cas:278:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Cities.Prontera.WayToQroomRQroomRToWay",
+    "output_hash": "76bf7c19c39897a576520bbe1215f4e0f48f955f12677065a0881b98453378da",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/cities/prontera/way_to_qroom_r_qroom_r_to_way.ex",
+    "source_hash": "10416fc1db4115fd027a480720602a520c25e59df8370e45c9f8e87f01a416a8",
+    "spawns": [
+      {
+        "name": "way_to_qroom_R_qroom_R_to_way",
+        "x": 278,
+        "y": 163,
+        "map": "prt_cas",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/dungeons/amicitia.txt|script|#wami2|amicitia1:149:19": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.Amicitia.Npc",
+    "output_hash": "43a2cf3b52a7fa5990c61429cfb33944c2ff014024b47260fb77c26c98d88681",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/amicitia/npc.ex",
+    "source_hash": "76e516f2cdecf7146659b7094397d42eb49a6012e098414aaf3940e1125ed770",
+    "spawns": [
+      {
+        "name": "",
+        "x": 149,
+        "y": 19,
+        "map": "amicitia1",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#wami2",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "re/warps/dungeons/ein_dun.txt|script|enter_ein_dun03|ein_dun02:16:250": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.EinDun.EnterEinDun03",
+    "output_hash": "a57514e5dc484273067c934481c3dcc39eee6454acd13bbfb8cde996c014379e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/ein_dun/enter_ein_dun03.ex",
+    "source_hash": "78b711b6f48e0ffda6bbc8ec434924822cca0af6e6aac171146654020e9233be",
+    "spawns": [
+      {
+        "name": "enter_ein_dun03",
+        "x": 16,
+        "y": 250,
+        "map": "ein_dun02",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/dungeons/iz_dun.txt|script|Gatekeeper#iz_dun|iz_dun04:130:234": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.IzDun.Gatekeeper",
+    "output_hash": "761ed2db6278180d772197626a5a96d540ee74eb4329b00aa60f976e00611deb",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/iz_dun/gatekeeper.ex",
+    "source_hash": "d11a3a7c3b12b78690f9d364279b63899dd4313a7d33c6ea13616bd4ff2219f3",
+    "spawns": [
+      {
+        "name": "Gatekeeper",
+        "x": 130,
+        "y": 234,
+        "map": "iz_dun04",
+        "dir": 5,
+        "sprite": 413,
+        "unique_name": "Gatekeeper#iz_dun"
+      }
+    ]
+  },
+  "re/warps/dungeons/iz_dun.txt|script|Guard#iz_dun|iz_dun05:142:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.IzDun.Guard",
+    "output_hash": "264e49dbc7115b914ca760024b13a91be9358ad9ffbe0a140a7f3761ca4fda7d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/iz_dun/guard.ex",
+    "source_hash": "549ef6185adf0985055065036ade23be5bc3bca7a3da14b9ab4c3b13ef264c99",
+    "spawns": [
+      {
+        "name": "Guard",
+        "x": 142,
+        "y": 190,
+        "map": "iz_dun05",
+        "dir": 5,
+        "sprite": 413,
+        "unique_name": "Guard#iz_dun"
+      }
+    ]
+  },
+  "re/warps/dungeons/mag_dun.txt|script|Republic Guard#mag03|mag_dun02:248:72": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.MagDun.RepublicGuard",
+    "output_hash": "7cfd1b2bbafca2655b1c15c679d9cc3ee94e170b026cf4edaef18484afadf414",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/mag_dun/republic_guard.ex",
+    "source_hash": "9dab2c5f5c1ed6a34c891db230b75c5c182b040d068fb90a8f2ea31a7aa2de05",
+    "spawns": [
+      {
+        "name": "Republic Guard",
+        "x": 248,
+        "y": 72,
+        "map": "mag_dun02",
+        "dir": 3,
+        "sprite": 852,
+        "unique_name": "Republic Guard#mag03"
+      }
+    ]
+  },
+  "re/warps/dungeons/mag_dun.txt|script|mag02a_mag03a|mag_dun02:247:68": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.MagDun.Mag02aMag03a",
+    "output_hash": "96a415572e9ba7afbc534831af9a0820cb7b99708599be3540143b1e4ce56fbe",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/mag_dun/mag02a_mag03a.ex",
+    "source_hash": "f0593022aea818f621cd543fb6837d3e8d112ea327b4cef5dd01aa1b80455ecf",
+    "spawns": [
+      {
+        "name": "mag02a_mag03a",
+        "x": 247,
+        "y": 68,
+        "map": "mag_dun02",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/dungeons/nif_dun.txt|script|nifdun01a_nifdun02a|nif_dun01:146:36": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.NifDun.Nifdun01aNifdun02a",
+    "output_hash": "b2fad7c7cac6abcf01a5fe13c3613a8547e566cd25ef537b0925812d1864db19",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/nif_dun/nifdun01a_nifdun02a.ex",
+    "source_hash": "d3c7717ff4882f81fc9a0dadbf4df78f7a1d72741f5a068b59dfdea13956e7eb",
+    "spawns": [
+      {
+        "name": "nifdun01a_nifdun02a",
+        "x": 146,
+        "y": 36,
+        "map": "nif_dun01",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/dungeons/nif_dun.txt|script|nifla_nifdun01a|niflheim:149:124": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Dungeons.NifDun.NiflaNifdun01a",
+    "output_hash": "97c0fada489cc2bf0b4f7a73ddf89a04f5d47fe44da5f0f5f8114383a0e10aa0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/dungeons/nif_dun/nifla_nifdun01a.ex",
+    "source_hash": "3d6081565df529b616d80f1affe0afd664d882767488454beec0f45be60c4357",
+    "spawns": [
+      {
+        "name": "nifla_nifdun01a",
+        "x": 149,
+        "y": 124,
+        "map": "niflheim",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/fields/bif_fild.txt|floating|bifrost_field0000|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.BifrostField0000",
+    "output_hash": "5444dfb4c713712058da385423e0c57a3ff66e59e65c2a9f38e5df4f5417b247",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/bifrost_field0000.ex",
+    "source_hash": "e57fe04db2ef4fd293c724c8b74db273ce2916c2de092ebd300bfab037fe7014",
+    "spawns": [
+      {
+        "name": "Small Hole",
+        "x": 285,
+        "y": 332,
+        "map": "bif_fild02",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Small Hole#ep14_mora1"
+      },
+      {
+        "name": "Small Hole",
+        "x": 95,
+        "y": 310,
+        "map": "bif_fild02",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Small Hole#ep14_mora2"
+      },
+      {
+        "name": "Small Hole",
+        "x": 174,
+        "y": 162,
+        "map": "bif_fild02",
+        "dir": 0,
+        "sprite": 844,
+        "unique_name": "Small Hole#ep14_mora3"
+      }
+    ]
+  },
+  "re/warps/guildcastles.txt|floating|warp_TE_castle|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Floating.WarpTeCastle",
+    "output_hash": "b52626cb165535c61a373095723827e93c3d0409d753cba1851325ef76a8c1e2",
+    "output_path": "lib/aesir/zone_server/content/npc/floating/warp_te_castle.ex",
+    "source_hash": "d0f3f4682b72bb52376d38476d5a4685b24107d56104e2f525db19b314ab1a17",
+    "spawns": [
+      {
+        "name": "prtg-1_prtg-1-01",
+        "x": 129,
+        "y": 65,
+        "map": "te_prt_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "prtg-1_prtg-1-01#1_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "prtg-2_prtg-2",
+        "x": 240,
+        "y": 124,
+        "map": "te_prt_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "prtg-2_prtg-2#2_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "prtg-3_prtg-3",
+        "x": 153,
+        "y": 141,
+        "map": "te_prt_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "prtg-3_prtg-3#3_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "prtg-4_prtg-4",
+        "x": 107,
+        "y": 240,
+        "map": "te_prt_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "prtg-4_prtg-4#4_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "prtg-5_prtg-5",
+        "x": 212,
+        "y": 240,
+        "map": "te_prt_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "prtg-5_prtg-5#5_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "aldeg-1_aldeg-1-1",
+        "x": 48,
+        "y": 79,
+        "map": "te_alde_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "aldeg-1_aldeg-1-1#6_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "aldeg-2_aldeg-2-1",
+        "x": 95,
+        "y": 253,
+        "map": "te_alde_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "aldeg-2_aldeg-2-1#7_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "aldeg-3_aldeg-3-1",
+        "x": 142,
+        "y": 81,
+        "map": "te_alde_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "aldeg-3_aldeg-3-1#8_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "aldeg-4_aldeg-4-1",
+        "x": 243,
+        "y": 242,
+        "map": "te_alde_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "aldeg-4_aldeg-4-1#9_te",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "aldeg-5_aldeg-5-1",
+        "x": 259,
+        "y": 90,
+        "map": "te_alde_gld",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "aldeg-5_aldeg-5-1#10_te",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/guildcastles.txt|script|aldeg-4-15_aldeg-4-#te|te_aldecas4:132:231": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Guildcastles.Aldeg415Aldeg4",
+    "output_hash": "12e52f92bdcf31f8d973cea686b88a2eeb92dd5653351b56c33773221c71892d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/guildcastles/aldeg_4_15_aldeg_4.ex",
+    "source_hash": "1e5c6c58fc1375ea44b7fa91e9a796fad6d904214ac462910be2e7709f4b9a39",
+    "spawns": [
+      {
+        "name": "aldeg-4-15_aldeg-4-",
+        "x": 132,
+        "y": 231,
+        "map": "te_aldecas4",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "aldeg-4-15_aldeg-4-#te",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/TrainingZone.txt|script|Training Instructor#sol1|prontera:246:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone.TrainingInstructor",
+    "output_hash": "d721ab7142727cc10b4210408e5b9391a932ec4c8b5390932ac5282e1db02c7d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone/training_instructor.ex",
+    "source_hash": "db9a0f91dd13d124065409544a46218c88e8c2110f9a255956922c34df48ed7d",
+    "spawns": [
+      {
+        "name": "Training Instructor",
+        "x": 246,
+        "y": 62,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 105,
+        "unique_name": "Training Instructor#sol1"
+      }
+    ]
+  },
+  "re/warps/other/TrainingZone.txt|script|Training Instructor#sol2|tra_fild:112:171": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone.TrainingInstructor112171",
+    "output_hash": "5c28da03a385be94e407ad2771d642b8ab0a44ed79edc3b07c0e665056cce5c8",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone/training_instructor_112_171.ex",
+    "source_hash": "cbe86b2b8c631ebdbf9f3714f1db00bc7431b38555d2de947ab7fa357b1308bc",
+    "spawns": [
+      {
+        "name": "Training Instructor",
+        "x": 112,
+        "y": 171,
+        "map": "tra_fild",
+        "dir": 3,
+        "sprite": 105,
+        "unique_name": "Training Instructor#sol2"
+      }
+    ]
+  },
+  "re/warps/other/TrainingZone.txt|script|Training Instructor#sol3|tra_fild:111:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone.TrainingInstructor11179",
+    "output_hash": "c800892cc7c47d2d2dd6163b0ce9b7de2adf11061f83921aa53b22e4fbad47e2",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone/training_instructor_111_79.ex",
+    "source_hash": "cd06681298a1235bfbd5606e7f5603f2f399398c65cfa4fb885832361aa691be",
+    "spawns": [
+      {
+        "name": "Training Instructor",
+        "x": 111,
+        "y": 79,
+        "map": "tra_fild",
+        "dir": 3,
+        "sprite": 105,
+        "unique_name": "Training Instructor#sol3"
+      }
+    ]
+  },
+  "re/warps/other/TrainingZone123.txt|script|Training Ground Manager#fild01_1|tra_fild01:204:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone123.TrainingGroundManager",
+    "output_hash": "213e5ae2a5c86ff463772538b7f443c377590efe432ba8e9ebe7623bf88f4e9b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone123/training_ground_manager.ex",
+    "source_hash": "7fc8fb94f1a7218cdb1037fbdee3257270c6f10c7d2ea80f51d19ad6eadf8f6d",
+    "spawns": [
+      {
+        "name": "Training Ground Manager",
+        "x": 204,
+        "y": 117,
+        "map": "tra_fild01",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild01_1"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 15,
+        "y": 117,
+        "map": "tra_fild01",
+        "dir": 6,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild01_2"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 106,
+        "y": 32,
+        "map": "tra_fild01",
+        "dir": 0,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild01_3"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 108,
+        "y": 100,
+        "map": "tra_fild01",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild01_4"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 204,
+        "y": 117,
+        "map": "tra_fild02",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild02_1"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 15,
+        "y": 117,
+        "map": "tra_fild02",
+        "dir": 6,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild02_2"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 106,
+        "y": 32,
+        "map": "tra_fild02",
+        "dir": 0,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild02_3"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 108,
+        "y": 100,
+        "map": "tra_fild02",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild02_4"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 204,
+        "y": 117,
+        "map": "tra_fild03",
+        "dir": 2,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild03_1"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 15,
+        "y": 117,
+        "map": "tra_fild03",
+        "dir": 6,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild03_2"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 106,
+        "y": 32,
+        "map": "tra_fild03",
+        "dir": 0,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild03_3"
+      },
+      {
+        "name": "Training Ground Manager",
+        "x": 108,
+        "y": 100,
+        "map": "tra_fild03",
+        "dir": 4,
+        "sprite": 105,
+        "unique_name": "Training Ground Manager#fild03_4"
+      }
+    ]
+  },
+  "re/warps/other/TrainingZone123.txt|script|Training Instructor#prontera_in|prontera:246:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone123.TrainingInstructor",
+    "output_hash": "c0e370eec56db1228c070db1ce75323866e04bedf94b98a5d5933cdde9fb5aef",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone123/training_instructor.ex",
+    "source_hash": "e45361cfe18e4b934b5dac844b26058a32f30d67f8ba137394866fb48882a65a",
+    "spawns": [
+      {
+        "name": "Training Instructor",
+        "x": 246,
+        "y": 62,
+        "map": "prontera",
+        "dir": 3,
+        "sprite": 105,
+        "unique_name": "Training Instructor#prontera_in"
+      }
+    ]
+  },
+  "re/warps/other/TrainingZone123.txt|script|tra_fild01_out1|tra_fild01:12:114": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Trainingzone123.TraFild01Out1",
+    "output_hash": "f6bddab256b37829faa2247e65b09a892c5a5c4b0b46f1f0710ed25e43616a54",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/trainingzone123/tra_fild01_out1.ex",
+    "source_hash": "91da122da40f953598b5b0f476576f1af1268398f078b3d0ee659d0fc78c24c5",
+    "spawns": [
+      {
+        "name": "tra_fild01_out1",
+        "x": 12,
+        "y": 114,
+        "map": "tra_fild01",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "tra_fild01_out2",
+        "x": 207,
+        "y": 114,
+        "map": "tra_fild01",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "tra_fild02_out1",
+        "x": 12,
+        "y": 114,
+        "map": "tra_fild02",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "tra_fild02_out2",
+        "x": 207,
+        "y": 114,
+        "map": "tra_fild02",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "tra_fild03_out1",
+        "x": 12,
+        "y": 114,
+        "map": "tra_fild03",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "tra_fild03_out2",
+        "x": 207,
+        "y": 114,
+        "map": "tra_fild03",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_2whs.txt|script|#172wh01|ba_2whs02:66:300": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Ba2whs.Npc",
+    "output_hash": "4401a55c3b36f5d7bcaeec3b319255da42d5f5ba12f721046ddf984519522669",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_2whs/npc.ex",
+    "source_hash": "5ab7e4795886d194cfee2c1cd7789743e10282994bd6d21f1b5dc06b75d11551",
+    "spawns": [
+      {
+        "name": "",
+        "x": 66,
+        "y": 300,
+        "map": "ba_2whs02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#172wh01",
+        "trigger": [
+          2,
+          2
+        ]
+      },
+      {
+        "name": "",
+        "x": 66,
+        "y": 325,
+        "map": "ba_2whs02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ba2whs02_to_ba2whslab-1",
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_maison.txt|script|#ep172_lab1_out|ba_in01:12:321": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.BaMaison.Npc",
+    "output_hash": "7e4e4bb4be6e94f0c389122227199d9d03ad84ccbe4c1b124a0f632efafbd7ba",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_maison/npc.ex",
+    "source_hash": "2b7edbafc633ab5f59651520432c24c79d21d1c65d9feca1b2652c993c0daddc",
+    "spawns": [
+      {
+        "name": "",
+        "x": 12,
+        "y": 321,
+        "map": "ba_in01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep172_lab1_out",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_maison.txt|script|#ep172_proom2_out|ba_maison:33:225": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.BaMaison.Npc33225",
+    "output_hash": "85c9f8497f76300ab364a37a2cb489aa1987163c68269dcea9b72c53576eeae5",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_maison/npc_33_225.ex",
+    "source_hash": "42e252d12d057b8f34c6f4bcafdfd3a5c4ec843c25102f2be8b9c8dd7e96ed01",
+    "spawns": [
+      {
+        "name": "",
+        "x": 33,
+        "y": 225,
+        "map": "ba_maison",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep172_proom2_out",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_maison.txt|script|#ep173_lost_in|ba_maison:314:203": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.BaMaison.Npc314203",
+    "output_hash": "880be029e08023d75da8189c6ea96083656f24b12ce5e82d896fa051d0adc8a2",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_maison/npc_314_203.ex",
+    "source_hash": "35dc1c8d89e629204b0c91412c31b1884a9819e77cab897f5d295e602dfae1b0",
+    "spawns": [
+      {
+        "name": "",
+        "x": 314,
+        "y": 203,
+        "map": "ba_maison",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep173_lost_in",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_pw.txt|script|#ep172_cor_to_pw2|sp_cor:258:287": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.BaPw.Npc258287",
+    "output_hash": "b21d07f0862b98639ae229a6778371e34b4bfb6c09da4f9aa7e6d95dc660de6e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_pw/npc_258_287.ex",
+    "source_hash": "107c2030e2f9b3572a5176fe8189a7484e01c5b6cf44ace983d6fa9927fdc9d0",
+    "spawns": [
+      {
+        "name": "",
+        "x": 258,
+        "y": 287,
+        "map": "sp_cor",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep172_cor_to_pw2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_pw.txt|script|#ep172_pw1_to_lab|ba_pw01:91:291": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.BaPw.Npc",
+    "output_hash": "4403898ef39581dbf6ba171299ae76d8dd831d247e010906c87046858b3bec14",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_pw/npc.ex",
+    "source_hash": "7b5ca1ecbbcb0d1c5cb923046e9cba8cd4e43387c414d72489b02fe717a0c28f",
+    "spawns": [
+      {
+        "name": "",
+        "x": 91,
+        "y": 291,
+        "map": "ba_pw01",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep172_pw1_to_lab",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/ba_pw.txt|script|#ep172_pw2_to_pw1|ba_pw02:7:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.BaPw.Npc7149",
+    "output_hash": "e863922426d314646a3d0b3f4642e4572d7b87a386e6a86448abf59d6ca7fee4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/ba_pw/npc_7_149.ex",
+    "source_hash": "330c7b1e311734b11a5586c9bb129de67fa949e6df138fde5c89aba070341cdb",
+    "spawns": [
+      {
+        "name": "",
+        "x": 7,
+        "y": 149,
+        "map": "ba_pw02",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#ep172_pw2_to_pw1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/dimensional_gap.txt|script|Transport Device#01|mid_camp:210:292": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.DimensionalGap.TransportDevice",
+    "output_hash": "a93fa092a79a315e6485a523cb6a36a31d65c2ec9d7362d4e0df3f353c856ae6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/dimensional_gap/transport_device.ex",
+    "source_hash": "9ed7d2d880b3bc8bba053d83b97354562660c48236ecdae9668ea27001df152a",
+    "spawns": [
+      {
+        "name": "Transport Device",
+        "x": 210,
+        "y": 292,
+        "map": "mid_camp",
+        "dir": 4,
+        "sprite": 10007,
+        "unique_name": "Transport Device#01"
+      }
+    ]
+  },
+  "re/warps/other/dimensional_gap.txt|script|Transport Device#02|moc_fild22b:222:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.DimensionalGap.TransportDevice222200",
+    "output_hash": "b41131fef6a0a2fe03e6ee118089ca865b476a02b009993a90ecd2a2fe6f5cd1",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/dimensional_gap/transport_device_222_200.ex",
+    "source_hash": "2b4f34f37a9285eb9455651b1ca003230185ac121b8fa61689ee7976a3e5b628",
+    "spawns": [
+      {
+        "name": "Transport Device",
+        "x": 222,
+        "y": 200,
+        "map": "moc_fild22b",
+        "dir": 4,
+        "sprite": 10007,
+        "unique_name": "Transport Device#02"
+      }
+    ]
+  },
+  "re/warps/other/dimensional_gap.txt|script|Transport Device#03|bif_fild01:318:159": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.DimensionalGap.TransportDevice318159",
+    "output_hash": "72df1e3c7c278bf2ce4cd5cb37674d29606121e07886a4b6d6fb5841fa6ce1f4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/dimensional_gap/transport_device_318_159.ex",
+    "source_hash": "103077a42772bbc45034767f2ff1d693755354c8468326e3afd7c62cd25c1785",
+    "spawns": [
+      {
+        "name": "Transport Device",
+        "x": 318,
+        "y": 159,
+        "map": "bif_fild01",
+        "dir": 4,
+        "sprite": 10007,
+        "unique_name": "Transport Device#03"
+      }
+    ]
+  },
+  "re/warps/other/dimensional_gap.txt|script|Transport Device#04|dic_fild02:241:31": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.DimensionalGap.TransportDevice24131",
+    "output_hash": "40dd029eb29782e1788a463e2e04850c00ce140c28353a6e7827d415eda0fceb",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/dimensional_gap/transport_device_241_31.ex",
+    "source_hash": "ba1bd22a9bd0bf9806e8b1f3ccd630ff1b896330e2a54c3a5712b393f16f6fbc",
+    "spawns": [
+      {
+        "name": "Transport Device",
+        "x": 241,
+        "y": 31,
+        "map": "dic_fild02",
+        "dir": 4,
+        "sprite": 10007,
+        "unique_name": "Transport Device#04"
+      }
+    ]
+  },
+  "re/warps/other/un_myst.txt|script|#m103|un_myst:258:208": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.UnMyst.Npc",
+    "output_hash": "47015adc8719c349feecae08d8b4c7d9cf98ce9ef625bbebddeef55e38eddd47",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/un_myst/npc.ex",
+    "source_hash": "9e88d5ba0806eac2e518035d972f2e422a69ae7aa87920247cb34bdfdf9dffea",
+    "spawns": [
+      {
+        "name": "",
+        "x": 258,
+        "y": 208,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m103",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 295,
+        "y": 208,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m104",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/un_myst.txt|script|#m201|un_myst:393:139": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.UnMyst.Npc393139",
+    "output_hash": "dc64fc4be788ba9725f94cd605cc587a9e89cdd60e02a314acf171fba979e187",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/un_myst/npc_393_139.ex",
+    "source_hash": "690e7f079431749f3c1273b14c476b9205209c60fd2fccf068436bda2c4cab13",
+    "spawns": [
+      {
+        "name": "",
+        "x": 393,
+        "y": 139,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m201",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 104,
+        "y": 136,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m202",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 138,
+        "y": 140,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m203",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/un_myst.txt|script|#m301|un_myst:75:91": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.UnMyst.Npc7591",
+    "output_hash": "a2c7cfdb486d5714e369c77a654220abb8895fdc65b750a3944b8402d6c25a54",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/un_myst/npc_75_91.ex",
+    "source_hash": "71c8ed61e724689b16359ea0ef77581ad3d7ec399b014cf9977c8f9a940b96b0",
+    "spawns": [
+      {
+        "name": "",
+        "x": 75,
+        "y": 91,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m301",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 121,
+        "y": 82,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m302",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 169,
+        "y": 89,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m303",
+        "trigger": [
+          1,
+          1
+        ]
+      },
+      {
+        "name": "",
+        "x": 219,
+        "y": 88,
+        "map": "un_myst",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#m304",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|A-0#L-1|un_bk_q:69:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.A0",
+    "output_hash": "500852fd5a16b8667e8a1bc64f04eb835acce7233e4a3fcd22f066801904cdd0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/a_0.ex",
+    "source_hash": "f7677a24d664fa1eef1cb73795ce13e4f3674dd52be45beb2e55a4c7026845be",
+    "spawns": [
+      {
+        "name": "A-0",
+        "x": 69,
+        "y": 118,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "A-0#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|A-0#L-2|un_bk_q:128:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.A0128118",
+    "output_hash": "76219eedd2d5f7a67eb29c76ce56caff1eb1364f552ccdf9a8cd6495621261a4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/a_0_128_118.ex",
+    "source_hash": "8bd3d396f64fb857b6626b872255233f4c13cdcb9015cddce346d2d1af06a4c8",
+    "spawns": [
+      {
+        "name": "A-0",
+        "x": 128,
+        "y": 118,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "A-0#L-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|A-0#b_Monitoring room_|un_bk_q:97:124": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.A097124",
+    "output_hash": "5908add47b97fe926dd29321aec9cfffe85c53a7433200b9f9718407c5e695ef",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/a_0_97_124.ex",
+    "source_hash": "a1892597ec158d5a4e8bbc4fd256ae082498a37d04eb157c7ed9a3848aa0ebab",
+    "spawns": [
+      {
+        "name": "A-0",
+        "x": 97,
+        "y": 124,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "A-0#b_Monitoring room_",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|B-1#L-1|un_bk_q:40:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.B1",
+    "output_hash": "2455ca9debb793f21b2175e01c547f7694f1a8493d1bd9c1ab6df2b691f7944a",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/b_1.ex",
+    "source_hash": "23838142fc046857c12eb00a24c6fb0ef3e2719ed0f9786813038a234a894b91",
+    "spawns": [
+      {
+        "name": "B-1",
+        "x": 40,
+        "y": 135,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "B-1#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|C-0#Farm|un_bk_q:216:300": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.C0",
+    "output_hash": "d21600ed77a3dcc2ff0fae6dc51eb68058b149adbead8338a440308f3254b9c4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/c_0.ex",
+    "source_hash": "f50d4cc99d257764b7b5f045a003065e9df45434e8f3970b270c6ee0e78d9789",
+    "spawns": [
+      {
+        "name": "C-0",
+        "x": 216,
+        "y": 300,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "C-0#Farm",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|C-0#G-1|un_bk_q:216:280": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.C0216280",
+    "output_hash": "4d8f31188bb6d4aef2a6899dcae4832f42396a29597850d082fb06f3da38f83e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/c_0_216_280.ex",
+    "source_hash": "c4776eb3cb7a03241e24f77efb6aa6513a78117982f14a76a14b71afdd58d99c",
+    "spawns": [
+      {
+        "name": "C-0",
+        "x": 216,
+        "y": 280,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "C-0#G-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Cafeteria#G-1|un_bk_q:271:290": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Cafeteria",
+    "output_hash": "6e2d2713ed9a7c57821e8cde8dc0c0b0972abcd32735fb9bc30be6966a498c84",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/cafeteria.ex",
+    "source_hash": "4add80859063d2bb15ed5067b87b5d385bf352fc83e67b5e82ffc5c9c5adcfb5",
+    "spawns": [
+      {
+        "name": "Cafeteria",
+        "x": 271,
+        "y": 290,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Cafeteria#G-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Cafeteria#G-2|un_bk_q:324:290": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Cafeteria324290",
+    "output_hash": "372f9a8128207ec5f823fae8cb008506fa46ed67c2f115e08fbb6171b4e1ebff",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/cafeteria_324_290.ex",
+    "source_hash": "859e234874fd7b6b13dd0b59b007e02571d8bafbcac17baad1716007e003c1e4",
+    "spawns": [
+      {
+        "name": "Cafeteria",
+        "x": 324,
+        "y": 290,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Cafeteria#G-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Clinic#G-1|un_bk_q:269:236": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Clinic",
+    "output_hash": "8c89c6d60b302c7d253b08b4b78fdb9f82d042b2ca0e47a813d78fccedd6d5bb",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/clinic.ex",
+    "source_hash": "d632a88968abf16bdc75358e904b0efa2d8e9193e8d56d0730b0aceceb1d2e5f",
+    "spawns": [
+      {
+        "name": "Clinic",
+        "x": 269,
+        "y": 236,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Clinic#G-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Clinic#G-2|un_bk_q:326:236": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Clinic326236",
+    "output_hash": "303efe33ddefa67f1023fbadde3449a6db8465adbeec523882eb91bc48f308f2",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/clinic_326_236.ex",
+    "source_hash": "fc1405fd0c111c80f00d4d3cb928a7dbe21780e5e6a4225898bc57fc1ea6020f",
+    "spawns": [
+      {
+        "name": "Clinic",
+        "x": 326,
+        "y": 236,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Clinic#G-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Clinic#H-0|un_bk_q:297:221": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Clinic297221",
+    "output_hash": "d508c95432fecfa3a3ccf2d270d02defcdd91850aff598338f5277d439eaea7d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/clinic_297_221.ex",
+    "source_hash": "e916ae149db06773ba803a40072f4c4bd31732b9b83ae76672881ba4c86c76c8",
+    "spawns": [
+      {
+        "name": "Clinic",
+        "x": 297,
+        "y": 221,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Clinic#H-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Control room#L-1|un_bk_q:71:236": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.ControlRoom",
+    "output_hash": "8f8249879926f0e3849e19339933b53e90b1b20987c9356f847bc1e369b39088",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/control_room.ex",
+    "source_hash": "d2edd5dedc41e73f92d991fcb9c723a41c36d9042457c4f40fb29c470ab7a8d1",
+    "spawns": [
+      {
+        "name": "Control room",
+        "x": 71,
+        "y": 236,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Control room#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Control room#L-2|un_bk_q:124:236": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.ControlRoom124236",
+    "output_hash": "437ee9a0aa491b2b7eafeef92f2676368cdc37cef42b4358e7a47cffd0c28e64",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/control_room_124_236.ex",
+    "source_hash": "f8e4078cbb01332d579e85dba779e49ab96e4a483a9c13158cfad4a4b5c0360d",
+    "spawns": [
+      {
+        "name": "Control room",
+        "x": 124,
+        "y": 236,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Control room#L-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|D-1#L-1|un_bk_q:21:375": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.D1",
+    "output_hash": "1163ec6ab9c63a34c380f3decd75b23955c7402fec348fed98da982c53a318a0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/d_1.ex",
+    "source_hash": "5e9b9a10b6bd99914d2eec9e2c23ebce1dd8aa93d1e202efd27cd3a123f2ce86",
+    "spawns": [
+      {
+        "name": "D-1",
+        "x": 21,
+        "y": 375,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "D-1#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|D-2#L-1|un_bk_q:67:375": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.D2",
+    "output_hash": "a73b2b7daf31285484d9549ef2f171f49e63cfab4a9a49da169d1708296c7f51",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/d_2.ex",
+    "source_hash": "3f01d797aac4834f413c50652dc57882a9725ab1262107a9e867d7abbe867b48",
+    "spawns": [
+      {
+        "name": "D-2",
+        "x": 67,
+        "y": 375,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "D-2#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|E-1#L-2|un_bk_q:105:375": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.E1",
+    "output_hash": "2f88e6c7829064fd4e30b2577b26f7e5c07d0da47823f32550a049d7bd067594",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/e_1.ex",
+    "source_hash": "a92c3869bc38afca40bf59b753ced3d52e115dbd00f0e01c865a2323929da7c3",
+    "spawns": [
+      {
+        "name": "E-1",
+        "x": 105,
+        "y": 375,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "E-1#L-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|E-2#L-2|un_bk_q:151:375": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.E2",
+    "output_hash": "4def5e9cda7a6e6fb2002d533ae5453e6ea0e0ae5c117b43e885d9ef8f59bb4d",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/e_2.ex",
+    "source_hash": "548bf04f263c6ede187d356f6377ccae9be56f43a4f25055ba192fc62392c094",
+    "spawns": [
+      {
+        "name": "E-2",
+        "x": 151,
+        "y": 375,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "E-2#L-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|F-1#G-1|un_bk_q:230:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.F1",
+    "output_hash": "521710dfd8c8013c8c75f5209b1c950e5433c5e9648e5e165dde4134cb16b8f0",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/f_1.ex",
+    "source_hash": "3bf3f141017fe71c52e9b326bcd534eb4cf35e1334d30c86050b37677cd51d86",
+    "spawns": [
+      {
+        "name": "F-1",
+        "x": 230,
+        "y": 214,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "F-1#G-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|F-2#G-2|un_bk_q:365:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.F2",
+    "output_hash": "f4832854b6d546cd9006c85214b0896ebae270fb4531126f0a3e553f6419ec68",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/f_2.ex",
+    "source_hash": "6e780079e1fd69e52c9dc9051c925dd6d569fae31aece2f34b1396d5bfb96840",
+    "spawns": [
+      {
+        "name": "F-2",
+        "x": 365,
+        "y": 214,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "F-2#G-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Farm#C-0|un_bk_q:213:346": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Farm",
+    "output_hash": "1a6d0c2e650aa809be03848d74f392a0d9d6dfe1caa591fe5cdf2a1b500254b4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/farm.ex",
+    "source_hash": "8aae3be03a9650cdd97069085f29046d1fa7a4e15fe70143db4e5f36a2ee6ac9",
+    "spawns": [
+      {
+        "name": "Farm",
+        "x": 213,
+        "y": 346,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Farm#C-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-1#C-0|un_bk_q:217:262": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G1",
+    "output_hash": "48b4e3898f6254c3b6c1b0981ef8ca3ddf1e7eed6cc46c9b8812be7120eef62c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_1.ex",
+    "source_hash": "0d1df5564816b35c0d8464d61402e80f182aa7aad19beec3bde865234ee6e1e8",
+    "spawns": [
+      {
+        "name": "G-1",
+        "x": 217,
+        "y": 262,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-1#C-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-1#Cafeteria|un_bk_q:258:262": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G1258262",
+    "output_hash": "7d31feea142d7fa17f0499d26d9bc48f84a9acd4cdfe71cb617917a6f0771128",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_1_258_262.ex",
+    "source_hash": "e12ad10788b7bcbad0fa5b408cb33b20ff528489e4846a6230cadef004dfb52d",
+    "spawns": [
+      {
+        "name": "G-1",
+        "x": 258,
+        "y": 262,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-1#Cafeteria",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-1#F-1|un_bk_q:245:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G1245214",
+    "output_hash": "8b9f19e2b9c079a6fb0f6a8cd637b93870ce0ce8586da748b32744999035a655",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_1_245_214.ex",
+    "source_hash": "093828cbcbd6526117e99bd1a159b55bd6770ca2b2b90bf88894fc3ec38f8df8",
+    "spawns": [
+      {
+        "name": "G-1",
+        "x": 245,
+        "y": 214,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-1#F-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-1#H-0|un_bk_q:262:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G1262200",
+    "output_hash": "32ad7ce1a93d0473084d20f2e80f862d3dd48418d423c663defd1b9f67920196",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_1_262_200.ex",
+    "source_hash": "570cc1aaae912e72a97cbddb0079b97e5e03ea53c51d7ad7a6d6b1c45b2877d2",
+    "spawns": [
+      {
+        "name": "G-1",
+        "x": 262,
+        "y": 200,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-1#H-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-1#M-0|un_bk_q:249:268": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G1249268",
+    "output_hash": "13333c8959d8ff07138836fd923a0c8156e262fb2268af74b9eba40db8df84b4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_1_249_268.ex",
+    "source_hash": "9acbb8d9d18853d2dba0f8102711fefe02e27fbc4502b7df095cae6013e38121",
+    "spawns": [
+      {
+        "name": "G-1",
+        "x": 249,
+        "y": 268,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-1#M-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-2#Cafeteria|un_bk_q:337:262": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G2337262",
+    "output_hash": "355031dd3cad67c3d38eeb2649264d81431ebc0fc7d81a8de4de6780df8ee519",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_2_337_262.ex",
+    "source_hash": "8d1387eafe038be3982b75049795042f424965f210ff47377c85f07b96df758f",
+    "spawns": [
+      {
+        "name": "G-2",
+        "x": 337,
+        "y": 262,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-2#Cafeteria",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-2#F-2|un_bk_q:350:214": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G2350214",
+    "output_hash": "c4d00d43bf76af26808599e9a8554bd30ce3a8473955eca53b12369c2da9ea56",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_2_350_214.ex",
+    "source_hash": "b8931b4b20020289358a4a3b9550b62f96e10081483df328203ec2ca460d40bf",
+    "spawns": [
+      {
+        "name": "G-2",
+        "x": 350,
+        "y": 214,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-2#F-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-2#H-0|un_bk_q:339:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G2",
+    "output_hash": "373ab1bfecbcb4b5931456653cf2074691c8bfb145180df39a71eb1b15f9571b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_2.ex",
+    "source_hash": "a5010c8a54a6df76cae6921faa6995555590872fe4f1111a61c1ec29aff614d5",
+    "spawns": [
+      {
+        "name": "G-2",
+        "x": 339,
+        "y": 200,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-2#H-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-2#I-0|un_bk_q:370:264": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G2370264",
+    "output_hash": "fe1677886066d6c966a55f5e650465675e031011eb9e5fb73fcd8df92ef7d011",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_2_370_264.ex",
+    "source_hash": "b172db2bc1d56d04eb5206db9f72320bac466f9a019b3e05ece7e6195f463572",
+    "spawns": [
+      {
+        "name": "G-2",
+        "x": 370,
+        "y": 264,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-2#I-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|G-2#N-0|un_bk_q:343:270": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.G2343270",
+    "output_hash": "426fbd12a90f1dc1e9e65087ab839555717660980fcff59f4433e74a7c46900e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/g_2_343_270.ex",
+    "source_hash": "9b7981b5585581d02bbe0d1f45677fa2b9f0f9abd74cd4771400c38041ed1280",
+    "spawns": [
+      {
+        "name": "G-2",
+        "x": 343,
+        "y": 270,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "G-2#N-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|H-0#G-1|un_bk_q:271:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.H0",
+    "output_hash": "da6c96808e1ddf269dd0d2d3e08d9ea3e47468452cbd55982bf883ffa07fea5f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/h_0.ex",
+    "source_hash": "8488c97d20caf419d0cb2ddcb0d49dc19f74c26baac78e2f9665e46a14840c6a",
+    "spawns": [
+      {
+        "name": "H-0",
+        "x": 271,
+        "y": 200,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "H-0#G-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|H-0#G-2|un_bk_q:324:200": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.H0324200",
+    "output_hash": "16b3fd67fc3574954ed8bef5bf8e4e3872420c8482500675f3f5cc4d1b5c712f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/h_0_324_200.ex",
+    "source_hash": "535bdb79aceedc0d882dc0e973e54b05a7cb52e51cc391b70255836a300e1857",
+    "spawns": [
+      {
+        "name": "H-0",
+        "x": 324,
+        "y": 200,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "H-0#G-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|H-0#Z-0|un_bk_q:297:192": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.H0297192",
+    "output_hash": "3fa0d0ccddcbcdb52b1fd89e7296b440e20d0864c8282513ec93a8a046bc2498",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/h_0_297_192.ex",
+    "source_hash": "8c688fd0fe39cc7f9b6e0647350262c7de9d0ab7e52098e3a1c843d7a4bf4444",
+    "spawns": [
+      {
+        "name": "H-0",
+        "x": 297,
+        "y": 192,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "H-0#Z-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|I-0#G-2|un_bk_q:385:264": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.I0",
+    "output_hash": "8c7aee6e694b5ecbd5357a9839cd81bdb2dc685077d5214a4608810da7b6bf42",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/i_0.ex",
+    "source_hash": "37a1250cbb0d9d39e51d8fd10342712830c24b0238aee133b520ffb0b3294970",
+    "spawns": [
+      {
+        "name": "I-0",
+        "x": 385,
+        "y": 264,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "I-0#G-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|J-0#L-1|un_bk_q:24:256": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.J024256",
+    "output_hash": "3b45eb9fa0e2747ad8f9d8f202db3b3cb799248e03f1c49df7c021834c3fa1f6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/j_0_24_256.ex",
+    "source_hash": "2ccb427a9915da48ac6f1d072cc988182ee8dd66f7b093a5bb71a2abcf72ea80",
+    "spawns": [
+      {
+        "name": "J-0",
+        "x": 24,
+        "y": 256,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "J-0#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|J-0#Machine Warehouse|un_bk_q:24:276": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.J0",
+    "output_hash": "d465ec557ea989e70dc63c54d52ce56b9b5f982b430aa0dec853839c31d7c413",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/j_0.ex",
+    "source_hash": "e429c433c561abaeb2101763e94733c189abf0bd3bbc2e66ca5ca774eb66e203",
+    "spawns": [
+      {
+        "name": "J-0",
+        "x": 24,
+        "y": 276,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "J-0#Machine Warehouse",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|K-0#L-2|un_bk_q:169:230": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.K0",
+    "output_hash": "c88f396498f002cfbe3b8afc90818a7dd140d1c938798b29842700fd1aa6b0ef",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/k_0.ex",
+    "source_hash": "839b687f18b6306cc7414ba74c9657d0eb13927ccc7f03bc51a33c93d3ada7c1",
+    "spawns": [
+      {
+        "name": "K-0",
+        "x": 169,
+        "y": 230,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "K-0#L-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#A-0|un_bk_q:57:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L157118",
+    "output_hash": "31884c40cf626082c88a33f41afd7b54d43abcc2616b5ffa18189ee357f4afa2",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1_57_118.ex",
+    "source_hash": "f29435e0c9bfa4560ce6a04c8dcbac9a0703d8866ff9ce91304ea6fcc1b7e13c",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 57,
+        "y": 118,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#A-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#B-1|un_bk_q:47:135": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L147135",
+    "output_hash": "809d9cc4ffd16217e66cdb256bdd53fb7402304b0817ab5fbb2aff237017f0c3",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1_47_135.ex",
+    "source_hash": "b8c5999e22cf796f21fd6ebb2efb242c795f25bf1509d6e6c0776b2581585b43",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 47,
+        "y": 135,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#B-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#Control room|un_bk_q:60:183": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L160183",
+    "output_hash": "f79be51983878491c29ba548fa25c44d95ad6d44ed8b8b3b8df9f6a27f124320",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1_60_183.ex",
+    "source_hash": "3194589f1c2a64a7f49867f97f1e642ea034975f22534e8138bee8cc7906b197",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 60,
+        "y": 183,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#Control room",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#D-1|un_bk_q:31:196": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L131196",
+    "output_hash": "a4475729df3b76bf48dae755f54ac84ab5aee95722a98eaf6b34531310f4270e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1_31_196.ex",
+    "source_hash": "7714d5002df32c8b4ec2bc65cfe0000f9ac591f9bf9f967b26be3cef3c81670e",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 31,
+        "y": 196,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#D-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#D-2|un_bk_q:51:196": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L151196",
+    "output_hash": "f19197114138805d13da3c4ff9c63bb989a72a004ca9c2d8b85305b14fa3b8c4",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1_51_196.ex",
+    "source_hash": "d07d6a4efc3811e9304ffb1b36f4e56b9b516d0c0607e7ac46859cfcc1efa07e",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 51,
+        "y": 196,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#D-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#J-0|un_bk_q:23:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L1",
+    "output_hash": "5a301527167a2995ee6039c50e32e13af0406774a47e72e64a5014b7ff0908db",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1.ex",
+    "source_hash": "442b0a5d98be1e10c40f01aafb10f8fd6d4c6ab27e2be6758d21f2ce8764d2e7",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 23,
+        "y": 190,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#J-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-1#b_Monitoring room_|un_bk_q:60:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L160169",
+    "output_hash": "c1eff5aac59d9ba6aa634e6846c0c6dd924b0ed51c971647b30ddfcbbf0acaba",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_1_60_169.ex",
+    "source_hash": "d27a00242dfb712f2390f4440cbccc3329e280fde151af94aca8a7dd74d07d74",
+    "spawns": [
+      {
+        "name": "L-1",
+        "x": 60,
+        "y": 169,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-1#b_Monitoring room_",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-2#A-0|un_bk_q:140:118": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L2",
+    "output_hash": "0b7c908f5018efafb8542ca0943490f0535568abceae44909c3d77b46faf85d6",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_2.ex",
+    "source_hash": "6b48a83ac902113d3dbf650c1b605002517554b352342e7d68a5b35804ee48f7",
+    "spawns": [
+      {
+        "name": "L-2",
+        "x": 140,
+        "y": 118,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-2#A-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-2#Control room|un_bk_q:137:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L2137185",
+    "output_hash": "314db6dd66e6a6e956fc9c54231d30d8093faa50803769db03b839111448193b",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_2_137_185.ex",
+    "source_hash": "17fa0d08bd1e40b92d9cba55f7357923b3737b2058aba2651ea899eaf6f5c953",
+    "spawns": [
+      {
+        "name": "L-2",
+        "x": 137,
+        "y": 185,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-2#Control room",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-2#E-1|un_bk_q:147:196": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L2147196",
+    "output_hash": "c5e774020aacbd643691b9ea511f598bfadb69b9d1eec210c6a0419590338b4c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_2_147_196.ex",
+    "source_hash": "85f0ebff4877b5c0117cb92671afe165dbec9b79e86de93b83e235dbb4676f96",
+    "spawns": [
+      {
+        "name": "L-2",
+        "x": 147,
+        "y": 196,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-2#E-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-2#E-2|un_bk_q:167:196": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L2167196",
+    "output_hash": "87f5a582fe01ed7154f9014b5faf52b0ff816174510b0c9d407e4438e528fc1e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_2_167_196.ex",
+    "source_hash": "14ab60d88309e3a5198061d436586b0b6bc1c4c6fdeb545e3dd7501d6c8a091e",
+    "spawns": [
+      {
+        "name": "L-2",
+        "x": 167,
+        "y": 196,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-2#E-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-2#K-0|un_bk_q:174:190": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L2174190",
+    "output_hash": "2106f35eb26d7275d58f471c20483bd34b8f776abbb489202c0b67c206e39541",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_2_174_190.ex",
+    "source_hash": "26d322514f6e66c81eadbdd889c6c35601c9fc4e95627a21ef3c0d63814356df",
+    "spawns": [
+      {
+        "name": "L-2",
+        "x": 174,
+        "y": 190,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-2#K-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|L-2#b_Monitoring room_|un_bk_q:137:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.L2137168",
+    "output_hash": "0fe9343b4556b26cb8d95f63b25d6be7c4e83228ce7c73f9e1e39a6136cc8a82",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/l_2_137_168.ex",
+    "source_hash": "bd0f919299ee8583a47a2c148b00425e9021d8fa4d052b59b12e2ea4a0a0efb5",
+    "spawns": [
+      {
+        "name": "L-2",
+        "x": 137,
+        "y": 168,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "L-2#b_Monitoring room_",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|LeftA-0#LeftH-0|un_bk_q:75:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Lefta0",
+    "output_hash": "ea669fbbf22ecced89d6f79e77adc97963fd75be69ce1d4032adcfca77f851fd",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/lefta_0.ex",
+    "source_hash": "ecc8c1ec02dec4e9646e85edef26e4dc79584f593e4213e5bec96ace9202d4dc",
+    "spawns": [
+      {
+        "name": "LeftA-0",
+        "x": 75,
+        "y": 128,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "LeftA-0#LeftH-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|LeftH-0#LeftA-0|un_bk_q:275:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Lefth0",
+    "output_hash": "27d19312c917584fd8f86a32e3698af247fbf2b6d7cdfbe734724e510eeee4af",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/lefth_0.ex",
+    "source_hash": "28d177d8fc9ae43463e19c96cb8592454643d95b5bbf273b0460f62b153d4dd0",
+    "spawns": [
+      {
+        "name": "LeftH-0",
+        "x": 275,
+        "y": 191,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "LeftH-0#LeftA-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|M-0#G-1|un_bk_q:389:377": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.M0",
+    "output_hash": "50d8d9b370a2d278ff0f0fd7df4185a4d4298ff8be4bba95f7b4cefd55019338",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/m_0.ex",
+    "source_hash": "67a04fdd2ea4d450dcc270ee7e99a468480255a4415984b54e86e35ac07b34d6",
+    "spawns": [
+      {
+        "name": "M-0",
+        "x": 389,
+        "y": 377,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "M-0#G-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Machine Warehouse#J-0|un_bk_q:41:275": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.MachineWarehouse",
+    "output_hash": "a7cb4cc778cf93c3bf321d0a77550b72098275f3d155ed55a1889c76db7f370f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/machine_warehouse.ex",
+    "source_hash": "149eb87d1cc6432d6786b054535f71bd6d578d94e7b86b7b59ad8ff4b439f693",
+    "spawns": [
+      {
+        "name": "Machine Warehouse",
+        "x": 41,
+        "y": 275,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Machine Warehouse#J-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Monitoring room#A-0|un_bk_q:97:141": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.MonitoringRoom",
+    "output_hash": "1264453886dc76921dd5ccbcaa122488d9ad25a473bc91653416dbea86ce7c53",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/monitoring_room.ex",
+    "source_hash": "a61c3fb41b314104b1d5425768ec24f4cf818388bcb1d13445bfda96671e12f5",
+    "spawns": [
+      {
+        "name": "Monitoring room",
+        "x": 97,
+        "y": 141,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Monitoring room#A-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|N-0#G-2|un_bk_q:381:325": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.N0",
+    "output_hash": "41323db93ee5bdc9a66dd844c8b14a8696141c839347803f8e80754e20e70802",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/n_0.ex",
+    "source_hash": "4460c3af39e5094758a389e890d12feb0757e0fc83e53a047a1260f6ee7bec0b",
+    "spawns": [
+      {
+        "name": "N-0",
+        "x": 381,
+        "y": 325,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "N-0#G-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|RightA-0#RightH-0|un_bk_q:119:128": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Righta0",
+    "output_hash": "4b1569975c806aecd0b4513ab245c4e819dc4457dc3ac8c57b7c4adb83ad440c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/righta_0.ex",
+    "source_hash": "bfd65de0478badc98a7dd6a5a07800cebbebffa94b9611458514234b30be7785",
+    "spawns": [
+      {
+        "name": "RightA-0",
+        "x": 119,
+        "y": 128,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "RightA-0#RightH-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|RightH-0#RightA-0|un_bk_q:320:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Righth0",
+    "output_hash": "f6f7dfb828e019daba002838900fd4f23e3ac2e2af58ab3641ce2f2e7172b56e",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/righth_0.ex",
+    "source_hash": "05159bd6ecfb74aadc78553013e1ef2ad0f08687d531ccac0c08ba2cd73dbf09",
+    "spawns": [
+      {
+        "name": "RightH-0",
+        "x": 320,
+        "y": 191,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "RightH-0#RightA-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Z-0#H-0|un_bk_q:297:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Z0",
+    "output_hash": "cc2f84874e9c08318ff264647bbb368e9eb778ebec5768fa9cd8ea126ed5f075",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/z_0.ex",
+    "source_hash": "44db8f8f8499f48f7740fef14fa68af1f3288d95197c57e02fbafb54f97a80a3",
+    "spawns": [
+      {
+        "name": "Z-0",
+        "x": 297,
+        "y": 186,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Z-0#H-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Z-0#Z-1|un_bk_q:229:163": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Z0229163",
+    "output_hash": "caf60791a3b793cda8b7a3a5a2d850cb749baa34b5b80a690f2680766c217b52",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/z_0_229_163.ex",
+    "source_hash": "5a937fe944d18f259d61a25c0ea539c03cdb7f5be6ecc48f00eb1ef6f6ae1115",
+    "spawns": [
+      {
+        "name": "Z-0",
+        "x": 229,
+        "y": 163,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Z-0#Z-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Z-0#Z-2|un_bk_q:366:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Z0366164",
+    "output_hash": "7130dc18fa65299921679585b0f952bf59365a00f0d01d9e750f12cbd52e5efe",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/z_0_366_164.ex",
+    "source_hash": "cd701200f4ff4008962df27e43972251a5b47306215c46d050da00709d9923dc",
+    "spawns": [
+      {
+        "name": "Z-0",
+        "x": 366,
+        "y": 164,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Z-0#Z-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Z-1#Z-0|un_bk_q:164:51": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Z1",
+    "output_hash": "fb3a15d30daaa4f1e92ba1306e518100b48712c7438daf340932c039b278d65f",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/z_1.ex",
+    "source_hash": "ab425de028ce646ad4e88b2b45873c0da4eaa49adb2546477445183911f9b0ab",
+    "spawns": [
+      {
+        "name": "Z-1",
+        "x": 164,
+        "y": 51,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Z-1#Z-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|Z-2#Z-0|un_bk_q:27:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Z2",
+    "output_hash": "4eb83fa2beb961cb411e795d65604e63af561e11c76b33a433835bbc4aed5384",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/z_2.ex",
+    "source_hash": "4e4fe8697fe191309bfd946d2ea9ea295ccf1835bed297c583047806c0579a49",
+    "spawns": [
+      {
+        "name": "Z-2",
+        "x": 27,
+        "y": 52,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "Z-2#Z-0",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|b_Monitoring room#L-1|un_bk_q:69:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.BMonitoringRoom",
+    "output_hash": "6eded3a441a07a18faff312f01f363021cea3ea4cadb2f47642dd14792b0964c",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/b_monitoring_room.ex",
+    "source_hash": "6ec6c5b79147fb34098d96f8147cf84ccf1a5c3905524d37cdd3254a6ddd6156",
+    "spawns": [
+      {
+        "name": "b_Monitoring room",
+        "x": 69,
+        "y": 167,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "b_Monitoring room#L-1",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|b_Monitoring room#L-2|un_bk_q:126:168": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.BMonitoringRoom126168",
+    "output_hash": "e8d5ab7cbdf859ed36ed93e0880f9a3f2440c4eab51c3080ed99eb1faf562d14",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/b_monitoring_room_126_168.ex",
+    "source_hash": "cfedd629388a811d582052758f4b69508ea1bb246be4d916c0355558ccbd8aef",
+    "spawns": [
+      {
+        "name": "b_Monitoring room",
+        "x": 126,
+        "y": 168,
+        "map": "un_bk_q",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "b_Monitoring room#L-2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|verus03_to_verus01|verus03:52:254": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Verus03ToVerus01",
+    "output_hash": "e5e901c3afccbed97e1b8bf1a9062a60971affd92aeb4270669ebe416025db64",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/verus03_to_verus01.ex",
+    "source_hash": "d612f6e3698b34675f6497ca232565ab7d624b81a45bcb7c472cf2cd5460ba81",
+    "spawns": [
+      {
+        "name": "verus03_to_verus01",
+        "x": 52,
+        "y": 254,
+        "map": "verus03",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "re/warps/other/verus.txt|script|verus03_to_verus02|verus03:169:259": {
+    "module": "Aesir.ZoneServer.Content.Npc.Re.Warps.Other.Verus.Verus03ToVerus02",
+    "output_hash": "41434bf593549ba9800a44bf3d25f92749e939e5dd9a77960aec4cc99341cbf1",
+    "output_path": "lib/aesir/zone_server/content/npc/re/warps/other/verus/verus03_to_verus02.ex",
+    "source_hash": "a5d122f154d78ef27506a47315623a5f7efef680f3f2d4078dafb28badd917b2",
+    "spawns": [
+      {
+        "name": "verus03_to_verus02",
+        "x": 169,
+        "y": 259,
+        "map": "verus03",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/umbala.txt|script|um_shaman1-1|umbala:220:189": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Umbala.UmShaman11",
+    "output_hash": "6149da49399a1122923459803851cece7a561571ef3473a479f0fe3f417297e3",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/umbala/um_shaman1_1.ex",
+    "source_hash": "5f12918622faac95dfb4f97faffa7553074b9a85b9865f7f36feb7064bc45415",
+    "spawns": [
+      {
+        "name": "um_shaman1-1",
+        "x": 220,
+        "y": 189,
+        "map": "umbala",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun63|yuno_in05:153:141": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc",
+    "output_hash": "b461db1a9c78197a006f6b8d3e094a2973df197dec1d459b97b72ecdada0c1ca",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc.ex",
+    "source_hash": "0333253785de175422a1c2bb59d04449581f7116e350a0409f3659187f2ae453",
+    "spawns": [
+      {
+        "name": "",
+        "x": 153,
+        "y": 141,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun63",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun64|yuno_in05:196:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc196102",
+    "output_hash": "bed627d41e7bc429eee1e2799fe93e1db607f518316a2347a326060827a918de",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_196_102.ex",
+    "source_hash": "b2cf6dca0ba7804189b51ffb13ce21afa639e0c8962c8bc0ea36f1b0d10bd208",
+    "spawns": [
+      {
+        "name": "",
+        "x": 196,
+        "y": 102,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun64",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun65|yuno_in05:181:116": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc181116",
+    "output_hash": "fb1687ad9e847842c07e4dc03883b0d86ef8ad0cffbb394b35daace1650f74fe",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_181_116.ex",
+    "source_hash": "6ac3630be57e2247d858abcb5c67ddcd8aca62fd9e92039552dfe71c0dc64388",
+    "spawns": [
+      {
+        "name": "",
+        "x": 181,
+        "y": 116,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun65",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun66|yuno_in05:165:102": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc165102",
+    "output_hash": "91ad6a2744394a71e6c6fe7b4c9a754f101a4726707a615ca0bda8e2ed2f55ac",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_165_102.ex",
+    "source_hash": "892efb3ead423e15775bb3c2dc08ef3b728ce75ed36ae170fcf2550c9a240152",
+    "spawns": [
+      {
+        "name": "",
+        "x": 165,
+        "y": 102,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun66",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun67|yuno_in05:181:91": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc18191",
+    "output_hash": "ef0aa35b0d836d96f23c06e976a2f70eea01c9c2a171e00b0db4a5c7a4c09e5a",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_181_91.ex",
+    "source_hash": "76d8b141d7a92487584afdb2a096141da2bc94a7769d23f1ca685416d294c315",
+    "spawns": [
+      {
+        "name": "",
+        "x": 181,
+        "y": 91,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun67",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun68|yuno_in05:148:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc14882",
+    "output_hash": "3a88c9825f2496e34d01fcf3c567a524e158146777b071b1fcc9c0a253932c13",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_148_82.ex",
+    "source_hash": "a4b23f1f054e70893ed77b109906f4916602927bffb08f01ad998f964687f9b9",
+    "spawns": [
+      {
+        "name": "",
+        "x": 148,
+        "y": 82,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun68",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun69|yuno_in05:125:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc12582",
+    "output_hash": "e7b53ac1583b42bf7e39c7aa7fd4a6c4a5a213f3d2be1bfa125b7720b542e9c9",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_125_82.ex",
+    "source_hash": "c1f005269bead2cac45e0270e452bab37fbbbf23346c65bf9f0367c515a45b89",
+    "spawns": [
+      {
+        "name": "",
+        "x": 125,
+        "y": 82,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun69",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun70|yuno_in05:136:71": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc13671",
+    "output_hash": "f34f99f7dbea36e10eb0b7b2874a7203478a52c5fc46d9b6a8218a8b3e352f27",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_136_71.ex",
+    "source_hash": "00dd1e16f8f095bd35588343b9831b10ed52c815f266954a6e8eaf04a8978886",
+    "spawns": [
+      {
+        "name": "",
+        "x": 136,
+        "y": 71,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun70",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun71|yuno_in05:16:188": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc16188",
+    "output_hash": "598e816eabd753ce6fcba30399c468134d03d85d9c355e04e635014d235eede6",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_16_188.ex",
+    "source_hash": "666bcf3a8b45d8682ff8efc3460071351aa748af505719d7be9c1322ebffd74d",
+    "spawns": [
+      {
+        "name": "",
+        "x": 16,
+        "y": 188,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun71",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun72|yuno_in05:176:9": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc1769",
+    "output_hash": "ddf9122861b97f07e520b9535c9d135bfd4d55747a5706f222d432b988b7c1da",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_176_9.ex",
+    "source_hash": "bbae06138ceb1d5c672e15c25aba4b2c89e5551765b50bc0cf41b3c2489bcc60",
+    "spawns": [
+      {
+        "name": "",
+        "x": 176,
+        "y": 9,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun72",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun73|yuno_in05:176:52": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc17652",
+    "output_hash": "c0dd3c93601b9b13190017ac84ad700bb2cbafb33bee55cfd0e14d7e96df0032",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_176_52.ex",
+    "source_hash": "02440853a712efbf336619d1c4cf4b1161007eb44c8b47c2f8500b50b780b8bf",
+    "spawns": [
+      {
+        "name": "",
+        "x": 176,
+        "y": 52,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun73",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun74|yuno_in05:40:178": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc40178",
+    "output_hash": "45f2ef720daf131f80309712b9a82fd33cbdcc9cec3980eacbcab9e0411018db",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_40_178.ex",
+    "source_hash": "548b10490b93a44bd33125b6286ec59785c00ba6b19d7c8b4a3165fbea33952e",
+    "spawns": [
+      {
+        "name": "",
+        "x": 40,
+        "y": 178,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun74",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/cities/yuno.txt|script|#yun75|yuno_in05:47:186": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Cities.Yuno.Npc47186",
+    "output_hash": "d469f0d9b207a80cd76819331669df136a2800c47de16375c9e90a948389f3a1",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/cities/yuno/npc_47_186.ex",
+    "source_hash": "ed84a94050bb265fa20dc77864e52401e18b1392cdff7da7bf29ebebfcd8f29c",
+    "spawns": [
+      {
+        "name": "",
+        "x": 47,
+        "y": 186,
+        "map": "yuno_in05",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#yun75",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/alde_dun.txt|script|ald008r|alde_dun02:267:41": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.AldeDun.Ald008r",
+    "output_hash": "3744d8ad8bfee82dfa598eb8d796ea00b9608aa9c08f1062227e227f092f0b5f",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/alde_dun/ald008r.ex",
+    "source_hash": "6bd98e1c41558f3d73796360edb61e56bb5733973c3392ff84341e0d9ec5d6d9",
+    "spawns": [
+      {
+        "name": "ald008r",
+        "x": 267,
+        "y": 41,
+        "map": "alde_dun02",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/alde_dun.txt|script|ald014r|alde_dun03:130:125": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.AldeDun.Ald014r",
+    "output_hash": "cf2d61af5afa5407ab4028cbef2c13b63c043f6b92545ba0ea2942924f9ca0a3",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/alde_dun/ald014r.ex",
+    "source_hash": "220cf8c9109bc5fae3c8ada31919e191951d90b0f5d303d50af31d7dec52d9b1",
+    "spawns": [
+      {
+        "name": "ald014r",
+        "x": 130,
+        "y": 125,
+        "map": "alde_dun03",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/alde_dun.txt|script|ald015r|alde_dun03:171:127": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.AldeDun.Ald015r",
+    "output_hash": "0fb3c540f4d45cb4b64ad45274e5872770d0631e9f1fc01f6b7a445b8492064c",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/alde_dun/ald015r.ex",
+    "source_hash": "823b7ea5da127e31ead36cd783599923d098447c02a5af4cf6684b3608480987",
+    "spawns": [
+      {
+        "name": "ald015r",
+        "x": 171,
+        "y": 127,
+        "map": "alde_dun03",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/alde_dun.txt|script|ald022r|alde_dun04:80:34": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.AldeDun.Ald022r",
+    "output_hash": "6915cc0de23c2dacfa08649ebc8fead14a22dc73a72f35d0afb23777c9d7594f",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/alde_dun/ald022r.ex",
+    "source_hash": "a64ef4379d53e4eec3dab0085ad01cefb85bce4259ce1205f04fbd443aad2d20",
+    "spawns": [
+      {
+        "name": "ald022r",
+        "x": 80,
+        "y": 34,
+        "map": "alde_dun04",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt006r|c_tower2:13:288": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt006r",
+    "output_hash": "7ff44eec2da6d807f52c1e6fb58f84c6347df5f8e4126af543a875c6c0df567e",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt006r.ex",
+    "source_hash": "b040b97e8dc95a43ae9a5e6377b398aef4f527b25a7211b11efbcfe107ad7abf",
+    "spawns": [
+      {
+        "name": "clt006r",
+        "x": 13,
+        "y": 288,
+        "map": "c_tower2",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt007r|c_tower2:223:267": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt007r",
+    "output_hash": "3cc99169cbca387ef102bbfae03baa2e2ae911eea2e93c9aaf867bc38213119a",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt007r.ex",
+    "source_hash": "acae4fc2f69a7fc6f66431be5bb3966b5d4cfb54b8771f57762a84abb2456522",
+    "spawns": [
+      {
+        "name": "clt007r",
+        "x": 223,
+        "y": 267,
+        "map": "c_tower2",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt014r|c_tower3:163:252": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt014r",
+    "output_hash": "63cfd100bab2fe741b6299d98739d7c5d62ea5723f62a26e92eadc8c9eb6ca75",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt014r.ex",
+    "source_hash": "42c49ae941b92dc548ad95adff323228b48509376429c1d3bf4669e1a0b47290",
+    "spawns": [
+      {
+        "name": "clt014r",
+        "x": 163,
+        "y": 252,
+        "map": "c_tower3",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt015r|c_tower3:240:7": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt015r",
+    "output_hash": "276cfee70d861480b5bb03f87d589b4a788277d160f292aa2c4d909a903422e4",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt015r.ex",
+    "source_hash": "2eb24821d05f955ded4ef13d8b9e42d1ee841e69a234aa876f950b7d491c0479",
+    "spawns": [
+      {
+        "name": "clt015r",
+        "x": 240,
+        "y": 7,
+        "map": "c_tower3",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt016r|c_tower3:252:24": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt016r",
+    "output_hash": "1d9830fbee76bf7bb956dd3b732c8b0c7550a262a27f3588d0e24581e8981404",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt016r.ex",
+    "source_hash": "16304eb6e29e00d120990b638b47fc9f7677e57d605f7e3f84bbed6b2da5aaa5",
+    "spawns": [
+      {
+        "name": "clt016r",
+        "x": 252,
+        "y": 24,
+        "map": "c_tower3",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt027r|c_tower4:75:156": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt027r",
+    "output_hash": "674777e9e663742a39078f0e69ef1abd2e2b416369919eec03fd37d59f923ee0",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt027r.ex",
+    "source_hash": "7e50a545f0b24d0e25f6056efd5fe8aaa7e9f106193764f3eeadfce97b4f7bbc",
+    "spawns": [
+      {
+        "name": "clt027r",
+        "x": 75,
+        "y": 156,
+        "map": "c_tower4",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt028r|c_tower4:68:79": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt028r",
+    "output_hash": "f9733f72a6f48856cc1c0756fad8a6594a82b2dcbc3ec1b2ef0c669a45e1024a",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt028r.ex",
+    "source_hash": "2ff4b1a02fb20f78d6d69a83f1c573702d9488baa959a325640780d81772a8ec",
+    "spawns": [
+      {
+        "name": "clt028r",
+        "x": 68,
+        "y": 79,
+        "map": "c_tower4",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt029r|c_tower4:142:151": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt029r",
+    "output_hash": "7a4cf99bacf70a1f413f6576c4ff3e3ca49881df6d671f3f275104f148de9848",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt029r.ex",
+    "source_hash": "d1aa78671ff2892a3cf05c12df1382d41711029599442bd648361947b0c463af",
+    "spawns": [
+      {
+        "name": "clt029r",
+        "x": 142,
+        "y": 151,
+        "map": "c_tower4",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt030r|c_tower4:151:96": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt030r",
+    "output_hash": "48a9c3abc7292246cd07835df14cdaca4f5f374e87224001cbdbaefaed9d425a",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt030r.ex",
+    "source_hash": "64b6b3c7aca8b91ae697e58343911abe1bd3597bbfb1872571bc98e7ea9b8592",
+    "spawns": [
+      {
+        "name": "clt030r",
+        "x": 151,
+        "y": 96,
+        "map": "c_tower4",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          0,
+          0
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/c_tower.txt|script|clt031r|c_tower4:189:40": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.CTower.Clt031r",
+    "output_hash": "c3d7815b98bbe2b68ec5bdca3431282e563837ead057bacf42e689d4e31ed431",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/c_tower/clt031r.ex",
+    "source_hash": "cfa90802fcee626586d06db39520b6b1fbda09898a1fa93d3db3a5d263f39cbd",
+    "spawns": [
+      {
+        "name": "clt031r",
+        "x": 189,
+        "y": 40,
+        "map": "c_tower4",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/kh_dun.txt|script|kh_dun04|kh_dun02:43:195": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.KhDun.KhDun04",
+    "output_hash": "14886aa94cf4060b6bc4010f486ae91f7e2e9839141ae389d0c28aee2bb248f6",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/kh_dun/kh_dun04.ex",
+    "source_hash": "f78e10bba001ba57b26b7b3cca0bba49e6d2fc597157161c38ccdc8aa4a1b8e7",
+    "spawns": [
+      {
+        "name": "kh_dun04",
+        "x": 43,
+        "y": 195,
+        "map": "kh_dun02",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|function|randomw|-": {
+    "module": "Aesir.ZoneServer.Content.Npc.Functions.Randomw",
+    "output_hash": "6e657ad173a8655a9e077c2c011a38d23045218d93fc4c8c6a8d13956f8683cf",
+    "output_path": "lib/aesir/zone_server/content/npc/functions/randomw.ex",
+    "source_hash": "71418d7b4fb0baf80f2011325ede727ffea5d1093238be6bdca00ca0c357132a",
+    "spawns": []
+  },
+  "warps/dungeons/lhz_dun.txt|script|Sewer Pipe#lt|lighthalzen:313:301": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.SewerPipe",
+    "output_hash": "16f3b265403d621bf8d89170e30f8a3fdbfb424d67b5dca5cf67012c37a35d25",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/sewer_pipe.ex",
+    "source_hash": "c776d60f54839019426a6dff37f87d14c29895ac63a2afe40e57f00d56bc0c3f",
+    "spawns": [
+      {
+        "name": "Sewer Pipe",
+        "x": 313,
+        "y": 301,
+        "map": "lighthalzen",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Sewer Pipe#lt"
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew01-1|lhz_cube:74:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew011",
+    "output_hash": "f6127aa4cf7a65407d95e5d32be09b889fc0a06d2dc8d2e0db6bc22b74a14271",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew01_1.ex",
+    "source_hash": "6d57471a1d96048b2fa47e849efcd26af99fbaa313c3423822248b988ef3924c",
+    "spawns": [
+      {
+        "name": "cubew01-1",
+        "x": 74,
+        "y": 74,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew01-3|lhz_cube:59:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew013",
+    "output_hash": "8a3af61779dea974df5698f972aaf93b6426bca3542701773b2759f17d07833b",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew01_3.ex",
+    "source_hash": "00feff181beb1cd447b752f9998e8d2f55ad7dc5cd79944937c13a3e75b945dc",
+    "spawns": [
+      {
+        "name": "cubew01-3",
+        "x": 59,
+        "y": 74,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew01-4|lhz_cube:66:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew014",
+    "output_hash": "824562cffeb1ec4dc554df314207332ed924db21c950137db0c8a8f8c0fefb31",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew01_4.ex",
+    "source_hash": "11e1326f02b27661383e2c1f9efe2677797d76a16a08b043f79a403f9a14dacc",
+    "spawns": [
+      {
+        "name": "cubew01-4",
+        "x": 66,
+        "y": 82,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew02-2|lhz_cube:66:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew022",
+    "output_hash": "7c963e937e08073dc34b4630fe73db67c9f1bf4073d166e60730a1633c477584",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew02_2.ex",
+    "source_hash": "8ba6d73eba0ba0e24e011e4454aa087cc143a91235b0694c5f28e4619155ae13",
+    "spawns": [
+      {
+        "name": "cubew02-2",
+        "x": 66,
+        "y": 129,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew02-3|lhz_cube:59:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew023",
+    "output_hash": "c6241f32f30a4820f201d93ce9302b0d8c706cc6fa42057219eb6a9dfcd5cb91",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew02_3.ex",
+    "source_hash": "89e5c7bd068303c149eeb181d1e0b7dda7ae9b508740ea6d463b140d46499f28",
+    "spawns": [
+      {
+        "name": "cubew02-3",
+        "x": 59,
+        "y": 136,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew02-4|lhz_cube:66:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew024",
+    "output_hash": "51e1641b18cd49f1731c46c6b075724d62b5a55597b0b3ff59fa47da9a965290",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew02_4.ex",
+    "source_hash": "8b22b33f6f7aecb43e0f5c0137d6ed901951860c2da27a8d0dfc60952df75d9a",
+    "spawns": [
+      {
+        "name": "cubew02-4",
+        "x": 66,
+        "y": 144,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew03-1|lhz_cube:74:192": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew031",
+    "output_hash": "2bb40d2d1a4fed81bbfb08bce95b18c2a130889d3e9ba99c4afedef36be77c5b",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew03_1.ex",
+    "source_hash": "0d80325d40a820f225b049a450a2535379229fe062af877ac6b4ab5116e51169",
+    "spawns": [
+      {
+        "name": "cubew03-1",
+        "x": 74,
+        "y": 192,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew03-2|lhz_cube:67:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew032",
+    "output_hash": "fde211ad545253d3890f6ba39f556502dfbce8a2002cee8718ab6e58d7600492",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew03_2.ex",
+    "source_hash": "86f63634123e309dbe5627eed5af8f8a17547d823552b4a8f5a6d9c4b787ff1c",
+    "spawns": [
+      {
+        "name": "cubew03-2",
+        "x": 67,
+        "y": 185,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew03-3|lhz_cube:59:192": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew033",
+    "output_hash": "778ed6eaae318f1ee25f948de13e2624f6821b560fd79a8cddb827a79a94a1fd",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew03_3.ex",
+    "source_hash": "bdc8fd2debf2cc5ea42c8102d857c9e40367a5a953d338da02e838cf45538543",
+    "spawns": [
+      {
+        "name": "cubew03-3",
+        "x": 59,
+        "y": 192,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew04-1|lhz_cube:74:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew041",
+    "output_hash": "99329cdd9bb1276b07ec0fd174c81d56260c3904bc7c1083b2cee3ff7a5b6e8f",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew04_1.ex",
+    "source_hash": "40e42b3ef93589c126e71c1284ab8bf967f7890e144f1f0ad82c71b06e3f62b2",
+    "spawns": [
+      {
+        "name": "cubew04-1",
+        "x": 74,
+        "y": 18,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew04-3|lhz_cube:59:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew043",
+    "output_hash": "fc30877e268e02cd799e7f12b7c6077085e7bee3774572d8d6c27549db6087cd",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew04_3.ex",
+    "source_hash": "5b597170fa675a0f6e0bdb1dceec7d1537be71baeb84ab7ddc0ab85d164cea39",
+    "spawns": [
+      {
+        "name": "cubew04-3",
+        "x": 59,
+        "y": 18,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew05-3|lhz_cube:3:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew053",
+    "output_hash": "a9c9f470a0f756a1d30a7ee4255d1bba1f180aa5465f6da05e4f95bc9edc982c",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew05_3.ex",
+    "source_hash": "e5d660d3545964620650f1a7a5519bae9dbb8ce3b9a8e6d38b39f00c0b88298a",
+    "spawns": [
+      {
+        "name": "cubew05-3",
+        "x": 3,
+        "y": 18,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew05-4|lhz_cube:10:26": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew054",
+    "output_hash": "e733dd615f279db97d803d8f4b8f5cfd7ca0fe58f5b745e130caa0179acdec6e",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew05_4.ex",
+    "source_hash": "559cd14bc96193eb7c029073342092922c646904e4e8261a586a1cc2b5a974e3",
+    "spawns": [
+      {
+        "name": "cubew05-4",
+        "x": 10,
+        "y": 26,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew06-1|lhz_cube:18:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew061",
+    "output_hash": "73948fccb50d5f11e03870f200c5dd2c8069e914c833db6da58728c96e31f89e",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew06_1.ex",
+    "source_hash": "729f0d008ff3eef311cfe25f5cf00e932db5b1c4a9e6ba166237e3dd3b357d9b",
+    "spawns": [
+      {
+        "name": "cubew06-1",
+        "x": 18,
+        "y": 74,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew06-4|lhz_cube:10:82": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew064",
+    "output_hash": "0196ccd3e7d23f904f0e6878d68d3ae78d740298098349be458403711d340367",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew06_4.ex",
+    "source_hash": "cad9361eaeb42a40ab3118ee336c1b369e04fbed000f006eb64c3179f33405c2",
+    "spawns": [
+      {
+        "name": "cubew06-4",
+        "x": 10,
+        "y": 82,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew07-2|lhz_cube:10:129": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew072",
+    "output_hash": "077d3cfe48d86f50574ec945fd5f597f6b7940e48c17a3b627cfbd24dca895e3",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew07_2.ex",
+    "source_hash": "4a6a0f73e75115b92e225c63e88cef472d15513daf2b4e9ac80e2e1bbdfbda3e",
+    "spawns": [
+      {
+        "name": "cubew07-2",
+        "x": 10,
+        "y": 129,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew07-3|lhz_cube:3:136": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew073",
+    "output_hash": "468ba620d4eaec9c02eb092bebcca3c56b1c5b00fa4919759e7b147e4dac85b3",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew07_3.ex",
+    "source_hash": "47102ec19ca4d34845817aa8d7be720ba4146d6057d9ba830c4e7060dda5a134",
+    "spawns": [
+      {
+        "name": "cubew07-3",
+        "x": 3,
+        "y": 136,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew07-4|lhz_cube:10:144": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew074",
+    "output_hash": "24f9df12672c290c1f7c7261b37d7b9d8c77cf5be2ba44cdb8bb55be73473baa",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew07_4.ex",
+    "source_hash": "b7bebfe10d292fa2d664e3d6614a9ba8f54124d07075e4b4fc39ca6eecb53007",
+    "spawns": [
+      {
+        "name": "cubew07-4",
+        "x": 10,
+        "y": 144,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew08-1|lhz_cube:18:192": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew081",
+    "output_hash": "86172f7ef469ad5231c9c264398d1241944180167c690e4983ffaf3dabb0f2dc",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew08_1.ex",
+    "source_hash": "1b121b7b53c3caff1861c60a1f48889381e2df2ddaa3b9f63f2a0ef71dbdebc0",
+    "spawns": [
+      {
+        "name": "cubew08-1",
+        "x": 18,
+        "y": 192,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew08-2|lhz_cube:10:185": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew082",
+    "output_hash": "4baa01d43e7bc8423a9340f14322d9df49752fd7578fbf732ce0b365940506d2",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew08_2.ex",
+    "source_hash": "06e867425afe3d79de6fd1f8a0e2c08011de53714dd8051b890955dab6e183ff",
+    "spawns": [
+      {
+        "name": "cubew08-2",
+        "x": 10,
+        "y": 185,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew09-1|lhz_cube:130:18": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew091",
+    "output_hash": "97a3d7cb0b61f6c7f7031195e79dba9eb74bd867ccd6d100d95fe43d6bd2352a",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew09_1.ex",
+    "source_hash": "4c6f3cbda3f096a120f30d61c31b1a6c31485a147f34278a43b591758428162e",
+    "spawns": [
+      {
+        "name": "cubew09-1",
+        "x": 130,
+        "y": 18,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew09-2|lhz_cube:123:11": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew092",
+    "output_hash": "25d24539d54de590d3202b6f0b12b11952e359103ffcf1c7dbc97eea10483569",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew09_2.ex",
+    "source_hash": "b8f49faf77caaa1daee8a28f3f384b2256b93998edce6a07a99951e697b674d9",
+    "spawns": [
+      {
+        "name": "cubew09-2",
+        "x": 123,
+        "y": 11,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|cubew09-4|lhz_cube:123:26": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.Cubew094",
+    "output_hash": "c39a110d88998b0664984f673f1662d47aacdcfe238111201b036036268957fa",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/cubew09_4.ex",
+    "source_hash": "1b4e6eb96386c7b3f7086850dfefacbfad18f135b4e4e1903ffca60a7a3c140d",
+    "spawns": [
+      {
+        "name": "cubew09-4",
+        "x": 123,
+        "y": 26,
+        "map": "lhz_cube",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/lhz_dun.txt|script|lhz_dun5-1|lhz_dun02:149:149": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.LhzDun.LhzDun51",
+    "output_hash": "1e39c5b5ab321147beae0ff9af5df654ab6f1fd7589d511b7c3522c8da178073",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/lhz_dun/lhz_dun5_1.ex",
+    "source_hash": "77d943a228a72bb33854b3f7b741600c2837141643a31d7fbb19c958beb43606",
+    "spawns": [
+      {
+        "name": "lhz_dun5-1",
+        "x": 149,
+        "y": 149,
+        "map": "lhz_dun02",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|#babayagain|mosk_dun02:53:220": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Npc",
+    "output_hash": "fbf306c3b215ef0a61844dc463709b3b879fa912e6f9541879c9f2265645ef8c",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/npc.ex",
+    "source_hash": "f13ff61ddfbe6443b77e731018e02a367845ec450a4daf1d2c9ba1edc0eebdd6",
+    "spawns": [
+      {
+        "name": "",
+        "x": 53,
+        "y": 220,
+        "map": "mosk_dun02",
+        "dir": 4,
+        "sprite": 45,
+        "unique_name": "#babayagain",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#1-1|mosk_dun01:194:43": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone19443",
+    "output_hash": "f602c93218bd28a523f2ada9bae592ddbe295dc9e0c56e9bfcc49febbb968618",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_194_43.ex",
+    "source_hash": "582dc161db88567fdc76b8a46a6541e97cf02708663ad4e2a180d8e94042b68e",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 194,
+        "y": 43,
+        "map": "mosk_dun01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#1-1"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#1-2|mosk_dun01:207:276": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone207276",
+    "output_hash": "e755667edf1019cf161154bcd6e360619ac19030622d9dcd583bcc0b5ca399a7",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_207_276.ex",
+    "source_hash": "7abe9c3e3eab346cc36e005af20ff4bbc02019c98ffc0baea52ab093001895fa",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 207,
+        "y": 276,
+        "map": "mosk_dun01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#1-2"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#1-3|mosk_dun01:264:191": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone264191",
+    "output_hash": "ce6650dc740cb421389f104e154d951b898bf5e3ef531e283c412fa617e108b0",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_264_191.ex",
+    "source_hash": "37603e68f2227b566bee414b087a7331b7639c470a3fbf442ff7c36f537885e4",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 264,
+        "y": 191,
+        "map": "mosk_dun01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#1-3"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#1|mosk_dun01:170:164": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone",
+    "output_hash": "3af102d1158b214a50857437219b38d04940f3b91124b4a832c709ffbd55fdb4",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone.ex",
+    "source_hash": "8598e5d494423f601f1de288b30bf142ccffd368ce85d690abe168b565b77c41",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 170,
+        "y": 164,
+        "map": "mosk_dun01",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#1"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#2-1|mosk_dun02:168:28": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone16828",
+    "output_hash": "bfd9335b09d6819207ea25eb93011a09c1912aa3ec432086513ac8a7cbd6ba33",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_168_28.ex",
+    "source_hash": "7d3336dc330944a32c7066da4569c72a556ecdac42d0c32d826554e508654c43",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 168,
+        "y": 28,
+        "map": "mosk_dun02",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#2-1"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#2-3|mosk_dun02:268:117": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone268117",
+    "output_hash": "b6cf0f0ddc1744f9221342ca204f39ad59a79f93b2f87fdc5f05c8db6b315288",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_268_117.ex",
+    "source_hash": "f0b64b31ac590983f9babea521ca5309297e9dc7ec0f25de9298ef0fde15b0a7",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 268,
+        "y": 117,
+        "map": "mosk_dun02",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#2-3"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#3-1|mosk_dun03:119:46": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone11946",
+    "output_hash": "b6fe9b4615b580fcf9bcabe7f9523ff788e0c207646c142c16dd4f0fb7792ce8",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_119_46.ex",
+    "source_hash": "fc7c740837c1dc954c0f2c71c078113c1b201a4d629f1279ac0c31a5f481b9d0",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 119,
+        "y": 46,
+        "map": "mosk_dun03",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#3-1"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Milestone#3-2|mosk_dun03:27:131": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Milestone27131",
+    "output_hash": "72cc5a0be943934c030d5115cc22fdeeaab4b7bcdb98fe37b9fa865610908730",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/milestone_27_131.ex",
+    "source_hash": "7b5744c55b1128637255884c4d45228801391e39172d2916be5aa44573df14a9",
+    "spawns": [
+      {
+        "name": "Milestone",
+        "x": 27,
+        "y": 131,
+        "map": "mosk_dun03",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Milestone#3-2"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Ship#mos_dun|mosk_fild02:198:53": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Ship",
+    "output_hash": "369c231edc914fcc32f472ec0520eae861b535172ebf8227aa6f1e4731729f7a",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/ship.ex",
+    "source_hash": "38e36e8cb2a24b6889266e0abb726a892e38d68bd66d86f4b4821972fa919b1d",
+    "spawns": [
+      {
+        "name": "Ship",
+        "x": 198,
+        "y": 53,
+        "map": "mosk_fild02",
+        "dir": 3,
+        "sprite": 111,
+        "unique_name": "Ship#mos_dun"
+      }
+    ]
+  },
+  "warps/dungeons/mosk_dun.txt|script|Soldier1#mos|mosk_dun02:53:215": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.MoskDun.Soldier1",
+    "output_hash": "11e5782334e6b5dffcda3892eb1203945ddfbe91f76d230a4a37742f33626500",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/mosk_dun/soldier1.ex",
+    "source_hash": "2ce28913602537d75c1c25bad581eebadff4fd5f91dd9eeb4ce3a412a678bd1b",
+    "spawns": [
+      {
+        "name": "Soldier1",
+        "x": 53,
+        "y": 215,
+        "map": "mosk_dun02",
+        "dir": 3,
+        "sprite": 966,
+        "unique_name": "Soldier1#mos"
+      },
+      {
+        "name": "Soldier2",
+        "x": 50,
+        "y": 217,
+        "map": "mosk_dun02",
+        "dir": 3,
+        "sprite": 966,
+        "unique_name": "Soldier2#mos"
+      },
+      {
+        "name": "Soldier3",
+        "x": 56,
+        "y": 217,
+        "map": "mosk_dun02",
+        "dir": 5,
+        "sprite": 966,
+        "unique_name": "Soldier3#mos"
+      }
+    ]
+  },
+  "warps/dungeons/pay_dun.txt|script|payd04r|pay_dun03:127:62": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.PayDun.Payd04r",
+    "output_hash": "64ea56df01e687179ae1f9505ba0c09ff9d14b3a73f6ae5f0fb20a76d9ca4b7c",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/pay_dun/payd04r.ex",
+    "source_hash": "f6f5702a3ca6f25628418f44242396525deae816bfd074e85c9f99b15b83f9b1",
+    "spawns": [
+      {
+        "name": "payd04r",
+        "x": 127,
+        "y": 62,
+        "map": "pay_dun03",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/prt_maze.txt|script|#mazewarp5303|prt_maze03:58:194": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.PrtMaze.Npc",
+    "output_hash": "93b31abd83c17262f9e3d1530b8f4088a43cc85b9a373f18d6781a13d8876c2e",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/prt_maze/npc.ex",
+    "source_hash": "144b7207dad94615e89c7a85af2aac5e81418952d640a22648d96f2a5db22b9d",
+    "spawns": [
+      {
+        "name": "",
+        "x": 58,
+        "y": 194,
+        "map": "prt_maze03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#mazewarp5303",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/prt_maze.txt|script|#mazewarp5339|prt_maze03:74:74": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.PrtMaze.Npc7474",
+    "output_hash": "d7dca4e91bc0796959d75d3c10ee046a6ebfcd03262ae9c89c6012ec0b29d77b",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/prt_maze/npc_74_74.ex",
+    "source_hash": "871b8cc4044ff3ddfb18a855d650176ffe4e7ff391fcd54b39aa9506af9ad6d4",
+    "spawns": [
+      {
+        "name": "",
+        "x": 74,
+        "y": 74,
+        "map": "prt_maze03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#mazewarp5339",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/prt_maze.txt|script|#mazewarp5346|prt_maze03:139:45": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.PrtMaze.Npc13945",
+    "output_hash": "8b980c1188eb54e2c1c6417873cc954dc7d46353dedae6a445a612bd8bafdbb7",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/prt_maze/npc_139_45.ex",
+    "source_hash": "57109e82b9d9a37c5edc5adea52729ec1cc25e18626a7f8ffed7074f5d609a73",
+    "spawns": [
+      {
+        "name": "",
+        "x": 139,
+        "y": 45,
+        "map": "prt_maze03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#mazewarp5346",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/prt_maze.txt|script|#mazewarp5358|prt_maze03:154:22": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.PrtMaze.Npc15422",
+    "output_hash": "446beb408dc0ca4c16745e14b60f556660d3e3b90980c88983601709e0b4ca69",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/prt_maze/npc_154_22.ex",
+    "source_hash": "d83fdeb72122c009283d7298e31df9b4b797a32bf82249e3d6c6928839541a4a",
+    "spawns": [
+      {
+        "name": "",
+        "x": 154,
+        "y": 22,
+        "map": "prt_maze03",
+        "dir": 0,
+        "sprite": 45,
+        "unique_name": "#mazewarp5358",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/dungeons/ra_san.txt|script|sanctuary01|ra_san01:139:13": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Dungeons.RaSan.Sanctuary01",
+    "output_hash": "d44d90919a382505068fb30da9bc80ce2b5a9a8dfdda72a3420e328fbf5c5631",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/dungeons/ra_san/sanctuary01.ex",
+    "source_hash": "e2c95ef61fc466d84c44b9388fcb9b2b16a4d8b46297ce0d372718dff564db07",
+    "spawns": [
+      {
+        "name": "sanctuary01",
+        "x": 139,
+        "y": 13,
+        "map": "ra_san01",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/fields/abyss_warper.txt|script|AbyssWarp|hu_fild05:196:210": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Fields.AbyssWarper.Abysswarp",
+    "output_hash": "68dcdd5baee7581d031a28998f50ee7e7820abd3be9e12d376f2a2e712179f37",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/fields/abyss_warper/abysswarp.ex",
+    "source_hash": "fde9a19cebcaadbe8cd3c31ecd154f7ac65d810c0635dfe04c2d747bd719427b",
+    "spawns": [
+      {
+        "name": "AbyssWarp",
+        "x": 196,
+        "y": 210,
+        "map": "hu_fild05",
+        "dir": 1,
+        "sprite": 45,
+        "trigger": [
+          2,
+          2
+        ]
+      }
+    ]
+  },
+  "warps/fields/abyss_warper.txt|script|Column#abyss1|hu_fild05:168:304": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Fields.AbyssWarper.Column",
+    "output_hash": "a510e7938f680de1bb81879a9379b3dc40395df570dbe5a3daf02042215a13c1",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/fields/abyss_warper/column.ex",
+    "source_hash": "70462ed9cc740d2f0ebbb94d7845d0156fcd7fc17ab60467237f65f807518661",
+    "spawns": [
+      {
+        "name": "Column",
+        "x": 168,
+        "y": 304,
+        "map": "hu_fild05",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Column#abyss1"
+      }
+    ]
+  },
+  "warps/fields/abyss_warper.txt|script|Column#abyss2|hu_fild05:171:211": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Fields.AbyssWarper.Column171211",
+    "output_hash": "5fd5d0fe68dc34d6f2bc19715b8534ddd64fb4b6803d38ae5a734648e6f9906f",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/fields/abyss_warper/column_171_211.ex",
+    "source_hash": "8d207d6da6e35fa86ccc22c77e10c6704631e5a3cfbe63a9019a0613e1cd5a3f",
+    "spawns": [
+      {
+        "name": "Column",
+        "x": 171,
+        "y": 211,
+        "map": "hu_fild05",
+        "dir": 0,
+        "sprite": 111,
+        "unique_name": "Column#abyss2",
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/fields/glastheim.txt|script|gl18-2|gl_prison:11:70": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Fields.Glastheim.Gl182",
+    "output_hash": "5d14ac99f903c82e73572198cc1b6f4b627a1436298ccc5386d03608b94c5e07",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/fields/glastheim/gl18_2.ex",
+    "source_hash": "10f064f4334ad77f2104472272356c6ed8cf7ff16e3ed3c8dc7ccb87cc6f3320",
+    "spawns": [
+      {
+        "name": "gl18-2",
+        "x": 11,
+        "y": 70,
+        "map": "gl_prison",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/fields/jawaii.txt|script|jawaiiwarp006|jawaii_in:27:91": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Fields.Jawaii.Jawaiiwarp006",
+    "output_hash": "083eff1121d7f096142565225fd3569a246986c32ff18d9c59856db6d282967c",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/fields/jawaii/jawaiiwarp006.ex",
+    "source_hash": "0292d018b0cdc158a2759e997c43879c385b4d21ec7cd5f1ce90f7161daaaa53",
+    "spawns": [
+      {
+        "name": "jawaiiwarp006",
+        "x": 27,
+        "y": 91,
+        "map": "jawaii_in",
+        "dir": 4,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/guildcastles.txt|script|aldeg-4-15_aldeg-4-|aldeg_cas04:132:231": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Guildcastles.Aldeg415Aldeg4",
+    "output_hash": "024cd78f5ae44383e120341767db3061951f10f2a3adae634532464e10f31659",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/guildcastles/aldeg_4_15_aldeg_4.ex",
+    "source_hash": "df64f803df364c393f66f1a156e1637b87cd00ca721ab47a1771e879fd7813cc",
+    "spawns": [
+      {
+        "name": "aldeg-4-15_aldeg-4-",
+        "x": 132,
+        "y": 231,
+        "map": "aldeg_cas04",
+        "dir": 0,
+        "sprite": 45,
+        "trigger": [
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "warps/other/arena.txt|script|#arenacontrol|sec_in02:79:180": {
+    "module": "Aesir.ZoneServer.Content.Npc.Warps.Other.Arena.Npc",
+    "output_hash": "eaf9973b51a2d68410ae7b94931e118608a207e09e3c84e369267668419c46a9",
+    "output_path": "lib/aesir/zone_server/content/npc/warps/other/arena/npc.ex",
+    "source_hash": "c8293f8f2e03dfc4cf43a5fd879c0324656dd2033162fb462b81e020e69e76bc",
+    "spawns": [
+      {
+        "name": "",
+        "x": 79,
+        "y": 180,
+        "map": "sec_in02",
+        "dir": 3,
+        "sprite": 81,
+        "unique_name": "#arenacontrol"
+      }
+    ]
   }
 }
