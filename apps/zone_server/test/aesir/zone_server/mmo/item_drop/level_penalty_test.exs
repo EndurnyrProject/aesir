@@ -75,6 +75,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.drop(100, 100) == 100
   end
 
+  @tag :tmp_dir
+  test "reload/0 applies an import breakpoint override", %{tmp_dir: root} do
+    previous =
+      for key <- [:db_mode, :db_root] do
+        {key, Application.get_env(:zone_server, key)}
+      end
+
+    on_exit(fn ->
+      Enum.each(previous, fn
+        {key, nil} -> Application.delete_env(:zone_server, key)
+        {key, value} -> Application.put_env(:zone_server, key, value)
+      end)
+
+      LevelPenalty.reload()
+    end)
+
+    File.mkdir_p!(Path.join(root, "re"))
+    File.write!(Path.join([root, "re", "level_penalty.yml"]), "4: 90\n")
+    File.write!(Path.join([root, "re", "level_penalty_exp.yml"]), "{}\n")
+    File.write!(Path.join([root, "re", "level_penalty_mvp_drop.yml"]), "{}\n")
+    File.write!(Path.join([root, "re", "level_penalty_mvp_exp.yml"]), "{}\n")
+
+    import = Path.join([root, "import", "level_penalty.yml"])
+    File.mkdir_p!(Path.dirname(import))
+    File.write!(import, "4: 42\n")
+
+    Application.put_env(:zone_server, :db_mode, :renewal)
+    Application.put_env(:zone_server, :db_root, root)
+
+    assert :ok = LevelPenalty.reload()
+    assert LevelPenalty.drop(104, 100) == 42
+  end
+
   test "exp/2 returns the rate on an exact breakpoint" do
     assert LevelPenalty.exp(120, 100) == 90
     assert LevelPenalty.exp(130, 100) == 70

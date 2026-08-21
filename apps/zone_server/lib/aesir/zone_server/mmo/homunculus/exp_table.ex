@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
   Runtime Homunculus experience requirements for levels 1 through 99.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs
 
   @doc "Returns the complete level-to-next-level EXP table."
@@ -19,15 +21,17 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
 
   @doc false
   @spec stage() :: map()
-  def stage, do: stage(data_path())
+  def stage do
+    "homunculus/exp.yml"
+    |> Source.sources()
+    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> DataLoader.merge_by_key(& &1["level"])
+    |> stage_rows()
+  end
 
   @doc false
   @spec stage(Path.t()) :: map()
-  def stage(path) do
-    rows = YamlElixir.read_from_file!(path)
-    validate!(rows)
-    Map.new(rows, &{&1["level"], &1["exp"]})
-  end
+  def stage(path), do: path |> YamlElixir.read_from_file!() |> stage_rows()
 
   @doc "Validates a decoded EXP corpus, raising on gaps or malformed values."
   @spec validate!([map()]) :: :ok
@@ -47,5 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.ExpTable do
 
   defp table, do: Catalogs.state(:exp_table)
 
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
+  defp stage_rows(rows) do
+    validate!(rows)
+    Map.new(rows, &{&1["level"], &1["exp"]})
+  end
 end

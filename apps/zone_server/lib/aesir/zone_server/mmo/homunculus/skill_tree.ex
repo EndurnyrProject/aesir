@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
   Runtime skill trees for every original and evolved Homunculus class variant.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs
 
   @class_ids MapSet.new(6001..6016)
@@ -41,15 +43,17 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
 
   @doc false
   @spec stage() :: map()
-  def stage, do: stage(data_path())
+  def stage do
+    "homunculus/skill_trees.yml"
+    |> Source.sources()
+    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> DataLoader.merge_by_key(&{&1["class_id"], &1["skill_id"]})
+    |> stage_rows()
+  end
 
   @doc false
   @spec stage(Path.t()) :: map()
-  def stage(path) do
-    rows = YamlElixir.read_from_file!(path)
-    validate!(rows, @class_ids)
-    build(rows)
-  end
+  def stage(path), do: path |> YamlElixir.read_from_file!() |> stage_rows()
 
   @doc "Validates decoded skill trees, raising on missing classes, bad gates, or bad prerequisites."
   @spec validate!([map()], MapSet.t(pos_integer())) :: :ok
@@ -114,6 +118,11 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
 
   defp index, do: Catalogs.state(:skill_tree)
 
+  defp stage_rows(rows) do
+    validate!(rows, @class_ids)
+    build(rows)
+  end
+
   defp build(rows) do
     all = rows |> Enum.map(&convert/1) |> Enum.sort_by(&{&1.class_id, &1.skill_id})
 
@@ -142,5 +151,4 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.SkillTree do
   defp non_negative?(value), do: is_integer(value) and value >= 0
   defp require!(true, _message), do: :ok
   defp require!(false, message), do: raise(ArgumentError, message)
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
 end

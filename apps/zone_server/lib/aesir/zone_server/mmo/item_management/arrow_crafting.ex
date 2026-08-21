@@ -10,6 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting do
   changes in a long-running session. Same API shape as `Items` / `Mobs`.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
+
   @pt_key __MODULE__
 
   defmodule Recipe do
@@ -54,10 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting do
 
   defp build do
     recipes =
-      :zone_server
-      |> Application.app_dir("priv/db/arrows.yml")
-      |> YamlElixir.read_from_file!()
+      "arrows.yml"
+      |> Source.sources()
+      |> Enum.flat_map(&YamlElixir.read_from_file!/1)
       |> Enum.map(&to_recipe/1)
+      |> DataLoader.merge_by_key(& &1.source_id)
 
     %{all: recipes, by_source: Map.new(recipes, &{&1.source_id, &1})}
   end

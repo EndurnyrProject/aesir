@@ -3,6 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable do
   Runtime catalog of ore discovery items and their rates.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
+
   @pt_key __MODULE__
 
   @typedoc "An ore item id and its discovery rate."
@@ -32,9 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.OreTable do
   end
 
   defp build do
-    :zone_server
-    |> Application.app_dir("priv/db/re/produce/ore_discovery.yml")
-    |> YamlElixir.read_from_file!()
+    "produce/ore_discovery.yml"
+    |> Source.sources()
+    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> DataLoader.merge_by_key(& &1["item_id"])
     |> Enum.map(fn %{"item_id" => item_id, "rate" => rate} -> {item_id, rate} end)
   end
 end

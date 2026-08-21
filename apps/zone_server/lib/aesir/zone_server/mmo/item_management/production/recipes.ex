@@ -3,6 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
   Runtime catalog of production recipes.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
+
   @pt_key __MODULE__
 
   defmodule Recipe do
@@ -65,10 +68,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
 
   defp build do
     recipes =
-      :zone_server
-      |> Application.app_dir("priv/db/re/produce/recipes.yml")
-      |> YamlElixir.read_from_file!()
+      "produce/recipes.yml"
+      |> Source.sources()
+      |> Enum.flat_map(&YamlElixir.read_from_file!/1)
       |> Enum.map(&to_recipe/1)
+      |> DataLoader.merge_by_key(& &1.id)
 
     %{all: recipes, by_id: Map.new(recipes, &{&1.id, &1})}
   end

@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   session. Mirrors the lazy-build pattern in `Mmo.ItemManagement.Items`.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+
   @pt_key_drop __MODULE__
   @pt_key_exp {__MODULE__, :exp}
   @pt_key_mvp_drop {__MODULE__, :mvp_drop}
@@ -95,8 +97,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
 
   @spec load(String.t()) :: %{integer() => integer()}
   defp load(file) do
-    :zone_server
-    |> Application.app_dir(Path.join("priv/db/re", file))
-    |> YamlElixir.read_from_file!()
+    file
+    |> Source.sources()
+    |> Enum.reduce(%{}, fn path, table -> Map.merge(table, YamlElixir.read_from_file!(path)) end)
   end
 end

@@ -205,6 +205,45 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
     end
   end
 
+  describe "import overlay" do
+    @tag :tmp_dir
+    test "replaces one map's flags", %{tmp_dir: root} do
+      previous =
+        for key <- [:db_mode, :db_root] do
+          {key, Application.get_env(:zone_server, key)}
+        end
+
+      on_exit(fn ->
+        Enum.each(previous, fn
+          {key, nil} -> Application.delete_env(:zone_server, key)
+          {key, value} -> Application.put_env(:zone_server, key, value)
+        end)
+
+        MapFlags.reload()
+      end)
+
+      File.write!(Path.join(root, "map_flags.yml"), """
+      - map: arena
+        flags: [pvp]
+      - map: untouched
+        flags: [pvp_noparty]
+      """)
+
+      import = Path.join([root, "import", "map_flags.yml"])
+      File.mkdir_p!(Path.dirname(import))
+
+      File.write!(import, """
+      - map: arena
+        flags: [pvp_noparty]
+      """)
+
+      Application.put_env(:zone_server, :db_root, root)
+      assert :ok = MapFlags.reload()
+      assert MapFlags.flags("arena") == %{pvp_noparty: true}
+      assert MapFlags.flags("untouched") == %{pvp_noparty: true}
+    end
+  end
+
   describe "same-map static merge" do
     test "castle flags and a loader-supplied pvp flag coexist on one map" do
       on_exit(&MapFlags.reload/0)

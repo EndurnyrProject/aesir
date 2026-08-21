@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   Runtime catalog for original and evolved Homunculus class variants.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs
 
   @class_ids MapSet.new(6001..6016)
@@ -59,15 +61,17 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
 
   @doc false
   @spec stage() :: map()
-  def stage, do: stage(data_path())
+  def stage do
+    "homunculus/species.yml"
+    |> Source.sources()
+    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> DataLoader.merge_by_key(& &1["id"])
+    |> stage_rows()
+  end
 
   @doc false
   @spec stage(Path.t()) :: map()
-  def stage(path) do
-    rows = YamlElixir.read_from_file!(path)
-    validate!(rows)
-    build(rows)
-  end
+  def stage(path), do: path |> YamlElixir.read_from_file!() |> stage_rows()
 
   @doc "Validates a decoded species corpus, raising on incomplete or malformed data."
   @spec validate!([map()]) :: :ok
@@ -144,6 +148,11 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
 
   defp index, do: Catalogs.state(:catalog)
 
+  defp stage_rows(rows) do
+    validate!(rows)
+    build(rows)
+  end
+
   defp build(rows) do
     all = rows |> Enum.map(&convert/1) |> Enum.sort_by(& &1.id)
     %{all: all, by_id: Map.new(all, &{&1.id, &1})}
@@ -184,5 +193,4 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Catalog do
   defp positive?(value), do: is_integer(value) and value > 0
   defp require!(true, _message), do: :ok
   defp require!(false, message), do: raise(ArgumentError, message)
-  defp data_path, do: Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
 end

@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags.StaticFlags do
   live toggles ignore typos.
   """
 
+  alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.DataLoader
 
   @typedoc "A static per-map flag index: map name => flag => `true`."
   @type static_index :: %{MapFlags.map_name() => %{MapFlags.flag() => true}}
@@ -21,7 +23,13 @@ defmodule Aesir.ZoneServer.Map.MapFlags.StaticFlags do
   Loads `priv/db/map_flags.yml` from the zone server's app dir.
   """
   @spec load() :: static_index()
-  def load, do: load(Application.app_dir(:zone_server, "priv/db/map_flags.yml"))
+  def load do
+    "map_flags.yml"
+    |> Source.sources()
+    |> Enum.flat_map(&YamlElixir.read_from_file!/1)
+    |> DataLoader.merge_by_key(& &1["map"])
+    |> to_index!()
+  end
 
   @doc """
   Loads a map-flags YAML file into a static index.
