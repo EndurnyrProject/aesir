@@ -15149,6 +15149,57 @@
       }
     ]
   },
+  "jobs/novice/supernovice.txt|script|Esseray#sn|aldeba_in:216:169": {
+    "module": "Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray",
+    "output_hash": "4405fa658484377192887c2c766aeb2a89b1134509ffba541fc2484c10d60f36",
+    "output_path": "lib/aesir/zone_server/content/npc/jobs/novice/supernovice/esseray.ex",
+    "source_hash": "ed463fa34bdd06e2426a88064ec50489a2e6b7614854ae39d9f4fed81042518c",
+    "spawns": [
+      {
+        "name": "Esseray",
+        "x": 216,
+        "y": 169,
+        "map": "aldeba_in",
+        "dir": 5,
+        "sprite": 86,
+        "unique_name": "Esseray#sn"
+      }
+    ]
+  },
+  "jobs/novice/supernovice.txt|script|Kafra Employee#sn|aldebaran:54:238": {
+    "module": "Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.KafraEmployee",
+    "output_hash": "68dea8c16fcbf9dadb73faf88f7ae0062a2baa7e3721184c809c1817ef59434f",
+    "output_path": "lib/aesir/zone_server/content/npc/jobs/novice/supernovice/kafra_employee.ex",
+    "source_hash": "bd55d738270eb3c3aef388acd69ba64add4859ded07eb02499341c2070931aa8",
+    "spawns": [
+      {
+        "name": "Kafra Employee",
+        "x": 54,
+        "y": 238,
+        "map": "aldebaran",
+        "dir": 5,
+        "sprite": 117,
+        "unique_name": "Kafra Employee#sn"
+      }
+    ]
+  },
+  "jobs/novice/supernovice.txt|script|Tzerero#sn|aldeba_in:223:167": {
+    "module": "Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero",
+    "output_hash": "e1f558f1257a3aa5cc618424b77504c39c0d44f84b3d423e457b749f96ba2235",
+    "output_path": "lib/aesir/zone_server/content/npc/jobs/novice/supernovice/tzerero.ex",
+    "source_hash": "76a297d8f280fe878a1d274fd25c548f483c1a317a97513c026a0c0bd8d5279c",
+    "spawns": [
+      {
+        "name": "Tzerero",
+        "x": 223,
+        "y": 167,
+        "map": "aldeba_in",
+        "dir": 3,
+        "sprite": 709,
+        "unique_name": "Tzerero#sn"
+      }
+    ]
+  },
   "other/Global_Functions.txt|function|F_Bye|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FBye",
     "output_hash": "768924cf8f390b3ba971b916b0ee9ab46b05581a254b4112db37fdfc4b63a9d3",
@@ -20557,7 +20608,7 @@
   },
   "re/jobs/novice/academy.txt|floating|::izludeWagjak|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak",
-    "output_hash": "a8deb6276d6cdae0636fee6d14883e22cebb33a67a42845150d76dea4195ec6d",
+    "output_hash": "579ca6ec843108346fa2758cc4d7137dbe0a813669499e0f9707d4d60e9d69a1",
     "output_path": "lib/aesir/zone_server/content/npc/floating/izludewagjak.ex",
     "source_hash": "2c01141ace6868459921f92307ec311ecee525efb18c630c0149e30dbd1613d2",
     "spawns": [
@@ -22236,7 +22287,7 @@
   },
   "re/jobs/novice/academy.txt|script|Enchanter Almond J#iz|izlude:108:139": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ",
-    "output_hash": "8a5aa019ea1fc69c5ad404710c2040649845fd2a37d98ba08ecd1ece3daf5db8",
+    "output_hash": "0169428f2218d5a3d9ea87eeeba766ea592bd8fdd08285062e764868ff984482",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_almond_j.ex",
     "source_hash": "12dadd9a6da656a6968ffab05e29383728cd689a062303e90d14d0031116a51e",
     "spawns": [
@@ -22605,7 +22656,7 @@
   },
   "re/jobs/novice/academy.txt|script|Guild Staff#ac|iz_ac02:162:86": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuildStaff",
-    "output_hash": "774b20a4c6718b161cd71ed165137b8637facacf5eaf6a83b3fd385a24731ed8",
+    "output_hash": "2836a1bdc981537fd8fcf9ccd5222f0a937c704937450cb0c31f7689cd94974b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/guild_staff.ex",
     "source_hash": "4912c47028b323c85a5ec26af184b41c5827f0ae86d3eb916467c3fb6787be59",
     "spawns": [
@@ -22817,7 +22868,7 @@
   },
   "re/jobs/novice/academy.txt|script|Kafra Guide Trainer#ac|iz_ac01:95:46": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer",
-    "output_hash": "a8fddf11adad349428b928d390e3b94ce7e9d5881f5b218fd4d7bb587b4ea13f",
+    "output_hash": "47854dec774d50d8ab81890afd3fe42886c5f84f7b5d6ef42e101e8dc0393758",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/kafra_guide_trainer.ex",
     "source_hash": "ae68268ad75a6db5564dc61c82f6e6c7bca7cacb51a182f786f19d717d89e268",
     "spawns": [
@@ -26733,7 +26784,7 @@
   },
   "re/jobs/novice/supernovice_ex.txt|script|Fishing Novice#sp2|beach_dun2:119:92": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovice",
-    "output_hash": "f9e013b4007d13d8785b76599bd1d28cb255c0e57b8591393bc656569a4551d8",
+    "output_hash": "f06930e5e1dad89d7f9e8ffeec57a8a7da428d3179c2120cc94df9fe7439ee7a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/supernovice_ex/fishing_novice.ex",
     "source_hash": "f5c914bec0a65c42035cd1901c14790bb734586b345d73e79f56fa008fb03cb3",
     "spawns": [

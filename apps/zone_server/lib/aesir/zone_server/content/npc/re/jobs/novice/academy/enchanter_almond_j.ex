@@ -57,7 +57,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -202,16 +201,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
               |> progressbar("ffff00", 2)
               |> completequest(5159)
 
-            v3 =
-              Todo.call!(:callfunc, [
-                "F_IsEquipIDHack",
+            {ctx, v3} =
+              Aesir.ZoneServer.Content.Npc.Functions.FIsequipidhack.call(ctx, [
                 get_local(ctx, :part, 0),
                 get_local(ctx, :equip_id, 0)
               ])
 
-            v4 =
-              Todo.call!(:callfunc, [
-                "F_IsEquipCardHack",
+            {ctx, v4} =
+              Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack.call(ctx, [
                 get_local(ctx, :part, 0),
                 Enum.at(get_local(ctx, :equip_card, []), 0, 0),
                 Enum.at(get_local(ctx, :equip_card, []), 1, 0),
@@ -219,9 +216,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
                 Enum.at(get_local(ctx, :equip_card, []), 3, 0)
               ])
 
-            v5 =
-              Todo.call!(:callfunc, [
-                "F_IsEquipRefineHack",
+            {ctx, v5} =
+              Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack.call(ctx, [
                 get_local(ctx, :part, 0),
                 get_local(ctx, :refineCount, 0)
               ])
@@ -680,16 +676,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
       |> specialeffect2(:repairweapon)
       |> progressbar("ffff00", 3)
 
-    v8 =
-      Todo.call!(:callfunc, [
-        "F_IsEquipIDHack",
+    {ctx, v8} =
+      Aesir.ZoneServer.Content.Npc.Functions.FIsequipidhack.call(ctx, [
         get_local(ctx, :part, 0),
         get_local(ctx, :equip, 0)
       ])
 
-    v9 =
-      Todo.call!(:callfunc, [
-        "F_IsEquipCardHack",
+    {ctx, v9} =
+      Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack.call(ctx, [
         get_local(ctx, :part, 0),
         Enum.at(get_local(ctx, :equip_card, []), 0, 0),
         Enum.at(get_local(ctx, :equip_card, []), 1, 0),
@@ -697,9 +691,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
         Enum.at(get_local(ctx, :equip_card, []), 3, 0)
       ])
 
-    v10 =
-      Todo.call!(:callfunc, [
-        "F_IsEquipRefineHack",
+    {ctx, v10} =
+      Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack.call(ctx, [
         get_local(ctx, :part, 0),
         get_local(ctx, :equip_refine, 0)
       ])

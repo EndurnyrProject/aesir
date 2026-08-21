@@ -646,7 +646,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
                                 ctx
                               end
 
-                            ctx =
+                            {ctx, _} =
                               ctx
                               |> specialeffect2(:lord)
                               |> specialeffect2(:sightrasher)
@@ -658,7 +658,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
                               |> mes("------------ yay -- !!")
                               |> next()
                               |> nude()
-                              |> todo(:callfunc, ["F_ClearJobVar"])
+                              |> Aesir.ZoneServer.Content.Npc.Functions.FClearjobvar.call([])
 
                             {ctx, _} =
                               ctx

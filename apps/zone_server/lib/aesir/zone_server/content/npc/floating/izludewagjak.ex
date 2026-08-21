@@ -57,7 +57,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak do
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -285,16 +284,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak do
                 ctx
               end
 
-            v4 =
-              Todo.call!(:callfunc, [
-                "F_IsEquipIDHack",
+            {ctx, v4} =
+              Aesir.ZoneServer.Content.Npc.Functions.FIsequipidhack.call(ctx, [
                 get_local(ctx, :part, 0),
                 get_local(ctx, :refineitemid, 0)
               ])
 
-            v5 =
-              Todo.call!(:callfunc, [
-                "F_IsEquipCardHack",
+            {ctx, v5} =
+              Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack.call(ctx, [
                 get_local(ctx, :part, 0),
                 Enum.at(get_local(ctx, :card, []), 0, 0),
                 Enum.at(get_local(ctx, :card, []), 1, 0),
@@ -302,9 +299,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak do
                 Enum.at(get_local(ctx, :card, []), 3, 0)
               ])
 
-            v6 =
-              Todo.call!(:callfunc, [
-                "F_IsEquipRefineHack",
+            {ctx, v6} =
+              Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack.call(ctx, [
                 get_local(ctx, :part, 0),
                 get_local(ctx, :refinerycnt, 0)
               ])
@@ -491,16 +487,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak do
         ctx = delitem(ctx, get_local(ctx, :material, 0), 1)
         ctx = pay_zeny(ctx, get_local(ctx, :price, 0))
 
-        v11 =
-          Todo.call!(:callfunc, [
-            "F_IsEquipIDHack",
+        {ctx, v11} =
+          Aesir.ZoneServer.Content.Npc.Functions.FIsequipidhack.call(ctx, [
             get_local(ctx, :part, 0),
             get_local(ctx, :refineitemid, 0)
           ])
 
-        v12 =
-          Todo.call!(:callfunc, [
-            "F_IsEquipCardHack",
+        {ctx, v12} =
+          Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack.call(ctx, [
             get_local(ctx, :part, 0),
             Enum.at(get_local(ctx, :card, []), 0, 0),
             Enum.at(get_local(ctx, :card, []), 1, 0),
@@ -508,9 +502,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Izludewagjak do
             Enum.at(get_local(ctx, :card, []), 3, 0)
           ])
 
-        v13 =
-          Todo.call!(:callfunc, [
-            "F_IsEquipRefineHack",
+        {ctx, v13} =
+          Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack.call(ctx, [
             get_local(ctx, :part, 0),
             get_local(ctx, :refinerycnt, 0)
           ])

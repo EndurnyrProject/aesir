@@ -147,7 +147,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
@@ -272,7 +271,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
                 |> mes("[Kafra Guide Trainer]")
                 |> mes("Storage is necessary for you to survive so use it regularly.")
               else
-                v4 = Todo.call!(:callfunc, ["F_CanOpenStorage"])
+                {ctx, v4} = Aesir.ZoneServer.Content.Npc.Functions.FCanopenstorage.call(ctx, [])
 
                 ctx =
                   if not Rathena.truthy?(v4) do
