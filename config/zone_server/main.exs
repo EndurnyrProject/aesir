@@ -5,6 +5,8 @@ alias Hush.Provider.SystemEnvironment
 config :zone_server, :server_info,
   cluster_id: {:hush, SystemEnvironment, "CLUSTER_ID", default: "default"}
 
+config :zone_server, db_mode: :renewal
+
 # Player view range: the cell radius a client is told about.
 # Drives entity visibility, combat/skill/effect broadcasts, and the radius within
 # which a client may acquire an attack/skill target.
