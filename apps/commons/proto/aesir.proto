@@ -15,228 +15,242 @@ package aesir.net;
 // counter used for correlation; `body` selects the concrete message. Field
 // numbers are grouped by category: 16-31 control, 32-63 client intents,
 // 64+ authoritative/world.
+//
+// Every `body` field carries a routing annotation as a trailing comment. It is
+// load-bearing metadata, not documentation: Aesir.Commons.Network.ProtoManifest
+// parses this block at compile time and an unannotated or malformed field fails
+// the build. The grammar is
+//
+//     // <direction> <servers> [channel]
+//
+//   direction  s2c (server -> client) or c2s (client -> server)
+//   servers    comma-separated subset of zone, account, char, no spaces
+//   channel    required for s2c only: control, gameplay, world, bulk, snapshots
+//
+// The channel is the bevy_quinnet channel the message rides outbound; c2s fields
+// take none because the client picks the inbound channel.
 message Envelope {
   uint32 seq = 1;
 
   oneof body {
     // 16-20: account control
-    Hello hello = 16;
-    HelloAck hello_ack = 17;
-    LoginRequest login_request = 18;
-    LoginResponse login_response = 19;
-    LoginFailed login_failed = 20;
+    Hello hello = 16;  // c2s zone,account,char
+    HelloAck hello_ack = 17;  // s2c zone,account,char control
+    LoginRequest login_request = 18;  // c2s account
+    LoginResponse login_response = 19;  // s2c account control
+    LoginFailed login_failed = 20;  // s2c account control
     // 21-31: char control
-    SessionAuth session_auth = 21;
-    CharList char_list = 22;
-    CharAuthFailed char_auth_failed = 23;
-    SelectChar select_char = 24;
-    ZoneServerInfo zone_server_info = 25;
-    CreateChar create_char = 26;
-    CharCreated char_created = 27;
-    CharCreateFailed char_create_failed = 28;
-    DeleteCharRequest delete_char_request = 29;
-    DeleteCharAck delete_char_ack = 30;
-    CharListRefresh char_list_refresh = 31;
+    SessionAuth session_auth = 21;  // c2s zone,char
+    CharList char_list = 22;  // s2c char control
+    CharAuthFailed char_auth_failed = 23;  // s2c char control
+    SelectChar select_char = 24;  // c2s char
+    ZoneServerInfo zone_server_info = 25;  // s2c char control
+    CreateChar create_char = 26;  // c2s char
+    CharCreated char_created = 27;  // s2c char control
+    CharCreateFailed char_create_failed = 28;  // s2c char control
+    DeleteCharRequest delete_char_request = 29;  // c2s char
+    DeleteCharAck delete_char_ack = 30;  // s2c char control
+    CharListRefresh char_list_refresh = 31;  // c2s char
     // 32+: zone
-    MapLoaded map_loaded = 32;
-    TimeSync time_sync = 33;
-    TimeSyncAck time_sync_ack = 34;
-    EnterAck enter_ack = 35;
-    MoveRequest move_request = 36;
-    SelfMove self_move = 37;
-    MoveStop move_stop = 38;
-    UnitSpawn unit_spawn = 39;
-    UnitDespawn unit_despawn = 40;
-    NameRequest name_request = 41;
-    NameResponse name_response = 42;
-    ChatRequest chat_request = 43;
-    ChatMessage chat_message = 44;
-    Snapshot snapshot = 45;
+    MapLoaded map_loaded = 32;  // c2s zone
+    TimeSync time_sync = 33;  // c2s zone
+    TimeSyncAck time_sync_ack = 34;  // s2c zone control
+    EnterAck enter_ack = 35;  // s2c zone control
+    MoveRequest move_request = 36;  // c2s zone
+    SelfMove self_move = 37;  // s2c zone gameplay
+    MoveStop move_stop = 38;  // s2c zone gameplay
+    UnitSpawn unit_spawn = 39;  // s2c zone world
+    UnitDespawn unit_despawn = 40;  // s2c zone world
+    NameRequest name_request = 41;  // c2s zone
+    NameResponse name_response = 42;  // s2c zone world
+    ChatRequest chat_request = 43;  // c2s zone
+    ChatMessage chat_message = 44;  // s2c zone world
+    Snapshot snapshot = 45;  // s2c zone snapshots
     // 46-71: zone combat / skill / item / stat
-    ActionRequest action_request = 46;
-    DamageDealt damage_dealt = 47;
-    Knockback knockback = 48;
-    SkillCast skill_cast = 49;
-    GroundSkillCast ground_skill_cast = 50;
-    SkillList skill_list = 51;
-    SkillDamage skill_damage = 52;
-    SkillEffect skill_effect = 53;
-    SkillCasting skill_casting = 54;
-    CastCancel cast_cancel = 55;
-    SkillCooldown skill_cooldown = 56;
-    GroundSkill ground_skill = 57;
-    EquipItem equip_item = 58;
-    UnequipItem unequip_item = 59;
-    EquipResult equip_result = 60;
-    UnequipResult unequip_result = 61;
-    InventoryList inventory_list = 62;
-    ItemAdded item_added = 63;
-    ItemRemoved item_removed = 64;
-    StatUp stat_up = 65;
-    StatUpResult stat_up_result = 66;
-    ParamChange param_change = 67;
-    UnitHp unit_hp = 68;
-    SpriteChange sprite_change = 69;
-    Resurrect resurrect = 70;
-    Respawn respawn = 71;
-    LearnSkill learn_skill = 72;
-    LearnSkillResult learn_skill_result = 73;
-    MapMove map_move = 74;
-    UseItem use_item = 75;
-    ItemUseResult item_use_result = 76;
-    StatusChange status_change = 77;
-    UnitStateChange unit_state_change = 78;
-    SpecialEffect special_effect = 79;
-    NpcTalk npc_talk = 80;
-    NpcDialog npc_dialog = 81;
-    NpcInteract npc_interact = 82;
+    ActionRequest action_request = 46;  // c2s zone
+    DamageDealt damage_dealt = 47;  // s2c zone gameplay
+    Knockback knockback = 48;  // s2c zone gameplay
+    SkillCast skill_cast = 49;  // c2s zone
+    GroundSkillCast ground_skill_cast = 50;  // c2s zone
+    SkillList skill_list = 51;  // s2c zone bulk
+    SkillDamage skill_damage = 52;  // s2c zone gameplay
+    SkillEffect skill_effect = 53;  // s2c zone gameplay
+    SkillCasting skill_casting = 54;  // s2c zone gameplay
+    CastCancel cast_cancel = 55;  // s2c zone gameplay
+    SkillCooldown skill_cooldown = 56;  // s2c zone gameplay
+    GroundSkill ground_skill = 57;  // s2c zone world
+    EquipItem equip_item = 58;  // c2s zone
+    UnequipItem unequip_item = 59;  // c2s zone
+    EquipResult equip_result = 60;  // s2c zone gameplay
+    UnequipResult unequip_result = 61;  // s2c zone gameplay
+    InventoryList inventory_list = 62;  // s2c zone bulk
+    ItemAdded item_added = 63;  // s2c zone gameplay
+    ItemRemoved item_removed = 64;  // s2c zone gameplay
+    StatUp stat_up = 65;  // c2s zone
+    StatUpResult stat_up_result = 66;  // s2c zone gameplay
+    ParamChange param_change = 67;  // s2c zone gameplay
+    UnitHp unit_hp = 68;  // s2c zone world
+    SpriteChange sprite_change = 69;  // s2c zone world
+    Resurrect resurrect = 70;  // s2c zone gameplay
+    Respawn respawn = 71;  // c2s zone
+    LearnSkill learn_skill = 72;  // c2s zone
+    LearnSkillResult learn_skill_result = 73;  // s2c zone gameplay
+    MapMove map_move = 74;  // s2c zone control
+    UseItem use_item = 75;  // c2s zone
+    ItemUseResult item_use_result = 76;  // s2c zone gameplay
+    StatusChange status_change = 77;  // s2c zone world
+    UnitStateChange unit_state_change = 78;  // s2c zone world
+    SpecialEffect special_effect = 79;  // s2c zone world
+    NpcTalk npc_talk = 80;  // c2s zone
+    NpcDialog npc_dialog = 81;  // s2c zone world
+    NpcInteract npc_interact = 82;  // c2s zone
     // 83-88: cart (server->client deltas + client intents)
-    CartInfo cart_info = 83;
-    CartItemAdded cart_item_added = 84;
-    CartItemRemoved cart_item_removed = 85;
-    CartMountRequest cart_mount_request = 86;
-    MoveToCartRequest move_to_cart_request = 87;
-    MoveFromCartRequest move_from_cart_request = 88;
+    CartInfo cart_info = 83;  // s2c zone bulk
+    CartItemAdded cart_item_added = 84;  // s2c zone gameplay
+    CartItemRemoved cart_item_removed = 85;  // s2c zone gameplay
+    CartMountRequest cart_mount_request = 86;  // c2s zone
+    MoveToCartRequest move_to_cart_request = 87;  // c2s zone
+    MoveFromCartRequest move_from_cart_request = 88;  // c2s zone
     // 89-96: vending (client intents + server->client board/list/sale deltas)
-    VendingOpenRequest vending_open_request = 89;
-    VendingCloseRequest vending_close_request = 90;
-    VendingListRequest vending_list_request = 91;
-    VendingPurchaseRequest vending_purchase_request = 92;
-    VendingBoardShown vending_board_shown = 93;
-    VendingBoardRemoved vending_board_removed = 94;
-    VendingList vending_list = 95;
-    VendingSaleReport vending_sale_report = 96;
+    VendingOpenRequest vending_open_request = 89;  // c2s zone
+    VendingCloseRequest vending_close_request = 90;  // c2s zone
+    VendingListRequest vending_list_request = 91;  // c2s zone
+    VendingPurchaseRequest vending_purchase_request = 92;  // c2s zone
+    VendingBoardShown vending_board_shown = 93;  // s2c zone world
+    VendingBoardRemoved vending_board_removed = 94;  // s2c zone world
+    VendingList vending_list = 95;  // s2c zone bulk
+    VendingSaleReport vending_sale_report = 96;  // s2c zone gameplay
     // 97-101: npc shop (server->client window/result + client buy/sell intents)
-    NpcShopOpen npc_shop_open = 97;
-    NpcBuyRequest npc_buy_request = 98;
-    NpcSellRequest npc_sell_request = 99;
-    NpcBuyResult npc_buy_result = 100;
-    NpcSellResult npc_sell_result = 101;
+    NpcShopOpen npc_shop_open = 97;  // s2c zone gameplay
+    NpcBuyRequest npc_buy_request = 98;  // c2s zone
+    NpcSellRequest npc_sell_request = 99;  // c2s zone
+    NpcBuyResult npc_buy_result = 100;  // s2c zone gameplay
+    NpcSellResult npc_sell_result = 101;  // s2c zone gameplay
     // 102-105: item drops (server->client ground spawn/vanish + client pickup intent/result)
-    ItemOnGround item_on_ground = 102;
-    ItemVanished item_vanished = 103;
-    PickupItemRequest pickup_item_request = 104;
-    PickupResult pickup_result = 105;
+    ItemOnGround item_on_ground = 102;  // s2c zone world
+    ItemVanished item_vanished = 103;  // s2c zone world
+    PickupItemRequest pickup_item_request = 104;  // c2s zone
+    PickupResult pickup_result = 105;  // s2c zone world
     // 106-116: party
-    PartyCreateRequest party_create_request = 106;
-    PartyInviteRequest party_invite_request = 107;
-    PartyInviteNotify party_invite_notify = 108;
-    PartyInviteResponse party_invite_response = 109;
-    PartyLeaveRequest party_leave_request = 110;
-    PartyKickRequest party_kick_request = 111;
-    PartyOptionsRequest party_options_request = 112;
-    PartyLeaderRequest party_leader_request = 113;
-    PartyActionResult party_action_result = 114;
-    PartyInfo party_info = 115;
-    PartyDisbanded party_disbanded = 116;
+    PartyCreateRequest party_create_request = 106;  // c2s zone
+    PartyInviteRequest party_invite_request = 107;  // c2s zone
+    PartyInviteNotify party_invite_notify = 108;  // s2c zone gameplay
+    PartyInviteResponse party_invite_response = 109;  // c2s zone
+    PartyLeaveRequest party_leave_request = 110;  // c2s zone
+    PartyKickRequest party_kick_request = 111;  // c2s zone
+    PartyOptionsRequest party_options_request = 112;  // c2s zone
+    PartyLeaderRequest party_leader_request = 113;  // c2s zone
+    PartyActionResult party_action_result = 114;  // s2c zone gameplay
+    PartyInfo party_info = 115;  // s2c zone gameplay
+    PartyDisbanded party_disbanded = 116;  // s2c zone gameplay
     // 117-123: storage (server->client window/deltas/result + client deposit/withdraw/close intents)
-    StorageOpened storage_opened = 117;
-    StorageDepositRequest storage_deposit_request = 118;
-    StorageWithdrawRequest storage_withdraw_request = 119;
-    StorageCloseRequest storage_close_request = 120;
-    StorageItemAdded storage_item_added = 121;
-    StorageItemRemoved storage_item_removed = 122;
-    StorageResult storage_result = 123;
+    StorageOpened storage_opened = 117;  // s2c zone bulk
+    StorageDepositRequest storage_deposit_request = 118;  // c2s zone
+    StorageWithdrawRequest storage_withdraw_request = 119;  // c2s zone
+    StorageCloseRequest storage_close_request = 120;  // c2s zone
+    StorageItemAdded storage_item_added = 121;  // s2c zone gameplay
+    StorageItemRemoved storage_item_removed = 122;  // s2c zone gameplay
+    StorageResult storage_result = 123;  // s2c zone gameplay
     // 124: broadcast messages (GM + script announce/mapannounce/areaannounce/broadcast)
-    Announcement announcement = 124;
+    Announcement announcement = 124;  // s2c zone world
     // 125-126: cart/vending results (server->client outcome of a gated intent)
-    CartMountResult cart_mount_result = 125;
-    VendingOpenResult vending_open_result = 126;
+    CartMountResult cart_mount_result = 125;  // s2c zone gameplay
+    VendingOpenResult vending_open_result = 126;  // s2c zone gameplay
     // 127-128: emotes (client intent + server->client display)
-    EmoteRequest emote_request = 127;
-    Emotion emotion = 128;
+    EmoteRequest emote_request = 127;  // c2s zone
+    Emotion emotion = 128;  // s2c zone world
     // 129-133: quest log (server->client dump + deltas)
-    QuestList quest_list = 129;
-    QuestAdded quest_added = 130;
-    QuestRemoved quest_removed = 131;
-    QuestStateChanged quest_state_changed = 132;
-    QuestHuntProgress quest_hunt_progress = 133;
+    QuestList quest_list = 129;  // s2c zone bulk
+    QuestAdded quest_added = 130;  // s2c zone gameplay
+    QuestRemoved quest_removed = 131;  // s2c zone gameplay
+    QuestStateChanged quest_state_changed = 132;  // s2c zone gameplay
+    QuestHuntProgress quest_hunt_progress = 133;  // s2c zone gameplay
     // 134: minimap viewpoint marker (script viewpoint buildin)
-    Viewpoint viewpoint = 134;
+    Viewpoint viewpoint = 134;  // s2c zone world
     // 135-136: script cutscene image + sound effect (cutin/soundeffect buildins)
-    Cutin cutin = 135;
-    SoundEffect sound_effect = 136;
+    Cutin cutin = 135;  // s2c zone world
+    SoundEffect sound_effect = 136;  // s2c zone world
     // 137: party member state delta
-    PartyMemberUpdate party_member_update = 137;
+    PartyMemberUpdate party_member_update = 137;  // s2c zone gameplay
     // 138-154: guild (client intents + server->client roster/emblem/notice deltas)
-    GuildCreateRequest guild_create_request = 138;
-    GuildInviteRequest guild_invite_request = 139;
-    GuildInviteResponse guild_invite_response = 140;
-    GuildLeaveRequest guild_leave_request = 141;
-    GuildExpelRequest guild_expel_request = 142;
-    GuildPositionEditRequest guild_position_edit_request = 143;
-    GuildMemberPositionRequest guild_member_position_request = 144;
-    GuildNoticeEditRequest guild_notice_edit_request = 145;
-    GuildEmblemUploadRequest guild_emblem_upload_request = 146;
-    GuildEmblemRequest guild_emblem_request = 147;
-    GuildActionResult guild_action_result = 148;
-    GuildInviteNotify guild_invite_notify = 149;
-    GuildInfo guild_info = 150;
-    GuildMemberUpdate guild_member_update = 151;
-    GuildEmblemChanged guild_emblem_changed = 152;
-    GuildEmblemData guild_emblem_data = 153;
-    GuildDisbanded guild_disbanded = 154;
+    GuildCreateRequest guild_create_request = 138;  // c2s zone
+    GuildInviteRequest guild_invite_request = 139;  // c2s zone
+    GuildInviteResponse guild_invite_response = 140;  // c2s zone
+    GuildLeaveRequest guild_leave_request = 141;  // c2s zone
+    GuildExpelRequest guild_expel_request = 142;  // c2s zone
+    GuildPositionEditRequest guild_position_edit_request = 143;  // c2s zone
+    GuildMemberPositionRequest guild_member_position_request = 144;  // c2s zone
+    GuildNoticeEditRequest guild_notice_edit_request = 145;  // c2s zone
+    GuildEmblemUploadRequest guild_emblem_upload_request = 146;  // c2s zone
+    GuildEmblemRequest guild_emblem_request = 147;  // c2s zone
+    GuildActionResult guild_action_result = 148;  // s2c zone gameplay
+    GuildInviteNotify guild_invite_notify = 149;  // s2c zone gameplay
+    GuildInfo guild_info = 150;  // s2c zone gameplay
+    GuildMemberUpdate guild_member_update = 151;  // s2c zone gameplay
+    GuildEmblemChanged guild_emblem_changed = 152;  // s2c zone gameplay
+    GuildEmblemData guild_emblem_data = 153;  // s2c zone gameplay
+    GuildDisbanded guild_disbanded = 154;  // s2c zone gameplay
     // 155-159: persistent skill-unit state and caster-only Estimation results
-    SkillUnitSnapshot skill_unit_snapshot = 155;
-    SkillUnitSpawn skill_unit_spawn = 156;
-    SkillUnitUpdate skill_unit_update = 157;
-    SkillUnitDespawn skill_unit_despawn = 158;
-    EstimationResult estimation_result = 159;
+    SkillUnitSnapshot skill_unit_snapshot = 155;  // s2c zone world
+    SkillUnitSpawn skill_unit_spawn = 156;  // s2c zone world
+    SkillUnitUpdate skill_unit_update = 157;  // s2c zone world
+    SkillUnitDespawn skill_unit_despawn = 158;  // s2c zone world
+    EstimationResult estimation_result = 159;  // s2c zone world
     // 160-161: generic skill menu (server->client offer + client selection)
-    SkillMenu skill_menu = 160;
-    SkillMenuReply skill_menu_reply = 161;
+    SkillMenu skill_menu = 160;  // s2c zone world
+    SkillMenuReply skill_menu_reply = 161;  // c2s zone
     // 162: caster-only reason for a rejected skill cast
-    SkillCastFailed skill_cast_failed = 162;
+    SkillCastFailed skill_cast_failed = 162;  // s2c zone gameplay
     // 163: authoritative absolute spirit-sphere state
-    SpiritSphereUpdate spirit_sphere_update = 163;
+    SpiritSphereUpdate spirit_sphere_update = 163;  // s2c zone world
     // 164-165: peco mount (client intent + server->client outcome)
-    MountRequest mount_request = 164;
-    MountResult mount_result = 165;
+    MountRequest mount_request = 164;  // c2s zone
+    MountResult mount_result = 165;  // s2c zone gameplay
     // 166-167: staged skill text input
-    SkillTextInputRequest skill_text_input_request = 166;
-    SkillTextInputReply skill_text_input_reply = 167;
+    SkillTextInputRequest skill_text_input_request = 166;  // s2c zone world
+    SkillTextInputReply skill_text_input_reply = 167;  // c2s zone
     // 168: server-authoritative production outcome
-    ProductionResult production_result = 168;
+    ProductionResult production_result = 168;  // s2c zone world
     // 169-171: owner-private Homunculus commands, results, and state
-    HomunculusRequest homunculus_request = 169;
-    HomunculusResult homunculus_result = 170;
-    HomunculusPrivateState homunculus_private_state = 171;
+    HomunculusRequest homunculus_request = 169;  // c2s zone
+    HomunculusResult homunculus_result = 170;  // s2c zone gameplay
+    HomunculusPrivateState homunculus_private_state = 171;  // s2c zone bulk
     // 172: inventory item binding update
-    ItemBound item_bound = 172;
+    ItemBound item_bound = 172;  // s2c zone gameplay
     // 173-185: player trade (client intents + server-authoritative updates)
-    TradeRequest trade_request = 173;
-    TradeResponse trade_response = 174;
-    TradeAddItem trade_add_item = 175;
-    TradeRemoveItem trade_remove_item = 176;
-    TradeSetZeny trade_set_zeny = 177;
-    TradeLock trade_lock = 178;
-    TradeConfirm trade_confirm = 179;
-    TradeCancel trade_cancel = 180;
-    TradeRequestReceived trade_request_received = 181;
-    TradeOpened trade_opened = 182;
-    TradeOfferUpdate trade_offer_update = 183;
-    TradeCompleted trade_completed = 184;
-    TradeCancelled trade_cancelled = 185;
+    TradeRequest trade_request = 173;  // c2s zone
+    TradeResponse trade_response = 174;  // c2s zone
+    TradeAddItem trade_add_item = 175;  // c2s zone
+    TradeRemoveItem trade_remove_item = 176;  // c2s zone
+    TradeSetZeny trade_set_zeny = 177;  // c2s zone
+    TradeLock trade_lock = 178;  // c2s zone
+    TradeConfirm trade_confirm = 179;  // c2s zone
+    TradeCancel trade_cancel = 180;  // c2s zone
+    TradeRequestReceived trade_request_received = 181;  // s2c zone gameplay
+    TradeOpened trade_opened = 182;  // s2c zone gameplay
+    TradeOfferUpdate trade_offer_update = 183;  // s2c zone gameplay
+    TradeCompleted trade_completed = 184;  // s2c zone gameplay
+    TradeCancelled trade_cancelled = 185;  // s2c zone gameplay
     // 186: per-player quest-icon bubble over an NPC (script questinfo buildin)
-    QuestInfoIcon quest_info_icon = 186;
+    QuestInfoIcon quest_info_icon = 186;  // s2c zone world
     // 187: progress bar over the attached character (script `progressbar` buildin)
-    ProgressBar progress_bar = 187;
+    ProgressBar progress_bar = 187;  // s2c zone world
     // 188: open the navigation window / start navigation (script `navigateto` buildin)
-    NavigateTo navigate_to = 188;
+    NavigateTo navigate_to = 188;  // s2c zone world
     // 189-191: NPC waiting room (chat room) client intents
-    WaitingRoomJoinRequest waiting_room_join_request = 189;
-    WaitingRoomLeaveRequest waiting_room_leave_request = 190;
-    WaitingRoomChatRequest waiting_room_chat_request = 191;
+    WaitingRoomJoinRequest waiting_room_join_request = 189;  // c2s zone
+    WaitingRoomLeaveRequest waiting_room_leave_request = 190;  // c2s zone
+    WaitingRoomChatRequest waiting_room_chat_request = 191;  // c2s zone
     // 192-196: NPC waiting room authoritative state (nearby / members / joiner)
-    WaitingRoomInfo waiting_room_info = 192;
-    WaitingRoomRemoved waiting_room_removed = 193;
-    WaitingRoomJoinResult waiting_room_join_result = 194;
-    WaitingRoomMemberUpdate waiting_room_member_update = 195;
-    WaitingRoomChat waiting_room_chat = 196;
+    WaitingRoomInfo waiting_room_info = 192;  // s2c zone world
+    WaitingRoomRemoved waiting_room_removed = 193;  // s2c zone world
+    WaitingRoomJoinResult waiting_room_join_result = 194;  // s2c zone world
+    WaitingRoomMemberUpdate waiting_room_member_update = 195;  // s2c zone world
+    WaitingRoomChat waiting_room_chat = 196;  // s2c zone world
     // 197: guild progression client intent (master spends a guild skill point)
-    GuildSkillUpRequest guild_skill_up_request = 197;
+    GuildSkillUpRequest guild_skill_up_request = 197;  // c2s zone
     // 198: guild progression authoritative level-up notification
-    GuildLevelUp guild_level_up = 198;
+    GuildLevelUp guild_level_up = 198;  // s2c zone gameplay
   }
 }
 

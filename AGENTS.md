@@ -76,8 +76,14 @@ The wire protocol is a single Protobuf schema, not hand-rolled binary packet mod
 
 1. Edit `apps/commons/proto/aesir.proto` (add the `message`, then add it to the `Envelope` `oneof`
    with a free field number in the right category range).
-2. Recompile commons; the `Aesir.Net.*` struct is generated automatically.
-3. Build/encode and decode through the generated structs:
+2. Annotate the new `oneof` line with its routing metadata — `// <direction> <servers> [channel]`,
+   e.g. `NavigateTo navigate_to = 188;  // s2c zone world`. `Aesir.Commons.Network.ProtoManifest`
+   parses these at compile time and an unannotated field fails the build; `MessageRouter.route/1`
+   is generated from them, so an `s2c zone` message is routable the moment it is declared.
+3. Recompile commons; the `Aesir.Net.*` struct is generated automatically.
+4. Run `mix aesir.gen.proto_routing` to refresh `apps/commons/proto/routing.json`, the sidecar the
+   Rust client reads (a test fails when it is stale).
+5. Build/encode and decode through the generated structs:
 
 ```elixir
 alias Aesir.Net.{Envelope, LoginRequest}
@@ -89,7 +95,7 @@ alias Aesir.Net.{Envelope, LoginRequest}
 {:ok, %Envelope{body: {tag, msg}}} = Envelope.decode(binary)
 ```
 
-4. Handle the new `{tag, msg}` body in the relevant server's `handle_message/3` (account/char) or in
+6. Handle the new `{tag, msg}` body in the relevant server's `handle_message/3` (account/char) or in
    the zone server's player-session packet routing.
 
 ## Session Management

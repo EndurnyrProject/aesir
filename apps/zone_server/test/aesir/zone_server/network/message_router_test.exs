@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Network.MessageRouterTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.Network.ProtoManifest
   alias Aesir.Net.Envelope
   alias Aesir.ZoneServer.Network.MessageRouter
 
@@ -58,6 +59,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.WaitingRoomJoinResult{}, {:world, :waiting_room_join_result}},
     {%Aesir.Net.WaitingRoomMemberUpdate{}, {:world, :waiting_room_member_update}},
     {%Aesir.Net.WaitingRoomChat{}, {:world, :waiting_room_chat}},
+    {%Aesir.Net.ProgressBar{}, {:world, :progress_bar}},
+    {%Aesir.Net.NavigateTo{}, {:world, :navigate_to}},
     {%Aesir.Net.HomunculusResult{}, {:gameplay, :homunculus_result}},
     {%Aesir.Net.TradeRequestReceived{}, {:gameplay, :trade_request_received}},
     {%Aesir.Net.TradeOpened{}, {:gameplay, :trade_opened}},
@@ -122,6 +125,19 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     test "raises for an unmapped struct" do
       unmapped = struct(Aesir.Net.MoveRequest, %{})
       assert_raise FunctionClauseError, fn -> MessageRouter.route(unmapped) end
+    end
+
+    test "covers every s2c zone message declared in the proto annotations" do
+      for {module, channel, tag} <- ProtoManifest.outbound(:zone) do
+        assert MessageRouter.route(struct(module)) == {channel, tag},
+               "#{inspect(module)} is annotated `s2c zone #{channel}` but route/1 disagrees"
+      end
+    end
+
+    test "refuses every client intent the zone accepts" do
+      for module <- ProtoManifest.inbound(:zone) do
+        assert_raise FunctionClauseError, fn -> MessageRouter.route(struct(module)) end
+      end
     end
   end
 end

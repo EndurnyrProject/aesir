@@ -53,6 +53,10 @@ defmodule Aesir.Commons.Network.QuinnetCodec do
           | {:more, binary()}
           | {:error, :frame_too_large | :invalid_frame}
 
+  @doc "Returns every logical channel name, in channel-id order."
+  @spec channels() :: [channel()]
+  def channels, do: Enum.sort_by(Map.keys(@channel_ids), &Map.fetch!(@channel_ids, &1))
+
   @doc "Returns the numeric channel id for a logical channel name."
   @spec channel_id(channel()) :: channel_id()
   def channel_id(name) when is_map_key(@channel_ids, name), do: Map.fetch!(@channel_ids, name)

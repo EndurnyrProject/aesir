@@ -28,22 +28,36 @@ When a menu-like need recurs, prefer one generic message pair over per-feature o
    `oneof body` with a free field number in the right range — **16-31 control, 32-63 client
    intents, 64+ authoritative/world**. (Recent world messages: Viewpoint 134, Cutin 135,
    SoundEffect 136.)
-2. Recompile commons — `Aesir.Commons.Network.Proto` (`use Protox`) regenerates the
+2. **Annotate the oneof line** — this is mandatory, the build fails without it:
+
+   ```proto
+   NavigateTo navigate_to = 188;   // s2c zone world
+   MoveRequest move_request = 36;  // c2s zone
+   ```
+
+   `// <direction> <servers> [channel]` — direction `s2c`/`c2s`, servers a comma-separated
+   subset of `zone,account,char` (no spaces), channel required for `s2c` only
+   (`control|gameplay|world|bulk|snapshots`). `Aesir.Commons.Network.ProtoManifest` parses
+   the block at compile time; a missing/malformed annotation, or one out of sync with the
+   `Envelope` oneof, raises `ProtoManifest.ParseError` and fails compilation.
+3. Recompile commons — `Aesir.Commons.Network.Proto` (`use Protox`) regenerates the
    `Aesir.Net.*` structs; the `.proto` is an `@external_resource` so edits force recompile.
-3. Route it:
-   - **Zone server, client→server**: add a `route/1` clause in
-     `apps/zone_server/lib/aesir/zone_server/network/message_router.ex` mapping the struct
-     to a `{domain, tag}` (`{:control, ...}`, `{:gameplay, ...}`, `{:world, ...}`), then
-     handle that tag in the player-session packet routing/handlers. Sessions have **no
-     catch-all `handle_info`** — a missed sender after a rename is a FunctionClauseError and
-     a player disconnect; renames must be atomic with grep-verified sender sweeps.
+4. Run `mix aesir.gen.proto_routing` to refresh the `proto/routing.json` sidecar the Rust
+   client consumes (protox drops real protobuf custom options, so the annotations are
+   comments plus this generated table). A test fails when it is stale.
+5. Route it:
+   - **Server→client**: nothing to add in the router — `MessageRouter.route/1` clauses are
+     generated from the `s2c zone` annotations. Build the `Aesir.Net.*` struct and send via
+     the broadcast layer (`Broadcast.to_player` for SELF-targeted, area broadcast
+     otherwise). No-op gracefully when `char_id` is nil (detached script contexts).
+   - **Zone server, client→server**: handle the struct in the player-session packet
+     routing/handlers. Sessions have **no catch-all `handle_info`** — a missed sender after
+     a rename is a FunctionClauseError and a player disconnect; renames must be atomic with
+     grep-verified sender sweeps.
    - **Account/char servers**: handle the new `{tag, msg}` body in that server's
      `handle_message/3` (the `Aesir.Commons.Network.QuicConnection` behaviour callback).
-   - **Server→client**: build the `Aesir.Net.*` struct and send via the broadcast layer
-     (`Broadcast.to_player` for SELF-targeted, area broadcast otherwise). No-op gracefully
-     when `char_id` is nil (detached script contexts).
-4. Document field meanings on the proto message.
-5. Coordinate the Rust client: prost regenerates from the same schema; client-side handling
+6. Document field meanings on the proto message.
+7. Coordinate the Rust client: prost regenerates from the same schema; client-side handling
    is a separate change in lifthrasir. Note which packet is load-bearing for the client
    (e.g. it derives cart/mount state purely from `UnitStateChange` effect bits).
 
