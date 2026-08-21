@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
 
   require Logger
 
+  alias Aesir.ZoneServer.Db.Source
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
@@ -362,12 +363,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   end
 
   @spec sources() :: [Path.t()]
-  defp sources do
-    case data_dir() |> Path.join("*.yml") |> Path.wildcard() do
-      [] -> raise "no skill tree data files in #{data_dir()}"
-      files -> files
-    end
-  end
+  defp sources, do: Source.sources("skill_tree")
 
   @spec build_index([Path.t()]) :: index()
   defp build_index(sources) do
@@ -382,6 +378,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   defp raw_jobs(sources) do
     sources
     |> Enum.flat_map(&DataLoader.parse_file/1)
+    |> DataLoader.merge_by_key(& &1["job"])
     |> Map.new(fn job -> {job["job"], job} end)
   end
 
@@ -473,7 +470,4 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
       {definition.name |> Atom.to_string() |> String.upcase(), definition.id}
     end)
   end
-
-  @spec data_dir() :: Path.t()
-  defp data_dir, do: Application.app_dir(:zone_server, "priv/db/re/skill_tree")
 end

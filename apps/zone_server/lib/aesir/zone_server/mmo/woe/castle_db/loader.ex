@@ -1,13 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.CastleDb.Loader do
   @moduledoc """
-  Builds the castle index from our-schema YAML files in a data directory.
+  Builds the castle index from our-schema YAML files in the castles domain.
 
-  Parses every `*.yml` into `Castle` structs, converting the list-form
+  Parses every source into `Castle` structs, converting the list-form
   `emperium`/`respawn` coordinates into `{x, y}` tuples, and indexes them by id
   and map name. Cache mechanics live in the caller's `:persistent_term` slot.
   Plain functions only - no process.
   """
 
+  alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
 
   @type index :: %{
@@ -22,17 +24,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleDb.Loader do
                |> Map.keys()
                |> Map.new(&{Atom.to_string(&1), &1})
 
-  @spec load(Path.t()) :: index()
-  def load(dir) do
-    sources = dir |> Path.join("*.yml") |> Path.wildcard()
-
-    if sources == [] do
-      raise "no data files in #{dir}"
-    end
-
-    sources
+  @spec load() :: index()
+  def load do
+    "castles"
+    |> Source.sources()
     |> Enum.flat_map(&YamlElixir.read_from_file!/1)
     |> Enum.map(&to_castle!/1)
+    |> DataLoader.merge_by_key(& &1.id)
     |> index()
   end
 

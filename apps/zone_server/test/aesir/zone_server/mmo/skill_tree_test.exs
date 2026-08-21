@@ -144,6 +144,27 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
     end
   end
 
+  describe "import overlay" do
+    setup context do
+      on_exit(&SkillTree.reload/0)
+      Aesir.ZoneServer.DbTestSetup.configure_root(context, "skill_tree")
+    end
+
+    @tag :tmp_dir
+    test "reload replaces a job tree with its imported definition", %{tmp_dir: dir} do
+      base = Path.join(dir, "novice.yml")
+      File.write!(base, "- job: novice\n  tree:\n    - name: NV_BASIC\n      max_level: 9\n")
+
+      import = Path.join([dir, "..", "..", "import", "skill_tree", "custom.yml"])
+      File.mkdir_p!(Path.dirname(import))
+      File.write!(import, "- job: novice\n  tree:\n    - name: NV_FIRSTAID\n      max_level: 1\n")
+
+      assert :ok = SkillTree.reload()
+      assert {:ok, %Entry{max_level: 1}} = SkillTree.entry(0, catalog_id(:nv_firstaid))
+      assert :error = SkillTree.entry(0, catalog_id(:nv_basic))
+    end
+  end
+
   describe "flatten_inherit/1 (pure, fixture data)" do
     test "child inherits a parent's entry" do
       raw = %{
