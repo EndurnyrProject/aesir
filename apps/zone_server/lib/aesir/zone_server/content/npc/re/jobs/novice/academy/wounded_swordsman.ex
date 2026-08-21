@@ -67,15 +67,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
   def on_event("OnInit", ctx), do: ev_oninit(ctx)
   @impl true
   def on_talk(ctx) do
-    ctx = ctx |> todo(:npctalk, ["Oh...", "", 3]) |> cloakonnpc()
+    ctx = ctx |> npctalk("Oh...", target: :self) |> cloakonnpc()
     cloakoffnpcself(ctx, Rathena.concat("Wounded Swordsman#intro_npc02_", strnpcinfo(ctx, 4)))
   end
 
   def ev_ontouch(ctx) do
     ctx
-    |> todo(:npctalk, ["Urgh... please... help me...", "", 3])
+    |> npctalk("Urgh... please... help me...", target: :self)
     |> sleep2(500)
-    |> todo(:npctalk, ["In order to talk with me.. click my body..", "", 3])
+    |> npctalk("In order to talk with me.. click my body..", target: :self)
   end
 
   def ev_oninit(ctx) do

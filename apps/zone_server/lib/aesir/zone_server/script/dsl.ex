@@ -299,6 +299,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate getnpctimer(ctx), to: NpcControl
   defdelegate getnpctimer(ctx, name), to: NpcControl
   defdelegate npctalk(ctx, text), to: NpcControl
+  defdelegate npctalk(ctx, text, opts), to: NpcControl
   defdelegate set_npc_display(ctx, opts), to: NpcControl
   defdelegate enablenpc(ctx), to: NpcControl
   defdelegate enablenpc(ctx, name), to: NpcControl

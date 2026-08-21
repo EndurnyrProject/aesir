@@ -33,6 +33,9 @@ defmodule Aesir.ZoneServer.Announcement.Flags do
 
   @scopes %{0x00 => :all, 0x01 => :map, 0x02 => :area, 0x03 => :self}
 
+  @typedoc "Delivery scope decoded from a broadcast flag's low bits."
+  @type scope :: :all | :map | :area | :self
+
   @doc """
   Resolves an rAthena `bc_*` constant name to its numeric value.
 
@@ -61,6 +64,16 @@ defmodule Aesir.ZoneServer.Announcement.Flags do
       source: source(flag)
     }
   end
+
+  @doc """
+  Maps a bare `bc_*` scope value to its scope atom, falling back to `default`.
+
+  Unlike `decode/2` this does not mask off color/source bits: `npctalk` takes a
+  plain scope argument and rAthena compares it whole (`BUILDIN_FUNC(npctalk)`'s
+  switch), so a combined flag is not a scope and falls back — there to `:area`.
+  """
+  @spec scope(non_neg_integer(), scope()) :: scope()
+  def scope(flag, default) when is_integer(flag), do: Map.get(@scopes, flag, default)
 
   defp source(flag) do
     if (flag &&& @source_mask) == @source_mask, do: :npc, else: :pc

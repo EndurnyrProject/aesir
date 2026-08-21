@@ -31,6 +31,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     special targets.
   - `%{shape: :ref1, dsl: name}` — a single-argument buildin (an event ref or
     an NPC name) → `name(ctx, arg)`; any other arg count stays a stub.
+  - `%{shape: :npctalk, dsl: name}` — `npctalk "<msg>"{,"<npc>"{,<flag>{,<color>}}}`:
+    the bare form → `name(ctx, msg)`, the optional tail → a keyword call
+    (`name(ctx, msg, npc: _, target: _)`). An empty-string NPC name means the
+    attached NPC and is dropped; the `<color>` argument is hoisted (for side
+    effects) then dropped, as the chat wire message carries no color.
   - `%{shape: :timer, dsl: name}` — `initnpctimer`/`stopnpctimer`: zero args
     (self) → `name(ctx)`, one name arg → `name(ctx, arg)`; attach-flag
     variants stay a stub.
@@ -150,7 +155,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "itemskill" => %{dsl: "itemskill", args: [:skill_opts]},
     "donpcevent" => %{shape: :ref1, dsl: "donpcevent"},
     "doevent" => %{shape: :ref1, dsl: "doevent"},
-    "npctalk" => %{shape: :ref1, dsl: "npctalk"},
+    "npctalk" => %{shape: :npctalk, dsl: "npctalk"},
     "enablenpc" => %{shape: :opt1, dsl: "enablenpc"},
     "disablenpc" => %{shape: :opt1, dsl: "disablenpc"},
     "hideonnpc" => %{shape: :opt1, dsl: "hideonnpc"},

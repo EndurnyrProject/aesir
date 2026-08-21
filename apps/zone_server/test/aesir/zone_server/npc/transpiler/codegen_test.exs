@@ -717,14 +717,32 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       if (getnpctimer(0) > 500) close;
       .@t = getnpctimer(0, "Boss");
       if (getnpctimer(1) > 0) close;
-      npctalk "hi", 1;
       close;
       """)
 
     assert src =~ "getnpctimer(ctx) > 500"
     assert src =~ ~S{set_local(ctx, :t, getnpctimer(ctx, "Boss"))}
     assert src =~ ~S|Todo.call!(:getnpctimer, [1])|
-    assert src =~ ~S|todo(:npctalk, ["hi", 1])|
+  end
+
+  test "npctalk's optional name/flag tail becomes keyword options" do
+    src =
+      gen!("""
+      npctalk "plain";
+      npctalk "self", "", bc_self;
+      npctalk "named", "Bob";
+      npctalk "mapwide", "Bob", 1, 0xFF0000;
+      npctalk "dynamic", "", getarg(0);
+      close;
+      """)
+
+    assert src =~ ~S{|> npctalk("plain")}
+    assert src =~ ~S{|> npctalk("self", target: :self)}
+    assert src =~ ~S{|> npctalk("named", npc: "Bob")}
+    assert src =~ ~S{|> npctalk("mapwide", npc: "Bob", target: :map)}
+    assert src =~ ~S{|> npctalk("dynamic", target: }
+    refute src =~ "todo(ctx, :npctalk"
+    refute src =~ "0xFF0000"
   end
 
   test "monster maps onto summon_mob with map, coords, amount and event" do

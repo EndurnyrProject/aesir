@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   require Logger
 
+  alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Npc.Transpiler.Analyzer
   alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
   alias Aesir.ZoneServer.Npc.Transpiler.ModuleName
@@ -1103,6 +1104,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
   end
 
+  # `npctalk "<msg>"{,"<npc>"{,<flag>{,<color>}}}` — overhead NPC chat. The bare
+  # form speaks as the running NPC in its own view range; the optional tail
+  # becomes keyword options. An empty NPC name means the attached NPC (rAthena
+  # checks `strlen > 0`) and is dropped, and the `<color>` argument is hoisted
+  # then dropped: the `ChatMessage` wire message carries no color.
+  defp emit_mapped(_name, %{shape: :npctalk, dsl: dsl}, [text], env) do
+    {pre, [text]} = hoist_all([text], env)
+    {pre ++ ["ctx = #{dsl}(ctx, #{render(text, env)})"], :cont}
+  end
+
+  defp emit_mapped(_name, %{shape: :npctalk, dsl: dsl}, [text, npc | rest], env) do
+    {pre, [text, npc | rest]} = hoist_all([text, npc | Enum.take(rest, 2)], env)
+    opts = npctalk_npc_opt(npc, env) ++ npctalk_target_opt(rest, env)
+    {pre ++ ["ctx = #{dsl}(ctx, #{Enum.join([render(text, env) | opts], ", ")})"], :cont}
+  end
+
   # A single-argument buildin (event ref, NPC name): any other arity is a
   # form the DSL cannot express, so it stays a stub.
   defp emit_mapped(_name, %{shape: :ref1, dsl: dsl}, [arg], env) do
@@ -1432,6 +1449,31 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   defp quest_const(_table, _arg), do: :error
+
+  # `npctalk`'s optional NPC name: an empty literal means the attached NPC,
+  # which is the DSL default, so it is dropped.
+  defp npctalk_npc_opt({:str, ""}, _env), do: []
+  defp npctalk_npc_opt(npc, env), do: ["npc: #{render(npc, env)}"]
+
+  # `npctalk`'s optional `bc_*` target: an int literal or a `bc_*` constant
+  # resolves to the DSL scope atom, anything dynamic is passed through as the
+  # integer the DSL decodes at runtime. The trailing `<color>` argument
+  # (already hoisted) is dropped.
+  defp npctalk_target_opt([], _env), do: []
+
+  defp npctalk_target_opt([flag | _color], env),
+    do: ["target: #{npctalk_target(flag, env)}"]
+
+  defp npctalk_target({:int, value}, _env), do: inspect(Flags.scope(value, :area))
+
+  defp npctalk_target({:name, symbol} = expr, env) do
+    case Flags.value(symbol) do
+      {:ok, value} -> inspect(Flags.scope(value, :area))
+      :error -> render(expr, env)
+    end
+  end
+
+  defp npctalk_target(expr, env), do: render(expr, env)
 
   # `navigateto` trailing args: pad the optional x/y/flag/hide_window/monster_id
   # with their rAthena defaults (0,0,NAV_KAFRA_AND_AIRSHIP,hidden,no monster).

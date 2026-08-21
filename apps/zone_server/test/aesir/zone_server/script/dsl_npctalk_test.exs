@@ -1,9 +1,12 @@
 defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
   @moduledoc """
-  Covers the Task 7 `npctalk/2` overhead chat op: it broadcasts a
-  `ChatMessage` in view range of the NPC's own placement, identically on an
-  attached or detached ctx, and no-ops when there is no `npc_gid` or no
-  resolvable placement.
+  Covers the `npctalk` overhead chat op: it broadcasts a `ChatMessage` in view
+  range of the NPC's own placement, identically on an attached or detached ctx,
+  and no-ops when there is no `npc_gid` or no resolvable placement.
+
+  The `/3` arity adds rAthena's optional tail — a `:npc` name picking a
+  different speaker and a `:target` scope (`:area`/`:map`/`:all`/`:self`, or
+  the raw `bc_*` integer a transpiled script passes).
   """
 
   use ExUnit.Case, async: false
@@ -11,6 +14,7 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
   import Aesir.TestEtsSetup
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ChatMessage
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -30,11 +34,19 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
     def on_talk(ctx), do: ctx
   end
 
+  defmodule HeraldNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 300, y: 300, sprite: 58, name: "Herald"}]
+
+    @impl true
+    def on_talk(ctx), do: ctx
+  end
+
   setup :setup_ets_tables
 
   setup do
     on_exit(fn -> :persistent_term.erase(NpcRegistry) end)
-    NpcRegistry.reload([TalkerNpc])
+    NpcRegistry.reload([TalkerNpc, HeraldNpc])
 
     placement = hd(TalkerNpc.spawn())
     gid = NpcRegistry.entity_id(placement)
@@ -105,6 +117,105 @@ defmodule Aesir.ZoneServer.Script.DslNpctalkTest do
       ctx = Ctx.halt(Ctx.detached(TalkerNpc, gid), :boom)
 
       assert Dsl.npctalk(ctx, "Hi") == ctx
+      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+    end
+  end
+
+  describe "npctalk/3 targets" do
+    test "target: :self reaches only the attached player, not the NPC's view range", %{
+      gid: gid
+    } do
+      register_player(1, x: 152, y: 150)
+      listener = register_player(2, x: 151, y: 150)
+      ctx = attached_ctx(listener, gid)
+
+      assert Dsl.npctalk(ctx, "Just for you", target: :self) == ctx
+
+      assert_receive {:"$gen_cast",
+                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Just for you"}}}
+
+      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+    end
+
+    test "the raw bc_self flag decodes to the same self target", %{gid: gid} do
+      listener = register_player(1, x: 900, y: 900)
+      ctx = attached_ctx(listener, gid)
+
+      assert Dsl.npctalk(ctx, "Out of range", target: 3) == ctx
+
+      assert_receive {:"$gen_cast",
+                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Out of range"}}}
+    end
+
+    test "target: :self on a detached ctx warns and no-ops", %{gid: gid} do
+      register_player(1, x: 152, y: 150)
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi", target: :self) == ctx end)
+
+      assert log =~ "no attached player"
+      refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
+    end
+
+    test "target: :map reaches a player outside view range on the same map", %{gid: gid} do
+      register_player(1, x: 900, y: 900)
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      assert Dsl.npctalk(ctx, "Map wide", target: :map) == ctx
+
+      assert_receive {:"$gen_cast",
+                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Map wide"}}}
+    end
+
+    test "target: :all publishes to the inter-server announce fan-out", %{gid: gid} do
+      :ok = PubSub.subscribe_to_announcements()
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      assert Dsl.npctalk(ctx, "Everywhere", target: :all) == ctx
+
+      assert_receive {:announcement, %ChatMessage{gid: ^gid, message: "Talker : Everywhere"}}
+    end
+
+    test "an unknown target warns and falls back to the area default", %{gid: gid} do
+      register_player(1, x: 152, y: 150)
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi", target: :nope) == ctx end)
+
+      assert log =~ "unknown target"
+      assert_receive {:"$gen_cast", {:send_packet, %ChatMessage{gid: ^gid}}}
+    end
+  end
+
+  describe "npctalk/3 speaker" do
+    test "npc: speaks as the named placement, not ctx.npc_gid", %{gid: gid} do
+      register_player(1, x: 301, y: 300)
+      herald_gid = NpcRegistry.entity_id(hd(HeraldNpc.spawn()))
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      assert Dsl.npctalk(ctx, "Hear ye", npc: "Herald") == ctx
+
+      assert_receive {:"$gen_cast",
+                      {:send_packet, %ChatMessage{gid: ^herald_gid, message: "Herald : Hear ye"}}}
+    end
+
+    test "an empty npc: name keeps the attached NPC as the speaker", %{gid: gid} do
+      register_player(1, x: 152, y: 150)
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      assert Dsl.npctalk(ctx, "Still me", npc: "") == ctx
+
+      assert_receive {:"$gen_cast",
+                      {:send_packet, %ChatMessage{gid: ^gid, message: "Talker : Still me"}}}
+    end
+
+    test "an unknown npc: name warns and no-ops", %{gid: gid} do
+      register_player(1, x: 152, y: 150)
+      ctx = Ctx.detached(TalkerNpc, gid)
+
+      log = capture_log(fn -> assert Dsl.npctalk(ctx, "Hi", npc: "Ghost") == ctx end)
+
+      assert log =~ "unknown name"
       refute_received {:"$gen_cast", {:send_packet, %ChatMessage{}}}
     end
   end

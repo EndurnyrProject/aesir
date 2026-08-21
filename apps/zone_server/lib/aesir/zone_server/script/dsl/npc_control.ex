@@ -11,9 +11,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
 
   require Logger
 
+  alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Net.ChatMessage
   alias Aesir.Net.WaitingRoomInfo
   alias Aesir.Net.WaitingRoomRemoved
+  alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
@@ -28,6 +30,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
@@ -352,11 +355,29 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   end
 
   @doc """
-  Broadcasts overhead chat from the NPC to every player within view range of
-  its placement (rAthena `npctalk`). Resolves the NPC's map/x/y through
-  `Npc.Registry.module_for_unit/1` — the NPC's own placement, not any
-  player's position — so this behaves identically whether `ctx` is attached
-  or detached; it mutates no player state.
+  Broadcasts overhead chat from an NPC (rAthena `npctalk`).
+
+  By default the speaker is `ctx.npc_gid` and the audience is every player
+  within view range of that NPC's own placement — resolved through
+  `Npc.Registry.module_for_unit/1`, never from a player's position — so this
+  behaves identically whether `ctx` is attached or detached; it mutates no
+  player state.
+
+  `opts` mirrors rAthena's optional tail:
+
+  - `:npc` — speak as the placement registered under this name instead of
+    `ctx.npc_gid`. An empty string means "the attached NPC", matching
+    rAthena's `strlen(...) > 0` check; an ambiguous name warns and uses the
+    first placement.
+  - `:target` — a `Announcement.Flags` scope atom (`:area`, `:map`, `:all`,
+    `:self`) or the raw `bc_*` integer a transpiled script passes.
+    `:area` (the default) delivers in view range of the speaker, `:map` to
+    everyone on the speaker's map, `:all` to every player on every node via
+    the inter-server announce fan-out, and `:self` only to the attached
+    player (a detached ctx warns and no-ops, as rAthena fails there too).
+
+  rAthena's `<color>` argument has no counterpart in the `ChatMessage` wire
+  message and is dropped.
 
   Unlike player chat (`ChatHandler`), where the client already typed the
   `"Name : text"` prefix into the wire message before the server ever sees
@@ -366,33 +387,86 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
   placement's `name`, matching what the client already expects to display
   verbatim for a `ChatMessage`.
 
-  A ctx with no `npc_gid` (e.g. an item script), or a `npc_gid` that does not
-  resolve to a registered placement, logs a warning and no-ops. Always
-  returns `ctx`.
+  A ctx with no `npc_gid` (e.g. an item script), or a `npc_gid`/`:npc` name
+  that does not resolve to a registered placement, logs a warning and
+  no-ops. Always returns `ctx`.
   """
-  @spec npctalk(Ctx.t(), String.t()) :: Ctx.t()
-  def npctalk(%Ctx{status: {:error, _}} = ctx, _text), do: ctx
-  def npctalk(%Ctx{npc_gid: nil} = ctx, _text), do: warn_no_npc_gid(ctx, "npctalk/2")
+  @spec npctalk(Ctx.t(), String.t(), keyword()) :: Ctx.t()
+  def npctalk(ctx, text, opts \\ [])
+  def npctalk(%Ctx{status: {:error, _}} = ctx, _text, _opts), do: ctx
 
-  def npctalk(%Ctx{npc_gid: gid} = ctx, text) do
-    case NpcRegistry.module_for_unit(gid) do
-      {:ok, {_module, placement}} ->
+  def npctalk(%Ctx{} = ctx, text, opts) do
+    case resolve_talker(ctx, Keyword.get(opts, :npc)) do
+      {:ok, gid, placement} ->
         packet = %ChatMessage{gid: gid, message: "#{placement.name} : #{text}"}
-
-        Broadcast.to_in_range(
-          placement.map,
-          placement.x,
-          placement.y,
-          Config.view_range(),
-          packet
-        )
-
+        deliver_npctalk(ctx, packet, placement, npctalk_target(opts))
         ctx
 
-      :error ->
-        Logger.warning("npc npctalk/2: gid #{gid} not registered, no-op")
+      {:error, reason} ->
+        Logger.warning("npc npctalk/3: #{reason}, no-op")
         ctx
     end
+  end
+
+  defp resolve_talker(%Ctx{npc_gid: nil}, npc) when npc in [nil, ""],
+    do: {:error, "ctx has no npc_gid"}
+
+  defp resolve_talker(%Ctx{npc_gid: gid}, npc) when npc in [nil, ""] do
+    case NpcRegistry.module_for_unit(gid) do
+      {:ok, {_module, placement}} -> {:ok, gid, placement}
+      :error -> {:error, "gid #{gid} not registered"}
+    end
+  end
+
+  defp resolve_talker(%Ctx{}, npc) do
+    case NpcRegistry.by_name(npc) do
+      [] ->
+        {:error, "unknown name #{inspect(npc)}"}
+
+      [{_module, placement} | _rest] = entries ->
+        warn_if_ambiguous(entries, npc, "npctalk/3")
+        {:ok, NpcRegistry.entity_id(placement), placement}
+    end
+  end
+
+  defp npctalk_target(opts) do
+    case Keyword.get(opts, :target, :area) do
+      atom when atom in [:area, :map, :all, :self] -> atom
+      flag when is_integer(flag) -> Flags.scope(flag, :area)
+      other -> unknown_npctalk_target(other)
+    end
+  end
+
+  defp unknown_npctalk_target(other) do
+    Logger.warning("npc npctalk/3: unknown target #{inspect(other)}, using :area")
+    :area
+  end
+
+  defp deliver_npctalk(_ctx, packet, placement, :area) do
+    Broadcast.to_in_range(
+      placement.map,
+      placement.x,
+      placement.y,
+      Config.view_range(),
+      packet
+    )
+  end
+
+  defp deliver_npctalk(_ctx, packet, placement, :map) do
+    placement.map
+    |> SpatialIndex.get_players_on_map()
+    |> Broadcast.to_players(packet)
+  end
+
+  defp deliver_npctalk(_ctx, packet, _placement, :all), do: PubSub.broadcast_announcement(packet)
+
+  defp deliver_npctalk(%Ctx{char_id: nil}, _packet, _placement, :self) do
+    Logger.warning("npc npctalk/3: target :self with no attached player, no-op")
+    :ok
+  end
+
+  defp deliver_npctalk(%Ctx{char_id: char_id}, packet, _placement, :self) do
+    Broadcast.to_player(char_id, packet)
   end
 
   @doc """

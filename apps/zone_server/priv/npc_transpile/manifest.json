@@ -25279,7 +25279,7 @@
   },
   "re/jobs/novice/academy.txt|script|Wounded Swordsman#intro_npc01_iz_int|iz_int:56:32": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman",
-    "output_hash": "10a340f485505de6ffdfc039a1ddcde846626077b6603fc63f78f501619901af",
+    "output_hash": "0a345da22d3c43e199fed9b3c19dbefacf82380f522a66d8188f61013e137a24",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wounded_swordsman.ex",
     "source_hash": "6101c57a23203e255f7008fb695998273d8604560c11fd11825223780eda4fb1",
     "spawns": [
