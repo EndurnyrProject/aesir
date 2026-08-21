@@ -11,19 +11,20 @@ defmodule Mix.Tasks.Aesir.Import.Mobs do
   """
   use Mix.Task
 
-  alias Aesir.ZoneServer.Mmo.MobManagement.Importer
+  alias Mix.Tasks.Aesir.Import
 
-  @out_dir Path.join(~w(apps zone_server priv db mobs))
+  alias Aesir.ZoneServer.Mmo.MobManagement.Importer
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("mobs", mode)
     src = Path.join([rathena, "db", "re", "mob_db.yml"])
-    File.mkdir_p!(@out_dir)
+    File.mkdir_p!(out_dir)
 
     definitions = src |> read_body!() |> Enum.map(&to_definition!/1)
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
-    out = Path.join(@out_dir, "mobs.yml")
+    out = Path.join(out_dir, "mobs.yml")
     File.write!(out, yaml)
     Mix.shell().info("mobs: #{length(definitions)} -> #{out}")
   end

@@ -36,11 +36,12 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Npc.Shops.Importer
 
-  @out_dir Path.join(~w(apps zone_server priv db shops))
   @globs [Path.join(~w(npc merchants *.txt)), Path.join(~w(npc re merchants *.txt))]
 
   @type shop_map :: Importer.shop_map()
@@ -49,7 +50,8 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("shops", mode)
     boot_map_cache!()
 
     files = shop_files(rathena)
@@ -60,8 +62,8 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
     {kept, skipped, dropped_items} = sanitize(resolved)
     skipped = unresolved_reasons ++ skipped
 
-    write!(kept)
-    report(files, shops, duplicates, kept, skipped, dropped_items, errors)
+    write!(kept, out_dir)
+    report(files, shops, duplicates, kept, skipped, dropped_items, errors, out_dir)
   end
 
   @spec boot_map_cache!() :: :ok
@@ -184,22 +186,22 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
     match?({:ok, _}, ItemManagement.get_item_by_id(nameid))
   end
 
-  @spec write!([shop_map()]) :: :ok
-  defp write!(kept) do
-    File.mkdir_p!(@out_dir)
-    clear_existing!()
+  @spec write!([shop_map()], Path.t()) :: :ok
+  defp write!(kept, out_dir) do
+    File.mkdir_p!(out_dir)
+    clear_existing!(out_dir)
 
     kept
     |> Enum.group_by(& &1["map"])
     |> Enum.each(fn {map, shops} ->
-      File.write!(Path.join(@out_dir, "#{map}.yml"), Ymlr.document!(shops))
+      File.write!(Path.join(out_dir, "#{map}.yml"), Ymlr.document!(shops))
     end)
   end
 
-  @spec clear_existing!() :: :ok
-  defp clear_existing! do
-    File.rm_rf!(Path.join(@out_dir, ".cache"))
-    @out_dir |> Path.join("*.yml") |> Path.wildcard() |> Enum.each(&File.rm!/1)
+  @spec clear_existing!(Path.t()) :: :ok
+  defp clear_existing!(out_dir) do
+    File.rm_rf!(Path.join(out_dir, ".cache"))
+    out_dir |> Path.join("*.yml") |> Path.wildcard() |> Enum.each(&File.rm!/1)
     :ok
   end
 
@@ -212,9 +214,10 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
           non_neg_integer(),
           [
             {Path.t(), pos_integer(), term()}
-          ]
+          ],
+          Path.t()
         ) :: :ok
-  defp report(files, shops, duplicates, kept, skipped, dropped_items, errors) do
+  defp report(files, shops, duplicates, kept, skipped, dropped_items, errors, out_dir) do
     maps = kept |> Enum.map(& &1["map"]) |> Enum.uniq() |> length()
 
     Mix.shell().info(
@@ -222,7 +225,7 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
         "from #{length(files)} files"
     )
 
-    Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{@out_dir}")
+    Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{out_dir}")
 
     unless skipped == [] do
       Mix.shell().info(

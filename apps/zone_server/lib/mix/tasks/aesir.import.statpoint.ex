@@ -15,12 +15,14 @@ defmodule Mix.Tasks.Aesir.Import.Statpoint do
   """
   use Mix.Task
 
-  @out_file Path.join(~w(apps zone_server priv db statpoint statpoint.yml))
+  alias Mix.Tasks.Aesir.Import
+
   @source Path.join(~w(db re statpoint.yml))
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_file = Import.path("statpoint", mode) |> Path.join("statpoint.yml")
 
     entries =
       rathena
@@ -28,10 +30,10 @@ defmodule Mix.Tasks.Aesir.Import.Statpoint do
       |> YamlElixir.read_from_file!()
       |> entries_from_body()
 
-    File.mkdir_p!(Path.dirname(@out_file))
-    File.write!(@out_file, Ymlr.document!(entries, sort_maps: true))
+    File.mkdir_p!(Path.dirname(out_file))
+    File.write!(out_file, Ymlr.document!(entries, sort_maps: true))
 
-    Mix.shell().info("statpoint: wrote #{length(entries)} levels -> #{@out_file}")
+    Mix.shell().info("statpoint: wrote #{length(entries)} levels -> #{out_file}")
   end
 
   @spec entries_from_body(map()) :: [map()]

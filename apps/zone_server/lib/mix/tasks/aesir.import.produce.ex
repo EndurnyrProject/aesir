@@ -9,15 +9,18 @@ defmodule Mix.Tasks.Aesir.Import.Produce do
   """
   use Mix.Task
 
-  @out_dir Path.join(~w(apps zone_server priv db produce))
+  alias Mix.Tasks.Aesir.Import
+
   @recipes_source Path.join(~w(db re produce_db.txt))
-  @ore_source Path.join(~w(apps zone_server priv db item_groups item_groups.yml))
 
   @doc "Imports production data from the optional source root."
   @spec run([String.t()]) :: :ok
   @impl Mix.Task
   def run(args) do
-    source_root = List.first(args) || "../rathena"
+    {source_root, mode} = Import.parse!(args)
+    recipes_out = Import.path("produce/recipes.yml", mode)
+    ore_out = Import.path("produce/ore_discovery.yml", mode)
+    ore_source = Import.path("item_groups", mode) |> Path.join("item_groups.yml")
 
     recipes =
       source_root
@@ -26,23 +29,17 @@ defmodule Mix.Tasks.Aesir.Import.Produce do
       |> parse_recipes()
 
     ore_entries =
-      @ore_source
+      ore_source
       |> YamlElixir.read_from_file!()
       |> ore_entries()
 
-    File.mkdir_p!(@out_dir)
-    File.write!(Path.join(@out_dir, "recipes.yml"), Ymlr.document!(recipes, sort_maps: true))
+    File.mkdir_p!(Path.dirname(recipes_out))
+    File.write!(recipes_out, Ymlr.document!(recipes, sort_maps: true))
+    File.write!(ore_out, Ymlr.document!(ore_entries, sort_maps: true))
 
-    File.write!(
-      Path.join(@out_dir, "ore_discovery.yml"),
-      Ymlr.document!(ore_entries, sort_maps: true)
-    )
+    Mix.shell().info("produce: wrote #{length(recipes)} recipes -> #{recipes_out}")
 
-    Mix.shell().info("produce: wrote #{length(recipes)} recipes -> #{@out_dir}/recipes.yml")
-
-    Mix.shell().info(
-      "produce: wrote #{length(ore_entries)} ore entries -> #{@out_dir}/ore_discovery.yml"
-    )
+    Mix.shell().info("produce: wrote #{length(ore_entries)} ore entries -> #{ore_out}")
   end
 
   @doc "Parses and normalizes delimited production recipes."

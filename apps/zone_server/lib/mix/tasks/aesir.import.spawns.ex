@@ -17,16 +17,18 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer
 
-  @out_dir Path.join(~w(apps zone_server priv db spawns))
   @conf Path.join(~w(npc re scripts_monsters.conf))
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("spawns", mode)
     boot_map_cache!()
 
     files = spawn_files(rathena)
@@ -38,8 +40,8 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
     kept = for {spawn, nil} <- classified, do: spawn
     skipped = for {spawn, reason} <- classified, not is_nil(reason), do: {spawn, reason}
 
-    write!(kept)
-    report(files, spawns, kept, skipped, errors)
+    write!(kept, out_dir)
+    report(files, spawns, kept, skipped, errors, out_dir)
   end
 
   @spec boot_map_cache!() :: :ok
@@ -126,34 +128,41 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
   defp blocked_cell?(map, x, y, 0, 0) when {x, y} != {0, 0}, do: not MapCache.walkable?(map, x, y)
   defp blocked_cell?(_map, _x, _y, _xs, _ys), do: false
 
-  @spec write!([Importer.spawn_map()]) :: :ok
-  defp write!(kept) do
-    File.mkdir_p!(@out_dir)
-    clear_existing!()
+  @spec write!([Importer.spawn_map()], Path.t()) :: :ok
+  defp write!(kept, out_dir) do
+    File.mkdir_p!(out_dir)
+    clear_existing!(out_dir)
 
     kept
     |> Enum.group_by(& &1["map"])
     |> Enum.each(fn {map, spawn_maps} ->
       spawns = Enum.flat_map(spawn_maps, & &1["spawns"])
       entry = [%{"map" => map, "spawns" => spawns}]
-      File.write!(Path.join(@out_dir, "#{map}.yml"), Ymlr.document!(entry))
+      File.write!(Path.join(out_dir, "#{map}.yml"), Ymlr.document!(entry))
     end)
   end
 
-  @spec clear_existing!() :: :ok
-  defp clear_existing! do
-    File.rm_rf!(Path.join(@out_dir, ".cache"))
-    @out_dir |> Path.join("*.yml") |> Path.wildcard() |> Enum.each(&File.rm!/1)
+  @spec clear_existing!(Path.t()) :: :ok
+  defp clear_existing!(out_dir) do
+    File.rm_rf!(Path.join(out_dir, ".cache"))
+    out_dir |> Path.join("*.yml") |> Path.wildcard() |> Enum.each(&File.rm!/1)
     :ok
   end
 
-  @spec report([Path.t()], [Importer.spawn_map()], [Importer.spawn_map()], skipped, errors) :: :ok
+  @spec report(
+          [Path.t()],
+          [Importer.spawn_map()],
+          [Importer.spawn_map()],
+          skipped,
+          errors,
+          Path.t()
+        ) :: :ok
         when skipped: [{Importer.spawn_map(), atom()}],
              errors: [{Path.t(), pos_integer(), term()}]
-  defp report(files, spawns, kept, skipped, errors) do
+  defp report(files, spawns, kept, skipped, errors, out_dir) do
     maps = kept |> Enum.map(& &1["map"]) |> Enum.uniq() |> length()
     Mix.shell().info("spawns: parsed #{length(spawns)} from #{length(files)} files")
-    Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{@out_dir}")
+    Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{out_dir}")
 
     report_boss_density(kept)
 

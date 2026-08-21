@@ -21,16 +21,18 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Mmo.MobSkill.Importer
 
-  @out_dir Path.join(~w(apps zone_server priv db mob_skills))
   @top_unresolved 20
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out = Import.path("mob_skills/mob_skills.yml", mode)
     src = Path.join([rathena, "db", "re", "mob_skill_db.txt"])
-    File.mkdir_p!(@out_dir)
+    File.mkdir_p!(Path.dirname(out))
 
     grouped =
       case Importer.to_rows(File.read!(src)) do
@@ -38,7 +40,6 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
         {:error, reason} -> Mix.raise("failed to import mob skills: #{inspect(reason)}")
       end
 
-    out = Path.join(@out_dir, "mob_skills.yml")
     File.write!(out, Ymlr.document!(grouped))
 
     Mix.shell().info("mob_skills: #{map_size(grouped)} mob keys -> #{out}")

@@ -18,10 +18,11 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Warps.Importer
 
-  @out_dir Path.join(~w(apps zone_server priv db warps))
   @confs [
     Path.join(~w(npc scripts_warps.conf)),
     Path.join(~w(npc re scripts_warps.conf))
@@ -29,7 +30,8 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("warps", mode)
     boot_map_cache!()
 
     files = warp_files(rathena)
@@ -40,8 +42,8 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
     kept = for {warp, nil} <- classified, do: warp
     skipped = for {warp, reason} <- classified, not is_nil(reason), do: {warp, reason}
 
-    write!(kept)
-    report(files, warps, kept, skipped, errors)
+    write!(kept, out_dir)
+    report(files, warps, kept, skipped, errors, out_dir)
   end
 
   @spec boot_map_cache!() :: :ok
@@ -129,32 +131,39 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
     end)
   end
 
-  @spec write!([Importer.warp_map()]) :: :ok
-  defp write!(kept) do
-    File.mkdir_p!(@out_dir)
-    clear_existing!()
+  @spec write!([Importer.warp_map()], Path.t()) :: :ok
+  defp write!(kept, out_dir) do
+    File.mkdir_p!(out_dir)
+    clear_existing!(out_dir)
 
     kept
     |> Enum.group_by(& &1["map"])
     |> Enum.each(fn {map, warps} ->
-      File.write!(Path.join(@out_dir, "#{map}.yml"), Ymlr.document!(warps))
+      File.write!(Path.join(out_dir, "#{map}.yml"), Ymlr.document!(warps))
     end)
   end
 
-  @spec clear_existing!() :: :ok
-  defp clear_existing! do
-    File.rm_rf!(Path.join(@out_dir, ".cache"))
-    @out_dir |> Path.join("*.yml") |> Path.wildcard() |> Enum.each(&File.rm!/1)
+  @spec clear_existing!(Path.t()) :: :ok
+  defp clear_existing!(out_dir) do
+    File.rm_rf!(Path.join(out_dir, ".cache"))
+    out_dir |> Path.join("*.yml") |> Path.wildcard() |> Enum.each(&File.rm!/1)
     :ok
   end
 
-  @spec report([Path.t()], [Importer.warp_map()], [Importer.warp_map()], skipped, errors) :: :ok
+  @spec report(
+          [Path.t()],
+          [Importer.warp_map()],
+          [Importer.warp_map()],
+          skipped,
+          errors,
+          Path.t()
+        ) :: :ok
         when skipped: [{Importer.warp_map(), atom()}],
              errors: [{Path.t(), pos_integer(), term()}]
-  defp report(files, warps, kept, skipped, errors) do
+  defp report(files, warps, kept, skipped, errors, out_dir) do
     maps = kept |> Enum.map(& &1["map"]) |> Enum.uniq() |> length()
     Mix.shell().info("warps: parsed #{length(warps)} from #{length(files)} files")
-    Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{@out_dir}")
+    Mix.shell().info("  wrote #{length(kept)} across #{maps} maps -> #{out_dir}")
 
     unless skipped == [] do
       freq = skipped |> Enum.map(fn {_warp, reason} -> reason end) |> Enum.frequencies()

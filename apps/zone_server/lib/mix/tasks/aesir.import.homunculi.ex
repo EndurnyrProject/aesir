@@ -8,17 +8,21 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs
   alias Aesir.ZoneServer.Mmo.Homunculus.ExpTable
   alias Aesir.ZoneServer.Mmo.Homunculus.SkillTree
 
-  @out_dir Path.join(~w(apps zone_server priv db homunculus))
   @status_types ~w(hp sp str agi vit int dex luk)
 
   @impl Mix.Task
   def run(args) do
-    root = List.first(args) || "../rathena"
+    {root, mode} = Import.parse!(args)
+    species_out = Import.path("homunculus/species.yml", mode)
+    exp_out = Import.path("homunculus/exp.yml", mode)
+    trees_out = Import.path("homunculus/skill_trees.yml", mode)
     homunculus_path = Path.join([root, "db", "re", "homunculus_db.yml"])
     exp_path = Path.join([root, "db", "re", "exp_homun.yml"])
     skill_path = Path.join([root, "db", "re", "skill_db.yml"])
@@ -49,10 +53,10 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
     SkillTree.validate!(trees, MapSet.new(species, & &1["id"]))
     Catalogs.validate!(species, trees)
 
-    File.mkdir_p!(@out_dir)
-    write!("species.yml", species)
-    write!("exp.yml", exp)
-    write!("skill_trees.yml", trees)
+    File.mkdir_p!(Path.dirname(species_out))
+    write!(species_out, species)
+    write!(exp_out, exp)
+    write!(trees_out, trees)
     :ok = Catalogs.reload()
     Mix.shell().info("homunculi: 16 classes, 99 EXP levels, #{length(trees)} skill rows")
   end
@@ -193,9 +197,9 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
   defp normalize(value),
     do: value |> Macro.underscore() |> String.replace("demihuman", "demi_human")
 
-  defp write!(name, rows) do
+  defp write!(path, rows) do
     rows = Enum.sort_by(rows, &sort_key/1)
-    File.write!(Path.join(@out_dir, name), Ymlr.document!(rows))
+    File.write!(path, Ymlr.document!(rows))
   end
 
   defp sort_key(%{"id" => id}), do: id

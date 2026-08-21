@@ -17,15 +17,17 @@ defmodule Mix.Tasks.Aesir.Import.Arrows do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
-  @out_file Path.join(~w(apps zone_server priv db arrows.yml))
   @source_db Path.join(~w(db create_arrow_db.yml))
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_file = Import.path("arrows.yml", mode)
 
     entries =
       rathena
@@ -35,8 +37,8 @@ defmodule Mix.Tasks.Aesir.Import.Arrows do
 
     {recipes, skipped} = convert(entries)
 
-    File.write!(@out_file, Ymlr.document!(recipes))
-    report(entries, recipes, skipped)
+    File.write!(out_file, Ymlr.document!(recipes))
+    report(entries, recipes, skipped, out_file)
   end
 
   @spec convert([map()]) :: {[map()], [{String.t(), atom()}]}
@@ -82,10 +84,10 @@ defmodule Mix.Tasks.Aesir.Import.Arrows do
   @spec resolve(String.t()) :: {:ok, ItemDefinition.t()} | :error
   defp resolve(aegis), do: Items.by_aegis(aegis)
 
-  @spec report([map()], [map()], [{String.t(), atom()}]) :: :ok
-  defp report(entries, recipes, skipped) do
+  @spec report([map()], [map()], [{String.t(), atom()}], Path.t()) :: :ok
+  defp report(entries, recipes, skipped, out_file) do
     Mix.shell().info("arrows: parsed #{length(entries)} recipes")
-    Mix.shell().info("  wrote #{length(recipes)} -> #{@out_file}")
+    Mix.shell().info("  wrote #{length(recipes)} -> #{out_file}")
 
     unless skipped == [] do
       freq = skipped |> Enum.map(fn {_aegis, reason} -> reason end) |> Enum.frequencies()

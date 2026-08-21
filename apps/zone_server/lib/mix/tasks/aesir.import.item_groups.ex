@@ -16,11 +16,11 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
 
-  @out_dir Path.join(~w(apps zone_server priv db item_groups))
-  @out_file Path.join(@out_dir, "item_groups.yml")
   @source_db Path.join(~w(db re item_group_db.yml))
 
   @entry_attributes %{
@@ -41,7 +41,8 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
   @impl Mix.Task
   @spec run([String.t()]) :: :ok
   def run(args) do
-    source_root = List.first(args) || "../rathena"
+    {source_root, mode} = Import.parse!(args)
+    out_file = Import.path("item_groups", mode) |> Path.join("item_groups.yml")
 
     {groups, resolved, dropped} =
       source_root
@@ -50,8 +51,8 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
       |> Map.fetch!("Body")
       |> convert()
 
-    File.mkdir_p!(@out_dir)
-    File.write!(@out_file, Ymlr.document!(groups, sort_maps: true))
+    File.mkdir_p!(Path.dirname(out_file))
+    File.write!(out_file, Ymlr.document!(groups, sort_maps: true))
     report(resolved, dropped)
   end
 

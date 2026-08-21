@@ -12,6 +12,8 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
@@ -23,29 +25,29 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   @usable_types [:usable, :healing, :delay_consume]
 
   @sources ~w(usable equip etc)
-  @out_dir Path.join(~w(apps zone_server priv db items))
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("items", mode)
     re_dir = Path.join([rathena, "db", "re"])
-    File.mkdir_p!(@out_dir)
+    File.mkdir_p!(out_dir)
 
-    entries = Enum.flat_map(@sources, &import_source(&1, re_dir))
+    entries = Enum.flat_map(@sources, &import_source(&1, re_dir, out_dir))
     summary = summarize(entries)
 
-    report_path = Path.join(@out_dir, "_transpile_report.md")
+    report_path = Path.join(out_dir, "_transpile_report.md")
     File.write!(report_path, Importer.build_report(summary))
 
     Mix.shell().info(summary_line(summary, report_path))
   end
 
-  defp import_source(kind, re_dir) do
+  defp import_source(kind, re_dir, out_dir) do
     src = Path.join(re_dir, "item_db_#{kind}.yml")
     entries = src |> read_body!() |> Enum.map(&transpile_entry/1)
     definitions = Enum.map(entries, &elem(&1, 0))
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
-    out = Path.join(@out_dir, "#{kind}.yml")
+    out = Path.join(out_dir, "#{kind}.yml")
     File.write!(out, yaml)
     Mix.shell().info("#{kind}: #{length(definitions)} items -> #{out}")
     entries

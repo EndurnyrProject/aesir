@@ -12,9 +12,10 @@ defmodule Mix.Tasks.Aesir.Import.Jobs do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
   alias Aesir.ZoneServer.Mmo.JobManagement.Importer
 
-  @out_dir Path.join(~w(apps zone_server priv db jobs))
   @sources %{
     stats: "job_stats.yml",
     basepoints: "job_basepoints.yml",
@@ -24,21 +25,22 @@ defmodule Mix.Tasks.Aesir.Import.Jobs do
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("jobs", mode)
     re_dir = Path.join([rathena, "db", "re"])
-    File.mkdir_p!(@out_dir)
+    File.mkdir_p!(out_dir)
 
     bodies = Map.new(@sources, fn {key, file} -> {key, read_body!(re_dir, file)} end)
 
     bodies
     |> Importer.build()
     |> Enum.group_by(&Importer.tier/1)
-    |> Enum.each(&write_tier/1)
+    |> Enum.each(&write_tier(&1, out_dir))
   end
 
-  defp write_tier({tier, maps}) do
+  defp write_tier({tier, maps}, out_dir) do
     yaml = maps |> Enum.sort_by(& &1["id"]) |> to_yaml()
-    out = Path.join(@out_dir, "jobs_#{tier}.yml")
+    out = Path.join(out_dir, "jobs_#{tier}.yml")
     File.write!(out, yaml)
     Mix.shell().info("#{tier}: #{length(maps)} jobs -> #{out}")
   end

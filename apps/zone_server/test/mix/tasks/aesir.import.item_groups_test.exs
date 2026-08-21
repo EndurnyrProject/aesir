@@ -5,7 +5,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
 
   alias Mix.Tasks.Aesir.Import.ItemGroups, as: Task
 
-  @out_file Path.join(~w(apps zone_server priv db item_groups item_groups.yml))
+  @out_file Path.join(~w(apps zone_server priv db re item_groups item_groups.yml))
 
   setup do
     original = File.read(@out_file)

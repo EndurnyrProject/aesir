@@ -19,25 +19,33 @@ defmodule Mix.Tasks.Aesir.Import.LevelPenalty do
   """
   use Mix.Task
 
-  @out_file Path.join(~w(apps zone_server priv db level_penalty.yml))
-  @exp_out_file Path.join(~w(apps zone_server priv db level_penalty_exp.yml))
-  @mvp_drop_out_file Path.join(~w(apps zone_server priv db level_penalty_mvp_drop.yml))
-  @mvp_exp_out_file Path.join(~w(apps zone_server priv db level_penalty_mvp_exp.yml))
+  alias Mix.Tasks.Aesir.Import
+
   @source Path.join(~w(db re level_penalty.yml))
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
 
     body =
       rathena
       |> Path.join(@source)
       |> YamlElixir.read_from_file!()
 
-    write_table!(table_for(body, "Drop"), @out_file, "drop")
-    write_table!(table_for(body, "Exp"), @exp_out_file, "exp")
-    write_table!(table_for(body, "Mvp_Drop"), @mvp_drop_out_file, "mvp_drop")
-    write_table!(table_for(body, "Mvp_Exp"), @mvp_exp_out_file, "mvp_exp")
+    write_table!(table_for(body, "Drop"), Import.path("level_penalty.yml", mode), "drop")
+    write_table!(table_for(body, "Exp"), Import.path("level_penalty_exp.yml", mode), "exp")
+
+    write_table!(
+      table_for(body, "Mvp_Drop"),
+      Import.path("level_penalty_mvp_drop.yml", mode),
+      "mvp_drop"
+    )
+
+    write_table!(
+      table_for(body, "Mvp_Exp"),
+      Import.path("level_penalty_mvp_exp.yml", mode),
+      "mvp_exp"
+    )
   end
 
   # `Mvp_Drop`/`Mvp_Exp` are documented by the source schema but ship with no

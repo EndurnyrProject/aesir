@@ -14,7 +14,7 @@ defmodule Mix.Tasks.Aesir.Import.Guild do
   """
   use Mix.Task
 
-  @out_dir Path.join(~w(apps zone_server priv db guild))
+  alias Mix.Tasks.Aesir.Import
 
   @skill_ids %{
     "GD_APPROVAL" => 10_000,
@@ -41,18 +41,22 @@ defmodule Mix.Tasks.Aesir.Import.Guild do
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    exp_out = Import.path("guild/exp.yml", mode)
+    tree_out = Import.path("guild/skill_tree.yml", mode)
     exp_src = Path.join([rathena, "db", "re", "exp_guild.yml"])
     tree_src = Path.join([rathena, "db", "re", "guild_skill_tree.yml"])
 
     exp = exp_src |> read_body!() |> Enum.map(&convert_exp/1)
     tree = tree_src |> read_body!() |> Enum.map(&convert_skill/1)
 
-    File.mkdir_p!(@out_dir)
-    write!(Path.join(@out_dir, "exp.yml"), exp)
-    write!(Path.join(@out_dir, "skill_tree.yml"), tree)
+    File.mkdir_p!(Path.dirname(exp_out))
+    write!(exp_out, exp)
+    write!(tree_out, tree)
 
-    Mix.shell().info("guild: #{length(exp)} exp levels, #{length(tree)} skills -> #{@out_dir}")
+    Mix.shell().info(
+      "guild: #{length(exp)} exp levels, #{length(tree)} skills -> #{Path.dirname(exp_out)}"
+    )
   end
 
   defp read_body!(path) do

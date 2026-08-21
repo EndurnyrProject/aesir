@@ -15,7 +15,8 @@ defmodule Mix.Tasks.Aesir.Import.Refine do
   """
   use Mix.Task
 
-  @out_file Path.join(~w(apps zone_server priv db refine refine.yml))
+  alias Mix.Tasks.Aesir.Import
+
   @source Path.join(~w(db re refine.yml))
 
   @groups %{
@@ -29,7 +30,8 @@ defmodule Mix.Tasks.Aesir.Import.Refine do
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_file = Import.path("refine/refine.yml", mode)
 
     groups =
       rathena
@@ -37,10 +39,10 @@ defmodule Mix.Tasks.Aesir.Import.Refine do
       |> YamlElixir.read_from_file!()
       |> groups_from_body()
 
-    File.mkdir_p!(Path.dirname(@out_file))
-    File.write!(@out_file, Ymlr.document!(groups, sort_maps: true))
+    File.mkdir_p!(Path.dirname(out_file))
+    File.write!(out_file, Ymlr.document!(groups, sort_maps: true))
 
-    Mix.shell().info("refine: wrote #{length(groups)} groups -> #{@out_file}")
+    Mix.shell().info("refine: wrote #{length(groups)} groups -> #{out_file}")
   end
 
   @spec groups_from_body(map()) :: [map()]

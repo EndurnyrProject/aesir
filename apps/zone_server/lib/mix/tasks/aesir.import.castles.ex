@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
   """
   use Mix.Task
 
-  @out_dir Path.join(~w(apps zone_server priv db castles))
+  alias Mix.Tasks.Aesir.Import
 
   @emperium_rooms %{
     "aldeg_cas01" => [216, 23],
@@ -44,15 +44,16 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("castles", mode)
     src = Path.join([rathena, "db", "re", "castle_db.yml"])
 
     castles = src |> read_body!() |> build()
 
-    File.mkdir_p!(@out_dir)
-    write!(Path.join(@out_dir, "fe.yml"), castles)
+    File.mkdir_p!(out_dir)
+    write!(Path.join(out_dir, "fe.yml"), castles)
 
-    Mix.shell().info("castles: #{length(castles)} FE castles -> #{@out_dir}")
+    Mix.shell().info("castles: #{length(castles)} FE castles -> #{out_dir}")
   end
 
   @doc false

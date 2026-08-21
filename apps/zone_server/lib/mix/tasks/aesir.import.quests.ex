@@ -16,15 +16,16 @@ defmodule Mix.Tasks.Aesir.Import.Quests do
   """
   use Mix.Task
 
-  alias Aesir.ZoneServer.Mmo.QuestManagement.Importer
+  alias Mix.Tasks.Aesir.Import
 
-  @out_dir Path.join(~w(apps zone_server priv db quests))
+  alias Aesir.ZoneServer.Mmo.QuestManagement.Importer
 
   @impl Mix.Task
   def run(args) do
-    rathena = List.first(args) || "../rathena"
+    {rathena, mode} = Import.parse!(args)
+    out_dir = Import.path("quests", mode)
     src = Path.join([rathena, "db", "re", "quest_db.yml"])
-    File.mkdir_p!(@out_dir)
+    File.mkdir_p!(out_dir)
 
     {definitions, dropped} =
       src
@@ -36,7 +37,7 @@ defmodule Mix.Tasks.Aesir.Import.Quests do
       |> then(fn {defs, dropped} -> {Enum.reverse(defs), dropped} end)
 
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
-    out = Path.join(@out_dir, "quests.yml")
+    out = Path.join(out_dir, "quests.yml")
     File.write!(out, yaml)
 
     Mix.shell().info("quests: #{length(definitions)} -> #{out}")
