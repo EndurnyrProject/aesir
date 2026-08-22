@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Db.Layout do
     "mob_skills/mob_skills.yml" => {:file, false, "aesir.import.mob_skills"},
     "arrows.yml" => {:file, true, "aesir.import.arrows"},
     "map_flags.yml" => {:file, true, nil},
+    "navigation.yml" => {:file, true, nil},
     "level_penalty.yml" => {:file, false, "aesir.import.level_penalty"},
     "level_penalty_exp.yml" => {:file, false, "aesir.import.level_penalty"},
     "level_penalty_mvp_drop.yml" => {:file, false, "aesir.import.level_penalty"},
