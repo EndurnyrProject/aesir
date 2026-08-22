@@ -61,6 +61,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.WaitingRoomChat{}, {:world, :waiting_room_chat}},
     {%Aesir.Net.ProgressBar{}, {:world, :progress_bar}},
     {%Aesir.Net.NavigateTo{}, {:world, :navigate_to}},
+    {%Aesir.Net.NavigationFailed{}, {:world, :navigation_failed}},
+    {%Aesir.Net.NavigationEnded{}, {:world, :navigation_ended}},
     {%Aesir.Net.HomunculusResult{}, {:gameplay, :homunculus_result}},
     {%Aesir.Net.TradeRequestReceived{}, {:gameplay, :trade_request_received}},
     {%Aesir.Net.TradeOpened{}, {:gameplay, :trade_opened}},

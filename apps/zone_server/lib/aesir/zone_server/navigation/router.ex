@@ -48,13 +48,13 @@ defmodule Aesir.ZoneServer.Navigation.Router do
     end)
     |> Enum.flat_map(fn
       {^origin_map, :any} ->
-        [route_option(0.0, direct_route(origin_map, [], origin))]
+        [route_option(0.0, direct_route(origin_map, [origin], origin))]
 
       {^origin_map, destination} ->
         case Pathfinding.find_path(map_data, origin, destination, []) do
           {:ok, path} ->
             cost = travel_time(Flood.path_cost(origin, path), walk_speed)
-            [route_option(cost, direct_route(origin_map, path, destination))]
+            [route_option(cost, direct_route(origin_map, [origin | path], destination))]
 
           {:error, _reason} ->
             []
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Navigation.Router do
       case Pathfinding.find_path(map_data, origin, {portal.x, portal.y}, []) do
         {:ok, path} ->
           cost = travel_time(Flood.path_cost(origin, path), walk_speed)
-          [%{portal_id: portal.id, cost: cost, path: path}]
+          [%{portal_id: portal.id, cost: cost, path: [origin | path]}]
 
         {:error, _reason} ->
           []

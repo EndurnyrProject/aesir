@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Npc.Warp
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -42,15 +43,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     cleared_game_state = PlayerState.clear_warp_cooldown(game_state)
     maybe_fire_spawn_warp(cleared_game_state)
 
-    {:noreply,
-     %{
-       state
-       | game_state: %{
-           cleared_game_state
-           | pending_map_load: nil,
-             visible_skill_units: visible_skill_units
-         }
-     }}
+    state = %{
+      state
+      | game_state: %{
+          cleared_game_state
+          | pending_map_load: nil,
+            visible_skill_units: visible_skill_units
+        }
+    }
+
+    {:noreply, NavigationHandler.on_map_loaded(state)}
   end
 
   def handle_map_loaded(%{connection_pid: connection_pid, game_state: game_state} = state) do

@@ -251,6 +251,11 @@ message Envelope {
     GuildSkillUpRequest guild_skill_up_request = 197;  // c2s zone
     // 198: guild progression authoritative level-up notification
     GuildLevelUp guild_level_up = 198;  // s2c zone gameplay
+    // 199-202: server-authoritative navigation requests and outcomes
+    NavigationRequest navigation_request = 199;  // c2s zone
+    NavigationCancel navigation_cancel = 200;  // c2s zone
+    NavigationFailed navigation_failed = 201;  // s2c zone world
+    NavigationEnded navigation_ended = 202;  // s2c zone world
   }
 }
 
@@ -671,19 +676,83 @@ message ProgressBar {
   uint32 npc_id = 3;
 }
 
-// Server -> client, open the navigation window / start navigation toward a map
-// coordinate or a tracked monster (replaces RO ZC_NAVIGATION 0x08e2, script
-// `navigateto`). Sent only to the invoking player. The client derives the
-// navigation target the same way the original packet does: monster_id > 0
-// targets that monster; else x > 0 && y > 0 targets those coordinates; else
-// it is map-only (fails client-side if the player is already on the map).
+// Server -> client, open the navigation window / update its server-authoritative
+// route. Sent only to the invoking player. The legacy target fields stay intact
+// for existing script content; `legs` is the route detail and `destination` is
+// the target selected after resolving it against the world.
 message NavigateTo {
-  string map = 1;        // destination map name
-  uint32 x = 2;          // destination cell x (0 when map-only or monster)
-  uint32 y = 3;          // destination cell y (0 when map-only or monster)
+  string map = 1;        // legacy destination map name
+  uint32 x = 2;          // legacy destination cell x (0 when map-only or monster)
+  uint32 y = 3;          // legacy destination cell y (0 when map-only or monster)
   uint32 flag = 4;       // allowed transport services (0 none, 1 airship, 10 scroll, 100 kafra)
   bool hide_window = 5;  // true = navigate silently without opening the window
   uint32 monster_id = 6; // optional tracked monster id
+  repeated NavigationLeg legs = 7;               // route legs; only the current leg has cells
+  NavigationCoordinate destination = 8;          // resolved final map and cell
+}
+
+// A map cell used by a detailed route leg.
+message NavigationCell {
+  uint32 x = 1;
+  uint32 y = 2;
+}
+
+// A map coordinate used by a request or resolved destination.
+message NavigationCoordinate {
+  string map = 1;
+  uint32 x = 2;
+  uint32 y = 3;
+}
+
+// One positional route leg. `cells` is empty for topology-only future legs;
+// `arrive` is set only on the final leg.
+message NavigationLeg {
+  uint32 index = 1;
+  string map = 2;
+  repeated NavigationCell cells = 3;
+  string exit_portal = 4;
+  string next_map = 5;
+  NavigationCell arrive = 6;
+}
+
+// Client -> server, request server-authoritative navigation to one target.
+message NavigationRequest {
+  oneof target {
+    NavigationCoordinate coord = 1;
+    string map = 2;
+    string npc = 3;
+    uint32 monster = 4;
+  }
+
+  uint32 flag = 5;       // allowed transport services (0 none, 1 airship, 10 scroll, 100 kafra)
+  bool hide_window = 6;  // true = navigate silently without opening the window
+}
+
+// Client -> server, stop the active server-authoritative navigation session.
+message NavigationCancel {}
+
+enum NavigationFailureReason {
+  NAVIGATION_FAILURE_REASON_UNSPECIFIED = 0;
+  NAVIGATION_FAILURE_REASON_UNRESOLVED = 1;
+  NAVIGATION_FAILURE_REASON_UNREACHABLE = 2;
+  NAVIGATION_FAILURE_REASON_ALREADY_THERE = 3;
+  NAVIGATION_FAILURE_REASON_EXCLUDED = 4;
+}
+
+// Server -> client, explains why a navigation request could not produce a route.
+message NavigationFailed {
+  NavigationFailureReason reason = 1;
+}
+
+enum NavigationEndReason {
+  NAVIGATION_END_REASON_UNSPECIFIED = 0;
+  NAVIGATION_END_REASON_ARRIVED = 1;
+  NAVIGATION_END_REASON_CANCELLED = 2;
+}
+
+// Server -> client, confirms that an active navigation session has ended.
+message NavigationEnded {
+  NavigationEndReason reason = 1;
 }
 
 // Client -> server, request an entity's name (replaces RO CZ_REQNAME2 0x0368).

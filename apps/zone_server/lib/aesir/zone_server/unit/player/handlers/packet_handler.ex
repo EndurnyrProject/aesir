@@ -36,6 +36,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.MoveRequest
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
+  alias Aesir.Net.NavigationCancel
+  alias Aesir.Net.NavigationCoordinate
+  alias Aesir.Net.NavigationRequest
   alias Aesir.Net.NpcBuyRequest
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.NpcSellRequest
@@ -89,6 +92,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NameHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcShopHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
@@ -141,6 +145,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(%HomunculusRequest{} = request, state) do
     HomunculusCommandHandler.request(request, state)
+  end
+
+  def handle_message(
+        %NavigationRequest{target: {:coord, %NavigationCoordinate{} = coordinate}} = request,
+        state
+      ) do
+    start_navigation(state, {:coord, coordinate.map, coordinate.x, coordinate.y}, request)
+  end
+
+  def handle_message(%NavigationRequest{target: {:map, map_name}} = request, state) do
+    start_navigation(state, {:map, map_name}, request)
+  end
+
+  def handle_message(%NavigationRequest{target: {:npc, npc_name}} = request, state) do
+    start_navigation(state, {:npc, npc_name}, request)
+  end
+
+  def handle_message(%NavigationRequest{target: {:monster, monster_id}} = request, state) do
+    start_navigation(state, {:monster, monster_id}, request)
+  end
+
+  def handle_message(%NavigationCancel{}, state) do
+    NavigationHandler.cancel(state, :cancelled)
   end
 
   # MapLoaded - Player finished loading map (protobuf analogue of CZ_NOTIFY_ACTORINIT)
@@ -519,6 +546,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     )
 
     {:noreply, state}
+  end
+
+  defp start_navigation(state, target, request) do
+    NavigationHandler.start(state, target,
+      flag: request.flag,
+      hide_window: request.hide_window
+    )
   end
 
   # Reads the player's learned NV_BASIC level and gates the action via

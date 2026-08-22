@@ -185,6 +185,10 @@
     {"field": 195, "tag": "waiting_room_member_update", "message": "WaitingRoomMemberUpdate", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 196, "tag": "waiting_room_chat", "message": "WaitingRoomChat", "direction": "s2c", "servers": ["zone"], "channel": "world"},
     {"field": 197, "tag": "guild_skill_up_request", "message": "GuildSkillUpRequest", "direction": "c2s", "servers": ["zone"]},
-    {"field": 198, "tag": "guild_level_up", "message": "GuildLevelUp", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
+    {"field": 198, "tag": "guild_level_up", "message": "GuildLevelUp", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 199, "tag": "navigation_request", "message": "NavigationRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 200, "tag": "navigation_cancel", "message": "NavigationCancel", "direction": "c2s", "servers": ["zone"]},
+    {"field": 201, "tag": "navigation_failed", "message": "NavigationFailed", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 202, "tag": "navigation_ended", "message": "NavigationEnded", "direction": "s2c", "servers": ["zone"], "channel": "world"}
   ]
 }

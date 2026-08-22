@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage, as: SkillUnitStorage
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
@@ -39,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcOwnerEventHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler
@@ -502,6 +504,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     )
   end
 
+  @doc "Starts server-authoritative navigation for this player."
+  @spec start_navigation(pid(), Target.t(), keyword()) :: :ok
+  def start_navigation(pid, target, opts \\ []) do
+    GenServer.cast(pid, {:navigation, {:start, target, opts}})
+  end
+
+  @doc "Cancels this player's active navigation, if any."
+  @spec cancel_navigation(pid()) :: :ok
+  def cancel_navigation(pid), do: GenServer.cast(pid, {:navigation, :cancel})
+
   @doc "Forwards a decoded client `message` to this player's session for routing."
   @spec deliver_message(pid(), struct()) :: :ok
   def deliver_message(pid, message) do
@@ -728,6 +740,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
   end
 
+  @impl true
+  def handle_info({:navigation, {:materialized, ref, index, result}}, state) do
+    NavigationHandler.handle_materialized(state, ref, index, result)
+  end
+
+  @impl true
+  def handle_info({:navigation, {:routed, ref, result}}, state) do
+    NavigationHandler.handle_routed(state, ref, result)
+  end
+
   def handle_info({:message, message}, state) do
     PacketHandler.handle_message(message, state)
   end
@@ -938,6 +960,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:homunculus, command}, state) do
     HomunculusCommandHandler.cast(command, state)
+  end
+
+  @impl true
+  def handle_cast({:navigation, {:start, target, opts}}, state) do
+    NavigationHandler.start(state, target, opts)
+  end
+
+  @impl true
+  def handle_cast({:navigation, :cancel}, state) do
+    NavigationHandler.cancel(state, :cancelled)
   end
 
   # Visibility: another player's session directly casting to this one as it

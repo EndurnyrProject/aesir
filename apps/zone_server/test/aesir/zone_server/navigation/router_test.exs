@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
              %Leg{
                index: 0,
                map: "start",
-               cells: [{1, 0}, {2, 0}, {3, 0}],
+               cells: [{0, 0}, {1, 0}, {2, 0}, {3, 0}],
                exit_portal: "fast_start",
                next_map: "fast_mid",
                arrive: nil
@@ -71,6 +71,11 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
            ] = route.legs
   end
 
+  test "starts the first cross-map leg at the route origin" do
+    assert {:ok, route} = Router.route({"start", 0, 0}, [{"goal", {2, 0}}], walk_speed: 1.0)
+    assert [%Leg{cells: [{0, 0} | _remaining]} | _later_legs] = route.legs
+  end
+
   test "chooses a cheaper same-map candidate instead of the first candidate" do
     candidates = [{"goal", {2, 0}}, {"start", {1, 0}}]
 
@@ -80,7 +85,7 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
              %Leg{
                index: 0,
                map: "start",
-               cells: [{1, 0}],
+               cells: [{0, 0}, {1, 0}],
                exit_portal: nil,
                next_map: nil,
                arrive: {1, 0}
@@ -118,14 +123,14 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
     candidates = [{"start", {6, 0}}, {"start", {2, 0}}]
 
     assert {:ok, route} = Router.route({"start", 0, 0}, candidates, walk_speed: 2.0)
-    assert [%Leg{cells: [{1, 0}, {2, 0}], arrive: {2, 0}}] = route.legs
+    assert [%Leg{cells: [{0, 0}, {1, 0}, {2, 0}], arrive: {2, 0}}] = route.legs
   end
 
   test "costs the first path step omitted by the pathfinder result" do
     candidates = [{"start", {1, 1}}, {"start", {1, 0}}]
 
     assert {:ok, route} = Router.route({"start", 0, 0}, candidates, walk_speed: 1.0)
-    assert [%Leg{cells: [{1, 0}], arrive: {1, 0}}] = route.legs
+    assert [%Leg{cells: [{0, 0}, {1, 0}], arrive: {1, 0}}] = route.legs
   end
 
   test "an any-cell candidate ends at the chosen portal landing" do

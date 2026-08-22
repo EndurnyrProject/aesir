@@ -13,7 +13,6 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   require Logger
 
   alias Aesir.Net.Cutin
-  alias Aesir.Net.NavigateTo
   alias Aesir.Net.SoundEffect
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.Config
@@ -22,6 +21,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.SpecialEffect
@@ -289,16 +289,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   end
 
   @doc """
-  Opens the navigation window / starts navigation toward a map coordinate or
-  tracked monster (rAthena `navigateto`, packet `ZC_NAVIGATION`). `flag` is the
-  allowed-transport-services value (`0` none, `1` airship, `10` scroll, `100`
-  kafra); `hide_window` suppresses the window when true. With `monster_id` set,
-  the coordinates are ignored and the client tracks that monster instead.
+  Starts server-authoritative navigation toward a map coordinate or a map that
+  spawns the requested monster. `flag` is the allowed-transport-services value
+  (`0` none, `1` airship, `10` scroll, `100` kafra); `hide_window` suppresses
+  the window when true. With `monster_id` set, the coordinates are ignored and
+  every known spawn map becomes a routing candidate.
 
   Sent only to the invoking player, so a detached ctx (no player to send to) is
   a silent no-op rather than a halt — a missing navigation target must never
-  abort the surrounding script. The navigation itself is entirely client-side;
-  the script continues immediately.
+  abort the surrounding script. Routing starts asynchronously in the player's
+  session, and the script continues immediately.
   """
   @spec navigateto(
           Ctx.t(),
@@ -315,18 +315,23 @@ defmodule Aesir.ZoneServer.Script.Dsl.Visuals do
   def navigateto(%Ctx{char_id: nil} = ctx, _map, _x, _y, _flag, _hide_window, _monster_id),
     do: ctx
 
-  def navigateto(%Ctx{char_id: char_id} = ctx, map, x, y, flag, hide_window, monster_id) do
-    Broadcast.to_player(char_id, %NavigateTo{
-      map: map,
-      x: x,
-      y: y,
+  def navigateto(%Ctx{} = ctx, map, x, y, flag, hide_window, monster_id) do
+    target = navigation_target(map, x, y, monster_id)
+    session_pid = ctx.session_pid || self()
+
+    PlayerSession.start_navigation(session_pid, target,
       flag: flag,
-      hide_window: hide_window,
-      monster_id: monster_id
-    })
+      hide_window: hide_window
+    )
 
     ctx
   end
+
+  defp navigation_target(_map, _x, _y, monster_id) when monster_id > 0,
+    do: {:monster, monster_id}
+
+  defp navigation_target(map, 0, 0, _monster_id), do: {:map, map}
+  defp navigation_target(map, x, y, _monster_id), do: {:coord, map, x, y}
 
   @doc """
   Shows an emote bubble over the NPC running the script (rAthena `emotion`,

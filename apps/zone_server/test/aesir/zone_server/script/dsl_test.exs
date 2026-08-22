@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.Net.NavigateTo
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ParamChange
   alias Aesir.Net.ProgressBar
@@ -534,44 +533,60 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "navigateto/7" do
-    test "sends a NavigateTo to the invoking player" do
-      test_pid = self()
-
-      expect(Broadcast, :to_player, fn 1, %NavigateTo{} = packet ->
-        send(test_pid, {:navigate_to, packet})
+    test "starts navigation to a coordinate through the player session" do
+      expect(PlayerSession, :start_navigation, fn pid, target, opts ->
+        assert pid == self()
+        assert target == {:coord, "einbroch", 267, 268}
+        assert opts == [flag: 73, hide_window: true]
         :ok
       end)
 
-      assert Dsl.navigateto(build_ctx(), "einbroch", 267, 268, 0, true, 0) == build_ctx()
+      reject(&Broadcast.to_player/2)
+      ctx = build_ctx()
+
+      assert Dsl.navigateto(ctx, "einbroch", 267, 268, 73, true, 0) == ctx
     end
 
-    test "forwards the monster_id target when present" do
-      test_pid = self()
+    test "gives a monster target precedence over coordinates" do
+      ctx = %{build_ctx() | session_pid: self()}
 
-      expect(Broadcast, :to_player, fn 1, %NavigateTo{} = packet ->
-        send(test_pid, {:navigate_to, packet})
+      expect(PlayerSession, :start_navigation, fn pid, target, opts ->
+        assert pid == ctx.session_pid
+        assert target == {:monster, 1_234}
+        assert opts == [flag: 83, hide_window: false]
         :ok
       end)
 
-      Dsl.navigateto(build_ctx(), "einbroch", 0, 0, 101, false, 1234)
+      reject(&Broadcast.to_player/2)
 
-      assert_received {:navigate_to,
-                       %NavigateTo{
-                         map: "einbroch",
-                         flag: 101,
-                         hide_window: false,
-                         monster_id: 1234
-                       }}
+      assert Dsl.navigateto(ctx, "ignored", 91, 92, 83, false, 1_234) == ctx
+    end
+
+    test "uses a map-only target when both coordinates are zero" do
+      ctx = %{build_ctx() | session_pid: self()}
+
+      expect(PlayerSession, :start_navigation, fn pid, target, opts ->
+        assert pid == ctx.session_pid
+        assert target == {:map, "einbroch"}
+        assert opts == [flag: 0, hide_window: false]
+        :ok
+      end)
+
+      reject(&Broadcast.to_player/2)
+
+      assert Dsl.navigateto(ctx, "einbroch", 0, 0, 0, false, 0) == ctx
     end
 
     test "is a no-op on a detached ctx (no player to send to)" do
       reject(&Broadcast.to_player/2)
+      reject(&PlayerSession.start_navigation/3)
       ctx = %{build_ctx() | char_id: nil}
       assert Dsl.navigateto(ctx, "einbroch", 267, 268, 0, true, 0) == ctx
     end
 
     test "short-circuits on an already-halted ctx" do
       reject(&Broadcast.to_player/2)
+      reject(&PlayerSession.start_navigation/3)
       ctx = Ctx.halt(build_ctx(), :boom)
       assert Dsl.navigateto(ctx, "einbroch", 267, 268, 0, true, 0) == ctx
     end

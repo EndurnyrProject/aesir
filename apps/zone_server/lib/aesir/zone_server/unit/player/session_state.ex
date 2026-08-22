@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   Handlers set and clear optional slots with struct updates rather than dynamic map keys.
   """
 
+  alias Aesir.ZoneServer.Navigation.Session, as: NavigationSession
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -51,7 +52,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             pending_guild_invite: nil,
             quest_info_display: %{map: nil, shown: %{}},
             homunculus: nil,
-            homunculus_runtime: %Runtime{private_dirty: false}
+            homunculus_runtime: %Runtime{private_dirty: false},
+            navigation: nil
 
   @type t() :: %__MODULE__{
           game_state: PlayerState.t(),
@@ -80,7 +82,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             shown: %{non_neg_integer() => {non_neg_integer(), non_neg_integer()}}
           },
           homunculus: HomunculusState.t() | nil,
-          homunculus_runtime: Runtime.t()
+          homunculus_runtime: Runtime.t(),
+          navigation: NavigationSession.t() | nil
         }
 
   @spec interaction_blocked?(map()) :: boolean()

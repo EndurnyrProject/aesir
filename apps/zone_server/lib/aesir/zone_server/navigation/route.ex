@@ -10,8 +10,9 @@ defmodule Aesir.ZoneServer.Navigation.Route.Leg do
   One leg of a route.
 
   `cells` is populated only for the leg the player is currently on; legs further
-  along carry topology only. `exit_portal` and `next_map` are `nil` on the final
-  leg, which instead carries `arrive`.
+  along carry topology only. When populated, it begins at the position from which
+  the leg is walked. `exit_portal` and `next_map` are `nil` on the final leg, which
+  instead carries `arrive`.
   """
   @type t() :: %__MODULE__{
           index: non_neg_integer(),
