@@ -255,6 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
          refineable: Map.get(entry, "Refineable", false),
          bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
          no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
+         no_guild_storage: get_in(entry, ["Trade", "NoGuildStorage"]) || false,
          attack_element: parse_attack_element(Map.get(entry, "Script"))
        }}
     end

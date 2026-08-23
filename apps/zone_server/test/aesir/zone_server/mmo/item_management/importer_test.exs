@@ -108,6 +108,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       refute Map.has_key?(Importer.to_yaml_map(definition), "no_trade")
     end
 
+    test "maps the no-guild-storage restriction and defaults it to false" do
+      restricted = %{
+        "Id" => 1201,
+        "AegisName" => "Knife",
+        "Name" => "Knife",
+        "Trade" => %{"NoGuildStorage" => true}
+      }
+
+      plain = %{"Id" => 1202, "AegisName" => "Sword", "Name" => "Sword"}
+
+      assert {:ok, %ItemDefinition{no_guild_storage: true}} = Importer.to_definition(restricted)
+      assert {:ok, %ItemDefinition{no_guild_storage: false}} = Importer.to_definition(plain)
+    end
+
     test "defaults missing Type to :etc (rAthena default)" do
       entry = %{"Id" => 909, "AegisName" => "Jellopy", "Name" => "Jellopy", "Weight" => 1}
 
