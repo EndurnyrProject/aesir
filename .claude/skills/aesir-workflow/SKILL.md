@@ -109,9 +109,9 @@ its **own** ETS world and background processes — do not reach for the old boot
 ### Known flaky tests (ignore when gating on green, if they pass in isolation)
 
 - `test/integration/npc_events_integration_test.exs` — OnTimer/OnMyMobDead timing.
-- The unit-suite flakes previously listed here (`mechanics_supervisor_test.exs` boot race,
-  `mob_session_skill_cast_test.exs` cast interruption, `guild/manager_test.exs`) are fixed.
-  Their root causes, worth recognising elsewhere:
+- The unit- and integration-suite flakes previously listed here are fixed; both suites now run
+  green repeatedly (`mix test` and `mix test --only integration`).
+  The root causes are worth recognising elsewhere:
   - A file that stubs without claiming a Mimic mode inherits a leaked global mode from the
     previous module. Files that stub need `setup :set_mimic_private`; files that go global
     need `setup {Aesir.MimicMode, :global}`, never raw `setup :set_mimic_global`.
@@ -120,9 +120,16 @@ its **own** ETS world and background processes — do not reach for the old boot
     to disappear. Anything else that tears down cluster entries needs the same wait.
   - `spawn(fn -> :ok end)` + `Process.monitor` to obtain a dead pid delivers `:noproc`, not
     `:normal`, when the process exits first — never pin that DOWN reason.
-  - A status applied through the real path in the test process needs
-    `stub(Resistance, :roll_success, fn _ -> true end)`; non-zero target `vit`/`luk` alone
-    makes the outcome seed-dependent.
+  - **Unpinned infliction rolls are the single most common flake.** A status applied through
+    the real path as *arranged state* must be pinned: `vit: 0, luk: 0` on the target, or
+    `stub(Resistance, :roll_success, fn _ -> true end)` when the roll happens in the test
+    process. This bit `bd_rokisweil_test` and `mob_cast_integration_test`'s dispel setup.
+  - Knockback/pull is a `GenServer.cast`. A test that arranges a trap or displacement and
+    asserts immediately is racing the mover's landing — and whatever occupies the
+    destination cell can fire its own `on_touch` and replace the state under assertion.
+  - Snapshotting a whole `SessionState` and pinning it across an operation also pins
+    lazily-populated ambient fields (`quest_info_display` is filled by an async post-map-load
+    refresh). Let the session settle with `assert_eventually` before the snapshot.
 - Parallel worktree suites share one `aesir_test` database; concurrent runs exhaust Postgres
   connections and surface as one-off DB-test failures. Check how many suites are running
   before diagnosing a race.

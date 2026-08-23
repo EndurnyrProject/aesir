@@ -243,7 +243,12 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   describe "SA_DISPELL rows" do
     test "a mob dispel strips the player's buffs and debuffs, sparing no_dispel statuses" do
-      player = start_player_session(id: 9_801, name: "Dispelled", base_level: 50)
+      # vit/luk 0 pins the setup infliction rolls to 100%: sc_poison and
+      # sc_bleeding below are arranged state, and a resisted roll fails the test
+      # before the dispel under test ever runs.
+      player =
+        start_player_session(id: 9_801, name: "Dispelled", base_level: 50, vit: 0, luk: 0)
+
       char_id = player.character.id
 
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, char_id) end)

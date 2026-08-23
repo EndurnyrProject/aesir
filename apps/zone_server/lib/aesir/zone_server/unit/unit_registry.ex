@@ -117,6 +117,20 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     :ets.member(table_for(:unit_registry_id_index), unit_id)
   end
 
+  @doc """
+  Resolves which unit type owns `unit_id` through the ID index.
+
+  Numeric unit IDs are unique across types (`claim_unit_id/2` reserves the key),
+  so this recovers the type for a caller that only carries a bare id.
+  """
+  @spec unit_type_for(unit_id()) :: {:ok, unit_type()} | {:error, :not_found}
+  def unit_type_for(unit_id) do
+    case :ets.lookup(table_for(:unit_registry_id_index), unit_id) do
+      [{^unit_id, unit_type} | _rest] -> {:ok, unit_type}
+      [] -> {:error, :not_found}
+    end
+  end
+
   @doc "Atomically reserves a numeric unit ID for a unit type."
   @spec claim_unit_id(unit_id(), unit_type()) :: boolean()
   def claim_unit_id(unit_id, unit_type) do

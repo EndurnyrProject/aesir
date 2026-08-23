@@ -68,7 +68,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
     end
   end
 
-  defp target_ref(%{character_id: caster_id}, :self), do: {:player, caster_id}
-  defp target_ref(_caster, {:unit, {unit_type, unit_id}}), do: {unit_type, unit_id}
-  defp target_ref(_caster, {:unit, target_id}), do: {:player, target_id}
+  defp target_ref(caster, target), do: Active.target_unit_ref(caster, target)
 end

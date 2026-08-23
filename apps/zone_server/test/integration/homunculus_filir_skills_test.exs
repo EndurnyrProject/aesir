@@ -34,6 +34,10 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   @mob_gid 1_600_901
   @map "filir_skill_map"
 
+  # DamageDealt swing types, mirroring Combat.PacketFactory's private constants.
+  @attack_type_normal 0
+  @attack_type_lucky_dodge 10
+
   setup do
     Mimic.copy(Broadcast)
     Mimic.copy(DamageApplication)
@@ -296,7 +300,11 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     assert {:ok, cast} =
              CastingHandler.begin(session, @sbr44, 2, {:unit, {:mob, @mob_gid}})
 
-    refute_receive {:combat_packet, %DamageDealt{}}
+    # A blocked hit still broadcasts the guard packet the client renders the block
+    # from: a zero-damage DamageDealt on the normal swing type. What must not
+    # happen is the miss packet (lucky-dodge type) or any damage delivery.
+    assert_receive {:combat_packet, %DamageDealt{damage: 0, div: 1, type: @attack_type_normal}}
+    refute_receive {:combat_packet, %DamageDealt{type: @attack_type_lucky_dodge}}
     refute_receive {:"$gen_cast", {:combat, {:apply_damage, _, _}}}
     assert cast.homunculus.intimacy_hundredths == 40_000
     assert cast.homunculus.sp == 99

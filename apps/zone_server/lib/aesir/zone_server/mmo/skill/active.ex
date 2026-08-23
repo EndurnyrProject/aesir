@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @typedoc "The resolved cast target handed to `cast/4`."
   @type target ::
@@ -177,4 +178,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Active do
   def resolve_target_id(%{character_id: caster_id}, :self), do: caster_id
   def resolve_target_id(%{world_gid: caster_id}, :self), do: caster_id
   def resolve_target_id(_caster, {:unit, id}), do: id
+
+  @doc """
+  Resolves a cast target to a fully qualified `{unit_type, unit_id}` reference.
+
+  A status-applying support skill needs the target's type, not just its id, and
+  the mob cast path does not carry one: `MobSkill.Executor` adapts a row target
+  down to a bare `{:unit, id}`. Assuming `:player` for that shape made a mob's
+  self-buff address a nonexistent player, so the type is recovered from the
+  registry's ID index instead. An id no longer registered keeps the historical
+  `:player` reading, leaving player-cast behaviour unchanged.
+  """
+  @spec target_unit_ref(map(), target()) :: {atom(), non_neg_integer() | Ref.t()}
+  def target_unit_ref(%MobState{instance_id: caster_id}, :self), do: {:mob, caster_id}
+  def target_unit_ref(%{character_id: caster_id}, :self), do: {:player, caster_id}
+  def target_unit_ref(_caster, {:unit, {unit_type, unit_id}}), do: {unit_type, unit_id}
+
+  def target_unit_ref(_caster, {:unit, target_id}) do
+    case UnitRegistry.unit_type_for(target_id) do
+      {:ok, unit_type} -> {unit_type, target_id}
+      {:error, :not_found} -> {:player, target_id}
+    end
+  end
 end

@@ -337,8 +337,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
     _caster = start_real_player(id: @caster_id, map_name: @map, position: {40, 40})
     _mob = start_real_mob(unit_id: @mob_id, map_name: @map, position: {49, 50})
 
+    # The blocker exists only to own the trap cell's exclusive terrain, so it is
+    # cast by the mob rather than the player: a player-owned snare on this cell
+    # treats the mob as an enemy and re-captures it the moment the failed
+    # capture's `Knockback.pull_to` cast lands, replacing the group-8 status this
+    # test is asserting self-heals. A mob-owned trap never captures a mob.
     blocker =
-      ankle_group(80)
+      ankle_group(80, :mob, @mob_id)
       |> Map.put(:visibility, :public)
       |> Map.update!(:state, fn state ->
         Map.merge(state, %{

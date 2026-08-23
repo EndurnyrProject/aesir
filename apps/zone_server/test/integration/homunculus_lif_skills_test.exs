@@ -353,6 +353,16 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
     character = character |> Repo.preload(:homunculus)
     session = start_player_session(character: character, map_name: @map, position: {150, 150})
     on_exit(fn -> if Process.alive?(session.pid), do: end_player_session(session) end)
+
+    # Several tests here snapshot the whole SessionState and pin it across a
+    # failed cast. The post-map-load quest-info refresh populates
+    # `quest_info_display` asynchronously, so a snapshot taken before it lands
+    # differs from the settled state for reasons the cast never caused. Wait for
+    # it, so the pin only ever sees rollback-relevant changes.
+    assert_eventually(fn ->
+      PlayerSession.get_state(session.pid).quest_info_display.map == @map
+    end)
+
     session
   end
 
