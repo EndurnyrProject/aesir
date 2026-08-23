@@ -2711,6 +2711,22 @@ defmodule Aesir.Commons.Network.ProtoTest do
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 
+  test "storage_opened kind round-trips and defaults to personal" do
+    guild_storage = %StorageOpened{capacity: 600, kind: :STORAGE_KIND_GUILD}
+
+    {:ok, guild_iodata, _size} = StorageOpened.encode(guild_storage)
+
+    assert {:ok, %StorageOpened{capacity: 600, kind: :STORAGE_KIND_GUILD}} =
+             StorageOpened.decode(IO.iodata_to_binary(guild_iodata))
+
+    legacy_storage = %StorageOpened{capacity: 600}
+
+    {:ok, legacy_iodata, _size} = StorageOpened.encode(legacy_storage)
+
+    assert {:ok, %StorageOpened{capacity: 600, kind: :STORAGE_KIND_PERSONAL}} =
+             StorageOpened.decode(IO.iodata_to_binary(legacy_iodata))
+  end
+
   test "storage_deposit_request round-trips through envelope oneof" do
     env = %Envelope{
       body: {:storage_deposit_request, %StorageDepositRequest{inventory_index: 3, amount: 10}}
@@ -2806,7 +2822,15 @@ defmodule Aesir.Commons.Network.ProtoTest do
           :STORAGE_ITEM_EQUIPPED,
           :STORAGE_INVALID_AMOUNT,
           :STORAGE_NOT_OPEN,
-          :STORAGE_BASIC_SKILL_REQUIRED
+          :STORAGE_BASIC_SKILL_REQUIRED,
+          :STORAGE_NO_GUILD,
+          :STORAGE_GUILD_NO_SKILL,
+          :STORAGE_GUILD_NO_PERMISSION,
+          :STORAGE_GUILD_IN_USE,
+          :STORAGE_OTHER_STORAGE_OPEN,
+          :STORAGE_RENTAL,
+          :STORAGE_NO_GUILD_STORAGE,
+          :STORAGE_STALE
         ] do
       env = %Envelope{body: {:storage_result, %StorageResult{result: result}}}
 

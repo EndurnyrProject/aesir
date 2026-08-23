@@ -1656,6 +1656,8 @@ message GuildPositionEditRequest {
   // configured guild_exp_limit. Absent = leave the position's tax unchanged
   // (old clients cannot reset a tax they do not know about).
   optional uint32 tax = 5;
+  // Absent = leave the position's storage permission unchanged.
+  optional bool can_storage = 6;
 }
 
 // Client -> server, master-only request to assign a member to a position slot.
@@ -1815,26 +1817,37 @@ message GuildDisbanded {
   string reason = 2;
 }
 
+// Distinguishes personal and guild storage windows.
+enum StorageKind {
+  STORAGE_KIND_PERSONAL = 0;
+  STORAGE_KIND_GUILD = 1;
+}
+
 // Server -> client, the full storage dump (sent on open). Mirrors CartInfo.
 message StorageOpened {
   uint32 capacity = 1;
   repeated InventoryItem items = 2;
+  StorageKind kind = 3;
 }
 
 // Client -> server, move an inventory item into storage.
 message StorageDepositRequest {
   uint32 inventory_index = 1;
   uint32 amount = 2;
+  StorageKind kind = 3;
 }
 
 // Client -> server, move a storage item back into the inventory.
 message StorageWithdrawRequest {
   uint32 storage_index = 1;
   uint32 amount = 2;
+  StorageKind kind = 3;
 }
 
 // Client -> server, close the currently open storage window.
-message StorageCloseRequest {}
+message StorageCloseRequest {
+  StorageKind kind = 1;
+}
 
 // Server -> client, an item was added to storage. Mirrors CartItemAdded.
 message StorageItemAdded {
@@ -1855,6 +1868,7 @@ message StorageItemAdded {
   string signer_name = 14;
   uint32 creator_id = 15;
   CreatorKind creator_kind = 16;
+  StorageKind kind = 17;
 }
 
 // Server -> client, an item was removed from storage. Mirrors CartItemRemoved.
@@ -1862,6 +1876,7 @@ message StorageItemRemoved {
   uint32 index = 1;
   uint32 amount = 2;
   uint32 reason = 3;
+  StorageKind kind = 4;
 }
 
 // Outcome of a storage deposit/withdraw/open request. Values are prefixed
@@ -1877,6 +1892,14 @@ enum StorageResultCode {
   STORAGE_INVALID_AMOUNT = 6;
   STORAGE_NOT_OPEN = 7;
   STORAGE_BASIC_SKILL_REQUIRED = 8;
+  STORAGE_NO_GUILD = 9;
+  STORAGE_GUILD_NO_SKILL = 10;
+  STORAGE_GUILD_NO_PERMISSION = 11;
+  STORAGE_GUILD_IN_USE = 12;
+  STORAGE_OTHER_STORAGE_OPEN = 13;
+  STORAGE_RENTAL = 14;
+  STORAGE_NO_GUILD_STORAGE = 15;
+  STORAGE_STALE = 16;
 }
 
 // Server -> client, result of a storage deposit/withdraw/open request.
