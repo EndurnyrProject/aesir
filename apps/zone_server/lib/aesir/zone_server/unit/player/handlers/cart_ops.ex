@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
   flat 8000 cap or the player's STR-derived inventory cap respectively.
 
   The moved item's full attribute set (identify/refine/attribute/cards/random
-  options/bound/favorite/`unique_id`/`enchant_grade`/`expire_time`) is preserved
+  options/craft/bound/favorite/`unique_id`/`enchant_grade`/`expire_time`) is preserved
   across the move via `Aesir.ZoneServer.Unit.ItemContainer.add_preserving/5`, the
   shared transfer-fidelity add: a plain item may stack, anything distinguishing
   always takes a fresh slot.
@@ -260,6 +260,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOps do
       card1: item.card1,
       card2: item.card2,
       card3: item.card3,
+      craft: item.craft,
       random_options: item.random_options,
       bound: item.bound,
       favorite: item.favorite,

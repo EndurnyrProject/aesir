@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.StorageItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.StorageOps
@@ -342,6 +343,74 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageOpsTest do
       # The inventory add must have rolled back with the storage reduce.
       assert [] = InventoryPersistence.load_inventory(char.id)
       assert [%StorageItem{amount: 10}] = StoragePersistence.load_storage(account.id)
+    end
+  end
+
+  describe "craft metadata" do
+    test "survives a deposit/withdraw round trip", %{
+      account: account,
+      character: char,
+      stats: stats
+    } do
+      craft = ItemCraft.to_map(ItemCraft.forged(:fire, 3, char.id))
+
+      seed_inv(char.id, @sword, 1, %{identify: 1, craft: craft})
+      inventory = inv_map(char.id)
+      storage = storage_map(account.id)
+      index = index_of(inventory, @sword)
+
+      assert {:ok, _inv, deposited, _inv_change, _storage_change} =
+               StorageOps.deposit(account.id, char.id, inventory, storage, index, 1)
+
+      # Written through to the row, not just held in the session map.
+      assert [%StorageItem{craft: ^craft}] = StoragePersistence.load_storage(account.id)
+
+      # And read back out of the row on the return trip.
+      stored_index = index_of(deposited, @sword)
+
+      assert {:ok, returned, _storage, _inv_change, _storage_change} =
+               StorageOps.withdraw(
+                 account.id,
+                 char.id,
+                 %{},
+                 storage_map(account.id),
+                 stats,
+                 stored_index,
+                 1
+               )
+
+      assert %InventoryItem{craft: ^craft} = returned[index_of(returned, @sword)]
+
+      assert {:ok, %ItemCraft{kind: :forged, element: :fire, star_crumbs: 3}} =
+               ItemCraft.from_map(craft)
+    end
+
+    test "a forged item does not merge into a plain stack of the same item", %{
+      account: account,
+      character: char
+    } do
+      seed_storage(account.id, @potion, 5, %{identify: 1})
+
+      craft = ItemCraft.to_map(ItemCraft.signed(char.id))
+      seed_inv(char.id, @potion, 1, %{identify: 1, craft: craft})
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @potion)
+
+      assert {:ok, _inv, _storage, _inv_change, {:added, _, _}} =
+               StorageOps.deposit(
+                 account.id,
+                 char.id,
+                 inventory,
+                 storage_map(account.id),
+                 index,
+                 1
+               )
+
+      rows = StoragePersistence.load_storage(account.id)
+      assert length(rows) == 2
+      assert Enum.find(rows, &(&1.craft == craft)).amount == 1
+      assert Enum.find(rows, &is_nil(&1.craft)).amount == 5
     end
   end
 

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Unit.Cart
   alias Aesir.ZoneServer.Unit.Cart.Persistence, as: CartPersistence
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -284,6 +285,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
     end
   end
 
+  describe "craft metadata" do
+    test "is written through to the cart row on move_to_cart/5", %{character: char} do
+      craft = ItemCraft.to_map(ItemCraft.forged(:water, 2, char.id))
+      seed_inv(char.id, @sword, 1, %{identify: 1, craft: craft})
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+
+      assert {:ok, _inv, _cart, _inv_change, _cart_change} =
+               CartOps.move_to_cart(char.id, inventory, %{}, index, 1)
+
+      assert [%CartItem{craft: ^craft}] = CartPersistence.load_cart(char.id)
+    end
+
+    test "a signed item takes a fresh cart slot instead of merging into a plain stack", %{
+      character: char
+    } do
+      seed_cart(char.id, @potion, 5, %{identify: 1})
+
+      craft = ItemCraft.to_map(ItemCraft.signed(char.id))
+      seed_inv(char.id, @potion, 1, %{identify: 1, craft: craft})
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @potion)
+
+      assert {:ok, _inv, _cart, _inv_change, {:added, _, _}} =
+               CartOps.move_to_cart(char.id, inventory, cart_map(char.id), index, 1)
+
+      rows = CartPersistence.load_cart(char.id)
+      assert length(rows) == 2
+      assert Enum.find(rows, &(&1.craft == craft)).amount == 1
+      assert Enum.find(rows, &is_nil(&1.craft)).amount == 5
+    end
+  end
+
   defp seed_inv(char_id, nameid, amount, attrs \\ %{}) do
     {:ok, item} =
       InventoryPersistence.insert_item(
@@ -328,6 +364,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartOpsTest do
       card1: c.card1,
       card2: c.card2,
       card3: c.card3,
+      craft: c.craft,
       random_options: c.random_options,
       bound: c.bound,
       favorite: c.favorite,

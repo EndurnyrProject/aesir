@@ -370,6 +370,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandler do
       card1: row.card1,
       card2: row.card2,
       card3: row.card3,
+      craft: row.craft,
       random_options: row.random_options,
       expire_time: row.expire_time,
       favorite: row.favorite,

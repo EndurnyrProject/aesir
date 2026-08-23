@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
   alias Aesir.Net.UnitStateChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -389,6 +390,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CartHandlerTest do
       assert %{0 => %InventoryItem{nameid: 501, amount: 7}} = restored.game_state.cart
       assert StatusStorage.has_status?(:player, @char_id, :sc_push_cart)
       assert restored.game_state.walk_speed > 150
+    end
+
+    test "restores craft metadata so a forged item keeps its creator" do
+      stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)
+
+      craft = ItemCraft.to_map(ItemCraft.forged(:fire, 3, @char_id))
+
+      row = %CartItem{
+        id: 43,
+        char_id: @char_id,
+        nameid: 1101,
+        amount: 1,
+        equip: 0,
+        identify: 1,
+        refine: 0,
+        attribute: 0,
+        card0: 0,
+        card1: 0,
+        card2: 0,
+        card3: 0,
+        craft: craft,
+        random_options: %{},
+        favorite: 0,
+        bound: 0,
+        unique_id: 0,
+        equip_switch: 0,
+        enchant_grade: 0
+      }
+
+      stub(Cart, :load_cart, fn @char_id -> [row] end)
+
+      learned = %{Integer.to_string(catalog_pushcart_id()) => @pushcart_level}
+      character = character(cart: 1, learned_skills: learned)
+
+      base = %{
+        connection_pid: self(),
+        game_state: %{PlayerState.new(character) | cart: %{}, cart_type: 0},
+        interaction_lock: nil
+      }
+
+      restored = CartHandler.load_on_spawn(character, base)
+
+      assert %{0 => %InventoryItem{craft: ^craft}} = restored.game_state.cart
     end
 
     test "is a no-op when the character has no cart" do
