@@ -682,8 +682,8 @@ message ProgressBar {
 // the target selected after resolving it against the world.
 message NavigateTo {
   string map = 1;        // legacy destination map name
-  uint32 x = 2;          // legacy destination cell x (0 when map-only or monster)
-  uint32 y = 3;          // legacy destination cell y (0 when map-only or monster)
+  uint32 x = 2;          // legacy destination cell x (mirrors `destination`)
+  uint32 y = 3;          // legacy destination cell y (mirrors `destination`)
   uint32 flag = 4;       // allowed transport services (0 none, 1 airship, 10 scroll, 100 kafra)
   bool hide_window = 5;  // true = navigate silently without opening the window
   uint32 monster_id = 6; // optional tracked monster id

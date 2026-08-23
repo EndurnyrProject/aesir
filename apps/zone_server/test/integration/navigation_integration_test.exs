@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Integration.NavigationIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Net.MapLoaded
+  alias Aesir.Net.MoveRequest
   alias Aesir.Net.NavigateTo
   alias Aesir.Net.NavigationCancel
   alias Aesir.Net.NavigationCell
@@ -114,6 +115,55 @@ defmodule Aesir.ZoneServer.Integration.NavigationIntegrationTest do
 
     assert length(initial.legs) > 1
     follow_route(player)
+    assert PlayerSession.get_state(player.pid).navigation == nil
+  end
+
+  test "walks the final leg to a cross-map coordinate instead of ending at the portal" do
+    player = start_player_session(id: 10_008, name: "Finisher", position: @origin)
+    flush_packets()
+
+    {destination_x, destination_y} = @destination
+
+    simulate_incoming_message(player.pid, %NavigationRequest{
+      target: {:coord, %NavigationCoordinate{map: "geffen", x: destination_x, y: destination_y}}
+    })
+
+    initial = await_packet(NavigateTo)
+    assert length(initial.legs) > 1
+
+    follow_route(player, {:walks_to, @destination})
+  end
+
+  test "a same-map route ends with an arrival once the player walks to the destination" do
+    {origin_x, origin_y} = @origin
+    destination = {origin_x + 6, origin_y}
+    {destination_x, destination_y} = destination
+
+    assert Cell.traversable?("prontera", destination_x, destination_y)
+
+    player = start_player_session(id: 10_009, name: "Stroller", position: @origin)
+    flush_packets()
+
+    simulate_incoming_message(player.pid, %NavigationRequest{
+      target: {
+        :coord,
+        %NavigationCoordinate{map: "prontera", x: destination_x, y: destination_y}
+      }
+    })
+
+    packet = await_packet(NavigateTo)
+
+    assert [%{index: 0, cells: [_ | _]}] = packet.legs
+    assert List.last(packet.legs).arrive == navigation_cell(destination)
+
+    simulate_incoming_message(player.pid, %MoveRequest{
+      dest_x: destination_x,
+      dest_y: destination_y
+    })
+
+    assert %NavigationEnded{reason: :NAVIGATION_END_REASON_ARRIVED} =
+             await_packet(NavigationEnded)
+
     assert PlayerSession.get_state(player.pid).navigation == nil
   end
 
@@ -250,7 +300,7 @@ defmodule Aesir.ZoneServer.Integration.NavigationIntegrationTest do
     refute Process.alive?(player.pid)
   end
 
-  defp follow_route(player) do
+  defp follow_route(player, final_expectation \\ :arrived) do
     state = PlayerSession.get_state(player.pid)
     navigation = state.navigation
     current_leg = Enum.at(navigation.route.legs, navigation.leg)
@@ -271,8 +321,7 @@ defmodule Aesir.ZoneServer.Integration.NavigationIntegrationTest do
     simulate_incoming_message(player.pid, %MapLoaded{})
 
     if next_index == final_index do
-      assert %NavigationEnded{reason: :NAVIGATION_END_REASON_ARRIVED} =
-               await_packet(NavigationEnded)
+      assert_final_leg(player, final_index, final_expectation)
     else
       packet = await_packet(NavigateTo)
       state = PlayerSession.get_state(player.pid)
@@ -285,8 +334,35 @@ defmodule Aesir.ZoneServer.Integration.NavigationIntegrationTest do
       assert hd(detailed_leg.cells) == actual
       assert valid_walk_path?(state.game_state.map_name, detailed_leg.cells)
       assert hd(wire_leg.cells) == navigation_cell(actual)
-      follow_route(player)
+      follow_route(player, final_expectation)
     end
+  end
+
+  defp assert_final_leg(player, _final_index, :arrived) do
+    assert %NavigationEnded{reason: :NAVIGATION_END_REASON_ARRIVED} =
+             await_packet(NavigationEnded)
+
+    assert PlayerSession.get_state(player.pid).navigation == nil
+  end
+
+  defp assert_final_leg(player, final_index, {:walks_to, destination}) do
+    packet = await_packet(NavigateTo)
+    state = PlayerSession.get_state(player.pid)
+
+    assert state.navigation.leg == final_index
+    refute_received {:packet_sent, %NavigationEnded{}, _channel}
+
+    actual = {state.game_state.x, state.game_state.y}
+    final_leg = Enum.at(state.navigation.route.legs, final_index)
+
+    assert final_leg.exit_portal == nil
+    assert final_leg.arrive == destination
+    assert hd(final_leg.cells) == actual
+    assert List.last(final_leg.cells) == destination
+    assert valid_walk_path?(state.game_state.map_name, final_leg.cells)
+
+    wire_leg = Enum.at(packet.legs, final_index)
+    assert List.last(wire_leg.cells) == navigation_cell(destination)
   end
 
   defp await_packet(packet_type, timeout \\ 15_000) do

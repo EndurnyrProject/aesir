@@ -171,9 +171,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
     assert %{index: 1, cells: [%{x: 2, y: 1} | _]} = Enum.at(legs, 1)
   end
 
-  test "ends navigation when the final leg's map loads" do
+  test "materializes the final leg when the destination map loads away from the arrival cell" do
+    ref = make_ref()
+
     navigation = %Session{
-      ref: make_ref(),
+      ref: ref,
       target: {:coord, "morocc", 5, 5},
       route: streaming_route(),
       leg: 1
@@ -183,12 +185,85 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
     game_state = %{state.game_state | map_name: "morocc", x: 1, y: 1}
     state = %{state | game_state: game_state, navigation: navigation}
 
+    materializing = NavigationHandler.on_map_loaded(state)
+    new_ref = materializing.navigation.ref
+
+    assert %Session{leg: 1} = materializing.navigation
+    refute new_ref == ref
+    refute_received {:send, :world, {:navigation_ended, _message}}
+
+    assert_receive {:navigation, {:materialized, ^new_ref, 2, {:ok, cells}}}
+    assert hd(cells) == {1, 1}
+    assert List.last(cells) == {5, 5}
+
+    assert {:noreply, updated} =
+             NavigationHandler.handle_materialized(materializing, new_ref, 2, {:ok, cells})
+
+    assert %Session{leg: 2, route: route} = updated.navigation
+    assert %Leg{cells: ^cells} = Enum.at(route.legs, 2)
+  end
+
+  test "ends navigation when the destination map loads within the arrival radius" do
+    navigation = %Session{
+      ref: make_ref(),
+      target: {:coord, "morocc", 5, 5},
+      route: streaming_route(),
+      leg: 1
+    }
+
+    state = session_state()
+    game_state = %{state.game_state | map_name: "morocc", x: 4, y: 4}
+    state = %{state | game_state: game_state, navigation: navigation}
+
     updated = NavigationHandler.on_map_loaded(state)
 
     assert updated.navigation == nil
 
     assert_received {:send, :world,
                      {:navigation_ended, %NavigationEnded{reason: :NAVIGATION_END_REASON_ARRIVED}}}
+  end
+
+  test "ends a same-map navigation once a step reaches the destination" do
+    navigation = %Session{ref: make_ref(), target: {:coord, "prontera", 4, 1}, route: route()}
+    state = session_state()
+
+    walking = %{
+      state
+      | game_state: %{state.game_state | x: 1, y: 1},
+        navigation: navigation
+    }
+
+    assert ^walking = NavigationHandler.on_moved(walking)
+    refute_received {:send, _channel, _message}
+
+    arrived =
+      NavigationHandler.on_moved(%{walking | game_state: %{walking.game_state | x: 3, y: 1}})
+
+    assert arrived.navigation == nil
+
+    assert_received {:send, :world,
+                     {:navigation_ended, %NavigationEnded{reason: :NAVIGATION_END_REASON_ARRIVED}}}
+  end
+
+  test "a step on a leg that is not the final one never ends navigation" do
+    navigation = %Session{
+      ref: make_ref(),
+      target: {:coord, "morocc", 5, 5},
+      route: streaming_route()
+    }
+
+    state = session_state()
+    state = %{state | navigation: navigation}
+
+    assert ^state = NavigationHandler.on_moved(state)
+    refute_received {:send, _channel, _message}
+  end
+
+  test "a step taken without an active navigation is a no-op" do
+    state = session_state()
+
+    assert ^state = NavigationHandler.on_moved(state)
+    refute_received {:send, _channel, _message}
   end
 
   test "silently re-routes an off-route arrival to the retained target" do
@@ -370,10 +445,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandlerTest do
         %Leg{
           index: 0,
           map: "prontera",
-          cells: [{1, 1}, {2, 1}],
+          cells: [{1, 1}, {2, 1}, {3, 1}, {4, 1}],
           exit_portal: nil,
           next_map: nil,
-          arrive: {2, 1}
+          arrive: {4, 1}
         }
       ]
     }

@@ -4,15 +4,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Navigation.PortalGraph
   alias Aesir.ZoneServer.Navigation.Route
+  alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Router
   alias Aesir.ZoneServer.Navigation.Session
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Navigation.View
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
   @task_supervisor Aesir.ZoneServer.TaskSupervisor
+
+  # A route ends when the player stands within this many cells of the final
+  # leg's arrival cell, so stopping a cell short of an occupied destination -
+  # or landing next to it through a warp - still counts as having arrived.
+  @arrival_radius 2
 
   @doc "Starts an asynchronous route solve while retaining the producer's display options."
   @spec start(SessionState.t(), Target.t(), keyword()) :: {:noreply, SessionState.t()}
@@ -56,7 +63,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
       ) do
     navigation = %{navigation | route: route, leg: 0}
     :ok = MessageRouter.send_to(state.connection_pid, View.navigate_to(route, 0, navigation))
-    {:noreply, %{state | navigation: navigation}}
+
+    # A single-leg route to a cell the player already stands on is drawn once
+    # and then ends immediately, rather than lingering until a cancel.
+    {:noreply, on_moved(%{state | navigation: navigation})}
   end
 
   def handle_routed(
@@ -70,7 +80,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
 
   def handle_routed(%SessionState{} = state, _ref, _result), do: {:noreply, state}
 
-  @doc "Advances, completes, or re-routes navigation after a warp destination loads."
+  @doc """
+  Advances, completes, or re-routes navigation after a warp destination loads.
+
+  Loading the leg's map materializes that leg - including the final one, which
+  is walked to its arrival cell. A map load that already lands within the
+  arrival radius (any map-wide or monster target, whose arrival cell is the
+  portal landing) ends the route instead.
+  """
   @spec on_map_loaded(SessionState.t()) :: SessionState.t()
   def on_map_loaded(%SessionState{navigation: %Session{route: nil} = navigation} = state),
     do: restart(state, navigation)
@@ -84,13 +101,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
     next_index = current_index + 1
 
     case Route.position(route, game_state.map_name, next_index) do
-      {:on_leg, leg} -> materialize_leg(state, navigation, leg, next_index)
-      :final -> state |> cancel(:arrived) |> elem(1)
+      {:on_leg, leg} -> advance(state, navigation, leg, next_index)
       :off_route -> restart(state, navigation)
     end
   end
 
   def on_map_loaded(state), do: state
+
+  @doc """
+  Ends navigation once a step brings the player onto the final leg's arrival cell.
+
+  Off-route wandering within a map is still not reacted to; only reaching the
+  destination is, since nothing else would ever end a same-map route.
+  """
+  @spec on_moved(SessionState.t()) :: SessionState.t()
+  def on_moved(
+        %SessionState{
+          game_state: %PlayerState{map_name: map_name} = game_state,
+          navigation: %Session{route: %Route{} = route, leg: index}
+        } = state
+      ) do
+    case Route.leg_at(route, index) do
+      {:ok, %Leg{map: ^map_name, exit_portal: nil, arrive: {_x, _y} = arrive}} ->
+        finish_if_arrived(state, game_state, arrive)
+
+      _ ->
+        state
+    end
+  end
+
+  def on_moved(state), do: state
 
   @doc "Accepts materialized cells only for the next leg of the active navigation epoch."
   @spec handle_materialized(
@@ -138,6 +178,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
     state
   end
 
+  defp advance(state, navigation, %Leg{exit_portal: nil, arrive: arrive} = leg, index) do
+    if arrived?(state.game_state, arrive) do
+      state |> cancel(:arrived) |> elem(1)
+    else
+      materialize_leg(state, navigation, leg, index)
+    end
+  end
+
+  defp advance(state, navigation, %Leg{} = leg, index),
+    do: materialize_leg(state, navigation, leg, index)
+
+  defp finish_if_arrived(state, game_state, arrive) do
+    if arrived?(game_state, arrive) do
+      state |> cancel(:arrived) |> elem(1)
+    else
+      state
+    end
+  end
+
+  defp arrived?(%PlayerState{x: x, y: y}, {arrive_x, arrive_y}),
+    do: abs(x - arrive_x) <= @arrival_radius and abs(y - arrive_y) <= @arrival_radius
+
   defp materialize_leg(state, navigation, leg, index) do
     session_pid = self()
     origin = {state.game_state.x, state.game_state.y}
@@ -154,13 +216,19 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler do
     state
   end
 
-  defp materialize_path(%{map: map_name, exit_portal: portal_id}, origin) do
-    with {:ok, portal} <- PortalGraph.fetch(portal_id),
-         {:ok, path} <-
-           Pathfinding.find_path(MapCache.get!(map_name), origin, {portal.x, portal.y}, []) do
-      {:ok, [origin | path]}
-    else
+  defp materialize_path(%Leg{map: map_name, exit_portal: nil, arrive: arrive}, origin),
+    do: walk_cells(map_name, origin, arrive)
+
+  defp materialize_path(%Leg{map: map_name, exit_portal: portal_id}, origin) do
+    case PortalGraph.fetch(portal_id) do
+      {:ok, portal} -> walk_cells(map_name, origin, {portal.x, portal.y})
       :error -> {:error, :unreachable}
+    end
+  end
+
+  defp walk_cells(map_name, origin, destination) do
+    case Pathfinding.find_path(MapCache.get!(map_name), origin, destination, []) do
+      {:ok, path} -> {:ok, [origin | path]}
       {:error, reason} -> {:error, reason}
     end
   end

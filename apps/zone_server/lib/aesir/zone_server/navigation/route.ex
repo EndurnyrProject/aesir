@@ -43,11 +43,15 @@ defmodule Aesir.ZoneServer.Navigation.Route do
   def leg_at(%__MODULE__{legs: legs}, index) when is_integer(index) and index >= 0,
     do: Enum.fetch(legs, index)
 
-  @doc "Classifies a map arrival against the leg at the supplied route position."
-  @spec position(t(), String.t(), non_neg_integer()) :: {:on_leg, leg()} | :final | :off_route
-  def position(%__MODULE__{legs: legs} = route, map_name, index) do
+  @doc """
+  Classifies a map arrival against the leg at the supplied route position.
+
+  The final leg is classified like any other: it is walked to its `arrive`
+  cell rather than being treated as an arrival the moment its map loads.
+  """
+  @spec position(t(), String.t(), non_neg_integer()) :: {:on_leg, leg()} | :off_route
+  def position(%__MODULE__{} = route, map_name, index) do
     case leg_at(route, index) do
-      {:ok, %Leg{map: ^map_name}} when index == length(legs) - 1 -> :final
       {:ok, %Leg{map: ^map_name} = leg} -> {:on_leg, leg}
       _ -> :off_route
     end

@@ -18,10 +18,11 @@ defmodule Aesir.ZoneServer.Navigation.RouteTest do
     assert {:on_leg, %Leg{index: 0, map: "prontera"}} = Route.position(route, "prontera", 0)
   end
 
-  test "identifies arrival on the final leg" do
+  test "identifies the final leg as a leg to walk rather than an arrival" do
     route = route(["prontera", "geffen"])
 
-    assert :final = Route.position(route, "geffen", 1)
+    assert {:on_leg, %Leg{index: 1, map: "geffen", arrive: {1, 1}}} =
+             Route.position(route, "geffen", 1)
   end
 
   test "identifies an arrival on a map outside the current leg" do
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Navigation.RouteTest do
     route = route(["geffen", "prontera", "morocc", "izlude", "prontera"])
 
     assert {:on_leg, %Leg{index: 1}} = Route.position(route, "prontera", 1)
-    assert :final = Route.position(route, "prontera", 4)
+    assert {:on_leg, %Leg{index: 4}} = Route.position(route, "prontera", 4)
   end
 
   test "requires an epoch reference and target while defaulting route state" do

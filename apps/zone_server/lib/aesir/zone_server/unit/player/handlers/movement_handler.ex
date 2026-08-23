@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Movement
   alias Aesir.ZoneServer.Unit.MovementEngine
+  alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -196,7 +197,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
         {:noreply, %{state | game_state: marked_state}}
 
       :no_warp ->
-        touched_state = maybe_trigger_touch(%{state | game_state: updated_game_state})
+        touched_state =
+          %{state | game_state: updated_game_state}
+          |> maybe_trigger_touch()
+          |> NavigationHandler.on_moved()
 
         # Schedule the next tick priced by the step it will take, so entering
         # each cell lines up with the client's per-cell interpolation.
