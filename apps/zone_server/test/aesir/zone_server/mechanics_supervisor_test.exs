@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisorTest do
 
   import Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.MechanicsSupervisor
@@ -29,6 +31,12 @@ defmodule Aesir.ZoneServer.MechanicsSupervisorTest do
   alias Aesir.ZoneServer.Npc.ShopVerifier
   alias Aesir.ZoneServer.Npc.Verifier, as: NpcVerifier
   alias Aesir.ZoneServer.Npc.Warps
+
+  # Boot here runs the real `ScriptCompiler.compile_all!/0`. Without claiming a
+  # Mimic mode, a global-mode stub leaking from the previously finished module
+  # would still be live and would no-op that compile, so "item scripts are
+  # compiled at zone boot" would fail on state this file never set.
+  setup :set_mimic_private
 
   test "item scripts are compiled at zone boot" do
     assert {:ok, _spec} = MechanicsSupervisor.init([])

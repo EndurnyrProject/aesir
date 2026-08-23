@@ -1551,7 +1551,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "resurrect returns a typed error when the target session is unavailable" do
       pid = spawn(fn -> :ok end)
       ref = Process.monitor(pid)
-      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+      # Unbound reason: monitoring an already-exited process reports :noproc
+      # rather than :normal. Either way the pid is dead, which is the point.
+      assert_receive {:DOWN, ^ref, :process, ^pid, _reason}
 
       assert {:error, :target_unavailable} = PlayerSession.resurrect(pid, 2_001, 30)
     end

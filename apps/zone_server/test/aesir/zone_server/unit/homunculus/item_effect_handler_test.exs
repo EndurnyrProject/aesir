@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ItemEffectHandlerTest do
   use Aesir.DataCase, async: false
   use Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus

@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Npc.WarpsTest do
   use ExUnit.Case, async: false
   import Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Npc.Warp

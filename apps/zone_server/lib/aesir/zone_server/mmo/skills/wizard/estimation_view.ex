@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView do
   @attack_elements [:water, :earth, :fire, :wind, :poison, :holy, :shadow, :ghost, :undead]
 
   @spec result(non_neg_integer(), MobState.t()) :: EstimationResult.t()
+  # Interpolates over a fixed literal list of element names at compile time.
+  # sobelow_skip ["DOS.BinToAtom"]
   def result(target_id, %MobState{hp: hp, mob_data: mob_data}) do
     {element, element_level} = mob_data.element
 

@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Map.CoordinatorTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :capture_log
+
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.EtsTable

@@ -73,7 +73,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoisonTest do
     offline = player_state(7, party_id: 7)
     offline_pid = spawn(fn -> :ok end)
     monitor = Process.monitor(offline_pid)
-    assert_receive {:DOWN, ^monitor, :process, ^offline_pid, :normal}
+    # Reason is deliberately unbound: the spawned process can already be gone by
+    # the time the monitor is set up, in which case the DOWN reason is :noproc,
+    # not :normal. Either way the pid is dead, which is all this needs.
+    assert_receive {:DOWN, ^monitor, :process, ^offline_pid, _reason}
     :ok = UnitRegistry.register_player(offline, offline_pid)
     :ok = SpatialIndex.add_unit(:player, 7, 51, 50, "prontera")
     assert {:error, _reason} = Interpreter.cast(caster, 138, 1, {:unit, 7})

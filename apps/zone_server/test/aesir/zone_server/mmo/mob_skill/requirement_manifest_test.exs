@@ -39,11 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.RequirementManifestTest do
       end)
 
     assert castable + uncastable + unresolved == length(rows)
-
-    IO.puts(
-      "mob skill requirement manifest: #{length(rows)} ids; " <>
-        "#{castable} castable, #{uncastable} uncastable-with-reason, #{unresolved} unresolved"
-    )
   end
 
   test "every imported Assassin row is explicitly mob-compatible" do

@@ -22,6 +22,11 @@ defmodule Aesir.ZoneServer.Mmo.DataLoader do
   basename, e.g. `"mobs.etf"`.
   """
   @spec load(Layout.domain(), String.t(), ([Path.t()] -> term())) :: term()
+  # Reads the derived-data cache this module wrote via `term_to_binary`, at a path
+  # built from the app's own priv dir. `[:safe]` is deliberately not used: the
+  # cached terms hold atoms that are only created on the build path, which a cache
+  # hit skips, so `:safe` would raise at boot instead of rebuilding.
+  # sobelow_skip ["Traversal.FileModule", "Misc.BinToTerm"]
   def load(domain, cache_file, build_fn) do
     sources = Source.sources(domain)
     cache = Path.join([Source.base_dir(domain), @cache_dir, cache_file])
@@ -64,6 +69,8 @@ defmodule Aesir.ZoneServer.Mmo.DataLoader do
   defp mtime(path), do: File.stat!(path, time: :posix).mtime
 
   @spec write_cache!(Path.t(), term()) :: :ok
+  # Cache path is derived from the app's priv dir.
+  # sobelow_skip ["Traversal.FileModule"]
   defp write_cache!(cache, blob) do
     File.mkdir_p!(Path.dirname(cache))
     File.write!(cache, :erlang.term_to_binary(blob))

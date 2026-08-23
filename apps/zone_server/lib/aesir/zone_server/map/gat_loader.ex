@@ -24,6 +24,8 @@ defmodule Aesir.ZoneServer.Map.GatLoader do
     - Bytes 16-19: Cell type (uint32)
   """
   @spec load_file(String.t()) :: {:ok, MapData.t()} | {:error, String.t()}
+  # `.gat` path comes from the local client-data directory given to the mix task.
+  # sobelow_skip ["Traversal.FileModule"]
   def load_file(file_path) do
     map_name = Path.basename(file_path, ".gat")
 

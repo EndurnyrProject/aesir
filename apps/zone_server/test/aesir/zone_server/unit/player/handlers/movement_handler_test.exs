@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandlerTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.CastCancel
   alias Aesir.Net.MoveRequest

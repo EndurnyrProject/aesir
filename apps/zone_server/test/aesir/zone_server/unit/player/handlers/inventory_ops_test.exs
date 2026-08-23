@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
   use Aesir.DataCase, async: true
   use Mimic
 
+  @moduletag :capture_log
+
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Account

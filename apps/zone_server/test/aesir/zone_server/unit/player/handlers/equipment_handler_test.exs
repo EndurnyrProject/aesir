@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  @moduletag :capture_log
+
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams

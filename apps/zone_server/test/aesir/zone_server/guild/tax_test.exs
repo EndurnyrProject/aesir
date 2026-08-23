@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Guild.TaxTest do
   alias Aesir.ZoneServer.Guild.Tax
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  setup :set_mimic_global
+  setup {Aesir.MimicMode, :global}
   setup :verify_on_exit!
 
   defp player(guild_id, tax) do

@@ -42,6 +42,8 @@ defmodule Aesir.ZoneServer.Map.CacheLoader do
     - Compressed cell data (zlib compressed array of GAT types)
   """
   @spec load_cache(String.t()) :: {:ok, map()} | {:error, String.t()}
+  # Cache path is built from `:code.priv_dir/1` or a mix-task argument.
+  # sobelow_skip ["Traversal.FileModule"]
   def load_cache(cache_path) do
     case File.read(cache_path) do
       {:ok, data} ->

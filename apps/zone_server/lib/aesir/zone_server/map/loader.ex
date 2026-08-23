@@ -102,6 +102,8 @@ defmodule Aesir.ZoneServer.Map.Loader do
     GatLoader.load_file(file_path)
   end
 
+  # Writes the map cache to a path the server itself derives from priv.
+  # sobelow_skip ["Traversal.FileModule"]
   defp write_cache_file(path, maps) do
     map_count = length(maps)
     cache_data = build_cache_binary(maps, map_count)

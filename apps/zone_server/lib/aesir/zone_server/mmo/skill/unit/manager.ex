@@ -259,11 +259,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     :ok = reconcile_terrain()
 
     state = %{
-      clock: Keyword.get(opts, :clock, fn -> System.monotonic_time(:millisecond) end),
-      rng: Keyword.get(opts, :rng, fn upper -> :rand.uniform(upper) - 1 end),
-      schedule_tick: Keyword.get(opts, :schedule_tick, &Process.send_after(&1, :tick, &2)),
+      clock: Keyword.get(opts, :clock, &__MODULE__.default_clock/0),
+      rng: Keyword.get(opts, :rng, &__MODULE__.default_rng/1),
+      schedule_tick: Keyword.get(opts, :schedule_tick, &__MODULE__.default_schedule_tick/2),
       tick_interval: Keyword.get(opts, :tick_interval, @tick_interval),
-      unit_available?: Keyword.get(opts, :unit_available?, &unit_available?/3)
+      unit_available?: Keyword.get(opts, :unit_available?, &__MODULE__.default_unit_available?/3)
     }
 
     schedule_tick(state)
@@ -580,6 +580,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp unit_available?(_unit_type, _unit_id, _map_name), do: false
+
+  @doc false
+  @spec default_clock() :: integer()
+  def default_clock, do: System.monotonic_time(:millisecond)
+
+  @doc false
+  @spec default_rng(pos_integer()) :: non_neg_integer()
+  def default_rng(upper), do: :rand.uniform(upper) - 1
+
+  @doc false
+  @spec default_schedule_tick(pid(), non_neg_integer()) :: reference()
+  def default_schedule_tick(pid, interval), do: Process.send_after(pid, :tick, interval)
+
+  @doc false
+  @spec default_unit_available?(atom(), integer(), String.t()) :: boolean()
+  def default_unit_available?(unit_type, unit_id, map_name),
+    do: unit_available?(unit_type, unit_id, map_name)
 
   defp invoke_interval(module, group, now) do
     case invoke(module, :on_interval, [group, now]) do

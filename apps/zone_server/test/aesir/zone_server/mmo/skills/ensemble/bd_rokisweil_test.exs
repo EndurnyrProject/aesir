@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
   alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweil
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RokisWeil
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.Handlers.CastingHandler
@@ -28,6 +29,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
 
   setup do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    # The cast runs in the test process and applies through the real status
+    # path, so the mob's non-zero vit/luk would otherwise let the debuff be
+    # resisted on some seeds.
+    stub(Resistance, :roll_success, fn _success_rate -> true end)
+
     Catalog.reload()
     :ok
   end

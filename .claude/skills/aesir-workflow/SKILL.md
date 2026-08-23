@@ -109,9 +109,20 @@ its **own** ETS world and background processes — do not reach for the old boot
 ### Known flaky tests (ignore when gating on green, if they pass in isolation)
 
 - `test/integration/npc_events_integration_test.exs` — OnTimer/OnMyMobDead timing.
-- `mechanics_supervisor_test.exs` "item scripts are compiled at zone boot" — boot race.
-- `mob_session_skill_cast_test.exs` cast-interruption `refute_receive` — timer race under load.
-- `guild/manager_test.exs` generally — shared `guild_fixture/1` race.
+- The unit-suite flakes previously listed here (`mechanics_supervisor_test.exs` boot race,
+  `mob_session_skill_cast_test.exs` cast interruption, `guild/manager_test.exs`) are fixed.
+  Their root causes, worth recognising elsewhere:
+  - A file that stubs without claiming a Mimic mode inherits a leaked global mode from the
+    previous module. Files that stub need `setup :set_mimic_private`; files that go global
+    need `setup {Aesir.MimicMode, :global}`, never raw `setup :set_mimic_global`.
+  - `ClusterTestHelper.clear_all/0` terminates the Horde entry owners, but deregistration
+    reaches the registry's local ETS asynchronously, so it now waits for the terminated pids
+    to disappear. Anything else that tears down cluster entries needs the same wait.
+  - `spawn(fn -> :ok end)` + `Process.monitor` to obtain a dead pid delivers `:noproc`, not
+    `:normal`, when the process exits first — never pin that DOWN reason.
+  - A status applied through the real path in the test process needs
+    `stub(Resistance, :roll_success, fn _ -> true end)`; non-zero target `vit`/`luk` alone
+    makes the outcome seed-dependent.
 - Parallel worktree suites share one `aesir_test` database; concurrent runs exhaust Postgres
   connections and surface as one-off DB-test failures. Check how many suites are running
   before diagnosing a race.

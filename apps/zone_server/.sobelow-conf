@@ -1,0 +1,42 @@
+# Sobelow baseline for the zone_server app.
+#
+# Individual findings are suppressed at the call site with `# sobelow_skip [...]`
+# (see `Aesir.Commons.Network.QuicListener` for the house style) so a *different*
+# finding in the same function still surfaces. `ignore_files` below is reserved for
+# modules that are wholly offline tooling, where a per-function annotation on every
+# `String.to_atom`/`File.read` would be noise.
+#
+# Prefer fixing the code over adding an entry here — a finding in a packet handler,
+# session, or any module fed by client input is real and must not be silenced.
+#
+# Run with: mix sobelow --exit low  (from apps/zone_server)
+[
+  exit: "low",
+  format: "compact",
+  threshold: "low",
+  verbose: false,
+  skip: true,
+  ignore: [],
+  ignore_files: [
+    # The rAthena import pipeline: run from mix tasks against a local rAthena
+    # checkout, never in the serving path. Atoms come from the shipped `priv/db`
+    # YAML and paths from the task's arguments, both developer-controlled.
+    "lib/aesir/zone_server/mmo/item_management/importer.ex",
+    "lib/aesir/zone_server/mmo/item_management/item_groups/loader.ex",
+    "lib/aesir/zone_server/mmo/item_management/loader.ex",
+    "lib/aesir/zone_server/mmo/item_management/rathena_script/codegen.ex",
+    "lib/aesir/zone_server/mmo/item_management/rathena_script/resolver.ex",
+    "lib/aesir/zone_server/mmo/job_management/importer.ex",
+    "lib/aesir/zone_server/mmo/job_management/loader.ex",
+    "lib/aesir/zone_server/mmo/mob_management/loader.ex",
+    "lib/aesir/zone_server/mmo/mob_skill/db.ex",
+    "lib/aesir/zone_server/mmo/mob_skill/importer.ex",
+    "lib/aesir/zone_server/mmo/quest_management/loader.ex",
+
+    # The offline rAthena NPC transpiler, likewise mix-task driven.
+    "lib/aesir/zone_server/npc/transpiler/codegen.ex",
+    "lib/aesir/zone_server/npc/transpiler/manifest.ex",
+    "lib/aesir/zone_server/npc/transpiler/resolver.ex",
+    "lib/aesir/zone_server/npc/transpiler/transpiler.ex"
+  ]
+]

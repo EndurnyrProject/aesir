@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :capture_log
+
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character

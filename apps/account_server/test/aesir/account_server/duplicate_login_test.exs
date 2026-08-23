@@ -17,8 +17,6 @@ defmodule Aesir.AccountServer.DuplicateLoginTest do
   setup :verify_on_exit!
 
   setup do
-    Mimic.copy(Auth)
-    Mimic.copy(SessionManager)
     ClusterTestHelper.clear_all()
     PubSub.subscribe_to_player_events()
 

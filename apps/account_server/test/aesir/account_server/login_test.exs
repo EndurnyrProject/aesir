@@ -40,8 +40,6 @@ defmodule Aesir.AccountServer.LoginTest do
 
   describe "login failure" do
     test "returns LoginFailed with reason code on invalid credentials" do
-      Mimic.copy(Auth)
-
       stub(Auth, :authenticate_user, fn _username, _password -> {:error, :invalid_credentials} end)
 
       capture_log(fn ->

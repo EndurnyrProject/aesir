@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag :capture_log
+
   import Aesir.TestWait
 
   alias Aesir.ZoneServer.Announcement

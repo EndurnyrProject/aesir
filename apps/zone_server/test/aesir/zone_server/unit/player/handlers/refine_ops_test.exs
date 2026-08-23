@@ -405,7 +405,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       state = build_state(char, stats, inventory)
 
       assert {^state, {:ok, 20}} = RefineOps.success(state, index, @sword)
-      assert new_state = state
     end
 
     test "rejects with :no_item on a missing/unexpected nameid",

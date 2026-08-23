@@ -142,6 +142,8 @@ defmodule Aesir.ZoneServer.Npc do
   end
 
   @spec derive_npc_id(module()) :: npc_id()
+  # Compile-time: the NPC id is derived from the NPC module's own name.
+  # sobelow_skip ["DOS.StringToAtom"]
   defp derive_npc_id(mod) do
     mod
     |> Macro.underscore()

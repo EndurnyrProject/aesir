@@ -30,6 +30,8 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
 
   @doc "Parses the annotations of the `.proto` at `path`."
   @spec parse_file!(Path.t()) :: [entry()]
+  # Compile-time: reads `proto/aesir.proto` from this app's own source tree.
+  # sobelow_skip ["Traversal.FileModule"]
   def parse_file!(path), do: path |> File.read!() |> parse_source!(path)
 
   @doc """
@@ -90,6 +92,7 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
     end
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp parse_line!(line, namespace, path) do
     case Regex.named_captures(@field_regex, line) do
       nil ->
@@ -129,6 +132,7 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
             "expected `// <direction> <servers> [channel]`"
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp parse_direction!(direction, _name, _path) when direction in @directions,
     do: String.to_atom(direction)
 
@@ -138,6 +142,7 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
             "expected one of #{inspect(@directions)}"
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp parse_servers!(servers, name, path) do
     servers
     |> String.split(",")
@@ -154,6 +159,7 @@ defmodule Aesir.Commons.Network.ProtoManifest.Parser do
 
   defp parse_channel!([], "c2s", _name, _path), do: nil
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp parse_channel!([channel], "s2c", name, path) do
     legal = Enum.map(QuinnetCodec.channels(), &Atom.to_string/1)
 

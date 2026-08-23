@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
 
   @doc "Loads a fresh cached graph or rebuilds it from the current world data."
   @spec load(keyword()) :: Aesir.ZoneServer.Navigation.PortalGraph.t()
+  # Map cache path comes from `:code.priv_dir/1` or an explicit opt.
+  # sobelow_skip ["Traversal.FileModule"]
   def load(opts \\ []) do
     warp_sources = Source.sources("warps")
     map_cache_path = Keyword.get(opts, :map_cache_path, default_map_cache_path())
@@ -163,11 +165,16 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
   defp default_map_cache_path, do: Path.join(:code.priv_dir(:zone_server), "maps.mcache")
 
   @spec fingerprint([Path.t()]) :: [binary()]
+  # Fingerprints the source files this builder was pointed at.
+  # sobelow_skip ["Traversal.FileModule"]
   defp fingerprint(paths) do
     Enum.map(paths, fn path -> :crypto.hash(:sha256, File.read!(path)) end)
   end
 
   @spec decode_cache(binary()) :: {:ok, term()} | :error
+  # Decodes the portal-graph cache this module wrote itself; malformed input is
+  # rescued into a rebuild. See the `[:safe]` note in Mmo.DataLoader.
+  # sobelow_skip ["Misc.BinToTerm"]
   defp decode_cache(binary) do
     {:ok, :erlang.binary_to_term(binary)}
   rescue
@@ -175,6 +182,8 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
   end
 
   @spec write_cache!(Path.t(), term()) :: :ok
+  # Cache path is derived from the app's priv dir.
+  # sobelow_skip ["Traversal.FileModule"]
   defp write_cache!(cache, blob) do
     File.mkdir_p!(Path.dirname(cache))
     File.write!(cache, :erlang.term_to_binary(blob))

@@ -383,6 +383,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   end
 
   @spec index_job({String.t(), tree()}, index()) :: index()
+  # Job names come from the shipped `priv/db` job trees.
+  # sobelow_skip ["DOS.StringToAtom"]
   defp index_job({job_name, tree}, acc) do
     case AvailableJobs.job_name_to_id(String.to_atom(job_name)) do
       {:ok, job_id} ->
@@ -444,6 +446,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   end
 
   @spec resolve_owner_job_id(String.t(), map()) :: non_neg_integer()
+  # Job names come from the shipped `priv/db` job trees.
+  # sobelow_skip ["DOS.StringToAtom"]
   defp resolve_owner_job_id(job_name, entry) do
     owner = Map.get(entry, "owner_job", job_name)
 

@@ -1,3 +1,16 @@
+# Sobelow baseline for the commons app.
+#
+# Findings are suppressed at the call site with `# sobelow_skip [...]` (see
+# `Aesir.Commons.Network.QuicListener`), never with a blanket check-level ignore,
+# so a different finding in the same function still surfaces.
+#
+# Run with: mix sobelow --exit low  (from apps/commons)
 [
-  skip: true
+  exit: "low",
+  format: "compact",
+  threshold: "low",
+  verbose: false,
+  skip: true,
+  ignore: [],
+  ignore_files: []
 ]

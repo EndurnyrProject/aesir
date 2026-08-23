@@ -20,6 +20,10 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
   @typedoc "The terrain view used to decide whether a step is traversable."
   @type terrain :: :runtime | :static
 
+  @typep cell_set :: %{optional(cell()) => true}
+  @typep cost_map :: %{optional(cell()) => cost()}
+  @typep queue :: :gb_sets.set({cost(), cell()})
+
   @doc "Returns the cost to each reachable target cell in one weighted flood."
   @spec costs(MapData.t(), cell(), MapSet.t(cell()), terrain: terrain()) :: %{
           optional(cell()) => cost()
@@ -31,8 +35,8 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
       map_data,
       :gb_sets.singleton({0.0, start}),
       %{start => 0.0},
-      MapSet.new(),
-      targets,
+      %{},
+      Map.new(targets, &{&1, true}),
       %{},
       terrain
     )
@@ -55,26 +59,54 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
     end)
   end
 
+  @spec flood(
+          MapData.t(),
+          queue(),
+          cost_map(),
+          cell_set(),
+          cell_set(),
+          cost_map(),
+          terrain()
+        ) :: cost_map()
   defp flood(map_data, queue, distances, visited, targets, costs, terrain) do
-    if MapSet.size(targets) == 0 or :gb_sets.is_empty(queue) do
+    if map_size(targets) == 0 or :gb_sets.is_empty(queue) do
       costs
     else
       expand(map_data, queue, distances, visited, targets, costs, terrain)
     end
   end
 
+  @spec expand(
+          MapData.t(),
+          queue(),
+          cost_map(),
+          cell_set(),
+          cell_set(),
+          cost_map(),
+          terrain()
+        ) :: cost_map()
   defp expand(map_data, queue, distances, visited, targets, costs, terrain) do
     {{cost, cell}, queue} = :gb_sets.take_smallest(queue)
 
-    if MapSet.member?(visited, cell) do
+    if Map.has_key?(visited, cell) do
       flood(map_data, queue, distances, visited, targets, costs, terrain)
     else
       expand_cell(map_data, queue, distances, visited, targets, costs, {cell, cost}, terrain)
     end
   end
 
+  @spec expand_cell(
+          MapData.t(),
+          queue(),
+          cost_map(),
+          cell_set(),
+          cell_set(),
+          cost_map(),
+          {cell(), cost()},
+          terrain()
+        ) :: cost_map()
   defp expand_cell(map_data, queue, distances, visited, targets, costs, {cell, cost}, terrain) do
-    visited = MapSet.put(visited, cell)
+    visited = Map.put(visited, cell, true)
     {targets, costs} = collect_target(cell, cost, targets, costs)
 
     {queue, distances} =
@@ -87,18 +119,28 @@ defmodule Aesir.ZoneServer.Navigation.Flood do
     flood(map_data, queue, distances, visited, targets, costs, terrain)
   end
 
+  @spec collect_target(cell(), cost(), cell_set(), cost_map()) :: {cell_set(), cost_map()}
   defp collect_target(cell, cost, targets, costs) do
-    if MapSet.member?(targets, cell) do
-      {MapSet.delete(targets, cell), Map.put(costs, cell, cost)}
+    if Map.has_key?(targets, cell) do
+      {Map.delete(targets, cell), Map.put(costs, cell, cost)}
     else
       {targets, costs}
     end
   end
 
+  @spec relax(
+          MapData.t(),
+          cell(),
+          cell(),
+          cost(),
+          cell_set(),
+          {queue(), cost_map()},
+          terrain()
+        ) :: {queue(), cost_map()}
   defp relax(map_data, from, to, step_cost, visited, {queue, distances}, terrain) do
     new_cost = Map.fetch!(distances, from) + step_cost
 
-    if valid_position?(map_data, to) and not MapSet.member?(visited, to) and
+    if valid_position?(map_data, to) and not Map.has_key?(visited, to) and
          step_traversable?(map_data, from, to, terrain) and
          new_cost < Map.get(distances, to, :infinity) do
       {:gb_sets.add({new_cost, to}, queue), Map.put(distances, to, new_cost)}

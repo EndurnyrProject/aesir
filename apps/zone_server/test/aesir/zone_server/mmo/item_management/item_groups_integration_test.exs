@@ -11,7 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Content.Npc.Dewata.LazyYoungMan
+  alias Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LazyYoungMan
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.ItemGroupPool
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler

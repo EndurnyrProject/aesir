@@ -208,6 +208,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   end
 
   # -- dynamic-variable helpers ------------------------------------------------
+  #
+  # The `:local`, `:temp` and `:char` scopes convert the runtime variable name to
+  # an atom because those var maps are atom-keyed, which sobelow flags as
+  # `DOS.StringToAtom`. Names come from server-authored NPC scripts, but a script
+  # that built one from a player `input` could grow the atom table, so the skips
+  # below record accepted risk rather than a false positive.
+  # `String.to_existing_atom` is not a drop-in fix - a script's first write to a
+  # new variable would fail; removing the risk means re-keying those maps by string.
 
   defp read_scope(_ctx, :server, key, index),
     do: read_dyn(Vars.get_server(key, dyn_default(key, index)), index, key)
@@ -221,6 +229,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   defp read_scope(ctx, :npc, key, index),
     do: read_dyn(Vars.get_npc(ctx.source, key, dyn_default(key, index)), index, key)
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp read_scope(ctx, :local, key, index),
     do: read_dyn(Map.get(ctx.vars, String.to_atom(key), dyn_default(key, index)), index, key)
 
@@ -257,6 +266,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
     ctx
   end
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp write_scope(ctx, :local, key, index, value) do
     set_local(
       ctx,
@@ -284,6 +294,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   # `get_temp_var`/`get_char_var` reads they delegate to.
   defp read_player_var(%Ctx{game_state: nil}, _key, _index, _fun), do: no_player!("getd/2")
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp read_player_var(%Ctx{} = ctx, key, index, fun),
     do: read_dyn(fun.(ctx, String.to_atom(key), dyn_default(key, index)), index, key)
 
@@ -292,6 +303,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Variables do
   defp write_player_var(%Ctx{game_state: nil} = ctx, _key, _index, _value, _scope),
     do: Ctx.halt(ctx, :no_player)
 
+  # sobelow_skip ["DOS.StringToAtom"]
   defp write_player_var(%Ctx{game_state: gs} = ctx, key, index, value, scope) do
     current = Map.get(player_scope(gs, scope), key, [])
 
