@@ -92,7 +92,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
 
   Validates that the reply answers the parked offer and that the selection is one
   of the offered ids, then hands the selection to the skill that opened the menu;
-  `selected_id: 0` cancels without running it. Always returns `{:noreply, state}`.
+  `cancel: true` closes it without running it. Always returns `{:noreply, state}`.
+
+  The selection is validated against the offered ids rather than against a
+  sentinel value, so an `INVENTORY_SLOTS` menu can offer inventory slot 0 - which
+  a `selected_id: 0` cancel sentinel would have swallowed.
   """
   @spec handle_reply(SkillMenuReply.t(), map()) :: {:noreply, map()}
   def handle_reply(%SkillMenuReply{} = reply, %{pending_skill_menu: nil} = state) do
@@ -109,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler do
     {:noreply, state}
   end
 
-  def handle_reply(%SkillMenuReply{selected_id: 0}, state) do
+  def handle_reply(%SkillMenuReply{cancel: true}, state) do
     {:noreply, clear(state)}
   end
 

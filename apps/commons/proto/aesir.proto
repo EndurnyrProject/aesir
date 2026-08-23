@@ -2097,11 +2097,13 @@ message SkillMenu {
 
 // Client -> server, the player's choice from the pending SkillMenu. `src_skill_id`
 // must match the offer the server is holding and `selected_id` must be one of its
-// entry_ids; a stale or forged reply is dropped. selected_id 0 cancels the menu.
+// entry_ids; a stale or forged reply is dropped. A reply with `cancel` set closes
+// the menu without acting, which is how the player backs out of it.
 message SkillMenuReply {
   uint32 src_skill_id = 1;
   uint32 selected_id = 2;
   repeated uint32 extra_ids = 3; // Up to three additional catalyst item ids.
+  bool cancel = 4; // The player dismissed the menu; selected_id is ignored.
 }
 
 // Server -> client, the outcome of an item-production attempt.

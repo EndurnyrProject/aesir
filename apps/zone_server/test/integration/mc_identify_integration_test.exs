@@ -53,6 +53,71 @@ defmodule Aesir.ZoneServer.Integration.McIdentifyIntegrationTest do
     assert Repo.get!(InventoryItem, other_id).identify == 0
   end
 
+  # Inventory slots are container keys and the first one is 0, which used to be the
+  # protocol's cancel sentinel: selecting the top row closed the menu and did
+  # nothing. Cancelling now travels in its own field, so slot 0 is selectable.
+  test "identifies the item sitting in inventory slot 0" do
+    character = insert_character()
+    item = insert_item(character.id)
+
+    session =
+      start_player_session(character: character, map_name: "prontera", position: {150, 150})
+
+    on_exit(fn -> end_player_session(session) end)
+    flush_packets()
+
+    simulate_incoming_message(session.pid, %LearnSkill{skill_id: 40})
+    assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+    flush_packets()
+
+    simulate_incoming_message(session.pid, %SkillCast{
+      skill_id: 40,
+      level: 1,
+      target_id: character.id
+    })
+
+    assert_receive {:packet_sent,
+                    %SkillMenu{src_skill_id: 40, kind: :INVENTORY_SLOTS, entry_ids: [0]}, _},
+                   1_000
+
+    simulate_incoming_message(session.pid, %SkillMenuReply{src_skill_id: 40, selected_id: 0})
+
+    assert get_player_state(session.pid).inventory[0].identify == 1
+    assert Repo.get!(InventoryItem, item.id).identify == 1
+  end
+
+  test "a cancelled menu leaves the item unidentified" do
+    character = insert_character()
+    item = insert_item(character.id)
+
+    session =
+      start_player_session(character: character, map_name: "prontera", position: {150, 150})
+
+    on_exit(fn -> end_player_session(session) end)
+    flush_packets()
+
+    simulate_incoming_message(session.pid, %LearnSkill{skill_id: 40})
+    assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+    flush_packets()
+
+    simulate_incoming_message(session.pid, %SkillCast{
+      skill_id: 40,
+      level: 1,
+      target_id: character.id
+    })
+
+    assert_receive {:packet_sent, %SkillMenu{src_skill_id: 40, entry_ids: [0]}, _}, 1_000
+
+    simulate_incoming_message(session.pid, %SkillMenuReply{
+      src_skill_id: 40,
+      selected_id: 0,
+      cancel: true
+    })
+
+    assert get_player_state(session.pid).inventory[0].identify == 0
+    assert Repo.get!(InventoryItem, item.id).identify == 0
+  end
+
   defp insert_character do
     uniq = System.unique_integer([:positive])
 

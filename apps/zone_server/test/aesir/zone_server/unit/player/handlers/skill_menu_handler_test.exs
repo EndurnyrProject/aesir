@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
       assert {:noreply, _} =
                SkillMenuHandler.handle_reply(
-                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 0},
+                 %SkillMenuReply{src_skill_id: @src_skill, cancel: true},
                  pending_state()
                )
     end
@@ -84,17 +84,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
                )
     end
 
-    test "cancels silently on selected_id 0" do
+    test "cancels silently on cancel: true" do
       state = pending_state()
 
       assert {:noreply, new_state} =
                SkillMenuHandler.handle_reply(
-                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 0},
+                 %SkillMenuReply{src_skill_id: @src_skill, cancel: true},
                  state
                )
 
       assert new_state.pending_skill_menu == nil
       refute_receive {:send, _, _}
+    end
+
+    # INVENTORY_SLOTS menus offer raw container keys and those start at 0, so id 0
+    # must be judged by the offered set like any other id instead of being read as
+    # a cancel. The accepted-slot-0 half of this lives in the MC_IDENTIFY
+    # integration test, which has a real inventory to select from.
+    test "selection id 0 is dropped when it was not offered" do
+      reject(&StatusInterpreter.apply_status/4)
+      state = pending_state()
+
+      assert {:noreply, ^state} =
+               SkillMenuHandler.handle_reply(
+                 %SkillMenuReply{src_skill_id: @src_skill, selected_id: 0},
+                 state
+               )
     end
   end
 
@@ -138,7 +153,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandlerTest do
 
       assert {:noreply, ^state} =
                SkillMenuHandler.handle_reply(
-                 %SkillMenuReply{src_skill_id: 381, selected_id: 0},
+                 %SkillMenuReply{src_skill_id: 381, cancel: true},
                  state
                )
     end
