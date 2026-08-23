@@ -61,10 +61,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
       assert entry.expires_at != nil
     end
 
-    test "a cancel arms nothing and clears the menu" do
-      assert {:noreply, cancelled} = inject(selected_id: 0)
+    test "a cancel arms nothing and clears the menu, even carrying a valid id" do
+      # The reply carries @firebolt, a genuinely offered entry: the cancel flag must
+      # still win and arm nothing.
+      assert {:noreply, cancelled} = inject(cancel: true)
 
       assert cancelled.pending_skill_menu == nil
+      assert StatusStorage.get_unit_statuses(:player, @char_id) == []
+    end
+
+    test "selected_id 0 without the cancel flag is a plain id, not a cancel" do
+      # Cancel is carried only by its own flag. 0 is an ordinary id: here it is
+      # not among the offered entries, so it is rejected and the menu stays open
+      # rather than being swallowed as a cancel.
+      assert {:noreply, unchanged} = inject(selected_id: 0)
+
+      assert unchanged.pending_skill_menu != nil
       assert StatusStorage.get_unit_statuses(:player, @char_id) == []
     end
 
@@ -171,7 +183,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
   # Opens the menu the way a real level-10 cast would, then injects the reply.
   defp inject(opts) do
     src_skill_id = Keyword.get(opts, :src_skill_id, @autospell)
-    selected_id = Keyword.fetch!(opts, :selected_id)
+    cancel = Keyword.get(opts, :cancel, false)
+    # Cancel is carried by its own flag and `selected_id` is ignored on that path.
+    # A cancel therefore defaults to carrying a *valid* entry id, so the test proves
+    # the flag is what cancelled - not some special value of selected_id.
+    selected_id =
+      if cancel,
+        do: Keyword.get(opts, :selected_id, @firebolt),
+        else: Keyword.fetch!(opts, :selected_id)
 
     state =
       SkillMenuHandler.open(
@@ -183,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
       )
 
     PacketHandler.handle_message(
-      %SkillMenuReply{src_skill_id: src_skill_id, selected_id: selected_id},
+      %SkillMenuReply{src_skill_id: src_skill_id, selected_id: selected_id, cancel: cancel},
       state
     )
   end
