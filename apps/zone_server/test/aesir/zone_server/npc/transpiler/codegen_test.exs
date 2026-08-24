@@ -475,6 +475,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx"
   end
 
+  test "guildopenstorage maps to its DSL op" do
+    src = gen!("guildopenstorage;")
+
+    assert src =~ "guildopenstorage(ctx)"
+    refute src =~ "todo(ctx, :guildopenstorage"
+  end
+
   test "setfalcon and checkfalcon map to attached-player DSL calls" do
     src =
       gen!("""

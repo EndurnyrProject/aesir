@@ -177,6 +177,20 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
     end
   end
 
+  describe "guildopenstorage/1" do
+    test "routes {:guildopenstorage}, folds the returned game state, and continues" do
+      gs = %{build_game_state() | guild_storage: %{}}
+      ctx = build_ctx(session: ok_session(gs))
+
+      result = ctx |> Dsl.guildopenstorage() |> Dsl.set_char_var(:after_guild_storage, 1)
+
+      assert result.status == :ok
+      assert result.game_state.guild_storage == %{}
+      assert_received {:script_apply, {:guildopenstorage}}
+      assert_received {:script_apply, {:set_char_var, :after_guild_storage, 1}}
+    end
+  end
+
   describe "setcart/1,2" do
     test "routes {:setcart, 1} by default and folds the returned game_state" do
       gs = build_game_state()

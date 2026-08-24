@@ -64,6 +64,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate getexp(ctx, base_exp, job_exp), to: PlayerEffects
   defdelegate jobchange(ctx, job), to: PlayerEffects
   defdelegate openstorage(ctx), to: PlayerEffects
+  defdelegate guildopenstorage(ctx), to: PlayerEffects
   defdelegate setcart(ctx), to: PlayerEffects
   defdelegate setcart(ctx, type), to: PlayerEffects
   defdelegate set_riding(ctx, riding?), to: PlayerEffects

@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.Net.QuestRemoved
   alias Aesir.Net.QuestStateChanged
   alias Aesir.Net.SpriteChange
+  alias Aesir.Net.StorageResult
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog.Entry
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @sphmask_id 7114
@@ -672,6 +675,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandlerTest do
       assert {:ok, game_state} = reply
       assert game_state.storage == %{}
       assert new_state.game_state.storage == %{}
+    end
+  end
+
+  describe "{:guildopenstorage}" do
+    test "delegates to GuildStorageHandler.open/1 and returns its game_state" do
+      Mimic.copy(GuildStorageHandler)
+      state = base_state()
+      opened_state = %{state | game_state: %{state.game_state | guild_storage: %{}}}
+
+      expect(GuildStorageHandler, :open, fn ^state -> {:noreply, opened_state} end)
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:guildopenstorage}, state)
+
+      assert {:ok, game_state} = reply
+      assert game_state.guild_storage == %{}
+      assert new_state.game_state.guild_storage == %{}
+    end
+
+    test "reports a gate failure and returns success so the script continues" do
+      %{game_state: game_state} = base_state()
+      state = %SessionState{connection_pid: self(), game_state: game_state}
+
+      {reply, new_state} = ScriptEffectHandler.apply_op({:guildopenstorage}, state)
+
+      assert reply == {:ok, state.game_state}
+      assert new_state == state
+
+      assert_received {:send, :gameplay,
+                       {:storage_result, %StorageResult{result: :STORAGE_NO_GUILD}}}
     end
   end
 

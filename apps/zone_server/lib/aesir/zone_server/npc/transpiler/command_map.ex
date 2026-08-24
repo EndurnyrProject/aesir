@@ -178,6 +178,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "setfalcon" => %{shape: :riding, dsl: "setfalcon"},
     "setriding" => %{shape: :riding, dsl: "set_riding"},
     "openstorage" => %{shape: :nullary, dsl: "openstorage"},
+    "guildopenstorage" => %{shape: :nullary, dsl: "guildopenstorage"},
     "setquest" => %{dsl: "setquest", args: [:int]},
     "erasequest" => %{dsl: "erasequest", args: [:int]},
     "completequest" => %{dsl: "completequest", args: [:int]},

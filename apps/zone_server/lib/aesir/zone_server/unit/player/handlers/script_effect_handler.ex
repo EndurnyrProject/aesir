@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
@@ -74,6 +75,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:warp, String.t(), non_neg_integer(), non_neg_integer()}
           | {:openstorage}
+          | {:guildopenstorage}
           | {:setcart, non_neg_integer()}
           | {:set_riding, boolean()}
           | {:set_falcon, boolean()}
@@ -456,6 +458,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:openstorage}, state) do
     {:noreply, new_state} = StorageHandler.open(state)
+    {{:ok, new_state.game_state}, new_state}
+  end
+
+  def apply_op({:guildopenstorage}, state) do
+    {:noreply, new_state} = GuildStorageHandler.open(state)
     {{:ok, new_state.game_state}, new_state}
   end
 

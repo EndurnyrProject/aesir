@@ -169,6 +169,18 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def openstorage(%Ctx{} = ctx), do: apply_op(ctx, {:openstorage})
 
   @doc """
+  Opens the guild storage window through the session seam. Never halts:
+  access-gate failures are reported to the client as a `StorageResult`, not a
+  script error.
+
+  Call `guildopenstorage` immediately before `close` so the NPC dialog does not
+  linger alongside the storage window.
+  """
+  @spec guildopenstorage(Ctx.t()) :: Ctx.t()
+  def guildopenstorage(%Ctx{status: {:error, _}} = ctx), do: ctx
+  def guildopenstorage(%Ctx{} = ctx), do: apply_op(ctx, {:guildopenstorage})
+
+  @doc """
   Gives the player a cart (rAthena `setcart`): mounts the pushcart through the
   session seam, or removes it when `type` is `0`. Mounting requires
   `MC_PUSHCART` learned; a rejected mount reports to the client as a
