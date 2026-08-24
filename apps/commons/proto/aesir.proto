@@ -291,11 +291,17 @@ message Hello {
   repeated FeatureCapability capabilities = 3;
 }
 
+enum GameMode {
+  GAME_MODE_RENEWAL = 0;
+  GAME_MODE_PRE_RENEWAL = 1;
+}
+
 // Server -> client, response to Hello with the negotiated capability intersection.
 message HelloAck {
   uint32 protocol_version = 1;
   bool accepted = 2;
   repeated FeatureCapability capabilities = 3;
+  GameMode mode = 4; // Active ruleset; omitted values default to renewal for compatibility.
 }
 
 // Server -> client prompt for one skill text value. request_id correlates its reply.

@@ -1,3 +1,4 @@
+Mimic.copy(Aesir.Commons.GameMode)
 Mimic.copy(Aesir.ZoneServer.Unit.MovementEngine)
 Mimic.copy(Aesir.ZoneServer.Unit.Movement)
 Mimic.copy(Aesir.ZoneServer.Unit.SpatialIndex)

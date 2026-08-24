@@ -8,6 +8,7 @@ defmodule Aesir.CharServerTest do
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Config.ServerInfo
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
   alias Aesir.Net.Character, as: NetCharacter
@@ -25,16 +26,38 @@ defmodule Aesir.CharServerTest do
   alias Aesir.Net.SessionAuth
   alias Aesir.Net.ZoneServerInfo
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   describe "handshake" do
-    test "accepts a Hello with the supported protocol version" do
-      assert {:ok, %{}, [{:hello_ack, %HelloAck{accepted: true, protocol_version: 1}}]} =
+    test "reports renewal mode" do
+      stub(GameMode, :mode, fn -> :renewal end)
+
+      assert {:ok, %{},
+              [{:hello_ack, hello_ack = %HelloAck{accepted: true, protocol_version: 1}}]} =
                CharServer.handle_message(
                  %Hello{protocol_version: 1, build: "dev"},
                  :control,
                  %{}
                )
+
+      assert Map.fetch!(hello_ack, :mode) == :GAME_MODE_RENEWAL
+      assert Aesir.Net.GameMode.encode(hello_ack.mode) == 0
+    end
+
+    test "reports pre-renewal mode" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+
+      assert {:ok, %{},
+              [{:hello_ack, hello_ack = %HelloAck{accepted: true, protocol_version: 1}}]} =
+               CharServer.handle_message(
+                 %Hello{protocol_version: 1, build: "dev"},
+                 :control,
+                 %{}
+               )
+
+      assert Map.fetch!(hello_ack, :mode) == :GAME_MODE_PRE_RENEWAL
+      assert Aesir.Net.GameMode.encode(hello_ack.mode) == 1
     end
 
     test "rejects a Hello with an unsupported protocol version" do

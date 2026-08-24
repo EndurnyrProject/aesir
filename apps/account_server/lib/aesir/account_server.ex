@@ -13,6 +13,7 @@ defmodule Aesir.AccountServer do
   require Logger
 
   alias Aesir.Commons.Auth
+  alias Aesir.Commons.GameMode, as: CommonsGameMode
   alias Aesir.Commons.InterServer.PubSub
   alias Aesir.Commons.SessionManager
   alias Aesir.Net.CharServerInfo
@@ -36,7 +37,8 @@ defmodule Aesir.AccountServer do
 
     response = %HelloAck{
       protocol_version: @protocol_version,
-      accepted: version == @protocol_version
+      accepted: version == @protocol_version,
+      mode: CommonsGameMode.proto_enum(CommonsGameMode.mode())
     }
 
     {:ok, session_data, [{:hello_ack, response}]}

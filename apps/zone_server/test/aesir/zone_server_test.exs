@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServerTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.SessionManager
   alias Aesir.Net.DamageDealt
@@ -23,17 +24,44 @@ defmodule Aesir.ZoneServerTest do
   alias Aesir.ZoneServer.CharacterLoader
   alias Aesir.ZoneServer.Unit.Player.PlayerSupervisor
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   describe "handshake" do
-    test "accepts a Hello without capabilities" do
+    test "reports renewal mode" do
+      stub(GameMode, :mode, fn -> :renewal end)
+
       assert {:ok, %{client_capabilities: []},
-              [{:hello_ack, %HelloAck{accepted: true, protocol_version: 1, capabilities: []}}]} =
+              [
+                {:hello_ack,
+                 hello_ack = %HelloAck{accepted: true, protocol_version: 1, capabilities: []}}
+              ]} =
                ZoneServer.handle_message(
                  %Hello{protocol_version: 1, build: "dev"},
                  :control,
                  %{}
                )
+
+      assert Map.fetch!(hello_ack, :mode) == :GAME_MODE_RENEWAL
+      assert Aesir.Net.GameMode.encode(hello_ack.mode) == 0
+    end
+
+    test "reports pre-renewal mode" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+
+      assert {:ok, %{client_capabilities: []},
+              [
+                {:hello_ack,
+                 hello_ack = %HelloAck{accepted: true, protocol_version: 1, capabilities: []}}
+              ]} =
+               ZoneServer.handle_message(
+                 %Hello{protocol_version: 1, build: "dev"},
+                 :control,
+                 %{}
+               )
+
+      assert Map.fetch!(hello_ack, :mode) == :GAME_MODE_PRE_RENEWAL
+      assert Aesir.Net.GameMode.encode(hello_ack.mode) == 1
     end
 
     test "ignores unknown capabilities" do

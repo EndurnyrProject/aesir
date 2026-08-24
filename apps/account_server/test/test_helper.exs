@@ -3,6 +3,7 @@
 # in this VM, which makes the code server report
 # "Module ... must be purged before deleting" mid-run.
 Mimic.copy(Aesir.Commons.Auth)
+Mimic.copy(Aesir.Commons.GameMode)
 Mimic.copy(Aesir.Commons.SessionManager)
 
 ExUnit.start()

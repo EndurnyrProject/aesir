@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer do
 
   require Logger
 
+  alias Aesir.Commons.GameMode, as: CommonsGameMode
   alias Aesir.Commons.SessionManager
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.EnterAck
@@ -50,7 +51,8 @@ defmodule Aesir.ZoneServer do
     response = %HelloAck{
       protocol_version: @protocol_version,
       accepted: version == @protocol_version,
-      capabilities: negotiated_capabilities
+      capabilities: negotiated_capabilities,
+      mode: CommonsGameMode.proto_enum(CommonsGameMode.mode())
     }
 
     {:ok, Map.put(session_data, :client_capabilities, negotiated_capabilities),

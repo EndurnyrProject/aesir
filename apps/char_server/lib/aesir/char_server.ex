@@ -16,6 +16,7 @@ defmodule Aesir.CharServer do
   alias Aesir.CharServer.Characters
   alias Aesir.CharServer.CharacterSession
   alias Aesir.CharServer.Config.ServerInfo
+  alias Aesir.Commons.GameMode, as: CommonsGameMode
   alias Aesir.Commons.SessionManager
   alias Aesir.Net.CharAuthFailed
   alias Aesir.Net.CharCreated
@@ -49,7 +50,8 @@ defmodule Aesir.CharServer do
 
     response = %HelloAck{
       protocol_version: @protocol_version,
-      accepted: version == @protocol_version
+      accepted: version == @protocol_version,
+      mode: CommonsGameMode.proto_enum(CommonsGameMode.mode())
     }
 
     {:ok, session_data, [{:hello_ack, response}]}
