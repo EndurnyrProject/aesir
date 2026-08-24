@@ -11,13 +11,14 @@ defmodule Aesir.ZoneServer.Guild.Permissions do
       flag exists for these yet)
     * `:invite` — the member's position `can_invite`
     * `:expel` — the member's position `can_expel`
+    * `:storage` — the member's position `can_storage`
 
   A non-member is always denied.
   """
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.State
 
-  @type action :: :invite | :expel | :emblem | :notice | :positions | :assign
+  @type action :: :invite | :expel | :storage | :emblem | :notice | :positions | :assign
 
   @master_only [:emblem, :notice, :positions, :assign]
 
@@ -41,5 +42,9 @@ defmodule Aesir.ZoneServer.Guild.Permissions do
 
   defp allowed?(state, char_id, :expel) do
     match?(%Position{can_expel: true}, State.position_of(state, char_id))
+  end
+
+  defp allowed?(state, char_id, :storage) do
+    match?(%Position{can_storage: true}, State.position_of(state, char_id))
   end
 end

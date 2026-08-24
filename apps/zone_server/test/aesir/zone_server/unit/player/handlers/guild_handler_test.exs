@@ -515,7 +515,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                    index: 5,
                    name: "Officer",
                    can_invite: true,
-                   can_expel: true
+                   can_expel: true,
+                   can_storage: true
                  },
                  state_for(master)
                )
@@ -530,6 +531,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
 
       {:ok, live} = GuildManager.get(guild.guild_id)
       assert live.positions[5].can_invite
+      assert live.positions[5].can_storage
+    end
+
+    test "an older client preserves can_storage by omitting it" do
+      {master, guild} = guild_fixture("OlderClient")
+
+      assert {:ok, _state} =
+               GuildManager.edit_position(guild.guild_id, master.id, %{
+                 index: 5,
+                 name: "Storage Officer",
+                 can_invite: false,
+                 can_expel: false,
+                 can_storage: true
+               })
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_position_edit_request(
+                 %GuildPositionEditRequest{
+                   index: 5,
+                   name: "Officer",
+                   can_invite: true,
+                   can_expel: false
+                 },
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{action: "position_edit", success: true}}}
+
+      {:ok, live} = GuildManager.get(guild.guild_id)
+      assert live.positions[5].can_storage
     end
 
     test "a non-master member is rejected with NO_PERMISSION" do

@@ -1,11 +1,11 @@
 defmodule Aesir.Commons.Models.GuildPosition do
   @moduledoc """
-  A single guild position slot (rAthena's 0-19 `guild_position` table).
+  A single guild position slot (0-19).
 
   Keyed by `{guild_id, index}`. Index 0 is always the guild master slot;
-  index 19 is where new members join. `can_storage` and `tax` are tracked
-  for parity with rAthena but are inert in phase 1 (no guild storage/tax
-  mechanics yet).
+  index 19 is where new members join. `can_storage` gates access to the guild's
+  shared storage; `tax` is tracked for parity but is still inert (no guild tax
+  mechanic yet).
   """
 
   use Ecto.Schema

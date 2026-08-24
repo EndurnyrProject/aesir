@@ -453,6 +453,51 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert row.can_invite
     end
 
+    test "persists can_storage and preserves it when an older client omits the field" do
+      {master, created} = guild_fixture("StorageEditors")
+
+      assert {:ok, _state} =
+               Manager.edit_position(created.guild_id, master.id, %{
+                 index: 5,
+                 name: "Storage Officer",
+                 can_invite: false,
+                 can_expel: false,
+                 can_storage: true
+               })
+
+      assert Repo.get_by(GuildPosition, guild_id: created.guild_id, index: 5).can_storage
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+      assert rebuilt.positions[5].can_storage
+
+      assert {:ok, _state} =
+               Manager.edit_position(created.guild_id, master.id, %{
+                 index: 5,
+                 name: "Officer",
+                 can_invite: true,
+                 can_expel: false
+               })
+
+      assert Repo.get_by(GuildPosition, guild_id: created.guild_id, index: 5).can_storage
+
+      ClusterTestHelper.clear_all()
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+      assert rebuilt.positions[5].can_storage
+
+      assert {:ok, state} =
+               Manager.edit_position(created.guild_id, master.id, %{
+                 index: 5,
+                 name: "Officer",
+                 can_invite: true,
+                 can_expel: false,
+                 can_storage: false
+               })
+
+      refute state.positions[5].can_storage
+      refute Repo.get_by(GuildPosition, guild_id: created.guild_id, index: 5).can_storage
+    end
+
     test "refuses to edit the protected index 0" do
       {master, created} = guild_fixture("Protected")
 

@@ -659,19 +659,20 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   end
 
   @doc """
-  Position-editing (`:positions`) update of one non-zero slot's `name`,
-  `can_invite` and `can_expel`. Index 0 (the master slot) is protected and
-  returns `{:error, :no_permission}`; an index outside `0..19` returns
+  Position-editing (`:positions`) update of one non-zero slot's `name` and
+  permission flags. Index 0 (the master slot) is protected and returns
+  `{:error, :no_permission}`; an index outside `0..19` returns
   `{:error, :invalid_position}`. `tax` (the position's guild EXP tax, clamped
-  to `Config.guild_exp_limit/0`) is applied; the inert `can_storage` field is
-  preserved. Broadcasts `{:social, {:guild_updated, state}}`.
+  to `Config.guild_exp_limit/0`) is applied. Broadcasts
+  `{:social, {:guild_updated, state}}`.
   """
   @spec edit_position(non_neg_integer(), non_neg_integer(), %{
           :index => non_neg_integer(),
           :name => String.t(),
           :can_invite => boolean(),
           :can_expel => boolean(),
-          optional(:tax) => non_neg_integer()
+          optional(:tax) => non_neg_integer() | nil,
+          optional(:can_storage) => boolean() | nil
         }) ::
           {:ok, State.t()} | {:error, :no_permission | :invalid_position | :not_found | term()}
   def edit_position(
@@ -690,10 +691,24 @@ defmodule Aesir.ZoneServer.Guild.Manager do
         tax -> min(tax, Config.guild_exp_limit())
       end
 
-    mutate(guild_id, &edit_position_reply(char_id, index, name, can_invite, can_expel, tax, &1))
+    can_storage = Map.get(changes, :can_storage)
+
+    mutate(
+      guild_id,
+      &edit_position_reply(char_id, index, name, can_invite, can_expel, tax, can_storage, &1)
+    )
   end
 
-  defp edit_position_reply(char_id, index, name, can_invite, can_expel, tax, %State{} = state) do
+  defp edit_position_reply(
+         char_id,
+         index,
+         name,
+         can_invite,
+         can_expel,
+         tax,
+         can_storage,
+         %State{} = state
+       ) do
     cond do
       not Permissions.can?(state, char_id, :positions) ->
         {{:error, :no_permission}, state}
@@ -707,7 +722,15 @@ defmodule Aesir.ZoneServer.Guild.Manager do
       true ->
         %Position{} = existing = Map.get(state.positions, index, %Position{index: index})
         tax = tax || existing.tax
-        changes = %{name: name, can_invite: can_invite, can_expel: can_expel, tax: tax}
+        can_storage = stored_can_storage(can_storage, existing)
+
+        changes = %{
+          name: name,
+          can_invite: can_invite,
+          can_expel: can_expel,
+          can_storage: can_storage,
+          tax: tax
+        }
 
         case persist_position(state.guild_id, index, changes) do
           :ok ->
@@ -716,6 +739,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
               | name: name,
                 can_invite: can_invite,
                 can_expel: can_expel,
+                can_storage: can_storage,
                 tax: tax
             }
 
@@ -727,6 +751,9 @@ defmodule Aesir.ZoneServer.Guild.Manager do
         end
     end
   end
+
+  defp stored_can_storage(nil, %Position{can_storage: can_storage}), do: can_storage
+  defp stored_can_storage(can_storage, %Position{}), do: can_storage
 
   defp persist_position(guild_id, index, changes) do
     case Repo.get_by(GuildPosition, guild_id: guild_id, index: index) do

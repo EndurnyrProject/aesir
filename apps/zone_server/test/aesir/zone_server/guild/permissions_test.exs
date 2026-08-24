@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Guild.PermissionsTest do
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.State
 
-  @actions [:invite, :expel, :emblem, :notice, :positions, :assign]
+  @actions [:invite, :expel, :storage, :emblem, :notice, :positions, :assign]
 
   defp member(char_id, position_index) do
     Member.new(char_id, "member-#{char_id}", 50, true, position_index, "prontera")
@@ -71,6 +71,22 @@ defmodule Aesir.ZoneServer.Guild.PermissionsTest do
       guild = state([member(1, 0), member(2, 5)], positions)
 
       refute Permissions.can?(guild, 2, :expel)
+    end
+  end
+
+  describe "storage" do
+    test "allowed when the member's position grants can_storage" do
+      positions = %{5 => %Position{index: 5, can_storage: true}}
+      guild = state([member(1, 0), member(2, 5)], positions)
+
+      assert Permissions.can?(guild, 2, :storage)
+    end
+
+    test "denied when the member's position lacks can_storage" do
+      positions = %{5 => %Position{index: 5, can_storage: false}}
+      guild = state([member(1, 0), member(2, 5)], positions)
+
+      refute Permissions.can?(guild, 2, :storage)
     end
   end
 

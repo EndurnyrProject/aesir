@@ -196,7 +196,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           name: name,
           can_invite: can_invite,
           can_expel: can_expel,
-          tax: tax
+          tax: tax,
+          can_storage: can_storage
         },
         state
       ) do
@@ -209,7 +210,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           name: name,
           can_invite: can_invite,
           can_expel: can_expel,
-          tax: tax
+          tax: tax,
+          can_storage: can_storage
         })
       end
 

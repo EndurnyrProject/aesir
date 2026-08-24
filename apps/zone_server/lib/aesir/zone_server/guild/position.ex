@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Guild.Position do
   @moduledoc """
-  One of a guild's 20 position slots (rAthena's `guild_position` 0-19).
+  One of a guild's 20 position slots (0-19).
 
   Pure value derived from `Aesir.Commons.Models.GuildPosition`. `can_storage`
-  and `tax` are carried for parity with rAthena but inert in phase 1. Index 0
-  is always the guild master slot; index 19 is where new members join.
+  gates access to the guild's shared storage; `tax` is carried for parity but
+  still inert. Index 0 is always the guild master slot; index 19 is where new
+  members join.
   """
 
   alias Aesir.Commons.Models.GuildPosition

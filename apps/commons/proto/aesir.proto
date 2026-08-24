@@ -1719,7 +1719,8 @@ message GuildInviteNotify {
   string inviter_name = 3;
 }
 
-// One position slot within a GuildInfo. `can_storage` and `tax` are inert in phase 1.
+// One position slot within a GuildInfo. `can_storage` gates guild storage access;
+// `tax` is still inert.
 message GuildPosition {
   uint32 index = 1;
   string name = 2;
