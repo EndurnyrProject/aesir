@@ -3,18 +3,18 @@ defmodule Aesir.ZoneServer.DbTestSetup do
 
   @spec configure_root(map(), String.t()) :: :ok | {:ok, keyword()}
   def configure_root(%{tmp_dir: root}, domain) do
-    previous =
-      for key <- [:db_mode, :db_root] do
-        {key, Application.get_env(:zone_server, key)}
-      end
+    previous = [
+      {:commons, :game_mode, Application.get_env(:commons, :game_mode)},
+      {:zone_server, :db_root, Application.get_env(:zone_server, :db_root)}
+    ]
 
-    Application.put_env(:zone_server, :db_mode, :renewal)
+    Application.put_env(:commons, :game_mode, :renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     ExUnit.Callbacks.on_exit(fn ->
       Enum.each(previous, fn
-        {key, nil} -> Application.delete_env(:zone_server, key)
-        {key, value} -> Application.put_env(:zone_server, key, value)
+        {app, key, nil} -> Application.delete_env(app, key)
+        {app, key, value} -> Application.put_env(app, key, value)
       end)
     end)
 

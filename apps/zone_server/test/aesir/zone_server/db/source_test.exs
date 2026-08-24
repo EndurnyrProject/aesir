@@ -6,15 +6,15 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
   @moduletag :tmp_dir
 
   setup do
-    previous =
-      for key <- [:db_mode, :db_root] do
-        {key, Application.get_env(:zone_server, key)}
-      end
+    previous = [
+      {:commons, :game_mode, Application.get_env(:commons, :game_mode)},
+      {:zone_server, :db_root, Application.get_env(:zone_server, :db_root)}
+    ]
 
     on_exit(fn ->
       Enum.each(previous, fn
-        {key, nil} -> Application.delete_env(:zone_server, key)
-        {key, value} -> Application.put_env(:zone_server, key, value)
+        {app, key, nil} -> Application.delete_env(app, key)
+        {app, key, value} -> Application.put_env(app, key, value)
       end)
     end)
 
@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
   end
 
   test "orders glob-domain base files before import files", %{tmp_dir: root} do
-    Application.put_env(:zone_server, :db_mode, :renewal)
+    Application.put_env(:commons, :game_mode, :renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     base_a = write_file(root, "re/items/a.yml", "[]")
@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
   end
 
   test "resolves a file-domain base file and its import counterpart", %{tmp_dir: root} do
-    Application.put_env(:zone_server, :db_mode, :renewal)
+    Application.put_env(:commons, :game_mode, :renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     base = write_file(root, "re/refine/refine.yml", "{}")
@@ -49,13 +49,13 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
   end
 
   test "reports the configured database mode" do
-    Application.put_env(:zone_server, :db_mode, :pre_renewal)
+    Application.put_env(:commons, :game_mode, :pre_renewal)
 
     assert Source.mode() == :pre_renewal
   end
 
   test "resolves an explicitly empty base file", %{tmp_dir: root} do
-    Application.put_env(:zone_server, :db_mode, :renewal)
+    Application.put_env(:commons, :game_mode, :renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     base = write_file(root, "re/level_penalty.yml", "[]")
@@ -68,14 +68,14 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
     arrows = write_file(root, "arrows.yml", "[]")
 
     for mode <- [:renewal, :pre_renewal] do
-      Application.put_env(:zone_server, :db_mode, mode)
+      Application.put_env(:commons, :game_mode, mode)
       assert Source.sources("arrows.yml") == [arrows]
       assert Source.base_dir("arrows.yml") == root
     end
   end
 
   test "raises with the expected pre-renewal path and importer", %{tmp_dir: root} do
-    Application.put_env(:zone_server, :db_mode, :pre_renewal)
+    Application.put_env(:commons, :game_mode, :pre_renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     error = assert_raise RuntimeError, fn -> Source.sources("items") end
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
   end
 
   test "reports hand-authored domains without an importer", %{tmp_dir: root} do
-    Application.put_env(:zone_server, :db_mode, :pre_renewal)
+    Application.put_env(:commons, :game_mode, :pre_renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     error = assert_raise RuntimeError, fn -> Source.sources("skill_tree") end

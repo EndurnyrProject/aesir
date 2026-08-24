@@ -5,10 +5,10 @@ case System.get_env("AESIR_DB_MODE") do
     :ok
 
   "renewal" ->
-    config :zone_server, db_mode: :renewal
+    config :commons, game_mode: :renewal
 
   "pre_renewal" ->
-    config :zone_server, db_mode: :pre_renewal
+    config :commons, game_mode: :pre_renewal
 
   value ->
     raise ArgumentError,

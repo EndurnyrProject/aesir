@@ -218,7 +218,7 @@ boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deter
 - `mix aesir.import.quests [<rathena_root>]` - rAthena `quest_db` -> `priv/db/re/quests/quests.yml`.
 - `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
 
-Zone DBs use `:zone_server, :db_mode`: renewal is the default (`re/`), while the empty
+Zone DBs use `:commons, :game_mode`: renewal is the default (`re/`), while the empty
 `pre-re/` seam awaits future data (`AESIR_DB_MODE=pre_renewal` selects it). Local
 `priv/db/import/` YAML is gitignored and loads after shipped data: keyed rows override, maps merge,
 and spawns append-only per map (base spawns kept, import spawns added); warps and shops append. Restart

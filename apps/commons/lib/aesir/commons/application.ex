@@ -4,6 +4,7 @@ defmodule Aesir.Commons.Application do
   use Application
 
   alias Aesir.Commons.Banner
+  alias Aesir.Commons.GameMode
 
   @impl true
   def start(_type, _args) do
@@ -12,6 +13,7 @@ defmodule Aesir.Commons.Application do
     silence_quic_transport_logs()
 
     Hush.resolve!()
+    if env() != :test, do: GameMode.cache!()
 
     topologies = Application.get_env(:libcluster, :topologies)
 

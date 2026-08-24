@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Db.Source do
 
   @doc "Returns the active database mode."
   @spec mode() :: Layout.mode()
-  def mode, do: Application.get_env(:zone_server, :db_mode, :renewal)
+  defdelegate mode, to: Aesir.Commons.GameMode
 
   @doc "Returns ordered base and import source files for a database domain."
   @spec sources(Layout.domain()) :: [Path.t()]
@@ -53,11 +53,11 @@ defmodule Aesir.ZoneServer.Db.Source do
     case Layout.import_task(domain) do
       nil ->
         raise "no #{mode()} data for db #{inspect(domain)} (expected under #{expected_path}). " <>
-                "This database is hand-authored and has no importer; add its base YAML or set db_mode: :renewal."
+                "This database is hand-authored and has no importer; add its base YAML or set AESIR_DB_MODE=renewal."
 
       task ->
         raise "no #{mode()} data for db #{inspect(domain)} (expected under #{expected_path}). " <>
-                "Import it with `mix #{task}` or set db_mode: :renewal."
+                "Import it with `mix #{task}` or set AESIR_DB_MODE=renewal."
     end
   end
 

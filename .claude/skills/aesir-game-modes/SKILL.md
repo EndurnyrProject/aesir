@@ -80,8 +80,7 @@ compile-time split. When researching ANY mechanic, always check whether it is mo
   `Mmo.Mechanics` facade resolves seven behaviour families
   (`PlayerFormulas`, `MobFormulas`, `CastTime`, `StatCost`, `Defense`, `Elements`, `Sizes`)
   to `.Renewal`/`.PreRenewal` impl modules at boot. Orchestration (`stats.ex`, damage
-  calculators, interpreter) stays shared; only leaf formulas dispatch. A DB stamp
-  (`server_metadata`) refuses booting a mode against the other mode's database. Design:
+  calculators and interpreter) stays shared; only leaf formulas dispatch. Design:
   `specs/2026-08-24-pre-renewal-mode/architecture.md` in the vault.
 - **Phasing**: Phase 1 = seam + core formulas + pre-re data. Phase 2 = per-skill/status
   behavior divergences (until then, pre-re runs today's renewal-flavored skill/status
@@ -97,9 +96,10 @@ compile-time split. When researching ANY mechanic, always check whether it is mo
   the Phase-2 audit inventory (~130 modules carry them already).
 - New formula work goes through the `Mechanics` family seam, never inline
   `if mode == :renewal` branches scattered in orchestration code.
-- Mode-specific tests: formula pairs test the impl modules directly (`async: true`, no
-  global state); anything flipping the global mode uses the `DbTestSetup` env pattern with
-  `on_exit` restore and `async: false`.
+- Mode-specific tests: formula pairs test impl modules directly (`async: true`, no global state);
+  orchestration uses explicit inputs or private process-local Mimic. New tests never mutate
+  application/system env or `:persistent_term`; mode-specific integration starts the test process
+  with `AESIR_DB_MODE` already set.
 - Trans-era boundary check for content: if it requires a 3rd/4th job, a trait stat, or a
   renewal-era system (instances, doram), it is renewal-only content — keep it out of
   pre-re data/skill trees rather than guarding it in code.

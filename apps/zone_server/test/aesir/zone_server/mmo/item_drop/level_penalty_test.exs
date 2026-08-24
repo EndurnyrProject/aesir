@@ -77,15 +77,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
 
   @tag :tmp_dir
   test "reload/0 applies an import breakpoint override", %{tmp_dir: root} do
-    previous =
-      for key <- [:db_mode, :db_root] do
-        {key, Application.get_env(:zone_server, key)}
-      end
+    previous = [
+      {:commons, :game_mode, Application.get_env(:commons, :game_mode)},
+      {:zone_server, :db_root, Application.get_env(:zone_server, :db_root)}
+    ]
 
     on_exit(fn ->
       Enum.each(previous, fn
-        {key, nil} -> Application.delete_env(:zone_server, key)
-        {key, value} -> Application.put_env(:zone_server, key, value)
+        {app, key, nil} -> Application.delete_env(app, key)
+        {app, key, value} -> Application.put_env(app, key, value)
       end)
 
       LevelPenalty.reload()
@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     File.mkdir_p!(Path.dirname(import))
     File.write!(import, "4: 42\n")
 
-    Application.put_env(:zone_server, :db_mode, :renewal)
+    Application.put_env(:commons, :game_mode, :renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     assert :ok = LevelPenalty.reload()
