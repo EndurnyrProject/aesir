@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   open-time capacity until the window closes.
   """
 
+  require Logger
+
   alias Aesir.Net.StorageResult
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Permissions
@@ -60,6 +62,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
       storage when is_map(storage) ->
         reject_open(state, :STORAGE_OTHER_STORAGE_OPEN)
 
+      {:error, :not_found} ->
+        reject_open(state, :STORAGE_NO_GUILD)
+
       {:error, :in_use} ->
         reject_open(state, :STORAGE_GUILD_IN_USE)
 
@@ -74,6 +79,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   def deposit(_index, _amount, %SessionState{game_state: %{guild_storage: nil}} = state) do
     send_result(state.connection_pid, :STORAGE_NOT_OPEN)
     {:noreply, state}
+  end
+
+  def deposit(
+        _index,
+        _amount,
+        %SessionState{
+          game_state: %{guild_id: current_guild_id, guild_storage: storage},
+          guild_storage_ctx: %{guild_id: claimed_guild_id}
+        } = state
+      )
+      when is_map(storage) and claimed_guild_id != current_guild_id do
+    reject_stale_claim(state)
   end
 
   def deposit(
@@ -117,6 +134,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   def withdraw(_index, _amount, %SessionState{game_state: %{guild_storage: nil}} = state) do
     send_result(state.connection_pid, :STORAGE_NOT_OPEN)
     {:noreply, state}
+  end
+
+  def withdraw(
+        _index,
+        _amount,
+        %SessionState{
+          game_state: %{guild_id: current_guild_id, guild_storage: storage},
+          guild_storage_ctx: %{guild_id: claimed_guild_id}
+        } = state
+      )
+      when is_map(storage) and claimed_guild_id != current_guild_id do
+    reject_stale_claim(state)
   end
 
   def withdraw(
@@ -184,6 +213,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
     {:noreply, state}
   end
 
+  @spec reject_stale_claim(SessionState.t()) :: {:noreply, SessionState.t()}
+  defp reject_stale_claim(state) do
+    closed = force_close(state)
+    send_result(closed.connection_pid, :STORAGE_STALE)
+    {:noreply, closed}
+  end
+
   @spec load_and_open(SessionState.t(), pos_integer()) :: {:noreply, SessionState.t()}
   defp load_and_open(%SessionState{game_state: game_state} = state, capacity) do
     storage =
@@ -214,7 +250,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   defp ensure_positive_amount(amount) when is_integer(amount) and amount > 0, do: :ok
   defp ensure_positive_amount(_amount), do: {:error, :invalid_amount}
 
-  @spec error_code(atom()) :: atom()
+  @spec error_code(term()) :: atom()
   defp error_code(:storage_full), do: :STORAGE_FULL
   defp error_code(:inventory_full), do: :STORAGE_INVENTORY_FULL
   defp error_code(:overweight), do: :STORAGE_OVERWEIGHT
@@ -228,6 +264,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler do
   defp error_code(:not_found), do: :STORAGE_INVALID_AMOUNT
   defp error_code(:invalid_amount), do: :STORAGE_INVALID_AMOUNT
   defp error_code(:not_open), do: :STORAGE_NOT_OPEN
+
+  defp error_code(reason) do
+    Logger.error("Guild storage transfer failed: #{inspect(reason)}")
+    :STORAGE_STALE
+  end
 
   @spec send_result(pid(), atom()) :: :ok
   defp send_result(connection_pid, code) do

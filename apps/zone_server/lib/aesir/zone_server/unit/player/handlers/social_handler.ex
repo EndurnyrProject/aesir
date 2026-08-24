@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Player.GuildSync
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -229,21 +230,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   @doc """
   A membership, position, or notice change on our own live guild: relay the
   fresh `GuildInfo` snapshot. If we're no longer listed among the members (an
-  expel/leave while online), unsubscribe and clear `guild_id` so the topic
-  subscription doesn't leak. A stale broadcast for a guild we've left is a
-  no-op.
+  expel/leave while online), force-close guild storage, unsubscribe, and clear
+  `guild_id` so neither the claim nor topic subscription leaks. A stale
+  broadcast is a no-op.
   """
   @spec guild_updated(GuildState.t(), SessionState.t()) :: {:noreply, SessionState.t()}
   def guild_updated(
         %GuildState{guild_id: guild_id} = guild_state,
-        %{game_state: %{guild_id: guild_id, character_id: char_id} = game_state} = state
+        %{game_state: %{guild_id: guild_id, character_id: char_id}} = state
       ) do
     if Map.has_key?(guild_state.members, char_id) do
       MessageRouter.send_to(state.connection_pid, GuildView.guild_info(guild_state))
       {:noreply, refresh_guild_tax(state, guild_state)}
     else
+      state = GuildStorageHandler.force_close(state)
       PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
-      {:noreply, StateCommit.commit(state, %{game_state | guild_id: 0})}
+      {:noreply, StateCommit.commit(state, %{state.game_state | guild_id: 0})}
     end
   end
 
@@ -354,19 +356,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   def guild_member_updated(_guild_id, %GuildMember{}, state), do: {:noreply, state}
 
   @doc """
-  Notifies the client that our guild disbanded, unsubscribes, and clears
-  `guild_id`; a stale disband for a guild we've left is ignored.
+  Notifies the client that our guild disbanded, force-closes guild storage,
+  unsubscribes, and clears `guild_id`; a stale disband for a guild we've left
+  is ignored.
   """
   @spec guild_disbanded(non_neg_integer(), String.t(), SessionState.t()) ::
           {:noreply, SessionState.t()}
-  def guild_disbanded(guild_id, reason, %{game_state: %{guild_id: guild_id} = game_state} = state) do
+  def guild_disbanded(guild_id, reason, %{game_state: %{guild_id: guild_id}} = state) do
     MessageRouter.send_to(state.connection_pid, %GuildDisbanded{
       guild_id: guild_id,
       reason: reason
     })
 
+    state = GuildStorageHandler.force_close(state)
     PubSub.unsubscribe(Aesir.PubSub, "guild:#{guild_id}")
-    {:noreply, StateCommit.commit(state, %{game_state | guild_id: 0})}
+    {:noreply, StateCommit.commit(state, %{state.game_state | guild_id: 0})}
   end
 
   def guild_disbanded(_guild_id, _reason, state), do: {:noreply, state}

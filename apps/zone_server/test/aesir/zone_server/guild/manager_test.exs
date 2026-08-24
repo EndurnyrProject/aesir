@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Guild.ManagerTest do
   use Aesir.DataCase, async: false
+  use Mimic
 
+  import Aesir.TestWait
   import Ecto.Query
+  import ExUnit.CaptureLog
 
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account
@@ -9,13 +12,26 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.GuildPosition
+  alias Aesir.Commons.Models.GuildStorageLog
+  alias Aesir.Net.StorageResult
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.State
+  alias Aesir.ZoneServer.Guild.Storage.Lock
+  alias Aesir.ZoneServer.Guild.Storage.Persistence, as: GuildStoragePersistence
+  alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOps
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   @newbie_position 19
   @max_members 16
+
+  setup :verify_on_exit!
+  setup :set_mimic_from_context
 
   setup do
     on_exit(&ClusterTestHelper.clear_all/0)
@@ -296,6 +312,144 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert Repo.get(Character, master.id).guild_id == 0
       assert Repo.get(Character, joiner.id).guild_id == 0
       assert_receive {:social, {:guild_disbanded, _id, "gm_action"}}
+    end
+
+    test "a failed disband leaves the storage claim and window usable" do
+      {master, created} = guild_fixture("FailedDisband")
+      guild_id = created.guild_id
+      ctx = %{guild_id: guild_id, char_id: master.id, session_pid: self(), capacity: 600}
+
+      {:ok, row} =
+        GuildStoragePersistence.insert_item(guild_id, %{nameid: 501, amount: 4, identify: 1})
+
+      storage = PlayerState.from_list([GuildStoragePersistence.to_session_item(row)])
+      assert :ok = Lock.claim(guild_id, master.id, self())
+
+      stub(Repo, :transaction, fn %Ecto.Multi{} ->
+        {:error, :guild, :forced_failure, %{}}
+      end)
+
+      assert {:error, :forced_failure} = Manager.disband(guild_id, "gm_action")
+      assert Lock.held_by?(guild_id, self())
+      assert Repo.get(GuildModel, guild_id)
+
+      assert {:ok, %{0 => _persisted_item}, %{}, {:added, 0, _change_item}, {:removed, 0}} =
+               GuildStorageOps.withdraw(
+                 ctx,
+                 %{},
+                 storage,
+                 Stats.from_character(master),
+                 0,
+                 4
+               )
+    end
+
+    test "an in-flight withdraw after the cascade rolls back as stale" do
+      {master, created} = guild_fixture("StaleDisband")
+      guild_id = created.guild_id
+      ctx = %{guild_id: guild_id, char_id: master.id, session_pid: self(), capacity: 600}
+
+      {:ok, row} =
+        GuildStoragePersistence.insert_item(guild_id, %{nameid: 501, amount: 4, identify: 1})
+
+      storage = PlayerState.from_list([GuildStoragePersistence.to_session_item(row)])
+      assert :ok = Lock.claim(guild_id, master.id, self())
+      Mimic.copy(Lock)
+
+      expect(Lock, :stop, fn ^guild_id ->
+        assert [] = GuildStoragePersistence.load_storage(guild_id)
+        assert Lock.held_by?(guild_id, self())
+
+        assert {:error, :stale} =
+                 GuildStorageOps.withdraw(
+                   ctx,
+                   %{},
+                   storage,
+                   Stats.from_character(master),
+                   0,
+                   4
+                 )
+
+        call_original(Lock, :stop, [guild_id])
+      end)
+
+      assert :ok = Manager.disband(guild_id, "gm_action")
+      assert [] = InventoryPersistence.load_inventory(master.id)
+
+      assert Repo.aggregate(
+               from(log in GuildStorageLog, where: log.guild_id == ^guild_id),
+               :count
+             ) == 0
+
+      assert_eventually(fn -> Lock.holder(guild_id) == :error end)
+    end
+
+    test "a post-cascade deposit is rejected without crashing the session" do
+      {master, created} = guild_fixture("CascadeDeposit")
+      guild_id = created.guild_id
+      ctx = %{guild_id: guild_id, char_id: master.id, session_pid: self(), capacity: 600}
+
+      {:ok, item} =
+        InventoryPersistence.insert_item(master.id, %{nameid: 501, amount: 4, identify: 1})
+
+      game_state = %{
+        PlayerState.new(master)
+        | guild_id: guild_id,
+          inventory: PlayerState.from_list([item]),
+          guild_storage: %{}
+      }
+
+      state = %SessionState{
+        connection_pid: self(),
+        game_state: game_state,
+        guild_storage_ctx: ctx
+      }
+
+      assert :ok = Lock.claim(guild_id, master.id, self())
+      Mimic.copy(Lock)
+
+      expect(Lock, :stop, fn ^guild_id ->
+        assert [] = GuildStoragePersistence.load_storage(guild_id)
+
+        assert {:noreply, ^state} =
+                 GuildStorageHandler.deposit(PlayerState.client_index(0), 4, state)
+
+        :ok
+      end)
+
+      log = capture_log(fn -> assert :ok = Manager.disband(guild_id, "gm_action") end)
+
+      assert log =~ "Guild storage transfer failed"
+
+      assert_received {:send, :gameplay,
+                       {:storage_result, %StorageResult{result: :STORAGE_STALE}}}
+
+      assert [%{id: item_id, amount: 4}] = InventoryPersistence.load_inventory(master.id)
+      assert item_id == item.id
+      assert [] = GuildStoragePersistence.load_storage(guild_id)
+
+      assert Repo.aggregate(
+               from(entry in GuildStorageLog, where: entry.guild_id == ^guild_id),
+               :count
+             ) == 0
+    end
+
+    test "a failed claim stop cannot suppress a committed disband" do
+      {master, created} = guild_fixture("StopFailure")
+      guild_id = created.guild_id
+      Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{guild_id}")
+      assert :ok = Lock.claim(guild_id, master.id, self())
+      Mimic.copy(Lock)
+
+      expect(Lock, :stop, fn ^guild_id -> exit(:timeout) end)
+
+      log = capture_log(fn -> assert :ok = Manager.disband(guild_id, "gm_action") end)
+
+      assert log =~ "Failed to stop guild storage claim for guild #{guild_id}"
+      assert_receive {:social, {:guild_disbanded, ^guild_id, "gm_action"}}
+      assert {:error, :not_found} = Manager.get(guild_id)
+      assert Repo.get(GuildModel, guild_id) == nil
+      assert Lock.held_by?(guild_id, self())
     end
 
     test "returns {:error, :not_found} when no entry is running" do

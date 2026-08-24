@@ -18,6 +18,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   only; `State` carries just the bumped `emblem_id` version counter.
   """
 
+  require Logger
+
   import Ecto.Query
 
   alias Aesir.Commons.Cluster
@@ -33,6 +35,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.Progression.Data
   alias Aesir.ZoneServer.Guild.State
+  alias Aesir.ZoneServer.Guild.Storage.Lock
 
   @master_index 0
   @newbie_position 19
@@ -160,31 +163,45 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   @doc """
   Disbands a guild: resets `guild_id`/`guild_position` to `0` for every member
   row and deletes the guild's positions, expulsions and row in one DB
-  transaction (explicit cascade, not a DB constraint), broadcasts
-  `{:social, {:guild_disbanded, guild_id, reason}}` on `"guild:\#{guild_id}"`,
-  and stops the entry.
+  transaction. The guild-row foreign key cascade deletes its storage, then the
+  storage claim is stopped. A failed transaction leaves the claim untouched. A
+  failed post-commit claim stop is logged but does not suppress the disband
+  broadcast or runtime-entry shutdown. It broadcasts
+  `{:social, {:guild_disbanded, guild_id, reason}}` on `"guild:\#{guild_id}"`.
   """
   @spec disband(non_neg_integer(), String.t()) :: :ok | {:error, term()}
   def disband(guild_id, reason) do
     case lookup_pid({:guild, guild_id}) do
       {:ok, pid} ->
-        try do
-          case Entry.get_and_update(pid, &disband_reply(guild_id, &1)) do
-            {:ok, _state} ->
-              broadcast(guild_id, {:guild_disbanded, guild_id, reason})
-              stop_entry({:guild, guild_id})
-              :ok
-
-            {:error, _reason} = error ->
-              error
+        result =
+          try do
+            Entry.get_and_update(pid, &disband_reply(guild_id, &1))
+          catch
+            :exit, _ -> {:error, :not_found}
           end
-        catch
-          :exit, _ -> {:error, :not_found}
+
+        case result do
+          {:ok, _state} ->
+            stop_storage_claim(guild_id)
+            broadcast(guild_id, {:guild_disbanded, guild_id, reason})
+            stop_entry({:guild, guild_id})
+            :ok
+
+          {:error, _reason} = error ->
+            error
         end
 
       :error ->
         {:error, :not_found}
     end
+  end
+
+  defp stop_storage_claim(guild_id) do
+    Lock.stop(guild_id)
+  catch
+    :exit, reason ->
+      Logger.error("Failed to stop guild storage claim for guild #{guild_id}: #{inspect(reason)}")
+      :ok
   end
 
   defp disband_reply(guild_id, state) do

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.Net.MapMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.Guild.Storage.Lock
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillMenuHandler
@@ -31,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.SpatialIndex
 
@@ -58,6 +61,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   on a cross-map warp (design "Storage window lifecycle": it stays open
   across same-map movement); a same-map warp (e.g. `AL_TELEPORT` level 1)
   leaves it untouched.
+
+  Item scripts supply only partial session state, so that path releases a guild
+  claim using the current `guild_id` and `self()`. If a guild change overtakes
+  the prior guild's queued update, the old claim can briefly outlive membership.
+  Transfers reject a claimed/current guild mismatch and force-close the window;
+  an otherwise stranded anchored claim is released when the session ends.
   """
   @spec warp(session_state(), String.t(), non_neg_integer(), non_neg_integer()) ::
           {:ok, session_state()} | {:error, :map_not_found}
@@ -69,9 +78,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
          {:ok, {fx, fy}} <- ensure_walkable(dest_map, x, y) do
       state = TradeHandler.cancel_if_trading(state, :cancelled)
       state = state |> SkillTextInputHandler.clear() |> SkillHandler.cancel_deferred()
-      game_state = state.game_state
-      game_state = WaitingRoomHandler.leave_if_in_room(game_state)
+      game_state = WaitingRoomHandler.leave_if_in_room(state.game_state)
+      state = %{state | game_state: game_state}
       state = HomunculusCommandHandler.detach_for_warp(state, same_map?)
+      state = close_storage_on_cross_map(state, same_map?)
+      game_state = state.game_state
       leave_current_map(game_state, DespawnReason.teleport())
       Broadcast.unsubscribe_mob_despawns(game_state.map_name)
       Broadcast.subscribe_mob_despawns(dest_map)
@@ -80,7 +91,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         game_state
         |> PlayerState.relocate(dest_map, fx, fy)
         |> Map.put(:pending_map_load, :warp)
-        |> close_storage_on_cross_map(same_map?)
 
       state = state |> StateCommit.commit(new_game_state) |> SkillMenuHandler.clear()
 
@@ -201,9 +211,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
     :ok
   end
 
-  @spec close_storage_on_cross_map(PlayerState.t(), boolean()) :: PlayerState.t()
-  defp close_storage_on_cross_map(game_state, true), do: game_state
-  defp close_storage_on_cross_map(game_state, false), do: %{game_state | storage: nil}
+  @spec close_storage_on_cross_map(session_state(), boolean()) :: session_state()
+  defp close_storage_on_cross_map(state, true), do: state
+
+  defp close_storage_on_cross_map(%SessionState{} = state, false) do
+    state = GuildStorageHandler.force_close(state)
+    %{state | game_state: %{state.game_state | storage: nil}}
+  end
+
+  defp close_storage_on_cross_map(
+         %{game_state: %PlayerState{} = game_state} = state,
+         false
+       ) do
+    :ok = Lock.release(game_state.guild_id, self())
+    %{state | game_state: %{game_state | storage: nil, guild_storage: nil}}
+  end
 
   defp fetch_map(map_name) do
     case MapCache.get(map_name) do

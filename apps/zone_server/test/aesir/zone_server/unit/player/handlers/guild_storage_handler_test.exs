@@ -197,6 +197,46 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandlerTest do
     assert_received {:send, :gameplay, {:storage_result, %StorageResult{result: :STORAGE_OK}}}
   end
 
+  test "deposit force-closes a claim for a guild the player no longer belongs to" do
+    reject(&GuildStorageOps.deposit/5)
+    assert :ok = Lock.claim(@guild_id, @char_id, self())
+    stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _game_state -> :ok end)
+
+    state =
+      state(
+        guild_id: @guild_id + 1,
+        guild_storage: %{},
+        guild_storage_ctx: storage_ctx(300)
+      )
+
+    assert {:noreply, closed} = GuildStorageHandler.deposit(2, 1, state)
+    assert closed.game_state.guild_storage == nil
+    assert closed.guild_storage_ctx == nil
+    assert :error = Lock.holder(@guild_id)
+
+    assert_received {:send, :gameplay, {:storage_result, %StorageResult{result: :STORAGE_STALE}}}
+  end
+
+  test "withdraw force-closes a claim for a guild the player no longer belongs to" do
+    reject(&GuildStorageOps.withdraw/6)
+    assert :ok = Lock.claim(@guild_id, @char_id, self())
+    stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _game_state -> :ok end)
+
+    state =
+      state(
+        guild_id: @guild_id + 1,
+        guild_storage: %{0 => item(501, 1)},
+        guild_storage_ctx: storage_ctx(300)
+      )
+
+    assert {:noreply, closed} = GuildStorageHandler.withdraw(2, 1, state)
+    assert closed.game_state.guild_storage == nil
+    assert closed.guild_storage_ctx == nil
+    assert :error = Lock.holder(@guild_id)
+
+    assert_received {:send, :gameplay, {:storage_result, %StorageResult{result: :STORAGE_STALE}}}
+  end
+
   test "guild transfer errors map to their dedicated result codes" do
     ctx = storage_ctx(300)
     state = state(guild_storage: %{}, guild_storage_ctx: ctx)
@@ -306,6 +346,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandlerTest do
       connection_pid: self(),
       game_state: %PlayerState{character_id: @char_id, guild_id: 0, storage: nil}
     }
+
+    assert {:noreply, ^state} = GuildStorageHandler.open(state)
+
+    assert_received {:send, :gameplay,
+                     {:storage_result, %StorageResult{result: :STORAGE_NO_GUILD}}}
+  end
+
+  test "open after the guild entry and row are gone is refused without changing state" do
+    stub(Manager, :ensure_started, fn @guild_id -> {:error, :not_found} end)
+    reject(&Persistence.load_storage/1)
+
+    state = state()
 
     assert {:noreply, ^state} = GuildStorageHandler.open(state)
 
@@ -426,7 +478,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandlerTest do
   defp state(opts \\ []) do
     game_state = %{
       PlayerState.new(character())
-      | guild_id: @guild_id,
+      | guild_id: Keyword.get(opts, :guild_id, @guild_id),
         storage: Keyword.get(opts, :storage),
         inventory: Keyword.get(opts, :inventory, %{}),
         guild_storage: Keyword.get(opts, :guild_storage)

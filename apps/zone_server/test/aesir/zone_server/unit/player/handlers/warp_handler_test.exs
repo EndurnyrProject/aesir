@@ -1,12 +1,15 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   use ExUnit.Case, async: false
   import Aesir.TestEtsSetup
+  import Aesir.TestWait
   import Mimic
 
+  alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Net.MapMove
   alias Aesir.Net.UnitDespawn
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Guild.Storage.Lock
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -15,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
+  alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -349,6 +353,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
       %{base | game_state: %{base.game_state | storage: storage}}
     end
 
+    defp state_with_guild_storage do
+      ClusterTestHelper.clear_all()
+      on_exit(&ClusterTestHelper.clear_all/0)
+      stub(GuildSync, :sync, fn _previous, _next -> :ok end)
+
+      base = state()
+      guild_id = 42
+      assert :ok = Lock.claim(guild_id, base.game_state.character_id, self())
+
+      %{
+        base
+        | game_state: %{base.game_state | guild_id: guild_id, guild_storage: %{}},
+          guild_storage_ctx: %{
+            guild_id: guild_id,
+            char_id: base.game_state.character_id,
+            session_pid: self(),
+            capacity: 200
+          }
+      }
+    end
+
     test "cross-map warp force-closes an open storage window" do
       storage = %{0 => :placeholder}
 
@@ -365,6 +390,52 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandlerTest do
                WarpHandler.warp(state_with_storage(storage), "prontera", 100, 120)
 
       assert gs.storage == storage
+    end
+
+    test "cross-map warp force-closes guild storage and frees its claim" do
+      state = state_with_guild_storage()
+      guild_id = state.guild_storage_ctx.guild_id
+
+      assert {:ok, updated} = WarpHandler.warp(state, "geffen", 100, 120)
+
+      assert updated.game_state.guild_storage == nil
+      assert updated.guild_storage_ctx == nil
+
+      next_holder = spawn(fn -> receive do: (:stop -> :ok) end)
+      on_exit(fn -> if Process.alive?(next_holder), do: Process.exit(next_holder, :kill) end)
+      assert_eventually(fn -> Lock.claim(guild_id, 2_000, next_holder) == :ok end)
+    end
+
+    test "cross-map item-script warp force-closes guild storage and frees its claim" do
+      state = state_with_guild_storage()
+      guild_id = state.guild_storage_ctx.guild_id
+      partial = %{game_state: state.game_state, connection_pid: state.connection_pid}
+
+      assert {:ok, updated} = WarpHandler.warp(partial, "geffen", 100, 120)
+      assert updated.game_state.guild_storage == nil
+
+      next_holder = spawn(fn -> receive do: (:stop -> :ok) end)
+      on_exit(fn -> if Process.alive?(next_holder), do: Process.exit(next_holder, :kill) end)
+      assert_eventually(fn -> Lock.claim(guild_id, 2_000, next_holder) == :ok end)
+    end
+
+    test "cross-map item-script warp force-closes personal storage" do
+      state = state_with_storage(%{0 => :placeholder})
+      partial = %{game_state: state.game_state, connection_pid: state.connection_pid}
+
+      assert {:ok, updated} = WarpHandler.warp(partial, "geffen", 100, 120)
+      assert updated.game_state.storage == nil
+    end
+
+    test "same-map warp leaves guild storage and its claim open" do
+      state = state_with_guild_storage()
+      guild_id = state.guild_storage_ctx.guild_id
+
+      assert {:ok, updated} = WarpHandler.warp(state, "prontera", 100, 120)
+
+      assert updated.game_state.guild_storage == %{}
+      assert updated.guild_storage_ctx == state.guild_storage_ctx
+      assert Lock.held_by?(guild_id, self())
     end
 
     test "same-map warp does not publish a map transition" do
