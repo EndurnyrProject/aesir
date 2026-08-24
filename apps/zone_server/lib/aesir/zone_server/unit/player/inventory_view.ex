@@ -170,11 +170,18 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
   @spec storage_opened(%{non_neg_integer() => InventoryItem.t()}) :: StorageOpened.t()
   def storage_opened(storage) do
+    storage_opened(storage, Storage.capacity(), :STORAGE_KIND_PERSONAL)
+  end
+
+  @doc "Builds a storage dump with an explicit capacity and container kind."
+  @spec storage_opened(%{non_neg_integer() => InventoryItem.t()}, pos_integer(), atom()) ::
+          StorageOpened.t()
+  def storage_opened(storage, capacity, kind) do
     storage_items = Enum.sort_by(storage, fn {index, _item} -> index end)
     names = storage_items |> Enum.map(&elem(&1, 1)) |> CreatorNames.names_for()
     items = Enum.map(storage_items, fn {index, item} -> to_inventory_item(index, item, names) end)
 
-    %StorageOpened{capacity: Storage.capacity(), items: items}
+    %StorageOpened{capacity: capacity, items: items, kind: kind}
   end
 
   @doc """
@@ -182,12 +189,18 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   """
   @spec storage_item_added(InventoryItem.t(), non_neg_integer()) :: StorageItemAdded.t()
   def storage_item_added(%InventoryItem{} = item, server_index) do
+    storage_item_added(item, server_index, :STORAGE_KIND_PERSONAL)
+  end
+
+  @doc "Builds a storage-slot addition for the selected container kind."
+  @spec storage_item_added(InventoryItem.t(), non_neg_integer(), atom()) :: StorageItemAdded.t()
+  def storage_item_added(%InventoryItem{} = item, server_index, kind) do
     names = CreatorNames.names_for([item])
 
     struct(
       StorageItemAdded,
       item_fields(item, names)
-      |> Map.merge(%{index: PlayerState.client_index(server_index), result: 0})
+      |> Map.merge(%{index: PlayerState.client_index(server_index), result: 0, kind: kind})
     )
   end
 
@@ -197,10 +210,18 @@ defmodule Aesir.ZoneServer.Unit.Player.InventoryView do
   @spec storage_item_removed(non_neg_integer(), pos_integer(), non_neg_integer()) ::
           StorageItemRemoved.t()
   def storage_item_removed(server_index, amount, reason \\ 0) do
+    storage_item_removed(server_index, amount, reason, :STORAGE_KIND_PERSONAL)
+  end
+
+  @doc "Builds a storage-slot removal for the selected container kind."
+  @spec storage_item_removed(non_neg_integer(), pos_integer(), non_neg_integer(), atom()) ::
+          StorageItemRemoved.t()
+  def storage_item_removed(server_index, amount, reason, kind) do
     %StorageItemRemoved{
       index: PlayerState.client_index(server_index),
       amount: amount,
-      reason: reason
+      reason: reason,
+      kind: kind
     }
   end
 

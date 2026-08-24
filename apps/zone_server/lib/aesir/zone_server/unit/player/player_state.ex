@@ -131,6 +131,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
           pending_cart_notify: [tuple()],
           cart_type: non_neg_integer(),
           storage: nil | %{non_neg_integer() => InventoryItem.t()},
+          guild_storage: nil | %{non_neg_integer() => InventoryItem.t()},
           pending_warp: {String.t(), non_neg_integer(), non_neg_integer()} | nil,
           pending_interaction: module() | nil,
           pending_menu_offer: map() | nil,
@@ -272,6 +273,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # Account storage keyed by stable session index, mirroring inventory/cart;
     # nil means the storage window is closed (nothing loaded for this session).
     storage: nil,
+    # Guild storage follows the same window-state convention as account storage.
+    guild_storage: nil,
     # Warp directive staged by a skill cast. When non-nil the handler calls
     # WarpHandler.warp/4 after committing SP/cooldowns, then clears this field.
     pending_warp: nil,

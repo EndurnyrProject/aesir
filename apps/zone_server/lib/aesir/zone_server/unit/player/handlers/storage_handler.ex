@@ -8,10 +8,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   `CartHandler`. `game_state.storage` doubles as the window state: `nil` means
   closed, a map means open (`ItemContainer`-shaped, same as inventory/cart).
 
-  Every deposit/withdraw outcome (including rejections) reports a
-  `StorageResult` to the client; the window itself only reports `StorageOpened`
-  on open (there is no error result to report if `open/1` already sends
-  `BASIC_SKILL_REQUIRED` on gate failure).
+  Every transfer outcome and open rejection reports a `StorageResult` to the
+  client; a successful open reports `StorageOpened`.
   """
 
   require Logger
@@ -33,23 +31,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandler do
   Opens the account storage window.
 
   Rejected (state unchanged) with `StorageResult(STORAGE_BASIC_SKILL_REQUIRED)`
-  when the learned `NV_BASIC` level is below #{@min_basic_skill_level}. When
-  already open, re-sends the current `StorageOpened` without touching the
-  database. Otherwise loads every row via `Storage.Persistence.load_storage/1`,
-  indexes it into the session map, commits `game_state.storage`, and sends
-  `StorageOpened`.
+  when the learned `NV_BASIC` level is below #{@min_basic_skill_level}, and with
+  `STORAGE_OTHER_STORAGE_OPEN` while guild storage is open. When already open,
+  re-sends the current `StorageOpened` without touching the database. Otherwise
+  loads every row via `Storage.Persistence.load_storage/1`, indexes it into the
+  session map, commits `game_state.storage`, and sends `StorageOpened`.
   """
   @spec open(map()) :: {:noreply, map()}
   def open(%{game_state: game_state} = state) do
-    if basic_skill_level(game_state) >= @min_basic_skill_level do
-      do_open(state)
-    else
-      Logger.debug(
-        "Storage open rejected for #{game_state.character_id}: NV_BASIC < #{@min_basic_skill_level}"
-      )
+    cond do
+      basic_skill_level(game_state) < @min_basic_skill_level ->
+        Logger.debug(
+          "Storage open rejected for #{game_state.character_id}: NV_BASIC < #{@min_basic_skill_level}"
+        )
 
-      send_result(state.connection_pid, :STORAGE_BASIC_SKILL_REQUIRED)
-      {:noreply, state}
+        send_result(state.connection_pid, :STORAGE_BASIC_SKILL_REQUIRED)
+        {:noreply, state}
+
+      is_map(game_state.guild_storage) ->
+        send_result(state.connection_pid, :STORAGE_OTHER_STORAGE_OPEN)
+        {:noreply, state}
+
+      true ->
+        do_open(state)
     end
   end
 

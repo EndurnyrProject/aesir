@@ -292,10 +292,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StorageHandlerTest do
       assert closed.game_state.storage == nil
     end
 
-    test "is a no-op when already closed" do
+    test "is a silent no-op when already closed" do
       base = state()
 
       assert {:noreply, ^base} = StorageHandler.close(base)
+      refute_received {:send, _, {:storage_result, %StorageResult{}}}
     end
   end
 

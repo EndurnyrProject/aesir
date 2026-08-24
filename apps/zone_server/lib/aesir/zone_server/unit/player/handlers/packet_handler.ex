@@ -86,6 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler
@@ -298,21 +299,61 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     CartHandler.move_to_inventory(index, amount, state)
   end
 
-  # StorageDepositRequest - Player moves an inventory item into account storage.
+  # StorageDepositRequest - Player moves an inventory item into the selected storage.
   # `inventory_index` is the client index (server index + 2); the handler subtracts the offset.
-  def handle_message(%StorageDepositRequest{inventory_index: index, amount: amount}, state) do
+  def handle_message(
+        %StorageDepositRequest{
+          kind: :STORAGE_KIND_PERSONAL,
+          inventory_index: index,
+          amount: amount
+        },
+        state
+      ) do
     StorageHandler.deposit(index, amount, state)
+  end
+
+  def handle_message(
+        %StorageDepositRequest{
+          kind: :STORAGE_KIND_GUILD,
+          inventory_index: index,
+          amount: amount
+        },
+        state
+      ) do
+    GuildStorageHandler.deposit(index, amount, state)
   end
 
   # StorageWithdrawRequest - Player moves a storage item back into the inventory.
   # `storage_index` is the client index (server index + 2); the handler subtracts the offset.
-  def handle_message(%StorageWithdrawRequest{storage_index: index, amount: amount}, state) do
+  def handle_message(
+        %StorageWithdrawRequest{
+          kind: :STORAGE_KIND_PERSONAL,
+          storage_index: index,
+          amount: amount
+        },
+        state
+      ) do
     StorageHandler.withdraw(index, amount, state)
   end
 
-  # StorageCloseRequest - Player closes the storage window.
-  def handle_message(%StorageCloseRequest{}, state) do
+  def handle_message(
+        %StorageWithdrawRequest{
+          kind: :STORAGE_KIND_GUILD,
+          storage_index: index,
+          amount: amount
+        },
+        state
+      ) do
+    GuildStorageHandler.withdraw(index, amount, state)
+  end
+
+  # StorageCloseRequest - Player closes the selected storage window.
+  def handle_message(%StorageCloseRequest{kind: :STORAGE_KIND_PERSONAL}, state) do
     StorageHandler.close(state)
+  end
+
+  def handle_message(%StorageCloseRequest{kind: :STORAGE_KIND_GUILD}, state) do
+    GuildStorageHandler.close(state)
   end
 
   # VendingOpenRequest - Merchant opens a vending shop selling cart items. The

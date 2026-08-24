@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             pending_trade_invite: nil,
             trade: nil,
             pending_guild_invite: nil,
+            guild_storage_ctx: nil,
             quest_info_display: %{map: nil, shown: %{}},
             homunculus: nil,
             homunculus_runtime: %Runtime{private_dirty: false},
@@ -77,6 +78,14 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             %{pid: pid(), monitor: reference(), partner_char_id: integer()}
             | nil,
           pending_guild_invite: map() | nil,
+          guild_storage_ctx:
+            %{
+              guild_id: non_neg_integer(),
+              char_id: non_neg_integer(),
+              session_pid: pid(),
+              capacity: pos_integer()
+            }
+            | nil,
           quest_info_display: %{
             map: String.t() | nil,
             shown: %{non_neg_integer() => {non_neg_integer(), non_neg_integer()}}
