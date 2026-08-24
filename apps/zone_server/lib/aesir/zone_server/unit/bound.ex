@@ -26,7 +26,19 @@ defmodule Aesir.ZoneServer.Unit.Bound do
 
   @doc """
   Returns whether an item may enter personal storage.
+
+  Personal storage accepts unbound and account-bound items; guild storage uses
+  the inverse account/guild-bound policy in `guild_storable?/1`.
   """
   @spec storable?(InventoryItem.t()) :: boolean()
   def storable?(%InventoryItem{bound: bound}), do: bound in [0, 1]
+
+  @doc """
+  Returns whether an item may enter guild storage.
+
+  Unlike personal storage, guild storage accepts guild-bound items and rejects
+  account-bound items.
+  """
+  @spec guild_storable?(InventoryItem.t()) :: boolean()
+  def guild_storable?(%InventoryItem{bound: bound}), do: bound in [0, 2]
 end

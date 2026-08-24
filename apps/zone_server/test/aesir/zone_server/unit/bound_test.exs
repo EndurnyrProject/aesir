@@ -20,4 +20,14 @@ defmodule Aesir.ZoneServer.Unit.BoundTest do
       assert Bound.storable?(item) == storable?
     end
   end
+
+  test "inverts the personal storage policy for account-bound and guild-bound items" do
+    account_bound = %InventoryItem{bound: 1}
+    guild_bound = %InventoryItem{bound: 2}
+
+    assert Bound.storable?(account_bound)
+    refute Bound.guild_storable?(account_bound)
+    refute Bound.storable?(guild_bound)
+    assert Bound.guild_storable?(guild_bound)
+  end
 end
