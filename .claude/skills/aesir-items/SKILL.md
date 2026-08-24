@@ -7,10 +7,13 @@ description: How to work on items in Aesir - the YAML item DB and its importer, 
 
 ## The item database
 
-- `apps/zone_server/priv/db/re/items/{equip,usable,etc}.yml` are **fully regenerated** by
-  `mix aesir.import.items [<rathena_root>]` — any hand-edit is erased on the next reimport.
-- The seam for hand-authored scripts is
-  `apps/zone_server/priv/db/re/items/script_overrides.yml`: keyed by item id, merged over the
+- The item DB is **mode-scoped**: `apps/zone_server/priv/db/<mode>/items/{equip,usable,etc}.yml`
+  where `<mode>` is `re/` or `pre-re/` (selected at boot by `AESIR_DB_MODE`; see
+  `aesir-game-modes`). The files are **fully regenerated** by
+  `mix aesir.import.items [<rathena_root>]` — any hand-edit is erased on the next reimport;
+  the importer writes to the active mode's dir.
+- The seam for hand-authored scripts is the mode dir's `items/script_overrides.yml`:
+  keyed by item id, merged over the
   generated `on_use` at load time by `ItemManagement.Loader`, never touched by the importer.
   Use it only for scripts the transpiler genuinely cannot emit — if the transpiler *should*
   handle it, fix the transpiler instead.
@@ -49,7 +52,8 @@ parameterized `{family, param}` tuples). Adding a new `bXxx` key means:
 3. Re-run the importer and check the resolved-coverage count actually moved.
 
 Conventions to keep: race atoms — player combatant race is `:player_human`, mob demihuman
-is `:demihuman` (RC_DemiHuman gear does not affect players in renewal); `:race2` params are
+is `:demihuman` (RC_DemiHuman gear does not affect players in renewal; in pre-re players
+ARE demi-human — a mode divergence, see `aesir-game-modes`); `:race2` params are
 case-insensitive; `:item` params pass verbatim.
 
 ## itemskill and status-granting consumables
@@ -68,6 +72,6 @@ case-insensitive; `:item` params pass verbatim.
 - **Bootstrap hazard**: the importer loads the *existing* item DB while regenerating it, so
   an on-disk format older than the loader crashes the import. Migrate formats with a
   standalone `mix run --no-start` transform first, then rerun the importer canonically.
-- **Stale ETF caches**: `priv/db/re/*/.cache/*.etf` tracks source paths and YAML mtimes — after an
+- **Stale ETF caches**: `priv/db/<mode>/*/.cache/*.etf` tracks source paths and YAML mtimes — after an
   `ItemDefinition` struct-shape change, delete the caches or boots poison silently.
 - Run importers from the repo root (CWD-relative output paths).

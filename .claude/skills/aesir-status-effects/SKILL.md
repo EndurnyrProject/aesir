@@ -92,3 +92,11 @@ able to rebuild them. `source_type` is not persisted either.
   (`restore_on_spawn` identity, `save_statuses` :ok) or they hit the DB sandbox.
 - When fixing one status's bug (dead key, missing flag, missing resolver entry), grep the
   whole `effects/` tree for structural siblings — this subsystem's bugs come in classes.
+
+## Game modes
+
+Several SC_ behaviors diverge between renewal and pre-renewal (element-field skills like
+Volcano/Deluge/Violent Gale, Steel Body, Kyrie, Angelus scaling, endows — renewal applies
+element bonuses as ratio deltas, pre-re multiplies damage). Phase 1 ships renewal behavior
+in both modes; when implementing or touching an effect with a known divergence, document
+BOTH modes in the `@moduledoc` (the Phase-2 audit inventory). See `aesir-game-modes`.

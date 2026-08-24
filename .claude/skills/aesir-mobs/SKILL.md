@@ -7,10 +7,11 @@ description: How to work on mobs in Aesir - MobSession/AI, the mob and spawn dat
 
 ## Data and runtime
 
-- Mob DB: `apps/zone_server/priv/db/re/mobs/mobs.yml` (`mix aesir.import.mobs`), loaded into
+- Mob DB: `apps/zone_server/priv/db/<mode>/mobs/mobs.yml` (`mix aesir.import.mobs`) — mode
+  dir is `re/` or `pre-re/` per `AESIR_DB_MODE` (see `aesir-game-modes`); loaded into
   `:persistent_term` via `Mmo.MobManagement.Mobs`. Boss/MVP classification is data-driven
   (two-axis: boss-flag vs MVP).
-- Spawns: `priv/db/re/spawns/<map>.yml` (`mix aesir.import.spawns`); map `Coordinator` owns
+- Spawns: `priv/db/<mode>/spawns/<map>.yml` (`mix aesir.import.spawns`); map `Coordinator` owns
   spawning and the death path.
 - Runtime: `unit/mob/mob_session.ex` — one GenServer per mob instance with a self-armed AI
   tick loop; `AiStateMachine` is a pure functional state machine (patrol/aggro/chase/attack/
@@ -34,7 +35,7 @@ There is no separate mob-skill implementation layer (the old archetype system wa
 The split is:
 
 - **Trigger layer** — `mmo/mob_skill/` (`Db`, `Importer`, `Selector`, `CastingHandler`):
-  the imported rows (`priv/db/re/mob_skills/`) own cast time, rate, state conditions, target
+  the imported rows (`priv/db/<mode>/mob_skills/`) own cast time, rate, state conditions, target
   codes.
 - **Execution** — `MobSkill.Executor` resolves `Skill.Catalog.by_id(row.skill_id)` and
   dispatches to the real `Skill.Active` module with a `%MobState{}` caster, calling

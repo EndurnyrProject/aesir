@@ -33,7 +33,8 @@ end
   auto-derived from `on_event/2` **literal** clause heads (non-literal head = CompileError).
 - `Npc.Registry` (`:persistent_term`) indexes placements at boot with deterministic
   synthetic gids from `{map, x, y}`; `Npc.Verifier` fails boot on cell collisions.
-- Warp portals are data, not modules: `apps/zone_server/priv/db/re/warps/*.yml`.
+- Warp portals are data, not modules: `apps/zone_server/priv/db/<mode>/warps/*.yml`
+  (mode dir `re/` or `pre-re/` per `AESIR_DB_MODE`; see `aesir-game-modes`).
 
 ## The Script DSL (`script/dsl.ex`)
 
@@ -77,7 +78,9 @@ External-store vars are read/written directly by the interaction Task, not via
 Output mirrors the rAthena source path — directory plus file basename
 (`content/npc/<dir>/<file>/<slug>.ex`, module `Content.Npc.<Dir…>.<File>.<Name>`), so every
 NPC in one source file shares a folder and module parent; distinct from hand-written NPCs at
-`content/npc/<map>/<name>.ex`.
+`content/npc/<map>/<name>.ex`. rAthena's `npc/` tree is mode-overlaid: root dirs are shared,
+`npc/re/` and `npc/pre-re/` are renewal-/classic-only content — the committed corpus is
+currently renewal-focused; the pre-re NPC corpus is Phase-3 work (see `aesir-game-modes`).
 Pipeline lives under `npc/transpiler/`; state in `priv/npc_transpile/manifest.json`; stub
 report at `priv/npc_transpile/_transpile_report.md`.
 

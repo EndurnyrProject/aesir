@@ -17,7 +17,9 @@ description: How to implement job/player skills in Aesir - the Skill behaviour a
 - **No registration step**: `Skill.Catalog` (`mmo/skill/catalog.ex`) discovers every module
   under `Aesir.ZoneServer.Mmo.Skills` at runtime into `:persistent_term` (`reload/0` after
   edits). Lookups: `Catalog.by_id/1`, `by_name/1` (both return `{:ok, defn} | :error`).
-- Learnability comes from the skill tree YAMLs: `apps/zone_server/priv/db/skill_tree/<job>.yml`.
+- Learnability comes from the skill tree YAMLs: `apps/zone_server/priv/db/<mode>/skill_tree/<job>.yml`
+  (mode dir `re/` or `pre-re/`; a skill absent from a mode's tree is unreachable in that mode —
+  that's how era-gating works, see `aesir-game-modes`).
   Skill name atoms are lowercase (`:nv_basic`, not `:NV_BASIC`).
 
 ## Behaviours
@@ -112,4 +114,7 @@ trigger layer). When writing a skill, either keep `cast/4` caster-generic or add
 - Mimic stubs: after changing a stubbed function's arity, sweep and update every stub
   (old-arity stubs go silently inert).
 - rAthena research: renewal skill logic is under `rathena/src/map/skills/<job>/`, not just
-  `skill.cpp`. Keep rAthena pointers out of Aesir code/docs — describe the mechanic.
+  `skill.cpp`. Always check for `#ifdef RENEWAL` branches — many skills behave differently
+  pre-renewal (see `aesir-game-modes`); document BOTH modes' behavior in the `@moduledoc`
+  even when only renewal is implemented (these notes are the Phase-2 audit inventory).
+  Keep rAthena pointers out of Aesir code/docs — describe the mechanic.

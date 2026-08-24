@@ -5,9 +5,14 @@ description: How to work on the Aesir codebase - version control (colocated Juju
 
 # Working on Aesir
 
-Aesir is a Ragnarok Online (Renewal) emulator in Elixir: an umbrella of four OTP apps
+Aesir is a Ragnarok Online emulator in Elixir: an umbrella of four OTP apps
 (`commons`, `account_server`, `char_server`, `zone_server`) talking to a custom Rust client
-over QUIC + Protobuf. Correctness with respect to Renewal mechanics is the top priority.
+over QUIC + Protobuf. It serves two rulesets from one artifact — **renewal** (the flagship)
+and **pre-renewal** (trans-era classic) — selected at boot by `AESIR_DB_MODE` and frozen for
+the node's lifetime. Correctness with respect to the active mode's mechanics is the top
+priority; renewal has zero regression tolerance. See the `aesir-game-modes` skill for how to
+identify mode-divergent mechanics and the mode seam.
+
 rAthena (checkout at `~/Development/personal/rathena`) is the reference implementation used
 during research — but never cite rAthena files/functions in Aesir code, docs, or comments;
 describe the mechanic itself in plain terms.
@@ -197,3 +202,4 @@ its **own** ETS world and background processes — do not reach for the old boot
 - `aesir-items` — item scripts, equip bonuses, importers.
 - `aesir-mobs` — mob AI and mob skill casting.
 - `aesir-protocol` — adding Protobuf wire messages.
+- `aesir-game-modes` — identifying renewal vs pre-renewal mechanics/content; the mode seam.
