@@ -12,77 +12,57 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
 
   @behaviour Aesir.ZoneServer.Unit.CombatCalculations
 
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @typedoc "Player stats structure used for calculations"
   @type player_stats :: Stats.t()
 
-  @doc """
-  Calculates player hit stat
-
-  ## Formula
-  Base: DEX + LUK/3 + base_level/4
-  Final: base_hit + equipment_bonuses + status_effect_bonuses
-  """
+  @doc "Calculates player HIT under the active ruleset."
   @impl true
   @spec calculate_hit(player_stats()) :: integer()
   def calculate_hit(%Stats{} = stats) do
-    effective_dex = Stats.get_effective_stat(stats, :dex)
-    effective_luk = Stats.get_effective_stat(stats, :luk)
-    effective_con = Stats.get_effective_stat(stats, :con)
-    base_level = stats.progression.base_level
-
-    # Base hit calculation (+ 2 * CON, row 3)
-    base_hit = trunc(effective_dex + effective_luk / 3 + base_level / 4) + 2 * effective_con
-
     passive_hit = stats.modifiers |> Map.get(:passive, %{}) |> Map.get(:hit, 0)
 
-    # Add modifiers from status effects, equipment, and passive skills
-    base_hit + Stats.get_status_modifier(stats, :hit) +
-      Stats.get_equipment_modifier(stats, :hit) + passive_hit
+    values = %{
+      dex: Stats.get_effective_stat(stats, :dex),
+      luk: Stats.get_effective_stat(stats, :luk),
+      con: Stats.get_effective_stat(stats, :con),
+      base_level: stats.progression.base_level,
+      flat_bonus:
+        Stats.get_status_modifier(stats, :hit) +
+          Stats.get_equipment_modifier(stats, :hit) + passive_hit
+    }
+
+    Mechanics.player_formulas().hit(values)
   end
 
-  @doc """
-  Calculates player flee stat
-
-  ## Formula
-  Base: AGI + LUK/5 + base_level/4
-  Final: base_flee + equipment_bonuses + status_effect_bonuses
-  """
+  @doc "Calculates player FLEE under the active ruleset."
   @impl true
   @spec calculate_flee(player_stats()) :: integer()
   def calculate_flee(%Stats{} = stats) do
-    effective_agi = Stats.get_effective_stat(stats, :agi)
-    effective_luk = Stats.get_effective_stat(stats, :luk)
-    effective_con = Stats.get_effective_stat(stats, :con)
-    base_level = stats.progression.base_level
+    values = %{
+      agi: Stats.get_effective_stat(stats, :agi),
+      luk: Stats.get_effective_stat(stats, :luk),
+      con: Stats.get_effective_stat(stats, :con),
+      base_level: stats.progression.base_level,
+      flat_bonus:
+        Stats.get_status_modifier(stats, :flee) +
+          Stats.get_equipment_modifier(stats, :flee) + Passives.flee_bonus(stats)
+    }
 
-    # Base flee calculation (+ 2 * CON, row 4)
-    base_flee = trunc(effective_agi + effective_luk / 5 + base_level / 4) + 2 * effective_con
-
-    # Add modifiers from status effects, equipment, and passive skills
-    base_flee + Stats.get_status_modifier(stats, :flee) +
-      Stats.get_equipment_modifier(stats, :flee) + Passives.flee_bonus(stats)
+    Mechanics.player_formulas().flee(values)
   end
 
-  @doc """
-  Calculates player perfect dodge stat
-
-  ## Formula
-  Base: LUK/5
-  Final: base_perfect_dodge + equipment_bonuses + status_effect_bonuses
-
-  Note: Client displays this value divided by 10 (flee2/10 format)
-  """
+  @doc "Calculates player perfect dodge under the active ruleset."
   @impl true
   @spec calculate_perfect_dodge(player_stats()) :: integer()
   def calculate_perfect_dodge(%Stats{} = stats) do
-    effective_luk = Stats.get_effective_stat(stats, :luk)
+    values = %{luk: Stats.get_effective_stat(stats, :luk)}
 
-    base_perfect_dodge = trunc(effective_luk / 5)
-
-    base_perfect_dodge + Stats.get_status_modifier(stats, :perfect_dodge) +
+    Mechanics.player_formulas().perfect_dodge(values) +
+      Stats.get_status_modifier(stats, :perfect_dodge) +
       Stats.get_equipment_modifier(stats, :perfect_dodge)
   end
 

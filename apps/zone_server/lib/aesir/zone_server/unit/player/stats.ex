@@ -49,7 +49,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -62,6 +64,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Unit.Stats
 
   @riding_option_bit Option.id(:riding)
+  @novice_high_job_id 4001
+  @ranged_weapons [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
 
   defmodule PlayerProgression do
     @moduledoc false
@@ -305,7 +309,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc """
   Calculates all stats from base values and modifiers.
-  This is the main calculation pipeline following rAthena patterns.
 
   ## Parameters
   - stats: The Stats struct to calculate
@@ -753,12 +756,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     stats
   end
 
-  @doc """
-  Calculates derived stats (HP, SP) using rAthena Post-Renewal formulas.
-
-  HP Formula: base_hp[level] * (1.0 + vit * 0.01) + bonuses
-  SP Formula: base_sp[level] * (1.0 + int * 0.01) + bonuses
-  """
+  @doc "Calculates mode-specific derived stats from prepared job and modifier inputs."
   @spec calculate_derived_stats(t()) :: t()
   def calculate_derived_stats(%__MODULE__{} = stats) do
     effective_vit = get_effective_stat(stats, :vit)
@@ -771,16 +769,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         job_stats = get_job_stats_for_level(job_name, base_level)
 
         # Calculate HP/SP with modifiers
+        transcendent? = transcendent_job?(stats.progression.job_id)
+
         max_hp =
           calculate_max_hp(
             job_stats.base_hp,
             effective_vit,
             job_stats.hp_factor,
             job_stats.hp_increase,
+            transcendent?,
             stats
           )
 
-        max_sp = calculate_max_sp(job_stats.base_sp, effective_int, job_stats.sp_increase, stats)
+        max_sp =
+          calculate_max_sp(
+            job_stats.base_sp,
+            effective_int,
+            job_stats.sp_increase,
+            transcendent?,
+            stats
+          )
 
         # Calculate ASPD
         aspd = calculate_aspd(stats)
@@ -852,55 +860,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp clamp_ap(stats, _max_ap), do: stats
 
-  @doc """
-  Calculates combat-related stats (hit, flee, critical, atk, matk, def).
-  Uses the new CombatCalculations behavior for consistent calculations.
-  """
+  @doc "Calculates combat-related stats under the active ruleset."
   @spec calculate_combat_stats(t()) :: t()
   def calculate_combat_stats(%__MODULE__{} = stats) do
     alias Aesir.ZoneServer.Unit.Player.CombatCalculations, as: PlayerCombatCalc
 
-    base_critical = calculate_base_critical(stats)
-    base_atk = apply_rate(calculate_base_atk(stats), get_equipment_modifier(stats, :atk_rate))
-    base_matk = calculate_base_matk(stats)
-    base_def = calculate_base_def(stats)
+    formulas = Mechanics.player_formulas()
+    values = formula_values(stats)
+
+    critical_basis =
+      formulas.critical(%{luk: values.luk, raw_luk: stats.base_stats.luk})
+
+    base_atk =
+      values
+      |> formulas.base_atk(equipped_weapon_type(stats) in @ranged_weapons)
+      |> apply_rate(get_equipment_modifier(stats, :atk_rate))
+
+    %{min: base_matk_min, max: base_matk_max} = formulas.base_matk(values)
+    base_def = formulas.base_def(values)
     skill_passive_atk = Passives.atk_bonus(stats)
     passive_atk = skill_passive_atk + forged_star_damage(stats.worn_items)
     passive_critical = Passives.critical_bonus(stats)
-    passive_critical_display = div(passive_critical, 10)
 
-    critical =
-      trunc(
-        (base_critical + passive_critical_display + get_status_modifier(stats, :critical) +
-           get_equipment_modifier(stats, :critical)) *
-          (100 + get_status_modifier(stats, :critical_rate)) / 100
+    flat_critical =
+      get_status_modifier(stats, :critical) + get_equipment_modifier(stats, :critical)
+
+    {critical, critical_rate} =
+      calculate_critical(
+        critical_basis,
+        passive_critical,
+        flat_critical,
+        get_status_modifier(stats, :critical_rate),
+        stats.right_hand
       )
-      |> apply_katar_critical(stats.right_hand)
 
-    # Effective trait stats feed the six SP-A combat slots (rows 5-10).
-    pow_eff = get_effective_stat(stats, :pow)
-    sta_eff = get_effective_stat(stats, :sta)
-    wis_eff = get_effective_stat(stats, :wis)
-    spl_eff = get_effective_stat(stats, :spl)
-    con_eff = get_effective_stat(stats, :con)
-    crt_eff = get_effective_stat(stats, :crt)
+    trait_slots = calculate_trait_slots(stats, formulas, values)
 
     flat_matk = get_status_modifier(stats, :matk) + get_equipment_modifier(stats, :matk)
     wmatk_min = Map.get(stats.modifiers.equipment, :wmatk_min, 0)
     wmatk_max = Map.get(stats.modifiers.equipment, :wmatk_max, 0)
     matk_rate = get_equipment_modifier(stats, :matk_rate)
-    matk_min = apply_rate(base_matk + wmatk_min + flat_matk, matk_rate)
-    matk_max = apply_rate(base_matk + wmatk_max + flat_matk, matk_rate)
+    matk_min = apply_rate(base_matk_min + wmatk_min + flat_matk, matk_rate)
+    matk_max = apply_rate(base_matk_max + wmatk_max + flat_matk, matk_rate)
 
-    # Heal MATK band excludes flat item/status MATK: rAthena's RE heal
-    # (skill.cpp:705-729) uses status_base_matk + weapon variance ONLY.
-    heal_matk_min = base_matk + wmatk_min
-    heal_matk_max = base_matk + wmatk_max
+    # Heal MATK excludes flat item and status MATK while retaining weapon variance.
+    heal_matk_min = base_matk_min + wmatk_min
+    heal_matk_max = base_matk_max + wmatk_max
 
     combat_stats = %Stats.CombatStats{
       hit: PlayerCombatCalc.calculate_hit(stats),
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical: critical,
+      critical_rate: critical_rate,
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
@@ -912,15 +923,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       heal_matk_max: heal_matk_max,
       def: base_def + get_status_modifier(stats, :def) + get_equipment_modifier(stats, :def),
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
-      soft_mdef: calculate_soft_mdef(stats),
+      soft_mdef: formulas.soft_mdef(values),
       passive_atk: passive_atk,
       hit_rate_bonus_pct: Passives.hit_rate_bonus_pct(stats),
-      patk: combat_modifier(stats, :patk, div(pow_eff, 3) + div(con_eff, 5)),
-      smatk: combat_modifier(stats, :smatk, div(spl_eff, 3) + div(con_eff, 5)),
-      res: combat_modifier(stats, :res, sta_eff + div(sta_eff, 3) * 5),
-      mres: combat_modifier(stats, :mres, wis_eff + div(wis_eff, 3) * 5),
-      hplus: combat_modifier(stats, :hplus, crt_eff),
-      crate: combat_modifier(stats, :crit_rate, div(crt_eff, 3)),
+      patk: trait_slots.patk,
+      smatk: trait_slots.smatk,
+      res: trait_slots.res,
+      mres: trait_slots.mres,
+      hplus: trait_slots.hplus,
+      crate: trait_slots.crate,
       overrefine_band: get_equipment_modifier(stats, :overrefine_band),
       ignore_size_penalty: get_status_flag(stats, :ignore_size_penalty),
       max_weapon_damage: get_status_flag(stats, :max_weapon_damage)
@@ -928,6 +939,41 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     %{stats | combat_stats: combat_stats}
   end
+
+  defp calculate_critical(
+         %{strategy: :display_first} = basis,
+         passive_critical,
+         flat_critical,
+         critical_rate,
+         right_hand
+       ) do
+    critical =
+      trunc(
+        (basis.display_base + div(passive_critical, 10) + flat_critical) *
+          (100 + critical_rate) / 100
+      )
+      |> apply_katar_critical(right_hand)
+
+    roll_rate = basis.roll_rate + (critical - basis.roll_display_base) * 10
+    {critical, roll_rate}
+  end
+
+  defp calculate_critical(
+         %{strategy: :exact_tenths, base_rate: base_rate},
+         passive_critical,
+         flat_critical,
+         critical_rate,
+         right_hand
+       ) do
+    roll_rate =
+      (base_rate + passive_critical + flat_critical * 10)
+      |> apply_critical_rate(critical_rate)
+      |> apply_katar_critical(right_hand)
+
+    {div(roll_rate, 10), roll_rate}
+  end
+
+  defp apply_critical_rate(critical, rate), do: div(critical * (100 + rate), 100)
 
   defp apply_katar_critical(critical, %WeaponHand{subtype: :katar}), do: critical * 2
   defp apply_katar_critical(critical, _right_hand), do: critical
@@ -944,52 +990,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     end)
   end
 
-  defp calculate_base_critical(%__MODULE__{} = stats) do
-    effective_luk = get_effective_stat(stats, :luk)
+  defp calculate_trait_slots(stats, formulas, values) do
+    bonuses = %{
+      patk: get_status_modifier(stats, :patk) + get_equipment_modifier(stats, :patk),
+      smatk: get_status_modifier(stats, :smatk) + get_equipment_modifier(stats, :smatk),
+      res: get_status_modifier(stats, :res) + get_equipment_modifier(stats, :res),
+      mres: get_status_modifier(stats, :mres) + get_equipment_modifier(stats, :mres),
+      hplus: get_status_modifier(stats, :hplus) + get_equipment_modifier(stats, :hplus),
+      crate: get_status_modifier(stats, :crit_rate) + get_equipment_modifier(stats, :crit_rate)
+    }
 
-    # Basic formula: critical = LUK / 3
-    trunc(effective_luk / 3)
+    formulas.trait_slots(values, bonuses)
   end
 
-  defp calculate_base_atk(%__MODULE__{} = stats) do
-    effective_str = get_effective_stat(stats, :str)
-    effective_pow = get_effective_stat(stats, :pow)
-
-    # Basic formula: atk = STR + base level / 4 (+ 5 * POW, row 1)
-    base_level = stats.progression.base_level
-    trunc(effective_str + base_level / 4) + 5 * effective_pow
+  defp formula_values(stats) do
+    %{
+      str: get_effective_stat(stats, :str),
+      agi: get_effective_stat(stats, :agi),
+      vit: get_effective_stat(stats, :vit),
+      int: get_effective_stat(stats, :int),
+      dex: get_effective_stat(stats, :dex),
+      luk: get_effective_stat(stats, :luk),
+      pow: get_effective_stat(stats, :pow),
+      sta: get_effective_stat(stats, :sta),
+      wis: get_effective_stat(stats, :wis),
+      spl: get_effective_stat(stats, :spl),
+      con: get_effective_stat(stats, :con),
+      crt: get_effective_stat(stats, :crt),
+      base_level: stats.progression.base_level
+    }
   end
 
-  defp calculate_base_def(%__MODULE__{} = stats) do
-    effective_vit = get_effective_stat(stats, :vit)
-
-    # Basic formula: def = VIT/2 + base level / 6
-    base_level = stats.progression.base_level
-    trunc(effective_vit / 2 + base_level / 6)
-  end
-
-  # Verified vs rAthena status_base_matk_min/max for BL_PC (status.cpp:2571/2590):
-  # INT + INT/2 + DEX/5 + LUK/3 + level/4 + 5*SPL (row 2). PC min == max (no
-  # inherent spread).
-  defp calculate_base_matk(%__MODULE__{} = stats) do
-    effective_int = get_effective_stat(stats, :int)
-    effective_dex = get_effective_stat(stats, :dex)
-    effective_luk = get_effective_stat(stats, :luk)
-    effective_spl = get_effective_stat(stats, :spl)
-    base_level = stats.progression.base_level
-
-    effective_int + div(effective_int, 2) + div(effective_dex, 5) + div(effective_luk, 3) +
-      div(base_level, 4) + 5 * effective_spl
-  end
-
-  defp calculate_soft_mdef(%__MODULE__{} = stats) do
-    effective_int = get_effective_stat(stats, :int)
-    effective_dex = get_effective_stat(stats, :dex)
-    effective_vit = get_effective_stat(stats, :vit)
-    base_level = stats.progression.base_level
-
-    effective_int + div(base_level, 4) + div(effective_dex + effective_vit, 5)
-  end
+  defp equipped_weapon_type(%__MODULE__{right_hand: %WeaponHand{subtype: subtype}}), do: subtype
+  defp equipped_weapon_type(%__MODULE__{equipment: equipment}), do: weapon_type(equipment)
 
   @doc """
   Gets the effective value of a stat including all modifiers.
@@ -1030,6 +1063,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   defp all_stats_bonus(%__MODULE__{}, _stat_name), do: 0
+
+  defp equipment_primary_stat_bonus(stats, stat_name) do
+    get_equipment_modifier(stats, stat_name) + get_equipment_modifier(stats, :all_stats)
+  end
 
   @doc """
   Gets all status effect modifiers for a specific stat or property.
@@ -1078,17 +1115,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     get_equipment_modifier(stats, :item_heal_rate) + get_status_modifier(stats, :item_heal_rate)
   end
 
-  # The trait derivation term is summed with the status/equipment modifiers
-  # BEFORE the 0..SHRT_MAX clamp, matching rAthena's cap_value over the full
-  # sum (status.cpp:2668/2672/2676/2680/2684/2688).
-  defp combat_modifier(%__MODULE__{} = stats, modifier_key, trait_term) do
-    (get_status_modifier(stats, modifier_key) + get_equipment_modifier(stats, modifier_key) +
-       trait_term)
-    |> clamp(0, 32_767)
-  end
-
-  defp clamp(value, lo, hi), do: value |> max(lo) |> min(hi)
-
   @doc """
   Checks if the player has a specific status flag set by status effects.
   This is used for boolean properties like 'endure' or 'hiding'.
@@ -1105,70 +1131,49 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     Map.get(stats.modifiers.status_effects, flag, false)
   end
 
-  @ranged_weapons [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
-
-  @doc """
-  Calculates ASPD (Attack Speed) following the renewal formula.
-
-  The stat contribution is:
-  - Ranged weapons: sqrt(DEX² / 7 + AGI² / 2) / 4
-  - Other weapons: sqrt(DEX² / 5 + AGI² / 2) / 4
-
-  added to a base of 196, minus the job's per-weapon delay (plus the shield
-  penalty). Flat ASPD bonuses (potions, passive skills) scale with AGI / 200;
-  percentage bonuses grant their share of the distance to 195 ASPD:
-  max(195 - aspd, 2) * percent / 100.
-  """
+  @doc "Calculates ASPD under the active ruleset."
   @spec calculate_aspd(t()) :: integer()
   def calculate_aspd(%__MODULE__{} = stats) do
-    effective_agi = get_effective_stat(stats, :agi)
-    effective_dex = get_effective_stat(stats, :dex)
-    weapon_atom = weapon_type(stats.equipment)
-    has_shield = shield?(stats.equipment)
+    weapon_atom = equipped_weapon_type(stats)
 
     case AvailableJobs.job_id_to_name(stats.progression.job_id) do
       {:ok, job_name} ->
         weapon_delay = get_weapon_aspd(job_name, weapon_atom)
 
         weapon_delay =
-          if has_shield do
+          if shield?(stats.equipment) do
             apply_shield_penalty(weapon_delay, job_name)
           else
             weapon_delay
           end
 
-        stat_term =
-          if weapon_atom in @ranged_weapons do
-            effective_dex * effective_dex / 7 + effective_agi * effective_agi / 2
-          else
-            effective_dex * effective_dex / 5 + effective_agi * effective_agi / 2
-          end
+        inputs = %{
+          agi: get_effective_stat(stats, :agi),
+          dex: get_effective_stat(stats, :dex),
+          weapon_delay: weapon_delay,
+          left_weapon_delay: left_weapon_delay(stats, job_name),
+          ranged?: weapon_atom in @ranged_weapons,
+          flat_bonus:
+            get_status_modifier(stats, :aspd) + get_equipment_modifier(stats, :aspd) +
+              Passives.aspd_bonus(stats),
+          rate_bonus: aspd_percent_bonus(stats),
+          penalty_rate: get_status_modifier(stats, :aspd_penalty_rate)
+        }
 
-        base_aspd = :math.sqrt(stat_term) * 0.25 + 196
-
-        flat_bonus =
-          get_status_modifier(stats, :aspd) + get_equipment_modifier(stats, :aspd) +
-            Passives.aspd_bonus(stats)
-
-        final_aspd =
-          trunc(base_aspd + flat_bonus * effective_agi / 200) - min(weapon_delay, 200)
-
-        final_aspd =
-          final_aspd + div(max(195 - final_aspd, 2) * aspd_percent_bonus(stats), 100)
-
-        final_aspd
-        |> apply_aspd_penalty(get_status_modifier(stats, :aspd_penalty_rate))
-        |> min(193)
-        |> max(0)
+        Mechanics.player_formulas().aspd(inputs)
 
       err ->
         raise "Failed to get job name for ASPD calculation: #{inspect(err)}"
     end
   end
 
-  defp apply_aspd_penalty(aspd, penalty_rate) do
-    200 - div((200 - aspd) * (1_000 + penalty_rate), 1_000)
-  end
+  defp left_weapon_delay(
+         %__MODULE__{right_hand: %WeaponHand{}, left_hand: %WeaponHand{subtype: subtype}},
+         job_name
+       ),
+       do: get_weapon_aspd(job_name, subtype)
+
+  defp left_weapon_delay(_stats, _job_name), do: nil
 
   defp get_job_stats_for_level(job_name, base_level) do
     with {:ok, base_stats} <- JobManagement.get_base_stats_for_level(job_name, base_level),
@@ -1186,45 +1191,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     end
   end
 
-  defp calculate_max_hp(base_hp, effective_vit, hp_factor, hp_increase, stats) do
-    # Apply VIT modifier
-    hp_with_vit = trunc(base_hp * (1.0 + effective_vit * 0.01))
-
-    # Apply job-specific HP factor if any
-    hp_with_factor =
-      if hp_factor > 0 do
-        trunc(hp_with_vit * (100 + hp_factor) / 100)
-      else
-        hp_with_vit
-      end
-
-    # Apply increases and bonuses
-    total_hp = hp_with_factor + hp_increase + get_hp_bonus_flat(stats)
-
-    total_hp
-    |> apply_max_rate(
-      get_status_modifier(stats, :max_hp_rate) + get_equipment_modifier(stats, :max_hp_rate)
-    )
-    |> max(1)
+  defp calculate_max_hp(
+         base_hp,
+         effective_vit,
+         hp_factor,
+         hp_increase,
+         transcendent?,
+         stats
+       ) do
+    Mechanics.player_formulas().max_hp(%{
+      base_hp: base_hp,
+      vit: effective_vit,
+      equipment_vit: equipment_primary_stat_bonus(stats, :vit),
+      hp_factor: hp_factor,
+      hp_increase: hp_increase,
+      flat_bonus: get_hp_bonus_flat(stats),
+      equipment_rate: get_equipment_modifier(stats, :max_hp_rate),
+      modifier_rate: get_status_modifier(stats, :max_hp_rate),
+      transcendent?: transcendent?
+    })
   end
 
-  defp calculate_max_sp(base_sp, effective_int, sp_increase, stats) do
-    # Apply INT modifier
-    sp_with_int = trunc(base_sp * (1.0 + effective_int * 0.01))
-
-    # Apply increases and bonuses
-    total_sp = sp_with_int + sp_increase + get_sp_bonus_flat(stats)
-
-    total_sp
-    |> apply_max_rate(
-      get_status_modifier(stats, :max_sp_rate) + get_equipment_modifier(stats, :max_sp_rate) +
-        stats.modifiers.passive.max_sp_rate
-    )
-    |> max(1)
+  defp calculate_max_sp(base_sp, effective_int, sp_increase, transcendent?, stats) do
+    Mechanics.player_formulas().max_sp(%{
+      base_sp: base_sp,
+      int: effective_int,
+      equipment_int: equipment_primary_stat_bonus(stats, :int),
+      sp_increase: sp_increase,
+      flat_bonus: get_sp_bonus_flat(stats),
+      equipment_rate: get_equipment_modifier(stats, :max_sp_rate),
+      modifier_rate:
+        get_status_modifier(stats, :max_sp_rate) + stats.modifiers.passive.max_sp_rate,
+      transcendent?: transcendent?
+    })
   end
 
-  @spec apply_max_rate(integer(), number()) :: integer()
-  defp apply_max_rate(value, rate), do: trunc(value * (100 + rate) / 100)
+  defp transcendent_job?(job_id),
+    do: JobLineage.descendant_or_self?(job_id, @novice_high_job_id)
 
   # Percentage bonuses that accumulate as a delta off 100 (`bAtkRate`,
   # `bMatkRate`). Zero is the common case and must be exact, not a float round-trip.
@@ -1249,8 +1252,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     end
   end
 
-  # Equipment stores :aspd_rate as a full rate (100 = neutral), status effects
-  # as a summable percent delta; both sum into one renewal percent.
+  # Equipment stores :aspd_rate as a full rate (100 = neutral), while status
+  # effects store a summable percent delta; both feed the formula's speed channel.
   defp aspd_percent_bonus(%__MODULE__{modifiers: modifiers}) do
     equipment_percent = Map.get(modifiers.equipment, :aspd_rate, 100) - 100
     status_percent = Map.get(modifiers.status_effects, :aspd_rate, 0)
@@ -1263,18 +1266,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp get_sp_bonus_flat(%__MODULE__{} = stats), do: get_equipment_modifier(stats, :max_sp)
 
-  # Sums the flat item_db bonuses (attack -> atk, defense -> def) across the
-  # equipped items. Weapon MATK (a magic weapon's `magic_attack`) becomes a
-  # renewal variance band (`wmatk_min`/`wmatk_max`) while non-weapon MATK
-  # (cards/armor enchants) stays a flat `matk` bonus. Bonus scripts and card
-  # effects are intentionally out of scope here; that is the future
-  # item-script engine's job. `aspd_rate` defaults to 100 (no modifier).
-  #
-  # Refined items additionally fold in `RefineDatabase.level_info/3` bonuses
-  # (rAthena status.cpp:3955-4096): weapon ATK/MATK, the overrefine band, and
-  # the wlv5/armor-lv2 trait riders accumulate alongside the flat bonuses.
-  # Armor refine DEF is summed raw into `refine_def` and folded into `def`
-  # once, after the reduce, per the rAthena `(refinedef+50)/100` rounding.
+  # Sums flat item bonuses across the equipped items. Weapon MATK becomes a
+  # variance band while non-weapon MATK stays flat. Refine bonuses, overrefine,
+  # and trait riders accumulate in the same pass; armor refine DEF rounds once
+  # after the reduction. `aspd_rate` defaults to 100 (no modifier).
   # The wearer's base stats (allocated points plus job bonuses) that an
   # `on_equip` `readparam(bStr)` reads. Deliberately excludes equipment, status
   # and passive contributions: equip scripts run before those in the recompute
@@ -1393,9 +1388,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def granted_skills(%__MODULE__{granted_skills: granted}) when is_map(granted), do: granted
   def granted_skills(%__MODULE__{}), do: %{}
 
-  # Weapon MATK variance, verified vs rAthena status.cpp:6306-6316:
-  # `variance = weapon.matk * weapon.wlv / 10` (integer div), then
-  # `matk_min += wMatk - variance; matk_max += wMatk + variance`.
+  # Weapon MATK variance is weapon MATK times weapon level divided by ten.
   defp accumulate_item_bonus(
          acc,
          %ItemDefinition{weapon_level: level, magic_attack: matk} = item,
@@ -1460,10 +1453,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp apply_refine_bonus(acc, %ItemDefinition{}, _refine), do: acc
 
-  # ponytail: enchantgrade multiplier deferred (roadmap SP-D - no grade-bonus
-  # system exists yet). rAthena applies
-  # `atk2/matk += (bonus/100 * enchantgrade_bonus)/100` (status.cpp:3961,3980);
-  # here the refine bonus is applied unmultiplied.
+  # ponytail: enchantgrade multiplication is deferred until grade bonuses exist;
+  # refine bonuses are applied unmultiplied for now.
   defp apply_weapon_matk_refine(acc, :bow, _bonus), do: acc
 
   defp apply_weapon_matk_refine(acc, _subtype, bonus) do

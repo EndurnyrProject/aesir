@@ -566,6 +566,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
      }}
   end
 
+  defp computed_critical_rate(%{combat_stats: %{critical_rate: critical_rate}})
+       when is_integer(critical_rate),
+       do: critical_rate
+
   defp computed_critical_rate(%{base_stats: %{luk: luk}, combat_stats: %{critical: critical}})
        when is_integer(luk) and is_integer(critical) do
     base_critical = div(luk, 3)
