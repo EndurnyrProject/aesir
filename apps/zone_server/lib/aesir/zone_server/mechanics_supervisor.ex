@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.MechanicsSupervisor do
   use Supervisor
 
+  alias Aesir.Commons.Application, as: CommonsApplication
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.BossRespawn
   alias Aesir.ZoneServer.Map.MapCache
@@ -9,6 +10,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobSkill.Db, as: MobSkillDb
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -25,6 +27,8 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Npc.Warps
 
   def init([]) do
+    if CommonsApplication.env() != :test, do: :ok = Mechanics.resolve!()
+
     :ok = MapCache.init()
     :ok = Interpreter.init()
     :ok = ItemGroups.reload()
