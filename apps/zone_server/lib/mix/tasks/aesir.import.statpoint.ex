@@ -1,10 +1,10 @@
 defmodule Mix.Tasks.Aesir.Import.Statpoint do
-  @shortdoc "Imports the rAthena renewal statpoint.yml into priv/db/re/statpoint/statpoint.yml"
+  @shortdoc "Imports selected rAthena stat points into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts rAthena's renewal `db/re/statpoint.yml` (schema v2)
-  into our own-schema `apps/zone_server/priv/db/re/statpoint/statpoint.yml`.
+  Converts canonical `db/statpoint.yml` plus its selected mode import into
+  `apps/zone_server/priv/db/<mode>/statpoint/statpoint.yml`.
 
-      mix aesir.import.statpoint [<rathena_root>]
+      mix aesir.import.statpoint [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Both columns are cumulative totals
   from base level 1 to that level: `Points` (status points) and `TraitPoints`
@@ -17,8 +17,6 @@ defmodule Mix.Tasks.Aesir.Import.Statpoint do
 
   alias Mix.Tasks.Aesir.Import
 
-  @source Path.join(~w(db re statpoint.yml))
-
   @impl Mix.Task
   def run(args) do
     {rathena, mode} = Import.parse!(args)
@@ -26,9 +24,9 @@ defmodule Mix.Tasks.Aesir.Import.Statpoint do
 
     entries =
       rathena
-      |> Path.join(@source)
-      |> YamlElixir.read_from_file!()
-      |> entries_from_body()
+      |> Path.join("db/statpoint.yml")
+      |> Import.read_mode_filtered!(mode)
+      |> then(&entries_from_body(%{"Body" => &1}))
 
     File.mkdir_p!(Path.dirname(out_file))
     File.write!(out_file, Ymlr.document!(entries, sort_maps: true))

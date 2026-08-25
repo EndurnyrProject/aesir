@@ -9,8 +9,9 @@ defmodule Mix.Tasks.Aesir.Import.LevelPenalty do
   `apps/zone_server/priv/db/re/level_penalty_mvp_exp.yml`, flat `level_difference
   => percent` mappings consumed by `Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty`.
 
-      mix aesir.import.level_penalty [<rathena_root>]
+      mix aesir.import.level_penalty [<rathena_root>] [--mode re|pre-re]
 
+  This domain is Renewal-only; `--mode pre-re` raises without writing output.
   `<rathena_root>` defaults to `../rathena`. A type absent from the source
   (the shipped rAthena database currently defines no MVP-specific breakpoints)
   writes an empty table, which `LevelPenalty` already resolves to a rate of
@@ -26,6 +27,7 @@ defmodule Mix.Tasks.Aesir.Import.LevelPenalty do
   @impl Mix.Task
   def run(args) do
     {rathena, mode} = Import.parse!(args)
+    ensure_renewal!(mode)
 
     body =
       rathena
@@ -53,6 +55,12 @@ defmodule Mix.Tasks.Aesir.Import.LevelPenalty do
   # are required: a resync that renames or restructures them must fail loudly
   # rather than silently emit an empty table and disable the penalty worldwide.
   @optional_types ~w(Mvp_Drop Mvp_Exp)
+
+  defp ensure_renewal!(:renewal), do: :ok
+
+  defp ensure_renewal!(:pre_renewal) do
+    Mix.raise("level_penalty is a renewal-only domain; --mode pre-re is not supported")
+  end
 
   @spec table_for(map(), String.t()) :: %{integer() => integer()}
   def table_for(%{"Body" => body}, type) do

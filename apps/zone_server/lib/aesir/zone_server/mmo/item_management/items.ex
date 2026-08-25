@@ -22,6 +22,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Items do
   @spec all() :: [ItemDefinition.t()]
   def all, do: index().all
 
+  @doc "Returns runtime readiness only; it does not identify the catalog's game mode."
+  @spec loaded?() :: boolean()
+  def loaded?, do: not is_nil(:persistent_term.get(@pt_key, nil))
+
   @spec reload() :: :ok
   def reload do
     :persistent_term.put(@pt_key, Loader.load())

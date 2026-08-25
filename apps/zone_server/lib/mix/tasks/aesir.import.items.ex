@@ -1,14 +1,14 @@
 defmodule Mix.Tasks.Aesir.Import.Items do
-  @shortdoc "Imports rAthena renewal item_db into priv/db/re/items/*.yml"
+  @shortdoc "Imports the selected rAthena item DB into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts rAthena's renewal `item_db_{usable,equip,etc}.yml`
-  into our own-schema YAML under `apps/zone_server/priv/db/re/items/`.
+  Converts canonical `db/item_db.yml` plus its selected mode imports into
+  `apps/zone_server/priv/db/<mode>/items/*.yml`. The selected
+  `db/item_group_db.yml` supplies item-group symbols during transpilation.
 
-      mix aesir.import.items [<rathena_root>]
+      mix aesir.import.items [<rathena_root>] [--mode re|pre-re]
 
-  `<rathena_root>` defaults to `../rathena`. Anchors/merge keys are expanded by
-  the parser, so the output is fully flat. Fails loudly on unmapped data - this
-  is a dev tool, run only when syncing rAthena.
+  `<rathena_root>` defaults to `../rathena`. Output is flat and deterministic;
+  unmapped data fails loudly.
   """
   use Mix.Task
 
@@ -16,6 +16,7 @@ defmodule Mix.Tasks.Aesir.Import.Items do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler
 
   @equip_types [:armor, :weapon, :shadow_gear, :ammo]
@@ -24,16 +25,36 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   # so it transpiles to `on_use` alongside them.
   @usable_types [:usable, :healing, :delay_consume]
 
-  @sources ~w(usable equip etc)
+  @sources [:usable, :equip, :etc]
+  @source_kinds %{
+    "healing" => :usable,
+    "usable" => :usable,
+    "delayconsume" => :usable,
+    "cash" => :usable,
+    "weapon" => :equip,
+    "armor" => :equip,
+    "petegg" => :equip,
+    "petarmor" => :equip,
+    "shadowgear" => :equip,
+    "ammo" => :etc,
+    "card" => :etc,
+    "etc" => :etc
+  }
 
   @impl Mix.Task
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out_dir = Import.path("items", mode)
-    re_dir = Path.join([rathena, "db", "re"])
+    item_rows = read_source!(rathena, "item_db.yml", mode)
+    item_group_rows = read_source!(rathena, "item_group_db.yml", mode)
+    source_catalogs = Resolver.source_catalogs(item_rows, item_group_rows)
     File.mkdir_p!(out_dir)
 
-    entries = Enum.flat_map(@sources, &import_source(&1, re_dir, out_dir))
+    entries =
+      Resolver.with_source_catalogs(source_catalogs, fn ->
+        Enum.flat_map(@sources, &import_source(&1, item_rows, out_dir))
+      end)
+
     summary = summarize(entries)
 
     report_path = Path.join(out_dir, "_transpile_report.md")
@@ -42,9 +63,8 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     Mix.shell().info(summary_line(summary, report_path))
   end
 
-  defp import_source(kind, re_dir, out_dir) do
-    src = Path.join(re_dir, "item_db_#{kind}.yml")
-    entries = src |> read_body!() |> Enum.map(&transpile_entry/1)
+  defp import_source(kind, rows, out_dir) do
+    entries = rows |> Enum.filter(&(source_kind!(&1) == kind)) |> Enum.map(&transpile_entry/1)
     definitions = Enum.map(entries, &elem(&1, 0))
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
     out = Path.join(out_dir, "#{kind}.yml")
@@ -128,10 +148,18 @@ defmodule Mix.Tasks.Aesir.Import.Items do
       "(#{length(on_equip_failures)} unsupported) -> #{report_path}"
   end
 
-  defp read_body!(path) do
-    case YamlElixir.read_from_file!(path) do
-      %{"Body" => body} when is_list(body) -> body
-      _ -> Mix.raise("expected a Body list in #{path}")
+  defp read_source!(rathena, file, mode) do
+    [rathena, "db", file]
+    |> Path.join()
+    |> Import.read_mode_filtered!(mode)
+  end
+
+  defp source_kind!(entry) do
+    type = entry |> Map.get("Type", "Etc") |> String.downcase()
+
+    case Map.fetch(@source_kinds, type) do
+      {:ok, kind} -> kind
+      :error -> Mix.raise("unknown item source type #{inspect(entry["Type"])}")
     end
   end
 

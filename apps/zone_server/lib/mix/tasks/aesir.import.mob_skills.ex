@@ -1,10 +1,10 @@
 defmodule Mix.Tasks.Aesir.Import.MobSkills do
-  @shortdoc "Imports rAthena mob_skill_db into priv/db/re/mob_skills/mob_skills.yml"
+  @shortdoc "Imports selected rAthena mob skills into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts rAthena's renewal `mob_skill_db.txt` into our own
-  YAML at `apps/zone_server/priv/db/re/mob_skills/mob_skills.yml`, grouped by mob id.
+  Converts the selected mode's `mob_skill_db.txt` into
+  `apps/zone_server/priv/db/<mode>/mob_skills/mob_skills.yml`, grouped by mob id.
 
-      mix aesir.import.mob_skills [<rathena_root>]
+      mix aesir.import.mob_skills [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Global rows (`-1`/`-2`/`-3`) are
   written under the reserved keys `global_boss`/`global_normal`/`global_all` and
@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out = Import.path("mob_skills/mob_skills.yml", mode)
-    src = Path.join([rathena, "db", "re", "mob_skill_db.txt"])
+    src = Path.join(Import.rathena_db_dir(rathena, mode), "mob_skill_db.txt")
     File.mkdir_p!(Path.dirname(out))
 
     grouped =
@@ -40,10 +40,21 @@ defmodule Mix.Tasks.Aesir.Import.MobSkills do
         {:error, reason} -> Mix.raise("failed to import mob skills: #{inspect(reason)}")
       end
 
-    File.write!(out, Ymlr.document!(grouped))
+    File.write!(out, grouped |> stable_rows() |> Ymlr.document!())
 
     Mix.shell().info("mob_skills: #{map_size(grouped)} mob keys -> #{out}")
     report(grouped)
+  end
+
+  defp stable_rows(grouped) do
+    Map.new(grouped, fn {key, rows} ->
+      rows =
+        Enum.map(rows, fn row ->
+          row |> Map.delete(:skill_id) |> Map.put("skill_id", row.skill_id)
+        end)
+
+      {key, rows}
+    end)
   end
 
   @spec report(%{String.t() => [Importer.row()]}) :: :ok

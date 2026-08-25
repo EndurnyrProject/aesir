@@ -1,26 +1,78 @@
+defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError do
+  @moduledoc "Raised when item or item-group resolution requires a cold runtime catalog."
+
+  defexception [:message]
+end
+
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   @moduledoc """
   Maps rAthena script symbols to Aesir runtime values for the item-script
   transpiler.
 
-  Statuses, elements, classes, races, sizes, mob classes and on-hit effects are
-  resolved through hand-curated maps (the rAthena constant names do not line up
-  with Aesir's internal atoms); skills and items delegate to the live
-  `Skill.Catalog` / `ItemManagement.Items` registries.
+  Statuses, elements, classes, races, sizes, mob classes and on-hit effects use
+  curated maps. Skills use `Skill.Catalog`. Items and item groups use the
+  process-local source catalogs installed by `with_source_catalogs/2`, or their
+  loaded runtime catalogs outside that context. A cold runtime catalog raises
+  `CatalogNotLoadedError`.
 
-  Every resolver returns `{:ok, value}` or `{:error, {:unknown_symbol, symbol}}`;
-  the error feeds the transpiler's all-or-nothing rule (an item with any
-  unresolvable symbol emits no `on_use`).
+  Unknown symbols return `{:error, {:unknown_symbol, symbol}}`; the error feeds
+  the transpiler's all-or-nothing rule.
   """
 
   alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
 
   @typedoc "An unresolvable rAthena symbol, carried verbatim for the coverage report."
   @type error :: {:error, {:unknown_symbol, String.t()}}
+
+  @typedoc "Process-local item and item-group indexes built from selected source rows."
+  @type source_catalogs :: %{
+          required(:items_by_id) => %{integer() => integer()},
+          required(:items_by_aegis) => %{String.t() => integer()},
+          required(:item_groups) => MapSet.t(String.t())
+        }
+
+  @source_catalogs_key {__MODULE__, :source_catalogs}
+
+  @doc "Builds source indexes from selected item and item-group database rows."
+  @spec source_catalogs([map()], [map()]) :: source_catalogs()
+  def source_catalogs(item_rows, item_group_rows) do
+    %{
+      items_by_id:
+        Map.new(item_rows, fn row -> {Map.fetch!(row, "Id"), Map.fetch!(row, "Id")} end),
+      items_by_aegis:
+        Map.new(item_rows, fn row -> {Map.fetch!(row, "AegisName"), Map.fetch!(row, "Id")} end),
+      item_groups: MapSet.new(item_group_rows, &source_group_key/1)
+    }
+  end
+
+  @doc """
+  Runs `fun` with authoritative process-local source indexes.
+
+  Calls are safely nested and the previous context is restored even when `fun`
+  raises. Runtime catalogs are not consulted while a source context exists.
+  """
+  @spec with_source_catalogs(source_catalogs(), (-> result)) :: result when result: term()
+  def with_source_catalogs(source_catalogs, fun)
+      when is_map(source_catalogs) and is_function(fun, 0) do
+    missing = make_ref()
+    previous = Process.get(@source_catalogs_key, missing)
+    Process.put(@source_catalogs_key, source_catalogs)
+
+    try do
+      fun.()
+    after
+      if previous == missing do
+        Process.delete(@source_catalogs_key)
+      else
+        Process.put(@source_catalogs_key, previous)
+      end
+    end
+  end
 
   @statuses %{
     "SC_BLESSING" => :sc_blessing,
@@ -484,14 +536,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   def resolve_effect(symbol) when is_binary(symbol), do: unknown(symbol)
 
-  @doc "Resolves an `IG_*` constant to a catalog item-group key."
+  @doc "Resolves an `IG_*` constant to a known item-group key."
   @spec resolve_item_group(String.t()) :: {:ok, atom()} | error()
   def resolve_item_group("IG_" <> group = symbol) when group != "" do
-    key = group |> String.downcase() |> String.to_atom()
+    group_key = String.downcase(group)
 
-    case ItemGroups.fetch(key) do
-      {:ok, _group} -> {:ok, key}
-      :error -> unknown(symbol)
+    case Process.get(@source_catalogs_key) do
+      %{item_groups: groups} ->
+        if MapSet.member?(groups, group_key),
+          do: {:ok, String.to_atom(group_key)},
+          else: unknown(symbol)
+
+      nil ->
+        ensure_catalog_loaded!(ItemGroups, "item-group", "IG_*")
+        key = String.to_atom(group_key)
+
+        case ItemGroups.fetch(key) do
+          {:ok, _group} -> {:ok, key}
+          :error -> unknown(symbol)
+        end
     end
   end
 
@@ -514,9 +577,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @spec resolve_item(String.t() | integer()) :: {:ok, integer()} | error()
   def resolve_item(id) when is_integer(id) do
-    case Items.by_id(id) do
-      {:ok, %{id: item_id}} -> {:ok, item_id}
-      :error -> unknown(Integer.to_string(id))
+    case Process.get(@source_catalogs_key) do
+      %{items_by_id: items} ->
+        case Map.fetch(items, id) do
+          {:ok, item_id} -> {:ok, item_id}
+          :error -> unknown(Integer.to_string(id))
+        end
+
+      nil ->
+        ensure_catalog_loaded!(Items, "item", "items")
+
+        case Items.by_id(id) do
+          {:ok, %{id: item_id}} -> {:ok, item_id}
+          :error -> unknown(Integer.to_string(id))
+        end
     end
   end
 
@@ -544,9 +618,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
 
   @spec resolve_item_aegis(String.t()) :: {:ok, integer()} | error()
   defp resolve_item_aegis(symbol) do
-    case Items.by_aegis(symbol) do
-      {:ok, %{id: id}} -> {:ok, id}
-      :error -> unknown(symbol)
+    case Process.get(@source_catalogs_key) do
+      %{items_by_aegis: items} ->
+        case Map.fetch(items, symbol) do
+          {:ok, id} -> {:ok, id}
+          :error -> unknown(symbol)
+        end
+
+      nil ->
+        ensure_catalog_loaded!(Items, "item", "items")
+
+        case Items.by_aegis(symbol) do
+          {:ok, %{id: id}} -> {:ok, id}
+          :error -> unknown(symbol)
+        end
+    end
+  end
+
+  defp source_group_key(row), do: row |> Map.fetch!("Group") |> String.downcase()
+
+  defp ensure_catalog_loaded!(catalog, label, references) do
+    unless catalog.loaded?() do
+      raise CatalogNotLoadedError,
+            "#{label} catalog is not loaded; call #{inspect(catalog)}.reload/0 before importing scripts that reference #{references}"
     end
   end
 

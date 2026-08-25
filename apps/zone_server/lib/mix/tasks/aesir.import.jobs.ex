@@ -1,14 +1,13 @@
 defmodule Mix.Tasks.Aesir.Import.Jobs do
-  @shortdoc "Imports rAthena renewal job databases into priv/db/re/jobs/*.yml"
+  @shortdoc "Imports selected rAthena job databases into mode-scoped YAML"
   @moduledoc """
-  One-time importer: merges rAthena's renewal `job_stats.yml`, `job_basepoints.yml`,
-  `job_aspd.yml` and `job_exp.yml` into our own-schema YAML under
-  `apps/zone_server/priv/db/re/jobs/`, split by class tier.
+  Merges the selected mode's `job_stats.yml`, `job_basepoints.yml`,
+  `job_aspd.yml`, and `job_exp.yml` into
+  `apps/zone_server/priv/db/<mode>/jobs/*.yml`, split by class tier.
 
-      mix aesir.import.jobs [<rathena_root>]
+      mix aesir.import.jobs [<rathena_root>] [--mode re|pre-re]
 
-  `<rathena_root>` defaults to `../rathena`. Fails loudly on unmapped data - this
-  is a dev tool, run only when syncing rAthena.
+  `<rathena_root>` defaults to `../rathena`. Unmapped data fails loudly.
   """
   use Mix.Task
 
@@ -27,10 +26,10 @@ defmodule Mix.Tasks.Aesir.Import.Jobs do
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out_dir = Import.path("jobs", mode)
-    re_dir = Path.join([rathena, "db", "re"])
+    db_dir = Import.rathena_db_dir(rathena, mode)
     File.mkdir_p!(out_dir)
 
-    bodies = Map.new(@sources, fn {key, file} -> {key, read_body!(re_dir, file)} end)
+    bodies = Map.new(@sources, fn {key, file} -> {key, read_body!(db_dir, file)} end)
 
     bodies
     |> Importer.build()
@@ -64,8 +63,8 @@ defmodule Mix.Tasks.Aesir.Import.Jobs do
     end)
   end
 
-  defp read_body!(re_dir, file) do
-    path = Path.join(re_dir, file)
+  defp read_body!(db_dir, file) do
+    path = Path.join(db_dir, file)
 
     case YamlElixir.read_from_file!(path) do
       %{"Body" => body} when is_list(body) -> body

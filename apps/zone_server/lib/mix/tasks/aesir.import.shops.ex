@@ -1,14 +1,14 @@
 defmodule Mix.Tasks.Aesir.Import.Shops do
-  @shortdoc "Imports merchant shops into priv/db/re/shops/*.yml"
+  @shortdoc "Imports enabled rAthena merchant shops into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts the upstream renewal merchant shop scripts under
-  `npc/merchants/` and `npc/re/merchants/` into our own-schema YAML under
-  `apps/zone_server/priv/db/re/shops/`, one file per source map.
+  Converts enabled merchant `npc:` rows from shared `npc/scripts_athena.conf`
+  and selected `npc/{re,pre-re}/scripts_athena.conf` into
+  `apps/zone_server/priv/db/<mode>/shops/*.yml`.
 
-      mix aesir.import.shops [<rathena_root>]
+      mix aesir.import.shops [<rathena_root>] [--mode re|pre-re]
 
-  `<rathena_root>` defaults to `../rathena`. `npc/pre-re/` is excluded (we target
-  renewal).
+  `<rathena_root>` defaults to `../rathena`. Config declaration order is
+  preserved; disabled merchant files are ignored.
 
   `duplicate(<label>)` shops carry no items of their own; they are resolved in a
   second pass from the placed shop whose `id` (full NPC name, including any
@@ -17,8 +17,8 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
   opaque: `:duplicate_of_script` (a dialog/`callshop`-driven `script` NPC),
   `:duplicate_of_cashshop` (a cash-point `cashshop` NPC), or
   `:unknown_duplicate_source` (no matching source found at all). The first two
-  dominate renewal merchant data and are simply out of scope for a data-only
-  zeny-shop importer.
+  dominate merchant data and are out of scope for a data-only zeny-shop
+  importer.
 
   Every resolved shop is sanitized so the data files stay boot-clean for the
   fatal `Aesir.ZoneServer.Npc.ShopVerifier`: a shop on an unknown map
@@ -38,11 +38,13 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
 
   alias Mix.Tasks.Aesir.Import
 
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Npc.Shops.Importer
 
-  @globs [Path.join(~w(npc merchants *.txt)), Path.join(~w(npc re merchants *.txt))]
+  @shared_conf Path.join(~w(npc scripts_athena.conf))
+  @mode_conf "scripts_athena.conf"
 
   @type shop_map :: Importer.shop_map()
   @type duplicate :: {String.t(), shop_map()}
@@ -54,7 +56,7 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
     out_dir = Import.path("shops", mode)
     boot_map_cache!()
 
-    files = shop_files(rathena)
+    files = shop_files(rathena, mode)
     {shops, duplicates, sources, errors} = parse_files(files)
     Enum.each(errors, fn {file, line, reason} -> report_error(file, line, reason) end)
 
@@ -72,11 +74,26 @@ defmodule Mix.Tasks.Aesir.Import.Shops do
     MapCache.init()
   end
 
-  @spec shop_files(Path.t()) :: [Path.t()]
-  defp shop_files(rathena) do
-    @globs
-    |> Enum.flat_map(&Path.wildcard(Path.join(rathena, &1)))
-    |> Enum.sort()
+  @spec shop_files(Path.t(), Layout.mode()) :: [Path.t()]
+  defp shop_files(rathena, mode) do
+    mode_conf = Path.join(["npc", Layout.mode_dir(mode), @mode_conf])
+
+    [@shared_conf, mode_conf]
+    |> Enum.flat_map(fn conf ->
+      conf |> then(&Path.join(rathena, &1)) |> merchant_files(rathena)
+    end)
+  end
+
+  defp merchant_files(conf, rathena) do
+    conf
+    |> File.read!()
+    |> String.split("\n")
+    |> Enum.flat_map(fn line ->
+      case Regex.run(~r/^\s*npc:\s*(npc\/(?:re\/|pre-re\/)?merchants\/\S+\.txt)\s*$/, line) do
+        [_, path] -> [Path.join(rathena, path)]
+        nil -> []
+      end
+    end)
   end
 
   @spec parse_files([Path.t()]) ::

@@ -1,8 +1,14 @@
 defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
   use ExUnit.Case, async: true
+  use Mimic
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Npc.Transpiler.Codegen
   alias Aesir.ZoneServer.Script.Ctx
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   defmodule ScriptSession do
     use GenServer
@@ -35,6 +41,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     {:ok, src} = Codegen.generate(body, opts)
     assert {:ok, _} = Code.string_to_quoted(src)
     src
+  end
+
+  test "re-raises a cold item catalog error" do
+    stub(Items, :loaded?, fn -> false end)
+    reject(&Items.by_aegis/1)
+
+    assert_raise CatalogNotLoadedError, fn -> gen!("getitem Red_Potion,1;") end
   end
 
   test "simple dialog module snapshot" do

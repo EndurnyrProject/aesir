@@ -1,13 +1,13 @@
 defmodule Mix.Tasks.Aesir.Import.ItemGroups do
-  @shortdoc "Imports Renewal item groups into priv/db/re/item_groups/item_groups.yml"
+  @shortdoc "Imports selected rAthena item groups into mode-scoped YAML"
   @moduledoc """
-  Imports Renewal item-group data into the local item-group database.
+  Converts canonical `db/item_group_db.yml` plus its selected mode imports into
+  `apps/zone_server/priv/db/<mode>/item_groups/item_groups.yml`.
 
-      mix aesir.import.item_groups [<source_root>]
+      mix aesir.import.item_groups [<rathena_root>] [--mode re|pre-re]
 
-  Item names that are absent from the local item catalog are dropped. Output is
-  sorted so re-running the task against the same source produces identical
-  files.
+  Entries resolve against the selected canonical `db/item_db.yml`; unknown item
+  names are dropped and reported. Output is deterministic.
 
   Two source attributes are intentionally NOT imported (spec non-goals):
   `RandomOptionGroup` (needs a random-option roller subsystem) and `Stacked`
@@ -18,10 +18,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
 
   alias Mix.Tasks.Aesir.Import
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
-
-  @source_db Path.join(~w(db re item_group_db.yml))
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @entry_attributes %{
     "Amount" => "amount",
@@ -43,13 +40,12 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
   def run(args) do
     {source_root, mode} = Import.parse!(args)
     out_file = Import.path("item_groups", mode) |> Path.join("item_groups.yml")
+    item_rows = read_source!(source_root, "item_db.yml", mode)
+    item_group_rows = read_source!(source_root, "item_group_db.yml", mode)
+    source_catalogs = Resolver.source_catalogs(item_rows, item_group_rows)
 
     {groups, resolved, dropped} =
-      source_root
-      |> Path.join(@source_db)
-      |> YamlElixir.read_from_file!()
-      |> Map.fetch!("Body")
-      |> convert()
+      Resolver.with_source_catalogs(source_catalogs, fn -> convert(item_group_rows) end)
 
     File.mkdir_p!(Path.dirname(out_file))
     File.write!(out_file, Ymlr.document!(groups, sort_maps: true))
@@ -116,10 +112,10 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
     end)
   end
 
-  @spec entry_map(map(), ItemDefinition.t()) :: map()
-  defp entry_map(entry, item) do
+  @spec entry_map(map(), integer()) :: map()
+  defp entry_map(entry, item_id) do
     @entry_attributes
-    |> Enum.reduce(%{"item_id" => item.id}, fn {source_key, target_key}, output ->
+    |> Enum.reduce(%{"item_id" => item_id}, fn {source_key, target_key}, output ->
       case Map.fetch(entry, source_key) do
         {:ok, value} -> Map.put(output, target_key, value)
         :error -> output
@@ -137,8 +133,19 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroups do
   defp algorithm("SharedPool"), do: "shared_pool"
   defp algorithm(value), do: Mix.raise("unknown item-group algorithm: #{inspect(value)}")
 
-  @spec resolve(String.t()) :: {:ok, ItemDefinition.t()} | :error
-  defp resolve(aegis), do: Items.by_aegis(aegis)
+  defp read_source!(source_root, file, mode) do
+    [source_root, "db", file]
+    |> Path.join()
+    |> Import.read_mode_filtered!(mode)
+  end
+
+  @spec resolve(String.t()) :: {:ok, integer()} | :error
+  defp resolve(aegis) do
+    case Resolver.resolve_item(aegis) do
+      {:ok, id} -> {:ok, id}
+      {:error, _reason} -> :error
+    end
+  end
 
   @spec report(non_neg_integer(), [String.t()]) :: :ok
   defp report(resolved, dropped) do

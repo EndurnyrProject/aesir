@@ -1,0 +1,12 @@
+---
+- map: lhz_in01
+  spawns:
+    - amount: 1
+      area:
+        x: 157
+        xs: 0
+        'y': 54
+        ys: 0
+      mob: 1085
+      respawn_time: 120000
+      respawn_variance: 100000

@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   require Logger
 
   alias Aesir.ZoneServer.Announcement.Flags
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Npc.Transpiler.Analyzer
   alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
   alias Aesir.ZoneServer.Npc.Transpiler.ModuleName
@@ -139,7 +140,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       {:ok, IO.iodata_to_binary(Code.format_string!(source)) <> "\n"}
     end
   rescue
-    e -> {:error, {:codegen, Exception.message(e)}}
+    error in CatalogNotLoadedError -> reraise error, __STACKTRACE__
+    error -> {:error, {:codegen, Exception.message(error)}}
   end
 
   # -- module assembly ---------------------------------------------------------

@@ -1,0 +1,30 @@
+---
+- map: jawaii_in
+  spawns:
+    - amount: 1
+      area:
+        x: 128
+        xs: 1
+        'y': 121
+        ys: 4
+      mob: 1085
+      respawn_time: 3000000
+      respawn_variance: 1200000
+    - amount: 1
+      area:
+        x: 124
+        xs: 1
+        'y': 76
+        ys: 1
+      mob: 1084
+      respawn_time: 3600000
+      respawn_variance: 1200000
+    - amount: 2
+      area:
+        x: 72
+        xs: 5
+        'y': 74
+        ys: 1
+      mob: 1084
+      respawn_time: 3000000
+      respawn_variance: 1200000

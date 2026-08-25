@@ -1,10 +1,10 @@
 defmodule Mix.Tasks.Aesir.Import.Quests do
-  @shortdoc "Imports rAthena renewal quest_db into priv/db/re/quests/quests.yml"
+  @shortdoc "Imports the selected rAthena quest DB into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts rAthena's renewal `quest_db.yml` into our
-  own-schema YAML at `apps/zone_server/priv/db/re/quests/quests.yml`.
+  Converts canonical `db/quest_db.yml` plus its selected mode imports into
+  `apps/zone_server/priv/db/<mode>/quests/quests.yml`.
 
-      mix aesir.import.quests [<rathena_root>]
+      mix aesir.import.quests [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Target `Mob`/`MapMobTargets`
   names and Drop `Mob`/`Item` names are resolved against the imported
@@ -24,12 +24,12 @@ defmodule Mix.Tasks.Aesir.Import.Quests do
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out_dir = Import.path("quests", mode)
-    src = Path.join([rathena, "db", "re", "quest_db.yml"])
+    src = Path.join([rathena, "db", "quest_db.yml"])
     File.mkdir_p!(out_dir)
 
     {definitions, dropped} =
       src
-      |> read_body!()
+      |> Import.read_mode_filtered!(mode)
       |> Enum.map(&Importer.to_definition/1)
       |> Enum.reduce({[], []}, fn {definition, entry_dropped}, {defs, dropped} ->
         {[definition | defs], dropped ++ entry_dropped}
@@ -42,13 +42,6 @@ defmodule Mix.Tasks.Aesir.Import.Quests do
 
     Mix.shell().info("quests: #{length(definitions)} -> #{out}")
     report(dropped)
-  end
-
-  defp read_body!(path) do
-    case YamlElixir.read_from_file!(path) do
-      %{"Body" => body} when is_list(body) -> body
-      _ -> Mix.raise("expected a Body list in #{path}")
-    end
   end
 
   defp report([]), do: :ok

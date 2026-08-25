@@ -1,15 +1,24 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
   use ExUnit.Case, async: false
 
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
-  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Codegen
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
 
   defp compile(script) do
     with {:ok, ast} <- Parser.parse_body(script) do
       Codegen.generate(ast)
     end
+  end
+
+  defp compile_with_source_catalogs(script) do
+    catalogs =
+      Resolver.source_catalogs(
+        [%{"Id" => 501, "AegisName" => "Red_Potion"}],
+        [%{"Group" => "BLUEBOX"}, %{"Group" => "ORE"}]
+      )
+
+    Resolver.with_source_catalogs(catalogs, fn -> compile(script) end)
   end
 
   test "homevolution emits the generic zero-argument DSL call" do
@@ -147,49 +156,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CodegenTest do
   end
 
   describe "generate/1 item and skill commands" do
-    setup do
-      potion = %ItemDefinition{
-        id: 501,
-        aegis_name: "Red_Potion",
-        name: "Red Potion",
-        type: :healing
-      }
-
-      index = %{all: [potion], by_id: %{501 => potion}, by_aegis: %{"Red_Potion" => potion}}
-      :persistent_term.put(Items, index)
-      on_exit(fn -> :persistent_term.erase(Items) end)
-      :ok
-    end
-
     test "getitem maps to give_item with a resolved id" do
-      assert {:ok, "give_item(ctx, 501, 1)"} = compile("getitem Red_Potion,1;")
+      assert {:ok, "give_item(ctx, 501, 1)"} =
+               compile_with_source_catalogs("getitem Red_Potion,1;")
     end
 
     test "item-group commands resolve keys and default the optional subgroup" do
-      assert {:ok, "get_group_item(ctx, :bluebox)"} = compile("getgroupitem IG_BlueBox;")
+      assert {:ok, "get_group_item(ctx, :bluebox)"} =
+               compile_with_source_catalogs("getgroupitem IG_BlueBox;")
 
       assert {:ok, "get_rand_group_item(ctx, :ore, 2, 0)"} =
-               compile("getrandgroupitem IG_Ore,2;")
+               compile_with_source_catalogs("getrandgroupitem IG_Ore,2;")
 
       assert {:ok, "get_rand_group_item(ctx, :ore, 2, 3)"} =
-               compile("getrandgroupitem IG_Ore,2,3;")
+               compile_with_source_catalogs("getrandgroupitem IG_Ore,2,3;")
     end
 
     test "groupranditem works in getitem expression position" do
       assert {:ok, "give_item(ctx, group_rand_item(ctx, :ore, 0), 1)"} =
-               compile("getitem groupranditem(IG_Ore),1;")
+               compile_with_source_catalogs("getitem groupranditem(IG_Ore),1;")
 
       assert {:ok, "give_item(ctx, group_rand_item(ctx, :ore, 2), 1)"} =
-               compile("getitem groupranditem(IG_Ore,2),1;")
+               compile_with_source_catalogs("getitem groupranditem(IG_Ore,2),1;")
     end
 
     test "an unknown item-group constant follows the unsupported symbol path" do
       assert {:error, {:unsupported, {:unknown_symbol, "IG_Not_A_Group"}}} =
-               compile("getgroupitem IG_Not_A_Group;")
+               compile_with_source_catalogs("getgroupitem IG_Not_A_Group;")
     end
 
     test "delitem resolves a numeric id" do
-      assert {:ok, "delitem(ctx, 501, 2)"} = compile("delitem 501,2;")
+      assert {:ok, "delitem(ctx, 501, 2)"} =
+               compile_with_source_catalogs("delitem 501,2;")
     end
 
     test "warp emits literal coords" do

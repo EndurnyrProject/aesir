@@ -1,11 +1,11 @@
 defmodule Mix.Tasks.Aesir.Import.Spawns do
-  @shortdoc "Imports rAthena mob-spawn scripts into priv/db/re/spawns/*.yml"
+  @shortdoc "Imports selected rAthena mob spawns into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts the rAthena mob-spawn scripts listed in
-  `npc/re/scripts_monsters.conf` into our own-schema YAML under
-  `apps/zone_server/priv/db/re/spawns/`, one file per source map.
+  Converts enabled spawn scripts from shared `npc/scripts_monsters.conf` and
+  selected `npc/{re,pre-re}/scripts_monsters.conf` into
+  `apps/zone_server/priv/db/<mode>/spawns/*.yml`.
 
-      mix aesir.import.spawns [<rathena_root>]
+      mix aesir.import.spawns [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Both `monster` and `boss_monster`
   lines are imported. Every spawn is checked against
@@ -19,11 +19,13 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
 
   alias Mix.Tasks.Aesir.Import
 
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.MobManagement.Spawns.Importer
 
-  @conf Path.join(~w(npc re scripts_monsters.conf))
+  @shared_conf Path.join(~w(npc scripts_monsters.conf))
+  @mode_conf "scripts_monsters.conf"
 
   @impl Mix.Task
   def run(args) do
@@ -31,7 +33,7 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
     out_dir = Import.path("spawns", mode)
     boot_map_cache!()
 
-    files = spawn_files(rathena)
+    files = spawn_files(rathena, mode)
     {parsed, errors} = parse_files(files)
     Enum.each(errors, fn {file, line, reason} -> report_error(file, line, reason) end)
 
@@ -50,14 +52,19 @@ defmodule Mix.Tasks.Aesir.Import.Spawns do
     MapCache.init()
   end
 
-  @spec spawn_files(Path.t()) :: [Path.t()]
-  defp spawn_files(rathena) do
-    conf = Path.join(rathena, @conf)
+  @spec spawn_files(Path.t(), Layout.mode()) :: [Path.t()]
+  defp spawn_files(rathena, mode) do
+    mode_conf = Path.join(["npc", Layout.mode_dir(mode), @mode_conf])
 
-    conf
-    |> File.read!()
-    |> String.split("\n")
-    |> Enum.flat_map(&conf_entry(&1, rathena))
+    [@shared_conf, mode_conf]
+    |> Enum.flat_map(fn conf ->
+      conf
+      |> then(&Path.join(rathena, &1))
+      |> File.read!()
+      |> String.split("\n")
+      |> Enum.flat_map(&conf_entry(&1, rathena))
+    end)
+    |> Enum.uniq()
   end
 
   @spec conf_entry(String.t(), Path.t()) :: [Path.t()]

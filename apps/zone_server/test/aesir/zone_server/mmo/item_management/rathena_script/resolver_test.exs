@@ -1,9 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   use ExUnit.Case, async: false
+  use Mimic
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   describe "resolve_status/1" do
     test "maps SC_BLESSING to the effect-module atom" do
@@ -47,7 +53,68 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     end
   end
 
-  describe "resolve_item/1" do
+  describe "source catalogs" do
+    test "resolve items and groups without consulting runtime catalogs" do
+      reject(&Items.loaded?/0)
+      reject(&Items.by_id/1)
+      reject(&Items.by_aegis/1)
+      reject(&ItemGroups.loaded?/0)
+      reject(&ItemGroups.fetch/1)
+
+      Resolver.with_source_catalogs(source_catalogs(501, "Red_Potion", "ORE"), fn ->
+        assert {:ok, 501} = Resolver.resolve_item(501)
+        assert {:ok, 501} = Resolver.resolve_item("Red_Potion")
+        assert {:ok, :ore} = Resolver.resolve_item_group("IG_Ore")
+        assert {:error, {:unknown_symbol, "Nope_Item"}} = Resolver.resolve_item("Nope_Item")
+        assert {:error, {:unknown_symbol, "IG_Nope"}} = Resolver.resolve_item_group("IG_Nope")
+      end)
+    end
+
+    test "nested contexts restore the outer context after success and failure" do
+      outer = source_catalogs(501, "Red_Potion", "ORE")
+      inner = source_catalogs(502, "Orange_Potion", "BLUEBOX")
+
+      Resolver.with_source_catalogs(outer, fn ->
+        Resolver.with_source_catalogs(inner, fn ->
+          assert {:ok, 502} = Resolver.resolve_item("Orange_Potion")
+          assert {:error, {:unknown_symbol, "Red_Potion"}} = Resolver.resolve_item("Red_Potion")
+        end)
+
+        assert_raise RuntimeError, "boom", fn ->
+          Resolver.with_source_catalogs(inner, fn -> raise "boom" end)
+        end
+
+        assert {:ok, 501} = Resolver.resolve_item("Red_Potion")
+        assert {:ok, :ore} = Resolver.resolve_item_group("IG_Ore")
+      end)
+    end
+
+    test "context is process-local" do
+      stub(Items, :loaded?, fn -> false end)
+      catalogs = source_catalogs(501, "Red_Potion", "ORE")
+
+      Resolver.with_source_catalogs(catalogs, fn ->
+        task =
+          Task.async(fn ->
+            receive do
+              :resolve ->
+                try do
+                  Resolver.resolve_item("Red_Potion")
+                rescue
+                  CatalogNotLoadedError -> :catalog_not_loaded
+                end
+            end
+          end)
+
+        Mimic.allow(Items, self(), task.pid)
+        send(task.pid, :resolve)
+        assert Task.await(task) == :catalog_not_loaded
+        assert {:ok, 501} = Resolver.resolve_item("Red_Potion")
+      end)
+    end
+  end
+
+  describe "runtime item fallback" do
     setup do
       potion = %ItemDefinition{
         id: 501,
@@ -56,32 +123,41 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
         type: :healing
       }
 
-      index = %{
-        all: [potion],
-        by_id: %{501 => potion},
-        by_aegis: %{"Red_Potion" => potion}
-      }
+      stub(Items, :loaded?, fn -> true end)
 
-      :persistent_term.put(Items, index)
-      on_exit(fn -> :persistent_term.erase(Items) end)
+      stub(Items, :by_id, fn
+        501 -> {:ok, potion}
+        _id -> :error
+      end)
+
+      stub(Items, :by_aegis, fn
+        "Red_Potion" -> {:ok, potion}
+        _aegis -> :error
+      end)
+
       :ok
     end
 
-    test "resolves an aegis name to its item id" do
+    test "resolves loaded items" do
       assert {:ok, 501} = Resolver.resolve_item("Red_Potion")
-    end
-
-    test "resolves a numeric item id" do
       assert {:ok, 501} = Resolver.resolve_item(501)
-    end
-
-    test "unknown item is an unknown_symbol error" do
       assert {:error, {:unknown_symbol, "Nope_Item"}} = Resolver.resolve_item("Nope_Item")
     end
   end
 
-  describe "resolve_item_group/1" do
-    test "strips IG_ and downcases the group token without changing underscores" do
+  describe "runtime item-group fallback" do
+    setup do
+      stub(ItemGroups, :loaded?, fn -> true end)
+
+      stub(ItemGroups, :fetch, fn
+        key when key in [:ore, :enchant_stone_box17] -> {:ok, :group}
+        _key -> :error
+      end)
+
+      :ok
+    end
+
+    test "strips IG_ and downcases a loaded group token" do
       assert {:ok, :ore} = Resolver.resolve_item_group("IG_Ore")
 
       assert {:ok, :enchant_stone_box17} =
@@ -90,6 +166,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
 
     test "a non-group symbol is an unknown_symbol error" do
       assert {:error, {:unknown_symbol, "Ore"}} = Resolver.resolve_item_group("Ore")
+    end
+  end
+
+  describe "cold runtime catalogs" do
+    test "item resolution raises the dedicated error" do
+      stub(Items, :loaded?, fn -> false end)
+      reject(&Items.by_aegis/1)
+
+      assert_raise CatalogNotLoadedError, ~r/item catalog is not loaded/, fn ->
+        Resolver.resolve_item("Red_Potion")
+      end
+    end
+
+    test "item-group resolution raises the dedicated error" do
+      stub(ItemGroups, :loaded?, fn -> false end)
+      reject(&ItemGroups.fetch/1)
+
+      assert_raise CatalogNotLoadedError, ~r/item-group catalog is not loaded/, fn ->
+        Resolver.resolve_item_group("IG_Ore")
+      end
     end
   end
 
@@ -213,5 +309,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
     test "a non EF_ symbol is an unknown_symbol error" do
       assert {:error, {:unknown_symbol, "SC_BLESSING"}} = Resolver.resolve_effect("SC_BLESSING")
     end
+  end
+
+  defp source_catalogs(id, aegis, group) do
+    Resolver.source_catalogs(
+      [%{"Id" => id, "AegisName" => aegis}],
+      [%{"Group" => group}]
+    )
   end
 end

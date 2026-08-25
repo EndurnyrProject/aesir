@@ -1,9 +1,23 @@
 defmodule Mix.Tasks.Aesir.Import.ItemsTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
+  use Mimic
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items, as: RuntimeItems
   alias Mix.Tasks.Aesir.Import.Items
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
+
+  @pre_files Enum.map(
+               ~w(usable equip etc),
+               &Path.join(["apps", "zone_server", "priv", "db", "pre-re", "items", "#{&1}.yml"])
+             ) ++
+               [
+                 Path.join(~w(apps zone_server priv db pre-re items _transpile_report.md))
+               ]
 
   defp definition(attrs) do
     struct(
@@ -81,6 +95,39 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
     end
   end
 
+  describe "mode-selected source import" do
+    @tag :tmp_dir
+    test "bootstraps pre-renewal output without runtime catalogs", %{tmp_dir: tmp_dir} do
+      originals = Map.new(@pre_files, &{&1, File.read(&1)})
+
+      on_exit(fn ->
+        Enum.each(originals, fn
+          {path, {:ok, contents}} -> File.write!(path, contents)
+          {path, {:error, :enoent}} -> File.rm(path)
+        end)
+
+        File.rmdir(Path.join(~w(apps zone_server priv db pre-re items)))
+      end)
+
+      write_source_fixture(tmp_dir)
+      reject(&RuntimeItems.loaded?/0)
+      reject(&RuntimeItems.by_id/1)
+      reject(&RuntimeItems.by_aegis/1)
+      reject(&ItemGroups.loaded?/0)
+      reject(&ItemGroups.fetch/1)
+
+      Items.run([tmp_dir, "--mode", "pre-re"])
+
+      [item] =
+        "apps/zone_server/priv/db/pre-re/items/usable.yml"
+        |> YamlElixir.read_from_file!()
+
+      assert item["id"] == 501
+      assert item["on_use"] =~ "give_item(ctx, 501, 1)"
+      assert item["on_use"] =~ "get_group_item(ctx, :pre_box)"
+    end
+  end
+
   describe "bAtkEle carve-out" do
     defp fireblend(script) do
       %{
@@ -113,5 +160,47 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
       assert {%ItemDefinition{attack_element: :fire, on_equip: [{:set, :atk_ele, :fire}]}, nil} =
                Items.apply_transpile(def, script)
     end
+  end
+
+  defp write_source_fixture(root) do
+    write_root(root, "item_db.yml", "ITEM_DB", "db/pre-re/item_db.yml")
+    write_root(root, "item_group_db.yml", "ITEM_GROUP_DB", "db/pre-re/item_group_db.yml")
+
+    write_body(root, "item_db.yml", "ITEM_DB", [
+      %{
+        "Id" => 501,
+        "AegisName" => "Pre_Potion",
+        "Name" => "Pre Potion",
+        "Type" => "Usable",
+        "Script" => "getitem Pre_Potion,1; getgroupitem IG_PRE_BOX;"
+      }
+    ])
+
+    write_body(root, "item_group_db.yml", "ITEM_GROUP_DB", [
+      %{"Group" => "PRE_BOX", "SubGroups" => []}
+    ])
+  end
+
+  defp write_root(root, file, type, import) do
+    path = Path.join([root, "db", file])
+    File.mkdir_p!(Path.dirname(path))
+
+    File.write!(
+      path,
+      Ymlr.document!(%{
+        "Header" => %{"Type" => type, "Version" => 3},
+        "Footer" => %{"Imports" => [%{"Path" => import, "Mode" => "Prerenewal"}]}
+      })
+    )
+  end
+
+  defp write_body(root, file, type, body) do
+    path = Path.join([root, "db", "pre-re", file])
+    File.mkdir_p!(Path.dirname(path))
+
+    File.write!(
+      path,
+      Ymlr.document!(%{"Header" => %{"Type" => type, "Version" => 3}, "Body" => body})
+    )
   end
 end

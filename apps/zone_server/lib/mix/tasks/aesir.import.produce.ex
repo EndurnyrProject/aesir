@@ -1,17 +1,16 @@
 defmodule Mix.Tasks.Aesir.Import.Produce do
-  @shortdoc "Imports production recipes and the ore discovery table"
+  @shortdoc "Imports selected production data into mode-scoped YAML"
   @moduledoc """
-  Imports production recipes and the ore discovery table into local YAML data.
+  Converts the selected mode's `produce_db.txt` and generated item-group data
+  into `apps/zone_server/priv/db/<mode>/produce/*.yml`.
 
-      mix aesir.import.produce [<source_root>]
+      mix aesir.import.produce [<rathena_root>] [--mode re|pre-re]
 
   Output is sorted so re-running the task produces byte-identical files.
   """
   use Mix.Task
 
   alias Mix.Tasks.Aesir.Import
-
-  @recipes_source Path.join(~w(db re produce_db.txt))
 
   @doc "Imports production data from the optional source root."
   @spec run([String.t()]) :: :ok
@@ -24,7 +23,8 @@ defmodule Mix.Tasks.Aesir.Import.Produce do
 
     recipes =
       source_root
-      |> Path.join(@recipes_source)
+      |> Import.rathena_db_dir(mode)
+      |> Path.join("produce_db.txt")
       |> File.read!()
       |> parse_recipes()
 

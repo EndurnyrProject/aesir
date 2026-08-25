@@ -1,13 +1,12 @@
 defmodule Mix.Tasks.Aesir.Import.Mobs do
-  @shortdoc "Imports rAthena renewal mob_db into priv/db/re/mobs/mobs.yml"
+  @shortdoc "Imports the selected rAthena mob DB into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts rAthena's renewal `mob_db.yml` into our own-schema
-  YAML at `apps/zone_server/priv/db/re/mobs/mobs.yml`.
+  Converts canonical `db/mob_db.yml` plus its selected mode imports into
+  `apps/zone_server/priv/db/<mode>/mobs/mobs.yml`.
 
-      mix aesir.import.mobs [<rathena_root>]
+      mix aesir.import.mobs [<rathena_root>] [--mode re|pre-re]
 
-  `<rathena_root>` defaults to `../rathena`. Fails loudly on unmapped data - this
-  is a dev tool, run only when syncing rAthena.
+  `<rathena_root>` defaults to `../rathena`. Unmapped data fails loudly.
   """
   use Mix.Task
 
@@ -19,21 +18,14 @@ defmodule Mix.Tasks.Aesir.Import.Mobs do
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out_dir = Import.path("mobs", mode)
-    src = Path.join([rathena, "db", "re", "mob_db.yml"])
+    src = Path.join([rathena, "db", "mob_db.yml"])
     File.mkdir_p!(out_dir)
 
-    definitions = src |> read_body!() |> Enum.map(&to_definition!/1)
+    definitions = src |> Import.read_mode_filtered!(mode) |> Enum.map(&to_definition!/1)
     yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
     out = Path.join(out_dir, "mobs.yml")
     File.write!(out, yaml)
     Mix.shell().info("mobs: #{length(definitions)} -> #{out}")
-  end
-
-  defp read_body!(path) do
-    case YamlElixir.read_from_file!(path) do
-      %{"Body" => body} when is_list(body) -> body
-      _ -> Mix.raise("expected a Body list in #{path}")
-    end
   end
 
   defp to_definition!(entry) do

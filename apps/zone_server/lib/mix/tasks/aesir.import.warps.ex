@@ -1,12 +1,11 @@
 defmodule Mix.Tasks.Aesir.Import.Warps do
-  @shortdoc "Imports rAthena warp scripts into priv/db/re/warps/*.yml"
+  @shortdoc "Imports selected rAthena warps into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts the rAthena warp scripts listed in the shared
-  `npc/scripts_warps.conf` and the renewal `npc/re/scripts_warps.conf` into our
-  own-schema YAML under `apps/zone_server/priv/db/re/warps/`, one file per source
-  map. We target renewal, so the pre-renewal conf is intentionally ignored.
+  Converts enabled warp scripts from shared `npc/scripts_warps.conf` and
+  selected `npc/{re,pre-re}/scripts_warps.conf` into
+  `apps/zone_server/priv/db/<mode>/warps/*.yml`.
 
-      mix aesir.import.warps [<rathena_root>]
+      mix aesir.import.warps [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Every warp is checked against the
   live `maps.mcache`: a warp whose source or destination map is missing, or
@@ -20,13 +19,12 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
 
   alias Mix.Tasks.Aesir.Import
 
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Npc.Warps.Importer
 
-  @confs [
-    Path.join(~w(npc scripts_warps.conf)),
-    Path.join(~w(npc re scripts_warps.conf))
-  ]
+  @shared_conf Path.join(~w(npc scripts_warps.conf))
+  @mode_conf "scripts_warps.conf"
 
   @impl Mix.Task
   def run(args) do
@@ -34,7 +32,7 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
     out_dir = Import.path("warps", mode)
     boot_map_cache!()
 
-    files = warp_files(rathena)
+    files = warp_files(rathena, mode)
     {warps, errors} = parse_files(files)
     Enum.each(errors, fn {file, line, reason} -> report_error(file, line, reason) end)
 
@@ -52,9 +50,11 @@ defmodule Mix.Tasks.Aesir.Import.Warps do
     MapCache.init()
   end
 
-  @spec warp_files(Path.t()) :: [Path.t()]
-  defp warp_files(rathena) do
-    @confs
+  @spec warp_files(Path.t(), Layout.mode()) :: [Path.t()]
+  defp warp_files(rathena, mode) do
+    mode_conf = Path.join(["npc", Layout.mode_dir(mode), @mode_conf])
+
+    [@shared_conf, mode_conf]
     |> Enum.map(&Path.join(rathena, &1))
     |> Enum.flat_map(&conf_files(&1, rathena))
     |> Enum.uniq()

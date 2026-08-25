@@ -1,10 +1,11 @@
 defmodule Mix.Tasks.Aesir.Import.Refine do
-  @shortdoc "Imports the rAthena renewal refine.yml into priv/db/re/refine/refine.yml"
+  @shortdoc "Imports the selected rAthena refine DB into mode-scoped YAML"
   @moduledoc """
-  One-time importer: converts rAthena's renewal `db/re/refine.yml` (schema v2)
-  into our own-schema `apps/zone_server/priv/db/re/refine/refine.yml`.
+  Converts canonical `db/refine.yml` plus its selected `db/re/refine.yml` or
+  `db/pre-re/refine.yml` import into
+  `apps/zone_server/priv/db/<mode>/refine/refine.yml`.
 
-      mix aesir.import.refine [<rathena_root>]
+      mix aesir.import.refine [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Groups (`Armor`/`Weapon`/
   `Shadow_Armor`/`Shadow_Weapon`), item levels (`Levels[].Level`) and refine
@@ -16,8 +17,6 @@ defmodule Mix.Tasks.Aesir.Import.Refine do
   use Mix.Task
 
   alias Mix.Tasks.Aesir.Import
-
-  @source Path.join(~w(db re refine.yml))
 
   @groups %{
     "Armor" => "armor",
@@ -35,9 +34,9 @@ defmodule Mix.Tasks.Aesir.Import.Refine do
 
     groups =
       rathena
-      |> Path.join(@source)
-      |> YamlElixir.read_from_file!()
-      |> groups_from_body()
+      |> Path.join("db/refine.yml")
+      |> Import.read_mode_filtered!(mode)
+      |> then(&groups_from_body(%{"Body" => &1}))
 
     File.mkdir_p!(Path.dirname(out_file))
     File.write!(out_file, Ymlr.document!(groups, sort_maps: true))

@@ -1,9 +1,15 @@
 defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
   use ExUnit.Case, async: false
+  use Mimic
 
   import ExUnit.CaptureIO
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Mix.Tasks.Aesir.Import.ItemGroups, as: Task
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   @out_file Path.join(~w(apps zone_server priv db re item_groups item_groups.yml))
 
@@ -24,12 +30,47 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
   test "writes sorted resolved groups deterministically and reports dropped entries", %{
     tmp_dir: tmp_dir
   } do
-    source = Path.join([tmp_dir, "db", "re", "item_group_db.yml"])
-    File.mkdir_p!(Path.dirname(source))
+    item_root = Path.join([tmp_dir, "db", "item_db.yml"])
+    item_source = Path.join([tmp_dir, "db", "re", "item_db.yml"])
+    group_root = Path.join([tmp_dir, "db", "item_group_db.yml"])
+    group_source = Path.join([tmp_dir, "db", "re", "item_group_db.yml"])
+    File.mkdir_p!(Path.dirname(group_source))
 
     File.write!(
-      source,
+      item_root,
       Ymlr.document!(%{
+        "Header" => %{"Type" => "ITEM_DB", "Version" => 3},
+        "Footer" => %{
+          "Imports" => [%{"Path" => "db/re/item_db.yml", "Mode" => "Renewal"}]
+        }
+      })
+    )
+
+    File.write!(
+      item_source,
+      Ymlr.document!(%{
+        "Header" => %{"Type" => "ITEM_DB", "Version" => 3},
+        "Body" => [
+          %{"Id" => 501, "AegisName" => "Red_Potion"},
+          %{"Id" => 909, "AegisName" => "Jellopy"}
+        ]
+      })
+    )
+
+    File.write!(
+      group_root,
+      Ymlr.document!(%{
+        "Header" => %{"Type" => "ITEM_GROUP_DB", "Version" => 3},
+        "Footer" => %{
+          "Imports" => [%{"Path" => "db/re/item_group_db.yml", "Mode" => "Renewal"}]
+        }
+      })
+    )
+
+    File.write!(
+      group_source,
+      Ymlr.document!(%{
+        "Header" => %{"Type" => "ITEM_GROUP_DB", "Version" => 3},
         "Body" => [
           %{
             "Group" => "ZETA",
@@ -79,6 +120,11 @@ defmodule Mix.Tasks.Aesir.Import.ItemGroupsTest do
         ]
       })
     )
+
+    reject(&Items.loaded?/0)
+    reject(&Items.by_aegis/1)
+    reject(&ItemGroups.loaded?/0)
+    reject(&ItemGroups.fetch/1)
 
     output = capture_io(fn -> Task.run([tmp_dir]) end)
     first = File.read!(@out_file)

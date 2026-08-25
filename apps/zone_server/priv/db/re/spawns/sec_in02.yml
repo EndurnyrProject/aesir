@@ -1,0 +1,57 @@
+---
+- map: sec_in02
+  spawns:
+    - amount: 5
+      area:
+        x: 139
+        xs: 20
+        'y': 80
+        ys: 10
+      mob: 1002
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 138
+        xs: 20
+        'y': 54
+        ys: 20
+      mob: 1242
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 161
+        xs: 15
+        'y': 46
+        ys: 15
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 114
+        xs: 10
+        'y': 47
+        ys: 10
+      mob: 1113
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 114
+        xs: 10
+        'y': 47
+        ys: 10
+      mob: 1060
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 139
+        xs: 30
+        'y': 80
+        ys: 30
+      mob: 1118
+      respawn_time: 0
+      respawn_variance: 0

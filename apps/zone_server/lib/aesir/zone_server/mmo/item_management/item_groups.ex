@@ -15,6 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
   @spec fetch(atom()) :: {:ok, Group.t()} | :error
   def fetch(key), do: Map.fetch(index(), key)
 
+  @doc "Returns runtime readiness only; it does not identify the catalog's game mode."
+  @spec loaded?() :: boolean()
+  def loaded?, do: not is_nil(:persistent_term.get(@pt_key, nil))
+
   @doc "Rebuilds the cached index after editing the data files in a running session."
   @spec reload() :: :ok
   def reload do
