@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+  alias Aesir.ZoneServer.Mmo.Mechanics
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.WeaponTypes
@@ -489,12 +490,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     modified_soft_def =
       if status_def_mode == :ignore_status_def, do: 0, else: calculated_soft_def
 
-    # Apply Renewal defense reduction formula
-    # Handle edge case where hard_def = -400 (causes division by zero)
-    effective_hard_def = if modified_hard_def == -400, do: -399, else: modified_hard_def
-
     base_damage =
-      defense_base_damage(def_formula, total_atk, effective_hard_def, modified_soft_def)
+      case def_formula do
+        :renewal ->
+          Mechanics.defense().apply_def(total_atk, %{
+            hard_def: modified_hard_def,
+            soft_def: modified_soft_def,
+            attacker_level: attacker_level(attacker),
+            ignore_soft_def?: status_def_mode == :ignore_status_def
+          })
+
+        :simple ->
+          effective_hard_def = if modified_hard_def == -400, do: -399, else: modified_hard_def
+          defense_base_damage(:simple, total_atk, effective_hard_def, modified_soft_def)
+      end
 
     final_damage =
       base_damage
@@ -508,14 +517,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {:ok, final_damage}
   end
 
-  # Renewal DEF curve vs. the simplified flat subtraction: the simple path drops
-  # hard + soft DEF as a flat value, completely bypassing the renewal reduction
-  # formula.
-  defp defense_base_damage(:renewal, total_atk, hard_def, soft_def),
-    do: total_atk * (4000 + hard_def) / (4000 + 10 * hard_def) - soft_def
-
   defp defense_base_damage(:simple, total_atk, hard_def, soft_def),
     do: total_atk - (hard_def + soft_def)
+
+  defp attacker_level(nil), do: nil
+  defp attacker_level(%{progression: %{base_level: base_level}}), do: base_level
 
   @doc """
   Applies critical hit calculation to final damage.

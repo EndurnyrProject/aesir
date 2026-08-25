@@ -1,8 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics do
   @moduledoc """
   Resolves formula families for the active game mode.
-
-  Implementation modules land separately, so their availability is deliberately not validated yet.
   """
 
   alias Aesir.Commons.GameMode
@@ -50,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   @doc "Resolves and caches every formula family for the active game mode."
   @spec resolve!() :: :ok
   def resolve! do
+    ensure_implementations_loaded!()
     mode = GameMode.mode()
 
     implementations =
@@ -93,6 +92,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
     case :persistent_term.get(@pt_key, nil) do
       nil -> @families |> Map.fetch!(family) |> Map.fetch!(GameMode.mode())
       implementations -> Map.fetch!(implementations, family)
+    end
+  end
+
+  defp ensure_implementations_loaded! do
+    for {_family, modes} <- @families, {_mode, module} <- modes do
+      unless Code.ensure_loaded?(module) do
+        raise "Mechanics implementation module #{inspect(module)} could not be loaded"
+      end
     end
   end
 end

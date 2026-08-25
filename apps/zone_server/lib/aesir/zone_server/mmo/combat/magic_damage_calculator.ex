@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   # CR_GRANDCROSS: routed through the magic path but scored by its own hybrid
@@ -272,9 +273,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
     hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
     hard = trunc(hard * (100 - ignore_mdef_rate) / 100)
     soft = if(ignore_soft_mdef?, do: 0, else: defender.combat_stats.soft_mdef)
-    effective_hard = if hard == -100, do: -99, else: hard
 
-    damage * (1000 + effective_hard) / (1000 + 10 * effective_hard) - soft
+    Mechanics.defense().apply_mdef(damage, %{hard_mdef: hard, soft_mdef: soft})
   end
 
   # Equipment bonuses read off `equip_modifiers`, present only on real
