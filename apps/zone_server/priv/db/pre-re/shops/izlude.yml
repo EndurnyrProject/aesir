@@ -1,0 +1,40 @@
+---
+- dir: 0
+  discount: true
+  id: Butcher#iz
+  items:
+    - id: 517
+      price:
+  map: izlude
+  name: Butcher
+  sprite: 54
+  x: 105
+  'y': 99
+- dir: 4
+  discount: true
+  id: Fruit Gardener#iz
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+    - id: 515
+      price:
+    - id: 516
+      price:
+  map: izlude
+  name: Fruit Gardener
+  sprite: 53
+  x: 94
+  'y': 98
+- dir: 7
+  discount: true
+  id: Vendor from Milk Ranch#i
+  items:
+    - id: 519
+      price:
+  map: izlude
+  name: Vendor from Milk Ranch
+  sprite: 90
+  x: 105
+  'y': 92

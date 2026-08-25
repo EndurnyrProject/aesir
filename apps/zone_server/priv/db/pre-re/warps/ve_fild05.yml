@@ -1,0 +1,25 @@
+---
+- id: ve_fild5-1
+  map: ve_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild03
+    x: 222
+    'y': 48
+  x: 200
+  xs: 1
+  'y': 330
+  ys: 1
+- id: ve_fild5-2
+  map: ve_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild06
+    x: 80
+    'y': 183
+  x: 359
+  xs: 1
+  'y': 192
+  ys: 1

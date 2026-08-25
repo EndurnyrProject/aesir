@@ -1,0 +1,37 @@
+---
+- id: ein004a
+  map: ein_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild11
+    x: 30
+    'y': 266
+  x: 382
+  xs: 1
+  'y': 263
+  ys: 1
+- id: ein005a
+  map: ein_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild06
+    x: 135
+    'y': 37
+  x: 145
+  xs: 1
+  'y': 362
+  ys: 1
+- id: ein006
+  map: ein_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild10
+    x: 194
+    'y': 370
+  x: 191
+  xs: 1
+  'y': 42
+  ys: 1

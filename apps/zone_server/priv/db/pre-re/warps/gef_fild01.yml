@@ -1,0 +1,37 @@
+---
+- id: gef010
+  map: gef_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild04
+    x: 20
+    'y': 114
+  x: 382
+  xs: 2
+  'y': 111
+  ys: 9
+- id: geff01
+  map: gef_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild09
+    x: 368
+    'y': 92
+  x: 16
+  xs: 2
+  'y': 102
+  ys: 4
+- id: geff02
+  map: gef_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild03
+    x: 66
+    'y': 379
+  x: 69
+  xs: 4
+  'y': 17
+  ys: 2

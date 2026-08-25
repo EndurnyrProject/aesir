@@ -1,0 +1,73 @@
+---
+- id: prts02
+  map: prt_sewb2
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb2
+    x: 140
+    'y': 28
+  x: 100
+  xs: 4
+  'y': 176
+  ys: 2
+- id: prts02-1
+  map: prt_sewb2
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb2
+    x: 100
+    'y': 172
+  x: 140
+  xs: 4
+  'y': 24
+  ys: 2
+- id: prts03
+  map: prt_sewb2
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb3
+    x: 180
+    'y': 169
+  x: 180
+  xs: 4
+  'y': 24
+  ys: 2
+- id: prts01-1
+  map: prt_sewb2
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb1
+    x: 192
+    'y': 247
+  x: 19
+  xs: 2
+  'y': 12
+  ys: 2
+- id: prts04
+  map: prt_sewb2
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb2
+    x: 60
+    'y': 28
+  x: 19
+  xs: 4
+  'y': 175
+  ys: 2
+- id: prts04-1
+  map: prt_sewb2
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb2
+    x: 19
+    'y': 171
+  x: 60
+  xs: 4
+  'y': 24
+  ys: 2

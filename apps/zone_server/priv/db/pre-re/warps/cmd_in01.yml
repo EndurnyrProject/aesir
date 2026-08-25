@@ -1,0 +1,85 @@
+---
+- id: cmd_tools1-2
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 97
+    'y': 128
+  x: 90
+  xs: 1
+  'y': 174
+  ys: 1
+- id: cmd_weapon1-2
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 265
+    'y': 79
+  x: 123
+  xs: 1
+  'y': 186
+  ys: 1
+- id: cmd_house1-2
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 269
+    'y': 273
+  x: 109
+  xs: 1
+  'y': 125
+  ys: 1
+- id: cmd_house2-2
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 195
+    'y': 294
+  x: 183
+  xs: 1
+  'y': 123
+  ys: 1
+- id: cmd_house3-2
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 145
+    'y': 324
+  x: 120
+  xs: 1
+  'y': 67
+  ys: 1
+- id: cmd_house4-2
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 239
+    'y': 296
+  x: 183
+  xs: 1
+  'y': 81
+  ys: 1
+- id: sign01
+  map: cmd_in01
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 187
+    'y': 164
+  x: 17
+  xs: 1
+  'y': 34
+  ys: 1

@@ -1,0 +1,85 @@
+---
+- id: gl15
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt01
+    x: 123
+    'y': 292
+  x: 104
+  xs: 1
+  'y': 204
+  ys: 1
+- id: gl14
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt02
+    x: 15
+    'y': 140
+  x: 12
+  xs: 1
+  'y': 148
+  ys: 1
+- id: gl15-1
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt01
+    x: 104
+    'y': 199
+  x: 128
+  xs: 1
+  'y': 292
+  ys: 1
+- id: gl16
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt02
+    x: 157
+    'y': 287
+  x: 150
+  xs: 1
+  'y': 291
+  ys: 1
+- id: gl2-1
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 74
+    'y': 193
+  x: 150
+  xs: 2
+  'y': 6
+  ys: 2
+- id: gl24-1
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew02
+    x: 296
+    'y': 22
+  x: 231
+  xs: 1
+  'y': 197
+  ys: 1
+- id: gl17
+  map: gl_knt01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt02
+    x: 283
+    'y': 140
+  x: 287
+  xs: 1
+  'y': 144
+  ys: 1

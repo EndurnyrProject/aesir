@@ -1,0 +1,57 @@
+---
+- map: xmas_dun02
+  spawns:
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1246
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1265
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1248
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1249
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1515
+      respawn_time: 1800000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1251
+      respawn_time: 3600000
+      respawn_variance: 600000

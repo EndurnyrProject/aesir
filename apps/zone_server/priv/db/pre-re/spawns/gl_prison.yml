@@ -1,0 +1,39 @@
+---
+- map: gl_prison
+  spawns:
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1257
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1035
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1197
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1201
+      respawn_time: 0
+      respawn_variance: 0

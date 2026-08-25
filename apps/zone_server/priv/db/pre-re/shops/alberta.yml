@@ -1,0 +1,12 @@
+---
+- dir: 5
+  discount: true
+  id: Chef Assistant#alb
+  items:
+    - id: 579
+      price:
+  map: alberta
+  name: Chef Assistant
+  sprite: 712
+  x: 167
+  'y': 135

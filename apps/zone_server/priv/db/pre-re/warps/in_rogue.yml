@@ -1,0 +1,97 @@
+---
+- id: rogue00-fild07
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild07
+    x: 196
+    'y': 117
+  x: 375
+  xs: 1
+  'y': 46
+  ys: 1
+- id: rogue01-02
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: in_rogue
+    x: 380
+    'y': 125
+  x: 375
+  xs: 1
+  'y': 34
+  ys: 1
+- id: rogue02-01
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: in_rogue
+    x: 379
+    'y': 33
+  x: 375
+  xs: 1
+  'y': 125
+  ys: 1
+- id: rogue03-fild07
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild07
+    x: 349
+    'y': 285
+  x: 247
+  xs: 1
+  'y': 122
+  ys: 1
+- id: rogue04-fild09
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild09
+    x: 106
+    'y': 191
+  x: 244
+  xs: 1
+  'y': 21
+  ys: 1
+- id: rogue05-fild09
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild09
+    x: 341
+    'y': 143
+  x: 172
+  xs: 1
+  'y': 34
+  ys: 1
+- id: rogue06-fild04
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild04
+    x: 302
+    'y': 177
+  x: 161
+  xs: 1
+  'y': 103
+  ys: 1
+- id: stair_to_ro
+  map: in_rogue
+  name: ''
+  sprite: 45
+  to:
+    map: in_rogue
+    x: 389
+    'y': 389
+  x: 8
+  xs: 1
+  'y': 9
+  ys: 1

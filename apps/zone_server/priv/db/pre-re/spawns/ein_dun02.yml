@@ -1,0 +1,84 @@
+---
+- map: ein_dun02
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1615
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1614
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 75
+        xs: 60
+        'y': 151
+        ys: 133
+      mob: 1615
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 35
+      area:
+        x: 230
+        xs: 63
+        'y': 155
+        ys: 140
+      mob: 1614
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1622
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 155
+        xs: 140
+        'y': 230
+        ys: 55
+      mob: 1622
+      respawn_time: 480000
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1617
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 154
+        xs: 134
+        'y': 80
+        ys: 55
+      mob: 1617
+      respawn_time: 480000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1623
+      respawn_time: 7500000
+      respawn_variance: 600000

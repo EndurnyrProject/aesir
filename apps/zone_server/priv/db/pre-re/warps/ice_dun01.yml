@@ -1,0 +1,25 @@
+---
+- id: ice001
+  map: ice_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild01
+    x: 233
+    'y': 327
+  x: 157
+  xs: 1
+  'y': 10
+  ys: 1
+- id: ice002
+  map: ice_dun01
+  name: ''
+  sprite: 45
+  to:
+    map: ice_dun02
+    x: 151
+    'y': 139
+  x: 146
+  xs: 1
+  'y': 161
+  ys: 1

@@ -1,0 +1,39 @@
+---
+- map: ice_dun01
+  spawns:
+    - amount: 75
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1776
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1782
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1778
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1780
+      respawn_time: 0
+      respawn_variance: 0

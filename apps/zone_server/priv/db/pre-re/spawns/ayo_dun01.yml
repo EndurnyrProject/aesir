@@ -1,0 +1,39 @@
+---
+- map: ayo_dun01
+  spawns:
+    - amount: 65
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1586
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1179
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1587
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0

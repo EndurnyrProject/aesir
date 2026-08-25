@@ -1,0 +1,93 @@
+---
+- map: ein_fild10
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1368
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1619
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 152
+        xs: 130
+        'y': 314
+        ys: 30
+      mob: 1619
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1079
+      respawn_time: 600000
+      respawn_variance: 300000
+    - amount: 6
+      area:
+        x: 225
+        xs: 30
+        'y': 95
+        ys: 45
+      mob: 1057
+      respawn_time: 30000
+      respawn_variance: 10000
+    - amount: 4
+      area:
+        x: 320
+        xs: 40
+        'y': 130
+        ys: 40
+      mob: 1057
+      respawn_time: 30000
+      respawn_variance: 10000
+    - amount: 10
+      area:
+        x: 225
+        xs: 30
+        'y': 95
+        ys: 45
+      mob: 1118
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 10
+      area:
+        x: 320
+        xs: 40
+        'y': 130
+        ys: 40
+      mob: 1118
+      respawn_time: 300000
+      respawn_variance: 120000

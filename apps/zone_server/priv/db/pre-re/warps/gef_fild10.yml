@@ -1,0 +1,109 @@
+---
+- id: geff11-1
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild09
+    x: 225
+    'y': 28
+  x: 251
+  xs: 5
+  'y': 371
+  ys: 2
+- id: geff12
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild11
+    x: 114
+    'y': 360
+  x: 104
+  xs: 5
+  'y': 21
+  ys: 2
+- id: geff05-1
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild03
+    x: 21
+    'y': 52
+  x: 370
+  xs: 2
+  'y': 56
+  ys: 5
+- id: gef018
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: in_orcs01
+    x: 122
+    'y': 171
+  x: 136
+  xs: 1
+  'y': 331
+  ys: 1
+- id: gef019
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: in_orcs01
+    x: 29
+    'y': 114
+  x: 138
+  xs: 1
+  'y': 284
+  ys: 1
+- id: gef020
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: in_orcs01
+    x: 162
+    'y': 53
+  x: 215
+  xs: 1
+  'y': 51
+  ys: 1
+- id: gef021
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: in_orcs01
+    x: 108
+    'y': 89
+  x: 223
+  xs: 1
+  'y': 205
+  ys: 1
+- id: gef022
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: in_orcs01
+    x: 30
+    'y': 157
+  x: 63
+  xs: 1
+  'y': 337
+  ys: 1
+- id: geff19-1
+  map: gef_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild14
+    x: 367
+    'y': 219
+  x: 27
+  xs: 1
+  'y': 219
+  ys: 1

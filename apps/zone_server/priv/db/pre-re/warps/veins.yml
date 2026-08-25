@@ -1,0 +1,145 @@
+---
+- id: ve_Tool1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 251
+    'y': 287
+  x: 230
+  xs: 1
+  'y': 166
+  ys: 1
+- id: ve_Weapon1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 349
+    'y': 223
+  x: 150
+  xs: 1
+  'y': 179
+  ys: 1
+- id: ve_Inn1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 183
+    'y': 207
+  x: 114
+  xs: 1
+  'y': 278
+  ys: 1
+- id: ve_Inn2-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 201
+    'y': 211
+  x: 128
+  xs: 1
+  'y': 270
+  ys: 1
+- id: ve_Inn3-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 99
+    'y': 219
+  x: 130
+  xs: 1
+  'y': 238
+  ys: 1
+- id: ve_Bar1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 252
+    'y': 127
+  x: 148
+  xs: 1
+  'y': 220
+  ys: 1
+- id: ve_Church1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 351
+    'y': 321
+  x: 197
+  xs: 1
+  'y': 260
+  ys: 1
+- id: ve_House1_1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 77
+    'y': 295
+  x: 88
+  xs: 1
+  'y': 173
+  ys: 1
+- id: ve_House2_1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in
+    x: 194
+    'y': 374
+  x: 337
+  xs: 1
+  'y': 231
+  ys: 1
+- id: ve_factory1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_in02
+    x: 17
+    'y': 19
+  x: 267
+  xs: 1
+  'y': 230
+  ys: 1
+- id: veins1-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild07
+    x: 147
+    'y': 366
+  x: 143
+  xs: 1
+  'y': 25
+  ys: 1
+- id: veins2-1
+  map: veins
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild06
+    x: 148
+    'y': 225
+  x: 218
+  xs: 1
+  'y': 361
+  ys: 1

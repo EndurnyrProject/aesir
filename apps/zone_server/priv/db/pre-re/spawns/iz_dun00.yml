@@ -1,0 +1,57 @@
+---
+- map: iz_dun00
+  spawns:
+    - amount: 65
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1161
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 45
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1141
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1070
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1068
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1066
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1084
+      respawn_time: 180000
+      respawn_variance: 90000

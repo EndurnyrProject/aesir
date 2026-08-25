@@ -1,0 +1,37 @@
+---
+- id: moc02-2
+  map: moc_ruins
+  name: ''
+  sprite: 45
+  to:
+    map: morocc
+    x: 30
+    'y': 290
+  x: 159
+  xs: 2
+  'y': 39
+  ys: 4
+- id: moc006
+  map: moc_ruins
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd01
+    x: 192
+    'y': 9
+  x: 54
+  xs: 2
+  'y': 161
+  ys: 3
+- id: moc007
+  map: moc_ruins
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild19
+    x: 71
+    'y': 167
+  x: 71
+  xs: 8
+  'y': 16
+  ys: 2

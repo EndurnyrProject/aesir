@@ -1,0 +1,417 @@
+---
+- map: abbey01
+  spawns:
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 97
+        xs: 87
+        'y': 270
+        ys: 87
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 97
+        xs: 87
+        'y': 270
+        ys: 87
+      mob: 1866
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 97
+        xs: 87
+        'y': 270
+        ys: 87
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 97
+        xs: 87
+        'y': 270
+        ys: 87
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 9
+      area:
+        x: 97
+        xs: 87
+        'y': 270
+        ys: 87
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 97
+        xs: 87
+        'y': 270
+        ys: 87
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 250
+        xs: 49
+        'y': 370
+        ys: 50
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 250
+        xs: 49
+        'y': 370
+        ys: 50
+      mob: 1866
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 250
+        xs: 49
+        'y': 370
+        ys: 50
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 250
+        xs: 49
+        'y': 370
+        ys: 50
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 250
+        xs: 49
+        'y': 370
+        ys: 50
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 250
+        xs: 49
+        'y': 370
+        ys: 50
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 374
+        xs: 39
+        'y': 207
+        ys: 100
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 374
+        xs: 39
+        'y': 207
+        ys: 100
+      mob: 1866
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 374
+        xs: 39
+        'y': 207
+        ys: 100
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 374
+        xs: 39
+        'y': 207
+        ys: 100
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 374
+        xs: 39
+        'y': 207
+        ys: 100
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 374
+        xs: 39
+        'y': 207
+        ys: 100
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 283
+        xs: 99
+        'y': 283
+        ys: 100
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 283
+        xs: 99
+        'y': 283
+        ys: 100
+      mob: 1866
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 283
+        xs: 99
+        'y': 283
+        ys: 100
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 283
+        xs: 99
+        'y': 283
+        ys: 100
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 283
+        xs: 99
+        'y': 283
+        ys: 100
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 283
+        xs: 99
+        'y': 283
+        ys: 100
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 71
+        xs: 64
+        'y': 67
+        ys: 58
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 260
+        xs: 35
+        'y': 70
+        ys: 30
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 260
+        xs: 35
+        'y': 70
+        ys: 30
+      mob: 1866
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 260
+        xs: 35
+        'y': 70
+        ys: 30
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 260
+        xs: 35
+        'y': 70
+        ys: 30
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 260
+        xs: 35
+        'y': 70
+        ys: 30
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 260
+        xs: 35
+        'y': 70
+        ys: 30
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 260
+        xs: 35
+        'y': 100
+        ys: 30
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 260
+        xs: 35
+        'y': 100
+        ys: 30
+      mob: 1866
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 260
+        xs: 35
+        'y': 100
+        ys: 30
+      mob: 1864
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 260
+        xs: 35
+        'y': 100
+        ys: 30
+      mob: 1865
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 260
+        xs: 35
+        'y': 100
+        ys: 30
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 260
+        xs: 35
+        'y': 100
+        ys: 30
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0

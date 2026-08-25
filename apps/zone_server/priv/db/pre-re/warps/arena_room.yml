@@ -1,0 +1,145 @@
+---
+- id: arn_room_11_1
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 63
+    'y': 130
+  x: 84
+  xs: 1
+  'y': 103
+  ys: 1
+- id: arn_room_11_2
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 87
+    'y': 100
+  x: 63
+  xs: 1
+  'y': 126
+  ys: 1
+- id: arn_room_9_1
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 46
+    'y': 87
+  x: 76
+  xs: 1
+  'y': 87
+  ys: 1
+- id: arn_room_9_2
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 78
+    'y': 87
+  x: 49
+  xs: 1
+  'y': 87
+  ys: 1
+- id: arn_room_7_1
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 60
+    'y': 50
+  x: 84
+  xs: 1
+  'y': 71
+  ys: 1
+- id: arn_room_7_2
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 86
+    'y': 74
+  x: 63
+  xs: 1
+  'y': 53
+  ys: 1
+- id: arn_room_5_1
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 139
+    'y': 50
+  x: 115
+  xs: 1
+  'y': 71
+  ys: 1
+- id: arn_room_5_2
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 113
+    'y': 74
+  x: 136
+  xs: 1
+  'y': 53
+  ys: 1
+- id: arn_room_3_1
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 153
+    'y': 87
+  x: 123
+  xs: 1
+  'y': 88
+  ys: 1
+- id: arn_room_3_2
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 120
+    'y': 87
+  x: 150
+  xs: 1
+  'y': 87
+  ys: 1
+- id: byeaco#arena
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 111
+    'y': 99
+  x: 135
+  xs: 1
+  'y': 126
+  ys: 1
+- id: bye_arena
+  map: arena_room
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 128
+    'y': 220
+  x: 99
+  xs: 2
+  'y': 24
+  ys: 2

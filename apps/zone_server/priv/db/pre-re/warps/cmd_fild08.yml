@@ -1,0 +1,97 @@
+---
+- id: moc_ant1-1
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: anthell01
+    x: 35
+    'y': 262
+  x: 335
+  xs: 3
+  'y': 355
+  ys: 4
+- id: moc_ant2-1
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: anthell02
+    x: 168
+    'y': 170
+  x: 348
+  xs: 3
+  'y': 82
+  ys: 3
+- id: cmd_fild08-1
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild06
+    x: 366
+    'y': 359
+  x: 25
+  xs: 1
+  'y': 355
+  ys: 1
+- id: cmd_fild08-2
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild06
+    x: 374
+    'y': 167
+  x: 25
+  xs: 1
+  'y': 170
+  ys: 1
+- id: cmd_fild08-3
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild06
+    x: 361
+    'y': 96
+  x: 15
+  xs: 1
+  'y': 102
+  ys: 1
+- id: cmd_fild08-4
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild09
+    x: 76
+    'y': 375
+  x: 76
+  xs: 2
+  'y': 31
+  ys: 1
+- id: cmd_fild08-5
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild09
+    x: 307
+    'y': 374
+  x: 309
+  xs: 2
+  'y': 48
+  ys: 1
+- id: cmd_fild08-6
+  map: cmd_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild12
+    x: 26
+    'y': 305
+  x: 354
+  xs: 1
+  'y': 324
+  ys: 1

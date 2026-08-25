@@ -1,0 +1,39 @@
+---
+- map: lou_dun02
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1512
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1026
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1514
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 0
+      respawn_variance: 0

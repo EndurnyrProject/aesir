@@ -1,0 +1,48 @@
+---
+- map: tha_t01
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1275
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1695
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1195
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1703
+      respawn_time: 1800000
+      respawn_variance: 1200000

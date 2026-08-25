@@ -1,0 +1,66 @@
+---
+- map: tha_t07
+  spawns:
+    - amount: 10
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1698
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 10
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1699
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 7
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1703
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 7
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1701
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 15
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1702
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1700
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 2
+      area:
+        x: 70
+        xs: 40
+        'y': 105
+        ys: 75
+      mob: 1705
+      respawn_time: 1800000
+      respawn_variance: 1200000

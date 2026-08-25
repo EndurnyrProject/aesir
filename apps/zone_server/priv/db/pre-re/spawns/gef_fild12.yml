@@ -1,0 +1,57 @@
+---
+- map: gef_fild12
+  spawns:
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1133
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1134
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1135
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1282
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1296
+      respawn_time: 1800000
+      respawn_variance: 1200000

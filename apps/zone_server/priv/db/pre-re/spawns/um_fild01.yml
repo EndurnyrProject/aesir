@@ -1,0 +1,75 @@
+---
+- map: um_fild01
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1499
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1215
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1376
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 65
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1493
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1114
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 6
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1083
+      respawn_time: 180000
+      respawn_variance: 90000

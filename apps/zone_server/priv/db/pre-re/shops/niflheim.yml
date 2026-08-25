@@ -1,0 +1,12 @@
+---
+- dir: 5
+  discount: true
+  id: Chef Assistant#nif
+  items:
+    - id: 581
+      price:
+  map: niflheim
+  name: Chef Assistant
+  sprite: 83
+  x: 209
+  'y': 180

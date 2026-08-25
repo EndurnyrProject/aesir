@@ -1,0 +1,57 @@
+---
+- map: ein_fild02
+  spawns:
+    - amount: 10
+      area:
+        x: 105
+        xs: 70
+        'y': 250
+        ys: 80
+      mob: 1380
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 259
+        xs: 90
+        'y': 269
+        ys: 70
+      mob: 1380
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 287
+        xs: 55
+        'y': 117
+        ys: 70
+      mob: 1380
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 108
+        xs: 60
+        'y': 88
+        ys: 60
+      mob: 1380
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1378
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1618
+      respawn_time: 75600000
+      respawn_variance: 75000000

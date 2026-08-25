@@ -1,0 +1,133 @@
+---
+- id: gef001
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild04
+    x: 187
+    'y': 42
+  x: 119
+  xs: 3
+  'y': 213
+  ys: 2
+- id: gef002
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: gef_tower
+    x: 52
+    'y': 177
+  x: 120
+  xs: 3
+  'y': 114
+  ys: 1
+- id: gef003
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild00
+    x: 46
+    'y': 199
+  x: 217
+  xs: 2
+  'y': 119
+  ys: 4
+- id: gef004
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild07
+    x: 336
+    'y': 187
+  x: 26
+  xs: 2
+  'y': 119
+  ys: 3
+- id: gef01
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 28
+    'y': 110
+  x: 138
+  xs: 1
+  'y': 138
+  ys: 1
+- id: gef02
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 70
+    'y': 52
+  x: 172
+  xs: 2
+  'y': 174
+  ys: 2
+- id: gef03
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 106
+    'y': 177
+  x: 182
+  xs: 2
+  'y': 59
+  ys: 2
+- id: gef04
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 70
+    'y': 138
+  x: 43
+  xs: 2
+  'y': 85
+  ys: 2
+- id: gef05
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 162
+    'y': 97
+  x: 61
+  xs: 3
+  'y': 180
+  ys: 3
+- id: gef06
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 28
+    'y': 160
+  x: 98
+  xs: 2
+  'y': 141
+  ys: 2
+- id: sign02
+  map: geffen
+  name: ''
+  sprite: 45
+  to:
+    map: geffen_in
+    x: 165
+    'y': 50
+  x: 140
+  xs: 1
+  'y': 99
+  ys: 1

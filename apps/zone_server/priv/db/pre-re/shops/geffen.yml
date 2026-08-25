@@ -1,0 +1,37 @@
+---
+- dir: 3
+  discount: true
+  id: Chef Assistant#gef
+  items:
+    - id: 7482
+      price:
+  map: geffen
+  name: Chef Assistant
+  sprite: 85
+  x: 196
+  'y': 111
+- dir: 4
+  discount: true
+  id: Pet Groomer#gef
+  items:
+    - id: 537
+      price:
+    - id: 643
+      price:
+    - id: 10013
+      price:
+    - id: 10014
+      price:
+    - id: 554
+      price:
+    - id: 6113
+      price:
+    - id: 6114
+      price:
+    - id: 6115
+      price:
+  map: geffen
+  name: Pet Groomer
+  sprite: 124
+  x: 193
+  'y': 152

@@ -1,0 +1,80 @@
+---
+- dir: 4
+  discount: true
+  id: Tool Dealer#pay3
+  items:
+    - id: 1750
+      price:
+    - id: 501
+      price:
+    - id: 645
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+  map: payon
+  name: Tool Dealer
+  sprite: 88
+  x: 159
+  'y': 96
+- dir: 5
+  discount: true
+  id: Chef Assistant#pay
+  items:
+    - id: 7455
+      price:
+  map: payon
+  name: Chef Assistant
+  sprite: 89
+  x: 206
+  'y': 119
+- dir: 4
+  discount: true
+  id: Pet Groomer#pay
+  items:
+    - id: 537
+      price:
+    - id: 643
+      price:
+    - id: 10013
+      price:
+    - id: 10014
+      price:
+    - id: 554
+      price:
+    - id: 6114
+      price:
+    - id: 6113
+      price:
+    - id: 6110
+      price:
+    - id: 6115
+      price:
+    - id: 6100
+      price:
+    - id: 6098
+      price:
+    - id: 6112
+      price:
+    - id: 6104
+      price:
+    - id: 6108
+      price:
+    - id: 6111
+      price:
+    - id: 6095
+      price:
+    - id: 6099
+      price:
+    - id: 6096
+      price:
+    - id: 6097
+      price:
+    - id: 6094
+      price:
+  map: payon
+  name: Pet Groomer
+  sprite: 124
+  x: 177
+  'y': 131

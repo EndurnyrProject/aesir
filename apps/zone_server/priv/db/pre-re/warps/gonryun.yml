@@ -1,0 +1,85 @@
+---
+- id: gon_house1-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_in
+    x: 112
+    'y': 98
+  x: 221
+  xs: 1
+  'y': 162
+  ys: 1
+- id: gon_house2-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_in
+    x: 95
+    'y': 23
+  x: 195
+  xs: 1
+  'y': 93
+  ys: 1
+- id: gon_tea1-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_in
+    x: 72
+    'y': 70
+  x: 107
+  xs: 1
+  'y': 184
+  ys: 1
+- id: gon_tavern1-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_in
+    x: 152
+    'y': 24
+  x: 215
+  xs: 1
+  'y': 114
+  ys: 1
+- id: gon_castle1-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_in
+    x: 44
+    'y': 24
+  x: 109
+  xs: 1
+  'y': 131
+  ys: 1
+- id: gon_fild1-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_fild01
+    x: 191
+    'y': 261
+  x: 161
+  xs: 1
+  'y': 8
+  ys: 1
+- id: gon_dun1-1
+  map: gonryun
+  name: ''
+  sprite: 45
+  to:
+    map: gon_dun01
+    x: 153
+    'y': 48
+  x: 159
+  xs: 1
+  'y': 201
+  ys: 1

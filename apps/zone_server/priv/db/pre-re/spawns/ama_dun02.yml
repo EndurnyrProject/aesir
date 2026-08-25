@@ -1,0 +1,57 @@
+---
+- map: ama_dun02
+  spawns:
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1402
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1403
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1404
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1401
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1129
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1375
+      respawn_time: 180000
+      respawn_variance: 90000

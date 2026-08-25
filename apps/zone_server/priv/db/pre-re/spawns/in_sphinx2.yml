@@ -1,0 +1,39 @@
+---
+- map: in_sphinx2
+  spawns:
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1111
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1164
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1178
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1146
+      respawn_time: 0
+      respawn_variance: 0

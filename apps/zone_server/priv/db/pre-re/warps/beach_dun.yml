@@ -1,0 +1,13 @@
+---
+- id: cmd_beach_dun1-2
+  map: beach_dun
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 31
+    'y': 215
+  x: 276
+  xs: 1
+  'y': 67
+  ys: 1

@@ -1,0 +1,57 @@
+---
+- map: gon_dun01
+  spawns:
+    - amount: 55
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1408
+      respawn_time: 650000
+      respawn_variance: 350000
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1410
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1417
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1082
+      respawn_time: 0
+      respawn_variance: 0

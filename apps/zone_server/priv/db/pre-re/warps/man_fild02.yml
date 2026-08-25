@@ -1,0 +1,25 @@
+---
+- id: man_fild02-1
+  map: man_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: man_fild01
+    x: 369
+    'y': 230
+  x: 32
+  xs: 1
+  'y': 261
+  ys: 1
+- id: man_fild02-2
+  map: man_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: manuk
+    x: 112
+    'y': 356
+  x: 139
+  xs: 1
+  'y': 41
+  ys: 1

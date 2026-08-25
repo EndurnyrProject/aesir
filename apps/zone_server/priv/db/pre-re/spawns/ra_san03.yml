@@ -1,0 +1,48 @@
+---
+- map: ra_san03
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1633
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1632
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 148
+        xs: 145
+        'y': 221
+        ys: 71
+      mob: 1774
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1773
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 148
+        xs: 146
+        'y': 79
+        ys: 71
+      mob: 1773
+      respawn_time: 0
+      respawn_variance: 0

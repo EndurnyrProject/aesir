@@ -1,0 +1,157 @@
+---
+- id: moc001
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild12
+    x: 159
+    'y': 378
+  x: 160
+  xs: 2
+  'y': 17
+  ys: 2
+- id: moc003
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild07
+    x: 198
+    'y': 25
+  x: 160
+  xs: 2
+  'y': 297
+  ys: 2
+- id: moc01
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 83
+    'y': 92
+  x: 197
+  xs: 1
+  'y': 66
+  ys: 1
+- id: moc02
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: moc_ruins
+    x: 156
+    'y': 42
+  x: 27
+  xs: 2
+  'y': 294
+  ys: 5
+- id: moc004
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild19
+    x: 164
+    'y': 107
+  x: 24
+  xs: 1
+  'y': 164
+  ys: 2
+- id: moc03
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 134
+    'y': 74
+  x: 253
+  xs: 2
+  'y': 56
+  ys: 1
+- id: moc04
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 138
+    'y': 136
+  x: 274
+  xs: 2
+  'y': 269
+  ys: 2
+- id: moc07
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 108
+    'y': 176
+  x: 283
+  xs: 2
+  'y': 170
+  ys: 2
+- id: moc005
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild20
+    x: 36
+    'y': 177
+  x: 299
+  xs: 2
+  'y': 207
+  ys: 2
+- id: moc05
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 68
+    'y': 72
+  x: 46
+  xs: 2
+  'y': 46
+  ys: 1
+- id: moc06
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 180
+    'y': 65
+  x: 52
+  xs: 1
+  'y': 259
+  ys: 2
+- id: moc08
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 44
+    'y': 149
+  x: 85
+  xs: 2
+  'y': 55
+  ys: 2
+- id: moc09
+  map: morocc
+  name: ''
+  sprite: 45
+  to:
+    map: morocc_in
+    x: 44
+    'y': 175
+  x: 98
+  xs: 1
+  'y': 68
+  ys: 1

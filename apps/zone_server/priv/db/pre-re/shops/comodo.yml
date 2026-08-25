@@ -1,0 +1,31 @@
+---
+- dir: 4
+  discount: true
+  id: Souvenir Vendor#cmd
+  items:
+    - id: 965
+      price:
+    - id: 964
+      price:
+  map: comodo
+  name: Souvenir Vendor
+  sprite: 101
+  x: 296
+  'y': 125
+- dir: 3
+  discount: true
+  id: Chef Assistant#cmd
+  items:
+    - id: 7455
+      price:
+    - id: 7453
+      price:
+    - id: 7454
+      price:
+    - id: 579
+      price:
+  map: comodo
+  name: Chef Assistant
+  sprite: 83
+  x: 225
+  'y': 164

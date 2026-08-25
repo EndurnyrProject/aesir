@@ -1,0 +1,39 @@
+---
+- map: alde_dun02
+  spawns:
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1213
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1189
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1211
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1194
+      respawn_time: 0
+      respawn_variance: 0

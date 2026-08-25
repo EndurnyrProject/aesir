@@ -1,0 +1,48 @@
+---
+- map: c_tower3
+  spawns:
+    - amount: 80
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1193
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1195
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 153
+        xs: 10
+        'y': 220
+        ys: 10
+      mob: 1195
+      respawn_time: 126000
+      respawn_variance: 100000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1270
+      respawn_time: 0
+      respawn_variance: 0

@@ -1,0 +1,57 @@
+---
+- map: gef_dun03
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1626
+      respawn_time: 600000
+      respawn_variance: 300000
+    - amount: 8
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1192
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1291
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1263
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1082
+      respawn_time: 180000
+      respawn_variance: 90000

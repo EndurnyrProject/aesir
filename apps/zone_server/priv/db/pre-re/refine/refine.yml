@@ -1,0 +1,1353 @@
+---
+- group: armor
+  levels:
+    - level: 1
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 70
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 140
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 210
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 280
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 350
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 9000
+              type: enriched
+          level: 5
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 420
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 7000
+              type: enriched
+          level: 6
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 490
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 7000
+              type: enriched
+          level: 7
+          random_bonus: 0
+        - blacksmith_blessing_amount: 1
+          bonus: 560
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 8
+          random_bonus: 0
+        - blacksmith_blessing_amount: 2
+          bonus: 630
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 9
+          random_bonus: 0
+        - blacksmith_blessing_amount: 4
+          bonus: 700
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 2000
+              rate: 1000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 2000
+              rate: 2000
+              type: enriched
+          level: 10
+          random_bonus: 0
+- group: weapon
+  levels:
+    - level: 1
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 200
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 400
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 600
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 800
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 5
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1200
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 6
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1400
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 7
+          random_bonus: 0
+        - blacksmith_blessing_amount: 1
+          bonus: 1600
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 9000
+              type: enriched
+          level: 8
+          random_bonus: 300
+        - blacksmith_blessing_amount: 2
+          bonus: 1800
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 7000
+              type: enriched
+          level: 9
+          random_bonus: 600
+        - blacksmith_blessing_amount: 4
+          bonus: 2000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Phracon
+              price: 50
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 3000
+              type: enriched
+          level: 10
+          random_bonus: 900
+    - level: 2
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 300
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 600
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 900
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1200
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 5
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1800
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 6
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 2100
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 9000
+              type: enriched
+          level: 7
+          random_bonus: 500
+        - blacksmith_blessing_amount: 1
+          bonus: 2400
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 7000
+              type: enriched
+          level: 8
+          random_bonus: 1000
+        - blacksmith_blessing_amount: 2
+          bonus: 2700
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 9
+          random_bonus: 1500
+        - blacksmith_blessing_amount: 4
+          bonus: 3000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Emveretarcon
+              price: 200
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 3000
+              type: enriched
+          level: 10
+          random_bonus: 2000
+    - level: 3
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 2000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 2500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 5
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 3000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 9000
+              type: enriched
+          level: 6
+          random_bonus: 800
+        - blacksmith_blessing_amount: 0
+          bonus: 3500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 5000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 8000
+              type: enriched
+          level: 7
+          random_bonus: 1600
+        - blacksmith_blessing_amount: 1
+          bonus: 4000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 8
+          random_bonus: 2400
+        - blacksmith_blessing_amount: 2
+          bonus: 4500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 9
+          random_bonus: 3200
+        - blacksmith_blessing_amount: 4
+          bonus: 5000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 5000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 3000
+              type: enriched
+          level: 10
+          random_bonus: 4000
+    - level: 4
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 700
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 1400
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 2100
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 2800
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 3500
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 9000
+              type: enriched
+          level: 5
+          random_bonus: 1300
+        - blacksmith_blessing_amount: 0
+          bonus: 4200
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 7000
+              type: enriched
+          level: 6
+          random_bonus: 2600
+        - blacksmith_blessing_amount: 0
+          bonus: 4900
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 7000
+              type: enriched
+          level: 7
+          random_bonus: 3900
+        - blacksmith_blessing_amount: 1
+          bonus: 5600
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 8
+          random_bonus: 5200
+        - blacksmith_blessing_amount: 2
+          bonus: 6300
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 4000
+              type: enriched
+          level: 9
+          random_bonus: 6500
+        - blacksmith_blessing_amount: 4
+          bonus: 7000
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 20000
+              rate: 1000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 2000
+              rate: 2000
+              type: enriched
+          level: 10
+          random_bonus: 7800
+- group: shadow_armor
+  levels:
+    - level: 1
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 9000
+              type: enriched
+          level: 5
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 7000
+              type: enriched
+          level: 6
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 7000
+              type: enriched
+          level: 7
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 4000
+              type: enriched
+          level: 8
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 4000
+              type: enriched
+          level: 9
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Elunium
+              price: 10000
+              rate: 900
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Elunium
+              price: 10000
+              rate: 2000
+              type: enriched
+          level: 10
+          random_bonus: 0
+- group: shadow_weapon
+  levels:
+    - level: 1
+      refine_levels:
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 1
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 2
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 3
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 10000
+              type: normal
+            - breaking_rate: 0
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 10000
+              type: enriched
+          level: 4
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 6000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 9000
+              type: enriched
+          level: 5
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 7000
+              type: enriched
+          level: 6
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 4000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 7000
+              type: enriched
+          level: 7
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 4000
+              type: enriched
+          level: 8
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 2000
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 4000
+              type: enriched
+          level: 9
+          random_bonus: 0
+        - blacksmith_blessing_amount: 0
+          bonus: 0
+          broadcast_failure: false
+          broadcast_success: false
+          chances:
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Oridecon
+              price: 10000
+              rate: 900
+              type: normal
+            - breaking_rate: 10000
+              downgrade_amount: 0
+              material: Enriched_Oridecon
+              price: 10000
+              rate: 2000
+              type: enriched
+          level: 10
+          random_bonus: 0

@@ -1,0 +1,121 @@
+---
+- id: yun02
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 120
+    'y': 138
+  x: 116
+  xs: 1
+  'y': 40
+  ys: 1
+- id: yun04
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 51
+    'y': 105
+  x: 40
+  xs: 1
+  'y': 176
+  ys: 1
+- id: yun05
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in01
+    x: 86
+    'y': 164
+  x: 32
+  xs: 1
+  'y': 182
+  ys: 1
+- id: yun06
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in01
+    x: 28
+    'y': 182
+  x: 82
+  xs: 1
+  'y': 164
+  ys: 1
+- id: yun08
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 51
+    'y': 151
+  x: 34
+  xs: 1
+  'y': 100
+  ys: 1
+- id: yun12
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 193
+    'y': 142
+  x: 32
+  xs: 1
+  'y': 36
+  ys: 1
+- id: yun14
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 264
+    'y': 90
+  x: 168
+  xs: 1
+  'y': 104
+  ys: 1
+- id: yun59
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in01
+    x: 173
+    'y': 34
+  x: 88
+  xs: 1
+  'y': 36
+  ys: 1
+- id: yun60
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in01
+    x: 91
+    'y': 36
+  x: 176
+  xs: 1
+  'y': 34
+  ys: 1
+- id: yun66
+  map: yuno_in01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 245
+    'y': 144
+  x: 101
+  xs: 1
+  'y': 85
+  ys: 1

@@ -1,0 +1,29 @@
+---
+- dir: 4
+  discount: true
+  id: Fruit Gardener#mosk
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+    - id: 515
+      price:
+    - id: 516
+      price:
+  map: moscovia
+  name: Fruit Gardener
+  sprite: 968
+  x: 152
+  'y': 71
+- dir: 3
+  discount: true
+  id: Vendor from Milk Ranch#m
+  items:
+    - id: 519
+      price:
+  map: moscovia
+  name: Vendor from Milk Ranch
+  sprite: 959
+  x: 199
+  'y': 110

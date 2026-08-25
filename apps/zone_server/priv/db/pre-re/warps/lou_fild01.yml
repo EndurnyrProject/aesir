@@ -1,0 +1,13 @@
+---
+- id: lou_fild1-2
+  map: lou_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 218
+    'y': 22
+  x: 233
+  xs: 1
+  'y': 356
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: ra027
+  map: ra_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild07
+    x: 168
+    'y': 349
+  x: 168
+  xs: 1
+  'y': 36
+  ys: 1
+- id: ra028
+  map: ra_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild03
+    x: 28
+    'y': 294
+  x: 373
+  xs: 1
+  'y': 275
+  ys: 1

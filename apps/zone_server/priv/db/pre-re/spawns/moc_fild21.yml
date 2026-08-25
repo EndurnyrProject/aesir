@@ -1,0 +1,66 @@
+---
+- map: moc_fild21
+  spawns:
+    - amount: 61
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1040
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1278
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1366
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1918
+      respawn_time: 30000
+      respawn_variance: 0
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1919
+      respawn_time: 30000
+      respawn_variance: 0
+    - amount: 46
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1920
+      respawn_time: 30000
+      respawn_variance: 0
+    - amount: 34
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1921
+      respawn_time: 30000
+      respawn_variance: 0

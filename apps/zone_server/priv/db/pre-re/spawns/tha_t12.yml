@@ -1,0 +1,57 @@
+---
+- map: tha_t12
+  spawns:
+    - amount: 5
+      area:
+        x: 129
+        xs: 35
+        'y': 51
+        ys: 35
+      mob: 1693
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 13
+      area:
+        x: 129
+        xs: 35
+        'y': 51
+        ys: 35
+      mob: 1700
+      respawn_time: 600000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 129
+        xs: 35
+        'y': 51
+        ys: 35
+      mob: 1703
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 129
+        xs: 35
+        'y': 51
+        ys: 35
+      mob: 1701
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 129
+        xs: 35
+        'y': 51
+        ys: 35
+      mob: 1702
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 129
+        xs: 35
+        'y': 51
+        ys: 35
+      mob: 1709
+      respawn_time: 1800000
+      respawn_variance: 1200000

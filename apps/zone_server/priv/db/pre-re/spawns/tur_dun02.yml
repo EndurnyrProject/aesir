@@ -1,0 +1,39 @@
+---
+- map: tur_dun02
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1314
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1316
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1319
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1256
+      respawn_time: 0
+      respawn_variance: 0

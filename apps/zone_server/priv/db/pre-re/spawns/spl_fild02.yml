@@ -1,0 +1,21 @@
+---
+- map: spl_fild02
+  spawns:
+    - amount: 95
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1995
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1994
+      respawn_time: 0
+      respawn_variance: 0

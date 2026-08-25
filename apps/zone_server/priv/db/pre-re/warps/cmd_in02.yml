@@ -1,0 +1,145 @@
+---
+- id: cmd_KAFRA1-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 127
+    'y': 191
+  x: 139
+  xs: 1
+  'y': 169
+  ys: 1
+- id: cmd_KAFRA2-1
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_in02
+    x: 97
+    'y': 211
+  x: 208
+  xs: 1
+  'y': 206
+  ys: 1
+- id: cmd_KAFRA12-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_in02
+    x: 207
+    'y': 210
+  x: 98
+  xs: 1
+  'y': 216
+  ys: 1
+- id: cmd_chief1-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 115
+    'y': 288
+  x: 69
+  xs: 1
+  'y': 129
+  ys: 1
+- id: cmd_casino1-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 140
+    'y': 115
+  x: 178
+  xs: 1
+  'y': 136
+  ys: 1
+- id: cmd_casino2-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 157
+    'y': 97
+  x: 216
+  xs: 1
+  'y': 97
+  ys: 1
+- id: cmd_casino3-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 122
+    'y': 98
+  x: 139
+  xs: 1
+  'y': 97
+  ys: 1
+- id: cmd_casino4-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 140
+    'y': 86
+  x: 74
+  xs: 1
+  'y': 21
+  ys: 1
+- id: cmd_casino5-1
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_in02
+    x: 63
+    'y': 73
+  x: 168
+  xs: 1
+  'y': 113
+  ys: 1
+- id: cmd_casino5-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_in02
+    x: 166
+    'y': 116
+  x: 58
+  xs: 1
+  'y': 74
+  ys: 1
+- id: cmd_casino6-1
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_in02
+    x: 84
+    'y': 37
+  x: 187
+  xs: 1
+  'y': 78
+  ys: 1
+- id: cmd_casino6-2
+  map: cmd_in02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_in02
+    x: 191
+    'y': 77
+  x: 90
+  xs: 1
+  'y': 37
+  ys: 1

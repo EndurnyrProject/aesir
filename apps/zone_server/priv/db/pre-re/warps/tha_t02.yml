@@ -1,0 +1,13 @@
+---
+- id: WarpThana1b
+  map: tha_t02
+  name: ''
+  sprite: 45
+  to:
+    map: tha_t01
+    x: 150
+    'y': 145
+  x: 149
+  xs: 1
+  'y': 125
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: xmas_dun2-2
+  map: xmas_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: xmas_dun01
+    x: 132
+    'y': 130
+  x: 129
+  xs: 1
+  'y': 130
+  ys: 1

@@ -1,0 +1,61 @@
+---
+- id: mocp03-1
+  map: moc_pryd03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd02
+    x: 100
+    'y': 92
+  x: 100
+  xs: 3
+  'y': 97
+  ys: 2
+- id: mocp04
+  map: moc_pryd03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd04
+    x: 12
+    'y': 18
+  x: 12
+  xs: 3
+  'y': 15
+  ys: 2
+- id: mocp05
+  map: moc_pryd03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd04
+    x: 18
+    'y': 187
+  x: 15
+  xs: 2
+  'y': 187
+  ys: 3
+- id: mocp06
+  map: moc_pryd03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd04
+    x: 181
+    'y': 11
+  x: 184
+  xs: 2
+  'y': 11
+  ys: 3
+- id: mocp07
+  map: moc_pryd03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_pryd04
+    x: 188
+    'y': 181
+  x: 188
+  xs: 3
+  'y': 184
+  ys: 2

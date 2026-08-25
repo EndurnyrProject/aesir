@@ -1,0 +1,120 @@
+---
+- map: juperos_01
+  spawns:
+    - amount: 15
+      area:
+        x: 100
+        xs: 60
+        'y': 180
+        ys: 70
+      mob: 1679
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 25
+      area:
+        x: 100
+        xs: 60
+        'y': 180
+        ys: 70
+      mob: 1676
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 100
+        xs: 60
+        'y': 180
+        ys: 70
+      mob: 1677
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 25
+      area:
+        x: 100
+        xs: 60
+        'y': 180
+        ys: 70
+      mob: 1678
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 35
+      area:
+        x: 192
+        xs: 60
+        'y': 132
+        ys: 80
+      mob: 1679
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 45
+      area:
+        x: 192
+        xs: 60
+        'y': 132
+        ys: 80
+      mob: 1676
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 50
+      area:
+        x: 192
+        xs: 60
+        'y': 132
+        ys: 80
+      mob: 1677
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 45
+      area:
+        x: 192
+        xs: 60
+        'y': 132
+        ys: 80
+      mob: 1678
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1670
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1671
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1672
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1673
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 232
+        xs: 25
+        'y': 202
+        ys: 25
+      mob: 1670
+      respawn_time: 420000
+      respawn_variance: 0

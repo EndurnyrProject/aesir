@@ -1,0 +1,13 @@
+---
+- id: hugel014a
+  map: yuno_fild10
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild09
+    x: 371
+    'y': 184
+  x: 39
+  xs: 1
+  'y': 183
+  ys: 1

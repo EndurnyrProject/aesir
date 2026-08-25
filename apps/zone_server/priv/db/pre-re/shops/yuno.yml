@@ -1,0 +1,155 @@
+---
+- dir: 5
+  discount: true
+  id: Tool Dealer#yuno
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+  map: yuno
+  name: Tool Dealer
+  sprite: 84
+  x: 218
+  'y': 97
+- dir: 5
+  discount: true
+  id: Tool Dealer#yuno1
+  items:
+    - id: 911
+      price:
+    - id: 910
+      price:
+    - id: 912
+      price:
+  map: yuno
+  name: Tool Dealer
+  sprite: 83
+  x: 226
+  'y': 107
+- dir: 4
+  discount: true
+  id: Mr. King's Shop#yuno
+  items:
+    - id: 2340
+      price:
+    - id: 2341
+      price:
+    - id: 2411
+      price:
+    - id: 2222
+      price:
+    - id: 2230
+      price:
+    - id: 1721
+      price:
+  map: yuno
+  name: Mr. King's Shop
+  sprite: 125
+  x: 205
+  'y': 103
+- dir: 5
+  discount: true
+  id: Magical Item Seller#yuno
+  items:
+    - id: 717
+      price:
+    - id: 1601
+      price:
+    - id: 1604
+      price:
+    - id: 1607
+      price:
+    - id: 1610
+      price:
+    - id: 2232
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+  map: yuno
+  name: Magical Item Seller
+  sprite: 90
+  x: 163
+  'y': 187
+- dir: 3
+  discount: true
+  id: Chef Assistant#yuno
+  items:
+    - id: 7457
+      price:
+    - id: 7482
+      price:
+  map: yuno
+  name: Chef Assistant
+  sprite: 83
+  x: 130
+  'y': 173
+- dir: 4
+  discount: true
+  id: Pet Groomer#yuno
+  items:
+    - id: 537
+      price:
+    - id: 643
+      price:
+    - id: 10013
+      price:
+    - id: 10014
+      price:
+    - id: 6115
+      price:
+    - id: 554
+      price:
+    - id: 6114
+      price:
+    - id: 6113
+      price:
+    - id: 6110
+      price:
+    - id: 6115
+      price:
+    - id: 6100
+      price:
+    - id: 6098
+      price:
+    - id: 6112
+      price:
+    - id: 6104
+      price:
+    - id: 6108
+      price:
+    - id: 6111
+      price:
+    - id: 6095
+      price:
+    - id: 6099
+      price:
+    - id: 6096
+      price:
+    - id: 6097
+      price:
+  map: yuno
+  name: Pet Groomer
+  sprite: 124
+  x: 197
+  'y': 114

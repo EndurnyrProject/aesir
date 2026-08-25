@@ -1,0 +1,13 @@
+---
+- id: spl_fild01-1
+  map: spl_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: spl_fild02
+    x: 292
+    'y': 377
+  x: 289
+  xs: 1
+  'y': 28
+  ys: 1

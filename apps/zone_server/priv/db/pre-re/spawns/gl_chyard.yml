@@ -1,0 +1,66 @@
+---
+- map: gl_chyard
+  spawns:
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1036
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1015
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 45
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1192
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1117
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1035
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1272
+      respawn_time: 3600000
+      respawn_variance: 600000

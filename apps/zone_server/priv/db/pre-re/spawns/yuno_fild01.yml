@@ -1,0 +1,111 @@
+---
+- map: yuno_fild01
+  spawns:
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1114
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1002
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 190
+        xs: 80
+        'y': 329
+        ys: 20
+      mob: 1369
+      respawn_time: 50000
+      respawn_variance: 25000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 2
+      area:
+        x: 70
+        xs: 10
+        'y': 370
+        ys: 10
+      mob: 1079
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 70
+        xs: 10
+        'y': 370
+        ys: 10
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 2
+      area:
+        x: 66
+        xs: 10
+        'y': 267
+        ys: 10
+      mob: 1081
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 6
+      area:
+        x: 238
+        xs: 40
+        'y': 326
+        ys: 40
+      mob: 1081
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 2
+      area:
+        x: 238
+        xs: 40
+        'y': 326
+        ys: 40
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 1800000
+      respawn_variance: 900000

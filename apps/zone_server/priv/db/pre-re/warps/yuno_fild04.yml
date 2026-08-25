@@ -1,0 +1,73 @@
+---
+- id: ein001
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild06
+    x: 252
+    'y': 363
+  x: 251
+  xs: 1
+  'y': 21
+  ys: 1
+- id: hugel003a-1
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild02
+    x: 350
+    'y': 250
+  x: 33
+  xs: 1
+  'y': 279
+  ys: 1
+- id: yunfild04-1
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 21
+    'y': 79
+  x: 375
+  xs: 1
+  'y': 84
+  ys: 1
+- id: yunfild05-1
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 22
+    'y': 155
+  x: 375
+  xs: 1
+  'y': 150
+  ys: 1
+- id: yunfild-yun
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 158
+    'y': 17
+  x: 231
+  xs: 1
+  'y': 288
+  ys: 1
+- id: newjun14
+  map: yuno_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild05
+    x: 59
+    'y': 30
+  x: 42
+  xs: 1
+  'y': 369
+  ys: 1

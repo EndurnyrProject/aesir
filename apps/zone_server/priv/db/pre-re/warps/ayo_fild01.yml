@@ -1,0 +1,13 @@
+---
+- id: ayo_fild1-2
+  map: ayo_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: ayothaya
+    x: 273
+    'y': 176
+  x: 32
+  xs: 1
+  'y': 240
+  ys: 1

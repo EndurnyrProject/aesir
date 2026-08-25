@@ -1,0 +1,25 @@
+---
+- id: cmd_beach_dun2-2
+  map: beach_dun2
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 176
+    'y': 353
+  x: 154
+  xs: 2
+  'y': 13
+  ys: 1
+- id: um_fild1-4
+  map: beach_dun2
+  name: ''
+  sprite: 45
+  to:
+    map: um_fild01
+    x: 35
+    'y': 276
+  x: 258
+  xs: 1
+  'y': 244
+  ys: 1

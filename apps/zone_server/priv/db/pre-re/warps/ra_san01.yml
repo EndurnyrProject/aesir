@@ -1,0 +1,13 @@
+---
+- id: sanctuary15
+  map: ra_san01
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temin
+    x: 27
+    'y': 314
+  x: 139
+  xs: 1
+  'y': 139
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: gl19
+  map: gl_sew01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew02
+    x: 108
+    'y': 291
+  x: 19
+  xs: 1
+  'y': 21
+  ys: 1
+- id: gl09
+  map: gl_sew01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison1
+    x: 61
+    'y': 183
+  x: 258
+  xs: 1
+  'y': 258
+  ys: 1

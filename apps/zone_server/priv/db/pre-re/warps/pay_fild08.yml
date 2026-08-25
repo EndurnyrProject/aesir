@@ -1,0 +1,37 @@
+---
+- id: payf11-1
+  map: pay_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild07
+    x: 280
+    'y': 379
+  x: 160
+  xs: 4
+  'y': 16
+  ys: 2
+- id: payf006
+  map: pay_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: payon
+    x: 265
+    'y': 92
+  x: 17
+  xs: 1
+  'y': 75
+  ys: 1
+- id: payf13
+  map: pay_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild09
+    x: 19
+    'y': 91
+  x: 262
+  xs: 2
+  'y': 91
+  ys: 4

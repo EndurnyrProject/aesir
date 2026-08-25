@@ -1,0 +1,48 @@
+---
+- map: ra_fild11
+  spawns:
+    - amount: 100
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1113
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1784
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1782
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 0
+      respawn_variance: 0

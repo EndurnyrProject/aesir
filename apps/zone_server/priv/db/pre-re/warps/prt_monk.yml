@@ -1,0 +1,49 @@
+---
+- id: monk15
+  map: prt_monk
+  name: ''
+  sprite: 45
+  to:
+    map: monk_test
+    x: 329
+    'y': 50
+  x: 192
+  xs: 1
+  'y': 172
+  ys: 1
+- id: monk001
+  map: prt_monk
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild03
+    x: 368
+    'y': 256
+  x: 22
+  xs: 2
+  'y': 248
+  ys: 2
+- id: monk01
+  map: prt_monk
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 98
+    'y': 30
+  x: 245
+  xs: 1
+  'y': 106
+  ys: 1
+- id: monk02
+  map: prt_monk
+  name: ''
+  sprite: 45
+  to:
+    map: monk_in
+    x: 98
+    'y': 183
+  x: 245
+  xs: 1
+  'y': 137
+  ys: 1

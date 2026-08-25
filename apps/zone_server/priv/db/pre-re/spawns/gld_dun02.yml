@@ -1,0 +1,57 @@
+---
+- map: gld_dun02
+  spawns:
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1295
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1304
+      respawn_time: 240000
+      respawn_variance: 120000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1305
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1294
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1303
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1046
+      respawn_time: 28800000
+      respawn_variance: 600000

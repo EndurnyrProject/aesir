@@ -1,0 +1,37 @@
+---
+- id: gl9-1
+  map: gl_church
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 200
+    'y': 134
+  x: 156
+  xs: 1
+  'y': 4
+  ys: 1
+- id: gl11a
+  map: gl_church
+  name: ''
+  sprite: 45
+  to:
+    map: gl_chyard
+    x: 147
+    'y': 284
+  x: 16
+  xs: 1
+  'y': 299
+  ys: 1
+- id: gl12
+  map: gl_church
+  name: ''
+  sprite: 45
+  to:
+    map: gl_chyard
+    x: 147
+    'y': 15
+  x: 301
+  xs: 1
+  'y': 46
+  ys: 1

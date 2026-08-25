@@ -1,0 +1,48 @@
+---
+- map: gl_sew03
+  spawns:
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1207
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 37
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1253
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 147
+        xs: 5
+        'y': 7
+        ys: 1
+      mob: 1253
+      respawn_time: 2400000
+      respawn_variance: 1800000
+    - amount: 1
+      area:
+        x: 140
+        xs: 5
+        'y': 7
+        ys: 1
+      mob: 1253
+      respawn_time: 3600000
+      respawn_variance: 1800000
+    - amount: 1
+      area:
+        x: 158
+        xs: 5
+        'y': 7
+        ys: 1
+      mob: 1253
+      respawn_time: 3600000
+      respawn_variance: 1800000

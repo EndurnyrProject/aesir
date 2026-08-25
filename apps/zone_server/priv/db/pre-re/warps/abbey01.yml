@@ -1,0 +1,49 @@
+---
+- id: namelesswarp0101
+  map: abbey01
+  name: ''
+  sprite: 45
+  to:
+    map: nameless_n
+    x: 160
+    'y': 184
+  x: 51
+  xs: 1
+  'y': 9
+  ys: 1
+- id: namelesswarp4001
+  map: abbey01
+  name: ''
+  sprite: 45
+  to:
+    map: abbey01
+    x: 13
+    'y': 201
+  x: 87
+  xs: 1
+  'y': 122
+  ys: 1
+- id: namelesswarp4002
+  map: abbey01
+  name: ''
+  sprite: 45
+  to:
+    map: abbey01
+    x: 88
+    'y': 118
+  x: 13
+  xs: 1
+  'y': 204
+  ys: 1
+- id: namelesswarp4003
+  map: abbey01
+  name: ''
+  sprite: 45
+  to:
+    map: abbey02
+    x: 149
+    'y': 11
+  x: 321
+  xs: 1
+  'y': 102
+  ys: 1

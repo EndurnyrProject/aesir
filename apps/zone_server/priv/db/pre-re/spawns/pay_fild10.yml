@@ -1,0 +1,111 @@
+---
+- map: pay_fild10
+  spawns:
+    - amount: 65
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1277
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1110
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1077
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1180
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1180
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1180
+      respawn_time: 900000
+      respawn_variance: 450000
+    - amount: 5
+      area:
+        x: 213
+        xs: 10
+        'y': 157
+        ys: 10
+      mob: 1080
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 5
+      area:
+        x: 281
+        xs: 10
+        'y': 307
+        ys: 10
+      mob: 1080
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 5
+      area:
+        x: 66
+        xs: 10
+        'y': 332
+        ys: 10
+      mob: 1080
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 213
+        xs: 10
+        'y': 157
+        ys: 10
+      mob: 1079
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 281
+        xs: 10
+        'y': 307
+        ys: 10
+      mob: 1079
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 66
+        xs: 10
+        'y': 332
+        ys: 10
+      mob: 1079
+      respawn_time: 360000
+      respawn_variance: 180000

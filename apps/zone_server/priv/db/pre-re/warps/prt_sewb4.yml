@@ -1,0 +1,13 @@
+---
+- id: prts05-1
+  map: prt_sewb4
+  name: ''
+  sprite: 45
+  to:
+    map: prt_sewb3
+    x: 19
+    'y': 180
+  x: 100
+  xs: 3
+  'y': 96
+  ys: 2

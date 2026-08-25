@@ -1,0 +1,84 @@
+---
+- map: hu_fild02
+  spawns:
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1627
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1715
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1718
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1692
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1368
+      respawn_time: 600000
+      respawn_variance: 120000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1687
+      respawn_time: 600000
+      respawn_variance: 120000
+    - amount: 3
+      area:
+        x: 85
+        xs: 53
+        'y': 85
+        ys: 47
+      mob: 1378
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 85
+        xs: 37
+        'y': 85
+        ys: 47
+      mob: 1715
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 85
+        xs: 37
+        'y': 85
+        ys: 47
+      mob: 1718
+      respawn_time: 300000
+      respawn_variance: 120000

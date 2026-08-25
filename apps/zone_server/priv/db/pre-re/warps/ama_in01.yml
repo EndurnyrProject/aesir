@@ -1,0 +1,133 @@
+---
+- id: ama_house1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 180
+    'y': 138
+  x: 31
+  xs: 1
+  'y': 176
+  ys: 1
+- id: ama_house2-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 245
+    'y': 160
+  x: 76
+  xs: 1
+  'y': 178
+  ys: 1
+- id: ama_warrior1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 168
+    'y': 179
+  x: 34
+  xs: 1
+  'y': 96
+  ys: 1
+- id: ama_deluxe1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 52
+    'y': 145
+  x: 88
+  xs: 1
+  'y': 94
+  ys: 1
+- id: ama_tools1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 97
+    'y': 117
+  x: 33
+  xs: 1
+  'y': 24
+  ys: 1
+- id: ama_weapon1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 129
+    'y': 117
+  x: 86
+  xs: 1
+  'y': 23
+  ys: 1
+- id: ama_tavern1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: amatsu
+    x: 214
+    'y': 116
+  x: 157
+  xs: 1
+  'y': 25
+  ys: 1
+- id: ama_inn1-1
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 162
+    'y': 31
+  x: 166
+  xs: 1
+  'y': 73
+  ys: 1
+- id: ama_inn1-2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ama_in01
+    x: 166
+    'y': 77
+  x: 162
+  xs: 1
+  'y': 34
+  ys: 1
+- id: ama_shrine1.2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ama_fild01
+    x: 174
+    'y': 328
+  x: 175
+  xs: 1
+  'y': 171
+  ys: 1
+- id: ama_craftsman1.2
+  map: ama_in01
+  name: ''
+  sprite: 45
+  to:
+    map: ama_fild01
+    x: 330
+    'y': 138
+  x: 174
+  xs: 1
+  'y': 121
+  ys: 1

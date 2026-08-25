@@ -1,0 +1,37 @@
+---
+- id: gl14-1
+  map: gl_knt02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt01
+    x: 7
+    'y': 148
+  x: 10
+  xs: 1
+  'y': 138
+  ys: 1
+- id: gl16-1
+  map: gl_knt02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt01
+    x: 150
+    'y': 286
+  x: 157
+  xs: 1
+  'y': 292
+  ys: 1
+- id: gl17-1
+  map: gl_knt02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_knt01
+    x: 292
+    'y': 144
+  x: 289
+  xs: 1
+  'y': 138
+  ys: 1

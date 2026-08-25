@@ -1,0 +1,13 @@
+---
+- id: lhz_dun5-2
+  map: lhz_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_dun02
+    x: 149
+    'y': 142
+  x: 139
+  xs: 1
+  'y': 137
+  ys: 1

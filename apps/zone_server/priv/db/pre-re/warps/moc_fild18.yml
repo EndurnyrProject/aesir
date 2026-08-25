@@ -1,0 +1,37 @@
+---
+- id: moc_fild18-1
+  map: moc_fild18
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild09
+    x: 363
+    'y': 164
+  x: 51
+  xs: 1
+  'y': 170
+  ys: 3
+- id: mocf24-1
+  map: moc_fild18
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild12
+    x: 118
+    'y': 33
+  x: 158
+  xs: 4
+  'y': 382
+  ys: 2
+- id: moc29-1
+  map: moc_fild18
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild17
+    x: 33
+    'y': 300
+  x: 382
+  xs: 2
+  'y': 305
+  ys: 4

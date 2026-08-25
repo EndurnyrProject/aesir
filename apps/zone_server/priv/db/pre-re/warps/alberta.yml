@@ -1,0 +1,133 @@
+---
+- id: alb001
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild03
+    x: 388
+    'y': 63
+  x: 15
+  xs: 2
+  'y': 234
+  ys: 5
+- id: alb01
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 180
+    'y': 30
+  x: 117
+  xs: 2
+  'y': 38
+  ys: 2
+- id: alb03
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alb_ship
+    x: 26
+    'y': 168
+  x: 170
+  xs: 1
+  'y': 170
+  ys: 1
+- id: alb04
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alb_ship
+    x: 39
+    'y': 163
+  x: 178
+  xs: 1
+  'y': 165
+  ys: 2
+- id: alb05
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alb_ship
+    x: 162
+    'y': 171
+  x: 209
+  xs: 1
+  'y': 173
+  ys: 2
+- id: alb06
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 74
+    'y': 44
+  x: 33
+  xs: 2
+  'y': 42
+  ys: 2
+- id: alb07
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 18
+    'y': 141
+  x: 65
+  xs: 2
+  'y': 233
+  ys: 2
+- id: alb08
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 114
+    'y': 134
+  x: 93
+  xs: 2
+  'y': 205
+  ys: 2
+- id: alb09
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 185
+    'y': 89
+  x: 98
+  xs: 2
+  'y': 153
+  ys: 2
+- id: alb10
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 122
+    'y': 161
+  x: 99
+  xs: 2
+  'y': 221
+  ys: 2
+- id: alb02
+  map: alberta
+  name: ''
+  sprite: 45
+  to:
+    map: alberta_in
+    x: 70
+    'y': 141
+  x: 134
+  xs: 1
+  'y': 38
+  ys: 1

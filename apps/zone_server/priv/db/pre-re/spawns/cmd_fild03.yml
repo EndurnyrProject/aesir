@@ -1,0 +1,75 @@
+---
+- map: cmd_fild03
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1262
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1256
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 90
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1206
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1089
+      respawn_time: 3600000
+      respawn_variance: 1800000
+    - amount: 1
+      area:
+        x: 356
+        xs: 3
+        'y': 232
+        ys: 3
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 262
+        xs: 3
+        'y': 289
+        ys: 3
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 145
+        xs: 3
+        'y': 191
+        ys: 3
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000

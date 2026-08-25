@@ -1,0 +1,61 @@
+---
+- id: arug001
+  map: ve_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: aru_gld
+    x: 195
+    'y': 360
+  x: 191
+  xs: 1
+  'y': 21
+  ys: 1
+- id: ve_fild2-2
+  map: ve_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild13
+    x: 34
+    'y': 308
+  x: 385
+  xs: 1
+  'y': 308
+  ys: 1
+- id: ve_fild2-3
+  map: ve_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: rachel
+    x: 130
+    'y': 25
+  x: 195
+  xs: 1
+  'y': 382
+  ys: 1
+- id: ve_fild2-4
+  map: ve_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild01
+    x: 361
+    'y': 267
+  x: 31
+  xs: 1
+  'y': 263
+  ys: 1
+- id: ve_fild2-5
+  map: ve_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild01
+    x: 345
+    'y': 92
+  x: 73
+  xs: 1
+  'y': 133
+  ys: 1

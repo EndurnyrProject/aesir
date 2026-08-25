@@ -1,0 +1,49 @@
+---
+- id: hu001a
+  map: yuno_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild05
+    x: 370
+    'y': 325
+  x: 40
+  xs: 1
+  'y': 319
+  ys: 1
+- id: hu002
+  map: yuno_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild03
+    x: 214
+    'y': 381
+  x: 217
+  xs: 1
+  'y': 27
+  ys: 1
+- id: hu003
+  map: yuno_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild04
+    x: 28
+    'y': 126
+  x: 369
+  xs: 1
+  'y': 136
+  ys: 1
+- id: hu005
+  map: yuno_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild01
+    x: 139
+    'y': 37
+  x: 149
+  xs: 1
+  'y': 369
+  ys: 1

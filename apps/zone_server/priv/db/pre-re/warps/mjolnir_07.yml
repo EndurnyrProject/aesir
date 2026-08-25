@@ -1,0 +1,73 @@
+---
+- id: mjol004
+  map: mjolnir_07
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild00
+    x: 159
+    'y': 380
+  x: 156
+  xs: 4
+  'y': 16
+  ys: 2
+- id: mjol10-1
+  map: mjolnir_07
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_06
+    x: 379
+    'y': 377
+  x: 16
+  xs: 2
+  'y': 377
+  ys: 4
+- id: mjol11-1
+  map: mjolnir_07
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_06
+    x: 380
+    'y': 74
+  x: 17
+  xs: 2
+  'y': 77
+  ys: 4
+- id: mjol04-1
+  map: mjolnir_07
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_03
+    x: 212
+    'y': 20
+  x: 214
+  xs: 4
+  'y': 383
+  ys: 2
+- id: mjol12
+  map: mjolnir_07
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_08
+    x: 33
+    'y': 234
+  x: 383
+  xs: 2
+  'y': 233
+  ys: 4
+- id: mjol13
+  map: mjolnir_07
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_08
+    x: 32
+    'y': 346
+  x: 383
+  xs: 2
+  'y': 362
+  ys: 4

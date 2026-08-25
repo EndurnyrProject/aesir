@@ -1,0 +1,25 @@
+---
+- id: odin06
+  map: odin_tem03
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem02
+    x: 154
+    'y': 345
+  x: 121
+  xs: 1
+  'y': 49
+  ys: 1
+- id: odin08
+  map: odin_tem03
+  name: ''
+  sprite: 45
+  to:
+    map: odin_tem02
+    x: 263
+    'y': 372
+  x: 247
+  xs: 1
+  'y': 34
+  ys: 1

@@ -1,0 +1,143 @@
+---
+- dir: 3
+  discount: true
+  id: Weapon Dealer#ve
+  items:
+    - id: 1201
+      price:
+    - id: 1207
+      price:
+    - id: 1216
+      price:
+    - id: 1107
+      price:
+    - id: 1122
+      price:
+    - id: 1116
+      price:
+    - id: 1154
+      price:
+  map: ve_in
+  name: Weapon Dealer
+  sprite: 931
+  x: 386
+  'y': 245
+- dir: 3
+  discount: true
+  id: Weapon Dealer#ve2
+  items:
+    - id: 1407
+      price:
+    - id: 1457
+      price:
+    - id: 1354
+      price:
+    - id: 1519
+      price:
+    - id: 13003
+      price:
+  map: ve_in
+  name: Weapon Dealer
+  sprite: 931
+  x: 336
+  'y': 243
+- dir: 3
+  discount: true
+  id: Armor Dealer#ve
+  items:
+    - id: 2101
+      price:
+    - id: 2103
+      price:
+    - id: 2403
+      price:
+    - id: 2405
+      price:
+    - id: 2503
+      price:
+    - id: 2321
+      price:
+    - id: 2314
+      price:
+    - id: 2309
+      price:
+    - id: 2335
+      price:
+    - id: 2628
+      price:
+  map: ve_in
+  name: Armor Dealer
+  sprite: 919
+  x: 374
+  'y': 230
+- dir: 5
+  discount: true
+  id: Tool Dealer#ve
+  items:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 611
+      price:
+    - id: 1065
+      price:
+    - id: 610
+      price:
+  map: ve_in
+  name: Tool Dealer
+  sprite: 943
+  x: 243
+  'y': 303
+- dir: 5
+  discount: true
+  id: Fruit Gardener#ve
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+  map: ve_in
+  name: Fruit Gardener
+  sprite: 941
+  x: 253
+  'y': 304
+- dir: 0
+  discount: true
+  id: Magical Item Seller#ve
+  items:
+    - id: 717
+      price:
+    - id: 1601
+      price:
+    - id: 1604
+      price:
+    - id: 1607
+      price:
+    - id: 1610
+      price:
+    - id: 2232
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+  map: ve_in
+  name: Magical Item Seller
+  sprite: 942
+  x: 252
+  'y': 313

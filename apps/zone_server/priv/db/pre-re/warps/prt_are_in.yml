@@ -1,0 +1,13 @@
+---
+- id: toarn_room
+  map: prt_are_in
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 100
+    'y': 77
+  x: 54
+  xs: 1
+  'y': 13
+  ys: 1

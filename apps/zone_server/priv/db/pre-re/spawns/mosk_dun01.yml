@@ -1,0 +1,111 @@
+---
+- map: mosk_dun01
+  spawns:
+    - amount: 15
+      area:
+        x: 64
+        xs: 100
+        'y': 236
+        ys: 100
+      mob: 1880
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 64
+        xs: 100
+        'y': 236
+        ys: 100
+      mob: 1881
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 99
+        xs: 100
+        'y': 162
+        ys: 100
+      mob: 1880
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 99
+        xs: 100
+        'y': 162
+        ys: 100
+      mob: 1881
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 150
+        xs: 100
+        'y': 80
+        ys: 5
+      mob: 1880
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 150
+        xs: 100
+        'y': 80
+        ys: 5
+      mob: 1881
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 241
+        xs: 10
+        'y': 177
+        ys: 10
+      mob: 1880
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 241
+        xs: 10
+        'y': 177
+        ys: 10
+      mob: 1881
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 198
+        xs: 10
+        'y': 223
+        ys: 10
+      mob: 1880
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 198
+        xs: 10
+        'y': 223
+        ys: 10
+      mob: 1881
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1139
+      respawn_time: 20000
+      respawn_variance: 0

@@ -1,0 +1,121 @@
+---
+- id: gl01
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_cas01
+    x: 144
+    'y': 314
+  x: 135
+  xs: 1
+  'y': 40
+  ys: 1
+- id: gl02
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison
+    x: 14
+    'y': 70
+  x: 149
+  xs: 1
+  'y': 314
+  ys: 1
+- id: gl03
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison
+    x: 14
+    'y': 70
+  x: 167
+  xs: 1
+  'y': 191
+  ys: 1
+- id: gl06
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_cas01
+    x: 163
+    'y': 191
+  x: 185
+  xs: 1
+  'y': 236
+  ys: 1
+- id: gl10a
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_cas02
+    x: 104
+    'y': 25
+  x: 200
+  xs: 1
+  'y': 165
+  ys: 1
+- id: gl7-1
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 200
+    'y': 294
+  x: 200
+  xs: 2
+  'y': 18
+  ys: 2
+- id: gl07
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_cas01
+    x: 238
+    'y': 192
+  x: 215
+  xs: 1
+  'y': 236
+  ys: 1
+- id: gl04
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison
+    x: 14
+    'y': 70
+  x: 234
+  xs: 1
+  'y': 192
+  ys: 1
+- id: gl05
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison
+    x: 14
+    'y': 70
+  x: 371
+  xs: 1
+  'y': 301
+  ys: 1
+- id: gl08
+  map: gl_cas01
+  name: ''
+  sprite: 45
+  to:
+    map: gl_cas01
+    x: 367
+    'y': 301
+  x: 372
+  xs: 1
+  'y': 39
+  ys: 1

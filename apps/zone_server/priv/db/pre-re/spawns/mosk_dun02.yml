@@ -1,0 +1,39 @@
+---
+- map: mosk_dun02
+  spawns:
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1880
+      respawn_time: 10000
+      respawn_variance: 10000
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1881
+      respawn_time: 10000
+      respawn_variance: 10000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1882
+      respawn_time: 20000
+      respawn_variance: 10000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1883
+      respawn_time: 20000
+      respawn_variance: 10000

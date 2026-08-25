@@ -1,0 +1,73 @@
+---
+- id: rachel77
+  map: que_rachel
+  name: ''
+  sprite: 45
+  to:
+    map: que_rachel
+    x: 239
+    'y': 258
+  x: 130
+  xs: 1
+  'y': 93
+  ys: 1
+- id: rachel78
+  map: que_rachel
+  name: ''
+  sprite: 45
+  to:
+    map: que_rachel
+    x: 312
+    'y': 258
+  x: 206
+  xs: 1
+  'y': 93
+  ys: 1
+- id: rachel79
+  map: que_rachel
+  name: ''
+  sprite: 45
+  to:
+    map: que_rachel
+    x: 27
+    'y': 305
+  x: 275
+  xs: 1
+  'y': 332
+  ys: 1
+- id: rachel80
+  map: que_rachel
+  name: ''
+  sprite: 45
+  to:
+    map: que_rachel
+    x: 130
+    'y': 88
+  x: 239
+  xs: 1
+  'y': 253
+  ys: 1
+- id: rachel81
+  map: que_rachel
+  name: ''
+  sprite: 45
+  to:
+    map: que_rachel
+    x: 206
+    'y': 88
+  x: 312
+  xs: 1
+  'y': 253
+  ys: 1
+- id: rachel82
+  map: que_rachel
+  name: ''
+  sprite: 45
+  to:
+    map: que_rachel
+    x: 275
+    'y': 328
+  x: 27
+  xs: 1
+  'y': 299
+  ys: 1

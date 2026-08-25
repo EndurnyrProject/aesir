@@ -1,0 +1,120 @@
+---
+- map: yuno_fild03
+  spawns:
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1113
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1002
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1242
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1368
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 62
+        xs: 44
+        'y': 131
+        ys: 15
+      mob: 1037
+      respawn_time: 300000
+      respawn_variance: 240000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1096
+      respawn_time: 3600000
+      respawn_variance: 1800000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1582
+      respawn_time: 3600000
+      respawn_variance: 1800000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 358
+        xs: 10
+        'y': 215
+        ys: 10
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 4
+      area:
+        x: 358
+        xs: 10
+        'y': 215
+        ys: 10
+      mob: 1079
+      respawn_time: 1800000
+      respawn_variance: 900000

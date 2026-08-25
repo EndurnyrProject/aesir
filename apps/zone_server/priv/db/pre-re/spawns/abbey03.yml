@@ -1,0 +1,93 @@
+---
+- map: abbey03
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1873
+      respawn_time: 43200000
+      respawn_variance: 600000
+    - amount: 10
+      area:
+        x: 120
+        xs: 116
+        'y': 212
+        ys: 24
+      mob: 1870
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 120
+        xs: 116
+        'y': 212
+        ys: 24
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 120
+        xs: 116
+        'y': 212
+        ys: 24
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 122
+        xs: 111
+        'y': 152
+        ys: 36
+      mob: 1870
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 122
+        xs: 111
+        'y': 152
+        ys: 36
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 122
+        xs: 111
+        'y': 152
+        ys: 36
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 120
+        xs: 117
+        'y': 64
+        ys: 53
+      mob: 1870
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 120
+        xs: 117
+        'y': 64
+        ys: 53
+      mob: 1867
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 120
+        xs: 117
+        'y': 64
+        ys: 53
+      mob: 1869
+      respawn_time: 0
+      respawn_variance: 0

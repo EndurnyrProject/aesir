@@ -1,0 +1,25 @@
+---
+- id: ama_dun1-2
+  map: ama_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ama_dun01
+    x: 232
+    'y': 144
+  x: 30
+  xs: 1
+  'y': 40
+  ys: 1
+- id: ama_dun2-1
+  map: ama_dun02
+  name: ''
+  sprite: 45
+  to:
+    map: ama_dun03
+    x: 120
+    'y': 12
+  x: 196
+  xs: 1
+  'y': 123
+  ys: 1

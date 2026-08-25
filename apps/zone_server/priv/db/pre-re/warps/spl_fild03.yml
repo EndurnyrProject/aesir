@@ -1,0 +1,25 @@
+---
+- id: spl_fild02-6
+  map: spl_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: spl_fild02
+    x: 102
+    'y': 32
+  x: 99
+  xs: 1
+  'y': 373
+  ys: 1
+- id: spl_fild03-1
+  map: spl_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: spl_fild02
+    x: 311
+    'y': 12
+  x: 306
+  xs: 1
+  'y': 379
+  ys: 1

@@ -1,0 +1,73 @@
+---
+- id: cmd_fild06-3
+  map: cmd_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild05
+    x: 146
+    'y': 27
+  x: 150
+  xs: 1
+  'y': 380
+  ys: 1
+- id: cmd_fild06-4
+  map: cmd_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild04
+    x: 371
+    'y': 288
+  x: 21
+  xs: 1
+  'y': 285
+  ys: 1
+- id: cmd_fild06-5
+  map: cmd_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild07
+    x: 147
+    'y': 370
+  x: 151
+  xs: 1
+  'y': 27
+  ys: 1
+- id: cmd_fild06-6
+  map: cmd_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild08
+    x: 25
+    'y': 102
+  x: 368
+  xs: 1
+  'y': 96
+  ys: 1
+- id: cmd_fild06-7
+  map: cmd_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild08
+    x: 28
+    'y': 166
+  x: 379
+  xs: 1
+  'y': 174
+  ys: 1
+- id: cmd_fild06-8
+  map: cmd_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild08
+    x: 31
+    'y': 359
+  x: 372
+  xs: 1
+  'y': 359
+  ys: 1

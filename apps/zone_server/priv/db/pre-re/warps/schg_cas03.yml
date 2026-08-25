@@ -1,0 +1,25 @@
+---
+- id: schg301
+  map: schg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: sch_gld
+    x: 97
+    'y': 196
+  x: 337
+  xs: 1
+  'y': 336
+  ys: 1
+- id: schg303
+  map: schg_cas03
+  name: ''
+  sprite: 45
+  to:
+    map: schg_cas03
+    x: 337
+    'y': 330
+  x: 57
+  xs: 1
+  'y': 9
+  ys: 1

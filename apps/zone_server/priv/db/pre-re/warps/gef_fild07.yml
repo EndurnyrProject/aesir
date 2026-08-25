@@ -1,0 +1,49 @@
+---
+- id: gef025
+  map: gef_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: geffen
+    x: 29
+    'y': 119
+  x: 339
+  xs: 2
+  'y': 187
+  ys: 4
+- id: geff08-1
+  map: gef_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild05
+    x: 64
+    'y': 18
+  x: 64
+  xs: 4
+  'y': 363
+  ys: 2
+- id: geff10
+  map: gef_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild08
+    x: 357
+    'y': 187
+  x: 18
+  xs: 2
+  'y': 191
+  ys: 4
+- id: geff13
+  map: gef_fild07
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild13
+    x: 41
+    'y': 369
+  x: 40
+  xs: 1
+  'y': 19
+  ys: 1

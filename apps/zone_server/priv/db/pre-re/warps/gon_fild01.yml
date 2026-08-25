@@ -1,0 +1,13 @@
+---
+- id: gon_fild1-2
+  map: gon_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: gonryun
+    x: 161
+    'y': 11
+  x: 192
+  xs: 1
+  'y': 265
+  ys: 1

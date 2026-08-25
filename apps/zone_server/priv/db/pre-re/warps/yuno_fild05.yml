@@ -1,0 +1,37 @@
+---
+- id: hugel003a
+  map: yuno_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild01
+    x: 345
+    'y': 367
+  x: 41
+  xs: 1
+  'y': 350
+  ys: 1
+- id: newjun14a
+  map: yuno_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild04
+    x: 42
+    'y': 367
+  x: 59
+  xs: 1
+  'y': 28
+  ys: 1
+- id: hu001
+  map: yuno_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild06
+    x: 42
+    'y': 319
+  x: 372
+  xs: 1
+  'y': 325
+  ys: 1

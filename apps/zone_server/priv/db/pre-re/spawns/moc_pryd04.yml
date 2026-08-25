@@ -1,0 +1,57 @@
+---
+- map: moc_pryd04
+  spawns:
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1041
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1297
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1029
+      respawn_time: 150000
+      respawn_variance: 75000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 600000
+      respawn_variance: 300000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1038
+      respawn_time: 3600000
+      respawn_variance: 600000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1146
+      respawn_time: 0
+      respawn_variance: 0

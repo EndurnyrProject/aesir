@@ -1,0 +1,85 @@
+---
+- id: moskwarp1001
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 96
+    'y': 61
+  x: 256
+  xs: 1
+  'y': 138
+  ys: 1
+- id: moskwarp1005
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 15
+    'y': 179
+  x: 185
+  xs: 1
+  'y': 188
+  ys: 1
+- id: moskwarp1007
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 86
+    'y': 180
+  x: 203
+  xs: 1
+  'y': 171
+  ys: 1
+- id: moskwarp1009
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 14
+    'y': 246
+  x: 223
+  xs: 1
+  'y': 174
+  ys: 1
+- id: moskwarp1011
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 142
+    'y': 178
+  x: 229
+  xs: 1
+  'y': 208
+  ys: 1
+- id: moskwarp1015
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 211
+    'y': 114
+  x: 256
+  xs: 1
+  'y': 179
+  ys: 1
+- id: moskwarp1021
+  map: moscovia
+  name: ''
+  sprite: 45
+  to:
+    map: mosk_in
+    x: 214
+    'y': 255
+  x: 205
+  xs: 1
+  'y': 98
+  ys: 1

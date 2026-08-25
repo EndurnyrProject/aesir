@@ -1,0 +1,37 @@
+---
+- id: ein_fd02a
+  map: ein_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: einbroch
+    x: 150
+    'y': 28
+  x: 164
+  xs: 1
+  'y': 380
+  ys: 1
+- id: ein008a
+  map: ein_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild09
+    x: 36
+    'y': 132
+  x: 363
+  xs: 1
+  'y': 128
+  ys: 1
+- id: ein051a
+  map: ein_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_fild03
+    x: 361
+    'y': 283
+  x: 23
+  xs: 1
+  'y': 275
+  ys: 1

@@ -1,0 +1,57 @@
+---
+- map: mjo_dun03
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1145
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1169
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1121
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1151
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1209
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1209
+      respawn_time: 50000
+      respawn_variance: 25000

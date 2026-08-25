@@ -1,0 +1,13 @@
+---
+- id: WarpThana10b
+  map: tha_t10
+  name: ''
+  sprite: 45
+  to:
+    map: thana_step
+    x: 14
+    'y': 73
+  x: 170
+  xs: 1
+  'y': 138
+  ys: 1

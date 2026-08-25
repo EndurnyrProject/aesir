@@ -1,0 +1,73 @@
+---
+- id: gef011
+  map: gef_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild07
+    x: 21
+    'y': 143
+  x: 380
+  xs: 3
+  'y': 156
+  ys: 7
+- id: gef012
+  map: gef_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild07
+    x: 18
+    'y': 289
+  x: 380
+  xs: 3
+  'y': 289
+  ys: 12
+- id: gef013
+  map: gef_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild07
+    x: 17
+    'y': 64
+  x: 380
+  xs: 3
+  'y': 68
+  ys: 10
+- id: gef026
+  map: gef_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild10
+    x: 227
+    'y': 296
+  x: 266
+  xs: 5
+  'y': 18
+  ys: 2
+- id: geff03
+  map: gef_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild03
+    x: 379
+    'y': 77
+  x: 14
+  xs: 2
+  'y': 78
+  ys: 4
+- id: geff04
+  map: gef_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild03
+    x: 379
+    'y': 277
+  x: 16
+  xs: 2
+  'y': 275
+  ys: 4

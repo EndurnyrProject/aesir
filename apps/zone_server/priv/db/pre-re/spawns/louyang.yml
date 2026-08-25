@@ -1,0 +1,12 @@
+---
+- map: louyang
+  spawns:
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1261
+      respawn_time: 7200000
+      respawn_variance: 3600000

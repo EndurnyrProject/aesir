@@ -1,0 +1,61 @@
+---
+- id: alb03-1
+  map: alb_ship
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 170
+    'y': 168
+  x: 26
+  xs: 4
+  'y': 166
+  ys: 1
+- id: alb04-1
+  map: alb_ship
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 180
+    'y': 165
+  x: 41
+  xs: 1
+  'y': 163
+  ys: 3
+- id: alb05-1
+  map: alb_ship
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 207
+    'y': 173
+  x: 160
+  xs: 1
+  'y': 171
+  ys: 3
+- id: alb20
+  map: alb_ship
+  name: ''
+  sprite: 45
+  to:
+    map: alb_ship
+    x: 70
+    'y': 99
+  x: 37
+  xs: 1
+  'y': 174
+  ys: 2
+- id: alb20-1
+  map: alb_ship
+  name: ''
+  sprite: 45
+  to:
+    map: alb_ship
+    x: 35
+    'y': 173
+  x: 68
+  xs: 1
+  'y': 99
+  ys: 3

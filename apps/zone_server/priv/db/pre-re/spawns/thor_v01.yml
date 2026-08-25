@@ -1,0 +1,147 @@
+---
+- map: thor_v01
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1836
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1837
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 12
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1837
+      respawn_time: 1800000
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 80
+        xs: 65
+        'y': 255
+        ys: 35
+      mob: 1837
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 240
+        xs: 50
+        'y': 250
+        ys: 30
+      mob: 1837
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 90
+        xs: 50
+        'y': 100
+        ys: 50
+      mob: 1837
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 210
+        xs: 50
+        'y': 110
+        ys: 30
+      mob: 1837
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1833
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 80
+        xs: 65
+        'y': 255
+        ys: 35
+      mob: 1833
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 240
+        xs: 50
+        'y': 250
+        ys: 30
+      mob: 1833
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 90
+        xs: 50
+        'y': 100
+        ys: 50
+      mob: 1833
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 210
+        xs: 50
+        'y': 110
+        ys: 30
+      mob: 1833
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1829
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1830
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1831
+      respawn_time: 3600000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1839
+      respawn_time: 3600000
+      respawn_variance: 0

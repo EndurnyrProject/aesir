@@ -1,0 +1,25 @@
+---
+- id: abysslakedunwarp001
+  map: abyss_01
+  name: ''
+  sprite: 45
+  to:
+    map: abyss_02
+    x: 271
+    'y': 270
+  x: 25
+  xs: 1
+  'y': 24
+  ys: 1
+- id: abysslakedunwarp005
+  map: abyss_01
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild05
+    x: 177
+    'y': 211
+  x: 265
+  xs: 1
+  'y': 274
+  ys: 1

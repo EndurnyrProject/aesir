@@ -1,0 +1,49 @@
+---
+- id: ra022
+  map: ra_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: rachel
+    x: 30
+    'y': 125
+  x: 360
+  xs: 1
+  'y': 226
+  ys: 1
+- id: ra023
+  map: ra_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild10
+    x: 379
+    'y': 283
+  x: 21
+  xs: 1
+  'y': 290
+  ys: 1
+- id: ra025a
+  map: ra_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: ra_fild07
+    x: 215
+    'y': 32
+  x: 202
+  xs: 1
+  'y': 335
+  ys: 1
+- id: ve_fild1-3
+  map: ra_fild11
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild01
+    x: 243
+    'y': 363
+  x: 233
+  xs: 1
+  'y': 27
+  ys: 1

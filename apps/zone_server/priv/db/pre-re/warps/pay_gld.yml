@@ -1,0 +1,85 @@
+---
+- id: payg01_payon-a
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payon
+    x: 19
+    'y': 143
+  x: 374
+  xs: 1
+  'y': 149
+  ys: 1
+- id: payg02_moc02a
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild02
+    x: 374
+    'y': 272
+  x: 16
+  xs: 1
+  'y': 276
+  ys: 1
+- id: payg-1_payg-1-06
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas01
+    x: 214
+    'y': 48
+  x: 121
+  xs: 1
+  'y': 238
+  ys: 1
+- id: payg-2_payg-2-02
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas02
+    x: 272
+    'y': 57
+  x: 291
+  xs: 1
+  'y': 116
+  ys: 1
+- id: payg-3_payg-3-07
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas03
+    x: 226
+    'y': 26
+  x: 323
+  xs: 1
+  'y': 293
+  ys: 1
+- id: payg-4_payg-4-01
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas04
+    x: 252
+    'y': 271
+  x: 140
+  xs: 1
+  'y': 156
+  ys: 1
+- id: payg-5_payg-5-03
+  map: pay_gld
+  name: ''
+  sprite: 45
+  to:
+    map: payg_cas05
+    x: 62
+    'y': 227
+  x: 204
+  xs: 1
+  'y': 270
+  ys: 1

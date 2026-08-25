@@ -1,0 +1,49 @@
+---
+- id: schg002
+  map: sch_gld
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 16
+    'y': 126
+  x: 354
+  xs: 1
+  'y': 89
+  ys: 1
+- id: schg102
+  map: sch_gld
+  name: ''
+  sprite: 45
+  to:
+    map: schg_cas01
+    x: 119
+    'y': 8
+  x: 293
+  xs: 1
+  'y': 90
+  ys: 1
+- id: schg202
+  map: sch_gld
+  name: ''
+  sprite: 45
+  to:
+    map: schg_cas02
+    x: 339
+    'y': 78
+  x: 288
+  xs: 1
+  'y': 258
+  ys: 1
+- id: schg302
+  map: sch_gld
+  name: ''
+  sprite: 45
+  to:
+    map: schg_cas03
+    x: 337
+    'y': 330
+  x: 97
+  xs: 1
+  'y': 183
+  ys: 1

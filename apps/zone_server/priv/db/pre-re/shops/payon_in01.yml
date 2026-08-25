@@ -1,0 +1,135 @@
+---
+- dir: 0
+  discount: true
+  id: Weapon Dealer#pay
+  items:
+    - id: 1750
+      price:
+    - id: 1751
+      price:
+    - id: 1101
+      price:
+    - id: 1104
+      price:
+    - id: 1107
+      price:
+    - id: 1201
+      price:
+    - id: 1204
+      price:
+    - id: 1207
+      price:
+    - id: 1601
+      price:
+    - id: 1701
+      price:
+    - id: 1704
+      price:
+    - id: 1707
+      price:
+    - id: 1710
+      price:
+    - id: 1713
+      price:
+    - id: 1714
+      price:
+    - id: 1718
+      price:
+  map: payon_in01
+  name: Weapon Dealer
+  sprite: 77
+  x: 15
+  'y': 119
+- dir: 7
+  discount: true
+  id: Weapon Dealer#pay2
+  items:
+    - id: 1146
+      price:
+    - id: 1245
+      price:
+  map: payon_in01
+  name: Weapon Dealer
+  sprite: 703
+  x: 5
+  'y': 129
+- dir: 2
+  discount: true
+  id: Armor Dealer#pay
+  items:
+    - id: 2401
+      price:
+    - id: 2403
+      price:
+    - id: 2405
+      price:
+    - id: 2501
+      price:
+    - id: 2503
+      price:
+    - id: 2505
+      price:
+    - id: 2208
+      price:
+    - id: 2211
+      price:
+    - id: 2212
+      price:
+    - id: 2301
+      price:
+    - id: 2303
+      price:
+    - id: 2305
+      price:
+    - id: 2321
+      price:
+    - id: 2328
+      price:
+    - id: 2332
+      price:
+    - id: 2307
+      price:
+    - id: 2309
+      price:
+    - id: 2330
+      price:
+    - id: 2628
+      price:
+  map: payon_in01
+  name: Armor Dealer
+  sprite: 76
+  x: 7
+  'y': 119
+- dir: 7
+  discount: true
+  id: Tool Dealer#pay
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 1065
+      price:
+  map: payon_in01
+  name: Tool Dealer
+  sprite: 88
+  x: 5
+  'y': 49

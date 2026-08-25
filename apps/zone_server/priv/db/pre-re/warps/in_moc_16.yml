@@ -1,0 +1,13 @@
+---
+- id: guild_to_16
+  map: in_moc_16
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild16
+    x: 205
+    'y': 291
+  x: 18
+  xs: 2
+  'y': 8
+  ys: 2

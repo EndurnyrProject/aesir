@@ -1,0 +1,121 @@
+---
+- id: clt017
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: alde_dun03
+    x: 277
+    'y': 54
+  x: 37
+  xs: 1
+  'y': 70
+  ys: 1
+- id: clt018
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: alde_dun01
+    x: 171
+    'y': 158
+  x: 51
+  xs: 1
+  'y': 156
+  ys: 1
+- id: clt019
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower4
+    x: 73
+    'y': 154
+  x: 68
+  xs: 1
+  'y': 46
+  ys: 1
+- id: clt020
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower3
+    x: 151
+    'y': 8
+  x: 70
+  xs: 2
+  'y': 19
+  ys: 2
+- id: clt021
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower4
+    x: 204
+    'y': 60
+  x: 79
+  xs: 2
+  'y': 49
+  ys: 2
+- id: clt022
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower4
+    x: 140
+    'y': 149
+  x: 133
+  xs: 1
+  'y': 202
+  ys: 1
+- id: clt023
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower2
+    x: 228
+    'y': 267
+  x: 153
+  xs: 1
+  'y': 107
+  ys: 1
+- id: clt024
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: alde_dun03
+    x: 276
+    'y': 53
+  x: 171
+  xs: 1
+  'y': 179
+  ys: 1
+- id: clt025
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower4
+    x: 152
+    'y': 98
+  x: 198
+  xs: 1
+  'y': 59
+  ys: 1
+- id: clt026
+  map: c_tower4
+  name: ''
+  sprite: 45
+  to:
+    map: c_tower4
+    x: 65
+    'y': 77
+  x: 204
+  xs: 1
+  'y': 57
+  ys: 1

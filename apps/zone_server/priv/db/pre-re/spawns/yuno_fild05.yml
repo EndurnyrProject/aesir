@@ -1,0 +1,93 @@
+---
+- map: yuno_fild05
+  spawns:
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1162
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1114
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1128
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1494
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1388
+      respawn_time: 3600000
+      respawn_variance: 180000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 2
+      area:
+        x: 176
+        xs: 8
+        'y': 202
+        ys: 8
+      mob: 1079
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 2
+      area:
+        x: 300
+        xs: 5
+        'y': 280
+        ys: 5
+      mob: 1079
+      respawn_time: 180000
+      respawn_variance: 90000

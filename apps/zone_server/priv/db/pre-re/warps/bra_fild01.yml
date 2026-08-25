@@ -1,0 +1,13 @@
+---
+- id: bra_fild01_brasilis
+  map: bra_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: brasilis
+    x: 309
+    'y': 334
+  x: 72
+  xs: 1
+  'y': 34
+  ys: 1

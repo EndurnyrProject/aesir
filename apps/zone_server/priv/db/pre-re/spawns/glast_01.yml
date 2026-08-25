@@ -1,0 +1,48 @@
+---
+- map: glast_01
+  spawns:
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1219
+      respawn_time: 600000
+      respawn_variance: 300000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1253
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 8
+      area:
+        x: 233
+        xs: 15
+        'y': 209
+        ys: 15
+      mob: 1080
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 2
+      area:
+        x: 233
+        xs: 15
+        'y': 209
+        ys: 15
+      mob: 1079
+      respawn_time: 900000
+      respawn_variance: 450000
+    - amount: 1
+      area:
+        x: 233
+        xs: 15
+        'y': 209
+        ys: 15
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000

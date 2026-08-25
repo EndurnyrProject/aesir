@@ -1,0 +1,49 @@
+---
+- id: payf07-1
+  map: pay_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild02
+    x: 280
+    'y': 108
+  x: 15
+  xs: 2
+  'y': 110
+  ys: 10
+- id: payf08
+  map: pay_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild07
+    x: 167
+    'y': 20
+  x: 172
+  xs: 5
+  'y': 281
+  ys: 2
+- id: payf09
+  map: pay_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild06
+    x: 305
+    'y': 372
+  x: 313
+  xs: 4
+  'y': 16
+  ys: 2
+- id: payf005
+  map: pay_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: alberta
+    x: 19
+    'y': 233
+  x: 392
+  xs: 2
+  'y': 63
+  ys: 7

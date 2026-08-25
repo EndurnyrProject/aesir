@@ -1,0 +1,13 @@
+---
+- id: ve_fild6-1
+  map: ve_fild06
+  name: ''
+  sprite: 45
+  to:
+    map: veins
+    x: 218
+    'y': 355
+  x: 153
+  xs: 1
+  'y': 220
+  ys: 1

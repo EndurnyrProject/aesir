@@ -1,0 +1,13 @@
+---
+- id: gl18-1
+  map: gl_prison
+  name: ''
+  sprite: 45
+  to:
+    map: gl_prison1
+    x: 150
+    'y': 14
+  x: 149
+  xs: 1
+  'y': 183
+  ys: 1

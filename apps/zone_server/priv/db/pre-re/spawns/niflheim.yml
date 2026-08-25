@@ -1,0 +1,48 @@
+---
+- map: niflheim
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1504
+      respawn_time: 1800000
+      respawn_variance: 1200000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1503
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1510
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1508
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1509
+      respawn_time: 300000
+      respawn_variance: 150000

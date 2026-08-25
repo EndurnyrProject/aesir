@@ -1,0 +1,61 @@
+---
+- id: hugel008
+  map: hu_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild02
+    x: 40
+    'y': 27
+  x: 47
+  xs: 1
+  'y': 372
+  ys: 1
+- id: hugel009
+  map: hu_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild02
+    x: 280
+    'y': 31
+  x: 294
+  xs: 1
+  'y': 379
+  ys: 1
+- id: hu003a
+  map: hu_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild06
+    x: 367
+    'y': 136
+  x: 26
+  xs: 1
+  'y': 126
+  ys: 1
+- id: hu004
+  map: hu_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild02
+    x: 118
+    'y': 374
+  x: 121
+  xs: 1
+  'y': 26
+  ys: 1
+- id: hu006
+  map: hu_fild04
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild05
+    x: 34
+    'y': 202
+  x: 381
+  xs: 1
+  'y': 187
+  ys: 1

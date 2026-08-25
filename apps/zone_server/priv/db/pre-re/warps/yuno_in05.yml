@@ -1,0 +1,37 @@
+---
+- id: yun62
+  map: yuno_in05
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in02
+    x: 85
+    'y': 14
+  x: 196
+  xs: 1
+  'y': 194
+  ys: 1
+- id: yun76
+  map: yuno_in05
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in05
+    x: 50
+    'y': 85
+  x: 31
+  xs: 1
+  'y': 167
+  ys: 1
+- id: yun77
+  map: yuno_in05
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_in02
+    x: 85
+    'y': 14
+  x: 50
+  xs: 1
+  'y': 88
+  ys: 1

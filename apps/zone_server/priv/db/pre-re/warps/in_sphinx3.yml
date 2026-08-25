@@ -1,0 +1,73 @@
+---
+- id: sphx02-1
+  map: in_sphinx3
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx2
+    x: 274
+    'y': 272
+  x: 210
+  xs: 4
+  'y': 57
+  ys: 1
+- id: sphx03
+  map: in_sphinx3
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx3
+    x: 62
+    'y': 227
+  x: 35
+  xs: 2
+  'y': 227
+  ys: 4
+- id: sphx03-1
+  map: in_sphinx3
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx3
+    x: 32
+    'y': 227
+  x: 60
+  xs: 1
+  'y': 227
+  ys: 4
+- id: sphx04
+  map: in_sphinx3
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx3
+    x: 70
+    'y': 81
+  x: 70
+  xs: 1
+  'y': 111
+  ys: 1
+- id: sphx04-1
+  map: in_sphinx3
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx3
+    x: 70
+    'y': 113
+  x: 70
+  xs: 4
+  'y': 83
+  ys: 1
+- id: sphx05
+  map: in_sphinx3
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx4
+    x: 10
+    'y': 222
+  x: 12
+  xs: 4
+  'y': 69
+  ys: 1

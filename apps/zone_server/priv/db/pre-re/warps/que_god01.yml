@@ -1,0 +1,73 @@
+---
+- id: god01_yuno
+  map: que_god01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno
+    x: 218
+    'y': 177
+  x: 99
+  xs: 1
+  'y': 81
+  ys: 1
+- id: god_sl_w0-1
+  map: que_god01
+  name: ''
+  sprite: 45
+  to:
+    map: que_god01
+    x: 87
+    'y': 92
+  x: 63
+  xs: 1
+  'y': 88
+  ys: 1
+- id: god_sl_w1-1
+  map: que_god01
+  name: ''
+  sprite: 45
+  to:
+    map: que_god01
+    x: 46
+    'y': 94
+  x: 62
+  xs: 1
+  'y': 116
+  ys: 1
+- id: god_sl_w2-1
+  map: que_god01
+  name: ''
+  sprite: 45
+  to:
+    map: que_god01
+    x: 16
+    'y': 94
+  x: 12
+  xs: 1
+  'y': 116
+  ys: 1
+- id: god_sl_w3-1
+  map: que_god01
+  name: ''
+  sprite: 45
+  to:
+    map: que_god01
+    x: 17
+    'y': 83
+  x: 12
+  xs: 1
+  'y': 55
+  ys: 1
+- id: god_sl_w4-1
+  map: que_god01
+  name: ''
+  sprite: 45
+  to:
+    map: que_god01
+    x: 47
+    'y': 83
+  x: 50
+  xs: 1
+  'y': 55
+  ys: 1

@@ -1,0 +1,25 @@
+---
+- id: jupwrp02
+  map: jupe_cave
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild07
+    x: 212
+    'y': 175
+  x: 148
+  xs: 1
+  'y': 52
+  ys: 1
+- id: jupwrp03
+  map: jupe_cave
+  name: ''
+  sprite: 45
+  to:
+    map: juperos_01
+    x: 53
+    'y': 247
+  x: 26
+  xs: 1
+  'y': 52
+  ys: 1

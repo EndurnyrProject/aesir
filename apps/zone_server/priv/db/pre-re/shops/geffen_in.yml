@@ -1,0 +1,100 @@
+---
+- dir: 7
+  discount: true
+  id: Weapon Dealer#gef
+  items:
+    - id: 1146
+      price:
+    - id: 1245
+      price:
+  map: geffen_in
+  name: Weapon Dealer
+  sprite: 84
+  x: 22
+  'y': 171
+- dir: 0
+  discount: true
+  id: Trader#gef
+  items:
+    - id: 911
+      price:
+    - id: 910
+      price:
+    - id: 912
+      price:
+  map: geffen_in
+  name: Trader
+  sprite: 66
+  x: 74
+  'y': 144
+- dir: 0
+  discount: true
+  id: Tool Dealer#gef
+  items:
+    - id: 1750
+      price:
+    - id: 611
+      price:
+    - id: 501
+      price:
+    - id: 502
+      price:
+    - id: 503
+      price:
+    - id: 504
+      price:
+    - id: 506
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 2241
+      price:
+  map: geffen_in
+  name: Tool Dealer
+  sprite: 68
+  x: 77
+  'y': 167
+- dir: 0
+  discount: true
+  id: Magical Item Seller#gef
+  items:
+    - id: 717
+      price:
+    - id: 1601
+      price:
+    - id: 1604
+      price:
+    - id: 1607
+      price:
+    - id: 1610
+      price:
+    - id: 2232
+      price:
+    - id: 2321
+      price:
+    - id: 2332
+      price:
+  map: geffen_in
+  name: Magical Item Seller
+  sprite: 64
+  x: 77
+  'y': 173
+- dir: 4
+  discount: true
+  id: Tool Dealer#gef2
+  items:
+    - id: 1092
+      price:
+    - id: 1093
+      price:
+  map: geffen_in
+  name: Tool Dealer
+  sprite: 64
+  x: 171
+  'y': 123

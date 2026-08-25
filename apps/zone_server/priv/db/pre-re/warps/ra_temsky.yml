@@ -1,0 +1,85 @@
+---
+- id: rachel34
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temsky
+    x: 99
+    'y': 140
+  x: 99
+  xs: 1
+  'y': 118
+  ys: 1
+- id: rachel35
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temsky
+    x: 141
+    'y': 139
+  x: 112
+  xs: 1
+  'y': 143
+  ys: 1
+- id: rachel36
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temsky
+    x: 58
+    'y': 139
+  x: 87
+  xs: 1
+  'y': 143
+  ys: 1
+- id: rachel70
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temin
+    x: 275
+    'y': 231
+  x: 99
+  xs: 1
+  'y': 8
+  ys: 1
+- id: rachel71
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temsky
+    x: 99
+    'y': 113
+  x: 99
+  xs: 1
+  'y': 135
+  ys: 1
+- id: rachel72
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temsky
+    x: 109
+    'y': 143
+  x: 137
+  xs: 1
+  'y': 139
+  ys: 1
+- id: rachel73
+  map: ra_temsky
+  name: ''
+  sprite: 45
+  to:
+    map: ra_temsky
+    x: 91
+    'y': 143
+  x: 62
+  xs: 1
+  'y': 139
+  ys: 1

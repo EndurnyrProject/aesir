@@ -1,0 +1,111 @@
+---
+- map: odin_tem02
+  spawns:
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1693
+      respawn_time: 900000
+      respawn_variance: 300000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1754
+      respawn_time: 1800000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1755
+      respawn_time: 1800000
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1753
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1752
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 160
+        xs: 3
+        'y': 330
+        ys: 3
+      mob: 1762
+      respawn_time: 30000
+      respawn_variance: 15000
+    - amount: 1
+      area:
+        x: 172
+        xs: 3
+        'y': 292
+        ys: 3
+      mob: 1761
+      respawn_time: 30000
+      respawn_variance: 15000
+    - amount: 1
+      area:
+        x: 182
+        xs: 3
+        'y': 263
+        ys: 3
+      mob: 1762
+      respawn_time: 30000
+      respawn_variance: 15000
+    - amount: 1
+      area:
+        x: 190
+        xs: 3
+        'y': 236
+        ys: 3
+      mob: 1761
+      respawn_time: 30000
+      respawn_variance: 15000
+    - amount: 1
+      area:
+        x: 205
+        xs: 3
+        'y': 198
+        ys: 3
+      mob: 1762
+      respawn_time: 30000
+      respawn_variance: 15000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1765
+      respawn_time: 5400000
+      respawn_variance: 1800000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1079
+      respawn_time: 1800000
+      respawn_variance: 900000

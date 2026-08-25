@@ -1,0 +1,85 @@
+---
+- id: prtg01_NorthField
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prt_fild01
+    x: 199
+    'y': 30
+  x: 159
+  xs: 1
+  'y': 298
+  ys: 1
+- id: prtg-1_prtg-1-01
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas01
+    x: 99
+    'y': 32
+  x: 129
+  xs: 1
+  'y': 65
+  ys: 1
+- id: prtg-2_prtg-2
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas02
+    x: 43
+    'y': 229
+  x: 240
+  xs: 1
+  'y': 124
+  ys: 1
+- id: prtg-3_prtg-3
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas03
+    x: 168
+    'y': 12
+  x: 153
+  xs: 1
+  'y': 141
+  ys: 1
+- id: prtg-4_prtg-4
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas04
+    x: 86
+    'y': 13
+  x: 107
+  xs: 1
+  'y': 240
+  ys: 1
+- id: prtg-5_prtg-5
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prtg_cas05
+    x: 17
+    'y': 235
+  x: 212
+  xs: 1
+  'y': 240
+  ys: 1
+- id: prtg02_Castle
+  map: prt_gld
+  name: ''
+  sprite: 45
+  to:
+    map: prt_castle
+    x: 102
+    'y': 178
+  x: 159
+  xs: 1
+  'y': 25
+  ys: 1

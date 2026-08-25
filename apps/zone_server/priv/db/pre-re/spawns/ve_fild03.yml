@@ -1,0 +1,66 @@
+---
+- map: ve_fild03
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1784
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 200
+        xs: 114
+        'y': 212
+        ys: 60
+      mob: 1836
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1165
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 25
+      area:
+        x: 187
+        xs: 155
+        'y': 106
+        ys: 35
+      mob: 1165
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 200
+        xs: 114
+        'y': 212
+        ys: 60
+      mob: 1386
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 200
+        xs: 114
+        'y': 212
+        ys: 60
+      mob: 1078
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 0
+      respawn_variance: 0

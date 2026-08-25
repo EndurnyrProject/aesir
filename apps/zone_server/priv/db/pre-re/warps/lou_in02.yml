@@ -1,0 +1,157 @@
+---
+- id: lou_pub1-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 280
+    'y': 164
+  x: 58
+  xs: 1
+  'y': 170
+  ys: 1
+- id: lou_pub2-1
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 41
+    'y': 138
+  x: 35
+  xs: 1
+  'y': 190
+  ys: 1
+- id: lou_pub2-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 37
+    'y': 190
+  x: 44
+  xs: 1
+  'y': 138
+  ys: 1
+- id: lou_pub3-1
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 73
+    'y': 140
+  x: 80
+  xs: 1
+  'y': 190
+  ys: 1
+- id: lou_pub3-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 77
+    'y': 190
+  x: 71
+  xs: 1
+  'y': 140
+  ys: 1
+- id: lou_weapon1-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 145
+    'y': 171
+  x: 126
+  xs: 1
+  'y': 165
+  ys: 1
+- id: lou_tool1-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 136
+    'y': 99
+  x: 249
+  xs: 1
+  'y': 173
+  ys: 1
+- id: lou_hospital1-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 260
+    'y': 93
+  x: 242
+  xs: 1
+  'y': 59
+  ys: 1
+- id: lou_office1-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 309
+    'y': 77
+  x: 189
+  xs: 1
+  'y': 74
+  ys: 1
+- id: lou_office2-1
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 173
+    'y': 46
+  x: 201
+  xs: 1
+  'y': 94
+  ys: 1
+- id: lou_office2-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in02
+    x: 203
+    'y': 94
+  x: 176
+  xs: 1
+  'y': 46
+  ys: 1
+- id: lou_house11-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 130
+    'y': 60
+  x: 72
+  xs: 1
+  'y': 28
+  ys: 1
+- id: lou_house21-2
+  map: lou_in02
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 317
+    'y': 173
+  x: 121
+  xs: 1
+  'y': 28
+  ys: 1

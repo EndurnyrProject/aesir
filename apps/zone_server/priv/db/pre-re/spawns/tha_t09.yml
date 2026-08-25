@@ -1,0 +1,66 @@
+---
+- map: tha_t09
+  spawns:
+    - amount: 5
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1694
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1703
+      respawn_time: 600000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1702
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1701
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1700
+      respawn_time: 420000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1707
+      respawn_time: 1800000
+      respawn_variance: 1200000
+    - amount: 3
+      area:
+        x: 50
+        xs: 35
+        'y': 129
+        ys: 35
+      mob: 1712
+      respawn_time: 1800000
+      respawn_variance: 1200000

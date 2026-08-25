@@ -1,0 +1,25 @@
+---
+- id: hugel007
+  map: hu_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: hu_fild02
+    x: 22
+    'y': 168
+  x: 366
+  xs: 1
+  'y': 185
+  ys: 1
+- id: hu005a
+  map: hu_fild01
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild06
+    x: 151
+    'y': 369
+  x: 139
+  xs: 1
+  'y': 35
+  ys: 1

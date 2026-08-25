@@ -1,0 +1,13 @@
+---
+- id: exit_turbo
+  map: turbo_room
+  name: ''
+  sprite: 45
+  to:
+    map: alde_gld
+    x: 183
+    'y': 198
+  x: 100
+  xs: 1
+  'y': 62
+  ys: 1

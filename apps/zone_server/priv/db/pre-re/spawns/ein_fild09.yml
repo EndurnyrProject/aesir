@@ -1,0 +1,75 @@
+---
+- map: ein_fild09
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1613
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1619
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1051
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 100
+        xs: 2
+        'y': 260
+        ys: 2
+      mob: 1048
+      respawn_time: 600000
+      respawn_variance: 300000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1085
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 5
+      area:
+        x: 260
+        xs: 50
+        'y': 85
+        ys: 20
+      mob: 1118
+      respawn_time: 300000
+      respawn_variance: 120000

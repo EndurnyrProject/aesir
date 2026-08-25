@@ -1,0 +1,179 @@
+---
+- dir: 0
+  discount: true
+  id: Vendor from Milk Ranch#p
+  items:
+    - id: 519
+      price:
+  map: prontera
+  name: Vendor from Milk Ranch
+  sprite: 90
+  x: 73
+  'y': 134
+- dir: 0
+  discount: true
+  id: Fruit Gardener#prt
+  items:
+    - id: 512
+      price:
+    - id: 513
+      price:
+  map: prontera
+  name: Fruit Gardener
+  sprite: 102
+  x: 104
+  'y': 49
+- dir: 0
+  discount: true
+  id: Butcher#prt
+  items:
+    - id: 517
+      price:
+    - id: 528
+      price:
+  map: prontera
+  name: Butcher
+  sprite: 87
+  x: 64
+  'y': 125
+- dir: 0
+  discount: true
+  id: Flower Girl#prt
+  items:
+    - id: 712
+      price:
+    - id: 744
+      price:
+  map: prontera
+  name: Flower Girl
+  sprite: 96
+  x: 58
+  'y': 182
+- dir: 0
+  discount: true
+  id: Flower Lady#prt
+  items:
+    - id: 712
+      price:
+    - id: 744
+      price:
+  map: prontera
+  name: Flower Lady
+  sprite: 90
+  x: 113
+  'y': 42
+- dir: 0
+  discount: true
+  id: Gift Merchant#prt
+  items:
+    - id: 734
+      price:
+    - id: 735
+      price:
+    - id: 736
+      price:
+    - id: 737
+      price:
+    - id: 746
+      price:
+  map: prontera
+  name: Gift Merchant
+  sprite: 91
+  x: 105
+  'y': 87
+- dir: 0
+  discount: true
+  id: Doll Supplier#prt
+  items:
+    - id: 740
+      price:
+    - id: 741
+      price:
+    - id: 742
+      price:
+  map: prontera
+  name: Doll Supplier
+  sprite: 85
+  x: 248
+  'y': 153
+- dir: 0
+  discount: true
+  id: Vegetable Gardener#prt
+  items:
+    - id: 515
+      price:
+    - id: 516
+      price:
+    - id: 535
+      price:
+  map: prontera
+  name: Vegetable Gardener
+  sprite: 91
+  x: 48
+  'y': 58
+- dir: 1
+  discount: true
+  id: Chef Assistant#prt
+  items:
+    - id: 7454
+      price:
+    - id: 7456
+      price:
+    - id: 7482
+      price:
+    - id: 580
+      price:
+  map: prontera
+  name: Chef Assistant
+  sprite: 700
+  x: 156
+  'y': 212
+- dir: 4
+  discount: true
+  id: Pet Groomer#prt
+  items:
+    - id: 537
+      price:
+    - id: 643
+      price:
+    - id: 10013
+      price:
+    - id: 10014
+      price:
+    - id: 554
+      price:
+    - id: 6114
+      price:
+    - id: 6113
+      price:
+    - id: 6110
+      price:
+    - id: 6115
+      price:
+    - id: 6100
+      price:
+    - id: 6098
+      price:
+    - id: 6112
+      price:
+    - id: 6104
+      price:
+    - id: 6108
+      price:
+    - id: 6111
+      price:
+    - id: 6095
+      price:
+    - id: 6099
+      price:
+    - id: 6096
+      price:
+    - id: 6097
+      price:
+    - id: 6094
+      price:
+  map: prontera
+  name: Pet Groomer
+  sprite: 125
+  x: 218
+  'y': 211

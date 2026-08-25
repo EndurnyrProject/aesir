@@ -1,0 +1,85 @@
+---
+- id: orc001
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild10
+    x: 223
+    'y': 203
+  x: 108
+  xs: 3
+  'y': 86
+  ys: 2
+- id: orc002
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild10
+    x: 138
+    'y': 329
+  x: 124
+  xs: 1
+  'y': 171
+  ys: 3
+- id: orc003
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild10
+    x: 214
+    'y': 53
+  x: 162
+  xs: 4
+  'y': 55
+  ys: 1
+- id: orc004
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild10
+    x: 137
+    'y': 286
+  x: 29
+  xs: 4
+  'y': 116
+  ys: 1
+- id: orc005
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild10
+    x: 65
+    'y': 335
+  x: 30
+  xs: 3
+  'y': 154
+  ys: 2
+- id: orc01
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: orcsdun01
+    x: 32
+    'y': 170
+  x: 30
+  xs: 2
+  'y': 182
+  ys: 1
+- id: orc02
+  map: in_orcs01
+  name: ''
+  sprite: 45
+  to:
+    map: orcsdun02
+    x: 180
+    'y': 17
+  x: 108
+  xs: 2
+  'y': 114
+  ys: 1

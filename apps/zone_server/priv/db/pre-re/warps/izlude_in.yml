@@ -1,0 +1,133 @@
+---
+- id: iz05
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 84
+    'y': 169
+  x: 108
+  xs: 2
+  'y': 169
+  ys: 3
+- id: iz02-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 145
+    'y': 145
+  x: 116
+  xs: 3
+  'y': 46
+  ys: 2
+- id: iz03-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 212
+    'y': 129
+  x: 148
+  xs: 2
+  'y': 127
+  ys: 5
+- id: iz06
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 172
+    'y': 119
+  x: 171
+  xs: 3
+  'y': 97
+  ys: 2
+- id: iz06-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 172
+    'y': 94
+  x: 172
+  xs: 3
+  'y': 116
+  ys: 2
+- id: iz07
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 172
+    'y': 161
+  x: 172
+  xs: 3
+  'y': 139
+  ys: 2
+- id: iz07-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 172
+    'y': 136
+  x: 172
+  xs: 3
+  'y': 158
+  ys: 2
+- id: w219
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 64
+    'y': 169
+  x: 43
+  xs: 2
+  'y': 169
+  ys: 3
+- id: iz01-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 113
+    'y': 147
+  x: 65
+  xs: 5
+  'y': 84
+  ys: 2
+- id: iz04-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 52
+    'y': 136
+  x: 74
+  xs: 3
+  'y': 158
+  ys: 2
+- id: iz05-1
+  map: izlude_in
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 111
+    'y': 169
+  x: 87
+  xs: 2
+  'y': 169
+  ys: 3

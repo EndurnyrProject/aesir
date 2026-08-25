@@ -1,0 +1,45 @@
+---
+- dir: 4
+  discount: true
+  id: Weapon Dealer#alb2
+  items:
+    - id: 1146
+      price:
+    - id: 1245
+      price:
+  map: alberta_in
+  name: Weapon Dealer
+  sprite: 82
+  x: 175
+  'y': 97
+- dir: 3
+  discount: true
+  id: Trading Merchant#alb
+  items:
+    - id: 13200
+      price:
+    - id: 13201
+      price:
+    - id: 13202
+      price:
+    - id: 13150
+      price:
+    - id: 13102
+      price:
+    - id: 13151
+      price:
+    - id: 13154
+      price:
+    - id: 13155
+      price:
+    - id: 13163
+      price:
+    - id: 13165
+      price:
+    - id: 13168
+      price:
+  map: alberta_in
+  name: Trading Merchant
+  sprite: 900
+  x: 176
+  'y': 81

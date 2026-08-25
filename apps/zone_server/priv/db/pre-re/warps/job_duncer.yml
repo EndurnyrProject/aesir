@@ -1,0 +1,13 @@
+---
+- id: duncer1
+  map: job_duncer
+  name: ''
+  sprite: 45
+  to:
+    map: comodo
+    x: 185
+    'y': 156
+  x: 69
+  xs: 1
+  'y': 43
+  ys: 1

@@ -1,0 +1,7447 @@
+---
+- key: accesory
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 2601
+          rate: 10
+        - item_id: 2602
+          rate: 11
+        - item_id: 2603
+          rate: 12
+        - item_id: 2604
+          rate: 12
+        - item_id: 2605
+          rate: 12
+        - item_id: 2607
+          rate: 12
+        - item_id: 2608
+          rate: 14
+        - item_id: 2609
+          rate: 14
+        - item_id: 2610
+          rate: 14
+        - item_id: 2611
+          rate: 14
+        - item_id: 2612
+          rate: 14
+        - item_id: 2613
+          rate: 11
+        - item_id: 2615
+          rate: 1
+        - item_id: 2616
+          rate: 1
+        - item_id: 2617
+          rate: 10
+        - item_id: 2618
+          rate: 11
+        - item_id: 2619
+          rate: 10
+        - item_id: 2621
+          rate: 1
+        - item_id: 2622
+          rate: 1
+        - item_id: 2623
+          rate: 10
+        - item_id: 2624
+          rate: 1
+        - item_id: 2625
+          rate: 1
+        - item_id: 2626
+          rate: 1
+        - item_id: 2627
+          rate: 10
+        - item_id: 2628
+          rate: 14
+        - item_id: 2654
+          rate: 1
+        - item_id: 2656
+          rate: 1
+        - item_id: 2658
+          rate: 10
+        - item_id: 2659
+          rate: 2
+        - item_id: 2660
+          rate: 2
+        - item_id: 2661
+          rate: 2
+        - item_id: 2662
+          rate: 2
+        - item_id: 2671
+          rate: 1
+        - item_id: 2677
+          rate: 1
+        - item_id: 2680
+          rate: 9
+        - item_id: 2700
+          rate: 2
+        - item_id: 2701
+          rate: 1
+        - item_id: 2703
+          rate: 1
+        - item_id: 2716
+          rate: 1
+        - item_id: 2717
+          rate: 1
+        - item_id: 2718
+          rate: 1
+        - item_id: 2719
+          rate: 1
+      number: 1
+- key: bleubox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 519
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 644
+          rate: 1
+        - item_id: 687
+          rate: 1
+        - item_id: 689
+          rate: 1
+        - item_id: 691
+          rate: 1
+        - item_id: 693
+          rate: 1
+        - item_id: 697
+          rate: 1
+        - item_id: 699
+          rate: 1
+        - item_id: 12000
+          rate: 1
+        - item_id: 12002
+          rate: 1
+      number: 1
+- key: bluebox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 12
+        - item_id: 502
+          rate: 12
+        - item_id: 503
+          rate: 12
+        - item_id: 504
+          rate: 12
+        - item_id: 505
+          rate: 12
+        - item_id: 506
+          rate: 12
+        - item_id: 507
+          rate: 12
+        - item_id: 508
+          rate: 12
+        - item_id: 509
+          rate: 12
+        - item_id: 510
+          rate: 12
+        - item_id: 511
+          rate: 12
+        - item_id: 512
+          rate: 12
+        - item_id: 513
+          rate: 12
+        - item_id: 514
+          rate: 12
+        - item_id: 515
+          rate: 12
+        - item_id: 516
+          rate: 12
+        - item_id: 517
+          rate: 12
+        - item_id: 518
+          rate: 12
+        - item_id: 519
+          rate: 12
+        - item_id: 520
+          rate: 12
+        - item_id: 521
+          rate: 12
+        - item_id: 522
+          rate: 12
+        - item_id: 523
+          rate: 12
+        - item_id: 525
+          rate: 12
+        - item_id: 526
+          rate: 12
+        - item_id: 528
+          rate: 12
+        - item_id: 529
+          rate: 12
+        - item_id: 530
+          rate: 12
+        - item_id: 531
+          rate: 12
+        - item_id: 532
+          rate: 12
+        - item_id: 533
+          rate: 12
+        - item_id: 534
+          rate: 12
+        - item_id: 535
+          rate: 12
+        - item_id: 536
+          rate: 12
+        - item_id: 537
+          rate: 12
+        - item_id: 538
+          rate: 12
+        - item_id: 539
+          rate: 12
+        - item_id: 544
+          rate: 12
+        - item_id: 545
+          rate: 12
+        - item_id: 546
+          rate: 12
+        - item_id: 547
+          rate: 12
+        - item_id: 548
+          rate: 12
+        - item_id: 549
+          rate: 12
+        - item_id: 550
+          rate: 12
+        - item_id: 551
+          rate: 12
+        - item_id: 553
+          rate: 12
+        - item_id: 555
+          rate: 12
+        - item_id: 558
+          rate: 12
+        - item_id: 561
+          rate: 12
+        - item_id: 601
+          rate: 12
+        - item_id: 602
+          rate: 12
+        - item_id: 604
+          rate: 512
+        - item_id: 605
+          rate: 12
+        - item_id: 606
+          rate: 12
+        - item_id: 607
+          rate: 12
+        - item_id: 608
+          rate: 12
+        - item_id: 609
+          rate: 12
+        - item_id: 610
+          rate: 12
+        - item_id: 611
+          rate: 12
+        - item_id: 612
+          rate: 12
+        - item_id: 613
+          rate: 12
+        - item_id: 614
+          rate: 12
+        - item_id: 615
+          rate: 12
+        - item_id: 618
+          rate: 12
+        - item_id: 619
+          rate: 12
+        - item_id: 620
+          rate: 12
+        - item_id: 621
+          rate: 12
+        - item_id: 622
+          rate: 12
+        - item_id: 623
+          rate: 12
+        - item_id: 624
+          rate: 12
+        - item_id: 625
+          rate: 12
+        - item_id: 626
+          rate: 12
+        - item_id: 627
+          rate: 12
+        - item_id: 628
+          rate: 12
+        - item_id: 629
+          rate: 12
+        - item_id: 630
+          rate: 12
+        - item_id: 631
+          rate: 12
+        - item_id: 632
+          rate: 12
+        - item_id: 633
+          rate: 12
+        - item_id: 634
+          rate: 12
+        - item_id: 635
+          rate: 12
+        - item_id: 636
+          rate: 12
+        - item_id: 637
+          rate: 12
+        - item_id: 638
+          rate: 12
+        - item_id: 639
+          rate: 12
+        - item_id: 640
+          rate: 12
+        - item_id: 641
+          rate: 12
+        - item_id: 642
+          rate: 12
+        - item_id: 643
+          rate: 12
+        - item_id: 644
+          rate: 312
+        - item_id: 645
+          rate: 12
+        - item_id: 656
+          rate: 12
+        - item_id: 657
+          rate: 12
+        - item_id: 659
+          rate: 12
+        - item_id: 663
+          rate: 12
+        - item_id: 664
+          rate: 12
+        - item_id: 665
+          rate: 12
+        - item_id: 666
+          rate: 12
+        - item_id: 667
+          rate: 12
+        - item_id: 668
+          rate: 12
+        - item_id: 678
+          rate: 12
+        - item_id: 679
+          rate: 12
+        - item_id: 701
+          rate: 12
+        - item_id: 702
+          rate: 12
+        - item_id: 703
+          rate: 12
+        - item_id: 704
+          rate: 12
+        - item_id: 705
+          rate: 12
+        - item_id: 706
+          rate: 12
+        - item_id: 707
+          rate: 12
+        - item_id: 708
+          rate: 12
+        - item_id: 710
+          rate: 12
+        - item_id: 711
+          rate: 12
+        - item_id: 712
+          rate: 12
+        - item_id: 713
+          rate: 12
+        - item_id: 715
+          rate: 12
+        - item_id: 716
+          rate: 12
+        - item_id: 717
+          rate: 12
+        - item_id: 718
+          rate: 12
+        - item_id: 719
+          rate: 12
+        - item_id: 720
+          rate: 12
+        - item_id: 721
+          rate: 12
+        - item_id: 722
+          rate: 12
+        - item_id: 723
+          rate: 12
+        - item_id: 724
+          rate: 12
+        - item_id: 725
+          rate: 12
+        - item_id: 726
+          rate: 12
+        - item_id: 727
+          rate: 12
+        - item_id: 728
+          rate: 12
+        - item_id: 729
+          rate: 12
+        - item_id: 730
+          rate: 12
+        - item_id: 731
+          rate: 12
+        - item_id: 732
+          rate: 12
+        - item_id: 733
+          rate: 12
+        - item_id: 734
+          rate: 12
+        - item_id: 735
+          rate: 12
+        - item_id: 736
+          rate: 12
+        - item_id: 737
+          rate: 12
+        - item_id: 738
+          rate: 12
+        - item_id: 739
+          rate: 12
+        - item_id: 740
+          rate: 12
+        - item_id: 741
+          rate: 12
+        - item_id: 742
+          rate: 12
+        - item_id: 743
+          rate: 12
+        - item_id: 744
+          rate: 12
+        - item_id: 745
+          rate: 12
+        - item_id: 746
+          rate: 12
+        - item_id: 747
+          rate: 12
+        - item_id: 748
+          rate: 12
+        - item_id: 749
+          rate: 12
+        - item_id: 750
+          rate: 12
+        - item_id: 751
+          rate: 12
+        - item_id: 752
+          rate: 12
+        - item_id: 753
+          rate: 12
+        - item_id: 754
+          rate: 12
+        - item_id: 901
+          rate: 12
+        - item_id: 902
+          rate: 12
+        - item_id: 903
+          rate: 12
+        - item_id: 904
+          rate: 12
+        - item_id: 905
+          rate: 12
+        - item_id: 906
+          rate: 12
+        - item_id: 907
+          rate: 12
+        - item_id: 908
+          rate: 12
+        - item_id: 909
+          rate: 12
+        - item_id: 910
+          rate: 12
+        - item_id: 911
+          rate: 12
+        - item_id: 912
+          rate: 12
+        - item_id: 913
+          rate: 12
+        - item_id: 914
+          rate: 12
+        - item_id: 915
+          rate: 12
+        - item_id: 916
+          rate: 12
+        - item_id: 917
+          rate: 12
+        - item_id: 918
+          rate: 12
+        - item_id: 919
+          rate: 12
+        - item_id: 920
+          rate: 12
+        - item_id: 921
+          rate: 12
+        - item_id: 922
+          rate: 12
+        - item_id: 923
+          rate: 12
+        - item_id: 924
+          rate: 12
+        - item_id: 925
+          rate: 12
+        - item_id: 926
+          rate: 12
+        - item_id: 928
+          rate: 12
+        - item_id: 929
+          rate: 12
+        - item_id: 930
+          rate: 12
+        - item_id: 931
+          rate: 12
+        - item_id: 932
+          rate: 12
+        - item_id: 934
+          rate: 12
+        - item_id: 935
+          rate: 12
+        - item_id: 936
+          rate: 12
+        - item_id: 937
+          rate: 12
+        - item_id: 938
+          rate: 12
+        - item_id: 939
+          rate: 12
+        - item_id: 940
+          rate: 12
+        - item_id: 941
+          rate: 12
+        - item_id: 942
+          rate: 12
+        - item_id: 943
+          rate: 12
+        - item_id: 944
+          rate: 12
+        - item_id: 945
+          rate: 12
+        - item_id: 946
+          rate: 12
+        - item_id: 947
+          rate: 12
+        - item_id: 948
+          rate: 12
+        - item_id: 949
+          rate: 12
+        - item_id: 950
+          rate: 12
+        - item_id: 951
+          rate: 12
+        - item_id: 952
+          rate: 12
+        - item_id: 953
+          rate: 12
+        - item_id: 954
+          rate: 12
+        - item_id: 955
+          rate: 12
+        - item_id: 956
+          rate: 12
+        - item_id: 957
+          rate: 12
+        - item_id: 958
+          rate: 12
+        - item_id: 959
+          rate: 12
+        - item_id: 960
+          rate: 12
+        - item_id: 961
+          rate: 12
+        - item_id: 962
+          rate: 12
+        - item_id: 963
+          rate: 12
+        - item_id: 964
+          rate: 12
+        - item_id: 965
+          rate: 12
+        - item_id: 966
+          rate: 12
+        - item_id: 967
+          rate: 12
+        - item_id: 968
+          rate: 12
+        - item_id: 969
+          rate: 12
+        - item_id: 971
+          rate: 12
+        - item_id: 972
+          rate: 12
+        - item_id: 973
+          rate: 12
+        - item_id: 974
+          rate: 12
+        - item_id: 975
+          rate: 12
+        - item_id: 976
+          rate: 12
+        - item_id: 978
+          rate: 12
+        - item_id: 979
+          rate: 12
+        - item_id: 980
+          rate: 12
+        - item_id: 981
+          rate: 12
+        - item_id: 982
+          rate: 12
+        - item_id: 983
+          rate: 12
+        - item_id: 986
+          rate: 12
+        - item_id: 987
+          rate: 12
+        - item_id: 988
+          rate: 12
+        - item_id: 989
+          rate: 12
+        - item_id: 990
+          rate: 12
+        - item_id: 991
+          rate: 12
+        - item_id: 992
+          rate: 12
+        - item_id: 993
+          rate: 12
+        - item_id: 994
+          rate: 12
+        - item_id: 995
+          rate: 12
+        - item_id: 996
+          rate: 12
+        - item_id: 997
+          rate: 12
+        - item_id: 998
+          rate: 12
+        - item_id: 999
+          rate: 12
+        - item_id: 1000
+          rate: 12
+        - item_id: 1001
+          rate: 12
+        - item_id: 1002
+          rate: 12
+        - item_id: 1003
+          rate: 12
+        - item_id: 1004
+          rate: 12
+        - item_id: 1005
+          rate: 12
+        - item_id: 1006
+          rate: 12
+        - item_id: 1007
+          rate: 12
+        - item_id: 1008
+          rate: 12
+        - item_id: 1009
+          rate: 12
+        - item_id: 1010
+          rate: 12
+        - item_id: 1011
+          rate: 12
+        - item_id: 1012
+          rate: 12
+        - item_id: 1013
+          rate: 12
+        - item_id: 1014
+          rate: 12
+        - item_id: 1015
+          rate: 12
+        - item_id: 1016
+          rate: 12
+        - item_id: 1017
+          rate: 12
+        - item_id: 1018
+          rate: 12
+        - item_id: 1019
+          rate: 12
+        - item_id: 1020
+          rate: 12
+        - item_id: 1021
+          rate: 12
+        - item_id: 1022
+          rate: 12
+        - item_id: 1023
+          rate: 12
+        - item_id: 1024
+          rate: 12
+        - item_id: 1025
+          rate: 12
+        - item_id: 1026
+          rate: 12
+        - item_id: 1027
+          rate: 12
+        - item_id: 1028
+          rate: 12
+        - item_id: 1029
+          rate: 12
+        - item_id: 1031
+          rate: 12
+        - item_id: 1032
+          rate: 12
+        - item_id: 1033
+          rate: 12
+        - item_id: 1034
+          rate: 12
+        - item_id: 1035
+          rate: 12
+        - item_id: 1036
+          rate: 12
+        - item_id: 1037
+          rate: 12
+        - item_id: 1038
+          rate: 12
+        - item_id: 1039
+          rate: 12
+        - item_id: 1040
+          rate: 12
+        - item_id: 1041
+          rate: 12
+        - item_id: 1042
+          rate: 12
+        - item_id: 1043
+          rate: 12
+        - item_id: 1044
+          rate: 12
+        - item_id: 1045
+          rate: 12
+        - item_id: 1046
+          rate: 12
+        - item_id: 1047
+          rate: 12
+        - item_id: 1048
+          rate: 12
+        - item_id: 1049
+          rate: 12
+        - item_id: 1050
+          rate: 12
+        - item_id: 1051
+          rate: 12
+        - item_id: 1052
+          rate: 12
+        - item_id: 1053
+          rate: 12
+        - item_id: 1054
+          rate: 12
+        - item_id: 1055
+          rate: 12
+        - item_id: 1056
+          rate: 12
+        - item_id: 1057
+          rate: 12
+        - item_id: 1058
+          rate: 12
+        - item_id: 1059
+          rate: 12
+        - item_id: 1060
+          rate: 12
+        - item_id: 1061
+          rate: 12
+        - item_id: 1062
+          rate: 12
+        - item_id: 1063
+          rate: 12
+        - item_id: 1064
+          rate: 12
+        - item_id: 1065
+          rate: 12
+        - item_id: 1066
+          rate: 12
+        - item_id: 1067
+          rate: 12
+        - item_id: 1068
+          rate: 12
+        - item_id: 1088
+          rate: 12
+        - item_id: 1089
+          rate: 12
+        - item_id: 1092
+          rate: 12
+        - item_id: 1093
+          rate: 12
+        - item_id: 1094
+          rate: 12
+        - item_id: 1095
+          rate: 12
+        - item_id: 1096
+          rate: 12
+        - item_id: 1097
+          rate: 12
+        - item_id: 1098
+          rate: 12
+        - item_id: 1099
+          rate: 12
+        - item_id: 1101
+          rate: 6
+        - item_id: 1102
+          rate: 6
+        - item_id: 1104
+          rate: 6
+        - item_id: 1105
+          rate: 6
+        - item_id: 1107
+          rate: 6
+        - item_id: 1108
+          rate: 6
+        - item_id: 1110
+          rate: 6
+        - item_id: 1111
+          rate: 6
+        - item_id: 1113
+          rate: 6
+        - item_id: 1114
+          rate: 6
+        - item_id: 1116
+          rate: 3
+        - item_id: 1117
+          rate: 3
+        - item_id: 1119
+          rate: 6
+        - item_id: 1120
+          rate: 6
+        - item_id: 1122
+          rate: 6
+        - item_id: 1123
+          rate: 6
+        - item_id: 1124
+          rate: 6
+        - item_id: 1125
+          rate: 6
+        - item_id: 1126
+          rate: 6
+        - item_id: 1127
+          rate: 6
+        - item_id: 1128
+          rate: 6
+        - item_id: 1129
+          rate: 6
+        - item_id: 1146
+          rate: 1
+        - item_id: 1147
+          rate: 1
+        - item_id: 1148
+          rate: 1
+        - item_id: 1151
+          rate: 3
+        - item_id: 1152
+          rate: 3
+        - item_id: 1154
+          rate: 3
+        - item_id: 1155
+          rate: 3
+        - item_id: 1157
+          rate: 3
+        - item_id: 1158
+          rate: 3
+        - item_id: 1160
+          rate: 3
+        - item_id: 1162
+          rate: 3
+        - item_id: 1163
+          rate: 3
+        - item_id: 1201
+          rate: 3
+        - item_id: 1202
+          rate: 3
+        - item_id: 1204
+          rate: 3
+        - item_id: 1205
+          rate: 3
+        - item_id: 1207
+          rate: 3
+        - item_id: 1208
+          rate: 3
+        - item_id: 1210
+          rate: 3
+        - item_id: 1211
+          rate: 3
+        - item_id: 1213
+          rate: 3
+        - item_id: 1214
+          rate: 3
+        - item_id: 1216
+          rate: 3
+        - item_id: 1217
+          rate: 3
+        - item_id: 1219
+          rate: 3
+        - item_id: 1220
+          rate: 3
+        - item_id: 1222
+          rate: 3
+        - item_id: 1226
+          rate: 3
+        - item_id: 1243
+          rate: 3
+        - item_id: 1245
+          rate: 1
+        - item_id: 1247
+          rate: 1
+        - item_id: 1248
+          rate: 1
+        - item_id: 1249
+          rate: 1
+        - item_id: 1250
+          rate: 3
+        - item_id: 1251
+          rate: 3
+        - item_id: 1252
+          rate: 3
+        - item_id: 1253
+          rate: 3
+        - item_id: 1254
+          rate: 3
+        - item_id: 1255
+          rate: 3
+        - item_id: 1256
+          rate: 3
+        - item_id: 1257
+          rate: 3
+        - item_id: 1258
+          rate: 3
+        - item_id: 1259
+          rate: 3
+        - item_id: 1262
+          rate: 1
+        - item_id: 1263
+          rate: 1
+        - item_id: 1264
+          rate: 2
+        - item_id: 1265
+          rate: 1
+        - item_id: 1269
+          rate: 1
+        - item_id: 1271
+          rate: 1
+        - item_id: 1301
+          rate: 3
+        - item_id: 1302
+          rate: 3
+        - item_id: 1304
+          rate: 3
+        - item_id: 1307
+          rate: 1
+        - item_id: 1351
+          rate: 3
+        - item_id: 1352
+          rate: 3
+        - item_id: 1354
+          rate: 3
+        - item_id: 1355
+          rate: 3
+        - item_id: 1357
+          rate: 3
+        - item_id: 1358
+          rate: 3
+        - item_id: 1360
+          rate: 3
+        - item_id: 1361
+          rate: 3
+        - item_id: 1370
+          rate: 1
+        - item_id: 1376
+          rate: 1
+        - item_id: 1377
+          rate: 1
+        - item_id: 1401
+          rate: 9
+        - item_id: 1402
+          rate: 9
+        - item_id: 1404
+          rate: 9
+        - item_id: 1405
+          rate: 9
+        - item_id: 1407
+          rate: 9
+        - item_id: 1408
+          rate: 9
+        - item_id: 1410
+          rate: 3
+        - item_id: 1411
+          rate: 3
+        - item_id: 1451
+          rate: 3
+        - item_id: 1452
+          rate: 3
+        - item_id: 1454
+          rate: 3
+        - item_id: 1455
+          rate: 3
+        - item_id: 1457
+          rate: 3
+        - item_id: 1458
+          rate: 3
+        - item_id: 1460
+          rate: 3
+        - item_id: 1461
+          rate: 3
+        - item_id: 1463
+          rate: 3
+        - item_id: 1464
+          rate: 3
+        - item_id: 1472
+          rate: 3
+        - item_id: 1474
+          rate: 1
+        - item_id: 1478
+          rate: 1
+        - item_id: 1501
+          rate: 6
+        - item_id: 1502
+          rate: 6
+        - item_id: 1504
+          rate: 6
+        - item_id: 1505
+          rate: 6
+        - item_id: 1507
+          rate: 6
+        - item_id: 1508
+          rate: 6
+        - item_id: 1510
+          rate: 6
+        - item_id: 1511
+          rate: 6
+        - item_id: 1513
+          rate: 6
+        - item_id: 1514
+          rate: 6
+        - item_id: 1516
+          rate: 6
+        - item_id: 1517
+          rate: 6
+        - item_id: 1519
+          rate: 6
+        - item_id: 1520
+          rate: 6
+        - item_id: 1522
+          rate: 6
+        - item_id: 1550
+          rate: 3
+        - item_id: 1551
+          rate: 3
+        - item_id: 1552
+          rate: 3
+        - item_id: 1553
+          rate: 3
+        - item_id: 1554
+          rate: 3
+        - item_id: 1555
+          rate: 3
+        - item_id: 1556
+          rate: 3
+        - item_id: 1558
+          rate: 3
+        - item_id: 1559
+          rate: 1
+        - item_id: 1560
+          rate: 1
+        - item_id: 1561
+          rate: 1
+        - item_id: 1601
+          rate: 3
+        - item_id: 1602
+          rate: 3
+        - item_id: 1604
+          rate: 3
+        - item_id: 1605
+          rate: 3
+        - item_id: 1607
+          rate: 3
+        - item_id: 1608
+          rate: 3
+        - item_id: 1610
+          rate: 3
+        - item_id: 1611
+          rate: 3
+        - item_id: 1613
+          rate: 3
+        - item_id: 1614
+          rate: 3
+        - item_id: 1615
+          rate: 3
+        - item_id: 1616
+          rate: 1
+        - item_id: 1617
+          rate: 1
+        - item_id: 1618
+          rate: 1
+        - item_id: 1619
+          rate: 1
+        - item_id: 1620
+          rate: 1
+        - item_id: 1621
+          rate: 1
+        - item_id: 1622
+          rate: 1
+        - item_id: 1701
+          rate: 3
+        - item_id: 1702
+          rate: 3
+        - item_id: 1704
+          rate: 3
+        - item_id: 1705
+          rate: 3
+        - item_id: 1707
+          rate: 3
+        - item_id: 1708
+          rate: 3
+        - item_id: 1710
+          rate: 3
+        - item_id: 1711
+          rate: 3
+        - item_id: 1713
+          rate: 3
+        - item_id: 1714
+          rate: 3
+        - item_id: 1715
+          rate: 3
+        - item_id: 1716
+          rate: 3
+        - item_id: 1718
+          rate: 3
+        - item_id: 1723
+          rate: 1
+        - item_id: 1724
+          rate: 1
+        - item_id: 1730
+          rate: 1
+        - item_id: 1731
+          rate: 1
+        - item_id: 1732
+          rate: 1
+        - item_id: 1733
+          rate: 1
+        - item_id: 1750
+          rate: 12
+        - item_id: 1751
+          rate: 12
+        - item_id: 1752
+          rate: 12
+        - item_id: 1753
+          rate: 12
+        - item_id: 1754
+          rate: 12
+        - item_id: 1755
+          rate: 12
+        - item_id: 1756
+          rate: 12
+        - item_id: 1757
+          rate: 12
+        - item_id: 1758
+          rate: 12
+        - item_id: 1759
+          rate: 12
+        - item_id: 1760
+          rate: 12
+        - item_id: 1761
+          rate: 12
+        - item_id: 1762
+          rate: 12
+        - item_id: 1763
+          rate: 12
+        - item_id: 1764
+          rate: 12
+        - item_id: 1765
+          rate: 12
+        - item_id: 1767
+          rate: 12
+        - item_id: 1768
+          rate: 12
+        - item_id: 1769
+          rate: 12
+        - item_id: 1770
+          rate: 12
+        - item_id: 1801
+          rate: 3
+        - item_id: 1802
+          rate: 3
+        - item_id: 1803
+          rate: 3
+        - item_id: 1804
+          rate: 3
+        - item_id: 1805
+          rate: 3
+        - item_id: 1806
+          rate: 3
+        - item_id: 1807
+          rate: 3
+        - item_id: 1808
+          rate: 3
+        - item_id: 1809
+          rate: 3
+        - item_id: 1810
+          rate: 3
+        - item_id: 1811
+          rate: 3
+        - item_id: 1812
+          rate: 3
+        - item_id: 1815
+          rate: 1
+        - item_id: 1818
+          rate: 1
+        - item_id: 1819
+          rate: 1
+        - item_id: 1820
+          rate: 1
+        - item_id: 1821
+          rate: 1
+        - item_id: 1822
+          rate: 1
+        - item_id: 1901
+          rate: 3
+        - item_id: 1902
+          rate: 3
+        - item_id: 1903
+          rate: 3
+        - item_id: 1904
+          rate: 3
+        - item_id: 1905
+          rate: 3
+        - item_id: 1906
+          rate: 3
+        - item_id: 1907
+          rate: 3
+        - item_id: 1908
+          rate: 3
+        - item_id: 1909
+          rate: 3
+        - item_id: 1910
+          rate: 3
+        - item_id: 1911
+          rate: 3
+        - item_id: 1912
+          rate: 3
+        - item_id: 1914
+          rate: 1
+        - item_id: 1915
+          rate: 1
+        - item_id: 1916
+          rate: 1
+        - item_id: 1917
+          rate: 1
+        - item_id: 1918
+          rate: 1
+        - item_id: 1919
+          rate: 1
+        - item_id: 1950
+          rate: 3
+        - item_id: 1951
+          rate: 3
+        - item_id: 1952
+          rate: 3
+        - item_id: 1953
+          rate: 3
+        - item_id: 1954
+          rate: 3
+        - item_id: 1955
+          rate: 3
+        - item_id: 1956
+          rate: 3
+        - item_id: 1957
+          rate: 3
+        - item_id: 1958
+          rate: 3
+        - item_id: 1959
+          rate: 3
+        - item_id: 1960
+          rate: 3
+        - item_id: 1961
+          rate: 3
+        - item_id: 1965
+          rate: 1
+        - item_id: 1966
+          rate: 1
+        - item_id: 1967
+          rate: 1
+        - item_id: 1968
+          rate: 1
+        - item_id: 1969
+          rate: 1
+        - item_id: 1970
+          rate: 1
+        - item_id: 1971
+          rate: 1
+        - item_id: 1972
+          rate: 1
+        - item_id: 1973
+          rate: 1
+        - item_id: 1974
+          rate: 1
+        - item_id: 2101
+          rate: 3
+        - item_id: 2102
+          rate: 3
+        - item_id: 2103
+          rate: 3
+        - item_id: 2104
+          rate: 3
+        - item_id: 2105
+          rate: 3
+        - item_id: 2106
+          rate: 3
+        - item_id: 2107
+          rate: 3
+        - item_id: 2108
+          rate: 3
+        - item_id: 2109
+          rate: 3
+        - item_id: 2112
+          rate: 3
+        - item_id: 2113
+          rate: 1
+        - item_id: 2123
+          rate: 1
+        - item_id: 2124
+          rate: 1
+        - item_id: 2125
+          rate: 1
+        - item_id: 2201
+          rate: 3
+        - item_id: 2203
+          rate: 3
+        - item_id: 2205
+          rate: 3
+        - item_id: 2206
+          rate: 3
+        - item_id: 2207
+          rate: 3
+        - item_id: 2208
+          rate: 3
+        - item_id: 2209
+          rate: 3
+        - item_id: 2210
+          rate: 3
+        - item_id: 2211
+          rate: 3
+        - item_id: 2212
+          rate: 3
+        - item_id: 2213
+          rate: 3
+        - item_id: 2214
+          rate: 3
+        - item_id: 2215
+          rate: 3
+        - item_id: 2216
+          rate: 3
+        - item_id: 2217
+          rate: 3
+        - item_id: 2218
+          rate: 3
+        - item_id: 2220
+          rate: 3
+        - item_id: 2221
+          rate: 3
+        - item_id: 2222
+          rate: 3
+        - item_id: 2223
+          rate: 3
+        - item_id: 2224
+          rate: 3
+        - item_id: 2225
+          rate: 3
+        - item_id: 2226
+          rate: 3
+        - item_id: 2227
+          rate: 3
+        - item_id: 2228
+          rate: 3
+        - item_id: 2229
+          rate: 3
+        - item_id: 2230
+          rate: 3
+        - item_id: 2231
+          rate: 3
+        - item_id: 2232
+          rate: 3
+        - item_id: 2233
+          rate: 3
+        - item_id: 2236
+          rate: 3
+        - item_id: 2239
+          rate: 3
+        - item_id: 2241
+          rate: 3
+        - item_id: 2242
+          rate: 3
+        - item_id: 2243
+          rate: 3
+        - item_id: 2244
+          rate: 3
+        - item_id: 2245
+          rate: 3
+        - item_id: 2246
+          rate: 3
+        - item_id: 2247
+          rate: 3
+        - item_id: 2248
+          rate: 3
+        - item_id: 2249
+          rate: 1
+        - item_id: 2250
+          rate: 3
+        - item_id: 2251
+          rate: 3
+        - item_id: 2252
+          rate: 3
+        - item_id: 2253
+          rate: 3
+        - item_id: 2254
+          rate: 1
+        - item_id: 2255
+          rate: 1
+        - item_id: 2257
+          rate: 3
+        - item_id: 2258
+          rate: 1
+        - item_id: 2259
+          rate: 3
+        - item_id: 2260
+          rate: 3
+        - item_id: 2261
+          rate: 3
+        - item_id: 2262
+          rate: 3
+        - item_id: 2263
+          rate: 3
+        - item_id: 2265
+          rate: 3
+        - item_id: 2266
+          rate: 3
+        - item_id: 2267
+          rate: 3
+        - item_id: 2268
+          rate: 3
+        - item_id: 2269
+          rate: 3
+        - item_id: 2270
+          rate: 3
+        - item_id: 2271
+          rate: 3
+        - item_id: 2274
+          rate: 1
+        - item_id: 2275
+          rate: 3
+        - item_id: 2276
+          rate: 3
+        - item_id: 2277
+          rate: 3
+        - item_id: 2278
+          rate: 3
+        - item_id: 2279
+          rate: 3
+        - item_id: 2282
+          rate: 3
+        - item_id: 2285
+          rate: 3
+        - item_id: 2287
+          rate: 3
+        - item_id: 2288
+          rate: 3
+        - item_id: 2289
+          rate: 3
+        - item_id: 2290
+          rate: 3
+        - item_id: 2291
+          rate: 3
+        - item_id: 2294
+          rate: 3
+        - item_id: 2295
+          rate: 3
+        - item_id: 2297
+          rate: 3
+        - item_id: 2298
+          rate: 3
+        - item_id: 2299
+          rate: 3
+        - item_id: 2301
+          rate: 3
+        - item_id: 2302
+          rate: 3
+        - item_id: 2303
+          rate: 3
+        - item_id: 2304
+          rate: 3
+        - item_id: 2305
+          rate: 3
+        - item_id: 2306
+          rate: 3
+        - item_id: 2307
+          rate: 3
+        - item_id: 2308
+          rate: 3
+        - item_id: 2309
+          rate: 3
+        - item_id: 2310
+          rate: 3
+        - item_id: 2311
+          rate: 3
+        - item_id: 2312
+          rate: 3
+        - item_id: 2313
+          rate: 3
+        - item_id: 2314
+          rate: 3
+        - item_id: 2315
+          rate: 3
+        - item_id: 2316
+          rate: 3
+        - item_id: 2317
+          rate: 3
+        - item_id: 2318
+          rate: 3
+        - item_id: 2320
+          rate: 3
+        - item_id: 2321
+          rate: 3
+        - item_id: 2322
+          rate: 3
+        - item_id: 2323
+          rate: 3
+        - item_id: 2324
+          rate: 3
+        - item_id: 2325
+          rate: 3
+        - item_id: 2326
+          rate: 3
+        - item_id: 2328
+          rate: 3
+        - item_id: 2329
+          rate: 3
+        - item_id: 2330
+          rate: 3
+        - item_id: 2331
+          rate: 3
+        - item_id: 2332
+          rate: 3
+        - item_id: 2333
+          rate: 3
+        - item_id: 2335
+          rate: 3
+        - item_id: 2336
+          rate: 3
+        - item_id: 2337
+          rate: 3
+        - item_id: 2339
+          rate: 3
+        - item_id: 2340
+          rate: 3
+        - item_id: 2341
+          rate: 3
+        - item_id: 2352
+          rate: 3
+        - item_id: 2365
+          rate: 1
+        - item_id: 2401
+          rate: 3
+        - item_id: 2402
+          rate: 3
+        - item_id: 2403
+          rate: 3
+        - item_id: 2404
+          rate: 3
+        - item_id: 2405
+          rate: 3
+        - item_id: 2406
+          rate: 3
+        - item_id: 2407
+          rate: 3
+        - item_id: 2408
+          rate: 3
+        - item_id: 2409
+          rate: 3
+        - item_id: 2411
+          rate: 3
+        - item_id: 2414
+          rate: 3
+        - item_id: 2416
+          rate: 1
+        - item_id: 2420
+          rate: 1
+        - item_id: 2501
+          rate: 3
+        - item_id: 2502
+          rate: 3
+        - item_id: 2503
+          rate: 3
+        - item_id: 2504
+          rate: 3
+        - item_id: 2505
+          rate: 3
+        - item_id: 2506
+          rate: 3
+        - item_id: 2507
+          rate: 3
+        - item_id: 2508
+          rate: 3
+        - item_id: 2510
+          rate: 3
+        - item_id: 2512
+          rate: 1
+        - item_id: 2513
+          rate: 1
+        - item_id: 2514
+          rate: 1
+        - item_id: 2515
+          rate: 1
+        - item_id: 2601
+          rate: 3
+        - item_id: 2602
+          rate: 3
+        - item_id: 2603
+          rate: 3
+        - item_id: 2604
+          rate: 3
+        - item_id: 2605
+          rate: 3
+        - item_id: 2607
+          rate: 3
+        - item_id: 2608
+          rate: 3
+        - item_id: 2609
+          rate: 3
+        - item_id: 2610
+          rate: 3
+        - item_id: 2611
+          rate: 3
+        - item_id: 2612
+          rate: 3
+        - item_id: 2613
+          rate: 3
+        - item_id: 2617
+          rate: 3
+        - item_id: 2618
+          rate: 3
+        - item_id: 2621
+          rate: 1
+        - item_id: 2622
+          rate: 1
+        - item_id: 2623
+          rate: 1
+        - item_id: 2624
+          rate: 1
+        - item_id: 2625
+          rate: 1
+        - item_id: 2626
+          rate: 1
+        - item_id: 2627
+          rate: 3
+        - item_id: 2628
+          rate: 3
+        - item_id: 2652
+          rate: 1
+        - item_id: 2654
+          rate: 1
+        - item_id: 2656
+          rate: 1
+        - item_id: 5002
+          rate: 1
+        - item_id: 5003
+          rate: 3
+        - item_id: 5005
+          rate: 3
+        - item_id: 5006
+          rate: 3
+        - item_id: 5009
+          rate: 3
+        - item_id: 5010
+          rate: 3
+        - item_id: 5011
+          rate: 3
+        - item_id: 5014
+          rate: 3
+        - item_id: 5015
+          rate: 3
+        - item_id: 5030
+          rate: 3
+        - item_id: 5035
+          rate: 3
+        - item_id: 5037
+          rate: 3
+        - item_id: 5055
+          rate: 3
+        - item_id: 5085
+          rate: 1
+        - item_id: 5088
+          rate: 3
+        - item_id: 5089
+          rate: 3
+        - item_id: 5090
+          rate: 3
+        - item_id: 5111
+          rate: 1
+        - item_id: 5112
+          rate: 1
+        - item_id: 5113
+          rate: 1
+        - item_id: 5114
+          rate: 1
+        - item_id: 5116
+          rate: 1
+        - item_id: 5118
+          rate: 1
+        - item_id: 5119
+          rate: 1
+        - item_id: 5120
+          rate: 1
+        - item_id: 5122
+          rate: 1
+        - item_id: 5175
+          rate: 1
+        - item_id: 7001
+          rate: 12
+        - item_id: 7002
+          rate: 12
+        - item_id: 7003
+          rate: 12
+        - item_id: 7004
+          rate: 12
+        - item_id: 7005
+          rate: 12
+        - item_id: 7006
+          rate: 12
+        - item_id: 7007
+          rate: 12
+        - item_id: 7008
+          rate: 12
+        - item_id: 7009
+          rate: 12
+        - item_id: 7010
+          rate: 12
+        - item_id: 7011
+          rate: 12
+        - item_id: 7012
+          rate: 12
+        - item_id: 7013
+          rate: 12
+        - item_id: 7014
+          rate: 12
+        - item_id: 7015
+          rate: 12
+        - item_id: 7016
+          rate: 12
+        - item_id: 7026
+          rate: 12
+        - item_id: 7027
+          rate: 12
+        - item_id: 7030
+          rate: 12
+        - item_id: 7031
+          rate: 12
+        - item_id: 7032
+          rate: 12
+        - item_id: 7033
+          rate: 12
+        - item_id: 7034
+          rate: 12
+        - item_id: 7035
+          rate: 12
+        - item_id: 7036
+          rate: 12
+        - item_id: 7038
+          rate: 12
+        - item_id: 7041
+          rate: 12
+        - item_id: 7047
+          rate: 12
+        - item_id: 7048
+          rate: 12
+        - item_id: 7049
+          rate: 12
+        - item_id: 7053
+          rate: 12
+        - item_id: 7054
+          rate: 12
+        - item_id: 7059
+          rate: 12
+        - item_id: 7060
+          rate: 12
+        - item_id: 7061
+          rate: 12
+        - item_id: 7063
+          rate: 12
+        - item_id: 7064
+          rate: 12
+        - item_id: 7065
+          rate: 12
+        - item_id: 7066
+          rate: 12
+        - item_id: 7067
+          rate: 12
+        - item_id: 7068
+          rate: 12
+        - item_id: 7069
+          rate: 12
+        - item_id: 7070
+          rate: 12
+        - item_id: 7071
+          rate: 12
+        - item_id: 7072
+          rate: 12
+        - item_id: 7093
+          rate: 12
+        - item_id: 7094
+          rate: 12
+        - item_id: 7095
+          rate: 12
+        - item_id: 7096
+          rate: 12
+        - item_id: 7097
+          rate: 12
+        - item_id: 7098
+          rate: 12
+        - item_id: 7099
+          rate: 12
+        - item_id: 7100
+          rate: 12
+        - item_id: 7101
+          rate: 12
+        - item_id: 7106
+          rate: 12
+        - item_id: 7107
+          rate: 12
+        - item_id: 7108
+          rate: 12
+        - item_id: 7109
+          rate: 12
+        - item_id: 7110
+          rate: 12
+        - item_id: 7111
+          rate: 12
+        - item_id: 7112
+          rate: 12
+        - item_id: 7113
+          rate: 12
+        - item_id: 7114
+          rate: 12
+        - item_id: 7115
+          rate: 12
+        - item_id: 7116
+          rate: 12
+        - item_id: 7117
+          rate: 12
+        - item_id: 7118
+          rate: 12
+        - item_id: 7119
+          rate: 12
+        - item_id: 7120
+          rate: 12
+        - item_id: 7121
+          rate: 12
+        - item_id: 7122
+          rate: 12
+        - item_id: 7123
+          rate: 12
+        - item_id: 7124
+          rate: 12
+        - item_id: 7125
+          rate: 12
+        - item_id: 7126
+          rate: 12
+        - item_id: 7134
+          rate: 12
+        - item_id: 7135
+          rate: 12
+        - item_id: 7136
+          rate: 12
+        - item_id: 7137
+          rate: 12
+        - item_id: 7138
+          rate: 12
+        - item_id: 7139
+          rate: 12
+        - item_id: 7149
+          rate: 12
+        - item_id: 7150
+          rate: 12
+        - item_id: 7151
+          rate: 12
+        - item_id: 7152
+          rate: 12
+        - item_id: 7153
+          rate: 12
+        - item_id: 7154
+          rate: 12
+        - item_id: 7155
+          rate: 12
+        - item_id: 7156
+          rate: 12
+        - item_id: 7157
+          rate: 12
+        - item_id: 7158
+          rate: 12
+        - item_id: 7159
+          rate: 12
+        - item_id: 7161
+          rate: 12
+        - item_id: 7162
+          rate: 12
+        - item_id: 7163
+          rate: 12
+        - item_id: 7164
+          rate: 12
+        - item_id: 7165
+          rate: 12
+        - item_id: 7166
+          rate: 12
+        - item_id: 7167
+          rate: 12
+        - item_id: 7168
+          rate: 12
+        - item_id: 7169
+          rate: 12
+        - item_id: 7171
+          rate: 12
+        - item_id: 7172
+          rate: 12
+        - item_id: 7174
+          rate: 12
+        - item_id: 7175
+          rate: 12
+        - item_id: 7182
+          rate: 12
+        - item_id: 7186
+          rate: 12
+        - item_id: 7187
+          rate: 12
+        - item_id: 7188
+          rate: 12
+        - item_id: 7189
+          rate: 12
+        - item_id: 7190
+          rate: 12
+        - item_id: 7191
+          rate: 12
+        - item_id: 7192
+          rate: 12
+        - item_id: 7193
+          rate: 12
+        - item_id: 7194
+          rate: 12
+        - item_id: 7195
+          rate: 12
+        - item_id: 7196
+          rate: 12
+        - item_id: 7197
+          rate: 12
+        - item_id: 7198
+          rate: 12
+        - item_id: 7200
+          rate: 12
+        - item_id: 7201
+          rate: 12
+        - item_id: 7202
+          rate: 12
+        - item_id: 7203
+          rate: 12
+        - item_id: 7205
+          rate: 12
+        - item_id: 7206
+          rate: 12
+        - item_id: 7207
+          rate: 12
+        - item_id: 7208
+          rate: 12
+        - item_id: 7209
+          rate: 12
+        - item_id: 7210
+          rate: 12
+        - item_id: 7211
+          rate: 12
+        - item_id: 7212
+          rate: 12
+        - item_id: 7213
+          rate: 12
+        - item_id: 7214
+          rate: 12
+        - item_id: 7215
+          rate: 12
+        - item_id: 7216
+          rate: 12
+        - item_id: 7217
+          rate: 12
+        - item_id: 7218
+          rate: 12
+        - item_id: 7219
+          rate: 12
+        - item_id: 7220
+          rate: 12
+        - item_id: 7221
+          rate: 12
+        - item_id: 7222
+          rate: 12
+        - item_id: 7223
+          rate: 12
+        - item_id: 7225
+          rate: 12
+        - item_id: 7262
+          rate: 12
+        - item_id: 7263
+          rate: 12
+        - item_id: 7264
+          rate: 12
+        - item_id: 7265
+          rate: 12
+        - item_id: 7266
+          rate: 12
+        - item_id: 7267
+          rate: 12
+        - item_id: 7268
+          rate: 12
+        - item_id: 7269
+          rate: 12
+        - item_id: 7270
+          rate: 12
+        - item_id: 7315
+          rate: 1
+        - item_id: 7316
+          rate: 1
+        - item_id: 7317
+          rate: 1
+        - item_id: 7318
+          rate: 1
+        - item_id: 7319
+          rate: 1
+        - item_id: 7320
+          rate: 1
+        - item_id: 7321
+          rate: 1
+        - item_id: 7322
+          rate: 1
+        - item_id: 7323
+          rate: 1
+        - item_id: 7325
+          rate: 1
+        - item_id: 7326
+          rate: 1
+        - item_id: 7327
+          rate: 1
+        - item_id: 7440
+          rate: 1
+        - item_id: 7441
+          rate: 1
+        - item_id: 7442
+          rate: 1
+        - item_id: 7443
+          rate: 1
+        - item_id: 7444
+          rate: 1
+        - item_id: 7445
+          rate: 1
+        - item_id: 7446
+          rate: 1
+        - item_id: 7447
+          rate: 1
+        - item_id: 7448
+          rate: 1
+        - item_id: 7449
+          rate: 1
+        - item_id: 7450
+          rate: 1
+        - item_id: 7451
+          rate: 1
+        - item_id: 7452
+          rate: 1
+        - item_id: 7453
+          rate: 1
+        - item_id: 7454
+          rate: 1
+        - item_id: 7455
+          rate: 1
+        - item_id: 7456
+          rate: 1
+        - item_id: 7457
+          rate: 1
+        - item_id: 7472
+          rate: 1
+        - item_id: 7473
+          rate: 1
+        - item_id: 7474
+          rate: 1
+        - item_id: 7475
+          rate: 1
+        - item_id: 7476
+          rate: 1
+        - item_id: 7482
+          rate: 1
+        - item_id: 7512
+          rate: 1
+        - item_id: 7513
+          rate: 1
+        - item_id: 7561
+          rate: 15
+        - item_id: 7562
+          rate: 15
+        - item_id: 7563
+          rate: 15
+        - item_id: 7564
+          rate: 15
+        - item_id: 7565
+          rate: 15
+        - item_id: 7567
+          rate: 1
+        - item_id: 7568
+          rate: 1
+        - item_id: 7751
+          rate: 34
+        - item_id: 7752
+          rate: 32
+        - item_id: 7753
+          rate: 34
+        - item_id: 10001
+          rate: 3
+        - item_id: 10002
+          rate: 3
+        - item_id: 10003
+          rate: 3
+        - item_id: 10004
+          rate: 3
+        - item_id: 10005
+          rate: 3
+        - item_id: 10006
+          rate: 3
+        - item_id: 10007
+          rate: 3
+        - item_id: 10008
+          rate: 3
+        - item_id: 10009
+          rate: 3
+        - item_id: 10010
+          rate: 3
+        - item_id: 10011
+          rate: 3
+        - item_id: 10012
+          rate: 3
+        - item_id: 10013
+          rate: 3
+        - item_id: 10014
+          rate: 3
+        - item_id: 10015
+          rate: 3
+        - item_id: 10016
+          rate: 3
+        - item_id: 10017
+          rate: 3
+        - item_id: 10018
+          rate: 3
+        - item_id: 10019
+          rate: 3
+        - item_id: 10020
+          rate: 3
+        - item_id: 13000
+          rate: 1
+        - item_id: 13001
+          rate: 1
+        - item_id: 13002
+          rate: 1
+        - item_id: 13003
+          rate: 1
+        - item_id: 13004
+          rate: 1
+        - item_id: 13163
+          rate: 1
+        - item_id: 13164
+          rate: 1
+        - item_id: 13167
+          rate: 1
+        - item_id: 13168
+          rate: 1
+        - item_id: 13170
+          rate: 2
+        - item_id: 13200
+          rate: 1
+        - item_id: 13201
+          rate: 1
+        - item_id: 13202
+          rate: 1
+        - item_id: 13203
+          rate: 1
+        - item_id: 13204
+          rate: 1
+        - item_id: 13205
+          rate: 1
+        - item_id: 13206
+          rate: 1
+        - item_id: 13207
+          rate: 1
+        - item_id: 13304
+          rate: 1
+      number: 1
+- key: bomb
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 13260
+          rate: 1
+        - item_id: 13261
+          rate: 1
+        - item_id: 13262
+          rate: 1
+        - item_id: 13263
+          rate: 1
+        - item_id: 13264
+          rate: 1
+        - item_id: 13265
+          rate: 1
+        - item_id: 13266
+          rate: 1
+        - item_id: 13267
+          rate: 1
+      number: 1
+- key: box
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 603
+          rate: 1
+        - item_id: 617
+          rate: 1
+        - item_id: 644
+          rate: 1
+      number: 1
+- key: candy
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+      number: 1
+- key: cardalbum
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 4001
+          rate: 10
+        - item_id: 4002
+          rate: 10
+        - item_id: 4003
+          rate: 6
+        - item_id: 4004
+          rate: 11
+        - item_id: 4005
+          rate: 1
+        - item_id: 4006
+          rate: 7
+        - item_id: 4007
+          rate: 4
+        - item_id: 4008
+          rate: 10
+        - item_id: 4009
+          rate: 10
+        - item_id: 4010
+          rate: 10
+        - item_id: 4011
+          rate: 10
+        - item_id: 4012
+          rate: 8
+        - item_id: 4013
+          rate: 7
+        - item_id: 4014
+          rate: 5
+        - item_id: 4015
+          rate: 7
+        - item_id: 4016
+          rate: 7
+        - item_id: 4017
+          rate: 5
+        - item_id: 4019
+          rate: 5
+        - item_id: 4020
+          rate: 5
+        - item_id: 4021
+          rate: 5
+        - item_id: 4022
+          rate: 5
+        - item_id: 4023
+          rate: 5
+        - item_id: 4024
+          rate: 5
+        - item_id: 4025
+          rate: 5
+        - item_id: 4026
+          rate: 3
+        - item_id: 4027
+          rate: 3
+        - item_id: 4028
+          rate: 3
+        - item_id: 4029
+          rate: 3
+        - item_id: 4030
+          rate: 3
+        - item_id: 4031
+          rate: 3
+        - item_id: 4032
+          rate: 3
+        - item_id: 4033
+          rate: 3
+        - item_id: 4034
+          rate: 3
+        - item_id: 4035
+          rate: 3
+        - item_id: 4036
+          rate: 3
+        - item_id: 4037
+          rate: 3
+        - item_id: 4038
+          rate: 3
+        - item_id: 4039
+          rate: 3
+        - item_id: 4041
+          rate: 3
+        - item_id: 4042
+          rate: 3
+        - item_id: 4043
+          rate: 3
+        - item_id: 4044
+          rate: 3
+        - item_id: 4045
+          rate: 3
+        - item_id: 4046
+          rate: 3
+        - item_id: 4048
+          rate: 3
+        - item_id: 4049
+          rate: 3
+        - item_id: 4050
+          rate: 3
+        - item_id: 4051
+          rate: 3
+        - item_id: 4052
+          rate: 3
+        - item_id: 4053
+          rate: 1
+        - item_id: 4055
+          rate: 3
+        - item_id: 4056
+          rate: 3
+        - item_id: 4057
+          rate: 2
+        - item_id: 4058
+          rate: 2
+        - item_id: 4060
+          rate: 2
+        - item_id: 4061
+          rate: 2
+        - item_id: 4062
+          rate: 2
+        - item_id: 4063
+          rate: 2
+        - item_id: 4064
+          rate: 2
+        - item_id: 4065
+          rate: 2
+        - item_id: 4066
+          rate: 2
+        - item_id: 4067
+          rate: 2
+        - item_id: 4068
+          rate: 2
+        - item_id: 4069
+          rate: 2
+        - item_id: 4070
+          rate: 2
+        - item_id: 4071
+          rate: 2
+        - item_id: 4072
+          rate: 2
+        - item_id: 4073
+          rate: 2
+        - item_id: 4074
+          rate: 2
+        - item_id: 4075
+          rate: 2
+        - item_id: 4076
+          rate: 2
+        - item_id: 4077
+          rate: 2
+        - item_id: 4078
+          rate: 2
+        - item_id: 4079
+          rate: 2
+        - item_id: 4080
+          rate: 2
+        - item_id: 4081
+          rate: 2
+        - item_id: 4082
+          rate: 1
+        - item_id: 4083
+          rate: 1
+        - item_id: 4084
+          rate: 1
+        - item_id: 4085
+          rate: 1
+        - item_id: 4086
+          rate: 1
+        - item_id: 4087
+          rate: 1
+        - item_id: 4088
+          rate: 1
+        - item_id: 4089
+          rate: 1
+        - item_id: 4090
+          rate: 1
+        - item_id: 4091
+          rate: 1
+        - item_id: 4092
+          rate: 1
+        - item_id: 4093
+          rate: 1
+        - item_id: 4094
+          rate: 1
+        - item_id: 4095
+          rate: 1
+        - item_id: 4096
+          rate: 1
+        - item_id: 4097
+          rate: 1
+        - item_id: 4098
+          rate: 1
+        - item_id: 4099
+          rate: 1
+        - item_id: 4100
+          rate: 1
+        - item_id: 4101
+          rate: 1
+        - item_id: 4102
+          rate: 1
+        - item_id: 4103
+          rate: 1
+        - item_id: 4104
+          rate: 1
+        - item_id: 4105
+          rate: 1
+        - item_id: 4106
+          rate: 1
+        - item_id: 4107
+          rate: 1
+        - item_id: 4108
+          rate: 1
+        - item_id: 4109
+          rate: 1
+        - item_id: 4110
+          rate: 1
+        - item_id: 4111
+          rate: 1
+        - item_id: 4112
+          rate: 1
+        - item_id: 4113
+          rate: 1
+        - item_id: 4114
+          rate: 1
+        - item_id: 4115
+          rate: 1
+        - item_id: 4116
+          rate: 1
+        - item_id: 4117
+          rate: 1
+        - item_id: 4118
+          rate: 1
+        - item_id: 4119
+          rate: 1
+        - item_id: 4120
+          rate: 1
+        - item_id: 4122
+          rate: 1
+        - item_id: 4125
+          rate: 1
+        - item_id: 4127
+          rate: 1
+        - item_id: 4129
+          rate: 1
+        - item_id: 4133
+          rate: 1
+        - item_id: 4136
+          rate: 1
+        - item_id: 4141
+          rate: 1
+        - item_id: 4149
+          rate: 1
+        - item_id: 4150
+          rate: 1
+        - item_id: 4151
+          rate: 1
+        - item_id: 4152
+          rate: 1
+        - item_id: 4153
+          rate: 1
+        - item_id: 4154
+          rate: 1
+        - item_id: 4156
+          rate: 1
+        - item_id: 4157
+          rate: 1
+        - item_id: 4158
+          rate: 1
+        - item_id: 4159
+          rate: 1
+        - item_id: 4160
+          rate: 1
+        - item_id: 4161
+          rate: 1
+        - item_id: 4162
+          rate: 1
+        - item_id: 4164
+          rate: 1
+        - item_id: 4165
+          rate: 1
+        - item_id: 4166
+          rate: 1
+        - item_id: 4167
+          rate: 1
+        - item_id: 4170
+          rate: 1
+        - item_id: 4172
+          rate: 1
+        - item_id: 4173
+          rate: 1
+        - item_id: 4175
+          rate: 1
+        - item_id: 4176
+          rate: 1
+        - item_id: 4177
+          rate: 1
+        - item_id: 4178
+          rate: 1
+        - item_id: 4180
+          rate: 1
+        - item_id: 4181
+          rate: 1
+        - item_id: 4182
+          rate: 1
+        - item_id: 4184
+          rate: 1
+        - item_id: 4185
+          rate: 1
+        - item_id: 4186
+          rate: 1
+        - item_id: 4187
+          rate: 1
+        - item_id: 4188
+          rate: 1
+        - item_id: 4189
+          rate: 1
+        - item_id: 4190
+          rate: 1
+        - item_id: 4191
+          rate: 1
+        - item_id: 4192
+          rate: 1
+        - item_id: 4193
+          rate: 1
+        - item_id: 4194
+          rate: 1
+        - item_id: 4195
+          rate: 1
+        - item_id: 4196
+          rate: 1
+        - item_id: 4199
+          rate: 1
+        - item_id: 4200
+          rate: 1
+        - item_id: 4201
+          rate: 1
+        - item_id: 4202
+          rate: 1
+        - item_id: 4204
+          rate: 1
+        - item_id: 4205
+          rate: 1
+        - item_id: 4206
+          rate: 1
+        - item_id: 4208
+          rate: 1
+        - item_id: 4209
+          rate: 1
+        - item_id: 4210
+          rate: 1
+        - item_id: 4212
+          rate: 1
+        - item_id: 4213
+          rate: 1
+        - item_id: 4214
+          rate: 1
+        - item_id: 4215
+          rate: 1
+        - item_id: 4216
+          rate: 1
+        - item_id: 4217
+          rate: 1
+        - item_id: 4218
+          rate: 1
+        - item_id: 4219
+          rate: 1
+        - item_id: 4220
+          rate: 1
+        - item_id: 4221
+          rate: 1
+        - item_id: 4222
+          rate: 1
+        - item_id: 4223
+          rate: 1
+        - item_id: 4224
+          rate: 1
+        - item_id: 4225
+          rate: 1
+        - item_id: 4226
+          rate: 1
+        - item_id: 4227
+          rate: 1
+        - item_id: 4228
+          rate: 1
+        - item_id: 4229
+          rate: 1
+        - item_id: 4230
+          rate: 1
+        - item_id: 4231
+          rate: 1
+        - item_id: 4232
+          rate: 1
+        - item_id: 4233
+          rate: 1
+        - item_id: 4234
+          rate: 1
+        - item_id: 4235
+          rate: 1
+        - item_id: 4237
+          rate: 1
+        - item_id: 4238
+          rate: 1
+        - item_id: 4239
+          rate: 1
+        - item_id: 4240
+          rate: 1
+        - item_id: 4242
+          rate: 1
+        - item_id: 4243
+          rate: 1
+        - item_id: 4244
+          rate: 1
+        - item_id: 4245
+          rate: 1
+        - item_id: 4246
+          rate: 1
+        - item_id: 4247
+          rate: 1
+        - item_id: 4248
+          rate: 1
+        - item_id: 4249
+          rate: 1
+        - item_id: 4251
+          rate: 1
+        - item_id: 4252
+          rate: 1
+        - item_id: 4253
+          rate: 1
+        - item_id: 4255
+          rate: 1
+        - item_id: 4256
+          rate: 1
+        - item_id: 4257
+          rate: 1
+        - item_id: 4258
+          rate: 1
+        - item_id: 4259
+          rate: 1
+        - item_id: 4260
+          rate: 1
+        - item_id: 4261
+          rate: 1
+        - item_id: 4262
+          rate: 1
+        - item_id: 4264
+          rate: 1
+        - item_id: 4265
+          rate: 1
+        - item_id: 4267
+          rate: 1
+        - item_id: 4268
+          rate: 1
+        - item_id: 4269
+          rate: 1
+        - item_id: 4270
+          rate: 1
+        - item_id: 4271
+          rate: 1
+        - item_id: 4272
+          rate: 1
+        - item_id: 4273
+          rate: 1
+        - item_id: 4274
+          rate: 1
+        - item_id: 4275
+          rate: 1
+        - item_id: 4277
+          rate: 1
+        - item_id: 4278
+          rate: 1
+        - item_id: 4279
+          rate: 1
+        - item_id: 4280
+          rate: 1
+        - item_id: 4281
+          rate: 1
+        - item_id: 4282
+          rate: 1
+        - item_id: 4283
+          rate: 1
+        - item_id: 4284
+          rate: 1
+        - item_id: 4285
+          rate: 1
+        - item_id: 4286
+          rate: 1
+        - item_id: 4287
+          rate: 1
+        - item_id: 4288
+          rate: 1
+        - item_id: 4289
+          rate: 1
+        - item_id: 4290
+          rate: 1
+        - item_id: 4292
+          rate: 1
+        - item_id: 4293
+          rate: 1
+        - item_id: 4294
+          rate: 1
+        - item_id: 4295
+          rate: 1
+        - item_id: 4296
+          rate: 1
+        - item_id: 4297
+          rate: 1
+        - item_id: 4298
+          rate: 1
+        - item_id: 4299
+          rate: 1
+        - item_id: 4300
+          rate: 1
+        - item_id: 4301
+          rate: 1
+        - item_id: 4304
+          rate: 1
+        - item_id: 4307
+          rate: 1
+        - item_id: 4308
+          rate: 1
+        - item_id: 4309
+          rate: 1
+        - item_id: 4310
+          rate: 1
+        - item_id: 4311
+          rate: 1
+        - item_id: 4312
+          rate: 1
+        - item_id: 4313
+          rate: 1
+        - item_id: 4314
+          rate: 1
+        - item_id: 4315
+          rate: 1
+        - item_id: 4316
+          rate: 1
+        - item_id: 4319
+          rate: 1
+        - item_id: 4321
+          rate: 1
+        - item_id: 4322
+          rate: 1
+        - item_id: 4323
+          rate: 1
+        - item_id: 4325
+          rate: 1
+        - item_id: 4326
+          rate: 1
+        - item_id: 4327
+          rate: 1
+        - item_id: 4328
+          rate: 1
+        - item_id: 4329
+          rate: 1
+        - item_id: 4331
+          rate: 1
+        - item_id: 4332
+          rate: 1
+        - item_id: 4333
+          rate: 3
+        - item_id: 4334
+          rate: 1
+        - item_id: 4335
+          rate: 3
+        - item_id: 4336
+          rate: 1
+        - item_id: 4337
+          rate: 1
+        - item_id: 4338
+          rate: 1
+        - item_id: 4339
+          rate: 1
+        - item_id: 4340
+          rate: 1
+        - item_id: 4341
+          rate: 1
+        - item_id: 4343
+          rate: 1
+        - item_id: 4344
+          rate: 3
+        - item_id: 4345
+          rate: 3
+        - item_id: 4346
+          rate: 1
+        - item_id: 4347
+          rate: 3
+        - item_id: 4348
+          rate: 1
+        - item_id: 4349
+          rate: 1
+        - item_id: 4350
+          rate: 3
+        - item_id: 4351
+          rate: 1
+        - item_id: 4353
+          rate: 1
+        - item_id: 4354
+          rate: 1
+        - item_id: 4355
+          rate: 3
+        - item_id: 4356
+          rate: 1
+        - item_id: 4358
+          rate: 1
+        - item_id: 4360
+          rate: 3
+        - item_id: 4362
+          rate: 1
+        - item_id: 4366
+          rate: 1
+        - item_id: 4368
+          rate: 1
+        - item_id: 4369
+          rate: 1
+        - item_id: 4370
+          rate: 1
+        - item_id: 4371
+          rate: 1
+        - item_id: 4373
+          rate: 1
+        - item_id: 4375
+          rate: 1
+        - item_id: 4377
+          rate: 3
+        - item_id: 4378
+          rate: 1
+        - item_id: 4379
+          rate: 1
+        - item_id: 4380
+          rate: 3
+        - item_id: 4381
+          rate: 1
+        - item_id: 4382
+          rate: 1
+        - item_id: 4383
+          rate: 3
+        - item_id: 4384
+          rate: 1
+        - item_id: 4385
+          rate: 3
+        - item_id: 4387
+          rate: 1
+        - item_id: 4388
+          rate: 3
+        - item_id: 4389
+          rate: 1
+        - item_id: 4390
+          rate: 1
+        - item_id: 4391
+          rate: 3
+        - item_id: 4392
+          rate: 1
+        - item_id: 4393
+          rate: 1
+        - item_id: 4394
+          rate: 1
+        - item_id: 4395
+          rate: 1
+        - item_id: 4396
+          rate: 1
+        - item_id: 4397
+          rate: 1
+        - item_id: 4400
+          rate: 1
+        - item_id: 4401
+          rate: 1
+        - item_id: 4402
+          rate: 1
+        - item_id: 4404
+          rate: 1
+        - item_id: 4405
+          rate: 1
+        - item_id: 4409
+          rate: 1
+        - item_id: 4410
+          rate: 1
+        - item_id: 4411
+          rate: 1
+        - item_id: 4412
+          rate: 1
+        - item_id: 4413
+          rate: 1
+        - item_id: 4414
+          rate: 1
+        - item_id: 4415
+          rate: 2
+        - item_id: 4416
+          rate: 1
+        - item_id: 4417
+          rate: 1
+        - item_id: 4418
+          rate: 1
+        - item_id: 4420
+          rate: 1
+        - item_id: 4421
+          rate: 2
+        - item_id: 4422
+          rate: 1
+        - item_id: 4423
+          rate: 1
+        - item_id: 4424
+          rate: 3
+        - item_id: 4426
+          rate: 1
+        - item_id: 4427
+          rate: 1
+        - item_id: 4428
+          rate: 1
+        - item_id: 4429
+          rate: 1
+        - item_id: 4431
+          rate: 1
+        - item_id: 4432
+          rate: 2
+        - item_id: 4433
+          rate: 1
+        - item_id: 4434
+          rate: 1
+        - item_id: 4435
+          rate: 1
+        - item_id: 4436
+          rate: 2
+        - item_id: 4437
+          rate: 2
+        - item_id: 4438
+          rate: 2
+        - item_id: 4439
+          rate: 1
+        - item_id: 4440
+          rate: 1
+      number: 1
+- key: cash_food
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 12202
+          rate: 1
+        - item_id: 12203
+          rate: 1
+        - item_id: 12204
+          rate: 1
+        - item_id: 12205
+          rate: 1
+        - item_id: 12206
+          rate: 1
+        - item_id: 12207
+          rate: 1
+      number: 1
+- key: cherish_box
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5454
+          rate: 1
+        - item_id: 5455
+          rate: 4
+        - item_id: 5456
+          rate: 5
+      number: 1
+- key: cherish_box_ori
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 2712
+          rate: 3
+        - item_id: 5212
+          rate: 2
+        - item_id: 5256
+          rate: 1
+        - item_id: 5305
+          rate: 2
+        - item_id: 5332
+          rate: 2
+      number: 1
+- key: cookiebag
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 529
+          rate: 5
+        - item_id: 530
+          rate: 5
+        - item_id: 538
+          rate: 5
+        - item_id: 539
+          rate: 5
+        - item_id: 558
+          rate: 1
+        - item_id: 559
+          rate: 1
+        - item_id: 560
+          rate: 1
+        - item_id: 561
+          rate: 1
+        - item_id: 564
+          rate: 5
+        - item_id: 570
+          rate: 5
+        - item_id: 571
+          rate: 5
+        - item_id: 572
+          rate: 5
+        - item_id: 573
+          rate: 1
+        - item_id: 12122
+          rate: 1
+        - item_id: 12123
+          rate: 1
+        - item_id: 12124
+          rate: 1
+      number: 1
+- key: easter_scroll
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 636
+          rate: 110
+        - item_id: 637
+          rate: 110
+        - item_id: 638
+          rate: 110
+        - item_id: 639
+          rate: 110
+        - item_id: 640
+          rate: 110
+        - item_id: 641
+          rate: 110
+        - item_id: 642
+          rate: 110
+        - item_id: 643
+          rate: 205
+        - item_id: 659
+          rate: 110
+        - item_id: 2264
+          rate: 1
+        - item_id: 2274
+          rate: 1
+        - item_id: 5046
+          rate: 1
+        - item_id: 5167
+          rate: 1
+        - item_id: 5168
+          rate: 1
+      number: 1
+- key: eggboy
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 514
+          rate: 300
+        - item_id: 564
+          rate: 522
+        - item_id: 660
+          rate: 20
+        - item_id: 682
+          rate: 100
+        - item_id: 683
+          rate: 50
+        - item_id: 2274
+          rate: 5
+        - item_id: 5072
+          rate: 2
+      number: 1
+- key: egggirl
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 514
+          rate: 300
+        - item_id: 564
+          rate: 522
+        - item_id: 661
+          rate: 20
+        - item_id: 682
+          rate: 100
+        - item_id: 683
+          rate: 50
+        - item_id: 5042
+          rate: 5
+        - item_id: 5066
+          rate: 2
+      number: 1
+- key: element
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 6360
+          rate: 1
+        - item_id: 6361
+          rate: 1
+        - item_id: 6362
+          rate: 1
+        - item_id: 6363
+          rate: 1
+      number: 1
+- key: firstaid
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 5
+        - item_id: 502
+          rate: 5
+        - item_id: 503
+          rate: 5
+        - item_id: 504
+          rate: 5
+        - item_id: 505
+          rate: 5
+        - item_id: 506
+          rate: 5
+        - item_id: 545
+          rate: 5
+        - item_id: 546
+          rate: 5
+        - item_id: 547
+          rate: 5
+        - item_id: 569
+          rate: 5
+        - item_id: 605
+          rate: 5
+        - item_id: 645
+          rate: 5
+        - item_id: 656
+          rate: 5
+        - item_id: 657
+          rate: 5
+        - item_id: 678
+          rate: 1
+        - item_id: 12016
+          rate: 5
+        - item_id: 12017
+          rate: 5
+        - item_id: 12020
+          rate: 5
+      number: 1
+- key: fish
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 544
+          rate: 1
+        - item_id: 551
+          rate: 1
+      number: 1
+- key: food
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 526
+          rate: 5
+        - item_id: 12042
+          rate: 10
+        - item_id: 12057
+          rate: 10
+        - item_id: 12053
+          rate: 10
+        - item_id: 12062
+          rate: 10
+        - item_id: 12068
+          rate: 10
+        - item_id: 12047
+          rate: 10
+        - item_id: 531
+          rate: 30
+        - item_id: 532
+          rate: 30
+        - item_id: 533
+          rate: 30
+        - item_id: 534
+          rate: 30
+        - item_id: 538
+          rate: 30
+        - item_id: 536
+          rate: 50
+        - item_id: 544
+          rate: 50
+        - item_id: 548
+          rate: 50
+        - item_id: 551
+          rate: 50
+        - item_id: 553
+          rate: 50
+        - item_id: 554
+          rate: 50
+        - item_id: 535
+          rate: 50
+        - item_id: 516
+          rate: 100
+        - item_id: 513
+          rate: 100
+        - item_id: 512
+          rate: 600
+      number: 1
+- key: foodbag
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 512
+          rate: 1
+        - item_id: 513
+          rate: 1
+        - item_id: 514
+          rate: 1
+        - item_id: 515
+          rate: 1
+        - item_id: 516
+          rate: 1
+        - item_id: 517
+          rate: 1
+        - item_id: 518
+          rate: 1
+        - item_id: 519
+          rate: 1
+        - item_id: 520
+          rate: 1
+        - item_id: 521
+          rate: 1
+        - item_id: 522
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 531
+          rate: 1
+        - item_id: 532
+          rate: 1
+        - item_id: 533
+          rate: 1
+        - item_id: 534
+          rate: 1
+        - item_id: 536
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 539
+          rate: 1
+        - item_id: 544
+          rate: 1
+        - item_id: 548
+          rate: 1
+        - item_id: 549
+          rate: 1
+        - item_id: 550
+          rate: 1
+        - item_id: 551
+          rate: 1
+        - item_id: 553
+          rate: 1
+        - item_id: 554
+          rate: 1
+        - item_id: 555
+          rate: 1
+        - item_id: 556
+          rate: 1
+        - item_id: 557
+          rate: 1
+        - item_id: 558
+          rate: 1
+        - item_id: 559
+          rate: 1
+        - item_id: 560
+          rate: 1
+        - item_id: 561
+          rate: 1
+        - item_id: 564
+          rate: 1
+        - item_id: 566
+          rate: 1
+        - item_id: 567
+          rate: 1
+        - item_id: 568
+          rate: 1
+        - item_id: 576
+          rate: 1
+        - item_id: 607
+          rate: 1
+        - item_id: 608
+          rate: 1
+        - item_id: 663
+          rate: 1
+        - item_id: 669
+          rate: 1
+      number: 1
+- key: fruit
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 512
+          rate: 1
+        - item_id: 513
+          rate: 1
+        - item_id: 514
+          rate: 1
+        - item_id: 515
+          rate: 1
+        - item_id: 516
+          rate: 1
+      number: 1
+- key: gemstone
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 715
+          rate: 1
+        - item_id: 716
+          rate: 1
+        - item_id: 717
+          rate: 1
+      number: 1
+- key: giant_fly_wing
+  subgroups:
+    - algorithm: all
+      entries:
+        - item_id: 12212
+        - item_id: 12494
+        - item_id: 12438
+      number: 0
+- key: giftbox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+        - item_id: 505
+          rate: 1
+        - item_id: 506
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 537
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 539
+          rate: 1
+        - item_id: 617
+          rate: 1
+        - item_id: 644
+          rate: 19
+        - item_id: 706
+          rate: 1
+        - item_id: 718
+          rate: 1
+        - item_id: 719
+          rate: 1
+        - item_id: 720
+          rate: 1
+        - item_id: 721
+          rate: 1
+        - item_id: 722
+          rate: 1
+        - item_id: 723
+          rate: 1
+        - item_id: 724
+          rate: 1
+        - item_id: 725
+          rate: 1
+        - item_id: 726
+          rate: 1
+        - item_id: 727
+          rate: 1
+        - item_id: 728
+          rate: 1
+        - item_id: 729
+          rate: 1
+        - item_id: 730
+          rate: 1
+        - item_id: 731
+          rate: 1
+        - item_id: 732
+          rate: 1
+        - item_id: 733
+          rate: 1
+        - item_id: 734
+          rate: 1
+        - item_id: 735
+          rate: 1
+        - item_id: 736
+          rate: 1
+        - item_id: 737
+          rate: 1
+        - item_id: 738
+          rate: 1
+        - item_id: 739
+          rate: 1
+        - item_id: 740
+          rate: 1
+        - item_id: 741
+          rate: 1
+        - item_id: 742
+          rate: 1
+        - item_id: 743
+          rate: 1
+        - item_id: 744
+          rate: 1
+        - item_id: 745
+          rate: 1
+        - item_id: 746
+          rate: 1
+        - item_id: 747
+          rate: 1
+        - item_id: 748
+          rate: 1
+        - item_id: 749
+          rate: 1
+        - item_id: 750
+          rate: 1
+        - item_id: 751
+          rate: 1
+        - item_id: 752
+          rate: 1
+        - item_id: 753
+          rate: 1
+        - item_id: 754
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 975
+          rate: 1
+        - item_id: 976
+          rate: 1
+        - item_id: 978
+          rate: 1
+        - item_id: 979
+          rate: 1
+        - item_id: 980
+          rate: 1
+        - item_id: 981
+          rate: 1
+        - item_id: 982
+          rate: 1
+        - item_id: 983
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1000
+          rate: 1
+        - item_id: 1558
+          rate: 1
+        - item_id: 4005
+          rate: 1
+        - item_id: 7034
+          rate: 1
+      number: 1
+- key: giftbox_1
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+        - item_id: 505
+          rate: 1
+        - item_id: 506
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 537
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 539
+          rate: 1
+        - item_id: 617
+          rate: 1
+        - item_id: 644
+          rate: 19
+        - item_id: 706
+          rate: 1
+        - item_id: 718
+          rate: 1
+        - item_id: 719
+          rate: 1
+        - item_id: 720
+          rate: 1
+        - item_id: 721
+          rate: 1
+        - item_id: 722
+          rate: 1
+        - item_id: 723
+          rate: 1
+        - item_id: 724
+          rate: 1
+        - item_id: 725
+          rate: 1
+        - item_id: 726
+          rate: 1
+        - item_id: 727
+          rate: 1
+        - item_id: 728
+          rate: 1
+        - item_id: 729
+          rate: 1
+        - item_id: 730
+          rate: 1
+        - item_id: 731
+          rate: 1
+        - item_id: 732
+          rate: 1
+        - item_id: 733
+          rate: 1
+        - item_id: 734
+          rate: 1
+        - item_id: 735
+          rate: 1
+        - item_id: 736
+          rate: 1
+        - item_id: 737
+          rate: 1
+        - item_id: 738
+          rate: 1
+        - item_id: 739
+          rate: 1
+        - item_id: 740
+          rate: 1
+        - item_id: 741
+          rate: 1
+        - item_id: 742
+          rate: 1
+        - item_id: 743
+          rate: 1
+        - item_id: 744
+          rate: 1
+        - item_id: 745
+          rate: 1
+        - item_id: 746
+          rate: 1
+        - item_id: 747
+          rate: 1
+        - item_id: 748
+          rate: 1
+        - item_id: 749
+          rate: 1
+        - item_id: 750
+          rate: 1
+        - item_id: 751
+          rate: 1
+        - item_id: 752
+          rate: 1
+        - item_id: 753
+          rate: 1
+        - item_id: 754
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 975
+          rate: 1
+        - item_id: 976
+          rate: 1
+        - item_id: 978
+          rate: 1
+        - item_id: 979
+          rate: 1
+        - item_id: 980
+          rate: 1
+        - item_id: 981
+          rate: 1
+        - item_id: 982
+          rate: 1
+        - item_id: 983
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1000
+          rate: 1
+        - item_id: 1558
+          rate: 1
+        - item_id: 4005
+          rate: 1
+        - item_id: 7034
+          rate: 1
+      number: 1
+- key: giftbox_2
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+        - item_id: 505
+          rate: 1
+        - item_id: 506
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 537
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 539
+          rate: 1
+        - item_id: 617
+          rate: 1
+        - item_id: 644
+          rate: 19
+        - item_id: 706
+          rate: 1
+        - item_id: 718
+          rate: 1
+        - item_id: 719
+          rate: 1
+        - item_id: 720
+          rate: 1
+        - item_id: 721
+          rate: 1
+        - item_id: 722
+          rate: 1
+        - item_id: 723
+          rate: 1
+        - item_id: 724
+          rate: 1
+        - item_id: 725
+          rate: 1
+        - item_id: 726
+          rate: 1
+        - item_id: 727
+          rate: 1
+        - item_id: 728
+          rate: 1
+        - item_id: 729
+          rate: 1
+        - item_id: 730
+          rate: 1
+        - item_id: 731
+          rate: 1
+        - item_id: 732
+          rate: 1
+        - item_id: 733
+          rate: 1
+        - item_id: 734
+          rate: 1
+        - item_id: 735
+          rate: 1
+        - item_id: 736
+          rate: 1
+        - item_id: 737
+          rate: 1
+        - item_id: 738
+          rate: 1
+        - item_id: 739
+          rate: 1
+        - item_id: 740
+          rate: 1
+        - item_id: 741
+          rate: 1
+        - item_id: 742
+          rate: 1
+        - item_id: 743
+          rate: 1
+        - item_id: 744
+          rate: 1
+        - item_id: 745
+          rate: 1
+        - item_id: 746
+          rate: 1
+        - item_id: 747
+          rate: 1
+        - item_id: 748
+          rate: 1
+        - item_id: 749
+          rate: 1
+        - item_id: 750
+          rate: 1
+        - item_id: 751
+          rate: 1
+        - item_id: 752
+          rate: 1
+        - item_id: 753
+          rate: 1
+        - item_id: 754
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 975
+          rate: 1
+        - item_id: 976
+          rate: 1
+        - item_id: 978
+          rate: 1
+        - item_id: 979
+          rate: 1
+        - item_id: 980
+          rate: 1
+        - item_id: 981
+          rate: 1
+        - item_id: 982
+          rate: 1
+        - item_id: 983
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1000
+          rate: 1
+        - item_id: 1558
+          rate: 1
+        - item_id: 4005
+          rate: 1
+        - item_id: 7034
+          rate: 1
+      number: 1
+- key: giftbox_3
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+        - item_id: 505
+          rate: 1
+        - item_id: 506
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 537
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 539
+          rate: 1
+        - item_id: 617
+          rate: 1
+        - item_id: 644
+          rate: 19
+        - item_id: 706
+          rate: 1
+        - item_id: 718
+          rate: 1
+        - item_id: 719
+          rate: 1
+        - item_id: 720
+          rate: 1
+        - item_id: 721
+          rate: 1
+        - item_id: 722
+          rate: 1
+        - item_id: 723
+          rate: 1
+        - item_id: 724
+          rate: 1
+        - item_id: 725
+          rate: 1
+        - item_id: 726
+          rate: 1
+        - item_id: 727
+          rate: 1
+        - item_id: 728
+          rate: 1
+        - item_id: 729
+          rate: 1
+        - item_id: 730
+          rate: 1
+        - item_id: 731
+          rate: 1
+        - item_id: 732
+          rate: 1
+        - item_id: 733
+          rate: 1
+        - item_id: 734
+          rate: 1
+        - item_id: 735
+          rate: 1
+        - item_id: 736
+          rate: 1
+        - item_id: 737
+          rate: 1
+        - item_id: 738
+          rate: 1
+        - item_id: 739
+          rate: 1
+        - item_id: 740
+          rate: 1
+        - item_id: 741
+          rate: 1
+        - item_id: 742
+          rate: 1
+        - item_id: 743
+          rate: 1
+        - item_id: 744
+          rate: 1
+        - item_id: 745
+          rate: 1
+        - item_id: 746
+          rate: 1
+        - item_id: 747
+          rate: 1
+        - item_id: 748
+          rate: 1
+        - item_id: 749
+          rate: 1
+        - item_id: 750
+          rate: 1
+        - item_id: 751
+          rate: 1
+        - item_id: 752
+          rate: 1
+        - item_id: 753
+          rate: 1
+        - item_id: 754
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 975
+          rate: 1
+        - item_id: 976
+          rate: 1
+        - item_id: 978
+          rate: 1
+        - item_id: 979
+          rate: 1
+        - item_id: 980
+          rate: 1
+        - item_id: 981
+          rate: 1
+        - item_id: 982
+          rate: 1
+        - item_id: 983
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1000
+          rate: 1
+        - item_id: 1558
+          rate: 1
+        - item_id: 4005
+          rate: 1
+        - item_id: 7034
+          rate: 1
+      number: 1
+- key: giftbox_4
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+        - item_id: 505
+          rate: 1
+        - item_id: 506
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 537
+          rate: 1
+        - item_id: 538
+          rate: 1
+        - item_id: 539
+          rate: 1
+        - item_id: 617
+          rate: 1
+        - item_id: 644
+          rate: 19
+        - item_id: 706
+          rate: 1
+        - item_id: 718
+          rate: 1
+        - item_id: 719
+          rate: 1
+        - item_id: 720
+          rate: 1
+        - item_id: 721
+          rate: 1
+        - item_id: 722
+          rate: 1
+        - item_id: 723
+          rate: 1
+        - item_id: 724
+          rate: 1
+        - item_id: 725
+          rate: 1
+        - item_id: 726
+          rate: 1
+        - item_id: 727
+          rate: 1
+        - item_id: 728
+          rate: 1
+        - item_id: 729
+          rate: 1
+        - item_id: 730
+          rate: 1
+        - item_id: 731
+          rate: 1
+        - item_id: 732
+          rate: 1
+        - item_id: 733
+          rate: 1
+        - item_id: 734
+          rate: 1
+        - item_id: 735
+          rate: 1
+        - item_id: 736
+          rate: 1
+        - item_id: 737
+          rate: 1
+        - item_id: 738
+          rate: 1
+        - item_id: 739
+          rate: 1
+        - item_id: 740
+          rate: 1
+        - item_id: 741
+          rate: 1
+        - item_id: 742
+          rate: 1
+        - item_id: 743
+          rate: 1
+        - item_id: 744
+          rate: 1
+        - item_id: 745
+          rate: 1
+        - item_id: 746
+          rate: 1
+        - item_id: 747
+          rate: 1
+        - item_id: 748
+          rate: 1
+        - item_id: 749
+          rate: 1
+        - item_id: 750
+          rate: 1
+        - item_id: 751
+          rate: 1
+        - item_id: 752
+          rate: 1
+        - item_id: 753
+          rate: 1
+        - item_id: 754
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 975
+          rate: 1
+        - item_id: 976
+          rate: 1
+        - item_id: 978
+          rate: 1
+        - item_id: 979
+          rate: 1
+        - item_id: 980
+          rate: 1
+        - item_id: 981
+          rate: 1
+        - item_id: 982
+          rate: 1
+        - item_id: 983
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1000
+          rate: 1
+        - item_id: 1558
+          rate: 1
+        - item_id: 4005
+          rate: 1
+        - item_id: 7034
+          rate: 1
+      number: 1
+- key: giftboxchina
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+        - item_id: 505
+          rate: 1
+        - item_id: 506
+          rate: 1
+        - item_id: 518
+          rate: 1
+        - item_id: 520
+          rate: 1
+        - item_id: 521
+          rate: 2
+        - item_id: 525
+          rate: 1
+        - item_id: 526
+          rate: 1
+        - item_id: 529
+          rate: 1
+        - item_id: 530
+          rate: 1
+        - item_id: 603
+          rate: 40
+        - item_id: 604
+          rate: 9
+        - item_id: 605
+          rate: 1
+        - item_id: 606
+          rate: 1
+        - item_id: 607
+          rate: 1
+        - item_id: 608
+          rate: 1
+        - item_id: 610
+          rate: 1
+        - item_id: 612
+          rate: 5
+        - item_id: 613
+          rate: 1
+        - item_id: 614
+          rate: 1
+        - item_id: 615
+          rate: 1
+        - item_id: 701
+          rate: 1
+        - item_id: 702
+          rate: 1
+        - item_id: 703
+          rate: 1
+        - item_id: 704
+          rate: 1
+        - item_id: 706
+          rate: 1
+        - item_id: 707
+          rate: 1
+        - item_id: 708
+          rate: 1
+        - item_id: 710
+          rate: 1
+        - item_id: 715
+          rate: 1
+        - item_id: 716
+          rate: 1
+        - item_id: 717
+          rate: 1
+        - item_id: 718
+          rate: 1
+        - item_id: 719
+          rate: 1
+        - item_id: 720
+          rate: 1
+        - item_id: 721
+          rate: 1
+        - item_id: 722
+          rate: 1
+        - item_id: 723
+          rate: 1
+        - item_id: 724
+          rate: 1
+        - item_id: 725
+          rate: 1
+        - item_id: 726
+          rate: 1
+        - item_id: 727
+          rate: 1
+        - item_id: 728
+          rate: 1
+        - item_id: 729
+          rate: 1
+        - item_id: 730
+          rate: 1
+        - item_id: 731
+          rate: 1
+        - item_id: 732
+          rate: 1
+        - item_id: 733
+          rate: 1
+        - item_id: 734
+          rate: 1
+        - item_id: 735
+          rate: 1
+        - item_id: 736
+          rate: 1
+        - item_id: 737
+          rate: 1
+        - item_id: 738
+          rate: 1
+        - item_id: 740
+          rate: 1
+        - item_id: 741
+          rate: 1
+        - item_id: 742
+          rate: 1
+        - item_id: 743
+          rate: 1
+        - item_id: 745
+          rate: 1
+        - item_id: 747
+          rate: 1
+        - item_id: 748
+          rate: 1
+        - item_id: 749
+          rate: 1
+        - item_id: 752
+          rate: 1
+        - item_id: 753
+          rate: 1
+        - item_id: 754
+          rate: 1
+        - item_id: 909
+          rate: 1
+        - item_id: 910
+          rate: 1
+        - item_id: 911
+          rate: 1
+        - item_id: 912
+          rate: 1
+        - item_id: 931
+          rate: 1
+        - item_id: 934
+          rate: 1
+        - item_id: 968
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 971
+          rate: 1
+        - item_id: 972
+          rate: 1
+        - item_id: 973
+          rate: 1
+        - item_id: 974
+          rate: 1
+        - item_id: 975
+          rate: 1
+        - item_id: 976
+          rate: 1
+        - item_id: 978
+          rate: 1
+        - item_id: 979
+          rate: 1
+        - item_id: 980
+          rate: 1
+        - item_id: 981
+          rate: 1
+        - item_id: 982
+          rate: 1
+        - item_id: 983
+          rate: 1
+        - item_id: 986
+          rate: 1
+        - item_id: 987
+          rate: 1
+        - item_id: 988
+          rate: 1
+        - item_id: 989
+          rate: 1
+        - item_id: 990
+          rate: 1
+        - item_id: 991
+          rate: 1
+        - item_id: 992
+          rate: 1
+        - item_id: 993
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 998
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1000
+          rate: 1
+        - item_id: 1001
+          rate: 1
+        - item_id: 1002
+          rate: 1
+        - item_id: 1003
+          rate: 1
+        - item_id: 1004
+          rate: 1
+        - item_id: 1005
+          rate: 1
+        - item_id: 1006
+          rate: 1
+        - item_id: 1007
+          rate: 1
+        - item_id: 1008
+          rate: 1
+        - item_id: 1009
+          rate: 1
+        - item_id: 1010
+          rate: 1
+        - item_id: 1011
+          rate: 1
+        - item_id: 1065
+          rate: 1
+        - item_id: 1102
+          rate: 1
+        - item_id: 1105
+          rate: 1
+        - item_id: 1108
+          rate: 1
+        - item_id: 1111
+          rate: 1
+        - item_id: 1114
+          rate: 1
+        - item_id: 1117
+          rate: 1
+        - item_id: 1120
+          rate: 1
+        - item_id: 1125
+          rate: 1
+        - item_id: 1127
+          rate: 1
+        - item_id: 1128
+          rate: 1
+        - item_id: 1129
+          rate: 1
+        - item_id: 1152
+          rate: 1
+        - item_id: 1155
+          rate: 1
+        - item_id: 1158
+          rate: 1
+        - item_id: 1162
+          rate: 1
+        - item_id: 1163
+          rate: 1
+        - item_id: 1202
+          rate: 1
+        - item_id: 1205
+          rate: 1
+        - item_id: 1208
+          rate: 1
+        - item_id: 1211
+          rate: 1
+        - item_id: 1214
+          rate: 1
+        - item_id: 1217
+          rate: 1
+        - item_id: 1220
+          rate: 1
+        - item_id: 1226
+          rate: 1
+        - item_id: 1251
+          rate: 1
+        - item_id: 1253
+          rate: 1
+        - item_id: 1255
+          rate: 1
+        - item_id: 1302
+          rate: 1
+        - item_id: 1352
+          rate: 1
+        - item_id: 1355
+          rate: 1
+        - item_id: 1358
+          rate: 1
+        - item_id: 1361
+          rate: 1
+        - item_id: 1402
+          rate: 1
+        - item_id: 1405
+          rate: 1
+        - item_id: 1408
+          rate: 1
+        - item_id: 1410
+          rate: 1
+        - item_id: 1452
+          rate: 1
+        - item_id: 1455
+          rate: 1
+        - item_id: 1458
+          rate: 1
+        - item_id: 1461
+          rate: 1
+        - item_id: 1464
+          rate: 1
+        - item_id: 1502
+          rate: 1
+        - item_id: 1505
+          rate: 1
+        - item_id: 1508
+          rate: 1
+        - item_id: 1511
+          rate: 1
+        - item_id: 1514
+          rate: 1
+        - item_id: 1517
+          rate: 1
+        - item_id: 1520
+          rate: 1
+        - item_id: 1550
+          rate: 1
+        - item_id: 1551
+          rate: 1
+        - item_id: 1602
+          rate: 1
+        - item_id: 1605
+          rate: 1
+        - item_id: 1608
+          rate: 1
+        - item_id: 1611
+          rate: 1
+        - item_id: 1613
+          rate: 1
+        - item_id: 1702
+          rate: 1
+        - item_id: 1705
+          rate: 1
+        - item_id: 1711
+          rate: 1
+        - item_id: 1713
+          rate: 1
+        - item_id: 1714
+          rate: 1
+        - item_id: 1718
+          rate: 1
+        - item_id: 1719
+          rate: 1
+        - item_id: 2102
+          rate: 1
+        - item_id: 2104
+          rate: 1
+        - item_id: 2106
+          rate: 1
+        - item_id: 2108
+          rate: 1
+        - item_id: 2207
+          rate: 1
+        - item_id: 2209
+          rate: 1
+        - item_id: 2213
+          rate: 1
+        - item_id: 2215
+          rate: 1
+        - item_id: 2217
+          rate: 1
+        - item_id: 2221
+          rate: 1
+        - item_id: 2223
+          rate: 1
+        - item_id: 2225
+          rate: 1
+        - item_id: 2227
+          rate: 1
+        - item_id: 2229
+          rate: 1
+        - item_id: 2231
+          rate: 1
+        - item_id: 2233
+          rate: 1
+        - item_id: 2236
+          rate: 1
+        - item_id: 2244
+          rate: 1
+        - item_id: 2249
+          rate: 1
+        - item_id: 2250
+          rate: 1
+        - item_id: 2257
+          rate: 1
+        - item_id: 2258
+          rate: 1
+        - item_id: 2262
+          rate: 1
+        - item_id: 2263
+          rate: 1
+        - item_id: 2265
+          rate: 1
+        - item_id: 2269
+          rate: 1
+        - item_id: 2270
+          rate: 1
+        - item_id: 2271
+          rate: 1
+        - item_id: 2272
+          rate: 1
+        - item_id: 2273
+          rate: 1
+        - item_id: 2275
+          rate: 1
+        - item_id: 2276
+          rate: 1
+        - item_id: 2279
+          rate: 1
+        - item_id: 2284
+          rate: 1
+        - item_id: 2287
+          rate: 1
+        - item_id: 2289
+          rate: 1
+        - item_id: 2290
+          rate: 1
+        - item_id: 2291
+          rate: 1
+        - item_id: 2293
+          rate: 1
+        - item_id: 2294
+          rate: 1
+        - item_id: 2295
+          rate: 1
+        - item_id: 2296
+          rate: 1
+        - item_id: 2298
+          rate: 1
+        - item_id: 2299
+          rate: 1
+        - item_id: 2302
+          rate: 1
+        - item_id: 2304
+          rate: 1
+        - item_id: 2306
+          rate: 1
+        - item_id: 2308
+          rate: 1
+        - item_id: 2310
+          rate: 1
+        - item_id: 2311
+          rate: 1
+        - item_id: 2313
+          rate: 1
+        - item_id: 2315
+          rate: 1
+        - item_id: 2317
+          rate: 1
+        - item_id: 2322
+          rate: 1
+        - item_id: 2324
+          rate: 1
+        - item_id: 2326
+          rate: 1
+        - item_id: 2329
+          rate: 1
+        - item_id: 2331
+          rate: 1
+        - item_id: 2333
+          rate: 1
+        - item_id: 2336
+          rate: 1
+        - item_id: 2337
+          rate: 1
+        - item_id: 2339
+          rate: 1
+        - item_id: 2402
+          rate: 1
+        - item_id: 2404
+          rate: 1
+        - item_id: 2407
+          rate: 1
+        - item_id: 2408
+          rate: 1
+        - item_id: 2409
+          rate: 1
+        - item_id: 2502
+          rate: 1
+        - item_id: 2504
+          rate: 1
+        - item_id: 2506
+          rate: 1
+        - item_id: 2507
+          rate: 1
+        - item_id: 2508
+          rate: 1
+        - item_id: 2601
+          rate: 1
+        - item_id: 2602
+          rate: 1
+        - item_id: 2603
+          rate: 1
+        - item_id: 2604
+          rate: 1
+        - item_id: 2605
+          rate: 1
+        - item_id: 2607
+          rate: 1
+        - item_id: 2608
+          rate: 1
+        - item_id: 2609
+          rate: 1
+        - item_id: 2610
+          rate: 1
+        - item_id: 2611
+          rate: 1
+        - item_id: 2612
+          rate: 1
+        - item_id: 2613
+          rate: 1
+        - item_id: 5009
+          rate: 1
+        - item_id: 5010
+          rate: 1
+        - item_id: 5014
+          rate: 1
+        - item_id: 5015
+          rate: 2
+      number: 1
+- key: greenbox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 573
+          rate: 100
+        - item_id: 607
+          rate: 99
+        - item_id: 608
+          rate: 100
+        - item_id: 5182
+          rate: 1
+        - item_id: 12018
+          rate: 100
+        - item_id: 12075
+          rate: 100
+        - item_id: 12080
+          rate: 100
+        - item_id: 12085
+          rate: 100
+        - item_id: 12090
+          rate: 100
+        - item_id: 12095
+          rate: 100
+        - item_id: 12100
+          rate: 100
+      number: 1
+- key: herb
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 507
+          rate: 1
+        - item_id: 508
+          rate: 1
+        - item_id: 509
+          rate: 1
+      number: 1
+- key: hometowngift
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 663
+          rate: 1
+        - item_id: 12122
+          rate: 1
+        - item_id: 12123
+          rate: 1
+        - item_id: 12124
+          rate: 1
+        - item_id: 12195
+          rate: 1
+        - item_id: 12196
+          rate: 1
+        - item_id: 12197
+          rate: 1
+        - item_id: 12198
+          rate: 1
+      number: 1
+- key: jewel
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 715
+          rate: 100
+        - item_id: 716
+          rate: 100
+        - item_id: 717
+          rate: 100
+        - item_id: 718
+          rate: 10
+        - item_id: 719
+          rate: 10
+        - item_id: 720
+          rate: 10
+        - item_id: 721
+          rate: 10
+        - item_id: 722
+          rate: 10
+        - item_id: 723
+          rate: 10
+        - item_id: 724
+          rate: 10
+        - item_id: 725
+          rate: 10
+        - item_id: 726
+          rate: 10
+        - item_id: 727
+          rate: 10
+        - item_id: 728
+          rate: 10
+        - item_id: 729
+          rate: 10
+        - item_id: 730
+          rate: 5
+        - item_id: 731
+          rate: 4
+        - item_id: 732
+          rate: 3
+        - item_id: 733
+          rate: 2
+        - item_id: 746
+          rate: 50
+      number: 1
+- key: juice
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 531
+          rate: 1
+        - item_id: 532
+          rate: 1
+        - item_id: 534
+          rate: 1
+      number: 1
+- key: lottobox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 7391
+          rate: 1
+        - item_id: 7392
+          rate: 1
+        - item_id: 7393
+          rate: 1
+        - item_id: 7394
+          rate: 1
+        - item_id: 7395
+          rate: 1
+        - item_id: 7396
+          rate: 1
+        - item_id: 7397
+          rate: 1
+        - item_id: 7398
+          rate: 1
+        - item_id: 7540
+          rate: 1
+        - item_id: 7541
+          rate: 1
+      number: 1
+- key: louise_costume_box
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 12132
+          rate: 18
+        - item_id: 12260
+          rate: 2
+      number: 1
+- key: magiccardalbum
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 4047
+          rate: 1
+        - item_id: 4054
+          rate: 1
+        - item_id: 4163
+          rate: 1
+        - item_id: 4169
+          rate: 1
+        - item_id: 4174
+          rate: 1
+        - item_id: 4179
+          rate: 10
+        - item_id: 4183
+          rate: 10
+        - item_id: 4197
+          rate: 10
+        - item_id: 4198
+          rate: 1
+        - item_id: 4203
+          rate: 10
+        - item_id: 4207
+          rate: 1
+        - item_id: 4211
+          rate: 1
+        - item_id: 4237
+          rate: 5
+        - item_id: 4238
+          rate: 5
+        - item_id: 4241
+          rate: 1
+        - item_id: 4250
+          rate: 1
+        - item_id: 4254
+          rate: 1
+        - item_id: 4266
+          rate: 10
+        - item_id: 4284
+          rate: 10
+        - item_id: 4285
+          rate: 10
+        - item_id: 4290
+          rate: 5
+        - item_id: 4291
+          rate: 10
+        - item_id: 4300
+          rate: 10
+        - item_id: 4306
+          rate: 10
+        - item_id: 4320
+          rate: 1
+        - item_id: 4336
+          rate: 1
+        - item_id: 4354
+          rate: 1
+        - item_id: 4384
+          rate: 1
+        - item_id: 4395
+          rate: 3
+        - item_id: 4396
+          rate: 3
+        - item_id: 4397
+          rate: 3
+      number: 1
+- key: mask
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 2278
+          rate: 10
+        - item_id: 2281
+          rate: 10
+        - item_id: 2288
+          rate: 10
+        - item_id: 2292
+          rate: 10
+        - item_id: 2297
+          rate: 10
+        - item_id: 5005
+          rate: 10
+        - item_id: 5086
+          rate: 10
+        - item_id: 5087
+          rate: 10
+        - item_id: 5088
+          rate: 10
+        - item_id: 5089
+          rate: 10
+        - item_id: 5090
+          rate: 10
+        - item_id: 5121
+          rate: 1
+        - item_id: 5176
+          rate: 2
+      number: 1
+- key: masquerade
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5296
+          rate: 10
+        - item_id: 5297
+          rate: 1
+        - item_id: 5298
+          rate: 10
+        - item_id: 5299
+          rate: 10
+      number: 1
+- key: masquerade_2
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5211
+          rate: 1
+        - item_id: 5213
+          rate: 13
+        - item_id: 5289
+          rate: 10
+        - item_id: 5304
+          rate: 10
+      number: 1
+- key: meat
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 517
+          rate: 1
+        - item_id: 528
+          rate: 1
+      number: 1
+- key: mercenary
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 12153
+          rate: 1
+        - item_id: 12154
+          rate: 1
+        - item_id: 12155
+          rate: 1
+        - item_id: 12156
+          rate: 1
+        - item_id: 12157
+          rate: 1
+        - item_id: 12158
+          rate: 1
+        - item_id: 12159
+          rate: 1
+        - item_id: 12160
+          rate: 1
+        - item_id: 12161
+          rate: 1
+        - item_id: 12162
+          rate: 1
+        - item_id: 12163
+          rate: 1
+        - item_id: 12164
+          rate: 1
+        - item_id: 12165
+          rate: 1
+        - item_id: 12166
+          rate: 1
+        - item_id: 12167
+          rate: 1
+        - item_id: 12168
+          rate: 1
+        - item_id: 12169
+          rate: 1
+        - item_id: 12170
+          rate: 1
+        - item_id: 12171
+          rate: 1
+        - item_id: 12172
+          rate: 1
+        - item_id: 12173
+          rate: 1
+        - item_id: 12174
+          rate: 1
+        - item_id: 12175
+          rate: 1
+        - item_id: 12176
+          rate: 1
+        - item_id: 12177
+          rate: 1
+        - item_id: 12178
+          rate: 1
+        - item_id: 12179
+          rate: 1
+        - item_id: 12180
+          rate: 1
+        - item_id: 12181
+          rate: 1
+        - item_id: 12182
+          rate: 1
+      number: 1
+- key: mf_noreturn
+  subgroups:
+    - algorithm: all
+      entries:
+        - item_id: 602
+        - item_id: 12324
+        - item_id: 14527
+        - item_id: 14581
+        - item_id: 12352
+        - item_id: 12500
+        - item_id: 12444
+        - item_id: 14582
+        - item_id: 12507
+        - item_id: 12451
+        - item_id: 14583
+        - item_id: 12508
+        - item_id: 12452
+        - item_id: 14584
+        - item_id: 12509
+        - item_id: 12453
+        - item_id: 14585
+        - item_id: 12510
+        - item_id: 12454
+        - item_id: 14591
+        - item_id: 12415
+        - item_id: 12511
+      number: 0
+- key: mf_noteleport
+  subgroups:
+    - algorithm: all
+      entries:
+        - item_id: 601
+        - item_id: 12212
+        - item_id: 12323
+        - item_id: 12494
+        - item_id: 12438
+      number: 0
+- key: mineral
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 714
+          rate: 1
+        - item_id: 756
+          rate: 1
+        - item_id: 757
+          rate: 1
+        - item_id: 969
+          rate: 1
+        - item_id: 984
+          rate: 1
+        - item_id: 985
+          rate: 1
+        - item_id: 990
+          rate: 1
+        - item_id: 991
+          rate: 1
+        - item_id: 992
+          rate: 1
+        - item_id: 993
+          rate: 1
+        - item_id: 994
+          rate: 1
+        - item_id: 995
+          rate: 1
+        - item_id: 996
+          rate: 1
+        - item_id: 997
+          rate: 1
+        - item_id: 998
+          rate: 1
+        - item_id: 999
+          rate: 1
+        - item_id: 1002
+          rate: 1
+        - item_id: 1003
+          rate: 1
+        - item_id: 1010
+          rate: 1
+        - item_id: 1011
+          rate: 1
+      number: 1
+- key: oldgiftbox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5270
+          rate: 45
+        - item_id: 5271
+          rate: 15
+        - item_id: 5272
+          rate: 40
+      number: 1
+- key: ore
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 1002
+          rate: 30
+        - item_id: 998
+          rate: 28
+        - item_id: 993
+          rate: 26
+        - item_id: 1003
+          rate: 24
+        - item_id: 992
+          rate: 22
+        - item_id: 1010
+          rate: 20
+        - item_id: 991
+          rate: 18
+        - item_id: 990
+          rate: 16
+        - item_id: 999
+          rate: 14
+        - item_id: 1011
+          rate: 12
+        - item_id: 757
+          rate: 10
+        - item_id: 756
+          rate: 9
+        - item_id: 997
+          rate: 8
+        - item_id: 996
+          rate: 7
+        - item_id: 995
+          rate: 6
+        - item_id: 994
+          rate: 5
+        - item_id: 985
+          rate: 4
+        - item_id: 984
+          rate: 3
+        - item_id: 969
+          rate: 2
+        - item_id: 714
+          rate: 1
+      number: 1
+- key: pierre_treasurebox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 603
+          rate: 11
+        - item_id: 604
+          rate: 3
+        - item_id: 617
+          rate: 5
+        - item_id: 644
+          rate: 3
+        - item_id: 975
+          rate: 3
+        - item_id: 976
+          rate: 3
+        - item_id: 978
+          rate: 3
+        - item_id: 979
+          rate: 3
+        - item_id: 980
+          rate: 3
+        - item_id: 981
+          rate: 3
+        - item_id: 982
+          rate: 3
+        - item_id: 983
+          rate: 3
+        - item_id: 7289
+          rate: 3
+        - item_id: 7290
+          rate: 3
+        - item_id: 7291
+          rate: 3
+        - item_id: 7292
+          rate: 3
+        - item_id: 7293
+          rate: 3
+        - item_id: 7294
+          rate: 3
+        - item_id: 7295
+          rate: 3
+        - item_id: 7296
+          rate: 3
+        - item_id: 7297
+          rate: 3
+        - item_id: 12018
+          rate: 3
+        - item_id: 12075
+          rate: 3
+        - item_id: 12085
+          rate: 3
+        - item_id: 12090
+          rate: 3
+        - item_id: 12095
+          rate: 3
+        - item_id: 12100
+          rate: 3
+        - item_id: 12103
+          rate: 1
+      number: 1
+- key: poison
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 12717
+          rate: 1
+        - item_id: 12718
+          rate: 1
+        - item_id: 12719
+          rate: 1
+        - item_id: 12720
+          rate: 1
+        - item_id: 12721
+          rate: 1
+        - item_id: 12722
+          rate: 1
+        - item_id: 12723
+          rate: 1
+        - item_id: 12724
+          rate: 1
+      number: 1
+- key: potion
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 1
+        - item_id: 502
+          rate: 1
+        - item_id: 503
+          rate: 1
+        - item_id: 504
+          rate: 1
+      number: 1
+- key: quiver
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 12004
+          rate: 1
+        - item_id: 12005
+          rate: 1
+        - item_id: 12006
+          rate: 1
+        - item_id: 12007
+          rate: 1
+        - item_id: 12008
+          rate: 1
+        - item_id: 12009
+          rate: 1
+        - item_id: 12010
+          rate: 1
+        - item_id: 12011
+          rate: 1
+        - item_id: 12012
+          rate: 1
+        - item_id: 12013
+          rate: 1
+        - item_id: 12014
+          rate: 1
+        - item_id: 12015
+          rate: 1
+        - item_id: 12183
+          rate: 2
+      number: 1
+- key: recovery
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 522
+          rate: 5
+        - item_id: 521
+          rate: 5
+        - item_id: 520
+          rate: 10
+        - item_id: 545
+          rate: 10
+        - item_id: 12120
+          rate: 10
+        - item_id: 508
+          rate: 20
+        - item_id: 501
+          rate: 20
+        - item_id: 511
+          rate: 30
+        - item_id: 507
+          rate: 30
+        - item_id: 569
+          rate: 50
+        - item_id: 549
+          rate: 50
+        - item_id: 529
+          rate: 100
+        - item_id: 528
+          rate: 200
+        - item_id: 550
+          rate: 600
+      number: 1
+- key: redbox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5099
+          rate: 1
+        - item_id: 5137
+          rate: 11
+        - item_id: 5138
+          rate: 11
+        - item_id: 5139
+          rate: 11
+        - item_id: 5140
+          rate: 11
+        - item_id: 5142
+          rate: 11
+        - item_id: 5143
+          rate: 12
+        - item_id: 5152
+          rate: 1
+        - item_id: 5181
+          rate: 11
+        - item_id: 5182
+          rate: 1
+        - item_id: 5183
+          rate: 11
+        - item_id: 5185
+          rate: 11
+        - item_id: 5186
+          rate: 11
+        - item_id: 5187
+          rate: 10
+      number: 1
+- key: redbox_2
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5137
+          rate: 1
+        - item_id: 5138
+          rate: 9
+        - item_id: 5139
+          rate: 10
+        - item_id: 5140
+          rate: 10
+      number: 1
+- key: resist
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 12118
+          rate: 1
+        - item_id: 12119
+          rate: 1
+        - item_id: 12120
+          rate: 1
+        - item_id: 12121
+          rate: 1
+      number: 1
+- key: scroll
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 686
+          rate: 1
+        - item_id: 687
+          rate: 1
+        - item_id: 688
+          rate: 1
+        - item_id: 689
+          rate: 1
+        - item_id: 690
+          rate: 1
+        - item_id: 691
+          rate: 1
+        - item_id: 692
+          rate: 1
+        - item_id: 693
+          rate: 1
+        - item_id: 694
+          rate: 1
+        - item_id: 695
+          rate: 1
+        - item_id: 696
+          rate: 1
+        - item_id: 697
+          rate: 1
+        - item_id: 698
+          rate: 1
+        - item_id: 699
+          rate: 1
+        - item_id: 700
+          rate: 1
+        - item_id: 12000
+          rate: 1
+        - item_id: 12001
+          rate: 1
+        - item_id: 12002
+          rate: 1
+      number: 1
+- key: taming
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 619
+          rate: 1
+        - item_id: 620
+          rate: 1
+        - item_id: 621
+          rate: 1
+        - item_id: 622
+          rate: 1
+        - item_id: 623
+          rate: 1
+        - item_id: 624
+          rate: 1
+        - item_id: 625
+          rate: 1
+        - item_id: 626
+          rate: 1
+        - item_id: 627
+          rate: 1
+        - item_id: 628
+          rate: 1
+        - item_id: 629
+          rate: 1
+        - item_id: 630
+          rate: 1
+        - item_id: 631
+          rate: 1
+        - item_id: 632
+          rate: 1
+        - item_id: 633
+          rate: 1
+        - item_id: 634
+          rate: 1
+        - item_id: 635
+          rate: 1
+        - item_id: 636
+          rate: 1
+        - item_id: 637
+          rate: 1
+        - item_id: 638
+          rate: 1
+        - item_id: 639
+          rate: 1
+        - item_id: 640
+          rate: 1
+        - item_id: 641
+          rate: 1
+        - item_id: 642
+          rate: 1
+        - item_id: 659
+          rate: 1
+        - item_id: 660
+          rate: 1
+        - item_id: 661
+          rate: 1
+        - item_id: 10001
+          rate: 1
+        - item_id: 10002
+          rate: 1
+        - item_id: 10003
+          rate: 1
+        - item_id: 10004
+          rate: 1
+        - item_id: 10005
+          rate: 1
+        - item_id: 10006
+          rate: 1
+        - item_id: 10007
+          rate: 1
+        - item_id: 10008
+          rate: 1
+        - item_id: 10009
+          rate: 1
+        - item_id: 10010
+          rate: 1
+        - item_id: 10011
+          rate: 1
+        - item_id: 10012
+          rate: 1
+        - item_id: 10013
+          rate: 1
+        - item_id: 10014
+          rate: 1
+        - item_id: 10015
+          rate: 1
+        - item_id: 10016
+          rate: 1
+        - item_id: 10017
+          rate: 1
+        - item_id: 10018
+          rate: 1
+        - item_id: 10019
+          rate: 1
+        - item_id: 10020
+          rate: 1
+        - item_id: 12373
+          rate: 1
+        - item_id: 12374
+          rate: 1
+        - item_id: 12395
+          rate: 1
+      number: 1
+- key: throwable
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 13268
+          rate: 1
+        - item_id: 13269
+          rate: 1
+        - item_id: 13270
+          rate: 1
+        - item_id: 13271
+          rate: 1
+        - item_id: 13272
+          rate: 1
+        - item_id: 13273
+          rate: 1
+        - item_id: 13274
+          rate: 1
+        - item_id: 13275
+          rate: 1
+        - item_id: 13276
+          rate: 1
+        - item_id: 13277
+          rate: 1
+        - item_id: 13278
+          rate: 1
+        - item_id: 13279
+          rate: 1
+        - item_id: 13280
+          rate: 1
+        - item_id: 13281
+          rate: 1
+        - item_id: 13282
+          rate: 1
+        - item_id: 13283
+          rate: 1
+        - item_id: 13284
+          rate: 1
+        - item_id: 13285
+          rate: 1
+        - item_id: 13286
+          rate: 1
+        - item_id: 13287
+          rate: 1
+        - item_id: 13288
+          rate: 1
+        - item_id: 13289
+          rate: 1
+        - item_id: 13290
+          rate: 1
+      number: 1
+- key: token_of_siegfried
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 6293
+          rate: 1
+        - item_id: 6316
+          rate: 1
+        - item_id: 7621
+          rate: 1
+      number: 1
+- key: tresure_box_woe
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 603
+          rate: 6
+        - item_id: 658
+          rate: 6
+        - item_id: 678
+          rate: 3
+        - item_id: 732
+          rate: 9
+        - item_id: 12010
+          rate: 24
+        - item_id: 12011
+          rate: 25
+        - item_id: 12012
+          rate: 26
+        - item_id: 12105
+          rate: 12
+        - item_id: 12107
+          rate: 2
+        - item_id: 12108
+          rate: 9
+        - item_id: 12110
+          rate: 9
+        - item_id: 12111
+          rate: 36
+        - item_id: 12130
+          rate: 48
+        - item_id: 12149
+          rate: 27
+        - item_id: 12150
+          rate: 27
+        - item_id: 12151
+          rate: 27
+        - item_id: 12183
+          rate: 7
+        - item_id: 12194
+          rate: 6
+        - item_id: 12260
+          rate: 22
+        - item_id: 12702
+          rate: 8
+      number: 1
+- key: violetbox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 501
+          rate: 14
+        - item_id: 502
+          rate: 14
+        - item_id: 503
+          rate: 14
+        - item_id: 504
+          rate: 14
+        - item_id: 505
+          rate: 14
+        - item_id: 506
+          rate: 14
+        - item_id: 507
+          rate: 14
+        - item_id: 508
+          rate: 14
+        - item_id: 509
+          rate: 14
+        - item_id: 510
+          rate: 14
+        - item_id: 511
+          rate: 14
+        - item_id: 512
+          rate: 14
+        - item_id: 513
+          rate: 14
+        - item_id: 514
+          rate: 14
+        - item_id: 515
+          rate: 14
+        - item_id: 516
+          rate: 14
+        - item_id: 517
+          rate: 14
+        - item_id: 518
+          rate: 14
+        - item_id: 519
+          rate: 14
+        - item_id: 520
+          rate: 14
+        - item_id: 521
+          rate: 14
+        - item_id: 522
+          rate: 14
+        - item_id: 523
+          rate: 14
+        - item_id: 525
+          rate: 14
+        - item_id: 526
+          rate: 14
+        - item_id: 528
+          rate: 14
+        - item_id: 529
+          rate: 14
+        - item_id: 530
+          rate: 14
+        - item_id: 531
+          rate: 14
+        - item_id: 532
+          rate: 14
+        - item_id: 533
+          rate: 14
+        - item_id: 534
+          rate: 14
+        - item_id: 535
+          rate: 14
+        - item_id: 536
+          rate: 14
+        - item_id: 537
+          rate: 14
+        - item_id: 538
+          rate: 14
+        - item_id: 539
+          rate: 14
+        - item_id: 544
+          rate: 14
+        - item_id: 545
+          rate: 14
+        - item_id: 546
+          rate: 14
+        - item_id: 547
+          rate: 14
+        - item_id: 548
+          rate: 14
+        - item_id: 549
+          rate: 14
+        - item_id: 550
+          rate: 14
+        - item_id: 551
+          rate: 14
+        - item_id: 553
+          rate: 14
+        - item_id: 555
+          rate: 14
+        - item_id: 558
+          rate: 14
+        - item_id: 561
+          rate: 14
+        - item_id: 601
+          rate: 14
+        - item_id: 602
+          rate: 14
+        - item_id: 604
+          rate: 214
+        - item_id: 605
+          rate: 14
+        - item_id: 606
+          rate: 14
+        - item_id: 607
+          rate: 14
+        - item_id: 608
+          rate: 14
+        - item_id: 609
+          rate: 14
+        - item_id: 610
+          rate: 14
+        - item_id: 611
+          rate: 14
+        - item_id: 612
+          rate: 14
+        - item_id: 613
+          rate: 14
+        - item_id: 614
+          rate: 14
+        - item_id: 615
+          rate: 14
+        - item_id: 616
+          rate: 1
+        - item_id: 617
+          rate: 103
+        - item_id: 618
+          rate: 14
+        - item_id: 619
+          rate: 14
+        - item_id: 620
+          rate: 14
+        - item_id: 621
+          rate: 14
+        - item_id: 622
+          rate: 14
+        - item_id: 623
+          rate: 14
+        - item_id: 624
+          rate: 14
+        - item_id: 625
+          rate: 14
+        - item_id: 626
+          rate: 14
+        - item_id: 627
+          rate: 14
+        - item_id: 628
+          rate: 14
+        - item_id: 629
+          rate: 14
+        - item_id: 630
+          rate: 14
+        - item_id: 631
+          rate: 14
+        - item_id: 632
+          rate: 14
+        - item_id: 633
+          rate: 14
+        - item_id: 634
+          rate: 14
+        - item_id: 635
+          rate: 14
+        - item_id: 636
+          rate: 14
+        - item_id: 637
+          rate: 14
+        - item_id: 638
+          rate: 14
+        - item_id: 639
+          rate: 14
+        - item_id: 640
+          rate: 14
+        - item_id: 641
+          rate: 14
+        - item_id: 642
+          rate: 14
+        - item_id: 643
+          rate: 14
+        - item_id: 644
+          rate: 114
+        - item_id: 645
+          rate: 14
+        - item_id: 656
+          rate: 14
+        - item_id: 657
+          rate: 14
+        - item_id: 659
+          rate: 14
+        - item_id: 663
+          rate: 14
+        - item_id: 664
+          rate: 14
+        - item_id: 665
+          rate: 14
+        - item_id: 666
+          rate: 14
+        - item_id: 667
+          rate: 14
+        - item_id: 668
+          rate: 14
+        - item_id: 678
+          rate: 14
+        - item_id: 679
+          rate: 14
+        - item_id: 701
+          rate: 14
+        - item_id: 702
+          rate: 14
+        - item_id: 703
+          rate: 14
+        - item_id: 704
+          rate: 14
+        - item_id: 705
+          rate: 14
+        - item_id: 706
+          rate: 14
+        - item_id: 707
+          rate: 14
+        - item_id: 708
+          rate: 14
+        - item_id: 710
+          rate: 14
+        - item_id: 711
+          rate: 14
+        - item_id: 712
+          rate: 14
+        - item_id: 713
+          rate: 14
+        - item_id: 715
+          rate: 14
+        - item_id: 716
+          rate: 14
+        - item_id: 717
+          rate: 14
+        - item_id: 718
+          rate: 14
+        - item_id: 719
+          rate: 14
+        - item_id: 720
+          rate: 14
+        - item_id: 721
+          rate: 14
+        - item_id: 722
+          rate: 14
+        - item_id: 723
+          rate: 14
+        - item_id: 724
+          rate: 14
+        - item_id: 725
+          rate: 14
+        - item_id: 726
+          rate: 14
+        - item_id: 727
+          rate: 14
+        - item_id: 728
+          rate: 14
+        - item_id: 729
+          rate: 14
+        - item_id: 730
+          rate: 14
+        - item_id: 731
+          rate: 14
+        - item_id: 732
+          rate: 14
+        - item_id: 733
+          rate: 14
+        - item_id: 734
+          rate: 14
+        - item_id: 735
+          rate: 14
+        - item_id: 736
+          rate: 14
+        - item_id: 737
+          rate: 14
+        - item_id: 738
+          rate: 14
+        - item_id: 739
+          rate: 14
+        - item_id: 740
+          rate: 14
+        - item_id: 741
+          rate: 14
+        - item_id: 742
+          rate: 14
+        - item_id: 743
+          rate: 14
+        - item_id: 744
+          rate: 14
+        - item_id: 745
+          rate: 14
+        - item_id: 746
+          rate: 14
+        - item_id: 747
+          rate: 14
+        - item_id: 748
+          rate: 14
+        - item_id: 749
+          rate: 14
+        - item_id: 750
+          rate: 14
+        - item_id: 751
+          rate: 14
+        - item_id: 752
+          rate: 14
+        - item_id: 753
+          rate: 14
+        - item_id: 754
+          rate: 14
+        - item_id: 901
+          rate: 14
+        - item_id: 902
+          rate: 14
+        - item_id: 903
+          rate: 14
+        - item_id: 904
+          rate: 14
+        - item_id: 905
+          rate: 14
+        - item_id: 906
+          rate: 14
+        - item_id: 907
+          rate: 14
+        - item_id: 908
+          rate: 14
+        - item_id: 909
+          rate: 14
+        - item_id: 910
+          rate: 14
+        - item_id: 911
+          rate: 14
+        - item_id: 912
+          rate: 14
+        - item_id: 913
+          rate: 14
+        - item_id: 914
+          rate: 14
+        - item_id: 915
+          rate: 14
+        - item_id: 916
+          rate: 14
+        - item_id: 917
+          rate: 14
+        - item_id: 918
+          rate: 14
+        - item_id: 919
+          rate: 14
+        - item_id: 920
+          rate: 14
+        - item_id: 921
+          rate: 14
+        - item_id: 922
+          rate: 14
+        - item_id: 923
+          rate: 14
+        - item_id: 924
+          rate: 14
+        - item_id: 925
+          rate: 14
+        - item_id: 926
+          rate: 14
+        - item_id: 928
+          rate: 14
+        - item_id: 929
+          rate: 14
+        - item_id: 930
+          rate: 14
+        - item_id: 931
+          rate: 14
+        - item_id: 932
+          rate: 14
+        - item_id: 934
+          rate: 14
+        - item_id: 935
+          rate: 14
+        - item_id: 936
+          rate: 14
+        - item_id: 937
+          rate: 14
+        - item_id: 938
+          rate: 14
+        - item_id: 939
+          rate: 14
+        - item_id: 940
+          rate: 14
+        - item_id: 941
+          rate: 14
+        - item_id: 942
+          rate: 14
+        - item_id: 943
+          rate: 14
+        - item_id: 944
+          rate: 14
+        - item_id: 945
+          rate: 14
+        - item_id: 946
+          rate: 14
+        - item_id: 947
+          rate: 14
+        - item_id: 948
+          rate: 14
+        - item_id: 949
+          rate: 14
+        - item_id: 950
+          rate: 14
+        - item_id: 951
+          rate: 14
+        - item_id: 952
+          rate: 14
+        - item_id: 953
+          rate: 14
+        - item_id: 954
+          rate: 14
+        - item_id: 955
+          rate: 14
+        - item_id: 956
+          rate: 14
+        - item_id: 957
+          rate: 14
+        - item_id: 958
+          rate: 14
+        - item_id: 959
+          rate: 14
+        - item_id: 960
+          rate: 14
+        - item_id: 961
+          rate: 14
+        - item_id: 962
+          rate: 14
+        - item_id: 963
+          rate: 14
+        - item_id: 964
+          rate: 14
+        - item_id: 965
+          rate: 14
+        - item_id: 966
+          rate: 14
+        - item_id: 967
+          rate: 14
+        - item_id: 968
+          rate: 14
+        - item_id: 969
+          rate: 14
+        - item_id: 971
+          rate: 14
+        - item_id: 972
+          rate: 14
+        - item_id: 973
+          rate: 14
+        - item_id: 974
+          rate: 14
+        - item_id: 975
+          rate: 14
+        - item_id: 976
+          rate: 14
+        - item_id: 978
+          rate: 14
+        - item_id: 979
+          rate: 14
+        - item_id: 980
+          rate: 14
+        - item_id: 981
+          rate: 14
+        - item_id: 982
+          rate: 14
+        - item_id: 983
+          rate: 14
+        - item_id: 986
+          rate: 14
+        - item_id: 987
+          rate: 14
+        - item_id: 988
+          rate: 14
+        - item_id: 989
+          rate: 14
+        - item_id: 990
+          rate: 14
+        - item_id: 991
+          rate: 14
+        - item_id: 992
+          rate: 14
+        - item_id: 993
+          rate: 14
+        - item_id: 994
+          rate: 14
+        - item_id: 995
+          rate: 14
+        - item_id: 996
+          rate: 14
+        - item_id: 997
+          rate: 14
+        - item_id: 998
+          rate: 14
+        - item_id: 999
+          rate: 14
+        - item_id: 1000
+          rate: 14
+        - item_id: 1001
+          rate: 14
+        - item_id: 1002
+          rate: 14
+        - item_id: 1003
+          rate: 14
+        - item_id: 1004
+          rate: 14
+        - item_id: 1005
+          rate: 14
+        - item_id: 1006
+          rate: 14
+        - item_id: 1007
+          rate: 14
+        - item_id: 1008
+          rate: 14
+        - item_id: 1009
+          rate: 14
+        - item_id: 1010
+          rate: 14
+        - item_id: 1011
+          rate: 14
+        - item_id: 1012
+          rate: 14
+        - item_id: 1013
+          rate: 14
+        - item_id: 1014
+          rate: 14
+        - item_id: 1015
+          rate: 14
+        - item_id: 1016
+          rate: 14
+        - item_id: 1017
+          rate: 14
+        - item_id: 1018
+          rate: 14
+        - item_id: 1019
+          rate: 14
+        - item_id: 1020
+          rate: 14
+        - item_id: 1021
+          rate: 14
+        - item_id: 1022
+          rate: 14
+        - item_id: 1023
+          rate: 14
+        - item_id: 1024
+          rate: 14
+        - item_id: 1025
+          rate: 14
+        - item_id: 1026
+          rate: 14
+        - item_id: 1027
+          rate: 14
+        - item_id: 1028
+          rate: 14
+        - item_id: 1029
+          rate: 14
+        - item_id: 1031
+          rate: 14
+        - item_id: 1032
+          rate: 14
+        - item_id: 1033
+          rate: 14
+        - item_id: 1034
+          rate: 14
+        - item_id: 1035
+          rate: 14
+        - item_id: 1036
+          rate: 14
+        - item_id: 1037
+          rate: 14
+        - item_id: 1038
+          rate: 14
+        - item_id: 1039
+          rate: 14
+        - item_id: 1040
+          rate: 14
+        - item_id: 1041
+          rate: 14
+        - item_id: 1042
+          rate: 14
+        - item_id: 1043
+          rate: 14
+        - item_id: 1044
+          rate: 14
+        - item_id: 1045
+          rate: 14
+        - item_id: 1046
+          rate: 14
+        - item_id: 1047
+          rate: 14
+        - item_id: 1048
+          rate: 14
+        - item_id: 1049
+          rate: 14
+        - item_id: 1050
+          rate: 14
+        - item_id: 1051
+          rate: 14
+        - item_id: 1052
+          rate: 14
+        - item_id: 1053
+          rate: 14
+        - item_id: 1054
+          rate: 14
+        - item_id: 1055
+          rate: 14
+        - item_id: 1056
+          rate: 14
+        - item_id: 1057
+          rate: 14
+        - item_id: 1058
+          rate: 14
+        - item_id: 1059
+          rate: 14
+        - item_id: 1060
+          rate: 14
+        - item_id: 1061
+          rate: 14
+        - item_id: 1062
+          rate: 14
+        - item_id: 1063
+          rate: 14
+        - item_id: 1064
+          rate: 14
+        - item_id: 1065
+          rate: 14
+        - item_id: 1066
+          rate: 14
+        - item_id: 1067
+          rate: 14
+        - item_id: 1068
+          rate: 14
+        - item_id: 1088
+          rate: 14
+        - item_id: 1089
+          rate: 14
+        - item_id: 1092
+          rate: 14
+        - item_id: 1093
+          rate: 14
+        - item_id: 1094
+          rate: 14
+        - item_id: 1095
+          rate: 14
+        - item_id: 1096
+          rate: 14
+        - item_id: 1097
+          rate: 14
+        - item_id: 1098
+          rate: 14
+        - item_id: 1099
+          rate: 14
+        - item_id: 1102
+          rate: 7
+        - item_id: 1105
+          rate: 7
+        - item_id: 1108
+          rate: 7
+        - item_id: 1111
+          rate: 7
+        - item_id: 1114
+          rate: 7
+        - item_id: 1117
+          rate: 7
+        - item_id: 1120
+          rate: 7
+        - item_id: 1124
+          rate: 7
+        - item_id: 1125
+          rate: 7
+        - item_id: 1127
+          rate: 7
+        - item_id: 1128
+          rate: 7
+        - item_id: 1129
+          rate: 7
+        - item_id: 1147
+          rate: 1
+        - item_id: 1148
+          rate: 1
+        - item_id: 1152
+          rate: 7
+        - item_id: 1155
+          rate: 7
+        - item_id: 1158
+          rate: 7
+        - item_id: 1162
+          rate: 7
+        - item_id: 1163
+          rate: 7
+        - item_id: 1202
+          rate: 7
+        - item_id: 1205
+          rate: 7
+        - item_id: 1208
+          rate: 7
+        - item_id: 1211
+          rate: 7
+        - item_id: 1214
+          rate: 7
+        - item_id: 1217
+          rate: 7
+        - item_id: 1220
+          rate: 7
+        - item_id: 1226
+          rate: 7
+        - item_id: 1243
+          rate: 7
+        - item_id: 1251
+          rate: 7
+        - item_id: 1253
+          rate: 7
+        - item_id: 1255
+          rate: 7
+        - item_id: 1256
+          rate: 7
+        - item_id: 1257
+          rate: 7
+        - item_id: 1258
+          rate: 7
+        - item_id: 1259
+          rate: 7
+        - item_id: 1262
+          rate: 1
+        - item_id: 1263
+          rate: 1
+        - item_id: 1264
+          rate: 2
+        - item_id: 1265
+          rate: 1
+        - item_id: 1269
+          rate: 1
+        - item_id: 1271
+          rate: 1
+        - item_id: 1302
+          rate: 7
+        - item_id: 1304
+          rate: 7
+        - item_id: 1307
+          rate: 1
+        - item_id: 1352
+          rate: 7
+        - item_id: 1355
+          rate: 7
+        - item_id: 1358
+          rate: 7
+        - item_id: 1361
+          rate: 7
+        - item_id: 1370
+          rate: 1
+        - item_id: 1376
+          rate: 1
+        - item_id: 1377
+          rate: 1
+        - item_id: 1402
+          rate: 7
+        - item_id: 1405
+          rate: 7
+        - item_id: 1408
+          rate: 7
+        - item_id: 1411
+          rate: 7
+        - item_id: 1452
+          rate: 7
+        - item_id: 1455
+          rate: 7
+        - item_id: 1458
+          rate: 7
+        - item_id: 1461
+          rate: 7
+        - item_id: 1464
+          rate: 7
+        - item_id: 1472
+          rate: 7
+        - item_id: 1474
+          rate: 1
+        - item_id: 1478
+          rate: 1
+        - item_id: 1502
+          rate: 7
+        - item_id: 1505
+          rate: 7
+        - item_id: 1508
+          rate: 7
+        - item_id: 1511
+          rate: 7
+        - item_id: 1514
+          rate: 7
+        - item_id: 1517
+          rate: 7
+        - item_id: 1520
+          rate: 7
+        - item_id: 1522
+          rate: 7
+        - item_id: 1550
+          rate: 7
+        - item_id: 1551
+          rate: 7
+        - item_id: 1552
+          rate: 7
+        - item_id: 1553
+          rate: 7
+        - item_id: 1554
+          rate: 7
+        - item_id: 1555
+          rate: 7
+        - item_id: 1556
+          rate: 7
+        - item_id: 1558
+          rate: 7
+        - item_id: 1559
+          rate: 1
+        - item_id: 1560
+          rate: 1
+        - item_id: 1561
+          rate: 1
+        - item_id: 1602
+          rate: 7
+        - item_id: 1605
+          rate: 7
+        - item_id: 1608
+          rate: 7
+        - item_id: 1611
+          rate: 7
+        - item_id: 1613
+          rate: 7
+        - item_id: 1614
+          rate: 7
+        - item_id: 1615
+          rate: 7
+        - item_id: 1616
+          rate: 1
+        - item_id: 1618
+          rate: 1
+        - item_id: 1620
+          rate: 1
+        - item_id: 1622
+          rate: 1
+        - item_id: 1702
+          rate: 7
+        - item_id: 1705
+          rate: 7
+        - item_id: 1708
+          rate: 7
+        - item_id: 1711
+          rate: 7
+        - item_id: 1715
+          rate: 7
+        - item_id: 1716
+          rate: 7
+        - item_id: 1718
+          rate: 7
+        - item_id: 1723
+          rate: 1
+        - item_id: 1724
+          rate: 1
+        - item_id: 1730
+          rate: 1
+        - item_id: 1731
+          rate: 1
+        - item_id: 1732
+          rate: 1
+        - item_id: 1733
+          rate: 1
+        - item_id: 1750
+          rate: 14
+        - item_id: 1751
+          rate: 14
+        - item_id: 1752
+          rate: 14
+        - item_id: 1753
+          rate: 14
+        - item_id: 1754
+          rate: 14
+        - item_id: 1755
+          rate: 14
+        - item_id: 1756
+          rate: 14
+        - item_id: 1757
+          rate: 14
+        - item_id: 1758
+          rate: 14
+        - item_id: 1759
+          rate: 14
+        - item_id: 1760
+          rate: 14
+        - item_id: 1761
+          rate: 14
+        - item_id: 1762
+          rate: 14
+        - item_id: 1763
+          rate: 14
+        - item_id: 1764
+          rate: 14
+        - item_id: 1765
+          rate: 14
+        - item_id: 1767
+          rate: 14
+        - item_id: 1768
+          rate: 14
+        - item_id: 1769
+          rate: 14
+        - item_id: 1770
+          rate: 14
+        - item_id: 1802
+          rate: 7
+        - item_id: 1804
+          rate: 7
+        - item_id: 1806
+          rate: 7
+        - item_id: 1808
+          rate: 7
+        - item_id: 1810
+          rate: 7
+        - item_id: 1812
+          rate: 7
+        - item_id: 1815
+          rate: 1
+        - item_id: 1818
+          rate: 1
+        - item_id: 1819
+          rate: 1
+        - item_id: 1820
+          rate: 1
+        - item_id: 1821
+          rate: 1
+        - item_id: 1822
+          rate: 1
+        - item_id: 1902
+          rate: 7
+        - item_id: 1904
+          rate: 7
+        - item_id: 1906
+          rate: 7
+        - item_id: 1908
+          rate: 7
+        - item_id: 1910
+          rate: 7
+        - item_id: 1912
+          rate: 7
+        - item_id: 1914
+          rate: 1
+        - item_id: 1915
+          rate: 1
+        - item_id: 1916
+          rate: 1
+        - item_id: 1917
+          rate: 1
+        - item_id: 1918
+          rate: 1
+        - item_id: 1919
+          rate: 1
+        - item_id: 1951
+          rate: 7
+        - item_id: 1953
+          rate: 7
+        - item_id: 1955
+          rate: 7
+        - item_id: 1957
+          rate: 7
+        - item_id: 1959
+          rate: 7
+        - item_id: 1961
+          rate: 7
+        - item_id: 1965
+          rate: 1
+        - item_id: 1966
+          rate: 1
+        - item_id: 1967
+          rate: 1
+        - item_id: 1968
+          rate: 1
+        - item_id: 1969
+          rate: 1
+        - item_id: 1970
+          rate: 1
+        - item_id: 1971
+          rate: 1
+        - item_id: 1972
+          rate: 1
+        - item_id: 1973
+          rate: 1
+        - item_id: 1974
+          rate: 1
+        - item_id: 2102
+          rate: 7
+        - item_id: 2104
+          rate: 7
+        - item_id: 2106
+          rate: 7
+        - item_id: 2108
+          rate: 7
+        - item_id: 2109
+          rate: 7
+        - item_id: 2112
+          rate: 7
+        - item_id: 2201
+          rate: 7
+        - item_id: 2203
+          rate: 7
+        - item_id: 2205
+          rate: 7
+        - item_id: 2206
+          rate: 7
+        - item_id: 2207
+          rate: 7
+        - item_id: 2208
+          rate: 7
+        - item_id: 2209
+          rate: 7
+        - item_id: 2210
+          rate: 7
+        - item_id: 2211
+          rate: 7
+        - item_id: 2212
+          rate: 7
+        - item_id: 2213
+          rate: 7
+        - item_id: 2214
+          rate: 7
+        - item_id: 2215
+          rate: 7
+        - item_id: 2216
+          rate: 7
+        - item_id: 2217
+          rate: 7
+        - item_id: 2218
+          rate: 7
+        - item_id: 2220
+          rate: 7
+        - item_id: 2221
+          rate: 7
+        - item_id: 2222
+          rate: 7
+        - item_id: 2223
+          rate: 7
+        - item_id: 2224
+          rate: 7
+        - item_id: 2225
+          rate: 7
+        - item_id: 2226
+          rate: 7
+        - item_id: 2227
+          rate: 7
+        - item_id: 2228
+          rate: 7
+        - item_id: 2229
+          rate: 7
+        - item_id: 2230
+          rate: 7
+        - item_id: 2231
+          rate: 7
+        - item_id: 2232
+          rate: 7
+        - item_id: 2233
+          rate: 7
+        - item_id: 2236
+          rate: 7
+        - item_id: 2239
+          rate: 7
+        - item_id: 2241
+          rate: 7
+        - item_id: 2242
+          rate: 7
+        - item_id: 2243
+          rate: 7
+        - item_id: 2244
+          rate: 7
+        - item_id: 2245
+          rate: 7
+        - item_id: 2246
+          rate: 7
+        - item_id: 2247
+          rate: 7
+        - item_id: 2248
+          rate: 7
+        - item_id: 2249
+          rate: 1
+        - item_id: 2250
+          rate: 7
+        - item_id: 2251
+          rate: 7
+        - item_id: 2252
+          rate: 7
+        - item_id: 2253
+          rate: 7
+        - item_id: 2254
+          rate: 1
+        - item_id: 2255
+          rate: 1
+        - item_id: 2257
+          rate: 7
+        - item_id: 2258
+          rate: 1
+        - item_id: 2259
+          rate: 7
+        - item_id: 2260
+          rate: 7
+        - item_id: 2261
+          rate: 7
+        - item_id: 2262
+          rate: 7
+        - item_id: 2263
+          rate: 7
+        - item_id: 2265
+          rate: 7
+        - item_id: 2266
+          rate: 7
+        - item_id: 2267
+          rate: 7
+        - item_id: 2268
+          rate: 7
+        - item_id: 2269
+          rate: 7
+        - item_id: 2270
+          rate: 7
+        - item_id: 2271
+          rate: 7
+        - item_id: 2274
+          rate: 1
+        - item_id: 2275
+          rate: 7
+        - item_id: 2276
+          rate: 7
+        - item_id: 2277
+          rate: 7
+        - item_id: 2278
+          rate: 7
+        - item_id: 2279
+          rate: 7
+        - item_id: 2282
+          rate: 7
+        - item_id: 2285
+          rate: 7
+        - item_id: 2286
+          rate: 1
+        - item_id: 2287
+          rate: 7
+        - item_id: 2288
+          rate: 7
+        - item_id: 2289
+          rate: 7
+        - item_id: 2290
+          rate: 7
+        - item_id: 2291
+          rate: 7
+        - item_id: 2294
+          rate: 7
+        - item_id: 2295
+          rate: 7
+        - item_id: 2297
+          rate: 7
+        - item_id: 2298
+          rate: 7
+        - item_id: 2299
+          rate: 7
+        - item_id: 2302
+          rate: 7
+        - item_id: 2304
+          rate: 7
+        - item_id: 2306
+          rate: 7
+        - item_id: 2308
+          rate: 7
+        - item_id: 2310
+          rate: 7
+        - item_id: 2311
+          rate: 7
+        - item_id: 2313
+          rate: 7
+        - item_id: 2315
+          rate: 7
+        - item_id: 2317
+          rate: 7
+        - item_id: 2318
+          rate: 7
+        - item_id: 2320
+          rate: 7
+        - item_id: 2322
+          rate: 7
+        - item_id: 2324
+          rate: 7
+        - item_id: 2326
+          rate: 7
+        - item_id: 2327
+          rate: 1
+        - item_id: 2329
+          rate: 7
+        - item_id: 2331
+          rate: 7
+        - item_id: 2333
+          rate: 7
+        - item_id: 2334
+          rate: 1
+        - item_id: 2336
+          rate: 7
+        - item_id: 2337
+          rate: 7
+        - item_id: 2339
+          rate: 7
+        - item_id: 2340
+          rate: 7
+        - item_id: 2352
+          rate: 7
+        - item_id: 2402
+          rate: 7
+        - item_id: 2404
+          rate: 7
+        - item_id: 2406
+          rate: 7
+        - item_id: 2407
+          rate: 7
+        - item_id: 2408
+          rate: 7
+        - item_id: 2409
+          rate: 7
+        - item_id: 2411
+          rate: 7
+        - item_id: 2414
+          rate: 7
+        - item_id: 2502
+          rate: 7
+        - item_id: 2504
+          rate: 7
+        - item_id: 2506
+          rate: 7
+        - item_id: 2507
+          rate: 7
+        - item_id: 2508
+          rate: 7
+        - item_id: 2510
+          rate: 7
+        - item_id: 2513
+          rate: 1
+        - item_id: 2514
+          rate: 1
+        - item_id: 2515
+          rate: 1
+        - item_id: 2601
+          rate: 7
+        - item_id: 2602
+          rate: 7
+        - item_id: 2603
+          rate: 7
+        - item_id: 2604
+          rate: 7
+        - item_id: 2605
+          rate: 7
+        - item_id: 2607
+          rate: 7
+        - item_id: 2608
+          rate: 7
+        - item_id: 2609
+          rate: 7
+        - item_id: 2610
+          rate: 7
+        - item_id: 2611
+          rate: 7
+        - item_id: 2612
+          rate: 7
+        - item_id: 2613
+          rate: 7
+        - item_id: 2614
+          rate: 1
+        - item_id: 2615
+          rate: 1
+        - item_id: 2616
+          rate: 1
+        - item_id: 2617
+          rate: 7
+        - item_id: 2618
+          rate: 7
+        - item_id: 2621
+          rate: 1
+        - item_id: 2622
+          rate: 1
+        - item_id: 2623
+          rate: 1
+        - item_id: 2624
+          rate: 1
+        - item_id: 2625
+          rate: 1
+        - item_id: 2626
+          rate: 1
+        - item_id: 2627
+          rate: 7
+        - item_id: 2628
+          rate: 7
+        - item_id: 2652
+          rate: 1
+        - item_id: 2654
+          rate: 1
+        - item_id: 2655
+          rate: 1
+        - item_id: 2656
+          rate: 1
+        - item_id: 5002
+          rate: 1
+        - item_id: 5003
+          rate: 7
+        - item_id: 5005
+          rate: 7
+        - item_id: 5006
+          rate: 7
+        - item_id: 5007
+          rate: 1
+        - item_id: 5009
+          rate: 7
+        - item_id: 5010
+          rate: 7
+        - item_id: 5011
+          rate: 7
+        - item_id: 5014
+          rate: 7
+        - item_id: 5015
+          rate: 7
+        - item_id: 5017
+          rate: 1
+        - item_id: 5030
+          rate: 7
+        - item_id: 5035
+          rate: 7
+        - item_id: 5037
+          rate: 7
+        - item_id: 5053
+          rate: 1
+        - item_id: 5055
+          rate: 7
+        - item_id: 5066
+          rate: 1
+        - item_id: 5072
+          rate: 1
+        - item_id: 5085
+          rate: 1
+        - item_id: 5088
+          rate: 7
+        - item_id: 5089
+          rate: 7
+        - item_id: 5090
+          rate: 7
+        - item_id: 5111
+          rate: 1
+        - item_id: 5113
+          rate: 1
+        - item_id: 5116
+          rate: 1
+        - item_id: 5118
+          rate: 1
+        - item_id: 5119
+          rate: 1
+        - item_id: 5120
+          rate: 1
+        - item_id: 7001
+          rate: 14
+        - item_id: 7002
+          rate: 14
+        - item_id: 7003
+          rate: 14
+        - item_id: 7004
+          rate: 14
+        - item_id: 7005
+          rate: 14
+        - item_id: 7006
+          rate: 14
+        - item_id: 7007
+          rate: 14
+        - item_id: 7008
+          rate: 14
+        - item_id: 7009
+          rate: 14
+        - item_id: 7010
+          rate: 14
+        - item_id: 7011
+          rate: 14
+        - item_id: 7012
+          rate: 14
+        - item_id: 7013
+          rate: 14
+        - item_id: 7014
+          rate: 14
+        - item_id: 7015
+          rate: 14
+        - item_id: 7016
+          rate: 14
+        - item_id: 7026
+          rate: 14
+        - item_id: 7027
+          rate: 14
+        - item_id: 7030
+          rate: 14
+        - item_id: 7031
+          rate: 14
+        - item_id: 7032
+          rate: 14
+        - item_id: 7033
+          rate: 14
+        - item_id: 7034
+          rate: 14
+        - item_id: 7035
+          rate: 14
+        - item_id: 7036
+          rate: 14
+        - item_id: 7038
+          rate: 14
+        - item_id: 7041
+          rate: 14
+        - item_id: 7047
+          rate: 14
+        - item_id: 7048
+          rate: 14
+        - item_id: 7049
+          rate: 14
+        - item_id: 7053
+          rate: 14
+        - item_id: 7054
+          rate: 14
+        - item_id: 7059
+          rate: 14
+        - item_id: 7060
+          rate: 14
+        - item_id: 7061
+          rate: 14
+        - item_id: 7063
+          rate: 14
+        - item_id: 7064
+          rate: 14
+        - item_id: 7065
+          rate: 14
+        - item_id: 7066
+          rate: 14
+        - item_id: 7067
+          rate: 14
+        - item_id: 7068
+          rate: 14
+        - item_id: 7069
+          rate: 14
+        - item_id: 7070
+          rate: 14
+        - item_id: 7071
+          rate: 14
+        - item_id: 7072
+          rate: 14
+        - item_id: 7093
+          rate: 14
+        - item_id: 7094
+          rate: 14
+        - item_id: 7095
+          rate: 14
+        - item_id: 7096
+          rate: 14
+        - item_id: 7097
+          rate: 14
+        - item_id: 7098
+          rate: 14
+        - item_id: 7099
+          rate: 14
+        - item_id: 7100
+          rate: 14
+        - item_id: 7101
+          rate: 14
+        - item_id: 7106
+          rate: 14
+        - item_id: 7107
+          rate: 14
+        - item_id: 7108
+          rate: 14
+        - item_id: 7109
+          rate: 14
+        - item_id: 7110
+          rate: 14
+        - item_id: 7111
+          rate: 14
+        - item_id: 7112
+          rate: 14
+        - item_id: 7113
+          rate: 14
+        - item_id: 7114
+          rate: 14
+        - item_id: 7115
+          rate: 14
+        - item_id: 7116
+          rate: 14
+        - item_id: 7117
+          rate: 14
+        - item_id: 7118
+          rate: 14
+        - item_id: 7119
+          rate: 14
+        - item_id: 7120
+          rate: 14
+        - item_id: 7121
+          rate: 14
+        - item_id: 7122
+          rate: 14
+        - item_id: 7123
+          rate: 14
+        - item_id: 7124
+          rate: 14
+        - item_id: 7125
+          rate: 14
+        - item_id: 7126
+          rate: 14
+        - item_id: 7134
+          rate: 14
+        - item_id: 7135
+          rate: 14
+        - item_id: 7136
+          rate: 14
+        - item_id: 7137
+          rate: 14
+        - item_id: 7138
+          rate: 14
+        - item_id: 7139
+          rate: 14
+        - item_id: 7149
+          rate: 14
+        - item_id: 7150
+          rate: 14
+        - item_id: 7151
+          rate: 14
+        - item_id: 7152
+          rate: 14
+        - item_id: 7153
+          rate: 14
+        - item_id: 7154
+          rate: 14
+        - item_id: 7155
+          rate: 14
+        - item_id: 7156
+          rate: 14
+        - item_id: 7157
+          rate: 14
+        - item_id: 7158
+          rate: 14
+        - item_id: 7159
+          rate: 14
+        - item_id: 7161
+          rate: 14
+        - item_id: 7162
+          rate: 14
+        - item_id: 7163
+          rate: 14
+        - item_id: 7164
+          rate: 14
+        - item_id: 7165
+          rate: 14
+        - item_id: 7166
+          rate: 14
+        - item_id: 7167
+          rate: 14
+        - item_id: 7168
+          rate: 14
+        - item_id: 7169
+          rate: 14
+        - item_id: 7171
+          rate: 14
+        - item_id: 7172
+          rate: 14
+        - item_id: 7174
+          rate: 14
+        - item_id: 7175
+          rate: 14
+        - item_id: 7182
+          rate: 14
+        - item_id: 7186
+          rate: 14
+        - item_id: 7187
+          rate: 14
+        - item_id: 7188
+          rate: 14
+        - item_id: 7189
+          rate: 14
+        - item_id: 7190
+          rate: 14
+        - item_id: 7191
+          rate: 14
+        - item_id: 7192
+          rate: 14
+        - item_id: 7193
+          rate: 14
+        - item_id: 7194
+          rate: 14
+        - item_id: 7195
+          rate: 14
+        - item_id: 7196
+          rate: 14
+        - item_id: 7197
+          rate: 14
+        - item_id: 7198
+          rate: 14
+        - item_id: 7200
+          rate: 14
+        - item_id: 7201
+          rate: 14
+        - item_id: 7202
+          rate: 14
+        - item_id: 7203
+          rate: 14
+        - item_id: 7205
+          rate: 14
+        - item_id: 7206
+          rate: 14
+        - item_id: 7207
+          rate: 14
+        - item_id: 7208
+          rate: 14
+        - item_id: 7209
+          rate: 14
+        - item_id: 7210
+          rate: 14
+        - item_id: 7211
+          rate: 14
+        - item_id: 7212
+          rate: 14
+        - item_id: 7213
+          rate: 14
+        - item_id: 7214
+          rate: 14
+        - item_id: 7215
+          rate: 14
+        - item_id: 7216
+          rate: 14
+        - item_id: 7217
+          rate: 14
+        - item_id: 7218
+          rate: 14
+        - item_id: 7219
+          rate: 14
+        - item_id: 7220
+          rate: 14
+        - item_id: 7221
+          rate: 14
+        - item_id: 7222
+          rate: 14
+        - item_id: 7223
+          rate: 14
+        - item_id: 7225
+          rate: 14
+        - item_id: 7262
+          rate: 14
+        - item_id: 7263
+          rate: 14
+        - item_id: 7264
+          rate: 14
+        - item_id: 7265
+          rate: 14
+        - item_id: 7266
+          rate: 14
+        - item_id: 7267
+          rate: 14
+        - item_id: 7268
+          rate: 14
+        - item_id: 7269
+          rate: 14
+        - item_id: 7270
+          rate: 14
+        - item_id: 7315
+          rate: 1
+        - item_id: 7316
+          rate: 1
+        - item_id: 7317
+          rate: 1
+        - item_id: 7318
+          rate: 1
+        - item_id: 7319
+          rate: 1
+        - item_id: 7320
+          rate: 1
+        - item_id: 7321
+          rate: 1
+        - item_id: 7322
+          rate: 1
+        - item_id: 7323
+          rate: 1
+        - item_id: 7325
+          rate: 1
+        - item_id: 7326
+          rate: 1
+        - item_id: 7327
+          rate: 1
+        - item_id: 7436
+          rate: 1
+        - item_id: 7437
+          rate: 1
+        - item_id: 7438
+          rate: 1
+        - item_id: 7439
+          rate: 1
+        - item_id: 7440
+          rate: 1
+        - item_id: 7441
+          rate: 1
+        - item_id: 7442
+          rate: 1
+        - item_id: 7443
+          rate: 1
+        - item_id: 7444
+          rate: 1
+        - item_id: 7445
+          rate: 1
+        - item_id: 7446
+          rate: 1
+        - item_id: 7447
+          rate: 1
+        - item_id: 7448
+          rate: 1
+        - item_id: 7449
+          rate: 1
+        - item_id: 7450
+          rate: 1
+        - item_id: 7451
+          rate: 1
+        - item_id: 7452
+          rate: 1
+        - item_id: 7453
+          rate: 1
+        - item_id: 7454
+          rate: 1
+        - item_id: 7455
+          rate: 1
+        - item_id: 7456
+          rate: 1
+        - item_id: 7457
+          rate: 1
+        - item_id: 7472
+          rate: 1
+        - item_id: 7473
+          rate: 1
+        - item_id: 7474
+          rate: 1
+        - item_id: 7475
+          rate: 1
+        - item_id: 7476
+          rate: 1
+        - item_id: 7477
+          rate: 1
+        - item_id: 7478
+          rate: 1
+        - item_id: 7479
+          rate: 1
+        - item_id: 7480
+          rate: 1
+        - item_id: 7481
+          rate: 1
+        - item_id: 7482
+          rate: 1
+        - item_id: 7512
+          rate: 1
+        - item_id: 7513
+          rate: 1
+        - item_id: 7561
+          rate: 1
+        - item_id: 7562
+          rate: 1
+        - item_id: 7563
+          rate: 1
+        - item_id: 7564
+          rate: 1
+        - item_id: 7565
+          rate: 1
+        - item_id: 7567
+          rate: 1
+        - item_id: 7568
+          rate: 1
+        - item_id: 7751
+          rate: 17
+        - item_id: 7752
+          rate: 16
+        - item_id: 7753
+          rate: 17
+        - item_id: 10001
+          rate: 7
+        - item_id: 10002
+          rate: 7
+        - item_id: 10003
+          rate: 7
+        - item_id: 10004
+          rate: 7
+        - item_id: 10005
+          rate: 7
+        - item_id: 10006
+          rate: 7
+        - item_id: 10007
+          rate: 7
+        - item_id: 10008
+          rate: 7
+        - item_id: 10009
+          rate: 7
+        - item_id: 10010
+          rate: 7
+        - item_id: 10011
+          rate: 7
+        - item_id: 10012
+          rate: 7
+        - item_id: 10013
+          rate: 7
+        - item_id: 10014
+          rate: 7
+        - item_id: 10015
+          rate: 7
+        - item_id: 10016
+          rate: 7
+        - item_id: 10017
+          rate: 7
+        - item_id: 10018
+          rate: 7
+        - item_id: 10019
+          rate: 7
+        - item_id: 10020
+          rate: 7
+        - item_id: 13001
+          rate: 1
+        - item_id: 13002
+          rate: 1
+        - item_id: 13004
+          rate: 1
+        - item_id: 13163
+          rate: 1
+        - item_id: 13164
+          rate: 1
+        - item_id: 13167
+          rate: 1
+        - item_id: 13168
+          rate: 1
+        - item_id: 13170
+          rate: 2
+        - item_id: 13200
+          rate: 1
+        - item_id: 13201
+          rate: 1
+        - item_id: 13202
+          rate: 1
+        - item_id: 13203
+          rate: 1
+        - item_id: 13204
+          rate: 1
+        - item_id: 13205
+          rate: 1
+        - item_id: 13206
+          rate: 1
+        - item_id: 13207
+          rate: 1
+        - item_id: 13304
+          rate: 1
+      number: 1
+- key: xmas_gift
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 559
+          rate: 18
+        - item_id: 560
+          rate: 18
+        - item_id: 573
+          rate: 18
+        - item_id: 603
+          rate: 24
+        - item_id: 644
+          rate: 66
+        - item_id: 732
+          rate: 12
+        - item_id: 5136
+          rate: 12
+        - item_id: 12016
+          rate: 12
+        - item_id: 12017
+          rate: 12
+        - item_id: 12105
+          rate: 6
+        - item_id: 12107
+          rate: 6
+        - item_id: 12108
+          rate: 12
+        - item_id: 12110
+          rate: 12
+        - item_id: 12130
+          rate: 12
+        - item_id: 12132
+          rate: 6
+        - item_id: 12354
+          rate: 24
+        - item_id: 12702
+          rate: 36
+        - item_id: 14546
+          rate: 6
+        - item_id: 14550
+          rate: 6
+      number: 1
+- key: yellowbox
+  subgroups:
+    - algorithm: random
+      entries:
+        - item_id: 5259
+          rate: 1
+        - item_id: 5260
+          rate: 1
+        - item_id: 5261
+          rate: 1
+        - item_id: 5262
+          rate: 1
+      number: 1

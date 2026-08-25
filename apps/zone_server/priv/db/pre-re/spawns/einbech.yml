@@ -1,0 +1,21 @@
+---
+- map: einbech
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1175
+      respawn_time: 1800000
+      respawn_variance: 1500000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1261
+      respawn_time: 3600000
+      respawn_variance: 3000000

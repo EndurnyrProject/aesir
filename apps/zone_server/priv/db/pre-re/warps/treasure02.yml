@@ -1,0 +1,133 @@
+---
+- id: tre11
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 102
+    'y': 120
+  x: 102
+  xs: 5
+  'y': 103
+  ys: 1
+- id: tre11-1
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 102
+    'y': 101
+  x: 102
+  xs: 5
+  'y': 118
+  ys: 1
+- id: tre13-1
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 155
+    'y': 97
+  x: 155
+  xs: 1
+  'y': 128
+  ys: 1
+- id: tre13
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 155
+    'y': 130
+  x: 155
+  xs: 1
+  'y': 99
+  ys: 1
+- id: tre14-1
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 49
+    'y': 130
+  x: 49
+  xs: 1
+  'y': 99
+  ys: 1
+- id: tre003
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure01
+    x: 69
+    'y': 179
+  x: 102
+  xs: 3
+  'y': 24
+  ys: 1
+- id: tre12
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 140
+    'y': 72
+  x: 123
+  xs: 1
+  'y': 72
+  ys: 4
+- id: tre12-1
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 121
+    'y': 72
+  x: 138
+  xs: 1
+  'y': 72
+  ys: 4
+- id: tre14
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 49
+    'y': 97
+  x: 49
+  xs: 1
+  'y': 128
+  ys: 1
+- id: tre15
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 82
+    'y': 72
+  x: 65
+  xs: 1
+  'y': 72
+  ys: 4
+- id: tre15-1
+  map: treasure02
+  name: ''
+  sprite: 45
+  to:
+    map: treasure02
+    x: 63
+    'y': 72
+  x: 80
+  xs: 1
+  'y': 72
+  ys: 4

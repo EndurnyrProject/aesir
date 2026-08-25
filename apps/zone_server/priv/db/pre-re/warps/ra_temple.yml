@@ -1,0 +1,13 @@
+---
+- id: rachel37
+  map: ra_temple
+  name: ''
+  sprite: 45
+  to:
+    map: rachel
+    x: 150
+    'y': 243
+  x: 120
+  xs: 1
+  'y': 22
+  ys: 1

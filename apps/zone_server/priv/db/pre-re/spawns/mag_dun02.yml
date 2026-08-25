@@ -1,0 +1,156 @@
+---
+- map: mag_dun02
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1387
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1384
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 25
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1385
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1382
+      respawn_time: 120000
+      respawn_variance: 30000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1379
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1379
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 5
+      area:
+        x: 110
+        xs: 50
+        'y': 190
+        ys: 20
+      mob: 1367
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 4
+      area:
+        x: 110
+        xs: 50
+        'y': 190
+        ys: 20
+      mob: 1379
+      respawn_time: 180000
+      respawn_variance: 150000
+    - amount: 15
+      area:
+        x: 200
+        xs: 40
+        'y': 120
+        ys: 40
+      mob: 1367
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 10
+      area:
+        x: 103
+        xs: 58
+        'y': 102
+        ys: 59
+      mob: 1379
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 3
+      area:
+        x: 120
+        xs: 20
+        'y': 202
+        ys: 20
+      mob: 1384
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 7
+      area:
+        x: 184
+        xs: 43
+        'y': 170
+        ys: 55
+      mob: 1384
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 10
+      area:
+        x: 184
+        xs: 43
+        'y': 170
+        ys: 55
+      mob: 1385
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 7
+      area:
+        x: 184
+        xs: 43
+        'y': 170
+        ys: 55
+      mob: 1379
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 3
+      area:
+        x: 197
+        xs: 50
+        'y': 59
+        ys: 37
+      mob: 1384
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 5
+      area:
+        x: 197
+        xs: 50
+        'y': 59
+        ys: 37
+      mob: 1385
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 5
+      area:
+        x: 197
+        xs: 50
+        'y': 59
+        ys: 37
+      mob: 1382
+      respawn_time: 300000
+      respawn_variance: 30000

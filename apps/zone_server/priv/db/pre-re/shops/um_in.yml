@@ -1,0 +1,63 @@
+---
+- dir: 3
+  discount: true
+  id: Tool Dealer#um
+  items:
+    - id: 512
+      price:
+    - id: 515
+      price:
+    - id: 535
+      price:
+    - id: 516
+      price:
+    - id: 513
+      price:
+    - id: 517
+      price:
+    - id: 528
+      price:
+    - id: 537
+      price:
+    - id: 601
+      price:
+    - id: 602
+      price:
+    - id: 645
+      price:
+    - id: 656
+      price:
+    - id: 610
+      price:
+  map: um_in
+  name: Tool Dealer
+  sprite: 788
+  x: 104
+  'y': 124
+- dir: 3
+  discount: true
+  id: Weapon Dealer#um
+  items:
+    - id: 1501
+      price:
+    - id: 1504
+      price:
+    - id: 1507
+      price:
+    - id: 1510
+      price:
+    - id: 1513
+      price:
+    - id: 1519
+      price:
+    - id: 1807
+      price:
+    - id: 1811
+      price:
+    - id: 1809
+      price:
+  map: um_in
+  name: Weapon Dealer
+  sprite: 789
+  x: 160
+  'y': 125

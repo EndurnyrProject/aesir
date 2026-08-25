@@ -1,0 +1,21 @@
+---
+- map: gl_dun02
+  spawns:
+    - amount: 45
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1310
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1253
+      respawn_time: 0
+      respawn_variance: 0

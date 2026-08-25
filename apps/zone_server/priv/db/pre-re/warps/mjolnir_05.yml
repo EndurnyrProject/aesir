@@ -1,0 +1,37 @@
+---
+- id: mjol07-1
+  map: mjolnir_05
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_04
+    x: 384
+    'y': 174
+  x: 16
+  xs: 2
+  'y': 171
+  ys: 2
+- id: mjol08
+  map: mjolnir_05
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_12
+    x: 220
+    'y': 29
+  x: 220
+  xs: 4
+  'y': 382
+  ys: 2
+- id: mjol09
+  map: mjolnir_05
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_10
+    x: 235
+    'y': 378
+  x: 235
+  xs: 4
+  'y': 16
+  ys: 2

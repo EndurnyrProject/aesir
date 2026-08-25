@@ -1,0 +1,49 @@
+---
+- id: mocf06
+  map: moc_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild13
+    x: 305
+    'y': 49
+  x: 17
+  xs: 2
+  'y': 37
+  ys: 4
+- id: mocf013
+  map: moc_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild11
+    x: 38
+    'y': 327
+  x: 179
+  xs: 4
+  'y': 16
+  ys: 2
+- id: mocf014
+  map: moc_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild01
+    x: 17
+    'y': 152
+  x: 303
+  xs: 2
+  'y': 170
+  ys: 7
+- id: mocf04-1
+  map: moc_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild02
+    x: 332
+    'y': 23
+  x: 70
+  xs: 5
+  'y': 341
+  ys: 2

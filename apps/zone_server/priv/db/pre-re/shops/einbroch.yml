@@ -1,0 +1,42 @@
+---
+- dir: 4
+  discount: true
+  id: Flu Mask Dealer#ein
+  items:
+    - id: 5114
+      price:
+    - id: 2218
+      price:
+  map: einbroch
+  name: Flu Mask Dealer
+  sprite: 850
+  x: 138
+  'y': 66
+- dir: 4
+  discount: true
+  id: Paddler#ein
+  items:
+    - id: 512
+      price:
+    - id: 645
+      price:
+    - id: 1750
+      price:
+    - id: 501
+      price:
+  map: einbroch
+  name: Paddler
+  sprite: 855
+  x: 82
+  'y': 199
+- dir: 5
+  discount: true
+  id: Chef Assistant#ein
+  items:
+    - id: 7457
+      price:
+  map: einbroch
+  name: Chef Assistant
+  sprite: 83
+  x: 224
+  'y': 207

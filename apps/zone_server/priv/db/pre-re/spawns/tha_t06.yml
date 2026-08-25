@@ -1,0 +1,228 @@
+---
+- map: tha_t06
+  spawns:
+    - amount: 5
+      area:
+        x: 61
+        xs: 55
+        'y': 179
+        ys: 55
+      mob: 1377
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 61
+        xs: 55
+        'y': 179
+        ys: 55
+      mob: 1697
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 61
+        xs: 55
+        'y': 179
+        ys: 55
+      mob: 1698
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 61
+        xs: 55
+        'y': 179
+        ys: 55
+      mob: 1699
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 61
+        xs: 55
+        'y': 179
+        ys: 55
+      mob: 1295
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 10
+      area:
+        x: 61
+        xs: 55
+        'y': 179
+        ys: 55
+      mob: 1320
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 5
+      area:
+        x: 178
+        xs: 55
+        'y': 178
+        ys: 55
+      mob: 1377
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 178
+        ys: 55
+      mob: 1695
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 178
+        ys: 55
+      mob: 1698
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 178
+        ys: 55
+      mob: 1699
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 178
+        ys: 55
+      mob: 1295
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 178
+        ys: 55
+      mob: 1320
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 5
+      area:
+        x: 178
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1377
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1696
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1698
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1699
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1295
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 10
+      area:
+        x: 178
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1320
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 5
+      area:
+        x: 62
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1377
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 62
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1694
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 62
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1698
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 62
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1699
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 62
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1295
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 10
+      area:
+        x: 62
+        xs: 55
+        'y': 63
+        ys: 55
+      mob: 1320
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1706
+      respawn_time: 1800000
+      respawn_variance: 1200000

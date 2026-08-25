@@ -1,0 +1,111 @@
+---
+- map: hu_fild03
+  spawns:
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1687
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1715
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1051
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 40
+        xs: 3
+        'y': 157
+        ys: 3
+      mob: 1085
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 219
+        xs: 7
+        'y': 211
+        ys: 5
+      mob: 1085
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 285
+        xs: 5
+        'y': 230
+        ys: 4
+      mob: 1085
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 247
+        xs: 9
+        'y': 118
+        ys: 4
+      mob: 1085
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 96
+        xs: 5
+        'y': 156
+        ys: 5
+      mob: 1084
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 170
+        xs: 5
+        'y': 220
+        ys: 4
+      mob: 1084
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 212
+        xs: 5
+        'y': 328
+        ys: 4
+      mob: 1084
+      respawn_time: 300000
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 231
+        xs: 3
+        'y': 151
+        ys: 3
+      mob: 1084
+      respawn_time: 300000
+      respawn_variance: 0

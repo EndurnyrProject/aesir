@@ -1,0 +1,39 @@
+---
+- map: man_fild01
+  spawns:
+    - amount: 105
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1988
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1989
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1999
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1987
+      respawn_time: 0
+      respawn_variance: 0

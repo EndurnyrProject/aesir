@@ -1,0 +1,49 @@
+---
+- id: mjol01-1
+  map: mjolnir_02
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_01
+    x: 374
+    'y': 256
+  x: 28
+  xs: 2
+  'y': 258
+  ys: 2
+- id: mjol02
+  map: mjolnir_02
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_03
+    x: 24
+    'y': 258
+  x: 326
+  xs: 1
+  'y': 289
+  ys: 1
+- id: mjol03
+  map: mjolnir_02
+  name: ''
+  sprite: 45
+  to:
+    map: mjolnir_06
+    x: 366
+    'y': 380
+  x: 361
+  xs: 4
+  'y': 18
+  ys: 2
+- id: mjol013
+  map: mjolnir_02
+  name: ''
+  sprite: 45
+  to:
+    map: mjo_dun01
+    x: 52
+    'y': 17
+  x: 79
+  xs: 2
+  'y': 365
+  ys: 1

@@ -1,0 +1,109 @@
+---
+- id: sphx06-1
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx4
+    x: 120
+    'y': 116
+  x: 100
+  xs: 4
+  'y': 96
+  ys: 2
+- id: sphx07
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 189
+    'y': 181
+  x: 11
+  xs: 3
+  'y': 16
+  ys: 1
+- id: sphx07-1
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 11
+    'y': 18
+  x: 11
+  xs: 3
+  'y': 183
+  ys: 1
+- id: sphx08-1
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 11
+    'y': 181
+  x: 189
+  xs: 3
+  'y': 16
+  ys: 1
+- id: sphx08-2
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 181
+    'y': 188
+  x: 16
+  xs: 1
+  'y': 188
+  ys: 3
+- id: sphx08-3
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 181
+    'y': 10
+  x: 16
+  xs: 1
+  'y': 10
+  ys: 3
+- id: sphx08-4
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 18
+    'y': 188
+  x: 183
+  xs: 1
+  'y': 10
+  ys: 3
+- id: sphx08-5
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 18
+    'y': 10
+  x: 183
+  xs: 1
+  'y': 188
+  ys: 3
+- id: sphx08-6
+  map: in_sphinx5
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx5
+    x: 189
+    'y': 18
+  x: 189
+  xs: 3
+  'y': 183
+  ys: 1

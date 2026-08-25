@@ -1,0 +1,73 @@
+---
+- id: aldeg01_alde-a
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldebaran
+    x: 39
+    'y': 140
+  x: 284
+  xs: 1
+  'y': 160
+  ys: 1
+- id: aldeg-1_aldeg-1-1
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldeg_cas01
+    x: 34
+    'y': 248
+  x: 48
+  xs: 1
+  'y': 79
+  ys: 1
+- id: aldeg-2_aldeg-2-1
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldeg_cas02
+    x: 88
+    'y': 163
+  x: 95
+  xs: 1
+  'y': 253
+  ys: 1
+- id: aldeg-3_aldeg-3-1
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldeg_cas03
+    x: 114
+    'y': 286
+  x: 142
+  xs: 1
+  'y': 81
+  ys: 1
+- id: aldeg-4_aldeg-4-1
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldeg_cas04
+    x: 149
+    'y': 17
+  x: 243
+  xs: 1
+  'y': 242
+  ys: 1
+- id: aldeg-5_aldeg-5-1
+  map: alde_gld
+  name: ''
+  sprite: 45
+  to:
+    map: aldeg_cas05
+    x: 216
+    'y': 103
+  x: 259
+  xs: 1
+  'y': 90
+  ys: 1

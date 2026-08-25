@@ -1,0 +1,129 @@
+---
+- map: gef_fild09
+  spawns:
+    - amount: 60
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1094
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1031
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1077
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 51
+        xs: 0
+        'y': 43
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 125
+        xs: 0
+        'y': 53
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 148
+        xs: 0
+        'y': 74
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 184
+        xs: 0
+        'y': 66
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 207
+        xs: 0
+        'y': 54
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 245
+        xs: 0
+        'y': 62
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 268
+        xs: 0
+        'y': 45
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 258
+        xs: 0
+        'y': 24
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 325
+        xs: 0
+        'y': 36
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 1
+      area:
+        x: 344
+        xs: 0
+        'y': 51
+        ys: 0
+      mob: 1085
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 3
+      area:
+        x: 277
+        xs: 5
+        'y': 201
+        ys: 5
+      mob: 1079
+      respawn_time: 900000
+      respawn_variance: 450000

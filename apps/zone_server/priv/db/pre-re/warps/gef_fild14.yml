@@ -1,0 +1,25 @@
+---
+- id: geff17-1
+  map: gef_fild14
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild13
+    x: 200
+    'y': 29
+  x: 180
+  xs: 1
+  'y': 360
+  ys: 1
+- id: geff19
+  map: gef_fild14
+  name: ''
+  sprite: 45
+  to:
+    map: gef_fild10
+    x: 31
+    'y': 219
+  x: 371
+  xs: 1
+  'y': 219
+  ys: 1

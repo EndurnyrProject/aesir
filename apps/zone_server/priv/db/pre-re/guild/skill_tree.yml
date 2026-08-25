@@ -1,0 +1,91 @@
+---
+- id: 10000
+  name: GD_APPROVAL
+  max_level: 1
+  prerequisites: []
+- id: 10001
+  name: GD_KAFRACONTRACT
+  max_level: 1
+  prerequisites:
+    - id: 10000
+      level: 1
+- id: 10002
+  name: GD_GUARDRESEARCH
+  max_level: 1
+  prerequisites:
+    - id: 10000
+      level: 1
+- id: 10003
+  name: GD_GUARDUP
+  max_level: 3
+  prerequisites: []
+- id: 10004
+  name: GD_EXTENSION
+  max_level: 10
+  prerequisites: []
+- id: 10005
+  name: GD_GLORYGUILD
+  max_level: 0
+  prerequisites: []
+- id: 10006
+  name: GD_LEADERSHIP
+  max_level: 5
+  prerequisites: []
+- id: 10007
+  name: GD_GLORYWOUNDS
+  max_level: 5
+  prerequisites: []
+- id: 10008
+  name: GD_SOULCOLD
+  max_level: 5
+  prerequisites:
+    - id: 10007
+      level: 1
+- id: 10009
+  name: GD_HAWKEYES
+  max_level: 5
+  prerequisites:
+    - id: 10006
+      level: 1
+- id: 10010
+  name: GD_BATTLEORDER
+  max_level: 1
+  prerequisites:
+    - id: 10000
+      level: 1
+    - id: 10004
+      level: 2
+- id: 10011
+  name: GD_REGENERATION
+  max_level: 3
+  prerequisites:
+    - id: 10000
+      level: 1
+    - id: 10004
+      level: 5
+    - id: 10010
+      level: 1
+- id: 10012
+  name: GD_RESTORE
+  max_level: 1
+  prerequisites:
+    - id: 10011
+      level: 1
+- id: 10013
+  name: GD_EMERGENCYCALL
+  max_level: 1
+  prerequisites:
+    - id: 10000
+      level: 1
+    - id: 10002
+      level: 1
+    - id: 10004
+      level: 5
+    - id: 10010
+      level: 1
+    - id: 10011
+      level: 1
+- id: 10014
+  name: GD_DEVELOPMENT
+  max_level: 1
+  prerequisites: []

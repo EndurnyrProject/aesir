@@ -1,0 +1,25 @@
+---
+- id: sphx01-1
+  map: in_sphinx2
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx1
+    x: 80
+    'y': 189
+  x: 149
+  xs: 3
+  'y': 77
+  ys: 2
+- id: sphx02
+  map: in_sphinx2
+  name: ''
+  sprite: 45
+  to:
+    map: in_sphinx3
+    x: 210
+    'y': 54
+  x: 276
+  xs: 1
+  'y': 272
+  ys: 3

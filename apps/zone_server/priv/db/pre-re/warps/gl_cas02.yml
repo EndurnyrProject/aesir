@@ -1,0 +1,25 @@
+---
+- id: gl10-1
+  map: gl_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: gl_cas01
+    x: 200
+    'y': 160
+  x: 104
+  xs: 1
+  'y': 15
+  ys: 1
+- id: gl8-1
+  map: gl_cas02
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 199
+    'y': 325
+  x: 104
+  xs: 1
+  'y': 193
+  ys: 1

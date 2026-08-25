@@ -1,0 +1,57 @@
+---
+- map: pay_dun01
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1111
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1116
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1028
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1016
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 7
+      area:
+        x: 235
+        xs: 10
+        'y': 54
+        ys: 10
+      mob: 1084
+      respawn_time: 900000
+      respawn_variance: 450000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 180000
+      respawn_variance: 90000

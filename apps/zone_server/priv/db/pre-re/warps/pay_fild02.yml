@@ -1,0 +1,61 @@
+---
+- id: payf04
+  map: pay_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild05
+    x: 127
+    'y': 375
+  x: 134
+  xs: 5
+  'y': 16
+  ys: 2
+- id: payf06
+  map: pay_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild11
+    x: 294
+    'y': 135
+  x: 16
+  xs: 2
+  'y': 175
+  ys: 4
+- id: payf02-1
+  map: pay_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild01
+    x: 354
+    'y': 18
+  x: 167
+  xs: 20
+  'y': 390
+  ys: 3
+- id: payf07
+  map: pay_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild03
+    x: 20
+    'y': 110
+  x: 284
+  xs: 2
+  'y': 108
+  ys: 7
+- id: payf01-1
+  map: pay_fild02
+  name: ''
+  sprite: 45
+  to:
+    map: pay_fild01
+    x: 278
+    'y': 18
+  x: 83
+  xs: 13
+  'y': 386
+  ys: 2

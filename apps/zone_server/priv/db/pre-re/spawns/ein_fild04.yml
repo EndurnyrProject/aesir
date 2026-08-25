@@ -1,0 +1,111 @@
+---
+- map: ein_fild04
+  spawns:
+    - amount: 50
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1613
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1368
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1628
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 200
+        xs: 125
+        'y': 295
+        ys: 65
+      mob: 1368
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 5
+      area:
+        x: 125
+        xs: 40
+        'y': 135
+        ys: 40
+      mob: 1368
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 5
+      area:
+        x: 260
+        xs: 20
+        'y': 70
+        ys: 30
+      mob: 1368
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 10
+      area:
+        x: 285
+        xs: 35
+        'y': 240
+        ys: 90
+      mob: 1121
+      respawn_time: 3600000
+      respawn_variance: 3000000
+    - amount: 15
+      area:
+        x: 106
+        xs: 60
+        'y': 284
+        ys: 60
+      mob: 1628
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 106
+        xs: 60
+        'y': 284
+        ys: 60
+      mob: 1614
+      respawn_time: 3600000
+      respawn_variance: 3000000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1080
+      respawn_time: 60000
+      respawn_variance: 30000

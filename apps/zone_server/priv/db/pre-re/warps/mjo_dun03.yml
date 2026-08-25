@@ -1,0 +1,25 @@
+---
+- id: mjod02-1
+  map: mjo_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: mjo_dun02
+    x: 31
+    'y': 23
+  x: 302
+  xs: 1
+  'y': 264
+  ys: 1
+- id: mjod03-1
+  map: mjo_dun03
+  name: ''
+  sprite: 45
+  to:
+    map: mjo_dun02
+    x: 39
+    'y': 23
+  x: 308
+  xs: 1
+  'y': 264
+  ys: 1

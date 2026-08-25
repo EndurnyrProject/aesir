@@ -1,0 +1,37 @@
+---
+- id: gl22
+  map: gl_chyard
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew02
+    x: 29
+    'y': 270
+  x: 12
+  xs: 1
+  'y': 149
+  ys: 1
+- id: gl12-1
+  map: gl_chyard
+  name: ''
+  sprite: 45
+  to:
+    map: gl_church
+    x: 295
+    'y': 46
+  x: 147
+  xs: 1
+  'y': 12
+  ys: 1
+- id: gl11-1
+  map: gl_chyard
+  name: ''
+  sprite: 45
+  to:
+    map: gl_church
+    x: 16
+    'y': 295
+  x: 147
+  xs: 1
+  'y': 287
+  ys: 1

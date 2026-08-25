@@ -1,0 +1,25 @@
+---
+- id: ein050a
+  map: lhz_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: lhz_fild02
+    x: 164
+    'y': 39
+  x: 158
+  xs: 1
+  'y': 349
+  ys: 1
+- id: ein051
+  map: lhz_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild08
+    x: 25
+    'y': 275
+  x: 363
+  xs: 1
+  'y': 283
+  ys: 1

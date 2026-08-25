@@ -1,0 +1,49 @@
+---
+- id: iz01
+  map: izlude
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 65
+    'y': 87
+  x: 109
+  xs: 3
+  'y': 151
+  ys: 3
+- id: iz02
+  map: izlude
+  name: ''
+  sprite: 45
+  to:
+    map: izlude_in
+    x: 116
+    'y': 49
+  x: 148
+  xs: 2
+  'y': 148
+  ys: 2
+- id: lizair2
+  map: izlude
+  name: ''
+  sprite: 45
+  to:
+    map: izlude
+    x: 145
+    'y': 40
+  x: 176
+  xs: 1
+  'y': 56
+  ys: 1
+- id: welcome_arena
+  map: izlude
+  name: ''
+  sprite: 45
+  to:
+    map: arena_room
+    x: 100
+    'y': 30
+  x: 128
+  xs: 1
+  'y': 226
+  ys: 1

@@ -1,0 +1,37 @@
+---
+- id: hugel001a
+  map: ein_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild04
+    x: 336
+    'y': 292
+  x: 76
+  xs: 1
+  'y': 294
+  ys: 1
+- id: hugel002
+  map: ein_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild06
+    x: 47
+    'y': 166
+  x: 376
+  xs: 1
+  'y': 183
+  ys: 1
+- id: hugel006a
+  map: ein_fild05
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild02
+    x: 170
+    'y': 37
+  x: 172
+  xs: 1
+  'y': 371
+  ys: 1

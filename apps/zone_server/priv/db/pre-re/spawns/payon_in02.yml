@@ -1,0 +1,12 @@
+---
+- map: payon_in02
+  spawns:
+    - amount: 7
+      area:
+        x: 23
+        xs: 5
+        'y': 68
+        ys: 5
+      mob: 1051
+      respawn_time: 1200000
+      respawn_variance: 600000

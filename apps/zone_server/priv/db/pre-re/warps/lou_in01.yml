@@ -1,0 +1,61 @@
+---
+- id: lou_palace1-2
+  map: lou_in01
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 218
+    'y': 252
+  x: 101
+  xs: 1
+  'y': 119
+  ys: 1
+- id: lou_palace2-1
+  map: lou_in01
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in01
+    x: 122
+    'y': 141
+  x: 153
+  xs: 1
+  'y': 141
+  ys: 1
+- id: lou_palace2-2
+  map: lou_in01
+  name: ''
+  sprite: 45
+  to:
+    map: lou_in01
+    x: 156
+    'y': 141
+  x: 125
+  xs: 1
+  'y': 141
+  ys: 1
+- id: lou_tower1-2
+  map: lou_in01
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 136
+    'y': 245
+  x: 28
+  xs: 1
+  'y': 19
+  ys: 1
+- id: lou_Towerexit
+  map: lou_in01
+  name: ''
+  sprite: 45
+  to:
+    map: louyang
+    x: 90
+    'y': 254
+  x: 14
+  xs: 1
+  'y': 18
+  ys: 1

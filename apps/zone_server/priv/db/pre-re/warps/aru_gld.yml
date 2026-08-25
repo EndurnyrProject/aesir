@@ -1,0 +1,49 @@
+---
+- id: arug002
+  map: aru_gld
+  name: ''
+  sprite: 45
+  to:
+    map: ve_fild02
+    x: 191
+    'y': 24
+  x: 195
+  xs: 1
+  'y': 363
+  ys: 1
+- id: arug102
+  map: aru_gld
+  name: ''
+  sprite: 45
+  to:
+    map: arug_cas01
+    x: 275
+    'y': 93
+  x: 155
+  xs: 1
+  'y': 274
+  ys: 1
+- id: arug202
+  map: aru_gld
+  name: ''
+  sprite: 45
+  to:
+    map: arug_cas02
+    x: 139
+    'y': 31
+  x: 78
+  xs: 1
+  'y': 47
+  ys: 1
+- id: arug302
+  map: aru_gld
+  name: ''
+  sprite: 45
+  to:
+    map: arug_cas03
+    x: 141
+    'y': 45
+  x: 68
+  xs: 1
+  'y': 150
+  ys: 1

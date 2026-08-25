@@ -1,0 +1,41 @@
+---
+- dir: 3
+  discount: true
+  id: Chivas Lugal
+  items:
+    - id: 13150
+      price:
+    - id: 13102
+      price:
+    - id: 13151
+      price:
+    - id: 13154
+      price:
+    - id: 13155
+      price:
+    - id: 13163
+      price:
+    - id: 13165
+      price:
+    - id: 13168
+      price:
+  map: que_ng
+  name: Chivas Lugal
+  sprite: 900
+  x: 179
+  'y': 91
+- dir: 3
+  discount: true
+  id: Johnny Waiker
+  items:
+    - id: 13200
+      price:
+    - id: 13201
+      price:
+    - id: 13202
+      price:
+  map: que_ng
+  name: Johnny Waiker
+  sprite: 900
+  x: 180
+  'y': 79

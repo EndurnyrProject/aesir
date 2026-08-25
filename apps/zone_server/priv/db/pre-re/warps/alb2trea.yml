@@ -1,0 +1,13 @@
+---
+- id: alb002
+  map: alb2trea
+  name: ''
+  sprite: 45
+  to:
+    map: treasure01
+    x: 69
+    'y': 24
+  x: 88
+  xs: 1
+  'y': 111
+  ys: 1

@@ -1,0 +1,13 @@
+---
+- id: man_fild03-1
+  map: man_fild03
+  name: ''
+  sprite: 45
+  to:
+    map: man_fild01
+    x: 103
+    'y': 58
+  x: 84
+  xs: 1
+  'y': 369
+  ys: 1

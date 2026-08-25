@@ -1,0 +1,25 @@
+---
+- id: gl23-1
+  map: gl_step
+  name: ''
+  sprite: 45
+  to:
+    map: gl_sew02
+    x: 285
+    'y': 158
+  x: 120
+  xs: 1
+  'y': 124
+  ys: 1
+- id: gl1-1
+  map: gl_step
+  name: ''
+  sprite: 45
+  to:
+    map: glast_01
+    x: 54
+    'y': 108
+  x: 8
+  xs: 1
+  'y': 7
+  ys: 1

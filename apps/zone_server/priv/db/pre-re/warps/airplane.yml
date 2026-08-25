@@ -1,0 +1,49 @@
+---
+- id: air_1wp01
+  map: airplane
+  name: ''
+  sprite: 45
+  to:
+    map: airplane
+    x: 91
+    'y': 67
+  x: 254
+  xs: 1
+  'y': 54
+  ys: 1
+- id: air_1wp01a
+  map: airplane
+  name: ''
+  sprite: 45
+  to:
+    map: airplane
+    x: 250
+    'y': 54
+  x: 87
+  xs: 1
+  'y': 67
+  ys: 1
+- id: air_1wp02
+  map: airplane
+  name: ''
+  sprite: 45
+  to:
+    map: airplane
+    x: 239
+    'y': 160
+  x: 208
+  xs: 1
+  'y': 53
+  ys: 1
+- id: air_1wp02a
+  map: airplane
+  name: ''
+  sprite: 45
+  to:
+    map: airplane
+    x: 214
+    'y': 54
+  x: 245
+  xs: 1
+  'y': 160
+  ys: 1

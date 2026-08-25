@@ -1,0 +1,30 @@
+---
+- map: gl_step
+  spawns:
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1191
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1276
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 100
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1263
+      respawn_time: 120000
+      respawn_variance: 0

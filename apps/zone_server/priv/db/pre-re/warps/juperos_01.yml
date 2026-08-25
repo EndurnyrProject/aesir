@@ -1,0 +1,13 @@
+---
+- id: jupwrp04
+  map: juperos_01
+  name: ''
+  sprite: 45
+  to:
+    map: jupe_cave
+    x: 29
+    'y': 52
+  x: 50
+  xs: 1
+  'y': 250
+  ys: 1

@@ -1,0 +1,138 @@
+---
+- map: pay_dun04
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1110
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1129
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 120
+        xs: 0
+        'y': 115
+        ys: 0
+      mob: 1150
+      respawn_time: 3600000
+      respawn_variance: 600000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1277
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1016
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1180
+      respawn_time: 60000
+      respawn_variance: 30000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1290
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1301
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 120
+        xs: 0
+        'y': 115
+        ys: 0
+      mob: 1307
+      respawn_time: 3600000
+      respawn_variance: 7200000
+    - amount: 1
+      area:
+        x: 120
+        xs: 10
+        'y': 120
+        ys: 10
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 28
+        xs: 5
+        'y': 110
+        ys: 5
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1078
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 2
+      area:
+        x: 107
+        xs: 5
+        'y': 206
+        ys: 5
+      mob: 1082
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 2
+      area:
+        x: 28
+        xs: 10
+        'y': 110
+        ys: 10
+      mob: 1082
+      respawn_time: 180000
+      respawn_variance: 90000
+    - amount: 2
+      area:
+        x: 190
+        xs: 5
+        'y': 207
+        ys: 5
+      mob: 1082
+      respawn_time: 180000
+      respawn_variance: 90000

@@ -1,0 +1,49 @@
+---
+- id: 16_to_guild
+  map: moc_fild16
+  name: ''
+  sprite: 45
+  to:
+    map: in_moc_16
+    x: 18
+    'y': 11
+  x: 205
+  xs: 2
+  'y': 296
+  ys: 2
+- id: mocf26-1
+  map: moc_fild16
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild20
+    x: 197
+    'y': 24
+  x: 124
+  xs: 5
+  'y': 381
+  ys: 2
+- id: mocf28
+  map: moc_fild16
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild17
+    x: 366
+    'y': 272
+  x: 16
+  xs: 2
+  'y': 179
+  ys: 6
+- id: mocf27-1
+  map: moc_fild16
+  name: ''
+  sprite: 45
+  to:
+    map: moc_fild20
+    x: 197
+    'y': 24
+  x: 333
+  xs: 4
+  'y': 380
+  ys: 2

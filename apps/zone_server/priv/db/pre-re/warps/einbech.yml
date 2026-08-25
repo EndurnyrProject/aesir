@@ -1,0 +1,97 @@
+---
+- id: eib_wp01
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 190
+    'y': 35
+  x: 177
+  xs: 1
+  'y': 136
+  ys: 1
+- id: eib_hu01
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 190
+    'y': 99
+  x: 207
+  xs: 1
+  'y': 135
+  ys: 1
+- id: eib_hu02
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 205
+    'y': 86
+  x: 214
+  xs: 1
+  'y': 121
+  ys: 1
+- id: eib_b01
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 285
+    'y': 89
+  x: 154
+  xs: 1
+  'y': 106
+  ys: 1
+- id: eib_b02
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 268
+    'y': 104
+  x: 145
+  xs: 1
+  'y': 112
+  ys: 1
+- id: eib_js01
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_in01
+    x: 148
+    'y': 153
+  x: 256
+  xs: 1
+  'y': 109
+  ys: 1
+- id: eib_d01
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_dun01
+    x: 22
+    'y': 14
+  x: 138
+  xs: 1
+  'y': 252
+  ys: 1
+- id: ein_fd03
+  map: einbech
+  name: ''
+  sprite: 45
+  to:
+    map: ein_fild09
+    x: 74
+    'y': 350
+  x: 62
+  xs: 1
+  'y': 29
+  ys: 1

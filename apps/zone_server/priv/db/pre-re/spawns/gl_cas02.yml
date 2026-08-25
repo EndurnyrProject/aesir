@@ -1,0 +1,291 @@
+---
+- map: gl_cas02
+  spawns:
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1208
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1163
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1195
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 19
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1276
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1283
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 3
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1219
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 3
+      area:
+        x: 193
+        xs: 5
+        'y': 167
+        ys: 5
+      mob: 1163
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 3
+      area:
+        x: 193
+        xs: 5
+        'y': 135
+        ys: 5
+      mob: 1163
+      respawn_time: 300000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 104
+        xs: 5
+        'y': 145
+        ys: 5
+      mob: 1203
+      respawn_time: 7200000
+      respawn_variance: 3600000
+    - amount: 1
+      area:
+        x: 102
+        xs: 0
+        'y': 180
+        ys: 0
+      mob: 1185
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 105
+        xs: 0
+        'y': 180
+        ys: 0
+      mob: 1185
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 182
+        xs: 3
+        'y': 12
+        ys: 3
+      mob: 1283
+      respawn_time: 3600000
+      respawn_variance: 1800000
+    - amount: 4
+      area:
+        x: 185
+        xs: 8
+        'y': 11
+        ys: 8
+      mob: 1195
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 4
+      area:
+        x: 174
+        xs: 8
+        'y': 11
+        ys: 8
+      mob: 1117
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 1
+      area:
+        x: 104
+        xs: 4
+        'y': 38
+        ys: 4
+      mob: 1219
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 24
+        xs: 4
+        'y': 35
+        ys: 4
+      mob: 1219
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 15
+      area:
+        x: 46
+        xs: 15
+        'y': 124
+        ys: 15
+      mob: 1195
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 5
+      area:
+        x: 16
+        xs: 10
+        'y': 186
+        ys: 10
+      mob: 1117
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 133
+        xs: 3
+        'y': 83
+        ys: 3
+      mob: 1132
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 45
+        xs: 3
+        'y': 177
+        ys: 3
+      mob: 1132
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 182
+        xs: 3
+        'y': 65
+        ys: 3
+      mob: 1132
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 173
+        xs: 3
+        'y': 127
+        ys: 3
+      mob: 1132
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 173
+        xs: 3
+        'y': 167
+        ys: 3
+      mob: 1132
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 93
+        xs: 3
+        'y': 177
+        ys: 3
+      mob: 1219
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 115
+        xs: 3
+        'y': 177
+        ys: 3
+      mob: 1219
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 1
+      area:
+        x: 83
+        xs: 2
+        'y': 84
+        ys: 2
+      mob: 1191
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 83
+        xs: 2
+        'y': 80
+        ys: 2
+      mob: 1191
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1204
+      respawn_time: 7200000
+      respawn_variance: 3600000
+    - amount: 1
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1275
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 189
+        xs: 1
+        'y': 20
+        ys: 1
+      mob: 1132
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 190
+        xs: 1
+        'y': 23
+        ys: 1
+      mob: 1208
+      respawn_time: 360000
+      respawn_variance: 180000
+    - amount: 1
+      area:
+        x: 190
+        xs: 1
+        'y': 38
+        ys: 1
+      mob: 1276
+      respawn_time: 360000
+      respawn_variance: 180000

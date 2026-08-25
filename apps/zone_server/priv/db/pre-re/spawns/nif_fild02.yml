@@ -1,0 +1,138 @@
+---
+- map: nif_fild02
+  spawns:
+    - amount: 10
+      area:
+        x: 366
+        xs: 15
+        'y': 236
+        ys: 15
+      mob: 1509
+      respawn_time: 360000
+      respawn_variance: 150000
+    - amount: 1
+      area:
+        x: 356
+        xs: 10
+        'y': 139
+        ys: 10
+      mob: 1507
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 1
+      area:
+        x: 144
+        xs: 10
+        'y': 232
+        ys: 10
+      mob: 1507
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 1
+      area:
+        x: 118
+        xs: 15
+        'y': 282
+        ys: 15
+      mob: 1507
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 1
+      area:
+        x: 62
+        xs: 15
+        'y': 327
+        ys: 15
+      mob: 1507
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 7
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1507
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 2
+      area:
+        x: 114
+        xs: 15
+        'y': 136
+        ys: 15
+      mob: 1505
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 4
+      area:
+        x: 52
+        xs: 10
+        'y': 115
+        ys: 10
+      mob: 1510
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 5
+      area:
+        x: 84
+        xs: 15
+        'y': 276
+        ys: 15
+      mob: 1503
+      respawn_time: 1200000
+      respawn_variance: 600000
+    - amount: 5
+      area:
+        x: 352
+        xs: 15
+        'y': 273
+        ys: 15
+      mob: 1503
+      respawn_time: 300000
+      respawn_variance: 150000
+    - amount: 19
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1505
+      respawn_time: 120000
+      respawn_variance: 60000
+    - amount: 5
+      area:
+        x: 352
+        xs: 15
+        'y': 273
+        ys: 15
+      mob: 1504
+      respawn_time: 600000
+      respawn_variance: 300000
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1504
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 6
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1510
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1503
+      respawn_time: 0
+      respawn_variance: 0

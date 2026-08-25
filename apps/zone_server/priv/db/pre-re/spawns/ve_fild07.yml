@@ -1,0 +1,93 @@
+---
+- map: ve_fild07
+  spawns:
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1784
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 64
+        xs: 35
+        'y': 126
+        ys: 55
+      mob: 1266
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 256
+        xs: 75
+        'y': 76
+        ys: 37
+      mob: 1266
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 3
+      area:
+        x: 64
+        xs: 35
+        'y': 126
+        ys: 55
+      mob: 1074
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 256
+        xs: 75
+        'y': 76
+        ys: 37
+      mob: 1074
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 24
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1254
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 4
+      area:
+        x: 64
+        xs: 35
+        'y': 126
+        ys: 55
+      mob: 1254
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 7
+      area:
+        x: 256
+        xs: 75
+        'y': 76
+        ys: 37
+      mob: 1254
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1037
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1082
+      respawn_time: 600000
+      respawn_variance: 0

@@ -1,0 +1,25 @@
+---
+- id: orc02-1
+  map: orcsdun02
+  name: ''
+  sprite: 45
+  to:
+    map: in_orcs01
+    x: 108
+    'y': 112
+  x: 180
+  xs: 2
+  'y': 15
+  ys: 1
+- id: orc03-1
+  map: orcsdun02
+  name: ''
+  sprite: 45
+  to:
+    map: orcsdun01
+    x: 183
+    'y': 11
+  x: 21
+  xs: 8
+  'y': 188
+  ys: 2

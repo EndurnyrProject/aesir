@@ -1,0 +1,75 @@
+---
+- map: prt_fild00
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1018
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 20
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1007
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1008
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 30
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1063
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 40
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1002
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 70
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1004
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 227
+        xs: 0
+        'y': 212
+        ys: 0
+      mob: 1083
+      respawn_time: 1800000
+      respawn_variance: 900000
+    - amount: 5
+      area:
+        x: 285
+        xs: 10
+        'y': 138
+        ys: 10
+      mob: 1080
+      respawn_time: 360000
+      respawn_variance: 180000

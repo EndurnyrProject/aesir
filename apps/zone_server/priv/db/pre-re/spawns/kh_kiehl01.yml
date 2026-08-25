@@ -1,0 +1,192 @@
+---
+- map: kh_kiehl01
+  spawns:
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1745
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 80
+        xs: 3
+        'y': 22
+        ys: 3
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 105
+        xs: 3
+        'y': 40
+        ys: 3
+      mob: 1746
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 105
+        xs: 3
+        'y': 40
+        ys: 3
+      mob: 1737
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 135
+        xs: 3
+        'y': 24
+        ys: 3
+      mob: 1739
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 173
+        xs: 3
+        'y': 90
+        ys: 3
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 156
+        xs: 3
+        'y': 101
+        ys: 3
+      mob: 1746
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 128
+        xs: 3
+        'y': 102
+        ys: 3
+      mob: 1739
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 128
+        xs: 3
+        'y': 102
+        ys: 3
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 37
+        xs: 3
+        'y': 110
+        ys: 3
+      mob: 1739
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 37
+        xs: 3
+        'y': 110
+        ys: 3
+      mob: 1735
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 32
+        xs: 3
+        'y': 124
+        ys: 3
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 67
+        xs: 5
+        'y': 171
+        ys: 5
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 67
+        xs: 5
+        'y': 171
+        ys: 5
+      mob: 1736
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 85
+        xs: 3
+        'y': 154
+        ys: 3
+      mob: 1739
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 85
+        xs: 3
+        'y': 154
+        ys: 3
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 106
+        xs: 3
+        'y': 154
+        ys: 3
+      mob: 1746
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 122
+        xs: 3
+        'y': 155
+        ys: 3
+      mob: 1740
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 122
+        xs: 3
+        'y': 155
+        ys: 3
+      mob: 1736
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 122
+        xs: 3
+        'y': 155
+        ys: 3
+      mob: 1739
+      respawn_time: 180000
+      respawn_variance: 120000
+    - amount: 1
+      area:
+        x: 122
+        xs: 3
+        'y': 155
+        ys: 3
+      mob: 1746
+      respawn_time: 180000
+      respawn_variance: 120000

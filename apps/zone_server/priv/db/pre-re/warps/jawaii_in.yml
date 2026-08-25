@@ -1,0 +1,49 @@
+---
+- id: jawaiiwarp001
+  map: jawaii_in
+  name: ''
+  sprite: 45
+  to:
+    map: jawaii
+    x: 115
+    'y': 172
+  x: 90
+  xs: 1
+  'y': 78
+  ys: 1
+- id: jawaiiwarp002
+  map: jawaii_in
+  name: ''
+  sprite: 45
+  to:
+    map: jawaii
+    x: 138
+    'y': 202
+  x: 113
+  xs: 1
+  'y': 61
+  ys: 1
+- id: jawaiiwarp003
+  map: jawaii_in
+  name: ''
+  sprite: 45
+  to:
+    map: jawaii
+    x: 111
+    'y': 199
+  x: 133
+  xs: 1
+  'y': 107
+  ys: 1
+- id: jawaiiwarp004
+  map: jawaii_in
+  name: ''
+  sprite: 45
+  to:
+    map: jawaii
+    x: 109
+    'y': 186
+  x: 88
+  xs: 1
+  'y': 117
+  ys: 1

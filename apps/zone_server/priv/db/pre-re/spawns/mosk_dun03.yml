@@ -1,0 +1,66 @@
+---
+- map: mosk_dun03
+  spawns:
+    - amount: 60
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1882
+      respawn_time: 10000
+      respawn_variance: 10000
+    - amount: 35
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1883
+      respawn_time: 20000
+      respawn_variance: 10000
+    - amount: 15
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1884
+      respawn_time: 20000
+      respawn_variance: 10000
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1081
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 10
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1082
+      respawn_time: 0
+      respawn_variance: 0
+    - amount: 5
+      area:
+        x: 0
+        xs: 0
+        'y': 0
+        ys: 0
+      mob: 1083
+      respawn_time: 10000
+      respawn_variance: 0
+    - amount: 1
+      area:
+        x: 207
+        xs: 5
+        'y': 221
+        ys: 5
+      mob: 1885
+      respawn_time: 7200000
+      respawn_variance: 600000

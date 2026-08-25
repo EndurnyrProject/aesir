@@ -1,0 +1,73 @@
+---
+- id: newjun05a
+  map: yuno_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild12
+    x: 195
+    'y': 371
+  x: 145
+  xs: 1
+  'y': 21
+  ys: 1
+- id: newjun08a
+  map: yuno_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild09
+    x: 21
+    'y': 194
+  x: 376
+  xs: 1
+  'y': 193
+  ys: 1
+- id: newjun09
+  map: yuno_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild07
+    x: 352
+    'y': 291
+  x: 20
+  xs: 1
+  'y': 278
+  ys: 1
+- id: newjun10
+  map: yuno_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild07
+    x: 358
+    'y': 72
+  x: 31
+  xs: 1
+  'y': 58
+  ys: 1
+- id: newjun12
+  map: yuno_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild02
+    x: 70
+    'y': 25
+  x: 74
+  xs: 1
+  'y': 376
+  ys: 1
+- id: newjun13
+  map: yuno_fild08
+  name: ''
+  sprite: 45
+  to:
+    map: yuno_fild02
+    x: 294
+    'y': 26
+  x: 286
+  xs: 1
+  'y': 386
+  ys: 1

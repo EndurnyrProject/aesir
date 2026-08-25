@@ -1,0 +1,25 @@
+---
+- id: moc_ant2-2
+  map: anthell02
+  name: ''
+  sprite: 45
+  to:
+    map: cmd_fild08
+    x: 344
+    'y': 82
+  x: 172
+  xs: 1
+  'y': 169
+  ys: 1
+- id: ant01-1
+  map: anthell02
+  name: ''
+  sprite: 45
+  to:
+    map: anthell01
+    x: 253
+    'y': 35
+  x: 32
+  xs: 2
+  'y': 267
+  ys: 2
