@@ -2,12 +2,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   use ExUnit.Case, async: false
 
   import Aesir.TestEtsSetup
+  import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Skill.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragi
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -16,8 +20,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
+  setup :verify_on_exit!
   setup :setup_ets_tables
+
+  setup do
+    Mimic.copy(UnitRegistry)
+    :ok
+  end
 
   defmodule DynamicCost do
     alias Aesir.ZoneServer.Mmo.Skill.Cost
@@ -187,6 +199,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       assert Caster.Player.cast_stats(caster, 29) == expected_player_cast_stats(caster, 29)
       refute Caster.Player.cast_stats(caster, 29) == Caster.Player.cast_stats(caster, 30)
     end
+
+    test "keeps equipment and Bragi early while Suffragium remains late" do
+      caster =
+        player(
+          equipment_modifiers: %{
+            {:skill_varcast_rate, 29} => -5,
+            varcast_rate: -10
+          }
+        )
+
+      stub(UnitRegistry, :get_unit_info, fn :player, 101 -> {:ok, %{stats: %{}}} end)
+      apply_classic_cast_statuses(:player, caster.character_id)
+
+      assert %{
+               varcast_reductions: [20, 20],
+               varcast_rate: -15,
+               classic_early_rate: -30,
+               classic_skill_rate: -5,
+               classic_late_reductions: [20]
+             } = Caster.Player.cast_stats(caster, 29)
+    end
   end
 
   describe "homunculus lifecycle" do
@@ -306,6 +339,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       assert Caster.Homunculus.cast_stats(caster, 8_001) ==
                expected_homunculus_cast_stats(caster)
     end
+
+    test "keeps Bragi early while Suffragium remains late for homunculi" do
+      caster = homunculus(dex: 20, int: 30)
+
+      stub(UnitRegistry, :get_unit_info, fn :homunculus, 301 -> {:ok, %{stats: %{}}} end)
+      apply_classic_cast_statuses(:homunculus, caster.world_gid)
+
+      assert %{
+               varcast_reductions: [20, 20],
+               varcast_rate: 0,
+               classic_early_rate: -20,
+               classic_skill_rate: 0,
+               classic_late_reductions: [20]
+             } = Caster.Homunculus.cast_stats(caster, 8_001)
+    end
   end
 
   test "mob adapter does not implement lifecycle" do
@@ -373,28 +421,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   defp expected_player_cast_stats(caster, skill_id) do
     base_stats = caster.stats.base_stats
 
+    {classic_status_early_rate, classic_late_reductions} =
+      classic_status_channels(:player, caster.character_id)
+
+    global_varcast_rate =
+      merged_modifier(:player, caster.character_id) + equip_modifier(caster, :varcast_rate)
+
+    classic_skill_rate = equip_modifier(caster, {:skill_varcast_rate, skill_id})
+    varcast_rate = global_varcast_rate + classic_skill_rate
+
     %{
       dex: base_stats.dex,
       int: base_stats.int,
       varcast_reductions: status_reductions(:player, caster.character_id),
-      varcast_rate:
-        merged_modifier(:player, caster.character_id) +
-          equip_modifier(caster, :varcast_rate) +
-          equip_modifier(caster, {:skill_varcast_rate, skill_id}),
+      varcast_rate: varcast_rate,
       fixed_cast: equip_modifier(caster, :fixed_cast),
       fixcast_rate:
         equip_modifier(caster, :fixcast_rate) +
-          equip_modifier(caster, {:skill_fixcast_rate, skill_id})
+          equip_modifier(caster, {:skill_fixcast_rate, skill_id}),
+      classic_early_rate: global_varcast_rate + classic_status_early_rate,
+      classic_skill_rate: classic_skill_rate,
+      classic_late_reductions: classic_late_reductions
     }
   end
 
   defp expected_homunculus_cast_stats(caster) do
+    varcast_rate = merged_modifier(:homunculus, caster.world_gid)
+
+    {classic_status_early_rate, classic_late_reductions} =
+      classic_status_channels(:homunculus, caster.world_gid)
+
     %{
       dex: max(caster.dex, 0),
       int: max(caster.int, 0),
       varcast_reductions: status_reductions(:homunculus, caster.world_gid),
-      varcast_rate: merged_modifier(:homunculus, caster.world_gid),
-      fixed_cast: 0
+      varcast_rate: varcast_rate,
+      fixed_cast: 0,
+      classic_early_rate: varcast_rate + classic_status_early_rate,
+      classic_skill_rate: 0,
+      classic_late_reductions: classic_late_reductions
     }
   end
 
@@ -409,6 +474,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
     end)
   end
 
+  defp classic_status_channels(unit_type, unit_id) do
+    unit_type
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.reduce({0, []}, fn entry, {early_rate, late} ->
+      case {entry.type, Map.get(entry.state || %{}, :cast_time_reduction)} do
+        {_type, nil} -> {early_rate, late}
+        {:sc_poembragi, reduction} -> {early_rate - reduction, late}
+        {_type, reduction} -> {early_rate, late ++ [reduction]}
+      end
+    end)
+  end
+
   defp merged_modifier(unit_type, unit_id) do
     unit_type
     |> ModifierCalculator.get_all_modifiers(unit_id)
@@ -418,6 +495,34 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
   defp equip_modifier(caster, key) do
     caster.stats.modifiers.equipment
     |> Map.get(key, 0)
+  end
+
+  defp apply_classic_cast_statuses(unit_type, unit_id) do
+    {:ok, bragi} =
+      PoemBragi.on_apply(
+        {unit_type, unit_id},
+        %StatusEntry{type: :sc_poembragi, val2: 20, val3: 0, state: %{}},
+        %{}
+      )
+
+    :ok =
+      StatusStorage.apply_status(unit_type, unit_id, :sc_poembragi,
+        val2: 20,
+        state: bragi.state
+      )
+
+    {:ok, suffragium} =
+      Suffragium.on_apply(
+        {unit_type, unit_id},
+        %StatusEntry{type: :sc_suffragium, val1: 3, state: %{}},
+        %{}
+      )
+
+    :ok =
+      StatusStorage.apply_status(unit_type, unit_id, :sc_suffragium,
+        val1: 3,
+        state: suffragium.state
+      )
   end
 
   defp homunculus(overrides \\ []) do

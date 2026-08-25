@@ -246,18 +246,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   def cast_stats(caster, skill_id) do
     base_stats = caster.stats.base_stats
 
+    {varcast_reductions, classic_status_early_rate, classic_late_reductions} =
+      cast_status_channels(caster.character_id)
+
+    global_varcast_rate =
+      merged_modifier(caster.character_id, :varcast_rate) +
+        equip_modifier(caster, :varcast_rate)
+
+    classic_early_rate = global_varcast_rate + classic_status_early_rate
+    classic_skill_rate = equip_modifier(caster, {:skill_varcast_rate, skill_id})
+    varcast_rate = global_varcast_rate + classic_skill_rate
+
     %{
       dex: base_stats.dex,
       int: base_stats.int,
-      varcast_reductions: status_reductions(caster.character_id, :cast_time_reduction),
-      varcast_rate:
-        merged_modifier(caster.character_id, :varcast_rate) +
-          equip_modifier(caster, :varcast_rate) +
-          equip_modifier(caster, {:skill_varcast_rate, skill_id}),
+      varcast_reductions: varcast_reductions,
+      varcast_rate: varcast_rate,
       fixed_cast: equip_modifier(caster, :fixed_cast),
       fixcast_rate:
         equip_modifier(caster, :fixcast_rate) +
-          equip_modifier(caster, {:skill_fixcast_rate, skill_id})
+          equip_modifier(caster, {:skill_fixcast_rate, skill_id}),
+      classic_early_rate: classic_early_rate,
+      classic_skill_rate: classic_skill_rate,
+      classic_late_reductions: classic_late_reductions
     }
   end
 
@@ -369,15 +380,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
     }
   end
 
-  defp status_reductions(character_id, state_key) do
-    :player
-    |> StatusStorage.get_unit_statuses(character_id)
-    |> Enum.flat_map(fn entry ->
-      case Map.get(entry.state || %{}, state_key) do
-        nil -> []
-        value -> [value]
-      end
-    end)
+  defp cast_status_channels(character_id) do
+    {renewal, classic_early_rate, classic_late} =
+      :player
+      |> StatusStorage.get_unit_statuses(character_id)
+      |> Enum.reduce({[], 0, []}, fn entry, {renewal, early_rate, late} ->
+        case {entry.type, Map.get(entry.state || %{}, :cast_time_reduction)} do
+          {_type, nil} ->
+            {renewal, early_rate, late}
+
+          {:sc_poembragi, reduction} ->
+            {[reduction | renewal], early_rate - reduction, late}
+
+          {:sc_suffragium, reduction} ->
+            {[reduction | renewal], early_rate, [reduction | late]}
+
+          {_type, reduction} ->
+            {[reduction | renewal], early_rate, [reduction | late]}
+        end
+      end)
+
+    {Enum.reverse(renewal), classic_early_rate, Enum.reverse(classic_late)}
   end
 
   defp merged_modifier(character_id, key) do

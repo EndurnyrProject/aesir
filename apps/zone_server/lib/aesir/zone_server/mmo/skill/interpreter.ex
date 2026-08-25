@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   @moduledoc """
   Orchestrates a skill cast across two phases.
 
-  `begin_cast/4` runs the full validation chain and computes the renewal cast
-  time; a zero-cast skill resolves immediately, a timed skill returns a
+  `begin_cast/4` runs the full validation chain and computes the active mode's
+  cast time; a zero-cast skill resolves immediately, a timed skill returns a
   `cast_info` for the caller to schedule and leaves the game state untouched
   (no SP deducted, no cooldown set). `complete_cast/4` re-validates the target,
   re-checks SP, runs the behavior, then deducts SP, sets the cooldown, and arms
@@ -109,13 +109,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   otherwise returns `{:casting, gs, cast_info}` with `gs` unchanged so the
   caller can schedule the cast.
 
-  Variable-cast reduction sums the caster's status-sourced `:cast_time_reduction`
-  values (Suffragium, Bragi) and passes the total into `CastTime` as a plain
-  integer, keeping `CastTime` pure. The additive `varcast_rate` channel folds the
-  caster's status `:varcast_rate` with the per-skill equipment
-  `{:skill_varcast_rate, id}` bonus (items carry negatives) at this single call
-  site, so `CastTime` never reads state. The caster's equipment `:fixed_cast`
-  bonus is passed the same way: a flat millisecond delta on the fixed portion.
+  Caster adapters pass plain cast inputs so `CastTime` never reads state. They
+  preserve Renewal's status-sourced `varcast_reductions` and additive
+  `varcast_rate` channels while also carrying classic source-aware channels:
+  equipment/global rates combine with Bragi, the per-skill rate remains a
+  separate early modifier, and both apply before classic's first integer
+  truncation. Suffragium remains a late status reduction. The
+  caster's equipment `fixed_cast` bonus remains a flat millisecond delta on
+  Renewal's fixed portion.
 
   NOTE: cast-time reduction uses base DEX/INT only; effective/buffed DEX/INT is a
   documented later refinement.

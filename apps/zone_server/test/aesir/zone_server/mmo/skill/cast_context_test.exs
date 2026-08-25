@@ -39,7 +39,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
              varcast_reductions: [],
              varcast_rate: 0,
              fixed_cast: 0,
-             fixcast_rate: 0
+             fixcast_rate: 0,
+             classic_early_rate: 0,
+             classic_skill_rate: 0,
+             classic_late_reductions: []
            }
   end
 
@@ -67,7 +70,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastContextTest do
              int: 18,
              varcast_reductions: [],
              varcast_rate: 0,
-             fixed_cast: 0
+             fixed_cast: 0,
+             classic_early_rate: 0,
+             classic_skill_rate: 0,
+             classic_late_reductions: []
            }
 
     assert Map.delete(begin_context, :phase) == Map.delete(completion_context, :phase)

@@ -155,12 +155,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
 
   @impl true
   def cast_stats(caster, _skill_id) do
+    {varcast_reductions, classic_status_early_rate, classic_late_reductions} =
+      cast_status_channels(caster.world_gid)
+
+    varcast_rate = merged_modifier(caster.world_gid, :varcast_rate)
+
     %{
       dex: max(caster.dex, 0),
       int: max(caster.int, 0),
-      varcast_reductions: status_reductions(caster.world_gid, :cast_time_reduction),
-      varcast_rate: merged_modifier(caster.world_gid, :varcast_rate),
-      fixed_cast: 0
+      varcast_reductions: varcast_reductions,
+      varcast_rate: varcast_rate,
+      fixed_cast: 0,
+      classic_early_rate: varcast_rate + classic_status_early_rate,
+      classic_skill_rate: 0,
+      classic_late_reductions: classic_late_reductions
     }
   end
 
@@ -174,15 +182,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Homunculus do
   defp validate_relationship(_caster, _target, :target_any), do: :ok
   defp validate_relationship(_caster, _target, _target_type), do: {:error, :invalid_target}
 
-  defp status_reductions(world_gid, state_key) do
-    :homunculus
-    |> StatusStorage.get_unit_statuses(world_gid)
-    |> Enum.flat_map(fn entry ->
-      case Map.get(entry.state || %{}, state_key) do
-        nil -> []
-        value -> [value]
-      end
-    end)
+  defp cast_status_channels(world_gid) do
+    {renewal, classic_early_rate, classic_late} =
+      :homunculus
+      |> StatusStorage.get_unit_statuses(world_gid)
+      |> Enum.reduce({[], 0, []}, fn entry, {renewal, early_rate, late} ->
+        case {entry.type, Map.get(entry.state || %{}, :cast_time_reduction)} do
+          {_type, nil} ->
+            {renewal, early_rate, late}
+
+          {:sc_poembragi, reduction} ->
+            {[reduction | renewal], early_rate - reduction, late}
+
+          {:sc_suffragium, reduction} ->
+            {[reduction | renewal], early_rate, [reduction | late]}
+
+          {_type, reduction} ->
+            {[reduction | renewal], early_rate, [reduction | late]}
+        end
+      end)
+
+    {Enum.reverse(renewal), classic_early_rate, Enum.reverse(classic_late)}
   end
 
   defp merged_modifier(world_gid, key) do

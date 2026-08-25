@@ -18,6 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Lifecycle do
           :varcast_reductions => [non_neg_integer()],
           :varcast_rate => integer(),
           :fixed_cast => integer(),
+          :classic_early_rate => integer(),
+          :classic_skill_rate => integer(),
+          :classic_late_reductions => [non_neg_integer()],
           optional(:fixcast_rate) => integer()
         }
 
