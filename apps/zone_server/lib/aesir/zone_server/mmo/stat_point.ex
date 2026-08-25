@@ -1,16 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.StatPoint do
   @moduledoc """
-  Status-point table and renewal cost formula.
+  Status-point table and mode-specific cost formulas.
 
   The cumulative status-point table (`points_at/1`, `gain/2`) is loaded as data
-  from `priv/db/re/statpoint/statpoint.yml` and cached in `:persistent_term`,
-  mirroring `JobManagement.Jobs`. The spend cost (`cost_to_raise/1`,
-  `points_needed/2`, `max_increase/3`) is the pure rAthena renewal formula.
+  and cached in `:persistent_term`, mirroring `JobManagement.Jobs`. The spend
+  cost and parameter caps delegate to the active mechanics implementation.
   Plain functions only - no process.
   """
 
   alias Aesir.ZoneServer.Mmo.DataLoader
-  alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
+  alias Aesir.ZoneServer.Mmo.Mechanics
 
   @pt_key __MODULE__
   @cache_file "statpoint_v2.etf"
@@ -49,11 +48,10 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
     do: trait_points_at(to_level) - trait_points_at(from_level)
 
   @doc """
-  Renewal status-point cost to raise a stat by one from its current `value`.
+  Status-point cost to raise a stat by one from its current `value`.
   """
   @spec cost_to_raise(non_neg_integer()) :: pos_integer()
-  def cost_to_raise(value) when value < 100, do: 2 + div(value - 1, 10)
-  def cost_to_raise(value), do: 16 + 4 * div(value - 100, 5)
+  def cost_to_raise(value), do: Mechanics.stat_cost().cost_to_raise(value)
 
   @doc """
   Total status points to raise a stat by `increase` from `current`.
@@ -69,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
 
   @doc """
   Largest increase affordable with `available` points that keeps the stat at or
-  below `max_param`. Faithful port of rAthena `pc_maxparameterincrease`.
+  below `max_param`.
   """
   @spec max_increase(non_neg_integer(), non_neg_integer(), non_neg_integer()) :: non_neg_integer()
   def max_increase(current, available, max_param) do
@@ -77,22 +75,16 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   end
 
   @doc """
-  Maximum value a primary (classic) stat can reach for the given job: 135 on
-  trait (4th) jobs, 99 otherwise.
+  Maximum value a primary stat can reach for the given job.
   """
   @spec max_parameter(non_neg_integer()) :: pos_integer()
-  def max_parameter(job_id) do
-    if TraitJobs.trait_job?(job_id), do: 135, else: 99
-  end
+  def max_parameter(job_id), do: Mechanics.stat_cost().max_parameter(job_id)
 
   @doc """
-  Maximum value a trait stat can reach for the given job: 100 on trait (4th)
-  jobs, 0 otherwise (only trait jobs may allocate trait stats).
+  Maximum value a trait stat can reach for the given job.
   """
   @spec max_trait_parameter(non_neg_integer()) :: non_neg_integer()
-  def max_trait_parameter(job_id) do
-    if TraitJobs.trait_job?(job_id), do: 100, else: 0
-  end
+  def max_trait_parameter(job_id), do: Mechanics.stat_cost().max_trait_parameter(job_id)
 
   @doc """
   Rebuilds the cached table after editing the data file in a running session.
