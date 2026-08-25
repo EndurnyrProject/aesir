@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Guild.Progression.Data do
   @moduledoc """
-  Static guild progression data, loaded from `priv/db/re/guild/*.yml`.
+  Static guild progression data, loaded from the active mode's `guild` database
+  domain.
 
   Serves the guild exp table (exp required per level) and the guild skill
   tree (max levels and prerequisites). Built once and cached in

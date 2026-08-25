@@ -1,16 +1,15 @@
 defmodule Mix.Tasks.Aesir.Import.Guild do
-  @shortdoc "Imports renewal guild exp and skill-tree data into priv/db/re/guild/"
+  @shortdoc "Imports mode-selected guild EXP and skill-tree data"
   @moduledoc """
-  One-time importer: converts the reference renewal `exp_guild.yml` and
-  `guild_skill_tree.yml` into our-schema YAML at
-  `apps/zone_server/priv/db/re/guild/{exp.yml,skill_tree.yml}`.
+  Converts the mode-selected `exp_guild.yml` and `guild_skill_tree.yml` into
+  our-schema YAML under `apps/zone_server/priv/db/<mode>/guild/`.
 
-      mix aesir.import.guild [<rathena_root>]
+      mix aesir.import.guild [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Skill names are resolved to their
-  numeric guild-skill ids (10000-10019); an unknown name is an error. Missing
-  input files are an error - no partial output is written. Deterministic and
-  idempotent: re-running against the same checkout produces identical files.
+  numeric guild-skill IDs; an unknown name is an error. Missing input files are
+  errors and no partial output is written. Re-running against the same checkout
+  is deterministic and idempotent.
   """
   use Mix.Task
 
@@ -44,11 +43,11 @@ defmodule Mix.Tasks.Aesir.Import.Guild do
     {rathena, mode} = Import.parse!(args)
     exp_out = Import.path("guild/exp.yml", mode)
     tree_out = Import.path("guild/skill_tree.yml", mode)
-    exp_src = Path.join([rathena, "db", "re", "exp_guild.yml"])
-    tree_src = Path.join([rathena, "db", "re", "guild_skill_tree.yml"])
+    exp_src = Path.join([rathena, "db", "exp_guild.yml"])
+    tree_src = Path.join([rathena, "db", "guild_skill_tree.yml"])
 
-    exp = exp_src |> read_body!() |> Enum.map(&convert_exp/1)
-    tree = tree_src |> read_body!() |> Enum.map(&convert_skill/1)
+    exp = exp_src |> Import.read_mode_filtered!(mode) |> Enum.map(&convert_exp/1)
+    tree = tree_src |> Import.read_mode_filtered!(mode) |> Enum.map(&convert_skill/1)
 
     File.mkdir_p!(Path.dirname(exp_out))
     write!(exp_out, exp)
@@ -57,15 +56,6 @@ defmodule Mix.Tasks.Aesir.Import.Guild do
     Mix.shell().info(
       "guild: #{length(exp)} exp levels, #{length(tree)} skills -> #{Path.dirname(exp_out)}"
     )
-  end
-
-  defp read_body!(path) do
-    unless File.exists?(path), do: Mix.raise("missing input file: #{path}")
-
-    case YamlElixir.read_from_file!(path) do
-      %{"Body" => body} when is_list(body) -> body
-      _ -> Mix.raise("expected a Body list in #{path}")
-    end
   end
 
   defp convert_exp(%{"Level" => level, "Exp" => exp}), do: %{level: level, exp: exp}

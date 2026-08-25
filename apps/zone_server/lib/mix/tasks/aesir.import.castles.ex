@@ -1,17 +1,19 @@
 defmodule Mix.Tasks.Aesir.Import.Castles do
-  @shortdoc "Imports WoE First-Edition castle data into priv/db/re/castles/"
+  @shortdoc "Imports mode-selected WoE First-Edition castle data"
   @moduledoc """
-  One-time importer: converts the reference `castle_db.yml` First-Edition
-  castles into our-schema YAML at `apps/zone_server/priv/db/re/castles/fe.yml`.
+  Converts the mode-selected `castle_db.yml` First-Edition castles into
+  our-schema YAML under `apps/zone_server/priv/db/<mode>/castles/fe.yml`.
 
-      mix aesir.import.castles [<rathena_root>]
+      mix aesir.import.castles [<rathena_root>] [--mode re|pre-re]
 
   `<rathena_root>` defaults to `../rathena`. Only the 20 First-Edition castles
-  (aldeg/gefg/payg/prtg_cas01-05) are kept; the Emperium-room coordinate, which
-  the source does not carry, comes from a maintained 20-row seed table keyed by
-  map. Missing input is an error - no partial output is written. Deterministic
-  and idempotent: re-running against the same checkout produces an identical
-  file.
+  (aldeg/gefg/payg/prtg_cas01-05) are kept. The Emperium-room coordinate comes
+  from a maintained 20-row seed table keyed by map. Canonical pre-renewal rows
+  omit warp coordinates, so their Aesir GvG respawn coordinates are normalized
+  from the matching Renewal castle numeric ID; all other fields remain from the
+  selected pre-renewal source. Missing or ambiguous matches are errors, and no
+  partial output is written. Re-running against the same checkout is
+  deterministic and idempotent.
   """
   use Mix.Task
 
@@ -46,9 +48,16 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out_dir = Import.path("castles", mode)
-    src = Path.join([rathena, "db", "re", "castle_db.yml"])
+    src = Path.join([rathena, "db", "castle_db.yml"])
+    entries = Import.read_mode_filtered!(src, mode)
 
-    castles = src |> read_body!() |> build()
+    entries =
+      case mode do
+        :renewal -> entries
+        :pre_renewal -> normalize_respawns!(entries, Import.read_mode_filtered!(src, :renewal))
+      end
+
+    castles = build(entries)
 
     File.mkdir_p!(out_dir)
     write!(Path.join(out_dir, "fe.yml"), castles)
@@ -73,10 +82,69 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
     Enum.map(fe, &convert/1)
   end
 
+  @doc false
+  @spec normalize_respawns!([map()], [map()]) :: [map()]
+  def normalize_respawns!(entries, renewal_entries) do
+    pre_renewal = retained_castles_by_id!(entries, "pre-renewal")
+    renewal = retained_castles_by_id!(renewal_entries, "Renewal")
+
+    validate_matching_ids!(pre_renewal, renewal)
+
+    Enum.map(entries, &if(fe_castle?(&1), do: with_respawn!(&1, renewal), else: &1))
+  end
+
   defp fe_castle?(%{"Type" => "First_Edition", "Map" => map}),
     do: Map.has_key?(@emperium_rooms, map)
 
   defp fe_castle?(_), do: false
+
+  defp retained_castles_by_id!(entries, source) do
+    entries
+    |> Enum.filter(&fe_castle?/1)
+    |> Enum.reduce(%{}, fn
+      %{"Id" => id} = entry, castles when is_integer(id) ->
+        if Map.has_key?(castles, id) do
+          Mix.raise("duplicate #{source} castle id #{id}")
+        else
+          Map.put(castles, id, entry)
+        end
+
+      entry, _castles ->
+        Mix.raise("malformed #{source} castle row: expected integer Id, got #{inspect(entry)}")
+    end)
+  end
+
+  defp validate_matching_ids!(pre_renewal, renewal) do
+    missing = pre_renewal |> Map.keys() |> Kernel.--(Map.keys(renewal)) |> Enum.sort()
+    extra = renewal |> Map.keys() |> Kernel.--(Map.keys(pre_renewal)) |> Enum.sort()
+
+    unless missing == [] and extra == [] do
+      Mix.raise(
+        "Renewal castle ID mismatch: missing #{inspect(missing, charlists: :as_lists)}, " <>
+          "extra #{inspect(extra, charlists: :as_lists)}"
+      )
+    end
+  end
+
+  defp with_respawn!(%{"Id" => id} = entry, renewal) do
+    if Map.has_key?(entry, "WarpX") or Map.has_key?(entry, "WarpY") do
+      Mix.raise("pre-renewal castle id #{id} must not define WarpX or WarpY")
+    end
+
+    renewal_entry = Map.fetch!(renewal, id)
+
+    Map.merge(entry, %{
+      "WarpX" => positive_coordinate!(renewal_entry, "WarpX", id),
+      "WarpY" => positive_coordinate!(renewal_entry, "WarpY", id)
+    })
+  end
+
+  defp positive_coordinate!(entry, field, id) do
+    case Map.fetch(entry, field) do
+      {:ok, value} when is_integer(value) and value > 0 -> value
+      _ -> Mix.raise("malformed Renewal #{field} for castle id #{id}")
+    end
+  end
 
   defp convert(%{"Id" => id, "Map" => map, "Name" => name} = entry) do
     %{
@@ -87,15 +155,6 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
       respawn: [Map.fetch!(entry, "WarpX"), Map.fetch!(entry, "WarpY")],
       emperium: Map.fetch!(@emperium_rooms, map)
     }
-  end
-
-  defp read_body!(path) do
-    unless File.exists?(path), do: Mix.raise("missing input file: #{path}")
-
-    case YamlElixir.read_from_file!(path) do
-      %{"Body" => body} when is_list(body) -> body
-      _ -> Mix.raise("expected a Body list in #{path}")
-    end
   end
 
   defp write!(path, entries), do: File.write!(path, Ymlr.document!(entries))

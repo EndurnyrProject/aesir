@@ -1,10 +1,11 @@
 defmodule Mix.Tasks.Aesir.Import.Homunculi do
-  @shortdoc "Imports Renewal Homunculus data into priv/db/re/homunculus"
+  @shortdoc "Imports mode-selected Homunculus data"
   @moduledoc """
-  Imports original and evolved Homunculus species, levels 1 through 99 EXP, and
-  skill trees from a local rAthena checkout.
+  Imports mode-selected original and evolved Homunculus species, EXP, and skill
+  trees from a local rAthena checkout. Renewal contains levels 1 through 99;
+  pre-renewal contains levels 1 through 98.
 
-      mix aesir.import.homunculi [<rathena_root>]
+      mix aesir.import.homunculi [<rathena_root>] [--mode re|pre-re]
   """
   use Mix.Task
 
@@ -23,17 +24,17 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
     species_out = Import.path("homunculus/species.yml", mode)
     exp_out = Import.path("homunculus/exp.yml", mode)
     trees_out = Import.path("homunculus/skill_trees.yml", mode)
-    homunculus_path = Path.join([root, "db", "re", "homunculus_db.yml"])
-    exp_path = Path.join([root, "db", "re", "exp_homun.yml"])
-    skill_path = Path.join([root, "db", "re", "skill_db.yml"])
+    homunculus_path = Path.join([root, "db", "homunculus_db.yml"])
+    exp_path = Path.join([root, "db", "exp_homun.yml"])
+    skill_path = Path.join([root, "db", "skill_db.yml"])
     class_path = Path.join([root, "src", "map", "homunculus.hpp"])
 
     class_ids = class_ids!(class_path)
-    skill_ids = skill_ids!(skill_path)
+    skill_ids = skill_path |> Import.read_mode_filtered!(mode) |> skill_ids!()
 
     source_species =
       homunculus_path
-      |> read_body!()
+      |> Import.read_mode_filtered!(mode)
       |> Enum.filter(&Map.has_key?(&1, "EvolutionClass"))
 
     if length(source_species) != 8,
@@ -42,14 +43,16 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
     species = Enum.flat_map(source_species, &species_rows(&1, class_ids, skill_ids))
     trees = Enum.flat_map(source_species, &skill_rows(&1, class_ids, skill_ids))
 
+    max_level = if mode == :renewal, do: 99, else: 98
+
     exp =
       exp_path
-      |> read_body!()
-      |> Enum.filter(&(&1["Level"] in 1..99))
+      |> Import.read_mode_filtered!(mode)
+      |> Enum.filter(&(&1["Level"] in 1..max_level))
       |> Enum.map(&%{"level" => &1["Level"], "exp" => &1["Exp"]})
 
     Catalog.validate!(species)
-    ExpTable.validate!(exp)
+    ExpTable.validate!(exp, mode)
     SkillTree.validate!(trees, MapSet.new(species, & &1["id"]))
     Catalogs.validate!(species, trees)
 
@@ -57,8 +60,10 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
     write!(species_out, species)
     write!(exp_out, exp)
     write!(trees_out, trees)
-    :ok = Catalogs.reload()
-    Mix.shell().info("homunculi: 16 classes, 99 EXP levels, #{length(trees)} skill rows")
+
+    Mix.shell().info(
+      "homunculi: 16 classes, #{length(exp)} EXP levels, #{length(trees)} skill rows"
+    )
   end
 
   defp species_rows(source, class_ids, skill_ids) do
@@ -174,23 +179,13 @@ defmodule Mix.Tasks.Aesir.Import.Homunculi do
     original
   end
 
-  defp skill_ids!(path) do
-    path
-    |> read_body!()
-    |> Map.new(fn entry -> {String.upcase(entry["Name"]), entry["Id"]} end)
-  end
+  defp skill_ids!(rows),
+    do: Map.new(rows, fn entry -> {String.upcase(entry["Name"]), entry["Id"]} end)
 
   defp fetch_id!(ids, name, kind) do
     case Map.fetch(ids, String.upcase(name)) do
       {:ok, id} -> id
       :error -> Mix.raise("unknown #{kind} #{name}")
-    end
-  end
-
-  defp read_body!(path) do
-    case YamlElixir.read_from_file!(path) do
-      %{"Body" => body} when is_list(body) -> body
-      _ -> Mix.raise("expected a Body list in #{path}")
     end
   end
 

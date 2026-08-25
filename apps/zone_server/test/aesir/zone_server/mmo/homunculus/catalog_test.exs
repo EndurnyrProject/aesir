@@ -214,10 +214,18 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
       Catalog.validate!(put_in(species, [Access.at(0), "stats", "hp", "growth_min"], 101))
     end
 
-    assert_raise ArgumentError, ~r/levels 1..99/, fn -> ExpTable.validate!(tl(exp)) end
+    assert_raise ArgumentError, ~r/levels 1..99/, fn ->
+      ExpTable.validate!(tl(exp), :renewal)
+    end
+
+    assert :ok = ExpTable.validate!(Enum.take(exp, 98), :pre_renewal)
+
+    assert_raise ArgumentError, ~r/levels 1..98/, fn ->
+      ExpTable.validate!(exp, :pre_renewal)
+    end
 
     assert_raise ArgumentError, ~r/positive integers/, fn ->
-      ExpTable.validate!(put_in(exp, [Access.at(0), "exp"], 0))
+      ExpTable.validate!(put_in(exp, [Access.at(0), "exp"], 0), :renewal)
     end
 
     duplicate_species_skill =

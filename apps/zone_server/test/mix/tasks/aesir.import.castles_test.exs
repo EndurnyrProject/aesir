@@ -105,6 +105,91 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
       assert Ymlr.document!(Castles.build(shuffled)) == Ymlr.document!(Castles.build(@fixture))
     end
 
+    test "normalizes pre-renewal respawns from reversed Renewal rows by numeric id only" do
+      pre =
+        Enum.map(@fixture, fn
+          %{"Id" => 0} = row ->
+            row |> Map.drop(["WarpX", "WarpY"]) |> Map.put("Name", "Classic Neuschwanstein")
+
+          %{"Id" => id} = row when id in 1..19 ->
+            Map.drop(row, ["WarpX", "WarpY"])
+
+          row ->
+            row
+        end)
+
+      rows = pre |> Castles.normalize_respawns!(Enum.reverse(@fixture)) |> Castles.build()
+
+      assert Enum.map(rows, & &1.respawn) ==
+               Enum.map(@fe, fn {_id, _map, _name, _client_id, x, y} -> [x, y] end)
+
+      assert hd(rows).name == "Classic Neuschwanstein"
+      assert hd(rows).map == "aldeg_cas01"
+      assert hd(rows).client_id == 6
+    end
+
+    test "raises on duplicate pre-renewal castle ids" do
+      pre =
+        Enum.map(@fixture, fn
+          %{"Id" => id} = row when id in 0..19 -> Map.drop(row, ["WarpX", "WarpY"])
+          row -> row
+        end)
+
+      assert_raise Mix.Error, ~r/duplicate pre-renewal castle id 0/, fn ->
+        Castles.normalize_respawns!([hd(pre) | pre], @fixture)
+      end
+    end
+
+    test "raises with missing or extra Renewal castle ids" do
+      pre =
+        Enum.map(@fixture, fn
+          %{"Id" => id} = row when id in 0..19 -> Map.drop(row, ["WarpX", "WarpY"])
+          row -> row
+        end)
+
+      assert_raise Mix.Error, ~r/Renewal castle ID mismatch: missing \[0\], extra \[\]/, fn ->
+        Castles.normalize_respawns!(pre, Enum.reject(@fixture, &(&1["Id"] == 0)))
+      end
+
+      extra = update_in(@fixture, [Access.at(0), "Id"], &(&1 + 100))
+
+      assert_raise Mix.Error, ~r/Renewal castle ID mismatch: missing \[0\], extra \[100\]/, fn ->
+        Castles.normalize_respawns!(pre, extra)
+      end
+    end
+
+    test "raises on duplicate or malformed Renewal respawn matches" do
+      pre =
+        Enum.map(@fixture, fn
+          %{"Id" => id} = row when id in 0..19 -> Map.drop(row, ["WarpX", "WarpY"])
+          row -> row
+        end)
+
+      assert_raise Mix.Error, ~r/duplicate Renewal castle id 0/, fn ->
+        Castles.normalize_respawns!(pre, [hd(@fixture) | @fixture])
+      end
+
+      malformed = put_in(@fixture, [Access.at(0), "WarpX"], 0)
+
+      assert_raise Mix.Error, ~r/malformed Renewal WarpX for castle id 0/, fn ->
+        Castles.normalize_respawns!(pre, malformed)
+      end
+    end
+
+    test "rejects complete pre-renewal respawn coordinates" do
+      assert_raise Mix.Error, ~r/pre-renewal castle id 0 must not define WarpX or WarpY/, fn ->
+        Castles.normalize_respawns!(@fixture, @fixture)
+      end
+    end
+
+    test "rejects partial pre-renewal respawn coordinates" do
+      partial = update_in(@fixture, [Access.at(0)], &Map.delete(&1, "WarpX"))
+
+      assert_raise Mix.Error, ~r/pre-renewal castle id 0 must not define WarpX or WarpY/, fn ->
+        Castles.normalize_respawns!(partial, @fixture)
+      end
+    end
+
     test "raises when a First-Edition castle is missing from the source" do
       incomplete = Enum.reject(@fixture, &(&1["Map"] == "prtg_cas01"))
 
@@ -137,7 +222,7 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
       out = Path.join([__DIR__, "..", "..", "..", "priv", "db", "re", "castles", "fe.yml"])
       before = File.read!(out)
 
-      assert_raise Mix.Error, ~r/missing input file/, fn ->
+      assert_raise Mix.Error, ~r/missing rAthena YAML file/, fn ->
         Castles.run(["/nonexistent/rathena"])
       end
 
