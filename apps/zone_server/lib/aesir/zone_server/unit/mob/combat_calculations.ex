@@ -1,127 +1,108 @@
 defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculations do
   @moduledoc """
-  Mob-specific combat calculation implementation.
+  Mob-specific combat calculation facade for the active ruleset.
 
   ## Key Features
 
-  - Performance-optimized simple formulas
-  - Level and base stat scaling
+  - Runtime ruleset dispatch
+  - Level and base-stat scaling
   """
 
   @behaviour Aesir.ZoneServer.Unit.CombatCalculations
 
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
 
   @typedoc "Mob definition structure used for calculations"
   @type mob_data :: MobDefinition.t()
 
   @doc """
-  Calculates mob hit stat using simplified rAthena formula.
+  Calculates the mob HIT stat under the active ruleset.
 
-  ## Formula
-  hit = level + dex
+  Renewal adds its combat baseline to level and DEX; classic uses level and DEX directly.
   """
   @impl true
   @spec calculate_hit(mob_data()) :: integer()
   def calculate_hit(%MobDefinition{} = mob_data) do
-    mob_data.level + mob_data.stats.dex
+    Mechanics.mob_formulas().calculate_hit(mob_data)
   end
 
   @doc """
-  Calculates mob flee stat
+  Calculates the mob FLEE stat under the active ruleset.
 
-  ## Formula
-  flee = level + agi
+  Renewal adds its combat baseline to level and AGI; classic uses level and AGI directly.
   """
   @impl true
   @spec calculate_flee(mob_data()) :: integer()
   def calculate_flee(%MobDefinition{} = mob_data) do
-    mob_data.level + mob_data.stats.agi
+    Mechanics.mob_formulas().calculate_flee(mob_data)
   end
 
   @doc """
-  Calculates mob perfect dodge stat
+  Calculates the mob perfect-dodge stat.
 
   ## Formula
-  perfect_dodge = luk / 5
+
+      perfect_dodge = trunc(luk / 5)
   """
   @impl true
   @spec calculate_perfect_dodge(mob_data()) :: integer()
   def calculate_perfect_dodge(%MobDefinition{} = mob_data) do
-    # Same base formula as players: luk/5
-    trunc(mob_data.stats.luk / 5)
+    Mechanics.mob_formulas().calculate_perfect_dodge(mob_data)
   end
 
   @doc """
   Calculates mob ASPD from attack delay.
 
   ## Formula
-  aspd = max(100, 200 - attack_delay/10)
 
-  Converts attack delay to ASPD format for consistency with player system.
+      aspd = max(100, 200 - attack_delay / 10)
   """
   @impl true
   @spec calculate_aspd(mob_data()) :: integer()
   def calculate_aspd(%MobDefinition{} = mob_data) do
-    max(100, 200 - div(mob_data.attack_delay, 10))
+    Mechanics.mob_formulas().calculate_aspd(mob_data)
   end
 
   @doc """
-  Calculates mob base attack stat.
-
-  ## Formula
-  base_atk = atk (renewal base physical attack)
+  Calculates the mob base attack stat from its database ATK.
 
   Damage variance is applied later in the combat system.
   """
   @impl true
   @spec calculate_base_attack(mob_data()) :: integer()
   def calculate_base_attack(%MobDefinition{} = mob_data) do
-    mob_data.atk
+    Mechanics.mob_formulas().calculate_base_attack(mob_data)
   end
 
-  @doc """
-  Calculates mob defense stat.
-
-  ## Formula
-  defense = def (direct from mob definition)
-  """
+  @doc "Calculates the mob hard-DEF stat from its database DEF."
   @impl true
   @spec calculate_defense(mob_data()) :: integer()
   def calculate_defense(%MobDefinition{} = mob_data) do
-    mob_data.def
+    Mechanics.mob_formulas().calculate_defense(mob_data)
   end
 
-  @doc """
-  Calculates mob magic attack stat.
+  @doc "Calculates the mob soft-DEF stat under the active ruleset."
+  @spec calculate_soft_defense(mob_data()) :: integer()
+  def calculate_soft_defense(%MobDefinition{} = mob_data) do
+    Mechanics.mob_formulas().calculate_soft_defense(mob_data)
+  end
 
-  ## Formula
-  matk = matk (direct from mob definition)
-  """
+  @doc "Calculates the mob magic attack stat from its database MATK."
   @spec calculate_magic_attack(mob_data()) :: integer()
   def calculate_magic_attack(%MobDefinition{} = mob_data) do
-    mob_data.matk
+    Mechanics.mob_formulas().calculate_magic_attack(mob_data)
   end
 
-  @doc """
-  Calculates mob magic defense stat (hard MDEF).
-
-  ## Formula
-  mdef = mdef (direct from mob definition)
-  """
+  @doc "Calculates the mob hard-MDEF stat from its database MDEF."
   @spec calculate_magic_defense(mob_data()) :: integer()
   def calculate_magic_defense(%MobDefinition{} = mob_data) do
-    mob_data.mdef
+    Mechanics.mob_formulas().calculate_magic_defense(mob_data)
   end
 
-  @doc """
-  Calculates mob soft MDEF using the renewal non-PC formula.
-
-  ## Formula
-  soft_mdef = (int + level) / 4
-  """
+  @doc "Calculates the mob soft-MDEF stat under the active ruleset."
   @spec calculate_soft_mdef(mob_data()) :: integer()
   def calculate_soft_mdef(%MobDefinition{} = mob_data) do
-    div(mob_data.stats.int + mob_data.level, 4)
+    Mechanics.mob_formulas().calculate_soft_mdef(mob_data)
   end
 end

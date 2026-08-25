@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
   end
 
   describe "calculate_hit/1" do
-    test "calculates hit using simplified formula: level + dex" do
+    test "calculates renewal hit using level + dex + 150" do
       mob =
         create_test_mob(%{
           level: 30,
@@ -47,8 +47,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(mob)
 
-      # 30 + 45 = 75
-      assert hit == 75
+      # 30 + 45 + 150 = 225
+      assert hit == 225
     end
 
     test "handles low level mob" do
@@ -60,8 +60,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(mob)
 
-      # 5 + 10 = 15
-      assert hit == 15
+      # 5 + 10 + 150 = 165
+      assert hit == 165
     end
 
     test "handles high level mob" do
@@ -73,8 +73,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(mob)
 
-      # 80 + 90 = 170
-      assert hit == 170
+      # 80 + 90 + 150 = 320
+      assert hit == 320
     end
 
     test "boss mob scenario" do
@@ -86,13 +86,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(boss_mob)
 
-      # 99 + 120 = 219
-      assert hit == 219
+      # 99 + 120 + 150 = 369
+      assert hit == 369
     end
   end
 
   describe "calculate_flee/1" do
-    test "calculates flee using simplified formula: level + agi" do
+    test "calculates renewal flee using level + agi + 100" do
       mob =
         create_test_mob(%{
           level: 35,
@@ -101,8 +101,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(mob)
 
-      # 35 + 55 = 90
-      assert flee == 90
+      # 35 + 55 + 100 = 190
+      assert flee == 190
     end
 
     test "handles slow mob with low AGI" do
@@ -114,8 +114,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(slow_mob)
 
-      # 20 + 10 = 30
-      assert flee == 30
+      # 20 + 10 + 100 = 130
+      assert flee == 130
     end
 
     test "handles fast mob with high AGI" do
@@ -127,8 +127,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(fast_mob)
 
-      # 40 + 80 = 120
-      assert flee == 120
+      # 40 + 80 + 100 = 220
+      assert flee == 220
     end
 
     test "agile boss scenario" do
@@ -140,8 +140,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(agile_boss)
 
-      # 85 + 95 = 180
-      assert flee == 180
+      # 85 + 95 + 100 = 280
+      assert flee == 280
     end
   end
 
@@ -433,10 +433,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
         })
 
       # Should not crash with minimal stats
-      # 1 + 0
-      assert CombatCalculations.calculate_hit(minimal_mob) == 1
-      # 1 + 0
-      assert CombatCalculations.calculate_flee(minimal_mob) == 1
+      # 1 + 0 + 150
+      assert CombatCalculations.calculate_hit(minimal_mob) == 151
+      # 1 + 0 + 100
+      assert CombatCalculations.calculate_flee(minimal_mob) == 101
       # 0/5
       assert CombatCalculations.calculate_perfect_dodge(minimal_mob) == 0
       assert CombatCalculations.calculate_base_attack(minimal_mob) == 1

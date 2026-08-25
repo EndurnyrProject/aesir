@@ -37,6 +37,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   - Combat modifiers: element, race, size, weapon
   - Timing: attack_range, attack_delay_ms
   - Positioning: position, map_name
+
+  `combat_stats.soft_def` is required for `:mob` combatants and enforced by
+  `validate_for_combat/1`; it is optional for other unit types.
   """
   @enforce_keys [
     :unit_id,
@@ -139,6 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             luk: integer()
           },
           combat_stats: %{
+            optional(:soft_def) => integer(),
             atk: integer(),
             def: integer(),
             hit: integer(),
@@ -228,6 +232,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
       not is_map(combatant.combat_stats) ->
         {:error, "Invalid combat_stats: must be map"}
+
+      combatant.unit_type == :mob and
+          not is_integer(Map.get(combatant.combat_stats, :soft_def)) ->
+        {:error, "Invalid mob soft_def: must be an integer"}
 
       combatant.progression.base_level <= 0 ->
         {:error, "Invalid base_level: must be positive integer"}

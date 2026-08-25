@@ -101,7 +101,8 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
       race: :brute,
       size: :medium,
       atk: 50,
-      def: 10
+      def: 10,
+      soft_def: 0
     ]
 
     opts = Keyword.merge(defaults, opts)
@@ -125,6 +126,7 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
       combat_stats: %{
         atk: opts[:atk],
         def: opts[:def],
+        soft_def: opts[:soft_def],
         hit: hit,
         flee: flee,
         perfect_dodge: perfect_dodge

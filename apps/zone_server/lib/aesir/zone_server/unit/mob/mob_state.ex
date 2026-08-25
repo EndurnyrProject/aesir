@@ -6,13 +6,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
-  alias Aesir.ZoneServer.Unit.Mob.CombatCalculations, as: MobCombatCalc
   alias Aesir.ZoneServer.Unit.Ref
 
   @behaviour Aesir.ZoneServer.Unit
@@ -345,7 +345,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   @impl Aesir.ZoneServer.Unit
   def to_combatant(%__MODULE__{} = mob_state) do
     mob_data = mob_state.mob_data
-    mob_matk = MobCombatCalc.calculate_magic_attack(mob_data)
+    formulas = Mechanics.mob_formulas()
+    mob_matk = formulas.calculate_magic_attack(mob_data)
     modifiers = Interpreter.get_all_modifiers(:mob, mob_state.instance_id)
 
     Combatant.new!(%{
@@ -362,16 +363,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         luk: mob_data.stats.luk + modifier(modifiers, :luk)
       },
       combat_stats: %{
-        hit: MobCombatCalc.calculate_hit(mob_data) + modifier(modifiers, :hit),
-        flee: MobCombatCalc.calculate_flee(mob_data) + modifier(modifiers, :flee),
-        perfect_dodge: MobCombatCalc.calculate_perfect_dodge(mob_data),
-        def: MobCombatCalc.calculate_defense(mob_data) + modifier(modifiers, :def),
-        atk: MobCombatCalc.calculate_base_attack(mob_data) + modifier(modifiers, :atk),
+        hit: formulas.calculate_hit(mob_data) + modifier(modifiers, :hit),
+        flee: formulas.calculate_flee(mob_data) + modifier(modifiers, :flee),
+        perfect_dodge: formulas.calculate_perfect_dodge(mob_data),
+        def: formulas.calculate_defense(mob_data) + modifier(modifiers, :def),
+        soft_def: formulas.calculate_soft_defense(mob_data),
+        atk: formulas.calculate_base_attack(mob_data) + modifier(modifiers, :atk),
         matk: mob_matk + modifier(modifiers, :matk),
         matk_min: mob_matk + modifier(modifiers, :matk),
         matk_max: mob_matk + modifier(modifiers, :matk),
-        mdef: MobCombatCalc.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef),
-        soft_mdef: MobCombatCalc.calculate_soft_mdef(mob_data),
+        mdef: formulas.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef),
+        soft_mdef: formulas.calculate_soft_mdef(mob_data),
         ignore_size_penalty: false,
         max_weapon_damage: false
       },

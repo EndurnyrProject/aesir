@@ -130,6 +130,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CombatantTest do
       assert error =~ "Invalid base_stats"
     end
 
+    test "rejects a mob with missing or non-integer soft DEF" do
+      combatant = CombatTestHelper.create_mob_combatant()
+
+      assert :ok = Combatant.validate_for_combat(combatant)
+
+      invalid_combat_stats = [
+        Map.delete(combatant.combat_stats, :soft_def),
+        Map.put(combatant.combat_stats, :soft_def, "invalid")
+      ]
+
+      for combat_stats <- invalid_combat_stats do
+        invalid_combatant = %{combatant | combat_stats: combat_stats}
+
+        assert Combatant.validate_for_combat(invalid_combatant) ===
+                 {:error, "Invalid mob soft_def: must be an integer"}
+      end
+    end
+
     test "rejects invalid combat_stats" do
       combatant = CombatTestHelper.create_player_combatant()
       invalid_combatant = %{combatant | combat_stats: "invalid"}

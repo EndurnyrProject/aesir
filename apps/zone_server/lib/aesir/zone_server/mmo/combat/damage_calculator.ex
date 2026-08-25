@@ -656,9 +656,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     defender.combat_stats.soft_def
   end
 
-  defp calculate_soft_defense(%{unit_type: :mob}) do
-    # Mobs typically don't have separate soft defense calculation
-    0
+  defp calculate_soft_defense(%{unit_type: :mob} = defender) do
+    defender.combat_stats.soft_def
   end
 
   defp calculate_soft_defense(%{unit_type: :skill_unit} = defender) do
