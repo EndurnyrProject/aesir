@@ -102,3 +102,88 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
     path
   end
 end
+
+defmodule Aesir.ZoneServer.Db.SourceModeRestrictionTest do
+  use ExUnit.Case, async: true
+
+  import Mimic
+
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Db.Source
+
+  @level_penalty_domains ~w(
+    level_penalty.yml
+    level_penalty_exp.yml
+    level_penalty_mvp_drop.yml
+    level_penalty_mvp_exp.yml
+  )
+
+  @moduletag :tmp_dir
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
+
+  test "returns no sources for renewal-only domains in pre-renewal", %{tmp_dir: root} do
+    stub_source_config(:pre_renewal, root)
+
+    Enum.each(@level_penalty_domains, fn domain ->
+      write_file(root, Path.join("pre-re", domain), "16: 50\n")
+      write_file(root, Path.join("import", domain), "16: 40\n")
+
+      assert Source.sources(domain) == []
+    end)
+  end
+
+  test "resolves renewal sources for every renewal-only domain", %{tmp_dir: root} do
+    stub_source_config(:renewal, root)
+
+    Enum.each(@level_penalty_domains, fn domain ->
+      base = write_file(root, Path.join("re", domain), "16: 50\n")
+      import = write_file(root, Path.join("import", domain), "16: 40\n")
+
+      assert Source.sources(domain) == [base, import]
+    end)
+  end
+
+  test "preserves the renewal missing-data error for renewal-only domains", %{tmp_dir: root} do
+    stub_source_config(:renewal, root)
+
+    Enum.each(@level_penalty_domains, fn domain ->
+      message =
+        "no renewal data for db #{inspect(domain)} (expected under priv/db/re/#{domain}). " <>
+          "Import it with `mix aesir.import.level_penalty` or set AESIR_DB_MODE=renewal."
+
+      assert_raise RuntimeError, message, fn -> Source.sources(domain) end
+    end)
+  end
+
+  test "preserves the missing-data error for a nonrestricted pre-renewal domain", %{
+    tmp_dir: root
+  } do
+    stub_source_config(:pre_renewal, root)
+
+    message =
+      "no pre_renewal data for db \"items\" (expected under priv/db/pre-re/items). " <>
+        "Import it with `mix aesir.import.items` or set AESIR_DB_MODE=renewal."
+
+    assert_raise RuntimeError, message, fn -> Source.sources("items") end
+  end
+
+  test "validates a domain before applying mode restrictions" do
+    assert_raise ArgumentError, "unknown database domain: \"unknown.yml\"", fn ->
+      Source.sources("unknown.yml")
+    end
+  end
+
+  defp stub_source_config(mode, root) do
+    stub(GameMode, :mode, fn -> mode end)
+    stub(Application, :get_env, fn :zone_server, :db_root, _default -> root end)
+  end
+
+  defp write_file(root, relative_path, contents) do
+    path = Path.join(root, relative_path)
+    File.mkdir_p!(Path.dirname(path))
+    File.write!(path, contents)
+    path
+  end
+end

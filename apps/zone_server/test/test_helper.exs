@@ -1,3 +1,4 @@
+Mimic.copy(Application)
 Mimic.copy(Aesir.Commons.GameMode)
 Mimic.copy(Aesir.ZoneServer.Mmo.Mechanics)
 Mimic.copy(Aesir.ZoneServer.Mmo.JobManagement)

@@ -1,13 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   @moduledoc """
-  Renewal level-penalty tables, loaded as data from `priv/db/re/level_penalty.yml`
-  (item drops), `priv/db/re/level_penalty_exp.yml` (experience),
-  `priv/db/re/level_penalty_mvp_drop.yml` (MVP item drops) and
-  `priv/db/re/level_penalty_mvp_exp.yml` (MVP experience).
+  Level-gap penalty tables for item drops, experience, MVP item drops, and MVP
+  experience.
 
-  Each `level_difference => percent` map is cached once in `:persistent_term`;
-  `reload/0` rebuilds all four after the data files change in a long-running
-  session. Mirrors the lazy-build pattern in `Mmo.ItemManagement.Items`.
+  Renewal loads each `level_difference => percent` map from its database domain.
+  Pre-renewal has no level-gap penalties, so its empty source lists install empty
+  maps whose lookup semantics return the neutral rate of `100`. Each map is
+  cached in `:persistent_term`; `reload/0` rebuilds all four after data changes.
   """
 
   alias Aesir.ZoneServer.Db.Source
@@ -21,10 +20,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   @doc """
   Returns the drop-rate percent for `mob_level - killer_base_level`.
 
-  Mirrors rAthena's carry-forward fill toward zero (`PenaltyDatabase::loadingFinished`):
-  an unlisted diff inherits the nearest defined breakpoint of the same sign whose
-  magnitude does not exceed it. The no-penalty band around zero (and any diff
-  smaller than the closest breakpoint) yields `100`.
+  An unlisted difference inherits the nearest defined breakpoint of the same
+  sign whose magnitude does not exceed it. The no-penalty band around zero (and
+  any difference smaller than the closest breakpoint) yields `100`.
   """
   @spec drop(integer(), integer()) :: integer()
   def drop(mob_level, killer_base_level) do
@@ -32,9 +30,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
   end
 
   @doc """
-  Returns the EXP-rate percent for `mob_level - killer_base_level` (renewal
-  `rAthena mob.cpp:3211`). Same carry-forward semantics as `drop/2`; rates
-  above `100` are a bonus for fighting an overleveled mob.
+  Returns the EXP-rate percent for `mob_level - killer_base_level`. Same
+  carry-forward semantics as `drop/2`; rates above `100` are a bonus for
+  fighting an overleveled mob.
   """
   @spec exp(integer(), integer()) :: integer()
   def exp(mob_level, killer_base_level) do
@@ -73,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty do
       breakpoint > 0 == diff > 0 and abs(breakpoint) <= abs(diff)
   end
 
+  @doc "Reloads all level-penalty tables for the active game mode."
   @spec reload() :: :ok
   def reload do
     :persistent_term.put(@pt_key_drop, load("level_penalty.yml"))

@@ -9,15 +9,25 @@ defmodule Aesir.ZoneServer.Db.Source do
   @spec mode() :: Layout.mode()
   defdelegate mode, to: Aesir.Commons.GameMode
 
-  @doc "Returns ordered base and import source files for a database domain."
+  @doc """
+  Returns ordered base and import source files for a database domain.
+
+  Returns an empty list when the domain is not available in the active mode.
+  """
   @spec sources(Layout.domain()) :: [Path.t()]
   def sources(domain) do
-    {base, import} = source_paths(domain)
+    modes = Layout.modes(domain)
 
-    if base == [] do
-      missing_data!(domain)
+    if mode() in modes do
+      {base, import} = source_paths(domain)
+
+      if base == [] do
+        missing_data!(domain)
+      else
+        Enum.sort(base) ++ Enum.sort(import)
+      end
     else
-      Enum.sort(base) ++ Enum.sort(import)
+      []
     end
   end
 

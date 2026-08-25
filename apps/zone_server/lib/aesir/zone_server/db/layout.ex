@@ -15,7 +15,11 @@ defmodule Aesir.ZoneServer.Db.Layout do
   @typedoc "The Mix task that imports a domain, when available."
   @type import_task :: String.t() | nil
 
-  @typep domain_info :: {kind(), boolean(), import_task()}
+  @typep domain_info ::
+           {kind(), boolean(), import_task()}
+           | {kind(), boolean(), import_task(), [mode()]}
+
+  @supported_modes [:renewal, :pre_renewal]
 
   @domains %{
     "items" => {:glob, false, "aesir.import.items"},
@@ -41,10 +45,10 @@ defmodule Aesir.ZoneServer.Db.Layout do
     "arrows.yml" => {:file, true, "aesir.import.arrows"},
     "map_flags.yml" => {:file, true, nil},
     "navigation.yml" => {:file, true, nil},
-    "level_penalty.yml" => {:file, false, "aesir.import.level_penalty"},
-    "level_penalty_exp.yml" => {:file, false, "aesir.import.level_penalty"},
-    "level_penalty_mvp_drop.yml" => {:file, false, "aesir.import.level_penalty"},
-    "level_penalty_mvp_exp.yml" => {:file, false, "aesir.import.level_penalty"}
+    "level_penalty.yml" => {:file, false, "aesir.import.level_penalty", [:renewal]},
+    "level_penalty_exp.yml" => {:file, false, "aesir.import.level_penalty", [:renewal]},
+    "level_penalty_mvp_drop.yml" => {:file, false, "aesir.import.level_penalty", [:renewal]},
+    "level_penalty_mvp_exp.yml" => {:file, false, "aesir.import.level_penalty", [:renewal]}
   }
 
   @doc "Returns the directory for a database mode."
@@ -76,6 +80,15 @@ defmodule Aesir.ZoneServer.Db.Layout do
   @doc "Returns the importer task for a domain, if one exists."
   @spec import_task(domain()) :: import_task()
   def import_task(domain), do: domain |> domain!() |> elem(2)
+
+  @doc "Returns the game modes in which a database domain is available."
+  @spec modes(domain()) :: [mode()]
+  def modes(domain) do
+    case domain!(domain) do
+      {_kind, _shared?, _import_task, modes} -> modes
+      {_kind, _shared?, _import_task} -> @supported_modes
+    end
+  end
 
   @spec domain!(domain()) :: domain_info()
   defp domain!(domain) do
