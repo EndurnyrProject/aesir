@@ -3,11 +3,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   Handles CZ_STATUS_CHANGE: spends status points to raise a primary stat.
 
   Validates the request against available points and the per-class parameter
-  cap, applies the renewal cost, recalculates stats, persists, and syncs the
-  client (ack, status-point balance, per-stat cost indicator, recalculated
-  stats). Failures ack with `ok = 0` and leave state unchanged.
+  cap, applies the active mode's cost, recalculates stats, persists, and syncs
+  the client (ack, status-point balance, per-stat cost indicator, recalculated
+  stats). Trait allocation is refused in pre-renewal. Failures ack with
+  `ok = 0` and leave state unchanged.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.StatUpResult
   alias Aesir.ZoneServer.CharacterPersistence
@@ -97,14 +99,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
   defp apply_trait_status_up(status_id, stat, u_param, amount, state, game_state) do
     stats = game_state.stats
     current = Map.fetch!(stats.base_stats, stat)
-    available = stats.progression.trait_point
-    max = StatPoint.max_trait_parameter(stats.progression.job_id)
-    increase = min(amount, min(max - current, available))
 
-    if increase <= 0 do
-      reject(status_id, current, state)
-    else
-      commit_trait(status_id, stat, u_param, current, increase, available, state, game_state)
+    case GameMode.mode() do
+      :pre_renewal ->
+        reject(status_id, current, state)
+
+      :renewal ->
+        available = stats.progression.trait_point
+        max = StatPoint.max_trait_parameter(stats.progression.job_id)
+        increase = min(amount, min(max - current, available))
+
+        if increase <= 0 do
+          reject(status_id, current, state)
+        else
+          commit_trait(status_id, stat, u_param, current, increase, available, state, game_state)
+        end
     end
   end
 

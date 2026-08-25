@@ -3,7 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
   import Mimic
 
+  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
@@ -11,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.CombatCalculations
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
@@ -124,11 +127,64 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
              {1, 1}
   end
 
-  test "classic trait slots are always inert" do
-    bonuses = %{patk: 2, smatk: 3, res: 4, mres: 5, hplus: 6, crate: 7}
+  test "classic trait slots are always inert through stats and combat consumers" do
+    stub(Mechanics, :player_formulas, fn -> PreRenewal end)
+    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 
-    assert PreRenewal.trait_slots(formula_values(stats_fixture()), bonuses) ===
-             Map.new([:patk, :smatk, :res, :mres, :hplus, :crate], &{&1, 0})
+    fixture = stats_fixture()
+
+    stats = %{
+      fixture
+      | base_stats: %UnitStats.BaseStats{
+          fixture.base_stats
+          | pow: 41,
+            sta: 43,
+            wis: 47,
+            spl: 53,
+            con: 59,
+            crt: 61
+        },
+        modifiers: %Modifiers{
+          equipment: %{patk: 2, smatk: 3, res: 4, mres: 5, hplus: 6, crit_rate: 7},
+          status_effects: %{patk: 11, smatk: 13, res: 17, mres: 19, hplus: 23, crit_rate: 29}
+        }
+    }
+
+    result = Stats.calculate_combat_stats(stats)
+    zero_slots = Map.new([:patk, :smatk, :res, :mres, :hplus, :crate], &{&1, 0})
+
+    assert Map.take(result.combat_stats, Map.keys(zero_slots)) === zero_slots
+
+    zero_crate = put_in(result.combat_stats.crate, 0)
+    assert CriticalHits.apply_critical_damage(1_000, zero_crate) === 1_400
+
+    assert CriticalHits.apply_critical_damage(1_000, result) ===
+             CriticalHits.apply_critical_damage(1_000, zero_crate)
+
+    attacker = %{
+      unit_type: :player,
+      unit_id: 1001,
+      combat_stats: %{result.combat_stats | matk: 100, matk_min: 100, matk_max: 100}
+    }
+
+    defender = %{
+      unit_type: :mob,
+      unit_id: 2001,
+      combat_stats: %{result.combat_stats | mdef: 0, soft_mdef: 0},
+      element: {:neutral, 1}
+    }
+
+    zero_smatk = put_in(attacker.combat_stats.smatk, 0)
+    zero_mres = put_in(defender.combat_stats.mres, 0)
+
+    assert {:ok, %{damage: 100, is_critical: false}} =
+             MagicDamageCalculator.calculate_magic_damage(zero_smatk, zero_mres)
+
+    assert MagicDamageCalculator.calculate_magic_damage(attacker, zero_mres) ===
+             MagicDamageCalculator.calculate_magic_damage(zero_smatk, zero_mres)
+
+    assert MagicDamageCalculator.calculate_magic_damage(zero_smatk, defender) ===
+             MagicDamageCalculator.calculate_magic_damage(zero_smatk, zero_mres)
   end
 
   test "HP and SP retain each mode's rate, equipment-stat, and upper-job stages" do

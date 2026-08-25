@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
 
   @doc """
   Cumulative trait points granted from base level 1 up to `level`, clamped to
-  the table's maximum level. 0 through level 200.
+  the table's maximum level. Tables without a trait-point column return 0.
   """
   @spec trait_points_at(pos_integer()) :: non_neg_integer()
   def trait_points_at(level) when level >= 1 do
@@ -135,8 +135,8 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
     sources
     |> Enum.flat_map(fn source -> source |> DataLoader.parse_file() |> Enum.with_index(1) end)
     |> DataLoader.merge_by_key(&elem(&1, 1))
-    |> Map.new(fn {%{"points" => points, "trait_points" => trait_points}, level} ->
-      {level, {points, trait_points}}
+    |> Map.new(fn {row, level} ->
+      {level, {Map.fetch!(row, "points"), Map.get(row, "trait_points", 0)}}
     end)
   end
 end

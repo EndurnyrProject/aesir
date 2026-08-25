@@ -2,9 +2,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.StatUpResult
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -18,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   @trait_job 4252
   @classic_job 4054
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   setup do
@@ -75,7 +78,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   end
 
   describe "trait-stat allocation" do
-    test "raising POW spends exactly 1 trait point and raises pow by 1" do
+    test "pre-renewal refuses POW without entering the trait success path" do
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      reject(&Mechanics.stat_cost/0)
+      reject(&Stats.calculate_stats/2)
+      reject(&UnitRegistry.update_unit_state/3)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusSync.send_params/2)
+      reject(&StatusSync.send_stat_updates/2)
+
+      state = state(@trait_job, [pow: 10], trait_point: 5)
+      stats_binary = :erlang.term_to_binary(state.game_state.stats)
+
+      assert {:noreply, new_state} =
+               StatAllocationHandler.handle_status_up(StatusParams.pow(), 1, state)
+
+      assert new_state === state
+      assert :erlang.term_to_binary(new_state.game_state.stats) === stats_binary
+
+      pow_id = StatusParams.pow()
+      assert_received {:ack, %StatUpResult{stat_id: ^pow_id, ok: false, value: 10}}
+    end
+
+    test "renewal POW allocation spends exactly 1 trait point and raises pow by 1" do
+      stub(GameMode, :mode, fn -> :renewal end)
       state = state(@trait_job, [pow: 10], trait_point: 5)
 
       {:noreply, new_state} =
