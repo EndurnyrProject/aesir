@@ -243,9 +243,32 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs do
 
   @job_name_to_id Map.new(@job_id_to_name, fn {k, v} -> {v, k} end)
 
+  @source_name_to_job @job_id_to_name
+                      |> Map.new(fn {id, name} ->
+                        source_name =
+                          name
+                          |> Atom.to_string()
+                          |> String.split("_")
+                          |> Enum.map_join("_", &Macro.camelize/1)
+
+                        {source_name, {id, name}}
+                      end)
+                      |> Map.drop(["Max_Basic", "Job_Max"])
+                      |> Map.put("Supernovice", {23, :super_novice})
+
   @doc "Returns the current job catalog IDs in deterministic order."
   @spec ids() :: [integer()]
   def ids, do: @job_id_to_name |> Map.keys() |> Enum.sort()
+
+  @doc "Resolves an exact canonical source spelling to its numeric ID and Aesir name."
+  @spec canonical_source_job(String.t()) ::
+          {:ok, {non_neg_integer(), atom()}} | {:error, :unknown_source_job}
+  def canonical_source_job(source_name) when is_binary(source_name) do
+    case Map.fetch(@source_name_to_job, source_name) do
+      {:ok, job} -> {:ok, job}
+      :error -> {:error, :unknown_source_job}
+    end
+  end
 
   @spec job_id_to_name(integer()) :: {:ok, atom()} | {:error, :unknown_job_id}
   def job_id_to_name(job_id) when is_integer(job_id) do

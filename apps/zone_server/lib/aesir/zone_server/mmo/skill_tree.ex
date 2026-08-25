@@ -3,17 +3,19 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   Skill-tree data: per-job learnable skills, their caps, level minimums and
   prerequisites.
 
-  Authored as aegis-named YAML under `priv/db/re/skill_tree/*.yml` (mirroring
-  rAthena's `db/re/skill_tree.yml`, including `inherit`) and loaded the same way
-  as `JobManagement.Jobs` / `StatPoint`: built once and cached in
-  `:persistent_term`, with `reload/0` to rebuild after a data change.
+  Authored or imported as aegis-named YAML under the active mode's
+  `priv/db/<mode>/skill_tree/*.yml` directory and loaded the same way as
+  `JobManagement.Jobs` / `StatPoint`: built once and cached in `:persistent_term`,
+  with `reload/0` to rebuild after a data change.
 
   Building the index:
 
     1. Parse every job's YAML block.
     2. Flatten `inherit` chains (`flatten_inherit/1`) - a parent's tree is merged
-       into the child, with the child's own entries overriding by name and
-       `exclude: true` removing an inherited entry.
+       into the child, with the child's own entries overriding by name.
+       `exclude: true` deletes that name from the current tree;
+       `exclude_inherit: true` keeps the defining job's entry but prevents
+       descendants from inheriting it.
     3. Resolve each entry's aegis name to a numeric skill id via `Skill.Catalog`
        and each `job` name to a job id via `AvailableJobs`.
     4. Filter to skills present in `Catalog` (a tree can never gate on a skill
@@ -35,6 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   @pt_key __MODULE__
+
+  @typedoc """
+  An own-schema entry before skill/job resolution.
+
+  `"exclude" => true` is a deletion marker: it removes the named inherited
+  entry from the current job. `"exclude_inherit" => true` is an inheritance
+  marker: the defining job keeps the entry, but jobs inheriting that tree do
+  not receive it. Both markers are internal to flattening and never appear in
+  resolved `Entry` structs.
+  """
+  @type raw_entry :: %{required(String.t()) => term()}
 
   @type tree :: %{non_neg_integer() => Entry.t()}
   @type index :: %{non_neg_integer() => tree()}
@@ -298,15 +311,23 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   Input is `%{job_name => job}` where `job` is either a bare list of entry maps
   (no inheritance) or `%{inherit: [parent_name], tree: [entry_map]}`. Returns
   `%{job_name => [entry_map]}` with parent entries merged in: a child entry
-  overrides an inherited one with the same `"name"`, and an entry flagged
-  `"exclude" => true` removes the inherited entry of that name. Each surviving
-  entry carries an `"owner_job"` key naming the job it originated from (the parent
-  for inherited entries, the job itself for its own). Pure - no process, no
-  resolution against the skill/job registries.
+  overrides an inherited one with the same `"name"`. An own
+  `"exclude" => true` entry removes that name from the current tree. An own
+  `"exclude_inherit" => true` entry remains in the defining job but is omitted
+  whenever that job is flattened as a parent; a descendant can restore the
+  skill by defining it again. Both markers are stripped from the returned maps.
+  Parent order is preserved, so duplicate names from multiple parents retain the
+  existing deterministic last-parent-wins behavior during resolution. Each
+  surviving entry carries an `"owner_job"` key naming the job it originated from
+  (the parent for inherited entries, the job itself for its own). Pure - no
+  process, no resolution against the skill/job registries.
   """
-  @spec flatten_inherit(map()) :: %{String.t() => [map()]}
+  @spec flatten_inherit(map()) :: %{String.t() => [raw_entry()]}
   def flatten_inherit(jobs) do
-    Map.new(jobs, fn {name, _job} -> {name, flatten_job(name, jobs)} end)
+    Map.new(jobs, fn {name, _job} ->
+      flattened = name |> flatten_job(jobs) |> Enum.map(&strip_internal_markers/1)
+      {name, flattened}
+    end)
   end
 
   @spec flatten_job(String.t(), map()) :: [map()]
@@ -314,7 +335,14 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     case Map.fetch(jobs, name) do
       {:ok, raw} ->
         job = normalize_job(raw)
-        inherited = Enum.flat_map(job.inherit, fn parent -> flatten_job(parent, jobs) end)
+
+        inherited =
+          Enum.flat_map(job.inherit, fn parent ->
+            parent
+            |> flatten_job(jobs)
+            |> Enum.reject(&(&1["exclude_inherit"] == true))
+          end)
+
         own = Enum.map(job.tree, &Map.put(&1, "owner_job", name))
         merge_tree(inherited, own)
 
@@ -332,6 +360,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
 
   defp normalize_job(job) when is_map(job) do
     %{inherit: Map.get(job, "inherit", []), tree: Map.get(job, "tree", [])}
+  end
+
+  @spec strip_internal_markers(raw_entry()) :: raw_entry()
+  defp strip_internal_markers(entry) do
+    entry
+    |> Map.delete("exclude")
+    |> Map.delete("exclude_inherit")
   end
 
   @spec merge_tree([map()], [map()]) :: [map()]

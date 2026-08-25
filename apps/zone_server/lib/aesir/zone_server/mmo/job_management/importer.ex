@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
   @moduledoc """
-  Merges rAthena's renewal job databases into our own-schema job maps.
+  Merges rAthena's selected-mode job databases into our own-schema job maps.
 
   rAthena splits job data across four same-schema (`JOB_STATS`) files that merge
   by job name, each grouping many jobs under one entry:
@@ -22,8 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
   Summoner (Spirit_Handler) +50% HP/SP, Super Novice (Hyper_Novice) +2000 HP at
   base 99/150, and Ninja/Gunslinger (Shinkiro/Shiranui/Night_Watch) SP tweaks.
 
-  A job is emitted only if it has a base-point group; rAthena's unused jobs
-  (Gangsi, Death_Knight, Dark_Collector) carry only exp curves and are skipped.
+  Source job spellings resolve through the closed `AvailableJobs` vocabulary and
+  fragments merge by numeric job ID. A job is emitted only when base points,
+  ASPD, base EXP, and job EXP are all present; stats remain optional.
   Used only by the one-time `mix aesir.import.jobs` task; not on any runtime path.
   """
 
@@ -97,6 +98,9 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
 
     points_by
     |> Map.keys()
+    |> intersection(Map.keys(aspd_by))
+    |> intersection(Map.keys(base_exp_by))
+    |> intersection(Map.keys(job_exp_by))
     |> Enum.sort()
     |> Enum.map(&to_map(&1, stats_by, points_by, aspd_by, base_exp_by, job_exp_by))
   end
@@ -120,34 +124,39 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
 
   # A job may appear in several groups within one file (e.g. job_basepoints lists
   # all BaseHp groups, then all BaseSp, then all BaseAp), so payloads are merged.
-  @spec expand([map()]) :: %{String.t() => map()}
+  @spec expand([map()]) :: %{non_neg_integer() => map()}
   defp expand(groups) do
     Enum.reduce(groups, %{}, fn group, acc ->
       {jobs, payload} = Map.pop!(group, "Jobs")
 
-      Enum.reduce(
-        Map.keys(jobs),
-        acc,
-        &Map.update(&2, &1, payload, fn p -> Map.merge(p, payload) end)
-      )
+      Enum.reduce(Map.keys(jobs), acc, fn source_name, expanded ->
+        {job_id, _name} = canonical_job!(source_name)
+        Map.update(expanded, job_id, payload, &Map.merge(&1, payload))
+      end)
     end)
   end
 
-  @spec to_map(String.t(), map(), map(), map(), map(), map()) :: map()
-  defp to_map(rname, stats_by, points_by, aspd_by, base_exp_by, job_exp_by) do
-    name = normalize(rname)
-    stats = Map.get(stats_by, rname, %{})
-    points = fetch!(points_by, rname, "base points")
-    aspd = fetch!(aspd_by, rname, "aspd")
-    base_exp = fetch!(base_exp_by, rname, "base exp")
-    job_exp = fetch!(job_exp_by, rname, "job exp")
+  @spec intersection([non_neg_integer()], [non_neg_integer()]) :: [non_neg_integer()]
+  defp intersection(left, right) do
+    right = MapSet.new(right)
+    Enum.filter(left, &MapSet.member?(right, &1))
+  end
+
+  @spec to_map(non_neg_integer(), map(), map(), map(), map(), map()) :: map()
+  defp to_map(job_id, stats_by, points_by, aspd_by, base_exp_by, job_exp_by) do
+    {:ok, name} = AvailableJobs.job_id_to_name(job_id)
+    stats = Map.get(stats_by, job_id, %{})
+    points = Map.fetch!(points_by, job_id)
+    aspd = Map.fetch!(aspd_by, job_id)
+    base_exp = Map.fetch!(base_exp_by, job_id)
+    job_exp = Map.fetch!(job_exp_by, job_id)
 
     max_base_level = Map.fetch!(base_exp, "MaxBaseLevel")
     factors = factors(stats)
     family = family(name)
 
     %{
-      "id" => job_id!(name),
+      "id" => job_id,
       "name" => Atom.to_string(name),
       "max_weight" => Map.get(stats, "MaxWeight", 20_000),
       "max_base_level" => max_base_level,
@@ -258,24 +267,14 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.Importer do
     if(level >= 99, do: 2000, else: 0) + if(level >= 150, do: 2000, else: 0)
   end
 
-  @spec normalize(String.t()) :: atom()
-  defp normalize(rname) do
-    rname |> Macro.underscore() |> String.replace("__", "_") |> String.to_atom()
-  end
+  @spec canonical_job!(String.t()) :: {non_neg_integer(), atom()}
+  defp canonical_job!(source_name) do
+    case AvailableJobs.canonical_source_job(source_name) do
+      {:ok, job} ->
+        job
 
-  @spec job_id!(atom()) :: integer()
-  defp job_id!(name) do
-    case AvailableJobs.job_name_to_id(name) do
-      {:ok, id} -> id
-      {:error, _} -> raise "no job id for #{inspect(name)} - add it to AvailableJobs"
-    end
-  end
-
-  @spec fetch!(map(), String.t(), String.t()) :: map()
-  defp fetch!(by_name, rname, what) do
-    case Map.fetch(by_name, rname) do
-      {:ok, payload} -> payload
-      :error -> raise "missing #{what} for job #{rname}"
+      {:error, :unknown_source_job} ->
+        raise "no job id for source job #{inspect(source_name)} - add it to AvailableJobs"
     end
   end
 

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.ImporterTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.Importer
 
   # Novice is fully table-driven; Dragon_Knight and Night_Watch ship no HP/SP
@@ -53,6 +54,21 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.ImporterTest do
   defp by_id, do: Map.new(Importer.build(bodies()), &{&1["id"], &1})
 
   describe "build/1" do
+    test "coalesces the Supernovice compatibility spelling by job ID" do
+      bodies = solo_bodies("Supernovice", %{"Fist" => 40})
+      aspd = [%{"Jobs" => %{"Super_Novice" => true}, "BaseASPD" => %{"Fist" => 40}}]
+
+      assert [%{"id" => 23, "name" => "super_novice"}] =
+               bodies |> Map.put(:aspd, aspd) |> Importer.build()
+    end
+
+    test "excludes a job absent from another required table" do
+      incomplete = %{"Jobs" => %{"Super_Novice_E" => true}, "BaseHp" => [hp(1, 40)]}
+      bodies = Map.update!(bodies(), :basepoints, &[incomplete | &1])
+
+      refute Enum.any?(Importer.build(bodies), &(&1["id"] == 4190))
+    end
+
     test "merges BaseHp and BaseSp from separate basepoints groups" do
       assert %{
                "id" => 0,
@@ -84,9 +100,14 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.ImporterTest do
     end
 
     test "raises on a job name not present in AvailableJobs" do
-      assert_raise RuntimeError, ~r/no job id for :bogus_job/, fn ->
+      assert_raise RuntimeError, ~r/no job id for source job "Bogus_Job"/, fn ->
         Importer.build(solo_bodies("Bogus_Job", %{"Fist" => 40}))
       end
+    end
+
+    test "rejects source sentinel job spellings" do
+      assert {:error, :unknown_source_job} = AvailableJobs.canonical_source_job("Max_Basic")
+      assert {:error, :unknown_source_job} = AvailableJobs.canonical_source_job("Job_Max")
     end
 
     test "raises on an unknown weapon type" do

@@ -215,6 +215,54 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       assert names == ["P_KEEP"]
     end
 
+    test "inheritance exclusions retain owner skills, block descendants, and allow redefinition" do
+      trick_dead = %{
+        "name" => "NV_TRICKDEAD",
+        "max_level" => 1,
+        "exclude_inherit" => true
+      }
+
+      raw = %{
+        "novice" => [trick_dead],
+        "novice_high" => %{inherit: ["novice"], tree: [trick_dead]},
+        "baby" => %{inherit: ["novice"], tree: [trick_dead]},
+        "swordman" => %{inherit: ["novice"], tree: []},
+        "alternate_novice" => [%{"name" => "NV_TRICKDEAD", "max_level" => 2}],
+        "multi_swordman" => %{inherit: ["novice", "alternate_novice"], tree: []},
+        "restored_swordman" => %{
+          inherit: ["novice"],
+          tree: [%{"name" => "NV_TRICKDEAD", "max_level" => 1}]
+        },
+        "knight" => %{inherit: ["restored_swordman"], tree: []},
+        "deleted" => %{
+          inherit: ["restored_swordman"],
+          tree: [%{"name" => "NV_TRICKDEAD", "exclude" => true}]
+        }
+      }
+
+      flattened = SkillTree.flatten_inherit(raw)
+
+      for owner <- ["novice", "novice_high", "baby"] do
+        assert [%{"name" => "NV_TRICKDEAD", "owner_job" => ^owner}] = flattened[owner]
+      end
+
+      assert flattened["swordman"] == []
+
+      assert [%{"owner_job" => "alternate_novice", "max_level" => 2}] =
+               flattened["multi_swordman"]
+
+      assert [%{"owner_job" => "restored_swordman"}] = flattened["restored_swordman"]
+      assert [%{"owner_job" => "restored_swordman"}] = flattened["knight"]
+      assert flattened["deleted"] == []
+
+      refute Enum.any?(flattened, fn {_job, entries} ->
+               Enum.any?(
+                 entries,
+                 &(Map.has_key?(&1, "exclude") or Map.has_key?(&1, "exclude_inherit"))
+               )
+             end)
+    end
+
     test "inheritance is transitive across chains" do
       raw = %{
         "grandparent" => [%{"name" => "G_SKILL", "max_level" => 5}],

@@ -58,18 +58,23 @@ defmodule Aesir.ZoneServer.Db.Source do
 
   @spec missing_data!(Layout.domain()) :: no_return()
   defp missing_data!(domain) do
-    expected_path = Path.join("priv/db", Layout.rel_path(domain, mode()))
+    mode = mode()
+    expected_path = Path.join("priv/db", Layout.rel_path(domain, mode))
 
     case Layout.import_task(domain) do
       nil ->
-        raise "no #{mode()} data for db #{inspect(domain)} (expected under #{expected_path}). " <>
+        raise "no #{mode} data for db #{inspect(domain)} (expected under #{expected_path}). " <>
                 "This database is hand-authored and has no importer; add its base YAML or set AESIR_DB_MODE=renewal."
 
       task ->
-        raise "no #{mode()} data for db #{inspect(domain)} (expected under #{expected_path}). " <>
-                "Import it with `mix #{task}` or set AESIR_DB_MODE=renewal."
+        raise "no #{mode} data for db #{inspect(domain)} (expected under #{expected_path}). " <>
+                "Import it with `mix #{task} --mode #{mode_arg(mode)}` or set AESIR_DB_MODE=renewal."
     end
   end
+
+  @spec mode_arg(Layout.mode()) :: String.t()
+  defp mode_arg(:renewal), do: "re"
+  defp mode_arg(:pre_renewal), do: "pre-re"
 
   @spec base_path(Layout.domain()) :: Path.t()
   defp base_path(domain), do: Path.join(db_root(), Layout.rel_path(domain, mode()))

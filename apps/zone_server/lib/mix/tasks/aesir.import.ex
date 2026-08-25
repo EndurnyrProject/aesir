@@ -64,6 +64,21 @@ defmodule Mix.Tasks.Aesir.Import do
     read_yaml!(path, checkout_root, rathena_mode(mode))
   end
 
+  @doc """
+  Reads the same selected rows as `read_mode_filtered!/2`, retaining source map order.
+
+  The normal parse remains authoritative for validating each database and selecting
+  its recursive official import graph. Every selected file is parsed a second time
+  as ordered mappings, then checked against the corresponding normal rows before
+  the ordered rows are returned.
+  """
+  @spec read_mode_filtered_ordered!(Path.t(), Layout.mode()) :: [term()]
+  def read_mode_filtered_ordered!(path, mode) do
+    path = Path.expand(path)
+    checkout_root = path |> Path.dirname() |> Path.dirname()
+    read_yaml_ordered!(path, checkout_root, rathena_mode(mode))
+  end
+
   @doc "Returns an importer's output path for a database domain and mode."
   @spec path(Layout.domain(), Layout.mode()) :: Path.t()
   def path(domain, mode), do: Path.join(@db_root, Layout.rel_path(domain, mode))
@@ -79,6 +94,20 @@ defmodule Mix.Tasks.Aesir.Import do
       end)
 
     body ++ imported_body
+  end
+
+  defp read_yaml_ordered!(path, checkout_root, target_mode) do
+    {body, imports} = read_database!(path)
+    ordered_body = path |> read_ordered_body!() |> retain_map_order!(body, path)
+
+    imported_body =
+      imports
+      |> selected_imports(target_mode)
+      |> Enum.flat_map(fn import_path ->
+        read_yaml_ordered!(Path.join(checkout_root, import_path), checkout_root, target_mode)
+      end)
+
+    ordered_body ++ imported_body
   end
 
   defp read_database!(path) do
@@ -100,6 +129,64 @@ defmodule Mix.Tasks.Aesir.Import do
   end
 
   defp validate_database!(_yaml, path), do: Mix.raise("expected top-level YAML map in #{path}")
+
+  defp read_ordered_body!(path) do
+    case YamlElixir.read_from_file(path, maps_as_keywords: true) do
+      {:ok, yaml} when is_list(yaml) ->
+        case List.keyfind(yaml, "Body", 0) do
+          {"Body", body} when is_list(body) -> body
+          {"Body", _body} -> Mix.raise("expected ordered Body to be a list in #{path}")
+          nil -> []
+        end
+
+      {:ok, _yaml} ->
+        Mix.raise("expected ordered top-level YAML map in #{path}")
+
+      {:error, %YamlElixir.FileNotFoundError{}} ->
+        Mix.raise("missing rAthena YAML file #{path}")
+
+      {:error, error} ->
+        Mix.raise(
+          "failed to parse ordered rAthena YAML file #{path}: #{Exception.message(error)}"
+        )
+    end
+  end
+
+  defp retain_map_order!(ordered, normal, path) when is_map(normal) and is_list(ordered) do
+    valid_mapping? =
+      length(ordered) == map_size(normal) and
+        Enum.all?(ordered, fn
+          {key, _value} -> Map.has_key?(normal, key)
+          _other -> false
+        end)
+
+    unless valid_mapping? do
+      Mix.raise("ordered YAML rows do not correspond to the normal parse in #{path}")
+    end
+
+    ordered
+    |> Enum.reverse()
+    |> Enum.map(fn {key, value} ->
+      {key, retain_map_order!(value, Map.fetch!(normal, key), path)}
+    end)
+  end
+
+  defp retain_map_order!(ordered, normal, path) when is_list(normal) and is_list(ordered) do
+    unless length(ordered) == length(normal) do
+      Mix.raise("ordered YAML rows do not correspond to the normal parse in #{path}")
+    end
+
+    ordered
+    |> Enum.zip(normal)
+    |> Enum.map(fn {ordered_value, normal_value} ->
+      retain_map_order!(ordered_value, normal_value, path)
+    end)
+  end
+
+  defp retain_map_order!(value, value, _path), do: value
+
+  defp retain_map_order!(_ordered, _normal, path),
+    do: Mix.raise("ordered YAML rows do not correspond to the normal parse in #{path}")
 
   defp validate_header!(%{"Header" => header}, _path) when is_map(header), do: :ok
   defp validate_header!(_yaml, path), do: Mix.raise("expected Header to be a map in #{path}")

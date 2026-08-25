@@ -81,18 +81,17 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
     error = assert_raise RuntimeError, fn -> Source.sources("items") end
 
     assert error.message =~ "priv/db/pre-re/items"
-    assert error.message =~ "mix aesir.import.items"
+    assert error.message =~ "mix aesir.import.items --mode pre-re"
   end
 
-  test "reports hand-authored domains without an importer", %{tmp_dir: root} do
+  test "reports the skill-tree importer when mode data is missing", %{tmp_dir: root} do
     Application.put_env(:commons, :game_mode, :pre_renewal)
     Application.put_env(:zone_server, :db_root, root)
 
     error = assert_raise RuntimeError, fn -> Source.sources("skill_tree") end
 
     assert error.message =~ "priv/db/pre-re/skill_tree"
-    assert error.message =~ "hand-authored"
-    assert error.message =~ "no importer"
+    assert error.message =~ "mix aesir.import.skill_tree --mode pre-re"
   end
 
   defp write_file(root, relative_path, contents) do
@@ -145,26 +144,26 @@ defmodule Aesir.ZoneServer.Db.SourceModeRestrictionTest do
     end)
   end
 
-  test "preserves the renewal missing-data error for renewal-only domains", %{tmp_dir: root} do
+  test "reports an explicit Renewal importer command for renewal-only domains", %{tmp_dir: root} do
     stub_source_config(:renewal, root)
 
     Enum.each(@level_penalty_domains, fn domain ->
       message =
         "no renewal data for db #{inspect(domain)} (expected under priv/db/re/#{domain}). " <>
-          "Import it with `mix aesir.import.level_penalty` or set AESIR_DB_MODE=renewal."
+          "Import it with `mix aesir.import.level_penalty --mode re` or set AESIR_DB_MODE=renewal."
 
       assert_raise RuntimeError, message, fn -> Source.sources(domain) end
     end)
   end
 
-  test "preserves the missing-data error for a nonrestricted pre-renewal domain", %{
+  test "reports an explicit pre-renewal importer command for a nonrestricted domain", %{
     tmp_dir: root
   } do
     stub_source_config(:pre_renewal, root)
 
     message =
       "no pre_renewal data for db \"items\" (expected under priv/db/pre-re/items). " <>
-        "Import it with `mix aesir.import.items` or set AESIR_DB_MODE=renewal."
+        "Import it with `mix aesir.import.items --mode pre-re` or set AESIR_DB_MODE=renewal."
 
     assert_raise RuntimeError, message, fn -> Source.sources("items") end
   end

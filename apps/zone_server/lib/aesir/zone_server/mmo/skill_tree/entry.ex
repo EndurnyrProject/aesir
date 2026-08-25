@@ -8,7 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree.Entry do
 
   `owner_job_id` is the job that originally owns the skill (e.g. `MG_FROSTDIVER`
   stays owned by Mage even when inherited into the Wizard tree), resolved from the
-  entry's originating job during inheritance flattening.
+  entry's originating job during inheritance flattening. Raw `exclude` and
+  `exclude_inherit` markers are consumed during flattening and never appear in
+  this resolved schema.
   """
 
   @enforce_keys [:skill_id, :owner_job_id, :max_level]
