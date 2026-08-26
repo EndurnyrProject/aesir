@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Npc.Transpiler.Codegen
+  alias Aesir.ZoneServer.Npc.Transpiler.FunctionIndex
   alias Aesir.ZoneServer.Script.Ctx
 
   setup :set_mimic_private
@@ -23,6 +24,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
       send(test_pid, {:script_apply, op})
       {:reply, {:ok, :unchanged}, test_pid}
     end
+  end
+
+  defp function_index!(functions) do
+    {:ok, index} = FunctionIndex.build(functions)
+    index
   end
 
   defp gen!(body, opts \\ []) do
@@ -1117,8 +1123,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "emotion(Todo.const!(:ET_NOPE))"
   end
 
-  test "callfunc resolves through the functions map or stubs" do
-    functions = %{"F_Check" => "Aesir.ZoneServer.Content.Npc.Functions.FCheck"}
+  test "callfunc resolves static scoped helpers directly and keeps unknown helpers as stubs" do
+    functions =
+      function_index!([
+        %{
+          name: "F_Check",
+          scope: :shared,
+          module: "Aesir.ZoneServer.Content.Npc.Functions.FCheck"
+        }
+      ])
 
     src =
       gen!(
@@ -1127,15 +1140,137 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
         if (callfunc("F_Missing") == 1) close;
         close;
         """,
-        functions: functions
+        functions: functions,
+        scope: :renewal
       )
 
     assert src =~ "{ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FCheck.call(ctx, [1])"
     assert src =~ ~S|Todo.call!(:callfunc, ["F_Missing"])|
+    refute src =~ "GameMode"
+  end
+
+  test "known opposite-overlay helpers fail in statement and expression callfunc forms" do
+    cases = [
+      {:renewal, :pre_renewal, "F_PreOnly", "re/caller.txt:7"},
+      {:pre_renewal, :renewal, "F_ReOnly", "pre-re/caller.txt:9"}
+    ]
+
+    for {caller_scope, helper_scope, helper, source} <- cases,
+        body <- ["callfunc \"#{helper}\";", "if (callfunc(\"#{helper}\") == 1) close;"] do
+      functions =
+        function_index!([
+          %{
+            name: helper,
+            scope: helper_scope,
+            module: "Aesir.ZoneServer.Content.Npc.Functions.#{helper}"
+          }
+        ])
+
+      opts = %{
+        module: "Aesir.ZoneServer.Content.Npc.Test.Caller",
+        kind: :script,
+        source: source,
+        spawns: [],
+        functions: functions,
+        scope: caller_scope
+      }
+
+      assert {:error, {:codegen, message}} = Codegen.generate(body, opts)
+      assert message =~ "NPC helper #{helper}"
+      assert message =~ "called from #{source}"
+      assert message =~ "#{caller_scope} scope"
+      assert message =~ "available scopes: #{inspect([helper_scope])}"
+    end
+  end
+
+  test "shared callers branch between overlay helpers and raise for a missing active target" do
+    both_modes =
+      function_index!([
+        %{
+          name: "F_Mode",
+          scope: :renewal,
+          module: "Aesir.ZoneServer.Content.Npc.Re.Functions.FMode"
+        },
+        %{
+          name: "F_Mode",
+          scope: :pre_renewal,
+          module: "Aesir.ZoneServer.Content.Npc.PreRe.Functions.FMode"
+        }
+      ])
+
+    both =
+      gen!(
+        """
+        callfunc "F_Mode", 1;
+        if (callfunc("F_Mode", 2) == 1) close;
+        close;
+        """,
+        functions: both_modes,
+        scope: :shared,
+        source: "shared/caller.txt:3"
+      )
+
+    assert both =~ "alias Aesir.Commons.GameMode"
+    assert both =~ "case GameMode.mode() do"
+    assert both =~ ":renewal -> Aesir.ZoneServer.Content.Npc.Re.Functions.FMode.call(ctx, [1])"
+
+    assert both =~
+             ":pre_renewal -> Aesir.ZoneServer.Content.Npc.PreRe.Functions.FMode.call(ctx, [1])"
+
+    assert both =~ "Aesir.ZoneServer.Content.Npc.Re.Functions.FMode.call(ctx, [2])"
+    assert both =~ "Aesir.ZoneServer.Content.Npc.PreRe.Functions.FMode.call(ctx, [2])"
+
+    renewal_only =
+      function_index!([
+        %{
+          name: "F_ReOnly",
+          scope: :renewal,
+          module: "Aesir.ZoneServer.Content.Npc.Re.Functions.FReOnly"
+        }
+      ])
+
+    missing_branch =
+      gen!("callfunc \"F_ReOnly\";",
+        functions: renewal_only,
+        scope: :shared,
+        source: "shared/caller.txt:9"
+      )
+
+    assert missing_branch =~
+             ~S|raise "NPC helper F_ReOnly called from shared/caller.txt:9 has no pre_renewal target"|
+  end
+
+  test "CommandMap takes precedence over scoped helper targets" do
+    functions =
+      function_index!([
+        %{name: "Job_Change", scope: :shared, module: "Wrong.JobChange"},
+        %{name: "F_GetNumSuffix", scope: :shared, module: "Wrong.NumSuffix"}
+      ])
+
+    src =
+      gen!(
+        """
+        callfunc "Job_Change", Job_Thief;
+        mes callfunc("F_GetNumSuffix", 2);
+        close;
+        """,
+        functions: functions
+      )
+
+    assert src =~ "jobchange(ctx, :thief)"
+    assert src =~ "num_suffix(ctx, 2)"
+    refute src =~ "Wrong."
   end
 
   test "a callfunc before end keeps its live binding and the entry catches script_end" do
-    functions = %{"F_Check" => "Aesir.ZoneServer.Content.Npc.Functions.FCheck"}
+    functions =
+      function_index!([
+        %{
+          name: "F_Check",
+          scope: :shared,
+          module: "Aesir.ZoneServer.Content.Npc.Functions.FCheck"
+        }
+      ])
 
     piped =
       gen!(

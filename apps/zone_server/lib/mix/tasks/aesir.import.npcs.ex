@@ -1,13 +1,17 @@
 defmodule Mix.Tasks.Aesir.Import.Npcs do
-  @shortdoc "Transpiles rAthena npc/re scripts into Elixir NPC modules"
+  @shortdoc "Transpiles enabled rAthena NPC content into scoped Elixir modules"
   @moduledoc """
-  Transpiles rAthena's renewal NPC scripts (`npc/re/**/*.txt`) into Elixir NPC
-  modules under `apps/zone_server/lib/aesir/zone_server/content/npc/`.
+  Transpiles the enabled shared, renewal, and pre-renewal NPC configuration
+  graphs into one scoped set of Elixir modules under
+  `apps/zone_server/lib/aesir/zone_server/content/npc/`.
 
       mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]
 
-  `<rathena_root>` defaults to `../rathena`. `--only` limits the run to source
-  files matching the glob relative to `npc/re/` (e.g. `--only "cities/*"`).
+  `<rathena_root>` defaults to `../rathena`. With no `--only`, one run follows
+  both `npc/re/scripts_main.conf` and `npc/pre-re/scripts_main.conf`, deduplicates
+  shared sources, and generates the complete enabled graph. `--only` remains an
+  incremental, non-authoritative selection relative to `npc/` (for example,
+  `--only "re/cities/*"`) and may intentionally target disabled sources.
   `--force` regenerates matching entries even when their source is unchanged
   (use after transpiler/codegen changes); hand-edited outputs still divert to
   `_conflicts/`.

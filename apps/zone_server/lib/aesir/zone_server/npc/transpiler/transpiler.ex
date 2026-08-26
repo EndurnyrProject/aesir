@@ -5,17 +5,20 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   file output.
 
   Driven by `mix aesir.import.npcs`; returns a result map the task renders
-  into `_transpile_report.md`. Per-entry problems never abort the run — they
-  are collected as failures.
+  into `_transpile_report.md`. Per-entry parse/codegen problems are collected
+  as failures; structural helper and duplicate ambiguity stops all writes.
   """
 
   alias Aesir.ZoneServer.Npc.Transpiler.Analyzer
   alias Aesir.ZoneServer.Npc.Transpiler.Codegen
+  alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
   alias Aesir.ZoneServer.Npc.Transpiler.FileParser
+  alias Aesir.ZoneServer.Npc.Transpiler.FunctionIndex
   alias Aesir.ZoneServer.Npc.Transpiler.Manifest
   alias Aesir.ZoneServer.Npc.Transpiler.ModuleName
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
   alias Aesir.ZoneServer.Npc.Transpiler.Resolver
+  alias Aesir.ZoneServer.Npc.Transpiler.SourceDiscovery
 
   @generic_sprite 46
   @manifest_rel "priv/npc_transpile/manifest.json"
@@ -25,8 +28,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   @doc """
   Runs the transpile.
 
+  With no `:only`, sources come from both enabled mode configuration graphs.
+
   Options:
-  - `:only` — glob (relative to `npc`) limiting the source files
+  - `:only` — non-authoritative glob relative to `npc`, limiting the source files
   - `:force` — regenerate even when the source is unchanged (codegen changed);
     hand-edited outputs still divert to `_conflicts/`
   - `:out_root` — zone_server app root the output paths hang off
@@ -35,40 +40,67 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   @spec run(Path.t(), keyword()) :: result()
   def run(rathena_root, opts \\ []) do
     out_root = Keyword.get(opts, :out_root, Path.join("apps", "zone_server"))
+    only = Keyword.get(opts, :only)
     manifest_path = Path.join(out_root, @manifest_rel)
     manifest = Manifest.load(manifest_path)
+    sources = SourceDiscovery.discover!(rathena_root, only: only)
+    active_manifest = active_manifest(manifest, sources, only)
     sprites = load_sprites(rathena_root)
 
-    entries = parse_files(rathena_root, Keyword.get(opts, :only))
+    entries = parse_files(sources)
     {functions, scripts, duplicates, skipped, file_errors} = partition(entries)
 
-    dup_index = Enum.group_by(duplicates, & &1.source)
     owners = Map.new(manifest, fn {key, rec} -> {rec.output_path, key} end)
-    manifest_scripts = manifest_scripts(manifest)
-    {fn_modules, fn_units} = function_units(functions, owners)
-    script_units = script_units(scripts, dup_index, sprites, owners)
-    cross_units = cross_run_units(scripts, dup_index, manifest_scripts, sprites, rathena_root)
+    {function_targets, function_units} = function_units(functions, owners)
+    local_function_keys = MapSet.new(function_units, &Manifest.key(&1.entry))
+
+    helper_targets =
+      function_targets ++ manifest_function_targets(active_manifest, local_function_keys)
+
+    {function_index, helper_failures} = build_function_index(helper_targets)
+
+    local_script_keys = MapSet.new(scripts, &Manifest.key/1)
+    manifest_sources = manifest_script_sources(active_manifest, local_script_keys)
+    source_targets = local_script_sources(scripts) ++ manifest_sources
+
+    {duplicate_links, orphan_duplicates, duplicate_failures} =
+      link_duplicates(duplicates, source_targets)
+
+    script_units = script_units(scripts, duplicate_links, sprites, owners)
+
+    {cross_units, cross_failures} =
+      cross_run_units(manifest_sources, duplicate_links, sprites, rathena_root)
+
+    units = function_units ++ script_units ++ cross_units
+    incompatible_helpers = incompatible_helper_failures(units, function_index)
+
+    structural_failures =
+      duplicate_failures ++ helper_failures ++ cross_failures ++ incompatible_helpers
 
     state = %{
       manifest: manifest,
       out_root: out_root,
       force: Keyword.get(opts, :force, false),
-      functions: Map.merge(manifest_functions(manifest), fn_modules),
+      functions: function_index,
       sprites: sprites,
       written: [],
       skipped: 0,
       conflicts: [],
-      failures: [],
+      failures: Enum.reverse(structural_failures),
       stubs: %{},
       unresolved_sprites: MapSet.new()
     }
 
-    state = Enum.reduce(fn_units ++ script_units ++ cross_units, state, &process_unit/2)
+    state =
+      if structural_failures == [] do
+        Enum.reduce(units, state, &process_unit/2)
+      else
+        state
+      end
 
-    Manifest.save(state.manifest, manifest_path)
-
-    orphans =
-      Map.keys(dup_index) -- (Enum.map(scripts, &ref_name/1) ++ Map.keys(manifest_scripts))
+    if structural_failures == [] do
+      Manifest.save(state.manifest, manifest_path)
+    end
 
     %{
       written: Enum.reverse(state.written),
@@ -78,7 +110,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       stubs: state.stubs,
       unresolved_sprites: Enum.sort(state.unresolved_sprites),
       skipped_types: Enum.frequencies_by(skipped, & &1.type),
-      orphan_duplicates: orphans,
+      orphan_duplicates: orphan_duplicates,
       totals: %{
         scripts: length(scripts),
         functions: length(functions),
@@ -96,25 +128,22 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     end
   end
 
-  defp parse_files(root, only) do
-    base = Path.join([root, "npc"])
-    files = base |> Path.join("**/*.txt") |> Path.wildcard()
-
-    files =
-      case only do
-        nil -> files
-        glob -> base |> Path.join(glob) |> Path.wildcard() |> MapSet.new() |> intersect(files)
-      end
-
-    files
-    |> Enum.sort()
-    |> Enum.flat_map(fn file ->
-      {:ok, entries} = FileParser.parse(File.read!(file), Path.relative_to(file, base))
-      entries
+  defp parse_files(sources) do
+    Enum.flat_map(sources, fn source ->
+      {:ok, entries} = FileParser.parse(File.read!(source.path), source.relative)
+      Enum.map(entries, &Map.put(&1, :scope, source.scope))
     end)
   end
 
-  defp intersect(allowed, files), do: Enum.filter(files, &MapSet.member?(allowed, &1))
+  defp active_manifest(manifest, _sources, only) when not is_nil(only), do: manifest
+
+  defp active_manifest(manifest, sources, nil) do
+    enabled = MapSet.new(sources, & &1.relative)
+
+    Map.filter(manifest, fn {key, _record} ->
+      MapSet.member?(enabled, Manifest.source_file(key))
+    end)
+  end
 
   defp partition(entries) do
     groups = Enum.group_by(entries, & &1.kind)
@@ -131,38 +160,44 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   # -- unit building -----------------------------------------------------------
 
   defp function_units(functions, owners) do
-    path_fun = fn _entry, slug -> ModuleName.path(:function, nil, slug) end
+    path_fun = fn entry, slug ->
+      ModuleName.path(:function, nil, slug, entry.scope)
+    end
 
     units =
       dedupe_slugs(functions, owners, path_fun, fn entry, slug ->
         %{
           entry: entry,
           kind: :function,
-          module: ModuleName.module(:function, nil, slug),
-          rel_path: ModuleName.path(:function, nil, slug),
+          module: ModuleName.module(:function, nil, slug, entry.scope),
+          rel_path: ModuleName.path(:function, nil, slug, entry.scope),
           spawns: []
         }
       end)
 
-    modules = Map.new(units, fn unit -> {unit.entry.name, unit.module} end)
-    {modules, units}
+    targets =
+      Enum.map(units, fn unit ->
+        %{name: unit.entry.name, scope: unit.entry.scope, module: unit.module}
+      end)
+
+    {targets, units}
   end
 
-  defp script_units(scripts, dup_index, sprites, owners) do
+  defp script_units(scripts, duplicate_links, sprites, owners) do
     path_fun = fn entry, slug ->
-      ModuleName.path(unit_kind(entry), entry, slug)
+      ModuleName.path(unit_kind(entry), entry, slug, entry.scope)
     end
 
     dedupe_slugs(scripts, owners, path_fun, fn entry, slug ->
       kind = unit_kind(entry)
-
-      {spawns, unresolved} = build_spawns(entry, Map.get(dup_index, ref_name(entry), []), sprites)
+      duplicates = Map.get(duplicate_links, Manifest.key(entry), [])
+      {spawns, unresolved} = build_spawns(entry, duplicates, sprites)
 
       %{
         entry: entry,
         kind: kind,
-        module: ModuleName.module(kind, entry, slug),
-        rel_path: ModuleName.path(kind, entry, slug),
+        module: ModuleName.module(kind, entry, slug, entry.scope),
+        rel_path: ModuleName.path(kind, entry, slug, entry.scope),
         spawns: spawns,
         unresolved_sprites: unresolved
       }
@@ -171,39 +206,123 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   defp unit_kind(entry), do: if(entry.kind == :script, do: :script, else: :floating)
 
-  # Global functions transpiled by earlier runs, recovered from the manifest
-  # (key `file|function|Name|-`, module from the output slug), so a `callfunc`
-  # into another import batch resolves to its module instead of a stub.
-  defp manifest_functions(manifest) do
-    manifest
-    |> Enum.flat_map(fn {key, rec} ->
-      case String.split(key, "|") do
-        [_file, "function", name | _rest] ->
-          [{name, ModuleName.module(:function, nil, Path.basename(rec.output_path, ".ex"))}]
-
-        _other ->
-          []
-      end
-    end)
-    |> Map.new()
+  defp manifest_function_targets(manifest, local_keys) do
+    Enum.flat_map(manifest, &manifest_function_target(&1, local_keys))
   end
 
-  # Script/floating NPCs transpiled by earlier runs, recovered from the manifest
-  # (keyed by their reference/export name), so a `duplicate(X)` in a later batch
-  # attaches to the already-transpiled source instead of being reported orphaned.
-  defp manifest_scripts(manifest) do
-    manifest
-    |> Enum.flat_map(fn {key, rec} ->
-      case String.split(key, "|") do
-        [_file, kind, name | _] when kind in ["script", "floating"] ->
-          [{ref_name(name), {key, rec}}]
+  defp manifest_function_target({key, rec}, local_keys) do
+    case String.split(key, "|") do
+      [_file, "function", name | _rest] ->
+        build_manifest_function_target(key, rec, name, MapSet.member?(local_keys, key))
 
-        _other ->
-          []
-      end
-    end)
-    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      _other ->
+        []
+    end
   end
+
+  defp build_manifest_function_target(_key, _rec, _name, true), do: []
+
+  defp build_manifest_function_target(key, rec, name, false) do
+    scope = Manifest.body_scope(key)
+    slug = Path.basename(rec.output_path, ".ex")
+
+    module =
+      case rec.module do
+        nil -> ModuleName.module(:function, nil, slug, scope)
+        module -> module
+      end
+
+    [%{name: name, scope: scope, module: module}]
+  end
+
+  defp build_function_index(targets) do
+    case FunctionIndex.build(targets) do
+      {:ok, index} ->
+        {index, []}
+
+      {:error, errors} ->
+        failures = Enum.map(errors, &{:link, "global functions", 0, &1})
+        {%{}, failures}
+    end
+  end
+
+  defp local_script_sources(scripts) do
+    Enum.map(scripts, fn entry ->
+      %{
+        key: Manifest.key(entry),
+        ref: ref_name(entry),
+        scope: entry.scope,
+        file: entry.file,
+        record: nil
+      }
+    end)
+  end
+
+  defp manifest_script_sources(manifest, local_keys) do
+    Enum.flat_map(manifest, &manifest_script_source(&1, local_keys))
+  end
+
+  defp manifest_script_source({key, rec}, local_keys) do
+    case String.split(key, "|") do
+      [_file, kind, name | _] when kind in ["script", "floating"] ->
+        build_manifest_script_source(key, rec, name, MapSet.member?(local_keys, key))
+
+      _other ->
+        []
+    end
+  end
+
+  defp build_manifest_script_source(_key, _rec, _name, true), do: []
+
+  defp build_manifest_script_source(key, rec, name, false) do
+    [
+      %{
+        key: key,
+        ref: ref_name(name),
+        scope: Manifest.body_scope(key),
+        file: Manifest.source_file(key),
+        record: rec
+      }
+    ]
+  end
+
+  defp link_duplicates(duplicates, sources) do
+    source_index = Enum.group_by(sources, & &1.ref)
+
+    {links, orphans, failures} =
+      Enum.reduce(duplicates, {%{}, [], []}, fn duplicate, {links, orphans, failures} ->
+        compatible =
+          source_index
+          |> Map.get(duplicate.source, [])
+          |> Enum.filter(&compatible_source?(&1.scope, duplicate.scope))
+
+        case compatible do
+          [source] ->
+            links = Map.update(links, source.key, [duplicate], &[duplicate | &1])
+            {links, orphans, failures}
+
+          [] ->
+            orphan = "#{duplicate.source} [#{duplicate.scope}]"
+            {links, [orphan | orphans], failures}
+
+          many ->
+            candidates = Enum.map(many, &{&1.file, &1.scope})
+
+            failure =
+              {:link, duplicate.file, duplicate.line,
+               {:ambiguous_duplicate, duplicate.source, duplicate.scope, candidates}}
+
+            {links, orphans, [failure | failures]}
+        end
+      end)
+
+    links = Map.new(links, fn {key, entries} -> {key, Enum.reverse(entries)} end)
+    {links, Enum.reverse(orphans), Enum.reverse(failures)}
+  end
+
+  defp compatible_source?(:shared, _duplicate_scope), do: true
+  defp compatible_source?(scope, scope), do: true
+  defp compatible_source?(_source_scope, _duplicate_scope), do: false
 
   # Slugs collide (same display name on one map, or across files); append the
   # placement coordinates, then an index, deterministically. A candidate is
@@ -234,7 +353,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   end
 
   defp dedupe_key(%{kind: :script} = entry), do: ModuleName.dir_slug(entry)
-  defp dedupe_key(_entry), do: nil
+  defp dedupe_key(entry), do: {entry.kind, entry.scope}
 
   defp coord_slug(%{x: x, y: y}, base), do: "#{base}_#{x}_#{y}"
   defp coord_slug(_entry, _base), do: nil
@@ -285,7 +404,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
           y: placement.y,
           dir: placement[:dir],
           sprite: sprite,
-          name: ModuleName.display_name(placement.name)
+          name: ModuleName.display_name(placement.name),
+          scope: placement.scope
         }
         |> maybe_put(:unique_name, unique_name(placement.name))
         |> maybe_put(:trigger, placement[:touch])
@@ -326,49 +446,63 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   # -- cross-run duplicate resolution -------------------------------------------
 
-  # Sources transpiled by an earlier run are not in this run's script list, but
-  # their `duplicate()` placements still need to land on them. For each such
-  # source, re-parse its recorded source file to recover the body, resolve the
-  # new duplicates, merge them with the stored spawns, and hand the resulting
-  # unit to the normal regen pipeline.
-  defp cross_run_units(scripts, dup_index, manifest_scripts, sprites, rathena_root) do
-    local_refs = MapSet.new(Enum.map(scripts, &ref_name/1))
+  defp cross_run_units(manifest_sources, duplicate_links, sprites, rathena_root) do
+    {units, failures} =
+      Enum.reduce(manifest_sources, {[], []}, fn source, acc ->
+        collect_cross_run_unit(source, duplicate_links, sprites, rathena_root, acc)
+      end)
 
-    manifest_scripts
-    |> Enum.flat_map(fn {source, manifest_entries} ->
-      cross_run_units_for(source, manifest_entries, local_refs, dup_index, sprites, rathena_root)
-    end)
+    {Enum.reverse(units), Enum.reverse(failures)}
   end
 
-  defp cross_run_units_for(source, manifest_entries, local_refs, dup_index, sprites, rathena_root) do
-    duplicates = Map.get(dup_index, source, [])
-
-    if duplicates == [] or MapSet.member?(local_refs, source) do
-      []
-    else
-      Enum.flat_map(manifest_entries, fn {key, rec} ->
-        build_cross_run_unit(key, rec, duplicates, sprites, rathena_root)
-      end)
+  defp collect_cross_run_unit(source, duplicate_links, sprites, rathena_root, acc) do
+    case Map.get(duplicate_links, source.key, []) do
+      [] -> acc
+      duplicates -> build_cross_run_unit(source, duplicates, sprites, rathena_root, acc)
     end
   end
 
-  defp build_cross_run_unit(key, rec, duplicates, sprites, rathena_root) do
-    with true <- is_binary(rec.module),
-         {:ok, entry} <- recover_entry(rathena_root, key) do
-      {new_spawns, unresolved} = resolve_duplicate_spawns(entry, duplicates, sprites)
+  defp build_cross_run_unit(source, duplicates, sprites, rathena_root, {units, failures}) do
+    case recover_cross_run_unit(source, duplicates, sprites, rathena_root) do
+      {:ok, unit} -> {[unit | units], failures}
+      {:error, failure} -> {units, [failure | failures]}
+    end
+  end
 
-      [
-        %{
-          entry: entry,
-          kind: unit_kind(entry),
-          module: rec.module,
-          rel_path: rec.output_path,
-          spawns: merge_spawns(rec.spawns, new_spawns),
-          unresolved_sprites: unresolved
-        }
-      ]
-    else
-      _ -> []
+  defp recover_cross_run_unit(source, duplicates, sprites, rathena_root) do
+    case recover_entry(rathena_root, source.key) do
+      {:ok, entry} ->
+        kind = unit_kind(entry)
+        {new_spawns, unresolved} = resolve_duplicate_spawns(entry, duplicates, sprites)
+
+        module =
+          source.record.module ||
+            ModuleName.module(
+              kind,
+              entry,
+              Path.basename(source.record.output_path, ".ex"),
+              entry.scope
+            )
+
+        {:ok,
+         %{
+           entry: entry,
+           kind: kind,
+           module: module,
+           rel_path: source.record.output_path,
+           spawns: merge_spawns(source.record.spawns, new_spawns),
+           unresolved_sprites: unresolved
+         }}
+
+      {:error, _reason} when is_nil(source.record.module) ->
+        {:error,
+         {:link, source.file, 0,
+          {:missing_manifest_module, source.key, source.file, source.scope}}}
+
+      {:error, reason} ->
+        {:error,
+         {:link, source.file, 0,
+          {:unrecoverable_duplicate_source, source.key, source.scope, reason}}}
     end
   end
 
@@ -381,7 +515,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
          {:ok, entries} <- FileParser.parse(source, file) do
       case Enum.find(entries, &(Manifest.key(&1) == key)) do
         nil -> {:error, :entry_not_found}
-        entry -> {:ok, entry}
+        entry -> {:ok, Map.put(entry, :scope, Manifest.body_scope(key))}
       end
     else
       _ -> {:error, :source_unavailable}
@@ -389,11 +523,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
   end
 
   # Merges stored spawns with newly resolved duplicates, keeping the first
-  # placement per {map, x, y} so re-running the same batch stays idempotent.
+  # placement per scoped location so re-running the same batch stays idempotent.
   defp merge_spawns(prior, new) do
     {merged, _seen} =
       Enum.reduce(prior ++ new, {[], MapSet.new()}, fn spawn, {acc, seen} ->
-        key = {spawn.map, spawn.x, spawn.y}
+        key = {spawn.map, spawn.x, spawn.y, spawn.scope}
 
         if MapSet.member?(seen, key) do
           {acc, seen}
@@ -409,7 +543,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
 
   defp process_unit(unit, state) do
     entry = unit.entry
-    source_hash = Manifest.hash(entry.body <> inspect(unit.spawns))
+
+    source_hash =
+      Manifest.hash(
+        entry.body <> inspect(unit.spawns) <> helper_link_hash(entry, state.functions)
+      )
+
     key = Manifest.key(entry)
     out_path = Path.join(state.out_root, unit.rel_path)
 
@@ -441,6 +580,77 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       {:ok, content} -> {:present, Manifest.hash(content)}
       {:error, _} -> :missing
     end
+  end
+
+  defp incompatible_helper_failures(units, functions) do
+    Enum.flat_map(units, fn unit ->
+      for {name, {:missing, scopes}} <- helper_resolutions(unit.entry, functions), scopes != [] do
+        {:link, unit.entry.file, unit.entry.line,
+         {:incompatible_helper, name, unit.entry.scope, scopes}}
+      end
+    end)
+  end
+
+  defp helper_link_hash(entry, functions) do
+    case helper_resolutions(entry, functions) do
+      [] -> ""
+      dependencies -> :erlang.term_to_binary(dependencies, [:deterministic])
+    end
+  end
+
+  defp helper_resolutions(entry, functions) do
+    case Parser.parse_body(entry.body) do
+      {:ok, ast} ->
+        Enum.map(literal_helper_dependencies(ast), fn name ->
+          {name, helper_resolution(functions, name, entry.scope)}
+        end)
+
+      {:error, reason} ->
+        [{:parse_error, reason}]
+    end
+  end
+
+  defp helper_resolution(functions, name, scope) do
+    case FunctionIndex.resolve(functions, name, scope) do
+      :missing ->
+        scopes = functions |> Map.get(name, %{}) |> Map.keys() |> Enum.sort()
+        {:missing, scopes}
+
+      resolved ->
+        resolved
+    end
+  end
+
+  defp literal_helper_dependencies(ast) do
+    ast
+    |> collect_literal_helpers(MapSet.new())
+    |> MapSet.to_list()
+    |> Enum.sort()
+  end
+
+  defp collect_literal_helpers({kind, "callfunc", [{:str, name} | args]}, found)
+       when kind in [:cmd, :call] do
+    found =
+      if command_map_handles?(kind, name), do: found, else: MapSet.put(found, name)
+
+    collect_literal_helpers(args, found)
+  end
+
+  defp collect_literal_helpers(tuple, found) when is_tuple(tuple) do
+    tuple
+    |> Tuple.to_list()
+    |> collect_literal_helpers(found)
+  end
+
+  defp collect_literal_helpers(list, found) when is_list(list) do
+    Enum.reduce(list, found, &collect_literal_helpers/2)
+  end
+
+  defp collect_literal_helpers(_term, found), do: found
+
+  defp command_map_handles?(kind, name) do
+    expected = if(kind == :cmd, do: :command, else: :read)
+    match?({:ok, %{kind: ^expected}}, CommandMap.function(name))
   end
 
   defp write_unit(unit, key, source_hash, out_path, state) do
@@ -497,6 +707,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       kind: unit.kind,
       spawns: spawns,
       functions: state.functions,
+      scope: entry.scope,
       sprites: state.sprites,
       source: "#{entry.file}:#{entry.line} (#{entry[:name]})"
     }

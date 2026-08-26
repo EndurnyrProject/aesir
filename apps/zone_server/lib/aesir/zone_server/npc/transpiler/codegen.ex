@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Npc.Transpiler.Analyzer
   alias Aesir.ZoneServer.Npc.Transpiler.CommandMap
+  alias Aesir.ZoneServer.Npc.Transpiler.FunctionIndex
   alias Aesir.ZoneServer.Npc.Transpiler.ModuleName
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
   alias Aesir.ZoneServer.Npc.Transpiler.Resolver
@@ -114,8 +115,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   Options: `:module` (full module name string), `:spawns` (resolved placement
   maps for the `use` line; `[]` for floating/functions), `:kind`
   (`:script | :floating | :function`), `:scope` (body content scope, defaults
-  to `:shared`), `:functions` (global `callfunc` name → module map), `:source`
-  (file:line provenance for the moduledoc).
+  to `:shared`), `:functions` (scoped global helper index), `:source`
+  (file:line provenance for the moduledoc and helper-link failures).
   """
   @type opts :: map()
 
@@ -130,6 +131,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         a: analysis,
         fns: Map.get(opts, :functions, %{}),
         labels: label_fns(analysis, unresolvable),
+        scope: Map.get(opts, :scope, :shared),
+        source: opts.source,
         sub: opts.kind == :function,
         break: nil,
         loop: nil,
@@ -227,6 +230,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp aliases do
     [
+      flag?(:game_mode) && "alias Aesir.Commons.GameMode",
       flag?(:rathena) && "alias Aesir.ZoneServer.Script.Rathena",
       flag?(:todo_mod) && "alias Aesir.ZoneServer.Script.Todo"
     ]
@@ -1014,22 +1018,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   # A CommandMap-mapped function (hand-curated DSL primitive) wins over a
-  # transpiled function module of the same name; anything else resolves to
-  # the module transpiled in this or an earlier import run.
+  # generated helper. Static helper targets stay direct; only a shared caller
+  # targeting overlays emits a runtime mode branch.
   defp emit_stmt({:cmd, "callfunc", [{:str, fname} | args]}, env) do
     {pre, args} = hoist_all(args, env)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
 
-    case {CommandMap.function(fname), Map.fetch(env.fns, fname)} do
-      {{:ok, %{kind: :command, dsl: dsl}}, _fns} ->
+    case CommandMap.function(fname) do
+      {:ok, %{kind: :command, dsl: dsl}} ->
         {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
 
-      {_command_map, {:ok, module}} ->
-        {pre ++ ["{ctx, _} = #{module}.call(ctx, [#{rendered}])"], :cont}
+      _command_map ->
+        case helper_target(env, fname, rendered) do
+          {:ok, call} ->
+            {pre ++ ["{ctx, _} = #{call}"], :cont}
 
-      _neither ->
-        flag(:todo_fun)
-        {pre ++ ["ctx = todo(ctx, :callfunc, [#{inspect(fname)}, #{rendered}])"], :cont}
+          :missing ->
+            flag(:todo_fun)
+            {pre ++ ["ctx = todo(ctx, :callfunc, [#{inspect(fname)}, #{rendered}])"], :cont}
+        end
     end
   end
 
@@ -1055,6 +1062,46 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         rendered = Enum.map_join(args, ", ", &render(&1, env))
         {pre ++ ["ctx = todo(ctx, #{atom_lit(name)}, [#{rendered}])"], :cont}
     end
+  end
+
+  defp helper_target(env, fname, rendered) do
+    case FunctionIndex.resolve(env.fns, fname, env.scope) do
+      {:static, module} ->
+        {:ok, "#{module}.call(ctx, [#{rendered}])"}
+
+      {:runtime, targets} ->
+        flag(:game_mode)
+        {:ok, runtime_helper_target(fname, rendered, targets, env.source)}
+
+      :missing ->
+        case Map.fetch(env.fns, fname) do
+          :error ->
+            :missing
+
+          {:ok, targets} ->
+            scopes = targets |> Map.keys() |> Enum.sort()
+
+            raise ArgumentError,
+                  "NPC helper #{fname} called from #{env.source} in #{env.scope} scope is incompatible; " <>
+                    "available scopes: #{inspect(scopes)}"
+        end
+    end
+  end
+
+  defp runtime_helper_target(fname, rendered, targets, source) do
+    branches =
+      Enum.map_join([:renewal, :pre_renewal], "\n", fn mode ->
+        case Map.fetch(targets, mode) do
+          {:ok, module} ->
+            "#{inspect(mode)} -> #{module}.call(ctx, [#{rendered}])"
+
+          :error ->
+            message = "NPC helper #{fname} called from #{source} has no #{mode} target"
+            "#{inspect(mode)} -> raise #{inspect(message)}"
+        end
+      end)
+
+    "case GameMode.mode() do\n#{branches}\nend"
   end
 
   defp atom_lit(name), do: inspect(String.to_atom(name))
@@ -2206,23 +2253,27 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   end
 
   # Same resolution order as the statement form: a CommandMap-mapped read
-  # wins over a transpiled function module of the same name.
+  # wins over a generated helper target.
   defp hoist_walk({:call, "callfunc", [{:str, fname} | args]}, env, pre) do
     {args, pre} = hoist_list(args, env, pre)
     rendered = Enum.map_join(args, ", ", &render(&1, env))
     tmp = tmp_var()
 
-    case {CommandMap.function(fname), Map.fetch(env.fns, fname)} do
-      {{:ok, %{kind: :read, dsl: dsl}}, _fns} ->
+    case CommandMap.function(fname) do
+      {:ok, %{kind: :read, dsl: dsl}} ->
         {{:temp, tmp}, ["#{tmp} = #{read_fn_call(dsl, args, rendered)}" | pre]}
 
-      {_command_map, {:ok, module}} ->
-        {{:temp, tmp}, ["{ctx, #{tmp}} = #{module}.call(ctx, [#{rendered}])" | pre]}
+      _command_map ->
+        case helper_target(env, fname, rendered) do
+          {:ok, call} ->
+            {{:temp, tmp}, ["{ctx, #{tmp}} = #{call}" | pre]}
 
-      _neither ->
-        flag(:todo_mod)
+          :missing ->
+            flag(:todo_mod)
 
-        {{:temp, tmp}, ["#{tmp} = Todo.call!(:callfunc, [#{inspect(fname)}, #{rendered}])" | pre]}
+            {{:temp, tmp},
+             ["#{tmp} = Todo.call!(:callfunc, [#{inspect(fname)}, #{rendered}])" | pre]}
+        end
     end
   end
 
