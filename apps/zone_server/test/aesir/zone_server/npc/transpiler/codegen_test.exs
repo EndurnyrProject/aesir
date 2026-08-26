@@ -67,7 +67,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
              of overwriting them.
              \"\"\"
 
-             use Aesir.ZoneServer.Npc, spawn: [%{map: "payon", x: 1, y: 2, dir: 3, sprite: 58, name: "Test"}]
+             use Aesir.ZoneServer.Npc,
+               scope: :shared,
+               spawn: [%{map: "payon", x: 1, y: 2, dir: 3, sprite: 58, name: "Test", scope: :shared}]
 
              @impl true
              def on_talk(ctx) do
@@ -921,6 +923,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert src =~ ~S|unique_name: "GuardEx"|
     assert src =~ "trigger: {2, 2}"
+  end
+
+  test "renders body scope and explicit scope on every placement" do
+    src =
+      gen!("close;",
+        scope: :renewal,
+        spawns: [
+          %{map: "payon", x: 1, y: 2, dir: 3, sprite: 58, name: "Inherited"},
+          %{
+            map: "payon",
+            x: 3,
+            y: 4,
+            dir: 5,
+            sprite: 58,
+            name: "Explicit",
+            scope: :pre_renewal
+          }
+        ]
+      )
+
+    assert src =~ ~r/use Aesir\.ZoneServer\.Npc,\s+scope: :renewal/
+    assert src =~ ~S|name: "Inherited", scope: :renewal|
+    assert src =~ ~S|name: "Explicit", scope: :pre_renewal|
   end
 
   test "global function modules take args and return {ctx, value}" do

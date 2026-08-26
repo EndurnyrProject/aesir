@@ -113,8 +113,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   @typedoc """
   Options: `:module` (full module name string), `:spawns` (resolved placement
   maps for the `use` line; `[]` for floating/functions), `:kind`
-  (`:script | :floating | :function`), `:functions` (global `callfunc` name →
-  module map), `:source` (file:line provenance for the moduledoc).
+  (`:script | :floating | :function`), `:scope` (body content scope, defaults
+  to `:shared`), `:functions` (global `callfunc` name → module map), `:source`
+  (file:line provenance for the moduledoc).
   """
   @type opts :: map()
 
@@ -196,11 +197,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp header(%{kind: :function}), do: "import Aesir.ZoneServer.Script.Dsl, warn: false"
 
   defp header(opts) do
-    spawns = Enum.map_join(opts.spawns, ",\n", &render_spawn/1)
-    "use Aesir.ZoneServer.Npc, spawn: [#{spawns}]"
+    scope = Map.get(opts, :scope, :shared)
+    spawns = Enum.map_join(opts.spawns, ",\n", &render_spawn(&1, scope))
+    "use Aesir.ZoneServer.Npc, scope: #{inspect(scope)}, spawn: [#{spawns}]"
   end
 
-  defp render_spawn(s) do
+  defp render_spawn(s, body_scope) do
     fields =
       [
         "map: #{inspect(s.map)}",
@@ -208,7 +210,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         "y: #{s.y}",
         "dir: #{s.dir}",
         "sprite: #{s.sprite}",
-        "name: #{inspect(s.name)}"
+        "name: #{inspect(s.name)}",
+        "scope: #{inspect(Map.get(s, :scope, body_scope))}"
       ] ++ optional_spawn_fields(s)
 
     "%{" <> Enum.join(fields, ", ") <> "}"

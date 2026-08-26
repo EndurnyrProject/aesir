@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   `1-1` or `1@mcd` gain an `M` prefix to stay valid Elixir aliases.
   """
 
+  alias Aesir.ZoneServer.Npc.ContentScope
+
   @root "Aesir.ZoneServer.Content.Npc"
 
   @doc "The player-visible display name: everything before the `#` suffix."
@@ -51,19 +53,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   end
 
   @doc "Module name for an entry kind + entry/name pair."
-  @spec module(:script | :floating | :function, map() | nil, String.t()) :: String.t()
-  def module(:script, entry, slug), do: "#{@root}.#{namespace(entry)}.#{camelize(slug)}"
+  @spec module(:script | :floating | :function, map() | nil, String.t(), ContentScope.t()) ::
+          String.t()
+  def module(kind, entry, slug, scope \\ :shared)
 
-  def module(:floating, _entry, slug), do: "#{@root}.Floating.#{camelize(slug)}"
-  def module(:function, _entry, slug), do: "#{@root}.Functions.#{camelize(slug)}"
+  def module(:script, entry, slug, _scope),
+    do: "#{@root}.#{namespace(entry)}.#{camelize(slug)}"
+
+  def module(:floating, _entry, slug, scope),
+    do: "#{module_root(scope)}.Floating.#{camelize(slug)}"
+
+  def module(:function, _entry, slug, scope),
+    do: "#{module_root(scope)}.Functions.#{camelize(slug)}"
 
   @doc "Output path (relative to the zone_server app root) for an entry."
-  @spec path(:script | :floating | :function, map() | nil, String.t()) :: String.t()
-  def path(:script, entry, slug),
+  @spec path(:script | :floating | :function, map() | nil, String.t(), ContentScope.t()) ::
+          String.t()
+  def path(kind, entry, slug, scope \\ :shared)
+
+  def path(:script, entry, slug, _scope),
     do: "lib/aesir/zone_server/content/npc/#{dir_slug(entry)}/#{slug}.ex"
 
-  def path(:floating, _entry, slug), do: "lib/aesir/zone_server/content/npc/floating/#{slug}.ex"
-  def path(:function, _entry, slug), do: "lib/aesir/zone_server/content/npc/functions/#{slug}.ex"
+  def path(:floating, _entry, slug, scope), do: "#{output_root(scope)}/floating/#{slug}.ex"
+  def path(:function, _entry, slug, scope), do: "#{output_root(scope)}/functions/#{slug}.ex"
 
   @doc """
   The slugged output folder for a placed script: its rAthena source directory
@@ -75,6 +87,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ModuleName do
   defp namespace(entry) do
     dir_slug(entry) |> String.split("/") |> Enum.map_join(".", &camelize/1)
   end
+
+  defp module_root(:shared), do: @root
+  defp module_root(:renewal), do: "#{@root}.Re"
+  defp module_root(:pre_renewal), do: "#{@root}.PreRe"
+
+  defp output_root(:shared), do: "lib/aesir/zone_server/content/npc"
+  defp output_root(:renewal), do: "lib/aesir/zone_server/content/npc/re"
+  defp output_root(:pre_renewal), do: "lib/aesir/zone_server/content/npc/pre_re"
 
   defp dir_segments(file) do
     dirs = file |> Path.dirname() |> Path.split() |> Enum.reject(&(&1 in [".", "", "/"]))
