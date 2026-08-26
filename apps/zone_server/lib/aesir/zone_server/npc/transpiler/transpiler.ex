@@ -42,15 +42,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     out_root = Keyword.get(opts, :out_root, Path.join("apps", "zone_server"))
     only = Keyword.get(opts, :only)
     manifest_path = Path.join(out_root, @manifest_rel)
-    manifest = Manifest.load(manifest_path)
+    loaded_manifest = Manifest.load(manifest_path)
     sources = SourceDiscovery.discover!(rathena_root, only: only)
-    active_manifest = active_manifest(manifest, sources, only)
+    {active_manifest, stale_manifest} = manifest_views(loaded_manifest, sources, only)
+
+    {active_manifest, active_groups, active_path_failures} =
+      normalize_manifest_outputs(active_manifest, out_root, :active)
+
+    {stale_manifest, stale_groups, stale_path_failures} =
+      normalize_manifest_outputs(stale_manifest, out_root, :stale)
+
+    active_ownership_failures = active_ownership_failures(active_groups)
+    manifest = Map.merge(active_manifest, stale_manifest)
     sprites = load_sprites(rathena_root)
 
     entries = parse_files(sources)
     {functions, scripts, duplicates, skipped, file_errors} = partition(entries)
 
-    owners = Map.new(manifest, fn {key, rec} -> {rec.output_path, key} end)
+    owners = build_ownership(manifest, out_root)
     {function_targets, function_units} = function_units(functions, owners)
     local_function_keys = MapSet.new(function_units, &Manifest.key(&1.entry))
 
@@ -77,6 +86,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     structural_failures =
       duplicate_failures ++ helper_failures ++ cross_failures ++ incompatible_helpers
 
+    {stale_keys, stale_outputs, stale_failures} =
+      preflight_stale(stale_groups, active_groups)
+
+    path_failures = active_path_failures ++ stale_path_failures ++ active_ownership_failures
+    blocking_failures = path_failures ++ structural_failures ++ stale_failures
+
     state = %{
       manifest: manifest,
       out_root: out_root,
@@ -86,19 +101,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       written: [],
       skipped: 0,
       conflicts: [],
-      failures: Enum.reverse(structural_failures),
+      failures: Enum.reverse(blocking_failures),
       stubs: %{},
       unresolved_sprites: MapSet.new()
     }
 
     state =
-      if structural_failures == [] do
-        Enum.reduce(units, state, &process_unit/2)
+      if blocking_failures == [] do
+        units
+        |> Enum.reduce(state, &process_unit/2)
+        |> reconcile_stale(stale_keys, stale_outputs)
       else
         state
       end
 
-    if structural_failures == [] do
+    if blocking_failures == [] do
       Manifest.save(state.manifest, manifest_path)
     end
 
@@ -135,14 +152,203 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     end)
   end
 
-  defp active_manifest(manifest, _sources, only) when not is_nil(only), do: manifest
+  defp manifest_views(manifest, _sources, only) when not is_nil(only), do: {manifest, %{}}
 
-  defp active_manifest(manifest, sources, nil) do
+  defp manifest_views(manifest, sources, nil) do
     enabled = MapSet.new(sources, & &1.relative)
 
-    Map.filter(manifest, fn {key, _record} ->
+    Enum.split_with(manifest, fn {key, _record} ->
       MapSet.member?(enabled, Manifest.source_file(key))
     end)
+    |> then(fn {active, stale} -> {Map.new(active), Map.new(stale)} end)
+  end
+
+  defp normalize_manifest_outputs(manifest, out_root, context) do
+    Enum.reduce(manifest, {%{}, %{}, []}, fn {key, record}, {manifest, groups, failures} ->
+      case normalize_output_path(out_root, record.output_path) do
+        {:ok, relative, output} ->
+          record = %{record | output_path: relative}
+          group = %{path: output, records: [{key, record}]}
+
+          {
+            Map.put(manifest, key, record),
+            Map.update(groups, relative, group, &%{&1 | records: [{key, record} | &1.records]}),
+            failures
+          }
+
+        {:error, reason} ->
+          failure = invalid_output_failure(context, key, record.output_path, reason)
+          {manifest, groups, [failure | failures]}
+      end
+    end)
+  end
+
+  defp active_ownership_failures(groups) do
+    groups
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.flat_map(fn {output_path, group} ->
+      owners =
+        group.records
+        |> Enum.map(fn {key, _record} -> {key, Manifest.source_file(key)} end)
+        |> Enum.uniq()
+        |> Enum.sort()
+
+      case owners do
+        [{_key, _source}] ->
+          []
+
+        [{_key, source} | _rest] ->
+          [{:active, source, 0, {:multiple_output_owners, output_path, owners}}]
+      end
+    end)
+  end
+
+  defp build_ownership(manifest, out_root) do
+    Enum.reduce(manifest, %{by_key: %{}, by_path: %{}, out_root: out_root}, fn {key, record},
+                                                                               acc ->
+      %{
+        acc
+        | by_key: Map.put(acc.by_key, key, record.output_path),
+          by_path:
+            Map.update(acc.by_path, record.output_path, MapSet.new([key]), &MapSet.put(&1, key))
+      }
+    end)
+  end
+
+  defp preflight_stale(stale_groups, active_groups) do
+    Enum.reduce(stale_groups, {[], [], []}, fn {relative, group}, acc ->
+      case active_groups[relative] do
+        nil -> preflight_stale_group(group, acc)
+        active_group -> active_stale_collision(group, active_group, acc)
+      end
+    end)
+  end
+
+  defp active_stale_collision(group, active_group, {keys, outputs, failures}) do
+    active_sources =
+      active_group.records
+      |> Enum.map(fn {key, _record} -> Manifest.source_file(key) end)
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    collision_failures =
+      Enum.map(group.records, fn {key, record} ->
+        {:stale, Manifest.source_file(key), 0,
+         {:output_owned_by_active, record.output_path, active_sources}}
+      end)
+
+    {keys, outputs, collision_failures ++ failures}
+  end
+
+  defp normalize_output_path(_out_root, output_path) when not is_binary(output_path),
+    do: {:error, :non_string}
+
+  defp normalize_output_path(out_root, output_path) do
+    root = Path.expand(out_root)
+
+    case Path.type(output_path) do
+      :relative -> safe_relative_output(root, output_path)
+      _type -> {:error, :non_relative}
+    end
+  end
+
+  defp safe_relative_output(root, output_path) do
+    case Path.safe_relative(output_path, root) do
+      {:ok, ""} ->
+        {:error, :output_root}
+
+      {:ok, relative} ->
+        if symlink_component?(root, relative) do
+          {:error, :symlink}
+        else
+          {:ok, relative, Path.join(root, relative)}
+        end
+
+      :error ->
+        if symlink_component?(root, output_path),
+          do: {:error, :symlink},
+          else: {:error, :outside_root}
+    end
+  end
+
+  defp symlink_component?(root, relative) do
+    relative
+    |> Path.split()
+    |> Enum.reduce_while(root, fn component, parent ->
+      path = Path.join(parent, component)
+
+      case File.lstat(path) do
+        {:ok, %File.Stat{type: :symlink}} -> {:halt, :symlink}
+        _other -> {:cont, path}
+      end
+    end)
+    |> Kernel.==(:symlink)
+  end
+
+  defp preflight_stale_group(group, {keys, outputs, failures}) do
+    case File.read(group.path) do
+      {:ok, content} ->
+        preflight_present_group(group, content, {keys, outputs, failures})
+
+      {:error, :enoent} ->
+        {group_keys(group) ++ keys, outputs, failures}
+
+      {:error, reason} ->
+        read_failures =
+          Enum.map(group.records, fn {key, record} ->
+            {:stale, Manifest.source_file(key), 0,
+             {:output_read_failed, record.output_path, reason}}
+          end)
+
+        {keys, outputs, read_failures ++ failures}
+    end
+  end
+
+  defp preflight_present_group(group, content, {keys, outputs, failures}) do
+    hash = Manifest.hash(content)
+
+    modified_failures =
+      for {key, record} <- group.records, record.output_hash != hash do
+        {:stale, Manifest.source_file(key), 0, {:output_modified, record.output_path}}
+      end
+
+    if modified_failures == [] do
+      {group_keys(group) ++ keys, [group | outputs], failures}
+    else
+      {keys, outputs, modified_failures ++ failures}
+    end
+  end
+
+  defp invalid_output_failure(context, key, output_path, reason) do
+    {context, Manifest.source_file(key), 0, {:invalid_output_path, output_path, reason}}
+  end
+
+  defp group_keys(group), do: Enum.map(group.records, &elem(&1, 0))
+
+  defp reconcile_stale(state, stale_keys, stale_outputs) do
+    state = %{state | manifest: Map.drop(state.manifest, stale_keys)}
+    Enum.reduce(stale_outputs, state, &remove_stale_output/2)
+  end
+
+  defp remove_stale_output(group, state) do
+    case File.rm(group.path) do
+      :ok ->
+        state
+
+      {:error, reason} ->
+        manifest =
+          Enum.reduce(group.records, state.manifest, fn {key, record}, acc ->
+            Map.put(acc, key, record)
+          end)
+
+        failures =
+          Enum.map(group.records, fn {key, record} ->
+            {:stale, Manifest.source_file(key), 0,
+             {:output_remove_failed, record.output_path, reason}}
+          end)
+
+        %{state | manifest: manifest, failures: failures ++ state.failures}
+    end
   end
 
   defp partition(entries) do
@@ -336,8 +542,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
       base = ModuleName.slug(ModuleName.display_name(entry.name))
 
       slug =
-        [base, coord_slug(entry, base)]
+        [preferred_slug(entry, owners, path_fun), base, coord_slug(entry, base)]
         |> Enum.reject(&is_nil/1)
+        |> Enum.uniq()
         |> Stream.concat(Stream.map(0..1_000_000//1, &"#{base}_#{&1}"))
         |> Enum.find(&slug_free?(&1, entry, seen, owners, path_fun))
 
@@ -347,9 +554,24 @@ defmodule Aesir.ZoneServer.Npc.Transpiler do
     |> Enum.reverse()
   end
 
+  defp preferred_slug(entry, owners, path_fun) do
+    with relative when is_binary(relative) <- owners.by_key[Manifest.key(entry)],
+         slug = Path.basename(relative, ".ex"),
+         {:ok, generated, _output} <-
+           normalize_output_path(owners.out_root, path_fun.(entry, slug)),
+         true <- generated == relative do
+      slug
+    else
+      _other -> nil
+    end
+  end
+
   defp slug_free?(slug, entry, seen, owners, path_fun) do
+    {:ok, relative, _output} = normalize_output_path(owners.out_root, path_fun.(entry, slug))
+    owner_keys = Map.get(owners.by_path, relative, MapSet.new())
+
     not MapSet.member?(seen, {dedupe_key(entry), slug}) and
-      Map.get(owners, path_fun.(entry, slug), :free) in [:free, Manifest.key(entry)]
+      (MapSet.size(owner_keys) == 0 or owner_keys == MapSet.new([Manifest.key(entry)]))
   end
 
   defp dedupe_key(%{kind: :script} = entry), do: ModuleName.dir_slug(entry)

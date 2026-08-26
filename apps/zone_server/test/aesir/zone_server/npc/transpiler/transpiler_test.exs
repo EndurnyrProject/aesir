@@ -558,7 +558,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
   end
 
   @tag :tmp_dir
-  test "disabled manifest records cannot satisfy linking and remain on disk", %{
+  test "authoritative runs exclude stale records from linking and remove untouched outputs", %{
     tmp_dir: tmp_dir
   } do
     npc_dir = Path.join(tmp_dir, "npc")
@@ -603,7 +603,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
 
     assert second.failures == []
     assert second.orphan_duplicates == ["StaleBody [renewal]"]
-    assert Enum.all?(stale_paths, &File.exists?/1)
+    refute Enum.any?(stale_paths, &File.exists?/1)
 
     caller_path =
       "lib/aesir/zone_server/content/npc/caller/caller.ex"
@@ -613,8 +613,872 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
     refute caller =~ "Functions.FStale.call"
 
     manifest = Manifest.load(Path.join(out_root, "priv/npc_transpile/manifest.json"))
+    refute Map.has_key?(manifest, "disabled/content.txt|floating|::StaleBody|-")
+    refute Map.has_key?(manifest, "disabled/content.txt|function|F_Stale|-")
+  end
+
+  @tag :tmp_dir
+  test "only runs reject an active manifest path that escapes the output root", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "shared"))
+    File.mkdir_p!(Path.join(npc_dir, "re"))
+
+    File.write!(Path.join(npc_dir, "shared/guard.txt"), """
+    -\tscript\t::GuardFloat\t-1,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "shared/**")
+
+    assert first.failures == []
+    assert [source_rel_path] = first.written
+    source_path = Path.join(out_root, source_rel_path)
+    source_before = File.read!(source_path)
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key = "shared/guard.txt|floating|::GuardFloat|-"
+    manifest = Manifest.load(manifest_path)
+    Manifest.save(put_in(manifest, [key, :output_path], "../escape.ex"), manifest_path)
+    manifest_before = File.read!(manifest_path)
+
+    File.write!(Path.join(npc_dir, "re/duplicate.txt"), """
+    izlude,100,100,4\tduplicate(GuardFloat)\tRenewal Guard\t54
+    """)
+
+    result = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**")
+
+    assert result.failures == [
+             {:active, "shared/guard.txt", 0,
+              {:invalid_output_path, "../escape.ex", :outside_root}}
+           ]
+
+    assert result.written == []
+    refute File.exists?(Path.join(tmp_dir, "escape.ex"))
+    assert File.read!(source_path) == source_before
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "only runs report a non-string active function path without mutating output", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "active"))
+
+    File.write!(Path.join(npc_dir, "active/helper.txt"), """
+    function\tscript\tF_Active\t{
+    return 1;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert first.failures == []
+    assert [output_rel_path] = first.written
+    output_path = Path.join(out_root, output_rel_path)
+    output_before = File.read!(output_path)
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key = "active/helper.txt|function|F_Active|-"
+    manifest = Manifest.load(manifest_path)
+    Manifest.save(put_in(manifest, [key, :output_path], 42), manifest_path)
+    manifest_before = File.read!(manifest_path)
+
+    result = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert result.failures == [
+             {:active, "active/helper.txt", 0, {:invalid_output_path, 42, :non_string}}
+           ]
+
+    assert result.written == []
+    assert File.read!(output_path) == output_before
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "only runs reject an active manifest path naming the output root", %{tmp_dir: tmp_dir} do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "shared"))
+    File.mkdir_p!(Path.join(npc_dir, "re"))
+
+    File.write!(Path.join(npc_dir, "shared/guard.txt"), """
+    -\tscript\t::RootGuard\t-1,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "shared/**")
+
+    assert first.failures == []
+    assert [output_rel_path] = first.written
+    output_path = Path.join(out_root, output_rel_path)
+    output_before = File.read!(output_path)
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key = "shared/guard.txt|floating|::RootGuard|-"
+    manifest = Manifest.load(manifest_path)
+    Manifest.save(put_in(manifest, [key, :output_path], "."), manifest_path)
+    manifest_before = File.read!(manifest_path)
+
+    File.write!(Path.join(npc_dir, "re/duplicate.txt"), """
+    izlude,100,100,4\tduplicate(RootGuard)\tRenewal Guard\t54
+    """)
+
+    result = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**")
+
+    assert result.failures == [
+             {:active, "shared/guard.txt", 0, {:invalid_output_path, ".", :output_root}}
+           ]
+
+    assert result.written == []
+    assert File.read!(output_path) == output_before
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "invalid active aliases cannot let a stale owner delete the active output", %{
+    tmp_dir: tmp_dir
+  } do
+    Enum.each([:absolute, :symlink], fn path_kind ->
+      case_root = Path.join(tmp_dir, Atom.to_string(path_kind))
+      npc_dir = Path.join(case_root, "npc")
+      out_root = Path.join(case_root, "out")
+      output_rel_path = "lib/active.ex"
+      output_path = Path.join(out_root, output_rel_path)
+      File.mkdir_p!(npc_dir)
+      File.mkdir_p!(Path.dirname(output_path))
+      File.write!(output_path, "active")
+      File.write!(Path.join(npc_dir, "active.txt"), "")
+      write_main!(case_root, "re", ["active.txt"])
+      write_main!(case_root, "pre-re", ["active.txt"])
+
+      active_output_path =
+        case path_kind do
+          :absolute ->
+            output_path
+
+          :symlink ->
+            File.ln_s!(Path.dirname(output_path), Path.join(out_root, "linked"))
+            "linked/active.ex"
+        end
+
+      record = %{
+        source_hash: "source",
+        output_path: active_output_path,
+        output_hash: Manifest.hash("active"),
+        spawns: [],
+        module: nil
+      }
+
+      manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+
+      Manifest.save(
+        %{
+          "active.txt|function|F_Active|-" => record,
+          "disabled.txt|function|F_Stale|-" => %{record | output_path: output_rel_path}
+        },
+        manifest_path
+      )
+
+      manifest_before = File.read!(manifest_path)
+      expected_reason = if(path_kind == :absolute, do: :non_relative, else: :symlink)
+
+      result = Transpiler.run(case_root, out_root: out_root)
+
+      assert result.failures == [
+               {:active, "active.txt", 0,
+                {:invalid_output_path, active_output_path, expected_reason}}
+             ]
+
+      assert result.written == []
+      assert File.read!(output_path) == "active"
+      assert File.read!(manifest_path) == manifest_before
+    end)
+  end
+
+  @tag :tmp_dir
+  test "cross-run recovery uses the canonical active manifest path", %{tmp_dir: tmp_dir} do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "shared"))
+    File.mkdir_p!(Path.join(npc_dir, "re"))
+
+    File.write!(Path.join(npc_dir, "shared/guard.txt"), """
+    -\tscript\t::CanonicalGuard\t-1,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "shared/**")
+
+    assert first.failures == []
+    assert [source_rel_path] = first.written
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key = "shared/guard.txt|floating|::CanonicalGuard|-"
+    manifest = Manifest.load(manifest_path)
+
+    aliased_path =
+      Path.dirname(source_rel_path) <> "/nested/../" <> Path.basename(source_rel_path)
+
+    Manifest.save(put_in(manifest, [key, :output_path], aliased_path), manifest_path)
+
+    File.write!(Path.join(npc_dir, "re/duplicate.txt"), """
+    izlude,100,100,4\tduplicate(CanonicalGuard)\tRenewal Guard\t54
+    """)
+
+    result = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**")
+
+    assert result.failures == []
+    assert result.written == [source_rel_path]
+    assert File.read!(Path.join(out_root, source_rel_path)) =~ ~S|map: "izlude"|
+    assert Manifest.load(manifest_path)[key].output_path == source_rel_path
+  end
+
+  @tag :tmp_dir
+  test "existing manifest keys reuse their canonical output path", %{tmp_dir: tmp_dir} do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "active"))
+    source_path = Path.join(npc_dir, "active/helper.txt")
+
+    File.write!(source_path, """
+    function\tscript\tF_Canonical\t{
+    return 1;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert first.failures == []
+    assert [output_rel_path] = first.written
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key = "active/helper.txt|function|F_Canonical|-"
+    manifest = Manifest.load(manifest_path)
+
+    aliased_path =
+      Path.dirname(output_rel_path) <> "/nested/../" <> Path.basename(output_rel_path)
+
+    Manifest.save(put_in(manifest, [key, :output_path], aliased_path), manifest_path)
+
+    File.write!(source_path, """
+    function\tscript\tF_Canonical\t{
+    return 2;
+    }
+    """)
+
+    result = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert result.failures == []
+    assert result.written == [output_rel_path]
+    assert File.read!(Path.join(out_root, output_rel_path)) =~ "{ctx, 2}"
+    assert Manifest.load(manifest_path)[key].output_path == output_rel_path
+  end
+
+  @tag :tmp_dir
+  test "only runs reject multiple active manifest owners of one canonical output", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc/active")
+    File.mkdir_p!(npc_dir)
+
+    File.write!(Path.join(npc_dir, "a.txt"), """
+    function\tscript\tF_A\t{
+    return 1;
+    }
+    """)
+
+    File.write!(Path.join(npc_dir, "b.txt"), """
+    function\tscript\tF_B\t{
+    return 2;
+    }
+    """)
+
+    File.write!(Path.join(npc_dir, "caller.txt"), """
+    prontera,100,100,4\tscript\tCaller\t54,{
+    callfunc "F_A";
+    callfunc "F_B";
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert first.failures == []
+    assert length(first.written) == 3
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key_a = "active/a.txt|function|F_A|-"
+    key_b = "active/b.txt|function|F_B|-"
+    manifest = Manifest.load(manifest_path)
+    output_a = manifest[key_a].output_path
+    output_b = manifest[key_b].output_path
+
+    output_alias = Path.dirname(output_a) <> "/nested/../" <> Path.basename(output_a)
+    Manifest.save(put_in(manifest, [key_b, :output_path], output_alias), manifest_path)
+
+    generated_before =
+      out_root
+      |> Path.join("lib/**/*.ex")
+      |> Path.wildcard()
+      |> Map.new(&{Path.relative_to(&1, out_root), File.read!(&1)})
+
+    manifest_before = File.read!(manifest_path)
+
+    result = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert result.failures == [
+             {:active, "active/a.txt", 0,
+              {:multiple_output_owners, output_a,
+               [
+                 {key_a, "active/a.txt"},
+                 {key_b, "active/b.txt"}
+               ]}}
+           ]
+
+    assert result.written == []
+
+    generated_after =
+      out_root
+      |> Path.join("lib/**/*.ex")
+      |> Path.wildcard()
+      |> Map.new(&{Path.relative_to(&1, out_root), File.read!(&1)})
+
+    assert generated_after == generated_before
+    assert Map.has_key?(generated_after, output_a)
+    assert Map.has_key?(generated_after, output_b)
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "authoritative reconciliation rejects absolute and root-escaping stale paths", %{
+    tmp_dir: tmp_dir
+  } do
+    out_root = Path.join(tmp_dir, "out")
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    absolute_path = Path.join(tmp_dir, "absolute.ex")
+    escaped_path = Path.join(tmp_dir, "escaped.ex")
+    File.write!(absolute_path, "absolute")
+    File.write!(escaped_path, "escaped")
+
+    manifest = %{
+      "disabled/absolute.txt|function|F_Absolute|-" => %{
+        source_hash: "source",
+        output_path: absolute_path,
+        output_hash: Manifest.hash("absolute"),
+        spawns: [],
+        module: nil
+      },
+      "disabled/escaped.txt|function|F_Escaped|-" => %{
+        source_hash: "source",
+        output_path: "../escaped.ex",
+        output_hash: Manifest.hash("escaped"),
+        spawns: [],
+        module: nil
+      }
+    }
+
+    Manifest.save(manifest, manifest_path)
+    manifest_before = File.read!(manifest_path)
+    write_main!(tmp_dir, "re", [])
+    write_main!(tmp_dir, "pre-re", [])
+
+    result = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert Enum.sort(result.failures) ==
+             Enum.sort([
+               {:stale, "disabled/absolute.txt", 0,
+                {:invalid_output_path, absolute_path, :non_relative}},
+               {:stale, "disabled/escaped.txt", 0,
+                {:invalid_output_path, "../escaped.ex", :outside_root}}
+             ])
+
+    assert result.written == []
+    assert File.read!(absolute_path) == "absolute"
+    assert File.read!(escaped_path) == "escaped"
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "authoritative reconciliation rejects stale paths through symlinked directories", %{
+    tmp_dir: tmp_dir
+  } do
+    out_root = Path.join(tmp_dir, "out")
+    outside_dir = Path.join(tmp_dir, "outside")
+    output_path = Path.join(outside_dir, "generated.ex")
+    File.mkdir_p!(out_root)
+    File.mkdir_p!(outside_dir)
+    File.write!(output_path, "generated")
+    File.ln_s!(outside_dir, Path.join(out_root, "linked"))
+
+    key = "disabled/symlink.txt|function|F_Symlink|-"
+
+    record = %{
+      source_hash: "source",
+      output_path: "linked/generated.ex",
+      output_hash: Manifest.hash("generated"),
+      spawns: [],
+      module: nil
+    }
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    Manifest.save(%{key => record}, manifest_path)
+    manifest_before = File.read!(manifest_path)
+    write_main!(tmp_dir, "re", [])
+    write_main!(tmp_dir, "pre-re", [])
+
+    result = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert result.failures == [
+             {:stale, "disabled/symlink.txt", 0,
+              {:invalid_output_path, "linked/generated.ex", :symlink}}
+           ]
+
+    assert File.read!(output_path) == "generated"
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "authoritative reconciliation groups aliased stale ownership by physical output", %{
+    tmp_dir: tmp_dir
+  } do
+    out_root = Path.join(tmp_dir, "out")
+    output_rel_path = "lib/shared.ex"
+    output_path = Path.join(out_root, output_rel_path)
+    File.mkdir_p!(Path.dirname(output_path))
+    File.write!(output_path, "generated")
+
+    record = %{
+      source_hash: "source",
+      output_path: output_rel_path,
+      output_hash: Manifest.hash("generated"),
+      spawns: [],
+      module: nil
+    }
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+
+    Manifest.save(
+      %{
+        "disabled/one.txt|function|F_One|-" => record,
+        "disabled/two.txt|function|F_Two|-" => %{record | output_path: "lib/nested/../shared.ex"}
+      },
+      manifest_path
+    )
+
+    write_main!(tmp_dir, "re", [])
+    write_main!(tmp_dir, "pre-re", [])
+
+    result = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert result.failures == []
+    refute File.exists?(output_path)
+    assert Manifest.load(manifest_path) == %{}
+  end
+
+  @tag :tmp_dir
+  test "authoritative reconciliation blocks active and stale aliases sharing one output", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "active"))
+
+    File.write!(Path.join(npc_dir, "active/content.txt"), """
+    prontera,100,100,4\tscript\tActive NPC\t54,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert first.failures == []
+    assert [output_rel_path] = first.written
+    output_path = Path.join(out_root, output_rel_path)
+
+    active_key = "active/content.txt|script|Active NPC|prontera:100:100"
+    stale_key = "disabled/stale.txt|script|Stale NPC|prontera:100:100"
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    manifest = Manifest.load(manifest_path)
+    active_record = manifest[active_key]
+
+    stale_output_alias =
+      Path.dirname(output_rel_path) <> "/nested/../" <> Path.basename(output_rel_path)
+
+    stale_record = %{active_record | output_path: stale_output_alias}
+    Manifest.save(Map.put(manifest, stale_key, stale_record), manifest_path)
+    File.write!(manifest_path, File.read!(manifest_path) <> "\n")
+    manifest_before = File.read!(manifest_path)
+    write_main!(tmp_dir, "re", ["active/content.txt"])
+    write_main!(tmp_dir, "pre-re", ["active/content.txt"])
+
+    result = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert result.failures == [
+             {:stale, "disabled/stale.txt", 0,
+              {:output_owned_by_active, output_rel_path, ["active/content.txt"]}}
+           ]
+
+    assert result.written == []
+    assert File.exists?(output_path)
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "a manifest key keeps its suffixed output after a stale reservation is removed", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "disabled"))
+    File.mkdir_p!(Path.join(npc_dir, "active"))
+
+    File.write!(Path.join(npc_dir, "disabled/helper.txt"), """
+    function\tscript\tF_Stable\t{
+    return 0;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "disabled/**")
+
+    assert first.failures == []
+    assert [reserved_rel_path] = first.written
+    reserved_path = Path.join(out_root, reserved_rel_path)
+
+    active_source = Path.join(npc_dir, "active/helper.txt")
+
+    File.write!(active_source, """
+    function\tscript\tF_Stable\t{
+    return 1;
+    }
+    """)
+
+    write_main!(tmp_dir, "re", ["active/helper.txt"])
+    write_main!(tmp_dir, "pre-re", ["active/helper.txt"])
+
+    second = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert second.failures == []
+    assert second.conflicts == []
+    assert [stable_rel_path] = second.written
+    assert stable_rel_path != reserved_rel_path
+    assert String.ends_with?(stable_rel_path, "/f_stable_0.ex")
+    refute File.exists?(reserved_path)
+
+    stable_path = Path.join(out_root, stable_rel_path)
+    assert File.exists?(stable_path)
+
+    third = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert third.failures == []
+    assert third.conflicts == []
+    assert third.written == []
+    assert third.skipped == 1
+    assert File.exists?(stable_path)
+
+    File.write!(active_source, """
+    function\tscript\tF_Stable\t{
+    return 2;
+    }
+    """)
+
+    fourth = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert fourth.failures == []
+    assert fourth.conflicts == []
+    assert fourth.written == [stable_rel_path]
+    assert File.read!(stable_path) =~ "{ctx, 2}"
+    refute File.exists?(reserved_path)
+
+    fifth = Transpiler.run(tmp_dir, out_root: out_root, force: true)
+
+    assert fifth.failures == []
+    assert fifth.conflicts == []
+    assert fifth.written == [stable_rel_path]
+    assert File.exists?(stable_path)
+  end
+
+  @tag :tmp_dir
+  test "only runs never prune records or outputs outside the selected sources", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "disabled"))
+    File.mkdir_p!(Path.join(npc_dir, "active"))
+
+    File.write!(Path.join(npc_dir, "disabled/content.txt"), """
+    -\tscript\t::StaleBody\t-1,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "disabled/**")
+
+    assert first.failures == []
+    assert [stale_rel_path] = first.written
+    stale_path = Path.join(out_root, stale_rel_path)
+
+    File.write!(Path.join(npc_dir, "active/content.txt"), """
+    prontera,100,100,4\tscript\tActive NPC\t54,{
+    close;
+    }
+    """)
+
+    second = Transpiler.run(tmp_dir, out_root: out_root, only: "active/**")
+
+    assert second.failures == []
+    assert [_active_rel_path] = second.written
+    assert File.exists?(stale_path)
+
+    manifest = Manifest.load(Path.join(out_root, "priv/npc_transpile/manifest.json"))
     assert Map.has_key?(manifest, "disabled/content.txt|floating|::StaleBody|-")
-    assert Map.has_key?(manifest, "disabled/content.txt|function|F_Stale|-")
+    assert Map.has_key?(manifest, "active/content.txt|script|Active NPC|prontera:100:100")
+  end
+
+  @tag :tmp_dir
+  test "structural linking failures leave untouched stale outputs and records intact", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "disabled"))
+    File.mkdir_p!(Path.join(npc_dir, "re"))
+
+    File.write!(Path.join(npc_dir, "disabled/content.txt"), """
+    -\tscript\t::StaleBody\t-1,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "disabled/**")
+
+    assert first.failures == []
+    assert [stale_rel_path] = first.written
+    stale_path = Path.join(out_root, stale_rel_path)
+
+    File.write!(Path.join(npc_dir, "shared.txt"), """
+    -\tscript\t::AmbiguousGuard\t-1,{
+    close;
+    }
+    """)
+
+    File.write!(Path.join(npc_dir, "re/source.txt"), """
+    -\tscript\t::AmbiguousGuard\t-1,{
+    close;
+    }
+    """)
+
+    File.write!(Path.join(npc_dir, "re/duplicate.txt"), """
+    izlude,70,70,4\tduplicate(AmbiguousGuard)\tAmbiguous Placement\t54
+    """)
+
+    write_main!(tmp_dir, "re", ["shared.txt", "re/source.txt", "re/duplicate.txt"])
+    write_main!(tmp_dir, "pre-re", ["shared.txt"])
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    File.write!(manifest_path, File.read!(manifest_path) <> "\n")
+    manifest_before = File.read!(manifest_path)
+
+    second = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert [
+             {:link, "re/duplicate.txt", 1,
+              {:ambiguous_duplicate, "AmbiguousGuard", :renewal, _candidates}}
+           ] = second.failures
+
+    assert second.written == []
+    assert File.exists?(stale_path)
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "edited stale outputs block authoritative runs before unrelated writes", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "disabled"))
+
+    File.write!(Path.join(npc_dir, "disabled/content.txt"), """
+    -\tscript\t::StaleBody\t-1,{
+    close;
+    }
+    function\tscript\tF_Stale\t{
+    return 1;
+    }
+    function\tscript\tF_Stale_2\t{
+    return 2;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "disabled/**")
+
+    assert first.failures == []
+    assert length(first.written) == 3
+
+    [untouched_rel_path | edited_rel_paths] = Enum.sort(first.written)
+    untouched = {untouched_rel_path, File.read!(Path.join(out_root, untouched_rel_path))}
+
+    edited =
+      Map.new(edited_rel_paths, fn rel_path ->
+        path = Path.join(out_root, rel_path)
+        content = File.read!(path) <> "# hand edit\n"
+        File.write!(path, content)
+        {rel_path, content}
+      end)
+
+    File.write!(Path.join(npc_dir, "active.txt"), """
+    prontera,100,100,4\tscript\tActive NPC\t54,{
+    close;
+    }
+    """)
+
+    write_main!(tmp_dir, "re", ["active.txt"])
+    write_main!(tmp_dir, "pre-re", ["active.txt"])
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    File.write!(manifest_path, File.read!(manifest_path) <> "\n")
+    manifest_before = File.read!(manifest_path)
+
+    second = Transpiler.run(tmp_dir, out_root: out_root)
+
+    expected_failures =
+      edited
+      |> Map.keys()
+      |> Enum.map(&{:stale, "disabled/content.txt", 0, {:output_modified, &1}})
+      |> Enum.sort()
+
+    assert Enum.sort(second.failures) == expected_failures
+    assert second.written == []
+
+    Enum.each([untouched | Map.to_list(edited)], fn {rel_path, content} ->
+      assert File.read!(Path.join(out_root, rel_path)) == content
+    end)
+
+    active_output =
+      Path.join(out_root, "lib/aesir/zone_server/content/npc/active/active_npc.ex")
+
+    refute File.exists?(active_output)
+    assert File.read!(manifest_path) == manifest_before
+  end
+
+  @tag :tmp_dir
+  test "a stale remove failure persists active writes and remains retryable", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "disabled"))
+
+    File.write!(Path.join(npc_dir, "disabled/content.txt"), """
+    -\tscript\t::StaleBody\t-1,{
+    close;
+    }
+    function\tscript\tF_Stale\t{
+    return 1;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "disabled/**")
+
+    assert first.failures == []
+    assert length(first.written) == 2
+
+    stale_rel_path = Enum.find(first.written, &String.contains?(&1, "/floating/"))
+    removable_rel_path = Enum.find(first.written, &String.contains?(&1, "/functions/"))
+    stale_path = Path.join(out_root, stale_rel_path)
+    removable_path = Path.join(out_root, removable_rel_path)
+    stale_dir = Path.dirname(stale_path)
+
+    File.write!(Path.join(npc_dir, "active.txt"), """
+    prontera,100,100,4\tscript\tActive NPC\t54,{
+    close;
+    }
+    """)
+
+    write_main!(tmp_dir, "re", ["active.txt"])
+    write_main!(tmp_dir, "pre-re", ["active.txt"])
+
+    on_exit(fn ->
+      if File.exists?(stale_dir), do: File.chmod!(stale_dir, 0o700)
+    end)
+
+    File.chmod!(stale_dir, 0o500)
+    second = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert [
+             {:stale, "disabled/content.txt", 0, {:output_remove_failed, ^stale_rel_path, reason}}
+           ] = second.failures
+
+    assert reason in [:eacces, :eperm]
+    assert [active_rel_path] = second.written
+    assert second.conflicts == []
+    assert File.exists?(stale_path)
+    refute File.exists?(removable_path)
+    assert File.exists?(Path.join(out_root, active_rel_path))
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    manifest = Manifest.load(manifest_path)
+    assert Map.has_key?(manifest, "disabled/content.txt|floating|::StaleBody|-")
+    refute Map.has_key?(manifest, "disabled/content.txt|function|F_Stale|-")
+    assert Map.has_key?(manifest, "active.txt|script|Active NPC|prontera:100:100")
+
+    File.chmod!(stale_dir, 0o700)
+    third = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert third.failures == []
+    assert third.conflicts == []
+    assert third.written == []
+    assert third.skipped == 1
+    refute File.exists?(stale_path)
+
+    reconciled_manifest = Manifest.load(manifest_path)
+    refute Map.has_key?(reconciled_manifest, "disabled/content.txt|floating|::StaleBody|-")
+    refute Map.has_key?(reconciled_manifest, "disabled/content.txt|function|F_Stale|-")
+    assert Map.has_key?(reconciled_manifest, "active.txt|script|Active NPC|prontera:100:100")
+  end
+
+  @tag :tmp_dir
+  test "authoritative runs drop stale records whose outputs are already missing", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "disabled"))
+
+    File.write!(Path.join(npc_dir, "disabled/content.txt"), """
+    -\tscript\t::StaleBody\t-1,{
+    close;
+    }
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+    first = Transpiler.run(tmp_dir, out_root: out_root, only: "disabled/**")
+
+    assert first.failures == []
+    assert [stale_rel_path] = first.written
+
+    stale_path = Path.join(out_root, stale_rel_path)
+    File.rm!(stale_path)
+    write_main!(tmp_dir, "re", [])
+    write_main!(tmp_dir, "pre-re", [])
+
+    second = Transpiler.run(tmp_dir, out_root: out_root)
+
+    assert second.failures == []
+    assert second.written == []
+    refute File.exists?(stale_path)
+
+    manifest = Manifest.load(Path.join(out_root, "priv/npc_transpile/manifest.json"))
+    refute Map.has_key?(manifest, "disabled/content.txt|floating|::StaleBody|-")
   end
 
   @tag :tmp_dir
