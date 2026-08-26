@@ -5,7 +5,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
 
   One JSON file (`priv/npc_transpile/manifest.json`) maps a stable entry key
   (source file + entry identity) to the source-body hash, the output path and
-  the hash of the file as generated. `decide/3` implements the regen policy:
+  the hash of the file as generated. Placement scopes use the closed strings
+  `shared`, `renewal`, and `pre_renewal`; legacy spawns without scope inherit
+  the body scope derived from their stable key. This fallback is deterministic
+  but cannot recover previously merged cross-scope placements, so the generated
+  corpus still requires clean regeneration before pre-renewal deployment.
+
+  `decide/3` implements the regen policy:
 
   | Situation                                             | Decision    |
   |-------------------------------------------------------|-------------|
@@ -15,6 +21,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
   | Source changed, output still as generated              | `:write`    |
   | Source changed, output hand-edited or missing          | `:conflict` |
   """
+
+  alias Aesir.ZoneServer.Npc.ContentScope
 
   @type entry_record :: %{
           source_hash: String.t(),
@@ -37,7 +45,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
            source_hash: rec["source_hash"],
            output_path: rec["output_path"],
            output_hash: rec["output_hash"],
-           spawns: decode_spawns(rec["spawns"]),
+           spawns: decode_spawns(rec["spawns"], body_scope(key)),
            module: rec["module"]
          }}
       end)
@@ -81,15 +89,34 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
     "#{entry.file}|#{entry.kind}|#{entry[:name]}|#{placement}"
   end
 
+  @doc "Returns the NPC-root-relative source file stored in a manifest key."
+  @spec source_file(String.t()) :: Path.t()
+  def source_file(key) do
+    case String.split(key, "|", parts: 2) do
+      [file, _entry] when file != "" -> file
+      _ -> raise ArgumentError, "invalid NPC manifest key: #{inspect(key)}"
+    end
+  end
+
+  @doc "Returns the script body's content scope derived from its stable manifest key."
+  @spec body_scope(String.t()) :: ContentScope.t()
+  def body_scope(key) do
+    case source_file(key) do
+      "re/" <> _path -> :renewal
+      "pre-re/" <> _path -> :pre_renewal
+      _path -> :shared
+    end
+  end
+
   @spec hash(binary()) :: String.t()
   def hash(content), do: :sha256 |> :crypto.hash(content) |> Base.encode16(case: :lower)
 
   # Spawn maps round-trip through JSON as string-keyed objects with `trigger`
   # tuples serialized to arrays; decode them back to the exact atom-keyed shape
   # `resolve_placements` produces so regen hashes stay stable across runs.
-  defp decode_spawns(nil), do: []
+  defp decode_spawns(nil, _body_scope), do: []
 
-  defp decode_spawns(spawns) when is_list(spawns) do
+  defp decode_spawns(spawns, body_scope) when is_list(spawns) do
     Enum.map(spawns, fn spawn ->
       %{
         map: spawn["map"],
@@ -101,6 +128,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
       }
       |> put_present(:unique_name, spawn["unique_name"])
       |> put_present(:trigger, decode_trigger(spawn["trigger"]))
+      |> Map.put(:scope, decode_spawn_scope(spawn, body_scope))
     end)
   end
 
@@ -110,9 +138,38 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
   defp decode_trigger(nil), do: nil
   defp decode_trigger([tx, ty]), do: {tx, ty}
 
-  # Inverse of `decode_trigger`: `trigger` tuples become JSON arrays.
-  defp encode_spawn(%{trigger: {tx, ty}} = spawn), do: %{spawn | trigger: [tx, ty]}
-  defp encode_spawn(spawn), do: spawn
+  defp decode_spawn_scope(spawn, body_scope) do
+    case Map.fetch(spawn, "scope") do
+      :error -> body_scope
+      {:ok, scope} -> decode_scope(scope)
+    end
+  end
+
+  defp decode_scope("shared"), do: :shared
+  defp decode_scope("renewal"), do: :renewal
+  defp decode_scope("pre_renewal"), do: :pre_renewal
+
+  defp decode_scope(scope),
+    do: raise(ArgumentError, "unknown NPC manifest placement scope #{inspect(scope)}")
+
+  defp encode_spawn(spawn) do
+    spawn
+    |> encode_trigger()
+    |> encode_spawn_scope()
+  end
+
+  defp encode_trigger(%{trigger: {tx, ty}} = spawn), do: %{spawn | trigger: [tx, ty]}
+  defp encode_trigger(spawn), do: spawn
+
+  defp encode_spawn_scope(%{scope: scope} = spawn), do: %{spawn | scope: encode_scope(scope)}
+  defp encode_spawn_scope(spawn), do: spawn
+
+  defp encode_scope(:shared), do: "shared"
+  defp encode_scope(:renewal), do: "renewal"
+  defp encode_scope(:pre_renewal), do: "pre_renewal"
+
+  defp encode_scope(scope),
+    do: raise(ArgumentError, "unknown NPC manifest placement scope #{inspect(scope)}")
 
   @doc """
   Regen decision for one entry given its manifest record (or `nil` for a new
