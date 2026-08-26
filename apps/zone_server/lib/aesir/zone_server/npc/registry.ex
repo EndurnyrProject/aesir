@@ -29,7 +29,9 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   by movement's `OnTouch` check).
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Npc
+  alias Aesir.ZoneServer.Npc.ContentScope
   alias Aesir.ZoneServer.Npc.Placement
 
   @pt_key __MODULE__
@@ -98,13 +100,31 @@ defmodule Aesir.ZoneServer.Npc.Registry do
   returns it. The `modules` argument is an injectable seam for tests, which
   pass their own in-file NPC modules.
 
+  `reload/0` and `reload/1` resolve the configured `GameMode`; `reload/2`
+  accepts an explicit mode for deterministic composition. Inactive NPC bodies
+  and placements are excluded before any index is built.
+
   Does **not** run `OnInit` itself — callers that want rAthena's full
   `@reloadscript` semantics call `Events.run_on_init/0` afterwards.
   """
+  @spec reload() :: registry()
+  def reload, do: reload(default_app_modules(), GameMode.mode())
+
   @spec reload([module()]) :: registry()
-  def reload(modules \\ default_app_modules()) do
+  def reload(modules), do: reload(modules, GameMode.mode())
+
+  @spec reload([module()], GameMode.t()) :: registry()
+  def reload(modules, mode) do
     terminate_sessions()
-    registry = build(npc_modules(modules))
+
+    entries =
+      for module <- npc_modules(modules),
+          ContentScope.active?(module.content_scope(), mode),
+          placement <- module.spawn(),
+          ContentScope.active?(placement.scope, mode),
+          do: {module, placement}
+
+    registry = build(entries)
     :persistent_term.put(@pt_key, registry)
     registry
   end
@@ -247,11 +267,8 @@ defmodule Aesir.ZoneServer.Npc.Registry do
     end
   end
 
-  @spec build([module()]) :: registry()
-  defp build(modules) do
-    entries =
-      for module <- modules, placement <- module.spawn(), do: {module, placement}
-
+  @spec build([entry()]) :: registry()
+  defp build(entries) do
     index =
       for {module, placement} <- entries,
           into: %{},
