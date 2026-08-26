@@ -9,30 +9,37 @@ description: How to create NPCs in Aesir - the declarative Npc module + Script D
 
 NPCs are declarative Elixir modules under
 `apps/zone_server/lib/aesir/zone_server/content/npc/<map>/<name>.ex` with no compile-time
-engine coupling:
+engine coupling. A body defaults to `:shared`; restrict it explicitly when its behavior belongs to
+one mode:
 
 ```elixir
-defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThief do
-  use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "morocc", x: 208, y: 90, dir: 6, sprite: 58, name: "Turban Thief"}]
-
-  @impl true
-  def on_talk(ctx) do
-    ctx
-    |> mes("Want to buy?")
-    |> select(["Yes", "No"])
-    |> handle_choice()
-  end
-end
+use Aesir.ZoneServer.Npc,
+  scope: :renewal,
+  spawn: [%{map: "morocc", x: 208, y: 90, dir: 6, sprite: 58, name: "Renewal Guide"}]
 ```
 
-- `spawn:` placements: `%{map, x, y, dir, sprite, name}` plus optional `unique_name`
-  (rAthena exname, used for `donpcevent "Name::Label"` resolution) and `trigger: {xs, ys}`
-  (OnTouch rect half-extents).
+A placement inherits its body scope, but a shared body may independently declare overlay placements:
+
+```elixir
+use Aesir.ZoneServer.Npc,
+  spawn: [
+    %{map: "prontera", x: 10, y: 10, sprite: 58, name: "Guide"},
+    %{map: "izlude", x: 20, y: 20, sprite: 58, name: "Guide", scope: :renewal}
+  ]
+```
+
+A placement cannot activate an inactive body. `scope:` accepts only `:shared`, `:renewal`, or
+`:pre_renewal`.
+
+- `spawn:` placements require `%{map, x, y, sprite}`; `dir` defaults to `0` and `name` to `""`.
+  They also accept optional `unique_name` (rAthena exname, used for `donpcevent "Name::Label"`
+  resolution) and `trigger: {xs, ys}` (OnTouch rect half-extents).
 - Callbacks: `on_talk/1` (required), `on_init/1` and `on_event/2` (optional). `events/0` is
   auto-derived from `on_event/2` **literal** clause heads (non-literal head = CompileError).
-- `Npc.Registry` (`:persistent_term`) indexes placements at boot with deterministic
-  synthetic gids from `{map, x, y}`; `Npc.Verifier` fails boot on cell collisions.
+- `Npc.Registry` (`:persistent_term`) composes shared content with the boot-selected `GameMode`
+  overlay before it builds placement, cell, gid, name, label, touch, or event indexes. It assigns
+  deterministic synthetic gids from `{map, x, y, unique_name}`. `Npc.Verifier` reports active
+  same-cell/same-name collisions without blocking boot.
 - Warp portals are data, not modules: `apps/zone_server/priv/db/<mode>/warps/*.yml`
   (mode dir `re/` or `pre-re/` per `AESIR_DB_MODE`; see `aesir-game-modes`).
 
@@ -73,35 +80,50 @@ External-store vars are read/written directly by the interaction Task, not via
 
 ## The rAthena transpiler
 
-`mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]` transpiles rAthena
-`npc/**/*.txt` into DSL modules (rathena checkout: `~/Development/personal/rathena`).
-Output mirrors the rAthena source path — directory plus file basename
-(`content/npc/<dir>/<file>/<slug>.ex`, module `Content.Npc.<Dir…>.<File>.<Name>`), so every
-NPC in one source file shares a folder and module parent; distinct from hand-written NPCs at
-`content/npc/<map>/<name>.ex`. rAthena's `npc/` tree is mode-overlaid: root dirs are shared,
-`npc/re/` and `npc/pre-re/` are renewal-/classic-only content — the committed corpus is
-currently renewal-focused; the pre-re NPC corpus is Phase-3 work (see `aesir-game-modes`).
-Pipeline lives under `npc/transpiler/`; state in `priv/npc_transpile/manifest.json`; stub
-report at `priv/npc_transpile/_transpile_report.md`.
+`mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]` transpiles upstream
+`npc/**/*.txt` into DSL modules. Run it from the repository root. With no `--only`, it follows
+the enabled shared, renewal, and pre-renewal configuration graphs rooted at
+`npc/re/scripts_main.conf` and `npc/pre-re/scripts_main.conf`, deduplicates shared files, and
+emits one all-scope corpus. This import is independent of `AESIR_DB_MODE`. `--only` globs are
+relative to `npc/` (for example `re/jobs/1-1/*`); they are targeted, incremental, and
+non-authoritative, so they may select disabled files but never prune unrelated manifest records or
+outputs.
+
+Placed-script output continues to mirror the source path. Scoped floating scripts and global helpers
+use separate namespaces: shared `Content.Npc.{Floating,Functions}` under `content/npc/{floating,functions}`;
+renewal `Content.Npc.Re.{Floating,Functions}` under `content/npc/re/{floating,functions}`; and
+pre-renewal `Content.Npc.PreRe.{Floating,Functions}` under
+`content/npc/pre_re/{floating,functions}`. A scope-independent target is a direct call. A shared
+caller to one or more overlay targets emits `GameMode` branches even for one target and raises in a
+missing active mode. A known incompatible scope blocks import; a globally unknown helper remains a
+`Todo` stub.
+
+Pipeline lives under `npc/transpiler/`; state in `priv/npc_transpile/manifest.json`; stub report at
+`priv/npc_transpile/_transpile_report.md`.
 
 Rules that repeatedly bite:
 
-- `--only` globs are relative to `npc/` (so `re/jobs/1-1/*`), and the task writes relative
-  to CWD — **run from the repo root**, or output nests wrongly.
-- `--force` is **required after any transpiler/codegen change** (the manifest skips on
-  source hash alone; a codegen fix never propagates otherwise).
-- Manifest gotchas: deleting a generated file while its manifest record remains diverts the
-  next run to `content/npc/_conflicts/` — drop the manifest key too. Hand-edited outputs
-  always divert to `_conflicts/`.
-- Only a curated set (~972 manifest entries) is committed. A full-corpus run generates ~10k
-  throwaway files and balloons the manifest — measure, then revert the manifest and clean
-  the untracked output; never commit the mass output.
+- A no-argument run is authoritative for its enabled graphs. After structural validation, it deletes
+  only untouched, manifest-owned stale outputs and their records; it removes records for already
+  missing stale outputs. An edited stale output is retained, reported, and fails the run. `--only`
+  never performs that reconciliation. Stale removal is post-write and non-transactional: active
+  writes and successful removals persist; a failed removal and its manifest record remain retryable.
+- Manifest paths cannot escape the app root or traverse symlinks. A hand-written output collision is
+  reported and diverted to `_conflicts/`, while unrelated processing may continue; a multiply-owned
+  manifest path blocks the import.
+- `--force` regenerates matching entries even when their source is unchanged (use after
+  transpiler/codegen changes); hand-edited outputs still divert to `_conflicts/`.
+- Generated and hand-written files share `content/npc`; this stack did not migrate the checked
+  corpus or manifest. Before any pre-renewal boot or deployment, remove only `output_path` files
+  listed in the current manifest, preserving every other file; remove the manifest; then run one
+  clean no-`--only` all-scope regeneration. Do not delete the directory. The user owns that
+  regeneration after this stack.
 - Unsupported buildins become runtime-raising `todo(ctx, :name, args)` stubs. Implementing
   one = add a DSL op + a `CommandMap` entry (or `@call_reads`/`@functions` for reads and
   global callfuncs), then force-regen. Codegen-native reads must also be added to Analyzer
   `@native_cmds` — keep the two in sync. Buildin lookups are case-insensitive; `read/1`
   params and `function/1` names are case-sensitive.
-- Global rAthena functions map onto DSL primitives via `CommandMap.function/1`
+- Global upstream functions map onto DSL primitives via `CommandMap.function/1`
   (`Job_Change` → `jobchange` is the template).
 
 ## Testing

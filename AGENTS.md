@@ -167,11 +167,15 @@ scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
 Recent major work. NPCs are declarative Elixir modules with no compile-time coupling to the engine.
 
 - **`Npc`** - A `use` macro that injects the `@behaviour`, imports `Script.Dsl`, and accepts a
-  `spawn:` list of placement maps `%{map, x, y, dir, sprite, name}`. Requires an `on_talk/1`
-  callback (`on_init/1` optional).
+  `spawn:` list. A placement requires `map`, `x`, `y`, and `sprite`; `dir` defaults to `0` and
+  `name` to `""`. NPC bodies default to `scope: :shared`; set `scope: :renewal` or
+  `:pre_renewal` only for mode-specific behavior. A placement inherits its body's scope unless
+  its spawn map sets its own `scope:`. Requires an `on_talk/1` callback (`on_init/1` optional).
 - **`Npc.Registry`** - Boot-time index (in `:persistent_term`) of placements, with cell and
-  unit-id lookups. NPC gids are synthetic, deterministically derived from `{map, x, y}`.
-- **`Npc.Verifier`** - Fails on cell collisions, warns on placements on unmapped maps.
+  unit-id lookups. It composes shared bodies and placements with the boot-selected `GameMode`
+  overlay before building any lookup, label, touch, or event index. NPC gids are synthetic hashes
+  of `{map, x, y, unique_name}`.
+- **`Npc.Verifier`** - Reports active same-cell/same-name collisions without blocking boot.
 - **`Npc.Warps`** - Warp NPCs loaded from `priv/db/re/warps/*.yml` (imported from rAthena).
 - **`Script.Dsl`** - The DSL: effect ops `(ctx, args) -> ctx` (`heal`, `sc_start`, `warp`,
   `give_item`, `delitem`, `pay_zeny`, `set_char_var`, ...), read ops `(ctx) -> value` (`zeny`,
@@ -216,6 +220,8 @@ boot. The mix tasks (in `apps/zone_server/lib/mix/tasks/`) are idempotent, deter
 - `mix aesir.import.spawns [<rathena_root>]` - rAthena mob-spawn scripts -> `priv/db/re/spawns/<map>.yml`.
 - `mix aesir.import.warps [<rathena_root>]` - rAthena warp scripts -> `priv/db/re/warps/<map>.yml`.
 - `mix aesir.import.quests [<rathena_root>]` - rAthena `quest_db` -> `priv/db/re/quests/quests.yml`.
+- `mix aesir.import.npcs [<rathena_root>] [--only <glob>] [--force]` - enabled shared, renewal,
+  and pre-renewal NPC graphs -> one scoped module corpus.
 - `mix aesir.import.mapcache [<gat_dir>] [<out>]` - `.gat` files -> `priv/maps.mcache` (zlib walkability).
 
 Zone DBs use `:commons, :game_mode`: renewal is the default (`re/`), and
@@ -225,6 +231,28 @@ complete regeneration sequence, and intentional exclusions are documented in
 after shipped data: keyed rows override, maps merge, and spawns append-only per map (base spawns
 kept, import spawns added); warps and shops append. Restart after edits, or call the relevant
 catalog's `reload/0`.
+
+NPC import is separate from the DB-mode importer flow: no-argument
+`mix aesir.import.npcs` follows both enabled `npc/re/scripts_main.conf` and
+`npc/pre-re/scripts_main.conf` graphs in one all-scope run, deduplicating shared sources; it is
+independent of `AESIR_DB_MODE`. `--only` is targeted, incremental, and non-authoritative: it may
+select disabled sources but never prunes unrelated manifest records or outputs. A no-argument run
+is authoritative for disabled sources: it removes only manifest-owned untouched stale outputs after
+validation, drops records for already-missing outputs, and retains an edited stale output as a
+reported failure. A hand-written output collision is reported and diverted to `_conflicts/`, while
+unrelated processing may continue; multiply-owned manifest paths block the import. Post-write stale
+removal is non-transactional: active writes and successful removals persist, while a failed removal
+and its manifest record remain retryable.
+
+Helper resolution is direct for a scope-independent target. A shared caller to one or more overlay
+targets emits `GameMode` branches, raising in a missing active mode; known incompatible scope blocks
+import, while a globally unknown helper remains a `Todo` stub.
+
+The checked generated NPC corpus and `priv/npc_transpile/manifest.json` predate mode scopes; this
+stack did not migrate them. Before any pre-renewal boot or deployment, remove only the `output_path`
+files listed in the current manifest, preserving every other `content/npc` file; remove the manifest;
+then run one clean no-`--only` all-scope regeneration from the repository root. Do not delete the
+content directory. The user owns that regeneration after this stack.
 
 ## Testing Approach
 
