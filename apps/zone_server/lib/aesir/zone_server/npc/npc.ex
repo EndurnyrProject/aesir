@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Npc do
       end
   """
 
+  alias Aesir.ZoneServer.Npc.ContentScope
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Script.Ctx
 
@@ -53,6 +54,9 @@ defmodule Aesir.ZoneServer.Npc do
 
   @doc "Returns the NPC's co-located placements. Macro-provided."
   @callback spawn() :: [Placement.t()]
+
+  @doc "Returns the NPC body's content scope. Macro-provided."
+  @callback content_scope() :: ContentScope.t()
 
   @doc "Runs when a player talks to the NPC; the interaction entry point."
   @callback on_talk(Ctx.t()) :: any()
@@ -75,12 +79,15 @@ defmodule Aesir.ZoneServer.Npc do
   @optional_callbacks on_init: 1, on_event: 2
 
   defmacro __using__(opts) do
-    quote bind_quoted: [opts: opts] do
+    scope = opts |> Keyword.get(:scope, :shared) |> validate_content_scope!(:body)
+
+    quote bind_quoted: [opts: opts, scope: scope] do
       @behaviour Aesir.ZoneServer.Npc
       @before_compile Aesir.ZoneServer.Npc
 
       import Aesir.ZoneServer.Script.Dsl
 
+      @npc_content_scope scope
       @npc_spawn Keyword.get(opts, :spawn, [])
     end
   end
@@ -88,7 +95,8 @@ defmodule Aesir.ZoneServer.Npc do
   defmacro __before_compile__(env) do
     mod = env.module
     raw_spawn = Module.get_attribute(mod, :npc_spawn) || []
-    placements = Macro.escape(Enum.map(raw_spawn, &to_placement!/1))
+    scope = Module.get_attribute(mod, :npc_content_scope)
+    placements = Macro.escape(Enum.map(raw_spawn, &to_placement!(&1, scope)))
     id = derive_npc_id(mod)
 
     events_ast =
@@ -108,12 +116,15 @@ defmodule Aesir.ZoneServer.Npc do
       @impl Aesir.ZoneServer.Npc
       def spawn, do: unquote(placements)
 
+      @impl Aesir.ZoneServer.Npc
+      def content_scope, do: unquote(scope)
+
       unquote(events_ast)
     end
   end
 
-  @spec to_placement!(map()) :: Placement.t()
-  defp to_placement!(entry) do
+  @spec to_placement!(map(), ContentScope.t()) :: Placement.t()
+  defp to_placement!(entry, body_scope) do
     name = Map.get(entry, :name, "")
 
     %Placement{
@@ -124,8 +135,18 @@ defmodule Aesir.ZoneServer.Npc do
       sprite: Map.fetch!(entry, :sprite),
       name: name,
       unique_name: Map.get(entry, :unique_name, name),
-      trigger: validate_trigger!(Map.get(entry, :trigger))
+      trigger: validate_trigger!(Map.get(entry, :trigger)),
+      scope: entry |> Map.get(:scope, body_scope) |> validate_content_scope!(:placement)
     }
+  end
+
+  @spec validate_content_scope!(term(), :body | :placement) :: ContentScope.t()
+  defp validate_content_scope!(scope, _kind) when scope in [:shared, :renewal, :pre_renewal],
+    do: scope
+
+  defp validate_content_scope!(scope, kind) do
+    raise ArgumentError,
+          "npc #{kind} content scope must be :shared, :renewal, or :pre_renewal, got: #{inspect(scope)}"
   end
 
   @spec validate_trigger!(term()) :: {non_neg_integer(), non_neg_integer()} | nil
