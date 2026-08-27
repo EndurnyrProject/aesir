@@ -1049,7 +1049,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     )
 
     OnHitEffects.after_hit(attacker, target, damage_result,
-      attack_flag: physical_skill_flag(hit_info)
+      attack_flag: physical_skill_flag(hit_info),
+      skill_id: skill_id
     )
 
     dispatch_equip_autocasts(attacker, target, target_pid, physical_skill_flag(hit_info))

@@ -5658,6 +5658,7 @@
   locations:
     - both_hand
   name: Bradium Stone Hammer
+  on_equip: bonus(ctx, {:add_eff_on_skill, 110, :sc_stun}, (500 + (200 * refine(ctx))))
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -10246,6 +10247,30 @@
   name: Glorious Cure Wand
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, :heal_power, 14)
+    ctx = bonus(ctx, :delay_rate, -10)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:ignore_mdef_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 5)
+      ctx = bonus(ctx, :heal_power, (5 + ((refine(ctx) - 5) * 2)))
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 28, trigger_skill: 28}, 10, 100)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 9) do
+      bonus(ctx, :heal_power, 10)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -10392,6 +10417,12 @@
   locations:
     - right_hand
   name: Croce Staff
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, :int, 4)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 34, trigger_skill: 28}, max(skill_lv(ctx, 34), 1), 20)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -11232,6 +11263,7 @@
   locations:
     - both_hand
   name: Nepenthes Bow
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 148, trigger_skill: 46}, 1, 20)'
   range: 5
   refineable: true
   slots: 2
@@ -12403,6 +12435,14 @@
   locations:
     - right_hand
   name: Harp of Nepenthes
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = if (refine(ctx) > 9) do
+      bonus(ctx, {:add_eff_on_skill, 316, :sc_stun}, 2000)
+    else
+      bonus(ctx, {:add_eff_on_skill, 316, :sc_stun}, 1000)
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -12994,6 +13034,14 @@
   locations:
     - right_hand
   name: Stem of Nepenthes
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:add_eff_on_skill, 324, :sc_freeze}, 2000)
+    else
+      bonus(ctx, {:add_eff_on_skill, 324, :sc_freeze}, 1000)
+    end
+    ctx
   range: 2
   refineable: true
   slots: 2
@@ -13129,6 +13177,31 @@
   name: Glorious Destruction Staff
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 15)
+    ctx = bonus(ctx, {:ignore_mdef_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:magic_addrace, :demi_human}, ((refine(ctx) - 5) * 2))
+      ctx = bonus(ctx, {:magic_addrace, :player_human}, ((refine(ctx) - 5) * 2))
+      ctx = bonus(ctx, {:ignore_mdef_race, :demi_human}, (5 + ((refine(ctx) - 5) * 2)))
+      ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, (5 + ((refine(ctx) - 5) * 2)))
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 12, trigger_skill: 89}, 10, 200)
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 12, trigger_skill: 83}, 10, 200)
+      ctx = auto_cast(ctx, %{force: 1, flag: 0, trigger: :on_skill, skill_id: 12, trigger_skill: 85}, 10, 200)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_staff
@@ -33681,6 +33754,13 @@
   locations:
     - right_hand
   name: Dagger of Hunter
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 5, trigger_skill: 212}, 10, 100)
+    ctx = bonus(ctx, {:skill_atk, 212}, 20)
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -33911,6 +33991,10 @@
   locations:
     - right_hand
   name: Krierg
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff_on_skill, 212, :sc_bleeding}, 1000)
+    ctx = bonus(ctx, {:skill_atk, 212}, 15)
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -35350,6 +35434,17 @@
   locations:
     - right_hand
   name: Elemental Sword
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :int, 4)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, {:addele, :neutral}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 19, trigger_skill: 14}, 3, 1000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 20, trigger_skill: 19}, 3, 1000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 0, trigger: :on_skill, skill_id: 90, trigger_skill: 20}, 3, 1000)
+    ctx
   range: 1
   refineable: true
   slots: 3

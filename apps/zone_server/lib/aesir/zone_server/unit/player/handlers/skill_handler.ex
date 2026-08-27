@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -1313,7 +1314,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     case Interpreter.auto_cast(game_state, skill_id, level, target) do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
-        broadcast_skill_use(new_state.game_state, skill_id, level, target)
+        broadcast_skill_effect(new_state.game_state, skill_id, level, target)
         {:noreply, new_state}
 
       {:error, _reason} ->
@@ -1333,7 +1334,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     case Interpreter.proc_cast(game_state, skill_id, level, target) do
       {:ok, new_game_state} ->
         new_state = commit_cast(state, new_game_state, skill_id, level, false)
-        broadcast_skill_use(new_state.game_state, skill_id, level, target)
+        broadcast_skill_effect(new_state.game_state, skill_id, level, target)
         {:noreply, new_state}
 
       {:error, _reason} ->
@@ -1466,9 +1467,35 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   # Damage skills broadcast their own ZC_NOTIFY_SKILL from the combat layer, so
   # the no-damage support visual is sent only for no-damage skills. Ground casts
   # emit their own ZC_NOTIFY_GROUNDSKILL visual, so they skip this entirely.
-  defp broadcast_skill_use(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
-
+  # A successful skill use: shows the skill to onlookers and arms whatever the
+  # caster's equipment procs off casting it. The two proc entry points broadcast
+  # without this dispatch, so a proc can never trigger another one.
   defp broadcast_skill_use(game_state, skill_id, level, target) do
+    broadcast_skill_effect(game_state, skill_id, level, target)
+    dispatch_on_skill_procs(game_state, skill_id, target)
+  end
+
+  # Rolls the caster's on-skill autocast procs and hands each to this session,
+  # which runs it after the current message like any other proc. A ground or
+  # self cast has no unit to pass along, so only the procs that keep themselves
+  # on the caster can fire.
+  @spec dispatch_on_skill_procs(PlayerState.t(), integer(), term()) :: :ok
+  defp dispatch_on_skill_procs(game_state, skill_id, target) do
+    game_state.stats.modifiers.equipment
+    |> EquipAutocast.on_skill(skill_id, proc_skill_target(target))
+    |> Enum.each(fn {:auto_cast, proc_skill_id, level, proc_target} ->
+      GenServer.cast(self(), {:skill, {:proc_cast, proc_skill_id, level, proc_target}})
+    end)
+  end
+
+  @spec proc_skill_target(term()) :: :self | {:unit, integer()} | nil
+  defp proc_skill_target({:unit, unit_id}), do: {:unit, unit_id}
+  defp proc_skill_target(:self), do: :self
+  defp proc_skill_target(_other), do: nil
+
+  defp broadcast_skill_effect(_game_state, _skill_id, _level, {:ground, _x, _y}), do: :ok
+
+  defp broadcast_skill_effect(game_state, skill_id, level, target) do
     case Catalog.by_id(skill_id) do
       {:ok, %{damage_type: :damage}} ->
         :ok

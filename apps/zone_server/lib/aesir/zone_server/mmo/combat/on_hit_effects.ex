@@ -44,6 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     - `:attack_flag` - the hit's `BattleFlags` classification, matched against
       flagged bonuses. The default `0` carries no classification, so flagged
       bonuses stay inert.
+    - `:skill_id` - the skill that landed this hit, matched against the
+      infliction bonuses armed for one named skill. A normal attack passes none.
   """
   @spec after_hit(Combatant.t(), Combatant.t(), map(), keyword()) :: :ok
   def after_hit(attacker, defender, damage_result, opts \\ [])
@@ -59,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     inflict(attacker, defender, :add_eff, roll, attack_flag)
     inflict(defender, attacker, :add_eff_when_hit, roll, attack_flag)
     inflict(attacker, attacker, :add_eff2, roll, attack_flag)
+    inflict_on_skill(attacker, defender, Keyword.get(opts, :skill_id), roll)
     :ok
   end
 
@@ -74,6 +77,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
       {{^family, sc}, rate} when is_atom(sc) ->
         try_inflict(source, other, sc, rate, roll)
+
+      _entry ->
+        :ok
+    end)
+  end
+
+  # `bAddEffOnSkill` arms a status on one named skill landing, whatever kind of
+  # attack that skill is; a hit from any other skill, or a normal attack, rolls
+  # nothing.
+  @spec inflict_on_skill(Combatant.t(), Combatant.t(), integer() | nil, roll_fun()) :: :ok
+  defp inflict_on_skill(_attacker, _defender, nil, _roll), do: :ok
+
+  defp inflict_on_skill(attacker, defender, skill_id, roll) do
+    Enum.each(attacker.equip_modifiers, fn
+      {{:add_eff_on_skill, ^skill_id, sc}, rate} when is_atom(sc) ->
+        try_inflict(attacker, defender, sc, rate, roll)
 
       _entry ->
         :ok

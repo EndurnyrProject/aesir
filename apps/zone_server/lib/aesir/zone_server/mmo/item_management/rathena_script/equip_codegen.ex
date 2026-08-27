@@ -282,6 +282,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
         # `bonus3 bAutoSpell,sk,lv,rate` - no flag argument at all.
         compile_auto_cast(key, first_ast, second_ast, third_ast, {:int, 0}, {:int, 0}, env)
 
+      match?({:ok, _family}, BonusKeys.on_skill_status_family(key)) ->
+        compile_on_skill_status(key, first_ast, second_ast, third_ast, env)
+
       true ->
         unsupported({:unsupported_command, "bonus3"})
     end
@@ -293,10 +296,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
          {:cmd, "bonus4", [{:name, key}, skill_ast, level_ast, rate_ast, force_ast]},
          env
        ) do
-    if match?({:ok, _trigger}, BonusKeys.auto_cast_trigger(key)) do
-      compile_auto_cast(key, skill_ast, level_ast, rate_ast, {:int, 0}, force_ast, env)
-    else
-      unsupported({:unsupported_command, "bonus4"})
+    case BonusKeys.auto_cast_trigger(key) do
+      # `bonus4 bAutoSpellOnSkill,src,sk,lv,rate` - the leading argument names
+      # the skill whose use triggers the proc, so the rest shifts along.
+      {:ok, :on_skill} ->
+        compile_auto_cast_on_skill(key, skill_ast, level_ast, rate_ast, force_ast, {:int, 0}, env)
+
+      {:ok, _trigger} ->
+        compile_auto_cast(key, skill_ast, level_ast, rate_ast, {:int, 0}, force_ast, env)
+
+      :error ->
+        unsupported({:unsupported_command, "bonus4"})
     end
   end
 
@@ -306,10 +316,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
          {:cmd, "bonus5", [{:name, key}, skill_ast, level_ast, rate_ast, flag_ast, force_ast]},
          env
        ) do
-    if match?({:ok, _trigger}, BonusKeys.auto_cast_trigger(key)) do
-      compile_auto_cast(key, skill_ast, level_ast, rate_ast, flag_ast, force_ast, env)
-    else
-      unsupported({:unsupported_command, "bonus5"})
+    case BonusKeys.auto_cast_trigger(key) do
+      # `bonus5 bAutoSpellOnSkill,src,sk,lv,rate,force`.
+      {:ok, :on_skill} ->
+        compile_auto_cast_on_skill(key, skill_ast, level_ast, rate_ast, flag_ast, force_ast, env)
+
+      {:ok, _trigger} ->
+        compile_auto_cast(key, skill_ast, level_ast, rate_ast, flag_ast, force_ast, env)
+
+      :error ->
+        unsupported({:unsupported_command, "bonus5"})
     end
   end
 
@@ -327,22 +343,41 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
 
-  # `bonus3 bAddMonsterDropItem,iid,r,n` gates a bonus item drop on the slain
-  # mob's race: the item id is a verbatim positive literal, the race a race
-  # constant, and the chance an amount expression. Emits a three-element
-  # `{family, item_id, race}` destination the loot roll reads only when the mob's
-  # race matches. The `RC_Boss` sentinel is not a real race and is unsupported.
+  # A bonus item drop gated on the mob that died: `bAddMonsterDropItem` gates on
+  # its race, `bAddMonsterIdDropItem` on one specific monster id. The item id is
+  # a verbatim positive literal and the chance an amount expression. Emits a
+  # three-element `{family, item_id, gate}` destination the loot roll reads only
+  # when the slain mob matches. The `RC_Boss` sentinel is not a real race and is
+  # unsupported.
   @spec compile_drop_bonus3(String.t(), term(), term(), term(), %{
           String.t() => EquipScript.expr()
         }) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
-  defp compile_drop_bonus3(key, item_ast, race_ast, amount_ast, env) do
-    with {:ok, %{family: family, param: :item}} <- param_schema(key),
+  defp compile_drop_bonus3(key, item_ast, gate_ast, amount_ast, env) do
+    with {:ok, {family, gate_kind}} <- drop_schema(key),
          {:ok, item_id} <- drop_item_id(item_ast),
-         {:ok, race} <- resolve_drop_race(race_ast),
+         {:ok, gate} <- resolve_drop_gate(gate_kind, gate_ast),
          {:ok, expr} <- compile_expr(amount_ast, env) do
-      {:ok, {:bonus, {family, item_id, race}, expr}}
+      {:ok, {:bonus, {family, item_id, gate}, expr}}
     end
   end
+
+  @spec drop_schema(String.t()) ::
+          {:ok, {atom(), :race | :monster}} | {:error, {:unsupported, detail()}}
+  defp drop_schema(key) do
+    case BonusKeys.bonus3_drop_schema(key) do
+      {:ok, schema} -> {:ok, schema}
+      :error -> unsupported({:unknown_bonus_key, key})
+    end
+  end
+
+  # The gate is either a race constant or, for the by-monster key, a bare
+  # monster id kept verbatim - the same spirit as the item id, and not validated
+  # against the mob catalog at transpile time.
+  @spec resolve_drop_gate(:race | :monster, term()) ::
+          {:ok, atom() | pos_integer()} | {:error, {:unsupported, detail()}}
+  defp resolve_drop_gate(:race, ast), do: resolve_drop_race(ast)
+  defp resolve_drop_gate(:monster, {:int, id}) when id > 0, do: {:ok, id}
+  defp resolve_drop_gate(:monster, other), do: unsupported({:unresolved_param, other})
 
   @spec drop_item_id(term()) :: {:ok, pos_integer()} | {:error, {:unsupported, detail()}}
   defp drop_item_id({:int, id}) when id > 0, do: {:ok, id}
@@ -475,8 +510,74 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
+  # `bonus3 bAddEffOnSkill,sk,eff,n` inflicts a status when the named skill
+  # lands. It carries no flag argument in the corpus, so the effect always
+  # targets the victim of the skill.
+  @spec compile_on_skill_status(String.t(), term(), term(), term(), %{
+          String.t() => EquipScript.expr()
+        }) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_on_skill_status(key, skill_ast, status_ast, rate_ast, env) do
+    with {:ok, family} <- on_skill_status_family(key),
+         {:ok, trigger_skill} <- resolve_skill_ref(skill_ast),
+         {:ok, status} <- resolve_on_skill_status(status_ast),
+         {:ok, expr} <- compile_expr(rate_ast, env) do
+      {:ok, {:bonus, {family, trigger_skill, status}, expr}}
+    end
+  end
+
+  @spec on_skill_status_family(String.t()) ::
+          {:ok, atom()} | {:error, {:unsupported, detail()}}
+  defp on_skill_status_family(key) do
+    case BonusKeys.on_skill_status_family(key) do
+      {:ok, family} -> {:ok, family}
+      :error -> unsupported({:unknown_bonus_key, key})
+    end
+  end
+
+  @spec resolve_on_skill_status(term()) :: {:ok, atom()} | {:error, {:unsupported, detail()}}
+  defp resolve_on_skill_status({:name, const}), do: resolve(&Resolver.resolve_eff/1, const)
+  defp resolve_on_skill_status(other), do: unsupported({:unresolved_param, other})
+
+  # An on-skill autocast is armed by the wearer casting `trigger_skill`, so it
+  # carries no battle flag: what fires it is a skill use, not a kind of attack.
+  @spec compile_auto_cast_on_skill(
+          String.t(),
+          term(),
+          term(),
+          term(),
+          term(),
+          term(),
+          %{String.t() => EquipScript.expr()}
+        ) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_auto_cast_on_skill(
+         key,
+         trigger_skill_ast,
+         skill_ast,
+         level_ast,
+         rate_ast,
+         force_ast,
+         env
+       ) do
+    with {:ok, trigger} <- auto_cast_trigger(key),
+         {:ok, trigger_skill} <- resolve_skill_ref(trigger_skill_ast),
+         {:ok, skill_id} <- resolve_skill_ref(skill_ast),
+         {:ok, force} <- auto_cast_force(force_ast),
+         {:ok, level_expr} <- compile_expr(level_ast, env),
+         {:ok, rate_expr} <- compile_expr(rate_ast, env) do
+      spec = %{
+        trigger: trigger,
+        skill_id: skill_id,
+        flag: 0,
+        force: force,
+        trigger_skill: trigger_skill
+      }
+
+      {:ok, {:auto_cast, spec, level_expr, rate_expr}}
+    end
+  end
+
   @spec auto_cast_trigger(String.t()) ::
-          {:ok, :attack | :when_hit} | {:error, {:unsupported, detail()}}
+          {:ok, :attack | :when_hit | :on_skill} | {:error, {:unsupported, detail()}}
   defp auto_cast_trigger(key) do
     case BonusKeys.auto_cast_trigger(key) do
       {:ok, trigger} -> {:ok, trigger}

@@ -236,6 +236,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   # The value names which flag vocabulary the key's argument is written in - the
   # sub-resist family classifies the incoming attack (`:battle`), the on-hit
   # status families additionally choose their victim (`:trigger`).
+  # `bonus3 bAddEffOnSkill,sk,eff,n` inflicts a status when one named skill
+  # lands, rather than on ordinary hits. Its destination carries both the skill
+  # that triggers it and the status it inflicts.
+  @on_skill_status_keys %{"baddeffonskill" => :add_eff_on_skill}
+
   @flag_keys %{
     "baddeff" => :trigger,
     "baddeffwhenhit" => :trigger,
@@ -247,10 +252,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   # Equip autocast keys: a chance for a worn item to cast a skill by itself.
   # The value is the trigger point - `:attack` fires on the wearer's own landed
-  # hits, `:when_hit` on hits taken.
+  # hits, `:when_hit` on hits taken, and `:on_skill` on the wearer casting one
+  # named skill.
   @auto_cast_keys %{
     "bautospell" => :attack,
-    "bautospellwhenhit" => :when_hit
+    "bautospellwhenhit" => :when_hit,
+    "bautospellonskill" => :on_skill
   }
 
   # A when-hit proc is armed for both normal attacks and skills, unlike the
@@ -259,11 +266,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @when_hit_preset_flag BattleFlag.id(:normal) ||| BattleFlag.id(:skill)
 
   # `bonus3` keys whose third argument is a genuine second param, not a droppable
-  # flag: `bonus3 bAddMonsterDropItem,iid,r,n` gates the drop on the slain mob's
-  # race. The transpiler emits a three-element `{family, item_id, race}`
-  # destination for these, distinct from the two-argument `bonus2` form's
-  # `{family, item_id}`.
-  @bonus3_drop_keys MapSet.new(["baddmonsterdropitem"])
+  # flag: a bonus item drop gated on the mob that died. The gate is either the
+  # mob's race (`bonus3 bAddMonsterDropItem,iid,r,n`) or one specific monster
+  # (`bonus3 bAddMonsterIdDropItem,iid,mid,n`). Both emit a three-element
+  # `{family, item_id, gate}` destination - a race atom or a monster id -
+  # distinct from the two-argument `bonus2` form's `{family, item_id}`.
+  @bonus3_drop_keys %{
+    "baddmonsterdropitem" => {:add_monster_drop, :race},
+    "baddmonsteriddropitem" => {:add_monster_drop, :monster}
+  }
 
   @race_domain [
     :formless,
@@ -383,11 +394,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def flag_kind(name) when is_binary(name), do: Map.fetch(@flag_keys, String.downcase(name))
 
   @doc """
-  Resolves an equip autocast key to the trigger point it arms: `:attack` for a
-  proc on the wearer's own landed hits, `:when_hit` for one on hits taken.
+  Resolves a key whose `bonus3` form inflicts a status when one named skill
+  lands (`bonus3 bAddEffOnSkill,sk,eff,n`) to the family it stores into.
   Returns `:error` for every other key (any case).
   """
-  @spec auto_cast_trigger(String.t()) :: {:ok, :attack | :when_hit} | :error
+  @spec on_skill_status_family(String.t()) :: {:ok, atom()} | :error
+  def on_skill_status_family(name) when is_binary(name),
+    do: Map.fetch(@on_skill_status_keys, String.downcase(name))
+
+  @doc """
+  Resolves an equip autocast key to the trigger point it arms: `:attack` for a
+  proc on the wearer's own landed hits, `:when_hit` for one on hits taken,
+  `:on_skill` for one on casting a named skill. Returns `:error` for every other
+  key (any case).
+  """
+  @spec auto_cast_trigger(String.t()) :: {:ok, :attack | :when_hit | :on_skill} | :error
   def auto_cast_trigger(name) when is_binary(name),
     do: Map.fetch(@auto_cast_keys, String.downcase(name))
 
@@ -396,19 +417,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   argument is folded in. A when-hit proc covers normal attacks and skills
   alike; an attack-side proc adds nothing of its own.
   """
-  @spec auto_cast_preset_flag(:attack | :when_hit) :: non_neg_integer()
+  @spec auto_cast_preset_flag(:attack | :when_hit | :on_skill) :: non_neg_integer()
   def auto_cast_preset_flag(:when_hit), do: @when_hit_preset_flag
   def auto_cast_preset_flag(:attack), do: 0
+  def auto_cast_preset_flag(:on_skill), do: 0
 
   @doc """
-  Whether a `bonus3` key's third argument is a race param gating a monster-drop
-  bonus (`bonus3 bAddMonsterDropItem,iid,r,n`) rather than a droppable flag. The
-  transpiler resolves such keys to a `{family, item_id, race}` destination.
-  Returns `false` for every other key (any case).
+  Whether a `bonus3` key's third argument gates a bonus item drop rather than
+  being a droppable flag. The transpiler resolves such keys to a
+  `{family, item_id, gate}` destination. Returns `false` for every other key
+  (any case).
   """
   @spec bonus3_drop_key?(String.t()) :: boolean()
   def bonus3_drop_key?(name) when is_binary(name),
-    do: MapSet.member?(@bonus3_drop_keys, String.downcase(name))
+    do: Map.has_key?(@bonus3_drop_keys, String.downcase(name))
+
+  @doc """
+  Resolves a bonus-drop key to the family it stores into and the kind of gate
+  its third argument names: `:race` for the slain mob's race, `:monster` for one
+  specific monster id. Returns `:error` for every other key (any case).
+  """
+  @spec bonus3_drop_schema(String.t()) :: {:ok, {atom(), :race | :monster}} | :error
+  def bonus3_drop_schema(name) when is_binary(name),
+    do: Map.fetch(@bonus3_drop_keys, String.downcase(name))
 
   @doc """
   The deduplicated set of family atoms every recognized `bonus2` and

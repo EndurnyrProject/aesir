@@ -62,29 +62,44 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   drops.
 
   Reads the killer's merged equipment modifiers for `{:add_monster_drop, item_id}`
-  (unconditional) and `{:add_monster_drop, item_id, race}` (dropped only when
-  `mob_race` matches, or the entry's race is `:all`) entries. Each entry's value
-  is a chance out of 10_000 (`n/100 %`) rolled independently. Entries whose item
-  id no longer resolves are skipped.
+  (unconditional) and `{:add_monster_drop, item_id, gate}` entries. A gate is
+  either a race - dropped only when `mob_race` matches it, or when it is `:all` -
+  or a monster id, dropped only by that one monster. Each entry's value is a
+  chance out of 10_000 (`n/100 %`) rolled independently. Entries whose item id no
+  longer resolves are skipped.
   """
-  @spec roll_equipment_drops(map(), atom() | nil, String.t(), integer(), integer()) :: [drop()]
-  def roll_equipment_drops(equip_modifiers, mob_race, map_name, x, y)
+  @spec roll_equipment_drops(
+          map(),
+          atom() | nil,
+          integer() | nil,
+          String.t(),
+          integer(),
+          integer()
+        ) :: [drop()]
+  def roll_equipment_drops(equip_modifiers, mob_race, mob_id, map_name, x, y)
       when is_map(equip_modifiers) do
     equip_modifiers
-    |> Enum.flat_map(&roll_bonus_slot(&1, mob_race))
+    |> Enum.flat_map(&roll_bonus_slot(&1, mob_race, mob_id))
     |> scatter(map_name, x, y)
   end
 
-  @spec roll_bonus_slot({term(), term()}, atom() | nil) :: [{integer(), integer(), boolean()}]
-  defp roll_bonus_slot({{:add_monster_drop, nameid}, chance}, _mob_race)
+  @spec roll_bonus_slot({term(), term()}, atom() | nil, integer() | nil) ::
+          [{integer(), integer(), boolean()}]
+  defp roll_bonus_slot({{:add_monster_drop, nameid}, chance}, _mob_race, _mob_id)
        when is_integer(nameid) and is_integer(chance),
        do: maybe_bonus_drop(nameid, chance)
 
-  defp roll_bonus_slot({{:add_monster_drop, nameid, race}, chance}, mob_race)
-       when is_integer(nameid) and is_integer(chance) and (race == :all or race == mob_race),
+  defp roll_bonus_slot({{:add_monster_drop, nameid, race}, chance}, mob_race, _mob_id)
+       when is_integer(nameid) and is_integer(chance) and is_atom(race) and
+              (race == :all or race == mob_race),
        do: maybe_bonus_drop(nameid, chance)
 
-  defp roll_bonus_slot(_entry, _mob_race), do: []
+  defp roll_bonus_slot({{:add_monster_drop, nameid, gate_id}, chance}, _mob_race, mob_id)
+       when is_integer(nameid) and is_integer(chance) and is_integer(gate_id) and
+              gate_id == mob_id,
+       do: maybe_bonus_drop(nameid, chance)
+
+  defp roll_bonus_slot(_entry, _mob_race, _mob_id), do: []
 
   @spec maybe_bonus_drop(integer(), integer()) :: [{integer(), integer(), boolean()}]
   defp maybe_bonus_drop(nameid, chance) do

@@ -139,6 +139,62 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocastTest do
     end
   end
 
+  describe "on_skill/4" do
+    defp on_skill_entry(opts) do
+      trigger_skill = Keyword.get(opts, :trigger_skill, 42)
+      force = Keyword.get(opts, :force, 0)
+      level = Keyword.get(opts, :level, 2)
+
+      %{
+        {:auto_cast_on_skill, {trigger_skill, @cold_bolt, level, force}} =>
+          Keyword.get(opts, :rate, 1_000)
+      }
+    end
+
+    test "a proc fires on its trigger skill and sends the cast at the skill's target" do
+      mods = on_skill_entry([])
+
+      assert [{:auto_cast, @cold_bolt, 2, {:unit, 2001}}] =
+               EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &always_hit/1)
+    end
+
+    test "another skill fires nothing" do
+      mods = on_skill_entry([])
+
+      assert [] = EquipAutocast.on_skill(mods, 99, {:unit, 2001}, roll: &always_hit/1)
+    end
+
+    # The target bit reads inverted here: it keeps the proc on the caster.
+    test "the target bit keeps the proc on the caster" do
+      mods = on_skill_entry(force: AutospellForceFlag.id(:target))
+
+      assert [{:auto_cast, @cold_bolt, 2, :self}] =
+               EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &always_hit/1)
+    end
+
+    test "a cast with no unit target fires only the procs that stay on the caster" do
+      outgoing = on_skill_entry([])
+      self_bound = on_skill_entry(force: AutospellForceFlag.id(:target))
+
+      assert [] = EquipAutocast.on_skill(outgoing, 42, nil, roll: &always_hit/1)
+
+      assert [{:auto_cast, @cold_bolt, 2, :self}] =
+               EquipAutocast.on_skill(self_bound, 42, nil, roll: &always_hit/1)
+    end
+
+    test "a failed roll casts nothing" do
+      mods = on_skill_entry([])
+
+      assert [] = EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &never_hit/1)
+    end
+
+    test "attack-trigger entries are never rolled here" do
+      mods = Map.new([entry(trigger: :attack)])
+
+      assert [] = EquipAutocast.on_skill(mods, 42, {:unit, 2001}, roll: &always_hit/1)
+    end
+  end
+
   describe "when_hit/4" do
     test "the defender's proc targets the attacker" do
       defender =

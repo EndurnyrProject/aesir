@@ -213,6 +213,70 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
     end
   end
 
+  describe "after_hit/4 add_eff_on_skill" do
+    test "inflicts only when the named skill landed the hit" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff_on_skill, 110, :sc_stun} => 10_000})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 skill_id: 110
+               )
+
+      assert_received {:applied, :mob, 2001, :sc_stun, _params}
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 skill_id: 111
+               )
+
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    test "a normal attack carries no skill and inflicts nothing" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff_on_skill, 110, :sc_stun} => 10_000})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
+
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    test "the victim's tolerance subtracts from the proc rate" do
+      pid = self()
+      stub(StatusInterpreter, :apply_status, fn _t, _i, _sc, _p -> :ok end)
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff_on_skill, 110, :sc_stun} => 3_000})
+
+      defender =
+        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        |> with_mods(%{{:res_eff, :sc_stun} => 1_000})
+
+      roll = fn effective ->
+        send(pid, {:rolled, effective})
+        false
+      end
+
+      assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: roll, skill_id: 110)
+
+      assert_received {:rolled, 2_000}
+    end
+  end
+
   describe "after_hit/4 trigger-flagged bonuses" do
     defp trigger_flag(names) do
       names

@@ -60,6 +60,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipAutocast do
     procs(defender, attacker, :when_hit, attack_flag, long_weapon_hit?(attack_flag), opts)
   end
 
+  @doc """
+  Rolls the caster's `:on_skill` procs for one successful use of `trigger_skill`.
+
+  These carry no attack kinds - what fires them is the skill use itself - and
+  their target bit reads inverted: setting it keeps the proc on the caster,
+  while its absence sends it at whatever the triggering skill targeted.
+
+  ## Options
+    - `:roll` - a `t:roll_fun/0` used for every per-mille roll (default `:rand`).
+    - `:level_roll` - picks the level of a random-level proc (default `:rand`).
+  """
+  @spec on_skill(map(), pos_integer(), :self | {:unit, integer()} | nil, keyword()) :: [proc()]
+  def on_skill(equip_modifiers, trigger_skill, skill_target, opts \\ [])
+      when is_map(equip_modifiers) do
+    roll = Keyword.get(opts, :roll, &default_roll/1)
+    level_roll = Keyword.get(opts, :level_roll, &default_level_roll/1)
+
+    Enum.flat_map(equip_modifiers, fn
+      {{:auto_cast_on_skill, {^trigger_skill, skill_id, level, force}}, rate} ->
+        on_skill_proc(skill_id, level, force, rate, skill_target, roll, level_roll)
+
+      _entry ->
+        []
+    end)
+  end
+
+  @spec on_skill_proc(
+          pos_integer(),
+          pos_integer(),
+          non_neg_integer(),
+          integer(),
+          :self | {:unit, integer()} | nil,
+          roll_fun(),
+          (pos_integer() -> pos_integer())
+        ) :: [proc()]
+  defp on_skill_proc(skill_id, level, force, rate, skill_target, roll, level_roll) do
+    effective = min(rate, @rate_cap)
+    target = if force_target?(force), do: :self, else: skill_target
+
+    if not is_nil(target) and effective > 0 and roll.(effective) do
+      [{:auto_cast, skill_id, cast_level(level, force, level_roll), target}]
+    else
+      []
+    end
+  end
+
   @spec procs(
           Combatant.t(),
           Combatant.t(),

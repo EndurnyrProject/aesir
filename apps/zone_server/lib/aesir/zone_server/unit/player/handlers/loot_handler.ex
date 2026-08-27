@@ -142,6 +142,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
       DropCalculator.roll_equipment_drops(
         stats.modifiers.equipment,
         Map.get(payload, :mob_race),
+        Map.get(payload, :mob_id),
         map,
         x,
         y

@@ -637,7 +637,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus4 bSetDefRace,RC_Player_Human,10000,5000,1;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus5"}}} =
-               compile(~S|bonus5 bAutoSpellOnSkill,"AL_HEAL","AL_HEAL",10,100,1;|)
+               compile("bonus5 bSubEle,Ele_Fire,3,BF_MAGIC,1;")
     end
 
     test "non-constant param is rejected" do
@@ -771,9 +771,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(~S|bonus5 bSubEle,Ele_Fire,3,BF_MAGIC,1;|)
     end
 
-    test "a bonus3 key outside the flag-arg allow-list stays unsupported" do
+    test "a bonus3 key outside the supported vocabulary stays unsupported" do
       assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
-               compile("bonus3 bAddEffOnSkill,MG_FIREBOLT,Eff_Stun,500;")
+               compile("bonus3 bSPVanishRate,3,30,BF_WEAPON;")
     end
 
     test "bonus3 flag-arg key with an unresolvable param is unresolved_param" do

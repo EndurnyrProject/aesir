@@ -147,14 +147,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc """
   The constant half of an autocast bonus: which trigger arms it, the skill it
   casts, the attack kinds that fire it, and the force bits deciding target and
-  level randomization. The level and chance are expressions, so they ride the
-  instruction rather than this map.
+  level randomization. An `:on_skill` proc additionally names the
+  `:trigger_skill` whose use fires it, and carries no attack kinds. The level
+  and chance are expressions, so they ride the instruction rather than this map.
   """
   @type auto_cast_spec :: %{
-          trigger: :attack | :when_hit,
-          skill_id: pos_integer(),
-          flag: non_neg_integer(),
-          force: non_neg_integer()
+          :trigger => :attack | :when_hit | :on_skill,
+          :skill_id => pos_integer(),
+          :flag => non_neg_integer(),
+          :force => non_neg_integer(),
+          optional(:trigger_skill) => pos_integer()
         }
 
   @typedoc "A single bonus program statement."
@@ -389,17 +391,33 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   # `bonus3 bAddMonsterDropItem,iid,r,n` renders as a three-element destination
   # literal, which quotes to a `{:{}, _, elems}` node rather than a bare tuple.
-  defp validate_destination!({:{}, _, [family, id, race]})
-       when is_atom(family) and is_integer(id) and id > 0 and is_atom(race) do
-    with {:ok, :item} <- BonusKeys.family_param(family),
-         true <- race in BonusKeys.param_domain(:race) do
-      {family, id, race}
+  # `{:add_eff_on_skill, trigger_skill, sc}`: a status inflicted when one named
+  # skill lands.
+  defp validate_destination!({:{}, _, [:add_eff_on_skill, skill_id, status]})
+       when is_integer(skill_id) and skill_id > 0 and is_atom(status) do
+    if status in BonusKeys.param_domain(:status) do
+      {:add_eff_on_skill, skill_id, status}
     else
-      _ -> malformed!("bonus destination", {family, id, race})
+      malformed!("bonus destination", {:add_eff_on_skill, skill_id, status})
+    end
+  end
+
+  defp validate_destination!({:{}, _, [family, id, gate]})
+       when is_atom(family) and is_integer(id) and id > 0 do
+    with {:ok, :item} <- BonusKeys.family_param(family),
+         true <- valid_drop_gate?(gate) do
+      {family, id, gate}
+    else
+      _ -> malformed!("bonus destination", {family, id, gate})
     end
   end
 
   defp validate_destination!(dest), do: malformed!("bonus destination", dest)
+
+  # A bonus drop is gated either on the slain mob's race or on one monster id.
+  defp valid_drop_gate?(gate) when is_atom(gate), do: gate in BonusKeys.param_domain(:race)
+  defp valid_drop_gate?(gate) when is_integer(gate), do: gate > 0
+  defp valid_drop_gate?(_gate), do: false
 
   defp validate_value!(dest, value) when is_atom(dest) and is_atom(value) do
     with {:ok, domain} <- BonusKeys.value_param(dest),
@@ -425,18 +443,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     spec = Map.new(fields)
 
     with %{trigger: trigger, skill_id: skill_id, flag: flag, force: force} <- spec,
-         true <- trigger in [:attack, :when_hit],
+         true <- trigger in [:attack, :when_hit, :on_skill],
          true <- is_integer(skill_id) and skill_id > 0,
          true <- is_integer(flag) and flag >= 0,
          true <- is_integer(force) and force >= 0,
-         4 <- map_size(spec) do
-      %{trigger: trigger, skill_id: skill_id, flag: flag, force: force}
+         true <- valid_trigger_skill?(spec, trigger) do
+      spec
     else
       _ -> malformed!("auto_cast spec", spec)
     end
   end
 
   defp validate_auto_cast_spec!(spec), do: malformed!("auto_cast spec", spec)
+
+  # Only an on-skill proc names a triggering skill, and it must name one.
+  defp valid_trigger_skill?(spec, :on_skill) do
+    map_size(spec) == 5 and is_integer(spec[:trigger_skill]) and spec[:trigger_skill] > 0
+  end
+
+  defp valid_trigger_skill?(spec, _trigger), do: map_size(spec) == 4
 
   defp validate_stat!(stat) when is_atom(stat) do
     if stat in @stat_params, do: stat, else: malformed!("stat param", stat)
@@ -488,8 +513,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     rate = eval_expr(rate_expr, inputs)
 
     if level > 0 and rate != 0 do
-      key = {:auto_cast, {spec.trigger, spec.skill_id, level, spec.flag, spec.force}}
-      Map.update(acc, key, rate, &(&1 + rate))
+      Map.update(acc, auto_cast_key(spec, level), rate, &(&1 + rate))
     else
       acc
     end
@@ -506,6 +530,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_instr(other, _inputs, _acc), do: malformed!("instruction", other)
+  # An on-skill proc is keyed by the skill that fires it instead of by the kinds
+  # of attack that do, so the two live in separate key families.
+  defp auto_cast_key(%{trigger: :on_skill} = spec, level) do
+    {:auto_cast_on_skill, {spec.trigger_skill, spec.skill_id, level, spec.force}}
+  end
+
+  defp auto_cast_key(spec, level) do
+    {:auto_cast, {spec.trigger, spec.skill_id, level, spec.flag, spec.force}}
+  end
 
   defp eval_expr(int, _inputs) when is_integer(int), do: int
 
