@@ -1069,6 +1069,13 @@
   locations:
     - right_hand
   name: Immaterial Sword
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx = bonus(ctx, {:sp_vanish_rate, 593}, 30)
+    ctx = bonus(ctx, {:sp_vanish_percent, 593}, 30)
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -35289,6 +35296,13 @@
   locations:
     - right_hand
   name: Refined Immaterial Sword
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx = bonus(ctx, {:sp_vanish_rate, 593}, 45)
+    ctx = bonus(ctx, {:sp_vanish_percent, 593}, 30)
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   subtype: one_handed_sword
   type: weapon

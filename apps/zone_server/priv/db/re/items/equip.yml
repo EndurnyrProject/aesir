@@ -1095,6 +1095,13 @@
   locations:
     - right_hand
   name: Immaterial Sword
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx = bonus(ctx, {:sp_vanish_rate, 849}, 3)
+    ctx = bonus(ctx, {:sp_vanish_percent, 849}, 30)
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -4786,6 +4793,21 @@
   locations:
     - both_hand
   name: Vellum Jamadhar
+  on_equip: |-
+    ctx = bonus(ctx, {:def_set_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:def_set_race_duration, :player_human}, 5000)
+    ctx = bonus(ctx, {:def_set_race_value, :player_human}, 1)
+    ctx = bonus(ctx, {:mdef_set_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:mdef_set_race_duration, :player_human}, 5000)
+    ctx = bonus(ctx, {:mdef_set_race_value, :player_human}, 1)
+    ctx = bonus(ctx, {:def_set_race_rate, :player_doram}, 10000)
+    ctx = bonus(ctx, {:def_set_race_duration, :player_doram}, 5000)
+    ctx = bonus(ctx, {:def_set_race_value, :player_doram}, 1)
+    ctx = bonus(ctx, {:mdef_set_race_rate, :player_doram}, 10000)
+    ctx = bonus(ctx, {:mdef_set_race_duration, :player_doram}, 5000)
+    ctx = bonus(ctx, {:mdef_set_race_value, :player_doram}, 1)
+    ctx = bonus(ctx, :aspd_rate, (4 + refine(ctx)))
+    ctx
   range: 1
   refineable: true
   subtype: katar
@@ -4802,6 +4824,12 @@
   locations:
     - both_hand
   name: Vellum Scale
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_vanish_race_rate, :player_human}, 1000)
+    ctx = bonus(ctx, {:sp_vanish_race_percent, :player_human}, 10)
+    ctx = bonus(ctx, {:sp_vanish_race_rate, :player_doram}, 1000)
+    ctx = bonus(ctx, {:sp_vanish_race_percent, :player_doram}, 10)
+    ctx
   range: 1
   refineable: true
   subtype: katar
@@ -7068,6 +7096,13 @@
   locations:
     - both_hand
   name: Vellum Buster
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:sp_vanish_race_rate, :player_human}, 1000)
+    ctx = bonus(ctx, {:sp_vanish_race_percent, :player_human}, 10)
+    ctx = bonus(ctx, {:sp_vanish_race_rate, :player_doram}, 1000)
+    ctx = bonus(ctx, {:sp_vanish_race_percent, :player_doram}, 10)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -13323,6 +13358,14 @@
     - right_hand
   magic_attack: 50
   name: Mental Destroyer
+  on_equip: |-
+    ctx = bonus(ctx, :int, 10)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :sp_cost_rate, 100)
+    ctx = bonus(ctx, :mdef, 20)
+    ctx = bonus(ctx, {:sp_vanish_rate, 855}, 1000)
+    ctx = bonus(ctx, {:sp_vanish_percent, 855}, (5 + if((refine(ctx) > 5), do: 3, else: 0)))
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -53870,6 +53913,15 @@
   locations:
     - right_hand
   name: Vellum Damascus
+  on_equip: |-
+    ctx = bonus(ctx, {:def_set_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:def_set_race_duration, :player_human}, 5000)
+    ctx = bonus(ctx, {:def_set_race_value, :player_human}, 1)
+    ctx = bonus(ctx, {:mdef_set_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:mdef_set_race_duration, :player_human}, 5000)
+    ctx = bonus(ctx, {:mdef_set_race_value, :player_human}, 1)
+    ctx = bonus(ctx, :aspd_rate, (4 + refine(ctx)))
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -57754,6 +57806,12 @@
   name: Refined Immaterial Sword
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx = bonus(ctx, {:sp_vanish_rate, 855}, 80)
+    ctx = bonus(ctx, {:sp_vanish_percent, 855}, 45)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   subtype: one_handed_sword
   type: weapon
@@ -59293,6 +59351,13 @@
   locations:
     - right_hand
   name: Illusion Immaterial Sword
+  on_equip: |-
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:sp_vanish_rate, 593}, (80 + (20 * refine(ctx))))
+    ctx = bonus(ctx, {:sp_vanish_percent, 593}, (30 + if((refine(ctx) >= 12), do: 20, else: 0)))
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -70334,6 +70399,23 @@
   locations:
     - right_hand
   name: Vellum Stunner
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, (300 * refine(ctx)))
+    ctx = bonus(ctx, {:def_set_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:def_set_race_duration, :player_human}, 5000)
+    ctx = bonus(ctx, {:def_set_race_value, :player_human}, 1)
+    ctx = bonus(ctx, {:mdef_set_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:mdef_set_race_duration, :player_human}, 5000)
+    ctx = bonus(ctx, {:mdef_set_race_value, :player_human}, 1)
+    ctx = bonus(ctx, {:def_set_race_rate, :player_doram}, 10000)
+    ctx = bonus(ctx, {:def_set_race_duration, :player_doram}, 5000)
+    ctx = bonus(ctx, {:def_set_race_value, :player_doram}, 1)
+    ctx = bonus(ctx, {:mdef_set_race_rate, :player_doram}, 10000)
+    ctx = bonus(ctx, {:mdef_set_race_duration, :player_doram}, 5000)
+    ctx = bonus(ctx, {:mdef_set_race_value, :player_doram}, 1)
+    ctx = bonus(ctx, :aspd_rate, (2 + refine(ctx)))
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -70360,6 +70442,15 @@
   locations:
     - right_hand
   name: Vellum Flail
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:no_recover_race_rate, :player_human}, 10000)
+    ctx = bonus(ctx, {:no_recover_race_duration, :player_human}, 10000)
+    ctx = bonus(ctx, {:no_recover_race_rate, :player_doram}, 10000)
+    ctx = bonus(ctx, {:no_recover_race_duration, :player_doram}, 10000)
+    ctx = bonus(ctx, :hit, div(refine(ctx), 2))
+    ctx = bonus(ctx, :critical, refine(ctx))
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -72185,6 +72276,11 @@
   locations:
     - both_hand
   name: Vellum Arbalest
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_vanish_race_rate, :player_human}, 1000)
+    ctx = bonus(ctx, {:sp_vanish_race_percent, :player_human}, 4)
+    ctx = bonus(ctx, :aspd, -5)
+    ctx
   range: 5
   refineable: true
   subtype: bow
@@ -102971,6 +103067,12 @@
   locations:
     - both_hand
   name: Vellum Katzbalger
+  on_equip: |-
+    ctx = bonus(ctx, {:hp_vanish_race_rate, :player_human}, 1000)
+    ctx = bonus(ctx, {:hp_vanish_race_percent, :player_human}, 8)
+    ctx = bonus(ctx, {:hp_vanish_race_rate, :player_doram}, 1000)
+    ctx = bonus(ctx, {:hp_vanish_race_percent, :player_doram}, 8)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_sword
