@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
@@ -684,7 +685,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         attacker.weapon.element
       )
 
-      OnHitEffects.after_hit(attacker, target, damage_result)
+      OnHitEffects.after_hit(attacker, target, damage_result,
+        attack_flag: normal_attack_flag(attacker)
+      )
+
       drain_hp(attacker, damage_result.damage)
       drain_sp(attacker, damage_result.damage)
       splash_attack(attacker, target)
@@ -782,7 +786,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
       dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
-      OnHitEffects.after_hit(attacker, target, damage_result)
+
+      OnHitEffects.after_hit(attacker, target, damage_result,
+        attack_flag: normal_attack_flag(attacker)
+      )
+
       drain_hp(attacker, damage)
       drain_sp(attacker, damage)
       splash_attack(attacker, target)
@@ -841,6 +849,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       target_id: target_id,
       position: target.position
     })
+  end
+
+  # Classifies a swing for the trigger-flagged equipment bonuses: always a
+  # weapon attack of normal (non-skill) origin, melee or ranged by the same
+  # attack-range rule that sets `is_short` on the delivered hit.
+  @spec normal_attack_flag(Combatant.t()) :: BattleFlags.flag()
+  defp normal_attack_flag(attacker) do
+    range = if Map.get(attacker, :attack_range, 1) <= 3, do: :short, else: :long
+    BattleFlags.build(:weapon, range, false)
   end
 
   # Recovers HP from the damage a landed swing dealt, when the attacker's
@@ -1234,7 +1251,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       mob_damage_source(target_type, attacker_combatant.unit_id)
     )
 
-    OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result)
+    OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result,
+      attack_flag: normal_attack_flag(attacker_combatant)
+    )
   end
 
   defp resolve_homunculus_attack({:miss}, attacker, target, _target_pid, _target_type, _target_hp) do

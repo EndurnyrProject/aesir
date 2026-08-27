@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   `roll_resistance`'s `resistance_roll`) so tests are deterministic.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
@@ -33,8 +34,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   zero-damage clause guards direct callers. Skill-unit targets carry no living
   state to inflict on and are skipped.
 
+  A bonus written with a trigger flag (`bonus3 bAddEff,Eff_Stun,500,ATF_MAGIC`)
+  only rolls when the flag matches `:attack_flag`, and its victim axis decides
+  who the status lands on: the attack's other party, the bonus's own wearer, or
+  both. Unflagged bonuses always roll against the other party.
+
   ## Options
     - `:roll` - a `t:roll_fun/0` used for every per-10000 roll (default `:rand`).
+    - `:attack_flag` - the hit's `BattleFlags` classification, matched against
+      flagged bonuses. The default `0` carries no classification, so flagged
+      bonuses stay inert.
   """
   @spec after_hit(Combatant.t(), Combatant.t(), map(), keyword()) :: :ok
   def after_hit(attacker, defender, damage_result, opts \\ [])
@@ -45,27 +54,72 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
 
   def after_hit(%Combatant{} = attacker, %Combatant{} = defender, _damage_result, opts) do
     roll = Keyword.get(opts, :roll, &default_roll/1)
+    attack_flag = Keyword.get(opts, :attack_flag, 0)
 
-    inflict(attacker, defender, :add_eff, roll)
-    inflict(defender, attacker, :add_eff_when_hit, roll)
-    inflict(attacker, attacker, :add_eff2, roll)
+    inflict(attacker, defender, :add_eff, roll, attack_flag)
+    inflict(defender, attacker, :add_eff_when_hit, roll, attack_flag)
+    inflict(attacker, attacker, :add_eff2, roll, attack_flag)
     :ok
   end
 
-  # Rolls every `{family, sc}` bonus on `source` against `victim`, applying the
-  # status to `victim` with `source` named as the caster so boss immunity gates.
-  @spec inflict(Combatant.t(), Combatant.t(), atom(), roll_fun()) :: :ok
-  defp inflict(source, victim, family, roll) do
-    for {{^family, sc}, rate} <- source.equip_modifiers do
-      effective = rate - Map.get(victim.equip_modifiers, {:res_eff, sc}, 0)
+  # Rolls every bonus of `family` carried by `source`. An unflagged entry
+  # (`{family, sc}`) targets `other`; a flagged one (`{family, {sc, flag}}`)
+  # rolls only on a matching attack and can name `other`, `source`, or both as
+  # its victim.
+  @spec inflict(Combatant.t(), Combatant.t(), atom(), roll_fun(), BattleFlags.flag()) :: :ok
+  defp inflict(source, other, family, roll, attack_flag) do
+    Enum.each(source.equip_modifiers, fn
+      {{^family, {sc, flag}}, rate} when is_atom(sc) and is_integer(flag) ->
+        inflict_flagged(source, other, sc, rate, roll, flag, attack_flag)
 
-      if effective > 0 and roll.(effective) do
-        StatusInterpreter.apply_status(victim.unit_type, victim.unit_id, sc,
-          caster_id: source.unit_id,
-          source_type: source.unit_type,
-          res_eff_exempt: true
-        )
-      end
+      {{^family, sc}, rate} when is_atom(sc) ->
+        try_inflict(source, other, sc, rate, roll)
+
+      _entry ->
+        :ok
+    end)
+  end
+
+  # A flagged bonus rolls only on a matching attack, once per victim its flag
+  # names.
+  @spec inflict_flagged(
+          Combatant.t(),
+          Combatant.t(),
+          atom(),
+          integer(),
+          roll_fun(),
+          BattleFlags.flag(),
+          BattleFlags.flag()
+        ) :: :ok
+  defp inflict_flagged(source, other, sc, rate, roll, flag, attack_flag) do
+    if BattleFlags.matches_trigger?(flag, attack_flag) do
+      victims =
+        [
+          BattleFlags.target_victim?(flag) && other,
+          BattleFlags.self_victim?(flag) && source
+        ]
+        |> Enum.filter(& &1)
+
+      Enum.each(victims, &try_inflict(source, &1, sc, rate, roll))
+    end
+
+    :ok
+  end
+
+  # Applies `sc` to `victim` when the roll lands, with `source` named as the
+  # caster so boss immunity gates. The victim's tolerance for the status is
+  # subtracted from the proc rate here, so the status system does not apply it
+  # a second time.
+  @spec try_inflict(Combatant.t(), Combatant.t(), atom(), integer(), roll_fun()) :: :ok
+  defp try_inflict(source, victim, sc, rate, roll) do
+    effective = rate - Map.get(victim.equip_modifiers, {:res_eff, sc}, 0)
+
+    if effective > 0 and roll.(effective) do
+      StatusInterpreter.apply_status(victim.unit_type, victim.unit_id, sc,
+        caster_id: source.unit_id,
+        source_type: source.unit_type,
+        res_eff_exempt: true
+      )
     end
 
     :ok

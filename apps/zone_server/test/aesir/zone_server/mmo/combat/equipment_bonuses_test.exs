@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.CombatTestHelper
+  alias Aesir.ZoneServer.Mmo.BattleFlag
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
 
   describe "attack_rates/4" do
@@ -195,6 +197,84 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                size: 10,
                skill: 0
              }
+    end
+
+    test "a trigger-flagged resist applies only to attacks its flag matches" do
+      magic_only = BattleFlags.fill_battle(BattleFlag.id(:magic))
+      weapon_only = BattleFlags.fill_battle(BattleFlag.id(:weapon))
+
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{
+          {:subele, :fire} => 5,
+          {:subele, {:fire, magic_only}} => 30,
+          {:subele, {:fire, weapon_only}} => 7
+        })
+
+      attacker = CombatTestHelper.create_player_combatant()
+
+      magic_hit = BattleFlags.build(:magic, :long, true)
+      melee_hit = BattleFlags.build(:weapon, :short, false)
+
+      # The unflagged entry applies to everything; each flagged entry only to
+      # the attack kind it names.
+      assert %{element: 35} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, %{}, nil, magic_hit)
+
+      assert %{element: 12} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, %{}, nil, melee_hit)
+    end
+
+    test "a flagged :all entry covers every param of its family" do
+      weapon_only = BattleFlags.fill_battle(BattleFlag.id(:weapon))
+
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{{:subele, {:all, weapon_only}} => 15})
+
+      attacker = CombatTestHelper.create_player_combatant()
+      melee_hit = BattleFlags.build(:weapon, :short, false)
+
+      assert %{element: 15} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, %{}, nil, melee_hit)
+
+      assert %{element: 15} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :holy, %{}, nil, melee_hit)
+    end
+
+    test "flagged resists of the race, class and size families gate the same way" do
+      normal_only = BattleFlags.fill_battle(BattleFlag.id(:normal))
+
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{
+          {:subrace, {:brute, normal_only}} => 10,
+          {:subclass, {:normal, normal_only}} => 4,
+          {:subsize, {:medium, normal_only}} => 6
+        })
+
+      attacker = CombatTestHelper.create_player_combatant(race: :brute, size: :medium)
+
+      swing = BattleFlags.build(:weapon, :short, false)
+      skill = BattleFlags.build(:weapon, :short, true)
+
+      assert %{race_class: 14, size: 6} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil, swing)
+
+      assert %{race_class: 0, size: 0} =
+               EquipmentBonuses.damage_taken_rates(defender, attacker, :neutral, %{}, nil, skill)
+    end
+
+    test "flagged entries stay inert for a caller that passes no classification" do
+      weapon_only = BattleFlags.fill_battle(BattleFlag.id(:weapon))
+
+      defender =
+        CombatTestHelper.create_mob_combatant()
+        |> with_equip_modifiers(%{{:subele, {:fire, weapon_only}} => 30})
+
+      attacker = CombatTestHelper.create_player_combatant()
+
+      assert %{element: 0} = EquipmentBonuses.damage_taken_rates(defender, attacker, :fire)
     end
 
     test "secondary monster groups sum matching damage-taken bonuses" do

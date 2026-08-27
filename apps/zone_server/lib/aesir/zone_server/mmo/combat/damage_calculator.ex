@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
@@ -748,13 +749,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     status_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
 
+    # A physical hit is a weapon attack, ranged or melee by the same rule that
+    # decides `is_short` at hit delivery, and skill-sourced whenever a skill id
+    # is present. Trigger-flagged resists match against that classification.
+    attack_flag =
+      BattleFlags.build(
+        :weapon,
+        if(ranged_hit?(attacker, opts), do: :long, else: :short),
+        skill_id != nil
+      )
+
     %{race_class: race_class, element: element, size: size, skill: skill} =
       EquipmentBonuses.damage_taken_rates(
         defender,
         attacker,
         attack_element,
         status_modifiers,
-        skill_id
+        skill_id,
+        attack_flag
       )
 
     race_class = race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race)

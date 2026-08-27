@@ -12388,7 +12388,7 @@
     ctx = bonus(ctx, :dex, 3)
     ctx = bonus(ctx, {:ignore_mdef_race, :demi_human}, 25)
     ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, 25)
-    ctx = bonus(ctx, {:add_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 46}}, 500)
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx
   range: 1
@@ -12420,7 +12420,7 @@
     ctx = bonus(ctx, :dex, 3)
     ctx = bonus(ctx, {:magic_addrace, :demi_human}, 15)
     ctx = bonus(ctx, {:magic_addrace, :player_human}, 15)
-    ctx = bonus(ctx, {:add_eff, :sc_stun}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 46}}, 500)
     ctx = bonus(ctx, :unbreakable_weapon, 1)
     ctx
   range: 1
@@ -13300,7 +13300,7 @@
   on_equip: |-
     ctx = bonus(ctx, {:magic_addrace, :player_human}, 10)
     ctx = bonus(ctx, {:magic_addrace, :player_doram}, 10)
-    ctx = bonus(ctx, {:add_eff, :sc_blind}, 1000)
+    ctx = bonus(ctx, {:add_eff, {:sc_blind, 46}}, 1000)
     ctx = bonus(ctx, :heal_power, 5)
     ctx
   range: 1
@@ -13478,7 +13478,7 @@
     ctx = bonus(ctx, :dex, 3)
     ctx = bonus(ctx, {:magic_addrace, :demi_human}, 10)
     ctx = bonus(ctx, {:magic_addrace, :player_human}, 10)
-    ctx = bonus(ctx, {:add_eff, :sc_stun}, 200)
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 46}}, 200)
     ctx
   range: 1
   refineable: true
@@ -13537,7 +13537,7 @@
       ctx
     end
     ctx = if (refine(ctx) > 8) do
-      ctx = bonus(ctx, {:add_eff, :sc_blind}, 2000)
+      ctx = bonus(ctx, {:add_eff, {:sc_blind, 46}}, 2000)
       ctx = bonus(ctx, :sp_cost_rate, -10)
       ctx
     else
@@ -18850,7 +18850,7 @@
   on_equip: |-
     ctx = bonus(ctx, {:magic_addrace, :player_human}, 20)
     ctx = bonus(ctx, {:magic_addrace, :player_doram}, 20)
-    ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 46}}, 1000)
     ctx = bonus(ctx, :heal_power, 5)
     ctx
   range: 1
@@ -27823,7 +27823,7 @@
   name: Asprika
   on_equip: |-
     ctx = bonus(ctx, :mdef, 5)
-    ctx = bonus(ctx, {:subele, :all}, 30)
+    ctx = bonus(ctx, {:subele, {:all, 849}}, 30)
     ctx = bonus(ctx, :flee, 30)
     ctx = grant_skill(ctx, 26, 1)
     ctx = bonus(ctx, :unbreakable_garment, 1)
@@ -28338,7 +28338,7 @@
   no_trade: true
   on_equip: |-
     ctx = bonus(ctx, :mdef, 2)
-    ctx = bonus(ctx, {:subele, :all}, 15)
+    ctx = bonus(ctx, {:subele, {:all, 849}}, 15)
     ctx = bonus(ctx, :flee, 15)
     ctx = grant_skill(ctx, 26, 1)
     ctx = bonus(ctx, :unbreakable_garment, 1)
@@ -30616,7 +30616,7 @@
     ctx = bonus(ctx, :hit, 10)
     ctx = bonus(ctx, :max_hp, 500)
     ctx = bonus(ctx, :max_sp, 50)
-    ctx = bonus(ctx, {:add_eff, :sc_stun}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 22}}, 100)
     ctx
   type: armor
 - aegis_name: Medal_Thief
@@ -30642,7 +30642,7 @@
     ctx = bonus(ctx, :flee, 10)
     ctx = bonus(ctx, :max_hp, 300)
     ctx = bonus(ctx, :max_sp, 80)
-    ctx = bonus(ctx, {:add_eff, :sc_poison}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_poison, 22}}, 100)
     ctx
   type: armor
 - aegis_name: Medal_Acolyte
@@ -30665,7 +30665,7 @@
     ctx = bonus(ctx, :matk_rate, 5)
     ctx = bonus(ctx, :mdef, 6)
     ctx = bonus(ctx, :max_hp, 600)
-    ctx = bonus(ctx, {:add_eff, :sc_silence}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_silence, 22}}, 100)
     ctx
   type: armor
 - aegis_name: Medal_Mage
@@ -30713,7 +30713,7 @@
     ctx = bonus(ctx, :critical, 10)
     ctx = bonus(ctx, :max_hp, 300)
     ctx = bonus(ctx, :max_sp, 80)
-    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_blind, 26}}, 100)
     ctx
   type: armor
 - aegis_name: Medal_Merchant
@@ -30737,7 +30737,7 @@
     ctx = bonus(ctx, :aspd_rate, 10)
     ctx = bonus(ctx, :max_hp, 500)
     ctx = bonus(ctx, :max_sp, 50)
-    ctx = bonus(ctx, {:add_eff, :sc_curse}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_curse, 22}}, 100)
     ctx
   type: armor
 - aegis_name: Icarus_Wing
@@ -30881,7 +30881,7 @@
     ctx = bonus(ctx, :critical, 10)
     ctx = bonus(ctx, :max_hp, 300)
     ctx = bonus(ctx, :max_sp, 80)
-    ctx = bonus(ctx, {:add_eff, :sc_blind}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_blind, 26}}, 100)
     ctx
   type: armor
 - aegis_name: Directive_A
@@ -31119,7 +31119,7 @@
     ctx = bonus(ctx, :dex, 2)
     ctx = bonus(ctx, :luk, -1)
     ctx = bonus(ctx, {:hp_loss_bonus, 10000}, 50)
-    ctx = bonus(ctx, {:add_eff, :sc_curse}, 200)
+    ctx = bonus(ctx, {:add_eff, {:sc_curse, 26}}, 200)
     ctx
   type: armor
   weight: 200
@@ -37667,7 +37667,7 @@
     if job_is(ctx, :base_class, :taekwon) do
       ctx = bonus(ctx, :dex, 2)
       ctx = bonus(ctx, :atk, (2 * refine(ctx)))
-      ctx = bonus(ctx, {:add_eff, :sc_stun}, 1000)
+      ctx = bonus(ctx, {:add_eff, {:sc_stun, 22}}, 1000)
       ctx
     else
       ctx
@@ -42406,7 +42406,7 @@
     ctx = bonus(ctx, {:addrace, :demi_human}, 7)
     ctx = bonus(ctx, {:addrace, :player_human}, 7)
     ctx = bonus(ctx, {:addrace, :player_doram}, 7)
-    ctx = bonus(ctx, {:add_eff, :sc_curse}, 10)
+    ctx = bonus(ctx, {:add_eff, {:sc_curse, 22}}, 10)
     ctx
   refineable: true
   type: armor
@@ -47981,11 +47981,11 @@
   no_guild_storage: true
   no_trade: true
   on_equip: |-
-    ctx = bonus(ctx, {:add_eff_when_hit, :sc_bleeding}, 500)
-    ctx = bonus(ctx, {:add_eff_when_hit, :sc_silence}, 500)
-    ctx = bonus(ctx, {:add_eff_when_hit, :sc_confusion}, 500)
-    ctx = bonus(ctx, {:add_eff_when_hit, :sc_curse}, 500)
-    ctx = bonus(ctx, {:add_eff_when_hit, :sc_blind}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, {:sc_bleeding, 31}}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, {:sc_silence, 31}}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, {:sc_confusion, 31}}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, {:sc_curse, 31}}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, {:sc_blind, 31}}, 500)
     ctx
   refineable: true
   type: armor
@@ -48440,16 +48440,16 @@
   name: Shaman Hat
   on_equip: |-
     ctx = bonus(ctx, :luk, 2)
-    ctx = bonus(ctx, {:subele, :neutral}, 3)
-    ctx = bonus(ctx, {:subele, :water}, 3)
-    ctx = bonus(ctx, {:subele, :earth}, 3)
-    ctx = bonus(ctx, {:subele, :fire}, 3)
-    ctx = bonus(ctx, {:subele, :wind}, 3)
-    ctx = bonus(ctx, {:subele, :poison}, 3)
-    ctx = bonus(ctx, {:subele, :holy}, 3)
-    ctx = bonus(ctx, {:subele, :shadow}, 3)
-    ctx = bonus(ctx, {:subele, :ghost}, 3)
-    ctx = bonus(ctx, {:subele, :undead}, 3)
+    ctx = bonus(ctx, {:subele, {:neutral, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:water, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:earth, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:fire, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:wind, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:poison, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:holy, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:shadow, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:ghost, 338}}, 3)
+    ctx = bonus(ctx, {:subele, {:undead, 338}}, 3)
     ctx
   refineable: true
   slots: 1
@@ -52840,7 +52840,7 @@
     ctx = bonus(ctx, :max_sp, 100)
     ctx = bonus(ctx, :sp_regen, 5)
     ctx = bonus(ctx, {:add_eff2, :sc_curse}, 20)
-    ctx = bonus(ctx, {:add_eff, :sc_curse}, 20)
+    ctx = bonus(ctx, {:add_eff, {:sc_curse, 29}}, 20)
     ctx
   refineable: true
   subtype: dagger
@@ -124306,8 +124306,8 @@
     - both_hand
   name: End Of The Horizon
   on_equip: |-
-    ctx = bonus(ctx, {:add_eff, :sc_stun}, 500)
-    ctx = bonus(ctx, {:add_eff, :sc_blind}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 26}}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_blind, 26}}, 500)
     ctx
   range: 9
   refineable: true
@@ -125563,7 +125563,7 @@
     ctx = bonus(ctx, :dex, 2)
     ctx = bonus(ctx, :luk, -1)
     ctx = bonus(ctx, {:hp_loss_bonus, 10000}, 50)
-    ctx = bonus(ctx, {:add_eff, :sc_curse}, 200)
+    ctx = bonus(ctx, {:add_eff, {:sc_curse, 26}}, 200)
     ctx
   slots: 1
   type: armor

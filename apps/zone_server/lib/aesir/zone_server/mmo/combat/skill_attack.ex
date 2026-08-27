@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
@@ -1046,8 +1047,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       source
     )
 
-    OnHitEffects.after_hit(attacker, target, damage_result)
+    OnHitEffects.after_hit(attacker, target, damage_result,
+      attack_flag: physical_skill_flag(hit_info)
+    )
+
     damage
+  end
+
+  # Classifies a physical skill hit for the trigger-flagged equipment bonuses:
+  # a weapon attack of skill origin, melee or ranged as the delivered hit was.
+  @spec physical_skill_flag(map()) :: BattleFlags.flag()
+  defp physical_skill_flag(hit_info) do
+    range = if Map.get(hit_info, :is_short, false), do: :short, else: :long
+    BattleFlags.build(:weapon, range, true)
   end
 
   defp damage_calculation({calc_opts, damage_calculator}),

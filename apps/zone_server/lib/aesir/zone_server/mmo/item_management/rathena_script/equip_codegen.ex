@@ -103,12 +103,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   `{:ok, []}`, which the importer stores as no `on_equip`.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @type detail :: term()
-  @type dest :: atom() | {atom(), atom() | integer()} | {atom(), integer(), atom()}
+  @type param :: atom() | integer() | {atom() | integer(), non_neg_integer()}
+  @type dest :: atom() | {atom(), param()} | {atom(), integer(), atom()}
 
   @arith_ops [:+, :-, :*, :/]
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
@@ -266,14 +268,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   # A `bonus3` key whose third argument is a trigger-condition flag has the same
   # leading `param, amount` pair as its `bonus2` form; it reuses that key's param
-  # schema and drops the flag. Every other `bonus3` shape stays unsupported.
+  # schema and folds the flag into the destination, so the bonus applies only to
+  # attacks of the flagged kind. Every other `bonus3` shape stays unsupported.
   defp compile_instr({:cmd, "bonus3", [{:name, key}, first_ast, second_ast, third_ast]}, env) do
     cond do
       BonusKeys.bonus3_drop_key?(key) ->
         compile_drop_bonus3(key, first_ast, second_ast, third_ast, env)
 
-      BonusKeys.bonus3_flag_key?(key) ->
-        compile_param_bonus(key, first_ast, second_ast, env)
+      match?({:ok, _kind}, BonusKeys.flag_kind(key)) ->
+        compile_flagged_bonus(key, first_ast, second_ast, third_ast, env)
 
       true ->
         unsupported({:unsupported_command, "bonus3"})
@@ -352,6 +355,60 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       {:ok, {:bonus, dest, expr}}
     end
   end
+
+  # A flagged key resolves its leading `param, amount` pair exactly like its
+  # `bonus2` form and folds the trigger-condition flag into the destination:
+  # `{family, {param, flag}}`. The flag is normalized at transpile time — the
+  # axes the script left unnamed take their defaults — so the runtime match is a
+  # plain per-axis intersection and the stored flag is always complete.
+  @spec compile_flagged_bonus(String.t(), term(), term(), term(), %{
+          String.t() => EquipScript.expr()
+        }) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_flagged_bonus(key, param_ast, amount_ast, flag_ast, env) do
+    with {:ok, kind} <- flag_kind(key),
+         {:ok, schema} <- param_schema(key),
+         {:ok, dest} <- resolve_param(schema, param_ast),
+         {:ok, flag} <- resolve_flag(kind, flag_ast),
+         {:ok, expr} <- compile_expr(amount_ast, env) do
+      {:ok, {:bonus, flagged_dest(dest, fill_flag(kind, flag)), expr}}
+    end
+  end
+
+  @spec flag_kind(String.t()) ::
+          {:ok, :battle | :trigger} | {:error, {:unsupported, detail()}}
+  defp flag_kind(key) do
+    case BonusKeys.flag_kind(key) do
+      {:ok, kind} -> {:ok, kind}
+      :error -> unsupported({:unknown_bonus_key, key})
+    end
+  end
+
+  @spec fill_flag(:battle | :trigger, non_neg_integer()) :: non_neg_integer()
+  defp fill_flag(:battle, flag), do: BattleFlags.fill_battle(flag)
+  defp fill_flag(:trigger, flag), do: BattleFlags.fill_trigger(flag)
+
+  # The flag argument is a constant or an OR of constants; anything else (a
+  # computed mask, a bare literal) is out of vocabulary.
+  @spec resolve_flag(:battle | :trigger, term()) ::
+          {:ok, non_neg_integer()} | {:error, {:unsupported, detail()}}
+  defp resolve_flag(kind, {:bin, :|, lhs, rhs}) do
+    with {:ok, left} <- resolve_flag(kind, lhs),
+         {:ok, right} <- resolve_flag(kind, rhs) do
+      {:ok, Bitwise.bor(left, right)}
+    end
+  end
+
+  defp resolve_flag(:battle, {:name, const}), do: resolve(&Resolver.resolve_battle_flag/1, const)
+
+  defp resolve_flag(:trigger, {:name, const}),
+    do: resolve(&Resolver.resolve_trigger_flag/1, const)
+
+  defp resolve_flag(_kind, other), do: unsupported({:unresolved_param, other})
+
+  # A flag rides inside the destination's param slot, keeping the destination a
+  # two-element tuple whose param widens to `{param, flag}`.
+  @spec flagged_dest(dest(), non_neg_integer()) :: dest()
+  defp flagged_dest({family, param}, flag), do: {family, {param, flag}}
 
   # A flag-param key carries its param in the lone `bonus` argument and a fixed
   # amount in its schema, so it resolves the param exactly like a `bonus2` key

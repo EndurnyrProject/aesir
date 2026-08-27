@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   the transpiler's all-or-nothing rule.
   """
 
+  alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
+  alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.EffectId
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -279,6 +281,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "Class_All" => :all
   }
 
+  # Battle-flag constants qualifying a bonus with the kind of attack that fires
+  # it (`bonus3 bSubEle,Ele_Fire,3,BF_MAGIC`), and the on-hit status families'
+  # trigger-flag variant (`bonus3 bAddEff,Eff_Stun,500,ATF_MAGIC`). Both tables
+  # are keyed on the downcased script spelling of their constant module's
+  # entries, so the numeric bits live in one place only. Scripts OR them
+  # together; `EquipCodegen` folds the expression.
+  @battle_flags Map.new(BattleFlag.ids(), fn {name, value} -> {"bf_#{name}", value} end)
+  @trigger_flags Map.new(AutoTriggerFlag.ids(), fn {name, value} -> {"atf_#{name}", value} end)
+
   # rAthena's `e_race2` monster-group enum (`bAddRace2`'s param). Keyed on the
   # downcased constant name because the corpus spells the same group both ways
   # (`RC2_BioLab` and `RC2_BIOLAB`, `RC2_Illusion_Vampire` and
@@ -470,6 +481,32 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   """
   @spec race2s() :: %{String.t() => atom()}
   def race2s, do: @race2
+
+  @doc """
+  Resolves an rAthena `BF_*` battle-flag constant to its axis bit.
+
+  These qualify a bonus with the kind of attack that triggers it; a script ORs
+  several together and the codegen folds the expression into one mask.
+  """
+  @spec resolve_battle_flag(String.t()) :: {:ok, non_neg_integer()} | error()
+  def resolve_battle_flag(symbol) when is_binary(symbol) do
+    case Map.fetch(@battle_flags, String.downcase(symbol)) do
+      {:ok, value} -> {:ok, value}
+      :error -> unknown(symbol)
+    end
+  end
+
+  @doc """
+  Resolves an rAthena `ATF_*` trigger-flag constant, the on-hit status
+  families' variant, to its axis bit.
+  """
+  @spec resolve_trigger_flag(String.t()) :: {:ok, non_neg_integer()} | error()
+  def resolve_trigger_flag(symbol) when is_binary(symbol) do
+    case Map.fetch(@trigger_flags, String.downcase(symbol)) do
+      {:ok, value} -> {:ok, value}
+      :error -> unknown(symbol)
+    end
+  end
 
   @doc """
   Resolves a bound type constant to its numeric value.

@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   import Mimic
 
   alias Aesir.ZoneServer.CombatTestHelper
+  alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
@@ -208,6 +210,142 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
 
       assert :ok = OnHitEffects.after_hit(attacker, defender, @landed, roll: &always_hit/1)
       assert_received {:applied, :mob, 2999, :sc_stun, _params}
+    end
+  end
+
+  describe "after_hit/4 trigger-flagged bonuses" do
+    defp trigger_flag(names) do
+      names
+      |> Enum.reduce(0, &Bitwise.bor(AutoTriggerFlag.id(&1), &2))
+      |> BattleFlags.fill_trigger()
+    end
+
+    test "a flagged bonus only rolls on an attack its flag matches" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:magic])}} => 10_000})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      refute_received {:applied, _type, _id, _sc, _params}
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:magic, :long, true)
+               )
+
+      assert_received {:applied, :mob, 2001, :sc_stun, _params}
+    end
+
+    test "the self bit inflicts on the wearer instead of the victim" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:self])}} => 10_000})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :player, 1001, :sc_stun, _params}
+      refute_received {:applied, :mob, 2001, :sc_stun, _params}
+    end
+
+    test "naming both victims inflicts on each once" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:self, :target])}} => 10_000})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :mob, 2001, :sc_stun, _params}
+      assert_received {:applied, :player, 1001, :sc_stun, _params}
+      refute_received {:applied, _type, _id, :sc_stun, _params}
+    end
+
+    test "a flagged when-hit bonus targets the attacker" do
+      record_applications()
+
+      attacker = CombatTestHelper.create_player_combatant(unit_id: 1001)
+
+      defender =
+        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        |> with_mods(%{{:add_eff_when_hit, {:sc_blind, trigger_flag([:target])}} => 10_000})
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :player, 1001, :sc_blind, _params}
+    end
+
+    test "a failed roll inflicts nothing" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:target])}} => 10_000})
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &never_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      refute_received {:applied, _type, _id, _sc, _params}
+    end
+
+    test "the victim's tolerance still subtracts from a flagged proc rate" do
+      pid = self()
+
+      stub(StatusInterpreter, :apply_status, fn _type, _id, _sc, _params -> :ok end)
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{{:add_eff, {:sc_stun, trigger_flag([:target])}} => 3_000})
+
+      defender =
+        CombatTestHelper.create_mob_combatant(unit_id: 2001)
+        |> with_mods(%{{:res_eff, :sc_stun} => 1_000})
+
+      roll = fn effective ->
+        send(pid, {:rolled, effective})
+        false
+      end
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: roll,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:rolled, 2_000}
     end
   end
 end

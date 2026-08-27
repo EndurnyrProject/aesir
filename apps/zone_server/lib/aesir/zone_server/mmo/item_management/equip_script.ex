@@ -125,11 +125,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   tuple for parameterized `bonus2` keys — `param` is an atom drawn from the
   family's `BonusKeys` domain (race/element/size/class/race2), a positive
   integer skill or item id, or a positive-integer interval in milliseconds for
-  the periodic HP-regen/loss families. The race-gated monster-drop bonus
-  (`bonus3 bAddMonsterDropItem,iid,r,n`) uses a three-element
-  `{family, item_id, race}` tuple.
+  the periodic HP-regen/loss families. A key written with a trigger-condition
+  flag (`bonus3 bSubEle,Ele_Fire,3,BF_MAGIC`) widens its param to a
+  `{param, flag}` pair, so the bonus applies only to attacks the flag matches.
+  The race-gated monster-drop bonus (`bonus3 bAddMonsterDropItem,iid,r,n`) uses
+  a three-element `{family, item_id, race}` tuple.
   """
-  @type dest :: atom() | {atom(), atom() | pos_integer()} | {atom(), pos_integer(), atom()}
+  @type param :: atom() | pos_integer()
+  @type dest ::
+          atom()
+          | {atom(), param() | {param(), non_neg_integer()}}
+          | {atom(), pos_integer(), atom()}
 
   @typedoc """
   A constant-valued destination assignment, for the `bonus` keys whose argument
@@ -335,6 +341,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp validate_destination!(dest) when is_atom(dest) do
     if dest in BonusKeys.destinations(), do: dest, else: malformed!("bonus destination", dest)
+  end
+
+  # A flagged destination validates its param exactly like the unflagged form
+  # and additionally requires a non-negative integer trigger flag. The flag is
+  # normalized at transpile time, so any complete mask is structurally valid.
+  defp validate_destination!({family, {param, flag}})
+       when is_atom(family) and is_integer(flag) and flag >= 0 do
+    {^family, ^param} = validate_destination!({family, param})
+    {family, {param, flag}}
   end
 
   defp validate_destination!({family, param} = dest) when is_atom(family) do

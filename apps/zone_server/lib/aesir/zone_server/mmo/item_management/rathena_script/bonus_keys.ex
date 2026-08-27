@@ -223,23 +223,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsplossrate" => :sp_loss_bonus
   }
 
-  # `bonus3` keys whose third argument is a trigger-condition flag
-  # (short/long/weapon/magic/self/target) rather than a value. Their leading
-  # `param, amount` pair is identical to the same key's `bonus2` form, so the
-  # transpiler reuses that key's `@param_keys` schema and drops the flag. Only
-  # keys whose `{family, param}` destination already has a runtime consumer are
-  # listed: the sub-resist family (read on the damage-taken side) and the
-  # on-hit status-infliction family. The dropped flag makes the effect apply to
-  # every attack instead of only the flagged category — the same breadth the
-  # `bonus2` form of these keys already has.
-  @bonus3_flag_keys MapSet.new([
-                      "baddeff",
-                      "baddeffwhenhit",
-                      "bsubele",
-                      "bsubrace",
-                      "bsubsize",
-                      "bsubclass"
-                    ])
+  # `bonus3` keys whose third argument is a trigger-condition flag rather than a
+  # value. Their leading `param, amount` pair is identical to the same key's
+  # `bonus2` form, so the transpiler reuses that key's `@param_keys` schema and
+  # keeps the flag as part of the destination: the bonus then applies only to
+  # attacks of the flagged kind, while the unflagged `bonus2` form keeps
+  # applying to every attack.
+  #
+  # The value names which flag vocabulary the key's argument is written in - the
+  # sub-resist family classifies the incoming attack (`:battle`), the on-hit
+  # status families additionally choose their victim (`:trigger`).
+  @flag_keys %{
+    "baddeff" => :trigger,
+    "baddeffwhenhit" => :trigger,
+    "bsubele" => :battle,
+    "bsubrace" => :battle,
+    "bsubsize" => :battle,
+    "bsubclass" => :battle
+  }
 
   # `bonus3` keys whose third argument is a genuine second param, not a droppable
   # flag: `bonus3 bAddMonsterDropItem,iid,r,n` gates the drop on the slain mob's
@@ -353,14 +354,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     do: Map.fetch(@interval_keys, String.downcase(name))
 
   @doc """
-  Whether a `bonus3` key's third argument is a droppable trigger-condition flag,
-  making its leading `param, amount` pair identical to the key's `bonus2` form.
-  The transpiler resolves such keys through `param_schema/1` and discards the
-  flag. Returns `false` for every other key (any case).
+  Resolves a key whose `bonus3` form takes a trigger-condition flag as its
+  third argument to the flag vocabulary that argument is written in:
+  `:battle` for the sub-resist family, `:trigger` for the on-hit status
+  families.
+
+  The leading `param, amount` pair is identical to the key's `bonus2` form, so
+  the transpiler resolves it through `param_schema/1` and folds the flag into
+  the destination. Returns `:error` for every other key (any case).
   """
-  @spec bonus3_flag_key?(String.t()) :: boolean()
-  def bonus3_flag_key?(name) when is_binary(name),
-    do: MapSet.member?(@bonus3_flag_keys, String.downcase(name))
+  @spec flag_kind(String.t()) :: {:ok, :battle | :trigger} | :error
+  def flag_kind(name) when is_binary(name), do: Map.fetch(@flag_keys, String.downcase(name))
 
   @doc """
   Whether a `bonus3` key's third argument is a race param gating a monster-drop

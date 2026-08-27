@@ -449,17 +449,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
   end
 
-  describe "bonus3_flag_key?/1" do
-    test "is true for the reader-backed flag-arg keys, any case" do
-      for key <- ~w(bAddEff bAddEffWhenHit bSubEle bSubRace bSubSize bSubClass) do
-        assert BonusKeys.bonus3_flag_key?(key)
-        assert BonusKeys.bonus3_flag_key?(String.upcase(key))
+  describe "flag_kind/1" do
+    test "names the flag vocabulary of each reader-backed flag-arg key, any case" do
+      for key <- ~w(bAddEff bAddEffWhenHit) do
+        assert {:ok, :trigger} = BonusKeys.flag_kind(key)
+        assert {:ok, :trigger} = BonusKeys.flag_kind(String.upcase(key))
+      end
+
+      for key <- ~w(bSubEle bSubRace bSubSize bSubClass) do
+        assert {:ok, :battle} = BonusKeys.flag_kind(key)
+        assert {:ok, :battle} = BonusKeys.flag_kind(String.upcase(key))
       end
     end
 
-    test "is false for bonus3 keys outside the allow-list" do
+    test "is :error for bonus3 keys outside the allow-list" do
       for key <- ~w(bAddEffOnSkill bAutoSpell bAddMonsterDropItem bAddRace bStr) do
-        refute BonusKeys.bonus3_flag_key?(key)
+        assert :error = BonusKeys.flag_kind(key)
       end
     end
 

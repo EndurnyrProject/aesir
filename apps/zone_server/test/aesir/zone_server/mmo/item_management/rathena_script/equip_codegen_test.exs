@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
+  alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
@@ -9,6 +11,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     with {:ok, stmts} <- Parser.parse_body(script) do
       EquipCodegen.generate(stmts)
     end
+  end
+
+  # Builds the expected normalized flag from the axis names it should contain,
+  # so the assertions read as the axes rather than as a magic number.
+  defp battle_flag(names) do
+    Enum.reduce(names, 0, &Bitwise.bor(BattleFlag.id(String.to_atom(&1)), &2))
+  end
+
+  defp trigger_flag(names) do
+    Enum.reduce(names, 0, &Bitwise.bor(AutoTriggerFlag.id(String.to_atom(&1)), &2))
   end
 
   describe "generate/1 supported corpus scripts" do
@@ -637,34 +649,65 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:error, {:unsupported, {:bonus_shape, _}}} = compile("bonus2 bAddRace,RC_Brute;")
     end
 
-    test "bonus3 flag-arg keys reuse the bonus2 param schema and drop the flag" do
-      # on-hit status infliction (add_eff / add_eff_when_hit)
-      assert {:ok, [{:bonus, {:add_eff, :sc_stun}, 500}]} =
+    test "bonus3 flag-arg keys reuse the bonus2 param schema and keep the flag" do
+      # on-hit status infliction (add_eff / add_eff_when_hit): trigger flags,
+      # filled with the unnamed axes (both ranges, weapon type, enemy victim).
+      assert {:ok, [{:bonus, {:add_eff, {:sc_stun, flag}}, 500}]} =
                compile("bonus3 bAddEff,Eff_Stun,500,ATF_TARGET;")
 
-      assert {:ok, [{:bonus, {:add_eff, :sc_curse}, 200}]} =
+      assert flag == trigger_flag(~w(target short long weapon))
+
+      assert {:ok, [{:bonus, {:add_eff, {:sc_curse, curse_flag}}, 200}]} =
                compile("bonus3 bAddEff,Eff_Curse,200,ATF_WEAPON|ATF_LONG|ATF_TARGET;")
 
-      assert {:ok, [{:bonus, {:add_eff_when_hit, :sc_blind}, 300}]} =
+      assert curse_flag == trigger_flag(~w(weapon long target))
+
+      assert {:ok, [{:bonus, {:add_eff_when_hit, {:sc_blind, blind_flag}}, 300}]} =
                compile("bonus3 bAddEffWhenHit,Eff_Blind,300,ATF_SHORT;")
 
-      # sub-resist family (subele / subrace / subsize / subclass)
-      assert {:ok, [{:bonus, {:subele, :fire}, 3}]} =
+      assert blind_flag == trigger_flag(~w(short target weapon))
+
+      # sub-resist family (subele / subrace / subsize / subclass): battle flags,
+      # filled with both ranges and the origin the damage type implies.
+      assert {:ok, [{:bonus, {:subele, {:fire, magic_flag}}, 3}]} =
                compile("bonus3 bSubEle,Ele_Fire,3,BF_MAGIC;")
 
-      assert {:ok, [{:bonus, {:subrace, :demon}, 10}]} =
+      assert magic_flag == battle_flag(~w(magic short long skill))
+
+      assert {:ok, [{:bonus, {:subrace, {:demon, weapon_flag}}, 10}]} =
                compile("bonus3 bSubRace,RC_Demon,10,BF_WEAPON;")
 
-      assert {:ok, [{:bonus, {:subsize, :large}, 15}]} =
+      assert weapon_flag == battle_flag(~w(weapon short long skill normal))
+
+      assert {:ok, [{:bonus, {:subsize, {:large, ^weapon_flag}}, 15}]} =
                compile("bonus3 bSubSize,Size_Large,15,BF_WEAPON;")
 
-      assert {:ok, [{:bonus, {:subclass, :boss}, 20}]} =
+      assert {:ok, [{:bonus, {:subclass, {:boss, normal_flag}}, 20}]} =
                compile("bonus3 bSubClass,Class_Boss,20,BF_NORMAL;")
+
+      # An explicit origin is left alone: no skill bit is added.
+      assert normal_flag == battle_flag(~w(normal weapon short long))
     end
 
     test "bonus3 flag-arg keys accept a refine-dependent amount" do
-      assert {:ok, [{:bonus, {:subele, :water}, {:*, :refine, 2}}]} =
+      assert {:ok, [{:bonus, {:subele, {:water, _flag}}, {:*, :refine, 2}}]} =
                compile("bonus3 bSubEle,Ele_Water,getrefine()*2,BF_MAGIC;")
+    end
+
+    test "an unresolvable trigger-condition flag rejects the item" do
+      assert {:error, {:unsupported, {:unresolved_param, "BF_NOTAFLAG"}}} =
+               compile("bonus3 bSubEle,Ele_Fire,3,BF_NOTAFLAG;")
+
+      assert {:error, {:unsupported, {:unresolved_param, "ATF_NOTAFLAG"}}} =
+               compile("bonus3 bAddEff,Eff_Stun,500,ATF_NOTAFLAG;")
+    end
+
+    test "a battle-flag key rejects a trigger-flag constant, and the reverse" do
+      assert {:error, {:unsupported, {:unresolved_param, "ATF_MAGIC"}}} =
+               compile("bonus3 bSubEle,Ele_Fire,3,ATF_MAGIC;")
+
+      assert {:error, {:unsupported, {:unresolved_param, "BF_MAGIC"}}} =
+               compile("bonus3 bAddEff,Eff_Stun,500,BF_MAGIC;")
     end
 
     test "a bonus3 key outside the flag-arg allow-list stays unsupported" do

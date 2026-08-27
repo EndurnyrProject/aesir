@@ -290,7 +290,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     reject(&Persistence.save_semantic/2)
     reject(&DamageApplication.prepare_unit_damage/5)
     reject(&DamageApplication.apply_unit_damage/6)
-    reject(&OnHitEffects.after_hit/3)
+    reject(&OnHitEffects.after_hit/4)
 
     session = session(intimacy_hundredths: 40_000, learned_skills: %{@sbr44 => 3})
     register_units(session.homunculus, mob())
@@ -335,7 +335,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     Mimic.stub(Persistence, :save_semantic, fn _row, _attrs -> {:error, :database_down} end)
     reject(&DamageApplication.prepare_unit_damage/5)
     reject(&DamageApplication.apply_unit_damage/6)
-    reject(&OnHitEffects.after_hit/3)
+    reject(&OnHitEffects.after_hit/4)
     reject(&Broadcast.to_in_range/5)
 
     assert {:error, :database_down, ^session} =

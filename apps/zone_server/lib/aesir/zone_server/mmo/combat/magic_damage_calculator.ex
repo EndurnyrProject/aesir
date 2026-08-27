@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   `smatk` never reaches it.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
@@ -61,6 +62,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   # base-damage formula (see calculate_grand_cross_damage/2), not the standard
   # MATK pipeline.
   @grand_cross_skill_id 254
+
+  # Every hit scored here is a magic skill. The range axis is recorded as ranged:
+  # spells are cast at a distance, and a trigger-flagged bonus that names a
+  # damage type without naming a range matches both anyway.
+  @magic_attack_flag BattleFlags.build(:magic, :long, true)
 
   # All-zero equipment rates used when a combatant is a bare test map rather than
   # a `%Combatant{}` (only real combatants carry a folded `equip_modifiers` map).
@@ -289,7 +295,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
           attacker,
           element,
           combatant_modifiers(defender),
-          skill_id
+          skill_id,
+          @magic_attack_flag
         ),
       ignore_mdef: EquipmentBonuses.ignore_mdef_rate(attacker, defender)
     }

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   an empty `equip_modifiers` map, so every read is zero for them.
   """
 
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
@@ -64,8 +65,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   The `skill` family is the defender's per-skill damage reduction
   (`{:sub_skill, skill_id}`), read exactly for the incoming `skill_id` (no
   catch-all): a normal attack (`skill_id == nil`) reduces nothing.
+
+  The sub-resist families additionally carry trigger-condition variants
+  (`bonus3 bSubEle,Ele_Fire,3,BF_MAGIC`), which apply only to attacks matching
+  their flag. `attack_flag` describes the incoming hit for those; the default
+  `0` carries no trigger information, so flagged entries stay inert for callers
+  that cannot classify the attack.
   """
-  @spec damage_taken_rates(Combatant.t(), Combatant.t(), atom(), map(), pos_integer() | nil) :: %{
+  @spec damage_taken_rates(
+          Combatant.t(),
+          Combatant.t(),
+          atom(),
+          map(),
+          pos_integer() | nil,
+          BattleFlags.flag()
+        ) :: %{
           race_class: rate(),
           element: rate(),
           size: rate(),
@@ -76,20 +90,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
         %Combatant{} = attacker,
         attack_element,
         status_modifiers \\ %{},
-        skill_id \\ nil
+        skill_id \\ nil,
+        attack_flag \\ 0
       ) do
     %{
       race_class:
-        read(defender, :subrace, attacker.race) + read(defender, :subclass, attacker.class) +
+        read(defender, :subrace, attacker.race, attack_flag) +
+          read(defender, :subclass, attacker.class, attack_flag) +
           status_subrace(status_modifiers, attacker.race) +
           read_race2(defender, :subrace2, attacker.race2),
       element:
-        read(defender, :subele, attack_element) +
+        read(defender, :subele, attack_element, attack_flag) +
           read(defender, :sub_def_ele, element_atom(attacker.element)) +
           status_subele(status_modifiers, attack_element) +
           faith_resist_rate(defender, attack_element) +
           skin_temper_resist_rate(defender, attack_element),
-      size: read(defender, :subsize, attacker.size),
+      size: read(defender, :subsize, attacker.size, attack_flag),
       skill: skill_rate(defender, :sub_skill, skill_id)
     }
   end
@@ -277,6 +293,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   defp read(combatant, family, param) do
     Map.get(combatant.equip_modifiers, {family, param}, 0) +
       Map.get(combatant.equip_modifiers, {family, :all}, 0)
+  end
+
+  # The flag-aware read: the unconditional entries plus every trigger-flagged
+  # entry of the family whose flag matches this attack. Flagged entries are
+  # keyed `{family, {param, flag}}`, so they need a scan of the (small) equip
+  # map rather than a direct lookup.
+  @spec read(Combatant.t(), atom(), atom(), BattleFlags.flag()) :: rate()
+  defp read(combatant, family, param, attack_flag) do
+    read(combatant, family, param) +
+      flagged_sum(combatant.equip_modifiers, family, param, attack_flag)
+  end
+
+  @spec flagged_sum(map(), atom(), atom(), BattleFlags.flag()) :: rate()
+  defp flagged_sum(equip_modifiers, family, param, attack_flag) do
+    Enum.reduce(equip_modifiers, 0, fn
+      {{^family, {entry_param, flag}}, rate}, acc when is_integer(flag) ->
+        if entry_param in [param, :all] and BattleFlags.matches_battle?(flag, attack_flag),
+          do: acc + rate,
+          else: acc
+
+      _entry, acc ->
+        acc
+    end)
   end
 
   @spec status_subele(map(), atom()) :: rate()

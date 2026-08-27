@@ -275,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       expect(Passives, :after_normal_hit, fn ^player_state, _hit -> :ok end)
       expect(EquipBreak, :resolve, fn ^stats, {:mob, ^target_state} -> [] end)
       expect(StatusInterpreter, :on_dealt_damage, fn :player, 1001, _hit -> [] end)
-      expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 350} -> :ok end)
+      expect(OnHitEffects, :after_hit, fn _attacker, ^target, %{damage: 350}, _opts -> :ok end)
       expect(HpDrain, :roll, fn _attacker, 350 -> 0 end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
