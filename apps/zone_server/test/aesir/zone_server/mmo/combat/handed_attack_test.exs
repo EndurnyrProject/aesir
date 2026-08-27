@@ -94,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       |> put_hit(20)
       |> put_critical(1_000)
 
-    target = defender() |> put_flee(100)
+    target = defender() |> put_flee(20)
     double_attack = player(%{48 => 10}, :dagger)
 
     :rand.seed(:exsss, {2, 3, 4})
@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
 
   test "failed Double Attack adds no HIT and leaves one display division" do
     attacker = with_hands(hand(:right_hand, 100), nil) |> put_hit(20)
-    target = defender() |> put_flee(100)
+    target = defender() |> put_flee(20)
 
     assert {:ok,
             %HandedAttack{

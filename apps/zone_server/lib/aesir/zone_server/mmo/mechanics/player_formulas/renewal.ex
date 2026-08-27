@@ -25,13 +25,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   end
 
   @impl true
+  def hit_rate_base, do: 0
+
+  @impl true
   def hit(%{dex: dex, luk: luk, con: con, base_level: level, flat_bonus: flat_bonus}) do
-    trunc(dex + luk / 3 + level / 4) + 2 * con + flat_bonus
+    trunc(dex + luk / 3 + level / 4) + 2 * con + flat_bonus + 175
   end
 
   @impl true
   def flee(%{agi: agi, luk: luk, con: con, base_level: level, flat_bonus: flat_bonus}) do
-    trunc(agi + luk / 5 + level / 4) + 2 * con + flat_bonus
+    trunc(agi + luk / 5 + level / 4) + 2 * con + flat_bonus + 100
   end
 
   @impl true

@@ -55,8 +55,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       stats = get_player_stats(player.pid)
       player_state = get_player_state(player.pid)
 
-      # A single attack can miss (hit rate is 80 + hit - flee, never guaranteed),
-      # so keep attacking until one lands. Misses deal 0 damage and leave the
+      # A single attack can miss, so keep attacking until one lands.
+      # Misses deal 0 damage and leave the
       # mob's HP untouched, so exactly one hit has landed when we stop.
       damage_packet =
         Enum.reduce_while(1..30, nil, fn _, _acc ->
@@ -197,8 +197,8 @@ defmodule Aesir.ZoneServer.Integration.CombatIntegrationTest do
       stats = get_player_stats(player.pid)
       player_state = get_player_state(player.pid)
 
-      # A single attack can miss (hit rate is 80 + hit - flee, never guaranteed),
-      # so keep attacking until the mob dies. A landed hit one-shots a 10 HP mob.
+      # A single attack can miss, so keep attacking until the mob dies.
+      # A landed hit one-shots a 10 HP mob.
       mob_state =
         Enum.reduce_while(1..30, get_mob_state(mob.pid), fn _, _acc ->
           Combat.execute_attack(stats, player_state, mob.unit_id)

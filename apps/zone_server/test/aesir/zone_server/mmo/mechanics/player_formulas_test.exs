@@ -100,11 +100,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert PreRenewal.max_sp(sp) === PreRenewal.max_sp(%{sp | int: 0})
   end
 
-  test "classic HIT and FLEE floor after the prepared flat bonus" do
+  test "mode-specific HIT and FLEE apply their combat baselines" do
     inputs = %{base_level: 1, dex: 1, agi: 1, luk: 0, con: 0, flat_bonus: -5}
 
-    assert {PreRenewal.hit(inputs), PreRenewal.flee(inputs)} === {1, 1}
-    assert {Renewal.hit(inputs), Renewal.flee(inputs)} === {-4, -4}
+    assert {PreRenewal.hit_rate_base(), PreRenewal.hit(inputs), PreRenewal.flee(inputs)} ===
+             {80, 1, 1}
+
+    assert {Renewal.hit_rate_base(), Renewal.hit(inputs), Renewal.flee(inputs)} ===
+             {0, 171, 96}
   end
 
   test "classic production HIT and FLEE floor the combined flat modifiers" do

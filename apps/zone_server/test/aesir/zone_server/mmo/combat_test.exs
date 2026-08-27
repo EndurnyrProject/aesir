@@ -1232,9 +1232,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
 
     test "a relative bonus scales a nonzero clamped hit rate up to a guaranteed hit" do
-      # hit 100, flee 160 -> 80 + 100 - 160 = 20% clamped; a +400% relative
-      # bonus scales it to 20 * (100 + 400) / 100 = 100%, a guaranteed hit.
-      attacker = combatant(1001, :player, hit: 100)
+      # hit 180, flee 160 -> 20% clamped; a +400% relative bonus scales it to
+      # 20 * (100 + 400) / 100 = 100%, a guaranteed hit.
+      attacker = combatant(1001, :player, hit: 180)
       target = combatant(2001, :mob, flee: 160)
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
       target_state = living_mob_state(target, 150, 150)

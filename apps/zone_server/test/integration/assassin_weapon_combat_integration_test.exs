@@ -154,7 +154,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
     defender = MobState.to_combatant(mob_state(target))
     attacker = PlayerState.to_combatant(player_state(double))
-    flee = 80 + attacker.combat_stats.hit - 5
+    flee = attacker.combat_stats.hit - 5
     defender = %{defender | combat_stats: %{defender.combat_stats | flee: flee, perfect_dodge: 0}}
 
     :rand.seed(:exsss, {1, 1, 1})

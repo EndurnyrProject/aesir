@@ -440,6 +440,12 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     character = Repo.preload(character, :homunculus)
     session = start_player_session(character: character, map_name: @map, position: {150, 150})
     on_exit(fn -> if Process.alive?(session.pid), do: end_player_session(session) end)
+
+    # Settle the asynchronous quest-info refresh before whole-state snapshots.
+    assert_eventually(fn ->
+      PlayerSession.get_state(session.pid).quest_info_display.map == @map
+    end)
+
     session
   end
 

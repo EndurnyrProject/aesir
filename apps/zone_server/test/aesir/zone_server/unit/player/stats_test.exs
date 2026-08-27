@@ -687,9 +687,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      # With zero stats and level, all values should be zero
-      assert result.combat_stats.hit == 0
-      assert result.combat_stats.flee == 0
+      # Renewal combat HIT/FLEE retain their canonical baselines at zero stats.
+      assert result.combat_stats.hit == 175
+      assert result.combat_stats.flee == 100
       assert result.combat_stats.critical == 0
       assert result.combat_stats.atk == 0
       assert result.combat_stats.def == 0
@@ -732,9 +732,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      # Base values are 0, but status effects add 10 to each
-      assert result.combat_stats.hit == 10
-      assert result.combat_stats.flee == 10
+      # Status effects add to the renewal combat baselines.
+      assert result.combat_stats.hit == 185
+      assert result.combat_stats.flee == 110
       assert result.combat_stats.critical == 10
       assert result.combat_stats.atk == 10
       assert result.combat_stats.def == 10
@@ -1032,8 +1032,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert result.combat_stats.patk == 1
       assert result.combat_stats.smatk == 1
-      assert result.combat_stats.hit == 14
-      assert result.combat_stats.flee == 14
+      assert result.combat_stats.hit == 189
+      assert result.combat_stats.flee == 114
     end
 
     test "row 7: STA 10 gives Res 25 (div truncates before *5)" do
@@ -1781,8 +1781,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = with_equipped(equipped(90_202, @armor_pos))
 
-      assert result.combat_stats.hit == 7
-      assert result.combat_stats.flee == 5
+      assert result.combat_stats.hit == 182
+      assert result.combat_stats.flee == 105
       assert result.combat_stats.critical == 4
     end
 

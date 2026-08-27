@@ -5,13 +5,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   This module handles accuracy vs flee calculations, perfect dodge and perfect
   hit mechanics, and determines whether attacks hit or miss:
 
-  - Base hit rate: 80 + attacker.hit - target.flee
+  - Base hit rate: attacker.hit - target.flee in renewal;
+    80 + attacker.hit - target.flee in pre-renewal
   - Perfect dodge: rand(1000) < target.perfect_dodge
   - Perfect hit: rand(100) < attacker.perfect_hit, ignoring the target's flee
   - Hit rate is clamped to 0-100% range, then an optional relative
     `hit_rate_bonus_pct` scales that clamped rate (e.g. a skill's own
     accuracy bonus), and the result is clamped again
   """
+
+  alias Aesir.ZoneServer.Mmo.Mechanics
 
   @typedoc """
   Result of a hit calculation.
@@ -47,7 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   Calculates whether an attack hits or misses
 
   ## Formula
-  Base hit rate = 80 + attacker.hit - target.flee
+  Base hit rate = mode base + attacker.hit - target.flee
 
   ## Priority Order
   1. Perfect dodge check (highest priority) — the defender's evasion takes
@@ -90,7 +93,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   Calculates the hit rate percentage
 
   ## Formula
-  hit_rate = 80 + attacker.hit - target.flee
+  hit_rate = mode_base + attacker.hit - target.flee
+
+  The mode base is `0` in renewal and `80` in pre-renewal.
 
   The result is clamped to 0-100% range to prevent impossible values, then
   scaled by the attacker's optional `hit_rate_bonus_pct` (a relative percent
@@ -106,25 +111,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
     - Integer between 0 and 100 representing hit rate percentage
 
   ## Examples
-      iex> attacker = %{hit: 120}
+      iex> attacker = %{hit: 220}
       iex> target = %{flee: 100}
       iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
       100
 
-      iex> attacker = %{hit: 90}
+      iex> attacker = %{hit: 170}
       iex> target = %{flee: 110}
       iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
       60
 
-      iex> attacker = %{hit: 100, hit_rate_bonus_pct: 50}
+      iex> attacker = %{hit: 180, hit_rate_bonus_pct: 50}
       iex> target = %{flee: 150}
       iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
       45
   """
   @spec calculate_hit_rate(attacker_stats(), target_stats()) :: 0..100
   def calculate_hit_rate(attacker_stats, target_stats) do
-    base_hit_rate = 80
-    raw_hit_rate = base_hit_rate + attacker_stats.hit - target_stats.flee
+    raw_hit_rate =
+      Mechanics.player_formulas().hit_rate_base() + attacker_stats.hit - target_stats.flee
+
     clamped_hit_rate = max(0, min(100, raw_hit_rate))
 
     bonus_pct = Map.get(attacker_stats, :hit_rate_bonus_pct, 0)

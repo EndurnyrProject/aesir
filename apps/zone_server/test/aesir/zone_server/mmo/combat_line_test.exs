@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatLineTest do
   defp build_caster do
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
-      combat_stats: %{atk: 1, def: 1, hit: 200, flee: 1, perfect_dodge: 1},
+      combat_stats: %{atk: 1, def: 1, hit: 400, flee: 1, perfect_dodge: 1},
       derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
       progression: %PlayerProgression{base_level: 1, job_level: 1, learned_skills: %{}},
       equipment: %Equipment{}

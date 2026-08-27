@@ -55,7 +55,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
   end
 
   describe "calculate_hit/1" do
-    test "calculates hit using rAthena formula: DEX + LUK/3 + base_level/4" do
+    test "calculates renewal HIT with its combat baseline" do
       stats =
         create_test_stats(%{
           base_stats: %{dex: 80, luk: 60},
@@ -64,8 +64,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(stats)
 
-      # 80 + 60/3 + 60/4 = 80 + 20 + 15 = 115
-      assert hit == 115
+      # 175 + 80 + 60/3 + 60/4 = 290
+      assert hit == 290
     end
 
     test "handles fractional values by truncating" do
@@ -77,8 +77,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(stats)
 
-      # 75 + 50/3 + 55/4 = 75 + 16 (trunc 16.67) + 13 (trunc 13.75) = 105
-      assert hit == 105
+      # 175 + 75 + trunc(50/3 + 55/4) = 280
+      assert hit == 280
     end
 
     test "includes status effect modifiers" do
@@ -95,8 +95,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(stats)
 
-      # Base 115 + 10 modifier = 125
-      assert hit == 125
+      # Base 290 + 10 modifier = 300
+      assert hit == 300
     end
 
     test "handles minimum stats" do
@@ -108,8 +108,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(stats)
 
-      # 1 + 1/3 + 1/4 = 1 + 0 + 0 = 1
-      assert hit == 1
+      # 175 + 1 + trunc(1/3 + 1/4) = 176
+      assert hit == 176
     end
 
     test "includes the passive HIT bonus" do
@@ -122,8 +122,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(stats)
 
-      # Base 115 + 3 passive = 118
-      assert hit == 118
+      # Base 290 + 3 passive = 293
+      assert hit == 293
     end
 
     test "handles high level scenario" do
@@ -135,13 +135,13 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       hit = CombatCalculations.calculate_hit(stats)
 
-      # 120 + 80/3 + 99/4 = 120 + 26 (trunc 26.67) + 24 (trunc 24.75) = 171
-      assert hit == 171
+      # 175 + 120 + trunc(80/3 + 99/4) = 346
+      assert hit == 346
     end
   end
 
   describe "calculate_flee/1" do
-    test "calculates flee using rAthena formula: AGI + LUK/5 + base_level/4" do
+    test "calculates renewal FLEE with its combat baseline" do
       stats =
         create_test_stats(%{
           base_stats: %{agi: 90, luk: 50},
@@ -150,8 +150,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(stats)
 
-      # 90 + 50/5 + 60/4 = 90 + 10 + 15 = 115
-      assert flee == 115
+      # 100 + 90 + 50/5 + 60/4 = 215
+      assert flee == 215
     end
 
     test "handles fractional values by truncating" do
@@ -163,8 +163,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(stats)
 
-      # 75 + 47/5 + 55/4 = 75 + 9 (trunc 9.4) + 13 (trunc 13.75) = 98
-      assert flee == 98
+      # 100 + 75 + trunc(47/5 + 55/4) = 198
+      assert flee == 198
     end
 
     test "includes status effect modifiers" do
@@ -181,8 +181,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(stats)
 
-      # Base 115 + 15 modifier = 130
-      assert flee == 130
+      # Base 215 + 15 modifier = 230
+      assert flee == 230
     end
 
     test "AGI build scenario" do
@@ -194,8 +194,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(stats)
 
-      # 99 + 70/5 + 85/4 = 99 + 14 + 21 = 134
-      assert flee == 134
+      # 100 + 99 + 70/5 + 85/4 = 234
+      assert flee == 234
     end
 
     test "includes the passive flee bonus term" do
@@ -209,8 +209,8 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       flee = CombatCalculations.calculate_flee(stats)
 
-      # Base 115 + 20 passive bonus = 135
-      assert flee == 135
+      # Base 215 + 20 passive bonus = 235
+      assert flee == 235
     end
   end
 

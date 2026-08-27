@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatHunterSkillAttackTest do
   defp build_caster do
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 99, luk: 1},
-      combat_stats: %{atk: 100, def: 1, hit: 200, flee: 1, perfect_dodge: 1, matk: 1},
+      combat_stats: %{atk: 100, def: 1, hit: 300, flee: 1, perfect_dodge: 1, matk: 1},
       derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
       current_state: %CurrentState{hp: 100, sp: 50},
       progression: %PlayerProgression{base_level: 1, job_level: 1, learned_skills: %{}},

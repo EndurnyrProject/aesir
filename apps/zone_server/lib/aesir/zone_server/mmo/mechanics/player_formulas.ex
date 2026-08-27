@@ -110,6 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
   @callback base_def(base_def_inputs()) :: integer()
   @callback base_matk(base_matk_inputs()) :: matk_band()
   @callback soft_mdef(soft_mdef_inputs()) :: integer()
+  @callback hit_rate_base() :: 0 | 80
   @callback hit(hit_inputs()) :: integer()
   @callback flee(flee_inputs()) :: integer()
   @callback critical(critical_inputs()) :: critical_basis()

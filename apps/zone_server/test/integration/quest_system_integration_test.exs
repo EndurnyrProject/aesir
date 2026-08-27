@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   @moduledoc """
   End-to-end acceptance of the quest system, driving the real subsystems through
-  the ported `Suspicious Cat#night2` NPC (`content/npc/moc_prydn1/suspicious_cat.ex`,
-  rAthena `quests_morocc.txt:122`).
+  the ported `Suspicious Cat#night2` NPC
+  (`content/npc/re/quests/quests_morocc/suspicious_cat_94_98.ex`).
 
   The loop, all through production code paths:
 
@@ -39,7 +39,10 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestRemoved
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat
+
+  alias Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat9498,
+    as: SuspiciousCat
+
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member

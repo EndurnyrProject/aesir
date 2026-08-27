@@ -31,6 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   def soft_mdef(%{int: int, vit: vit}), do: max(int, 0) + div(max(vit, 0), 2)
 
   @impl true
+  def hit_rate_base, do: 80
+
+  @impl true
   def hit(%{base_level: level, dex: dex, flat_bonus: flat_bonus}) do
     max(level + max(dex, 0) + flat_bonus, 1)
   end

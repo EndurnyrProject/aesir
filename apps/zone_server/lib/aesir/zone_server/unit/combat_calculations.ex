@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Unit.CombatCalculations do
   @doc """
   Calculates the hit stat for accuracy calculations.
 
-  Used in hit rate formula: 80 + attacker.hit - target.flee
+  Compared with target FLEE through the active mode's hit-rate formula.
 
   ## Parameters
     - unit_data: Unit-specific data containing base stats and modifiers
@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Unit.CombatCalculations do
   @doc """
   Calculates the flee stat for evasion calculations.
 
-  Used in hit rate formula: 80 + attacker.hit - target.flee
+  Compared with attacker HIT through the active mode's hit-rate formula.
 
   ## Parameters
     - unit_data: Unit-specific data containing base stats and modifiers

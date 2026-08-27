@@ -10,11 +10,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
 
   describe "calculate_hit_result/2" do
     test "returns hit when perfect dodge is 0 and hit rate is high" do
-      attacker = %{hit: 120, char_id: 1}
+      attacker = %{hit: 180, char_id: 1}
       target = %{flee: 80, perfect_dodge: 0, unit_id: 2}
 
-      # With hit 120, flee 80, hit rate = 80 + 120 - 80 = 120 (clamped to 100)
-      # Should always hit with 100% hit rate and 0 perfect dodge
+      # Renewal uses the full combat HIT/FLEE values with no additional base rate.
+      # With hit 180 and flee 80, the clamped hit rate is 100%.
       result = HitCalculations.calculate_hit_result(attacker, target)
       assert result == :hit
     end
@@ -23,8 +23,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       attacker = %{hit: 50, char_id: 1}
       target = %{flee: 200, perfect_dodge: 0, unit_id: 2}
 
-      # With hit 50, flee 200, hit rate = 80 + 50 - 200 = -70 (clamped to 0)
-      # Should always miss with 0% hit rate
+      # With hit 50 and flee 200, the renewal hit rate clamps to 0%.
+      # The attack always misses.
       result = HitCalculations.calculate_hit_result(attacker, target)
       assert result == :miss
     end
@@ -78,10 +78,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
     end
 
     test "handles balanced hit/flee scenarios" do
-      attacker = %{hit: 100, char_id: 1}
+      attacker = %{hit: 180, char_id: 1}
       target = %{flee: 100, perfect_dodge: 0, unit_id: 2}
 
-      # hit rate = 80 + 100 - 100 = 80%
+      # renewal hit rate = 180 - 100 = 80%
       # Run multiple times to get statistical distribution
       results =
         for _ <- 1..100 do
@@ -104,10 +104,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
 
   describe "calculate_hit_rate/2" do
     test "calculates basic hit rate formula" do
-      attacker = %{hit: 120}
+      attacker = %{hit: 200}
       target = %{flee: 100}
 
-      # 80 + 120 - 100 = 100
+      # 200 - 100 = 100
       assert HitCalculations.calculate_hit_rate(attacker, target) == 100
     end
 
@@ -115,7 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       attacker = %{hit: 200}
       target = %{flee: 50}
 
-      # 80 + 200 - 50 = 230, should clamp to 100
+      # 200 - 50 = 150, clamped to 100
       assert HitCalculations.calculate_hit_rate(attacker, target) == 100
     end
 
@@ -123,41 +123,38 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       attacker = %{hit: 50}
       target = %{flee: 200}
 
-      # 80 + 50 - 200 = -70, should clamp to 0
+      # 50 - 200 = -150, clamped to 0
       assert HitCalculations.calculate_hit_rate(attacker, target) == 0
     end
 
     test "calculates edge cases correctly" do
-      # Equal hit and flee
-      attacker = %{hit: 100}
+      # Full renewal HIT/FLEE values with an 80-point difference
+      attacker = %{hit: 180}
       target = %{flee: 100}
-      # 80 + 100 - 100 = 80
       assert HitCalculations.calculate_hit_rate(attacker, target) == 80
 
-      # Very low stats
-      attacker = %{hit: 1}
+      # Very low effective rate
+      attacker = %{hit: 81}
       target = %{flee: 1}
-      # 80 + 1 - 1 = 80
       assert HitCalculations.calculate_hit_rate(attacker, target) == 80
 
-      # Zero stats
-      attacker = %{hit: 0}
+      # Zero FLEE
+      attacker = %{hit: 80}
       target = %{flee: 0}
-      # 80 + 0 - 0 = 80
       assert HitCalculations.calculate_hit_rate(attacker, target) == 80
     end
 
     test "hit_rate_bonus_pct is a relative bonus applied after the base clamp, not a flat hit addition" do
-      # 80 + 100 - 150 = 30, clamped to 30. A +50% relative bonus (Pierce at
-      # level 10) scales it to 30 * 150 / 100 = 45, not a flat 30 + 50 = 80.
-      attacker = %{hit: 100, hit_rate_bonus_pct: 50}
+      # 180 - 150 = 30. A +50% relative bonus (Pierce at level 10) scales
+      # it to 30 * 150 / 100 = 45, not a flat 30 + 50 = 80.
+      attacker = %{hit: 180, hit_rate_bonus_pct: 50}
       target = %{flee: 150}
 
       assert HitCalculations.calculate_hit_rate(attacker, target) == 45
     end
 
     test "hit_rate_bonus_pct defaults to 0 (no change) when absent" do
-      attacker = %{hit: 90}
+      attacker = %{hit: 170}
       target = %{flee: 110}
 
       assert HitCalculations.calculate_hit_rate(attacker, target) == 60
@@ -171,25 +168,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
     end
 
     test "hit_rate_bonus_pct is clamped back to 100 when it overshoots" do
-      attacker = %{hit: 100, hit_rate_bonus_pct: 400}
+      attacker = %{hit: 180, hit_rate_bonus_pct: 400}
       target = %{flee: 160}
 
-      # 80 + 100 - 160 = 20, clamped 20. 20 * 500 / 100 = 100.
+      # 180 - 160 = 20. The 400% bonus scales that to 100.
       assert HitCalculations.calculate_hit_rate(attacker, target) == 100
     end
 
     test "calculates various scenarios correctly" do
       test_cases = [
-        # 80 + 90 - 110 = 60
-        {%{hit: 90}, %{flee: 110}, 60},
-        # 80 + 150 - 80 = 150 -> 100 (clamped)
-        {%{hit: 150}, %{flee: 80}, 100},
-        # 80 + 60 - 150 = -10 -> 0 (clamped)
-        {%{hit: 60}, %{flee: 150}, 0},
-        # 80 + 120 - 120 = 80
-        {%{hit: 120}, %{flee: 120}, 80},
-        # 80 + 200 - 200 = 80
-        {%{hit: 200}, %{flee: 200}, 80}
+        # 170 - 110 = 60
+        {%{hit: 170}, %{flee: 110}, 60},
+        # 230 - 80 = 150 -> 100 (clamped)
+        {%{hit: 230}, %{flee: 80}, 100},
+        # 140 - 150 = -10 -> 0 (clamped)
+        {%{hit: 140}, %{flee: 150}, 0},
+        # 200 - 120 = 80
+        {%{hit: 200}, %{flee: 120}, 80},
+        # 280 - 200 = 80
+        {%{hit: 280}, %{flee: 200}, 80}
       ]
 
       for {attacker, target, expected} <- test_cases do
@@ -334,8 +331,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
   describe "integration scenarios" do
     test "realistic combat scenarios" do
       # Novice vs Novice
-      novice_attacker = %{hit: 95, char_id: 1}
-      novice_target = %{flee: 90, perfect_dodge: 5, unit_id: 2}
+      novice_attacker = %{hit: 195, char_id: 1}
+      novice_target = %{flee: 110, perfect_dodge: 5, unit_id: 2}
 
       # Should mostly hit with occasional misses and very rare perfect dodges
       results =
@@ -344,30 +341,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
         end
 
       assert :hit in results
-      # hit rate = 80 + 95 - 90 = 85%, should be mostly hits
+      # hit rate = 195 - 110 = 85%, should be mostly hits
 
       # High level vs High level
-      expert_attacker = %{hit: 150, char_id: 3}
-      expert_target = %{flee: 140, perfect_dodge: 20, unit_id: 4}
+      expert_attacker = %{hit: 250, char_id: 3}
+      expert_target = %{flee: 160, perfect_dodge: 20, unit_id: 4}
 
       results =
         for _ <- 1..100 do
           HitCalculations.calculate_hit_result(expert_attacker, expert_target)
         end
 
-      # hit rate = 80 + 150 - 140 = 90%, should be mostly hits
+      # hit rate = 250 - 160 = 90%, should be mostly hits
       assert :hit in results
 
       # Tank vs DPS (high flee vs high hit)
-      dps_attacker = %{hit: 180, char_id: 5}
-      tank_target = %{flee: 160, perfect_dodge: 30, unit_id: 6}
+      dps_attacker = %{hit: 280, char_id: 5}
+      tank_target = %{flee: 180, perfect_dodge: 30, unit_id: 6}
 
       results =
         for _ <- 1..100 do
           HitCalculations.calculate_hit_result(dps_attacker, tank_target)
         end
 
-      # hit rate = 80 + 180 - 160 = 100%, should be all hits except perfect dodges
+      # hit rate = 280 - 180 = 100%, so only perfect dodges avoid hits
       unique_results = results |> Enum.uniq() |> Enum.sort()
       assert :hit in unique_results
       # May have some perfect dodges due to 3% chance
@@ -375,30 +372,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
 
     test "extreme scenarios" do
       # Impossible to hit (except perfect dodge doesn't apply to attacker)
-      weak_attacker = %{hit: 10, char_id: 1}
-      dodge_master = %{flee: 300, perfect_dodge: 200, unit_id: 2}
+      weak_attacker = %{hit: 185, char_id: 1}
+      dodge_master = %{flee: 400, perfect_dodge: 200, unit_id: 2}
 
       results =
         for _ <- 1..50 do
           HitCalculations.calculate_hit_result(weak_attacker, dodge_master)
         end
 
-      # Should be mostly perfect dodges and misses, no hits
-      # hit rate = 80 + 10 - 300 = -210 -> 0%
+      # Should be mostly perfect dodges and misses, no hits.
+      # hit rate = 185 - 400 = -215 -> 0%
       refute :hit in results
       assert :perfect_dodge in results
 
       # Guaranteed hit scenario (ignoring perfect dodge)
-      master_attacker = %{hit: 300, char_id: 3}
-      sitting_duck = %{flee: 10, perfect_dodge: 0, unit_id: 4}
+      master_attacker = %{hit: 400, char_id: 3}
+      sitting_duck = %{flee: 110, perfect_dodge: 0, unit_id: 4}
 
       results =
         for _ <- 1..50 do
           HitCalculations.calculate_hit_result(master_attacker, sitting_duck)
         end
 
-      # Should be all hits
-      # hit rate = 80 + 300 - 10 = 370 -> 100%
+      # hit rate = 400 - 110 = 290 -> 100%, so every attack hits.
       assert Enum.all?(results, &(&1 == :hit))
     end
   end
