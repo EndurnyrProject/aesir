@@ -310,6 +310,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
       assert_received {:applied, :mob, 2001, :sc_stun, _params}
     end
 
+    test "passes a positive bonus4 duration override to the status interpreter" do
+      record_applications()
+      flag = trigger_flag([:target])
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{
+          {:add_eff, {:sc_stun, flag}} => 10_000,
+          {:add_eff_duration, {:sc_stun, flag}} => 5_000
+        })
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :mob, 2001, :sc_stun, params}
+      assert params[:duration] == 5_000
+    end
+
+    test "zero duration keeps the status definition default" do
+      record_applications()
+      flag = trigger_flag([:target])
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{
+          {:add_eff, {:sc_stun, flag}} => 10_000,
+          {:add_eff_duration, {:sc_stun, flag}} => 0
+        })
+
+      defender = CombatTestHelper.create_mob_combatant(unit_id: 2001)
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :mob, 2001, :sc_stun, params}
+      refute Keyword.has_key?(params, :duration)
+    end
+
     test "the self bit inflicts on the wearer instead of the victim" do
       record_applications()
 

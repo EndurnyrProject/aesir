@@ -300,6 +300,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   # `:interval`-param destinations.
   @interval_families [:hp_regen_bonus, :hp_loss_bonus, :sp_regen_bonus, :sp_loss_bonus]
 
+  @status_duration_families [:add_eff_duration, :add_eff_when_hit_duration]
+
   describe "param_schema/1" do
     test "resolves every documented bonus2 parameterized key" do
       for {key, schema} <- @param_schemas do
@@ -365,7 +367,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "returns exactly the documented param-key families" do
       expected =
         (@param_schemas |> Map.values() |> Enum.map(& &1.family)) ++
-          @flag_only_families ++ @interval_families
+          @flag_only_families ++ @interval_families ++ @status_duration_families
 
       assert Enum.sort(BonusKeys.families()) == Enum.sort(Enum.uniq(expected))
     end
@@ -391,6 +393,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.family_param(:hp_loss_bonus) == {:ok, :interval}
       assert BonusKeys.family_param(:sp_regen_bonus) == {:ok, :interval}
       assert BonusKeys.family_param(:sp_loss_bonus) == {:ok, :interval}
+    end
+
+    test "resolves status-duration families to the status param kind" do
+      assert BonusKeys.family_param(:add_eff_duration) == {:ok, :status}
+      assert BonusKeys.family_param(:add_eff_when_hit_duration) == {:ok, :status}
     end
 
     test "resolves the monster-id param family (bAddDamageClass)" do
@@ -472,6 +479,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       for key <- ~w(bAddEff bAddEffWhenHit bSubEle bSubRace bSubSize bSubClass) do
         assert {:ok, _schema} = BonusKeys.param_schema(key)
       end
+    end
+  end
+
+  describe "status_duration_family/1" do
+    test "resolves the two bonus4 duration siblings case-insensitively" do
+      assert BonusKeys.status_duration_family("bAddEff") == {:ok, :add_eff_duration}
+
+      assert BonusKeys.status_duration_family("BADDEFFWHENHIT") ==
+               {:ok, :add_eff_when_hit_duration}
+    end
+
+    test "returns :error outside the duration vocabulary" do
+      assert BonusKeys.status_duration_family("bAddEffOnSkill") == :error
     end
   end
 

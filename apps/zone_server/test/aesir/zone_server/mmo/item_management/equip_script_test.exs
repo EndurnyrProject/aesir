@@ -106,6 +106,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
          [{:bonus, {:addrace, :all}, 5}]}
       ],
       tuple_add_eff_dest: [{:bonus, {:add_eff, :sc_stun}, 500}],
+      tuple_add_eff_duration_dest: [
+        {:bonus, {:add_eff, {:sc_stun, 93}}, 500},
+        {:bonus, {:add_eff_duration, {:sc_stun, 93}}, 5_000}
+      ],
       tuple_add_eff2_dest: [{:bonus, {:add_eff2, :sc_curse}, 500}],
       tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
       tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}],

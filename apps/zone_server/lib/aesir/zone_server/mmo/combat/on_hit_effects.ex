@@ -73,10 +73,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   defp inflict(source, other, family, roll, attack_flag) do
     Enum.each(source.equip_modifiers, fn
       {{^family, {sc, flag}}, rate} when is_atom(sc) and is_integer(flag) ->
-        inflict_flagged(source, other, sc, rate, roll, flag, attack_flag)
+        duration = status_duration(source, family, {sc, flag})
+        inflict_flagged(source, other, sc, rate, duration, roll, flag, attack_flag)
 
       {{^family, sc}, rate} when is_atom(sc) ->
-        try_inflict(source, other, sc, rate, roll)
+        try_inflict(source, other, sc, rate, roll, status_duration(source, family, sc))
 
       _entry ->
         :ok
@@ -106,11 +107,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
           Combatant.t(),
           atom(),
           integer(),
+          non_neg_integer(),
           roll_fun(),
           BattleFlags.flag(),
           BattleFlags.flag()
         ) :: :ok
-  defp inflict_flagged(source, other, sc, rate, roll, flag, attack_flag) do
+  defp inflict_flagged(source, other, sc, rate, duration, roll, flag, attack_flag) do
     if BattleFlags.matches_trigger?(flag, attack_flag) do
       victims =
         [
@@ -119,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
         ]
         |> Enum.filter(& &1)
 
-      Enum.each(victims, &try_inflict(source, &1, sc, rate, roll))
+      Enum.each(victims, &try_inflict(source, &1, sc, rate, roll, duration))
     end
 
     :ok
@@ -130,19 +132,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   # subtracted from the proc rate here, so the status system does not apply it
   # a second time.
   @spec try_inflict(Combatant.t(), Combatant.t(), atom(), integer(), roll_fun()) :: :ok
-  defp try_inflict(source, victim, sc, rate, roll) do
+  defp try_inflict(source, victim, sc, rate, roll),
+    do: try_inflict(source, victim, sc, rate, roll, 0)
+
+  @spec try_inflict(
+          Combatant.t(),
+          Combatant.t(),
+          atom(),
+          integer(),
+          roll_fun(),
+          non_neg_integer()
+        ) :: :ok
+  defp try_inflict(source, victim, sc, rate, roll, duration) do
     effective = rate - Map.get(victim.equip_modifiers, {:res_eff, sc}, 0)
 
     if effective > 0 and roll.(effective) do
-      StatusInterpreter.apply_status(victim.unit_type, victim.unit_id, sc,
-        caster_id: source.unit_id,
-        source_type: source.unit_type,
-        res_eff_exempt: true
-      )
+      params =
+        [
+          caster_id: source.unit_id,
+          source_type: source.unit_type,
+          res_eff_exempt: true
+        ]
+        |> maybe_duration(duration)
+
+      StatusInterpreter.apply_status(victim.unit_type, victim.unit_id, sc, params)
     end
 
     :ok
   end
+
+  defp status_duration(source, family, param) do
+    case duration_family(family) do
+      nil -> 0
+      duration_family -> Map.get(source.equip_modifiers, {duration_family, param}, 0)
+    end
+  end
+
+  defp duration_family(:add_eff), do: :add_eff_duration
+  defp duration_family(:add_eff_when_hit), do: :add_eff_when_hit_duration
+  defp duration_family(_family), do: nil
+
+  defp maybe_duration(params, duration) when is_integer(duration) and duration > 0,
+    do: Keyword.put(params, :duration, duration)
+
+  defp maybe_duration(params, _duration), do: params
 
   @spec default_roll(non_neg_integer()) :: boolean()
   defp default_roll(effective), do: :rand.uniform(@roll_ceiling) <= effective

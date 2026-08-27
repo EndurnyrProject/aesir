@@ -250,6 +250,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsubclass" => :battle
   }
 
+  # The extra argument on bonus4 bAddEff/bAddEffWhenHit is a duration override
+  # in milliseconds. It rides in a sibling family with the same status/flag param
+  # as the chance entry, keeping every equipment modifier value numeric.
+  @status_duration_families %{
+    "baddeff" => :add_eff_duration,
+    "baddeffwhenhit" => :add_eff_when_hit_duration
+  }
+
   # Equip autocast keys: a chance for a worn item to cast a skill by itself.
   # The value is the trigger point - `:attack` fires on the wearer's own landed
   # hits, `:when_hit` on hits taken, and `:on_skill` on the wearer casting one
@@ -393,6 +401,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @spec flag_kind(String.t()) :: {:ok, :battle | :trigger} | :error
   def flag_kind(name) when is_binary(name), do: Map.fetch(@flag_keys, String.downcase(name))
 
+  @doc "Returns the sibling duration family for bonus4 status-infliction keys."
+  @spec status_duration_family(String.t()) :: {:ok, atom()} | :error
+  def status_duration_family(name) when is_binary(name),
+    do: Map.fetch(@status_duration_families, String.downcase(name))
+
   @doc """
   Resolves a key whose `bonus3` form inflicts a status when one named skill
   lands (`bonus3 bAddEffOnSkill,sk,eff,n`) to the family it stores into.
@@ -450,6 +463,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
     |> Enum.map(& &1.family)
     |> Kernel.++(Map.values(@interval_keys))
+    |> Kernel.++(Map.values(@status_duration_families))
     |> Enum.uniq()
   end
 
@@ -507,15 +521,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec family_param(atom()) :: {:ok, param()} | :error
   def family_param(family) when is_atom(family) do
-    if family in Map.values(@interval_keys) do
-      {:ok, :interval}
-    else
-      (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
-      |> Enum.find(&(&1.family == family))
-      |> case do
-        %{param: param} -> {:ok, param}
-        nil -> :error
-      end
+    cond do
+      family in Map.values(@interval_keys) ->
+        {:ok, :interval}
+
+      family in Map.values(@status_duration_families) ->
+        {:ok, :status}
+
+      true ->
+        (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
+        |> Enum.find(&(&1.family == family))
+        |> case do
+          %{param: param} -> {:ok, param}
+          nil -> :error
+        end
     end
   end
 end

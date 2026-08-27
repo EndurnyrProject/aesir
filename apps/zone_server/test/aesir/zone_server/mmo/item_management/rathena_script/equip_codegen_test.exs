@@ -763,9 +763,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(~S|bonus5 bAutoSpell,"MG_COLDBOLT",5,100,BF_NOTAFLAG,0;|)
     end
 
-    test "bonus4 and bonus5 of a non-autocast key stay unsupported" do
+    test "bonus4/5 keys outside their dedicated vocabularies stay unsupported" do
       assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
-               compile(~S|bonus4 bAddEff,Eff_Crystalize,500,ATF_SHORT,3000;|)
+               compile(~S|bonus4 bSubEle,Ele_Fire,3,BF_MAGIC;|)
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus5"}}} =
                compile(~S|bonus5 bSubEle,Ele_Fire,3,BF_MAGIC,1;|)
@@ -781,9 +781,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus3 bAddEff,Eff_NotAStatus,500,ATF_TARGET;")
     end
 
-    test "bonus4 bAddEff (flag + duration) stays unsupported" do
-      assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
-               compile("bonus4 bAddEff,Eff_Stun,500,ATF_TARGET,5000;")
+    test "bonus4 status infliction keeps its flag and duration override" do
+      assert {:ok,
+              [
+                {:bonus, {:add_eff, {:sc_stun, flag}}, 500},
+                {:bonus, {:add_eff_duration, {:sc_stun, duration_flag}}, 5_000}
+              ]} = compile("bonus4 bAddEff,Eff_Stun,500,ATF_TARGET,5000;")
+
+      assert flag == trigger_flag(~w(target short long weapon))
+      assert duration_flag == flag
+
+      assert {:ok,
+              [
+                {:bonus, {:add_eff_when_hit, {:sc_blind, hit_flag}}, 300},
+                {:bonus, {:add_eff_when_hit_duration, {:sc_blind, hit_duration_flag}},
+                 {:*, :refine, 100}}
+              ]} =
+               compile("bonus4 bAddEffWhenHit,Eff_Blind,300,ATF_SHORT,getrefine()*100;")
+
+      assert hit_duration_flag == hit_flag
     end
 
     test "unknown Eff_ status param is rejected" do

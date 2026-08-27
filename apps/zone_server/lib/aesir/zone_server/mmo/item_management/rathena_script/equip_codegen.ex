@@ -65,17 +65,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     family it redirects to `:addclass`/`:subclass`; on any other family it is
     unsupported. A non-constant or unresolvable param is
     `{:unresolved_param, detail}`; any other shape is unsupported.
-  - `bonus3 bKey,param,amount,flag` — for the keys in
-    `BonusKeys.bonus3_flag_key?/1` (the sub-resist family and the on-hit
-    status-infliction family), whose third argument is a trigger-condition flag
-    rather than a value: the leading `param, amount` pair is identical to the
-    key's `bonus2` form, so it resolves through the same param schema and the
-    flag is dropped.
-  - `bonus3 bAddMonsterDropItem,iid,r,n` — for the drop key in
-    `BonusKeys.bonus3_drop_key?/1`, whose third argument is a genuine race param
-    gating the bonus drop: emits a three-element `{family, item_id, race}`
-    destination. Every other `bonus3` key, and `bonus4`/`bonus5`, parse as
-    ordinary commands and stay unsupported.
+  - `bonus3 bKey,param,amount,flag` — the sub-resist and on-hit status families
+    retain the normalized trigger flag in `{family, {param, flag}}`.
+  - `bonus3 bAddMonsterDropItem,iid,r,n` and `bAddMonsterIdDropItem` emit a
+    three-element destination gated by race or monster id.
+  - `bonus3`/`bonus4`/`bonus5` autocast shapes emit `:auto_cast` instructions;
+    `bonus3`/`bonus4` on-skill status shapes emit their keyed status bonuses.
+  - `bonus4 bAddEff` / `bAddEffWhenHit` emits the ordinary flagged chance plus
+    a sibling duration-family entry carrying the millisecond override.
   - `skill <skill id>,<level>{,<flag>}` — `{:grant_skill, id, expr}`, granting the
     wearer a castable skill at `level` while the item is worn. The skill id
     resolves like a `bonus2` skill param (constant name, quoted name, or literal
@@ -306,7 +303,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
         compile_auto_cast(key, skill_ast, level_ast, rate_ast, {:int, 0}, force_ast, env)
 
       :error ->
-        unsupported({:unsupported_command, "bonus4"})
+        case BonusKeys.status_duration_family(key) do
+          {:ok, duration_family} ->
+            compile_flagged_duration_bonus(
+              key,
+              skill_ast,
+              level_ast,
+              rate_ast,
+              force_ast,
+              duration_family,
+              env
+            )
+
+          :error ->
+            unsupported({:unsupported_command, "bonus4"})
+        end
     end
   end
 
@@ -436,6 +447,35 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
          {:ok, flag} <- resolve_flag(kind, flag_ast),
          {:ok, expr} <- compile_expr(amount_ast, env) do
       {:ok, {:bonus, flagged_dest(dest, fill_flag(kind, flag)), expr}}
+    end
+  end
+
+  @spec compile_flagged_duration_bonus(
+          String.t(),
+          term(),
+          term(),
+          term(),
+          term(),
+          atom(),
+          %{String.t() => EquipScript.expr()}
+        ) :: {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
+  defp compile_flagged_duration_bonus(
+         key,
+         param_ast,
+         amount_ast,
+         flag_ast,
+         duration_ast,
+         duration_family,
+         env
+       ) do
+    with {:ok, {:bonus, {family, param}, amount}} <-
+           compile_flagged_bonus(key, param_ast, amount_ast, flag_ast, env),
+         {:ok, duration} <- compile_expr(duration_ast, env) do
+      {:ok,
+       [
+         {:bonus, {family, param}, amount},
+         {:bonus, {duration_family, param}, duration}
+       ]}
     end
   end
 
