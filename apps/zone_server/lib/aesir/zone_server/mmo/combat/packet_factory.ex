@@ -114,7 +114,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
   @doc "Builds one authoritative packet for a settled ordinary weapon swing."
   @spec build_weapon_swing_packet(Combatant.t(), Combatant.t(), HandedAttack.t()) ::
           DamageDealt.t()
-  def build_weapon_swing_packet(attacker, defender, %HandedAttack{} = swing) do
+  @spec build_weapon_swing_packet(Combatant.t(), Combatant.t(), HandedAttack.t(), keyword()) ::
+          DamageDealt.t()
+  def build_weapon_swing_packet(attacker, defender, %HandedAttack{} = swing, opts \\ []) do
     %DamageDealt{
       src_id: attacker.unit_id,
       target_id: defender.unit_id,
@@ -125,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
       div: swing.display_divisions,
       type: weapon_swing_type(swing),
       damage2: secondary_damage(swing.secondary),
-      is_sp_damage: false
+      is_sp_damage: Keyword.get(opts, :is_sp_damage, false)
     }
   end
 

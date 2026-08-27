@@ -74,6 +74,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactoryTest do
                  swing(200, secondary: 20, outcome: :critical)
                )
     end
+
+    test "marks a Vellum replacement as SP damage" do
+      attacker = CombatTestHelper.create_player_combatant()
+      defender = CombatTestHelper.create_player_combatant()
+
+      assert %DamageDealt{damage: 100, is_sp_damage: true} =
+               PacketFactory.build_weapon_swing_packet(
+                 attacker,
+                 defender,
+                 swing(100),
+                 is_sp_damage: true
+               )
+    end
   end
 
   describe "src_speed / src_delay carry the attacker's attack cadence" do

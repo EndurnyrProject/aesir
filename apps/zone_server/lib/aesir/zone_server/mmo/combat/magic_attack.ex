@@ -14,8 +14,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
@@ -110,6 +112,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           skill_level: skill_level,
           from_caster?: true
         )
+
+      if damage > 1 do
+        EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+      end
 
       {damage, hit_info} =
         prepare_magic_hit(
@@ -681,6 +687,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
       source = damage_source(attacker, target_type)
 
+      if damage > 1 do
+        EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+      end
+
       {damage, hit_info} =
         prepare_magic_hit(target_type, target_id, damage, hit_info, source)
 
@@ -722,6 +732,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          {skill_id, skill_level}
        ) do
     source = damage_source(attacker, target_type)
+    apply_vanish_hits(attacker, target, target_pid, damages)
 
     prepared_hits =
       Enum.map(damages, fn damage ->
@@ -777,6 +788,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       )
     end
   end
+
+  defp apply_vanish_hits(attacker, target, target_pid, damages) do
+    Enum.each(damages, fn damage ->
+      if damage > 1 do
+        EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+      end
+    end)
+  end
+
+  defp magic_attack_flag, do: BattleFlags.build(:magic, :long, true)
 
   defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, :player),
     do: {unit_type, unit_id}

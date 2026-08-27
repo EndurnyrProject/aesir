@@ -1030,6 +1030,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       guild_id: state.guild_id,
       base_stats: state.stats.base_stats,
       combat_stats: state.stats.combat_stats,
+      max_hp: state.stats.derived_stats.max_hp,
+      max_sp: state.stats.derived_stats.max_sp,
       progression: state.stats.progression,
       element: defense_element(state.stats),
       race: :player_human,

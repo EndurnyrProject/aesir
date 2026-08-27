@@ -771,9 +771,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(~S|bonus5 bSubEle,Ele_Fire,3,BF_MAGIC,1;|)
     end
 
-    test "a bonus3 key outside the supported vocabulary stays unsupported" do
-      assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
-               compile("bonus3 bSPVanishRate,3,30,BF_WEAPON;")
+    test "vanish rates retain chance, percent and their category/race gate" do
+      normal_flag = battle_flag(~w(weapon short long normal))
+
+      assert {:ok,
+              [
+                {:bonus, {:sp_vanish_rate, ^normal_flag}, 80},
+                {:bonus, {:sp_vanish_percent, ^normal_flag}, 30}
+              ]} = compile("bonus2 bSPVanishRate,80,30;")
+
+      weapon_flag = battle_flag(~w(weapon short long normal skill))
+
+      assert {:ok,
+              [
+                {:bonus, {:sp_vanish_rate, ^weapon_flag}, 3},
+                {:bonus, {:sp_vanish_percent, ^weapon_flag}, 30}
+              ]} = compile("bonus3 bSPVanishRate,3,30,BF_WEAPON;")
+
+      assert {:ok,
+              [
+                {:bonus, {:hp_vanish_race_rate, :player_human}, 1_000},
+                {:bonus, {:hp_vanish_race_percent, :player_human}, 8}
+              ]} = compile("bonus3 bHPVanishRaceRate,RC_Player_Human,1000,8;")
+    end
+
+    test "a vanish rate rejects an unknown battle flag or race" do
+      assert {:error, {:unsupported, {:unresolved_param, "BF_NOTAFLAG"}}} =
+               compile("bonus3 bSPVanishRate,3,30,BF_NOTAFLAG;")
+
+      assert {:error, {:unsupported, {:unresolved_param, "RC_NotARace"}}} =
+               compile("bonus3 bHPVanishRaceRate,RC_NotARace,1000,8;")
     end
 
     test "bonus3 flag-arg key with an unresolvable param is unresolved_param" do

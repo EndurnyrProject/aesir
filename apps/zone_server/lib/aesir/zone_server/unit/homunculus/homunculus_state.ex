@@ -261,6 +261,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
       reward_root: {:player, state.owner_character_id},
       base_stats: base_stats(state),
       combat_stats: state.combat_stats,
+      max_hp: state.max_hp,
+      max_sp: state.max_sp,
       progression: %{base_level: state.level, job_level: 1},
       element: state.element,
       race: state.race,

@@ -67,6 +67,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
+  @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."
+  @spec handle_vanish(non_neg_integer(), non_neg_integer(), tuple(), MobState.t()) ::
+          {:noreply, MobState.t()}
+  def handle_vanish(_hp_percent, _sp_percent, _source, %{is_dead: true} = state),
+    do: {:noreply, state}
+
+  def handle_vanish(hp_percent, sp_percent, source, state) do
+    hp_amount = div(state.max_hp * max(hp_percent, 0), 100)
+    sp_amount = div(state.max_sp * max(sp_percent, 0), 100)
+    hp_damage = min(hp_amount, max(state.hp - 1, 0))
+
+    {:noreply, state} =
+      if hp_damage > 0, do: handle_apply_damage(hp_damage, source, state), else: {:noreply, state}
+
+    {:noreply, %{state | sp: max(0, state.sp - sp_amount)}}
+  end
+
   defp maybe_add_aggro(state, _reward_owner_id, nil, _damage), do: state
 
   defp maybe_add_aggro(state, reward_owner_id, attacker_ref, damage) do

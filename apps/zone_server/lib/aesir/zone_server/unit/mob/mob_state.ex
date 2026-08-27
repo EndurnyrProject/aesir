@@ -377,6 +377,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         ignore_size_penalty: false,
         max_weapon_damage: false
       },
+      max_hp: mob_state.max_hp,
+      max_sp: mob_state.max_sp,
       progression: %{
         base_level: mob_data.level,
         job_level: 1

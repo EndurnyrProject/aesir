@@ -439,6 +439,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "apply_vanish/4" do
+    test "drains percentages of maxima while keeping HP nonlethal" do
+      state = build_state(20, :idle)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: current}}}} =
+               HealthHandler.apply_vanish(100, 20, {:player, 2}, state)
+
+      assert current.hp == 1
+      assert current.sp == 0
+    end
+
+    test "a zero-percent vanish is a no-op" do
+      state = build_state(20, :idle)
+      assert {:noreply, ^state} = HealthHandler.apply_vanish(0, 0, {:player, 2}, state)
+    end
+  end
+
   describe "apply_heal/3" do
     test "publishes healed HP with the unchanged SP/AP maxima" do
       state = build_state(70, :idle)

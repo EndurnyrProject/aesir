@@ -85,6 +85,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.start_link(__MODULE__, args)
   end
 
+  @doc "Applies equipment vanish as nonlethal max-HP/SP percentage loss."
+  @spec apply_vanish(pid(), non_neg_integer(), non_neg_integer(), Ref.t()) :: :ok
+  def apply_vanish(pid, hp_percent, sp_percent, source) do
+    GenServer.cast(pid, {:unit, {:apply_vanish, hp_percent, sp_percent, source}})
+  end
+
   @doc """
   Sends a packet to this player.
   """
@@ -1090,6 +1096,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:unit, {:apply_damage, damage, attacker_id}}, state) do
     HealthHandler.apply_damage(damage, attacker_id, state)
+  end
+
+  @impl true
+  def handle_cast({:unit, {:apply_vanish, hp_percent, sp_percent, source}}, state) do
+    HealthHandler.apply_vanish(hp_percent, sp_percent, source, state)
   end
 
   @impl true

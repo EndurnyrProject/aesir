@@ -73,6 +73,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     `bonus3`/`bonus4` on-skill status shapes emit their keyed status bonuses.
   - `bonus4 bAddEff` / `bAddEffWhenHit` emits the ordinary flagged chance plus
     a sibling duration-family entry carrying the millisecond override.
+  - `bonus2`/`bonus3` HP/SP vanish shapes emit sibling chance/percent families
+    keyed by a normalized battle flag or target race.
   - `skill <skill id>,<level>{,<flag>}` — `{:grant_skill, id, expr}`, granting the
     wearer a castable skill at `level` while the item is worn. The skill id
     resolves like a `bonus2` skill param (constant name, quoted name, or literal
@@ -100,6 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   `{:ok, []}`, which the importer stores as no `on_equip`.
   """
 
+  alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
@@ -112,6 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   @arith_ops [:+, :-, :*, :/]
   @compare_ops [:>, :<, :>=, :<=, :==, :!=]
   @logic_ops [:&&, :||]
+  @normal_vanish_flag BattleFlags.fill_battle(BattleFlag.id(:normal))
 
   @type env :: %{String.t() => EquipScript.expr()}
 
@@ -249,15 +253,21 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_instr({:cmd, "bonus", args}, _env), do: unsupported({:bonus_shape, args})
 
   defp compile_instr({:cmd, "bonus2", [{:name, key}, first_arg, second_arg]}, env) do
-    case BonusKeys.pair_schema(key) do
-      {:ok, schema} ->
+    cond do
+      match?({:ok, _schema}, BonusKeys.vanish_schema(key)) ->
+        {:ok, schema} = BonusKeys.vanish_schema(key)
+        compile_vanish(schema, first_arg, second_arg, @normal_vanish_flag, env)
+
+      match?({:ok, _schema}, BonusKeys.pair_schema(key)) ->
+        {:ok, schema} = BonusKeys.pair_schema(key)
         compile_pair_bonus(schema, first_arg, second_arg, env)
 
-      :error ->
-        case BonusKeys.interval_family(key) do
-          {:ok, family} -> compile_interval_bonus(family, first_arg, second_arg, env)
-          :error -> compile_param_bonus(key, first_arg, second_arg, env)
-        end
+      match?({:ok, _family}, BonusKeys.interval_family(key)) ->
+        {:ok, family} = BonusKeys.interval_family(key)
+        compile_interval_bonus(family, first_arg, second_arg, env)
+
+      true ->
+        compile_param_bonus(key, first_arg, second_arg, env)
     end
   end
 
@@ -269,6 +279,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # attacks of the flagged kind. Every other `bonus3` shape stays unsupported.
   defp compile_instr({:cmd, "bonus3", [{:name, key}, first_ast, second_ast, third_ast]}, env) do
     cond do
+      match?({:ok, _schema}, BonusKeys.vanish_schema(key)) ->
+        with {:ok, schema} <- BonusKeys.vanish_schema(key),
+             {:ok, flag} <- resolve_flag(:battle, third_ast) do
+          compile_vanish(schema, first_ast, second_ast, BattleFlags.fill_battle(flag), env)
+        end
+
+      match?({:ok, _schema}, BonusKeys.race_vanish_schema(key)) ->
+        compile_race_vanish(key, first_ast, second_ast, third_ast, env)
+
       BonusKeys.bonus3_drop_key?(key) ->
         compile_drop_bonus3(key, first_ast, second_ast, third_ast, env)
 
@@ -353,6 +372,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
+
+  @spec compile_vanish(
+          %{rate: atom(), percent: atom()},
+          term(),
+          term(),
+          non_neg_integer(),
+          env()
+        ) :: {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
+  defp compile_vanish(schema, rate_ast, percent_ast, flag, env) do
+    with {:ok, rate} <- compile_expr(rate_ast, env),
+         {:ok, percent} <- compile_expr(percent_ast, env) do
+      {:ok,
+       [
+         {:bonus, {schema.rate, flag}, rate},
+         {:bonus, {schema.percent, flag}, percent}
+       ]}
+    end
+  end
+
+  @spec compile_race_vanish(String.t(), term(), term(), term(), env()) ::
+          {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
+  defp compile_race_vanish(key, race_ast, rate_ast, percent_ast, env) do
+    with {:ok, schema} <- BonusKeys.race_vanish_schema(key),
+         {:ok, {_family, race}} <- resolve_param(%{family: schema.rate, param: :race}, race_ast),
+         {:ok, rate} <- compile_expr(rate_ast, env),
+         {:ok, percent} <- compile_expr(percent_ast, env) do
+      {:ok,
+       [
+         {:bonus, {schema.rate, race}, rate},
+         {:bonus, {schema.percent, race}, percent}
+       ]}
+    end
+  end
 
   # A bonus item drop gated on the mob that died: `bAddMonsterDropItem` gates on
   # its race, `bAddMonsterIdDropItem` on one specific monster id. The item id is

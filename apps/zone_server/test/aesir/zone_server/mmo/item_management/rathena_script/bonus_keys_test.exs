@@ -301,6 +301,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   @interval_families [:hp_regen_bonus, :hp_loss_bonus, :sp_regen_bonus, :sp_loss_bonus]
 
   @status_duration_families [:add_eff_duration, :add_eff_when_hit_duration]
+  @vanish_families [:hp_vanish_rate, :hp_vanish_percent, :sp_vanish_rate, :sp_vanish_percent]
+  @race_vanish_families [
+    :hp_vanish_race_rate,
+    :hp_vanish_race_percent,
+    :sp_vanish_race_rate,
+    :sp_vanish_race_percent
+  ]
 
   describe "param_schema/1" do
     test "resolves every documented bonus2 parameterized key" do
@@ -367,7 +374,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "returns exactly the documented param-key families" do
       expected =
         (@param_schemas |> Map.values() |> Enum.map(& &1.family)) ++
-          @flag_only_families ++ @interval_families ++ @status_duration_families
+          @flag_only_families ++
+          @interval_families ++
+          @status_duration_families ++
+          @vanish_families ++ @race_vanish_families
 
       assert Enum.sort(BonusKeys.families()) == Enum.sort(Enum.uniq(expected))
     end
@@ -398,6 +408,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "resolves status-duration families to the status param kind" do
       assert BonusKeys.family_param(:add_eff_duration) == {:ok, :status}
       assert BonusKeys.family_param(:add_eff_when_hit_duration) == {:ok, :status}
+    end
+
+    test "resolves vanish battle flags and race gates" do
+      for family <- @vanish_families do
+        assert BonusKeys.family_param(family) == {:ok, :battle}
+      end
+
+      for family <- @race_vanish_families do
+        assert BonusKeys.family_param(family) == {:ok, :race}
+      end
     end
 
     test "resolves the monster-id param family (bAddDamageClass)" do
@@ -492,6 +512,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
     test "returns :error outside the duration vocabulary" do
       assert BonusKeys.status_duration_family("bAddEffOnSkill") == :error
+    end
+  end
+
+  describe "vanish schemas" do
+    test "resolves category-gated HP/SP keys case-insensitively" do
+      assert BonusKeys.vanish_schema("bSPVanishRate") ==
+               {:ok, %{rate: :sp_vanish_rate, percent: :sp_vanish_percent}}
+
+      assert BonusKeys.vanish_schema("BHPVANISHRATE") ==
+               {:ok, %{rate: :hp_vanish_rate, percent: :hp_vanish_percent}}
+    end
+
+    test "resolves race-gated HP/SP keys" do
+      assert BonusKeys.race_vanish_schema("bSPVanishRaceRate") ==
+               {:ok, %{rate: :sp_vanish_race_rate, percent: :sp_vanish_race_percent}}
+
+      assert BonusKeys.race_vanish_schema("bHPVanishRaceRate") ==
+               {:ok, %{rate: :hp_vanish_race_rate, percent: :hp_vanish_race_percent}}
+    end
+
+    test "keeps the two vocabularies disjoint" do
+      assert BonusKeys.vanish_schema("bSPVanishRaceRate") == :error
+      assert BonusKeys.race_vanish_schema("bSPVanishRate") == :error
     end
   end
 

@@ -104,6 +104,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatHandlerMasterCreditTest do
     assert MobState.damage_log(victim) == [{player_id, 100}]
   end
 
+  test "vanish drains max-resource percentages without killing the mob" do
+    victim = %{mob_state(1) | hp: 20, sp: 50, max_sp: 100}
+
+    assert {:noreply, vanished} =
+             CombatHandler.handle_vanish(100, 25, {:player, 42}, victim)
+
+    assert vanished.hp == 1
+    assert vanished.sp == 25
+    refute vanished.is_dead
+  end
+
   defp register_mob(instance_id, owner_player_id) do
     state =
       instance_id

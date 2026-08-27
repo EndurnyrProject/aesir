@@ -107,6 +107,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
 
+  @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."
+  @spec apply_vanish(
+          non_neg_integer(),
+          non_neg_integer(),
+          Ref.t(),
+          SessionState.t()
+        ) :: {:noreply, SessionState.t()}
+  def apply_vanish(hp_percent, sp_percent, source, state) do
+    stats = state.game_state.stats
+    hp_amount = div(stats.derived_stats.max_hp * max(hp_percent, 0), 100)
+    sp_amount = div(stats.derived_stats.max_sp * max(sp_percent, 0), 100)
+    hp_damage = min(hp_amount, max(stats.current_state.hp - 1, 0))
+
+    {:noreply, state} =
+      if hp_damage > 0, do: apply_damage(hp_damage, source, state), else: {:noreply, state}
+
+    if sp_amount > 0, do: consume_sp(sp_amount, state), else: {:noreply, state}
+  end
+
   # Legacy callers (mostly tests) hand death attribution a bare character id;
   # production paths send typed refs or nil. Normalize at this boundary so
   # handle_death/2 always sees a typed ref or nil.

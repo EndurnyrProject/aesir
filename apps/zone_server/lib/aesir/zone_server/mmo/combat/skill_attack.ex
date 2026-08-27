@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.LineTargets
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
@@ -695,13 +696,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_level: skill_level
       }
 
+      source = damage_source(attacker, target_type)
+
+      if damage > 1 do
+        EquipVanish.after_hit(
+          attacker,
+          target,
+          target_pid,
+          BattleFlags.build(:misc, :long, true)
+        )
+      end
+
       {damage, hit_info} =
         DamageApplication.prepare_unit_damage(
           target_type,
           target_id,
           damage,
           hit_info,
-          damage_source(attacker, target_type)
+          source
         )
 
       packet =
@@ -722,7 +734,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         target_id,
         damage,
         hit_info,
-        damage_source(attacker, target_type)
+        source
       )
     end
   end
@@ -1016,6 +1028,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     }
 
     source = damage_source(attacker, target_type)
+    attack_flag = physical_skill_flag(hit_info)
+
+    if damage_result.damage > 1 do
+      EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
+    end
 
     {damage, hit_info} =
       DamageApplication.prepare_unit_damage(
@@ -1049,11 +1066,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     )
 
     OnHitEffects.after_hit(attacker, target, damage_result,
-      attack_flag: physical_skill_flag(hit_info),
+      attack_flag: attack_flag,
       skill_id: skill_id
     )
 
-    dispatch_equip_autocasts(attacker, target, target_pid, physical_skill_flag(hit_info))
+    dispatch_equip_autocasts(attacker, target, target_pid, attack_flag)
 
     damage
   end

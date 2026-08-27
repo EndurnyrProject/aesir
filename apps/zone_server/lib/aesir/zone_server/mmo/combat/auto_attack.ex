@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
@@ -40,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.Resource
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   # Blade Stop (MO_BLADESTOP) skill id, read from a caught player attacker's
@@ -665,6 +667,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
+    attack_flag = normal_attack_flag(attacker)
+
+    if damage_result.damage > 1,
+      do: EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
+
     with :ok <-
            handle_player_attack_hit(
              damage_result,
@@ -753,6 +760,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
+    attack_flag = normal_attack_flag(attacker)
+    if swing.raw_total > 1, do: EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
+    override = EquipVanish.normal_attack_override(attacker, target)
+    swing = apply_vanish_override(swing, override)
+
     hit_info = %{
       dmg_type: :physical,
       is_short: true,
@@ -766,40 +778,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     source = player_damage_source(target_type, attacker.unit_id)
 
     {settled, delivery} =
-      DamageApplication.apply_weapon_swing(
-        target_type,
-        target_pid,
-        target_id,
-        swing,
-        hit_info,
-        source
-      )
+      case override do
+        {:sp, _amount} ->
+          {swing, :ok}
+
+        _other ->
+          DamageApplication.apply_weapon_swing(
+            target_type,
+            target_pid,
+            target_id,
+            swing,
+            hit_info,
+            source
+          )
+      end
 
     with :ok <- delivery do
       DamageApplication.broadcast_nearby(
         target,
-        PacketFactory.build_weapon_swing_packet(attacker, target, settled)
+        PacketFactory.build_weapon_swing_packet(attacker, target, settled,
+          is_sp_damage: match?({:sp, _amount}, override)
+        )
       )
 
-      damage = settled_damage(settled)
-      damage_result = %{damage: damage, is_critical: settled.outcome == :critical}
+      case override do
+        {:sp, amount} ->
+          Resource.drain_sp({target_type, target_id}, amount)
+          {:snatcher, player_state}
 
-      updated_player_state = maybe_snatch(player_state, target_type, target_id)
+        _other ->
+          damage = settled_damage(settled)
+          damage_result = %{damage: damage, is_critical: settled.outcome == :critical}
+          updated_player_state = maybe_snatch(player_state, target_type, target_id)
 
-      dispatch_normal_hit_passives(player_state, target_type, target_id, target)
-      roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
-      dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
+          dispatch_normal_hit_passives(player_state, target_type, target_id, target)
+          roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
+          dispatch_dealt_damage(attacker, target_type, target_id, damage, settled.primary_element)
 
-      OnHitEffects.after_hit(attacker, target, damage_result,
-        attack_flag: normal_attack_flag(attacker)
-      )
+          OnHitEffects.after_hit(attacker, target, damage_result, attack_flag: attack_flag)
+          dispatch_equip_autocasts(attacker, target, target_pid, attack_flag)
 
-      dispatch_equip_autocasts(attacker, target, target_pid, normal_attack_flag(attacker))
-
-      drain_hp(attacker, damage)
-      drain_sp(attacker, damage)
-      splash_attack(attacker, target)
-      {:snatcher, updated_player_state}
+          drain_hp(attacker, damage)
+          drain_sp(attacker, damage)
+          splash_attack(attacker, target)
+          {:snatcher, updated_player_state}
+      end
     end
   end
 
@@ -1396,6 +1419,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     do: TargetResolver.ensure_targetable(target_state, :homunculus)
 
   defp ensure_mob_targetable(_target_state, :player), do: :ok
+
+  defp apply_vanish_override(swing, :none), do: swing
+
+  defp apply_vanish_override(%HandedAttack{} = swing, {_resource, amount}) do
+    %{
+      swing
+      | primary: %{swing.primary | damage: amount},
+        secondary: nil,
+        raw_total: amount
+    }
+  end
 
   defp settled_damage(%HandedAttack{primary: primary, secondary: nil}), do: primary.damage
 

@@ -192,6 +192,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
     PubSub.broadcast(Aesir.PubSub, "player:#{unit_id}", {:combat, {:restore_sp, amount}})
   end
 
+  @doc "Applies nonlethal percentage HP/SP vanish through the target's owning session."
+  @spec apply_vanish(
+          :player | :mob | :homunculus | :skill_unit,
+          pid(),
+          non_neg_integer(),
+          non_neg_integer(),
+          Ref.t()
+        ) :: :ok
+  def apply_vanish(:player, target_pid, hp_percent, sp_percent, source) do
+    PlayerSession.apply_vanish(target_pid, hp_percent, sp_percent, source)
+  end
+
+  def apply_vanish(:mob, target_pid, hp_percent, sp_percent, source) do
+    MobSession.apply_vanish(target_pid, hp_percent, sp_percent, source)
+  end
+
+  def apply_vanish(_target_type, _target_pid, _hp_percent, _sp_percent, _source), do: :ok
+
   @doc """
   Heals a living unit.
 

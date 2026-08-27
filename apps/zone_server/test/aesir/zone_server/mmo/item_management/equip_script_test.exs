@@ -110,6 +110,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:bonus, {:add_eff, {:sc_stun, 93}}, 500},
         {:bonus, {:add_eff_duration, {:sc_stun, 93}}, 5_000}
       ],
+      tuple_vanish_battle_dest: [
+        {:bonus, {:sp_vanish_rate, 849}, 80},
+        {:bonus, {:sp_vanish_percent, 849}, 30}
+      ],
+      tuple_vanish_race_dest: [
+        {:bonus, {:hp_vanish_race_rate, :player_human}, 1_000},
+        {:bonus, {:hp_vanish_race_percent, :player_human}, 8}
+      ],
       tuple_add_eff2_dest: [{:bonus, {:add_eff2, :sc_curse}, 500}],
       tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
       tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}],

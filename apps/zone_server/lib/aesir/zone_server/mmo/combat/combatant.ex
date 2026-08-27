@@ -68,7 +68,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Combat-derived stats (physical: atk/def, magic: matk/mdef/soft_mdef)
     combat_stats: nil,
-
+    max_hp: nil,
+    max_sp: nil,
     # Character progression
     progression: nil,
 
@@ -154,6 +155,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             mdef: integer(),
             soft_mdef: integer()
           },
+          max_hp: non_neg_integer() | nil,
+          max_sp: non_neg_integer() | nil,
           progression: %{
             base_level: integer(),
             job_level: integer()

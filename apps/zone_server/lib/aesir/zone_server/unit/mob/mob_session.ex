@@ -42,6 +42,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:combat, {:apply_damage, damage, attacker_id}})
   end
 
+  @doc "Applies equipment vanish as nonlethal max-HP/SP percentage loss."
+  @spec apply_vanish(pid(), non_neg_integer(), non_neg_integer(), tuple()) :: :ok
+  def apply_vanish(pid, hp_percent, sp_percent, source) do
+    GenServer.cast(pid, {:combat, {:apply_vanish, hp_percent, sp_percent, source}})
+  end
+
   @doc """
   Records the attack-type classification (`:melee | :ranged | :magic`) of the
   hit `attacker` is about to land, so a lethal hit can grant the killer the
@@ -356,6 +362,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_cast({:combat, {:apply_damage, damage, attacker_id}}, state) do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
+  end
+
+  def handle_cast({:combat, {:apply_vanish, hp_percent, sp_percent, source}}, state) do
+    CombatHandler.handle_vanish(hp_percent, sp_percent, source, state)
   end
 
   def handle_cast({:combat, {:note_hit_type, attacker, bf}}, state) do

@@ -124,8 +124,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   A bonus destination: a flat atom for section-3 keys, or a `{family, param}`
   tuple for parameterized `bonus2` keys — `param` is an atom drawn from the
   family's `BonusKeys` domain (race/element/size/class/race2), a positive
-  integer skill or item id, or a positive-integer interval in milliseconds for
-  the periodic HP-regen/loss families. A key written with a trigger-condition
+  integer skill or item id, a positive-integer interval in milliseconds for the
+  periodic HP-regen/loss families, or a normalized battle flag for vanish
+  families. A key written with a trigger-condition
   flag (`bonus3 bSubEle,Ele_Fire,3,BF_MAGIC`) widens its param to a
   `{param, flag}` pair, so the bonus applies only to attacks the flag matches.
   The race-gated monster-drop bonus (`bonus3 bAddMonsterDropItem,iid,r,n`) uses
@@ -378,7 +379,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp validate_destination!({family, param} = dest) when is_atom(family) do
     case BonusKeys.family_param(family) do
-      {:ok, kind} when kind in [:skill, :item, :interval, :monster] ->
+      {:ok, kind} when kind in [:skill, :item, :interval, :monster, :battle] ->
         validate_skill_param!(dest, param)
 
       {:ok, domain} ->

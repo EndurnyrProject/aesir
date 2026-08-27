@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
           | :race2
           | :interval
           | :monster
+          | :battle
   @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
   @type value_schema :: %{dest: destination(), param: param()}
   @type pair_schema :: %{first: destination(), second: destination()}
@@ -258,6 +259,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "baddeffwhenhit" => :add_eff_when_hit_duration
   }
 
+  # Category-gated vanish entries share a normalized battle flag; chance and
+  # percent are sibling numeric families so equal flags sum independently.
+  @vanish_schemas %{
+    "bhpvanishrate" => %{rate: :hp_vanish_rate, percent: :hp_vanish_percent},
+    "bspvanishrate" => %{rate: :sp_vanish_rate, percent: :sp_vanish_percent}
+  }
+
+  # Race-gated Vellum entries use the target race instead of a battle flag.
+  @race_vanish_schemas %{
+    "bhpvanishracerate" => %{rate: :hp_vanish_race_rate, percent: :hp_vanish_race_percent},
+    "bspvanishracerate" => %{rate: :sp_vanish_race_rate, percent: :sp_vanish_race_percent}
+  }
+
   # Equip autocast keys: a chance for a worn item to cast a skill by itself.
   # The value is the trigger point - `:attack` fires on the wearer's own landed
   # hits, `:when_hit` on hits taken, and `:on_skill` on the wearer casting one
@@ -406,6 +420,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def status_duration_family(name) when is_binary(name),
     do: Map.fetch(@status_duration_families, String.downcase(name))
 
+  @doc "Returns the category-gated HP/SP vanish sibling families for a key."
+  @spec vanish_schema(String.t()) :: {:ok, %{rate: atom(), percent: atom()}} | :error
+  def vanish_schema(name) when is_binary(name),
+    do: Map.fetch(@vanish_schemas, String.downcase(name))
+
+  @doc "Returns the race-gated HP/SP vanish sibling families for a key."
+  @spec race_vanish_schema(String.t()) :: {:ok, %{rate: atom(), percent: atom()}} | :error
+  def race_vanish_schema(name) when is_binary(name),
+    do: Map.fetch(@race_vanish_schemas, String.downcase(name))
+
   @doc """
   Resolves a key whose `bonus3` form inflicts a status when one named skill
   lands (`bonus3 bAddEffOnSkill,sk,eff,n`) to the family it stores into.
@@ -460,10 +484,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec families() :: [atom()]
   def families do
+    vanish_families = Enum.flat_map([@vanish_schemas, @race_vanish_schemas], &schema_families/1)
+
     (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
     |> Enum.map(& &1.family)
     |> Kernel.++(Map.values(@interval_keys))
     |> Kernel.++(Map.values(@status_duration_families))
+    |> Kernel.++(vanish_families)
     |> Enum.uniq()
   end
 
@@ -528,6 +555,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
       family in Map.values(@status_duration_families) ->
         {:ok, :status}
 
+      family in schema_families(@vanish_schemas) ->
+        {:ok, :battle}
+
+      family in schema_families(@race_vanish_schemas) ->
+        {:ok, :race}
+
       true ->
         (Map.values(@param_keys) ++ Map.values(@flag_param_keys))
         |> Enum.find(&(&1.family == family))
@@ -537,4 +570,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
         end
     end
   end
+
+  defp schema_families(schemas),
+    do: schemas |> Map.values() |> Enum.flat_map(&Map.values/1)
 end
