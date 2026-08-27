@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
         dir: 3,
         sprite: 886,
         name: "Dacquoise",
+        scope: :renewal,
         unique_name: "Dacquoise#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
         dir: 3,
         sprite: 886,
         name: "Dacquoise",
+        scope: :renewal,
         unique_name: "Dacquoise#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
         dir: 3,
         sprite: 886,
         name: "Dacquoise",
+        scope: :renewal,
         unique_name: "Dacquoise#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
         dir: 3,
         sprite: 886,
         name: "Dacquoise",
+        scope: :renewal,
         unique_name: "Dacquoise#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise do
         dir: 3,
         sprite: 886,
         name: "Dacquoise",
+        scope: :renewal,
         unique_name: "Dacquoise#ac_d"
       }
     ]

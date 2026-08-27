@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_rogue",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
         dir: 4,
         sprite: 747,
         name: "Rogue Guildsman",
+        scope: :shared,
         unique_name: "Rogue Guildsman#rg"
       }
     ]

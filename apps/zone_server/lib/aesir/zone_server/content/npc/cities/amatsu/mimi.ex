@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Mimi do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "amatsu", x: 205, y: 163, dir: 3, sprite: 759, name: "Mimi", unique_name: "Mimi#ama"}
+      %{
+        map: "amatsu",
+        x: 205,
+        y: 163,
+        dir: 3,
+        sprite: 759,
+        name: "Mimi",
+        scope: :shared,
+        unique_name: "Mimi#ama"
+      }
     ]
 
   @impl true

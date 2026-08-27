@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Morei do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbroch",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Morei do
         dir: 5,
         sprite: 854,
         name: "Morei",
+        scope: :shared,
         unique_name: "Morei#ein"
       }
     ]

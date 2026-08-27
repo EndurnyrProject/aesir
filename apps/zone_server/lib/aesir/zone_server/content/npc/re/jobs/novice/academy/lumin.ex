@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "int_land",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
         dir: 3,
         sprite: 639,
         name: "Lumin",
+        scope: :renewal,
         unique_name: "Lumin#new_ship"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
         dir: 3,
         sprite: 639,
         name: "Lumin",
+        scope: :renewal,
         unique_name: "Lumin#new_ship01"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
         dir: 3,
         sprite: 639,
         name: "Lumin",
+        scope: :renewal,
         unique_name: "Lumin#new_ship02"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
         dir: 3,
         sprite: 639,
         name: "Lumin",
+        scope: :renewal,
         unique_name: "Lumin#new_ship03"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
         dir: 3,
         sprite: 639,
         name: "Lumin",
+        scope: :renewal,
         unique_name: "Lumin#new_ship04"
       }
     ]

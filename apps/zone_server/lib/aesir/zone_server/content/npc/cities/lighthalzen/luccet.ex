@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Luccet do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Luccet do
         dir: 3,
         sprite: 703,
         name: "Luccet",
+        scope: :shared,
         unique_name: "Luccet#li_party"
       }
     ]

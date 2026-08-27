@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.PaleLookingYoungMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "moc_ruins", x: 94, y: 117, dir: 0, sprite: 48, name: "Pale Looking Young Man"}
+      %{
+        map: "moc_ruins",
+        x: 94,
+        y: 117,
+        dir: 0,
+        sprite: 48,
+        name: "Pale Looking Young Man",
+        scope: :shared
+      }
     ]
 
   @impl true

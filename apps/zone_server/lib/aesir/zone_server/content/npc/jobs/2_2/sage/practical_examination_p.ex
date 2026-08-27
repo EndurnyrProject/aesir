@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PracticalExaminationP do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "yuno_in03", x: 169, y: 180, dir: 3, sprite: 755, name: "Practical Examination P"}
+      %{
+        map: "yuno_in03",
+        x: 169,
+        y: 180,
+        dir: 3,
+        sprite: 755,
+        name: "Practical Examination P",
+        scope: :shared
+      }
     ]
 
   @impl true

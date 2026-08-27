@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.DrunkenMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.DrunkenMan do
         dir: 3,
         sprite: 849,
         name: "Drunken Man",
+        scope: :shared,
         unique_name: "Drunken Man#einbech"
       }
     ]

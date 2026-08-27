@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Piom183185 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "manuk",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Piom183185 do
         dir: 5,
         sprite: 454,
         name: "Piom",
+        scope: :shared,
         unique_name: "Piom#ep13_2_3"
       }
     ]

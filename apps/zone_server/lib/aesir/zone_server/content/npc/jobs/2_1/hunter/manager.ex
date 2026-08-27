@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_hunte",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Manager do
         dir: 1,
         sprite: 66,
         name: "Manager",
+        scope: :shared,
         unique_name: "Manager#hnt"
       }
     ]

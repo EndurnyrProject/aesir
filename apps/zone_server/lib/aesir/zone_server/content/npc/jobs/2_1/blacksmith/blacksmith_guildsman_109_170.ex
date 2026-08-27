@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.BlacksmithGuildsman10
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "geffen_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.BlacksmithGuildsman10
         dir: 3,
         sprite: 726,
         name: "Blacksmith Guildsman",
+        scope: :shared,
         unique_name: "Blacksmith Guildsman#gef"
       }
     ]

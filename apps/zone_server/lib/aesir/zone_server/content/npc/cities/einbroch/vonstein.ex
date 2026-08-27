@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Vonstein do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Vonstein do
         dir: 3,
         sprite: 855,
         name: "Vonstein",
+        scope: :shared,
         unique_name: "Vonstein#ein"
       }
     ]

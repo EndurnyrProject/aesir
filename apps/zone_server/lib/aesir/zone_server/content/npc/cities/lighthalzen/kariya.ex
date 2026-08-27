@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Kariya do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Kariya do
         dir: 3,
         sprite: 72,
         name: "Kariya",
+        scope: :shared,
         unique_name: "Kariya#li_01"
       }
     ]

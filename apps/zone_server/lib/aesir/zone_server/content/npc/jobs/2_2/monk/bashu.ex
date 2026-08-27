@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Bashu do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "monk_test",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Bashu do
         dir: 3,
         sprite: 753,
         name: "Bashu",
+        scope: :shared,
         unique_name: "Bashu#mk"
       }
     ]

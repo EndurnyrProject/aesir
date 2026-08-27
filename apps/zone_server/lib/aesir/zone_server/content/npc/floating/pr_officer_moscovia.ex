@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PrOfficerMoscovia do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PrOfficerMoscovia do
         dir: 4,
         sprite: 960,
         name: "Moscovia P.R. Officer",
+        scope: :renewal,
+        unique_name: "Moscovia P.R. Officer#1"
+      },
+      %{
+        map: "alberta",
+        x: 245,
+        y: 66,
+        dir: 4,
+        sprite: 960,
+        name: "Moscovia P.R. Officer",
+        scope: :pre_renewal,
         unique_name: "Moscovia P.R. Officer#1"
       }
     ]

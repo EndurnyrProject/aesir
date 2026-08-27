@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Togii do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Togii do
         dir: 0,
         sprite: 849,
         name: "Togii",
+        scope: :shared,
         unique_name: "Togii#07"
       }
     ]

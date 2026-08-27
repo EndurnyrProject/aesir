@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.GJ do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.GJ do
         dir: 4,
         sprite: 86,
         name: "G . J",
+        scope: :shared,
         unique_name: "G . J#cmd"
       }
     ]

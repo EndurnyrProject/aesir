@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Haith do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "comodo", x: 171, y: 137, dir: 1, sprite: 92, name: "Haith", unique_name: "Haith#um"}
+      %{
+        map: "comodo",
+        x: 171,
+        y: 137,
+        dir: 1,
+        sprite: 92,
+        name: "Haith",
+        scope: :shared,
+        unique_name: "Haith#um"
+      }
     ]
 
   @impl true

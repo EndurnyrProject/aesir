@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.RelievedRaffle do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.RelievedRaffle do
         dir: 5,
         sprite: 517,
         name: "Relieved Raffle",
+        scope: :renewal,
         unique_name: "Relieved Raffle#podo"
       }
     ]

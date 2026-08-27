@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Monk63190 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "dewata", x: 63, y: 190, dir: 8, sprite: 834, name: "Monk", unique_name: "Monk#dew3"}
+      %{
+        map: "dewata",
+        x: 63,
+        y: 190,
+        dir: 8,
+        sprite: 834,
+        name: "Monk",
+        scope: :renewal,
+        unique_name: "Monk#dew3"
+      }
     ]
 
   @impl true

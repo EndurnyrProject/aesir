@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
         dir: 0,
         sprite: 1078,
         name: "Cultivated Red Plant",
+        scope: :renewal,
         unique_name: "Cultivated Red Plant#0",
         trigger: {3, 3}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
         dir: 0,
         sprite: 1078,
         name: "Cultivated Red Plant",
+        scope: :renewal,
         unique_name: "Cultivated Red Plant#a",
         trigger: {3, 3}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
         dir: 0,
         sprite: 1078,
         name: "Cultivated Red Plant",
+        scope: :renewal,
         unique_name: "Cultivated Red Plant#b",
         trigger: {3, 3}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
         dir: 0,
         sprite: 1078,
         name: "Cultivated Red Plant",
+        scope: :renewal,
         unique_name: "Cultivated Red Plant#c",
         trigger: {3, 3}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CultivatedRedPlant
         dir: 0,
         sprite: 1078,
         name: "Cultivated Red Plant",
+        scope: :renewal,
         unique_name: "Cultivated Red Plant#d",
         trigger: {3, 3}
       }

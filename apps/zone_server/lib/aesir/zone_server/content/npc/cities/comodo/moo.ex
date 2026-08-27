@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Moo do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "cmd_in02", x: 57, y: 62, dir: 4, sprite: 109, name: "Moo", unique_name: "Moo#cmd"}
+      %{
+        map: "cmd_in02",
+        x: 57,
+        y: 62,
+        dir: 4,
+        sprite: 109,
+        name: "Moo",
+        scope: :shared,
+        unique_name: "Moo#cmd"
+      }
     ]
 
   @impl true

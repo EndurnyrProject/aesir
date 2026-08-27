@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GirlLouyang do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.GirlLouyang do
         dir: 3,
         sprite: 815,
         name: "Girl",
+        scope: :renewal,
+        unique_name: "Girl#0lou"
+      },
+      %{
+        map: "alberta",
+        x: 245,
+        y: 45,
+        dir: 3,
+        sprite: 815,
+        name: "Girl",
+        scope: :pre_renewal,
         unique_name: "Girl#0lou"
       }
     ]

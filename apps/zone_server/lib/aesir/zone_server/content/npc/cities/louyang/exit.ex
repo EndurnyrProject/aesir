@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Exit do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "louyang", x: 84, y: 254, dir: 0, sprite: 111, name: "Exit", unique_name: "Exit#lou"}
+      %{
+        map: "louyang",
+        x: 84,
+        y: 254,
+        dir: 0,
+        sprite: 111,
+        name: "Exit",
+        scope: :shared,
+        unique_name: "Exit#lou"
+      }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena

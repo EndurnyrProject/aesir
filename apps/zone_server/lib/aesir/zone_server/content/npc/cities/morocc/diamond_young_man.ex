@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.DiamondYoungMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_ruins",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.DiamondYoungMan do
         dir: 0,
         sprite: 99,
         name: "Diamond Young Man",
+        scope: :shared,
         unique_name: "Diamond Young Man#moc"
       }
     ]

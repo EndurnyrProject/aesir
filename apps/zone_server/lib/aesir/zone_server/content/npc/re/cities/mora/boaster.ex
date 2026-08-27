@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Boaster do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Boaster do
         dir: 3,
         sprite: 514,
         name: "Boaster",
+        scope: :renewal,
         unique_name: "Boaster#podo"
       }
     ]

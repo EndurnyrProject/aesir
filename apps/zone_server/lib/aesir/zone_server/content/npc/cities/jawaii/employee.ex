@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Employee do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "jawaii",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.Employee do
         dir: 3,
         sprite: 798,
         name: "Employee",
+        scope: :shared,
         unique_name: "Employee#sroom"
       }
     ]

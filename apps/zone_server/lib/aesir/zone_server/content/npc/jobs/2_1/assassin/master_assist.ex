@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.MasterAssist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.MasterAssist do
         dir: 1,
         sprite: 55,
         name: "Master Assist",
+        scope: :shared,
         trigger: {1, 1}
       }
     ]

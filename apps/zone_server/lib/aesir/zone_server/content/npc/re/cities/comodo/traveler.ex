@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Traveler do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "cmd_fild07",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Traveler do
         dir: 0,
         sprite: 724,
         name: "Traveler",
+        scope: :renewal,
         unique_name: "Traveler#pa0829_01"
       }
     ]

@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.LegendaryTree do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "amatsu", x: 262, y: 197, dir: 1, sprite: 111, name: "Legendary Tree"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "amatsu",
+        x: 262,
+        y: 197,
+        dir: 1,
+        sprite: 111,
+        name: "Legendary Tree",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

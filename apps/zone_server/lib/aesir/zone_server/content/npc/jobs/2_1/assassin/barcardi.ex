@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Barcardi do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Barcardi do
         dir: 2,
         sprite: 725,
         name: "Barcardi",
+        scope: :shared,
         unique_name: "Barcardi#ASN",
         trigger: {2, 2}
       }

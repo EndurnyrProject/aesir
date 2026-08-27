@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Nils do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane_01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Nils do
         dir: 4,
         sprite: 49,
         name: "Nils",
+        scope: :shared,
         unique_name: "Nils#ein",
         trigger: {1, 1}
       }

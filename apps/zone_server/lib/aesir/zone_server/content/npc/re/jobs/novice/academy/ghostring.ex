@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Ghostring do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "new_1-3",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Ghostring do
         dir: 3,
         sprite: 950,
         name: "Ghostring",
+        scope: :renewal,
         unique_name: "Ghostring#cupet"
       }
     ]

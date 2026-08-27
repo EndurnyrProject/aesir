@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Wanderer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malangdo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Wanderer do
         dir: 5,
         sprite: 485,
         name: "Wanderer",
+        scope: :renewal,
         unique_name: "Wanderer#mal",
         trigger: {5, 1}
       }

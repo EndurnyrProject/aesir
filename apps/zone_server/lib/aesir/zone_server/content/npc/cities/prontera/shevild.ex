@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Shevild do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Shevild do
         dir: 2,
         sprite: 85,
         name: "Shevild",
+        scope: :shared,
         unique_name: "Shevild#pront"
       }
     ]

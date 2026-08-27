@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
         dir: 3,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#iz",
         trigger: {5, 5}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
         dir: 3,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#iz_a",
         trigger: {5, 5}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
         dir: 3,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#iz_b",
         trigger: {5, 5}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
         dir: 3,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#iz_c",
         trigger: {5, 5}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
         dir: 3,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#iz_d",
         trigger: {5, 5}
       }

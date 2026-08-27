@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
         dir: 4,
         sprite: 97,
         name: "Kylick",
+        scope: :renewal,
         unique_name: "Kylick#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
         dir: 4,
         sprite: 97,
         name: "Kylick",
+        scope: :renewal,
         unique_name: "Kylick#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
         dir: 4,
         sprite: 97,
         name: "Kylick",
+        scope: :renewal,
         unique_name: "Kylick#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
         dir: 4,
         sprite: 97,
         name: "Kylick",
+        scope: :renewal,
         unique_name: "Kylick#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KylickIzlude do
         dir: 4,
         sprite: 97,
         name: "Kylick",
+        scope: :renewal,
         unique_name: "Kylick#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 150,
+        y: 143,
+        dir: 2,
+        sprite: 97,
+        name: "Kylick",
+        scope: :pre_renewal,
+        unique_name: "Kylick#izlude"
       }
     ]
 

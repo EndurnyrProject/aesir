@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Keedz do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "niflheim",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Keedz do
         dir: 3,
         sprite: 796,
         name: "Keedz",
+        scope: :shared,
         unique_name: "Keedz#nif"
       }
     ]

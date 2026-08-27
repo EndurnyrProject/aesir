@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Cleric do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "prt_church",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Cleric do
         dir: 4,
         sprite: 60,
         name: "Cleric",
+        scope: :renewal,
         unique_name: "Cleric#aco"
       }
     ]

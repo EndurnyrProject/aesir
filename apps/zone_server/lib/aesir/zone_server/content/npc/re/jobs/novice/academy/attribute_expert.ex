@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
         dir: 3,
         sprite: 64,
         name: "Attribute Expert",
+        scope: :renewal,
         unique_name: "Attribute Expert#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
         dir: 3,
         sprite: 64,
         name: "Attribute Expert",
+        scope: :renewal,
         unique_name: "Attribute Expert#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
         dir: 3,
         sprite: 64,
         name: "Attribute Expert",
+        scope: :renewal,
         unique_name: "Attribute Expert#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
         dir: 3,
         sprite: 64,
         name: "Attribute Expert",
+        scope: :renewal,
         unique_name: "Attribute Expert#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
         dir: 3,
         sprite: 64,
         name: "Attribute Expert",
+        scope: :renewal,
         unique_name: "Attribute Expert#ac_d"
       }
     ]

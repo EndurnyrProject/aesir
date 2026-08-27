@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
         dir: 7,
         sprite: 546,
         name: "Enchanter Almond J",
+        scope: :renewal,
         unique_name: "Enchanter Almond J#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
         dir: 7,
         sprite: 546,
         name: "Enchanter Almond J",
+        scope: :renewal,
         unique_name: "Enchanter Almond J#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
         dir: 7,
         sprite: 546,
         name: "Enchanter Almond J",
+        scope: :renewal,
         unique_name: "Enchanter Almond J#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
         dir: 7,
         sprite: 546,
         name: "Enchanter Almond J",
+        scope: :renewal,
         unique_name: "Enchanter Almond J#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterAlmondJ d
         dir: 7,
         sprite: 546,
         name: "Enchanter Almond J",
+        scope: :renewal,
         unique_name: "Enchanter Almond J#iz_d"
       }
     ]

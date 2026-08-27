@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Rahasu do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_fild07",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Rahasu do
         dir: 4,
         sprite: 100,
         name: "Rahasu",
+        scope: :shared,
         unique_name: "Rahasu#cmd"
       }
     ]

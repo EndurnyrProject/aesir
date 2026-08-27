@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.QuestOut do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "in_rogue", x: 370, y: 320, dir: 0, sprite: 45, name: "quest_out", trigger: {1, 1}}
+      %{
+        map: "in_rogue",
+        x: 370,
+        y: 320,
+        dir: 0,
+        sprite: 45,
+        name: "quest_out",
+        scope: :shared,
+        trigger: {1, 1}
+      }
     ]
 
   @impl true

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfEarth14 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_wiz",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfEarth14 do
         dir: 1,
         sprite: 66,
         name: "Room of Earth",
+        scope: :shared,
         unique_name: "Room of Earth#Door"
       }
     ]

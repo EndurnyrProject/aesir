@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Ruth do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Ruth do
         dir: 3,
         sprite: 862,
         name: "Ruth",
+        scope: :shared,
         unique_name: "Ruth#zen4"
       }
     ]

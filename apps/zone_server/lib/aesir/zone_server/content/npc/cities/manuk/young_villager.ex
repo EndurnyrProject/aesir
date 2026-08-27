@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.YoungVillager do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "manuk",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.YoungVillager do
         dir: 5,
         sprite: 454,
         name: "Young Villager",
+        scope: :shared,
         unique_name: "Young Villager#ep13bs"
       }
     ]

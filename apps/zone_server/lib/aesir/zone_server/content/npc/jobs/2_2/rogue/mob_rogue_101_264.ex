@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue101264 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
   @impl true
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)

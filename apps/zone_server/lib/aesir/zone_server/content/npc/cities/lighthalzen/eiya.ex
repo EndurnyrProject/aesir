@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Eiya do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Eiya do
         dir: 3,
         sprite: 91,
         name: "Eiya",
+        scope: :shared,
         unique_name: "Eiya#iaiai"
       }
     ]

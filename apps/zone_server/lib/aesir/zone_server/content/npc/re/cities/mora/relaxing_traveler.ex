@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.RelaxingTraveler do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.RelaxingTraveler do
         dir: 4,
         sprite: 514,
         name: "Relaxing Traveler",
+        scope: :renewal,
         unique_name: "Relaxing Traveler#ep14_1"
       }
     ]

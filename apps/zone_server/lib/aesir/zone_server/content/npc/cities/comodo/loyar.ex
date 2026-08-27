@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Loyar do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Loyar do
         dir: 4,
         sprite: 83,
         name: "Loyar",
+        scope: :shared,
         unique_name: "Loyar#cmd"
       }
     ]

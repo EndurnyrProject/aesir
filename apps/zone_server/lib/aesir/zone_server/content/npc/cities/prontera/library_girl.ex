@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.LibraryGirl do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.LibraryGirl do
         dir: 0,
         sprite: 71,
         name: "Library Girl",
+        scope: :shared,
         unique_name: "Library Girl#pront"
       }
     ]

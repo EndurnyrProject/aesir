@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Jyaburo do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "amatsu",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Jyaburo do
         dir: 3,
         sprite: 766,
         name: "Jyaburo",
+        scope: :shared,
         unique_name: "Jyaburo#ama"
       }
     ]

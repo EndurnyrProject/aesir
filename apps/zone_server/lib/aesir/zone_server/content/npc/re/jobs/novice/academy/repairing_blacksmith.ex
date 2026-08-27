@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmit
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmit
         dir: 5,
         sprite: 726,
         name: "Repairing Blacksmith",
+        scope: :renewal,
         unique_name: "Repairing Blacksmith#0",
         trigger: {5, 7}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmit
         dir: 5,
         sprite: 726,
         name: "Repairing Blacksmith",
+        scope: :renewal,
         unique_name: "Repairing Blacksmith#a",
         trigger: {5, 7}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmit
         dir: 5,
         sprite: 726,
         name: "Repairing Blacksmith",
+        scope: :renewal,
         unique_name: "Repairing Blacksmith#b",
         trigger: {5, 7}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmit
         dir: 5,
         sprite: 726,
         name: "Repairing Blacksmith",
+        scope: :renewal,
         unique_name: "Repairing Blacksmith#c",
         trigger: {5, 7}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairingBlacksmit
         dir: 5,
         sprite: 726,
         name: "Repairing Blacksmith",
+        scope: :renewal,
         unique_name: "Repairing Blacksmith#d",
         trigger: {5, 7}
       }

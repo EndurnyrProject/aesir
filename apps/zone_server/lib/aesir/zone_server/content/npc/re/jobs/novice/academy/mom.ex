@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "izlude", x: 95, y: 146, dir: 5, sprite: 979, name: "Mom", unique_name: "Mom#iz"},
+      %{
+        map: "izlude",
+        x: 95,
+        y: 146,
+        dir: 5,
+        sprite: 979,
+        name: "Mom",
+        scope: :renewal,
+        unique_name: "Mom#iz"
+      },
       %{
         map: "izlude_a",
         x: 95,
@@ -17,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom do
         dir: 5,
         sprite: 979,
         name: "Mom",
+        scope: :renewal,
         unique_name: "Mom#iz_a"
       },
       %{
@@ -26,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom do
         dir: 5,
         sprite: 979,
         name: "Mom",
+        scope: :renewal,
         unique_name: "Mom#iz_b"
       },
       %{
@@ -35,9 +47,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Mom do
         dir: 5,
         sprite: 979,
         name: "Mom",
+        scope: :renewal,
         unique_name: "Mom#iz_c"
       },
-      %{map: "izlude_d", x: 95, y: 146, dir: 5, sprite: 979, name: "Mom", unique_name: "Mom#iz_d"}
+      %{
+        map: "izlude_d",
+        x: 95,
+        y: 146,
+        dir: 5,
+        sprite: 979,
+        name: "Mom",
+        scope: :renewal,
+        unique_name: "Mom#iz_d"
+      }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena

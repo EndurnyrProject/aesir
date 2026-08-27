@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#ac_d"
       },
       %{
@@ -61,6 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#01"
       },
       %{
@@ -70,6 +77,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#01_a"
       },
       %{
@@ -79,6 +87,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#01_b"
       },
       %{
@@ -88,6 +97,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#01_c"
       },
       %{
@@ -97,6 +107,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#01_d"
       },
       %{
@@ -106,6 +117,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#02"
       },
       %{
@@ -115,6 +127,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#02_a"
       },
       %{
@@ -124,6 +137,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#02_b"
       },
       %{
@@ -133,6 +147,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#02_c"
       },
       %{
@@ -142,6 +157,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.KafraGuideTrainer 
         dir: 5,
         sprite: 117,
         name: "Kafra Guide Trainer",
+        scope: :renewal,
         unique_name: "Kafra Guide Trainer#02_d"
       }
     ]

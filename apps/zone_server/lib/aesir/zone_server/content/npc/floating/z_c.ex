@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ZC do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
   @impl true
   def on_event("OnMyMobDead", ctx), do: ev_onmymobdead(ctx)

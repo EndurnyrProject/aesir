@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.FollowerYakum do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "ra_temple", x: 115, y: 148, dir: 7, sprite: 916, name: "Follower Yakum"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "ra_temple",
+        x: 115,
+        y: 148,
+        dir: 7,
+        sprite: 916,
+        name: "Follower Yakum",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Khashurantze do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Khashurantze do
         dir: 5,
         sprite: 852,
         name: "Khashurantze",
+        scope: :shared,
         unique_name: "Khashurantze#ein"
       }
     ]

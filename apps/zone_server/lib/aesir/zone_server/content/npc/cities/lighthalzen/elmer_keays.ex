@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.ElmerKeays do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.ElmerKeays do
         dir: 3,
         sprite: 866,
         name: "Elmer Keays",
+        scope: :shared,
         unique_name: "Elmer Keays#li_03"
       }
     ]

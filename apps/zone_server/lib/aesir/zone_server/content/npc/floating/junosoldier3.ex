@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier3 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "yuno",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Junosoldier3 do
         dir: 4,
         sprite: 852,
         name: "Juno Soldier",
+        scope: :renewal,
+        unique_name: "Juno Soldier#3juno"
+      },
+      %{
+        map: "yuno",
+        x: 227,
+        y: 292,
+        dir: 4,
+        sprite: 105,
+        name: "Juno Soldier",
+        scope: :pre_renewal,
         unique_name: "Juno Soldier#3juno"
       }
     ]

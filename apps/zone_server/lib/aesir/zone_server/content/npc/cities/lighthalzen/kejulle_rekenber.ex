@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.KejulleRekenber do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.KejulleRekenber do
         dir: 7,
         sprite: 822,
         name: "Kejulle Rekenber",
+        scope: :shared,
         unique_name: "Kejulle Rekenber#reken"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Boohae do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_monk",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Boohae do
         dir: 1,
         sprite: 110,
         name: "Boohae",
+        scope: :shared,
         unique_name: "Boohae#mk"
       }
     ]

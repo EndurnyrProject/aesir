@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Krongast do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Krongast do
         dir: 4,
         sprite: 734,
         name: "Krongast",
+        scope: :shared,
         unique_name: "Krongast#BLS"
       }
     ]

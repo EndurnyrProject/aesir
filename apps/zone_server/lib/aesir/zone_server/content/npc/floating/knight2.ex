@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Knight2 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
   alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)

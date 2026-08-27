@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.PatronKnight do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_cru",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.PatronKnight do
         dir: 4,
         sprite: 751,
         name: "Patron Knight",
+        scope: :shared,
         unique_name: "Patron Knight#2"
       }
     ]

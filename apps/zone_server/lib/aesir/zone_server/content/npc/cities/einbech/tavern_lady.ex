@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.TavernLady do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.TavernLady do
         dir: 3,
         sprite: 854,
         name: "Tavern Lady",
+        scope: :shared,
         unique_name: "Tavern Lady#ein"
       }
     ]

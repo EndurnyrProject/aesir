@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Shena do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbech",
@@ -16,9 +17,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Shena do
         dir: 6,
         sprite: 846,
         name: "Shena",
+        scope: :shared,
         unique_name: "EinMonsters"
       },
-      %{map: "einbech", x: 48, y: 107, dir: 4, sprite: 850, name: "Luda", unique_name: "Luda#ein"}
+      %{
+        map: "einbech",
+        x: 48,
+        y: 107,
+        dir: 4,
+        sprite: 850,
+        name: "Luda",
+        scope: :shared,
+        unique_name: "Luda#ein"
+      }
     ]
 
   @impl true

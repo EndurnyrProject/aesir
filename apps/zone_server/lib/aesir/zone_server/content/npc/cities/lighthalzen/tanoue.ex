@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Tanoue do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Tanoue do
         dir: 3,
         sprite: 863,
         name: "Tanoue",
+        scope: :shared,
         unique_name: "Tanoue#zen04"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.SplendideGuard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "spl_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.SplendideGuard do
         dir: 3,
         sprite: 447,
         name: "Splendide Guard",
+        scope: :shared,
         unique_name: "Splendide Guard#tre"
       }
     ]

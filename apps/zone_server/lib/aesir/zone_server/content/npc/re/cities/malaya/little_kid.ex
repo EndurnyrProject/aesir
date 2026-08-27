@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.LittleKid do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malaya",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.LittleKid do
         dir: 6,
         sprite: 577,
         name: "Little Kid",
+        scope: :renewal,
         unique_name: "Little Kid#ma05"
       }
     ]

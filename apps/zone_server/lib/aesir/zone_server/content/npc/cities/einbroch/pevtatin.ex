@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Pevtatin do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Pevtatin do
         dir: 1,
         sprite: 848,
         name: "Pevtatin",
+        scope: :shared,
         unique_name: "Pevtatin#ein"
       }
     ]

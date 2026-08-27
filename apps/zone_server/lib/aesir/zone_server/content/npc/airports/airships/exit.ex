@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Exit do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Exit do
         dir: 5,
         sprite: 857,
         name: "Exit",
+        scope: :shared,
         unique_name: "ExitAirplane"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Exit do
         dir: 5,
         sprite: 857,
         name: "Exit",
+        scope: :shared,
         unique_name: "Exit#airplane1b"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Exit do
         dir: 1,
         sprite: 857,
         name: "Exit",
+        scope: :shared,
         unique_name: "Exit#airplane2a"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Exit do
         dir: 1,
         sprite: 857,
         name: "Exit",
+        scope: :shared,
         unique_name: "Exit#airplane2b"
       }
     ]

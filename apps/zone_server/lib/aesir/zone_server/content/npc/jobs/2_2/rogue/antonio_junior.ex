@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AntonioJunior do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_rogue",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AntonioJunior do
         dir: 1,
         sprite: 88,
         name: "Antonio junior",
+        scope: :shared,
         unique_name: "Antonio junior#rg"
       }
     ]

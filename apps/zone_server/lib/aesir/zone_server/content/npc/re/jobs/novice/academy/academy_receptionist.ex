@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
         dir: 5,
         sprite: 90,
         name: "Academy Receptionist",
+        scope: :renewal,
         unique_name: "Academy Receptionist#1"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
         dir: 5,
         sprite: 90,
         name: "Academy Receptionist",
+        scope: :renewal,
         unique_name: "Academy Receptionist#1_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
         dir: 5,
         sprite: 90,
         name: "Academy Receptionist",
+        scope: :renewal,
         unique_name: "Academy Receptionist#1_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
         dir: 5,
         sprite: 90,
         name: "Academy Receptionist",
+        scope: :renewal,
         unique_name: "Academy Receptionist#1_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
         dir: 5,
         sprite: 90,
         name: "Academy Receptionist",
+        scope: :renewal,
         unique_name: "Academy Receptionist#1_d"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.ExitMonk do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "monk_test",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.ExitMonk do
         dir: 0,
         sprite: 45,
         name: "exit_monk",
+        scope: :shared,
         unique_name: "exit_monk#1",
         trigger: {1, 1}
       }

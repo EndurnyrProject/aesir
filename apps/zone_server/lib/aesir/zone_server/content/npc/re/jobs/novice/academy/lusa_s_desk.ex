@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
         dir: 4,
         sprite: 844,
         name: "Lusa's Desk",
+        scope: :renewal,
         unique_name: "Lusa's Desk#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
         dir: 4,
         sprite: 844,
         name: "Lusa's Desk",
+        scope: :renewal,
         unique_name: "Lusa's Desk#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
         dir: 4,
         sprite: 844,
         name: "Lusa's Desk",
+        scope: :renewal,
         unique_name: "Lusa's Desk#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
         dir: 4,
         sprite: 844,
         name: "Lusa's Desk",
+        scope: :renewal,
         unique_name: "Lusa's Desk#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LusaSDesk do
         dir: 4,
         sprite: 844,
         name: "Lusa's Desk",
+        scope: :renewal,
         unique_name: "Lusa's Desk#ac_d"
       }
     ]

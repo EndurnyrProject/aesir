@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Rocky do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Rocky do
         dir: 3,
         sprite: 81,
         name: "Rocky",
+        scope: :shared,
         unique_name: "Rocky#li_house"
       }
     ]

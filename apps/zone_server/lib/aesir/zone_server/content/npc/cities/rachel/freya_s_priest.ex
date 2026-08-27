@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.FreyaSPriest do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "rachel",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.FreyaSPriest do
         dir: 3,
         sprite: 920,
         name: "Freya's Priest",
+        scope: :shared,
         unique_name: "Freya's Priest#play"
       }
     ]

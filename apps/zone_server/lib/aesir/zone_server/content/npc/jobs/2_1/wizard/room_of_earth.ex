@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.RoomOfEarth do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "job_wiz", x: 1, y: 3, dir: 1, sprite: 66, name: "Room of Earth"}]
+    scope: :shared,
+    spawn: [
+      %{map: "job_wiz", x: 1, y: 3, dir: 1, sprite: 66, name: "Room of Earth", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true

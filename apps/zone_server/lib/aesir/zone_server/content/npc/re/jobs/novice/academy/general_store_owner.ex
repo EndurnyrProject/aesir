@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
         dir: 3,
         sprite: 92,
         name: "General Store Owner",
+        scope: :renewal,
         unique_name: "General Store Owner#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
         dir: 3,
         sprite: 92,
         name: "General Store Owner",
+        scope: :renewal,
         unique_name: "General Store Owner#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
         dir: 3,
         sprite: 92,
         name: "General Store Owner",
+        scope: :renewal,
         unique_name: "General Store Owner#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
         dir: 3,
         sprite: 92,
         name: "General Store Owner",
+        scope: :renewal,
         unique_name: "General Store Owner#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GeneralStoreOwner 
         dir: 3,
         sprite: 92,
         name: "General Store Owner",
+        scope: :renewal,
         unique_name: "General Store Owner#ac_d"
       }
     ]

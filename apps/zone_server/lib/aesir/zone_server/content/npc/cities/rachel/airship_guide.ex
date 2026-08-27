@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.AirshipGuide do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ra_fild12",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.AirshipGuide do
         dir: 3,
         sprite: 934,
         name: "Airship Guide",
+        scope: :shared,
         unique_name: "Airship Guide#Fild"
       }
     ]

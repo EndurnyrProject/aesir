@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.ApprenticePriestess do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "ra_fild12", x: 283, y: 208, dir: 3, sprite: 914, name: "Apprentice Priestess"}
+      %{
+        map: "ra_fild12",
+        x: 283,
+        y: 208,
+        dir: 3,
+        sprite: 914,
+        name: "Apprentice Priestess",
+        scope: :shared
+      }
     ]
 
   @impl true

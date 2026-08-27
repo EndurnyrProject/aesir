@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
         dir: 4,
         sprite: 119,
         name: "Sir Gray",
+        scope: :shared,
         unique_name: "Sir Gray#knt"
       }
     ]

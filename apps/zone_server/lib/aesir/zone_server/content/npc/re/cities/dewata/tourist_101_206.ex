@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Tourist101206 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Tourist101206 do
         dir: 4,
         sprite: 90,
         name: "Tourist",
+        scope: :renewal,
         unique_name: "Tourist#dew3"
       }
     ]

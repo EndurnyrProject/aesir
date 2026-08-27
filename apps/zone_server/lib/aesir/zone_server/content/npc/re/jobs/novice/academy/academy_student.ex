@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
         dir: 7,
         sprite: 639,
         name: "Academy Student",
+        scope: :renewal,
         unique_name: "Academy Student#0"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
         dir: 7,
         sprite: 639,
         name: "Academy Student",
+        scope: :renewal,
         unique_name: "Academy Student#a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
         dir: 7,
         sprite: 639,
         name: "Academy Student",
+        scope: :renewal,
         unique_name: "Academy Student#b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
         dir: 7,
         sprite: 639,
         name: "Academy Student",
+        scope: :renewal,
         unique_name: "Academy Student#c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
         dir: 7,
         sprite: 639,
         name: "Academy Student",
+        scope: :renewal,
         unique_name: "Academy Student#d"
       }
     ]

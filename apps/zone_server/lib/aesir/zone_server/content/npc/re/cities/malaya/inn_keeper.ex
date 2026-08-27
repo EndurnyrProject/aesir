@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.InnKeeper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "ma_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.InnKeeper do
         dir: 4,
         sprite: 583,
         name: "Inn Keeper",
+        scope: :renewal,
         unique_name: "Inn Keeper#ma"
       }
     ]

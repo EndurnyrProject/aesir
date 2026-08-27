@@ -71,6 +71,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
           | {:set_temp_var, atom(), term()}
           | {:change_job, non_neg_integer()}
           | {:reset_skills}
+          | {:reset_level, integer()}
           | {:grant_skill, integer() | atom(), integer()}
           | {:set_save_point, String.t(), non_neg_integer(), non_neg_integer()}
           | {:warp, String.t(), non_neg_integer(), non_neg_integer()}
@@ -134,7 +135,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
       tag when tag in [:setquest, :erasequest, :completequest, :changequest] ->
         :quest_changed
 
-      tag when tag in [:change_job, :getexp] ->
+      tag when tag in [:change_job, :getexp, :reset_level] ->
         :progression_changed
 
       tag
@@ -421,6 +422,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler do
 
   def apply_op({:reset_skills}, state) do
     case ProgressionHandler.reset_skills(state) do
+      {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
+      {:error, reason} -> {{:error, reason}, state}
+    end
+  end
+
+  def apply_op({:reset_level, type}, state) do
+    case ProgressionHandler.reset_level(type, state) do
       {:ok, new_state} -> {{:ok, new_state.game_state}, new_state}
       {:error, reason} -> {{:error, reason}, state}
     end

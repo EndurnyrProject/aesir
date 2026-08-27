@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PhysicsProfessor do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "yuno_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PhysicsProfessor do
         dir: 3,
         sprite: 120,
         name: "Physics Professor",
+        scope: :shared,
         unique_name: "Physics Professor#sa"
       }
     ]

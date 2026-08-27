@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.MonsterScholar do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "payon",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.MonsterScholar do
         dir: 3,
         sprite: 98,
         name: "Monster Scholar",
+        scope: :shared,
         unique_name: "Monster Scholar#02"
       }
     ]

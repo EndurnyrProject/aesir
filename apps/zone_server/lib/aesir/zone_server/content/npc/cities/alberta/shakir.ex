@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Alberta.Shakir do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "alberta", x: 58, y: 80, dir: 2, sprite: 99, name: "Shakir"}]
+    scope: :shared,
+    spawn: [%{map: "alberta", x: 58, y: 80, dir: 2, sprite: 99, name: "Shakir", scope: :shared}]
 
   alias Aesir.ZoneServer.Script.Rathena
 

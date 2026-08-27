@@ -17,6 +17,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
     only: [no_player!: 1]
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ClientItemType
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
@@ -24,6 +26,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.Mobs
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -502,6 +506,26 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
     end
   end
 
+  @doc """
+  Returns a mob's display name for `MOB_NAME` (`type = 1`).
+
+  `mob` accepts a numeric id or Aegis name. Unknown mobs return `"null"`;
+  unsupported selectors return `-1`. This read does not require a player.
+  """
+  @spec getmonsterinfo(Ctx.t(), integer() | String.t(), integer()) :: String.t() | -1
+  def getmonsterinfo(%Ctx{}, mob, 1) do
+    case resolve_mob(mob) do
+      {:ok, %MobDefinition{name: name}} -> name
+      :error -> "null"
+    end
+  end
+
+  def getmonsterinfo(%Ctx{}, _mob, _type), do: -1
+
+  @spec resolve_mob(integer() | String.t()) :: {:ok, MobDefinition.t()} | :error
+  defp resolve_mob(mob) when is_integer(mob), do: Mobs.by_id(mob)
+  defp resolve_mob(mob) when is_binary(mob), do: Mobs.by_name(mob)
+
   # `getiteminfo` accepts a nameid or an Aegis name string.
   @spec resolve_item(integer() | String.t()) ::
           {:ok, ItemDefinition.t()} | {:error, :item_not_found}
@@ -738,6 +762,15 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def getcharid(%Ctx{game_state: gs}, 2), do: gs.guild_id || 0
   def getcharid(%Ctx{account_id: account_id}, 3), do: account_id
   def getcharid(%Ctx{}, _type), do: 0
+
+  @doc "Returns the guild name for `guild_id`, or `\"null\"` when no guild exists."
+  @spec getguildname(Ctx.t(), integer()) :: String.t()
+  def getguildname(%Ctx{}, guild_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, %GuildState{name: name}} -> name
+      {:error, :not_found} -> "null"
+    end
+  end
 
   @doc """
   Whether the attached player is the leader of their party (rAthena

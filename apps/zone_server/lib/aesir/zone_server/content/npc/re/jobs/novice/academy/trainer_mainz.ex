@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
         dir: 5,
         sprite: 418,
         name: "Trainer Mainz",
+        scope: :renewal,
         unique_name: "Trainer Mainz#ac",
         trigger: {4, 4}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
         dir: 5,
         sprite: 418,
         name: "Trainer Mainz",
+        scope: :renewal,
         unique_name: "Trainer Mainz#ac_a",
         trigger: {4, 4}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
         dir: 5,
         sprite: 418,
         name: "Trainer Mainz",
+        scope: :renewal,
         unique_name: "Trainer Mainz#ac_b",
         trigger: {4, 4}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
         dir: 5,
         sprite: 418,
         name: "Trainer Mainz",
+        scope: :renewal,
         unique_name: "Trainer Mainz#ac_c",
         trigger: {4, 4}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainerMainz do
         dir: 5,
         sprite: 418,
         name: "Trainer Mainz",
+        scope: :renewal,
         unique_name: "Trainer Mainz#ac_d",
         trigger: {4, 4}
       }

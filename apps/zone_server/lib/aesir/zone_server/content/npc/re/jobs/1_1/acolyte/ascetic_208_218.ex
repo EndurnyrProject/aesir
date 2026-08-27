@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic208218 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "prt_fild00",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic208218 do
         dir: 6,
         sprite: 98,
         name: "Ascetic",
+        scope: :renewal,
         unique_name: "Ascetic#3aco"
       }
     ]
@@ -130,7 +132,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic208218 do
       else
         ctx =
           if base_job(ctx) == :acolyte do
-            todo(ctx, :callfunc, ["F_FatherYos"])
+            {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FFatheryos.call(ctx, [])
+            ctx
           else
             if base_job(ctx) == :priest do
               ctx =

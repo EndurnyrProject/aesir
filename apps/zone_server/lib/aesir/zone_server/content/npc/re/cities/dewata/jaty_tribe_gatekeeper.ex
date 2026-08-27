@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.JatyTribeGatekeeper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "dew_fild01", x: 101, y: 259, dir: 6, sprite: 541, name: "Jaty Tribe Gatekeeper"}
+      %{
+        map: "dew_fild01",
+        x: 101,
+        y: 259,
+        dir: 6,
+        sprite: 541,
+        name: "Jaty Tribe Gatekeeper",
+        scope: :renewal
+      }
     ]
 
   @impl true

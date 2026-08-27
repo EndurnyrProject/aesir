@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MagicianSGuildGuid
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "geffen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MagicianSGuildGuid
         dir: 6,
         sprite: 123,
         name: "Magician's Guild Guide",
+        scope: :renewal,
         unique_name: "Magician's Guild Guide#2"
       }
     ]

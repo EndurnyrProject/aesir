@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.Receptionist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "ecl_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.Receptionist do
         dir: 3,
         sprite: 835,
         name: "Receptionist",
+        scope: :renewal,
         unique_name: "Receptionist#Laphine"
       }
     ]

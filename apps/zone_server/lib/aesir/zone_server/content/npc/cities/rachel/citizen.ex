@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Citizen do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "rachel",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Citizen do
         dir: 1,
         sprite: 921,
         name: "Citizen",
+        scope: :shared,
         unique_name: "Citizen#1 "
       }
     ]

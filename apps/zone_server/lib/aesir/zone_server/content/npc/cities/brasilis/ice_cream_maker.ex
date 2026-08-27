@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Brasilis.IceCreamMaker do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "brasilis", x: 137, y: 77, dir: 5, sprite: 85, name: "Ice-Cream Maker"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "brasilis",
+        x: 137,
+        y: 77,
+        dir: 5,
+        sprite: 85,
+        name: "Ice-Cream Maker",
+        scope: :shared
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

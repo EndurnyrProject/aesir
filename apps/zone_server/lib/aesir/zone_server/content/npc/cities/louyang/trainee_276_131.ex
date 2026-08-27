@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee276131 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "louyang",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee276131 do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#2lou"
       }
     ]

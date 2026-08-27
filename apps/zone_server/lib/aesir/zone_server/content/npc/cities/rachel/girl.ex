@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Girl do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "rachel", x: 74, y: 150, dir: 7, sprite: 914, name: "Girl", unique_name: "Girl#1"}
+      %{
+        map: "rachel",
+        x: 74,
+        y: 150,
+        dir: 7,
+        sprite: 914,
+        name: "Girl",
+        scope: :shared,
+        unique_name: "Girl#1"
+      }
     ]
 
   @impl true

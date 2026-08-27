@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.VictorPerfecto do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.VictorPerfecto do
         dir: 3,
         sprite: 869,
         name: "Victor Perfecto",
+        scope: :shared,
         unique_name: "Victor Perfecto#zen9"
       }
     ]

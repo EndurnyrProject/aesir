@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.DoorKeeper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_monk",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.DoorKeeper do
         dir: 3,
         sprite: 746,
         name: "Door Keeper",
+        scope: :shared,
         unique_name: "Door Keeper#mk"
       }
     ]

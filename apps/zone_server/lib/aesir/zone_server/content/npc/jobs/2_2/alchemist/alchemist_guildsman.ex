@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alde_alche",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman do
         dir: 5,
         sprite: 744,
         name: "Alchemist Guildsman",
+        scope: :shared,
         unique_name: "Alchemist Guildsman#am"
       }
     ]

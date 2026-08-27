@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Thomas do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Thomas do
         dir: 1,
         sprite: 118,
         name: "Thomas",
+        scope: :shared,
         unique_name: "Thomas#ASNTEST",
         trigger: {5, 1}
       }

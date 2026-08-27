@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie11 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)

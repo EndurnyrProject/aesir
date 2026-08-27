@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Npc16655 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "lhz_in01", x: 166, y: 55, dir: 3, sprite: 111, name: "", unique_name: "#crazy4u"}
+      %{
+        map: "lhz_in01",
+        x: 166,
+        y: 55,
+        dir: 3,
+        sprite: 111,
+        name: "",
+        scope: :shared,
+        unique_name: "#crazy4u"
+      }
     ]
 
   @impl true

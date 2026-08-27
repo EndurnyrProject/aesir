@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Avetis do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Avetis do
         dir: 3,
         sprite: 849,
         name: "Avetis",
+        scope: :shared,
         unique_name: "Avetis#zen10"
       }
     ]

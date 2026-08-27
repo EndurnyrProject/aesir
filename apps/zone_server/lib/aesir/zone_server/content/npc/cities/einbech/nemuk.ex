@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Nemuk do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbech",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Nemuk do
         dir: 4,
         sprite: 855,
         name: "Nemuk",
+        scope: :shared,
         unique_name: "Nemuk#ein"
       }
     ]

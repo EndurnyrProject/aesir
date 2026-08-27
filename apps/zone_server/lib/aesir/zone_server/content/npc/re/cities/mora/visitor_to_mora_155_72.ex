@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.VisitorToMora15572 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.VisitorToMora15572 do
         dir: 3,
         sprite: 513,
         name: "Visitor to Mora",
+        scope: :renewal,
         unique_name: "Visitor to Mora#podo2"
       }
     ]

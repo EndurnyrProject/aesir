@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.WolfYoungMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_ruins",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.WolfYoungMan do
         dir: 0,
         sprite: 85,
         name: "Wolf Young Man",
+        scope: :shared,
         unique_name: "Wolf Young Man#moc"
       }
     ]

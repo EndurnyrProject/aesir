@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.ProposeGirl do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "amatsu",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.ProposeGirl do
         dir: 1,
         sprite: 758,
         name: "Propose Girl",
+        scope: :shared,
         unique_name: "Propose Girl#ama"
       }
     ]

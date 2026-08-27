@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.WishingKid do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.WishingKid do
         dir: 6,
         sprite: 539,
         name: "Wishing Kid",
+        scope: :renewal,
         unique_name: "Wishing Kid#dew"
       }
     ]

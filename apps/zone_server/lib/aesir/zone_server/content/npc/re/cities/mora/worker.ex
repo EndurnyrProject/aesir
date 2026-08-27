@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Worker do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Worker do
         dir: 5,
         sprite: 516,
         name: "Worker",
+        scope: :renewal,
         unique_name: "Worker#mo1"
       }
     ]

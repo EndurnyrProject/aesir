@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Brasilis.Crewman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "brasilis",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Brasilis.Crewman do
         dir: 3,
         sprite: 100,
         name: "Crewman",
+        scope: :shared,
         unique_name: "Crewman#bra1"
       }
     ]

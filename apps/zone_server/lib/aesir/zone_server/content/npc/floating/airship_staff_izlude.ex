@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
         dir: 3,
         sprite: 90,
         name: "Airship Staff",
+        scope: :renewal,
         unique_name: "Airship Staff#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
         dir: 3,
         sprite: 90,
         name: "Airship Staff",
+        scope: :renewal,
         unique_name: "Airship Staff#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
         dir: 3,
         sprite: 90,
         name: "Airship Staff",
+        scope: :renewal,
         unique_name: "Airship Staff#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
         dir: 3,
         sprite: 90,
         name: "Airship Staff",
+        scope: :renewal,
         unique_name: "Airship Staff#izlude_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AirshipStaffIzlude do
         dir: 3,
         sprite: 90,
         name: "Airship Staff",
+        scope: :renewal,
         unique_name: "Airship Staff#izlude_d"
       }
     ]

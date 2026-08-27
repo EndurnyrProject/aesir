@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
         dir: 4,
         sprite: 105,
         name: "Information Staff",
+        scope: :renewal,
         unique_name: "Information Staff#0"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
         dir: 4,
         sprite: 105,
         name: "Information Staff",
+        scope: :renewal,
         unique_name: "Information Staff#a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
         dir: 4,
         sprite: 105,
         name: "Information Staff",
+        scope: :renewal,
         unique_name: "Information Staff#b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
         dir: 4,
         sprite: 105,
         name: "Information Staff",
+        scope: :renewal,
         unique_name: "Information Staff#c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InformationStaff d
         dir: 4,
         sprite: 105,
         name: "Information Staff",
+        scope: :renewal,
         unique_name: "Information Staff#d"
       }
     ]

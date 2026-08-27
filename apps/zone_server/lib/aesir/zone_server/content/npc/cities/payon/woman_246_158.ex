@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Woman246158 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "payon",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Woman246158 do
         dir: 5,
         sprite: 66,
         name: "Woman",
+        scope: :shared,
         unique_name: "Woman#2payon",
         trigger: {0, 0}
       }

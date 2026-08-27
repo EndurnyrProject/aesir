@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldeba_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
         dir: 5,
         sprite: 86,
         name: "Esseray",
+        scope: :shared,
         unique_name: "Esseray#sn"
       }
     ]
@@ -42,8 +44,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
       if base_job(ctx) == :super_novice do
         ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
-            {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.EsserayEx.call(ctx, [])
-            ctx
+            todo(ctx, :callfunc, ["Esseray_Ex"])
           else
             ctx
           end

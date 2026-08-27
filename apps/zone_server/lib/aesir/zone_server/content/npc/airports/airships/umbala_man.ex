@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.UmbalaMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.UmbalaMan do
         dir: 7,
         sprite: 789,
         name: "Umbala Man",
+        scope: :shared,
         unique_name: "Umbala Man#ein_p"
       }
     ]

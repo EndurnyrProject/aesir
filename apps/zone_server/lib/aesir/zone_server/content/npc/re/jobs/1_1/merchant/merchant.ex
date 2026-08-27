@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Merchant.Merchant do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "alberta_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Merchant.Merchant do
         dir: 6,
         sprite: 86,
         name: "Merchant",
+        scope: :renewal,
         unique_name: "Merchant#mer"
       }
     ]

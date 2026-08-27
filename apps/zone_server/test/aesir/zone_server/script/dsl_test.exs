@@ -988,6 +988,60 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  describe "mapwarp/5 and mapwarp/7" do
+    test "warps every online player from the source map" do
+      test_pid = self()
+
+      expect(SpatialIndex, :get_players_on_map, fn "que_avan01" -> [101, 102] end)
+      stub(UnitRegistry, :get_unit, fn :player, _ -> {:ok, {PlayerState, %{}, test_pid}} end)
+
+      expect(PlayerSession, :warp, 2, fn pid, map, x, y ->
+        send(test_pid, {:warped, pid, map, x, y})
+        :ok
+      end)
+
+      ctx = build_ctx()
+      assert Dsl.mapwarp(ctx, "que_avan01", "eclage", 265, 275) == ctx
+      assert_received {:warped, ^test_pid, "eclage", 265, 275}
+      assert_received {:warped, ^test_pid, "eclage", 265, 275}
+    end
+
+    test "filters by guild when type is 1" do
+      test_pid = self()
+
+      expect(SpatialIndex, :get_players_on_map, fn "guild_map" -> [101, 102] end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 101 -> {:ok, {PlayerState, %{guild_id: 63}, test_pid}}
+        :player, 102 -> {:ok, {PlayerState, %{guild_id: 64}, test_pid}}
+      end)
+
+      expect(PlayerSession, :warp, fn pid, "exit", 10, 20 ->
+        send(test_pid, {:warped, pid})
+        :ok
+      end)
+
+      assert %Ctx{} = Dsl.mapwarp(build_ctx(), "guild_map", "exit", 10, 20, 1, 63)
+      assert_received {:warped, ^test_pid}
+    end
+
+    test "uses a random destination per player when coordinates are zero" do
+      test_pid = self()
+
+      expect(SpatialIndex, :get_players_on_map, fn "source" -> [101] end)
+      expect(UnitRegistry, :get_unit, fn :player, 101 -> {:ok, {PlayerState, %{}, test_pid}} end)
+      expect(Cell, :random_traversable, fn "destination" -> {:ok, {33, 44}} end)
+
+      expect(PlayerSession, :warp, fn pid, "destination", 33, 44 ->
+        send(test_pid, {:warped, pid})
+        :ok
+      end)
+
+      assert %Ctx{} = Dsl.mapwarp(build_ctx(), "source", "destination", 0, 0)
+      assert_received {:warped, ^test_pid}
+    end
+  end
+
   describe "warpchar/4" do
     test "three-arg form delegates to warp on the attached player" do
       relocated = %{build_game_state() | map_name: "prontera", x: 20, y: 145}

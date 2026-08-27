@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Exit do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_hunte",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Exit do
         dir: 0,
         sprite: 45,
         name: "exit",
+        scope: :shared,
         unique_name: "exit#hnttest",
         trigger: {2, 2}
       }

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.FastidiousAlchemist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alde_alche",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.FastidiousAlchemist do
         dir: 3,
         sprite: 749,
         name: "Fastidious Alchemist",
+        scope: :shared,
         unique_name: "Fastidious Alchemist#am"
       }
     ]

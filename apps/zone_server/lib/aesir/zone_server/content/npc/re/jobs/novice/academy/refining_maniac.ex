@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac do
         dir: 5,
         sprite: 881,
         name: "Refining Maniac",
+        scope: :renewal,
         unique_name: "Refining Maniac#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac do
         dir: 5,
         sprite: 881,
         name: "Refining Maniac",
+        scope: :renewal,
         unique_name: "Refining Maniac#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac do
         dir: 5,
         sprite: 881,
         name: "Refining Maniac",
+        scope: :renewal,
         unique_name: "Refining Maniac#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac do
         dir: 5,
         sprite: 881,
         name: "Refining Maniac",
+        scope: :renewal,
         unique_name: "Refining Maniac#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefiningManiac do
         dir: 5,
         sprite: 881,
         name: "Refining Maniac",
+        scope: :renewal,
         unique_name: "Refining Maniac#iz_d"
       }
     ]

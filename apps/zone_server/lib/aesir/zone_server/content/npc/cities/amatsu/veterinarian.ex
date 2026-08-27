@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Veterinarian do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "amatsu",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Veterinarian do
         dir: 7,
         sprite: 735,
         name: "Veterinarian",
+        scope: :shared,
         unique_name: "Veterinarian#ama"
       }
     ]

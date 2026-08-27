@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Kong do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malangdo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Kong do
         dir: 4,
         sprite: 545,
         name: "Kong",
+        scope: :renewal,
         unique_name: "Kong#malang"
       }
     ]

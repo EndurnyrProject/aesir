@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.TrainStationStaff do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbech",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.TrainStationStaff do
         dir: 5,
         sprite: 852,
         name: "Train Station Staff",
+        scope: :shared,
         unique_name: "Train Station Staff#ein3"
       }
     ]

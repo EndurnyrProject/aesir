@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Ayothaya.YoungMan197189 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ayothaya",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Ayothaya.YoungMan197189 do
         dir: 5,
         sprite: 841,
         name: "Young Man",
+        scope: :shared,
         unique_name: "Young Man#1ayothaya"
       }
     ]

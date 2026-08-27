@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.KeeperOfTheDoor do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.KeeperOfTheDoor do
         dir: 0,
         sprite: 45,
         name: "Keeper of the Door",
+        scope: :shared,
         unique_name: "Keeper of the Door#ASN",
         trigger: {2, 1}
       }

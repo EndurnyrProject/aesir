@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HermanthornJr do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_rogue",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HermanthornJr do
         dir: 1,
         sprite: 85,
         name: "Hermanthorn Jr",
+        scope: :shared,
         unique_name: "Hermanthorn Jr#rg"
       }
     ]

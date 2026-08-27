@@ -27,6 +27,14 @@ defmodule Aesir.ZoneServer.Script.RathenaTest do
     end
   end
 
+  describe "job_id/1" do
+    test "preserves numeric ids and resolves job atoms" do
+      assert Rathena.job_id(13) == 13
+      assert Rathena.job_id(:knight2) == 13
+      assert Rathena.job_id(:novice_high) == 4001
+    end
+  end
+
   describe "input_int/3" do
     test "returns {0, value} when in range" do
       assert Rathena.input_int(3, 1, 5) == {0, 3}

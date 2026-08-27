@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.Swordman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.Swordman do
         dir: 4,
         sprite: 119,
         name: "Swordman",
+        scope: :renewal,
         unique_name: "Swordman#swd"
       }
     ]

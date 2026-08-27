@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Resetter do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
   @impl true
   def on_event("OnTimer500000", ctx), do: ev_ontimer500000(ctx)

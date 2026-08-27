@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LittleKidInTown do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.LittleKidInTown do
         dir: 4,
         sprite: 538,
         name: "Little Kid in Town",
+        scope: :renewal,
         unique_name: "Little Kid in Town#dew",
         trigger: {2, 3}
       }

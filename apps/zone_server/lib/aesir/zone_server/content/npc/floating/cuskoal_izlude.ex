@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
         dir: 4,
         sprite: 124,
         name: "Cuskoal",
+        scope: :renewal,
         unique_name: "Cuskoal#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
         dir: 4,
         sprite: 124,
         name: "Cuskoal",
+        scope: :renewal,
         unique_name: "Cuskoal#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
         dir: 4,
         sprite: 124,
         name: "Cuskoal",
+        scope: :renewal,
         unique_name: "Cuskoal#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
         dir: 4,
         sprite: 124,
         name: "Cuskoal",
+        scope: :renewal,
         unique_name: "Cuskoal#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CuskoalIzlude do
         dir: 4,
         sprite: 124,
         name: "Cuskoal",
+        scope: :renewal,
         unique_name: "Cuskoal#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 119,
+        y: 121,
+        dir: 2,
+        sprite: 124,
+        name: "Cuskoal",
+        scope: :pre_renewal,
+        unique_name: "Cuskoal#izlude"
       }
     ]
 

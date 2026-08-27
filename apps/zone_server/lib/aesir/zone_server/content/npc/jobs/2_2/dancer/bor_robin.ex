@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.BorRobin do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "comodo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.BorRobin do
         dir: 4,
         sprite: 86,
         name: "Bor Robin",
+        scope: :shared,
         unique_name: "Bor Robin#1"
       }
     ]

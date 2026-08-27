@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterInfo do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_hunter",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterInfo do
         dir: 4,
         sprite: 727,
         name: "Hunter Info",
+        scope: :shared,
         unique_name: "HntNotice"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterInfo do
         dir: 3,
         sprite: 857,
         name: "Job Change Location",
+        scope: :shared,
         unique_name: "Job Change Location#hu"
       }
     ]

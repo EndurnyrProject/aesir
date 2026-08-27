@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lady do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "iz_ac01", x: 138, y: 69, dir: 3, sprite: 76, name: "Lady", unique_name: "Lady#ac"},
+      %{
+        map: "iz_ac01",
+        x: 138,
+        y: 69,
+        dir: 3,
+        sprite: 76,
+        name: "Lady",
+        scope: :renewal,
+        unique_name: "Lady#ac"
+      },
       %{
         map: "iz_ac01_a",
         x: 138,
@@ -17,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lady do
         dir: 3,
         sprite: 76,
         name: "Lady",
+        scope: :renewal,
         unique_name: "Lady#ac_a"
       },
       %{
@@ -26,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lady do
         dir: 3,
         sprite: 76,
         name: "Lady",
+        scope: :renewal,
         unique_name: "Lady#ac_b"
       },
       %{
@@ -35,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lady do
         dir: 3,
         sprite: 76,
         name: "Lady",
+        scope: :renewal,
         unique_name: "Lady#ac_c"
       },
       %{
@@ -44,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lady do
         dir: 3,
         sprite: 76,
         name: "Lady",
+        scope: :renewal,
         unique_name: "Lady#ac_d"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.ArrivalStaff do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "y_airport",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.ArrivalStaff do
         dir: 3,
         sprite: 90,
         name: "Arrival Staff",
+        scope: :shared,
         unique_name: "y_airport2"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.ArrivalStaff do
         dir: 3,
         sprite: 90,
         name: "Arrival Staff",
+        scope: :shared,
         unique_name: "Arrival Staff#y_air2b"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.ArrivalStaff do
         dir: 3,
         sprite: 90,
         name: "Arrival Staff",
+        scope: :shared,
         unique_name: "Arrival Staff#y_air2c"
       }
     ]

@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Script.Rathena do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
 
   @doc "rAthena truthiness: `0` and `\"\"` are false, everything else true."
   @spec truthy?(term()) :: boolean()
@@ -32,6 +33,15 @@ defmodule Aesir.ZoneServer.Script.Rathena do
   @doc "rAthena `+` on strings: concatenates, coercing numbers."
   @spec concat(term(), term()) :: String.t()
   def concat(a, b), do: to_string(a) <> to_string(b)
+
+  @doc "Returns the numeric job id used by rAthena arithmetic."
+  @spec job_id(integer() | atom()) :: integer()
+  def job_id(id) when is_integer(id), do: id
+
+  def job_id(name) when is_atom(name) do
+    {:ok, id} = AvailableJobs.job_name_to_id(name)
+    id
+  end
 
   @doc """
   rAthena `atoi`: C-style leading-integer parse of a string — skips leading

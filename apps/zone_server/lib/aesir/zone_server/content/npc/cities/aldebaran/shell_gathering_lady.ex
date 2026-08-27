@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.ShellGatheringLady do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldebaran",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.ShellGatheringLady do
         dir: 4,
         sprite: 101,
         name: "Shell Gathering Lady",
+        scope: :shared,
         unique_name: "Shell Gathering Lady#ald"
       }
     ]

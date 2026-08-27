@@ -7,7 +7,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_castle",
+        x: 45,
+        y: 169,
+        dir: 5,
+        sprite: 752,
+        name: "Senior Crusader",
+        scope: :pre_renewal
+      },
+      %{
+        map: "prt_cas",
+        x: 251,
+        y: 75,
+        dir: 1,
+        sprite: 752,
+        name: "Senior Crusader",
+        scope: :renewal
+      }
+    ]
+
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true

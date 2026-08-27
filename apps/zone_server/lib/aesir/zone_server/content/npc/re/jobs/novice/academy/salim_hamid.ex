@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
         dir: 3,
         sprite: 58,
         name: "Salim Hamid",
+        scope: :renewal,
         unique_name: "Salim Hamid#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
         dir: 3,
         sprite: 58,
         name: "Salim Hamid",
+        scope: :renewal,
         unique_name: "Salim Hamid#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
         dir: 3,
         sprite: 58,
         name: "Salim Hamid",
+        scope: :renewal,
         unique_name: "Salim Hamid#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
         dir: 3,
         sprite: 58,
         name: "Salim Hamid",
+        scope: :renewal,
         unique_name: "Salim Hamid#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
         dir: 3,
         sprite: 58,
         name: "Salim Hamid",
+        scope: :renewal,
         unique_name: "Salim Hamid#ac_d"
       }
     ]

@@ -92,10 +92,12 @@ getequiprefinecost/4
 getequiprefinerycnt/2
 getequipweaponlv/2
 getexp/3
+getguildname/2
 getitem2/10
 getiteminfo/3
 getlook/2
 getmapusers/2
+getmonsterinfo/3
 getnpcid/1
 getnpcid/2
 getnpctimer/1
@@ -138,6 +140,9 @@ killmonsterall/2
 logmes/2
 mapannounce/4
 mapannounce/5
+mapwarp/5
+mapwarp/6
+mapwarp/7
 max_hp/1
 mes/2
 mobcount/3
@@ -169,6 +174,7 @@ refine_targets/1
 repair/2
 repairall/1
 reset_skills/1
+resetlvl/2
 roclass/2
 roclass/3
 savepoint/4

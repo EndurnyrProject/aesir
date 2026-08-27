@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Guard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Guard do
         dir: 4,
         sprite: 868,
         name: "Guard",
+        scope: :shared,
         unique_name: "LhzRekGuard"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Guard do
         dir: 4,
         sprite: 868,
         name: "Guard",
+        scope: :shared,
         unique_name: "Guard#03"
       }
     ]

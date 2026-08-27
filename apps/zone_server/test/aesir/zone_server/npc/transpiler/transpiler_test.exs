@@ -215,6 +215,60 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.TranspilerTest do
   end
 
   @tag :tmp_dir
+  test "sequential mode overlay batches preserve same-cell placements from both scopes", %{
+    tmp_dir: tmp_dir
+  } do
+    npc_dir = Path.join(tmp_dir, "npc")
+    File.mkdir_p!(Path.join(npc_dir, "shared"))
+    File.mkdir_p!(Path.join(npc_dir, "re"))
+    File.mkdir_p!(Path.join(npc_dir, "pre-re"))
+
+    File.write!(Path.join(npc_dir, "shared/guard.txt"), """
+    -\tscript\t::GuardFloat\t-1,{
+    close;
+    }
+    """)
+
+    File.write!(Path.join(npc_dir, "pre-re/guard.txt"), """
+    yuno,100,100,4\tduplicate(GuardFloat)\tGuard#yuno\t105
+    """)
+
+    File.write!(Path.join(npc_dir, "re/guard.txt"), """
+    yuno,100,100,4\tduplicate(GuardFloat)\tGuard#yuno\t852
+    """)
+
+    out_root = Path.join(tmp_dir, "out")
+
+    shared = Transpiler.run(tmp_dir, out_root: out_root, only: "shared/**", force: true)
+
+    pre_renewal =
+      Transpiler.run(tmp_dir, out_root: out_root, only: "pre-re/**", force: true)
+
+    renewal = Transpiler.run(tmp_dir, out_root: out_root, only: "re/**", force: true)
+
+    assert shared.failures == []
+    assert pre_renewal.failures == []
+    assert renewal.failures == []
+    assert renewal.conflicts == []
+
+    manifest_path = Path.join(out_root, "priv/npc_transpile/manifest.json")
+    key = "shared/guard.txt|floating|::GuardFloat|-"
+    spawns = Manifest.load(manifest_path)[key].spawns
+
+    assert Enum.map(spawns, &{&1.scope, &1.sprite}) == [
+             {:pre_renewal, 105},
+             {:renewal, 852}
+           ]
+
+    source_path = Path.join(out_root, "lib/aesir/zone_server/content/npc/floating/guardfloat.ex")
+    source = File.read!(source_path)
+
+    assert length(Regex.scan(~r/map: "yuno"/, source)) == 2
+    assert source =~ "scope: :pre_renewal"
+    assert source =~ "scope: :renewal"
+  end
+
+  @tag :tmp_dir
   test "a source-present manifest script with no module is recovered for cross-run linking", %{
     tmp_dir: tmp_dir
   } do

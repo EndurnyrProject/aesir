@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AibakthingAyothaya do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.AibakthingAyothaya do
         dir: 3,
         sprite: 843,
         name: "Aibakthing",
+        scope: :renewal,
+        unique_name: "Aibakthing#ayo"
+      },
+      %{
+        map: "alberta",
+        x: 247,
+        y: 42,
+        dir: 3,
+        sprite: 843,
+        name: "Aibakthing",
+        scope: :pre_renewal,
         unique_name: "Aibakthing#ayo"
       }
     ]

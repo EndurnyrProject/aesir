@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Grinnel do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Grinnel do
         dir: 5,
         sprite: 870,
         name: "Grinnel",
+        scope: :shared,
         unique_name: "Grinnel#zen6"
       }
     ]

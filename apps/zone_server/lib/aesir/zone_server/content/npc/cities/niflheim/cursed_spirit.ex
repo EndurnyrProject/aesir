@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.CursedSpirit do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "niflheim",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.CursedSpirit do
         dir: 1,
         sprite: 802,
         name: "Cursed Spirit",
+        scope: :shared,
         unique_name: "Cursed Spirit#nif"
       }
     ]

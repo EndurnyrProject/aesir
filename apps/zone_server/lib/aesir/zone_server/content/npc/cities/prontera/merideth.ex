@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Merideth do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prontera",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Merideth do
         dir: 6,
         sprite: 91,
         name: "Merideth",
+        scope: :shared,
         unique_name: "Merideth#pront"
       }
     ]

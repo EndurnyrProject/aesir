@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
         dir: 1,
         sprite: 84,
         name: "Refinery Owner Han",
+        scope: :renewal,
         unique_name: "Refinery Owner Han#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
         dir: 1,
         sprite: 84,
         name: "Refinery Owner Han",
+        scope: :renewal,
         unique_name: "Refinery Owner Han#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
         dir: 1,
         sprite: 84,
         name: "Refinery Owner Han",
+        scope: :renewal,
         unique_name: "Refinery Owner Han#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
         dir: 1,
         sprite: 84,
         name: "Refinery Owner Han",
+        scope: :renewal,
         unique_name: "Refinery Owner Han#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan d
         dir: 1,
         sprite: 84,
         name: "Refinery Owner Han",
+        scope: :renewal,
         unique_name: "Refinery Owner Han#iz_d"
       }
     ]

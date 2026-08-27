@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Passerby do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "cmd_fild07",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Passerby do
         dir: 7,
         sprite: 727,
         name: "Passerby",
+        scope: :renewal,
         unique_name: "Passerby#pa0829_01"
       }
     ]

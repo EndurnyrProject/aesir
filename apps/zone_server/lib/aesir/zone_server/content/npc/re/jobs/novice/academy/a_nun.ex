@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
         dir: 5,
         sprite: 95,
         name: "A Nun",
+        scope: :renewal,
         unique_name: "A Nun#2"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
         dir: 5,
         sprite: 95,
         name: "A Nun",
+        scope: :renewal,
         unique_name: "A Nun#2_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
         dir: 5,
         sprite: 95,
         name: "A Nun",
+        scope: :renewal,
         unique_name: "A Nun#2_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
         dir: 5,
         sprite: 95,
         name: "A Nun",
+        scope: :renewal,
         unique_name: "A Nun#2_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
         dir: 5,
         sprite: 95,
         name: "A Nun",
+        scope: :renewal,
         unique_name: "A Nun#2_d"
       }
     ]

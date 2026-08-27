@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Garnet do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_church",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Garnet do
         dir: 0,
         sprite: 67,
         name: "Garnet",
+        scope: :shared,
         unique_name: "Garnet#pront"
       }
     ]

@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.SeriousVenknicka do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "dic_in01", x: 360, y: 125, dir: 5, sprite: 449, name: "Serious Venknicka"}]
+    scope: :renewal,
+    spawn: [
+      %{
+        map: "dic_in01",
+        x: 360,
+        y: 125,
+        dir: 5,
+        sprite: 449,
+        name: "Serious Venknicka",
+        scope: :renewal
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

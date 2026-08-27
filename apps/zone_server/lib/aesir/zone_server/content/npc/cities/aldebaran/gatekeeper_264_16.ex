@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.Gatekeeper26416 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alde_dun03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.Gatekeeper26416 do
         dir: 4,
         sprite: 101,
         name: "Gatekeeper",
+        scope: :shared,
         unique_name: "Gatekeeper#ct1"
       }
     ]

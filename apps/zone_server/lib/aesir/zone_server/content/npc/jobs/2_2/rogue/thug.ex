@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Thug do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_ruins",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Thug do
         dir: 1,
         sprite: 118,
         name: "Thug",
+        scope: :shared,
         unique_name: "Thug#rg"
       }
     ]

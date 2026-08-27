@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.FavorableKnit do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dicastes01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.FavorableKnit do
         dir: 3,
         sprite: 453,
         name: "Favorable Knit",
+        scope: :renewal,
         unique_name: "Favorable Knit#a"
       }
     ]

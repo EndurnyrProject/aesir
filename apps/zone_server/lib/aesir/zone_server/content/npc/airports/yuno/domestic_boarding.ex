@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.DomesticBoarding do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "y_airport", x: 145, y: 63, dir: 5, sprite: 91, name: "Domestic Boarding"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "y_airport",
+        x: 145,
+        y: 63,
+        dir: 5,
+        sprite: 91,
+        name: "Domestic Boarding",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

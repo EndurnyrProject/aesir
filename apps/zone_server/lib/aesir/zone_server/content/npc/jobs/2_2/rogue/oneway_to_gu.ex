@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.OnewayToGu do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "in_rogue", x: 9, y: 389, dir: 0, sprite: 45, name: "oneway_to_gu", trigger: {1, 1}}
+      %{
+        map: "in_rogue",
+        x: 9,
+        y: 389,
+        dir: 0,
+        sprite: 45,
+        name: "oneway_to_gu",
+        scope: :shared,
+        trigger: {1, 1}
+      }
     ]
 
   @impl true

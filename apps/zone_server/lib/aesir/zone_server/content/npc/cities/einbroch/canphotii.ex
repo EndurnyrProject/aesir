@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Canphotii do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Canphotii do
         dir: 3,
         sprite: 852,
         name: "Canphotii",
+        scope: :shared,
         unique_name: "Canphotii#ein"
       }
     ]

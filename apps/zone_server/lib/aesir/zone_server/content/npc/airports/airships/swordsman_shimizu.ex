@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.SwordsmanShimizu do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane_01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.SwordsmanShimizu do
         dir: 2,
         sprite: 106,
         name: "Swordsman Shimizu",
+        scope: :shared,
         unique_name: "Swordsman Shimizu#air_01"
       }
     ]

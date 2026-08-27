@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Mazwon do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Mazwon do
         dir: 1,
         sprite: 828,
         name: "Mazwon",
+        scope: :shared,
         unique_name: "Mazwon#minus1"
       }
     ]

@@ -26,6 +26,9 @@ defmodule Mix.Tasks.Aesir.Import.Npcs do
   """
   use Mix.Task
 
+  alias Mix.Tasks.Aesir.Import
+
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Npc.Transpiler
 
   @report_path Path.join(~w(apps zone_server priv npc_transpile _transpile_report.md))
@@ -40,7 +43,11 @@ defmodule Mix.Tasks.Aesir.Import.Npcs do
       Mix.raise("rAthena root not found at #{rathena} (no npc/ directory)")
     end
 
-    result = Transpiler.run(rathena, only: opts[:only], force: Keyword.get(opts, :force, false))
+    result =
+      transpile(rathena,
+        only: opts[:only],
+        force: Keyword.get(opts, :force, false)
+      )
 
     File.mkdir_p!(Path.dirname(@report_path))
     File.write!(@report_path, report(result))
@@ -50,6 +57,29 @@ defmodule Mix.Tasks.Aesir.Import.Npcs do
         "#{length(result.conflicts)} conflicts, #{length(result.failures)} failures " <>
         "-> #{@report_path}"
     )
+  end
+
+  @doc false
+  @spec transpile(Path.t(), keyword()) :: Transpiler.result()
+  def transpile(rathena, opts) do
+    Resolver.with_source_catalogs(source_catalogs(rathena), fn ->
+      Transpiler.run(rathena, opts)
+    end)
+  end
+
+  defp source_catalogs(rathena) do
+    Resolver.source_catalogs(
+      source_rows!(rathena, "item_db.yml"),
+      source_rows!(rathena, "item_group_db.yml")
+    )
+  end
+
+  defp source_rows!(rathena, file) do
+    path = Path.join([rathena, "db", file])
+
+    Enum.flat_map([:renewal, :pre_renewal], fn mode ->
+      Import.read_mode_filtered!(path, mode)
+    end)
   end
 
   defp report(result) do

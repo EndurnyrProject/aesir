@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestRemoved
   alias Aesir.Repo
-  alias Aesir.ZoneServer.Content.Npc.MocPrydn1.SuspiciousCat
+  alias Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member

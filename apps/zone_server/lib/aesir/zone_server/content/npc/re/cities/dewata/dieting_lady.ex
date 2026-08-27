@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DietingLady do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.DietingLady do
         dir: 6,
         sprite: 537,
         name: "Dieting Lady",
+        scope: :renewal,
         unique_name: "Dieting Lady#dew"
       }
     ]

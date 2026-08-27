@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Blackboard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Blackboard do
         dir: 3,
         sprite: 111,
         name: "Blackboard",
+        scope: :shared,
         unique_name: "Blackboard#li"
       }
     ]

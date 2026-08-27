@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Hugel.APartTimer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "hu_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Hugel.APartTimer do
         dir: 0,
         sprite: 49,
         name: "A Part-Timer",
+        scope: :shared,
         unique_name: "A Part-Timer#1"
       }
     ]

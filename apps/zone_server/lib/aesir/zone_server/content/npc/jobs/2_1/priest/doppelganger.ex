@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Doppelganger do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_prist",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Doppelganger do
         dir: 4,
         sprite: 1046,
         name: "Doppelganger",
+        scope: :shared,
         unique_name: "Doppelganger#prst",
         trigger: {8, 1}
       }

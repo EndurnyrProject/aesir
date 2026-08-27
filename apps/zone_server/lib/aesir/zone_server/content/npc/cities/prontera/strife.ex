@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Strife do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prontera",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Strife do
         dir: 2,
         sprite: 48,
         name: "Strife",
+        scope: :shared,
         unique_name: "Strife#pront"
       }
     ]

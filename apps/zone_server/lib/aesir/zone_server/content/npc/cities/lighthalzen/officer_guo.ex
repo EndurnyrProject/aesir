@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.OfficerGuo do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.OfficerGuo do
         dir: 3,
         sprite: 85,
         name: "Officer Guo",
+        scope: :shared,
         unique_name: "off_guo"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.OfficerGuo do
         dir: 6,
         sprite: 870,
         name: "Suspect",
+        scope: :shared,
         unique_name: "Suspect#6"
       }
     ]

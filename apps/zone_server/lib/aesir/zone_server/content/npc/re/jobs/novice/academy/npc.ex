@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc do
         dir: 0,
         sprite: 111,
         name: "",
+        scope: :renewal,
         unique_name: "#acKick",
         trigger: {5, 5}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc do
         dir: 0,
         sprite: 111,
         name: "",
+        scope: :renewal,
         unique_name: "#acKick_a",
         trigger: {5, 5}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc do
         dir: 0,
         sprite: 111,
         name: "",
+        scope: :renewal,
         unique_name: "#acKick_b",
         trigger: {5, 5}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc do
         dir: 0,
         sprite: 111,
         name: "",
+        scope: :renewal,
         unique_name: "#acKick_c",
         trigger: {5, 5}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc do
         dir: 0,
         sprite: 111,
         name: "",
+        scope: :renewal,
         unique_name: "#acKick_d",
         trigger: {5, 5}
       }

@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.ArenaAssistant do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "job_wiz", x: 50, y: 165, dir: 4, sprite: 700, name: "Arena Assistant"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_wiz",
+        x: 50,
+        y: 165,
+        dir: 4,
+        sprite: 700,
+        name: "Arena Assistant",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)

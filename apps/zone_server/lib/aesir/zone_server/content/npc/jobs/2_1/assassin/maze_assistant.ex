@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.MazeAssistant do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.MazeAssistant do
         dir: 0,
         sprite: 45,
         name: "Maze Assistant",
+        scope: :shared,
         trigger: {1, 1}
       }
     ]

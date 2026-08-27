@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.QianYuenShuang do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gonryun",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.QianYuenShuang do
         dir: 5,
         sprite: 89,
         name: "Qian Yuen Shuang",
+        scope: :shared,
         unique_name: "Qian Yuen Shuang#gon"
       }
     ]

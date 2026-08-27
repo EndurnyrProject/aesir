@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.LittleBoy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_ruins",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.LittleBoy do
         dir: 1,
         sprite: 706,
         name: "Little Boy",
+        scope: :shared,
         unique_name: "Little Boy#moc"
       }
     ]

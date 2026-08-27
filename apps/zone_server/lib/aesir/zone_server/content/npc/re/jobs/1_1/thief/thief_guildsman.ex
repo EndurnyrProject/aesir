@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuildsman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "moc_prydb1",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuildsman do
         dir: 2,
         sprite: 118,
         name: "Thief Guildsman",
+        scope: :renewal,
         unique_name: "Thief Guildsman#thief"
       }
     ]

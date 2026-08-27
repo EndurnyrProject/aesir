@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Nemnem do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "mora", x: 160, y: 123, dir: 3, sprite: 517, name: "Nemnem", unique_name: "Nemnem#p"}
+      %{
+        map: "mora",
+        x: 160,
+        y: 123,
+        dir: 3,
+        sprite: 517,
+        name: "Nemnem",
+        scope: :renewal,
+        unique_name: "Nemnem#p"
+      }
     ]
 
   @impl true

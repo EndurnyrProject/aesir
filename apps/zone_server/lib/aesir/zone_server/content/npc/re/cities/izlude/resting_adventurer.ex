@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "prt_fild08",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
         dir: 7,
         sprite: 882,
         name: "Resting Adventurer",
+        scope: :renewal,
         unique_name: "Resting Adventurer#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
         dir: 7,
         sprite: 882,
         name: "Resting Adventurer",
+        scope: :renewal,
         unique_name: "Resting Adventurer#iza"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
         dir: 7,
         sprite: 882,
         name: "Resting Adventurer",
+        scope: :renewal,
         unique_name: "Resting Adventurer#izb"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
         dir: 7,
         sprite: 882,
         name: "Resting Adventurer",
+        scope: :renewal,
         unique_name: "Resting Adventurer#izc"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.RestingAdventurer do
         dir: 7,
         sprite: 882,
         name: "Resting Adventurer",
+        scope: :renewal,
         unique_name: "Resting Adventurer#izd"
       }
     ]

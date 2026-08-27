@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
         dir: 3,
         sprite: 896,
         name: "Noisy Trainee",
+        scope: :renewal,
         unique_name: "Noisy Trainee#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
         dir: 3,
         sprite: 896,
         name: "Noisy Trainee",
+        scope: :renewal,
         unique_name: "Noisy Trainee#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
         dir: 3,
         sprite: 896,
         name: "Noisy Trainee",
+        scope: :renewal,
         unique_name: "Noisy Trainee#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
         dir: 3,
         sprite: 896,
         name: "Noisy Trainee",
+        scope: :renewal,
         unique_name: "Noisy Trainee#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
         dir: 3,
         sprite: 896,
         name: "Noisy Trainee",
+        scope: :renewal,
         unique_name: "Noisy Trainee#ac_d"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "int_land",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor do
         dir: 5,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#intro_npc04"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor do
         dir: 5,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#intro_npc04_01"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor do
         dir: 5,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#intro_npc04_02"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor do
         dir: 5,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#intro_npc04_03"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor do
         dir: 5,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#intro_npc04_04"
       }
     ]

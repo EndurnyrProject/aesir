@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Daeguro do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_fild04",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Daeguro do
         dir: 4,
         sprite: 703,
         name: "Daeguro",
+        scope: :shared,
         unique_name: "Daeguro#cmd"
       }
     ]

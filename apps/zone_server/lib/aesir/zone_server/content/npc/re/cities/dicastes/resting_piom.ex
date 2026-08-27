@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.RestingPiom do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dic_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.RestingPiom do
         dir: 5,
         sprite: 454,
         name: "Resting Piom",
+        scope: :renewal,
         unique_name: "Resting Piom#01"
       }
     ]

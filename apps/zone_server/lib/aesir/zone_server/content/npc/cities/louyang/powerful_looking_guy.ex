@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.PowerfulLookingGuy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "louyang",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.PowerfulLookingGuy do
         dir: 4,
         sprite: 819,
         name: "Powerful-looking guy",
+        scope: :shared,
         unique_name: "Powerful-looking guy#lou"
       }
     ]

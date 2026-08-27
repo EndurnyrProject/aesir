@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
         dir: 2,
         sprite: 105,
         name: "Soldier",
+        scope: :renewal,
         unique_name: "Soldier#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
         dir: 2,
         sprite: 105,
         name: "Soldier",
+        scope: :renewal,
         unique_name: "Soldier#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
         dir: 2,
         sprite: 105,
         name: "Soldier",
+        scope: :renewal,
         unique_name: "Soldier#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
         dir: 2,
         sprite: 105,
         name: "Soldier",
+        scope: :renewal,
         unique_name: "Soldier#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SoldierIzlude do
         dir: 2,
         sprite: 105,
         name: "Soldier",
+        scope: :renewal,
         unique_name: "Soldier#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 124,
+        y: 178,
+        dir: 2,
+        sprite: 105,
+        name: "Soldier",
+        scope: :pre_renewal,
+        unique_name: "Soldier#izlude"
       }
     ]
 

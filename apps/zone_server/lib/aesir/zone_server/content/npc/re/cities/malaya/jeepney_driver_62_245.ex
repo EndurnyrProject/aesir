@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.JeepneyDriver62245 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malaya",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.JeepneyDriver62245 do
         dir: 6,
         sprite: 582,
         name: "Jeepney Driver",
+        scope: :renewal,
         unique_name: "Jeepney Driver#08"
       }
     ]
@@ -23,7 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.JeepneyDriver62245 do
   @impl true
   def on_talk(ctx) do
     {ctx, _} =
-      Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney.call(ctx, [
+      Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney.call(ctx, [
         "ma_zif08",
         60,
         "Shoo~ Be gone if you're a ghost, and go away even if you're human~ Shoo~",

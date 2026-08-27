@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "louyang",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "LouTrainee"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#7lou"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#8lou"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#9lou"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#10lou"
       },
       %{
@@ -61,6 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#11lou"
       },
       %{
@@ -70,6 +77,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.Trainee do
         dir: 0,
         sprite: 819,
         name: "Trainee",
+        scope: :shared,
         unique_name: "Trainee#12lou"
       }
     ]

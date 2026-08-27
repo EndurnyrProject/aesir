@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SemangatSWife do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SemangatSWife do
         dir: 6,
         sprite: 535,
         name: "Semangat's Wife",
+        scope: :renewal,
         unique_name: "Semangat's Wife#dew"
       }
     ]

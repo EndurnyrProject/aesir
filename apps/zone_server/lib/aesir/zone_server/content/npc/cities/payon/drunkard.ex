@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Drunkard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "payon",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Drunkard do
         dir: 1,
         sprite: 120,
         name: "Drunkard",
+        scope: :shared,
         unique_name: "Drunkard#payon"
       }
     ]

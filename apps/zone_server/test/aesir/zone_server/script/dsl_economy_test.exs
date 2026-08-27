@@ -164,6 +164,23 @@ defmodule Aesir.ZoneServer.Script.DslEconomyTest do
     end
   end
 
+  describe "resetlvl/2" do
+    test "routes {:reset_level, type} and folds the returned game state" do
+      gs = build_game_state()
+      ctx = build_ctx(session: ok_session(gs))
+
+      assert Dsl.resetlvl(ctx, 1).game_state == gs
+      assert_received {:script_apply, {:reset_level, 1}}
+    end
+
+    test "halts when the session rejects the reset type" do
+      ctx = build_ctx(session: error_session(:invalid_reset_type))
+
+      assert Dsl.resetlvl(ctx, 9).status == {:error, :invalid_reset_type}
+      assert_received {:script_apply, {:reset_level, 9}}
+    end
+  end
+
   describe "openstorage/1" do
     test "routes {:openstorage} and folds the returned game_state" do
       gs = %{build_game_state() | storage: %{}}

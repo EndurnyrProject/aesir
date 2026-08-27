@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp335143 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_fild09",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.Warp335143 do
         dir: 0,
         sprite: 45,
         name: "Warp",
+        scope: :shared,
         unique_name: "Warp#2",
         trigger: {1, 1}
       }

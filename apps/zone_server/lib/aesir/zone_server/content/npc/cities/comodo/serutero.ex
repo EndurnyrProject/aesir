@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Serutero do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_fild12",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Serutero do
         dir: 4,
         sprite: 59,
         name: "Serutero",
+        scope: :shared,
         unique_name: "Serutero#cmd"
       }
     ]

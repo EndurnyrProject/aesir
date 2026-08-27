@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "izlude", x: 57, y: 159, dir: 2, sprite: 85, name: "Red", unique_name: "Red#izlude"},
+      %{
+        map: "izlude",
+        x: 57,
+        y: 159,
+        dir: 2,
+        sprite: 85,
+        name: "Red",
+        scope: :renewal,
+        unique_name: "Red#izlude"
+      },
       %{
         map: "izlude_a",
         x: 57,
@@ -17,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
         dir: 2,
         sprite: 85,
         name: "Red",
+        scope: :renewal,
         unique_name: "Red#izlude_a"
       },
       %{
@@ -26,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
         dir: 2,
         sprite: 85,
         name: "Red",
+        scope: :renewal,
         unique_name: "Red#izlude_b"
       },
       %{
@@ -35,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
         dir: 2,
         sprite: 85,
         name: "Red",
+        scope: :renewal,
         unique_name: "Red#izlude_c"
       },
       %{
@@ -44,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.RedIzlude do
         dir: 2,
         sprite: 85,
         name: "Red",
+        scope: :renewal,
         unique_name: "Red#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 56,
+        y: 126,
+        dir: 2,
+        sprite: 85,
+        name: "Red",
+        scope: :pre_renewal,
+        unique_name: "Red#izlude"
       }
     ]
 

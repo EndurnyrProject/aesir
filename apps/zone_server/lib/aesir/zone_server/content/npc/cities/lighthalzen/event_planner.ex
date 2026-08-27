@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.EventPlanner do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "lhz_in02", x: 40, y: 280, dir: 6, sprite: 833, name: "Event Planner"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "lhz_in02",
+        x: 40,
+        y: 280,
+        dir: 6,
+        sprite: 833,
+        name: "Event Planner",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

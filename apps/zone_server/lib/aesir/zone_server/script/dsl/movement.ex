@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   @moduledoc """
   Player-relocation buildins for the script DSL: single-player warps (explicit
-  cell, random cell, save point), area warps over every player in a rectangle,
-  and by-character-id warps.
+  cell, random cell, save point), rectangle and whole-map warps, and
+  by-character-id warps.
 
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade.
   """
@@ -79,6 +79,42 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
   end
 
   def warp(%Ctx{} = ctx, map, x, y), do: Internal.apply_op(ctx, {:warp, map, x, y})
+
+  @doc """
+  Warps players from one map to another (`mapwarp`). With no filter, every
+  player on `from_map` is relocated. Filter type `1` selects a guild and type
+  `2` a party by `id`; any other type selects everyone.
+
+  A destination of `"Random"` shuffles players on `from_map`. Coordinates
+  `{0, 0}` select an independent random traversable destination for each player.
+  The world effect works from a detached context and skips offline players.
+  """
+  @spec mapwarp(Ctx.t(), String.t(), String.t(), integer(), integer()) :: Ctx.t()
+  def mapwarp(%Ctx{} = ctx, from_map, to_map, x, y),
+    do: mapwarp(ctx, from_map, to_map, x, y, 0, 0)
+
+  @spec mapwarp(Ctx.t(), String.t(), String.t(), integer(), integer(), integer()) :: Ctx.t()
+  def mapwarp(%Ctx{} = ctx, from_map, to_map, x, y, _type),
+    do: mapwarp(ctx, from_map, to_map, x, y, 0, 0)
+
+  @spec mapwarp(
+          Ctx.t(),
+          String.t(),
+          String.t(),
+          integer(),
+          integer(),
+          integer(),
+          integer()
+        ) :: Ctx.t()
+  def mapwarp(%Ctx{status: {:error, _}} = ctx, _from, _to, _x, _y, _type, _id), do: ctx
+
+  def mapwarp(%Ctx{} = ctx, from_map, to_map, x, y, type, id) do
+    from_map
+    |> SpatialIndex.get_players_on_map()
+    |> Enum.each(&warp_map_player(&1, from_map, to_map, x, y, type, id))
+
+    ctx
+  end
 
   @doc """
   Warps every player inside the rectangle `{x1,y1}`–`{x2,y2}` on `from_map` to
@@ -180,6 +216,32 @@ defmodule Aesir.ZoneServer.Script.Dsl.Movement do
       end
 
       ctx
+    end
+  end
+
+  defp warp_map_player(char_id, from_map, to_map, x, y, type, id) do
+    with {:ok, {_module, game_state, pid}} when is_pid(pid) <-
+           UnitRegistry.get_unit(:player, char_id),
+         true <- mapwarp_selected?(game_state, type, id),
+         {:ok, {dest_map, dest_x, dest_y}} <- mapwarp_destination(from_map, to_map, x, y) do
+      PlayerSession.warp(pid, dest_map, dest_x, dest_y)
+    else
+      _ -> :ok
+    end
+  end
+
+  defp mapwarp_selected?(game_state, 1, id), do: Map.get(game_state, :guild_id) == id
+  defp mapwarp_selected?(game_state, 2, id), do: Map.get(game_state, :party_id) == id
+  defp mapwarp_selected?(_game_state, _type, _id), do: true
+
+  defp mapwarp_destination(from_map, "Random", _x, _y), do: random_destination(from_map)
+  defp mapwarp_destination(_from_map, to_map, 0, 0), do: random_destination(to_map)
+  defp mapwarp_destination(_from_map, to_map, x, y), do: {:ok, {to_map, x, y}}
+
+  defp random_destination(map) do
+    case Cell.random_traversable(map) do
+      {:ok, {x, y}} -> {:ok, {map, x, y}}
+      {:error, reason} -> {:error, reason}
     end
   end
 

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
         dir: 7,
         sprite: 706,
         name: "Talkative Adventurer",
+        scope: :renewal,
         unique_name: "Talkative Adventurer#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
         dir: 7,
         sprite: 706,
         name: "Talkative Adventurer",
+        scope: :renewal,
         unique_name: "Talkative Adventurer#iza"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
         dir: 7,
         sprite: 706,
         name: "Talkative Adventurer",
+        scope: :renewal,
         unique_name: "Talkative Adventurer#izb"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
         dir: 7,
         sprite: 706,
         name: "Talkative Adventurer",
+        scope: :renewal,
         unique_name: "Talkative Adventurer#izc"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeAdventurer do
         dir: 7,
         sprite: 706,
         name: "Talkative Adventurer",
+        scope: :renewal,
         unique_name: "Talkative Adventurer#izd"
       }
     ]

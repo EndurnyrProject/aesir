@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.HighRankedSoldier do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "spl_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.HighRankedSoldier do
         dir: 5,
         sprite: 461,
         name: "High-Ranked Soldier",
+        scope: :shared,
         unique_name: "High-Ranked Soldier#ep13"
       }
     ]

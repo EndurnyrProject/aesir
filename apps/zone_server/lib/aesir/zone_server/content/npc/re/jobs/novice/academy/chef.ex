@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Chef do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "iz_ac01", x: 160, y: 50, dir: 3, sprite: 701, name: "Chef", unique_name: "Chef#ac"},
+      %{
+        map: "iz_ac01",
+        x: 160,
+        y: 50,
+        dir: 3,
+        sprite: 701,
+        name: "Chef",
+        scope: :renewal,
+        unique_name: "Chef#ac"
+      },
       %{
         map: "iz_ac01_a",
         x: 160,
@@ -17,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Chef do
         dir: 3,
         sprite: 701,
         name: "Chef",
+        scope: :renewal,
         unique_name: "Chef#ac_a"
       },
       %{
@@ -26,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Chef do
         dir: 3,
         sprite: 701,
         name: "Chef",
+        scope: :renewal,
         unique_name: "Chef#ac_b"
       },
       %{
@@ -35,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Chef do
         dir: 3,
         sprite: 701,
         name: "Chef",
+        scope: :renewal,
         unique_name: "Chef#ac_c"
       },
       %{
@@ -44,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Chef do
         dir: 3,
         sprite: 701,
         name: "Chef",
+        scope: :renewal,
         unique_name: "Chef#ac_d"
       }
     ]

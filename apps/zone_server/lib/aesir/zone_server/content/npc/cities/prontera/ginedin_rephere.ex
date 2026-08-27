@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.GinedinRephere do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.GinedinRephere do
         dir: 3,
         sprite: 55,
         name: "Ginedin Rephere",
+        scope: :shared,
         unique_name: "Ginedin Rephere#pront"
       }
     ]

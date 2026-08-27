@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
         dir: 3,
         sprite: 640,
         name: "Guest Lecturer Mayssel",
+        scope: :renewal,
         unique_name: "Guest Lecturer Mayssel#0"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
         dir: 3,
         sprite: 640,
         name: "Guest Lecturer Mayssel",
+        scope: :renewal,
         unique_name: "Guest Lecturer Mayssel#a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
         dir: 3,
         sprite: 640,
         name: "Guest Lecturer Mayssel",
+        scope: :renewal,
         unique_name: "Guest Lecturer Mayssel#b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
         dir: 3,
         sprite: 640,
         name: "Guest Lecturer Mayssel",
+        scope: :renewal,
         unique_name: "Guest Lecturer Mayssel#c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
         dir: 3,
         sprite: 640,
         name: "Guest Lecturer Mayssel",
+        scope: :renewal,
         unique_name: "Guest Lecturer Mayssel#d"
       }
     ]

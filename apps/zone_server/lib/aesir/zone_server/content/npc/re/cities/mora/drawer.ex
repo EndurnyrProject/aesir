@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Drawer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,16 +17,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Drawer do
         dir: 0,
         sprite: 111,
         name: "Drawer",
+        scope: :renewal,
         unique_name: "Drawer#mora_warehouse"
       }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @impl true
   def on_talk(ctx) do
-    v1 = Todo.call!(:callfunc, ["F_CanOpenStorage"])
+    {ctx, v1} = Aesir.ZoneServer.Content.Npc.Functions.FCanopenstorage.call(ctx, [])
 
     ctx =
       if not Rathena.truthy?(v1) do

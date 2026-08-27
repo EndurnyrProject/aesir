@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.Grampa do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_ruins",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.Grampa do
         dir: 0,
         sprite: 61,
         name: "Grampa",
+        scope: :shared,
         unique_name: "Grampa#moc"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc90208 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "gef_fild07",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc90208 do
         dir: 6,
         sprite: 111,
         name: "",
+        scope: :renewal,
         unique_name: "#acmageguide",
         trigger: {7, 7}
       }

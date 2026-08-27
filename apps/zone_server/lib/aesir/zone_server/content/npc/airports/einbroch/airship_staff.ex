@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.AirshipStaff do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbroch",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.AirshipStaff do
         dir: 3,
         sprite: 91,
         name: "Airship Staff",
+        scope: :shared,
         unique_name: "Airship Staff#ein01"
       }
     ]

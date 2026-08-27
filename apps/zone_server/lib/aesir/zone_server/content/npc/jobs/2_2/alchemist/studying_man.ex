@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.StudyingMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alde_alche",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.StudyingMan do
         dir: 7,
         sprite: 750,
         name: "Studying Man",
+        scope: :shared,
         unique_name: "Studying Man#am"
       }
     ]

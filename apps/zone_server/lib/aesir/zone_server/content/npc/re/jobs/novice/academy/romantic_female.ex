@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
         dir: 5,
         sprite: 882,
         name: "Romantic Female",
+        scope: :renewal,
         unique_name: "Romantic Female#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
         dir: 5,
         sprite: 882,
         name: "Romantic Female",
+        scope: :renewal,
         unique_name: "Romantic Female#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
         dir: 5,
         sprite: 882,
         name: "Romantic Female",
+        scope: :renewal,
         unique_name: "Romantic Female#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
         dir: 5,
         sprite: 882,
         name: "Romantic Female",
+        scope: :renewal,
         unique_name: "Romantic Female#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RomanticFemale do
         dir: 5,
         sprite: 882,
         name: "Romantic Female",
+        scope: :renewal,
         unique_name: "Romantic Female#iz_d"
       }
     ]

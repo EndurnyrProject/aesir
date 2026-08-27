@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Hugel.Toairplane do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "hugel",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Hugel.Toairplane do
         dir: 0,
         sprite: 45,
         name: "toairplane",
+        scope: :shared,
         unique_name: "toairplane#hugel",
         trigger: {1, 1}
       }

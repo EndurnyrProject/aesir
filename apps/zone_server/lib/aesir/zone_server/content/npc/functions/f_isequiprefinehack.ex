@@ -21,7 +21,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack do
       ctx =
         if get_local(ctx, :refine, 0) != get_local(ctx, :refine_chk, 0) do
           ctx =
-            todo(ctx, :logmes, [
+            logmes(
+              ctx,
               Rathena.concat(
                 Rathena.concat(
                   Rathena.concat(
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequiprefinehack do
                 ),
                 "."
               )
-            ])
+            )
 
           throw({:script_return, {ctx, 1}})
         else

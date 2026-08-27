@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alde_alche",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
         dir: 1,
         sprite: 57,
         name: "Chief Researcher",
+        scope: :shared,
         unique_name: "Chief Researcher#am"
       }
     ]

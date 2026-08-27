@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
         dir: 1,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
         dir: 1,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
         dir: 1,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
         dir: 1,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SailorIzlude do
         dir: 1,
         sprite: 100,
         name: "Sailor",
+        scope: :renewal,
         unique_name: "Sailor#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 201,
+        y: 181,
+        dir: 2,
+        sprite: 100,
+        name: "Sailor",
+        scope: :pre_renewal,
+        unique_name: "Sailor#izlude"
       }
     ]
 

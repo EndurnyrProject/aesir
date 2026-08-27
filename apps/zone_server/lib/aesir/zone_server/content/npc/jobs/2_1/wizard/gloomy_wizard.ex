@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "gef_tower", x: 102, y: 24, dir: 2, sprite: 735, name: "Gloomy Wizard"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "gef_tower",
+        x: 102,
+        y: 24,
+        dir: 2,
+        sprite: 735,
+        name: "Gloomy Wizard",
+        scope: :shared
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

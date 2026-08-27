@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship do
         dir: 3,
         sprite: 858,
         name: "Airship",
+        scope: :renewal,
         unique_name: "Airship#iz",
         trigger: {3, 3}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship do
         dir: 3,
         sprite: 858,
         name: "Airship",
+        scope: :renewal,
         unique_name: "Airship#iz_a",
         trigger: {3, 3}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship do
         dir: 3,
         sprite: 858,
         name: "Airship",
+        scope: :renewal,
         unique_name: "Airship#iz_b",
         trigger: {3, 3}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship do
         dir: 3,
         sprite: 858,
         name: "Airship",
+        scope: :renewal,
         unique_name: "Airship#iz_c",
         trigger: {3, 3}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Airship do
         dir: 3,
         sprite: 858,
         name: "Airship",
+        scope: :renewal,
         unique_name: "Airship#iz_d",
         trigger: {3, 3}
       }

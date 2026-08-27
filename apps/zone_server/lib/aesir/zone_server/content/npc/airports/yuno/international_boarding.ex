@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Yuno.InternationalBoarding do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "y_airport", x: 140, y: 63, dir: 5, sprite: 91, name: "International Boarding"}
+      %{
+        map: "y_airport",
+        x: 140,
+        y: 63,
+        dir: 5,
+        sprite: 91,
+        name: "International Boarding",
+        scope: :shared
+      }
     ]
 
   @impl true

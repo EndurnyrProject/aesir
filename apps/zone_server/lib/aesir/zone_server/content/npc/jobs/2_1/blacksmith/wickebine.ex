@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Wickebine do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "morocc",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Wickebine do
         dir: 4,
         sprite: 725,
         name: "Wickebine",
+        scope: :shared,
         unique_name: "Wickebine#BLS"
       }
     ]

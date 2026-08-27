@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WhiteDog do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gef_tower",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WhiteDog do
         dir: 4,
         sprite: 81,
         name: "White Dog",
+        scope: :shared,
         unique_name: "White Dog#wiz"
       }
     ]

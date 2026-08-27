@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.Gatekeeper113127 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gonryun",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.Gatekeeper113127 do
         dir: 6,
         sprite: 780,
         name: "Gatekeeper",
+        scope: :shared,
         unique_name: "Gatekeeper#gon2"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.MiddleRankedLaphine do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "splendide",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.MiddleRankedLaphine do
         dir: 5,
         sprite: 443,
         name: "Middle-Ranked Laphine",
+        scope: :shared,
         unique_name: "Middle-Ranked Laphine#1"
       }
     ]

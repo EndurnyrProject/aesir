@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Rangrang do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Rangrang do
         dir: 1,
         sprite: 518,
         name: "Rangrang",
+        scope: :renewal,
         unique_name: "Rangrang#p"
       }
     ]

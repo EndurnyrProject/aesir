@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.EclageGuard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "ecl_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.EclageGuard do
         dir: 5,
         sprite: 447,
         name: "Eclage Guard",
+        scope: :renewal,
         unique_name: "Eclage Guard#pri_inn"
       }
     ]

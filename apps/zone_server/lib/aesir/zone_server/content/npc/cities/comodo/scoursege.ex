@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Scoursege do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Scoursege do
         dir: 4,
         sprite: 51,
         name: "Scoursege",
+        scope: :shared,
         unique_name: "Scoursege#cmd"
       }
     ]

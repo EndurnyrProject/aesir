@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst21 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "job_prist", x: 168, y: 180, dir: 4, sprite: 45, name: "prst2_1", trigger: {3, 3}}
+      %{
+        map: "job_prist",
+        x: 168,
+        y: 180,
+        dir: 4,
+        sprite: 45,
+        name: "prst2_1",
+        scope: :shared,
+        trigger: {3, 3}
+      }
     ]
 
   @impl true

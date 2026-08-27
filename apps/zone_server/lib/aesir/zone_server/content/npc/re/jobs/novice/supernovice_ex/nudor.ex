@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.Nudor do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "airplane",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.Nudor do
         dir: 5,
         sprite: 729,
         name: "Nudor",
+        scope: :renewal,
         unique_name: "Nudor#sp2"
       }
     ]

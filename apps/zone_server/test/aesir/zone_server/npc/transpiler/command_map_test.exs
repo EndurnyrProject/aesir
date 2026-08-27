@@ -20,6 +20,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
   test "reads and call reads" do
     assert {:ok, "base_level"} = CommandMap.read("BaseLevel")
     assert {:ok, %{dsl: "count_item"}} = CommandMap.call_read("countitem")
+
+    assert {:ok, %{dsl: "getguildname", args: [:int]}} =
+             CommandMap.call_read("GetGuildName")
+
     assert :error = CommandMap.read("PartnerId")
   end
 
@@ -333,6 +337,30 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
     assert {:ok, %{shape: :riding, dsl: "set_riding"}} = CommandMap.command("setriding")
     assert CommandMap.supported?("setriding")
     assert CommandMap.supported?("SetRiding")
+  end
+
+  test "mapwarp, checkriding, and resetlvl map to existing DSL seams" do
+    assert {:ok, %{dsl: "mapwarp", args: [:string, :string, :int, :int, :int, :int]}} =
+             CommandMap.command("mapwarp")
+
+    assert {:ok, %{shape: :nullary, dsl: "ismounting"}} =
+             CommandMap.call_read("checkriding")
+
+    assert {:ok, %{dsl: "resetlvl", args: [:int]}} = CommandMap.command("resetlvl")
+
+    for name <- ~w(mapwarp checkriding resetlvl), do: assert(CommandMap.supported?(name))
+  end
+
+  test "resetskill and MOB_NAME getmonsterinfo map to existing DSL seams" do
+    assert {:ok, %{shape: :nullary, dsl: "reset_skills"}} =
+             CommandMap.command("ResetSkill")
+
+    assert {:ok, %{dsl: "getmonsterinfo", args: [:int, :int]}} =
+             CommandMap.call_read("getmonsterinfo")
+
+    assert {:ok, "1"} = Resolver.constant("MOB_NAME")
+
+    for name <- ~w(ResetSkill getmonsterinfo), do: assert(CommandMap.supported?(name))
   end
 
   test "repair/repairall map to their DSL ops" do

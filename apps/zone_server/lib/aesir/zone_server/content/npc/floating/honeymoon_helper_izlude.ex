@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
         dir: 3,
         sprite: 71,
         name: "Honeymoon Helper",
+        scope: :renewal,
         unique_name: "Honeymoon Helper#Izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
         dir: 3,
         sprite: 71,
         name: "Honeymoon Helper",
+        scope: :renewal,
         unique_name: "Honeymoon Helper#Iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
         dir: 3,
         sprite: 71,
         name: "Honeymoon Helper",
+        scope: :renewal,
         unique_name: "Honeymoon Helper#Iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
         dir: 3,
         sprite: 71,
         name: "Honeymoon Helper",
+        scope: :renewal,
         unique_name: "Honeymoon Helper#Iz_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.HoneymoonHelperIzlude do
         dir: 3,
         sprite: 71,
         name: "Honeymoon Helper",
+        scope: :renewal,
         unique_name: "Honeymoon Helper#Iz_d"
+      },
+      %{
+        map: "izlude",
+        x: 171,
+        y: 185,
+        dir: 3,
+        sprite: 71,
+        name: "Honeymoon Helper",
+        scope: :pre_renewal,
+        unique_name: "Honeymoon Helper#Izlude"
       }
     ]
 

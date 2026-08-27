@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.SeaCaptain do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "amatsu",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.SeaCaptain do
         dir: 5,
         sprite: 709,
         name: "Sea Captain",
+        scope: :shared,
         unique_name: "Sea Captain#ama2"
       }
     ]

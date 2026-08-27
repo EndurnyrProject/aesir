@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
         dir: 3,
         sprite: 887,
         name: "Instructor Argos",
+        scope: :renewal,
         unique_name: "Instructor Argos#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
         dir: 3,
         sprite: 887,
         name: "Instructor Argos",
+        scope: :renewal,
         unique_name: "Instructor Argos#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
         dir: 3,
         sprite: 887,
         name: "Instructor Argos",
+        scope: :renewal,
         unique_name: "Instructor Argos#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
         dir: 3,
         sprite: 887,
         name: "Instructor Argos",
+        scope: :renewal,
         unique_name: "Instructor Argos#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
         dir: 3,
         sprite: 887,
         name: "Instructor Argos",
+        scope: :renewal,
         unique_name: "Instructor Argos#iz_d"
       }
     ]

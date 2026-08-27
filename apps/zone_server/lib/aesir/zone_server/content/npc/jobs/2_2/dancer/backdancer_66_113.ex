@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Backdancer66113 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_duncer",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Backdancer66113 do
         dir: 4,
         sprite: 724,
         name: "Backdancer",
+        scope: :shared,
         unique_name: "Backdancer#2"
       }
     ]

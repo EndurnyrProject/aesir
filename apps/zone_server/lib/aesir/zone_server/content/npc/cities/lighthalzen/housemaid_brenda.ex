@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HousemaidBrenda do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HousemaidBrenda do
         dir: 1,
         sprite: 74,
         name: "Housemaid Brenda",
+        scope: :shared,
         unique_name: "Housemaid Brenda#li"
       }
     ]

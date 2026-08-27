@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Waitress do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "geffen_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Waitress do
         dir: 5,
         sprite: 91,
         name: "Waitress",
+        scope: :shared,
         unique_name: "Waitress#elen"
       }
     ]

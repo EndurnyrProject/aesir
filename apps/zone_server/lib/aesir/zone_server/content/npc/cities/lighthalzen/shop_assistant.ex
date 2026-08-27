@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.ShopAssistant do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.ShopAssistant do
         dir: 1,
         sprite: 91,
         name: "Shop Assistant",
+        scope: :shared,
         unique_name: "Shop Assistant#cobo"
       }
     ]

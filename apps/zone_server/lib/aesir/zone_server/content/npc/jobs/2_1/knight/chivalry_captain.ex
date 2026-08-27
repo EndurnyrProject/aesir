@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
         dir: 4,
         sprite: 56,
         name: "Chivalry Captain",
+        scope: :shared,
         unique_name: "Chivalry Captain#knt"
       }
     ]

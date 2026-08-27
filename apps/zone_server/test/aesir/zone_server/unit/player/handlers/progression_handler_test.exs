@@ -48,6 +48,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   @knight_id knight_id
   {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
   @novice_id novice_id
+  {:ok, novice_high_id} = AvailableJobs.job_name_to_id(:novice_high)
+  @novice_high_id novice_high_id
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
   {:ok, merchant_id} = AvailableJobs.job_name_to_id(:merchant)
@@ -915,6 +917,151 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       str = StatusParams.str()
       assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^str, value: 1}}}
+    end
+  end
+
+  describe "reset_level/2" do
+    test "type 1 performs a rebirth reset and grants Novice High utility skills" do
+      bash = catalog_id(:sm_bash)
+      first_aid = catalog_id(:nv_firstaid)
+      trick_dead = catalog_id(:nv_trickdead)
+
+      state =
+        state_with(
+          job_id: @novice_high_id,
+          base_level: 99,
+          job_level: 50,
+          base_exp: 12_345,
+          job_exp: 678,
+          learned_skills: %{bash => 4},
+          skill_point: 3,
+          status_point: 7,
+          trait_point: 9
+        )
+
+      stats =
+        %{
+          state.game_state.stats
+          | base_stats:
+              struct(state.game_state.stats.base_stats,
+                str: 40,
+                agi: 30,
+                vit: 20,
+                int: 10,
+                dex: 9,
+                luk: 8,
+                pow: 7,
+                sta: 6,
+                wis: 5,
+                spl: 4,
+                con: 3,
+                crt: 2
+              )
+        }
+
+      state = %{state | game_state: %{state.game_state | stats: stats}}
+
+      assert {:ok, new_state} = ProgressionHandler.reset_level(1, state)
+      result = new_state.game_state.stats
+      progression = result.progression
+
+      assert progression.base_level == 1
+      assert progression.job_level == 1
+      assert progression.base_exp == 0
+      assert progression.job_exp == 0
+      assert progression.skill_point == 0
+      assert progression.status_point == 100
+      assert progression.trait_point == 0
+      assert progression.learned_skills == %{first_aid => 1, trick_dead => 1}
+
+      for stat <- [:str, :agi, :vit, :int, :dex, :luk],
+          do: assert(Map.fetch!(result.base_stats, stat) == 1)
+
+      for stat <- [:pow, :sta, :wis, :spl, :con, :crt],
+          do: assert(Map.fetch!(result.base_stats, stat) == 0)
+    end
+
+    test "type 2 resets levels and skills while preserving allocated stats" do
+      bash = catalog_id(:sm_bash)
+
+      state =
+        state_with(
+          job_id: @swordman_id,
+          base_level: 80,
+          job_level: 40,
+          base_exp: 123,
+          job_exp: 456,
+          learned_skills: %{bash => 4},
+          skill_point: 2
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.reset_level(2, state)
+      result = new_state.game_state.stats
+
+      assert result.progression.base_level == 1
+      assert result.progression.job_level == 1
+      assert result.progression.base_exp == 0
+      assert result.progression.job_exp == 0
+      assert result.progression.skill_point == 0
+      assert result.progression.learned_skills == %{}
+      assert result.base_stats.str == state.game_state.stats.base_stats.str
+    end
+
+    test "type 3 resets only base level and base experience" do
+      bash = catalog_id(:sm_bash)
+
+      state =
+        state_with(
+          job_id: @swordman_id,
+          base_level: 80,
+          job_level: 40,
+          base_exp: 123,
+          job_exp: 456,
+          learned_skills: %{bash => 4},
+          skill_point: 2
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.reset_level(3, state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.base_level == 1
+      assert progression.base_exp == 0
+      assert progression.job_level == 40
+      assert progression.job_exp == 456
+      assert progression.skill_point == 2
+      assert progression.learned_skills == %{bash => 4}
+    end
+
+    test "type 4 resets job level and refunds learned skills" do
+      bash = catalog_id(:sm_bash)
+
+      state =
+        state_with(
+          job_id: @swordman_id,
+          base_level: 80,
+          job_level: 40,
+          base_exp: 123,
+          job_exp: 456,
+          learned_skills: %{bash => 4},
+          skill_point: 2
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.reset_level(4, state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.base_level == 80
+      assert progression.base_exp == 123
+      assert progression.job_level == 1
+      assert progression.job_exp == 0
+      assert progression.skill_point == 6
+      assert progression.learned_skills == %{}
+    end
+
+    test "rejects invalid types and skill-reset types while a cart is active" do
+      state = state_with_gs([job_id: @merchant_id], cart_type: 1)
+
+      assert {:error, :cart_active} = ProgressionHandler.reset_level(1, state)
+      assert {:error, :invalid_reset_type} = ProgressionHandler.reset_level(0, state)
     end
   end
 

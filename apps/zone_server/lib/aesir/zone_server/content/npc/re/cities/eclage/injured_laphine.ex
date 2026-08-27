@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.InjuredLaphine do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "ecl_in02", x: 135, y: 45, dir: 5, sprite: 442, name: "Injured Laphine"},
+      %{
+        map: "ecl_in02",
+        x: 135,
+        y: 45,
+        dir: 5,
+        sprite: 442,
+        name: "Injured Laphine",
+        scope: :renewal
+      },
       %{
         map: "ecl_in02",
         x: 137,
@@ -17,6 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.InjuredLaphine do
         dir: 3,
         sprite: 441,
         name: "Doctor Laphine",
+        scope: :renewal,
         unique_name: "Doctor Laphine#doctor"
       }
     ]

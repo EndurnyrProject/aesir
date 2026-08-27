@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SweetMarriedCouple234263
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SweetMarriedCouple234263
         dir: 8,
         sprite: 727,
         name: "Sweet Married Couple",
+        scope: :renewal,
         unique_name: "Sweet Married Couple#2",
         trigger: {2, 3}
       }

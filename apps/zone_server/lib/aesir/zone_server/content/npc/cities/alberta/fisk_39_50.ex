@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Alberta.Fisk3950 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "alb2trea", x: 39, y: 50, dir: 6, sprite: 100, name: "Fisk", unique_name: "Fisk#a2t"}
+      %{
+        map: "alb2trea",
+        x: 39,
+        y: 50,
+        dir: 6,
+        sprite: 100,
+        name: "Fisk",
+        scope: :shared,
+        unique_name: "Fisk#a2t"
+      }
     ]
 
   @impl true

@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Crusader do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "prt_church", x: 95, y: 127, dir: 3, sprite: 745, name: "Crusader"}]
+    scope: :shared,
+    spawn: [
+      %{map: "prt_church", x: 95, y: 127, dir: 3, sprite: 745, name: "Crusader", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

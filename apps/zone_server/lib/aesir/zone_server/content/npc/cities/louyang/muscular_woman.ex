@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.MuscularWoman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "louyang",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.MuscularWoman do
         dir: 2,
         sprite: 815,
         name: "Muscular Woman",
+        scope: :shared,
         unique_name: "Muscular Woman#lou"
       }
     ]

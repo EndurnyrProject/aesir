@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Soldier do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_maze02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Soldier do
         dir: 0,
         sprite: 105,
         name: "Soldier",
+        scope: :shared,
         unique_name: "Soldier#pront"
       }
     ]

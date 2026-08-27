@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.AppleMerchant do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.AppleMerchant do
         dir: 5,
         sprite: 86,
         name: "Apple Merchant",
+        scope: :shared,
         unique_name: "Apple Merchant#airplane"
       }
     ]

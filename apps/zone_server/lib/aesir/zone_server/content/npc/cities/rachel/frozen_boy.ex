@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.FrozenBoy do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "ice_dun04", x: 33, y: 166, dir: 3, sprite: 925, name: "Frozen Boy"}]
+    scope: :shared,
+    spawn: [
+      %{map: "ice_dun04", x: 33, y: 166, dir: 3, sprite: 925, name: "Frozen Boy", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

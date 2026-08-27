@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.BulletinBoard104202 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbroch",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.BulletinBoard104202 do
         dir: 5,
         sprite: 858,
         name: "Bulletin Board",
+        scope: :shared,
         unique_name: "Bulletin Board#ein55"
       }
     ]

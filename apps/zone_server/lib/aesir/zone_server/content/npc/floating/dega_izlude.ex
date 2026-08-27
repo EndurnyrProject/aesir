@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
         dir: 4,
         sprite: 84,
         name: "Dega",
+        scope: :renewal,
         unique_name: "Dega#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
         dir: 4,
         sprite: 84,
         name: "Dega",
+        scope: :renewal,
         unique_name: "Dega#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
         dir: 4,
         sprite: 84,
         name: "Dega",
+        scope: :renewal,
         unique_name: "Dega#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
         dir: 4,
         sprite: 84,
         name: "Dega",
+        scope: :renewal,
         unique_name: "Dega#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.DegaIzlude do
         dir: 4,
         sprite: 84,
         name: "Dega",
+        scope: :renewal,
         unique_name: "Dega#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 150,
+        y: 118,
+        dir: 2,
+        sprite: 84,
+        name: "Dega",
+        scope: :pre_renewal,
+        unique_name: "Dega#izlude"
       }
     ]
 

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.ReadingRaffle do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.ReadingRaffle do
         dir: 4,
         sprite: 516,
         name: "Reading Raffle",
+        scope: :renewal,
         unique_name: "Reading Raffle#ep14_1"
       }
     ]

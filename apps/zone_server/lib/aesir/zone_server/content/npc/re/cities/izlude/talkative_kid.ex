@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid do
         dir: 7,
         sprite: 703,
         name: "Talkative Kid",
+        scope: :renewal,
         unique_name: "Talkative Kid#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid do
         dir: 7,
         sprite: 703,
         name: "Talkative Kid",
+        scope: :renewal,
         unique_name: "Talkative Kid#iza"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid do
         dir: 7,
         sprite: 703,
         name: "Talkative Kid",
+        scope: :renewal,
         unique_name: "Talkative Kid#izb"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid do
         dir: 7,
         sprite: 703,
         name: "Talkative Kid",
+        scope: :renewal,
         unique_name: "Talkative Kid#izc"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.TalkativeKid do
         dir: 7,
         sprite: 703,
         name: "Talkative Kid",
+        scope: :renewal,
         unique_name: "Talkative Kid#izd"
       }
     ]

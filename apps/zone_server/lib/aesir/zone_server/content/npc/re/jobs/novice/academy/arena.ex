@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
         dir: 3,
         sprite: 858,
         name: "Arena",
+        scope: :renewal,
         unique_name: "Arena#iz",
         trigger: {3, 3}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
         dir: 3,
         sprite: 858,
         name: "Arena",
+        scope: :renewal,
         unique_name: "Arena#iz_a",
         trigger: {3, 3}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
         dir: 3,
         sprite: 858,
         name: "Arena",
+        scope: :renewal,
         unique_name: "Arena#iz_b",
         trigger: {3, 3}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
         dir: 3,
         sprite: 858,
         name: "Arena",
+        scope: :renewal,
         unique_name: "Arena#iz_c",
         trigger: {3, 3}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arena do
         dir: 3,
         sprite: 858,
         name: "Arena",
+        scope: :renewal,
         unique_name: "Arena#iz_d",
         trigger: {3, 3}
       }

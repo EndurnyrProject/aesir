@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.SecurityOfficer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "spl_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.SecurityOfficer do
         dir: 5,
         sprite: 461,
         name: "Security Officer",
+        scope: :shared,
         unique_name: "Security Officer#tre"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.CatTrainer164203 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malangdo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.CatTrainer164203 do
         dir: 3,
         sprite: 853,
         name: "Cat Trainer",
+        scope: :renewal,
         unique_name: "Cat Trainer#mal2"
       }
     ]

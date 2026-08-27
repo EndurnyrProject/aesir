@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.KunlunEnvoy15364 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gonryun",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.KunlunEnvoy15364 do
         dir: 7,
         sprite: 776,
         name: "Kunlun Envoy",
+        scope: :shared,
         unique_name: "Kunlun Envoy#gon4"
       }
     ]

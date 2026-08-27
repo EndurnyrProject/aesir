@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Tan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "einbroch", x: 236, y: 191, dir: 3, sprite: 855, name: "Tan", unique_name: "Tan#ein"}
+      %{
+        map: "einbroch",
+        x: 236,
+        y: 191,
+        dir: 3,
+        sprite: 855,
+        name: "Tan",
+        scope: :shared,
+        unique_name: "Tan#ein"
+      }
     ]
 
   @impl true

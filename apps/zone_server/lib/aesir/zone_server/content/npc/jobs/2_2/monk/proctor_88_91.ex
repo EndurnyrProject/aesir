@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Proctor8891 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "monk_test",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Proctor8891 do
         dir: 1,
         sprite: 52,
         name: "Proctor",
+        scope: :shared,
         unique_name: "Proctor#mk2"
       }
     ]

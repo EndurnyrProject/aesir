@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "geffen_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman do
         dir: 4,
         sprite: 123,
         name: "Mage Guildsman",
+        scope: :renewal,
         unique_name: "Mage Guildsman#mage"
       }
     ]

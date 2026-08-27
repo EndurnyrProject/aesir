@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KunlunEnvoyGonryun do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.KunlunEnvoyGonryun do
         dir: 3,
         sprite: 776,
         name: "Kunlun Envoy",
+        scope: :renewal,
+        unique_name: "Kunlun Envoy#gon"
+      },
+      %{
+        map: "alberta",
+        x: 245,
+        y: 69,
+        dir: 3,
+        sprite: 776,
+        name: "Kunlun Envoy",
+        scope: :pre_renewal,
         unique_name: "Kunlun Envoy#gon"
       }
     ]

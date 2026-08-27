@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
         dir: 3,
         sprite: 642,
         name: "Battle Instructor",
+        scope: :renewal,
         unique_name: "Battle Instructor#08"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
         dir: 3,
         sprite: 642,
         name: "Battle Instructor",
+        scope: :renewal,
         unique_name: "Battle Instructor#08a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
         dir: 3,
         sprite: 642,
         name: "Battle Instructor",
+        scope: :renewal,
         unique_name: "Battle Instructor#08b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
         dir: 3,
         sprite: 642,
         name: "Battle Instructor",
+        scope: :renewal,
         unique_name: "Battle Instructor#08c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
         dir: 3,
         sprite: 642,
         name: "Battle Instructor",
+        scope: :renewal,
         unique_name: "Battle Instructor#08d"
       }
     ]

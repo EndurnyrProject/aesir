@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.KafraEmployee do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldebaran",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.KafraEmployee do
         dir: 5,
         sprite: 117,
         name: "Kafra Employee",
+        scope: :shared,
         unique_name: "Kafra Employee#sn"
       }
     ]

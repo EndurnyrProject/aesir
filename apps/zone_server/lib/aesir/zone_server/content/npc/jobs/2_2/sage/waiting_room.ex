@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WaitingRoom do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_sage",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WaitingRoom do
         dir: 4,
         sprite: 700,
         name: "Waiting Room",
+        scope: :shared,
         unique_name: "Waiting Room#sg"
       }
     ]

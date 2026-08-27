@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Izlude.Aaron do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Izlude.Aaron do
         dir: 2,
         sprite: 65,
         name: "Aaron",
+        scope: :shared,
         unique_name: "Aaron#izlude"
       }
     ]

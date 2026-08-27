@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Loomin1stClassSecret do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "ra_san04", x: 137, y: 48, dir: 3, sprite: 111, name: "Loomin-1st Class Secret"}
+      %{
+        map: "ra_san04",
+        x: 137,
+        y: 48,
+        dir: 3,
+        sprite: 111,
+        name: "Loomin-1st Class Secret",
+        scope: :shared
+      }
     ]
 
   @impl true

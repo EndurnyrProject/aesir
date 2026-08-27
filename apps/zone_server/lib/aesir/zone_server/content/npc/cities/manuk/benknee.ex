@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Benknee do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "manuk",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Benknee do
         dir: 3,
         sprite: 449,
         name: "Benknee",
+        scope: :shared,
         unique_name: "Benknee#ep13_2_1"
       }
     ]

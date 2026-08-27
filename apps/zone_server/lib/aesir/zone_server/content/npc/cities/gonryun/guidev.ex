@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.Guidev do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gonryun",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.Guidev do
         dir: 3,
         sprite: 770,
         name: "Guidev",
+        scope: :shared,
         unique_name: "Guidev#gon"
       }
     ]

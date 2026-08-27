@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prontera",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
         dir: 1,
         sprite: 105,
         name: "Guard",
+        scope: :shared,
         unique_name: "Guard#2pront"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
         dir: 5,
         sprite: 105,
         name: "Guard",
+        scope: :shared,
         unique_name: "Guard#3pront"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
         dir: 5,
         sprite: 105,
         name: "Guard",
+        scope: :shared,
         unique_name: "Guard#4pront"
       },
       %{
@@ -43,7 +47,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Guard do
         dir: 5,
         sprite: 105,
         name: "Guard",
+        scope: :renewal,
         unique_name: "Guard#1pront"
+      },
+      %{
+        map: "prontera",
+        x: 160,
+        y: 330,
+        dir: 4,
+        sprite: 105,
+        name: "Guard",
+        scope: :pre_renewal,
+        unique_name: "Guard#5pront"
       }
     ]
 

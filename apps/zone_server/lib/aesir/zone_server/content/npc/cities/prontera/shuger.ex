@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Shuger do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prontera",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Shuger do
         dir: 3,
         sprite: 98,
         name: "Shuger",
+        scope: :shared,
         unique_name: "Shuger#pront"
       }
     ]

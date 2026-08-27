@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Sipo do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.Sipo do
         dir: 4,
         sprite: 538,
         name: "Sipo",
+        scope: :renewal,
         unique_name: "Sipo#dew",
         trigger: {2, 3}
       }

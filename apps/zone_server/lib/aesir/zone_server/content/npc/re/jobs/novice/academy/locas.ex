@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
         dir: 3,
         sprite: 84,
         name: "Locas",
+        scope: :renewal,
         unique_name: "Locas#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
         dir: 3,
         sprite: 84,
         name: "Locas",
+        scope: :renewal,
         unique_name: "Locas#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
         dir: 3,
         sprite: 84,
         name: "Locas",
+        scope: :renewal,
         unique_name: "Locas#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
         dir: 3,
         sprite: 84,
         name: "Locas",
+        scope: :renewal,
         unique_name: "Locas#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Locas do
         dir: 3,
         sprite: 84,
         name: "Locas",
+        scope: :renewal,
         unique_name: "Locas#iz_d"
       }
     ]

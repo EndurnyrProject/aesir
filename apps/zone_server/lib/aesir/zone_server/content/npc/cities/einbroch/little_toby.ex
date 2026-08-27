@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.LittleToby do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbroch",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.LittleToby do
         dir: 5,
         sprite: 855,
         name: "Little Toby",
+        scope: :shared,
         unique_name: "Little Toby#ein-1"
       }
     ]

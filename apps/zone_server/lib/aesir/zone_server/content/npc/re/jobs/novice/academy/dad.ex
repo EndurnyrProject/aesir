@@ -8,12 +8,58 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dad do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "izlude", x: 97, y: 147, dir: 3, sprite: 54, name: "Dad", unique_name: "Dad#iz"},
-      %{map: "izlude_a", x: 97, y: 147, dir: 3, sprite: 54, name: "Dad", unique_name: "Dad#iz_a"},
-      %{map: "izlude_b", x: 97, y: 147, dir: 3, sprite: 54, name: "Dad", unique_name: "Dad#iz_b"},
-      %{map: "izlude_c", x: 97, y: 147, dir: 3, sprite: 54, name: "Dad", unique_name: "Dad#iz_c"},
-      %{map: "izlude_d", x: 97, y: 147, dir: 3, sprite: 54, name: "Dad", unique_name: "Dad#iz_d"}
+      %{
+        map: "izlude",
+        x: 97,
+        y: 147,
+        dir: 3,
+        sprite: 54,
+        name: "Dad",
+        scope: :renewal,
+        unique_name: "Dad#iz"
+      },
+      %{
+        map: "izlude_a",
+        x: 97,
+        y: 147,
+        dir: 3,
+        sprite: 54,
+        name: "Dad",
+        scope: :renewal,
+        unique_name: "Dad#iz_a"
+      },
+      %{
+        map: "izlude_b",
+        x: 97,
+        y: 147,
+        dir: 3,
+        sprite: 54,
+        name: "Dad",
+        scope: :renewal,
+        unique_name: "Dad#iz_b"
+      },
+      %{
+        map: "izlude_c",
+        x: 97,
+        y: 147,
+        dir: 3,
+        sprite: 54,
+        name: "Dad",
+        scope: :renewal,
+        unique_name: "Dad#iz_c"
+      },
+      %{
+        map: "izlude_d",
+        x: 97,
+        y: 147,
+        dir: 3,
+        sprite: 54,
+        name: "Dad",
+        scope: :renewal,
+        unique_name: "Dad#iz_d"
+      }
     ]
 
   @impl true

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.WoundedRafflesia do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.WoundedRafflesia do
         dir: 4,
         sprite: 517,
         name: "Wounded Rafflesia",
+        scope: :renewal,
         unique_name: "Wounded Rafflesia#ep14_1"
       }
     ]

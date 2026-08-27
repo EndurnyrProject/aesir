@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Veins.Kid223165 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "veins", x: 223, y: 165, dir: 5, sprite: 944, name: "Kid", unique_name: "Kid#ve4"}
+      %{
+        map: "veins",
+        x: 223,
+        y: 165,
+        dir: 5,
+        sprite: 944,
+        name: "Kid",
+        scope: :shared,
+        unique_name: "Kid#ve4"
+      }
     ]
 
   @impl true

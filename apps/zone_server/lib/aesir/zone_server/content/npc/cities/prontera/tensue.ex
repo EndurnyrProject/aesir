@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Tensue do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Tensue do
         dir: 2,
         sprite: 97,
         name: "TenSue",
+        scope: :shared,
         unique_name: "TenSue#pront"
       }
     ]

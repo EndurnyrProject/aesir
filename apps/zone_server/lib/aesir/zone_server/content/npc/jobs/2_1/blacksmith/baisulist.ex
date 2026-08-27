@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Baisulist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "geffen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Baisulist do
         dir: 1,
         sprite: 69,
         name: "Baisulist",
+        scope: :shared,
         unique_name: "Baisulist#BLS"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.LabStaff do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.LabStaff do
         dir: 6,
         sprite: 865,
         name: "Lab Staff",
+        scope: :shared,
         unique_name: "Lab Staff#amano08"
       }
     ]

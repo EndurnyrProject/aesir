@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Pasto do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "umbala", x: 177, y: 153, dir: 3, sprite: 97, name: "Pasto", unique_name: "Pasto#um"}
+      %{
+        map: "umbala",
+        x: 177,
+        y: 153,
+        dir: 3,
+        sprite: 97,
+        name: "Pasto",
+        scope: :shared,
+        unique_name: "Pasto#um"
+      }
     ]
 
   @impl true

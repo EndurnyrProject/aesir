@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_int",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
         dir: 0,
         sprite: 139,
         name: "iz_int",
+        scope: :renewal,
         unique_name: "iz_int#intro_start",
         trigger: {6, 6}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
         dir: 0,
         sprite: 139,
         name: "iz_int01",
+        scope: :renewal,
         unique_name: "iz_int01#intro_start",
         trigger: {6, 6}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
         dir: 0,
         sprite: 139,
         name: "iz_int02",
+        scope: :renewal,
         unique_name: "iz_int02#intro_start",
         trigger: {6, 6}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
         dir: 0,
         sprite: 139,
         name: "iz_int03",
+        scope: :renewal,
         unique_name: "iz_int03#intro_start",
         trigger: {6, 6}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.IzInt do
         dir: 0,
         sprite: 139,
         name: "iz_int04",
+        scope: :renewal,
         unique_name: "iz_int04#intro_start",
         trigger: {6, 6}
       }

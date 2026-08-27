@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Spectator do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "cmd_fild07",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Comodo.Spectator do
         dir: 7,
         sprite: 83,
         name: "Spectator",
+        scope: :renewal,
         unique_name: "Spectator#pa0829_01"
       }
     ]

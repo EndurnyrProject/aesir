@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Bartender do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Bartender do
         dir: 2,
         sprite: 61,
         name: "Bartender",
+        scope: :shared,
         unique_name: "Bartender#pront"
       }
     ]

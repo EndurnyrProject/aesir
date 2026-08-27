@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Innkeeper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malangdo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Innkeeper do
         dir: 3,
         sprite: 554,
         name: "Innkeeper",
+        scope: :renewal,
         unique_name: "Innkeeper#malang"
       }
     ]

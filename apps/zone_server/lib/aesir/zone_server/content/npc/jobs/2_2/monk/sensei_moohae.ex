@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "monk_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
         dir: 1,
         sprite: 60,
         name: "Sensei Moohae",
+        scope: :shared,
         unique_name: "Sensei Moohae#mk"
       }
     ]

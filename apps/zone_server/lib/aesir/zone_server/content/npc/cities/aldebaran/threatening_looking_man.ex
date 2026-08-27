@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.ThreateningLookingMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "aldeba_in", x: 223, y: 121, dir: 4, sprite: 63, name: "Threatening-Looking Man"}
+      %{
+        map: "aldeba_in",
+        x: 223,
+        y: 121,
+        dir: 4,
+        sprite: 63,
+        name: "Threatening-Looking Man",
+        scope: :shared
+      }
     ]
 
   @impl true

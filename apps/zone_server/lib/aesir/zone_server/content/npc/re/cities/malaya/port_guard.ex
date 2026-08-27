@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.PortGuard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malaya",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.PortGuard do
         dir: 4,
         sprite: 570,
         name: "Port Guard",
+        scope: :renewal,
         unique_name: "Port Guard#ma03"
       }
     ]

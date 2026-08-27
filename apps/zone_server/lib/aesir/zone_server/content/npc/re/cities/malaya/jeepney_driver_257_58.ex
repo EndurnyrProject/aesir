@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.JeepneyDriver25758 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malaya",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.JeepneyDriver25758 do
         dir: 6,
         sprite: 582,
         name: "Jeepney Driver",
+        scope: :renewal,
         unique_name: "Jeepney Driver#09"
       }
     ]
@@ -23,7 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.JeepneyDriver25758 do
   @impl true
   def on_talk(ctx) do
     {ctx, _} =
-      Aesir.ZoneServer.Content.Npc.Functions.FMalayaJeepney.call(ctx, [
+      Aesir.ZoneServer.Content.Npc.Re.Functions.FMalayaJeepney.call(ctx, [
         "ma_zif09",
         60,
         "...You're an outsider... Don't go touching anything and be careful in town...",

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
         dir: 5,
         sprite: 634,
         name: "Archer Teacher",
+        scope: :renewal,
         unique_name: "Archer Teacher#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
         dir: 5,
         sprite: 634,
         name: "Archer Teacher",
+        scope: :renewal,
         unique_name: "Archer Teacher#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
         dir: 5,
         sprite: 634,
         name: "Archer Teacher",
+        scope: :renewal,
         unique_name: "Archer Teacher#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
         dir: 5,
         sprite: 634,
         name: "Archer Teacher",
+        scope: :renewal,
         unique_name: "Archer Teacher#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
         dir: 5,
         sprite: 634,
         name: "Archer Teacher",
+        scope: :renewal,
         unique_name: "Archer Teacher#ac_d"
       }
     ]

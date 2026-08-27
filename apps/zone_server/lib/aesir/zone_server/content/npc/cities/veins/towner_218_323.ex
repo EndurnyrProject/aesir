@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Veins.Towner218323 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "veins",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Veins.Towner218323 do
         dir: 1,
         sprite: 945,
         name: "Towner",
+        scope: :shared,
         unique_name: "Towner#ve8"
       }
     ]

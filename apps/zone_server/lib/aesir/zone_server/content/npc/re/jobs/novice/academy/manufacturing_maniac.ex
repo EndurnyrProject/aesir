@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude_a",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
         dir: 3,
         sprite: 740,
         name: "Manufacturing Maniac",
+        scope: :renewal,
         unique_name: "Manufacturing Maniac#a"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
         dir: 3,
         sprite: 740,
         name: "Manufacturing Maniac",
+        scope: :renewal,
         unique_name: "Manufacturing Maniac#b"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
         dir: 3,
         sprite: 740,
         name: "Manufacturing Maniac",
+        scope: :renewal,
         unique_name: "Manufacturing Maniac#c"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ManufacturingMania
         dir: 3,
         sprite: 740,
         name: "Manufacturing Maniac",
+        scope: :renewal,
         unique_name: "Manufacturing Maniac#d"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
         dir: 5,
         sprite: 418,
         name: "Swordman Assistant",
+        scope: :renewal,
         unique_name: "Swordman Assistant#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
         dir: 5,
         sprite: 418,
         name: "Swordman Assistant",
+        scope: :renewal,
         unique_name: "Swordman Assistant#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
         dir: 5,
         sprite: 418,
         name: "Swordman Assistant",
+        scope: :renewal,
         unique_name: "Swordman Assistant#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
         dir: 5,
         sprite: 418,
         name: "Swordman Assistant",
+        scope: :renewal,
         unique_name: "Swordman Assistant#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
         dir: 5,
         sprite: 418,
         name: "Swordman Assistant",
+        scope: :renewal,
         unique_name: "Swordman Assistant#ac_d"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ExperimentExpert do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alde_alche",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ExperimentExpert do
         dir: 5,
         sprite: 748,
         name: "Experiment Expert",
+        scope: :shared,
         unique_name: "Experiment Expert#am"
       }
     ]

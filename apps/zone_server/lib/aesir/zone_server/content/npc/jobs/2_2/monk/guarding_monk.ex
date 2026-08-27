@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_monk",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
         dir: 1,
         sprite: 120,
         name: "Guarding Monk",
+        scope: :shared,
         unique_name: "Guarding Monk#mk",
         trigger: {6, 2}
       }

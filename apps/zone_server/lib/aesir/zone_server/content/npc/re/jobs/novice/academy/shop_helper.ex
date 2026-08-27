@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         dir: 5,
         sprite: 894,
         name: "Shop Helper",
+        scope: :renewal,
         unique_name: "Shop Helper#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         dir: 5,
         sprite: 894,
         name: "Shop Helper",
+        scope: :renewal,
         unique_name: "Shop Helper#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         dir: 5,
         sprite: 894,
         name: "Shop Helper",
+        scope: :renewal,
         unique_name: "Shop Helper#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         dir: 5,
         sprite: 894,
         name: "Shop Helper",
+        scope: :renewal,
         unique_name: "Shop Helper#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         dir: 5,
         sprite: 894,
         name: "Shop Helper",
+        scope: :renewal,
         unique_name: "Shop Helper#iz_d"
       }
     ]

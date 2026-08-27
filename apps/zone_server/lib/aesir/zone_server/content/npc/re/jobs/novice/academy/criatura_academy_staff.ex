@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
         dir: 3,
         sprite: 903,
         name: "Criatura Academy Staff",
+        scope: :renewal,
         unique_name: "Criatura Academy Staff#0",
         trigger: {3, 3}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
         dir: 3,
         sprite: 903,
         name: "Criatura Academy Staff",
+        scope: :renewal,
         unique_name: "Criatura Academy Staff#a",
         trigger: {3, 3}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
         dir: 3,
         sprite: 903,
         name: "Criatura Academy Staff",
+        scope: :renewal,
         unique_name: "Criatura Academy Staff#b",
         trigger: {3, 3}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
         dir: 3,
         sprite: 903,
         name: "Criatura Academy Staff",
+        scope: :renewal,
         unique_name: "Criatura Academy Staff#c",
         trigger: {3, 3}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
         dir: 3,
         sprite: 903,
         name: "Criatura Academy Staff",
+        scope: :renewal,
         unique_name: "Criatura Academy Staff#d",
         trigger: {3, 3}
       }

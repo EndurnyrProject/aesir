@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.UndeadChicken do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "nif_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.UndeadChicken do
         dir: 1,
         sprite: 800,
         name: "Undead Chicken",
+        scope: :shared,
         unique_name: "Undead Chicken#nif"
       }
     ]

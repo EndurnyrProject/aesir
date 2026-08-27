@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Berru do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Berru do
         dir: 3,
         sprite: 706,
         name: "Berru",
+        scope: :shared,
         unique_name: "Berru#lhz_01"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Berru do
         dir: 3,
         sprite: 818,
         name: "Pilia",
+        scope: :shared,
         unique_name: "Pilia#lhz_01"
       }
     ]

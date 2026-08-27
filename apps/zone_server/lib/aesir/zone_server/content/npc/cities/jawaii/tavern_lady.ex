@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.TavernLady do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "jawaii",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.TavernLady do
         dir: 7,
         sprite: 80,
         name: "Tavern Lady",
+        scope: :shared,
         unique_name: "Tavern Lady#Jawaii"
       }
     ]

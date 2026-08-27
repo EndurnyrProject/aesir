@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BanquetStaff do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "lhz_in01", x: 14, y: 28, dir: 3, sprite: 109, name: "Banquet Staff"}]
+    scope: :shared,
+    spawn: [
+      %{map: "lhz_in01", x: 14, y: 28, dir: 3, sprite: 109, name: "Banquet Staff", scope: :shared}
+    ]
 
   @impl true
   def on_talk(ctx) do

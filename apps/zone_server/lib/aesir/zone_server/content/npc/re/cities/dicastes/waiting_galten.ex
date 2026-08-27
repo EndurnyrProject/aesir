@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.WaitingGalten do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dic_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.WaitingGalten do
         dir: 4,
         sprite: 492,
         name: "Waiting Galten",
+        scope: :renewal,
         unique_name: "Waiting Galten#in_1"
       }
     ]

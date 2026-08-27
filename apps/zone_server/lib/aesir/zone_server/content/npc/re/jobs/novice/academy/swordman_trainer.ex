@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
         dir: 5,
         sprite: 635,
         name: "Swordman Trainer",
+        scope: :renewal,
         unique_name: "Swordman Trainer#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
         dir: 5,
         sprite: 635,
         name: "Swordman Trainer",
+        scope: :renewal,
         unique_name: "Swordman Trainer#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
         dir: 5,
         sprite: 635,
         name: "Swordman Trainer",
+        scope: :renewal,
         unique_name: "Swordman Trainer#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
         dir: 5,
         sprite: 635,
         name: "Swordman Trainer",
+        scope: :renewal,
         unique_name: "Swordman Trainer#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
         dir: 5,
         sprite: 635,
         name: "Swordman Trainer",
+        scope: :renewal,
         unique_name: "Swordman Trainer#ac_d"
       }
     ]

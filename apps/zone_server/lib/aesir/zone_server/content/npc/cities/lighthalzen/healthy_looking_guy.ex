@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HealthyLookingGuy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HealthyLookingGuy do
         dir: 7,
         sprite: 85,
         name: "Healthy Looking Guy",
+        scope: :shared,
         unique_name: "Healthy Looking Guy#hol"
       }
     ]

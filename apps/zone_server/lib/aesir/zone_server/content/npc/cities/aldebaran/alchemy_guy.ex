@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.AlchemyGuy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldebaran",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.AlchemyGuy do
         dir: 4,
         sprite: 49,
         name: "Alchemy Guy",
+        scope: :shared,
         unique_name: "Alchemy Guy#alde"
       }
     ]

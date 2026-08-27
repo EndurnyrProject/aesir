@@ -49,8 +49,10 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.AnalyzerTest do
       dispbottom "hi";
       setcart;
       openstorage;
+      ResetSkill;
       deletearray quests[0];
       .@n = getarraysize(.@a) + getcharid(0) + checkcart() + getskilllv(39);
+      .@name$ = getmonsterinfo(1002, MOB_NAME);
       .@s$ = implode(.@a$, ",");
       close3;
       """)

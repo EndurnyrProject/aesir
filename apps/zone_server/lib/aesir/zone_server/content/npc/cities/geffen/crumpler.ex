@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Crumpler do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "geffen_in", x: 22, y: 125, dir: 1, sprite: 52, name: "Crumpler"}]
+    scope: :shared,
+    spawn: [
+      %{map: "geffen_in", x: 22, y: 125, dir: 1, sprite: 52, name: "Crumpler", scope: :shared}
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

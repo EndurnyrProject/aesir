@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
         dir: 4,
         sprite: 91,
         name: "Charfri",
+        scope: :renewal,
         unique_name: "Charfri#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
         dir: 4,
         sprite: 91,
         name: "Charfri",
+        scope: :renewal,
         unique_name: "Charfri#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
         dir: 4,
         sprite: 91,
         name: "Charfri",
+        scope: :renewal,
         unique_name: "Charfri#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
         dir: 4,
         sprite: 91,
         name: "Charfri",
+        scope: :renewal,
         unique_name: "Charfri#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CharfriIzlude do
         dir: 4,
         sprite: 91,
         name: "Charfri",
+        scope: :renewal,
         unique_name: "Charfri#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 135,
+        y: 78,
+        dir: 2,
+        sprite: 91,
+        name: "Charfri",
+        scope: :pre_renewal,
+        unique_name: "Charfri#izlude"
       }
     ]
 

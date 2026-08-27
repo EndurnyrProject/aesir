@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HousemaidJane do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HousemaidJane do
         dir: 7,
         sprite: 850,
         name: "Housemaid Jane",
+        scope: :shared,
         unique_name: "Housemaid Jane#li_house1"
       }
     ]

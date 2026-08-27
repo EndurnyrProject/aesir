@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "yuno_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
         dir: 5,
         sprite: 743,
         name: "Dean of the Academy",
+        scope: :shared,
         unique_name: "Dean of the Academy#sa"
       }
     ]

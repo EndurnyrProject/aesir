@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Gigantia do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "niflheim",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Gigantia do
         dir: 6,
         sprite: 796,
         name: "Gigantia",
+        scope: :shared,
         unique_name: "Gigantia#nif",
         trigger: {3, 3}
       }

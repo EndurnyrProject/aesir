@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.Sentinel do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dicastes01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.Sentinel do
         dir: 3,
         sprite: 450,
         name: "Sentinel",
+        scope: :renewal,
         unique_name: "Sentinel#a"
       }
     ]

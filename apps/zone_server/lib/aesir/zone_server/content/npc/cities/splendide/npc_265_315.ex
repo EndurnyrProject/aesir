@@ -7,7 +7,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.Npc265315 do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
 
   @impl true
   def on_event("OnTouch", ctx) do

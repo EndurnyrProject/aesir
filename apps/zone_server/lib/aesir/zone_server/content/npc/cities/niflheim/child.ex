@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Child do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "nif_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.Child do
         dir: 5,
         sprite: 793,
         name: "Child",
+        scope: :shared,
         unique_name: "Child#niflheim"
       }
     ]

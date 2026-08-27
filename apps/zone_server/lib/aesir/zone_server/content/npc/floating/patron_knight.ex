@@ -7,7 +7,28 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PatronKnight do
   of overwriting them.
   """
 
-  use Aesir.ZoneServer.Npc, spawn: []
+  use Aesir.ZoneServer.Npc,
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_castle",
+        x: 35,
+        y: 151,
+        dir: 5,
+        sprite: 751,
+        name: "Patron Knight",
+        scope: :pre_renewal
+      },
+      %{
+        map: "prt_cas",
+        x: 261,
+        y: 101,
+        dir: 3,
+        sprite: 751,
+        name: "Patron Knight",
+        scope: :renewal
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

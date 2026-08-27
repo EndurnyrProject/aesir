@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.LostGalten do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dic_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.LostGalten do
         dir: 3,
         sprite: 492,
         name: "Lost Galten",
+        scope: :renewal,
         unique_name: "Lost Galten#a"
       }
     ]

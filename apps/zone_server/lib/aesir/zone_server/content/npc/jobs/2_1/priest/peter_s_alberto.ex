@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.PeterSAlberto do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "job_prist", x: 24, y: 187, dir: 4, sprite: 110, name: "Peter S. Alberto"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "job_prist",
+        x: 24,
+        y: 187,
+        dir: 4,
+        sprite: 110,
+        name: "Peter S. Alberto",
+        scope: :shared
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
   @impl true

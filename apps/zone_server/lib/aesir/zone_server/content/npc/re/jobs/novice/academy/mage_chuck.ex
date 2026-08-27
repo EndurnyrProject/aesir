@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
         dir: 3,
         sprite: 735,
         name: "Mage Chuck",
+        scope: :renewal,
         unique_name: "Mage Chuck#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
         dir: 3,
         sprite: 735,
         name: "Mage Chuck",
+        scope: :renewal,
         unique_name: "Mage Chuck#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
         dir: 3,
         sprite: 735,
         name: "Mage Chuck",
+        scope: :renewal,
         unique_name: "Mage Chuck#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
         dir: 3,
         sprite: 735,
         name: "Mage Chuck",
+        scope: :renewal,
         unique_name: "Mage Chuck#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
         dir: 3,
         sprite: 735,
         name: "Mage Chuck",
+        scope: :renewal,
         unique_name: "Mage Chuck#ac_d"
       }
     ]

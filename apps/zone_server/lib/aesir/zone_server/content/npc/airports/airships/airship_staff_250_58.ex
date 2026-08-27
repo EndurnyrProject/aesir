@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.AirshipStaff25058 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane_01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.AirshipStaff25058 do
         dir: 2,
         sprite: 67,
         name: "Airship Staff",
+        scope: :shared,
         unique_name: "Airship Staff#airplane01"
       }
     ]

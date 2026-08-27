@@ -286,8 +286,162 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     {:ok, new_state}
   end
 
+  @doc """
+  Applies the four `resetlvl` action types through the player-session writer.
+
+  Types `1`, `2`, and `4` reset learned skills and therefore reject an active
+  cart rather than discard its contents. Type `3` changes only base level and
+  base experience. Invalid types return `{:error, :invalid_reset_type}`.
+  """
+  @spec reset_level(integer(), map()) ::
+          {:ok, map()} | {:error, :cart_active | :invalid_reset_type}
+  def reset_level(type, %{game_state: game_state} = state) when type in 1..4 do
+    if type != 3 and cart_blocks_reset?(game_state) do
+      {:error, :cart_active}
+    else
+      do_reset_level(type, state, game_state)
+    end
+  end
+
+  def reset_level(_type, _state), do: {:error, :invalid_reset_type}
+
   defp trait_reset_bonus(job_id) do
     if TraitJobs.trait_job?(job_id), do: 7, else: 0
+  end
+
+  defp do_reset_level(type, state, game_state) do
+    previous_game_state = game_state
+    progression = game_state.stats.progression
+    {progression, dropped_ids} = reset_level_skills(progression, type)
+
+    state =
+      state
+      |> dismount_if_losing_riding(dropped_ids)
+      |> dismiss_falcon_if_losing_mastery(dropped_ids)
+      |> clear_reset_options(type)
+
+    progression = progression |> reset_level_progression(type) |> grant_rebirth_skills(type)
+    game_state = state.game_state
+    base_stats = reset_level_base_stats(game_state.stats.base_stats, type)
+    stats = %{game_state.stats | progression: progression, base_stats: base_stats}
+
+    %{state | game_state: %{game_state | stats: stats}}
+    |> cleanup_dropped_skills(dropped_ids)
+    |> recheck_equipment(progression.job_id, progression.base_level)
+    |> enforce_weapon_requirements()
+    |> finish_reset_level(previous_game_state, type)
+  end
+
+  defp reset_level_skills(progression, 3), do: {progression, []}
+
+  defp reset_level_skills(progression, _type) do
+    reset = SkillTree.reset_skills(progression)
+    dropped_ids = Map.keys(progression.learned_skills) -- Map.keys(reset.learned_skills)
+    {reset, dropped_ids}
+  end
+
+  defp reset_level_progression(progression, 1) do
+    %{
+      progression
+      | base_level: 1,
+        job_level: 1,
+        base_exp: 0,
+        job_exp: 0,
+        skill_point: 0,
+        trait_point: 0
+    }
+  end
+
+  defp reset_level_progression(progression, 2) do
+    %{
+      progression
+      | base_level: 1,
+        job_level: 1,
+        base_exp: 0,
+        job_exp: 0,
+        skill_point: 0
+    }
+  end
+
+  defp reset_level_progression(progression, 3),
+    do: %{progression | base_level: 1, base_exp: 0}
+
+  defp reset_level_progression(progression, 4),
+    do: %{progression | job_level: 1, job_exp: 0}
+
+  defp grant_rebirth_skills(progression, 1) do
+    case AvailableJobs.job_id_to_name(progression.job_id) do
+      {:ok, :novice_high} ->
+        learned_skills =
+          Enum.reduce(
+            [:nv_firstaid, :nv_trickdead],
+            progression.learned_skills,
+            &grant_rebirth_skill/2
+          )
+
+        %{progression | learned_skills: learned_skills, status_point: 100}
+
+      _other ->
+        progression
+    end
+  end
+
+  defp grant_rebirth_skills(progression, _type), do: progression
+
+  defp grant_rebirth_skill(name, skills) do
+    case Catalog.by_name(name) do
+      {:ok, definition} -> Map.put(skills, definition.id, 1)
+      :error -> skills
+    end
+  end
+
+  defp reset_level_base_stats(base_stats, 1) do
+    %{
+      base_stats
+      | str: 1,
+        agi: 1,
+        vit: 1,
+        int: 1,
+        dex: 1,
+        luk: 1,
+        pow: 0,
+        sta: 0,
+        wis: 0,
+        spl: 0,
+        con: 0,
+        crt: 0
+    }
+  end
+
+  defp reset_level_base_stats(base_stats, _type), do: base_stats
+
+  defp clear_reset_options(state, 1) do
+    state = if MountHandler.riding?(state), do: MountHandler.force_dismount(state), else: state
+    state = if FalconHandler.falcon?(state), do: FalconHandler.force_dismiss(state), else: state
+    %{state | game_state: %{state.game_state | option: 0}}
+  end
+
+  defp clear_reset_options(state, _type), do: state
+
+  defp finish_reset_level(%{game_state: game_state} = state, previous_game_state, type) do
+    stats =
+      game_state.stats
+      |> Stats.calculate_stats(game_state.character_id)
+      |> clamp_vitals()
+
+    game_state = %{game_state | stats: stats}
+    progression = stats.progression
+
+    if type != 3,
+      do: MessageRouter.send_to(state.connection_pid, SkillListView.build(progression))
+
+    {:noreply, new_state} =
+      commit_from(previous_game_state, state, game_state, progression,
+        learned_skills: Learned.dump(progression.learned_skills),
+        option: game_state.option
+      )
+
+    {:ok, new_state}
   end
 
   defp do_reset_skills(state, game_state) do
@@ -460,20 +614,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     end
   end
 
-  # Force-unequips every worn item the new job can no longer wear (job check only,
-  # not level or other requirements), routing each through the equipment handler's
-  # persist + client sync path.
+  # Force-unequips every worn item the new job or base level can no longer wear,
+  # routing each through the equipment handler's persistence and client-sync path.
   defp recheck_equipment(%{game_state: game_state} = state, job_id) do
+    recheck_equipment(state, job_id, game_state.stats.progression.base_level)
+  end
+
+  defp recheck_equipment(%{game_state: game_state} = state, job_id, base_level) do
     game_state.inventory
     |> Inventory.equipped_items()
     |> Map.keys()
-    |> Enum.reduce(state, fn index, acc -> maybe_unequip(acc, index, job_id) end)
+    |> Enum.reduce(state, fn index, acc -> maybe_unequip(acc, index, job_id, base_level) end)
   end
 
-  defp maybe_unequip(%{game_state: gs} = state, index, job_id) do
+  defp maybe_unequip(%{game_state: gs} = state, index, job_id, base_level) do
     with %InventoryItem{nameid: nameid} <- Map.get(gs.inventory, index),
          {:ok, item_def} <- ItemManagement.get_item_by_id(nameid),
-         {:error, :requirement_unmet} <- Inventory.validate_job(item_def, job_id) do
+         {:error, :requirement_unmet} <-
+           Inventory.validate_requirements(item_def, %{job_id: job_id, base_level: base_level}) do
       {:noreply, new_state} = EquipmentHandler.handle_unequip(index, state)
       new_state
     else

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Ziyaol do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_fild04",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Ziyaol do
         dir: 4,
         sprite: 709,
         name: "Ziyaol",
+        scope: :shared,
         unique_name: "Ziyaol#cmd"
       }
     ]

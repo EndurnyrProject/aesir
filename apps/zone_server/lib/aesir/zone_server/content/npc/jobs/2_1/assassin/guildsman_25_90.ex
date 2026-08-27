@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman2590 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman2590 do
         dir: 1,
         sprite: 730,
         name: "Guildsman",
+        scope: :shared,
         unique_name: "Guildsman#ASN2",
         trigger: {2, 2}
       }

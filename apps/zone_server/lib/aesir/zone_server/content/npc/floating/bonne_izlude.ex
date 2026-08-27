@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
         dir: 2,
         sprite: 90,
         name: "Bonne",
+        scope: :renewal,
         unique_name: "Bonne#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
         dir: 2,
         sprite: 90,
         name: "Bonne",
+        scope: :renewal,
         unique_name: "Bonne#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
         dir: 2,
         sprite: 90,
         name: "Bonne",
+        scope: :renewal,
         unique_name: "Bonne#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
         dir: 2,
         sprite: 90,
         name: "Bonne",
+        scope: :renewal,
         unique_name: "Bonne#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.BonneIzlude do
         dir: 2,
         sprite: 90,
         name: "Bonne",
+        scope: :renewal,
         unique_name: "Bonne#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 55,
+        y: 74,
+        dir: 2,
+        sprite: 90,
+        name: "Bonne",
+        scope: :pre_renewal,
+        unique_name: "Bonne#izlude"
       }
     ]
 

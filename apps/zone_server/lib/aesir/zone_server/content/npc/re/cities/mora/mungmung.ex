@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Mungmung do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Mungmung do
         dir: 5,
         sprite: 516,
         name: "Mungmung",
+        scope: :renewal,
         unique_name: "Mungmung#p"
       }
     ]

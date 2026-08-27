@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Sonotora do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "comodo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Sonotora do
         dir: 4,
         sprite: 90,
         name: "Sonotora",
+        scope: :shared,
         unique_name: "Sonotora#1"
       }
     ]

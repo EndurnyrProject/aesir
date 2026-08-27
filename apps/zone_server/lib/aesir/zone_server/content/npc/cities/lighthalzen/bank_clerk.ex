@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BankClerk do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BankClerk do
         dir: 7,
         sprite: 86,
         name: "Bank Clerk",
+        scope: :shared,
         unique_name: "BankClerk"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BankClerk do
         dir: 7,
         sprite: 86,
         name: "Bank Clerk",
+        scope: :shared,
         unique_name: "Bank Clerk#2"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.BankClerk do
         dir: 1,
         sprite: 755,
         name: "Bank Clerk",
+        scope: :shared,
         unique_name: "Bank Clerk#3"
       }
     ]

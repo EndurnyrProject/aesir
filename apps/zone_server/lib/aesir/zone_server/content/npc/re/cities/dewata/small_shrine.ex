@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
         dir: 6,
         sprite: 844,
         name: "Small Shrine",
+        scope: :renewal,
         unique_name: "Small Shrine#dew1"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
         dir: 6,
         sprite: 844,
         name: "Small Shrine",
+        scope: :renewal,
         unique_name: "Small Shrine#dew2"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
         dir: 6,
         sprite: 844,
         name: "Small Shrine",
+        scope: :renewal,
         unique_name: "Small Shrine#dew3"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.SmallShrine do
         dir: 6,
         sprite: 844,
         name: "Small Shrine",
+        scope: :renewal,
         unique_name: "Small Shrine#dew4"
       }
     ]

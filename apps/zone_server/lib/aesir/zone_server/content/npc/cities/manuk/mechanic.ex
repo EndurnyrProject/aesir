@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Mechanic do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "man_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Manuk.Mechanic do
         dir: 5,
         sprite: 454,
         name: "Mechanic",
+        scope: :shared,
         unique_name: "Mechanic#ep13bs"
       }
     ]

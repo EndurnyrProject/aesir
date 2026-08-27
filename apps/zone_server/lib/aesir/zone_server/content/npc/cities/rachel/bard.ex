@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.Bard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "rachel", x: 197, y: 137, dir: 3, sprite: 51, name: "Bard", unique_name: "Bard#aru"}
+      %{
+        map: "rachel",
+        x: 197,
+        y: 137,
+        dir: 3,
+        sprite: 51,
+        name: "Bard",
+        scope: :shared,
+        unique_name: "Bard#aru"
+      }
     ]
 
   alias Aesir.ZoneServer.Script.Rathena

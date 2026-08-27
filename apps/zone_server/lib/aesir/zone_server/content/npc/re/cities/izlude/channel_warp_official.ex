@@ -8,12 +8,23 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Izlude.ChannelWarpOfficial do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "izlude", x: 122, y: 105, dir: 5, sprite: 64, name: "Channel Warp Official"}]
+    scope: :renewal,
+    spawn: [
+      %{
+        map: "izlude",
+        x: 122,
+        y: 105,
+        dir: 5,
+        sprite: 64,
+        name: "Channel Warp Official",
+        scope: :renewal
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do
     {ctx, _} =
-      Aesir.ZoneServer.Content.Npc.Functions.FIzludechannel.call(ctx, [
+      Aesir.ZoneServer.Content.Npc.Re.Functions.FIzludechannel.call(ctx, [
         ":Go to copy 2:Go to copy 3:Go to copy 4:Go to copy 5"
       ])
 

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Brasilis.Signpost240247 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "brasilis",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Brasilis.Signpost240247 do
         dir: 3,
         sprite: 858,
         name: "Signpost",
+        scope: :shared,
         unique_name: "Signpost#bra3"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.EatingAdventurer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dic_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.EatingAdventurer do
         dir: 3,
         sprite: 711,
         name: "Eating Adventurer",
+        scope: :renewal,
         unique_name: "Eating Adventurer#tre"
       }
     ]

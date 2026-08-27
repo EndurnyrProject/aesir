@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Timer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
-      %{map: "job_knt", x: 1, y: 1, dir: 1, sprite: 107, name: "Timer", unique_name: "Timer#knt"}
+      %{
+        map: "job_knt",
+        x: 1,
+        y: 1,
+        dir: 1,
+        sprite: 107,
+        name: "Timer",
+        scope: :shared,
+        unique_name: "Timer#knt"
+      }
     ]
 
   @impl true

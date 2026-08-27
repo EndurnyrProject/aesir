@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.Fairy125227 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "splendide",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.Fairy125227 do
         dir: 3,
         sprite: 444,
         name: "Fairy",
+        scope: :shared,
         unique_name: "Fairy#ep13_3"
       }
     ]

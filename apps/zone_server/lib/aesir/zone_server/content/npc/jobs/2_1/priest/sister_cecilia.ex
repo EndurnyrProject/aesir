@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.SisterCecilia do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "prt_church", x: 27, y: 24, dir: 1, sprite: 79, name: "Sister Cecilia"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "prt_church",
+        x: 27,
+        y: 24,
+        dir: 1,
+        sprite: 79,
+        name: "Sister Cecilia",
+        scope: :shared
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

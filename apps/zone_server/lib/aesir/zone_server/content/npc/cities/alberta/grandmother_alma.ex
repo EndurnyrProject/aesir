@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Alberta.GrandmotherAlma do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "alberta", x: 93, y: 174, dir: 2, sprite: 103, name: "Grandmother Alma"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "alberta",
+        x: 93,
+        y: 174,
+        dir: 2,
+        sprite: 103,
+        name: "Grandmother Alma",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

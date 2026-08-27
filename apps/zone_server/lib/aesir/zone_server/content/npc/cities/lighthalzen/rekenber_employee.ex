@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.RekenberEmployee do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lighthalzen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.RekenberEmployee do
         dir: 1,
         sprite: 109,
         name: "Rekenber Employee",
+        scope: :shared,
         unique_name: "Rekenber Employee#li"
       }
     ]

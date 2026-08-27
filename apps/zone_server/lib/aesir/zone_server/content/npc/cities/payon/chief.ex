@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Chief do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "payon_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Payon.Chief do
         dir: 4,
         sprite: 107,
         name: "Chief",
+        scope: :shared,
         unique_name: "Chief#payon",
         trigger: {2, 2}
       }

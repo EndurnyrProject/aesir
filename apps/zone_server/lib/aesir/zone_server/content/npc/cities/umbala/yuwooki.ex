@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Yuwooki do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "umbala",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Yuwooki do
         dir: 4,
         sprite: 753,
         name: "Yuwooki",
+        scope: :shared,
         unique_name: "Yuwooki#um"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.UndeadFamiliar do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "nif_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Niflheim.UndeadFamiliar do
         dir: 4,
         sprite: 799,
         name: "Undead Familiar",
+        scope: :shared,
         unique_name: "Undead Familiar#nif"
       }
     ]

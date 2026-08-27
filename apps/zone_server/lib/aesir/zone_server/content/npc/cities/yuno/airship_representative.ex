@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Yuno.AirshipRepresentative do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "yuno", x: 142, y: 183, dir: 5, sprite: 100, name: "Airship Representative"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "yuno",
+        x: 142,
+        y: 183,
+        dir: 5,
+        sprite: 100,
+        name: "Airship Representative",
+        scope: :shared
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 
@@ -196,7 +207,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Yuno.AirshipRepresentative do
       ctx =
         ctx
         |> pay_zeny(1800)
-        |> todo(:warp, [Enum.at(args, 0, 0), Enum.at(args, 1, 0), Enum.at(args, 2, 0)])
+        |> warp(Enum.at(args, 0, 0), Enum.at(args, 1, 0), Enum.at(args, 2, 0))
 
       throw({:script_end, ctx})
     else

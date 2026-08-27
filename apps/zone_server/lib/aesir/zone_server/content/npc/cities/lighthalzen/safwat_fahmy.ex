@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.SafwatFahmy do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "lhz_in02", x: 201, y: 181, dir: 7, sprite: 853, name: "Safwat Fahmy"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "lhz_in02",
+        x: 201,
+        y: 181,
+        dir: 7,
+        sprite: 853,
+        name: "Safwat Fahmy",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

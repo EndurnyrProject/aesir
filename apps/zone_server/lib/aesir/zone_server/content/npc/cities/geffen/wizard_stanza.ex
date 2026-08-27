@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.WizardStanza do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "geffen_in", x: 164, y: 109, dir: 0, sprite: 64, name: "Wizard Stanza"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "geffen_in",
+        x: 164,
+        y: 109,
+        dir: 0,
+        sprite: 64,
+        name: "Wizard Stanza",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

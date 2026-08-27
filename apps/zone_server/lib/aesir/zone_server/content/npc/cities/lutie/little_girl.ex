@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lutie.LittleGirl do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "xmas", x: 208, y: 168, dir: 4, sprite: 703, name: "Little Girl"}]
+    scope: :shared,
+    spawn: [
+      %{map: "xmas", x: 208, y: 168, dir: 4, sprite: 703, name: "Little Girl", scope: :shared}
+    ]
 
   @impl true
   def on_talk(ctx) do

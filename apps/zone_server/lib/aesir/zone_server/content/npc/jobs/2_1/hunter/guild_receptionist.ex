@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.GuildReceptionist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "hu_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.GuildReceptionist do
         dir: 4,
         sprite: 732,
         name: "Guild Receptionist",
+        scope: :shared,
         unique_name: "Guild Receptionist#hnt"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.UtanKid149165 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "umbala",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.UtanKid149165 do
         dir: 4,
         sprite: 781,
         name: "Utan Kid",
+        scope: :shared,
         unique_name: "Utan Kid#3"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.VolunteerMorocc268287 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "morocc",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.VolunteerMorocc268287 do
         dir: 3,
         sprite: 727,
         name: "Volunteer - Morocc",
+        scope: :shared,
         unique_name: "Volunteer - Morocc#04"
       }
     ]

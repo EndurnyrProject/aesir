@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
         dir: 5,
         sprite: 71,
         name: "Wedding Secretary",
+        scope: :renewal,
         unique_name: "Wedding Secretary#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
         dir: 5,
         sprite: 71,
         name: "Wedding Secretary",
+        scope: :renewal,
         unique_name: "Wedding Secretary#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
         dir: 5,
         sprite: 71,
         name: "Wedding Secretary",
+        scope: :renewal,
         unique_name: "Wedding Secretary#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
         dir: 5,
         sprite: 71,
         name: "Wedding Secretary",
+        scope: :renewal,
         unique_name: "Wedding Secretary#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
         dir: 5,
         sprite: 71,
         name: "Wedding Secretary",
+        scope: :renewal,
         unique_name: "Wedding Secretary#iz_d"
       }
     ]

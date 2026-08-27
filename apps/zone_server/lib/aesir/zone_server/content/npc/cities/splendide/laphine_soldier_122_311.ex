@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.LaphineSoldier122311 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "spl_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.LaphineSoldier122311 do
         dir: 1,
         sprite: 447,
         name: "Laphine Soldier",
+        scope: :shared,
         unique_name: "Laphine Soldier#ep13_2"
       }
     ]

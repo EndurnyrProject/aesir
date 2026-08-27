@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.OptamaraCrew do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malaya.OptamaraCrew do
         dir: 3,
         sprite: 100,
         name: "Optamara Crew",
+        scope: :renewal,
         unique_name: "Optamara Crew#alberta"
       }
     ]

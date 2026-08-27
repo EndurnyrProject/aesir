@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Ayothaya.Aibakthing do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ayothaya",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Ayothaya.Aibakthing do
         dir: 1,
         sprite: 843,
         name: "Aibakthing",
+        scope: :shared,
         unique_name: "Aibakthing#ayo2"
       }
     ]

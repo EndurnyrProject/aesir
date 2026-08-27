@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.HoneymoonHelper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "jawaii",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Jawaii.HoneymoonHelper do
         dir: 5,
         sprite: 71,
         name: "Honeymoon Helper",
+        scope: :shared,
         unique_name: "Honeymoon Helper#Jawaii"
       }
     ]

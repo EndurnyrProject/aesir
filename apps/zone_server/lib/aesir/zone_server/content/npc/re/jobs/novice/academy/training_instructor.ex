@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "new_1-1",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#1a"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#1b"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#1c"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 5,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#1d"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#1e"
       },
       %{
@@ -61,6 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 1,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#1f"
       },
       %{
@@ -70,6 +77,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2a"
       },
       %{
@@ -79,6 +87,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2b"
       },
       %{
@@ -88,6 +97,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2c"
       },
       %{
@@ -97,6 +107,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 5,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2d"
       },
       %{
@@ -106,6 +117,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2e"
       },
       %{
@@ -115,6 +127,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2f"
       },
       %{
@@ -124,6 +137,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 1,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#2g"
       },
       %{
@@ -133,6 +147,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3a"
       },
       %{
@@ -142,6 +157,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3b"
       },
       %{
@@ -151,6 +167,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3c"
       },
       %{
@@ -160,6 +177,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 5,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3d"
       },
       %{
@@ -169,6 +187,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3e"
       },
       %{
@@ -178,6 +197,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3f"
       },
       %{
@@ -187,6 +207,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 1,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#3g"
       },
       %{
@@ -196,6 +217,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4a"
       },
       %{
@@ -205,6 +227,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4b"
       },
       %{
@@ -214,6 +237,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4c"
       },
       %{
@@ -223,6 +247,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 5,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4d"
       },
       %{
@@ -232,6 +257,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4e"
       },
       %{
@@ -241,6 +267,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4f"
       },
       %{
@@ -250,6 +277,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 1,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#4g"
       },
       %{
@@ -259,6 +287,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5a"
       },
       %{
@@ -268,6 +297,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5b"
       },
       %{
@@ -277,6 +307,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 3,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5c"
       },
       %{
@@ -286,6 +317,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 5,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5d"
       },
       %{
@@ -295,6 +327,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5e"
       },
       %{
@@ -304,6 +337,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 4,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5f"
       },
       %{
@@ -313,6 +347,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.TrainingInstructor
         dir: 1,
         sprite: 92,
         name: "Training Instructor",
+        scope: :renewal,
         unique_name: "Training Instructor#5g"
       }
     ]

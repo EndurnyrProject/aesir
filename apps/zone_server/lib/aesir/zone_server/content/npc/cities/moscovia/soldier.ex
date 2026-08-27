@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Moscovia.Soldier do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moscovia",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Moscovia.Soldier do
         dir: 4,
         sprite: 966,
         name: "Soldier",
+        scope: :shared,
         unique_name: "Soldier#mosk1"
       }
     ]

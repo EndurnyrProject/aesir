@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
         dir: 4,
         sprite: 86,
         name: "Repair Man",
+        scope: :renewal,
         unique_name: "Repair Man#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
         dir: 4,
         sprite: 86,
         name: "Repair Man",
+        scope: :renewal,
         unique_name: "Repair Man#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
         dir: 4,
         sprite: 86,
         name: "Repair Man",
+        scope: :renewal,
         unique_name: "Repair Man#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
         dir: 4,
         sprite: 86,
         name: "Repair Man",
+        scope: :renewal,
         unique_name: "Repair Man#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RepairMan do
         dir: 4,
         sprite: 86,
         name: "Repair Man",
+        scope: :renewal,
         unique_name: "Repair Man#iz_d"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.KafraEmployeeKafComodo2 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.KafraEmployeeKafComodo2 do
         dir: 4,
         sprite: 721,
         name: "Kafra Employee::kaf_comodo2",
+        scope: :shared,
         unique_name: "kaf_comodo2"
       }
     ]

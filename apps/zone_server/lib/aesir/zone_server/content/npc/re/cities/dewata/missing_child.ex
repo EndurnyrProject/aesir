@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.MissingChild do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dewata",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.MissingChild do
         dir: 4,
         sprite: 703,
         name: "Missing Child",
+        scope: :renewal,
         unique_name: "Missing Child#dew",
         trigger: {2, 3}
       }

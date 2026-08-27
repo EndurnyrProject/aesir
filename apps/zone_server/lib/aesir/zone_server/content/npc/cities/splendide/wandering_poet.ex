@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.WanderingPoet do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "spl_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Splendide.WanderingPoet do
         dir: 3,
         sprite: 51,
         name: "Wandering Poet",
+        scope: :shared,
         unique_name: "Wandering Poet#ep13"
       }
     ]

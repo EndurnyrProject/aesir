@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Lighthalzen.ArrivalStaff do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_airport",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Lighthalzen.ArrivalStaff do
         dir: 3,
         sprite: 90,
         name: "Arrival Staff",
+        scope: :shared,
         unique_name: "lhz_airport2"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Lighthalzen.ArrivalStaff do
         dir: 3,
         sprite: 90,
         name: "Arrival Staff",
+        scope: :shared,
         unique_name: "Arrival Staff#lhz_air2b"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Lighthalzen.ArrivalStaff do
         dir: 3,
         sprite: 90,
         name: "Arrival Staff",
+        scope: :shared,
         unique_name: "Arrival Staff#lhz_air2c"
       }
     ]

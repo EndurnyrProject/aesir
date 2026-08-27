@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.MrClaus do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldebaran",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.MrClaus do
         dir: 4,
         sprite: 718,
         name: "Mr. Claus",
+        scope: :renewal,
+        unique_name: "Mr. Claus#1"
+      },
+      %{
+        map: "aldebaran",
+        x: 223,
+        y: 222,
+        dir: 4,
+        sprite: 718,
+        name: "Mr. Claus",
+        scope: :pre_renewal,
         unique_name: "Mr. Claus#1"
       }
     ]

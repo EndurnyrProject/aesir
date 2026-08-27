@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AraghamJunior do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_rogue",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AraghamJunior do
         dir: 1,
         sprite: 99,
         name: "Aragham Junior",
+        scope: :shared,
         unique_name: "Aragham Junior#rg"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HeToRogue do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_rogue",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HeToRogue do
         dir: 0,
         sprite: 45,
         name: "he_to_rogue",
+        scope: :shared,
         unique_name: "he_to_rogue#rg",
         trigger: {1, 1}
       }

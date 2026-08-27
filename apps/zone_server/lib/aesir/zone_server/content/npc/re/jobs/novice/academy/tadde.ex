@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
         dir: 7,
         sprite: 86,
         name: "Tadde",
+        scope: :renewal,
         unique_name: "Tadde#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
         dir: 7,
         sprite: 86,
         name: "Tadde",
+        scope: :renewal,
         unique_name: "Tadde#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
         dir: 7,
         sprite: 86,
         name: "Tadde",
+        scope: :renewal,
         unique_name: "Tadde#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
         dir: 7,
         sprite: 86,
         name: "Tadde",
+        scope: :renewal,
         unique_name: "Tadde#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Tadde do
         dir: 7,
         sprite: 86,
         name: "Tadde",
+        scope: :renewal,
         unique_name: "Tadde#iz_d"
       }
     ]

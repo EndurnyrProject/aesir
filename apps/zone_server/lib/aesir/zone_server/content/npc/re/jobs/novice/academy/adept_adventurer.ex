@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer do
         dir: 5,
         sprite: 731,
         name: "Adept Adventurer",
+        scope: :renewal,
         unique_name: "Adept Adventurer#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer do
         dir: 5,
         sprite: 731,
         name: "Adept Adventurer",
+        scope: :renewal,
         unique_name: "Adept Adventurer#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer do
         dir: 5,
         sprite: 731,
         name: "Adept Adventurer",
+        scope: :renewal,
         unique_name: "Adept Adventurer#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer do
         dir: 5,
         sprite: 731,
         name: "Adept Adventurer",
+        scope: :renewal,
         unique_name: "Adept Adventurer#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer do
         dir: 5,
         sprite: 731,
         name: "Adept Adventurer",
+        scope: :renewal,
         unique_name: "Adept Adventurer#ac_d"
       }
     ]

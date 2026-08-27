@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.RachelGuard do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "rachel",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.RachelGuard do
         dir: 1,
         sprite: 934,
         name: "Rachel Guard",
+        scope: :shared,
         unique_name: "RaGuard"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.RachelGuard do
         dir: 5,
         sprite: 934,
         name: "Rachel Guard",
+        scope: :shared,
         unique_name: "Rachel Guard#2aru"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.RachelGuard do
         dir: 3,
         sprite: 934,
         name: "Rachel Guard",
+        scope: :shared,
         unique_name: "Rachel Guard#3aru"
       }
     ]

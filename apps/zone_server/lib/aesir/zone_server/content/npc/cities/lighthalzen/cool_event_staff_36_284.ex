@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.CoolEventStaff36284 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.CoolEventStaff36284 do
         dir: 0,
         sprite: 874,
         name: "Cool Event Staff",
+        scope: :shared,
         unique_name: "Cool Event Staff#Cesuna"
       }
     ]

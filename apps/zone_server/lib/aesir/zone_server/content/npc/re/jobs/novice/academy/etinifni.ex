@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni do
         dir: 1,
         sprite: 538,
         name: "Etinifni",
+        scope: :renewal,
         unique_name: "Etinifni#iz"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni do
         dir: 1,
         sprite: 538,
         name: "Etinifni",
+        scope: :renewal,
         unique_name: "Etinifni#iz_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni do
         dir: 1,
         sprite: 538,
         name: "Etinifni",
+        scope: :renewal,
         unique_name: "Etinifni#iz_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni do
         dir: 1,
         sprite: 538,
         name: "Etinifni",
+        scope: :renewal,
         unique_name: "Etinifni#iz_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Etinifni do
         dir: 1,
         sprite: 538,
         name: "Etinifni",
+        scope: :renewal,
         unique_name: "Etinifni#iz_d"
       }
     ]

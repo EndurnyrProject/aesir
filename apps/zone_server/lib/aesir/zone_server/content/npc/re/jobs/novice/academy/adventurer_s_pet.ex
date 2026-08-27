@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
         dir: 7,
         sprite: 738,
         name: "Adventurer's Pet",
+        scope: :renewal,
         unique_name: "Adventurer's Pet#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
         dir: 7,
         sprite: 738,
         name: "Adventurer's Pet",
+        scope: :renewal,
         unique_name: "Adventurer's Pet#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
         dir: 7,
         sprite: 738,
         name: "Adventurer's Pet",
+        scope: :renewal,
         unique_name: "Adventurer's Pet#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
         dir: 7,
         sprite: 738,
         name: "Adventurer's Pet",
+        scope: :renewal,
         unique_name: "Adventurer's Pet#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdventurerSPet do
         dir: 7,
         sprite: 738,
         name: "Adventurer's Pet",
+        scope: :renewal,
         unique_name: "Adventurer's Pet#ac_d"
       }
     ]

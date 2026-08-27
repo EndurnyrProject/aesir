@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Deniroz do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Comodo.Deniroz do
         dir: 4,
         sprite: 89,
         name: "Deniroz",
+        scope: :shared,
         unique_name: "Deniroz#cmd"
       }
     ]

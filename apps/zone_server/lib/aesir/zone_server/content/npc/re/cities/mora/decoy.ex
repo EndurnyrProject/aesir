@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Decoy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "mora", x: 99, y: 100, dir: 7, sprite: 515, name: "Decoy", unique_name: "Decoy#podo"}
+      %{
+        map: "mora",
+        x: 99,
+        y: 100,
+        dir: 7,
+        sprite: 515,
+        name: "Decoy",
+        scope: :renewal,
+        unique_name: "Decoy#podo"
+      }
     ]
 
   @impl true

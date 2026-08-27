@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_int",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
         dir: 3,
         sprite: 687,
         name: "Wounded Swordsman",
+        scope: :renewal,
         unique_name: "Wounded Swordsman#intro_npc01_iz_int",
         trigger: {5, 5}
       },
@@ -26,6 +28,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
         dir: 3,
         sprite: 687,
         name: "Wounded Swordsman",
+        scope: :renewal,
         unique_name: "Wounded Swordsman#intro_npc01_iz_int01",
         trigger: {5, 5}
       },
@@ -36,6 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
         dir: 3,
         sprite: 687,
         name: "Wounded Swordsman",
+        scope: :renewal,
         unique_name: "Wounded Swordsman#intro_npc01_iz_int02",
         trigger: {5, 5}
       },
@@ -46,6 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
         dir: 3,
         sprite: 687,
         name: "Wounded Swordsman",
+        scope: :renewal,
         unique_name: "Wounded Swordsman#intro_npc01_iz_int03",
         trigger: {5, 5}
       },
@@ -56,6 +61,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman d
         dir: 3,
         sprite: 687,
         name: "Wounded Swordsman",
+        scope: :renewal,
         unique_name: "Wounded Swordsman#intro_npc01_iz_int04",
         trigger: {5, 5}
       }

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.JiChungZhe do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gon_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.JiChungZhe do
         dir: 5,
         sprite: 778,
         name: "Ji Chung Zhe",
+        scope: :shared,
         unique_name: "Ji Chung Zhe#gon"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FoolishPoring do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "new_1-3",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FoolishPoring do
         dir: 5,
         sprite: 2398,
         name: "Foolish Poring",
+        scope: :renewal,
         unique_name: "Foolish Poring#pet_3"
       }
     ]

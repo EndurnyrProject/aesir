@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc11 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "iz_ac02", x: 1, y: 1, dir: 0, sprite: 844, name: "", unique_name: "#nbacStone01"},
+      %{
+        map: "iz_ac02",
+        x: 1,
+        y: 1,
+        dir: 0,
+        sprite: 844,
+        name: "",
+        scope: :renewal,
+        unique_name: "#nbacStone01"
+      },
       %{
         map: "iz_ac02_a",
         x: 1,
@@ -17,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc11 do
         dir: 0,
         sprite: 844,
         name: "",
+        scope: :renewal,
         unique_name: "#nbacStone01_a"
       },
       %{
@@ -26,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc11 do
         dir: 0,
         sprite: 844,
         name: "",
+        scope: :renewal,
         unique_name: "#nbacStone01_b"
       },
       %{
@@ -35,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc11 do
         dir: 0,
         sprite: 844,
         name: "",
+        scope: :renewal,
         unique_name: "#nbacStone01_c"
       },
       %{
@@ -44,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Npc11 do
         dir: 0,
         sprite: 844,
         name: "",
+        scope: :renewal,
         unique_name: "#nbacStone01_d"
       }
     ]

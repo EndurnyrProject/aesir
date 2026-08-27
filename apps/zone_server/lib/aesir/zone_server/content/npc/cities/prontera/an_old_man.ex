@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.AnOldMan do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.AnOldMan do
         dir: 0,
         sprite: 56,
         name: "An Old Man",
+        scope: :shared,
         unique_name: "An Old Man#pront"
       }
     ]

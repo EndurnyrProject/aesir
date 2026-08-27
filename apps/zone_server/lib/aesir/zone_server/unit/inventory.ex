@@ -335,7 +335,10 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     if type in @equippable_types, do: :ok, else: {:error, :cannot_equip}
   end
 
-  defp validate_requirements(%ItemDefinition{} = item_def, %{} = ctx) do
+  @doc "Whether `item_def` may be equipped by the given job and base level."
+  @spec validate_requirements(ItemDefinition.t(), equip_ctx()) ::
+          :ok | {:error, :requirement_unmet}
+  def validate_requirements(%ItemDefinition{} = item_def, %{} = ctx) do
     with :ok <- validate_job(item_def, ctx.job_id) do
       validate_level(item_def, ctx.base_level)
     end

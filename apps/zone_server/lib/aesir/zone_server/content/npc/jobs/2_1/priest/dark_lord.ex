@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.DarkLord do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_prist",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.DarkLord do
         dir: 4,
         sprite: 1272,
         name: "Dark Lord",
+        scope: :shared,
         unique_name: "Dark Lord#prst",
         trigger: {8, 1}
       }

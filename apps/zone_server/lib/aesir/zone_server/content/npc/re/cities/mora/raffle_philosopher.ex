@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.RafflePhilosopher do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "mora", x: 140, y: 186, dir: 3, sprite: 517, name: "Raffle Philosopher"}]
+    scope: :renewal,
+    spawn: [
+      %{
+        map: "mora",
+        x: 140,
+        y: 186,
+        dir: 3,
+        sprite: 517,
+        name: "Raffle Philosopher",
+        scope: :renewal
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

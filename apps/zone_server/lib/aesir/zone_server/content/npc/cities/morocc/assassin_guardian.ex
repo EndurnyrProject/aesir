@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "moc_fild16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "SinGuard"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#2"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#3"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#4"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#5"
       },
       %{
@@ -61,6 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#6"
       },
       %{
@@ -70,6 +77,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#7"
       },
       %{
@@ -79,6 +87,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Morocc.AssassinGuardian do
         dir: 4,
         sprite: 707,
         name: "Assassin Guardian",
+        scope: :shared,
         unique_name: "Assassin Guardian#8"
       }
     ]

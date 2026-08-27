@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Mark do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbroch",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Mark do
         dir: 5,
         sprite: 855,
         name: "Mark",
+        scope: :shared,
         unique_name: "Mark#ein"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Mark do
         dir: 5,
         sprite: 855,
         name: "Oberu",
+        scope: :shared,
         unique_name: "Oberu#ein"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Mark do
         dir: 5,
         sprite: 855,
         name: "Khemko",
+        scope: :shared,
         unique_name: "Khemko#ein"
       }
     ]

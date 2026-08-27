@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.Sign do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "ecl_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Eclage.Sign do
         dir: 3,
         sprite: 545,
         name: "sign",
+        scope: :renewal,
         unique_name: "sign#prison_inn"
       }
     ]

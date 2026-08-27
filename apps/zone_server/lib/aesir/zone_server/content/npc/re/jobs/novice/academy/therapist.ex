@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
         dir: 3,
         sprite: 993,
         name: "Therapist",
+        scope: :renewal,
         unique_name: "Therapist#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
         dir: 3,
         sprite: 993,
         name: "Therapist",
+        scope: :renewal,
         unique_name: "Therapist#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
         dir: 3,
         sprite: 993,
         name: "Therapist",
+        scope: :renewal,
         unique_name: "Therapist#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
         dir: 3,
         sprite: 993,
         name: "Therapist",
+        scope: :renewal,
         unique_name: "Therapist#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Therapist do
         dir: 3,
         sprite: 993,
         name: "Therapist",
+        scope: :renewal,
         unique_name: "Therapist#ac_d"
       }
     ]

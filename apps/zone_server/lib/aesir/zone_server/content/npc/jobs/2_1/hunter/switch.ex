@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Switch do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_hunte",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.Switch do
         dir: 1,
         sprite: 723,
         name: "Switch",
+        scope: :shared,
         unique_name: "Switch#hnt",
         trigger: {1, 1}
       }

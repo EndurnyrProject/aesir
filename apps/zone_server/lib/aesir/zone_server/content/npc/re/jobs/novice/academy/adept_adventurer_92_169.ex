@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer921
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "new_1-3",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AdeptAdventurer921
         dir: 5,
         sprite: 731,
         name: "Adept Adventurer",
+        scope: :renewal,
         unique_name: "Adept Adventurer#new_1-3"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeaCaptainAmatsu do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeaCaptainAmatsu do
         dir: 3,
         sprite: 709,
         name: "Sea Captain",
+        scope: :renewal,
+        unique_name: "Sea Captain#ama1"
+      },
+      %{
+        map: "alberta",
+        x: 245,
+        y: 93,
+        dir: 3,
+        sprite: 709,
+        name: "Sea Captain",
+        scope: :pre_renewal,
         unique_name: "Sea Captain#ama1"
       }
     ]

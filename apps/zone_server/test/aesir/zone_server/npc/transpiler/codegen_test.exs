@@ -547,6 +547,40 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx"
   end
 
+  test "mapwarp, checkriding, and resetlvl emit native DSL calls" do
+    src =
+      gen!("""
+      mapwarp "que_avan01","eclage",265,275;
+      mapwarp "guild_map","exit",10,20,1,63;
+      if (checkriding()) close;
+      resetlvl(1);
+      close;
+      """)
+
+    assert src =~ ~r/mapwarp\((ctx, )?"que_avan01", "eclage", 265, 275\)/
+    assert src =~ ~r/mapwarp\((ctx, )?"guild_map", "exit", 10, 20, 1, 63\)/
+    assert src =~ "Rathena.truthy?(ismounting(ctx))"
+    assert src =~ ~r/resetlvl\((ctx, )?1\)/
+    refute src =~ "todo(ctx, :mapwarp"
+    refute src =~ "Todo.call!(:checkriding"
+    refute src =~ "todo(ctx, :resetlvl"
+  end
+
+  test "ResetSkill and getmonsterinfo MOB_NAME emit native DSL calls" do
+    src =
+      gen!("""
+      ResetSkill;
+      mes getmonsterinfo(1002, MOB_NAME);
+      close;
+      """)
+
+    assert src =~ ~r/reset_skills\((ctx)?\)/
+    assert src =~ "getmonsterinfo(ctx, 1002, 1)"
+    refute src =~ "todo(ctx, :ResetSkill"
+    refute src =~ "Todo.call!(:getmonsterinfo"
+    refute src =~ "Todo.const!(:MOB_NAME"
+  end
+
   test "getcharid and getskilllv map to reads, resolving the skill constant" do
     src =
       gen!("""
@@ -557,6 +591,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "getcharid(ctx, 0)"
     assert src =~ "getskilllv(ctx, 39)"
     refute src =~ "Todo.const!"
+  end
+
+  test "getguildname maps to the DSL read" do
+    src =
+      gen!("""
+      mes getguildname(55);
+      close;
+      """)
+
+    assert src =~ "getguildname(ctx, 55)"
+    refute src =~ "Todo.call!(:getguildname"
   end
 
   test "skill grants and job-lineage reads emit native DSL calls" do
@@ -972,6 +1017,25 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "use Aesir.ZoneServer.Npc"
   end
 
+  test "On labels inside global functions stay in call/2 flow" do
+    src =
+      gen!(
+        """
+        OnTouch:
+        return getarg(0);
+        """,
+        kind: :function,
+        module: "Aesir.ZoneServer.Content.Npc.Functions.FOnTouch",
+        spawns: []
+      )
+
+    refute src =~ "def on_event("
+    refute src =~ "def ev_ontouch("
+
+    [{module, _}] = Code.compile_string(src)
+    assert module.call(:ctx, [7]) == {:ctx, 7}
+  end
+
   test "a global function ending in close/end throws so the calling script ends too" do
     close_fn =
       gen!("mes \"hi\";\nclose;\n",
@@ -1069,6 +1133,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ "todo(ctx, :savepoint"
     refute src =~ "todo(:savepoint"
     refute src =~ ~S|Todo.call!(:callfunc, ["Job_Change"|
+  end
+
+  test "job values use numeric ids in arithmetic expressions" do
+    src = gen!("set ADVJOB, Class + Job_Novice_High;")
+
+    assert src =~ "Rathena.job_id(class(ctx)) + Rathena.job_id(:novice_high)"
   end
 
   test "emotion maps to the self-form DSL op; a target arg is dropped" do

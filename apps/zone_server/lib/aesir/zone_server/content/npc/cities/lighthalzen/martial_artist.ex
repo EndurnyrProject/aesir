@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.MartialArtist do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.MartialArtist do
         dir: 3,
         sprite: 753,
         name: "Martial Artist",
+        scope: :shared,
         unique_name: "Martial Artist#1"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.AirportStaff do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airport",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.AirportStaff do
         dir: 5,
         sprite: 90,
         name: "Airport Staff",
+        scope: :shared,
         unique_name: "airport1"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.AirportStaff do
         dir: 5,
         sprite: 90,
         name: "Airport Staff",
+        scope: :shared,
         unique_name: "Airport Staff#airport1b"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Einbroch.AirportStaff do
         dir: 5,
         sprite: 90,
         name: "Airport Staff",
+        scope: :shared,
         unique_name: "Airport Staff#airport1c"
       }
     ]

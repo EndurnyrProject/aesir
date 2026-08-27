@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Talpiz do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "payon",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Talpiz do
         dir: 4,
         sprite: 59,
         name: "Talpiz",
+        scope: :shared,
         unique_name: "Talpiz#BLS"
       }
     ]

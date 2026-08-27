@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Hinkley do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.Hinkley do
         dir: 6,
         sprite: 870,
         name: "Hinkley",
+        scope: :shared,
         unique_name: "Hinkley#06"
       }
     ]

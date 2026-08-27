@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prt_church",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
         dir: 4,
         sprite: 60,
         name: "High Bishop",
+        scope: :shared,
         unique_name: "High Bishop#prst"
       }
     ]

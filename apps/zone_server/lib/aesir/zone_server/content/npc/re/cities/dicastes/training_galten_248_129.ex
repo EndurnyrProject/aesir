@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.TrainingGalten248129 d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dicastes01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.TrainingGalten248129 d
         dir: 0,
         sprite: 450,
         name: "Training Galten",
+        scope: :renewal,
         unique_name: "Training Galten#d"
       }
     ]

@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplural do
 
   import Aesir.ZoneServer.Script.Dsl, warn: false
   alias Aesir.ZoneServer.Script.Rathena
-  alias Aesir.ZoneServer.Script.Todo
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, args) do
@@ -164,10 +163,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplural do
                             ctx,
                             :"result$",
                             Rathena.concat(
-                              Todo.call!(:delchar, [
+                              Rathena.delchar(
                                 get_local(ctx, :"str$", ""),
                                 get_local(ctx, :strlen, 0) - 1
-                              ]),
+                              ),
                               "ies"
                             )
                           )

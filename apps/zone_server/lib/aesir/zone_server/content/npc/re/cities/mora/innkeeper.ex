@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Innkeeper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.Innkeeper do
         dir: 3,
         sprite: 522,
         name: "Innkeeper",
+        scope: :renewal,
         unique_name: "Innkeeper#mora_inn"
       }
     ]

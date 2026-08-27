@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "yuno_in03",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
         dir: 5,
         sprite: 754,
         name: "Written Test Professor",
+        scope: :shared,
         unique_name: "Written Test Professor#s"
       }
     ]

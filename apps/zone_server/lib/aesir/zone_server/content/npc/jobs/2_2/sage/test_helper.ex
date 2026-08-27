@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.TestHelper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_sage",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.TestHelper do
         dir: 4,
         sprite: 700,
         name: "Test Helper",
+        scope: :shared,
         unique_name: "Test Helper#talk"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Izlude.Sailor do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlu2dun",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Izlude.Sailor do
         dir: 0,
         sprite: 100,
         name: "Sailor",
+        scope: :shared,
         unique_name: "Sailor#2izlude"
       }
     ]

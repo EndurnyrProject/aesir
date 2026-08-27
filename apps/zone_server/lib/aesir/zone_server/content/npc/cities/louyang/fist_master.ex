@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.FistMaster do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "louyang",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Louyang.FistMaster do
         dir: 4,
         sprite: 819,
         name: "Fist master",
+        scope: :shared,
         unique_name: "Fist master#lou"
       }
     ]

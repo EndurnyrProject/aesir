@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Switchreset do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "monk_test",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Switchreset do
         dir: 1,
         sprite: 79,
         name: "switchreset",
+        scope: :shared,
         unique_name: "switchreset#monkmonk"
       }
     ]

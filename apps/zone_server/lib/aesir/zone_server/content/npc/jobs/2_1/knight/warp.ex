@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Warp do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_knt",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.Warp do
         dir: 1,
         sprite: 107,
         name: "Warp",
+        scope: :shared,
         unique_name: "Warp#knt",
         trigger: {22, 22}
       }

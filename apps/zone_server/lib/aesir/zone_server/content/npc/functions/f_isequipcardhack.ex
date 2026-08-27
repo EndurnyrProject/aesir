@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack do
       ctx =
         if get_local(ctx, :card, 0) != get_local(ctx, :card_chk, 0) do
           ctx =
-            todo(ctx, :logmes, [
+            logmes(
+              ctx,
               Rathena.concat(
                 Rathena.concat(
                   Rathena.concat(
@@ -48,7 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FIsequipcardhack do
                 ),
                 "."
               )
-            ])
+            )
 
           throw({:script_return, {ctx, 1}})
         else

@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.PsychicAdvisor do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "geffen_in", x: 39, y: 127, dir: 2, sprite: 704, name: "Psychic Advisor"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "geffen_in",
+        x: 39,
+        y: 127,
+        dir: 2,
+        sprite: 704,
+        name: "Psychic Advisor",
+        scope: :shared
+      }
+    ]
 
   @impl true
   def on_talk(ctx) do

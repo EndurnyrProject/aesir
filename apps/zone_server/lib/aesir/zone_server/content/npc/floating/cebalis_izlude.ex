@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "izlude",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
         dir: 2,
         sprite: 98,
         name: "Cebalis",
+        scope: :renewal,
         unique_name: "Cebalis#izlude"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
         dir: 2,
         sprite: 98,
         name: "Cebalis",
+        scope: :renewal,
         unique_name: "Cebalis#izlude_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
         dir: 2,
         sprite: 98,
         name: "Cebalis",
+        scope: :renewal,
         unique_name: "Cebalis#izlude_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
         dir: 2,
         sprite: 98,
         name: "Cebalis",
+        scope: :renewal,
         unique_name: "Cebalis#izlude_c"
       },
       %{
@@ -52,7 +57,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CebalisIzlude do
         dir: 2,
         sprite: 98,
         name: "Cebalis",
+        scope: :renewal,
         unique_name: "Cebalis#izlude_d"
+      },
+      %{
+        map: "izlude",
+        x: 58,
+        y: 126,
+        dir: 2,
+        sprite: 98,
+        name: "Cebalis",
+        scope: :pre_renewal,
+        unique_name: "Cebalis#izlude"
       }
     ]
 

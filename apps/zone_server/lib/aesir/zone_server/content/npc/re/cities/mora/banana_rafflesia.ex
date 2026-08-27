@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.BananaRafflesia do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "mora",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Mora.BananaRafflesia do
         dir: 6,
         sprite: 516,
         name: "Banana Rafflesia",
+        scope: :renewal,
         unique_name: "Banana Rafflesia#ep14_1"
       }
     ]

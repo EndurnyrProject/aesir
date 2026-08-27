@@ -6,10 +6,16 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
   """
 
   use ExUnit.Case, async: true
+  use Mimic
 
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   defp game_state(opts) do
     %PlayerState{
@@ -68,6 +74,22 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
 
     test "raises on a detached ctx" do
       assert_raise ArgumentError, fn -> Dsl.getcharid(%{ctx() | game_state: nil}, 0) end
+    end
+  end
+
+  describe "getguildname/2" do
+    test "returns the guild name and works without an attached player" do
+      expect(GuildManager, :get, fn 55 ->
+        {:ok, %GuildState{guild_id: 55, name: "Knights", master_char_id: 1}}
+      end)
+
+      assert Dsl.getguildname(%{ctx() | game_state: nil}, 55) == "Knights"
+    end
+
+    test "returns null when the guild does not exist" do
+      expect(GuildManager, :get, fn 999 -> {:error, :not_found} end)
+
+      assert Dsl.getguildname(ctx(), 999) == "null"
     end
   end
 
@@ -169,6 +191,18 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
 
     test "raises on a detached ctx (no player state)" do
       assert_raise ArgumentError, fn -> Dsl.getpartnerid(%{ctx() | game_state: nil}) end
+    end
+  end
+
+  describe "getmonsterinfo/3" do
+    test "returns MOB_NAME by numeric id or Aegis name" do
+      assert Dsl.getmonsterinfo(ctx(), 1002, 1) == "Poring"
+      assert Dsl.getmonsterinfo(ctx(), "PORING", 1) == "Poring"
+    end
+
+    test "returns the compatible defaults for missing mobs and unsupported selectors" do
+      assert Dsl.getmonsterinfo(%{ctx() | game_state: nil}, -1, 1) == "null"
+      assert Dsl.getmonsterinfo(ctx(), 1002, 2) == -1
     end
   end
 

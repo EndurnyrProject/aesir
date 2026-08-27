@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.YuJiuXia do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gon_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.YuJiuXia do
         dir: 3,
         sprite: 774,
         name: "Yu Jiu Xia",
+        scope: :shared,
         unique_name: "Yu Jiu Xia#gon"
       }
     ]

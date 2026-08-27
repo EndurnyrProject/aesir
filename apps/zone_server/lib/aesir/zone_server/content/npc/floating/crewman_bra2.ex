@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CrewmanBra2 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "alberta",
@@ -16,6 +17,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.CrewmanBra2 do
         dir: 3,
         sprite: 100,
         name: "Crewman",
+        scope: :renewal,
+        unique_name: "Crewman#bra2"
+      },
+      %{
+        map: "alberta",
+        x: 247,
+        y: 115,
+        dir: 3,
+        sprite: 100,
+        name: "Crewman",
+        scope: :pre_renewal,
         unique_name: "Crewman#bra2"
       }
     ]

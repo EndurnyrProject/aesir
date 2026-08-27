@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "iz_ac02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin do
         dir: 3,
         sprite: 109,
         name: "Steward Aydin",
+        scope: :renewal,
         unique_name: "Steward Aydin#ac"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin do
         dir: 3,
         sprite: 109,
         name: "Steward Aydin",
+        scope: :renewal,
         unique_name: "Steward Aydin#ac_a"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin do
         dir: 3,
         sprite: 109,
         name: "Steward Aydin",
+        scope: :renewal,
         unique_name: "Steward Aydin#ac_b"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin do
         dir: 3,
         sprite: 109,
         name: "Steward Aydin",
+        scope: :renewal,
         unique_name: "Steward Aydin#ac_c"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.StewardAydin do
         dir: 3,
         sprite: 109,
         name: "Steward Aydin",
+        scope: :renewal,
         unique_name: "Steward Aydin#ac_d"
       }
     ]

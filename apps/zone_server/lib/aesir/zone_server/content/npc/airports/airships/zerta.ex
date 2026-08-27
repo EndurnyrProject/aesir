@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Zerta do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Zerta do
         dir: 2,
         sprite: 834,
         name: "Zerta",
+        scope: :shared,
         unique_name: "Zerta#01airplane"
       }
     ]

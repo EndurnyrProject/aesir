@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Grandma do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "amatsu",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Amatsu.Grandma do
         dir: 1,
         sprite: 760,
         name: "Grandma",
+        scope: :shared,
         unique_name: "Grandma#ama"
       }
     ]

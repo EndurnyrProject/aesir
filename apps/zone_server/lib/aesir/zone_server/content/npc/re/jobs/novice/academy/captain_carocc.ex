@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "int_land",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
         dir: 5,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#intro_npc03"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
         dir: 5,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#intro_npc03_01"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
         dir: 5,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#intro_npc03_02"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
         dir: 5,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#intro_npc03_03"
       },
       %{
@@ -52,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
         dir: 5,
         sprite: 873,
         name: "Captain Carocc",
+        scope: :renewal,
         unique_name: "Captain Carocc#intro_npc03_04"
       }
     ]

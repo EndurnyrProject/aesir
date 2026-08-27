@@ -138,6 +138,20 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   def getexp(%Ctx{} = ctx, base_exp, job_exp), do: apply_op(ctx, {:getexp, base_exp, job_exp})
 
   @doc """
+  Resets the attached player's levels according to `type` (`resetlvl`):
+
+  - `1` resets base/job levels, experience, skills, allocated stats, and options.
+  - `2` resets base/job levels, experience, and skills, preserving allocated stats.
+  - `3` resets only base level and base experience.
+  - `4` resets job level, job experience, and skills.
+
+  Invalid types halt the script with `:invalid_reset_type`.
+  """
+  @spec resetlvl(Ctx.t(), integer()) :: Ctx.t()
+  def resetlvl(%Ctx{status: {:error, _}} = ctx, _type), do: ctx
+  def resetlvl(%Ctx{} = ctx, type), do: apply_op(ctx, {:reset_level, type})
+
+  @doc """
   Changes the player's job through the session seam, recomputing job-dependent
   stats and refreshing the client's sprite/skill window. Accepts either a
   numeric job id or a job name atom (as `Job_*` constants transpile to). Halts

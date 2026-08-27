@@ -70,6 +70,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   def constant("ITEMINFO_ARMORLEVEL"), do: {:ok, "19"}
   def constant("ITEMINFO_SUBTYPE"), do: {:ok, "20"}
 
+  # The only monster-info selector currently used by the imported corpus.
+  def constant("MOB_NAME"), do: {:ok, "1"}
+
   # rAthena `enum e_date_type` selectors (`gettime`'s argument), matching the
   # `DT_*` order in `src/map/date.hpp` (DT_MIN is 0, the first real type is 1).
   def constant("DT_SECOND"), do: {:ok, "1"}

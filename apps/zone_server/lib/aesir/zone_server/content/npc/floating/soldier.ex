@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "mosk_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
         dir: 5,
         sprite: 966,
         name: "Soldier",
+        scope: :shared,
         unique_name: "Soldier#mosk02"
       },
       %{
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
         dir: 3,
         sprite: 966,
         name: "Soldier",
+        scope: :shared,
         unique_name: "Soldier#mosk03"
       },
       %{
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
         dir: 3,
         sprite: 966,
         name: "Soldier",
+        scope: :shared,
         unique_name: "Soldier#mosk04"
       },
       %{
@@ -43,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.Soldier do
         dir: 5,
         sprite: 966,
         name: "Soldier",
+        scope: :shared,
         unique_name: "Soldier#mosk05"
       }
     ]

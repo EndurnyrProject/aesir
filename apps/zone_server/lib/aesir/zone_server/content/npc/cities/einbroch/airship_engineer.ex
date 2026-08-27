@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.AirshipEngineer do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbroch",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.AirshipEngineer do
         dir: 1,
         sprite: 855,
         name: "Airship Engineer",
+        scope: :shared,
         unique_name: "Airship Engineer#ein-1"
       }
     ]

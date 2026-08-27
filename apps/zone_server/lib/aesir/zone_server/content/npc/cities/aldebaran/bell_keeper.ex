@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.BellKeeper do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldebaran",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Aldebaran.BellKeeper do
         dir: 4,
         sprite: 89,
         name: "Bell Keeper",
+        scope: :shared,
         unique_name: "Bell Keeper#A"
       }
     ]

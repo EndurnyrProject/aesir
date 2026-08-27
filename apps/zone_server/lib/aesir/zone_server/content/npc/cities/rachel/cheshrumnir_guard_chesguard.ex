@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.CheshrumnirGuardChesguard d
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "rachel",
@@ -16,9 +17,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Rachel.CheshrumnirGuardChesguard d
         dir: 5,
         sprite: 934,
         name: "Cheshrumnir Guard::ChesGuard",
+        scope: :shared,
         unique_name: "ChesGuard"
       },
-      %{map: "rachel", x: 155, y: 243, dir: 3, sprite: 934, name: "Cheshrumnir Guard"}
+      %{
+        map: "rachel",
+        x: 155,
+        y: 243,
+        dir: 3,
+        sprite: 934,
+        name: "Cheshrumnir Guard",
+        scope: :shared
+      }
     ]
 
   @impl true

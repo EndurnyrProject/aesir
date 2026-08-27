@@ -8,7 +8,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Clarice do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "airplane_01", x: 33, y: 68, dir: 4, sprite: 74, name: "Clarice"}]
+    scope: :shared,
+    spawn: [
+      %{map: "airplane_01", x: 33, y: 68, dir: 4, sprite: 74, name: "Clarice", scope: :shared}
+    ]
 
   @impl true
   def on_talk(ctx) do

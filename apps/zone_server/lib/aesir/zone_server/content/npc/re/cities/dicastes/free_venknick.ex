@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.FreeVenknick do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "dicastes01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dicastes.FreeVenknick do
         dir: 3,
         sprite: 449,
         name: "Free Venknick",
+        scope: :renewal,
         unique_name: "Free Venknick#a"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Yupi do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "prontera",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Prontera.Yupi do
         dir: 2,
         sprite: 102,
         name: "YuPi",
+        scope: :shared,
         unique_name: "YuPi#pront"
       }
     ]

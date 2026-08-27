@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Mjunia do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "einbech",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbech.Mjunia do
         dir: 3,
         sprite: 850,
         name: "Mjunia",
+        scope: :shared,
         unique_name: "Mjunia#ein"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LadyHarvestingHerb
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "pay_fild08",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.LadyHarvestingHerb
         dir: 1,
         sprite: 76,
         name: "Lady Harvesting Herbs",
+        scope: :renewal,
         unique_name: "Lady Harvesting Herbs#2"
       }
     ]

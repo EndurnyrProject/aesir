@@ -151,7 +151,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # -- module assembly ---------------------------------------------------------
 
   defp build_module(ast, env, opts) do
-    {main, segments} = segment(ast, env)
+    {main, segments} = segment(ast, env, opts.kind)
     catch_return? = env.sub and needs_return_catch?(main)
     main_env = %{env | catch_return: catch_return?}
     {main_lines, main_terminal} = emit_block(main, main_env)
@@ -187,7 +187,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
       #{header(opts)}
       #{aliases()}
-      #{event_clauses(env, catch_end?)}
+      #{event_clauses(env, opts.kind, catch_end?)}
       #{entry}
       #{Enum.join(segment_defs, "\n\n")}
       #{Enum.join(deferred, "\n\n")}
@@ -243,7 +243,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # area-trigger variant) normalizes to the plain `"OnTouch"` head the engine
   # actually dispatches — a script defining both collapses to one clause,
   # keeping the first and warning.
-  defp event_clauses(env, catch_end?) do
+  defp event_clauses(_env, :function, _catch_end?), do: ""
+
+  defp event_clauses(env, _kind, catch_end?) do
     case env.a.events |> Enum.map(&{normalized_event_head(&1), &1}) |> dedupe_event_heads() do
       [] ->
         ""
@@ -455,11 +457,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # Splits top-level statements at labels that need their own function:
   # jump targets, callsub targets and event labels. Other labels are inert.
   # A label closes the segment being accumulated and opens its own.
-  defp segment(stmts, env) do
+  defp segment(stmts, env, script_kind) do
     {segs, {kind, name, acc}} =
       Enum.reduce(stmts, {[], {:main, nil, []}}, fn
         {:label, label} = stmt, {segs, {kind, name, acc}} ->
-          case segment_kind(label, env.a) do
+          case segment_kind(label, env.a, script_kind) do
             nil -> {segs, {kind, name, [stmt | acc]}}
             new_kind -> {[{kind, name, Enum.reverse(acc)} | segs], {new_kind, label, []}}
           end
@@ -472,13 +474,13 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {main, rest}
   end
 
-  defp segment_kind(name, analysis) do
+  defp segment_kind(name, analysis, script_kind) do
     key = String.downcase(name)
 
     cond do
       MapSet.member?(analysis.callsub_targets, key) -> :sub
       MapSet.member?(analysis.jump_targets, key) -> :jump
-      String.starts_with?(name, "On") -> :event
+      script_kind != :function and String.starts_with?(name, "On") -> :event
       true -> nil
     end
   end
@@ -2473,18 +2475,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
       flag(:rathena)
       "Rathena.concat(#{render(l, env)}, #{render(r, env)})"
     else
-      "(#{render(l, env)} + #{render(r, env)})"
+      "(#{render_numeric(l, env)} + #{render_numeric(r, env)})"
     end
   end
 
   defp render({:bin, op, l, r}, env) when is_map_key(@arith, op),
-    do: "(#{render(l, env)} #{@arith[op]} #{render(r, env)})"
+    do: "(#{render_numeric(l, env)} #{@arith[op]} #{render_numeric(r, env)})"
 
-  defp render({:bin, :/, l, r}, env), do: "div(#{render(l, env)}, #{render(r, env)})"
-  defp render({:bin, :%, l, r}, env), do: "rem(#{render(l, env)}, #{render(r, env)})"
+  defp render({:bin, :/, l, r}, env),
+    do: "div(#{render_numeric(l, env)}, #{render_numeric(r, env)})"
+
+  defp render({:bin, :%, l, r}, env),
+    do: "rem(#{render_numeric(l, env)}, #{render_numeric(r, env)})"
 
   defp render({:bin, op, l, r}, env) when is_map_key(@bitwise, op),
-    do: ":erlang.#{@bitwise[op]}(#{render(l, env)}, #{render(r, env)})"
+    do: ":erlang.#{@bitwise[op]}(#{render_numeric(l, env)}, #{render_numeric(r, env)})"
 
   defp render({:call, "getarg", [index]}, %{sub: true} = env),
     do: "Enum.at(args, #{render(index, env)}, 0)"
@@ -2677,6 +2682,16 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   defp render(other, _env) do
     flag(:todo_mod)
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
+  end
+
+  defp render_numeric({:name, "Class"} = expr, env), do: render_job_id(expr, env)
+
+  defp render_numeric({:name, "Job_" <> _} = expr, env), do: render_job_id(expr, env)
+  defp render_numeric(expr, env), do: render(expr, env)
+
+  defp render_job_id(expr, env) do
+    flag(:rathena)
+    "Rathena.job_id(#{render(expr, env)})"
   end
 
   # `getvariableofnpc(.var, "<npc>")` read/write helpers. Defined outside the

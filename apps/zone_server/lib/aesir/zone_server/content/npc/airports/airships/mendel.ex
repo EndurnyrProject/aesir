@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Mendel do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "airplane_01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Airports.Airships.Mendel do
         dir: 2,
         sprite: 55,
         name: "Mendel",
+        scope: :shared,
         unique_name: "Mendel#01airplane_01"
       }
     ]

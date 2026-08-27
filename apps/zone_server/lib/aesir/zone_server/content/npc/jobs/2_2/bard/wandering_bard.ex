@@ -8,7 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "comodo", x: 226, y: 123, dir: 5, sprite: 741, name: "Wandering Bard"}]
+    scope: :shared,
+    spawn: [
+      %{
+        map: "comodo",
+        x: 226,
+        y: 123,
+        dir: 5,
+        sprite: 741,
+        name: "Wandering Bard",
+        scope: :shared
+      }
+    ]
 
   alias Aesir.ZoneServer.Script.Rathena
 

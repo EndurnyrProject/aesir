@@ -135,7 +135,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FClocktowergate do
             ctx =
               ctx
               |> delitem(get_local(ctx, :item_req, 0), 1)
-              |> todo(:warp, [Enum.at(args, 2, 0), Enum.at(args, 3, 0), Enum.at(args, 4, 0)])
+              |> warp(Enum.at(args, 2, 0), Enum.at(args, 3, 0), Enum.at(args, 4, 0))
 
             throw({:script_end, ctx})
           else

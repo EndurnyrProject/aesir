@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Baphomet do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_prist",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Baphomet do
         dir: 4,
         sprite: 736,
         name: "Baphomet",
+        scope: :shared,
         unique_name: "Baphomet#prst",
         trigger: {8, 1}
       }

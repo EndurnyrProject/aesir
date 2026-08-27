@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_duncer",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou do
         dir: 4,
         sprite: 101,
         name: "Bijou",
+        scope: :shared,
         unique_name: "Bijou#da"
       }
     ]

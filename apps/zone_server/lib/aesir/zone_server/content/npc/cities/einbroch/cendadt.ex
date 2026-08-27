@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Cendadt do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "ein_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Einbroch.Cendadt do
         dir: 3,
         sprite: 851,
         name: "Cendadt",
+        scope: :shared,
         unique_name: "Cendadt#ein"
       }
     ]

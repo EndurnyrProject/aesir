@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HotelEmployee238275 do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in02",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.HotelEmployee238275 do
         dir: 5,
         sprite: 869,
         name: "Hotel Employee",
+        scope: :shared,
         unique_name: "Hotel Employee#zen1"
       }
     ]

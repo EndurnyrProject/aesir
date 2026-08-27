@@ -8,8 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "iz_ac02", x: 142, y: 85, dir: 6, sprite: 633, name: "Lusa", unique_name: "Lusa#ac"},
+      %{
+        map: "iz_ac02",
+        x: 142,
+        y: 85,
+        dir: 6,
+        sprite: 633,
+        name: "Lusa",
+        scope: :renewal,
+        unique_name: "Lusa#ac"
+      },
       %{
         map: "iz_ac02_a",
         x: 142,
@@ -17,6 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
         dir: 6,
         sprite: 633,
         name: "Lusa",
+        scope: :renewal,
         unique_name: "Lusa#ac_a"
       },
       %{
@@ -26,6 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
         dir: 6,
         sprite: 633,
         name: "Lusa",
+        scope: :renewal,
         unique_name: "Lusa#ac_b"
       },
       %{
@@ -35,6 +47,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
         dir: 6,
         sprite: 633,
         name: "Lusa",
+        scope: :renewal,
         unique_name: "Lusa#ac_c"
       },
       %{
@@ -44,6 +57,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
         dir: 6,
         sprite: 633,
         name: "Lusa",
+        scope: :renewal,
         unique_name: "Lusa#ac_d"
       }
     ]

@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Dewata.HappilyMarriedGrandpa do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
-      %{map: "dewata", x: 278, y: 281, dir: 4, sprite: 534, name: "Happily Married Grandpa"}
+      %{
+        map: "dewata",
+        x: 278,
+        y: 281,
+        dir: 4,
+        sprite: 534,
+        name: "Happily Married Grandpa",
+        scope: :renewal
+      }
     ]
 
   @impl true

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Yuno.JunoGranny do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "yuno",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Yuno.JunoGranny do
         dir: 4,
         sprite: 103,
         name: "Juno Granny",
+        scope: :shared,
         unique_name: "Juno Granny#juno"
       }
     ]

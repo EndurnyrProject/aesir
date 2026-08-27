@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.Citizen do
   """
 
   use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "geffen", x: 203, y: 146, dir: 5, sprite: 97, name: "Citizen"}]
+    scope: :shared,
+    spawn: [%{map: "geffen", x: 203, y: 146, dir: 5, sprite: 97, name: "Citizen", scope: :shared}]
 
   @impl true
   def on_talk(ctx) do

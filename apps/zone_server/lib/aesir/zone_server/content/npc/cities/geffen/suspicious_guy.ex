@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "geffen",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Geffen.SuspiciousGuy do
         dir: 4,
         sprite: 99,
         name: "Suspicious Guy",
+        scope: :shared,
         trigger: {6, 6}
       }
     ]

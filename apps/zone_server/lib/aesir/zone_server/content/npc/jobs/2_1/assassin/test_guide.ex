@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.TestGuide do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "in_moc_16",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.TestGuide do
         dir: 2,
         sprite: 725,
         name: "Test Guide",
+        scope: :shared,
         unique_name: "Test Guide#ASN",
         trigger: {4, 4}
       }

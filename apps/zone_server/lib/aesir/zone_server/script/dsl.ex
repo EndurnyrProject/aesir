@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate cure(ctx, status), to: PlayerEffects
   defdelegate savepoint(ctx, map, x, y), to: PlayerEffects
   defdelegate getexp(ctx, base_exp, job_exp), to: PlayerEffects
+  defdelegate resetlvl(ctx, type), to: PlayerEffects
   defdelegate jobchange(ctx, job), to: PlayerEffects
   defdelegate openstorage(ctx), to: PlayerEffects
   defdelegate guildopenstorage(ctx), to: PlayerEffects
@@ -128,6 +129,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   defdelegate warp(ctx, target), to: Movement
   defdelegate warp(ctx, map, x, y), to: Movement
+  defdelegate mapwarp(ctx, from_map, to_map, x, y), to: Movement
+  defdelegate mapwarp(ctx, from_map, to_map, x, y, type), to: Movement
+  defdelegate mapwarp(ctx, from_map, to_map, x, y, type, id), to: Movement
   defdelegate areawarp(ctx, from_map, x1, y1, x2, y2, to_map, x3, y3), to: Movement
   defdelegate areawarp(ctx, from_map, x1, y1, x2, y2, to_map, x3, y3, x4, y4), to: Movement
   defdelegate warpchar(ctx, map, x, y), to: Movement
@@ -265,6 +269,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate getequiprefinecost(ctx, slot, type, info), to: Reads
   defdelegate isequippedcnt(ctx, item_ids), to: Reads
   defdelegate getiteminfo(ctx, item, type), to: Reads
+  defdelegate getmonsterinfo(ctx, mob, type), to: Reads
   defdelegate num_suffix(ctx, n), to: Reads
   defdelegate insert_comma(ctx, value), to: Reads
   defdelegate getpartnerid(ctx), to: Reads
@@ -276,6 +281,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate getnpcid(ctx, name), to: Reads
   defdelegate playerattached(ctx), to: Reads
   defdelegate getcharid(ctx, type), to: Reads
+  defdelegate getguildname(ctx, guild_id), to: Reads
   defdelegate party_leader?(ctx), to: Reads
   defdelegate party_leader?(ctx, party_id), to: Reads
   defdelegate strnpcinfo(ctx, type), to: Reads

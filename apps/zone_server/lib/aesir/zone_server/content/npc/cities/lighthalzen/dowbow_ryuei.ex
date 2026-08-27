@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.DowbowRyuei do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "lhz_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Lighthalzen.DowbowRyuei do
         dir: 3,
         sprite: 843,
         name: "Dowbow Ryuei",
+        scope: :shared,
         unique_name: "Dowbow Ryuei#ryusei"
       }
     ]

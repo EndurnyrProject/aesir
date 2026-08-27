@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Minstrel do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :renewal,
     spawn: [
       %{
         map: "malangdo",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Cities.Malangdo.Minstrel do
         dir: 3,
         sprite: 479,
         name: "Minstrel",
+        scope: :renewal,
         unique_name: "Minstrel#mal"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "aldeba_in",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
         dir: 3,
         sprite: 709,
         name: "Tzerero",
+        scope: :shared,
         unique_name: "Tzerero#sn"
       }
     ]

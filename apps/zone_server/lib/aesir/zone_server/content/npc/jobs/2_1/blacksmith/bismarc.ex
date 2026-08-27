@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Bismarc do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "hugel",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Bismarc do
         dir: 1,
         sprite: 118,
         name: "Bismarc",
+        scope: :shared,
         unique_name: "Bismarc#BLS"
       }
     ]

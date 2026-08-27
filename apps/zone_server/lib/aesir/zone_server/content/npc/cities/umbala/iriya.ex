@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Iriya do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "cmd_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Umbala.Iriya do
         dir: 3,
         sprite: 69,
         name: "Iriya",
+        scope: :shared,
         unique_name: "Iriya#um"
       }
     ]

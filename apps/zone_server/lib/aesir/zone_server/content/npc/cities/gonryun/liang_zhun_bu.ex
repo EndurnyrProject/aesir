@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.LiangZhunBu do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "gonryun",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Cities.Gonryun.LiangZhunBu do
         dir: 3,
         sprite: 776,
         name: "Liang Zhun Bu",
+        scope: :shared,
         unique_name: "Liang Zhun Bu#gon"
       }
     ]

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "hu_in01",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
         dir: 4,
         sprite: 727,
         name: "Hunter Guildsman",
+        scope: :shared,
         unique_name: "Hunter Guildsman#hnt"
       }
     ]

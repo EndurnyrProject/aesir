@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.MummyGenerator do
   """
 
   use Aesir.ZoneServer.Npc,
+    scope: :shared,
     spawn: [
       %{
         map: "job_prist",
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.MummyGenerator do
         dir: 1,
         sprite: 110,
         name: "Mummy_Generator",
+        scope: :shared,
         trigger: {1, 1}
       }
     ]
