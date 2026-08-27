@@ -278,8 +278,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       match?({:ok, _kind}, BonusKeys.flag_kind(key)) ->
         compile_flagged_bonus(key, first_ast, second_ast, third_ast, env)
 
+      match?({:ok, _trigger}, BonusKeys.auto_cast_trigger(key)) ->
+        # `bonus3 bAutoSpell,sk,lv,rate` - no flag argument at all.
+        compile_auto_cast(key, first_ast, second_ast, third_ast, {:int, 0}, {:int, 0}, env)
+
       true ->
         unsupported({:unsupported_command, "bonus3"})
+    end
+  end
+
+  # `bonus4 bAutoSpell,sk,lv,rate,force` adds the force argument (cast on self
+  # or on the other party, random level); the battle flag stays the default.
+  defp compile_instr(
+         {:cmd, "bonus4", [{:name, key}, skill_ast, level_ast, rate_ast, force_ast]},
+         env
+       ) do
+    if match?({:ok, _trigger}, BonusKeys.auto_cast_trigger(key)) do
+      compile_auto_cast(key, skill_ast, level_ast, rate_ast, {:int, 0}, force_ast, env)
+    else
+      unsupported({:unsupported_command, "bonus4"})
+    end
+  end
+
+  # `bonus5 bAutoSpell,sk,lv,rate,bf,force` is the complete form: it names the
+  # attack kinds that trigger the proc as well as the force argument.
+  defp compile_instr(
+         {:cmd, "bonus5", [{:name, key}, skill_ast, level_ast, rate_ast, flag_ast, force_ast]},
+         env
+       ) do
+    if match?({:ok, _trigger}, BonusKeys.auto_cast_trigger(key)) do
+      compile_auto_cast(key, skill_ast, level_ast, rate_ast, flag_ast, force_ast, env)
+    else
+      unsupported({:unsupported_command, "bonus5"})
     end
   end
 
@@ -409,6 +439,63 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # two-element tuple whose param widens to `{param, flag}`.
   @spec flagged_dest(dest(), non_neg_integer()) :: dest()
   defp flagged_dest({family, param}, flag), do: {family, {param, flag}}
+
+  # An autocast bonus arms a worn item to cast a skill by itself: on the
+  # wearer's landed hits (`bAutoSpell`) or on hits taken (`bAutoSpellWhenHit`).
+  #
+  # The skill and both flags are transpile-time constants; the level and the
+  # per-mille chance stay ordinary amount expressions, so a refine- or
+  # learned-level-dependent proc keeps working. The battle flag is normalized
+  # here exactly like a flagged resist, over the trigger's own preset.
+  @spec compile_auto_cast(
+          String.t(),
+          term(),
+          term(),
+          term(),
+          term(),
+          term(),
+          %{String.t() => EquipScript.expr()}
+        ) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_auto_cast(key, skill_ast, level_ast, rate_ast, flag_ast, force_ast, env) do
+    with {:ok, trigger} <- auto_cast_trigger(key),
+         {:ok, skill_id} <- resolve_skill_ref(skill_ast),
+         {:ok, flag} <- resolve_auto_cast_flag(flag_ast),
+         {:ok, force} <- auto_cast_force(force_ast),
+         {:ok, level_expr} <- compile_expr(level_ast, env),
+         {:ok, rate_expr} <- compile_expr(rate_ast, env) do
+      spec = %{
+        trigger: trigger,
+        skill_id: skill_id,
+        flag:
+          BattleFlags.fill_battle(Bitwise.bor(flag, BonusKeys.auto_cast_preset_flag(trigger))),
+        force: force
+      }
+
+      {:ok, {:auto_cast, spec, level_expr, rate_expr}}
+    end
+  end
+
+  @spec auto_cast_trigger(String.t()) ::
+          {:ok, :attack | :when_hit} | {:error, {:unsupported, detail()}}
+  defp auto_cast_trigger(key) do
+    case BonusKeys.auto_cast_trigger(key) do
+      {:ok, trigger} -> {:ok, trigger}
+      :error -> unsupported({:unknown_bonus_key, key})
+    end
+  end
+
+  # The battle-flag argument is optional: the arities that omit it pass a
+  # literal `0`, which normalizes to the trigger's defaults.
+  @spec resolve_auto_cast_flag(term()) ::
+          {:ok, non_neg_integer()} | {:error, {:unsupported, detail()}}
+  defp resolve_auto_cast_flag({:int, 0}), do: {:ok, 0}
+  defp resolve_auto_cast_flag(ast), do: resolve_flag(:battle, ast)
+
+  # The force argument is a plain bitmask literal in the corpus rather than a
+  # named constant, so a non-negative literal is the whole vocabulary.
+  @spec auto_cast_force(term()) :: {:ok, non_neg_integer()} | {:error, {:unsupported, detail()}}
+  defp auto_cast_force({:int, force}) when force >= 0, do: {:ok, force}
+  defp auto_cast_force(other), do: unsupported({:unresolved_param, other})
 
   # A flag-param key carries its param in the lone `bonus` argument and a fixed
   # amount in its schema, so it resolves the param exactly like a `bonus2` key

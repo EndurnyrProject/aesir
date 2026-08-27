@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.LineTargets
@@ -1051,7 +1052,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       attack_flag: physical_skill_flag(hit_info)
     )
 
+    dispatch_equip_autocasts(attacker, target, target_pid, physical_skill_flag(hit_info))
+
     damage
+  end
+
+  # Rolls both sides' equipment autocasts for a landed skill hit: the caster's
+  # own procs run in the caster's session, the target's when-hit procs in the
+  # target's. Entries armed for normal swings only never match here.
+  @spec dispatch_equip_autocasts(Combatant.t(), Combatant.t(), pid() | nil, BattleFlags.flag()) ::
+          :ok
+  defp dispatch_equip_autocasts(attacker, target, target_pid, attack_flag) do
+    attacker
+    |> EquipAutocast.on_attack(target, attack_flag)
+    |> Enum.each(&send_auto_cast(self(), &1))
+
+    target
+    |> EquipAutocast.when_hit(attacker, attack_flag)
+    |> Enum.each(&send_auto_cast(target_pid, &1))
+  end
+
+  @spec send_auto_cast(pid() | nil, EquipAutocast.proc()) :: :ok
+  defp send_auto_cast(nil, _proc), do: :ok
+
+  defp send_auto_cast(pid, {:auto_cast, skill_id, level, target}) do
+    GenServer.cast(pid, {:skill, {:proc_cast, skill_id, level, target}})
   end
 
   # Classifies a physical skill hit for the trigger-flagged equipment bonuses:

@@ -444,6 +444,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   def auto_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
 
   @doc """
+  Runs an equipment-granted proc cast: the entry the autocast bonuses use.
+
+  Deliberately neither `complete_cast/4` nor `auto_cast/4`. A worn item casting
+  by itself skips what the wearer cannot be asked for - cast time, the learned
+  requirement, range and the act-delay gate - but it is not free the way a
+  status proc is: it pays the skill's full SP cost and it respects the skill's
+  own pacing, so a proc cannot fire while its skill is still cooling down and
+  it arms that cooldown when it does.
+
+  Insufficient SP or a skill still on cooldown returns an error and runs
+  nothing; the caller drops it silently, since a proc that cannot pay is simply
+  a proc that did not happen.
+  """
+  @spec proc_cast(Active.caster(), integer(), pos_integer(), Active.target()) ::
+          {:ok, Active.caster()} | {:error, atom()}
+  def proc_cast(game_state, skill_id, level, target) when is_integer(level) and level > 0 do
+    now = System.monotonic_time(:millisecond)
+    adapter = Caster.for(game_state)
+
+    with {:ok, definition} <- fetch_definition(skill_id),
+         :ok <- check_max_level(definition, level),
+         {:ok, module} <- fetch_active_module(definition),
+         {:ok, resolved} <- resolve_auto_cast_target(definition, target),
+         :ok <- check_cooldown(game_state, skill_id, now),
+         cost = proc_cast_sp_cost(definition, level),
+         :ok <- check_sp(adapter, game_state, cost),
+         {:ok, game_state} <-
+           run_unconditional(module, game_state, resolved, level, definition, :auto) do
+      {:ok,
+       game_state
+       |> adapter.deduct_sp(cost)
+       |> put_cooldown(skill_id, definition, level, now)
+       |> put_act_delay(definition, level, now)}
+    end
+  end
+
+  def proc_cast(_game_state, _skill_id, _level, _target), do: {:error, :invalid_level}
+
+  @doc """
   Runs an item-triggered cast: the restricted entry `itemskill` uses.
 
   This entry point is player-only because item scripts execute against a player
@@ -522,7 +561,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
     end
   end
 
-  # rAthena: `skill_get_sp(skill_id, skill_lv) * 2 / 3`, C integer division.
+  # An equipment proc pays the skill's declared SP cost in full, unlike the
+  # status-driven proc's reduced charge. Caster `sp_cost_rate` sources stay out
+  # of it: the item pays what the skill lists.
+  @spec proc_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
+  defp proc_cast_sp_cost(definition, level), do: Enum.at(definition.sp_cost, level - 1)
+
+  # A status-driven proc charges two thirds of the skill's SP cost, in C integer
+  # division.
   @spec auto_cast_sp_cost(Definition.t(), pos_integer()) :: non_neg_integer()
   defp auto_cast_sp_cost(definition, level) do
     div(Enum.at(definition.sp_cost, level - 1) * 2, 3)

@@ -774,6 +774,13 @@
   locations:
     - right_hand
   name: Ice Falchion
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 500)
+    ctx = bonus(ctx, {:add_eff2, :sc_freeze}, 10)
+    ctx = grant_skill(ctx, 14, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 3, 100)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -823,6 +830,11 @@
   locations:
     - right_hand
   name: Fireblend
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = grant_skill(ctx, 19, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 3, 100)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -967,6 +979,13 @@
   locations:
     - right_hand
   name: Mysteltainn
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :shadow)
+    ctx = bonus(ctx, {:addele, :ghost}, 15)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 16}, 3, 100)
+    ctx = bonus(ctx, {:add_eff, :sc_stone}, 10)
+    ctx = bonus(ctx, :dex, 3)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -1556,6 +1575,11 @@
   locations:
     - both_hand
   name: Schweizersabel
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :def, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 3, 100)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_sword
@@ -1755,6 +1779,10 @@
   locations:
     - both_hand
   name: Muscle Cutter
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 800)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 30}, 1, 30)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -1793,6 +1821,11 @@
   locations:
     - both_hand
   name: Schweizersabel
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :def, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 3, 100)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -5370,6 +5403,15 @@
   locations:
     - both_hand
   name: Heart Breaker
+  on_equip: |-
+    ctx = bonus(ctx, :critical, (20 + refine(ctx)))
+    ctx = bonus(ctx, :aspd_rate, 5)
+    ctx = if (job_is(ctx, :class, :whitesmith) || job_is(ctx, :class, :creator)) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 110}, 3, 30)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -5529,6 +5571,12 @@
     - both_hand
   name: Celestial Axe
   no_guild_storage: true
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, :vit, 10)
+    ctx = bonus(ctx, {:addrace, :undead}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 34}, 5, 50)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -6739,6 +6787,11 @@
   locations:
     - both_hand
   name: Zephyrus
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, {:add_eff, :sc_silence}, 200)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 3, 100)
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -6783,6 +6836,12 @@
   locations:
     - both_hand
   name: Brionac
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = grant_skill(ctx, 28, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 13}, 3, 100)
+    ctx = bonus(ctx, {:addclass, :boss}, 5)
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -6802,6 +6861,11 @@
   locations:
     - both_hand
   name: Hellfire
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 3, 100)
+    ctx = bonus(ctx, :str, 3)
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -6958,6 +7022,13 @@
   locations:
     - both_hand
   name: Ahlspiess
+  on_equip: |-
+    ctx = bonus(ctx, {:ignore_def_class, :normal}, 100)
+    ctx = bonus(ctx, {:ignore_def_class, :boss}, 100)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 56}, 5, 30)
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -7029,6 +7100,11 @@
   locations:
     - both_hand
   name: Zephyrus
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, {:add_eff, :sc_silence}, 200)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 3, 100)
+    ctx
   range: 3
   refineable: true
   slots: 3
@@ -7169,6 +7245,13 @@
   locations:
     - both_hand
   name: Ahlspiess
+  on_equip: |-
+    ctx = bonus(ctx, {:ignore_def_class, :normal}, 100)
+    ctx = bonus(ctx, {:ignore_def_class, :boss}, 100)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 56}, 5, 30)
+    ctx
   range: 3
   refineable: true
   subtype: two_handed_spear
@@ -8654,6 +8737,10 @@
   locations:
     - right_hand
   name: Battlefield Textbook
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 34}, (3 + (bool(ctx, (skill_lv(ctx, 34) > 3)) * (skill_lv(ctx, 34) - 3))), 20)
+    ctx
   range: 1
   slots: 1
   subtype: book
@@ -11621,6 +11708,7 @@
   locations:
     - right_hand
   name: Magma Fist
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 280}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -11639,6 +11727,7 @@
   locations:
     - right_hand
   name: Icicle Fist
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 281}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -11657,6 +11746,7 @@
   locations:
     - right_hand
   name: Electric Fist
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 282}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -11675,6 +11765,7 @@
   locations:
     - right_hand
   name: Seismic Fist
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 283}, 5, 10)'
   range: 1
   refineable: true
   slots: 3
@@ -11771,6 +11862,29 @@
   name: Glorious Claw
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 95)
+    ctx = bonus(ctx, {:addrace, :player_human}, 95)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:addrace, :player_human}, ((refine(ctx) - 4) * (refine(ctx) - 4)))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 266}, 5, ((refine(ctx) * 10) - 50))
+      ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 30}, 1, ((refine(ctx) * 10) - 50))
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: knuckle
@@ -12047,6 +12161,13 @@
   locations:
     - right_hand
   name: Electric Guitar
+  on_equip: |-
+    ctx = grant_skill(ctx, 84, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 84}, 1, 100)
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :agi, 1)
+    ctx
   range: 1
   refineable: true
   subtype: musical
@@ -12776,6 +12897,12 @@
   locations:
     - right_hand
   name: Carrot Whip
+  on_equip: |-
+    if (refine(ctx) > 0) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 29}, refine(ctx), 10)
+    else
+      ctx
+    end
   range: 2
   refineable: true
   subtype: whip
@@ -13729,6 +13856,12 @@
   locations:
     - left_hand
   name: Cracked Buckler
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, {:addele, :neutral}, -10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 73}, 1, 50)
+    ctx = bonus(ctx, :mdef, 1)
+    ctx
   type: armor
   view: 2
 - aegis_name: Valkyrja's_Shield_C
@@ -16794,6 +16927,13 @@
   locations:
     - armor
   name: Old Green Pantie
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :vit, 2)
+    ctx = bonus(ctx, :max_hp, 200)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 261}, 5, 20)
+    ctx = bonus(ctx, :mdef, 1)
+    ctx
   type: armor
 - aegis_name: N_Adventurer's_Suit
   armor_level: 1
@@ -17313,6 +17453,14 @@
   locations:
     - shoes
   name: Shadow Walk
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = if (skill_lv(ctx, 135) < 2) do
+      auto_cast(ctx, %{force: 0, flag: 850, trigger: :when_hit, skill_id: 135}, 2, 100)
+    else
+      auto_cast(ctx, %{force: 0, flag: 850, trigger: :when_hit, skill_id: 135}, skill_lv(ctx, 135), 100)
+    end
+    ctx
   refineable: true
   type: armor
   weight: 2000
@@ -17631,6 +17779,13 @@
   locations:
     - shoes
   name: Red Stocking Boots
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 2)
+    ctx = bonus(ctx, :hp_regen, 10)
+    ctx = bonus(ctx, :sp_regen, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, 3, 20)
+    ctx = bonus(ctx, :mdef, 1)
+    ctx
   type: armor
 - aegis_name: Fish_Shoes
   armor_level: 1
@@ -17651,6 +17806,12 @@
   name: Glorious Shoes
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 4)
+    ctx = bonus(ctx, {:subrace, :player_human}, 4)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 29}, 1, 10)
+    ctx
   refineable: true
   type: armor
 - aegis_name: Krieger_Shoes2
@@ -18530,6 +18691,10 @@
   locations:
     - garment
   name: Musika
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, max(1, skill_lv(ctx, 28)), 20)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -20136,6 +20301,7 @@
   name: Chinese Handicraft
   no_guild_storage: true
   no_trade: true
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 5, 300)'
   type: armor
   weight: 50
 - aegis_name: 5_Anniversary_Coin
@@ -23358,6 +23524,7 @@
   locations:
     - head_top
   name: Banana Hat
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 3, 30)'
   refineable: true
   type: armor
   view: 197
@@ -24460,6 +24627,10 @@
   locations:
     - head_top
   name: Puppy Hat
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 1, (10 + (20 * bool(ctx, (stat(ctx, :agi) >= 77)))))
+    ctx
   type: armor
   view: 234
   weight: 500
@@ -24523,6 +24694,10 @@
   locations:
     - head_top
   name: Geographer Band
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 1, 50)
+    ctx
   type: armor
   view: 238
   weight: 500
@@ -24939,6 +25114,10 @@
     - head_mid
     - head_top
   name: Moonlight Flower Hat
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 29}, 1, 50)
+    ctx
   refineable: true
   type: armor
   view: 268
@@ -25582,6 +25761,11 @@
   locations:
     - head_top
   name: Drooping Ninetail
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 75}, 1, 30)
+    ctx
   refineable: true
   type: armor
   view: 296
@@ -25638,6 +25822,10 @@
   locations:
     - head_top
   name: Triple Poring Hat
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 1013}, 1, 50)
+    ctx
   type: armor
   view: 299
   weight: 600
@@ -25651,6 +25839,10 @@
     - head_top
   name: Valkyrie Feather Band
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 1, 10)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -25679,6 +25871,10 @@
     - head_mid
     - head_top
   name: Afro Wig
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 142}, 1, 300)
+    ctx = bonus(ctx, {:subele, :neutral}, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -25692,6 +25888,11 @@
   locations:
     - head_top
   name: Elephant Hat
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 86}, 3, 10)
+    ctx = grant_skill(ctx, 31, 1)
+    ctx
   refineable: true
   type: armor
   view: 215
@@ -25924,6 +26125,7 @@
     - head_low
     - head_mid
   name: Tongue Mask
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 5, 50)'
   type: armor
   view: 253
   weight: 100
@@ -26191,6 +26393,13 @@
     - head_top
   name: Vanilmirth Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, 1, 10)
+    ctx = bonus(ctx, :mdef, 5)
+    ctx
   type: armor
   view: 317
   weight: 100
@@ -26220,6 +26429,10 @@
     - head_top
   name: Kettle Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 286}, 2, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 86}, 3, 10)
+    ctx
   refineable: true
   type: armor
   view: 318
@@ -26248,6 +26461,10 @@
     - head_top
   name: Ramen Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 4)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 30}, 1, 30)
+    ctx
   type: armor
   view: 320
 - aegis_name: Whisper_Mask
@@ -26344,6 +26561,7 @@
     - head_mid
     - head_top
   name: Pagdayaw
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 326}, 1, 50)'
   slots: 1
   type: armor
   view: 303
@@ -26460,6 +26678,10 @@
     - head_top
   name: Carmen Miranda's Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 1011}, 1, 50)
+    ctx
   refineable: true
   type: armor
   view: 329
@@ -26625,6 +26847,7 @@
   locations:
     - head_top
   name: Fisherman's Hat
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 86}, 3, 50)'
   refineable: true
   type: armor
   view: 339
@@ -26667,6 +26890,10 @@
   name: Champion Wreath
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 1, 50)
+    ctx
   refineable: true
   type: armor
   view: 261
@@ -26725,6 +26952,10 @@
     - head_top
   name: Little Angel Doll
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 254}, 3, 30)
+    ctx
   refineable: true
   type: armor
   view: 344
@@ -26850,6 +27081,13 @@
     - head_top
   name: Radio Antenna
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, :flee, 5)
+    ctx = grant_skill(ctx, 20, 1)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 21}, 5, 30)
+    ctx
   refineable: true
   type: armor
   view: 347
@@ -26939,6 +27177,12 @@
   locations:
     - head_top
   name: Defolty Doll Hat
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 5)
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = bonus(ctx, :str, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 33}, 10, 20)
+    ctx
   slots: 1
   type: armor
   view: 354
@@ -27511,6 +27755,10 @@
     - head_top
   name: Orc Hero Headdress
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 112}, 3, 10)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -27557,6 +27805,10 @@
     - head_top
   name: Bunny Top Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 29}, 5, 10)
+    ctx
   refineable: true
   type: armor
   view: 384
@@ -27587,6 +27839,7 @@
     - head_top
   name: Fish Head Hat
   no_guild_storage: true
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 281}, 1, 5)'
   refineable: true
   type: armor
   view: 386
@@ -27658,6 +27911,11 @@
   locations:
     - head_top
   name: Twin Pompom By JB
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 3)
+    ctx = grant_skill(ctx, 93, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 29}, 1, 500)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -27910,6 +28168,10 @@
   locations:
     - head_top
   name: Mandragora Cap
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 326}, 5, 30)
+    ctx
   slots: 1
   type: armor
   view: 402
@@ -27988,6 +28250,7 @@
     - head_top
   name: Blue Ribbon
   no_guild_storage: true
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 45}, 2, 7)'
   refineable: true
   slots: 1
   type: armor
@@ -28129,6 +28392,10 @@
   locations:
     - head_top
   name: Camp Fire Hat
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :fire}, 10)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 17}, 5, 100)
+    ctx
   type: armor
   view: 416
   weight: 300
@@ -28171,6 +28438,11 @@
   locations:
     - head_top
   name: Crown Parrots
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_silence}, 10000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 326}, 1, 50)
+    ctx
   slots: 1
   type: armor
   view: 419
@@ -28218,6 +28490,16 @@
     - head_top
   name: Mask Of Ifrit
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, {:subele, :fire}, 10)
+    ctx = bonus(ctx, {:subele, :water}, -10)
+    ctx = grant_skill(ctx, 10, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 83}, 3, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 3, 50)
+    ctx
   type: armor
   view: 421
 - aegis_name: Ifrit's_Ear
@@ -28388,6 +28670,10 @@
   locations:
     - head_top
   name: Chicken Hat
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 155}, 1, 30)
+    ctx = bonus(ctx, :aspd_rate, 5)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -28551,6 +28837,10 @@
   locations:
     - head_top
   name: Statue Of Baby Angel
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 72}, 1, 20)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -28736,6 +29026,11 @@
   locations:
     - head_top
   name: Decorative Geographer
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, 5, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 5, 30)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -28991,6 +29286,10 @@
     - head_top
   name: Bijofnil Wings
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 66}, 3, 3)
+    ctx
   refineable: true
   type: armor
   view: 477
@@ -29336,6 +29635,7 @@
     - head_top
   name: Necromancer's Hood
   no_guild_storage: true
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 851, trigger: :when_hit, skill_id: 340}, 5, 5)'
   refineable: true
   type: armor
   view: 491
@@ -29348,6 +29648,15 @@
     - head_top
   name: Magic Rabit Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :mdef, 1)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 19}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 14}, 1, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 20}, 1, 20)
+    ctx
   refineable: true
   type: armor
   view: 497
@@ -29446,6 +29755,14 @@
     - head_top
   name: Sting hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, {:addele, :fire}, 5)
+    ctx = bonus(ctx, {:subele, :earth}, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, 1, 10)
+    ctx
   refineable: true
   type: armor
   view: 504
@@ -30164,6 +30481,10 @@
     - head_top
   name: Octopus Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 6}, 5, 10)
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx
   refineable: true
   type: armor
   view: 538
@@ -30177,6 +30498,10 @@
     - head_top
   name: Leaf Cat Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 3, 10)
+    ctx
   refineable: true
   type: armor
   view: 539
@@ -30192,6 +30517,10 @@
     - head_mid
     - head_top
   name: Seal Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 88}, 1, 30)
+    ctx
   refineable: true
   type: armor
   view: 540
@@ -30269,6 +30598,14 @@
   locations:
     - head_top
   name: Magic Rabbit Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = auto_cast(ctx, %{force: 3, flag: 849, trigger: :when_hit, skill_id: 19}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 3, flag: 849, trigger: :when_hit, skill_id: 14}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 3, flag: 849, trigger: :when_hit, skill_id: 20}, 3, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 1, 10)
+    ctx
   refineable: true
   type: armor
   view: 497
@@ -30815,6 +31152,10 @@
     - head_top
   name: Holy Marching Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 68}, 2, 30)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -30829,6 +31170,7 @@
   locations:
     - head_top
   name: Imp Hat
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 280}, 1, 5)'
   refineable: true
   type: armor
   view: 589
@@ -30842,6 +31184,7 @@
   locations:
     - head_top
   name: Sleeper Hat
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 283}, 1, 5)'
   refineable: true
   type: armor
   view: 590
@@ -30855,6 +31198,7 @@
   locations:
     - head_top
   name: Gryphon Hat
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 282}, 1, 5)'
   refineable: true
   type: armor
   view: 591
@@ -31122,6 +31466,19 @@
     - head_top
   name: Snowman Hat
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, {:subele, :water}, 7)
+    ctx = bonus(ctx, {:add_monster_drop, 530}, 100)
+    ctx = bonus(ctx, {:add_monster_drop, 12354}, 300)
+    ctx = if (refine(ctx) > 7) do
+      auto_cast(ctx, %{force: 0, flag: 851, trigger: :when_hit, skill_id: 318}, 5, 20)
+    else
+      auto_cast(ctx, %{force: 0, flag: 851, trigger: :when_hit, skill_id: 318}, 1, 20)
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -31343,6 +31700,16 @@
   locations:
     - head_top
   name: Red Tailed Ribbon
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 2)
+    ctx = bonus(ctx, {:subrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = if (skill_lv(ctx, 28) == 10) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 10, 20)
+    else
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 5, 20)
+    end
+    ctx
   refineable: true
   type: armor
   view: 167
@@ -32586,6 +32953,10 @@
   locations:
     - right_hand
   name: Hakujin
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, 1, 10)
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -32602,6 +32973,10 @@
   locations:
     - right_hand
   name: Hakujin
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, 1, 10)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -34440,6 +34815,12 @@
   locations:
     - both_hand
   name: Huuma Blaze Shuriken
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = bonus(ctx, :dex, -2)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 30)
+    ctx
   range: 1
   refineable: true
   subtype: huuma
@@ -34796,6 +35177,12 @@
   locations:
     - right_hand
   name: Refined Fireblend
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = bonus(ctx, :int, 2)
+    ctx = grant_skill(ctx, 19, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 5, 100)
+    ctx
   range: 1
   subtype: one_handed_sword
   type: weapon

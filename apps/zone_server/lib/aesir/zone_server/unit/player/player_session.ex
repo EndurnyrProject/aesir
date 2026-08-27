@@ -1076,6 +1076,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SkillHandler.handle_auto_cast(state, skill_id, level, target)
   end
 
+  # Skill: a proc from this player's own equipment - either armed on their hits
+  # or on hits they took. Cast into this session (by it, or by the attacker's
+  # session for a when-hit proc) so the skill runs on the wearer's own state.
+  @impl true
+  def handle_cast({:skill, {:proc_cast, skill_id, level, target}}, state) do
+    SkillHandler.handle_proc_cast(state, skill_id, level, target)
+  end
+
   # Unit: vitals casts (damage, SP drain/restore), all handled in
   # HealthHandler. Heal stays under `:combat` - the player heal carries
   # received-heal-rate scaling that is genuinely player-only.

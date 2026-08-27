@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
@@ -689,6 +690,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         attack_flag: normal_attack_flag(attacker)
       )
 
+      dispatch_equip_autocasts(attacker, target, target_pid, normal_attack_flag(attacker))
+
       drain_hp(attacker, damage_result.damage)
       drain_sp(attacker, damage_result.damage)
       splash_attack(attacker, target)
@@ -791,6 +794,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         attack_flag: normal_attack_flag(attacker)
       )
 
+      dispatch_equip_autocasts(attacker, target, target_pid, normal_attack_flag(attacker))
+
       drain_hp(attacker, damage)
       drain_sp(attacker, damage)
       splash_attack(attacker, target)
@@ -858,6 +863,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp normal_attack_flag(attacker) do
     range = if Map.get(attacker, :attack_range, 1) <= 3, do: :short, else: :long
     BattleFlags.build(:weapon, range, false)
+  end
+
+  # Rolls both sides' equipment autocasts for a landed swing.
+  #
+  # The attacker's own procs are cast to `self()`, exactly like the
+  # `SC_AUTOSPELL` bolt: this runs inside the attacker's session, so the cast
+  # lands after the current message on state the session already committed. The
+  # defender's when-hit procs are handed to the defender's session instead, so
+  # each side's skills are cast by its own single writer. A mob defender carries
+  # no equipment and produces nothing.
+  @spec dispatch_equip_autocasts(Combatant.t(), Combatant.t(), pid() | nil, BattleFlags.flag()) ::
+          :ok
+  defp dispatch_equip_autocasts(attacker, target, target_pid, attack_flag) do
+    attacker
+    |> EquipAutocast.on_attack(target, attack_flag)
+    |> Enum.each(&send_auto_cast(self(), &1))
+
+    target
+    |> EquipAutocast.when_hit(attacker, attack_flag)
+    |> Enum.each(&send_auto_cast(target_pid, &1))
+  end
+
+  @spec send_auto_cast(pid() | nil, EquipAutocast.proc()) :: :ok
+  defp send_auto_cast(nil, _proc), do: :ok
+
+  defp send_auto_cast(pid, {:auto_cast, skill_id, level, target}) do
+    GenServer.cast(pid, {:skill, {:proc_cast, skill_id, level, target}})
   end
 
   # Recovers HP from the damage a landed swing dealt, when the attacker's
@@ -1253,6 +1285,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     OnHitEffects.after_hit(attacker_combatant, target_combatant, damage_result,
       attack_flag: normal_attack_flag(attacker_combatant)
+    )
+
+    dispatch_equip_autocasts(
+      attacker_combatant,
+      target_combatant,
+      target_pid,
+      normal_attack_flag(attacker_combatant)
     )
   end
 

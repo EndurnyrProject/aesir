@@ -49,6 +49,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     refine-dependent amount is scaled too.
   """
 
+  import Bitwise
+
+  alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
 
   @type destination :: atom()
@@ -242,6 +245,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsubclass" => :battle
   }
 
+  # Equip autocast keys: a chance for a worn item to cast a skill by itself.
+  # The value is the trigger point - `:attack` fires on the wearer's own landed
+  # hits, `:when_hit` on hits taken.
+  @auto_cast_keys %{
+    "bautospell" => :attack,
+    "bautospellwhenhit" => :when_hit
+  }
+
+  # A when-hit proc is armed for both normal attacks and skills, unlike the
+  # attack-side default of normal swings only. The remaining axes fill from the
+  # script's own flag argument.
+  @when_hit_preset_flag BattleFlag.id(:normal) ||| BattleFlag.id(:skill)
+
   # `bonus3` keys whose third argument is a genuine second param, not a droppable
   # flag: `bonus3 bAddMonsterDropItem,iid,r,n` gates the drop on the slain mob's
   # race. The transpiler emits a three-element `{family, item_id, race}`
@@ -365,6 +381,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec flag_kind(String.t()) :: {:ok, :battle | :trigger} | :error
   def flag_kind(name) when is_binary(name), do: Map.fetch(@flag_keys, String.downcase(name))
+
+  @doc """
+  Resolves an equip autocast key to the trigger point it arms: `:attack` for a
+  proc on the wearer's own landed hits, `:when_hit` for one on hits taken.
+  Returns `:error` for every other key (any case).
+  """
+  @spec auto_cast_trigger(String.t()) :: {:ok, :attack | :when_hit} | :error
+  def auto_cast_trigger(name) when is_binary(name),
+    do: Map.fetch(@auto_cast_keys, String.downcase(name))
+
+  @doc """
+  The battle-flag bits an autocast trigger arms before the script's own flag
+  argument is folded in. A when-hit proc covers normal attacks and skills
+  alike; an attack-side proc adds nothing of its own.
+  """
+  @spec auto_cast_preset_flag(:attack | :when_hit) :: non_neg_integer()
+  def auto_cast_preset_flag(:when_hit), do: @when_hit_preset_flag
+  def auto_cast_preset_flag(:attack), do: 0
 
   @doc """
   Whether a `bonus3` key's third argument is a race param gating a monster-drop

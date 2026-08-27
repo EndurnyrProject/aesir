@@ -15,6 +15,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
   # Builds the expected normalized flag from the axis names it should contain,
   # so the assertions read as the axes rather than as a magic number.
+  defp skill_id!(name) do
+    {:ok, definition} = Catalog.by_name(name)
+    definition.id
+  end
+
   defp battle_flag(names) do
     Enum.reduce(names, 0, &Bitwise.bor(BattleFlag.id(String.to_atom(&1)), &2))
   end
@@ -624,15 +629,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bMaxHP,RC_Brute,10;")
     end
 
-    test "unsupported bonus3 keys, and bonus4/5, stay unsupported commands" do
+    test "unsupported bonus3 keys, and out-of-vocabulary bonus4/5, stay unsupported" do
       assert {:error, {:unsupported, {:unsupported_command, "bonus3"}}} =
                compile("bonus3 bAddMonsterDropItemGroup,IG_Jewel,RC_Brute,100;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
-               compile("bonus4 bAutoSpell,MG_FIREBOLT,5,20,0;")
+               compile("bonus4 bSetDefRace,RC_Player_Human,10000,5000,1;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus5"}}} =
-               compile("bonus5 bAutoSpell,MG_FIREBOLT,5,20,0,BF_WEAPON;")
+               compile(~S|bonus5 bAutoSpellOnSkill,"AL_HEAL","AL_HEAL",10,100,1;|)
     end
 
     test "non-constant param is rejected" do
@@ -708,6 +713,62 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:error, {:unsupported, {:unresolved_param, "BF_MAGIC"}}} =
                compile("bonus3 bAddEff,Eff_Stun,500,BF_MAGIC;")
+    end
+
+    test "bonus3 bAutoSpell arms an attack-trigger proc with the default flag" do
+      assert {:ok, [{:auto_cast, spec, 3, 100}]} =
+               compile(~S|bonus3 bAutoSpell,"MG_COLDBOLT",3,100;|)
+
+      assert %{trigger: :attack, skill_id: skill_id, force: 0} = spec
+      assert skill_id == skill_id!(:mg_coldbolt)
+
+      # No flag argument: a weapon proc, either range, normal swings and skills.
+      assert spec.flag == battle_flag(~w(weapon short long normal skill))
+    end
+
+    test "bonus3 bAutoSpellWhenHit arms the when-hit trigger" do
+      assert {:ok, [{:auto_cast, %{trigger: :when_hit} = spec, 5, 20}]} =
+               compile(~S|bonus3 bAutoSpellWhenHit,"AL_HEAL",5,20;|)
+
+      assert spec.flag == battle_flag(~w(weapon short long normal skill))
+    end
+
+    test "bonus4 adds the force argument, keeping the default flag" do
+      assert {:ok, [{:auto_cast, %{force: 1, trigger: :attack}, 1, 10}]} =
+               compile(~S|bonus4 bAutoSpell,"MG_COLDBOLT",1,10,1;|)
+    end
+
+    test "bonus5 names both the triggering attack kinds and the force argument" do
+      assert {:ok, [{:auto_cast, spec, 5, 100}]} =
+               compile(~S|bonus5 bAutoSpell,"MG_FIREBOLT",5,100,BF_MAGIC,0;|)
+
+      assert %{trigger: :attack, force: 0} = spec
+      assert spec.flag == battle_flag(~w(magic short long skill))
+    end
+
+    test "an autocast level and chance may be refine- or skill-level-dependent" do
+      assert {:ok, [{:auto_cast, _spec, {:max, 2, {:skill_lv, _id}}, {:+, 10, :refine}}]} =
+               compile(
+                 ~S|bonus3 bAutoSpell,"MG_COLDBOLT",max(2,getskilllv("MG_COLDBOLT")),10+getrefine();|
+               )
+    end
+
+    test "an autocast naming a skill outside the catalog rejects the item" do
+      assert {:error, {:unsupported, {:unresolved_param, "NPC_NOTASKILL"}}} =
+               compile(~S|bonus3 bAutoSpell,"NPC_NOTASKILL",3,100;|)
+    end
+
+    test "an unresolvable autocast battle flag rejects the item" do
+      assert {:error, {:unsupported, {:unresolved_param, "BF_NOTAFLAG"}}} =
+               compile(~S|bonus5 bAutoSpell,"MG_COLDBOLT",5,100,BF_NOTAFLAG,0;|)
+    end
+
+    test "bonus4 and bonus5 of a non-autocast key stay unsupported" do
+      assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
+               compile(~S|bonus4 bAddEff,Eff_Crystalize,500,ATF_SHORT,3000;|)
+
+      assert {:error, {:unsupported, {:unsupported_command, "bonus5"}}} =
+               compile(~S|bonus5 bSubEle,Ele_Fire,3,BF_MAGIC,1;|)
     end
 
     test "a bonus3 key outside the flag-arg allow-list stays unsupported" do

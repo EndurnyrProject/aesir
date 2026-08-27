@@ -2556,6 +2556,78 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
   end
 
+  describe "proc_cast/4" do
+    setup do
+      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts -> :ok end)
+      :ok
+    end
+
+    test "charges the skill's full SP cost, unlike a status proc" do
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.stats.current_state.sp == 88
+    end
+
+    test "the SP cost tracks the proc level" do
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 10, {:unit, 2001})
+      assert updated.stats.current_state.sp == 70
+    end
+
+    # WZ_METEOR carries a real cooldown, unlike the single-target bolts above.
+    test "arms the skill's cooldown, so procs cannot outpace the skill itself" do
+      stub(Combat, :resolve_target_position, fn 2001 -> {:ok, :mob, {14, 12, "prontera"}} end)
+      stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
+
+      gs = game_state(100, %{})
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 83, 1, {:unit, 2001})
+      assert Map.has_key?(updated.skill_cooldowns, 83)
+    end
+
+    test "refuses to fire while the skill is still cooling down" do
+      reject(&Combat.execute_magic_attack/3)
+
+      cooling = %{
+        game_state(100, %{})
+        | skill_cooldowns: %{19 => System.monotonic_time(:millisecond) + 10_000}
+      }
+
+      assert {:error, :on_cooldown} = Interpreter.proc_cast(cooling, 19, 1, {:unit, 2001})
+    end
+
+    test "fizzles silently when SP is short, spending nothing and casting nothing" do
+      reject(&Combat.execute_magic_attack/3)
+      gs = game_state(11, %{})
+
+      assert {:error, :insufficient_sp} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+    end
+
+    test "applies the skill's aftercast delay" do
+      gs = game_state(100, %{})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.act_delay_until >= before + 1400
+    end
+
+    test "needs no learned level and ignores the caster's act delay" do
+      gs = %{game_state(100, %{}) | act_delay_until: System.monotonic_time(:millisecond) + 10_000}
+
+      assert {:ok, _} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+    end
+
+    test "an unknown skill id and a zero level are both refused" do
+      assert {:error, :unknown_skill} =
+               Interpreter.proc_cast(game_state(100, %{}), 999_999, 1, {:unit, 2001})
+
+      assert {:error, :invalid_level} =
+               Interpreter.proc_cast(game_state(100, %{}), 19, 0, {:unit, 2001})
+    end
+  end
+
   # rAthena switches on `skill_get_casttype` and sends a ground bolt to the
   # victim's cell via `skill_castend_pos2` (battle.cpp:7508-7510).
   describe "auto_cast/4 with a ground bolt" do

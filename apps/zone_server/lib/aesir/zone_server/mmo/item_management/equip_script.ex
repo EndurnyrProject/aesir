@@ -144,11 +144,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   """
   @type value :: atom()
 
+  @typedoc """
+  The constant half of an autocast bonus: which trigger arms it, the skill it
+  casts, the attack kinds that fire it, and the force bits deciding target and
+  level randomization. The level and chance are expressions, so they ride the
+  instruction rather than this map.
+  """
+  @type auto_cast_spec :: %{
+          trigger: :attack | :when_hit,
+          skill_id: pos_integer(),
+          flag: non_neg_integer(),
+          force: non_neg_integer()
+        }
+
   @typedoc "A single bonus program statement."
   @type instr ::
           {:bonus, dest(), expr()}
           | {:set, dest(), value()}
           | {:grant_skill, pos_integer(), expr()}
+          | {:auto_cast, auto_cast_spec(), expr(), expr()}
           | {:if, condition(), [instr()], [instr()]}
 
   @typedoc "A bonus program: an ordered list of instructions."
@@ -221,6 +235,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "grant_skill(ctx, #{id}, #{render_expr(expr)})"
   end
 
+  defp render_instr({:auto_cast, spec, level, rate}) do
+    "auto_cast(ctx, #{inspect(spec)}, #{render_expr(level)}, #{render_expr(rate)})"
+  end
+
   defp render_instr({:if, condition, then_branch, else_branch}) do
     "if #{render_cond(condition)} do\n" <>
       "#{indent(render_stmts(then_branch))}\nelse\n#{indent(render_stmts(else_branch))}\nend"
@@ -282,6 +300,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_instr!({:grant_skill, _, [{:ctx, _, c}, id, expr]}) when is_atom(c) do
     {:grant_skill, validate_skill_id!(id), parse_expr!(expr)}
+  end
+
+  defp parse_instr!({:auto_cast, _, [{:ctx, _, c}, spec, level, rate]}) when is_atom(c) do
+    {:auto_cast, validate_auto_cast_spec!(spec), parse_expr!(level), parse_expr!(rate)}
   end
 
   defp parse_instr!({:if, _, [condition, [do: then_q, else: else_q]]}) do
@@ -397,6 +419,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp validate_skill_id!(id) when is_integer(id) and id > 0, do: id
   defp validate_skill_id!(id), do: malformed!("skill id", id)
 
+  # An autocast spec quotes as a map literal; every field is a constant, so the
+  # whole shape is checked structurally here.
+  defp validate_auto_cast_spec!({:%{}, _, fields}) do
+    spec = Map.new(fields)
+
+    with %{trigger: trigger, skill_id: skill_id, flag: flag, force: force} <- spec,
+         true <- trigger in [:attack, :when_hit],
+         true <- is_integer(skill_id) and skill_id > 0,
+         true <- is_integer(flag) and flag >= 0,
+         true <- is_integer(force) and force >= 0,
+         4 <- map_size(spec) do
+      %{trigger: trigger, skill_id: skill_id, flag: flag, force: force}
+    else
+      _ -> malformed!("auto_cast spec", spec)
+    end
+  end
+
+  defp validate_auto_cast_spec!(spec), do: malformed!("auto_cast spec", spec)
+
   defp validate_stat!(stat) when is_atom(stat) do
     if stat in @stat_params, do: stat, else: malformed!("stat param", stat)
   end
@@ -436,6 +477,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_instr({:set, key, value}, _inputs, acc), do: Map.put(acc, key, value)
+
+  # An autocast folds into an entry keyed by everything that makes two procs the
+  # same arming - trigger, skill, level, attack kinds and force bits - with the
+  # per-mille chance as its value. Two items arming the identical proc therefore
+  # stack their chances, while the same skill at a different level stays its own
+  # entry.
+  defp eval_instr({:auto_cast, spec, level_expr, rate_expr}, inputs, acc) do
+    level = eval_expr(level_expr, inputs)
+    rate = eval_expr(rate_expr, inputs)
+
+    if level > 0 and rate != 0 do
+      key = {:auto_cast, {spec.trigger, spec.skill_id, level, spec.flag, spec.force}}
+      Map.update(acc, key, rate, &(&1 + rate))
+    else
+      acc
+    end
+  end
 
   defp eval_instr({:grant_skill, skill_id, expr}, inputs, acc) do
     level = eval_expr(expr, inputs)

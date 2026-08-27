@@ -1321,6 +1321,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     end
   end
 
+  @doc """
+  Runs an equipment-granted proc cast for this player.
+
+  The equipment sibling of `handle_auto_cast/4`: it routes to the interpreter's
+  proc entry, which charges the skill's full SP cost and honors its cooldown. A
+  proc that cannot pay or is still cooling down is dropped silently.
+  """
+  @spec handle_proc_cast(map(), integer(), pos_integer(), term()) :: {:noreply, map()}
+  def handle_proc_cast(%{game_state: game_state} = state, skill_id, level, target) do
+    case Interpreter.proc_cast(game_state, skill_id, level, target) do
+      {:ok, new_game_state} ->
+        new_state = commit_cast(state, new_game_state, skill_id, level, false)
+        broadcast_skill_use(new_state.game_state, skill_id, level, target)
+        {:noreply, new_state}
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
+
   # Synthetic gid stamped on skill-triggered dialogs (AC_MAKINGARROW's crafting
   # menu). Outside every real unit-id range (warps 0x4000_0000.., NPCs
   # 0x5000_0000..0x57FF_FFFF) so it can never collide with a spawned unit; the
