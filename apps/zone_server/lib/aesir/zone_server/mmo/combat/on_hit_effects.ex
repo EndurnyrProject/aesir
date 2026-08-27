@@ -21,8 +21,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @roll_ceiling 10_000
+  @normal_short BattleFlags.build(:weapon, :short, false)
+  @normal_long BattleFlags.build(:weapon, :long, false)
+  @defender_procs [
+    %{
+      status: :sc_defset,
+      rate: :def_set_race_rate,
+      duration: :def_set_race_duration,
+      value: :def_set_race_value
+    },
+    %{
+      status: :sc_mdefset,
+      rate: :mdef_set_race_rate,
+      duration: :mdef_set_race_duration,
+      value: :mdef_set_race_value
+    },
+    %{
+      status: :sc_norecover_state,
+      rate: :no_recover_race_rate,
+      duration: :no_recover_race_duration
+    }
+  ]
 
   @typedoc "A per-10000 chance/tolerance predicate: given an effective rate, is the roll a hit."
   @type roll_fun :: (non_neg_integer() -> boolean())
@@ -62,6 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     inflict(defender, attacker, :add_eff_when_hit, roll, attack_flag)
     inflict(attacker, attacker, :add_eff2, roll, attack_flag)
     inflict_on_skill(attacker, defender, Keyword.get(opts, :skill_id), roll)
+    inflict_defender_procs(attacker, defender, roll, attack_flag)
     :ok
   end
 
@@ -176,6 +201,80 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffects do
     do: Keyword.put(params, :duration, duration)
 
   defp maybe_duration(params, _duration), do: params
+
+  defp inflict_defender_procs(
+         %Combatant{unit_type: :player} = source,
+         %Combatant{unit_type: :player} = victim,
+         roll,
+         attack_flag
+       ) do
+    if normal_weapon_attack?(attack_flag) do
+      Enum.each(@defender_procs, &try_defender_proc(&1, source, victim, roll))
+    end
+
+    :ok
+  end
+
+  defp inflict_defender_procs(_source, _victim, _roll, _attack_flag), do: :ok
+
+  defp try_defender_proc(proc, source, victim, roll) do
+    modifiers = source.equip_modifiers
+    rate = Map.get(modifiers, {proc.rate, victim.race}, 0)
+
+    if rate > 0 do
+      duration = Map.get(modifiers, {proc.duration, victim.race}, 0)
+      {rate, duration} = adjust_defender_proc(proc.status, rate, duration, victim)
+      apply_defender_proc(proc, source, victim, modifiers, rate, duration, roll)
+    end
+  end
+
+  defp apply_defender_proc(proc, source, victim, modifiers, rate, duration, roll) do
+    if rate > 0 and roll.(rate) do
+      params = [
+        caster_id: source.unit_id,
+        source_type: source.unit_type,
+        duration: max(duration, 1)
+      ]
+
+      params = maybe_proc_value(params, proc, modifiers, victim.race)
+      StatusInterpreter.apply_status(:player, victim.unit_id, proc.status, params)
+    end
+  end
+
+  defp adjust_defender_proc(:sc_norecover_state, rate, duration, victim) do
+    tolerance = Map.get(victim.equip_modifiers, {:res_eff, :sc_norecover_state}, 0)
+    rate = max(0, rate - div(rate * tolerance, 10_000))
+    {rate, duration - effective_luk(victim) * 100}
+  end
+
+  defp adjust_defender_proc(_status, rate, duration, _victim), do: {rate, duration}
+
+  defp effective_luk(victim) do
+    case UnitRegistry.get_unit(:player, victim.unit_id) do
+      {:ok, {_module, %{stats: stats}, _pid}} -> PlayerStats.get_effective_stat(stats, :luk)
+      _missing -> fallback_luk(victim)
+    end
+  end
+
+  defp fallback_luk(victim) do
+    status_luk =
+      victim.unit_type
+      |> ModifierCalculator.get_all_modifiers(victim.unit_id)
+      |> Map.get(:luk, 0)
+
+    Map.get(victim.base_stats, :luk, 0) + Map.get(victim.equip_modifiers, :luk, 0) + status_luk
+  end
+
+  defp maybe_proc_value(params, %{value: value_family}, modifiers, race) do
+    Keyword.put(params, :val1, Map.get(modifiers, {value_family, race}, 0))
+  end
+
+  defp maybe_proc_value(params, _proc, _modifiers, _race), do: params
+
+  defp normal_weapon_attack?(attack_flag) do
+    BattleFlags.matches_battle?(@normal_short, attack_flag) or
+      BattleFlags.matches_battle?(@normal_long, attack_flag)
+  end
 
   @spec default_roll(non_neg_integer()) :: boolean()
   defp default_roll(effective), do: :rand.uniform(@roll_ceiling) <= effective

@@ -495,10 +495,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_instr({:bonus, key, expr}, inputs, acc) do
     value = eval_expr(expr, inputs)
 
-    if BonusKeys.max_destination?(key) do
-      Map.update(acc, key, value, &max(&1, value))
-    else
-      Map.update(acc, key, value, &(&1 + value))
+    cond do
+      BonusKeys.overwrite_destination?(key) -> Map.put(acc, key, value)
+      BonusKeys.max_destination?(key) -> Map.update(acc, key, value, &max(&1, value))
+      true -> Map.update(acc, key, value, &(&1 + value))
     end
   end
 

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.NaturalHeal
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -35,7 +36,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
   def handle_tick(%{game_state: game_state} = state, elapsed_ms) do
     stats = game_state.stats
 
-    if full?(stats) do
+    if recovery_blocked?(game_state) or full?(stats) do
       {:noreply, state}
     else
       regen_modifiers = regen_modifiers(game_state)
@@ -110,6 +111,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
 
   defp put_when(map, true, key, value), do: Map.put(map, key, value)
   defp put_when(map, false, _key, _value), do: map
+
+  defp recovery_blocked?(game_state),
+    do: StatusStorage.has_status?(:player, game_state.character_id, :sc_norecover_state)
 
   defp full?(stats) do
     stats.current_state.hp >= stats.derived_stats.max_hp and

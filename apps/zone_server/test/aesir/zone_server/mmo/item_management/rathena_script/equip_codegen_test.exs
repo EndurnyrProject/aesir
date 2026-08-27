@@ -634,7 +634,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus3 bAddMonsterDropItemGroup,IG_Jewel,RC_Brute,100;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus4"}}} =
-               compile("bonus4 bSetDefRace,RC_Player_Human,10000,5000,1;")
+               compile("bonus4 bSubSize,Size_Large,10,BF_WEAPON,0;")
 
       assert {:error, {:unsupported, {:unsupported_command, "bonus5"}}} =
                compile("bonus5 bSubEle,Ele_Fire,3,BF_MAGIC,1;")
@@ -801,6 +801,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:error, {:unsupported, {:unresolved_param, "RC_NotARace"}}} =
                compile("bonus3 bHPVanishRaceRate,RC_NotARace,1000,8;")
+    end
+
+    test "defender-status procs retain race, chance, duration and replacement value" do
+      assert {:ok,
+              [
+                {:bonus, {:def_set_race_rate, :player_human}, 10_000},
+                {:bonus, {:def_set_race_duration, :player_human}, 5_000},
+                {:bonus, {:def_set_race_value, :player_human}, 1}
+              ]} = compile("bonus4 bSetDefRace,RC_Player_Human,10000,5000,1;")
+
+      assert {:ok,
+              [
+                {:bonus, {:mdef_set_race_rate, :player_doram}, 5_000},
+                {:bonus, {:mdef_set_race_duration, :player_doram}, {:*, :refine, 100}},
+                {:bonus, {:mdef_set_race_value, :player_doram}, 2}
+              ]} = compile("bonus4 bSetMDefRace,RC_Player_Doram,5000,getrefine()*100,2;")
+
+      assert {:ok,
+              [
+                {:bonus, {:no_recover_race_rate, :player_human}, 10_000},
+                {:bonus, {:no_recover_race_duration, :player_human}, 10_000}
+              ]} = compile("bonus3 bStateNoRecoverRace,RC_Player_Human,10000,10000;")
     end
 
     test "bonus3 flag-arg key with an unresolvable param is unresolved_param" do

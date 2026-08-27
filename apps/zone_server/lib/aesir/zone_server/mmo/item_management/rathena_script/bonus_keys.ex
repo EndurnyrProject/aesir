@@ -272,6 +272,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bspvanishracerate" => %{rate: :sp_vanish_race_rate, percent: :sp_vanish_race_percent}
   }
 
+  # Normal-weapon-hit procs keyed by target race. Registration is last-writer
+  # rather than additive, so all sibling fields use overwrite merge semantics.
+  @defender_proc_schemas %{
+    "bsetdefrace" => %{
+      rate: :def_set_race_rate,
+      duration: :def_set_race_duration,
+      value: :def_set_race_value
+    },
+    "bsetmdefrace" => %{
+      rate: :mdef_set_race_rate,
+      duration: :mdef_set_race_duration,
+      value: :mdef_set_race_value
+    },
+    "bstatenorecoverrace" => %{
+      rate: :no_recover_race_rate,
+      duration: :no_recover_race_duration
+    }
+  }
+  @defender_proc_families Enum.flat_map(Map.values(@defender_proc_schemas), &Map.values/1)
+
   # Equip autocast keys: a chance for a worn item to cast a skill by itself.
   # The value is the trigger point - `:attack` fires on the wearer's own landed
   # hits, `:when_hit` on hits taken, and `:on_skill` on the wearer casting one
@@ -430,6 +450,28 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   def race_vanish_schema(name) when is_binary(name),
     do: Map.fetch(@race_vanish_schemas, String.downcase(name))
 
+  @doc "Returns the race-gated defender-status sibling families for a key."
+  @spec defender_proc_schema(String.t()) ::
+          {:ok,
+           %{required(:rate) => atom(), required(:duration) => atom(), optional(:value) => atom()}}
+          | :error
+  def defender_proc_schema(name) when is_binary(name),
+    do: Map.fetch(@defender_proc_schemas, String.downcase(name))
+
+  @doc "Returns the number of numeric fields carried by a defender proc key."
+  @spec defender_proc_arity(String.t()) :: {:ok, 2 | 3} | :error
+  def defender_proc_arity(name) when is_binary(name) do
+    case defender_proc_schema(name) do
+      {:ok, schema} -> {:ok, map_size(schema)}
+      :error -> :error
+    end
+  end
+
+  @doc "Whether a numeric equipment destination uses last-writer merge semantics."
+  @spec overwrite_destination?(term()) :: boolean()
+  def overwrite_destination?({family, _param}), do: family in @defender_proc_families
+  def overwrite_destination?(_destination), do: false
+
   @doc """
   Resolves a key whose `bonus3` form inflicts a status when one named skill
   lands (`bonus3 bAddEffOnSkill,sk,eff,n`) to the family it stores into.
@@ -491,6 +533,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     |> Kernel.++(Map.values(@interval_keys))
     |> Kernel.++(Map.values(@status_duration_families))
     |> Kernel.++(vanish_families)
+    |> Kernel.++(@defender_proc_families)
     |> Enum.uniq()
   end
 
@@ -559,6 +602,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
         {:ok, :battle}
 
       family in schema_families(@race_vanish_schemas) ->
+        {:ok, :race}
+
+      family in @defender_proc_families ->
         {:ok, :race}
 
       true ->

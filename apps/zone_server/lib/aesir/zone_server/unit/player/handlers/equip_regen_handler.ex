@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.EquipRegen
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.StatusSync
@@ -40,6 +41,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
         elapsed_ms
       )
 
+    deltas = block_recovery(deltas, game_state)
+
     if accumulators == %{} do
       {:noreply, state}
     else
@@ -60,6 +63,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler do
       apply_changes(state, current.hp, new_hp, current.sp, new_sp)
 
       {:noreply, state}
+    end
+  end
+
+  defp block_recovery(deltas, game_state) do
+    if StatusStorage.has_status?(:player, game_state.character_id, :sc_norecover_state) do
+      %{deltas | hp_gain: 0, sp_gain: 0}
+    else
+      deltas
     end
   end
 

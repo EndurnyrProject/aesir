@@ -558,6 +558,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # soft_def = (20 + 10) * 1.2 = 36
       assert final_damage > 0
     end
+
+    test "SC_DEFSET replaces both hard and soft DEF before equipment ignore" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      defender = CombatTestHelper.create_player_combatant(unit_id: 7_001, vit: 80)
+      defender = %{defender | combat_stats: %{defender.combat_stats | def: 200}}
+      reference = CombatTestHelper.create_player_combatant(unit_id: 7_002, vit: 1)
+      reference = %{reference | combat_stats: %{reference.combat_stats | def: 1}}
+
+      :ok = StatusStorage.apply_status(:player, 7_001, :sc_defset, val1: 1)
+      on_exit(fn -> StatusStorage.remove_status(:player, 7_001, :sc_defset) end)
+
+      assert DamageCalculator.apply_defense_formula(200, defender) ==
+               DamageCalculator.apply_defense_formula(200, reference)
+    end
   end
 
   describe "apply_critical_hit/2" do

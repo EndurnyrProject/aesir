@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Internal
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -307,8 +308,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     max_sp = stats.derived_stats.max_sp
 
     hp_delta = scale_received_heal(hp_fun.(current.hp, max_hp) - current.hp, ctx.char_id)
+    sp_delta = sp_fun.(current.sp, max_sp) - current.sp
+    {hp_delta, sp_delta} = block_recovery(ctx.char_id, hp_delta, sp_delta)
+
     new_hp = Internal.clamp(current.hp + hp_delta, max_hp)
-    new_sp = Internal.clamp(sp_fun.(current.sp, max_sp), max_sp)
+    new_sp = Internal.clamp(current.sp + sp_delta, max_sp)
 
     new_state = %{current | hp: new_hp, sp: new_sp}
     game_state = %{ctx.game_state | stats: %{stats | current_state: new_state}}
@@ -317,6 +321,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     sync_sp(ctx, current.sp, new_sp)
 
     %{ctx | game_state: game_state}
+  end
+
+  defp block_recovery(char_id, hp_delta, sp_delta) do
+    if StatusStorage.has_status?(:player, char_id, :sc_norecover_state) do
+      {min(hp_delta, 0), min(sp_delta, 0)}
+    else
+      {hp_delta, sp_delta}
+    end
   end
 
   # Scales the healed HP delta (never SP) by the target's `received_heal_rate`

@@ -279,6 +279,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # attacks of the flagged kind. Every other `bonus3` shape stays unsupported.
   defp compile_instr({:cmd, "bonus3", [{:name, key}, first_ast, second_ast, third_ast]}, env) do
     cond do
+      BonusKeys.defender_proc_arity(key) == {:ok, 2} ->
+        compile_defender_proc(key, first_ast, second_ast, third_ast, nil, env)
+
       match?({:ok, _schema}, BonusKeys.vanish_schema(key)) ->
         with {:ok, schema} <- BonusKeys.vanish_schema(key),
              {:ok, flag} <- resolve_flag(:battle, third_ast) do
@@ -322,21 +325,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
         compile_auto_cast(key, skill_ast, level_ast, rate_ast, {:int, 0}, force_ast, env)
 
       :error ->
-        case BonusKeys.status_duration_family(key) do
-          {:ok, duration_family} ->
-            compile_flagged_duration_bonus(
-              key,
-              skill_ast,
-              level_ast,
-              rate_ast,
-              force_ast,
-              duration_family,
-              env
-            )
-
-          :error ->
-            unsupported({:unsupported_command, "bonus4"})
-        end
+        compile_bonus4_non_autocast(
+          key,
+          skill_ast,
+          level_ast,
+          rate_ast,
+          force_ast,
+          env
+        )
     end
   end
 
@@ -372,6 +368,57 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_instr({:cmd, name, _args}, _env), do: unsupported({:unsupported_command, name})
   defp compile_instr(other, _env), do: unsupported({:statement, other})
+
+  defp compile_bonus4_non_autocast(key, first_ast, second_ast, third_ast, fourth_ast, env) do
+    case BonusKeys.status_duration_family(key) do
+      {:ok, duration_family} ->
+        compile_flagged_duration_bonus(
+          key,
+          first_ast,
+          second_ast,
+          third_ast,
+          fourth_ast,
+          duration_family,
+          env
+        )
+
+      :error ->
+        if BonusKeys.defender_proc_arity(key) == {:ok, 3} do
+          compile_defender_proc(key, first_ast, second_ast, third_ast, fourth_ast, env)
+        else
+          unsupported({:unsupported_command, "bonus4"})
+        end
+    end
+  end
+
+  @spec compile_defender_proc(
+          String.t(),
+          term(),
+          term(),
+          term(),
+          term() | nil,
+          env()
+        ) :: {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
+  defp compile_defender_proc(key, race_ast, rate_ast, duration_ast, value_ast, env) do
+    with {:ok, schema} <- BonusKeys.defender_proc_schema(key),
+         {:ok, {_family, race}} <- resolve_param(%{family: schema.rate, param: :race}, race_ast),
+         {:ok, rate} <- compile_expr(rate_ast, env),
+         {:ok, duration} <- compile_expr(duration_ast, env),
+         {:ok, value} <- compile_optional_expr(value_ast, env) do
+      instructions = [
+        {:bonus, {schema.rate, race}, rate},
+        {:bonus, {schema.duration, race}, duration}
+      ]
+
+      value_instruction =
+        if value == nil, do: [], else: [{:bonus, {schema.value, race}, value}]
+
+      {:ok, instructions ++ value_instruction}
+    end
+  end
+
+  defp compile_optional_expr(nil, _env), do: {:ok, nil}
+  defp compile_optional_expr(ast, env), do: compile_expr(ast, env)
 
   @spec compile_vanish(
           %{rate: atom(), percent: atom()},

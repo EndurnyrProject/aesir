@@ -456,6 +456,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "SC_NORECOVER_STATE" do
+    test "blocks HP healing and SP restoration" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_norecover_state) end)
+      state = build_state(20, :idle)
+
+      assert {:noreply, ^state} = HealthHandler.apply_heal(50, 2, state)
+      assert {:noreply, ^state} = HealthHandler.restore_sp(30, state)
+    end
+  end
+
   describe "apply_heal/3" do
     test "publishes healed HP with the unchanged SP/AP maxima" do
       state = build_state(70, :idle)

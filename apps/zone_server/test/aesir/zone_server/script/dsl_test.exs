@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
@@ -186,6 +187,17 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       ctx = Dsl.heal(ctx, hp: 100)
 
       assert ctx.game_state.stats.current_state.hp == 200
+    end
+
+    test "no-recover blocks item/script HP and SP recovery" do
+      ctx = %{build_ctx(hp: 100, sp: 10) | char_id: 88_002}
+      :ok = StatusStorage.apply_status(:player, 88_002, :sc_norecover_state)
+      on_exit(fn -> StatusStorage.remove_status(:player, 88_002, :sc_norecover_state) end)
+
+      blocked = Dsl.heal(ctx, hp: 100, sp: 100)
+
+      assert blocked.game_state.stats.current_state.hp == 100
+      assert blocked.game_state.stats.current_state.sp == 10
     end
   end
 

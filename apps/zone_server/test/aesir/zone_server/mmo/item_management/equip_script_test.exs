@@ -118,6 +118,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         {:bonus, {:hp_vanish_race_rate, :player_human}, 1_000},
         {:bonus, {:hp_vanish_race_percent, :player_human}, 8}
       ],
+      tuple_defender_proc_dest: [
+        {:bonus, {:def_set_race_rate, :player_human}, 10_000},
+        {:bonus, {:def_set_race_duration, :player_human}, 5_000},
+        {:bonus, {:def_set_race_value, :player_human}, 1}
+      ],
       tuple_add_eff2_dest: [{:bonus, {:add_eff2, :sc_curse}, 500}],
       tuple_add_eff_when_hit_dest: [{:bonus, {:add_eff_when_hit, :sc_poison}, 300}],
       tuple_res_eff_dest: [{:bonus, {:res_eff, :sc_freeze}, 1000}],
@@ -444,6 +449,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, on(0)) == %{movement_speed: 25}
       assert EquipScript.eval(Enum.reverse(program), on(0)) == %{movement_speed: 25}
+    end
+
+    test "defender proc siblings use last-writer semantics" do
+      key = {:def_set_race_rate, :player_human}
+      program = [{:bonus, key, 10_000}, {:bonus, key, 5_000}]
+
+      assert EquipScript.eval(program, on(0)) == %{key => 5_000}
+      assert EquipScript.eval(Enum.reverse(program), on(0)) == %{key => 10_000}
     end
 
     test "splash range keeps the largest contribution instead of summing" do

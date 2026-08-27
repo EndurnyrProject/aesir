@@ -191,19 +191,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:noreply, state}
   end
 
-  def apply_heal({:potion, :hp, _amount} = descriptor, source_id, state) do
-    apply_heal(
-      PotionRecovery.recover(descriptor, potion_recipient_terms(state)),
-      source_id,
-      state
-    )
+  def apply_heal(amount, source_id, state) do
+    if recovery_blocked?(state) do
+      {:noreply, state}
+    else
+      do_apply_heal(amount, source_id, state)
+    end
   end
 
-  def apply_heal({:potion, :sp, _amount} = descriptor, _source_id, state) do
-    restore_sp(PotionRecovery.recover(descriptor, potion_recipient_terms(state)), state)
+  defp do_apply_heal({:potion, :hp, _amount} = descriptor, source_id, state) do
+    descriptor
+    |> PotionRecovery.recover(potion_recipient_terms(state))
+    |> do_apply_heal(source_id, state)
   end
 
-  def apply_heal(amount, _source_id, state) when amount > 0 do
+  defp do_apply_heal({:potion, :sp, _amount} = descriptor, _source_id, state) do
+    descriptor
+    |> PotionRecovery.recover(potion_recipient_terms(state))
+    |> do_restore_sp(state)
+  end
+
+  defp do_apply_heal(amount, _source_id, state) when amount > 0 do
     stats = state.game_state.stats
     max_hp = stats.derived_stats.max_hp
     char_id = state.game_state.character_id
@@ -220,7 +228,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     {:noreply, state}
   end
 
-  def apply_heal(_amount, _source_id, state), do: {:noreply, state}
+  defp do_apply_heal(_amount, _source_id, state), do: {:noreply, state}
 
   # Scales a heal by the target's `received_heal_rate` (SC_INCHEALRATE) percent
   # delta before it is applied. The status delta (`received_heal_rate`,
@@ -371,11 +379,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   """
   @spec restore_sp(integer(), SessionState.t()) :: {:noreply, SessionState.t()}
   def restore_sp(amount, state) when is_integer(amount) and amount > 0 do
-    max_sp = state.game_state.stats.derived_stats.max_sp
-    {:noreply, put_sp(state, min(current_sp(state) + amount, max_sp))}
+    if recovery_blocked?(state), do: {:noreply, state}, else: do_restore_sp(amount, state)
   end
 
   def restore_sp(_amount, state), do: {:noreply, state}
+
+  defp do_restore_sp(amount, state) do
+    max_sp = state.game_state.stats.derived_stats.max_sp
+    {:noreply, put_sp(state, min(current_sp(state) + amount, max_sp))}
+  end
 
   @doc """
   Restores HP to the player, clamped at `max_hp`, as a raw forced heal.
@@ -393,6 +405,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   end
 
   def gain_hp(_amount, state), do: {:noreply, state}
+
+  defp recovery_blocked?(state) do
+    StatusStorage.has_status?(
+      :player,
+      state.game_state.character_id,
+      :sc_norecover_state
+    )
+  end
 
   defp current_hp(state), do: state.game_state.stats.current_state.hp
 

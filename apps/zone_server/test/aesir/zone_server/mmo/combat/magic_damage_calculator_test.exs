@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @element_status_keys [
     water: :subele_water,
@@ -116,6 +117,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       # 100 * 1010 / 1100 = 91.818..., - 5 = 86.818... -> trunc 86
       assert {:ok, %{damage: 86, is_critical: false}} =
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
+    end
+
+    test "SC_MDEFSET replaces both hard and soft MDEF" do
+      set_defender = %{defender(100, 80) | unit_type: :player, unit_id: 7_001}
+      reference = %{defender(2, 2) | unit_type: :player, unit_id: 7_002}
+
+      :ok = StatusStorage.apply_status(:player, 7_001, :sc_mdefset, val1: 2)
+      on_exit(fn -> StatusStorage.remove_status(:player, 7_001, :sc_mdefset) end)
+
+      assert MagicDamageCalculator.calculate_magic_damage(attacker(100), set_defender) ==
+               MagicDamageCalculator.calculate_magic_damage(attacker(100), reference)
     end
 
     test "skill_ratio scales the base MATK" do

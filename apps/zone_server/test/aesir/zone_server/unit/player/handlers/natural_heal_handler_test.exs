@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler
@@ -224,6 +225,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
 
       assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 500)
       refute_received {:send, _channel, _payload}
+    end
+
+    test "no-recover skips natural regeneration" do
+      reject(CharacterPersistence, :update_stats, 3)
+      state = build_state(hp: 100, sp: 50, action: :idle, movement: :standing)
+      state = put_in(state.game_state.character_id, 88_001)
+
+      :ok = StatusStorage.apply_status(:player, 88_001, :sc_norecover_state)
+      on_exit(fn -> StatusStorage.remove_status(:player, 88_001, :sc_norecover_state) end)
+
+      assert {:noreply, ^state} = NaturalHealHandler.handle_tick(state, 10_000)
     end
 
     test "no packet push and no persist on a zero-delta tick (full HP and SP)" do

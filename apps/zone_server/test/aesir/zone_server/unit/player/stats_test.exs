@@ -1924,6 +1924,22 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert both.modifiers.equipment.atk_ele == :wind
     end
 
+    test "defender proc fields use last-equipped-item semantics" do
+      key = {:def_set_race_rate, :player_human}
+      first = scripted_item(90_250, on_equip: [{:bonus, key, 10_000}])
+      second = scripted_item(90_251, on_equip: [{:bonus, key, 5_000}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_250 -> {:ok, first}
+        90_251 -> {:ok, second}
+      end)
+
+      result =
+        with_equipped_items([equipped(90_250, @right_hand), equipped(90_251, @left_hand)])
+
+      assert result.modifiers.equipment[key] == 5_000
+    end
+
     test "bSpeedRate does not stack across items — the strongest one wins" do
       boots = scripted_item(90_218, on_equip: [{:bonus, :movement_speed, 25}])
       cape = scripted_item(90_219, on_equip: [{:bonus, :movement_speed, 10}])

@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   # CR_GRANDCROSS: routed through the magic path but scored by its own hybrid
   # base-damage formula (see calculate_grand_cross_damage/2), not the standard
@@ -129,7 +130,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
   defp calculate_grand_cross_damage(attacker, defender, opts) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     hybrid_base = div(attacker.combat_stats.atk + roll_matk(attacker.combat_stats), 2)
-    mdef = defender.combat_stats.mdef + defender.combat_stats.soft_mdef
+    modifiers = combatant_modifiers(defender)
+    {hard_mdef, soft_mdef} = mdef_values(defender, modifiers, false)
+    mdef = hard_mdef + soft_mdef
 
     damage =
       (div(hybrid_base * skill_ratio, 100) - mdef)
@@ -272,15 +275,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator do
 
   @spec apply_mdef_formula(number(), map(), map(), non_neg_integer(), boolean()) :: number()
   defp apply_mdef_formula(damage, defender, modifiers, ignore_mdef_rate, ignore_soft_mdef?) do
-    # :mdef_rate is an additive percent delta on hard MDEF (Freeze's +25); the
-    # skill-status family scales the defender's eMDEF. The attacker's equipment
-    # ignore-mdef then bypasses a percent of the resulting hard MDEF.
-    mdef_rate = Map.get(modifiers, :mdef_rate, 0)
-    hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
+    {hard, soft} = mdef_values(defender, modifiers, ignore_soft_mdef?)
     hard = trunc(hard * (100 - ignore_mdef_rate) / 100)
-    soft = if(ignore_soft_mdef?, do: 0, else: defender.combat_stats.soft_mdef)
 
     Mechanics.defense().apply_mdef(damage, %{hard_mdef: hard, soft_mdef: soft})
+  end
+
+  defp mdef_values(defender, modifiers, ignore_soft_mdef?) do
+    {unit_type, unit_id} = get_unit_type_and_id(defender)
+
+    case StatusStorage.get_status(unit_type, unit_id, :sc_mdefset) do
+      %{val1: value} when is_integer(value) ->
+        {value, if(ignore_soft_mdef?, do: 0, else: value)}
+
+      _missing ->
+        mdef_rate = Map.get(modifiers, :mdef_rate, 0)
+        hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
+        soft = if(ignore_soft_mdef?, do: 0, else: defender.combat_stats.soft_mdef)
+        {hard, soft}
+    end
   end
 
   # Equipment bonuses read off `equip_modifiers`, present only on real

@@ -1354,10 +1354,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     do: Map.update(acc, key, level, &max(&1, level))
 
   defp merge_equip_bonus(acc, key, value) when is_number(value) do
-    if BonusKeys.max_destination?(key) do
-      Map.update(acc, key, value, &max(&1, value))
-    else
-      Map.update(acc, key, value, &(&1 + value))
+    cond do
+      BonusKeys.overwrite_destination?(key) -> Map.put(acc, key, value)
+      BonusKeys.max_destination?(key) -> Map.update(acc, key, value, &max(&1, value))
+      true -> Map.update(acc, key, value, &(&1 + value))
     end
   end
 

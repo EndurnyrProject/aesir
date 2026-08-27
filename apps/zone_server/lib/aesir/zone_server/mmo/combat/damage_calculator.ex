@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Mechanics
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @typedoc """
@@ -468,28 +469,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          def_ignore_mode,
          def_formula
        ) do
-    hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender, def_ignore_mode)
-
-    soft_def =
-      case status_def_mode do
-        :apply_status_def ->
-          calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
-
-        :ignore_status_def ->
-          0
-      end
-
     {unit_type, unit_id} = get_unit_type_and_id(defender)
     modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
 
-    # Apply status effect defense modifiers
-    {modified_hard_def, calculated_soft_def} =
-      apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers)
-
-    # Load-bearing: status-effect modifiers can turn the zeroed soft-DEF input
-    # back into a positive value, so ignore mode must clamp again here.
-    modified_soft_def =
-      if status_def_mode == :ignore_status_def, do: 0, else: calculated_soft_def
+    {modified_hard_def, modified_soft_def} =
+      defense_values(defender, attacker, status_def_mode, def_ignore_mode, modifiers)
 
     base_damage =
       case def_formula do
@@ -516,6 +500,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
 
     {:ok, final_damage}
+  end
+
+  defp defense_values(defender, attacker, status_def_mode, def_ignore_mode, modifiers) do
+    {unit_type, unit_id} = get_unit_type_and_id(defender)
+
+    case StatusStorage.get_status(unit_type, unit_id, :sc_defset) do
+      %{val1: value} when is_integer(value) ->
+        hard_def = ignore_hard_def(value, attacker, defender, def_ignore_mode)
+        soft_def = if status_def_mode == :ignore_status_def, do: 0, else: value
+        {hard_def, soft_def}
+
+      _missing ->
+        ordinary_defense_values(
+          defender,
+          attacker,
+          status_def_mode,
+          def_ignore_mode,
+          modifiers
+        )
+    end
+  end
+
+  defp ordinary_defense_values(
+         defender,
+         attacker,
+         status_def_mode,
+         def_ignore_mode,
+         modifiers
+       ) do
+    hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender, def_ignore_mode)
+
+    soft_def =
+      if status_def_mode == :ignore_status_def do
+        0
+      else
+        calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
+      end
+
+    {modified_hard_def, modified_soft_def} =
+      apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers)
+
+    if status_def_mode == :ignore_status_def do
+      {modified_hard_def, 0}
+    else
+      {modified_hard_def, modified_soft_def}
+    end
   end
 
   defp defense_base_damage(:simple, total_atk, hard_def, soft_def),

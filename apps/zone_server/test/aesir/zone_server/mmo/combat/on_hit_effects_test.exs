@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
   setup :verify_on_exit!
 
@@ -456,6 +457,109 @@ defmodule Aesir.ZoneServer.Mmo.Combat.OnHitEffectsTest do
                )
 
       assert_received {:rolled, 2_000}
+    end
+  end
+
+  describe "after_hit/4 defender-status procs" do
+    test "a matching normal weapon hit applies DEF and MDEF replacements to a player" do
+      record_applications()
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{
+          {:def_set_race_rate, :player_human} => 10_000,
+          {:def_set_race_duration, :player_human} => 5_000,
+          {:def_set_race_value, :player_human} => 1,
+          {:mdef_set_race_rate, :player_human} => 10_000,
+          {:mdef_set_race_duration, :player_human} => 4_000,
+          {:mdef_set_race_value, :player_human} => 2
+        })
+
+      defender = %{
+        CombatTestHelper.create_player_combatant(unit_id: 2001)
+        | race: :player_human
+      }
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+
+      assert_received {:applied, :player, 2001, :sc_defset, def_params}
+      assert def_params[:duration] == 5_000
+      assert def_params[:val1] == 1
+
+      assert_received {:applied, :player, 2001, :sc_mdefset, mdef_params}
+      assert mdef_params[:duration] == 4_000
+      assert mdef_params[:val1] == 2
+    end
+
+    test "defender procs reject skills, magic and non-player victims" do
+      reject(&StatusInterpreter.apply_status/4)
+
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_mods(%{
+          {:def_set_race_rate, :player_human} => 10_000,
+          {:def_set_race_duration, :player_human} => 5_000,
+          {:def_set_race_value, :player_human} => 1
+        })
+
+      player = %{CombatTestHelper.create_player_combatant() | race: :player_human}
+      mob = %{CombatTestHelper.create_mob_combatant() | race: :player_human}
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, player, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, true)
+               )
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, player, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:magic, :long, true)
+               )
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, mob, @landed,
+                 roll: &always_hit/1,
+                 attack_flag: BattleFlags.build(:weapon, :short, false)
+               )
+    end
+
+    test "no-recover applies tolerance to chance and effective LUK to duration" do
+      record_applications()
+      test_pid = self()
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 2001 -> %{luk: 5} end)
+
+      attacker =
+        CombatTestHelper.create_player_combatant(unit_id: 1001)
+        |> with_mods(%{
+          {:no_recover_race_rate, :player_human} => 10_000,
+          {:no_recover_race_duration, :player_human} => 10_000
+        })
+
+      defender =
+        %{CombatTestHelper.create_player_combatant(unit_id: 2001, luk: 10) | race: :player_human}
+        |> with_mods(%{:luk => 2, {:res_eff, :sc_norecover_state} => 2_000})
+
+      roll = fn rate ->
+        send(test_pid, {:rolled, rate})
+        true
+      end
+
+      assert :ok =
+               OnHitEffects.after_hit(attacker, defender, @landed,
+                 roll: roll,
+                 attack_flag: BattleFlags.build(:weapon, :long, false)
+               )
+
+      assert_received {:rolled, 8_000}
+      assert_received {:applied, :player, 2001, :sc_norecover_state, params}
+      assert params[:duration] == 8_300
+      refute Keyword.has_key?(params, :val1)
     end
   end
 end

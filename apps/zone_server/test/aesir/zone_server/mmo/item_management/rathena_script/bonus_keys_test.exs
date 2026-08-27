@@ -308,6 +308,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :sp_vanish_race_rate,
     :sp_vanish_race_percent
   ]
+  @defender_proc_families [
+    :def_set_race_rate,
+    :def_set_race_duration,
+    :def_set_race_value,
+    :mdef_set_race_rate,
+    :mdef_set_race_duration,
+    :mdef_set_race_value,
+    :no_recover_race_rate,
+    :no_recover_race_duration
+  ]
 
   describe "param_schema/1" do
     test "resolves every documented bonus2 parameterized key" do
@@ -377,7 +387,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
           @flag_only_families ++
           @interval_families ++
           @status_duration_families ++
-          @vanish_families ++ @race_vanish_families
+          @vanish_families ++ @race_vanish_families ++ @defender_proc_families
 
       assert Enum.sort(BonusKeys.families()) == Enum.sort(Enum.uniq(expected))
     end
@@ -416,6 +426,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       end
 
       for family <- @race_vanish_families do
+        assert BonusKeys.family_param(family) == {:ok, :race}
+      end
+
+      for family <- @defender_proc_families do
         assert BonusKeys.family_param(family) == {:ok, :race}
       end
     end
@@ -535,6 +549,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "keeps the two vocabularies disjoint" do
       assert BonusKeys.vanish_schema("bSPVanishRaceRate") == :error
       assert BonusKeys.race_vanish_schema("bSPVanishRate") == :error
+    end
+  end
+
+  describe "defender proc schemas" do
+    test "resolves set-defense and no-recover shapes" do
+      assert BonusKeys.defender_proc_schema("bSetDefRace") ==
+               {:ok,
+                %{
+                  rate: :def_set_race_rate,
+                  duration: :def_set_race_duration,
+                  value: :def_set_race_value
+                }}
+
+      assert BonusKeys.defender_proc_arity("bSetMDefRace") == {:ok, 3}
+      assert BonusKeys.defender_proc_arity("bStateNoRecoverRace") == {:ok, 2}
+    end
+
+    test "marks every sibling destination as last-writer" do
+      for family <- @defender_proc_families do
+        assert BonusKeys.overwrite_destination?({family, :player_human})
+      end
+
+      refute BonusKeys.overwrite_destination?({:sp_vanish_rate, 849})
     end
   end
 
