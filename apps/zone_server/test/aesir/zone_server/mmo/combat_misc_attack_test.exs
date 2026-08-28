@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -20,11 +21,19 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  defmodule HpLessUnit do
+    defstruct [:combatant, :x, :y]
+
+    def to_combatant(%__MODULE__{combatant: combatant}), do: combatant
+    def living?(%__MODULE__{}), do: true
+  end
+
   setup :set_mimic_from_context
   setup :verify_on_exit!
 
   setup do
     Mimic.copy(EquipComa)
+    Mimic.copy(Knockback)
     :ok
   end
 
@@ -118,8 +127,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
   end
 
   describe "execute_misc_attack/3" do
-    test "marks landed positive misc damage for target-owner coma delivery" do
+    test "marks landed equipment-only misc blow after target-owner damage delivery" do
       caster = build_caster()
+      caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 122} => 2})
       test_pid = self()
       stub_single_target_mob()
 
@@ -150,16 +160,40 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
         :ok
       end)
 
+      expect(Knockback, :skill, fn attacker, target, 122, result, options ->
+        assert_received :coma_delivered
+        assert attacker.unit_id == @caster_id
+        assert attacker.equip_modifiers[{:add_skill_blow, 122}] == 2
+        assert target.unit_id == @target_id
+        assert result == %{hit?: true, target_survives?: true, coma?: true}
+
+        assert options == [
+                 base_distance: 3,
+                 origin: {149, 150},
+                 native_enabled: false,
+                 native_target_types: [:player],
+                 native_requires_survival: true
+               ]
+
+        send(test_pid, :knockback_requested)
+        :ok
+      end)
+
       assert :ok =
                Combat.execute_misc_attack(caster, @target_id,
                  skill_id: 122,
                  skill_level: 5,
                  base_damage: 250,
-                 element: :fire
+                 element: :fire,
+                 base_distance: 3,
+                 origin: {149, 150},
+                 native_enabled: false,
+                 native_target_types: [:player],
+                 native_requires_survival: true
                )
 
       assert_received {:packet, %SkillDamage{damage: 80, skill_id: 122, level: 5}}
-      assert_received :coma_delivered
+      assert_received :knockback_requested
     end
 
     test "zero misc damage never decides or delivers coma" do
@@ -172,7 +206,19 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       reject(&EquipComa.trigger?/2)
       reject(&MobSession.apply_coma/2)
-      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id -> :ok end)
+
+      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id ->
+        send(self(), :zero_damage_delivered)
+        :ok
+      end)
+
+      expect(Knockback, :skill, fn attacker, target, 122, result, [] ->
+        assert_received :zero_damage_delivered
+        assert attacker.unit_id == @caster_id
+        assert target.unit_id == @target_id
+        assert result == %{hit?: true, target_survives?: true, coma?: false}
+        :ok
+      end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
         assert packet.damage == 0
@@ -187,6 +233,47 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
                )
     end
 
+    test "HP-less misc targets return after delivery with conservative survival" do
+      caster = build_caster()
+      target = MobState.to_combatant(build_mob_state(@target_id, 150, 150))
+      target_state = %HpLessUnit{combatant: target, x: 150, y: 150}
+      test_pid = self()
+
+      stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+        {:ok, {HpLessUnit, target_state, self()}}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+        {:ok, {150, 150, @map_name}}
+      end)
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, ^target, _opts ->
+        {:ok, %{damage: 80, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, ^target -> false end)
+      stub(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, _hit_info -> 80 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      expect(MobSession, :apply_damage, fn _pid, 80, @caster_id ->
+        send(test_pid, :damage_delivered)
+        :ok
+      end)
+
+      expect(Knockback, :skill, fn _attacker, ^target, 122, result, [] ->
+        assert_received :damage_delivered
+        assert result == %{hit?: true, target_survives?: false, coma?: false}
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 250
+               )
+    end
+
     test "failed misc calculation never decides or delivers coma" do
       caster = build_caster()
       stub_single_target_mob()
@@ -196,6 +283,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
       end)
 
       reject(&EquipComa.trigger?/2)
+      reject(&Knockback.skill/5)
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/3)
       reject(&Broadcast.to_in_range/5)
@@ -218,6 +306,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
       reject(&MiscDamageCalculator.calculate_misc_damage/3)
       reject(&EquipComa.trigger?/2)
+      reject(&Knockback.skill/5)
       reject(&MobSession.apply_coma/2)
       reject(&MobSession.apply_damage/3)
 
