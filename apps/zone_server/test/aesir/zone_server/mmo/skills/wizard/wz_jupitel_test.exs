@@ -233,12 +233,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
       assert opts[:hit_count] == 3
       assert opts[:element] == :wind
       assert opts[:skip_range] == true
+      assert opts[:base_distance] == 2
+      assert opts[:origin] == {50, 60}
       :ok
     end)
 
-    expect(Combat, :knockback, fn :mob, @target_id, 50, 60, 2 ->
-      {:ok, {57, 60}}
-    end)
+    reject(&Combat.knockback/5)
 
     assert :ok = WzJupitel.deferred(impact, caster)
   end

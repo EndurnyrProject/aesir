@@ -49,14 +49,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher do
         skill_level: level,
         skill_ratio: 100 + 20 * level,
         element: definition.element,
-        split: false
+        split: false,
+        base_distance: definition.knockback,
+        origin: {x, y}
       ]
 
-      caster
-      |> Combat.execute_magic_splash({x, y}, definition.splash_radius, opts)
-      |> Enum.each(fn {unit_type, target_id} ->
-        Combat.knockback(unit_type, target_id, x, y, definition.knockback)
-      end)
+      _ = Combat.execute_magic_splash(caster, {x, y}, definition.splash_radius, opts)
 
       {:ok, caster}
     end

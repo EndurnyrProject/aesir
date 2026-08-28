@@ -144,16 +144,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           damage
         )
 
-      apply_and_broadcast_magic_damage(
-        target_type,
-        target_pid,
-        target_id,
-        damage,
-        hit_info,
+      delivery =
+        apply_and_broadcast_magic_damage(
+          target_type,
+          target_pid,
+          target_id,
+          damage,
+          hit_info,
+          attacker,
+          target,
+          packet
+        )
+
+      maybe_apply_magic_knockback(
+        delivery,
         attacker,
         target,
-        packet
+        target_type,
+        skill_id,
+        magic_result(target_state, [damage], coma_decision),
+        opts
       )
+
+      delivery
     end
   end
 
@@ -345,9 +358,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         apply_walk_delay(unit_type, target_pid, dst_delay)
       end
 
-      result = skill_unit_result(target_state, damage, coma_decision)
+      result = magic_result(target_state, [damage], coma_decision)
 
-      maybe_apply_skill_unit_knockback(
+      maybe_apply_magic_knockback(
         delivery,
         caster,
         target,
@@ -450,9 +463,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
 
       deliver_magic_hits(
-        target_type,
-        target_pid,
-        target_id,
+        {target_type, target_pid, target_id, target_state, target},
         damages,
         magic_hit_info(element,
           skill_id: skill_id,
@@ -460,8 +471,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           from_caster?: true
         ),
         attacker,
-        target,
-        {skill_id, skill_level}
+        {skill_id, skill_level},
+        opts
       )
     end
   end
@@ -498,8 +509,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     line_of_sight = Keyword.get(opts, :line_of_sight, false)
     hit_count = Keyword.get(opts, :hit_count, 1)
 
-    {hits, _decisions} =
-      Enum.flat_map_reduce(1..hit_count//1, %{}, fn _round, decisions ->
+    initial = %{decisions: %{}, results: %{}}
+
+    {hits, %{results: results}} =
+      Enum.flat_map_reduce(1..hit_count//1, initial, fn _round, acc ->
         targets =
           attacker.map_name
           |> SplashTargets.select(center, radius, attacker)
@@ -507,8 +520,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
         divisor = if split, do: max(length(targets), 1), else: 1
 
-        Enum.flat_map_reduce(targets, decisions, fn target_ref, decisions ->
-          {hits, decision} =
+        Enum.flat_map_reduce(targets, acc, fn target_ref, acc ->
+          {hits, decision, result} =
             apply_magic_splash_hit(
               attacker,
               target_ref,
@@ -517,12 +530,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
               element,
               skill_ratio,
               divisor,
-              Map.get(decisions, target_ref, :unchecked)
+              Map.get(acc.decisions, target_ref, :unchecked)
             )
 
-          {hits, Map.put(decisions, target_ref, decision)}
+          acc = %{
+            decisions: Map.put(acc.decisions, target_ref, decision),
+            results: merge_magic_splash_result(acc.results, result)
+          }
+
+          {hits, acc}
         end)
       end)
+
+    hits
+    |> Enum.uniq()
+    |> Enum.each(fn target_ref ->
+      result = Map.fetch!(results, target_ref)
+
+      maybe_apply_magic_knockback(
+        result.delivery,
+        attacker,
+        result.target,
+        result.target_type,
+        skill_id,
+        magic_result(result.target_state, result.damages, result.coma_decision),
+        opts
+      )
+    end)
 
     hits
   end
@@ -614,18 +648,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   defp apply_walk_delay(:homunculus, _target_pid, _dst_delay), do: :ok
 
-  defp skill_unit_result(target_state, damage, coma_decision) do
-    hit? = damage > 0
+  defp magic_result(target_state, damages, coma_decision) do
+    final_damage = damages |> Enum.filter(&(&1 > 0)) |> Enum.sum()
+    hit? = final_damage > 0
     coma? = hit? and coma_decision == true
 
     %{
       hit?: hit?,
-      target_survives?: coma? or not hit? or known_target_survives?(target_state, damage),
+      target_survives?: coma? or not hit? or known_target_survives?(target_state, final_damage),
       coma?: coma?
     }
   end
 
-  defp maybe_apply_skill_unit_knockback(
+  defp maybe_apply_magic_knockback(
          :ok,
          attacker,
          target,
@@ -639,7 +674,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     :ok
   end
 
-  defp maybe_apply_skill_unit_knockback(
+  defp maybe_apply_magic_knockback(
+         {:local_effects, _effects},
+         attacker,
+         target,
+         target_type,
+         skill_id,
+         result,
+         opts
+       ) do
+    maybe_apply_magic_knockback(:ok, attacker, target, target_type, skill_id, result, opts)
+  end
+
+  defp maybe_apply_magic_knockback(
          _delivery,
          _attacker,
          _target,
@@ -808,30 +855,61 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       packet = Hallucination.maybe_garble(packet, target_type)
       Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
 
-      DamageApplication.apply_unit_damage(
-        target_type,
-        target_pid,
-        target_id,
-        damage,
-        hit_info,
-        source
-      )
+      delivery =
+        DamageApplication.apply_unit_damage(
+          target_type,
+          target_pid,
+          target_id,
+          damage,
+          hit_info,
+          source
+        )
 
-      {[target_ref], coma_decision}
+      result = %{
+        target_ref: target_ref,
+        target_state: target_state,
+        target: target,
+        target_type: target_type,
+        damage: damage,
+        coma_decision: coma_decision,
+        delivery: delivery
+      }
+
+      {[target_ref], coma_decision, result}
     else
-      _ -> {[], coma_decision}
+      _ -> {[], coma_decision, nil}
     end
   end
 
+  defp merge_magic_splash_result(results, nil), do: results
+
+  defp merge_magic_splash_result(results, result) do
+    initial = result |> Map.put(:damages, [result.damage]) |> Map.delete(:damage)
+
+    Map.update(results, result.target_ref, initial, fn existing ->
+      %{
+        existing
+        | target: result.target,
+          damages: [result.damage | existing.damages],
+          coma_decision: result.coma_decision,
+          delivery: successful_delivery(existing.delivery, result.delivery)
+      }
+    end)
+  end
+
+  defp successful_delivery(:ok, _delivery), do: :ok
+  defp successful_delivery(_delivery, :ok), do: :ok
+  defp successful_delivery({:local_effects, _effects} = delivery, _current), do: delivery
+  defp successful_delivery(_previous, {:local_effects, _effects} = delivery), do: delivery
+  defp successful_delivery(_previous, delivery), do: delivery
+
   defp deliver_magic_hits(
-         target_type,
-         target_pid,
-         target_id,
+         {target_type, target_pid, target_id, target_state, target},
          damages,
          hit_info,
          attacker,
-         target,
-         {skill_id, skill_level}
+         {skill_id, skill_level},
+         opts
        ) do
     source = damage_source(attacker, target_type)
     coma_decision = decide_coma(attacker, target, damages)
@@ -843,54 +921,76 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         prepare_magic_hit(target_type, target_id, damage, hit_info, source)
       end)
 
-    if length(prepared_hits) > 1 and
-         prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1 do
-      Enum.each(prepared_hits, fn {damage, prepared_hit_info} ->
+    delivery =
+      if separately_delivered?(prepared_hits) do
+        Enum.reduce(prepared_hits, nil, fn {damage, prepared_hit_info}, delivery ->
+          packet =
+            PacketFactory.build_splash_damage_packet(
+              attacker.unit_id,
+              target_id,
+              skill_id,
+              skill_level,
+              damage
+            )
+
+          current =
+            apply_and_broadcast_magic_damage(
+              target_type,
+              target_pid,
+              target_id,
+              damage,
+              prepared_hit_info,
+              attacker,
+              target,
+              packet
+            )
+
+          successful_delivery(delivery, current)
+        end)
+      else
+        {_, prepared_hit_info} = List.first(prepared_hits)
+        total = prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.sum()
+
         packet =
           PacketFactory.build_splash_damage_packet(
             attacker.unit_id,
             target_id,
             skill_id,
             skill_level,
-            damage
+            total,
+            div: length(prepared_hits)
           )
 
         apply_and_broadcast_magic_damage(
           target_type,
           target_pid,
           target_id,
-          damage,
+          total,
           prepared_hit_info,
           attacker,
           target,
           packet
         )
-      end)
-    else
-      {_, prepared_hit_info} = List.first(prepared_hits)
-      total = Enum.sum(Enum.map(prepared_hits, &elem(&1, 0)))
+      end
 
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          attacker.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          total,
-          div: length(prepared_hits)
-        )
+    final_damages = Enum.map(prepared_hits, &elem(&1, 0))
 
-      apply_and_broadcast_magic_damage(
-        target_type,
-        target_pid,
-        target_id,
-        total,
-        prepared_hit_info,
-        attacker,
-        target,
-        packet
-      )
-    end
+    maybe_apply_magic_knockback(
+      delivery,
+      attacker,
+      target,
+      target_type,
+      skill_id,
+      magic_result(target_state, final_damages, coma_decision),
+      opts
+    )
+
+    delivery
+  end
+
+  defp separately_delivered?(prepared_hits) do
+    length(prepared_hits) > 1 and
+      prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.uniq() |> length() > 1
   end
 
   defp apply_vanish_hits(attacker, target, target_pid, damages) do

@@ -78,23 +78,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
                                                 89,
                                                 @level,
                                                 :water,
-                                                @expected_ratio ->
+                                                @expected_ratio,
+                                                opts ->
         assert caster.unit_id == @caster_id
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == @center
         send(test_pid, {:hit, unit_type, target_id})
         :ok
       end)
 
-      stub(Combat, :knockback, fn :mob, target_id, 150, 150, 2 ->
-        send(test_pid, {:knockback, target_id})
-        {:ok, {0, 0}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, %Group{}} = WzStormgust.on_interval(group(), 0)
 
       assert_received {:hit, :mob, 2001}
       assert_received {:hit, :mob, 2002}
-      assert_received {:knockback, 2001}
-      assert_received {:knockback, 2002}
       refute_received {:hit, :player, @caster_id}
     end
 
@@ -102,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
 
       reject(&Combat.splash_targets/4)
-      reject(&Combat.apply_skill_unit_damage/7)
+      reject(&Combat.apply_skill_unit_damage/8)
       reject(&Combat.knockback/5)
       reject(&StatusInterpreter.apply_status/4)
 
@@ -113,7 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
       stub_caster()
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id -> [] end)
 
-      reject(&Combat.apply_skill_unit_damage/7)
+      reject(&Combat.apply_skill_unit_damage/8)
       reject(&Combat.knockback/5)
       reject(&StatusInterpreter.apply_status/4)
 
@@ -127,8 +125,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
-      stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
+        :ok
+      end)
+
+      reject(&Combat.knockback/5)
       reject(&StatusInterpreter.apply_status/4)
 
       assert {:ok, %Group{state: %{hit_counts: %{2001 => 1}}}} =
@@ -142,8 +143,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
-      stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
+        :ok
+      end)
+
+      reject(&Combat.knockback/5)
 
       expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_freeze, _params -> :ok end)
 
@@ -160,8 +164,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
-      stub(Combat, :knockback, fn _ut, _tid, _x, _y, _d -> {:ok, {0, 0}} end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
+        :ok
+      end)
+
+      reject(&Combat.knockback/5)
       reject(&StatusInterpreter.apply_status/4)
 
       seeded = group(%{hit_counts: %{2001 => 3}})

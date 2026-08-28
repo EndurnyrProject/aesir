@@ -91,10 +91,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
       group.skill_id,
       group.level,
       definition.element,
-      skill_ratio(group.level)
+      skill_ratio(group.level),
+      base_distance: definition.knockback,
+      origin: {cx, cy}
     )
 
-    Combat.knockback(unit_type, target_id, cx, cy, definition.knockback)
     :ok
   end
 

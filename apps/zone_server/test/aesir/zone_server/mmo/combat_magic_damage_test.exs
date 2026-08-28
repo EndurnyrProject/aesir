@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
   setup do
     Mimic.copy(EquipComa)
+    Mimic.copy(Knockback)
     :ok
   end
 
@@ -123,6 +125,36 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
   end
 
   describe "execute_magic_damage/4" do
+    test "direct magic damage applies equipment blow once after final delivery" do
+      caster =
+        put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, @skill_id} => 2})
+
+      stub_mob_target(150, 150, {:neutral, 1})
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 50, hit_info ->
+        assert hit_info.dmg_type == :magic
+        50
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
+
+      expect(Knockback, :skill, fn attacker, target, @skill_id, result, [] ->
+        assert attacker.equip_modifiers[{:add_skill_blow, @skill_id}] == 2
+        assert target.unit_id == @target_id
+        assert result == %{hit?: true, target_survives?: true, coma?: false}
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_damage(caster, @target_id, 50,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level
+               )
+    end
+
     test "applies the element modifier and broadcasts a SkillDamage packet (holy vs undead)" do
       caster = build_caster()
       test_pid = self()

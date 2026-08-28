@@ -287,13 +287,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
       assert opts[:skill_ratio] == 120
       assert opts[:element] == :fire
       assert opts[:split] == false
+      assert opts[:base_distance] == 5
+      assert opts[:origin] == {50, 60}
       [{:mob, 2_001}, {:player, 2_002}]
     end)
 
-    expect(Combat, :knockback, 2, fn unit_type, target_id, 50, 60, 5 ->
-      assert {unit_type, target_id} in [{:mob, 2_001}, {:player, 2_002}]
-      {:ok, {50, 65}}
-    end)
+    reject(&Combat.knockback/5)
 
     assert {:ok, @caster} =
              WzSightrasher.cast(@caster, :self, 1, WzSightrasher.definition())

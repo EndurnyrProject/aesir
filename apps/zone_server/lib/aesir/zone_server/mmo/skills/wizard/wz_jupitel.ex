@@ -64,7 +64,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
       skill_ratio: 100,
       hit_count: level + 2,
       element: definition.element,
-      skip_range: true
+      skip_range: true,
+      base_distance: div(level, 2) + 2,
+      origin: {x, y}
     ]
 
     with {:ok, {target_x, target_y, ^map_name}} <-
@@ -73,7 +75,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
          {:ok, _map_data} <- MapCache.get(map_name),
          true <- LineOfSight.clear?(map_name, {x, y}, {target_x, target_y}),
          :ok <- Combat.execute_magic_attack(caster, target_id, opts) do
-      _ = Combat.knockback(unit_type, target_id, x, y, div(level, 2) + 2)
       :ok
     else
       false -> {:error, :blocked_line_of_sight}

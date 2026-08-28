@@ -106,24 +106,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
                                                 18,
                                                 3,
                                                 :fire,
-                                                @expected_ratio ->
+                                                @expected_ratio,
+                                                opts ->
         assert caster.unit_id == @caster_id
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == @center
+        assert opts[:native_enabled]
         send(test_pid, {:hit, unit_type, target_id})
         :ok
       end)
 
-      stub(Combat, :knockback, fn unit_type, target_id, _fx, _fy, 2 ->
-        send(test_pid, {:knockback, unit_type, target_id})
-        {:ok, {0, 0}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, %Group{state: %{hits_remaining: 5}}} =
                MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
 
       assert_received {:hit, :mob, 2001}
       assert_received {:hit, :mob, 2002}
-      assert_received {:knockback, :mob, 2001}
-      assert_received {:knockback, :mob, 2002}
     end
 
     test "does not knock back a fire-element target" do
@@ -133,7 +132,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, opts ->
+        refute opts[:native_enabled]
+        :ok
+      end)
+
       reject(&Combat.knockback/5)
 
       assert {:ok, %Group{}} = MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
@@ -146,7 +149,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, opts ->
+        refute opts[:native_enabled]
+        :ok
+      end)
+
       reject(&Combat.knockback/5)
 
       assert {:ok, %Group{}} = MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
@@ -159,7 +166,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, opts ->
+        refute opts[:native_enabled]
+        :ok
+      end)
+
       reject(&Combat.knockback/5)
 
       assert {:ok, %Group{}} = MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
@@ -169,7 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:error, :target_not_found} end)
 
       reject(&Combat.splash_targets/4)
-      reject(&Combat.apply_skill_unit_damage/7)
+      reject(&Combat.apply_skill_unit_damage/8)
 
       assert {:ok, %Group{state: %{hits_remaining: 7}}} =
                MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
@@ -182,8 +193,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
-      stub(Combat, :knockback, fn _ut, _tid, _fx, _fy, _d -> {:ok, {0, 0}} end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
+        :ok
+      end)
+
+      reject(&Combat.knockback/5)
 
       assert {:expire, %Group{state: %{hits_remaining: 0}}} =
                MgFirewall.on_interval(group(3, %{hits_remaining: 1}), 0)
@@ -196,8 +210,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
         [{:mob, 2001}]
       end)
 
-      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio -> :ok end)
-      stub(Combat, :knockback, fn _ut, _tid, _fx, _fy, _d -> {:ok, {0, 0}} end)
+      stub(Combat, :apply_skill_unit_damage, fn _c, _ut, _tid, _sid, _lvl, _el, _ratio, _opts ->
+        :ok
+      end)
+
+      reject(&Combat.knockback/5)
 
       level = 5
       budget = 4 + level

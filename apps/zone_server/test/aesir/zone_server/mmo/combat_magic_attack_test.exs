@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -39,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
   setup do
     Mimic.copy(EquipComa)
+    Mimic.copy(Knockback)
     Mimic.copy(MagicAttack)
     :ok
   end
@@ -261,6 +263,37 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_attack/3" do
+    test "multi-hit magic issues one combined blow from its final logical result" do
+      caster = put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, 19} => 3})
+      stub_single_target_mob()
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, 3, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 120, @caster_id -> :ok end)
+
+      expect(Knockback, :skill, fn attacker, target, 19, result, opts ->
+        assert attacker.equip_modifiers[{:add_skill_blow, 19}] == 3
+        assert target.unit_id == @target_id
+        assert result == %{hit?: true, target_survives?: false, coma?: false}
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == @center
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 3,
+                 hit_count: 3,
+                 base_distance: 2,
+                 origin: @center
+               )
+    end
+
     test "damages a targetable skill-unit cell through its manager" do
       caster = build_caster()
       {_manager, cell} = targetable_cell(%{caster_type: :mob, caster_id: 5_000})
@@ -270,6 +303,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      reject(&Knockback.skill/5)
 
       assert :ok =
                Combat.execute_magic_attack(caster, cell.cell_id,
@@ -1052,7 +1087,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
     end
 
     test "multi-round splash fixes one coma decision across the logical cast" do
-      caster = build_caster()
+      caster = put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, 91} => 4})
 
       expect(SpatialIndex, :get_all_units_in_range, 2, fn @map_name, 150, 150, 4 ->
         [{:mob, @target_id}]
@@ -1078,6 +1113,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
       reject(&MobSession.apply_damage/3)
       expect(MobSession, :apply_coma, 2, fn _pid, {:player, @caster_id} -> :ok end)
+
+      expect(Knockback, :skill, fn attacker, target, 91, result, opts ->
+        assert attacker.equip_modifiers[{:add_skill_blow, 91}] == 4
+        assert target.unit_id == @target_id
+        assert result == %{hit?: true, target_survives?: true, coma?: true}
+        assert opts == []
+        :ok
+      end)
 
       assert [{:mob, @target_id}, {:mob, @target_id}] =
                Combat.execute_magic_splash(caster, @center, 2,

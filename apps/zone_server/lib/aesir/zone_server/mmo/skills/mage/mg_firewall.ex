@@ -113,12 +113,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
       group.skill_id,
       group.level,
       definition.element,
-      @skill_ratio
+      @skill_ratio,
+      base_distance: definition.knockback,
+      origin: {cx, cy},
+      native_enabled: knockback?(target_id)
     )
-
-    if knockback?(target_id) do
-      Combat.knockback(unit_type, target_id, cx, cy, definition.knockback)
-    end
 
     :ok
   end
