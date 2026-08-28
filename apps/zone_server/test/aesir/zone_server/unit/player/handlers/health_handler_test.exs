@@ -439,6 +439,63 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "apply_coma/2" do
+    test "leaves a living player at 1 HP and 1 SP through damage and sync paths" do
+      test_pid = self()
+
+      expect(StatusInterpreter, :on_damage, fn :player, 1, damage_info ->
+        send(test_pid, {:coma_damage, damage_info})
+        :ok
+      end)
+
+      stub(CharacterPersistence, :update_stats, fn id, fields, opts ->
+        send(test_pid, {:coma_persist, id, fields, opts})
+        {:ok, %Character{}}
+      end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: current}}}} =
+               HealthHandler.apply_coma({:player, 2}, build_state(20, :idle))
+
+      assert current.hp == 1
+      assert current.sp == 1
+      assert_received {:coma_damage, %{damage: 19, hp_after: 1, max_hp: 100}}
+      assert_received {:coma_persist, 1, %{hp: 1}, [async: true]}
+      assert_received {:coma_persist, 1, %{sp: 1}, [async: true]}
+
+      hp_id = StatusParams.hp()
+      sp_id = StatusParams.sp()
+      assert_received {:send, _, {_, %ParamChange{var_id: ^hp_id, value: 1}}}
+      assert_received {:send, _, {_, %ParamChange{var_id: ^sp_id, value: 1}}}
+    end
+
+    test "is idempotent once HP and SP are already 1" do
+      state = put_in(build_state(1, :idle).game_state.stats.current_state.sp, 1)
+      reject(&StatusInterpreter.on_damage/3)
+      reject(&CharacterPersistence.update_stats/3)
+
+      assert {:noreply, ^state} = HealthHandler.apply_coma({:player, 2}, state)
+      refute_received {:send, _, _}
+    end
+
+    test "does not alter an HP-zero player whose action state is inconsistent" do
+      state = build_state(0, :idle)
+      reject(&StatusInterpreter.on_damage/3)
+      reject(&CharacterPersistence.update_stats/3)
+
+      assert {:noreply, ^state} = HealthHandler.apply_coma({:player, 2}, state)
+      refute_received {:send, _, _}
+    end
+
+    test "does not resurrect or alter a dead player" do
+      state = build_state(0, :dead)
+      reject(&StatusInterpreter.on_damage/3)
+      reject(&CharacterPersistence.update_stats/3)
+
+      assert {:noreply, ^state} = HealthHandler.apply_coma({:player, 2}, state)
+      refute_received {:send, _, _}
+    end
+  end
+
   describe "apply_vanish/4" do
     test "drains percentages of maxima while keeping HP nonlethal" do
       state = build_state(20, :idle)

@@ -91,6 +91,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:unit, {:apply_vanish, hp_percent, sp_percent, source}})
   end
 
+  @doc "Applies coma through this player's owning session."
+  @spec apply_coma(pid(), Ref.t() | integer() | nil) :: :ok
+  def apply_coma(pid, source) do
+    GenServer.cast(pid, {:unit, {:apply_coma, source}})
+  end
+
   @doc """
   Sends a packet to this player.
   """
@@ -1101,6 +1107,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:unit, {:apply_vanish, hp_percent, sp_percent, source}}, state) do
     HealthHandler.apply_vanish(hp_percent, sp_percent, source, state)
+  end
+
+  @impl true
+  def handle_cast({:unit, {:apply_coma, source}}, state) do
+    HealthHandler.apply_coma(source, state)
   end
 
   @impl true

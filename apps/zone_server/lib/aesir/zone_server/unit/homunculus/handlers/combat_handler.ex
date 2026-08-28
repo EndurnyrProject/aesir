@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   @type event ::
           {:apply_damage, pos_integer(), non_neg_integer(), map(), tuple() | nil}
+          | {:apply_coma, pos_integer(), tuple() | nil}
           | {:apply_heal, pos_integer(), DamageApplication.heal_amount(), tuple() | nil}
           | {:drain_sp, pos_integer(), non_neg_integer()}
           | {:basic_attack, pos_integer(), tuple()}
@@ -49,9 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
         if new_hp == 0 do
           die(session)
         else
-          updated = %{homunculus | hp: new_hp}
-          notify_hp(updated)
-          {:noreply, StateCommit.commit(session, updated)}
+          commit_damage(session, homunculus, %{homunculus | hp: new_hp})
         end
 
       {:error, :stale_target} ->
@@ -61,6 +60,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
 
   def handle({:apply_damage, _gid, _damage, _hit_info, _attacker}, session),
     do: {:noreply, session}
+
+  def handle({:apply_coma, gid, _source}, session) do
+    case active_homunculus(session, gid) do
+      {:ok, %{hp: hp}} when hp <= 0 ->
+        {:noreply, session}
+
+      {:ok, homunculus} ->
+        updated = %{homunculus | hp: 1, sp: 1}
+
+        if updated == homunculus,
+          do: {:noreply, session},
+          else: commit_damage(session, homunculus, updated)
+
+      {:error, :stale_target} ->
+        {:noreply, session}
+    end
+  end
 
   # Renewal's three-times Homunculus bonus applies only to HP potion recovery; SP uses shared recovery unmultiplied.
   def handle({:apply_heal, gid, {:potion, :hp, _amount} = descriptor, _source}, session) do
@@ -307,6 +323,11 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CombatHandler do
     else
       reason -> {:stop, {:homunculus_death_persistence_failed, reason}, session}
     end
+  end
+
+  defp commit_damage(session, previous, updated) do
+    unless previous.hp == updated.hp, do: notify_hp(updated)
+    {:noreply, StateCommit.commit(session, updated)}
   end
 
   defp active_homunculus(%SessionState{} = session, gid) do

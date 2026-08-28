@@ -48,6 +48,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     GenServer.cast(pid, {:combat, {:apply_vanish, hp_percent, sp_percent, source}})
   end
 
+  @doc "Applies coma through this mob's owning session."
+  @spec apply_coma(pid(), tuple() | integer() | nil) :: :ok
+  def apply_coma(pid, source) do
+    GenServer.cast(pid, {:combat, {:apply_coma, source}})
+  end
+
   @doc """
   Records the attack-type classification (`:melee | :ranged | :magic`) of the
   hit `attacker` is about to land, so a lethal hit can grant the killer the
@@ -362,6 +368,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
   @impl GenServer
   def handle_cast({:combat, {:apply_damage, damage, attacker_id}}, state) do
     CombatHandler.handle_apply_damage(damage, attacker_id, state)
+  end
+
+  def handle_cast({:combat, {:apply_coma, source}}, state) do
+    CombatHandler.handle_coma(source, state)
   end
 
   def handle_cast({:combat, {:apply_vanish, hp_percent, sp_percent, source}}, state) do

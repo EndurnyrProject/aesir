@@ -9,8 +9,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule HalfDamage do
@@ -205,6 +209,139 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
                target_id,
                40,
                %{skill_id: 21, skill_level: 5},
+               20
+             )
+  end
+
+  test "positive coma delivery preserves skill identity and post-damage hooks once" do
+    target_id = 23
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+    Registry.register_module(AfterDamage)
+
+    :ok =
+      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_after_damage,
+        state: %{test_pid: self()}
+      )
+
+    reject(&PlayerSession.apply_damage/3)
+    expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 20} -> :ok end)
+    expect(PlayerSession, :record_skill_hit, fn ^target_pid, 21, 5 -> :ok end)
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :player,
+               target_pid,
+               target_id,
+               40,
+               %{coma?: true, skill_id: 21, skill_level: 5},
+               20
+             )
+
+    assert_received {:after_damage_taken, %{damage: 40, attacker: {:player, 20}}}
+    refute_received {:after_damage_taken, _hit_info}
+  end
+
+  test "positive mob coma delivery preserves typed source without stale kill classification" do
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+    reject(&MobSession.note_hit_type/3)
+    reject(&MobSession.apply_damage/3)
+    expect(MobSession, :apply_coma, fn ^target_pid, {:mob, 20} -> :ok end)
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :mob,
+               target_pid,
+               24,
+               40,
+               %{coma?: true, dmg_type: :physical, is_short: true},
+               {:mob, 20}
+             )
+  end
+
+  test "same-owner Homunculus coma is returned as a local effect" do
+    assert {:local_effects, [effect]} =
+             DamageApplication.apply_unit_damage(
+               :homunculus,
+               self(),
+               25,
+               40,
+               %{coma?: true},
+               {:mob, 20}
+             )
+
+    assert effect == {:homunculus, {:apply_coma, 25, {:mob, 20}}}
+  end
+
+  test "zero prepared coma damage performs no owner delivery or post-damage hook" do
+    target_id = 26
+    target_pid = spawn(fn -> Process.sleep(:infinity) end)
+    stub_unit_info(target_id)
+    Registry.register_module(AfterDamage)
+
+    :ok =
+      Interpreter.apply_status(:player, target_id, :sc_test_weapon_swing_after_damage,
+        state: %{test_pid: self()}
+      )
+
+    reject(&PlayerSession.apply_coma/2)
+    reject(&PlayerSession.apply_damage/3)
+    reject(&PlayerSession.record_skill_hit/3)
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :player,
+               target_pid,
+               target_id,
+               0,
+               %{coma?: true, pre_delivery_prepared?: true, skill_id: 21, skill_level: 5},
+               20
+             )
+
+    refute_received {:after_damage_taken, _hit_info}
+  end
+
+  test "Devotion redirection carries coma to the actual owner" do
+    devotee_id = 27
+    crusader_id = 28
+    devotee_pid = spawn(fn -> Process.sleep(:infinity) end)
+    crusader_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+    crusader = %PlayerState{
+      character_id: crusader_id,
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    UnitRegistry.register_unit(:player, crusader_id, PlayerState, crusader, crusader_pid)
+    SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
+    SpatialIndex.add_player(crusader_id, 51, 50, "prontera")
+
+    :ok =
+      StatusStorage.apply_status(:player, devotee_id, :sc_devotion,
+        state: %{peer: {:player, crusader_id}, link_id: make_ref(), range: 7}
+      )
+
+    reject(&PlayerSession.apply_damage/3)
+    expect(PlayerSession, :apply_coma, fn ^crusader_pid, {:player, 20} -> :ok end)
+
+    assert {0, prepared} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               devotee_id,
+               40,
+               %{coma?: true},
+               20
+             )
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :player,
+               devotee_pid,
+               devotee_id,
+               0,
+               prepared,
                20
              )
   end

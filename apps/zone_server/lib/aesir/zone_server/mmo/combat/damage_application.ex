@@ -478,6 +478,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
       else: absorb_unit_damage(target_type, target_id, damage, hit_info)
   end
 
+  defp deliver_unit_damage(
+         target_type,
+         target_pid,
+         target_id,
+         damage,
+         %{coma?: true} = hit_info,
+         attacker
+       )
+       when target_type in [:player, :mob, :homunculus] and damage > 0 do
+    deliver_coma(target_type, target_pid, target_id, hit_info, attacker)
+  end
+
+  defp deliver_unit_damage(_target_type, _pid, _id, damage, %{coma?: true}, _attacker)
+       when damage <= 0,
+       do: :ok
+
   defp deliver_unit_damage(:homunculus, target_pid, target_id, damage, hit_info, attacker)
        when target_pid == self() do
     effect =
@@ -523,6 +539,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp deliver_unit_damage(:player, target_pid, _target_id, damage, _hit_info, attacker) do
     PlayerSession.apply_damage(target_pid, damage, typed_attacker(attacker))
+  end
+
+  defp deliver_coma(
+         :player,
+         target_pid,
+         _target_id,
+         %{skill_id: skill_id, skill_level: skill_level},
+         attacker
+       )
+       when is_integer(skill_id) and is_integer(skill_level) do
+    PlayerSession.apply_coma(target_pid, typed_attacker(attacker))
+    PlayerSession.record_skill_hit(target_pid, skill_id, skill_level)
+  end
+
+  defp deliver_coma(:player, target_pid, _target_id, _hit_info, attacker) do
+    PlayerSession.apply_coma(target_pid, typed_attacker(attacker))
+  end
+
+  defp deliver_coma(:mob, target_pid, _target_id, _hit_info, attacker) do
+    MobSession.apply_coma(target_pid, typed_attacker(attacker))
+  end
+
+  defp deliver_coma(:homunculus, target_pid, target_id, _hit_info, attacker)
+       when target_pid == self() do
+    {:local_effects, [{:homunculus, {:apply_coma, target_id, typed_attacker(attacker)}}]}
+  end
+
+  defp deliver_coma(:homunculus, target_pid, target_id, _hit_info, attacker) do
+    GenServer.cast(target_pid, {:homunculus, {:apply_coma, target_id, typed_attacker(attacker)}})
   end
 
   # Classifies a hit for the on-kill HP/SP gain equipment bonuses: a physical

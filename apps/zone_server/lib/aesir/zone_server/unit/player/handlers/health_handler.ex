@@ -107,6 +107,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
 
   def apply_damage(_damage, _attacker_id, state), do: {:noreply, state}
 
+  @doc "Leaves a living player at exactly 1 HP and 1 SP."
+  @spec apply_coma(Ref.t() | integer() | nil, SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def apply_coma(_source, %{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+
+  def apply_coma(_source, %{game_state: %{stats: %{current_state: %{hp: hp}}}} = state)
+      when hp <= 0,
+      do: {:noreply, state}
+
+  def apply_coma(source, state) do
+    hp_damage = max(current_hp(state) - 1, 0)
+
+    {:noreply, state} =
+      if hp_damage > 0, do: apply_damage(hp_damage, source, state), else: {:noreply, state}
+
+    if current_sp(state) == 1, do: {:noreply, state}, else: {:noreply, put_sp(state, 1)}
+  end
+
   @doc "Applies nonlethal equipment vanish from max-HP/SP percentages."
   @spec apply_vanish(
           non_neg_integer(),

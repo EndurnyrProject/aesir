@@ -211,6 +211,136 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     assert PlayerSession.get_state(session.pid).homunculus.sp == 100
   end
 
+  test "external coma is applied by the owning player aggregate", %{session: session, gid: gid} do
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :homunculus,
+               session.pid,
+               gid,
+               40,
+               %{coma?: true},
+               {:mob, 2_001}
+             )
+
+    assert_eventually(fn ->
+      homunculus = PlayerSession.get_state(session.pid).homunculus
+      homunculus.hp == 1 and homunculus.sp == 1
+    end)
+
+    session_pid = session.pid
+
+    assert {:ok, {HomunculusState, registered, ^session_pid}} =
+             UnitRegistry.get_unit(:homunculus, gid)
+
+    assert registered.hp == 1
+    assert registered.sp == 1
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :homunculus,
+               session.pid,
+               gid,
+               40,
+               %{coma?: true},
+               {:mob, 2_001}
+             )
+
+    assert %{hp: 1, sp: 1} = PlayerSession.get_state(session.pid).homunculus
+  end
+
+  test "same-owner coma is applied as an aggregate-local effect", %{session: session, gid: gid} do
+    :sys.replace_state(session.pid, fn current ->
+      current = StateCommit.commit(current, %{current.homunculus | hp: 800, sp: 150})
+
+      assert {:local_effects, [effect]} =
+               DamageApplication.apply_unit_damage(
+                 :homunculus,
+                 self(),
+                 gid,
+                 40,
+                 %{coma?: true},
+                 {:mob, 2_001}
+               )
+
+      {:noreply, current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    assert %{hp: 1, sp: 1} = PlayerSession.get_state(session.pid).homunculus
+
+    session_pid = session.pid
+
+    assert {:ok, {HomunculusState, %{hp: 1, sp: 1}, ^session_pid}} =
+             UnitRegistry.get_unit(:homunculus, gid)
+  end
+
+  test "external coma does not alter an active HP-zero Homunculus", %{
+    session: session,
+    gid: gid
+  } do
+    session_pid = session.pid
+
+    assert {:ok, {HomunculusState, registered_before, ^session_pid}} =
+             UnitRegistry.get_unit(:homunculus, gid)
+
+    :sys.replace_state(session.pid, fn current ->
+      %{current | homunculus: %{current.homunculus | hp: 0, sp: 150, action_state: :idle}}
+    end)
+
+    before = PlayerSession.get_state(session.pid).homunculus
+
+    assert :ok =
+             DamageApplication.apply_unit_damage(
+               :homunculus,
+               session.pid,
+               gid,
+               40,
+               %{coma?: true},
+               {:mob, 2_001}
+             )
+
+    assert PlayerSession.get_state(session.pid).homunculus == before
+
+    assert {:ok, {HomunculusState, ^registered_before, ^session_pid}} =
+             UnitRegistry.get_unit(:homunculus, gid)
+  end
+
+  test "aggregate-local coma does not alter an active HP-zero Homunculus", %{
+    session: session,
+    gid: gid
+  } do
+    session_pid = session.pid
+
+    assert {:ok, {HomunculusState, registered_before, ^session_pid}} =
+             UnitRegistry.get_unit(:homunculus, gid)
+
+    :sys.replace_state(session.pid, fn current ->
+      current = %{
+        current
+        | homunculus: %{current.homunculus | hp: 0, sp: 150, action_state: :idle}
+      }
+
+      assert {:local_effects, [effect]} =
+               DamageApplication.apply_unit_damage(
+                 :homunculus,
+                 self(),
+                 gid,
+                 40,
+                 %{coma?: true},
+                 {:mob, 2_001}
+               )
+
+      assert {:noreply, ^current} = CommandHandler.local_effect(effect, current)
+      current
+    end)
+
+    homunculus = PlayerSession.get_state(session.pid).homunculus
+    assert %{hp: 0, sp: 150, lifecycle: :active, action_state: :idle} = homunculus
+
+    assert {:ok, {HomunculusState, ^registered_before, ^session_pid}} =
+             UnitRegistry.get_unit(:homunculus, gid)
+  end
+
   test "Homunculus attack, skill, and magic paths retain typed source and target identity", %{
     session: session,
     gid: gid
@@ -392,6 +522,10 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     assert is_nil(state.homunculus_runtime.active_expiry_timer_ref)
     assert is_nil(state.homunculus_runtime.hunger_timer_ref)
     assert {:error, :not_found} = UnitRegistry.get_unit(:homunculus, gid)
+
+    dead = state.homunculus
+    GenServer.cast(session.pid, {:homunculus, {:apply_coma, gid, {:mob, 2_001}}})
+    assert PlayerSession.get_state(session.pid).homunculus == dead
 
     row = Persistence.load_for_character(character.id)
     assert row.lifecycle == "dead"
