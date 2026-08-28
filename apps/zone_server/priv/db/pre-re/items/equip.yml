@@ -5111,6 +5111,10 @@
   locations:
     - both_hand
   name: Great Axe
+  on_equip: |-
+    ctx = bonus(ctx, {:add_skill_blow, 42}, 5)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 1500)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -5133,6 +5137,11 @@
   locations:
     - both_hand
   name: Sabbath
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :shadow)
+    ctx = bonus(ctx, {:coma_race, :demon}, 50)
+    ctx = bonus(ctx, {:critical_add_race, :undead}, 50)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -5182,6 +5191,13 @@
   locations:
     - both_hand
   name: Slaughter
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :earth)
+    ctx = bonus(ctx, {:ignore_def_race, :brute}, 100)
+    ctx = bonus(ctx, {:coma_race, :brute}, 40)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 100)
+    ctx = bonus(ctx, {:coma_race, :player_doram}, 40)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -5462,6 +5478,12 @@
   locations:
     - both_hand
   name: Refined Great Axe
+  on_equip: |-
+    ctx = bonus(ctx, :str, 5)
+    ctx = bonus(ctx, :hit, 20)
+    ctx = bonus(ctx, {:add_skill_blow, 42}, 5)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 2000)
+    ctx
   range: 1
   subtype: two_handed_axe
   type: weapon
@@ -7896,6 +7918,11 @@
   locations:
     - right_hand
   name: Slash
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :undead}, 15)
+    ctx = bonus(ctx, {:coma_race, :undead}, 10)
+    ctx = bonus(ctx, {:exp_add_race, :undead}, 5)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -9077,6 +9104,28 @@
   name: Glorious Apocalypse
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 80)
+    ctx = bonus(ctx, {:addrace, :player_human}, 80)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+    else
+      ctx
+    end
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx = bonus(ctx, :delay_rate, -5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: book
@@ -9613,6 +9662,10 @@
   locations:
     - right_hand
   name: Wing Staff
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -9982,6 +10035,13 @@
   locations:
     - right_hand
   name: Holy Stick
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, {:skill_varcast_rate, 156}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 77}, -25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 79}, -25)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -10231,6 +10291,22 @@
   name: Glorious Arc Wand
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 15)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 15)
+    ctx = bonus(ctx, {:ignore_mdef_race, :demi_human}, (25 + if((refine(ctx) > 5), do: 5, else: 0)))
+    ctx = bonus(ctx, {:ignore_mdef_race, :player_human}, (25 + if((refine(ctx) > 5), do: 5, else: 0)))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :varcast_rate, -5)
+      ctx = bonus(ctx, :delay_rate, -5)
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -10300,6 +10376,11 @@
   name: Staff Of Darkness
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, :int, 2)
+    ctx
   range: 1
   subtype: staff
   type: weapon
@@ -10404,6 +10485,17 @@
   locations:
     - right_hand
   name: La'cryma Stick
+  on_equip: |-
+    ctx = bonus(ctx, :int, 4)
+    ctx = bonus(ctx, :matk_rate, 15)
+    ctx = bonus(ctx, :mdef, refine(ctx))
+    ctx = bonus(ctx, {:skill_atk, 89}, refine(ctx))
+    ctx = if (refine(ctx) > 9) do
+      bonus(ctx, {:skill_varcast_rate, 89}, -8)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -16095,6 +16187,10 @@
   locations:
     - armor
   name: Robe of Cast
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx = bonus(ctx, :mdef, 4)
+    ctx
   refineable: true
   type: armor
   weight: 1100
@@ -16386,6 +16482,10 @@
   locations:
     - armor
   name: Robe of Cast
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx = bonus(ctx, :mdef, 4)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -16423,6 +16523,10 @@
   locations:
     - armor
   name: Orleans's Gown
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, 15)
+    ctx = bonus(ctx, :no_cast_cancel, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -20775,6 +20879,10 @@
   name: Rune Spellstone
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, :varcast_rate, -1)
+    ctx
   slots: 1
   type: armor
   weight: 50
@@ -20917,6 +21025,13 @@
   name: All In One Ring
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, :no_cast_cancel, 1)
+    ctx = bonus(ctx, :varcast_rate, 10)
+    ctx = grant_skill(ctx, 28, 1)
+    ctx = grant_skill(ctx, 26, 1)
+    ctx
   type: armor
 - aegis_name: Angelic_Ring
   armor_level: 1
@@ -20966,6 +21081,10 @@
   locations:
     - both_accessory
   name: Sprint Ring
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx = bonus(ctx, :delay_rate, 5)
+    ctx
   type: armor
   weight: 100
 - aegis_name: Pinguicula_Corsage
@@ -21354,6 +21473,16 @@
   name: Glorious Ring
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = bonus(ctx, {:subele, :water}, 10)
+    ctx = bonus(ctx, {:subele, :wind}, 10)
+    ctx = bonus(ctx, {:subele, :earth}, 10)
+    ctx = bonus(ctx, {:subele, :fire}, 10)
+    ctx = bonus(ctx, :aspd_rate, 5)
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx = bonus(ctx, :heal_power, 5)
+    ctx
   type: armor
 - aegis_name: Krieger_Ring2
   armor_level: 1
@@ -23973,6 +24102,11 @@
   locations:
     - head_top
   name: Magic Eyes
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx = bonus(ctx, :sp_cost_rate, 20)
+    ctx
   refineable: true
   type: armor
   view: 209
@@ -25118,6 +25252,12 @@
     - head_top
   name: Flapping Angel Wing
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :agi, 1)
+    ctx
   refineable: true
   type: armor
   view: 264
@@ -25401,6 +25541,12 @@
     - head_top
   name: Mini Propeller
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :varcast_rate, (0 - refine(ctx)))
+    ctx
   refineable: true
   type: armor
   view: 270
@@ -26435,6 +26581,11 @@
     - head_top
   name: Pecopeco Hairband
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :movement_speed, 25)
+    ctx = bonus(ctx, :aspd_rate, -10)
+    ctx = bonus(ctx, :varcast_rate, 25)
+    ctx
   type: armor
   view: 314
 - aegis_name: Vacation_Hat
@@ -26867,6 +27018,11 @@
     - head_top
   name: Diadem
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -27477,6 +27633,7 @@
   locations:
     - head_top
   name: Muslim Hat M
+  on_equip: bonus(ctx, :varcast_rate, -5)
   type: armor
   view: 362
   weight: 100
@@ -27487,6 +27644,7 @@
   locations:
     - head_top
   name: Selendang
+  on_equip: bonus(ctx, :varcast_rate, -5)
   type: armor
   view: 363
   weight: 100
@@ -28388,6 +28546,11 @@
   locations:
     - head_top
   name: Old Bandana
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, :varcast_rate, 10)
+    ctx
   type: armor
   view: 6
 - aegis_name: New_Cowboy_Hat
@@ -28488,6 +28651,15 @@
   locations:
     - head_top
   name: Poring Cake Hat
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, :flee, 5)
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = bonus(ctx, :aspd_rate, 5)
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx
   refineable: true
   type: armor
   view: 417
@@ -30698,6 +30870,11 @@
     - head_mid
     - head_top
   name: Luxurious Wedding Veil
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx = bonus(ctx, :sp_cost_rate, -5)
+    ctx
   slots: 1
   type: armor
   view: 489
@@ -30713,6 +30890,10 @@
     - head_top
   name: Crown of Deceit
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 4)
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -31292,6 +31473,10 @@
   locations:
     - head_mid
   name: Filir's Pinions
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 2)
+    ctx = bonus(ctx, :varcast_rate, -2)
+    ctx
   type: armor
   view: 595
   weight: 100
@@ -32998,6 +33183,11 @@
   locations:
     - right_hand
   name: Murasame
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 10)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -33016,6 +33206,11 @@
   locations:
     - right_hand
   name: Murasame
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 10)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -34447,6 +34642,10 @@
   locations:
     - both_hand
   name: Butcher
+  on_equip: |-
+    ctx = bonus(ctx, {:critical_add_race, :brute}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_doram}, 10)
+    ctx
   range: 9
   refineable: true
   subtype: gatling
@@ -34463,6 +34662,10 @@
   locations:
     - both_hand
   name: Butcher
+  on_equip: |-
+    ctx = bonus(ctx, {:critical_add_race, :brute}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_doram}, 10)
+    ctx
   range: 9
   refineable: true
   slots: 1

@@ -6311,6 +6311,10 @@
   locations:
     - both_hand
   name: Great Axe
+  on_equip: |-
+    ctx = bonus(ctx, {:add_skill_blow, 42}, 5)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 1500)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -6333,6 +6337,11 @@
   locations:
     - both_hand
   name: Sabbath
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :shadow)
+    ctx = bonus(ctx, {:coma_race, :demon}, 50)
+    ctx = bonus(ctx, {:critical_add_race, :undead}, 50)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -6382,6 +6391,13 @@
   locations:
     - both_hand
   name: Slaughter
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :earth)
+    ctx = bonus(ctx, {:ignore_def_race, :brute}, 100)
+    ctx = bonus(ctx, {:coma_race, :brute}, 40)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 100)
+    ctx = bonus(ctx, {:coma_race, :player_doram}, 40)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -10035,6 +10051,11 @@
   locations:
     - right_hand
   name: Slash
+  on_equip: |-
+    ctx = bonus(ctx, {:addele, :undead}, 15)
+    ctx = bonus(ctx, {:coma_race, :undead}, 10)
+    ctx = bonus(ctx, {:exp_add_race, :undead}, 5)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -48931,6 +48952,15 @@
   locations:
     - head_top
   name: Valkyrie Helmet
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 3)
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :varcast_rate, -3)
+    ctx
   type: armor
   view: 225
 - aegis_name: Book_File_Hat
@@ -52138,6 +52168,11 @@
   locations:
     - right_hand
   name: Murasame
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 10)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -52157,6 +52192,11 @@
   locations:
     - right_hand
   name: Murasame
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 10)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -55927,6 +55967,10 @@
   locations:
     - both_hand
   name: Butcher
+  on_equip: |-
+    ctx = bonus(ctx, {:critical_add_race, :brute}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_doram}, 10)
+    ctx
   range: 9
   refineable: true
   subtype: gatling
@@ -55944,6 +55988,10 @@
   locations:
     - both_hand
   name: Butcher
+  on_equip: |-
+    ctx = bonus(ctx, {:critical_add_race, :brute}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_doram}, 10)
+    ctx
   range: 9
   refineable: true
   slots: 1
