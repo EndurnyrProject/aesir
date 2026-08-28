@@ -603,7 +603,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       reduced = calculate_equipment_bonuses(without_shield, stats.progression, stat_params)
 
       %{
-        def: max(Map.get(full, :def, 0) - Map.get(reduced, :def, 0), 0),
+        def: max(scaled_equipment_def(full) - scaled_equipment_def(reduced), 0),
         mdef: max(Map.get(full, :mdef, 0) - Map.get(reduced, :mdef, 0), 0)
       }
     else
@@ -921,7 +921,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       matk: matk_max,
       heal_matk_min: heal_matk_min,
       heal_matk_max: heal_matk_max,
-      def: base_def + get_status_modifier(stats, :def) + get_equipment_modifier(stats, :def),
+      def:
+        base_def + get_status_modifier(stats, :def) +
+          scaled_equipment_def(stats.modifiers.equipment),
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
       soft_mdef: formulas.soft_mdef(values),
       passive_atk: passive_atk,
@@ -938,6 +940,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     }
 
     %{stats | combat_stats: combat_stats}
+  end
+
+  @spec scaled_equipment_def(map()) :: integer()
+  defp scaled_equipment_def(equipment_modifiers) do
+    raw_def = Map.get(equipment_modifiers, :def, 0)
+    rate = max(0, 100 + Map.get(equipment_modifiers, :def_rate, 0))
+    div(raw_def * rate, 100)
   end
 
   defp calculate_critical(

@@ -101,6 +101,22 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     }
   end
 
+  defp combat_stats(equipment_modifiers) do
+    %Stats{
+      base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+      progression: %{base_level: 0, job_level: 0, learned_skills: %{}},
+      derived_stats: %{max_hp: 1, max_sp: 1},
+      equipment: %Equipment{},
+      modifiers: %{
+        equipment: equipment_modifiers,
+        status_effects: %{},
+        job_bonuses: %{}
+      }
+    }
+    |> Stats.calculate_combat_stats()
+    |> Map.fetch!(:combat_stats)
+  end
+
   describe "from_character/1" do
     test "creates Stats struct from Character model" do
       character = %Character{
@@ -697,6 +713,45 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       refute result.combat_stats.max_weapon_damage
     end
 
+    test "positive equipment DEF rate scales only equipment hard DEF" do
+      assert combat_stats(%{def: 81, def_rate: 50}).def == 121
+    end
+
+    test "equipment hard DEF is unchanged without a DEF rate" do
+      assert combat_stats(%{def: 81}).def == 81
+    end
+
+    test "negative equipment DEF rate reduces equipment hard DEF" do
+      assert combat_stats(%{def: 81, def_rate: -25}).def == 60
+    end
+
+    test "equipment DEF rates at or below minus 100 floor equipment hard DEF at zero" do
+      for rate <- [-100, -150] do
+        assert combat_stats(%{def: 81, def_rate: rate}).def == 0
+      end
+    end
+
+    test "equipment DEF rate leaves derived and status hard DEF, soft DEF input, and MDEF unscaled" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 40, int: 20, dex: 10, luk: 0},
+        progression: %{base_level: 60, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: %{def: 80, def_rate: 50, mdef: 7},
+          status_effects: %{def: 11, mdef: 3},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.def == 30 + 11 + 120
+      assert result.combat_stats.mdef == 10
+      assert result.combat_stats.soft_mdef == 45
+      assert result.base_stats.vit == 40
+    end
+
     test "folds physical damage flags from status modifiers" do
       stats = %Stats{
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
@@ -1252,6 +1307,47 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert contribution.def > 0
       # The Guard carries no MDEF script, so it suppresses no MDEF.
       assert contribution.mdef == 0
+    end
+
+    test "includes a shield-granted DEF rate in the shield's marginal contribution" do
+      armor = %ItemDefinition{
+        id: 90_270,
+        aegis_name: "test_def_armor",
+        name: "Test DEF Armor",
+        type: :armor,
+        defense: 80,
+        on_equip: [{:bonus, :mdef, 7}]
+      }
+
+      shield = %ItemDefinition{
+        id: 90_271,
+        aegis_name: "test_def_shield",
+        name: "Test DEF Shield",
+        type: :armor,
+        defense: 20,
+        on_equip: [{:bonus, :def_rate, 50}, {:bonus, :mdef, 5}]
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_270 -> {:ok, armor}
+        90_271 -> {:ok, shield}
+      end)
+
+      base = swordman(%Equipment{}, %{})
+      without_shield = Stats.calculate_stats(base, nil, [equipped(90_270, @armor_pos)])
+
+      with_shield =
+        Stats.calculate_stats(
+          base,
+          nil,
+          [equipped(90_270, @armor_pos), equipped(90_271, @left_hand)]
+        )
+
+      contribution = Stats.shield_defense_contribution(with_shield)
+
+      assert with_shield.combat_stats.def == 150
+      assert contribution == %{def: 70, mdef: 5}
+      assert contribution.def == with_shield.combat_stats.def - without_shield.combat_stats.def
     end
 
     test "a left-hand weapon (not a shield) contributes nothing" do
@@ -1878,6 +1974,26 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.matk_min == 22
       # the renewal heal band excludes the item rate
       assert result.combat_stats.heal_matk_max == 15
+    end
+
+    test "signed equipment DEF rates fold additively before scaling" do
+      armor = scripted_item(90_260, defense: 40, on_equip: [{:bonus, :def_rate, 30}])
+      garment = scripted_item(90_261, defense: 60, on_equip: [{:bonus, :def_rate, -10}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_260 -> {:ok, armor}
+        90_261 -> {:ok, garment}
+      end)
+
+      result =
+        with_equipped_items([
+          equipped(90_260, @armor_pos),
+          equipped(90_261, @garment_pos)
+        ])
+
+      assert result.modifiers.equipment.def == 100
+      assert result.modifiers.equipment.def_rate == 20
+      assert result.combat_stats.def == 120
     end
 
     test "bAspdRate accumulates as a delta off the neutral 100 rate" do
