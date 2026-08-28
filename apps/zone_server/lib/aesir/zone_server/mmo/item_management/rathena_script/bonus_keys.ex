@@ -67,7 +67,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
           | :interval
           | :monster
           | :battle
-  @type param_schema :: %{family: atom(), param: param(), unit: :percent | :ms | :sp | :per10k}
+  @type param_schema :: %{
+          family: atom(),
+          param: param(),
+          unit: :percent | :ms | :sp | :per10k | :cells
+        }
   @type value_schema :: %{dest: destination(), param: param()}
   @type pair_schema :: %{first: destination(), second: destination()}
   @type flag_schema :: %{family: atom(), param: param(), amount: integer()}
@@ -89,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "batk" => :atk,
     "bmatk" => :matk,
     "bdef" => :def,
+    "bdefrate" => :def_rate,
     "bmdef" => :mdef,
     "bhit" => :hit,
     "bflee" => :flee,
@@ -104,6 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "batkrate" => :atk_rate,
     "bmatkrate" => :matk_rate,
     "bvariablecastrate" => :varcast_rate,
+    "bcastrate" => :varcast_rate,
     "bdelayrate" => :delay_rate,
     "blongatkrate" => :long_atk_rate,
     "bpatk" => :patk,
@@ -153,6 +159,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
 
   @param_keys %{
     "baddrace" => %{family: :addrace, param: :race, unit: :percent},
+    "bcomarace" => %{family: :coma_race, param: :race, unit: :per10k},
+    "bcriticaladdrace" => %{family: :critical_add_race, param: :race, unit: :percent},
     "baddele" => %{family: :addele, param: :element, unit: :percent},
     "baddsize" => %{family: :addsize, param: :size, unit: :percent},
     "baddclass" => %{family: :addclass, param: :class, unit: :percent},
@@ -165,12 +173,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "baddskillblow" => %{family: :add_skill_blow, param: :skill, unit: :cells},
     "bexpaddrace" => %{family: :exp_add_race, param: :race, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
     "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "bcastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeff2" => %{family: :add_eff2, param: :status, unit: :per10k},

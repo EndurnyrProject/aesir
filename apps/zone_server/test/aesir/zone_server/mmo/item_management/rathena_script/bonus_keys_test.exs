@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :atk,
     :matk,
     :def,
+    :def_rate,
     :mdef,
     :hit,
     :flee,
@@ -176,7 +177,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.value_param(:str) == :error
     end
 
-    test "resolves the cast, delay and long-attack rate keys" do
+    test "resolves cast, defense, delay, and long-attack rate keys case-insensitively" do
+      assert BonusKeys.destination("bCastRate") == {:ok, :varcast_rate}
+      assert BonusKeys.destination("bCastrate") == {:ok, :varcast_rate}
+      assert BonusKeys.destination("BCASTRATE") == {:ok, :varcast_rate}
+      assert BonusKeys.destination("bDefRate") == {:ok, :def_rate}
       assert BonusKeys.destination("bVariableCastrate") == {:ok, :varcast_rate}
       assert BonusKeys.destination("bDelayrate") == {:ok, :delay_rate}
       assert BonusKeys.destination("bLongAtkRate") == {:ok, :long_atk_rate}
@@ -199,6 +204,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
       assert BonusKeys.param_schema("bVariableCastrate") ==
                {:ok, %{family: :skill_varcast_rate, param: :skill, unit: :percent}}
+    end
+
+    test "bCastRate and historical bCastrate share both normalized forms" do
+      schema = {:ok, %{family: :skill_varcast_rate, param: :skill, unit: :percent}}
+
+      assert BonusKeys.destination("bCastRate") == {:ok, :varcast_rate}
+      assert BonusKeys.destination("bCastrate") == {:ok, :varcast_rate}
+      assert BonusKeys.param_schema("bCastRate") == schema
+      assert BonusKeys.param_schema("bCastrate") == schema
     end
   end
 
@@ -249,6 +263,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
 
   @param_schemas %{
     "baddrace" => %{family: :addrace, param: :race, unit: :percent},
+    "bcomarace" => %{family: :coma_race, param: :race, unit: :per10k},
+    "bcriticaladdrace" => %{family: :critical_add_race, param: :race, unit: :percent},
     "baddele" => %{family: :addele, param: :element, unit: :percent},
     "baddsize" => %{family: :addsize, param: :size, unit: :percent},
     "baddclass" => %{family: :addclass, param: :class, unit: :percent},
@@ -261,12 +277,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "baddskillblow" => %{family: :add_skill_blow, param: :skill, unit: :cells},
     "bexpaddrace" => %{family: :exp_add_race, param: :race, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},
     "bignoremdefracerate" => %{family: :ignore_mdef_race, param: :race, unit: :percent},
     "bskillcooldown" => %{family: :skill_cooldown, param: :skill, unit: :ms},
     "bskillusesp" => %{family: :skill_use_sp, param: :skill, unit: :sp},
     "bvariablecastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
+    "bcastrate" => %{family: :skill_varcast_rate, param: :skill, unit: :percent},
     "bskillusesprate" => %{family: :skill_use_sp_rate, param: :skill, unit: :percent},
     "baddeff" => %{family: :add_eff, param: :status, unit: :per10k},
     "baddeff2" => %{family: :add_eff2, param: :status, unit: :per10k},
@@ -330,6 +348,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.param_schema("bExpAddRace") == {:ok, @param_schemas["bexpaddrace"]}
       assert BonusKeys.param_schema("bAddRace") == {:ok, @param_schemas["baddrace"]}
       assert BonusKeys.param_schema("BADDRACE") == {:ok, @param_schemas["baddrace"]}
+      assert BonusKeys.param_schema("bComaRace") == {:ok, @param_schemas["bcomarace"]}
+
+      assert BonusKeys.param_schema("bCriticalAddRace") ==
+               {:ok, @param_schemas["bcriticaladdrace"]}
+
+      assert BonusKeys.param_schema("bAddSkillBlow") ==
+               {:ok, @param_schemas["baddskillblow"]}
     end
 
     test "resolves the skill-economy keys case-insensitively" do

@@ -1,16 +1,26 @@
 defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
   use ExUnit.Case, async: true
+  import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
+  alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.PreRenewal
+  alias Aesir.ZoneServer.Mmo.Mechanics.CastTime.Renewal
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Caster
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
+  alias Aesir.ZoneServer.Npc.Transpiler.Parser
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+
+  setup :setup_ets_tables
 
   test "resolves each caster state to its adapter" do
     assert Caster.for(player()) == Caster.Player
@@ -61,6 +71,61 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterTest do
     assert Caster.Mob.position(state) == {"prontera", 12, 22}
     assert Caster.Mob.attack_range(state) == 7
     assert Caster.Mob.broadcast_source(state) == {:mob, 401}
+  end
+
+  test "emitted bCastRate modifiers affect renewal and pre-renewal casts" do
+    definition = %Definition{
+      id: 83,
+      name: :test_skill,
+      display_name: "Test Skill",
+      max_level: 1,
+      cast_time: [1_000],
+      fixed_cast_time: [200]
+    }
+
+    baseline_stats = Caster.Player.cast_stats(cast_player(%{}), definition.id)
+    baseline_renewal = Renewal.compute(definition, 1, baseline_stats)
+    baseline_pre_renewal = PreRenewal.compute(definition, 1, baseline_stats)
+
+    results =
+      Map.new([-25, 25], fn rate ->
+        modifiers = emitted_cast_modifiers(rate)
+        assert modifiers == %{varcast_rate: rate}
+
+        stats = Caster.Player.cast_stats(cast_player(modifiers), definition.id)
+        assert stats.varcast_rate == rate
+        assert stats.classic_early_rate == rate
+
+        {rate,
+         %{
+           renewal: Renewal.compute(definition, 1, stats),
+           pre_renewal: PreRenewal.compute(definition, 1, stats)
+         }}
+      end)
+
+    assert results[-25].renewal.total < baseline_renewal.total
+    assert results[25].renewal.total > baseline_renewal.total
+    assert results[-25].pre_renewal.total < baseline_pre_renewal.total
+    assert results[25].pre_renewal.total > baseline_pre_renewal.total
+  end
+
+  defp emitted_cast_modifiers(rate) do
+    {:ok, statements} = Parser.parse_body("bonus bCastRate,#{rate};")
+    {:ok, program} = EquipCodegen.generate(statements)
+
+    EquipScript.eval(program, %{refine: 0, base_level: 1, job_level: 1})
+  end
+
+  defp cast_player(equipment_modifiers) do
+    state = player()
+
+    stats = %{
+      state.stats
+      | base_stats: %BaseStats{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+        modifiers: %{state.stats.modifiers | equipment: equipment_modifiers}
+    }
+
+    %{state | stats: stats}
   end
 
   defp player do

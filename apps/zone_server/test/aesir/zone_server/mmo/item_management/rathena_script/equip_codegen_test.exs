@@ -52,6 +52,51 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bAspdRate,10; bonus bAtkRate,5; bonus bMatkRate,7;")
     end
 
+    test "additional item keys emit exact signed flat and parameterized destinations" do
+      bash_id = skill_id!(:sm_bash)
+
+      assert {:ok,
+              [
+                {:bonus, :varcast_rate, -10},
+                {:bonus, :def_rate, 25},
+                {:bonus, {:coma_race, :all}, 10_000},
+                {:bonus, {:critical_add_race, :player_human}, -5},
+                {:bonus, {:add_skill_blow, ^bash_id}, 3}
+              ]} =
+               compile(
+                 "bonus bCastRate,-10; bonus bDefRate,25; " <>
+                   "bonus2 bComaRace,RC_All,10000; " <>
+                   "bonus2 bCriticalAddRace,RC_Player_Human,-5; " <>
+                   "bonus2 bAddSkillBlow,SM_BASH,3;"
+               )
+    end
+
+    test "additional tuple keys retain every additive contribution" do
+      bash_id = skill_id!(:sm_bash)
+
+      assert {:ok,
+              [
+                {:bonus, {:coma_race, :undead}, 100},
+                {:bonus, {:coma_race, :undead}, 250},
+                {:bonus, {:add_skill_blow, ^bash_id}, 4},
+                {:bonus, {:add_skill_blow, ^bash_id}, -1}
+              ]} =
+               compile(
+                 "bonus2 bComaRace,RC_Undead,100; " <>
+                   "bonus2 bComaRace,RC_Undead,250; " <>
+                   "bonus2 bAddSkillBlow,SM_BASH,4; " <>
+                   "bonus2 bAddSkillBlow,SM_BASH,-1;"
+               )
+    end
+
+    test "additional parameterized keys keep unresolved constants explicit" do
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus2 bComaRace,RC_Bogus,100;")
+
+      assert {:error, {:unsupported, {:unresolved_param, _}}} =
+               compile("bonus2 bAddSkillBlow,NOT_A_SKILL,2;")
+    end
+
     test "bAllStats compiles to the fan-out destination" do
       assert {:ok, [{:bonus, :all_stats, 2}]} = compile("bonus bAllStats,2;")
     end
@@ -436,6 +481,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:ok, [{:bonus, {:skill_varcast_rate, ^firebolt_id}, -10}]} =
                compile("bonus2 bVariableCastrate,#{firebolt_id},-10;")
+
+      assert {:ok, [{:bonus, :varcast_rate, -15}]} = compile("bonus bCastrate,-15;")
+
+      assert {:ok, [{:bonus, {:skill_varcast_rate, ^firebolt_id}, -25}]} =
+               compile("bonus2 bCastrate,MG_FIREBOLT,-25;")
     end
 
     test "delay and long-attack rate keys" do
