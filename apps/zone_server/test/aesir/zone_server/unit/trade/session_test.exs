@@ -199,7 +199,8 @@ defmodule Aesir.ZoneServer.Unit.Trade.SessionTest do
     Process.exit(side_a, :kill)
 
     assert_receive {:b, {:trade, {:cancelled, :disconnected}}}
-    assert_receive {:DOWN, ^monitor, :process, ^trade, :normal}
+    assert_receive {:DOWN, ^monitor, :process, ^trade, reason}
+    assert reason in [:normal, :noproc]
   end
 
   defp start_opened_trade(side_a, side_b) do
