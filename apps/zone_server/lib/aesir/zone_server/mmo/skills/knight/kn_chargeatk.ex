@@ -56,10 +56,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{directive: directive, unit_type: unit_type, dest: {dest_x, dest_y}}} <-
+    with {:ok, %{directive: directive, dest: destination}} <-
            prepare(caster, target_id, definition),
-         :ok <- strike(caster, target_id, level, definition) do
-      Combat.knockback(unit_type, target_id, dest_x, dest_y, definition.knockback)
+         :ok <- strike(caster, target_id, level, definition, destination) do
       {:ok, PlayerState.put_pending_forced_movement(caster, directive)}
     end
   end
@@ -74,7 +73,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
           {:ok,
            %{
              directive: ForcedMovement.t(),
-             unit_type: :mob | :player,
              dest: {integer(), integer()}
            }}
           | {:error, atom()}
@@ -86,25 +84,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
          {dest_x, dest_y} = landing_cell(caster, tx, ty),
          {:ok, directive} <- ForcedMovement.validate(caster, dest_x, dest_y, definition.range),
          :ok <- ensure_walkable_line(caster, tx, ty) do
-      {:ok, %{directive: directive, unit_type: unit_type, dest: {dest_x, dest_y}}}
+      {:ok, %{directive: directive, dest: {dest_x, dest_y}}}
     end
   end
 
-  @spec strike(PlayerState.t(), integer(), pos_integer(), Definition.t()) ::
-          :ok | {:error, atom()}
-  defp strike(caster, target_id, level, definition) do
-    opts = [
+  @spec strike(
+          PlayerState.t(),
+          integer(),
+          pos_integer(),
+          Definition.t(),
+          {integer(), integer()}
+        ) :: :ok | {:error, atom()}
+  defp strike(caster, target_id, level, definition, origin) do
+    Combat.execute_skill_attack(caster, target_id,
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 700,
       skip_crit: true,
-      skip_range: true
-    ]
-
-    case Combat.execute_skill_attack(caster, target_id, opts) do
-      :ok -> :ok
-      {:error, _reason} = error -> error
-    end
+      skip_range: true,
+      base_distance: definition.knockback,
+      origin: origin,
+      native_target_types: [:player, :mob]
+    )
   end
 
   @spec resolve_position(:mob | :player, integer()) ::

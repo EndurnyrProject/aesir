@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -51,6 +52,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     ])
   end
 
+  defp mob_caster do
+    %MobState{
+      instance_id: 1,
+      mob_id: 1_002,
+      mob_data: %{element: {:neutral, 1}, race: :formless, modes: []},
+      spawn_ref: nil,
+      x: 10,
+      y: 20,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 10,
+      max_sp: 10,
+      spawned_at: 0
+    }
+  end
+
   test "Catalog.by_id/1 resolves CR_SHIELDCHARGE" do
     assert definition().name == :cr_shieldcharge
     assert definition().max_level == 5
@@ -81,8 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
     end
 
     test "mob casters skip the shield gate" do
-      assert CrShieldcharge.validate(%{instance_id: 1}, {:unit, @target_id}, 1, definition()) ==
-               :ok
+      assert CrShieldcharge.validate(mob_caster(), {:unit, @target_id}, 1, definition()) == :ok
     end
   end
 
@@ -154,17 +171,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       assert {:ok, ^caster} = CrShieldcharge.cast(caster, {:unit, @target_id}, 5, definition())
     end
 
-    test "knocks back level + 4 cells on a connecting hit" do
+    test "passes native and equipment blow through one canonical attack request" do
       caster = caster_with_shield()
+      caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 250} => 2})
 
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+      expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert caster.stats.modifiers.equipment[{:add_skill_blow, 250}] == 2
+        assert opts[:base_distance] == 7
+        assert opts[:origin] == {10, 20}
+        assert opts[:native_target_types] == [:player, :mob, :homunculus]
         {:ok, %{hit?: true}}
       end)
 
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
       stub(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, _params -> :ok end)
-
-      expect(Combat, :knockback, fn :mob, @target_id, 10, 20, 7 -> {:ok, {10, 20}} end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = CrShieldcharge.cast(caster, {:unit, @target_id}, 3, definition())
     end
@@ -175,13 +196,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       caster = caster_with_shield()
 
       stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+        send(self(), :combined_blow_requested)
         {:ok, %{hit?: true}}
       end)
 
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-      stub(Combat, :knockback, fn :mob, @target_id, 10, 20, 7 -> {:ok, {10, 20}} end)
+      reject(&Combat.knockback/5)
 
       expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
+        assert_received :combined_blow_requested
         assert params[:duration] == 4_500
         :ok
       end)
@@ -194,13 +217,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       :rand.seed(:exsss, {1, 1, 2})
       caster = caster_with_shield()
 
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert opts[:base_distance] == 5
         {:ok, %{hit?: true}}
       end)
 
       stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
-      stub(Combat, :knockback, fn :mob, @target_id, 10, 20, 5 -> {:ok, {10, 20}} end)
-
+      reject(&Combat.knockback/5)
       reject(&StatusInterpreter.apply_status/4)
 
       assert {:ok, ^caster} = CrShieldcharge.cast(caster, {:unit, @target_id}, 1, definition())
@@ -209,10 +232,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
 
   describe "mob_cast fallback" do
     test "a mob caster deals damage through the shield-base fallback (plain batk)" do
-      caster = %{instance_id: 1}
+      caster = mob_caster()
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
         assert opts[:damage_base] == :shield
+        assert opts[:origin] == {10, 20}
         {:ok, %{hit?: false}}
       end)
 

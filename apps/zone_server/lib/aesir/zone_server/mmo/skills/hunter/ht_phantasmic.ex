@@ -45,19 +45,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic do
       element: definition.element,
       hit_count: 1,
       skip_crit: true,
-      report_hit: true
+      base_distance: definition.knockback,
+      origin: {caster.x, caster.y},
+      native_target_types: [:mob],
+      native_requires_survival: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      {:ok, %{hit?: true, target_survives?: true}} ->
-        Combat.knockback(:mob, target_id, caster.x, caster.y, definition.knockback)
-        {:ok, caster}
-
-      {:ok, %{}} ->
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
+      :ok -> {:ok, caster}
+      {:error, _reason} = error -> error
     end
   end
 end

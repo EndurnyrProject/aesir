@@ -51,7 +51,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
       skill_ratio: 100 + 20 * level,
       damage_base: :shield,
       skip_crit: true,
-      report_hit: true
+      report_hit: true,
+      base_distance: knockback_distance(level),
+      origin: {caster.x, caster.y},
+      native_target_types: [:player, :mob, :homunculus]
     ]
 
     case Combat.execute_skill_attack(caster, target, opts) do
@@ -66,7 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
 
   defp apply_riders(caster, target, level) do
     {unit_type, unit_id} = target_ref(target)
-    Combat.knockback(unit_type, unit_id, caster.x, caster.y, knockback_distance(level))
     maybe_stun(caster, unit_type, unit_id, level)
     :ok
   end

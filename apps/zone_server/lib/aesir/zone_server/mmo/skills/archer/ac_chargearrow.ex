@@ -44,19 +44,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow do
       skill_ratio: 150,
       hit_count: 1,
       skip_crit: true,
-      report_hit: true
+      base_distance: definition.knockback,
+      origin: {caster.x, caster.y},
+      native_target_types: [:mob]
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do
-      {:ok, %{hit?: true}} ->
-        Combat.knockback(:mob, target_id, caster.x, caster.y, definition.knockback)
-        {:ok, caster}
-
-      {:ok, %{hit?: false}} ->
-        {:ok, caster}
-
-      {:error, _reason} = error ->
-        error
+      :ok -> {:ok, caster}
+      {:error, _reason} = error -> error
     end
   end
 end

@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -24,7 +26,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     :ok
   end
 
-  defp caster(x, y), do: %PlayerState{character_id: 4000, map_name: "prontera", x: x, y: y}
+  defp caster(x, y, equipment \\ %{}) do
+    %PlayerState{
+      character_id: 4000,
+      map_name: "prontera",
+      x: x,
+      y: y,
+      stats: %Stats{modifiers: %Modifiers{equipment: equipment}}
+    }
+  end
 
   defp stub_target_at(x, y) do
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
@@ -36,16 +46,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     stub(Cell, :step_traversable?, fn "prontera", _prev, _cell -> true end)
   end
 
-  defp stub_recording_strike do
-    stub(Combat, :execute_skill_attack, fn _caster, @target_id, opts ->
+  defp expect_recording_strike do
+    expect(Combat, :execute_skill_attack, fn _caster, @target_id, opts ->
       send(self(), {:strike, opts})
       :ok
     end)
 
-    stub(Combat, :knockback, fn unit_type, target_id, from_x, from_y, distance ->
-      send(self(), {:knockback, unit_type, target_id, from_x, from_y, distance})
-      {:ok, {from_x, from_y}}
-    end)
+    reject(&Combat.knockback/5)
   end
 
   defp stub_strike_guard do
@@ -67,28 +74,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     assert definition.sp_cost == [40]
   end
 
-  test "charges adjacent to the target, strikes for 700% and knocks it back 2" do
+  test "ordinary executor :ok preserves the prepared caster movement" do
     stub_clear_terrain()
     stub_target_at(15, 10)
-    stub_recording_strike()
+    expect_recording_strike()
 
     {:ok, definition} = Catalog.by_id(1001)
+    caster = caster(5, 10, %{{:add_skill_blow, 1001} => 2})
 
-    assert {:ok, updated} = KnChargeatk.cast(caster(5, 10), {:unit, @target_id}, 1, definition)
+    assert {:ok, updated} = KnChargeatk.cast(caster, {:unit, @target_id}, 1, definition)
 
     assert %ForcedMovement{map_name: "prontera", x: 14, y: 10} = updated.pending_forced_movement
 
     assert_received {:strike, opts}
+    assert caster.stats.modifiers.equipment[{:add_skill_blow, 1001}] == 2
     assert opts[:skill_ratio] == 700
     assert opts[:skip_range] == true
-
-    assert_received {:knockback, :mob, @target_id, 14, 10, 2}
+    assert opts[:base_distance] == 2
+    assert opts[:origin] == {14, 10}
+    assert opts[:native_target_types] == [:player, :mob]
   end
 
   test "charges along a clear diagonal line and lands adjacent to the target" do
     stub_clear_terrain()
     stub_target_at(15, 15)
-    stub_recording_strike()
+    expect_recording_strike()
 
     {:ok, definition} = Catalog.by_id(1001)
 
@@ -97,8 +107,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     assert %ForcedMovement{map_name: "prontera", x: 14, y: 14} = updated.pending_forced_movement
 
     assert_received {:strike, opts}
-    assert opts[:skill_ratio] == 700
-    assert_received {:knockback, :mob, @target_id, 14, 14, 2}
+    assert opts[:origin] == {14, 14}
+  end
+
+  test "an ordinary attack validation error returns without caster movement" do
+    stub_clear_terrain()
+    stub_target_at(15, 10)
+
+    expect(Combat, :execute_skill_attack, fn _caster, @target_id, opts ->
+      assert opts[:origin] == {14, 10}
+      {:error, :invalid_target}
+    end)
+
+    {:ok, definition} = Catalog.by_id(1001)
+
+    assert {:error, :invalid_target} =
+             KnChargeatk.cast(caster(5, 10), {:unit, @target_id}, 1, definition)
   end
 
   test "a diagonal corner-cut on the line fails the cast with no movement and no strike" do

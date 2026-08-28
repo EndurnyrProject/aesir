@@ -69,54 +69,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
   end
 
   describe "cast/4" do
-    test "deals a single 500% Wind bow hit and knocks a surviving target back 3 cells" do
+    test "forwards survival-gated native and equipment blow through the ordinary contract" do
       caster = caster()
+      caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 1009} => 2})
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert caster.stats.modifiers.equipment[{:add_skill_blow, 1009}] == 2
         assert opts[:skill_id] == 1009
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == 500
         assert opts[:element] == :wind
         assert opts[:hit_count] == 1
         assert opts[:skip_crit] == true
-        assert opts[:report_hit] == true
-        {:ok, %{hit?: true, damage: 500, target_survives?: true}}
+        refute Keyword.has_key?(opts, :report_hit)
+        assert opts[:base_distance] == 3
+        assert opts[:origin] == {50, 60}
+        assert opts[:native_target_types] == [:mob]
+        assert opts[:native_requires_survival] == true
+        :ok
       end)
 
-      expect(Combat, :knockback, fn :mob, @target_id, 50, 60, 3 ->
-        {:ok, {50, 63}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = HtPhantasmic.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "does not request movement for a predicted lethal hit" do
+    test "propagates an attack error" do
       caster = caster()
-      reject(&Combat.knockback/5)
 
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
-        {:ok, %{hit?: true, damage: 9_999, target_survives?: false}}
-      end)
-
-      assert {:ok, ^caster} = HtPhantasmic.cast(caster, {:unit, @target_id}, 1, definition())
-    end
-
-    test "does not request movement for a missed or dodged strike" do
-      caster = caster()
-      reject(&Combat.knockback/5)
-
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
-        {:ok, %{hit?: false, damage: 0, target_survives?: true}}
-      end)
-
-      assert {:ok, ^caster} = HtPhantasmic.cast(caster, {:unit, @target_id}, 1, definition())
-    end
-
-    test "propagates an attack error without requesting movement" do
-      caster = caster()
-      reject(&Combat.knockback/5)
-
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+      expect(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
         {:error, :target_out_of_range}
       end)
 

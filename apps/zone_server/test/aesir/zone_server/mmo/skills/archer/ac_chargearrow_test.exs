@@ -6,12 +6,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrowTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrow
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
 
   setup :verify_on_exit!
 
   @target_id 2000
 
-  defp caster, do: %PlayerState{character_id: 1000, x: 50, y: 60}
+  defp caster(equipment \\ %{}) do
+    %PlayerState{
+      character_id: 1000,
+      x: 50,
+      y: 60,
+      stats: %Stats{modifiers: %Modifiers{equipment: equipment}}
+    }
+  end
 
   defp definition do
     {:ok, definition} = Catalog.by_name(:ac_chargearrow)
@@ -38,42 +47,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrowTest do
   end
 
   describe "cast/4" do
-    test "deals a single 150% bow hit and knocks the target back 6 cells" do
-      caster = caster()
+    test "forwards native and equipment blow through the ordinary attack contract" do
+      caster = caster(%{{:add_skill_blow, 148} => 2})
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert caster.stats.modifiers.equipment[{:add_skill_blow, 148}] == 2
         assert opts[:skill_id] == 148
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == 150
         assert opts[:hit_count] == 1
         assert opts[:skip_crit] == true
-        assert opts[:report_hit] == true
-        {:ok, %{hit?: true}}
+        refute Keyword.has_key?(opts, :report_hit)
+        assert opts[:base_distance] == 6
+        assert opts[:origin] == {50, 60}
+        assert opts[:native_target_types] == [:mob]
+        :ok
       end)
 
-      expect(Combat, :knockback, fn :mob, @target_id, 50, 60, 6 ->
-        {:ok, {50, 66}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = AcChargearrow.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "does not knock back a dodged strike, but still returns {:ok, caster}" do
+    test "propagates an attack error" do
       caster = caster()
-      reject(&Combat.knockback/5)
 
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
-        {:ok, %{hit?: false}}
-      end)
-
-      assert {:ok, ^caster} = AcChargearrow.cast(caster, {:unit, @target_id}, 1, definition())
-    end
-
-    test "propagates an attack error without knocking back" do
-      caster = caster()
-      reject(&Combat.knockback/5)
-
-      stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
+      expect(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts ->
         {:error, :target_out_of_range}
       end)
 
