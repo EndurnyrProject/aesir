@@ -26,6 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   - :boss - Special boss monsters (receives different modifiers)
   """
 
+  alias Aesir.Commons.GameMode
+
   @type race ::
           :formless
           | :undead
@@ -137,10 +139,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   def dragonology_resist_rate(_defender, _attacker_race), do: 0
 
   @doc """
-  Gets the default race for players.
+  Gets the player race for the active game mode.
   """
-  @spec player_race() :: race()
-  def player_race, do: :player_human
+  @spec player_race() :: :player_human | :demi_human
+  def player_race do
+    case GameMode.mode() do
+      :renewal -> :player_human
+      :pre_renewal -> :demi_human
+    end
+  end
 
   @doc """
   Checks if a race is considered undead.

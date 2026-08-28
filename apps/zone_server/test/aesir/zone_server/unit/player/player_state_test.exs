@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
@@ -493,6 +494,13 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
 
   describe "to_combatant/1 weapon type resolution" do
     setup do
+      game_mode = {
+        Application.fetch_env(:commons, :game_mode),
+        :persistent_term.get(GameMode, nil)
+      }
+
+      on_exit(fn -> restore_game_mode(game_mode) end)
+
       character = %Character{
         id: 1,
         name: "TestPlayer",
@@ -561,11 +569,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.attack_range == 1
     end
 
-    test "resolves the player's race and leaves secondary groups empty", %{state: state} do
-      combatant = PlayerState.to_combatant(state)
+    test "uses the active game mode race and leaves secondary groups empty", %{state: state} do
+      set_game_mode(:renewal)
+      assert %{race: :player_human, race2: []} = PlayerState.to_combatant(state)
 
-      assert combatant.race == :player_human
-      assert combatant.race2 == []
+      set_game_mode(:pre_renewal)
+      assert %{race: :demi_human, race2: []} = PlayerState.to_combatant(state)
     end
 
     test "adds the passive range bonus to the weapon's attack range", %{state: state} do
@@ -775,6 +784,24 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert PlayerState.client_index(0) == 2
       assert PlayerState.server_index(2) == 0
       assert PlayerState.server_index(PlayerState.client_index(7)) == 7
+    end
+  end
+
+  defp set_game_mode(mode) do
+    Application.put_env(:commons, :game_mode, mode)
+    :persistent_term.erase(GameMode)
+  end
+
+  defp restore_game_mode({configured_mode, cached_mode}) do
+    case configured_mode do
+      {:ok, mode} -> Application.put_env(:commons, :game_mode, mode)
+      :error -> Application.delete_env(:commons, :game_mode)
+    end
+
+    if cached_mode do
+      :persistent_term.put(GameMode, cached_mode)
+    else
+      :persistent_term.erase(GameMode)
     end
   end
 

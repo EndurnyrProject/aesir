@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
@@ -1034,7 +1035,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       max_sp: state.stats.derived_stats.max_sp,
       progression: state.stats.progression,
       element: defense_element(state.stats),
-      race: :player_human,
+      race: RaceModifiers.player_race(),
       size: :medium,
       weapon: %{
         type: weapon_type,
