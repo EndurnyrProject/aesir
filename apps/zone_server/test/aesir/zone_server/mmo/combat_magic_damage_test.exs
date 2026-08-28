@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -23,6 +24,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(EquipComa)
+    :ok
+  end
 
   @caster_id 1000
   @target_id 2001
@@ -122,6 +128,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       test_pid = self()
       stub_mob_target(150, 150, {:undead, 1})
 
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 125, hit_info ->
+        refute hit_info.coma?
+        125
+      end)
+
       stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
         send(test_pid, {:packet, packet})
         :ok
@@ -188,9 +201,66 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       assert_received {:damage, 50}
     end
 
+    test "final 1-point direct magic participates in coma" do
+      caster = build_caster()
+      stub_mob_target(150, 150, {:poison, 1})
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 1, hit_info ->
+        assert hit_info.coma?
+        1
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        assert packet.damage == 1
+        :ok
+      end)
+
+      reject(&MobSession.apply_damage/3)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+
+      assert :ok =
+               Combat.execute_magic_damage(caster, @target_id, 100,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level,
+                 element: :poison
+               )
+    end
+
+    test "full absorption consumes direct coma decision without owner mutation" do
+      caster = build_caster()
+      stub_mob_target(150, 150, {:neutral, 1})
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 100, hit_info ->
+        assert hit_info.coma?
+        0
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        assert packet.damage == 0
+        :ok
+      end)
+
+      reject(&MobSession.apply_damage/3)
+      reject(&MobSession.apply_coma/2)
+
+      assert :ok =
+               Combat.execute_magic_damage(caster, @target_id, 100,
+                 skill_id: @skill_id,
+                 skill_level: @skill_level,
+                 element: :neutral
+               )
+    end
+
     test "returns {:error, :target_out_of_range} for a target beyond caster attack range" do
       caster = build_caster()
       stub_mob_target(170, 170, {:neutral, 1})
+
+      reject(&EquipComa.trigger?/2)
+      reject(&MobSession.apply_coma/2)
 
       assert {:error, :target_out_of_range} =
                Combat.execute_magic_damage(caster, @target_id, 100,

@@ -41,14 +41,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendrive do
       skill_level: level,
       skill_ratio: 125,
       element: definition.element,
-      split: false
+      split: false,
+      hit_count: level
     ]
 
-    Enum.each(1..level, fn _hit ->
-      caster
-      |> Combat.execute_magic_splash({x, y}, definition.splash_radius, opts)
-      |> Enum.each(&remove_root_twist/1)
-    end)
+    caster
+    |> Combat.execute_magic_splash({x, y}, definition.splash_radius, opts)
+    |> Enum.each(&remove_root_twist/1)
 
     {:ok, caster}
   end

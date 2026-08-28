@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   setup :verify_on_exit!
 
   setup do
+    Mimic.copy(EquipComa)
     Mimic.copy(MagicAttack)
     :ok
   end
@@ -407,11 +409,114 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       reject(&MagicDamageCalculator.calculate_magic_damage/3)
+      reject(&EquipComa.trigger?/2)
       reject(&Broadcast.to_in_range/5)
       reject(&MobSession.apply_damage/3)
 
       assert {:error, :target_dead} =
                WzEarthspike.cast(caster, {:unit, @target_id}, 1, WzEarthspike.definition())
+    end
+
+    test "final 1-point calculated magic participates in coma" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 1, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn attacker, target ->
+        assert attacker.unit_type == :player
+        assert target.unit_type == :mob
+        true
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 1, hit_info ->
+        assert hit_info.coma?
+        1
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      reject(&MobSession.apply_damage/3)
+
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} ->
+        send(test_pid, :coma_delivered)
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 element: :fire
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 1, div: 1}}
+      assert_received :coma_delivered
+    end
+
+    test "zero calculated magic never decides or delivers coma" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 0, is_critical: false}}
+      end)
+
+      reject(&EquipComa.trigger?/2)
+
+      reject(&StatusInterpreter.absorb_damage/4)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        assert packet.damage == 0
+        :ok
+      end)
+
+      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id -> :ok end)
+      reject(&MobSession.apply_coma/2)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 1,
+                 element: :fire
+               )
+    end
+
+    test "one successful coma decision marks every prepared magic fragment" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 80, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, @target_id, 80, hit_info ->
+        assert hit_info.coma?
+
+        (Process.get(:prepared_fragment, 79) + 1)
+        |> tap(&Process.put(:prepared_fragment, &1))
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} -> :ok end)
+      reject(&MobSession.apply_damage/3)
+      expect(MobSession, :apply_coma, 2, fn _pid, {:player, @caster_id} -> :ok end)
+
+      assert :ok =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 19,
+                 skill_level: 2,
+                 hit_count: 2,
+                 element: :fire
+               )
     end
 
     test "Earth Spike level 1 damages a live mob through the magic pipeline" do
@@ -901,6 +1006,87 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                )
 
       assert_received {:skill_id, 17}
+    end
+
+    test "splash targets make independent coma decisions" do
+      caster = build_caster()
+      test_pid = self()
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 4 ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 150, 150), self()}}
+        :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 151, 150), self()}}
+      end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, 2, fn _attacker, target ->
+        send(test_pid, {:coma_decision, target.unit_id})
+        target.unit_id == 2001
+      end)
+
+      stub(StatusInterpreter, :absorb_damage, fn :mob, target_id, 40, hit_info ->
+        assert hit_info.coma? == (target_id == 2001)
+        40
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+
+      assert [{:mob, 2001}, {:mob, 2002}] =
+               Combat.execute_magic_splash(caster, @center, 2,
+                 skill_id: 17,
+                 skill_level: 5,
+                 skill_ratio: 240,
+                 element: :fire
+               )
+
+      assert_received {:coma_decision, 2001}
+      assert_received {:coma_decision, 2002}
+    end
+
+    test "multi-round splash fixes one coma decision across the logical cast" do
+      caster = build_caster()
+
+      expect(SpatialIndex, :get_all_units_in_range, 2, fn @map_name, 150, 150, 4 ->
+        [{:mob, @target_id}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+        {:ok, {MobState, build_mob_state(@target_id, 150, 150), self()}}
+      end)
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn _attacker, _target, _opts ->
+        round = Process.get(:splash_round, 0) + 1
+        Process.put(:splash_round, round)
+        {:ok, %{damage: if(round == 1, do: 40, else: 10_000), is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, 2, fn :mob, @target_id, damage, hit_info ->
+        assert hit_info.coma?
+        damage
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      reject(&MobSession.apply_damage/3)
+      expect(MobSession, :apply_coma, 2, fn _pid, {:player, @caster_id} -> :ok end)
+
+      assert [{:mob, @target_id}, {:mob, @target_id}] =
+               Combat.execute_magic_splash(caster, @center, 2,
+                 skill_id: 91,
+                 skill_level: 2,
+                 skill_ratio: 125,
+                 element: :earth,
+                 hit_count: 2
+               )
     end
 
     test "hits each target for full damage without :split" do

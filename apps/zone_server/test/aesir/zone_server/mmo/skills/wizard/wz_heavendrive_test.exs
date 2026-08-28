@@ -163,6 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
         assert opts[:skill_ratio] == 125
         assert opts[:element] == :earth
         assert opts[:split] == false
+        assert opts[:hit_count] == 1
         [{:mob, 2_001}]
       end)
 
@@ -170,13 +171,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
                WzHeavendrive.cast(caster, {:ground, 150, 150}, 1, definition)
     end
 
-    test "level 5 hits every target in the footprint five times" do
+    test "level 5 sends one five-round splash and retains every hit for Root Twist removal" do
       caster = %{character_id: 1_000}
       definition = WzHeavendrive.definition()
 
-      expect(Combat, :execute_magic_splash, 5, fn ^caster, {150, 150}, 2, opts ->
+      expect(Combat, :execute_magic_splash, fn ^caster, {150, 150}, 2, opts ->
         assert opts[:skill_level] == 5
-        [{:mob, 2_001}, {:mob, 2_002}]
+        assert opts[:hit_count] == 5
+
+        List.duplicate([{:mob, 2_001}, {:mob, 2_002}], 5)
+        |> List.flatten()
       end)
 
       expect(StatusInterpreter, :remove_status, 10, fn :mob, target_id, :sc_sv_roottwist ->

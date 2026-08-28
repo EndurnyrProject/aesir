@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -103,14 +104,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- Targeting.validate_enemy(attacker, target) do
       damage =
         amount
-        |> DamageShared.apply_element(element, target, DamageShared.attacker_modifiers(attacker))
+        |> DamageShared.apply_element(
+          element,
+          target,
+          DamageShared.attacker_modifiers(attacker)
+        )
         |> DamageShared.clamp_min_one()
+
+      coma_decision = decide_coma(attacker, target, [damage])
 
       hit_info =
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true
+          from_caster?: true,
+          coma?: coma_decision == true
         )
 
       if damage > 1 do
@@ -294,11 +302,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           :error -> {damage, if(divide_hits?, do: -hit_count, else: hit_count)}
         end
 
+      coma_decision = decide_coma(caster, target, [damage])
+
       hit_info =
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: false
+          from_caster?: false,
+          coma?: coma_decision == true
         )
 
       {damage, hit_info} =
@@ -441,12 +452,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   @doc """
   Executes a center+radius magic splash against every offensive target in range.
 
-  Reuses `SplashTargets.select/4` to find the hit set, runs each target through
-  `MagicDamageCalculator` (one magic hit at `:skill_ratio` in `:element`),
-  broadcasts a `ZC_NOTIFY_SKILL` packet per target and applies the damage.
+  For each round, reuses `SplashTargets.select/4` to find the hit set, runs each
+  target through `MagicDamageCalculator` (one magic hit at `:skill_ratio` in
+  `:element`), broadcasts a `ZC_NOTIFY_SKILL` packet per target, and applies the
+  damage.
   With `:split` the total damage is divided evenly across the number of targets
   hit (Napalm Beat); without it each target takes the full per-target damage.
-  Returns the typed `{unit_type, unit_id}` references that were hit.
+  Returns one typed `{unit_type, unit_id}` reference per successful round, including
+  duplicates when a target is hit more than once.
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
@@ -454,6 +467,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:element` - the skill's magic element (default `:neutral`)
     - `:split` - divide total damage by the number of targets hit (default `false`)
     - `:line_of_sight` - require an unobstructed projectile path (default `false`)
+    - `:hit_count` - number of independently selected and calculated rounds (default `1`)
   """
   @spec execute_magic_splash(struct(), {integer(), integer()}, non_neg_integer(), keyword()) ::
           [{atom(), integer()}]
@@ -465,25 +479,35 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     element = Keyword.get(opts, :element, :neutral)
     split = Keyword.get(opts, :split, false)
     line_of_sight = Keyword.get(opts, :line_of_sight, false)
+    hit_count = Keyword.get(opts, :hit_count, 1)
 
-    targets =
-      attacker.map_name
-      |> SplashTargets.select(center, radius, attacker)
-      |> filter_splash_line_of_sight(attacker.map_name, center, line_of_sight)
+    {hits, _decisions} =
+      Enum.flat_map_reduce(1..hit_count//1, %{}, fn _round, decisions ->
+        targets =
+          attacker.map_name
+          |> SplashTargets.select(center, radius, attacker)
+          |> filter_splash_line_of_sight(attacker.map_name, center, line_of_sight)
 
-    divisor = if split, do: max(length(targets), 1), else: 1
+        divisor = if split, do: max(length(targets), 1), else: 1
 
-    Enum.flat_map(targets, fn target_ref ->
-      apply_magic_splash_hit(
-        attacker,
-        target_ref,
-        skill_id,
-        skill_level,
-        element,
-        skill_ratio,
-        divisor
-      )
-    end)
+        Enum.flat_map_reduce(targets, decisions, fn target_ref, decisions ->
+          {hits, decision} =
+            apply_magic_splash_hit(
+              attacker,
+              target_ref,
+              skill_id,
+              skill_level,
+              element,
+              skill_ratio,
+              divisor,
+              Map.get(decisions, target_ref, :unchecked)
+            )
+
+          {hits, Map.put(decisions, target_ref, decision)}
+        end)
+      end)
+
+    hits
   end
 
   # Post-calculation damage scale for a skill-unit hit (Grand Cross halves its
@@ -508,9 +532,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          bonus_matk,
          skill_id,
          nil
-       ) do
-    sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id)
-  end
+       ),
+       do: sum_magic_hits(attacker, target, element, skill_ratio, hits, bonus_matk, skill_id)
 
   defp skill_unit_damage(
          attacker,
@@ -601,7 +624,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       element: element,
       skill_id: Keyword.get(opts, :skill_id),
       skill_level: Keyword.get(opts, :skill_level),
-      from_caster?: Keyword.get(opts, :from_caster?, false)
+      from_caster?: Keyword.get(opts, :from_caster?, false),
+      coma?: Keyword.get(opts, :coma?, false)
     }
   end
 
@@ -662,7 +686,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          skill_level,
          element,
          skill_ratio,
-         divisor
+         divisor,
+         coma_decision
        ) do
     with {:ok, target_pid, target_state, target_type} <-
            TargetResolver.resolve(unit_type, target_id),
@@ -678,11 +703,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       damage = div(damage, divisor)
       {tx, ty} = target.position
 
+      coma_decision = decide_coma_once(coma_decision, attacker, target, damage)
+
       hit_info =
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true
+          from_caster?: true,
+          coma?: coma_decision == true
         )
 
       source = damage_source(attacker, target_type)
@@ -715,9 +743,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         source
       )
 
-      [target_ref]
+      {[target_ref], coma_decision}
     else
-      _ -> []
+      _ -> {[], coma_decision}
     end
   end
 
@@ -732,6 +760,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          {skill_id, skill_level}
        ) do
     source = damage_source(attacker, target_type)
+    coma_decision = decide_coma(attacker, target, damages)
+    hit_info = Map.put(hit_info, :coma?, coma_decision == true)
     apply_vanish_hits(attacker, target, target_pid, damages)
 
     prepared_hits =
@@ -798,6 +828,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp magic_attack_flag, do: BattleFlags.build(:magic, :long, true)
+
+  defp decide_coma(attacker, target, damages) do
+    case Enum.find(damages, &(&1 > 0)) do
+      nil -> :unchecked
+      _damage -> EquipComa.trigger?(attacker, target)
+    end
+  end
+
+  defp decide_coma_once(:unchecked, attacker, target, damage),
+    do: decide_coma(attacker, target, [damage])
+
+  defp decide_coma_once(decision, _attacker, _target, _damage), do: decision
 
   defp damage_source(%{unit_type: unit_type, unit_id: unit_id}, :player),
     do: {unit_type, unit_id}

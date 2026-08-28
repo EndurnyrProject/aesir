@@ -12,13 +12,19 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -29,6 +35,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   @map_name "prontera"
 
   setup do
+    Mimic.copy(Combat)
+    Mimic.copy(EquipComa)
     Mimic.copy(ModifierCalculator)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
     :ok
@@ -110,6 +118,283 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
       spawned_at: System.system_time(:second),
       aggro_list: %{}
     }
+  end
+
+  test "player-owned ground damage marks eligible recipient for coma" do
+    test_pid = self()
+    mob_state = build_mob_state(0)
+    attacker = caster(100)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, fn ^attacker, target ->
+      assert target.unit_type == :mob
+      true
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    reject(&MobSession.apply_damage/3)
+    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
+  end
+
+  test "zero ground damage never decides or delivers coma" do
+    test_pid = self()
+    mob_state = build_mob_state(0)
+    attacker = caster(100)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+      {:ok, %{damage: 0, is_critical: false}}
+    end)
+
+    reject(&EquipComa.trigger?/2)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      assert packet.damage == 0
+      :ok
+    end)
+
+    expect(MobSession, :apply_damage, fn ^test_pid, 0, @caster_id -> :ok end)
+    reject(&MobSession.apply_coma/2)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
+  end
+
+  test "final 1-point fixed ground magic participates in coma" do
+    test_pid = self()
+    mob_state = build_mob_state(0)
+    mob_state = %{mob_state | mob_data: %{mob_state.mob_data | element: {:poison, 1}}}
+    attacker = caster(100)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    reject(&MagicDamageCalculator.calculate_magic_damage/3)
+    expect(EquipComa, :trigger?, fn ^attacker, _target -> true end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      assert packet.damage == 1
+      :ok
+    end)
+
+    reject(&MobSession.apply_damage/3)
+    expect(MobSession, :apply_coma, fn ^test_pid, {:player, @caster_id} -> :ok end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :poison, 0,
+               fixed_damage: 100
+             )
+  end
+
+  test "player-owned ground damage reaches player and Homunculus owners" do
+    attacker = caster(100)
+    player_id = @target_id
+    homunculus_id = @target_id + 1
+    test_pid = self()
+
+    player =
+      PlayerStateFixture.build(%{
+        character_id: player_id,
+        account_id: player_id,
+        map_name: @map_name,
+        x: 150,
+        y: 150,
+        stats: %{}
+      })
+
+    owner =
+      spawn(fn ->
+        receive do
+          {:"$gen_cast", message} -> send(test_pid, {:owner_cast, message})
+        end
+      end)
+
+    homunculus = %HomunculusState{
+      id: 1,
+      owner_character_id: 3_000,
+      owner_session_pid: owner,
+      class_id: 6_001,
+      name: "Lif",
+      lifecycle: :active,
+      action_state: :idle,
+      hp: 100,
+      max_hp: 100,
+      sp: 50,
+      max_sp: 50,
+      world_gid: homunculus_id,
+      map_name: @map_name,
+      x: 151,
+      y: 150
+    }
+
+    stub(TargetResolver, :resolve, fn
+      :player, ^player_id -> {:ok, self(), player, :player}
+      :homunculus, ^homunculus_id -> {:ok, owner, homunculus, :homunculus}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :player, ^player_id -> {:ok, {150, 150, @map_name}}
+      :homunculus, ^homunculus_id -> {:ok, {151, 150, @map_name}}
+    end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn ^attacker, target, _opts ->
+      assert target.unit_type in [:player, :homunculus]
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, 2, fn ^attacker, target ->
+      assert target.unit_type in [:player, :homunculus]
+      true
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    reject(&PlayerSession.apply_damage/3)
+    expect(PlayerSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :player, player_id, 89, 10, :water, 600)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(
+               attacker,
+               :homunculus,
+               homunculus_id,
+               89,
+               10,
+               :water,
+               600
+             )
+
+    assert_received {:owner_cast,
+                     {:homunculus, {:apply_coma, ^homunculus_id, {:player, @caster_id}}}}
+  end
+
+  test "mob and Homunculus ground attackers cannot source player equipment coma" do
+    target = build_mob_state(0)
+    test_pid = self()
+
+    attackers =
+      for {unit_type, unit_id} <- [mob: 3_001, homunculus: 3_002] do
+        %{caster(100) | unit_type: unit_type, unit_id: unit_id}
+      end
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, target, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn attacker, _target, _opts ->
+      assert attacker.unit_type in [:mob, :homunculus]
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, 2, fn attacker, _target ->
+      assert attacker.unit_type in [:mob, :homunculus]
+      false
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    reject(&MobSession.apply_coma/2)
+
+    stub(MobSession, :apply_damage, fn ^test_pid, 40, source ->
+      send(test_pid, {:ordinary_damage, source})
+      :ok
+    end)
+
+    Enum.each(attackers, fn attacker ->
+      assert :ok =
+               Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
+    end)
+
+    assert_received {:ordinary_damage, 3_001}
+    assert_received {:ordinary_damage, {:homunculus, 3_002}}
+  end
+
+  test "targetable skill-unit recipients remain ineligible for coma" do
+    test_pid = self()
+    attacker = caster(100)
+
+    {:ok, cell} =
+      SkillUnitCell.new(%{
+        cell_id: @target_id,
+        group_id: 1,
+        map_name: @map_name,
+        x: 150,
+        y: 150,
+        hp: 100,
+        max_hp: 100,
+        flags: [:targetable]
+      })
+
+    manager =
+      spawn(fn ->
+        receive do
+          {:"$gen_call", from, {:damage_targetable_cell, @target_id, 40, {:player, @caster_id}}} ->
+            send(test_pid, :skill_unit_damaged)
+            GenServer.reply(from, {:ok, cell})
+        end
+      end)
+
+    stub(TargetResolver, :resolve, fn :skill_unit, @target_id ->
+      {:ok, manager, cell, :skill_unit}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :skill_unit, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, fn ^attacker, target ->
+      assert target.unit_type == :skill_unit
+      false
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(
+               attacker,
+               :skill_unit,
+               @target_id,
+               89,
+               10,
+               :water,
+               600
+             )
+
+    assert_received :skill_unit_damaged
   end
 
   test "computes magic damage from MATK/MDEF/element, broadcasts, and applies it" do
@@ -268,6 +553,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:error, :not_found} end)
     stub(UnitRegistry, :get_player_pid, fn @target_id -> {:error, :not_found} end)
 
+    reject(&EquipComa.trigger?/2)
     reject(&Broadcast.to_in_range/5)
     reject(&MobSession.apply_damage/3)
 
