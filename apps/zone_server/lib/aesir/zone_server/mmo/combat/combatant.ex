@@ -114,6 +114,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     # are always :normal; mobs are :boss when tagged with the :boss mode.
     class: :normal,
 
+    # Existing status-immunity mode projected for pure combat policies.
+    status_immune: false,
+
     # Monster database id (mob class), set only for mob defenders. Keys the
     # per-monster physical damage bonus (add_damage_class); nil for players.
     monster_id: nil,
@@ -183,6 +186,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           faith_level: integer(),
           skin_temper_level: integer(),
           class: :normal | :boss,
+          status_immune: boolean(),
           monster_id: integer() | nil,
           riding: boolean(),
           equip_modifiers: map()

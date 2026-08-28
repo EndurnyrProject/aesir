@@ -397,6 +397,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       position: {mob_state.x, mob_state.y},
       map_name: mob_state.map_name,
       class: if(is_boss?(mob_state), do: :boss, else: :normal),
+      status_immune: :status_immune in mob_data.modes,
       monster_id: mob_state.mob_id,
       equip_modifiers: %{}
     })

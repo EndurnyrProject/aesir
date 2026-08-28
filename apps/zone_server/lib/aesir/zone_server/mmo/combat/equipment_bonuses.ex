@@ -248,6 +248,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
+  Per-10,000 coma chance granted against the defender's race.
+
+  The exact race and `:all` entries add as a signed sum without clamping.
+  """
+  @spec coma_race_rate(Combatant.t(), Combatant.t()) :: rate()
+  def coma_race_rate(%Combatant{} = attacker, %Combatant{race: race}) do
+    read(attacker, :coma_race, race)
+  end
+
+  @doc """
   Critical chance percentage points granted against the defender's race.
 
   The exact race and `:all` entries add without clamping; the critical roll

@@ -708,6 +708,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "coma_race_rate/2" do
+    test "adds the matching race and :all signed per-10,000 rates" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{
+          {:coma_race, :brute} => 1_200,
+          {:coma_race, :all} => -200,
+          {:coma_race, :demon} => 5_000
+        })
+
+      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+      demon = CombatTestHelper.create_mob_combatant(race: :demon)
+
+      assert EquipmentBonuses.coma_race_rate(attacker, brute) == 1_000
+      assert EquipmentBonuses.coma_race_rate(attacker, demon) == 4_800
+    end
+
+    test "returns zero without a matching modifier" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:coma_race, :demon} => 2_000})
+
+      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+
+      assert EquipmentBonuses.coma_race_rate(attacker, brute) == 0
+
+      assert EquipmentBonuses.coma_race_rate(
+               CombatTestHelper.create_player_combatant(),
+               brute
+             ) == 0
+    end
+  end
+
   describe "critical_add_race_rate/2" do
     test "adds the matching race and :all signed percentage points" do
       attacker =

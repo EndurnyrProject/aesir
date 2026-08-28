@@ -315,6 +315,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "to_combatant/1 status immunity" do
+    test "an ordinary mob combatant is not status immune" do
+      combatant = build_mob_state() |> MobState.to_combatant()
+
+      refute combatant.status_immune
+    end
+
+    test "a mob with the :status_immune mode exposes immunity on its combatant" do
+      base = build_mob_state()
+      state = %MobState{base | mob_data: %{base.mob_data | modes: [:status_immune]}}
+
+      assert MobState.to_combatant(state).status_immune
+    end
+  end
+
   describe "to_combatant/1 status modifiers" do
     test "an ATK-raising status on the mob raises combat_stats.atk" do
       state = build_mob_state()
