@@ -8,15 +8,18 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.HpDrain
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -38,7 +41,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
   # every test to "nothing breaks" so the existing attack assertions are
   # unaffected; the break describe below overrides this with real decisions.
   setup do
+    Mimic.copy(EquipComa)
     stub(EquipBreak, :resolve, fn _attacker, _target -> [] end)
+    stub(EquipComa, :trigger?, fn _attacker, _target -> false end)
     :ok
   end
 
@@ -292,6 +297,493 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
+  describe "execute_attack/3 equipment coma" do
+    test "splash targets make and deliver their own coma decisions" do
+      test_pid = self()
+
+      splash_owner =
+        spawn(fn ->
+          receive do
+            :stop -> :ok
+          end
+        end)
+
+      on_exit(fn -> send(splash_owner, :stop) end)
+      {stats, player_state} = dagger_player()
+
+      stats = put_in(stats.modifiers.equipment, %{splash_range: 3})
+      player_state = %{player_state | stats: stats}
+      primary = combatant(2001, :mob)
+      primary_state = living_mob_state(primary, 150, 150)
+      splash_state = %{player_state | character_id: 3001}
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :mob, 2001 -> {:ok, {FakeUnit, primary_state, test_pid}}
+        :player, 3001 -> {:ok, {PlayerState, splash_state, splash_owner}}
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        3001 -> {:ok, splash_owner}
+        _ -> {:error, :not_found}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _radius ->
+        [{:player, 3001}]
+      end)
+
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, 2, fn _attacker, target ->
+        send(test_pid, {:coma_decision, target.unit_id})
+        target.unit_id == 3001
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, hit_info ->
+        refute hit_info.coma?
+        50
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :player, 3001, 50, hit_info ->
+        assert hit_info.coma?
+        50
+      end)
+
+      expect(MobSession, :apply_damage, fn ^test_pid, 50, 1001 -> :ok end)
+      expect(PlayerSession, :apply_coma, fn ^splash_owner, {:player, 1001} -> :ok end)
+      reject(&PlayerSession.apply_damage/3)
+      reject(&MobSession.apply_coma/2)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 2001)
+      end)
+
+      assert_received {:coma_decision, 2001}
+      assert_received {:coma_decision, 3001}
+    end
+
+    test "one guaranteed coma decision covers both hands without later ordinary damage" do
+      {stats, player_state} = dual_dagger_player()
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+      stub(Passives, :right_hand_damage_rate, fn _player -> 100 end)
+      stub(Passives, :left_hand_damage_rate, fn _player -> 100 end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      stub(DamageCalculator, :calculate_secondary_hand_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn attacker, defender ->
+        assert attacker.unit_id == 1001
+        assert defender.unit_id == 2001
+        true
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 140, hit_info ->
+        assert hit_info.coma?
+
+        assert hit_info.components == [
+                 {:primary, 100, :neutral},
+                 {:secondary, 40, :neutral}
+               ]
+
+        140
+      end)
+
+      reject(&MobSession.apply_damage/3)
+      expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 2001)
+      end)
+    end
+
+    test "a failed coma decision preserves ordinary damage" do
+      {stats, player_state} = dagger_player()
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, hit_info ->
+        refute hit_info.coma?
+        50
+      end)
+
+      reject(&MobSession.apply_coma/2)
+      expect(MobSession, :apply_damage, fn _pid, 50, 1001 -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 2001)
+      end)
+    end
+
+    test "race vanish replacement is resolved before the coma decision" do
+      attacker =
+        1001
+        |> combatant(:player)
+        |> Map.put(:equip_modifiers, %{
+          {:hp_vanish_race_rate, :formless} => 1_000,
+          {:hp_vanish_race_percent, :formless} => 50
+        })
+
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target = %{combatant(2001, :mob) | max_hp: 1_000}
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 500, hit_info ->
+        assert hit_info.coma?
+        500
+      end)
+
+      reject(&MobSession.apply_damage/3)
+      expect(MobSession, :apply_coma, fn _pid, {:player, 1001} -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 2001)
+      end)
+    end
+
+    test "an SP-only Vellum replacement drains SP without coma or HP damage" do
+      attacker =
+        1001
+        |> combatant(:player)
+        |> Map.put(:equip_modifiers, %{
+          {:sp_vanish_race_rate, :formless} => 1_000,
+          {:sp_vanish_race_percent, :formless} => 50
+        })
+
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target = %{combatant(2001, :mob) | max_sp: 200}
+      target_state = %{living_mob_state(target, 150, 150) | sp: 100, max_sp: 200}
+      stub(MobState, :to_combatant, fn ^target_state -> target end)
+
+      stub(UnitRegistry, :get_player_pid, fn _ -> {:error, :not_found} end)
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      reject(&EquipComa.trigger?/2)
+      reject(&StatusInterpreter.absorb_damage/4)
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+
+      expect(MobSession, :zap_sp, fn pid, 100 ->
+        assert pid == self()
+        :ok
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 2001)
+      end)
+    end
+
+    test "a landed player swing carries coma to a player owner" do
+      {stats, player_state} = dagger_player()
+      target_state = %{player_state | character_id: 3001}
+      target_pid = self()
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, target_pid} end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 3001 ->
+        {:ok, {PlayerState, target_state, target_pid}}
+      end)
+
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn attacker, target ->
+        assert attacker.unit_type == :player
+        assert target.unit_type == :player
+        true
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :player, 3001, 50, hit_info ->
+        assert hit_info.coma?
+        50
+      end)
+
+      reject(&PlayerSession.apply_damage/3)
+      expect(PlayerSession, :apply_coma, fn ^target_pid, {:player, 1001} -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 3001)
+      end)
+    end
+
+    for outcome <- [:miss, :perfect_dodge] do
+      test "#{outcome} does not consult or deliver equipment coma" do
+        Mimic.copy(HitCalculations)
+        attacker = combatant(1001, :player)
+        player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+        target = combatant(2001, :mob)
+        target_state = living_mob_state(target, 150, 150)
+
+        stub(UnitRegistry, :get_unit, fn :mob, 2001 ->
+          {:ok, {FakeUnit, target_state, self()}}
+        end)
+
+        stub(SpatialIndex, :get_unit_position, fn :mob, 2001 ->
+          {:ok, {150, 150, "prontera"}}
+        end)
+
+        stub(Passives, :attack_replacement, fn _player -> :normal end)
+
+        expect(HitCalculations, :calculate_hit_result, fn _attacker, _target ->
+          unquote(outcome)
+        end)
+
+        reject(&EquipComa.trigger?/2)
+        reject(&DamageCalculator.calculate_damage/3)
+        reject(&MobSession.apply_coma/2)
+        reject(&MobSession.apply_damage/3)
+        stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+        capture_log(fn ->
+          assert :ok = Combat.execute_attack(attacker, player_state, 2001)
+        end)
+      end
+    end
+
+    test "full absorption consumes one connected roll but delivers no coma mutation" do
+      {stats, player_state} = dagger_player()
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 50, hit_info ->
+        assert hit_info.coma?
+        0
+      end)
+
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 2001)
+      end)
+    end
+
+    test "zero calculated damage skips coma before preparation and keeps the zero packet" do
+      test_pid = self()
+      {stats, player_state} = dagger_player()
+      target = combatant(2001, :mob)
+      target_state = living_mob_state(target, 150, 150)
+
+      stub(UnitRegistry, :get_player_pid, fn _ -> {:error, :not_found} end)
+
+      stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, test_pid}} end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {150, 150, "prontera"}} end)
+      stub(Passives, :attack_replacement, fn _player -> :normal end)
+      stub(Passives, :attack_procs, fn _player -> %{} end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender, _opts ->
+        {:ok, %{damage: 0, is_critical: false}}
+      end)
+
+      reject(&EquipComa.trigger?/2)
+      reject(&StatusInterpreter.absorb_damage/4)
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+
+      expect(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(stats, player_state, 2001)
+      end)
+
+      assert_received {:packet,
+                       %DamageDealt{src_id: 1001, target_id: 2001, damage: 0, damage2: 0}}
+    end
+
+    test "a Homunculus normal attacker never consults player equipment coma" do
+      {_stats, target_state} = dagger_player()
+      target_state = %{target_state | character_id: 3001}
+      target_pid = self()
+
+      attacker_state = %HomunculusState{
+        id: 1,
+        owner_character_id: 1001,
+        owner_session_pid: self(),
+        class_id: 6001,
+        name: "Attacker",
+        lifecycle: :active,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        world_gid: 4001,
+        map_name: "prontera",
+        x: 150,
+        y: 150,
+        combat_stats: %{HomunculusState.__struct__().combat_stats | hit: 200}
+      }
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, target_pid} end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, 3001 -> {:ok, {PlayerState, target_state, target_pid}}
+        :player, 1001 -> {:error, :not_found}
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender ->
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      reject(&EquipComa.trigger?/2)
+      reject(&PlayerSession.apply_coma/2)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 10, {:homunculus, 4001} -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      assert :ok = AutoAttack.execute_homunculus_attack(attacker_state, {:player, 3001})
+    end
+
+    test "a landed player swing carries coma to a Homunculus owner" do
+      test_pid = self()
+      attacker = combatant(1001, :player)
+      player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
+      target_pid = spawn(fn -> relay_once(test_pid) end)
+
+      target_state = %HomunculusState{
+        id: 1,
+        owner_character_id: 3001,
+        owner_session_pid: target_pid,
+        class_id: 6001,
+        name: "Target",
+        lifecycle: :active,
+        hp: 100,
+        max_hp: 100,
+        sp: 50,
+        max_sp: 50,
+        world_gid: 4001,
+        map_name: "prontera",
+        x: 150,
+        y: 150,
+        combat_stats: %{HomunculusState.__struct__().combat_stats | flee: 0}
+      }
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 4001 -> {:ok, {HomunculusState, target_state, target_pid}}
+        :player, 3001 -> {:error, :not_found}
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :homunculus, 4001 ->
+        {:ok, {150, 150, "prontera"}}
+      end)
+
+      stub(DamageCalculator, :calculate_damage, fn _attacker, _defender ->
+        {:ok, %{damage: 50, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn ^attacker, target ->
+        assert target.unit_type == :homunculus
+        true
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :homunculus, 4001, 50, hit_info ->
+        assert hit_info.coma?
+        50
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, {:homunculus, 4001})
+      end)
+
+      assert_receive {:relayed,
+                      {:"$gen_cast", {:homunculus, {:apply_coma, 4001, {:player, 1001}}}}}
+    end
+  end
+
   describe "execute_attack/3 multi-hit procs" do
     setup do
       {stats, player_state} = dagger_player()
@@ -325,6 +817,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
       reject(&Passives.attack_replacement/1)
       reject(&DamageCalculator.calculate_damage/2)
+      reject(&EquipComa.trigger?/2)
 
       assert :intercepted = Combat.execute_attack(attacker, player_state, 2001)
 
@@ -338,6 +831,21 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
                          element: :poison,
                          distance: 0
                        }}
+    end
+
+    test "a Guard block does not consult or deliver equipment coma",
+         %{player_state: player_state, stats: stats} do
+      stub(StatusInterpreter, :before_weapon_hit, fn :mob, 2001, _attack_info ->
+        {:intercept, :blocked}
+      end)
+
+      reject(&Passives.attack_replacement/1)
+      reject(&DamageCalculator.calculate_damage/3)
+      reject(&EquipComa.trigger?/2)
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+
+      assert :intercepted = Combat.execute_attack(stats, player_state, 2001)
     end
 
     test "applies one aggregate mutation for a two-division Double Attack",
@@ -1380,8 +1888,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       :ok
     end
 
-    test "mob melee runs through the absorb_damage hook before HP loss" do
+    test "mob melee runs through absorption without consulting player equipment coma" do
       test_pid = self()
+
+      reject(&EquipComa.trigger?/2)
+      reject(&PlayerSession.apply_coma/2)
 
       expect(StatusInterpreter, :absorb_damage, fn :player, 2001, 10, hit_info ->
         send(test_pid, {:hit_info, hit_info})

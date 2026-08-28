@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
@@ -672,6 +673,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     if damage_result.damage > 1,
       do: EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
 
+    coma? = equipment_coma?(attacker, target, target_type, damage_result.damage)
+
     with :ok <-
            handle_player_attack_hit(
              damage_result,
@@ -680,7 +683,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
              target_pid,
              target_type,
              target_id,
-             1
+             1,
+             coma?
            ) do
       dispatch_normal_hit_passives(player_state, target_type, target_id, target)
       roll_equipment_breaks(player_state, target_state, target_type, target_id, target_pid)
@@ -765,6 +769,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     override = EquipVanish.normal_attack_override(attacker, target)
     swing = apply_vanish_override(swing, override)
 
+    coma? =
+      not match?({:sp, _amount}, override) and
+        equipment_coma?(attacker, target, target_type, swing.raw_total)
+
     hit_info = %{
       dmg_type: :physical,
       is_short: true,
@@ -772,7 +780,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       skill_id: nil,
       skill_level: nil,
       from_caster?: true,
-      basic_attack?: true
+      basic_attack?: true,
+      coma?: coma?
     }
 
     source = player_damage_source(target_type, attacker.unit_id)
@@ -972,7 +981,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
         target_pid,
         target_type,
         target_id,
-        1
+        1,
+        equipment_coma?(attacker, splash_target, target_type, damage_result.damage)
       )
     end
 
@@ -1065,7 +1075,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_pid,
          target_type,
          target_id,
-         hits
+         hits,
+         coma?
        ) do
     damage = damage_result.damage
     is_critical = damage_result.is_critical
@@ -1083,7 +1094,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_id: nil,
           skill_level: nil,
           from_caster?: true,
-          basic_attack?: true
+          basic_attack?: true,
+          coma?: coma?
         }
 
         prepared_hits =
@@ -1118,7 +1130,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_id: nil,
           skill_level: nil,
           from_caster?: true,
-          basic_attack?: true
+          basic_attack?: true,
+          coma?: coma?
         }
 
         {final_damage, prepared_hit_info} =
@@ -1156,7 +1169,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           skill_id: nil,
           skill_level: nil,
           from_caster?: true,
-          basic_attack?: true
+          basic_attack?: true,
+          coma?: coma?
         }
 
         {final_damage, prepared_hit_info} =
@@ -1435,6 +1449,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
   defp settled_damage(%HandedAttack{primary: primary, secondary: secondary}),
     do: primary.damage + secondary.damage
+
+  defp equipment_coma?(_attacker, _target, :skill_unit, _damage), do: false
+
+  defp equipment_coma?(attacker, target, _target_type, damage) when damage > 0,
+    do: EquipComa.trigger?(attacker, target)
+
+  defp equipment_coma?(_attacker, _target, _target_type, _damage), do: false
 
   defp player_damage_source(_target_type, attacker_id), do: {:player, attacker_id}
 
