@@ -89,47 +89,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
   end
 
   describe "cast/4" do
-    test "splashes the target cell, uses STR in the ratio, and knocks each hit back" do
+    test "passes caster-centered mob-native and equipment blow through one splash execution" do
       caster = build_player(spear(), riding?: true, str: 60, x: 10, y: 20)
+      caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 57} => 3})
       level = 5
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
+        assert caster.stats.modifiers.equipment[{:add_skill_blow, 57}] == 3
         assert opts[:skill_id] == 57
         assert opts[:skill_level] == level
         assert opts[:skill_ratio] == 1_080
         assert opts[:skip_crit] == true
         assert opts[:ranged] == true
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == {10, 20}
+        assert opts[:native_target_types] == [:mob]
         [101, 102]
       end)
 
-      expect(Combat, :knockback, 2, fn :mob, target_id, 10, 20, 2 ->
-        assert target_id in [101, 102]
-        {:ok, {0, 0}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} =
                KnBrandishspear.cast(caster, {:unit, @target_id}, level, definition())
-    end
-
-    test "knocks the primary target back from the caster's cell, not the target's own cell" do
-      caster = build_player(spear(), riding?: true, x: 10, y: 20)
-      primary_target_id = 999
-
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
-
-      stub(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, _opts ->
-        [primary_target_id]
-      end)
-
-      expect(Combat, :knockback, fn :mob, ^primary_target_id, from_x, from_y, 2 ->
-        assert {from_x, from_y} == {caster.x, caster.y}
-        refute {from_x, from_y} == {15, 25}
-        {:ok, {0, 0}}
-      end)
-
-      assert {:ok, ^caster} = KnBrandishspear.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
     test "propagates a target resolution error and deals no damage" do
@@ -156,7 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
         []
       end)
 
-      stub(Combat, :knockback, fn _, _, _, _, _ -> {:ok, {0, 0}} end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} =
                KnBrandishspear.cast(caster, {:unit, @target_id}, level, definition())

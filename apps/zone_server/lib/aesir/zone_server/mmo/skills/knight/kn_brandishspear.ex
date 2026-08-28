@@ -64,13 +64,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
         skill_level: level,
         skill_ratio: skill_ratio(level, combatant.base_stats.str),
         skip_crit: true,
-        ranged: true
+        ranged: true,
+        base_distance: @knockback_distance,
+        origin: {caster.x, caster.y},
+        native_target_types: [:mob]
       ]
 
-      caster
-      |> Combat.execute_splash_attack({x, y}, definition.splash_radius, opts)
-      |> Enum.each(&Combat.knockback(:mob, &1, caster.x, caster.y, @knockback_distance))
-
+      _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)
       {:ok, caster}
     end
   end

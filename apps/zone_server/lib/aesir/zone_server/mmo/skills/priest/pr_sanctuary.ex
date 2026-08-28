@@ -203,11 +203,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
         group.level,
         :holy,
         0,
-        fixed_damage: heal_amount(group.level)
+        fixed_damage: heal_amount(group.level),
+        base_distance: definition().knockback,
+        origin: group.center,
+        native_target_types: [:player, :mob, :homunculus]
       )
 
     if result == :ok do
-      Combat.knockback(unit_type, unit_id, elem(group.center, 0), elem(group.center, 1), 2)
       hits_remaining = group.state.hits_remaining - 1
       updated = %{group | state: %{group.state | hits_remaining: hits_remaining}}
       if hits_remaining <= 0, do: {:halt, updated}, else: {:cont, updated}

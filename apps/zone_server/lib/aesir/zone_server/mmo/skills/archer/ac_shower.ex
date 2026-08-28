@@ -39,13 +39,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcShower do
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: 100,
-        skip_crit: true
+        skip_crit: true,
+        base_distance: definition.knockback,
+        origin: {x, y},
+        native_target_types: [:mob]
       ]
 
-      caster
-      |> Combat.execute_splash_attack({x, y}, radius, opts)
-      |> Enum.each(&Combat.knockback(:mob, &1, x, y, definition.knockback))
-
+      _ = Combat.execute_splash_attack(caster, {x, y}, radius, opts)
       {:ok, caster}
     end
   end

@@ -41,12 +41,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100,
-      skip_crit: true
+      skip_crit: true,
+      base_distance: definition.knockback,
+      origin: {x, y},
+      native_target_types: [:mob]
     ]
 
-    caster
-    |> Combat.execute_splash_attack({x, y}, definition.splash_radius, opts)
-    |> Enum.each(&Combat.knockback(:mob, &1, x, y, definition.knockback))
+    _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)
 
     duration = Enum.at(definition.duration, level - 1)
     params = [val1: @fire_element, caster_id: caster_id, duration: duration]

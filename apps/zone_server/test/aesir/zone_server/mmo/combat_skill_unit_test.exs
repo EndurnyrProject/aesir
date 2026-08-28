@@ -10,6 +10,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
   @moduletag :capture_log
 
+  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
@@ -18,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -35,9 +38,12 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   @map_name "prontera"
 
   setup do
+    Mimic.copy(Cell)
     Mimic.copy(Combat)
     Mimic.copy(EquipComa)
+    Mimic.copy(MapCache)
     Mimic.copy(ModifierCalculator)
+    Mimic.copy(StatusInterpreter)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
     :ok
   end
@@ -120,6 +126,156 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     }
   end
 
+  test "player-owned ground damage applies equipment blow after delivery and walk delay" do
+    test_pid = self()
+    mob_state = %{build_mob_state(0) | x: 151}
+
+    attacker = %{
+      caster(100)
+      | equip_modifiers: %{{:add_skill_blow, 80} => 2},
+        position: {150, 150},
+        map_name: @map_name
+    }
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, fn ^attacker, _target -> false end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    expect(MobSession, :apply_damage, fn ^test_pid, 40, @caster_id ->
+      send(test_pid, {:event, :damage})
+      :ok
+    end)
+
+    expect(MobSession, :apply_walk_delay, fn ^test_pid, 600 ->
+      send(test_pid, {:event, :walk_delay})
+      :ok
+    end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 80, 1, :fire, 100,
+               dst_delay: 600
+             )
+
+    assert_receive {:event, :damage}
+    assert_receive {:event, :walk_delay}
+
+    assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+    refute_receive {:"$gen_cast", {:movement, _movement}}
+  end
+
+  test "ground native distance combines with equipment at its field origin and survives without equipment" do
+    test_pid = self()
+    mob_state = %{build_mob_state(0) | x: 151}
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, 2, fn _attacker, _target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, 2, fn _attacker, _target -> false end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    expect(MobSession, :apply_damage, 2, fn ^test_pid, 40, @caster_id -> :ok end)
+
+    for {equipment, destination} <- [
+          {%{{:add_skill_blow, 70} => 3}, {156, 150}},
+          {%{}, {153, 150}}
+        ] do
+      attacker = %{
+        caster(100)
+        | equip_modifiers: equipment,
+          position: {140, 150},
+          map_name: @map_name
+      }
+
+      assert :ok =
+               Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 70, 7, :holy, 100,
+                 base_distance: 2,
+                 origin: {150, 150},
+                 native_target_types: [:player, :mob, :homunculus]
+               )
+
+      {dst_x, dst_y} = destination
+
+      assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, ^dst_x, ^dst_y}}}
+      refute_receive {:"$gen_cast", {:movement, _movement}}
+    end
+  end
+
+  test "ground survival and classification use post-absorption magic damage" do
+    test_pid = self()
+    mob_state = %{build_mob_state(0) | x: 151, hp: 50, max_hp: 50}
+    attacker = %{caster(100) | position: {150, 150}, map_name: @map_name}
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+    stub(Cell, :step_traversable?, fn @map_name, _from, _to -> true end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+      {:ok, %{damage: 80, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, fn ^attacker, _target -> false end)
+
+    expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+      assert %{
+               dmg_type: :magic,
+               is_short: false,
+               element: :holy,
+               skill_id: 70,
+               skill_level: 7,
+               from_caster?: false
+             } = hit_info
+
+      40
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      assert packet.damage == 40
+      :ok
+    end)
+
+    expect(MobSession, :apply_damage, fn ^test_pid, 40, @caster_id -> :ok end)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 70, 7, :holy, 100,
+               base_distance: 2,
+               native_requires_survival: true
+             )
+
+    assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+  end
+
   test "player-owned ground damage marks eligible recipient for coma" do
     test_pid = self()
     mob_state = build_mob_state(0)
@@ -179,6 +335,52 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     assert :ok =
              Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600)
+  end
+
+  test "fully absorbed ground damage never requests equipment or native blow" do
+    test_pid = self()
+    mob_state = %{build_mob_state(0) | x: 151}
+
+    attacker = %{
+      caster(100)
+      | equip_modifiers: %{{:add_skill_blow, 89} => 3},
+        position: {150, 150},
+        map_name: @map_name
+    }
+
+    expect(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, mob_state, test_pid}}
+    end)
+
+    expect(SpatialIndex, :get_unit_position, 2, fn :mob, @target_id ->
+      {:ok, {151, 150, @map_name}}
+    end)
+
+    expect(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+      {:ok, %{damage: 80, is_critical: false}}
+    end)
+
+    expect(EquipComa, :trigger?, fn ^attacker, _target -> true end)
+
+    expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+      assert hit_info.coma?
+      0
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      assert packet.damage == 0
+      :ok
+    end)
+
+    reject(&MobSession.apply_damage/3)
+    reject(&MobSession.apply_coma/2)
+
+    assert :ok =
+             Combat.apply_skill_unit_damage(attacker, :mob, @target_id, 89, 10, :water, 600,
+               base_distance: 2
+             )
+
+    refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
   test "final 1-point fixed ground magic participates in coma" do
@@ -337,6 +539,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     assert_received {:ordinary_damage, 3_001}
     assert_received {:ordinary_damage, {:homunculus, 3_002}}
+    refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
   test "targetable skill-unit recipients remain ineligible for coma" do
@@ -395,6 +598,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
              )
 
     assert_received :skill_unit_damaged
+    refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
   test "computes magic damage from MATK/MDEF/element, broadcasts, and applies it" do
@@ -559,6 +763,28 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     assert {:error, :target_not_found} =
              Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 89, 10, :water, 600)
+  end
+
+  test "a dead ground target fails before damage or movement" do
+    dead = %{build_mob_state(0) | hp: 0, is_dead: true}
+
+    expect(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {MobState, dead, self()}}
+    end)
+
+    expect(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+      {:ok, {150, 150, @map_name}}
+    end)
+
+    reject(&MagicDamageCalculator.calculate_magic_damage/3)
+    reject(&Broadcast.to_in_range/5)
+
+    assert {:error, :target_dead} =
+             Combat.apply_skill_unit_damage(caster(100), :mob, @target_id, 89, 10, :water, 600,
+               base_distance: 2
+             )
+
+    refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
   test "supports Fire Pillar's flat MATK, multi-hit, and target walk delay" do

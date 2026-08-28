@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
   rAthena (`src/map/skills/merchant/cartrevolution.cpp`): `MaxLevel` 1, `SplashArea`
   1, `Knockback` 2, `SpCost` 12, element forced to Neutral (`battle.cpp:3698`,
   `battle_attr_fix(... ELE_NEUTRAL ...)`). Like `AC_SHOWER` we center the splash on
-  the target's cell and reuse `Combat.execute_splash_attack` + `Combat.knockback`.
+  the target's cell and pass its native displacement through
+  `Combat.execute_splash_attack` for one combined knockback.
 
   ## Damage formula
 
@@ -59,13 +60,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution do
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: skill_ratio(caster.cart),
-        skip_crit: true
+        skip_crit: true,
+        base_distance: definition.knockback,
+        origin: {x, y},
+        native_target_types: [:mob]
       ]
 
-      caster
-      |> Combat.execute_splash_attack({x, y}, definition.splash_radius, opts)
-      |> Enum.each(&Combat.knockback(:mob, &1, x, y, definition.knockback))
-
+      _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)
       {:ok, caster}
     end
   end

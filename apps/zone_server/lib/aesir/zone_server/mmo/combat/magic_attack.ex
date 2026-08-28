@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
@@ -249,6 +250,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   `:damage_scale` (default `1`) multiplies the final computed damage before it is
   applied and re-clamps to a floor of 1 - the seam Grand Cross uses to halve the
   self-damage its own footprint deals to its caster.
+
+  The canonical skill knockback options are `:base_distance`, `:origin`,
+  `:native_enabled`, `:native_target_types`, and `:native_requires_survival`.
+  Player-owned damaging ground hits also consume exact-skill equipment blow.
   """
   @spec apply_skill_unit_damage(
           struct(),
@@ -334,11 +339,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
       packet = Hallucination.maybe_garble(packet, target_type)
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
-      apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
+      delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
 
       if dst_delay > 0 do
         apply_walk_delay(unit_type, target_pid, dst_delay)
       end
+
+      result = skill_unit_result(target_state, damage, coma_decision)
+
+      maybe_apply_skill_unit_knockback(
+        delivery,
+        caster,
+        target,
+        target_type,
+        skill_id,
+        result,
+        opts
+      )
 
       :ok
     end
@@ -596,6 +613,63 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     do: DamageApplication.unit_session(unit_type).apply_walk_delay(target_pid, dst_delay)
 
   defp apply_walk_delay(:homunculus, _target_pid, _dst_delay), do: :ok
+
+  defp skill_unit_result(target_state, damage, coma_decision) do
+    hit? = damage > 0
+    coma? = hit? and coma_decision == true
+
+    %{
+      hit?: hit?,
+      target_survives?: coma? or not hit? or known_target_survives?(target_state, damage),
+      coma?: coma?
+    }
+  end
+
+  defp maybe_apply_skill_unit_knockback(
+         :ok,
+         attacker,
+         target,
+         target_type,
+         skill_id,
+         %{hit?: true} = result,
+         opts
+       )
+       when target_type != :skill_unit do
+    _ = Knockback.skill(attacker, target, skill_id, result, knockback_options(opts))
+    :ok
+  end
+
+  defp maybe_apply_skill_unit_knockback(
+         _delivery,
+         _attacker,
+         _target,
+         _target_type,
+         _skill_id,
+         _result,
+         _opts
+       ),
+       do: :ok
+
+  defp knockback_options(opts) do
+    Keyword.take(opts, [
+      :base_distance,
+      :origin,
+      :native_enabled,
+      :native_target_types,
+      :native_requires_survival
+    ])
+  end
+
+  defp known_target_survives?(target_state, damage) do
+    case target_hp(target_state) do
+      hp when is_integer(hp) -> hp > damage
+      nil -> false
+    end
+  end
+
+  defp target_hp(%{stats: %{current_state: %{hp: hp}}}) when is_integer(hp), do: hp
+  defp target_hp(%{hp: hp}) when is_integer(hp), do: hp
+  defp target_hp(_target_state), do: nil
 
   defp ensure_living_target(_target_state, :skill_unit), do: :ok
 

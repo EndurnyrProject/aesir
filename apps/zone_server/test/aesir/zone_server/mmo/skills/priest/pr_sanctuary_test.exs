@@ -4,10 +4,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.Cell
+  alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -17,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
@@ -29,7 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   setup :verify_on_exit!
 
   setup do
+    Mimic.copy(Cell)
     Mimic.copy(DamageApplication)
+    Mimic.copy(EquipVanish)
+    Mimic.copy(MapCache)
+    Mimic.copy(StatusInterpreter)
     :ok
   end
 
@@ -323,6 +332,90 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
              PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
   end
 
+  test "real offensive ticks retain ground Holy damage and one field-centered combined blow" do
+    target_ids = [2_001, 2_002, 2_003, 2_004]
+    targets = Enum.map(target_ids, &{:mob, &1})
+
+    states = %{
+      2_001 => %{mob(2_001, :demon, :shadow) | x: 151},
+      2_002 => %{mob(2_002, :demon, :water) | x: 151},
+      2_003 => %{mob(2_003, :demon, :holy) | x: 151},
+      2_004 => %{mob(2_004, :demon, :shadow) | x: 151}
+    }
+
+    attacker =
+      CombatTestHelper.create_player_combatant(
+        unit_id: 1_000,
+        position: @center,
+        map_name: "prontera"
+      )
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 70} => 3})
+
+    expect(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, attacker} end)
+    stub(Combat, :splash_targets, fn "prontera", @center, 2, ^attacker -> targets end)
+
+    stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 0 -> targets end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :mob, 2_004 -> {:error, :not_found}
+      :mob, id when id in [2_001, 2_002, 2_003] -> {:ok, {151, 150, "prontera"}}
+    end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, id ->
+      {:ok, {MobState, Map.fetch!(states, id), self()}}
+    end)
+
+    stub(MapCache, :get, fn "prontera" -> {:ok, :map} end)
+    stub(Cell, :step_traversable?, fn "prontera", _from, _to -> true end)
+
+    expect(StatusInterpreter, :absorb_damage, 3, fn :mob, id, damage, hit_info ->
+      assert id in [2_001, 2_002, 2_003]
+
+      assert %{
+               dmg_type: :magic,
+               element: :holy,
+               skill_id: 70,
+               skill_level: 7,
+               from_caster?: false
+             } = hit_info
+
+      damage
+    end)
+
+    reject(&EquipVanish.after_hit/4)
+    reject(&MobSession.apply_coma/2)
+
+    expect(MobSession, :apply_damage, 3, fn _pid, damage, 1_000 ->
+      send(self(), {:delivered_damage, damage})
+      :ok
+    end)
+
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, packet ->
+      send(self(), {:damage_packet, packet.target_id, packet.src_id, packet.damage})
+      :ok
+    end)
+
+    assert {:ok, %Group{state: %{hits_remaining: 7}}} =
+             PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
+
+    assert_received {:damage_packet, 2_001, 1_000, 971}
+    assert_received {:damage_packet, 2_002, 1_000, 582}
+    assert_received {:damage_packet, 2_003, 1_000, 1}
+    refute_received {:damage_packet, 2_004, _, _}
+
+    assert_received {:delivered_damage, 971}
+    assert_received {:delivered_damage, 582}
+    assert_received {:delivered_damage, 1}
+
+    for _ <- 1..3 do
+      assert_receive {:"$gen_cast", {:combat, {:note_hit_type, 1_000, :magic}}}
+
+      assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, "prontera", 156, 150}}}
+    end
+
+    refute_receive {:"$gen_cast", {:movement, _movement}}
+  end
+
   test "damages enemy undead and demons with fixed Holy damage and spends quota only on success" do
     targets = [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}]
 
@@ -336,14 +429,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
 
     expect(Combat, :apply_skill_unit_damage, 3, fn
-      _caster, :mob, id, 70, 7, :holy, 0, [fixed_damage: 777] ->
+      %{unit_id: 1_000}, :mob, id, 70, 7, :holy, 0, opts ->
+        assert opts == [
+                 fixed_damage: 777,
+                 base_distance: 2,
+                 origin: {150, 150},
+                 native_target_types: [:player, :mob, :homunculus]
+               ]
+
         if id == 2_002, do: {:error, :miss}, else: :ok
     end)
 
-    expect(Combat, :knockback, 2, fn :mob, id, 150, 150, 2 ->
-      assert id in [2_001, 2_003]
-      {:ok, {150, 150}}
-    end)
+    reject(&Combat.execute_misc_attack/3)
+    reject(&Combat.knockback/5)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
              PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
@@ -355,18 +453,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     stub_tick(targets, targets)
     stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
 
-    expect(Combat, :apply_skill_unit_damage, 4, fn _,
-                                                   :mob,
-                                                   _,
-                                                   70,
-                                                   1,
-                                                   :holy,
-                                                   0,
-                                                   [fixed_damage: 100] ->
-      :ok
+    expect(Combat, :apply_skill_unit_damage, 4, fn
+      %{unit_id: 1_000}, :mob, _id, 70, 1, :holy, 0, opts ->
+        assert opts[:fixed_damage] == 100
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == {150, 150}
+        :ok
     end)
 
-    stub(Combat, :knockback, fn :mob, _, 150, 150, 2 -> {:ok, {150, 150}} end)
+    reject(&Combat.execute_misc_attack/3)
+    reject(&Combat.knockback/5)
 
     assert {:expire, %Group{state: %{hits_remaining: 0}}} =
              PrSanctuary.on_interval(group(1, %{hits_remaining: 4}), 1_000)

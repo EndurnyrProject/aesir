@@ -111,26 +111,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   end
 
   describe "cast/4" do
-    test "splashes the target cell, knocks each hit back, and uses the base hit count" do
+    test "passes caster-centered mob-native and equipment blow with the base hit count" do
       caster = build_player(fist(), x: 10, y: 20)
+      caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 62} => 3})
       level = 3
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant -> [{:mob, 1}] end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
+        assert caster.stats.modifiers.equipment[{:add_skill_blow, 62}] == 3
         assert opts[:skill_id] == 62
         assert opts[:skill_level] == level
         assert opts[:skill_ratio] == 220
         assert opts[:hit_count] == 2
         assert opts[:skip_crit] == true
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == {10, 20}
+        assert opts[:native_target_types] == [:mob]
         [101, 102]
       end)
 
-      expect(Combat, :knockback, 2, fn :mob, target_id, 10, 20, 2 ->
-        assert target_id in [101, 102]
-        {:ok, {0, 0}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
@@ -147,10 +149,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
         assert opts[:hit_count] == 3
+        assert opts[:base_distance] == 1
         []
       end)
 
-      stub(Combat, :knockback, fn _, _, _, _, _ -> {:ok, {0, 0}} end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
@@ -167,51 +170,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
         assert opts[:hit_count] == 4
+        assert opts[:base_distance] == 1
         []
       end)
 
-      stub(Combat, :knockback, fn _, _, _, _, _ -> {:ok, {0, 0}} end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
 
-    test "knocks back each hit target the level-scaled distance" do
+    test "passes the level-scaled distance through the canonical request" do
       caster = build_player(fist(), x: 10, y: 20)
       level = 9
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
       stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant -> [{:mob, 1}] end)
-      stub(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, _opts -> [101] end)
 
-      expect(Combat, :knockback, fn :mob, 101, 10, 20, 5 -> {:ok, {0, 0}} end)
-
-      assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
-    end
-
-    test "knocks the primary target back from the caster's cell, not the target's own cell" do
-      caster = build_player(fist(), x: 10, y: 20)
-      level = 1
-      primary_target_id = 999
-
-      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
-
-      stub(Combat, :splash_targets, fn "prontera", {15, 25}, 2, _combatant ->
-        [{:mob, primary_target_id}]
+      expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
+        assert opts[:base_distance] == 5
+        assert opts[:origin] == {10, 20}
+        [101]
       end)
 
-      stub(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, _opts ->
-        [primary_target_id]
-      end)
-
-      expect(Combat, :knockback, fn :mob, ^primary_target_id, from_x, from_y, _distance ->
-        # The primary target stands exactly on the splash center {15, 25}. If the
-        # knockback origin were that same cell, sign(x - from) would be {0, 0}
-        # and Knockback's no-move clause would swallow the hit every cast. The
-        # origin must be the caster's cell so the direction is never degenerate.
-        assert {from_x, from_y} == {caster.x, caster.y}
-        refute {from_x, from_y} == {15, 25}
-        {:ok, {0, 0}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
@@ -237,10 +218,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 2, opts ->
         assert opts[:hit_count] == 2
+        assert opts[:native_target_types] == [:mob]
         []
       end)
 
-      stub(Combat, :knockback, fn _, _, _, _, _ -> {:ok, {0, 0}} end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end

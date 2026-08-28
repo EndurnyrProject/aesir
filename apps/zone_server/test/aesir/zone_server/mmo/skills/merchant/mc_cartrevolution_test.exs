@@ -8,6 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolution
   alias Aesir.ZoneServer.Unit.Cart.Weight
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
 
   setup :verify_on_exit!
 
@@ -88,25 +91,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
                McCartrevolution.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "with a mounted cart splashes the target cell with the weight-scaled ratio and knocks back" do
+    test "passes target-centered mob-native and equipment blow with the cart-scaled splash" do
       stub_item_weight()
-      caster = %{cart_type: 1, cart: cart(40)}
+
+      caster = %PlayerState{
+        character_id: 1_000,
+        cart_type: 1,
+        cart: cart(40),
+        stats: %Stats{modifiers: %Modifiers{equipment: %{{:add_skill_blow, 153} => 3}}}
+      }
+
       expected_ratio = McCartrevolution.skill_ratio(caster.cart)
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
 
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
+        assert caster.stats.modifiers.equipment[{:add_skill_blow, 153}] == 3
         assert opts[:skill_id] == definition().id
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == expected_ratio
         assert opts[:skip_crit] == true
+        assert opts[:base_distance] == 2
+        assert opts[:origin] == {15, 25}
+        assert opts[:native_target_types] == [:mob]
         [101, 102]
       end)
 
-      expect(Combat, :knockback, 2, fn :mob, target_id, 15, 25, 2 ->
-        assert target_id in [101, 102]
-        {:ok, {0, 0}}
-      end)
+      reject(&Combat.knockback/5)
 
       assert {:ok, ^caster} = McCartrevolution.cast(caster, {:unit, @target_id}, 1, definition())
     end
@@ -117,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
       heavy = %{cart_type: 1, cart: cart(40)}
 
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {0, 0}}} end)
-      stub(Combat, :knockback, fn _, _, _, _, _ -> {:ok, {0, 0}} end)
+      reject(&Combat.knockback/5)
 
       test_pid = self()
 
@@ -138,6 +149,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
     test "propagates a target resolution error" do
       caster = %{cart_type: 1, cart: %{}}
 
+      reject(&Combat.execute_splash_attack/4)
+      reject(&Combat.knockback/5)
       stub(Combat, :resolve_combatant, fn @target_id -> {:error, :target_not_found} end)
 
       assert {:error, :target_not_found} =

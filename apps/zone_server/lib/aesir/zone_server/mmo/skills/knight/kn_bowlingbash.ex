@@ -44,13 +44,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
         skill_level: level,
         skill_ratio: skill_ratio(level),
         hit_count: hit_count(caster, enemy_count),
-        skip_crit: true
+        skip_crit: true,
+        base_distance: knockback_distance(level),
+        origin: {caster.x, caster.y},
+        native_target_types: [:mob]
       ]
 
-      caster
-      |> Combat.execute_splash_attack({x, y}, definition.splash_radius, opts)
-      |> Enum.each(&Combat.knockback(:mob, &1, caster.x, caster.y, knockback_distance(level)))
-
+      _ = Combat.execute_splash_attack(caster, {x, y}, definition.splash_radius, opts)
       {:ok, caster}
     end
   end

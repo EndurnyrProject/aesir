@@ -44,27 +44,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
         skill_id: definition.id,
         skill_level: level,
         skill_ratio: Formulas.ki_explosion_ratio(),
-        skip_crit: true
+        skip_crit: true,
+        typed_results: true,
+        base_distance: definition.knockback,
+        origin: {x, y},
+        native_target_types: [:player, :mob, :homunculus]
       )
-      |> Enum.each(&apply_splash_effects(caster, &1, x, y, definition))
+      |> Enum.each(&apply_splash_effects(caster, &1))
 
       {:ok, caster}
     end
   end
 
-  defp apply_splash_effects(caster, target_id, x, y, definition) do
-    case TargetResolver.resolve(target_id) do
-      {:ok, _pid, _state, unit_type} ->
-        apply_resolved_splash_effects(caster, unit_type, target_id, x, y, definition)
+  defp apply_splash_effects(caster, {unit_type, target_id} = target_ref) do
+    case TargetResolver.resolve(target_ref) do
+      {:ok, _pid, _state, ^unit_type} ->
+        apply_resolved_splash_effects(caster, unit_type, target_id)
 
       {:error, _reason} ->
         :ok
     end
   end
 
-  defp apply_resolved_splash_effects(caster, unit_type, target_id, x, y, definition) do
-    _ = Combat.knockback(unit_type, target_id, x, y, definition.knockback)
-
+  defp apply_resolved_splash_effects(caster, unit_type, target_id) do
     if :rand.uniform(100) <= Formulas.ki_explosion_stun_rate() do
       {caster_type, caster_id} = caster_identity(caster)
 
