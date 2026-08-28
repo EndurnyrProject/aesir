@@ -9,12 +9,50 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @type result :: :ok | {:ok, {integer(), integer()}} | {:error, atom()}
+
+  @type skill_result :: %{
+          hit?: boolean(),
+          target_survives?: boolean(),
+          coma?: boolean()
+        }
+
+  @type target_type :: :player | :mob | :homunculus | :skill_unit
+
+  @type skill_options :: [
+          base_distance: non_neg_integer(),
+          origin: {integer(), integer()} | nil,
+          native_enabled: boolean(),
+          native_target_types: [target_type()],
+          native_requires_survival: boolean()
+        ]
+
+  @doc """
+  Combines a landed named skill's native and equipment knockback distances.
+
+  Native conditions gate only `base_distance`. The final signed sum is floored
+  at zero before one collision-aware, target-owned displacement request.
+  """
+  @spec skill(Combatant.t(), Combatant.t(), pos_integer(), skill_result(), skill_options()) ::
+          result()
+  def skill(attacker, target, skill_id, skill_result, opts \\ []) do
+    distance =
+      max(
+        0,
+        native_distance(target, skill_result, opts) +
+          EquipmentBonuses.add_skill_blow(attacker, skill_id)
+      )
+
+    request_skill_displacement(skill_result, attacker, target, distance, opts)
+  end
 
   @doc """
   Requests collision-aware movement away from `{from_x, from_y}`.
@@ -32,7 +70,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
       else
         {dx, dy} = {sign(x - from_x), sign(y - from_y)}
         destination = blow_path(map_name, x, y, dx, dy, distance)
-        request_displacement(pid, {x, y, map_name}, destination)
+        request_displacement(unit_type, unit_id, pid, {x, y, map_name}, destination)
       end
     end
   end
@@ -52,7 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
         {:ok, {x, y}}
       else
         destination = pull_path(map_data, {x, y}, {target_x, target_y})
-        request_displacement(pid, {x, y, map_name}, destination)
+        request_displacement(unit_type, unit_id, pid, {x, y, map_name}, destination)
       end
     end
   end
@@ -99,9 +137,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
 
   defp ensure_living(state), do: if(Unit.living?(state), do: :ok, else: {:error, :target_dead})
 
-  defp request_displacement(_pid, {x, y, _map_name}, {x, y}), do: {:ok, {x, y}}
+  defp native_distance(target, skill_result, opts) do
+    if native_distance_enabled?(target, skill_result, opts),
+      do: Keyword.get(opts, :base_distance, 0),
+      else: 0
+  end
 
-  defp request_displacement(pid, {x, y, map_name}, {dst_x, dst_y}) do
+  defp native_distance_enabled?(target, skill_result, opts) do
+    Keyword.get(opts, :native_enabled, true) and
+      target.unit_type in Keyword.get(opts, :native_target_types, [
+        :player,
+        :mob,
+        :homunculus,
+        :skill_unit
+      ]) and
+      (not Keyword.get(opts, :native_requires_survival, false) or
+         skill_result.target_survives? or skill_result.coma?)
+  end
+
+  defp request_skill_displacement(%{hit?: true}, attacker, target, distance, opts)
+       when distance > 0 do
+    {from_x, from_y} = displacement_origin(attacker, opts)
+    knockback(target.unit_type, target.unit_id, from_x, from_y, distance)
+  end
+
+  defp request_skill_displacement(_skill_result, _attacker, _target, _distance, _opts), do: :ok
+
+  defp displacement_origin(attacker, opts) do
+    case Keyword.get(opts, :origin) do
+      nil -> attacker.position
+      origin -> origin
+    end
+  end
+
+  defp request_displacement(_unit_type, _unit_id, _pid, {x, y, _map_name}, {x, y}),
+    do: {:ok, {x, y}}
+
+  defp request_displacement(
+         :homunculus,
+         unit_id,
+         pid,
+         {x, y, map_name},
+         {dst_x, dst_y}
+       ) do
+    PlayerSession.displace_homunculus(pid, unit_id, x, y, map_name, dst_x, dst_y)
+    {:ok, {dst_x, dst_y}}
+  end
+
+  defp request_displacement(_unit_type, _unit_id, pid, {x, y, map_name}, {dst_x, dst_y}) do
     GenServer.cast(pid, {:movement, {:displace, x, y, map_name, dst_x, dst_y}})
     {:ok, {dst_x, dst_y}}
   end

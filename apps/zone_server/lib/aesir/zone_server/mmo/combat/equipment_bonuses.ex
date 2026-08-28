@@ -269,6 +269,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
+  Additional signed knockback cells granted to the named skill.
+
+  Reads only the exact skill ID; there is no catch-all skill entry.
+  """
+  @spec add_skill_blow(Combatant.t(), pos_integer()) :: integer()
+  def add_skill_blow(%Combatant{} = attacker, skill_id) do
+    Map.get(attacker.equip_modifiers, {:add_skill_blow, skill_id}, 0)
+  end
+
+  @doc """
   Percent of the defender's hard DEF ignored by the attacker's equipment,
   capped at 100. Sums the by-race (`bIgnoreDefRace`/`bIgnoreDefRaceRate`) and
   by-class (`bIgnoreDefClass`/`bIgnoreDefClassRate`) contributions against the

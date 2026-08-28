@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   Executes Homunculus paths and separation recovery in the owner aggregate.
   """
 
+  alias Aesir.Net.Knockback
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
@@ -10,6 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Clock
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CastingHandler
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
@@ -40,6 +42,29 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
     case path(session, destination) do
       {:ok, cells} -> start_path(session, cells, nil, false)
       {:error, _reason} -> stop(session, true)
+    end
+  end
+
+  @doc "Commits displacement only for the exact living Homunculus endpoint."
+  @spec displace(
+          SessionState.t(),
+          pos_integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: SessionState.t()
+  def displace(%SessionState{} = session, gid, expected_x, expected_y, map_name, x, y) do
+    with %HomunculusState{world_gid: ^gid} = homunculus <- session.homunculus,
+         true <- HomunculusState.living?(homunculus),
+         true <-
+           {homunculus.x, homunculus.y, homunculus.map_name} ==
+             {expected_x, expected_y, map_name},
+         true <- Cell.traversable?(map_name, x, y) do
+      commit_displacement(session, homunculus, gid, map_name, x, y)
+    else
+      _invalid -> session
     end
   end
 
@@ -277,10 +302,30 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
     end
   end
 
+  defp commit_displacement(session, homunculus, gid, map_name, x, y) do
+    session = cancel_movement(session)
+
+    updated = %{
+      homunculus
+      | x: x,
+        y: y,
+        action_state: stopped_action(homunculus.action_state),
+        movement_state: :standing
+    }
+
+    committed = session |> StateCommit.commit(updated) |> sync_separation()
+    packet = %Knockback{unit_id: gid, dst_x: x, dst_y: y}
+    Broadcast.to_in_range(map_name, x, y, Config.view_range(), packet)
+    committed
+  end
+
   defp cancel_movement(session) do
     runtime = Clock.cancel_field(session.homunculus_runtime, :movement_timer_ref)
     %{session | homunculus_runtime: %{runtime | movement_path: []}}
   end
+
+  defp stopped_action(:moving), do: :idle
+  defp stopped_action(action), do: action
 
   defp arm_movement(session) do
     modifiers =

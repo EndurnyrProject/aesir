@@ -63,6 +63,26 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.AiRuntimeTest do
     assert advanced.homunculus.y == 2
   end
 
+  test "displacement commits only for the exact living Homunculus endpoint" do
+    moving = active_session() |> MovementHandler.move_to({4, 2})
+
+    displaced = MovementHandler.displace(moving, 700, 2, 2, @map, 3, 2)
+
+    assert {displaced.homunculus.x, displaced.homunculus.y} == {3, 2}
+    assert {displaced.game_state.x, displaced.game_state.y} == {2, 2}
+    assert displaced.homunculus.action_state == :idle
+    assert displaced.homunculus.movement_state == :standing
+    assert displaced.homunculus_runtime.movement_path == []
+    assert displaced.homunculus_runtime.movement_timer_ref == nil
+    assert {:ok, {3, 2, @map}} = SpatialIndex.get_unit_position(:homunculus, 700)
+
+    assert MovementHandler.displace(displaced, 700, 2, 2, @map, 4, 2) == displaced
+    assert MovementHandler.displace(displaced, 701, 3, 2, @map, 4, 2) == displaced
+
+    dead = %{displaced | homunculus: %{displaced.homunculus | hp: 0}}
+    assert MovementHandler.displace(dead, 700, 3, 2, @map, 4, 2) == dead
+  end
+
   test "a blocked first step repaths or stops without crossing the blocker" do
     moving = active_session() |> MovementHandler.move_to({6, 2})
     ref = moving.homunculus_runtime.movement_timer_ref

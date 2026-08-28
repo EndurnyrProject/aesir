@@ -3,11 +3,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -43,6 +45,148 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
       max_sp: 50,
       spawned_at: 0
     }
+  end
+
+  defp stub_movable_mob(opts \\ []) do
+    {x, y} = Keyword.get(opts, :position, {151, 150})
+    modes = Keyword.get(opts, :modes, [])
+    traversable? = Keyword.get(opts, :traversable?, fn _from, _to -> true end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @mob_id ->
+      {:ok, {x, y, @map_name}}
+    end)
+
+    stub(MapCache, :get, fn @map_name -> {:ok, :map} end)
+    stub(Cell, :step_traversable?, fn @map_name, from, to -> traversable?.(from, to) end)
+
+    stub(UnitRegistry, :get_unit, fn :mob, @mob_id ->
+      {:ok, {MobState, mob_state(x, y, modes), self()}}
+    end)
+  end
+
+  test "skill combines native and equipment distances into one displacement" do
+    attacker =
+      CombatTestHelper.create_player_combatant(position: @from)
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
+
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+
+    stub_movable_mob()
+
+    result = %{hit?: true, target_survives?: true, coma?: false}
+
+    assert {:ok, {156, 150}} =
+             Knockback.skill(attacker, target, 18, result, base_distance: 3)
+
+    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 156, 150}}}
+    refute_received {:"$gen_cast", {:movement, _movement}}
+  end
+
+  test "skill native gates do not suppress equipment-only distance" do
+    attacker =
+      CombatTestHelper.create_player_combatant(position: @from)
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
+
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    result = %{hit?: true, target_survives?: false, coma?: false}
+    stub_movable_mob()
+
+    gated_options = [
+      [base_distance: 3, native_enabled: false],
+      [base_distance: 3, native_target_types: [:player]],
+      [base_distance: 3, native_requires_survival: true]
+    ]
+
+    for opts <- gated_options do
+      assert {:ok, {153, 150}} = Knockback.skill(attacker, target, 18, result, opts)
+
+      assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+      refute_received {:"$gen_cast", {:movement, _movement}}
+    end
+  end
+
+  test "skill coma counts as surviving for the native survival gate" do
+    attacker = CombatTestHelper.create_player_combatant(position: @from)
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    result = %{hit?: true, target_survives?: false, coma?: true}
+    stub_movable_mob()
+
+    assert {:ok, {154, 150}} =
+             Knockback.skill(attacker, target, 18, result,
+               base_distance: 3,
+               native_requires_survival: true
+             )
+
+    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 154, 150}}}
+  end
+
+  test "skill misses and zero final distance do not request knockback" do
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+
+    attacker =
+      CombatTestHelper.create_player_combatant(position: @from)
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => -3})
+
+    reject(&SpatialIndex.get_unit_position/2)
+
+    assert :ok =
+             Knockback.skill(
+               attacker,
+               target,
+               18,
+               %{hit?: false, target_survives?: true, coma?: false},
+               base_distance: 5
+             )
+
+    assert :ok =
+             Knockback.skill(
+               attacker,
+               target,
+               18,
+               %{hit?: true, target_survives?: true, coma?: false},
+               base_distance: 3
+             )
+  end
+
+  test "skill preserves a caller-supplied knockback origin" do
+    attacker =
+      CombatTestHelper.create_player_combatant(position: @from)
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
+
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    result = %{hit?: true, target_survives?: true, coma?: false}
+    stub_movable_mob()
+
+    assert {:ok, {149, 150}} =
+             Knockback.skill(attacker, target, 18, result, origin: {152, 150})
+
+    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 149, 150}}}
+  end
+
+  test "skill keeps existing boss knockback immunity" do
+    attacker =
+      CombatTestHelper.create_player_combatant(position: @from)
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
+
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    result = %{hit?: true, target_survives?: true, coma?: false}
+    stub_movable_mob(modes: [:boss])
+
+    assert {:ok, {151, 150}} = Knockback.skill(attacker, target, 18, result)
+    refute_received {:"$gen_cast", {:movement, _movement}}
+  end
+
+  test "skill keeps existing blocked-cell collision behavior" do
+    attacker =
+      CombatTestHelper.create_player_combatant(position: @from)
+      |> Map.put(:equip_modifiers, %{{:add_skill_blow, 18} => 2})
+
+    target = CombatTestHelper.create_mob_combatant(unit_id: @mob_id, position: {151, 150})
+    result = %{hit?: true, target_survives?: true, coma?: false}
+    stub_movable_mob(traversable?: fn _from, _to -> false end)
+
+    assert {:ok, {151, 150}} = Knockback.skill(attacker, target, 18, result)
+    refute_received {:"$gen_cast", {:movement, _movement}}
   end
 
   test "knockback sends expected and landing cells to the owning session" do

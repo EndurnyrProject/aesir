@@ -114,9 +114,13 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler do
     {:noreply, session}
   end
 
-  @doc "Routes an asynchronous combat event through the sole aggregate writer."
+  @doc "Routes an asynchronous event through the sole aggregate writer."
   @spec cast(term(), SessionState.t()) ::
           {:noreply, SessionState.t()} | {:stop, term(), SessionState.t()}
+  def cast({:displace, gid, expected_x, expected_y, map_name, x, y}, session) do
+    {:noreply, MovementHandler.displace(session, gid, expected_x, expected_y, map_name, x, y)}
+  end
+
   def cast({:apply_damage, _gid, _damage, _hit_info, _source} = combat_event, session),
     do: CombatHandler.handle(combat_event, session)
 

@@ -774,6 +774,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "add_skill_blow/2" do
+    test "reads only the named skill's folded signed distance" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{
+          {:add_skill_blow, 18} => -2,
+          {:add_skill_blow, 19} => 5,
+          {:add_skill_blow, :all} => 99
+        })
+
+      assert EquipmentBonuses.add_skill_blow(attacker, 18) == -2
+      assert EquipmentBonuses.add_skill_blow(attacker, 19) == 5
+      assert EquipmentBonuses.add_skill_blow(attacker, 20) == 0
+      assert EquipmentBonuses.add_skill_blow(CombatTestHelper.create_player_combatant(), 18) == 0
+    end
+  end
+
   defp with_equip_modifiers(combatant, modifiers) do
     %{combatant | equip_modifiers: modifiers}
   end

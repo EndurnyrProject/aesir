@@ -4,14 +4,18 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
+  alias Aesir.Net.Knockback, as: KnockbackPacket
   alias Aesir.Net.UnitDespawn
   alias Aesir.Net.UnitHp
   alias Aesir.Net.UnitSpawn
   alias Aesir.Repo
   alias Aesir.ZoneServer.Constants.DespawnReason
+  alias Aesir.ZoneServer.EtsTable
+  alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.LineTargets
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
@@ -209,6 +213,50 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
     end)
 
     assert PlayerSession.get_state(session.pid).homunculus.sp == 100
+  end
+
+  test "skill knockback displaces only the Homunculus through its owner session", %{
+    session: session,
+    gid: gid
+  } do
+    :ets.insert(
+      EtsTable.table_for(:map_cache),
+      {"hom_combat_map", MapData.new("hom_combat_map", 100, 100)}
+    )
+
+    before = PlayerSession.get_state(session.pid)
+    owner_position = {before.game_state.x, before.game_state.y}
+    homunculus = before.homunculus
+    destination = {destination_x, destination_y} = {homunculus.x + 2, homunculus.y}
+
+    attacker = PlayerState.to_combatant(before.game_state)
+    target = HomunculusState.to_combatant(homunculus)
+    result = %{hit?: true, target_survives?: true, coma?: false}
+
+    assert {:ok, ^destination} =
+             Knockback.skill(attacker, target, 18, result,
+               base_distance: 2,
+               origin: {homunculus.x - 1, homunculus.y}
+             )
+
+    assert_eventually(fn ->
+      current = PlayerSession.get_state(session.pid)
+      {current.homunculus.x, current.homunculus.y} == destination
+    end)
+
+    current = PlayerSession.get_state(session.pid)
+    assert {current.game_state.x, current.game_state.y} == owner_position
+
+    assert {:ok, {destination_x, destination_y, homunculus.map_name}} ==
+             SpatialIndex.get_unit_position(:homunculus, gid)
+
+    assert_receive {:packet_sent,
+                    %KnockbackPacket{
+                      unit_id: ^gid,
+                      dst_x: ^destination_x,
+                      dst_y: ^destination_y
+                    }, :gameplay},
+                   500
   end
 
   test "external coma is applied by the owning player aggregate", %{session: session, gid: gid} do
