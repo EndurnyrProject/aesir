@@ -708,6 +708,39 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
     end
   end
 
+  describe "critical_add_race_rate/2" do
+    test "adds the matching race and :all signed percentage points" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{
+          {:critical_add_race, :brute} => 12,
+          {:critical_add_race, :all} => -3,
+          {:critical_add_race, :demon} => 50
+        })
+
+      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+      demon = CombatTestHelper.create_mob_combatant(race: :demon)
+
+      assert EquipmentBonuses.critical_add_race_rate(attacker, brute) == 9
+      assert EquipmentBonuses.critical_add_race_rate(attacker, demon) == 47
+    end
+
+    test "returns zero without matching modifiers" do
+      attacker =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:critical_add_race, :demon} => 20})
+
+      defender = CombatTestHelper.create_mob_combatant(race: :brute)
+
+      assert EquipmentBonuses.critical_add_race_rate(attacker, defender) == 0
+
+      assert EquipmentBonuses.critical_add_race_rate(
+               CombatTestHelper.create_player_combatant(),
+               defender
+             ) == 0
+    end
+  end
+
   defp with_equip_modifiers(combatant, modifiers) do
     %{combatant | equip_modifiers: modifiers}
   end

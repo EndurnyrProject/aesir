@@ -63,6 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     Mimic.copy(SizeModifiers)
     Mimic.copy(RaceModifiers)
     Mimic.copy(CriticalHits)
+    Mimic.copy(EquipmentBonuses)
     Mimic.copy(ModifierCalculator)
     :ok
   end
@@ -635,6 +636,60 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, %{critical_rate: 206}} = DamageCalculator.apply_critical_hit(100, attacker)
     end
+
+    test "adds matching defender-race percentage points in tenths exactly once" do
+      attacker =
+        CombatTestHelper.create_player_combatant(luk: 0)
+        |> Map.put(:equip_modifiers, %{
+          {:critical_add_race, :brute} => 7,
+          {:critical_add_race, :all} => 2,
+          {:critical_add_race, :demon} => 40
+        })
+
+      defender = CombatTestHelper.create_mob_combatant(race: :brute)
+
+      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 90}, 100 ->
+        %{damage: 100, is_critical: false, critical_rate: 90}
+      end)
+
+      assert {:ok, %{critical_rate: 90}} =
+               DamageCalculator.apply_critical_hit(100, attacker, defender)
+    end
+
+    test "uses the defender race and preserves the existing critical chance clamp" do
+      attacker =
+        CombatTestHelper.create_player_combatant(luk: 0)
+        |> Map.put(:equip_modifiers, %{
+          {:critical_add_race, :brute} => 100,
+          {:critical_add_race, :demon} => -100
+        })
+
+      brute = CombatTestHelper.create_mob_combatant(race: :brute)
+      demon = CombatTestHelper.create_mob_combatant(race: :demon)
+
+      assert {:ok, %{is_critical: true, critical_rate: 1_000}} =
+               DamageCalculator.apply_critical_hit(100, attacker, brute)
+
+      assert {:ok, %{is_critical: false, critical_rate: 0}} =
+               DamageCalculator.apply_critical_hit(100, attacker, demon)
+    end
+
+    test "matches both mode-aware player defender races and preserves critical damage bonuses" do
+      attacker =
+        CombatTestHelper.create_player_combatant(luk: 0)
+        |> Map.put(:equip_modifiers, %{
+          {:critical_add_race, :player_human} => 100,
+          {:critical_add_race, :demi_human} => 100,
+          crit_atk_rate: 50
+        })
+
+      for race <- [:player_human, :demi_human] do
+        defender = CombatTestHelper.create_player_combatant(race: race)
+
+        assert {:ok, %{is_critical: true, critical_rate: 1_000, damage: 210}} =
+                 DamageCalculator.apply_critical_hit(100, attacker, defender)
+      end
+    end
   end
 
   describe "integration scenarios" do
@@ -726,9 +781,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert bashed > baseline
     end
 
-    test "skip_crit returns a non-critical result without rolling a crit" do
+    test "skip_crit returns a non-critical result without reading race critical bonuses" do
       stub(CriticalHits, :calculate_critical_hit, fn _, _ ->
         flunk("critical roll must be skipped when skip_crit is set")
+      end)
+
+      stub(EquipmentBonuses, :critical_add_race_rate, fn _, _ ->
+        flunk("race critical bonus must be skipped when skip_crit is set")
       end)
 
       {attacker, defender} = CombatTestHelper.create_combat_scenario()
@@ -738,6 +797,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
                  skill_ratio: 130,
                  skip_crit: true
                )
+    end
+
+    test "force_crit stays forced without reading race critical bonuses" do
+      stub(EquipmentBonuses, :critical_add_race_rate, fn _, _ ->
+        flunk("race critical bonus must be skipped when force_crit is set")
+      end)
+
+      {attacker, defender} = CombatTestHelper.create_combat_scenario()
+
+      assert {:ok, %{is_critical: true, critical_rate: 1_000}} =
+               DamageCalculator.calculate_damage(attacker, defender, force_crit: true)
     end
 
     test "bonus_atk adds a flat amount of pre-defense damage" do

@@ -248,6 +248,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
+  Critical chance percentage points granted against the defender's race.
+
+  The exact race and `:all` entries add without clamping; the critical roll
+  converts the result to its tenths-of-a-percent unit and applies its bounds.
+  """
+  @spec critical_add_race_rate(Combatant.t(), Combatant.t()) :: rate()
+  def critical_add_race_rate(%Combatant{} = attacker, %Combatant{race: race}) do
+    read(attacker, :critical_add_race, race)
+  end
+
+  @doc """
   Percent of the defender's hard DEF ignored by the attacker's equipment,
   capped at 100. Sums the by-race (`bIgnoreDefRace`/`bIgnoreDefRaceRate`) and
   by-class (`bIgnoreDefClass`/`bIgnoreDefClassRate`) contributions against the
