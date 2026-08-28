@@ -4,9 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
 
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -18,7 +20,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_from_context
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(EquipComa)
+    :ok
+  end
 
   @caster_id 1000
   @target_id 2001
@@ -110,6 +118,181 @@ defmodule Aesir.ZoneServer.Mmo.CombatMiscAttackTest do
   end
 
   describe "execute_misc_attack/3" do
+    test "marks landed positive misc damage for target-owner coma delivery" do
+      caster = build_caster()
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 80, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn attacker, target ->
+        assert attacker.unit_type == :player
+        assert target.unit_type == :mob
+        true
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+        assert hit_info.coma?
+        80
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      reject(&MobSession.apply_damage/3)
+
+      expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} ->
+        send(test_pid, :coma_delivered)
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 250,
+                 element: :fire
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 80, skill_id: 122, level: 5}}
+      assert_received :coma_delivered
+    end
+
+    test "zero misc damage never decides or delivers coma" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 0, is_critical: false}}
+      end)
+
+      reject(&EquipComa.trigger?/2)
+      reject(&MobSession.apply_coma/2)
+      expect(MobSession, :apply_damage, fn _pid, 0, @caster_id -> :ok end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        assert packet.damage == 0
+        :ok
+      end)
+
+      assert :ok =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 0
+               )
+    end
+
+    test "failed misc calculation never decides or delivers coma" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, _target, _opts ->
+        {:error, :failed}
+      end)
+
+      reject(&EquipComa.trigger?/2)
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+      reject(&Broadcast.to_in_range/5)
+
+      assert {:error, :failed} =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 250
+               )
+    end
+
+    test "a target rejected before misc calculation never decides coma" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      stub(Aesir.ZoneServer.Mmo.Skill.Targeting, :validate_enemy, fn _attacker, _target ->
+        {:error, :friendly_target}
+      end)
+
+      reject(&MiscDamageCalculator.calculate_misc_damage/3)
+      reject(&EquipComa.trigger?/2)
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+
+      assert {:error, :friendly_target} =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 250
+               )
+    end
+
+    test "full absorption consumes a misc coma roll without owner mutation" do
+      caster = build_caster()
+      stub_single_target_mob()
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 80, is_critical: false}}
+      end)
+
+      expect(EquipComa, :trigger?, fn _attacker, _target -> true end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+        assert hit_info.coma?
+        0
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, %SkillDamage{} = packet ->
+        assert packet.damage == 0
+        :ok
+      end)
+
+      reject(&MobSession.apply_coma/2)
+      reject(&MobSession.apply_damage/3)
+
+      assert :ok =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 250
+               )
+    end
+
+    test "a mob attacker follows ordinary misc owner delivery" do
+      caster = build_mob_state(@caster_id, 150, 150)
+      stub_single_target_mob()
+
+      stub(Aesir.ZoneServer.Mmo.Skill.Targeting, :validate_enemy, fn attacker, target ->
+        assert attacker.unit_type == :mob
+        assert target.unit_type == :mob
+        :ok
+      end)
+
+      stub(MiscDamageCalculator, :calculate_misc_damage, fn attacker, target, _opts ->
+        assert attacker.unit_type == :mob
+        assert target.unit_type == :mob
+        {:ok, %{damage: 80, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 80, hit_info ->
+        refute hit_info.coma?
+        80
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      reject(&MobSession.apply_coma/2)
+      expect(MobSession, :apply_damage, fn _pid, 80, @caster_id -> :ok end)
+
+      assert :ok =
+               Combat.execute_misc_attack(caster, @target_id,
+                 skill_id: 122,
+                 skill_level: 5,
+                 base_damage: 250
+               )
+    end
+
     test "broadcasts a SkillDamage packet and applies the misc damage" do
       caster = build_caster()
       test_pid = self()
