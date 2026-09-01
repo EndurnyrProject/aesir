@@ -656,6 +656,20 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.equip_modifiers == %{atk: 10, addrace_brute: 20}
     end
 
+    test "carries the current equipment autobonus registration map", %{state: state} do
+      registrations = %{{11, 0} => %{trigger: :attack, rate: 250}}
+
+      state =
+        state
+        |> put_in([Access.key(:stats), Access.key(:equip_autobonuses)], registrations)
+        |> put_in([Access.key(:stats), Access.key(:active_autobonuses)], %{{11, 0} => 3})
+
+      combatant = PlayerState.to_combatant(state)
+
+      assert combatant.equip_autobonuses == registrations
+      assert is_map(combatant.equip_autobonuses)
+    end
+
     test "an on-foot player's combatant is not riding", %{state: state} do
       refute PlayerState.to_combatant(state).riding
     end

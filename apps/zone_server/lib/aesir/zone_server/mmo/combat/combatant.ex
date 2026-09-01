@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
       DamageCalculator.calculate_damage(player_combatant, mob_combatant)
   """
 
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
 
   @typedoc """
@@ -127,7 +128,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
 
     # Folded equipment bonus map (players: `stats.modifiers.equipment`;
     # mobs: empty, since mobs carry no equipment).
-    equip_modifiers: %{}
+    equip_modifiers: %{},
+
+    # Current derived equipment autobonus registrations. Non-player combatants
+    # have no equipment, so they retain the safe empty default.
+    equip_autobonuses: %{}
   ]
 
   @type t() :: %__MODULE__{
@@ -189,7 +194,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
           status_immune: boolean(),
           monster_id: integer() | nil,
           riding: boolean(),
-          equip_modifiers: map()
+          equip_modifiers: map(),
+          equip_autobonuses: %{Stats.autobonus_key() => Stats.autobonus_registration()}
         }
 
   @doc """

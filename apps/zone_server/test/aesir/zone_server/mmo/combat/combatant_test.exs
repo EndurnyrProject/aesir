@@ -83,6 +83,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CombatantTest do
       assert combatant.map_name == nil
       assert combatant.race2 == []
     end
+
+    test "defaults equipment autobonuses for non-player combatants" do
+      assert CombatTestHelper.create_mob_combatant().equip_autobonuses == %{}
+    end
   end
 
   describe "new!/1" do

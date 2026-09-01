@@ -1056,7 +1056,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       skin_temper_level: Learned.learned_level(learned, 109),
       class: :normal,
       riding: riding?(state.option),
-      equip_modifiers: state.stats.modifiers.equipment
+      equip_modifiers: state.stats.modifiers.equipment,
+      equip_autobonuses: state.stats.equip_autobonuses
     })
   end
 
