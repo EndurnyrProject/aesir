@@ -13,13 +13,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
       ctx
 
   and parsed back to the tuple form at load time through a closed vocabulary
-  (`parse!/1`): `bonus/3`, `refine/1`, `base_level/1`, `job_level/1`,
-  `+ - *`, `div/2`, `min/2`, `max/2`, `pow/2`, comparisons, `&&`/`||`,
-  `job_is/3`, `job_is_not/3`, `bool/2`, `if/else` statements, and the
-  inline `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the
-  source is never compiled to code — the equip corpus (~13k items) is far past
-  the BEAM clause-count ceiling — so `eval/2` interprets the tuple program
-  against the `t:inputs/0` map during the stats recompute. The evaluator is
+  (`parse!/1`): `bonus/3`, `autobonus/4`, `status_start/4`, `status_end/2`,
+  `refine/1`, `base_level/1`, `job_level/1`, `+ - *`, `div/2`, `min/2`,
+  `max/2`, `pow/2`, comparisons, `&&`/`||`, `job_is/3`, `job_is_not/3`,
+  `bool/2`, `if/else` statements, and the inline
+  `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the source is
+  never compiled to code — the equip corpus (~13k items) is far past the BEAM
+  clause-count ceiling — so `evaluate/2` interprets the tuple program against
+  the `t:inputs/0` map during the stats recompute. `eval/2` remains the
+  modifier-only compatibility entry point. The evaluator is
   pure and deterministic in `(program, inputs)` — the three inputs (the item's
   refine, the wearer's base and job level) are the only reads the vocabulary
   admits, and there is no randomness. Level inputs change on level-up, which is
@@ -29,6 +31,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   Corrupt stored data must fail loudly rather than silently degrade: `parse!/1`
   raises on any construct outside the vocabulary, any unknown bonus
   destination, or malformed shape.
+
+  ## Effects and autobonuses
+
+  Status lifecycle instructions evaluate their duration and value from the
+  same pure inputs as modifiers. Autobonus instructions keep their trigger,
+  battle flag, and nested programs as validated data while evaluating rate and
+  duration into ordered registrations. `:infinite` is reserved for status
+  duration; non-positive finite status durations and autobonus rates or
+  durations are omitted.
 
   ## Skill-aware constructs
 
@@ -71,6 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     a comparison as an integer term, e.g. `bonus bDef,2+3*(getrefine()>5)`.
   """
 
+  alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript.Result
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
@@ -160,12 +172,38 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:trigger_skill) => pos_integer()
         }
 
+  @typedoc "The constant trigger and nested programs of an autobonus instruction."
+  @type autobonus_spec :: %{
+          trigger: :attack | :when_hit | {:on_skill, pos_integer()},
+          battle_flag: non_neg_integer(),
+          primary: program(),
+          secondary: program()
+        }
+
+  @typedoc "A status lifecycle effect emitted by an evaluated equipment program."
+  @type effect ::
+          {:status_start, atom(), pos_integer() | :infinite, integer()}
+          | {:status_end, atom()}
+
+  @typedoc "A temporary equipment-program registration emitted by evaluation."
+  @type autobonus :: %{
+          trigger: :attack | :when_hit | {:on_skill, pos_integer()},
+          rate: integer(),
+          duration_ms: pos_integer(),
+          battle_flag: non_neg_integer(),
+          primary: program(),
+          secondary: program()
+        }
+
   @typedoc "A single bonus program statement."
   @type instr ::
           {:bonus, dest(), expr()}
           | {:set, dest(), value()}
           | {:grant_skill, pos_integer(), expr()}
           | {:auto_cast, auto_cast_spec(), expr(), expr()}
+          | {:autobonus, autobonus_spec(), expr(), expr()}
+          | {:status_start, atom(), expr() | :infinite, expr()}
+          | {:status_end, atom()}
           | {:if, condition(), [instr()], [instr()]}
 
   @typedoc "A bonus program: an ordered list of instructions."
@@ -204,17 +242,29 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   @doc """
-  Evaluates a program against its `t:inputs/0`, folding every `:bonus` into a
-  `%{destination => integer}` accumulator. `:set` instructions store their
-  constant instead, overwriting rather than summing, and the non-stackable
-  destinations (`BonusKeys.max_destination?/1`) keep the largest contribution
-  instead of summing. Pure and deterministic in `(program, inputs)`; an input
-  the program reads but the map lacks raises.
+  Evaluates a program against its `t:inputs/0` into modifiers, autobonus
+  registrations, and ordered status effects. Pure and deterministic in
+  `(program, inputs)`; an input the program reads but the map lacks raises.
+  """
+  @spec evaluate(program(), inputs()) :: Result.t()
+  def evaluate(program, inputs) when is_list(program) and is_map(inputs) do
+    result =
+      eval_instrs(program, inputs, %Result{modifiers: %{}, autobonuses: [], effects: []})
+
+    %{
+      result
+      | autobonuses: Enum.reverse(result.autobonuses),
+        effects: Enum.reverse(result.effects)
+    }
+  end
+
+  @doc """
+  Evaluates a program and returns only its modifier map.
+
+  This is the compatibility entry point for existing equipment-stat callers.
   """
   @spec eval(program(), inputs()) :: %{dest() => integer() | value()}
-  def eval(program, inputs) when is_list(program) and is_map(inputs) do
-    eval_instrs(program, inputs, %{})
-  end
+  def eval(program, inputs), do: evaluate(program, inputs).modifiers
 
   defp render_stmts([]), do: "ctx"
   defp render_stmts([instr]), do: render_instr(instr)
@@ -242,10 +292,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "auto_cast(ctx, #{inspect(spec)}, #{render_expr(level)}, #{render_expr(rate)})"
   end
 
+  defp render_instr({:autobonus, spec, rate, duration}) do
+    "autobonus(ctx, #{inspect(spec, limit: :infinity)}, #{render_expr(rate)}, #{render_expr(duration)})"
+  end
+
+  defp render_instr({:status_start, status, duration, value}) do
+    "status_start(ctx, #{inspect(status)}, #{render_duration(duration)}, #{render_expr(value)})"
+  end
+
+  defp render_instr({:status_end, status}) do
+    "status_end(ctx, #{inspect(status)})"
+  end
+
   defp render_instr({:if, condition, then_branch, else_branch}) do
     "if #{render_cond(condition)} do\n" <>
       "#{indent(render_stmts(then_branch))}\nelse\n#{indent(render_stmts(else_branch))}\nend"
   end
+
+  defp render_duration(:infinite), do: ":infinite"
+  defp render_duration(expr), do: render_expr(expr)
 
   defp render_expr(int) when is_integer(int), do: Integer.to_string(int)
   defp render_expr(:refine), do: "refine(ctx)"
@@ -309,6 +374,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     {:auto_cast, validate_auto_cast_spec!(spec), parse_expr!(level), parse_expr!(rate)}
   end
 
+  defp parse_instr!({:autobonus, _, [{:ctx, _, c}, spec, rate, duration]}) when is_atom(c) do
+    {:autobonus, validate_autobonus_spec!(spec), parse_expr!(rate), parse_expr!(duration)}
+  end
+
+  defp parse_instr!({:status_start, _, [{:ctx, _, c}, status, duration, value]})
+       when is_atom(c) do
+    {:status_start, validate_status!(status), parse_duration!(duration), parse_expr!(value)}
+  end
+
+  defp parse_instr!({:status_end, _, [{:ctx, _, c}, status]}) when is_atom(c) do
+    {:status_end, validate_status!(status)}
+  end
+
   defp parse_instr!({:if, _, [condition, [do: then_q, else: else_q]]}) do
     {:if, parse_cond!(condition), parse_stmts(then_q), parse_stmts(else_q)}
   end
@@ -318,6 +396,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp parse_instr!(other), do: malformed!("instruction", other)
+
+  defp parse_duration!(:infinite), do: :infinite
+  defp parse_duration!(duration), do: parse_expr!(duration)
 
   defp parse_expr!(int) when is_integer(int), do: int
   defp parse_expr!({:-, _, [int]}) when is_integer(int), do: -int
@@ -438,6 +519,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp validate_skill_id!(id) when is_integer(id) and id > 0, do: id
   defp validate_skill_id!(id), do: malformed!("skill id", id)
 
+  defp validate_status!(status) when is_atom(status), do: status
+  defp validate_status!(status), do: malformed!("status", status)
+
   # An autocast spec quotes as a map literal; every field is a constant, so the
   # whole shape is checked structurally here.
   defp validate_auto_cast_spec!({:%{}, _, fields}) do
@@ -456,6 +540,56 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp validate_auto_cast_spec!(spec), do: malformed!("auto_cast spec", spec)
+
+  defp validate_autobonus_spec!({:%{}, _, _} = quoted) do
+    quoted
+    |> literal!()
+    |> validate_autobonus_spec!()
+  end
+
+  defp validate_autobonus_spec!(
+         %{trigger: trigger, battle_flag: battle_flag, primary: primary, secondary: secondary} =
+           spec
+       ) do
+    with true <- map_size(spec) == 4,
+         true <- valid_autobonus_trigger?(trigger),
+         true <- is_integer(battle_flag) and battle_flag >= 0,
+         primary when is_list(primary) <- validate_program!(primary),
+         secondary when is_list(secondary) <- validate_program!(secondary) do
+      %{spec | primary: primary, secondary: secondary}
+    else
+      _ -> malformed!("autobonus spec", spec)
+    end
+  end
+
+  defp validate_autobonus_spec!(spec), do: malformed!("autobonus spec", spec)
+
+  defp valid_autobonus_trigger?(trigger) when trigger in [:attack, :when_hit], do: true
+  defp valid_autobonus_trigger?({:on_skill, id}), do: is_integer(id) and id > 0
+  defp valid_autobonus_trigger?(_trigger), do: false
+
+  defp validate_program!(program) when is_list(program) do
+    case program |> render_stmts() |> Code.string_to_quoted!() |> parse_stmts() do
+      ^program -> program
+      _other -> malformed!("autobonus program", program)
+    end
+  rescue
+    FunctionClauseError -> malformed!("autobonus program", program)
+  end
+
+  defp validate_program!(program), do: malformed!("autobonus program", program)
+
+  defp literal!(term) when is_atom(term) or is_integer(term) or is_binary(term), do: term
+  defp literal!({:-, _, [integer]}) when is_integer(integer), do: -integer
+  defp literal!(list) when is_list(list), do: Enum.map(list, &literal!/1)
+  defp literal!({left, right}), do: {literal!(left), literal!(right)}
+  defp literal!({:{}, _, values}), do: values |> Enum.map(&literal!/1) |> List.to_tuple()
+
+  defp literal!({:%{}, _, fields}) do
+    Map.new(fields, fn {key, value} -> {literal!(key), literal!(value)} end)
+  end
+
+  defp literal!(term), do: malformed!("literal", term)
 
   # Only an on-skill proc names a triggering skill, and it must name one.
   defp valid_trigger_skill?(spec, :on_skill) do
@@ -492,37 +626,77 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     Enum.reduce(instrs, acc, &eval_instr(&1, inputs, &2))
   end
 
-  defp eval_instr({:bonus, key, expr}, inputs, acc) do
+  defp eval_instr({:bonus, key, expr}, inputs, %Result{modifiers: modifiers} = result) do
     value = eval_expr(expr, inputs)
 
-    cond do
-      BonusKeys.overwrite_destination?(key) -> Map.put(acc, key, value)
-      BonusKeys.max_destination?(key) -> Map.update(acc, key, value, &max(&1, value))
-      true -> Map.update(acc, key, value, &(&1 + value))
-    end
+    modifiers =
+      cond do
+        BonusKeys.overwrite_destination?(key) -> Map.put(modifiers, key, value)
+        BonusKeys.max_destination?(key) -> Map.update(modifiers, key, value, &max(&1, value))
+        true -> Map.update(modifiers, key, value, &(&1 + value))
+      end
+
+    %{result | modifiers: modifiers}
   end
 
-  defp eval_instr({:set, key, value}, _inputs, acc), do: Map.put(acc, key, value)
+  defp eval_instr({:set, key, value}, _inputs, %Result{} = result) do
+    %{result | modifiers: Map.put(result.modifiers, key, value)}
+  end
 
   # An autocast folds into an entry keyed by everything that makes two procs the
   # same arming - trigger, skill, level, attack kinds and force bits - with the
   # per-mille chance as its value. Two items arming the identical proc therefore
   # stack their chances, while the same skill at a different level stays its own
   # entry.
-  defp eval_instr({:auto_cast, spec, level_expr, rate_expr}, inputs, acc) do
+  defp eval_instr({:auto_cast, spec, level_expr, rate_expr}, inputs, %Result{} = result) do
     level = eval_expr(level_expr, inputs)
     rate = eval_expr(rate_expr, inputs)
 
     if level > 0 and rate != 0 do
-      Map.update(acc, auto_cast_key(spec, level), rate, &(&1 + rate))
+      key = auto_cast_key(spec, level)
+      modifiers = Map.update(result.modifiers, key, rate, &(&1 + rate))
+      %{result | modifiers: modifiers}
     else
-      acc
+      result
     end
   end
 
-  defp eval_instr({:grant_skill, skill_id, expr}, inputs, acc) do
+  defp eval_instr({:grant_skill, skill_id, expr}, inputs, %Result{} = result) do
     level = eval_expr(expr, inputs)
-    Map.update(acc, {:granted_skill, skill_id}, level, &max(&1, level))
+    key = {:granted_skill, skill_id}
+    %{result | modifiers: Map.update(result.modifiers, key, level, &max(&1, level))}
+  end
+
+  defp eval_instr({:autobonus, spec, rate_expr, duration_expr}, inputs, %Result{} = result) do
+    rate = eval_expr(rate_expr, inputs)
+    duration = eval_expr(duration_expr, inputs)
+
+    if rate > 0 and duration > 0 do
+      autobonus = spec |> Map.put(:rate, rate) |> Map.put(:duration_ms, duration)
+      %{result | autobonuses: [autobonus | result.autobonuses]}
+    else
+      result
+    end
+  end
+
+  defp eval_instr({:status_start, status, :infinite, value_expr}, inputs, %Result{} = result) do
+    effect = {:status_start, status, :infinite, eval_expr(value_expr, inputs)}
+    %{result | effects: [effect | result.effects]}
+  end
+
+  defp eval_instr({:status_start, status, duration_expr, value_expr}, inputs, %Result{} = result) do
+    duration = eval_expr(duration_expr, inputs)
+
+    if duration > 0 do
+      effect = {:status_start, status, duration, eval_expr(value_expr, inputs)}
+      %{result | effects: [effect | result.effects]}
+    else
+      result
+    end
+  end
+
+  defp eval_instr({:status_end, status}, _inputs, %Result{} = result) do
+    %{result | effects: [{:status_end, status} | result.effects]}
   end
 
   defp eval_instr({:if, condition, then_branch, else_branch}, inputs, acc) do

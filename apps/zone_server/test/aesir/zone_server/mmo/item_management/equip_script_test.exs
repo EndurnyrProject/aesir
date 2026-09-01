@@ -217,6 +217,160 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     end
   end
 
+  describe "status effect instructions" do
+    test "round-trips finite, infinite, and end effects" do
+      program = [
+        {:status_start, :sc_stun, {:*, :refine, 1_000}, 3},
+        {:status_start, :sc_summer, :infinite, 1},
+        {:status_end, :sc_summer}
+      ]
+
+      assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
+    end
+
+    test "rejects malformed status shapes and reserves :infinite for duration" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("status_start(ctx, 10, 1_000, 1)")
+      end
+
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("status_start(ctx, :sc_stun, 1_000, :infinite)")
+      end
+
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("status_end(ctx, :sc_stun, 1)")
+      end
+    end
+
+    test "omits finite status starts with non-positive evaluated durations" do
+      program = [
+        {:status_start, :sc_stun, 0, 1},
+        {:status_start, :sc_freeze, {:-, :refine, 10}, 1}
+      ]
+
+      assert EquipScript.evaluate(program, on(5)).effects == []
+    end
+
+    test "evaluates effects in source order without changing modifier folding" do
+      program = [
+        {:status_start, :sc_stun, {:*, :refine, 1_000}, 3},
+        {:bonus, :str, 2},
+        {:status_end, :sc_stun},
+        {:status_start, :sc_summer, :infinite, {:+, :job_level, 1}},
+        {:bonus, :str, 4}
+      ]
+
+      assert EquipScript.evaluate(program, on(2, job_level: 5)) ==
+               %EquipScript.Result{
+                 modifiers: %{str: 6},
+                 autobonuses: [],
+                 effects: [
+                   {:status_start, :sc_stun, 2_000, 3},
+                   {:status_end, :sc_stun},
+                   {:status_start, :sc_summer, :infinite, 6}
+                 ]
+               }
+    end
+  end
+
+  describe "autobonus instructions" do
+    test "round-trips attack, when-hit, and on-skill registrations" do
+      primary = [
+        {:bonus, :atk, {:div, :base_level, 10}},
+        {:bonus, {:skill_varcast_rate, 271}, -100}
+      ]
+
+      secondary = [{:status_start, :sc_stun, 1_000, 1}]
+
+      program = [
+        {:autobonus, %{trigger: :attack, battle_flag: 17, primary: primary, secondary: secondary},
+         {:*, :refine, 100}, 5_000},
+        {:autobonus, %{trigger: :when_hit, battle_flag: 34, primary: primary, secondary: []}, 250,
+         {:*, :job_level, 100}},
+        {:autobonus,
+         %{trigger: {:on_skill, 28}, battle_flag: 0, primary: primary, secondary: secondary},
+         1_000, 3_000}
+      ]
+
+      assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
+    end
+
+    test "rejects malformed and unknown registration data" do
+      valid = "%{trigger: :attack, battle_flag: 17, primary: [], secondary: []}"
+
+      invalid_specs = [
+        "%{trigger: :bogus, battle_flag: 17, primary: [], secondary: []}",
+        "%{trigger: {:on_skill, 0}, battle_flag: 0, primary: [], secondary: []}",
+        "%{trigger: :attack, battle_flag: -1, primary: [], secondary: []}",
+        "%{trigger: :attack, battle_flag: 17, primary: []}",
+        "%{trigger: :attack, battle_flag: 17, primary: [], secondary: [], extra: 1}",
+        "%{trigger: :attack, battle_flag: 17, primary: [heal(ctx, 1)], secondary: []}",
+        "%{trigger: :attack, battle_flag: 17, primary: :not_a_program, secondary: []}"
+      ]
+
+      for spec <- invalid_specs do
+        assert_raise ArgumentError, fn ->
+          EquipScript.parse!("autobonus(ctx, #{spec}, 100, 1_000)")
+        end
+      end
+
+      assert_raise ArgumentError, fn ->
+        EquipScript.parse!("autobonus(ctx, #{valid}, 100, :infinite)")
+      end
+
+      assert_raise ArgumentError, fn ->
+        EquipScript.evaluate(
+          [
+            {:autobonus, %{trigger: :attack, battle_flag: 17, primary: [], secondary: []}, 100,
+             :infinite}
+          ],
+          on(0)
+        )
+      end
+    end
+
+    test "omits registrations with zero or negative evaluated rate or duration" do
+      spec = %{trigger: :attack, battle_flag: 17, primary: [], secondary: []}
+
+      program = [
+        {:autobonus, spec, 0, 1_000},
+        {:autobonus, spec, -1, 1_000},
+        {:autobonus, spec, 1_000, 0},
+        {:autobonus, spec, 1_000, {:-, :refine, 10}}
+      ]
+
+      assert EquipScript.evaluate(program, on(5)).autobonuses == []
+    end
+
+    test "evaluates registrations against pure inputs in their own source order" do
+      first = %{trigger: :attack, battle_flag: 17, primary: [{:bonus, :atk, 5}], secondary: []}
+
+      second = %{
+        trigger: {:on_skill, 28},
+        battle_flag: 0,
+        primary: [{:bonus, :str, 2}],
+        secondary: [{:status_end, :sc_stun}]
+      }
+
+      program = [
+        {:autobonus, first, {:*, :refine, 100}, {:*, :base_level, 10}},
+        {:status_end, :sc_stun},
+        {:bonus, :vit, 3},
+        {:autobonus, second, {:*, :job_level, 10}, 2_000}
+      ]
+
+      assert EquipScript.evaluate(program, on(4, base_level: 20, job_level: 7)) ==
+               %EquipScript.Result{
+                 modifiers: %{vit: 3},
+                 effects: [{:status_end, :sc_stun}],
+                 autobonuses: [
+                   Map.merge(first, %{rate: 400, duration_ms: 200}),
+                   Map.merge(second, %{rate: 70, duration_ms: 2_000})
+                 ]
+               }
+    end
+  end
+
   describe "corpus round-trip over the imported equip.yml" do
     test "every on_equip program round-trips through to_source |> parse! and evals cleanly for refine 0..20" do
       programs =
@@ -418,7 +572,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     end
   end
 
+  describe "evaluate/2" do
+    test "returns modifiers in a structured result" do
+      result = EquipScript.evaluate([{:bonus, :str, 2}], on(0))
+
+      assert result == %EquipScript.Result{modifiers: %{str: 2}, autobonuses: [], effects: []}
+    end
+  end
+
   describe "eval/2" do
+    test "returns only modifiers when the program also emits effects and registrations" do
+      spec = %{trigger: :when_hit, battle_flag: 34, primary: [], secondary: []}
+
+      program = [
+        {:status_start, :sc_stun, 1_000, 1},
+        {:bonus, :str, 2},
+        {:autobonus, spec, 100, 5_000}
+      ]
+
+      assert EquipScript.eval(program, on(0)) == %{str: 2}
+    end
+
     test "evaluates integer-truncating arithmetic against refine" do
       program = [{:bonus, :smatk, {:+, 1, {:div, :refine, 2}}}]
 
