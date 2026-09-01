@@ -5010,6 +5010,7 @@
 - aegis_name: Cool_Summer_Outfit
   id: 12260
   name: Cool Summer Outfit
+  on_use: sc_start(ctx, :sc_summer, 600000, 0)
   type: usable
   weight: 100
 - aegis_name: Secret_Medicine

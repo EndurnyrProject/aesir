@@ -1965,6 +1965,11 @@
   locations:
     - both_hand
   name: Bloody Eater
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :ghost)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :critical, 100}, {:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 5000)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -2037,6 +2042,11 @@
   locations:
     - both_hand
   name: Violet Fear
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 3, 30)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 88}, 5, 50)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_def_class, :normal}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -4580,6 +4590,27 @@
   name: Glorious Bloody Roar
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 70)
+    ctx = bonus(ctx, {:addrace, :player_human}, 70)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 70, 3000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: katar
@@ -4597,6 +4628,26 @@
   name: Glorious Jamadhar
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 70)
+    ctx = bonus(ctx, {:addrace, :player_human}, 70)
+    ctx = bonus(ctx, :crit_atk_rate, 20)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:critical_add_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:critical_add_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 70, 3000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: katar
@@ -6734,6 +6785,13 @@
   name: Brave Insane Battle Axe
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 3)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 55)
+    ctx = bonus(ctx, {:addrace, :player_human}, 55)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :break_armor_rate, 10000}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 3000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -10138,6 +10196,14 @@
   locations:
     - right_hand
   name: Mjolnir
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :dex, 50)
+    ctx = bonus(ctx, :str, 20)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 10, 100)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :splash_range, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 10000)
+    ctx
   range: 1
   subtype: mace
   type: weapon
@@ -10377,6 +10443,13 @@
   locations:
     - right_hand
   name: Nemesis
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, {:addele, :shadow}, 10)
+    ctx = bonus(ctx, {:addrace, :demon}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 32}, (1 + refine(ctx)), 100)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 20000)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -10441,6 +10514,14 @@
   name: Brave Battlefield Morning Star
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:add_eff, :sc_stun}, 5000}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 6000)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -11210,6 +11291,27 @@
   name: Glorious Tablet
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 80)
+    ctx = bonus(ctx, {:addrace, :player_human}, 80)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 25)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 25)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = if (refine(ctx) > 5) do
+      ctx = bonus(ctx, {:addrace, :demi_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:addrace, :player_human}, pow((min(14, refine(ctx)) - 4), 2))
+      ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      autobonus(ctx, %{primary: [{:bonus, :atk, 200}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 3000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: book
@@ -11452,6 +11554,17 @@
   locations:
     - right_hand
   name: Vellum Great Encyclopedia
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (80 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (80 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 30)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 30)
+    ctx = if (refine(ctx) > 8) do
+      autobonus(ctx, %{primary: [{:bonus, :atk, 200}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 3000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: book
@@ -12556,6 +12669,11 @@
     - right_hand
   magic_attack: 125
   name: Release of Wish
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :heal_power, 5)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 2000}, 200}, {:bonus, {:sp_regen_bonus, 2000}, 50}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 10000)
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -13603,6 +13721,14 @@
     - right_hand
   magic_attack: 200
   name: Thanos Staff
+  on_equip: |-
+    ctx = bonus(ctx, :int, 6)
+    ctx = bonus(ctx, :vit, 6)
+    ctx = bonus(ctx, :luk, -6)
+    ctx = bonus(ctx, :heal_power, 15)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 2000}, 300}, {:bonus, {:sp_regen_bonus, 2000}, 50}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 60000)
+    ctx = bonus(ctx, {:hp_loss_bonus, 10000}, 100)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -15144,6 +15270,7 @@
   locations:
     - both_hand
   name: Ixion Wings
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 7}], trigger: :attack, secondary: [], battle_flag: 849}, (5 + refine(ctx)), 7000)'
   range: 5
   refineable: true
   slots: 1
@@ -15907,6 +16034,15 @@
   name: Brave Battle Fist
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 95)
+    ctx = bonus(ctx, {:addrace, :player_human}, 95)
+    ctx = bonus(ctx, {:skill_varcast_rate, 271}, -25)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_varcast_rate, 271}, -100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 6000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 1
   refineable: true
   subtype: knuckle
@@ -16506,6 +16642,33 @@
   locations:
     - right_hand
   name: Lesser Guild Member's Fist
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, {:skill_fixcast_rate, 271}, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :atk, {:+, 30, {:-, :refine, 10}}}], trigger: {:on_skill, 270}, secondary: [], battle_flag: 0}, 1000, 20000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: knuckle
@@ -18748,6 +18911,11 @@
     - both_hand
   magic_attack: 240
   name: Kronos
+  on_equip: |-
+    ctx = bonus(ctx, :int, (3 + div(refine(ctx), 2)))
+    ctx = bonus(ctx, :max_hp, (300 + div((50 * refine(ctx)), 2)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk_rate, 12}, {:bonus, :sp_cost_rate, 20}], trigger: :attack, secondary: [], battle_flag: 338}, 1, 5000)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_staff
@@ -19251,6 +19419,14 @@
     - both_hand
   magic_attack: 250
   name: Thanos Two-Handed Staff
+  on_equip: |-
+    ctx = bonus(ctx, :int, 6)
+    ctx = bonus(ctx, :vit, 6)
+    ctx = bonus(ctx, :luk, -6)
+    ctx = bonus(ctx, :heal_power, 18)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 2000}, 300}, {:bonus, {:sp_regen_bonus, 2000}, 50}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 60000)
+    ctx = bonus(ctx, {:hp_loss_bonus, 10000}, 100)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -19622,6 +19798,16 @@
     - both_hand
   magic_attack: 210
   name: Sunflower Kid
+  on_equip: |-
+    ctx = bonus(ctx, {:ignore_mdef_class, :all}, (5 * refine(ctx)))
+    ctx = bonus(ctx, {:magic_atk_ele, :fire}, (3 * refine(ctx)))
+    ctx = if (skill_lv(ctx, 81) == 10) do
+      bonus(ctx, {:magic_atk_ele, :fire}, 20)
+    else
+      ctx
+    end
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 83}, 60}], trigger: {:on_skill, 83}, secondary: [], battle_flag: 0}, (10 * refine(ctx)), 5000)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -20117,6 +20303,29 @@
     - both_hand
   magic_attack: 330
   name: Detecting Staff
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :matk_rate, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :matk, 60)
+      ctx = bonus(ctx, :varcast_rate, -10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 15)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_addsize, :all}, 20}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :delay_rate, -20)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -20923,6 +21132,14 @@
   locations:
     - left_hand
   name: Shield of Naga
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = if (refine(ctx) < 11) do
+      autobonus(ctx, %{primary: [{:bonus, :short_weapon_damage_return, {:*, :refine, 3}}], trigger: :when_hit, secondary: [], battle_flag: 849}, 10, 5000)
+    else
+      autobonus(ctx, %{primary: [{:bonus, :short_weapon_damage_return, 30}], trigger: :when_hit, secondary: [], battle_flag: 849}, 10, (1000 * (5 + div((refine(ctx) - 10), 2))))
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -21603,6 +21820,7 @@
   locations:
     - left_hand
   name: Wolf Wrist Guard
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :atk, 100}, {:bonus, :flee, -50}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)'
   refineable: true
   slots: 1
   type: armor
@@ -22029,6 +22247,12 @@
   locations:
     - left_hand
   name: Fallen Angel Shield
+  on_equip: |-
+    if (refine(ctx) >= 7) do
+      autobonus(ctx, %{primary: [{:bonus, :delay_rate, {:-, -10, {:*, 5, {:-, :refine, 6}}}}], trigger: :when_hit, secondary: [], battle_flag: 338}, 50, 5000)
+    else
+      autobonus(ctx, %{primary: [{:bonus, :delay_rate, -10}], trigger: :when_hit, secondary: [], battle_flag: 338}, 50, 5000)
+    end
   refineable: true
   slots: 1
   type: armor
@@ -25188,6 +25412,10 @@
   locations:
     - armor
   name: Armor of Naga
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 5, 10000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -28959,6 +29187,11 @@
   locations:
     - garment
   name: White Wing Manteau
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :flee, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :flee, 20}], trigger: :attack, secondary: [], battle_flag: 833}, 20, 7000)
+    ctx
   refineable: true
   type: armor
   weight: 200
@@ -30822,6 +31055,14 @@
   name: 5th Anniversary Coin
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = bonus(ctx, :matk, 10)
+    ctx = bonus(ctx, :critical, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd, 3}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :varcast_rate, -50}], trigger: :attack, secondary: [], battle_flag: 338}, 1, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :heal_power, 20}], trigger: {:on_skill, 28}, secondary: [], battle_flag: 0}, 100, 3000)
+    ctx
   type: armor
 - aegis_name: Bloody_Iron_Ball_C
   armor_level: 1
@@ -31382,6 +31623,14 @@
   locations:
     - both_accessory
   name: Angelic Ring
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :heal_power, 20}], trigger: {:on_skill, 28}, secondary: [], battle_flag: 0}, 100, 3000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :heal_power, 20}], trigger: {:on_skill, 231}, secondary: [], battle_flag: 0}, 100, 3000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :heal_power, 20}], trigger: {:on_skill, 70}, secondary: [], battle_flag: 0}, 100, 3000)
+    ctx
   type: armor
   weight: 100
 - aegis_name: Sprint_Ring
@@ -31879,6 +32128,8 @@
   locations:
     - both_accessory
   name: Adventurer's Trusty Towel
+  on_equip: status_start(ctx, :sc_summer, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_summer)
   slots: 1
   type: armor
   weight: 100
@@ -31929,6 +32180,7 @@
   locations:
     - both_accessory
   name: Dark Knight Glove
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 2}], trigger: :attack, secondary: [], battle_flag: 593}, 10, 5000)'
   type: armor
   weight: 500
 - aegis_name: Aumdura's_Grace
@@ -32757,6 +33009,7 @@
   locations:
     - both_accessory
   name: Dark Knight Glove
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :max_hp_rate, 2}], trigger: :attack, secondary: [], battle_flag: 593}, 10, 5000)'
   type: armor
   weight: 500
 - aegis_name: Upg_Clip
@@ -40740,6 +40993,11 @@
   locations:
     - head_top
   name: Sorin Doll Hat
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 5)
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 593}, 20, 10000)
+    ctx
   slots: 1
   type: armor
   view: 356
@@ -40770,6 +41028,11 @@
   locations:
     - head_top
   name: Bennit Doll Hat
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 5)
+    ctx = bonus(ctx, {:subrace, :player_human}, 5)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 5}], trigger: :attack, secondary: [], battle_flag: 593}, 20, 30000)
+    ctx
   slots: 1
   type: armor
   view: 358
@@ -41019,6 +41282,11 @@
   locations:
     - head_top
   name: Hyuke's Black Cat Ears
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_mdef_class, :normal}, 25}, {:bonus, {:ignore_mdef_class, :boss}, 25}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 5000)
+    ctx
   refineable: true
   type: armor
   view: 368
@@ -42581,6 +42849,12 @@
   locations:
     - head_top
   name: Puppy Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :int, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :critical, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 3000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_mdef_class, :normal}, 100}, {:bonus, {:ignore_mdef_class, :boss}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 3000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -42749,6 +43023,13 @@
   locations:
     - head_top
   name: Zaha Doll Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :mdef, 9)
+    ctx = bonus(ctx, {:magic_addrace, :undead}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk, {:*, 30, {:max, 1, :refine}}}, {:bonus, :fixed_cast, {:*, -80, {:max, 1, :refine}}}, {:bonus, {:sp_loss_bonus, 1000}, 10}], trigger: :attack, secondary: [], battle_flag: 338}, 15, (2 + (div(refine(ctx), 3) * 1000)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk, {:*, 30, {:max, 1, :refine}}}, {:bonus, :fixed_cast, {:*, -80, {:max, 1, :refine}}}, {:bonus, {:sp_loss_bonus, 1000}, 10}], trigger: :when_hit, secondary: [], battle_flag: 338}, 15, (2 + (div(refine(ctx), 3) * 1000)))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -43270,6 +43551,17 @@
   locations:
     - head_top
   name: Power Of Thor
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :wind}, 7)
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :dex, 1)
+    ctx = if (refine(ctx) >= 8) do
+      autobonus(ctx, %{primary: [{:bonus, :matk, 40}, {:bonus, :atk, 40}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 6000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -43297,6 +43589,14 @@
   locations:
     - head_top
   name: King Tiger Doll Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:addrace, :brute}, 10)
+    ctx = bonus(ctx, {:addrace, :player_doram}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_loss_bonus, 1000}, 5}, {:bonus, :atk, {:*, 25, :refine}}], trigger: :attack, secondary: [], battle_flag: 593}, (3 * refine(ctx)), 3000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_loss_bonus, 1000}, 5}, {:bonus, :atk, {:*, 25, :refine}}], trigger: :when_hit, secondary: [], battle_flag: 593}, refine(ctx), 3000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -44533,6 +44833,17 @@
   locations:
     - head_top
   name: Sinulog Hat
+  on_equip: |-
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :critical, 10)
+      ctx = bonus(ctx, :hit, 10)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 30}], trigger: :attack, secondary: [], battle_flag: 593}, 30, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :str, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -44925,6 +45236,18 @@
   locations:
     - head_top
   name: Leo Diadem
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:subele, :fire}, 5)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :flee, 10)
+      ctx = bonus(ctx, :aspd_rate, 3)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :splash_range, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 566
@@ -45109,6 +45432,18 @@
   locations:
     - head_top
   name: Virgo Crown
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :aspd_rate, 1)
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, {:subele, :earth}, 5)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :dex, 20}], trigger: :attack, secondary: [], battle_flag: 338}, 30, 6000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :dex, 20}], trigger: :attack, secondary: [], battle_flag: 593}, 30, 6000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 573
@@ -46063,6 +46398,12 @@
   locations:
     - head_top
   name: Evil Snake Lord Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :dex, -2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :varcast_rate, -50}, {:bonus, :flee, 30}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 5000)
+    ctx
   refineable: true
   type: armor
   view: 372
@@ -46294,6 +46635,15 @@
     - head_mid
     - head_top
   name: Skull Hood
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demon}, 10)
+    ctx = bonus(ctx, {:subrace, :undead}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      autobonus(ctx, %{primary: [{:bonus, :critical, 30}, {:bonus, :hit, 10}], trigger: :attack, secondary: [], battle_flag: 593}, 10, 10000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -47339,6 +47689,30 @@
   locations:
     - head_top
   name: Sagittarius Crown
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:subele, :fire}, 7)
+    ctx = if (refine(ctx) > 6) do
+      bonus(ctx, :aspd_rate, 2)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 7) do
+      bonus(ctx, :agi, 2)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, :long_atk_rate, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 9) do
+      autobonus(ctx, %{primary: [{:bonus, :agi, 10}, {:bonus, :dex, 10}], trigger: :attack, secondary: [], battle_flag: 593}, 3, 10000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48184,6 +48558,10 @@
   locations:
     - head_top
   name: Blue Arara Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 5}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 10000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -48198,6 +48576,10 @@
   locations:
     - head_top
   name: Drooping Boto
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk_rate, 3}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 10000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -49372,6 +49754,11 @@
   locations:
     - head_top
   name: Worldcup Hat of Passion
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :flee, -15}, {:bonus, {:addclass, :all}, 5}], trigger: :attack, secondary: [], battle_flag: 593}, 20, 10000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -49386,6 +49773,11 @@
   locations:
     - head_top
   name: Worldcup Hat of Fight
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :vit, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :heal_power, 20}], trigger: {:on_skill, 28}, secondary: [], battle_flag: 0}, 150, 5000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -49400,6 +49792,11 @@
   locations:
     - head_top
   name: Worldcup Hat of Victory
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk_rate, 5}, {:bonus, :def, -30}], trigger: :attack, secondary: [], battle_flag: 338}, 3, 10000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -50570,6 +50967,12 @@
   locations:
     - head_top
   name: Owl Viscount Silk Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :matk, (7 * refine(ctx)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, {:ternary, {:>=, :refine, 9}, 40, {:ternary, {:>=, :refine, 7}, 10, {:ternary, {:>=, :refine, 5}, 5, 0}}}}], trigger: :attack, secondary: [], battle_flag: 338}, 20, 30000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -50612,6 +51015,10 @@
   locations:
     - head_low
   name: Well-Chewed Pencil (Red)
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = autobonus(ctx, %{primary: [{:set, :atk_ele, :fire}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 60000)
+    ctx
   type: armor
   view: 931
   weight: 300
@@ -52936,6 +53343,19 @@
   name: Valorous Assassin's Damascus
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 75)
+    ctx = bonus(ctx, {:addrace, :player_human}, 75)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:def_ratio_atk_class, :all}, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 6000)
+    ctx = if ((job_is(ctx, :class, :ninja) || job_is(ctx, :class, :rogue)) || job_is(ctx, :class, :stalker)) do
+      bonus(ctx, :matk, 90)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -53160,6 +53580,10 @@
   name: Ice Pick
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :flee, 20}], trigger: :attack, secondary: [], battle_flag: 853}, 10, 10000)
+    ctx
   range: 1
   subtype: dagger
   type: weapon
@@ -53221,6 +53645,10 @@
   locations:
     - right_hand
   name: Weihna
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff_on_skill, 214, :sc_poison}, 1000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:addclass, :all}, 10}], trigger: :attack, secondary: [], battle_flag: 785}, 5, 5000)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -53815,6 +54243,19 @@
   name: Pompano
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 3)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 30}], trigger: :attack, secondary: [], battle_flag: 593}, 15, 7000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk, 20}], trigger: :attack, secondary: [], battle_flag: 338}, 15, 7000)
+    ctx = if (base_level(ctx) > 99) do
+      ctx = bonus(ctx, :atk, 10)
+      ctx = bonus(ctx, :matk, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   subtype: dagger
   type: weapon
@@ -54553,6 +54994,10 @@
     - right_hand
   magic_attack: 50
   name: Faceworm Leg
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :poison)
+    ctx = autobonus(ctx, %{primary: [], trigger: :attack, secondary: [], battle_flag: 849}, 30, 5000)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -54590,6 +55035,10 @@
     - right_hand
   magic_attack: 120
   name: Faceworm Queen Leg
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 653}, 1, 200}], trigger: :attack, secondary: [], battle_flag: 593}, 8, 5000)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -54801,6 +55250,21 @@
   locations:
     - right_hand
   name: Half BF Dagger2
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 35)
+    ctx = bonus(ctx, {:addrace, :player_human}, 35)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:def_ratio_atk_class, :all}, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 3000)
+    ctx = if ((job_is(ctx, :class, :ninja) || job_is(ctx, :class, :rogue)) || job_is(ctx, :class, :stalker)) do
+      bonus(ctx, :matk_rate, 45)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -55032,6 +55496,16 @@
   name: Soldier Revolver
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :hit, -10)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 55)
+    ctx = bonus(ctx, {:addrace, :player_human}, 55)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 3000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 7
   refineable: true
   subtype: revolver
@@ -56251,6 +56725,15 @@
   name: Soldier Gatling Gun
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 35)
+    ctx = bonus(ctx, {:addrace, :player_human}, 35)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 80}, {:bonus, {:hp_loss_bonus, 1000}, 120}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 6000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 9
   refineable: true
   subtype: gatling
@@ -56268,6 +56751,16 @@
   name: Soldier Shotgun
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 55)
+    ctx = bonus(ctx, {:addrace, :player_human}, 55)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 80}, {:bonus, {:hp_loss_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 6000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 9
   refineable: true
   subtype: shotgun
@@ -56285,6 +56778,16 @@
   name: Soldier Grenade Launcher
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 35)
+    ctx = bonus(ctx, {:addrace, :player_human}, 35)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 20)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 300}, {:bonus, {:hp_loss_bonus, 1000}, 120}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 9000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 9
   refineable: true
   subtype: grenade
@@ -57954,6 +58457,11 @@
   locations:
     - right_hand
   name: Twin Edge of Naght Sieger
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :water)
+    ctx = grant_skill(ctx, 15, 5)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_def_class, :normal}, 100}], trigger: :attack, secondary: [], battle_flag: 593}, 50, 5000)
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -57980,6 +58488,11 @@
   locations:
     - right_hand
   name: Twin Edge of Naght Sieger
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :fire)
+    ctx = grant_skill(ctx, 83, 3)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_def_class, :normal}, 100}], trigger: :attack, secondary: [], battle_flag: 593}, 50, 5000)
+    ctx
   range: 1
   refineable: true
   slots: 3
@@ -58212,6 +58725,7 @@
   locations:
     - right_hand
   name: Ruber
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 62}, 20}, {:bonus, {:skill_atk, 5}, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 5, 15000)'
   range: 1
   refineable: true
   slots: 1
@@ -58916,6 +59430,14 @@
   locations:
     - right_hand
   name: Gladius Daemonicus
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, :aspd, 3}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 5000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 2
   subtype: one_handed_sword
@@ -59888,6 +60410,31 @@
   locations:
     - both_hand
   name: Lesser Guild Member's Flamberge
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :max_hp, {:+, 1000, {:*, {:-, :refine, 10}, 50}}}], trigger: {:on_skill, 255}, secondary: [], battle_flag: 0}, 1000, 30000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -62420,6 +62967,7 @@
   locations:
     - armor
   name: Sarah's Battle Robe
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :matk, {:*, :refine, 8}}], trigger: :attack, secondary: [], battle_flag: 338}, 3, 10000)'
   refineable: true
   slots: 1
   type: armor
@@ -63120,6 +63668,10 @@
   locations:
     - head_top
   name: Pure White Marching Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = autobonus(ctx, %{primary: [{:set, :atk_ele, :ghost}], trigger: :attack, secondary: [], battle_flag: 849}, max(1, (refine(ctx) * 2)), 60000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -70269,6 +70821,13 @@
     - right_hand
   magic_attack: 180
   name: Mace Of Judgement
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :int, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_addrace, :demon}, 20}], trigger: :attack, secondary: [], battle_flag: 338}, 30, 7000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:addrace, :demon}, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 5, 7000)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -70384,6 +70943,13 @@
     - right_hand
   magic_attack: 180
   name: Empowered Mace Of Judgement
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :int, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_addrace, :demon}, 40}], trigger: :attack, secondary: [], battle_flag: 338}, 60, 7000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:addrace, :demon}, 40}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 7000)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -70518,6 +71084,14 @@
   locations:
     - right_hand
   name: Nemesis
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 32}, max(1, min(10, refine(ctx))), 10)
+    ctx = bonus(ctx, {:addrace, :demon}, 10)
+    ctx = bonus(ctx, {:addele, :shadow}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 593}, 10, 20000)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -70839,6 +71413,14 @@
   locations:
     - right_hand
   name: Half Mjolnir
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :dex, 50)
+    ctx = bonus(ctx, :str, 20)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 21}, 10, 100)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :splash_range, 1}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 10000)
+    ctx
   range: 1
   subtype: mace
   type: weapon
@@ -72220,6 +72802,15 @@
   name: Zebra Eel
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 3)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd, 2}], trigger: :attack, secondary: [], battle_flag: 849}, 5, 5000)
+    ctx = if (base_level(ctx) > 99) do
+      bonus(ctx, :long_atk_rate, 20)
+    else
+      ctx
+    end
+    ctx
   range: 5
   subtype: bow
   type: weapon
@@ -72689,6 +73280,10 @@
   locations:
     - both_hand
   name: Ixion Wing
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 7}], trigger: :attack, secondary: [], battle_flag: 849}, (5 + refine(ctx)), 7000)
+    ctx = bonus(ctx, {:add_skill_blow, 148}, 3)
+    ctx
   range: 5
   refineable: true
   slots: 3
@@ -73441,6 +74036,33 @@
   locations:
     - both_hand
   name: Lesser Guild Member's Hunter Bow
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, (20 + (refine(ctx) - 10)))
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 46}, {:+, 20, {:-, :refine, 10}}}], trigger: {:on_skill, 45}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   subtype: bow
@@ -74152,6 +74774,10 @@
   name: Eden Team Hat II
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 10}], trigger: :attack, secondary: [], battle_flag: 849}, 70, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk, 10}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 5000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -75571,6 +76197,22 @@
   locations:
     - head_top
   name: Horn of Ancient
+  on_equip: |-
+    ctx = bonus(ctx, {:subclass, :boss}, 10)
+    ctx = bonus(ctx, {:addclass, :boss}, 10)
+    ctx = if (refine(ctx) > 6) do
+      autobonus(ctx, %{primary: [{:bonus, :atk, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 10000)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, {:subclass, :boss}, 10)
+      ctx = bonus(ctx, {:addclass, :boss}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -76111,6 +76753,15 @@
   locations:
     - head_top
   name: Drooping Alicel
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 10)
+    ctx = bonus(ctx, {:addrace, :player_human}, 10)
+    ctx = if (refine(ctx) > 10) do
+      autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 7000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: armor
   view: 784
@@ -76423,6 +77074,17 @@
   locations:
     - head_low
   name: RWC Shouting Mouth
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 8}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 261}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 270}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 114}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 155}, 1, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 45}, 5, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 75}, 3, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :str, 3}, {:bonus, :agi, 3}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :int, 3}, {:bonus, :luk, 3}], trigger: :attack, secondary: [], battle_flag: 338}, 5, 5000)
+    ctx
   type: armor
   view: 194
   weight: 50
@@ -76435,6 +77097,10 @@
   locations:
     - head_top
   name: Ignis Cap
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_def_class, :normal}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 7000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -76578,6 +77244,10 @@
     - head_mid
     - head_top
   name: Boitata Hat
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:set, :atk_ele, :fire}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 180000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 5, 10)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -77251,6 +77921,13 @@
   locations:
     - head_top
   name: Flip Hat
+  on_equip: |-
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = bonus(ctx, :luk, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :hit, 30}], trigger: :attack, secondary: [], battle_flag: 849}, (1 + refine(ctx)), 6000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :varcast_rate, -30}], trigger: :attack, secondary: [], battle_flag: 338}, (1 + refine(ctx)), 6000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 10, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -77760,6 +78437,8 @@
   locations:
     - costume_head_top
   name: Costume Will O Wisp
+  on_equip: status_start(ctx, :sc_strangelights, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_strangelights)
   type: armor
   view: 880
 - aegis_name: C_MoonStar_Accessory
@@ -77769,6 +78448,8 @@
   locations:
     - costume_head_mid
   name: Costume Moon and Stars
+  on_equip: status_start(ctx, :sc_moonstar, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_moonstar)
   type: armor
   view: 881
 - aegis_name: C_Spirit_Of_Chung_E
@@ -77787,6 +78468,8 @@
   locations:
     - costume_head_mid
   name: Costume Twilight
+  on_equip: status_start(ctx, :sc_super_star, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_super_star)
   type: armor
   view: 883
 - aegis_name: Choco_Stick_In_Mouth
@@ -79243,6 +79926,7 @@
     - head_low
     - head_mid
   name: Bankruptcy Mask
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 2000}, 50}, {:bonus, {:sp_regen_bonus, 2000}, 10}], trigger: :attack, secondary: [], battle_flag: 851}, 10, 10000)'
   slots: 1
   type: armor
   view: 936
@@ -79423,6 +80107,13 @@
   locations:
     - head_top
   name: Angeling Woolly Hat
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, :atk, (2 + (refine(ctx) * 2)))
+    ctx = bonus(ctx, :matk, (2 + (refine(ctx) * 2)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd, 2}], trigger: :attack, secondary: [], battle_flag: 593}, (3 + refine(ctx)), 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :varcast_rate, -50}], trigger: :attack, secondary: [], battle_flag: 338}, (3 + refine(ctx)), 5000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -79528,6 +80219,11 @@
   locations:
     - head_low
   name: Banshee Master Kiss
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx = bonus(ctx, :max_sp_rate, 3)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:subrace, :player_doram}, 100}, {:bonus, {:subrace, :player_human}, 100}], trigger: :when_hit, secondary: [], battle_flag: 849}, 10, 3000)
+    ctx
   type: armor
   view: 959
   weight: 200
@@ -79706,6 +80402,11 @@
   locations:
     - head_top
   name: Aviator Hat
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 3)
+    ctx = bonus(ctx, :int, 3)
+    ctx = autobonus(ctx, %{primary: [{:set, :atk_ele, :wind}], trigger: :attack, secondary: [], battle_flag: 593}, 500, 180)
+    ctx
   refineable: true
   type: armor
   view: 972
@@ -79719,6 +80420,14 @@
   locations:
     - head_top
   name: W King Tiger Doll Hat
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:addrace, :brute}, 10)
+    ctx = bonus(ctx, {:addrace, :player_doram}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_loss_bonus, 1000}, 5}, {:bonus, :atk, {:*, 25, {:max, 1, :refine}}}], trigger: :attack, secondary: [], battle_flag: 593}, (3 * refine(ctx)), 3000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_loss_bonus, 1000}, 5}, {:bonus, :atk, {:*, 25, {:max, 1, :refine}}}], trigger: :when_hit, secondary: [], battle_flag: 593}, refine(ctx), 3000)
+    ctx
   refineable: true
   type: armor
   view: 973
@@ -80958,6 +81667,11 @@
   locations:
     - head_top
   name: Fox Ears Bell Ribbon
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :critical, 100}, {:bonus, :long_atk_rate, {:+, 5, {:max, 0, {:-, :refine, 6}}}}], trigger: :attack, secondary: [], battle_flag: 593}, (50 + (refine(ctx) * 2)), 5000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -81869,6 +82583,8 @@
   locations:
     - head_top
   name: Floating Stone Of Intelligence
+  on_equip: status_start(ctx, :sc_fstone, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_fstone)
   type: armor
   view: 1230
 - aegis_name: Q_Scaraba_Crown
@@ -83222,6 +83938,11 @@
   locations:
     - head_top
   name: Wickebine's Black Cat Ears
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_mdef_class, :normal}, 100}, {:bonus, {:ignore_mdef_class, :boss}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 5000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -83234,6 +83955,27 @@
   locations:
     - head_top
   name: Spirit of Green Maiden
+  on_equip: |-
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, :max_hp_rate, (2 * div(refine(ctx), 4)))
+    ctx = bonus(ctx, :max_sp_rate, (2 * div(refine(ctx), 4)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :hp_regen, 40)
+      ctx = bonus(ctx, :sp_regen, 40)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      ctx = bonus(ctx, :max_hp_rate, 3)
+      ctx = bonus(ctx, :max_sp_rate, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = autobonus(ctx, %{primary: [{:bonus, :crit_atk_rate, 30}, {:bonus, :matk_rate, 30}], trigger: :attack, secondary: [], battle_flag: 851}, 1, 5000)
+    ctx
   refineable: true
   type: armor
   view: 882
@@ -83245,6 +83987,27 @@
   locations:
     - head_top
   name: Spirit of Green Maiden
+  on_equip: |-
+    ctx = bonus(ctx, {:exp_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, {:drop_add_race, :all}, div(refine(ctx), 2))
+    ctx = bonus(ctx, :max_hp_rate, div(refine(ctx), 4))
+    ctx = bonus(ctx, :max_sp_rate, div(refine(ctx), 4))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :hp_regen, 40)
+      ctx = bonus(ctx, :sp_regen, 40)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      ctx = bonus(ctx, :max_hp_rate, 3)
+      ctx = bonus(ctx, :max_sp_rate, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = autobonus(ctx, %{primary: [{:bonus, :crit_atk_rate, 30}, {:bonus, :matk_rate, 30}], trigger: :attack, secondary: [], battle_flag: 851}, 1, 5000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -83768,6 +84531,13 @@
   locations:
     - head_top
   name: '[Katsua]Tiger King Doll Hat'
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:addrace, :brute}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_loss_bonus, 1000}, 5}, {:bonus, :atk, {:*, 25, :refine}}], trigger: :attack, secondary: [], battle_flag: 593}, (3 * refine(ctx)), 3000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_loss_bonus, 1000}, 5}, {:bonus, :atk, {:*, 25, :refine}}], trigger: :when_hit, secondary: [], battle_flag: 593}, (3 * refine(ctx)), 3000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -84096,6 +84866,20 @@
   name: Racing Cap (Guillotine Cross)
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (10 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :aspd_rate, (2 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 8) do
+      bonus(ctx, :crit_atk_rate, (5 * skill_lv(ctx, 133)))
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      autobonus(ctx, %{primary: [{:bonus, :crit_atk_rate, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -84680,6 +85464,7 @@
   locations:
     - head_low
   name: Poring Village Leek
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :movement_speed, 25}], trigger: :attack, secondary: [], battle_flag: 593}, 50, 5000)'
   type: armor
   view: 824
   weight: 100
@@ -84691,6 +85476,7 @@
   locations:
     - head_low
   name: Poring Village Carrot
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :movement_speed, 25}], trigger: :attack, secondary: [], battle_flag: 593}, 50, 5000)'
   type: armor
   view: 829
   weight: 100
@@ -84981,6 +85767,18 @@
   locations:
     - head_top
   name: Gold Fish Head Hat
+  on_equip: |-
+    ctx = if (refine(ctx) > 8) do
+      auto_cast(ctx, %{force: 1, flag: 849, trigger: :when_hit, skill_id: 92}, 1, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) < 6) do
+      autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :holy}, 10}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 60000)
+    else
+      autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :holy}, 10}], trigger: :attack, secondary: [], battle_flag: 338}, (10 + (refine(ctx) * 2)), 60000)
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -85245,6 +86043,10 @@
   locations:
     - armor
   name: Agenda Robe
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk_rate, :refine}], trigger: :attack, secondary: [], battle_flag: 338}, 3, 10000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -85983,6 +86785,26 @@
   locations:
     - head_top
   name: Cuddly Siamese Cat
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_helm, 1)
+    ctx = bonus(ctx, :max_hp_rate, (5 + refine(ctx)))
+    ctx = bonus(ctx, :max_sp_rate, (5 + refine(ctx)))
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, {:subrace, :player_human}, (3 + refine(ctx)))
+    ctx = bonus(ctx, {:subrace, :player_doram}, (3 + refine(ctx)))
+    ctx = grant_skill(ctx, 1013, 1)
+    ctx = bonus(ctx, :fixcast_rate, (-7 * refine(ctx)))
+    ctx = if (refine(ctx) >= 8) do
+      bonus(ctx, :delay_rate, -100)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :all_stats, 30}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -86503,6 +87325,15 @@
   name: Biting Rideword
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:hp_loss_bonus, 5000}, 10)
+    ctx = bonus(ctx, :hp_drain_rate, 40)
+    ctx = bonus(ctx, :hp_drain_percent, 2)
+    ctx = bonus(ctx, :sp_drain_rate, 40)
+    ctx = bonus(ctx, :sp_drain_percent, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 300}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 4000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 70}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 4000)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -87993,6 +88824,10 @@
   locations:
     - costume_head_top
   name: Full Moon
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 50}], trigger: :attack, secondary: [], battle_flag: 849}, 10, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk, 50}], trigger: :attack, secondary: [], battle_flag: 338}, 5, 5000)
+    ctx
   type: armor
   view: 780
 - aegis_name: C_Reginleif_Hairband
@@ -89446,6 +90281,7 @@
   locations:
     - costume_head_top
   name: Costume Santa Hairband
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :flee, 10}], trigger: :attack, secondary: [], battle_flag: 851}, 30, 5000)'
   type: armor
   view: 964
 - aegis_name: C_Lush_Rose
@@ -91273,6 +92109,8 @@
   locations:
     - costume_head_mid
   name: Costume Decoration of Music
+  on_equip: status_start(ctx, :sc_decoration_of_music, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_decoration_of_music)
   type: armor
   view: 1074
 - aegis_name: C_Phantom_Of_Opera
@@ -93084,6 +93922,8 @@
   locations:
     - costume_head_top
   name: Costume Angel Stair
+  on_equip: status_start(ctx, :sc_hat_effect, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_hat_effect)
   type: armor
 - aegis_name: Yellow_Brain_Hat
   armor_level: 1
@@ -93433,6 +94273,8 @@
   locations:
     - costume_head_top
   name: Flying Ljosalfar
+  on_equip: status_start(ctx, :sc_ljosalfar, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_ljosalfar)
   type: armor
   view: 1239
 - aegis_name: C_Volume_Fhat
@@ -93945,6 +94787,8 @@
   locations:
     - costume_head_mid
   name: Costume Maple Which Falls
+  on_equip: status_start(ctx, :sc_maple_falls, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_maple_falls)
   type: armor
   view: 1275
 - aegis_name: C_Ladys_Feather_Hat
@@ -94459,6 +95303,8 @@
   locations:
     - costume_head_mid
   name: Costume Mermaid Bubbles
+  on_equip: status_start(ctx, :sc_mermaid_longing, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_mermaid_longing)
   type: armor
   view: 1299
 - aegis_name: C_Cock_Hat2
@@ -94806,6 +95652,8 @@
   locations:
     - costume_head_mid
   name: Costume Decoration Time
+  on_equip: status_start(ctx, :sc_time_accessory, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_time_accessory)
   type: armor
   view: 1309
 - aegis_name: C_Blackhand_Of_Fate
@@ -95496,6 +96344,8 @@
   locations:
     - costume_head_low
   name: Costume Sparkling Sound
+  on_equip: status_start(ctx, :sc_decoration_of_music, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_decoration_of_music)
   type: armor
   view: 1074
 - aegis_name: C_Pigeon_Hat
@@ -96161,6 +97011,7 @@
     - costume_head_low
     - costume_head_mid
   name: Costume Jakk
+  on_equip: 'autobonus(ctx, %{primary: [], trigger: :when_hit, secondary: [], battle_flag: 851}, 31, 10000)'
   type: armor
   view: 1415
 - aegis_name: C_Niflheim_Bunny_Hat
@@ -102382,6 +103233,26 @@
   locations:
     - garment
   name: Dragon Scale Hood
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = bonus(ctx, :def, 20)
+    ctx = bonus(ctx, :heal_power2, 15)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :dragon}, 2)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 2000}], trigger: :when_hit, secondary: [], battle_flag: 851}, 1, 3000)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, {:subrace, :dragon}, 3)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -102528,6 +103399,22 @@
   locations:
     - garment
   name: Christmas Guardian Tree
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, div(refine(ctx), 2))
+    ctx = bonus(ctx, :atk_rate, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk, 30)
+      ctx = bonus(ctx, :atk, 30)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :neutral}, 20}, {:bonus, {:magic_atk_ele, :holy}, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 10000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -103849,6 +104736,31 @@
   locations:
     - both_hand
   name: Lesser Guild Member's Craymore
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, {:ignore_def_race, :player_human}, {:+, 10, {:-, :refine, 10}}}, {:bonus, {:ignore_def_race, :player_doram}, {:+, 10, {:-, :refine, 10}}}], trigger: :attack, secondary: [], battle_flag: 849}, 100, 7000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_sword
@@ -104059,6 +104971,30 @@
   locations:
     - both_hand
   name: Claw Sword
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 5)
+    ctx = bonus(ctx, :atk_rate, 15)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :crit_atk_rate, 25)
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = autobonus(ctx, %{primary: [{:bonus, {:addsize, :all}, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 5000)
+        ctx = if (refine(ctx) >= 11) do
+          ctx = bonus(ctx, :delay_rate, -20)
+          ctx = bonus(ctx, :critical, 7)
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -108071,6 +109007,26 @@
   locations:
     - shoes
   name: Dragon Scale Boots
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp, 500)
+    ctx = bonus(ctx, :aspd_rate, 7)
+    ctx = bonus(ctx, :varcast_rate, -7)
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, {:subrace, :dragon}, 2)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 500}], trigger: :when_hit, secondary: [], battle_flag: 851}, 1, 3000)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, {:subrace, :dragon}, 3)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -112023,6 +112979,10 @@
   locations:
     - shadow_armor
   name: Attack Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, {:*, :refine, 5}}], trigger: :attack, secondary: [], battle_flag: 593}, ((refine(ctx) * 2) + 10), 3000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Blitz_Earring
@@ -112068,6 +113028,14 @@
   locations:
     - shadow_armor
   name: Cold Bolt Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = if (refine(ctx) >= 2) do
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_FireBolt_Armor
@@ -112077,6 +113045,14 @@
   locations:
     - shadow_armor
   name: Fire Bolt Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = if (refine(ctx) >= 2) do
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_LightingBolt_Armor
@@ -112086,6 +113062,14 @@
   locations:
     - shadow_armor
   name: Lightning Bolt Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = if (refine(ctx) >= 2) do
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 20}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_EarthSpike_Armor
@@ -112095,6 +113079,14 @@
   locations:
     - shadow_armor
   name: Earth Spike Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = if (refine(ctx) >= 2) do
+      autobonus(ctx, %{primary: [{:auto_cast, %{force: 0, flag: 849, trigger: :attack, skill_id: 90}, {:div, :refine, 2}, 1000}], trigger: :attack, secondary: [], battle_flag: 785}, ((refine(ctx) * 2) + 100), 100)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Enhance_Force_Weapon
@@ -112799,6 +113791,10 @@
   locations:
     - shadow_armor
   name: Blacksmith Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:addsize, :all}, {:ternary, {:>, :refine, 6}, {:+, 5, {:-, :refine, 6}}, 5}}, {:bonus, {:magic_addsize, :all}, {:ternary, {:>, :refine, 6}, {:+, 5, {:-, :refine, 6}}, 5}}], trigger: {:on_skill, 112}, secondary: [], battle_flag: 0}, 1000, 50000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Alchemist_Armor
@@ -112887,6 +113883,10 @@
   locations:
     - shadow_armor
   name: Sage Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:if, {:>=, :refine, 9}, [{:bonus, :aspd, 2}], [{:if, {:>=, :refine, 7}, [{:bonus, :aspd, 1}], []}]}, {:bonus, :aspd_rate, :refine}], trigger: {:on_skill, 279}, secondary: [], battle_flag: 0}, 1000, 50000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Hunter_Armor
@@ -112910,6 +113910,14 @@
   locations:
     - shadow_armor
   name: Bard Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 317}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 321}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 320}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 322}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 319}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Dancer_Armor
@@ -112919,6 +113927,14 @@
   locations:
     - shadow_armor
   name: Dancer Shadow Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 329}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 330}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 328}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 327}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 5000}, {:+, 5, :refine}}], trigger: {:on_skill, 325}, secondary: [], battle_flag: 0}, 1000, 30000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_SuperNovice_Weapon
@@ -116475,6 +117491,19 @@
   locations:
     - shadow_weapon
   name: Katar Shadow Weapon
+  on_equip: |-
+    ctx = bonus(ctx, :atk, refine(ctx))
+    ctx = bonus(ctx, :matk, refine(ctx))
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, {:addsize, :all}, 15}, {:bonus, :crit_atk_rate, 15}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 10000)
+    else
+      if (refine(ctx) >= 7) do
+        autobonus(ctx, %{primary: [{:bonus, {:addsize, :all}, 15}, {:bonus, :crit_atk_rate, 15}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 5000)
+      else
+        autobonus(ctx, %{primary: [{:bonus, {:addsize, :all}, 10}, {:bonus, :crit_atk_rate, 10}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 5000)
+      end
+    end
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Katar_Pendant
@@ -123208,6 +124237,27 @@
     - right_hand
   magic_attack: 125
   name: Lesser Guild Member's Healing Staff
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, (10 + refine(ctx)))
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, {:skill_use_sp_rate, 29}, (2 + refine(ctx)))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 34}, (2 + refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :heal_power, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :heal_power, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :heal_power, {:+, 25, {:-, :refine, 10}}}], trigger: {:on_skill, 28}, secondary: [], battle_flag: 0}, 100, 20000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: staff
@@ -123363,6 +124413,28 @@
     - right_hand
   magic_attack: 175
   name: Rutilus Stick-OS
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:magic_addele, :neutral}, 5)
+    ctx = bonus(ctx, {:magic_addele, :earth}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :varcast_rate, -7)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :fire}, 30}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 10000)
+        ctx = if (refine(ctx) >= 11) do
+          bonus(ctx, :delay_rate, -10)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -123527,6 +124599,33 @@
     - right_hand
   magic_attack: 200
   name: Welding Wand
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 7)
+    ctx = bonus(ctx, {:magic_atk_ele, :fire}, 7)
+    ctx = bonus(ctx, {:magic_atk_ele, :water}, 7)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :varcast_rate, -10)
+      ctx = bonus(ctx, :matk, 40)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 8)
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 8)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 8)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_addsize, :all}, 15}], trigger: :attack, secondary: [], battle_flag: 338}, 1, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :delay_rate, -20)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -124055,6 +125154,34 @@
   locations:
     - right_hand
   name: Lesser Guild Member's Lariat
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, (20 + (refine(ctx) - 10)))
+      ctx = bonus(ctx, :varcast_rate, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 324}, {:+, 30, {:-, :refine, 10}}}], trigger: {:on_skill, 304}, secondary: [], battle_flag: 0}, 1000, 60000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 2
   refineable: true
   subtype: whip
@@ -124531,6 +125658,7 @@
   locations:
     - both_hand
   name: Illusion Sharpened Legbone of Ghoul
+  on_equip: 'autobonus(ctx, %{primary: [{:set, :def_ele, :undead}, {:status_start, :sc_endure, 6000, 1}], trigger: :attack, secondary: [], battle_flag: 785}, 40, 6000)'
   range: 1
   refineable: true
   slots: 2
@@ -124684,6 +125812,31 @@
   locations:
     - both_hand
   name: Lesser Guild Member's Jamadhar
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :crit_atk_rate, {:+, 20, {:*, {:-, :refine, 10}, 2}}}], trigger: :attack, secondary: [], battle_flag: 849}, 100, 7000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: katar
@@ -125302,6 +126455,19 @@
   locations:
     - both_hand
   name: Mine Worker's Pickaxe
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :critical, 20}], trigger: :attack, secondary: [], battle_flag: 785}, 50, 7000)
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :crit_atk_rate, 15)
+    else
+      if (refine(ctx) >= 7) do
+        bonus(ctx, :crit_atk_rate, 5)
+      else
+        ctx
+      end
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -125869,6 +127035,16 @@
   locations:
     - both_hand
   name: Half BF Shotgun1
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 30)
+    ctx = bonus(ctx, {:addrace, :player_human}, 30)
+    ctx = bonus(ctx, {:ignore_def_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 80}, {:bonus, {:hp_loss_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 6000)
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx
   range: 9
   refineable: true
   subtype: shotgun
@@ -126938,6 +128114,7 @@
   locations:
     - both_accessory
   name: Jewerly Ring
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :aspd, 2}, {:bonus, :varcast_rate, -30}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 5000)'
   type: armor
   weight: 100
 - aegis_name: Gold_PC_Ring
@@ -127421,6 +128598,10 @@
   locations:
     - shadow_right_accessory
   name: Thief Shadow Earring
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, {:+, 30, {:*, :refine, 10}}}, {:bonus, :flee, {:+, 30, {:*, :refine, 10}}}], trigger: {:on_skill, 152}, secondary: [], battle_flag: 0}, 200, 5000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: S_Archer_earring
@@ -127429,6 +128610,10 @@
   locations:
     - shadow_right_accessory
   name: Archer Shadow Earring
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (refine(ctx) * 10))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :atk, {:+, 30, {:*, :refine, 10}}}, {:bonus, :hit, {:+, 30, {:*, :refine, 10}}}], trigger: {:on_skill, 46}, secondary: [], battle_flag: 0}, 200, 5000)
+    ctx
   refineable: true
   type: shadow_gear
 - aegis_name: King_of_Spirit_Ring
@@ -128961,6 +130146,16 @@
   name: RKC Participant Memorial Ring
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :sp_cost_rate, -3)
+    ctx = bonus(ctx, :aspd_rate, 5)
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = bonus(ctx, :hp_drain_rate, 10)
+    ctx = bonus(ctx, :hp_drain_percent, 3)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 300}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx
   slots: 1
   type: armor
   weight: 200
@@ -128973,6 +130168,15 @@
   name: RKC Winner Memorial Ring
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :sp_cost_rate, -7)
+    ctx = bonus(ctx, :long_atk_rate, 3)
+    ctx = bonus(ctx, :crit_atk_rate, 3)
+    ctx = bonus(ctx, {:magic_atk_ele, :all}, 3)
+    ctx = bonus(ctx, :sp_drain_rate, 10)
+    ctx = bonus(ctx, :sp_drain_percent, 1)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx
   slots: 1
   type: armor
   weight: 200
@@ -129710,6 +130914,16 @@
     - right_hand
   magic_attack: 170
   name: Demon Hunting Bible
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:skill_atk, 79}, (30 + min(stat(ctx, :int), 120)))
+    ctx = bonus(ctx, :heal_power, 10)
+    ctx = bonus(ctx, :item_heal_rate, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:ignore_mdef_race, :all}, 100}], trigger: :when_hit, secondary: [], battle_flag: 849}, 50, (1000 + (refine(ctx) * 1000)))
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -130028,6 +131242,18 @@
     - right_hand
   magic_attack: 170
   name: Holy Bible
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :heal_power2, 10)
+    ctx = bonus(ctx, :item_heal_rate, 10)
+    ctx = bonus(ctx, {:skill_atk, 79}, (40 + (2 * div(stat(ctx, :int), 3))))
+    ctx = if (refine(ctx) >= 1) do
+      autobonus(ctx, %{primary: [{:bonus, {:ignore_def_class, :normal}, 100}, {:bonus, {:ignore_def_class, :boss}, 100}], trigger: :when_hit, secondary: [], battle_flag: 849}, 50, (1000 * div(refine(ctx), 2)))
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -130383,6 +131609,31 @@
   locations:
     - right_hand
   name: Safety Manual
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 3)
+    ctx = bonus(ctx, :atk_rate, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :atk, 40)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:addsize, :all}, 15}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 10000)
+      ctx = bonus(ctx, :crit_atk_rate, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, :crit_atk_rate, 15)
+      ctx = bonus(ctx, :delay_rate, -20)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -131648,6 +132899,33 @@
   locations:
     - right_hand
   name: Lesser Guild Member's Gladius
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, 30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 214}, 50}], trigger: {:on_skill, 51}, secondary: [], battle_flag: 0}, 1000, 20000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -131949,6 +133227,24 @@
     - right_hand
   magic_attack: 170
   name: Platinum Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :matk, (4 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 15)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 15)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 15)
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      autobonus(ctx, %{primary: [{:bonus, :matk, 100}, {:bonus, {:magic_addsize, :all}, 30}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 10000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -131982,6 +133278,31 @@
     - right_hand
   magic_attack: 180
   name: Jewel Detector Mk47
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 10)
+    ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 7)
+    ctx = bonus(ctx, {:magic_atk_ele, :fire}, 7)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, :matk, 40)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_atk_ele, :neutral}, 8)
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 8)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_addsize, :all}, 15}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      bonus(ctx, :delay_rate, -20)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -132477,6 +133798,10 @@
   locations:
     - left_hand
   name: Rudo's Rollpaper
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :holy}, (20 + (refine(ctx) * 2)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :holy}, 10}], trigger: :attack, secondary: [], battle_flag: 338}, 50, (3000 + (1000 * (refine(ctx) - 5))))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -132875,6 +134200,31 @@
   locations:
     - left_hand
   name: Cursed Knight's Shield
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = bonus(ctx, {:subele, :all}, 7)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 25}], trigger: :when_hit, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 150}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk, 10)
+      ctx = bonus(ctx, :matk, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :delay_rate, -3)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -132927,6 +134277,31 @@
   locations:
     - left_hand
   name: Bloody Knight's Shield
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :atk_rate, 3)
+    ctx = bonus(ctx, :matk_rate, 3)
+    ctx = bonus(ctx, {:subele, :all}, 7)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 25}], trigger: :when_hit, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 150}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk, 10)
+      ctx = bonus(ctx, :matk, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :delay_rate, -3)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -132939,6 +134314,31 @@
   locations:
     - left_hand
   name: Purified Knight's Shield
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :atk_rate, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, {:subele, :all}, 10)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 50}], trigger: :when_hit, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 300}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk, 20)
+      ctx = bonus(ctx, :matk, 20)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :aspd, 2)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      bonus(ctx, :delay_rate, -5)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -133149,6 +134549,28 @@
   name: Poring Battle Shield
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:subsize, :all}, (2 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :max_hp_rate, 5)
+      ctx = bonus(ctx, :max_sp_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :aspd, 1)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 12) do
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 4000)
+      ctx = bonus(ctx, :short_weapon_damage_return, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -134485,6 +135907,8 @@
   locations:
     - costume_head_low
   name: Costume Prison of Time
+  on_equip: status_start(ctx, :sc_time_accessory, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_time_accessory)
   type: armor
   view: 1309
 - aegis_name: C_Krathong_Crown_TH
@@ -136764,6 +138188,8 @@
   locations:
     - costume_head_mid
   name: Costume Floating Sage Stone
+  on_equip: status_start(ctx, :sc_fstone, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_fstone)
   type: armor
   view: 1230
 - aegis_name: C_Radio_Antenna
@@ -138502,6 +139928,8 @@
   locations:
     - costume_head_low
   name: 'Costume: Firefly Spirit Light'
+  on_equip: status_start(ctx, :sc_strangelights, :infinite, 0)
+  on_unequip: status_end(ctx, :sc_strangelights)
   type: armor
   view: 880
 - aegis_name: C_Marin_Muffler
@@ -142175,6 +143603,34 @@
   locations:
     - right_hand
   name: Lesser Guild Member's Pike
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 56}, {:+, 20, {:skill_lv, 55}}}], trigger: {:on_skill, 6}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx = bonus(ctx, {:add_eff_on_skill, 56, :sc_stun}, (1000 + (skill_lv(ctx, 55) * 200)))
+      ctx = bonus(ctx, {:add_eff_on_skill, 56, :sc_blind}, (1000 + (skill_lv(ctx, 55) * 200)))
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -142516,6 +143972,34 @@
   locations:
     - right_hand
   name: Lesser Guild Member's Guitar
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, (20 + (refine(ctx) - 10)))
+      ctx = bonus(ctx, :varcast_rate, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 316}, {:+, 30, {:-, :refine, 10}}}], trigger: {:on_skill, 304}, secondary: [], battle_flag: 0}, 1000, 60000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   subtype: musical
@@ -143878,6 +145362,29 @@
   locations:
     - head_top
   name: Officer's Hat
+  on_equip: |-
+    ctx = bonus(ctx, {:hp_loss_bonus, 5000}, 10)
+    ctx = bonus(ctx, :matk, (5 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, :atk, (5 * div(refine(ctx), 2)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :matk_rate, 5)
+      ctx = bonus(ctx, :atk_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :hp_drain_rate, 50)
+      ctx = bonus(ctx, :hp_drain_percent, 5)
+      ctx = bonus(ctx, :sp_drain_rate, 10)
+      ctx = bonus(ctx, :sp_drain_percent, 3)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 300}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 4000)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:sp_regen_bonus, 1000}, 70}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 4000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -144475,6 +145982,12 @@
   locations:
     - head_top
   name: Rental Owl Viscount Silk Hat
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :matk, (7 * refine(ctx)))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, {:ternary, {:>=, :refine, 9}, 40, {:ternary, {:>=, :refine, 7}, 10, {:ternary, {:>=, :refine, 5}, 5, 0}}}}], trigger: :attack, secondary: [], battle_flag: 338}, 20, 30000)
+    ctx
   refineable: true
   type: armor
   view: 1323
@@ -145620,6 +147133,10 @@
   name: Advanced Paradise Hat
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk, 60)
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 350}, {:bonus, {:sp_regen_bonus, 1000}, 80}], trigger: :attack, secondary: [], battle_flag: 338}, 1, 4000)
+    ctx
   type: armor
 - aegis_name: Thanos_Helm_2
   armor_level: 1
@@ -147344,6 +148861,17 @@
   name: '[Not For Sale] Sinulog Hat'
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = if (refine(ctx) > 6) do
+      ctx = bonus(ctx, :critical, 10)
+      ctx = bonus(ctx, :hit, 10)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :atk, 30}], trigger: :attack, secondary: [], battle_flag: 593}, 30, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx = bonus(ctx, :str, 1)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -156296,6 +157824,7 @@
   locations:
     - head_mid
   name: Cultist's Circlet (Strength)
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :str, 20}, {:bonus, :atk, 100}, {:bonus, :matk, 100}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)'
   slots: 1
   type: armor
   view: 2288
@@ -156308,6 +157837,7 @@
   locations:
     - head_mid
   name: Cultist's Circlet (Agility)
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :agi, 20}, {:bonus, :atk, 100}, {:bonus, :matk, 100}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)'
   slots: 1
   type: armor
   view: 2288
@@ -156320,6 +157850,7 @@
   locations:
     - head_mid
   name: Cultist's Circlet (Vitality)
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :vit, 20}, {:bonus, :atk, 100}, {:bonus, :matk, 100}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)'
   slots: 1
   type: armor
   view: 2288
@@ -156332,6 +157863,7 @@
   locations:
     - head_mid
   name: Cultist's Circlet (Intelligence)
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :int, 20}, {:bonus, :atk, 100}, {:bonus, :matk, 100}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)'
   slots: 1
   type: armor
   view: 2288
@@ -156344,6 +157876,7 @@
   locations:
     - head_mid
   name: Cultist's Circlet (Dexterity)
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :dex, 20}, {:bonus, :atk, 100}, {:bonus, :matk, 100}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)'
   slots: 1
   type: armor
   view: 2288
@@ -156356,6 +157889,7 @@
   locations:
     - head_mid
   name: Cultist's Circlet (Lucky)
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, :luk, 20}, {:bonus, :atk, 100}, {:bonus, :matk, 100}], trigger: :attack, secondary: [], battle_flag: 851}, 50, 10000)'
   slots: 1
   type: armor
   view: 2288
@@ -157763,6 +159297,7 @@
   name: Feeling of Love
   no_guild_storage: true
   no_trade: true
+  on_equip: 'autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 400}, {:bonus, {:sp_regen_bonus, 1000}, 80}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 10000)'
   type: armor
   view: 1717
   weight: 300
@@ -165906,6 +167441,42 @@
   locations:
     - armor
   name: Magical Cloth
+  on_equip: |-
+    ctx = bonus(ctx, {:magic_atk_ele, :earth}, 5)
+    ctx = bonus(ctx, {:magic_atk_ele, :water}, 5)
+    ctx = bonus(ctx, {:magic_atk_ele, :wind}, 5)
+    ctx = bonus(ctx, {:magic_atk_ele, :fire}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :aspd_rate, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 2)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 2)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 2)
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 2)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 8) do
+      ctx = bonus(ctx, :unbreakable_armor, 1)
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 3)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 3)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 3)
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 3)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 5)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 5)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 5)
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 5)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 19}, 100}, {:bonus, {:skill_atk, 14}, 100}, {:bonus, {:skill_atk, 20}, 100}, {:bonus, {:skill_atk, 90}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 2000, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -166087,6 +167658,20 @@
   locations:
     - armor
   name: Illusion Saphien's Armor of Ocean
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, :max_hp, (125 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :def, 50)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, {:subele, :water}, 15}], trigger: :when_hit, secondary: [], battle_flag: 851}, 1, 5000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -167009,6 +168594,27 @@
   locations:
     - armor
   name: Engraved Naga's Scale Armor
+  on_equip: |-
+    ctx = bonus(ctx, :short_weapon_damage_return, 5)
+    ctx = bonus(ctx, :mres, 3)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :short_weapon_damage_return, 5)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :short_atk_rate, 10)
+        ctx = if (refine(ctx) >= 11) do
+          autobonus(ctx, %{primary: [{:bonus, :patk, 15}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 7000)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -170597,6 +172203,27 @@
   locations:
     - left_hand
   name: Forbidden Grimoire II
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :max_hp, (100 * refine(ctx)))
+    ctx = bonus(ctx, {:magic_atk_ele, :neutral}, (4 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, {:magic_atk_ele, :wind}, (4 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :aspd, 2)
+      ctx = bonus(ctx, :fixed_cast, -500)
+      ctx = if (refine(ctx) >= 11) do
+        ctx = grant_skill(ctx, 48, 10)
+        ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 78}, 1, 150)
+        ctx = autobonus(ctx, %{primary: [{:bonus, :int, 150}, {:bonus, {:hp_loss_bonus, 1000}, 100}, {:bonus, {:sp_loss_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 40, 10000)
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -171404,6 +173031,31 @@
   locations:
     - shoes
   name: Elemental Boots
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 19}, (15 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_atk, 14}, (15 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_atk, 90}, (15 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_atk, 20}, (15 + (2 * refine(ctx))))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :matk, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, :matk_rate, 10}, {:bonus, :int, 70}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 5000)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -173332,6 +174984,17 @@
   locations:
     - shoes
   name: Shining Priest's Boots
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 350)
+    ctx = bonus(ctx, :max_sp, 150)
+    ctx = bonus(ctx, :hit, (3 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, {:magic_atk_ele, :holy}, (4 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, :perfect_dodge, 300}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 2000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -173578,6 +175241,42 @@
   locations:
     - shoes
   name: Beast Territory Boots
+  on_equip: |-
+    ctx = bonus(ctx, :atk, (10 * div(refine(ctx), 2)))
+    ctx = bonus(ctx, {:addrace, :angel}, (4 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, {:addrace, :demon}, (4 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, {:addrace, :dragon}, (4 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, :atk_rate, 10)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, :fixed_cast, -500)
+        ctx = if (refine(ctx) >= 11) do
+          ctx = bonus(ctx, :long_atk_rate, 10)
+          ctx = bonus(ctx, :short_atk_rate, 10)
+          ctx = if (refine(ctx) >= 12) do
+            ctx = bonus(ctx, {:addele, :all}, 10)
+            ctx = if (refine(ctx) >= 13) do
+              autobonus(ctx, %{primary: [{:bonus, :pow, 10}, {:bonus, :atk_rate, 10}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 10000)
+            else
+              ctx
+            end
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -175157,6 +176856,31 @@
   name: '[Not For Sale] Elemental Boots'
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 19}, (15 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_atk, 14}, (15 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_atk, 90}, (15 + (2 * refine(ctx))))
+    ctx = bonus(ctx, {:skill_atk, 20}, (15 + (2 * refine(ctx))))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :matk, 20)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      autobonus(ctx, %{primary: [{:bonus, :matk_rate, 10}, {:bonus, :int, 70}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 5000)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, {:magic_atk_ele, :fire}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :earth}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :water}, 10)
+      ctx = bonus(ctx, {:magic_atk_ele, :wind}, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -175609,6 +177333,45 @@
   locations:
     - shoes
   name: Kshatra Vairya
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 15)
+    ctx = bonus(ctx, {:subclass, :boss}, 5)
+    ctx = bonus(ctx, {:subclass, :normal}, 5)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 10)
+    ctx = bonus(ctx, {:subrace, :player_human}, 10)
+    ctx = bonus(ctx, {:addclass, :all}, 40)
+    ctx = bonus(ctx, {:magic_addclass, :all}, 40)
+    ctx = bonus(ctx, :all_stats, (3 * refine(ctx)))
+    ctx = if (refine(ctx) >= 5) do
+      ctx = bonus(ctx, :max_hp_rate, 15)
+      ctx = bonus(ctx, :delay_rate, -15)
+      ctx = if (refine(ctx) >= 7) do
+        ctx = bonus(ctx, :max_hp_rate, 25)
+        ctx = bonus(ctx, :delay_rate, -25)
+        ctx = if (refine(ctx) >= 9) do
+          ctx = bonus(ctx, {:addclass, :all}, 30)
+          ctx = bonus(ctx, {:magic_addclass, :all}, 30)
+          ctx = if (refine(ctx) >= 10) do
+            ctx = bonus(ctx, {:addsize, :all}, 15)
+            ctx = bonus(ctx, {:magic_addsize, :all}, 15)
+            ctx = autobonus(ctx, %{primary: [{:bonus, :all_stats, {:div, :base_level, 10}}, {:bonus, :max_hp_rate, {:div, :base_level, 10}}, {:bonus, :flee, {:*, 10, {:div, :base_level, 10}}}, {:bonus, :atk, {:*, 10, {:div, :base_level, 10}}}, {:bonus, :matk, {:*, 10, {:div, :base_level, 10}}}], trigger: :attack, secondary: [], battle_flag: 851}, 10, 10000)
+            ctx
+          else
+            ctx
+          end
+          ctx
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -176444,6 +178207,28 @@
   locations:
     - garment
   name: Owl Baron Mantle
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :mdef, 5)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :atk, (6 * refine(ctx)))
+    ctx = bonus(ctx, :matk, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = grant_skill(ctx, 78, 1)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 40}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 30000)
+      ctx
+    else
+      if (refine(ctx) >= 9) do
+        autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 20}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 30000)
+      else
+        if (refine(ctx) >= 7) do
+          autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 10}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 30000)
+        else
+          ctx
+        end
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -176784,6 +178569,24 @@
   locations:
     - garment
   name: Ravage Magic Muffler
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 2000)
+    ctx = bonus(ctx, :max_hp_rate, div(refine(ctx), 2))
+    ctx = bonus(ctx, :aspd_rate, div(refine(ctx), 3))
+    ctx = bonus(ctx, :varcast_rate, (0 - div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addsize, :all}, 3)
+      ctx = bonus(ctx, {:magic_addsize, :all}, 3)
+      ctx = if (refine(ctx) >= 11) do
+        autobonus(ctx, %{primary: [{:bonus, {:hp_regen_bonus, 1000}, 350}, {:bonus, {:sp_regen_bonus, 1000}, 20}], trigger: :attack, secondary: [], battle_flag: 851}, 1, 10000)
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -179472,6 +181275,22 @@
   name: '[Not For Sale] Christmas Guardian Tree'
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, div(refine(ctx), 2))
+    ctx = bonus(ctx, :atk_rate, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :matk, 30)
+      ctx = bonus(ctx, :atk, 30)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :neutral}, 20}, {:bonus, {:magic_atk_ele, :holy}, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 10000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -180292,6 +182111,22 @@
   locations:
     - garment
   name: Dream Guardian
+  on_equip: |-
+    ctx = bonus(ctx, :atk_rate, div(refine(ctx), 2))
+    ctx = bonus(ctx, :matk_rate, div(refine(ctx), 2))
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, :atk, 30)
+      ctx = bonus(ctx, :matk, 30)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      autobonus(ctx, %{primary: [{:bonus, {:magic_atk_ele, :ghost}, 20}, {:bonus, {:magic_atk_ele, :water}, 20}], trigger: :attack, secondary: [], battle_flag: 849}, 30, 10000)
+    else
+      ctx
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -182191,6 +184026,27 @@
   locations:
     - garment
   name: Owl Baron Cloak
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = bonus(ctx, :aspd_rate, 10)
+    ctx = bonus(ctx, :atk, (6 * refine(ctx)))
+    ctx = bonus(ctx, :matk, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 10) do
+      ctx = grant_skill(ctx, 78, 1)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 40}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 30000)
+      ctx
+    else
+      if (refine(ctx) >= 9) do
+        autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 20}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 30000)
+      else
+        if (refine(ctx) >= 7) do
+          autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 10}], trigger: :when_hit, secondary: [], battle_flag: 851}, 50, 30000)
+        else
+          ctx
+        end
+      end
+    end
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -188910,6 +190766,15 @@
   locations:
     - both_accessory
   name: Bomber Glove
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, {:skill_atk, 122}, div(base_level(ctx), 2))
+    ctx = bonus(ctx, {:skill_atk, 123}, div(base_level(ctx), 2))
+    ctx = bonus(ctx, {:skill_atk, 116}, div(base_level(ctx), 2))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :movement_speed, 50}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 60000)
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -188925,6 +190790,15 @@
   name: '[Not For Sale] Bomber Glove'
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, :dex, 3)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx = bonus(ctx, {:skill_atk, 122}, div(base_level(ctx), 2))
+    ctx = bonus(ctx, {:skill_atk, 123}, div(base_level(ctx), 2))
+    ctx = bonus(ctx, {:skill_atk, 116}, div(base_level(ctx), 2))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :movement_speed, 50}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 60000)
+    ctx
   slots: 1
   type: armor
   weight: 100
@@ -190734,6 +192608,31 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Flamberge
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :max_hp, {:+, 1000, {:*, {:-, :refine, 10}, 50}}}], trigger: {:on_skill, 255}, secondary: [], battle_flag: 0}, 1000, 30000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -191316,6 +193215,26 @@
     - right_hand
   magic_attack: 130
   name: Melon Blade
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -192264,6 +194183,33 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Gladius
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, 30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 214}, 50}], trigger: {:on_skill, 51}, secondary: [], battle_flag: 0}, 1000, 20000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -192563,6 +194509,29 @@
     - right_hand
   magic_attack: 180
   name: Illusion Ancient Dagger
+  on_equip: |-
+    ctx = bonus(ctx, :sp_regen, 10)
+    ctx = bonus(ctx, :max_sp, 100)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :matk_rate, 10}, {:bonus, :matk, 70}], trigger: :attack, secondary: [], battle_flag: 849}, 1, 10000)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:magic_atk_ele, :all}, 15)
+      ctx = if (refine(ctx) >= 9) do
+        ctx = bonus(ctx, {:magic_addsize, :medium}, 20)
+        ctx = bonus(ctx, {:magic_addsize, :large}, 20)
+        ctx = if (refine(ctx) >= 11) do
+          autobonus(ctx, %{primary: [{:bonus, {:magic_addrace, :all}, 15}], trigger: :attack, secondary: [], battle_flag: 338}, 1, 10000)
+        else
+          ctx
+        end
+        ctx
+      else
+        ctx
+      end
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -192907,6 +194876,26 @@
     - right_hand
   magic_attack: 120
   name: Melon Dagger
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -194533,6 +196522,26 @@
     - right_hand
   magic_attack: 110
   name: Melon Axe
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -194880,6 +196889,34 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Pike
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 56}, {:+, 20, {:skill_lv, 55}}}], trigger: {:on_skill, 6}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx = bonus(ctx, {:add_eff_on_skill, 56, :sc_stun}, (1000 + (skill_lv(ctx, 55) * 200)))
+      ctx = bonus(ctx, {:add_eff_on_skill, 56, :sc_blind}, (1000 + (skill_lv(ctx, 55) * 200)))
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -195109,6 +197146,26 @@
     - right_hand
   magic_attack: 110
   name: Melon Spear
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -195658,6 +197715,30 @@
     - right_hand
   magic_attack: 220
   name: Sloth Bible
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, {:subclass, :normal}, 15}, {:bonus, {:sp_regen_bonus, 1000}, 300}], trigger: :attack, secondary: [], battle_flag: 851}, 1, 5000)
+    ctx = bonus(ctx, :varcast_rate, (-3 * div(refine(ctx), 3)))
+    ctx = bonus(ctx, :matk, (6 * div(refine(ctx), 3)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:skill_atk, 20}, 25)
+      ctx = bonus(ctx, {:skill_atk, 19}, 25)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :aspd_rate, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 11) do
+      ctx = bonus(ctx, {:skill_atk, 20}, 30)
+      ctx = bonus(ctx, {:skill_atk, 19}, 30)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -196192,6 +198273,27 @@
     - right_hand
   magic_attack: 140
   name: Melon Book
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = bonus(ctx, :heal_power, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -197234,6 +199336,27 @@
     - right_hand
   magic_attack: 145
   name: Intermediate Guild Member's Healing Staff
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, (10 + refine(ctx)))
+    ctx = bonus(ctx, :delay_rate, -5)
+    ctx = bonus(ctx, {:skill_use_sp_rate, 29}, (2 + refine(ctx)))
+    ctx = bonus(ctx, {:skill_use_sp_rate, 34}, (2 + refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      bonus(ctx, :heal_power, 5)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :heal_power, 10)
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :heal_power, {:+, 25, {:-, :refine, 10}}}], trigger: {:on_skill, 28}, secondary: [], battle_flag: 0}, 100, 20000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -198242,6 +200365,27 @@
     - right_hand
   magic_attack: 180
   name: Melon Wand
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = bonus(ctx, :heal_power, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -198261,6 +200405,27 @@
     - right_hand
   magic_attack: 180
   name: Melon Foxtail
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = bonus(ctx, :heal_power, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 9
   refineable: true
   slots: 1
@@ -200063,6 +202228,33 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Fist
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, {:skill_fixcast_rate, 271}, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, :atk, {:+, 30, {:-, :refine, 10}}}], trigger: {:on_skill, 270}, secondary: [], battle_flag: 0}, 1000, 20000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -200418,6 +202610,26 @@
     - right_hand
   magic_attack: 100
   name: Melon Claw
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -200934,6 +203146,34 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Guitar
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, (20 + (refine(ctx) - 10)))
+      ctx = bonus(ctx, :varcast_rate, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 316}, {:+, 30, {:-, :refine, 10}}}], trigger: {:on_skill, 304}, secondary: [], battle_flag: 0}, 1000, 60000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -201232,6 +203472,26 @@
     - right_hand
   magic_attack: 120
   name: Melon Viollin
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -201774,6 +204034,34 @@
   locations:
     - right_hand
   name: Intermediate Guild Member's Lariat
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (15 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, (20 + (refine(ctx) - 10)))
+      ctx = bonus(ctx, :varcast_rate, -30)
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 324}, {:+, 30, {:-, :refine, 10}}}], trigger: {:on_skill, 304}, secondary: [], battle_flag: 0}, 1000, 60000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 2
   refineable: true
   slots: 1
@@ -202072,6 +204360,26 @@
     - right_hand
   magic_attack: 120
   name: Melon Whip
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 2
   refineable: true
   slots: 1
@@ -203102,6 +205410,26 @@
     - right_hand
   magic_attack: 110
   name: Melon Mace
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -203907,6 +206235,31 @@
   locations:
     - both_hand
   name: Intermediate Guild Member's Craymore
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (25 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, {:ignore_def_race, :player_human}, {:+, 10, {:-, :refine, 10}}}, {:bonus, {:ignore_def_race, :player_doram}, {:+, 10, {:-, :refine, 10}}}], trigger: :attack, secondary: [], battle_flag: 849}, 100, 7000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -204120,6 +206473,26 @@
     - both_hand
   magic_attack: 230
   name: Melon Claymore
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 30, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -204576,6 +206949,31 @@
   locations:
     - both_hand
   name: Intermediate Guild Member's Jamadhar
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      autobonus(ctx, %{primary: [{:bonus, :crit_atk_rate, {:+, 20, {:*, {:-, :refine, 10}, 2}}}], trigger: :attack, secondary: [], battle_flag: 849}, 100, 7000)
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -204915,6 +207313,26 @@
     - both_hand
   magic_attack: 250
   name: Melon Katar
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -205638,6 +208056,26 @@
     - both_hand
   magic_attack: 200
   name: Melon Two-Handed Axe
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 30, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -206171,6 +208609,26 @@
     - both_hand
   magic_attack: 230
   name: Melon Lance
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 30, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 3
   refineable: true
   slots: 1
@@ -206940,6 +209398,27 @@
     - both_hand
   magic_attack: 270
   name: Melon Staff
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 50, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 30, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = bonus(ctx, :heal_power, (6 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -207587,6 +210066,26 @@
     - both_hand
   magic_attack: 160
   name: Melon Huuma
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -208173,6 +210672,33 @@
   locations:
     - both_hand
   name: Intermediate Guild Member's Hunter Bow
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :player_human}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:addrace, :player_doram}, (20 + refine(ctx)))
+    ctx = bonus(ctx, {:ignore_def_race, :player_human}, 10)
+    ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 10)
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :player_human}, 5)
+      ctx = bonus(ctx, {:ignore_def_race, :player_doram}, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:addrace, :player_human}, 15)
+      ctx = bonus(ctx, {:addrace, :player_doram}, 15)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 10) do
+      ctx = bonus(ctx, :hit, (20 + (refine(ctx) - 10)))
+      ctx = autobonus(ctx, %{primary: [{:bonus, {:skill_atk, 46}, {:+, 20, {:-, :refine, 10}}}], trigger: {:on_skill, 45}, secondary: [], battle_flag: 0}, 1000, 10000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   slots: 1
@@ -208796,6 +211322,26 @@
     - both_hand
   magic_attack: 170
   name: Melon Wing
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 5
   refineable: true
   slots: 1
@@ -209582,6 +212128,26 @@
   locations:
     - both_hand
   name: Melon Handgun
+  on_equip: |-
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 20, 5000)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :sp_cost_rate, -100}, {:bonus, {:sp_regen_bonus, 1000}, 100}], trigger: :attack, secondary: [], battle_flag: 338}, 10, 5000)
+    ctx = bonus(ctx, :atk_rate, (10 * refine(ctx)))
+    ctx = bonus(ctx, :matk_rate, (5 * refine(ctx)))
+    ctx = if (refine(ctx) >= 7) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:ignore_def_race, :all}, 50)
+      ctx = bonus(ctx, {:ignore_mdef_race, :all}, 50)
+      ctx
+    else
+      ctx
+    end
+    ctx
   range: 7
   refineable: true
   slots: 1

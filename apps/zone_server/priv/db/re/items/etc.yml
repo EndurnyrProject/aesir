@@ -21840,6 +21840,7 @@
   locations:
     - ammo
   name: Throwing Boost 500
+  on_equip: status_start(ctx, :sc_boost500, 500000, 10)
   subtype: throw_weapon
   type: ammo
   weight: 10
@@ -21852,6 +21853,7 @@
   locations:
     - ammo
   name: Throwing Full Swing K
+  on_equip: status_start(ctx, :sc_full_swing_k, 500000, 50)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -21864,6 +21866,7 @@
   locations:
     - ammo
   name: Throwing Mana Plus
+  on_equip: status_start(ctx, :sc_mana_plus, 500000, 50)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -21888,6 +21891,7 @@
   locations:
     - ammo
   name: Throwing Muramura M
+  on_equip: status_start(ctx, :sc_mustle_m, 500000, 5)
   subtype: throw_weapon
   type: ammo
   weight: 10
@@ -21900,6 +21904,7 @@
   locations:
     - ammo
   name: Throwing Falmons F
+  on_equip: status_start(ctx, :sc_life_force_f, 500000, 5)
   subtype: throw_weapon
   type: ammo
   weight: 10
@@ -22008,6 +22013,7 @@
   locations:
     - ammo
   name: Throwing Ceromain Soup
+  on_equip: status_start(ctx, :sc_extract_salamine_juice, 500000, 10)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -22020,6 +22026,7 @@
   locations:
     - ammo
   name: Throwing Savage Full Roast
+  on_equip: status_start(ctx, :sc_savage_steak, 300000, 20)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -22032,6 +22039,7 @@
   locations:
     - ammo
   name: Throwing Cocktail Warg Blood
+  on_equip: status_start(ctx, :sc_cocktail_warg_blood, 300000, 20)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -22044,6 +22052,7 @@
   locations:
     - ammo
   name: Throwing Minor Stew
+  on_equip: status_start(ctx, :sc_minor_bbq, 300000, 20)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -22056,6 +22065,7 @@
   locations:
     - ammo
   name: Throwing Siroma Iced Tea
+  on_equip: status_start(ctx, :sc_siroma_ice_tea, 300000, 20)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -22068,6 +22078,7 @@
   locations:
     - ammo
   name: Throwing Drosera Herb Salad
+  on_equip: status_start(ctx, :sc_drocera_herb_steamed, 300000, 20)
   subtype: throw_weapon
   type: ammo
   weight: 50
@@ -22080,6 +22091,7 @@
   locations:
     - ammo
   name: Throwing Petite Tail Soup
+  on_equip: status_start(ctx, :sc_putti_tails_noodles, 300000, 20)
   subtype: throw_weapon
   type: ammo
   weight: 50
