@@ -199,7 +199,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
     "SC_SKF_CAST" => :sc_skf_cast,
     "SC_SPCOST_RATE" => :sc_spcost_rate,
     "SC_MENTAL_POTION" => :sc_mental_potion,
-    "SC_BEEF_RIB_STEW" => :sc_beef_rib_stew
+    "SC_BEEF_RIB_STEW" => :sc_beef_rib_stew,
+    "SC_SUMMER" => :sc_summer,
+    "SC_STRANGELIGHTS" => :sc_strangelights,
+    "SC_MOONSTAR" => :sc_moonstar,
+    "SC_SUPER_STAR" => :sc_super_star,
+    "SC_FSTONE" => :sc_fstone,
+    "SC_DECORATION_OF_MUSIC" => :sc_decoration_of_music,
+    "SC_HAT_EFFECT" => :sc_hat_effect,
+    "SC_LJOSALFAR" => :sc_ljosalfar,
+    "SC_MAPLE_FALLS" => :sc_maple_falls,
+    "SC_MERMAID_LONGING" => :sc_mermaid_longing,
+    "SC_TIME_ACCESSORY" => :sc_time_accessory
   }
 
   @elements %{
