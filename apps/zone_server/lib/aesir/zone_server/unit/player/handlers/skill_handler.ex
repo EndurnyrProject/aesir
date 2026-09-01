@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -1475,10 +1476,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     dispatch_on_skill_procs(game_state, skill_id, target)
   end
 
-  # Rolls the caster's on-skill autocast procs and hands each to this session,
-  # which runs it after the current message like any other proc. A ground or
-  # self cast has no unit to pass along, so only the procs that keep themselves
-  # on the caster can fire.
+  # Ordinary successful skill use arms both equipment proc families. Proc-origin
+  # casts bypass this seam, so neither family can recursively arm itself.
   @spec dispatch_on_skill_procs(PlayerState.t(), integer(), term()) :: :ok
   defp dispatch_on_skill_procs(game_state, skill_id, target) do
     game_state.stats.modifiers.equipment
@@ -1486,6 +1485,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     |> Enum.each(fn {:auto_cast, proc_skill_id, level, proc_target} ->
       GenServer.cast(self(), {:skill, {:proc_cast, proc_skill_id, level, proc_target}})
     end)
+
+    keys = EquipAutobonus.on_skill(game_state.stats.equip_autobonuses, skill_id)
+
+    with [_ | _] <- keys,
+         {:ok, pid} <- UnitRegistry.get_player_pid(game_state.character_id) do
+      Enum.each(keys, &GenServer.cast(pid, {:equip_autobonus_activate, &1}))
+    end
+
+    :ok
   end
 
   @spec proc_skill_target(term()) :: :self | {:unit, integer()} | nil

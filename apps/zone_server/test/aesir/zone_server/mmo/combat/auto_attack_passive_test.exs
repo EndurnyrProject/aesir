@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
 
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -134,6 +135,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
     %{attacker: player_state.stats, player_state: player_state}
   end
 
+  defp autobonus(trigger, battle_flag, source_order) do
+    %{trigger: trigger, battle_flag: battle_flag, rate: 1_000, source_order: source_order}
+  end
+
   describe "execute_attack/3 confirmed ordinary hits" do
     setup :setup_mob_hit
 
@@ -154,6 +159,44 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
                        %{target_type: :mob, target_id: 2001, position: {150, 150}}}
 
       refute_received {:after_normal_hit, _, _}
+    end
+
+    test "dispatches one matching attacker autobonus for a multi-division swing",
+         %{attacker: attacker, player_state: player_state} do
+      attack_flag = BattleFlags.build(:weapon, :short, false)
+      matching_key = {10, 0}
+      wrong_flag_key = {10, 1}
+
+      attacker = %{
+        attacker
+        | equip_autobonuses: %{
+            matching_key => autobonus(:attack, attack_flag, 0),
+            wrong_flag_key => autobonus(:attack, BattleFlags.build(:misc, :long, true), 1)
+          }
+      }
+
+      stub(Passives, :attack_procs, fn _player -> %{multi_hit: 2} end)
+      test_pid = self()
+
+      stub(UnitRegistry, :get_player_pid, fn
+        1001 ->
+          send(test_pid, :attacker_pid_lookup)
+          {:ok, test_pid}
+
+        _other ->
+          {:error, :not_found}
+      end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 2001)
+      end)
+
+      assert_received :attacker_pid_lookup
+      refute_received :attacker_pid_lookup
+
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^matching_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_flag_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^matching_key}}
     end
 
     test "restores SP after a normal hit when the drain is non-zero",
@@ -224,6 +267,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttackPassiveTest do
       capture_log(fn ->
         assert :ok = Combat.execute_attack(attacker, player_state, 3001)
       end)
+    end
+
+    test "dispatches a defender autobonus to the defender session",
+         %{attacker: attacker, player_state: player_state} do
+      attack_flag = BattleFlags.build(:weapon, :short, false)
+      defender_key = {20, 0}
+
+      target_stats = %{
+        player_state.stats
+        | equip_autobonuses: %{defender_key => autobonus(:when_hit, attack_flag, 0)}
+      }
+
+      target_state = %{player_state | character_id: 3001, stats: target_stats}
+
+      stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, self()} end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 3001 ->
+        {:ok, {PlayerState, target_state, self()}}
+      end)
+
+      stub(MapFlags, :get, fn
+        "prontera", :pvp -> true
+        _map_name, _flag -> false
+      end)
+
+      capture_log(fn ->
+        assert :ok = Combat.execute_attack(attacker, player_state, 3001)
+      end)
+
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
     end
 
     test "a multi-hit swing still dispatches exactly once",

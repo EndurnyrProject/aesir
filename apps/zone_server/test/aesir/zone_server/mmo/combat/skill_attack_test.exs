@@ -8,11 +8,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
+  alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -52,8 +54,139 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     Mimic.copy(EquipComa)
     Mimic.copy(EquipVanish)
     Mimic.copy(Knockback)
+    Mimic.copy(MiscDamageCalculator)
     Mimic.copy(OnHitEffects)
     :ok
+  end
+
+  defp autobonus(trigger, battle_flag, source_order) do
+    %{trigger: trigger, battle_flag: battle_flag, rate: 1_000, source_order: source_order}
+  end
+
+  test "physical skill hit dispatches matching procs once despite display divisions" do
+    flag = BattleFlags.build(:weapon, :short, true)
+    attacker_key = {10, 0}
+    defender_key = {20, 0}
+    wrong_key = {10, 1}
+
+    attacker =
+      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+      |> Map.put(:equip_autobonuses, %{
+        attacker_key => autobonus(:attack, flag, 0),
+        wrong_key => autobonus(:attack, BattleFlags.build(:misc, :long, true), 1)
+      })
+
+    target =
+      CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
+      |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+
+    stub(TargetResolver, :resolve, fn {:player, 2001} ->
+      {:ok, self(), target_state, :player}
+    end)
+
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :player, 2001, _info -> :continue end)
+
+    stub(DamageCalculator, :calculate_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+    stub(EquipVanish, :after_hit, fn ^attacker, ^target, _pid, ^flag -> :ok end)
+    stub(OnHitEffects, :after_hit, fn ^attacker, ^target, _result, _opts -> :ok end)
+    stub(Knockback, :skill, fn ^attacker, ^target, 7, _result, [] -> :ok end)
+
+    stub(StatusInterpreter, :absorb_damage, fn :player, 2001, 40, hit_info ->
+      assert hit_info.is_short
+      40
+    end)
+
+    stub(StatusInterpreter, :after_damage_taken, fn :player, 2001, _hit_info -> 0 end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, 1001} -> :ok end)
+
+    expect(UnitRegistry, :get_player_pid, 2, fn id when id in [1001, 2001] ->
+      {:ok, self()}
+    end)
+
+    assert :ok =
+             SkillAttack.execute_skill_attack(caster_state, {:player, 2001},
+               skill_id: 7,
+               skill_level: 1,
+               ignore_flee: true,
+               display_hit_count: 5
+             )
+
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+  end
+
+  test "misc skill hit dispatches only misc attacker and defender procs" do
+    flag = BattleFlags.build(:misc, :long, true)
+    attacker_key = {30, 0}
+    defender_key = {40, 0}
+    wrong_key = {30, 1}
+
+    attacker =
+      CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+      |> Map.put(:equip_autobonuses, %{
+        attacker_key => autobonus(:attack, flag, 0),
+        wrong_key => autobonus(:attack, BattleFlags.build(:weapon, :short, true), 1)
+      })
+
+    target =
+      CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
+      |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+
+    stub(TargetResolver, :resolve, fn {:player, 2001} ->
+      {:ok, self(), target_state, :player}
+    end)
+
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+
+    stub(MiscDamageCalculator, :calculate_misc_damage, fn ^attacker, ^target, _opts ->
+      {:ok, %{damage: 40, is_critical: false}}
+    end)
+
+    stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+    stub(EquipVanish, :after_hit, fn ^attacker, ^target, _pid, ^flag -> :ok end)
+    stub(Knockback, :skill, fn ^attacker, ^target, 122, _result, [] -> :ok end)
+
+    stub(StatusInterpreter, :absorb_damage, fn :player, 2001, 40, hit_info ->
+      assert hit_info.dmg_type == :misc
+      40
+    end)
+
+    stub(StatusInterpreter, :after_damage_taken, fn :player, 2001, _hit_info -> 0 end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+    stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, 1001} -> :ok end)
+
+    expect(UnitRegistry, :get_player_pid, 2, fn id when id in [1001, 2001] ->
+      {:ok, self()}
+    end)
+
+    assert :ok =
+             SkillAttack.execute_misc_attack(caster_state, {:player, 2001},
+               skill_id: 122,
+               skill_level: 1,
+               base_damage: 40
+             )
+
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key}}
   end
 
   test "streams every multi-hit fragment through delivery before calculating the next" do

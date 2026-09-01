@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
@@ -897,14 +898,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     BattleFlags.build(:weapon, range, false)
   end
 
-  # Rolls both sides' equipment autocasts for a landed swing.
-  #
-  # The attacker's own procs are cast to `self()`, exactly like the
-  # `SC_AUTOSPELL` bolt: this runs inside the attacker's session, so the cast
-  # lands after the current message on state the session already committed. The
-  # defender's when-hit procs are handed to the defender's session instead, so
-  # each side's skills are cast by its own single writer. A mob defender carries
-  # no equipment and produces nothing.
+  # Rolls both sides' equipment procs once for the landed logical swing.
+  # Existing autocasts retain their session-local delivery; autobonus activation
+  # resolves each player through the registry so the wearer owns the mutation.
   @spec dispatch_equip_autocasts(Combatant.t(), Combatant.t(), pid() | nil, BattleFlags.flag()) ::
           :ok
   defp dispatch_equip_autocasts(attacker, target, target_pid, attack_flag) do
@@ -915,7 +911,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     target
     |> EquipAutocast.when_hit(attacker, attack_flag)
     |> Enum.each(&send_auto_cast(target_pid, &1))
+
+    send_equip_autobonuses(
+      attacker,
+      EquipAutobonus.on_attack(attacker.equip_autobonuses, attack_flag)
+    )
+
+    send_equip_autobonuses(
+      target,
+      EquipAutobonus.when_hit(target.equip_autobonuses, attack_flag)
+    )
   end
+
+  defp send_equip_autobonuses(%{unit_type: :player, unit_id: unit_id}, [_ | _] = keys) do
+    with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
+      Enum.each(keys, &GenServer.cast(pid, {:equip_autobonus_activate, &1}))
+    end
+
+    :ok
+  end
+
+  defp send_equip_autobonuses(_combatant, _keys), do: :ok
 
   @spec send_auto_cast(pid() | nil, EquipAutocast.proc()) :: :ok
   defp send_auto_cast(nil, _proc), do: :ok

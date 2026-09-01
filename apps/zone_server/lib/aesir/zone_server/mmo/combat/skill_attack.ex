@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
@@ -56,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @max_uint32 0xFFFF_FFFF
 
@@ -772,14 +774,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       }
 
       source = damage_source(attacker, target_type)
+      attack_flag = BattleFlags.build(:misc, :long, true)
 
       if damage > 1 do
-        EquipVanish.after_hit(
-          attacker,
-          target,
-          target_pid,
-          BattleFlags.build(:misc, :long, true)
-        )
+        EquipVanish.after_hit(attacker, target, target_pid, attack_flag)
       end
 
       {damage, hit_info} =
@@ -822,6 +820,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         result,
         misc_opts.knockback_options
       )
+
+      if delivery == :ok do
+        dispatch_equip_autobonuses(attacker, target, attack_flag)
+      end
 
       delivery
     end
@@ -1179,7 +1181,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     target
     |> EquipAutocast.when_hit(attacker, attack_flag)
     |> Enum.each(&send_auto_cast(target_pid, &1))
+
+    dispatch_equip_autobonuses(attacker, target, attack_flag)
   end
+
+  defp dispatch_equip_autobonuses(attacker, target, attack_flag) do
+    send_equip_autobonuses(
+      attacker,
+      EquipAutobonus.on_attack(attacker.equip_autobonuses, attack_flag)
+    )
+
+    send_equip_autobonuses(
+      target,
+      EquipAutobonus.when_hit(target.equip_autobonuses, attack_flag)
+    )
+  end
+
+  defp send_equip_autobonuses(%{unit_type: :player, unit_id: unit_id}, [_ | _] = keys) do
+    with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
+      Enum.each(keys, &GenServer.cast(pid, {:equip_autobonus_activate, &1}))
+    end
+
+    :ok
+  end
+
+  defp send_equip_autobonuses(_combatant, _keys), do: :ok
 
   @spec send_auto_cast(pid() | nil, EquipAutocast.proc()) :: :ok
   defp send_auto_cast(nil, _proc), do: :ok

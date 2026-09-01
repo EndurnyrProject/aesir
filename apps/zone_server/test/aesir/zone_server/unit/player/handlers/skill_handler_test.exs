@@ -236,6 +236,81 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       assert returned.game_state.combo.stage == :idle
     end
 
+    test "successful named skill use dispatches its equipment autobonus" do
+      key = {10, 0}
+      state = casting_state(45)
+
+      stats = %{
+        state.game_state.stats
+        | equip_autobonuses: %{
+            key => %{trigger: {:on_skill, 29}, rate: 1_000, source_order: 0}
+          }
+      }
+
+      game_state = %{state.game_state | stats: stats}
+      state = %{state | game_state: game_state}
+
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub(Interpreter, :begin_cast, fn ^game_state, 29, 1, :self -> {:instant, game_state} end)
+
+      stub(StatusInterpreter, :on_committed_action, fn :player, 1000, {:skill, 29} ->
+        :unchanged
+      end)
+
+      stub_commit()
+      expect(UnitRegistry, :get_player_pid, fn 1000 -> {:ok, self()} end)
+
+      assert {:noreply, _state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^key}}
+    end
+
+    test "rejected named skill use does not dispatch an equipment autobonus" do
+      key = {10, 0}
+      state = casting_state(45)
+
+      stats = %{
+        state.game_state.stats
+        | equip_autobonuses: %{
+            key => %{trigger: {:on_skill, 29}, rate: 1_000, source_order: 0}
+          }
+      }
+
+      state = %{state | game_state: %{state.game_state | stats: stats}}
+
+      stub(Interpreter, :begin_cast, fn _game_state, 29, 1, :self ->
+        {:error, :invalid_target}
+      end)
+
+      stub(Broadcast, :to_player, fn 1000, %SkillCastFailed{} -> :ok end)
+      reject(&UnitRegistry.get_player_pid/1)
+
+      assert {:noreply, ^state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key}}
+    end
+
+    test "proc-origin skill casts do not recursively dispatch named-skill autobonuses" do
+      key = {10, 0}
+      state = casting_state(45)
+
+      stats = %{
+        state.game_state.stats
+        | equip_autobonuses: %{
+            key => %{trigger: {:on_skill, 29}, rate: 1_000, source_order: 0}
+          }
+      }
+
+      state = %{state | game_state: %{state.game_state | stats: stats}}
+      game_state = state.game_state
+
+      stub(Interpreter, :proc_cast, fn ^game_state, 29, 1, :self -> {:ok, game_state} end)
+      stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
+      stub_commit()
+      reject(&UnitRegistry.get_player_pid/1)
+
+      assert {:noreply, _state} = SkillHandler.handle_proc_cast(state, 29, 1, :self)
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key}}
+    end
+
     test "publishes the final resource projection after consuming SP" do
       stub(Catalog, :by_id, fn 29 -> {:ok, definition(cast_time: [])} end)
       stub(StatusInterpreter, :apply_status, fn :player, 1000, :sc_increaseagi, _ -> :ok end)
