@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
@@ -30,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @bolts %{
     14 => {:water, 100},
@@ -165,6 +167,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         magic_result(target_state, [damage], coma_decision),
         opts
       )
+
+      if delivery == :ok do
+        dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
+      end
 
       delivery
     end
@@ -353,6 +359,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       packet = Hallucination.maybe_garble(packet, target_type)
       Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
       delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
+
+      if delivery == :ok do
+        dispatch_equip_autobonuses(caster, target, magic_attack_flag())
+      end
 
       if dst_delay > 0 do
         apply_walk_delay(unit_type, target_pid, dst_delay)
@@ -865,6 +875,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           source
         )
 
+      if delivery == :ok do
+        dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
+      end
+
       result = %{
         target_ref: target_ref,
         target_state: target_state,
@@ -985,6 +999,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       opts
     )
 
+    if delivery == :ok do
+      dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
+    end
+
     delivery
   end
 
@@ -1002,6 +1020,28 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   end
 
   defp magic_attack_flag, do: BattleFlags.build(:magic, :long, true)
+
+  defp dispatch_equip_autobonuses(attacker, target, attack_flag) do
+    send_equip_autobonuses(
+      attacker,
+      EquipAutobonus.on_attack(attacker.equip_autobonuses, attack_flag)
+    )
+
+    send_equip_autobonuses(
+      target,
+      EquipAutobonus.when_hit(target.equip_autobonuses, attack_flag)
+    )
+  end
+
+  defp send_equip_autobonuses(%{unit_type: :player, unit_id: unit_id}, [_ | _] = keys) do
+    with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
+      Enum.each(keys, &GenServer.cast(pid, {:equip_autobonus_activate, &1}))
+    end
+
+    :ok
+  end
+
+  defp send_equip_autobonuses(_combatant, _keys), do: :ok
 
   defp decide_coma(attacker, target, damages) do
     case Enum.find(damages, &(&1 > 0)) do

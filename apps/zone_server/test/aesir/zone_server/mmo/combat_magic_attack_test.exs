@@ -8,12 +8,16 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
+  alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -49,6 +53,29 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   @target_id 2001
   @map_name "prontera"
   @center {150, 150}
+
+  defmodule TestUnit do
+    defstruct [:combatant, :x, :y]
+
+    def to_combatant(%__MODULE__{combatant: combatant}), do: combatant
+    def living?(%__MODULE__{}), do: true
+  end
+
+  defp autobonus(trigger, battle_flag, source_order) do
+    %{trigger: trigger, battle_flag: battle_flag, rate: 1_000, source_order: source_order}
+  end
+
+  defp relay_gen_casts(test_pid) do
+    receive do
+      {:"$gen_cast", message} ->
+        send(test_pid, {:source_session, message})
+        relay_gen_casts(test_pid)
+
+      {:relay_barrier, from} ->
+        send(from, :relay_drained)
+        relay_gen_casts(test_pid)
+    end
+  end
 
   defp build_caster do
     stats = %Stats{
@@ -263,6 +290,193 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_attack/3" do
+    test "dispatches matching attacker and defender procs once for a multi-division magic hit" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {10, 0}
+      defender_key = {20, 0}
+      wrong_key = {10, 1}
+
+      attacker =
+        build_caster()
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{
+          attacker_key => autobonus(:attack, flag, 0),
+          wrong_key => autobonus(:attack, BattleFlags.build(:weapon, :long, true), 1)
+        })
+
+      target =
+        %{build_caster() | character_id: @target_id, account_id: @target_id, x: 151}
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+
+      caster_state = %TestUnit{combatant: attacker}
+      target_state = %TestUnit{combatant: target}
+
+      stub(TargetResolver, :resolve, fn {:player, @target_id} ->
+        {:ok, self(), target_state, :player}
+      end)
+
+      stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+      stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+      stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, ^target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, 40, _hit_info -> 40 end)
+      stub(StatusInterpreter, :after_damage_taken, fn :player, @target_id, _hit_info -> 0 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, 80, {:player, @caster_id} -> :ok end)
+
+      expect(UnitRegistry, :get_player_pid, 2, fn id when id in [@caster_id, @target_id] ->
+        {:ok, self()}
+      end)
+
+      assert :ok =
+               MagicAttack.execute_magic_attack(caster_state, {:player, @target_id},
+                 skill_id: 19,
+                 skill_level: 2,
+                 hit_count: 2
+               )
+
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+    end
+
+    test "drops a defender proc when its player session has despawned" do
+      flag = BattleFlags.build(:magic, :long, true)
+      defender_key = {20, 0}
+      attacker = PlayerState.to_combatant(build_caster())
+
+      target =
+        %{build_caster() | character_id: @target_id, account_id: @target_id, x: 151}
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+
+      caster_state = %TestUnit{combatant: attacker}
+      target_state = %TestUnit{combatant: target}
+
+      stub(TargetResolver, :resolve, fn {:player, @target_id} ->
+        {:ok, self(), target_state, :player}
+      end)
+
+      stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+      stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+      stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, ^target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(EquipComa, :trigger?, fn ^attacker, ^target -> false end)
+      stub(StatusInterpreter, :absorb_damage, fn :player, @target_id, 40, _hit_info -> 40 end)
+      stub(StatusInterpreter, :after_damage_taken, fn :player, @target_id, _hit_info -> 0 end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, @caster_id} -> :ok end)
+      expect(UnitRegistry, :get_player_pid, fn @target_id -> {:error, :not_found} end)
+
+      assert :ok =
+               MagicAttack.execute_magic_attack(caster_state, {:player, @target_id},
+                 skill_id: 19,
+                 skill_level: 1
+               )
+
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+    end
+
+    test "splash magic dispatches attacker and defender procs once per target" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {30, 0}
+      defender_key = {40, 0}
+      second_target_id = 2002
+      second_defender_key = {50, 0}
+
+      attacker =
+        build_caster()
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{attacker_key => autobonus(:attack, flag, 0)})
+
+      target =
+        %{build_caster() | character_id: @target_id, account_id: @target_id, x: 151}
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{defender_key => autobonus(:when_hit, flag, 0)})
+
+      second_target =
+        %{build_caster() | character_id: second_target_id, account_id: second_target_id, x: 151}
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{second_defender_key => autobonus(:when_hit, flag, 0)})
+
+      caster_state = %TestUnit{combatant: attacker, x: 150, y: 150}
+      target_state = %TestUnit{combatant: target, x: 151, y: 150}
+      second_target_state = %TestUnit{combatant: second_target, x: 151, y: 150}
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:player, @target_id}, {:player, second_target_id}]
+      end)
+
+      stub(TargetResolver, :resolve, fn
+        :player, @target_id -> {:ok, self(), target_state, :player}
+        :player, ^second_target_id -> {:ok, self(), second_target_state, :player}
+      end)
+
+      stub(TargetResolver, :ensure_targetable, fn
+        ^target_state, :player -> :ok
+        ^second_target_state, :player -> :ok
+      end)
+
+      stub(Targeting, :validate_enemy, fn ^attacker, _target -> :ok end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn ^attacker, _target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(EquipComa, :trigger?, fn ^attacker, _target -> false end)
+
+      stub(StatusInterpreter, :absorb_damage, fn :player, target_id, 40, _hit_info
+                                                 when target_id in [@target_id, second_target_id] ->
+        40
+      end)
+
+      stub(StatusInterpreter, :after_damage_taken, fn :player, target_id, _hit_info
+                                                      when target_id in [
+                                                             @target_id,
+                                                             second_target_id
+                                                           ] ->
+        0
+      end)
+
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(PlayerSession, :apply_damage, fn _pid, 40, {:player, @caster_id} -> :ok end)
+
+      expect(UnitRegistry, :get_player_pid, 4, fn id
+                                                  when id in [
+                                                         @caster_id,
+                                                         @target_id,
+                                                         second_target_id
+                                                       ] ->
+        {:ok, self()}
+      end)
+
+      assert Enum.sort([{:player, @target_id}, {:player, second_target_id}]) ==
+               MagicAttack.execute_magic_splash(caster_state, @center, 1,
+                 skill_id: 19,
+                 skill_level: 1
+               )
+
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^second_defender_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^second_defender_key}}
+    end
+
     test "multi-hit magic issues one combined blow from its final logical result" do
       caster = put_in(build_caster().stats.modifiers.equipment, %{{:add_skill_blow, 19} => 3})
       stub_single_target_mob()
@@ -317,8 +531,15 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert %{hp: 10} = Storage.get_cell(cell.cell_id)
     end
 
-    test "does not broadcast when a targetable skill-unit cell disappears before damage" do
-      caster = build_caster()
+    test "does not activate an armed proc when a targetable skill-unit cell disappears before damage" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {11, 0}
+
+      caster =
+        put_in(build_caster().stats.equip_autobonuses, %{
+          attacker_key => autobonus(:attack, flag, 0)
+        })
+
       {manager, cell} = targetable_cell(%{caster_type: :mob, caster_id: 5_000})
 
       Mimic.copy(Manager)
@@ -333,6 +554,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       end)
 
       reject(&Broadcast.to_in_range/5)
+      stub(UnitRegistry, :get_player_pid, fn @caster_id -> {:ok, self()} end)
 
       assert {:error, :not_found} =
                Combat.execute_magic_attack(caster, cell.cell_id,
@@ -341,6 +563,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_ratio: 100,
                  element: :fire
                )
+
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
     end
 
     test "applies explicit magic damage to a targetable skill-unit cell" do
@@ -792,10 +1016,22 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:damage, 30}
     end
 
-    test "explicit magic damage honors :skip_range for an interpreter-validated cast" do
-      caster = build_caster()
+    test "explicit magic damage honors :skip_range and activates one matching proc" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {60, 0}
+
+      caster =
+        put_in(build_caster().stats.equip_autobonuses, %{
+          attacker_key => autobonus(:attack, flag, 0)
+        })
+
       test_pid = self()
       stub_single_target_mob(155, 150)
+
+      stub(UnitRegistry, :get_player_pid, fn
+        @caster_id -> {:ok, self()}
+        @target_id -> {:error, :not_found}
+      end)
 
       stub(Broadcast, :to_in_range, fn @map_name, 155, 150, _range, %SkillDamage{} = packet ->
         send(test_pid, {:packet, packet})
@@ -817,6 +1053,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       assert_received {:packet, %SkillDamage{skill_id: 28}}
       assert_received {:damage, _}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
     end
 
     test "returns an error when the target is out of range" do
@@ -835,6 +1073,69 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "apply_skill_unit_damage/8" do
+    test "dispatches a ground magic proc to the source player session once despite divisions" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {50, 0}
+      test_pid = self()
+
+      source_session = spawn_link(fn -> relay_gen_casts(test_pid) end)
+
+      on_exit(fn -> Process.exit(source_session, :kill) end)
+
+      caster =
+        build_caster()
+        |> PlayerState.to_combatant()
+        |> Map.put(:equip_autobonuses, %{attacker_key => autobonus(:attack, flag, 0)})
+
+      target = %{caster | unit_id: @target_id, unit_type: :mob, position: {151, 150}}
+      target_state = %TestUnit{combatant: target, x: 151, y: 150}
+
+      :ok =
+        UnitRegistry.register_unit(
+          :player,
+          @caster_id,
+          PlayerState,
+          build_caster(),
+          source_session
+        )
+
+      stub(TargetResolver, :resolve, fn :mob, @target_id ->
+        {:ok, self(), target_state, :mob}
+      end)
+
+      stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, @target_id ->
+        {:ok, {151, 150, @map_name}}
+      end)
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn ^caster, ^target, _opts ->
+        {:ok, %{damage: 40, is_critical: false}}
+      end)
+
+      stub(EquipComa, :trigger?, fn ^caster, ^target -> false end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      stub(MobSession, :apply_damage, fn _pid, 40, @caster_id -> :ok end)
+
+      assert :ok =
+               MagicAttack.apply_skill_unit_damage(
+                 caster,
+                 :mob,
+                 @target_id,
+                 70,
+                 1,
+                 :fire,
+                 100,
+                 hit_divisions: 3
+               )
+
+      send(source_session, {:relay_barrier, self()})
+      assert_receive :relay_drained, 100
+      assert_received {:source_session, {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:source_session, {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+    end
+
     test "applies explicit fixed elemental damage without invoking the MATK calculator" do
       caster = PlayerState.to_combatant(build_caster())
       stub_single_target_mob()
