@@ -107,7 +107,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
+  alias Aesir.ZoneServer.Npc.Transpiler.Parser
 
+  @type context :: :equip | :unequip
+  @typep compile_context :: context() | :autobonus_primary | :autobonus_secondary
   @type detail :: term()
   @type param :: atom() | integer() | {atom() | integer(), non_neg_integer()}
   @type dest :: atom() | {atom(), param()} | {atom(), integer(), atom()}
@@ -121,8 +124,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   @spec generate([tuple()]) ::
           {:ok, EquipScript.program()} | {:error, {:unsupported, detail()}}
-  def generate(stmts) when is_list(stmts) do
-    with {:ok, {instrs, _env}} <- reduce(unblock_all(stmts), %{}) do
+  def generate(stmts) when is_list(stmts), do: generate(stmts, :equip)
+
+  @spec generate([tuple()], context()) ::
+          {:ok, EquipScript.program()} | {:error, {:unsupported, detail()}}
+  def generate(stmts, context) when is_list(stmts) and context in [:equip, :unequip] do
+    with {:ok, {instrs, _env}} <- reduce(unblock_all(stmts), %{}, context) do
       {:ok, instrs}
     end
   end
@@ -135,11 +142,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   # Threads the transpile-time variable environment through a statement list,
   # returning the emitted instructions and the resulting environment.
-  @spec reduce([tuple()], env()) ::
+  @spec reduce([tuple()], env(), compile_context()) ::
           {:ok, {[EquipScript.instr()], env()}} | {:error, {:unsupported, detail()}}
-  defp reduce(stmts, env) do
+  defp reduce(stmts, env, context) do
     Enum.reduce_while(stmts, {:ok, {[], env}}, fn stmt, {:ok, {acc, env}} ->
-      case step(stmt, env) do
+      case step(stmt, env, context) do
         {:ok, {instrs, env}} -> {:cont, {:ok, {acc ++ instrs, env}}}
         {:error, _} = error -> {:halt, error}
       end
@@ -149,18 +156,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # A `.@var` assignment binds an input-pure expression and emits nothing; an
   # `if` folds its branch environments back together (`merge_envs/4`); every
   # other statement compiles to instructions and leaves the environment as-is.
-  @spec step(tuple(), env()) ::
+  @spec step(tuple(), env(), compile_context()) ::
           {:ok, {[EquipScript.instr()], env()}} | {:error, {:unsupported, detail()}}
-  defp step({:assign, {:var, :local, name, :int}, ast}, env) do
+  defp step({:assign, {:var, :local, name, :int}, ast}, env, _context) do
     with {:ok, expr} <- compile_expr(ast, env) do
       {:ok, {[], Map.put(env, name, expr)}}
     end
   end
 
-  defp step({:if, cond_expr, then_stmts, else_stmts}, env) do
+  defp step({:if, cond_expr, then_stmts, else_stmts}, env, context) do
     with {:ok, condition} <- compile_cond(cond_expr, env),
-         {:ok, {then_instrs, then_env}} <- reduce(unblock_all(then_stmts), env),
-         {:ok, {else_instrs, else_env}} <- reduce(unblock_all(else_stmts), env) do
+         {:ok, {then_instrs, then_env}} <- reduce(unblock_all(then_stmts), env, context),
+         {:ok, {else_instrs, else_env}} <- reduce(unblock_all(else_stmts), env, context) do
       merged = merge_envs(env, condition, then_env, else_env)
       # An `if` whose branches emit nothing existed only to conditionally assign
       # a variable; that effect is already captured in `merged`, so it needs no
@@ -174,8 +181,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     end
   end
 
-  defp step(stmt, env) do
-    with {:ok, instrs} <- compile_instrs(stmt, env) do
+  defp step(stmt, env, context) do
+    with {:ok, instrs} <- compile_instrs(stmt, env, context) do
       {:ok, {instrs, env}}
     end
   end
@@ -219,15 +226,234 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   # A statement normally compiles to exactly one instruction; pair keys expand
   # to two. Normalizing here keeps both fold points list-shaped without every
   # `compile_instr/2` clause having to wrap itself.
-  @spec compile_instrs(tuple(), %{String.t() => EquipScript.expr()}) ::
+  @spec compile_instrs(tuple(), env(), compile_context()) ::
           {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
-  defp compile_instrs(stmt, env) do
-    case compile_instr(stmt, env) do
+  defp compile_instrs(stmt, env, context) do
+    case compile_context_instr(stmt, env, context) do
       {:ok, instrs} when is_list(instrs) -> {:ok, instrs}
       {:ok, instr} -> {:ok, [instr]}
       {:error, _} = error -> error
     end
   end
+
+  @autobonus_commands ~w(autobonus autobonus2 autobonus3)
+  @nested_contexts [:autobonus_primary, :autobonus_secondary]
+  @nested_cosmetics ~w(specialeffect2 active_transform showscript)
+
+  defp compile_context_instr({:cmd, name, args}, env, :equip)
+       when name in @autobonus_commands,
+       do: compile_autobonus(name, args, env)
+
+  defp compile_context_instr({:cmd, name, _args}, _env, context)
+       when name in @autobonus_commands and context in @nested_contexts,
+       do: unsupported({:recursive_autobonus, name})
+
+  defp compile_context_instr({:cmd, "sc_start", args}, env, context)
+       when context in [:equip | @nested_contexts],
+       do: compile_status_start(args, env)
+
+  defp compile_context_instr({:cmd, "sc_end", args}, _env, context)
+       when context in [:unequip | @nested_contexts],
+       do: compile_status_end(args)
+
+  defp compile_context_instr({:cmd, name, _args}, _env, context)
+       when name in @nested_cosmetics and context in @nested_contexts,
+       do: {:ok, []}
+
+  defp compile_context_instr(stmt, env, context)
+       when context in [:equip, :autobonus_primary],
+       do: compile_instr(stmt, env)
+
+  defp compile_context_instr({:cmd, name, _args}, _env, _context),
+    do: unsupported({:unsupported_command, name})
+
+  defp compile_context_instr(other, _env, _context), do: unsupported({:statement, other})
+
+  defp compile_autobonus(name, [primary, rate, duration], env)
+       when name in ["autobonus", "autobonus2"] do
+    compile_battle_autobonus(name, primary, rate, duration, {:int, 0}, nil, env)
+  end
+
+  defp compile_autobonus(name, [primary, rate, duration, flag], env)
+       when name in ["autobonus", "autobonus2"] do
+    compile_battle_autobonus(name, primary, rate, duration, flag, nil, env)
+  end
+
+  defp compile_autobonus(name, [primary, rate, duration, flag, secondary], env)
+       when name in ["autobonus", "autobonus2"] do
+    compile_battle_autobonus(name, primary, rate, duration, flag, secondary, env)
+  end
+
+  defp compile_autobonus("autobonus3", [primary, rate, duration, skill], env) do
+    compile_skill_autobonus(primary, rate, duration, skill, nil, env)
+  end
+
+  defp compile_autobonus("autobonus3", [primary, rate, duration, skill, secondary], env) do
+    compile_skill_autobonus(primary, rate, duration, skill, secondary, env)
+  end
+
+  defp compile_autobonus(name, args, _env), do: unsupported({:autobonus_shape, name, args})
+
+  defp compile_battle_autobonus(
+         name,
+         primary_ast,
+         rate_ast,
+         duration_ast,
+         flag_ast,
+         secondary_ast,
+         env
+       ) do
+    with {:ok, primary} <- compile_nested(primary_ast, env, :autobonus_primary, name),
+         {:ok, secondary} <- compile_optional_nested(secondary_ast, env, name),
+         {:ok, rate} <- compile_expr(rate_ast, env),
+         {:ok, duration} <- compile_expr(duration_ast, env),
+         {:ok, flag} <- resolve_autobonus_flag(flag_ast) do
+      spec = %{
+        trigger: autobonus_trigger(name),
+        battle_flag: BattleFlags.fill_battle(flag),
+        primary: primary,
+        secondary: secondary
+      }
+
+      {:ok, {:autobonus, spec, rate, duration}}
+    end
+  end
+
+  defp compile_skill_autobonus(
+         primary_ast,
+         rate_ast,
+         duration_ast,
+         skill_ast,
+         secondary_ast,
+         env
+       ) do
+    with {:ok, primary} <-
+           compile_nested(primary_ast, env, :autobonus_primary, "autobonus3"),
+         {:ok, secondary} <- compile_optional_nested(secondary_ast, env, "autobonus3"),
+         {:ok, rate} <- compile_expr(rate_ast, env),
+         {:ok, duration} <- compile_expr(duration_ast, env),
+         {:ok, skill_id} <- resolve_skill_ref(skill_ast) do
+      spec = %{
+        trigger: {:on_skill, skill_id},
+        battle_flag: 0,
+        primary: primary,
+        secondary: secondary
+      }
+
+      {:ok, {:autobonus, spec, rate, duration}}
+    end
+  end
+
+  defp compile_optional_nested(nil, _env, _outer_command), do: {:ok, []}
+
+  defp compile_optional_nested(ast, env, outer_command),
+    do: compile_nested(ast, env, :autobonus_secondary, outer_command)
+
+  defp autobonus_trigger("autobonus"), do: :attack
+  defp autobonus_trigger("autobonus2"), do: :when_hit
+
+  defp resolve_autobonus_flag({:int, 0}), do: {:ok, 0}
+  defp resolve_autobonus_flag(ast), do: resolve_flag(:battle, ast)
+
+  defp compile_status_start([{:name, symbol}, duration_ast, value_ast], env) do
+    with {:ok, status} <- resolve(&Resolver.resolve_status/1, symbol),
+         {:ok, duration} <- compile_status_duration(duration_ast, env),
+         {:ok, value} <- compile_expr(value_ast, env) do
+      {:ok, {:status_start, status, duration, value}}
+    end
+  end
+
+  defp compile_status_start(args, _env), do: unsupported({:status_start_shape, args})
+
+  defp compile_status_end([{:name, symbol}]) do
+    with {:ok, status} <- resolve(&Resolver.resolve_status/1, symbol),
+         do: {:ok, {:status_end, status}}
+  end
+
+  defp compile_status_end(args), do: unsupported({:status_end_shape, args})
+
+  defp compile_status_duration({:name, symbol}, _env) do
+    if String.upcase(symbol) == "INFINITE_TICK",
+      do: {:ok, :infinite},
+      else: unsupported({:expression, {:name, symbol}})
+  end
+
+  defp compile_status_duration(ast, env), do: compile_expr(ast, env)
+
+  defp compile_nested(source_ast, env, context, outer_command) do
+    with {:ok, {source, nested_env}} <- compile_nested_source(source_ast, env),
+         do: parse_nested(source, nested_env, context, outer_command)
+  end
+
+  defp parse_nested(source, env, context, outer_command) do
+    case Parser.parse_body(source) do
+      {:ok, stmts} ->
+        with {:ok, {instrs, _env}} <- reduce(unblock_all(stmts), env, context),
+             do: {:ok, instrs}
+
+      {:error, reason} ->
+        unsupported({:nested_parse_error, outer_command, reason})
+    end
+  end
+
+  defp compile_nested_source({:str, source}, _env), do: {:ok, {source, %{}}}
+
+  defp compile_nested_source(ast, env) do
+    if nested_string?(ast) do
+      literal_source = collect_literal_source(ast)
+
+      with {:ok, {source, nested_env, _index}} <-
+             build_nested_source(ast, env, literal_source, 0),
+           do: {:ok, {source, nested_env}}
+    else
+      unsupported({:expression, ast})
+    end
+  end
+
+  defp collect_literal_source({:str, source}), do: source
+
+  defp collect_literal_source({:bin, :+, left, right}),
+    do: collect_literal_source(left) <> collect_literal_source(right)
+
+  defp collect_literal_source(_ast), do: ""
+
+  defp build_nested_source({:str, source}, _env, _literal_source, index),
+    do: {:ok, {source, %{}, index}}
+
+  defp build_nested_source({:bin, :+, left, right} = ast, env, literal_source, index) do
+    if nested_string?(ast) do
+      with {:ok, {left_source, left_env, index}} <-
+             build_nested_source(left, env, literal_source, index),
+           {:ok, {right_source, right_env, index}} <-
+             build_nested_source(right, env, literal_source, index) do
+        {:ok, {left_source <> right_source, Map.merge(left_env, right_env), index}}
+      end
+    else
+      inject_nested_expr(ast, env, literal_source, index)
+    end
+  end
+
+  defp build_nested_source(ast, env, literal_source, index),
+    do: inject_nested_expr(ast, env, literal_source, index)
+
+  defp inject_nested_expr(ast, env, literal_source, index) do
+    with {:ok, expr} <- compile_expr(ast, env) do
+      {name, next_index} = next_placeholder(literal_source, index)
+      {:ok, {".@#{name}", %{name => expr}, next_index}}
+    end
+  end
+
+  defp next_placeholder(literal_source, index) do
+    name = "__aesir_nested_#{index}"
+
+    if String.contains?(literal_source, name),
+      do: next_placeholder(literal_source, index + 1),
+      else: {name, index + 1}
+  end
+
+  defp nested_string?({:str, _source}), do: true
+  defp nested_string?({:bin, :+, left, right}), do: nested_string?(left) or nested_string?(right)
+  defp nested_string?(_ast), do: false
 
   @spec compile_instr(tuple(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.instr() | [EquipScript.instr()]}

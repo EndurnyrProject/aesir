@@ -7,9 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
 
-  defp compile(script) do
+  defp compile(script, context \\ :equip) do
     with {:ok, stmts} <- Parser.parse_body(script) do
-      EquipCodegen.generate(stmts)
+      EquipCodegen.generate(stmts, context)
     end
   end
 
@@ -1162,6 +1162,187 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "an unresolvable operand inside a combinator propagates the error" do
       assert {:error, {:unsupported, {:unsupported_call, "rand"}}} =
                compile("bonus bInt,min(rand(5),3);")
+    end
+  end
+
+  describe "autobonus and status commands" do
+    test "autobonus compiles its primary program with the default attack flag" do
+      assert {:ok, [{:autobonus, spec, 50, 5_000}]} =
+               compile(~S|autobonus "{ bonus bStr,5; }",50,5000;|)
+
+      assert %{
+               trigger: :attack,
+               battle_flag: flag,
+               primary: [{:bonus, :str, 5}],
+               secondary: []
+             } = spec
+
+      assert flag == battle_flag(~w(weapon short long normal skill))
+    end
+
+    test "autobonus2 compiles flags and secondary status effects while omitting cosmetics" do
+      script =
+        ~S'autobonus2 "{ bonus bVit,10; }",25,3000,BF_MAGIC|BF_LONG,"{ specialeffect2 EF_HEAL; sc_start SC_BLESSING,2000,3; showscript \"ready\"; }";'
+
+      assert {:ok, [{:autobonus, spec, 25, 3_000}]} = compile(script)
+
+      assert %{
+               trigger: :when_hit,
+               battle_flag: flag,
+               primary: [{:bonus, :vit, 10}],
+               secondary: [{:status_start, :sc_blessing, 2_000, 3}]
+             } = spec
+
+      assert flag == battle_flag(~w(magic long skill))
+    end
+
+    test "autobonus3 resolves its trigger skill and status effects" do
+      bash_id = skill_id!(:sm_bash)
+
+      script =
+        ~S'autobonus3 "{ sc_start SC_BLESSING,5000,2; }",1000,6000,"SM_BASH","{ sc_end SC_CURSE; }";'
+
+      assert {:ok, [{:autobonus, spec, 1_000, 6_000}]} = compile(script)
+
+      assert %{
+               trigger: {:on_skill, ^bash_id},
+               battle_flag: 0,
+               primary: [{:status_start, :sc_blessing, 5_000, 2}],
+               secondary: [{:status_end, :sc_curse}]
+             } = spec
+    end
+
+    test "dynamic nested source strings capture outer input-pure expressions" do
+      script =
+        ~S'.@r = getrefine(); autobonus "{ bonus bBaseAtk,25*"+.@r+"; }",3*.@r,3000,BF_NORMAL;'
+
+      assert {:ok, [{:autobonus, spec, {:*, 3, :refine}, 3_000}]} = compile(script)
+      assert spec.primary == [{:bonus, :atk, {:*, 25, :refine}}]
+      assert spec.battle_flag == battle_flag(~w(normal weapon short long))
+    end
+
+    test "dynamic nested source capture is isolated from literal local assignments" do
+      script =
+        ~S'.@r=getrefine(); autobonus "{ .@__aesir_nested_0=7; bonus bStr,"+.@r+"; }",10,1000;'
+
+      assert {:ok, [{:autobonus, spec, 10, 1_000}]} = compile(script)
+      assert spec.primary == [{:bonus, :str, :refine}]
+    end
+
+    test "dynamic nested source keeps multiple captured expressions distinct" do
+      script =
+        ~S'.@r=getrefine(); autobonus "{ .@__aesir_nested_0=7; bonus bStr,"+.@r+"; bonus bAgi,"+(.@r+1)+"; }",10,1000;'
+
+      assert {:ok, [{:autobonus, spec, 10, 1_000}]} = compile(script)
+
+      assert spec.primary == [
+               {:bonus, :str, :refine},
+               {:bonus, :agi, {:+, :refine, 1}}
+             ]
+    end
+
+    test "direct equip and unequip status commands use their lifecycle contexts" do
+      assert {:ok, [{:status_start, :sc_summer, :infinite, 0}]} =
+               compile("sc_start SC_SUMMER,INFINITE_TICK,0;")
+
+      assert {:ok, [{:status_end, :sc_summer}]} = compile("sc_end SC_SUMMER;", :unequip)
+
+      assert {:error, {:unsupported, {:unsupported_command, "sc_end"}}} =
+               compile("sc_end SC_SUMMER;")
+
+      assert {:error, {:unsupported, {:unsupported_command, "sc_start"}}} =
+               compile("sc_start SC_SUMMER,1000,0;", :unequip)
+
+      assert {:error, {:unsupported, {:unsupported_command, "bonus"}}} =
+               compile("bonus bStr,1;", :unequip)
+    end
+
+    test "secondary programs reject gameplay commands with their nested reason" do
+      script = ~S'autobonus "{}",10,1000,0,"{ bonus bStr,1; }";'
+
+      assert {:error, {:unsupported, {:unsupported_command, "bonus"}}} = compile(script)
+    end
+
+    test "all three nested cosmetics are omitted and top-level cosmetics stay unsupported" do
+      script =
+        ~S'autobonus "{ specialeffect2 EF_HEAL; active_transform 1002,1000; showscript \"ok\"; bonus bStr,1; }",10,1000;'
+
+      assert {:ok, [{:autobonus, %{primary: [{:bonus, :str, 1}]}, 10, 1_000}]} =
+               compile(script)
+
+      assert {:error, {:unsupported, {:unsupported_command, "specialeffect2"}}} =
+               compile("specialeffect2 EF_HEAL;")
+    end
+
+    test "remaining source arities compile with defaults and optional data" do
+      bash_id = skill_id!(:sm_bash)
+
+      assert {:ok, [{:autobonus, attack, 10, 1_000}]} =
+               compile(~S'autobonus "{}",10,1000,BF_MAGIC;')
+
+      assert attack.trigger == :attack
+      assert attack.battle_flag == battle_flag(~w(magic short long skill))
+      assert attack.secondary == []
+
+      assert {:ok, [{:autobonus, when_hit, 20, 2_000}]} =
+               compile(~S'autobonus2 "{}",20,2000;')
+
+      assert when_hit.trigger == :when_hit
+      assert when_hit.battle_flag == battle_flag(~w(weapon short long normal skill))
+
+      assert {:ok, [{:autobonus, zero_flag, 30, 3_000}]} =
+               compile(~S'autobonus "{}",30,3000,0,"{}";')
+
+      assert zero_flag.battle_flag == battle_flag(~w(weapon short long normal skill))
+      assert zero_flag.secondary == []
+
+      assert {:ok, [{:autobonus, on_skill, 1_000, 4_000}]} =
+               compile("autobonus3 \"{}\",1000,4000,#{bash_id};")
+
+      assert on_skill.trigger == {:on_skill, bash_id}
+      assert on_skill.secondary == []
+    end
+
+    test "nested parser errors name the outer command and retain the parser reason" do
+      nested = "{ bonus bStr,; }"
+      assert {:error, nested_reason} = Parser.parse_body(nested)
+
+      assert {:error, {:unsupported, {:nested_parse_error, "autobonus2", ^nested_reason}}} =
+               compile("autobonus2 #{inspect(nested)},10,1000;")
+    end
+
+    test "unsupported nested gameplay and recursive autobonuses fail explicitly" do
+      assert {:error, {:unsupported, {:unsupported_command, "heal"}}} =
+               compile(~S'autobonus "{ heal 100,0; }",10,1000;')
+
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bNotReal"}}} =
+               compile(~S'autobonus "{ bonus bNotReal,1; }",10,1000;')
+
+      assert {:error, {:unsupported, {:recursive_autobonus, "autobonus3"}}} =
+               compile(~S'autobonus "{ autobonus3 \"{}\",1000,1000,\"SM_BASH\"; }",10,1000;')
+    end
+
+    test "unknown status, skill, and flag symbols preserve resolver failures" do
+      assert {:error, {:unsupported, {:unresolved_param, "SC_NOT_REAL"}}} =
+               compile("sc_start SC_NOT_REAL,1000,1;")
+
+      assert {:error, {:unsupported, {:unresolved_param, "XX_NOTASKILL"}}} =
+               compile(~S'autobonus3 "{}",1000,1000,"XX_NOTASKILL";')
+
+      assert {:error, {:unsupported, {:unresolved_param, "BF_NOTAFLAG"}}} =
+               compile(~S'autobonus "{}",10,1000,BF_NOTAFLAG;')
+    end
+
+    test "INFINITE_TICK is accepted only as a status duration" do
+      assert {:ok,
+              [{:autobonus, %{primary: [{:status_start, :sc_blessing, :infinite, 1}]}, 10, 1_000}]} =
+               compile(~S'autobonus "{ sc_start SC_BLESSING,INFINITE_TICK,1; }",10,1000;')
+
+      assert {:error, {:unsupported, {:expression, {:name, "INFINITE_TICK"}}}} =
+               compile(~S'autobonus "{}",10,INFINITE_TICK;')
+
+      assert {:error, {:unsupported, {:expression, {:name, "INFINITE_TICK"}}}} =
+               compile("sc_start SC_BLESSING,1000,INFINITE_TICK;")
     end
   end
 end
