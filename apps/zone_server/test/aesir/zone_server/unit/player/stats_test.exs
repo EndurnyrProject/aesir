@@ -79,6 +79,17 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1, refine: refine}
   end
 
+  defp equipped_row(id, nameid, equip, refine \\ 0) do
+    %InventoryItem{
+      id: id,
+      nameid: nameid,
+      amount: 1,
+      equip: equip,
+      identify: 1,
+      refine: refine
+    }
+  end
+
   defp base_character do
     %Character{
       id: 1,
@@ -157,6 +168,25 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.derived_stats.max_hp > 0
       assert stats.derived_stats.max_sp > 0
       assert stats.derived_stats.aspd > 0
+    end
+
+    test "equipment folding has no clock or timer dependency" do
+      source =
+        "../../../../../lib/aesir/zone_server/unit/player/stats.ex"
+        |> Path.expand(__DIR__)
+        |> File.read!()
+
+      for forbidden <- [
+            "System.monotonic_time",
+            "System.system_time",
+            "DateTime.utc_now",
+            "NaiveDateTime.utc_now",
+            "Process.send_after",
+            ":erlang.send_after",
+            ":erlang.start_timer"
+          ] do
+        refute source =~ forbidden
+      end
     end
 
     test "from_character carries status_point into progression" do
@@ -313,6 +343,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert stats.modifiers.equipment == %{}
       assert stats.modifiers.status_effects == %{}
+      assert stats.equip_autobonuses == %{}
+      assert stats.active_autobonuses == %{}
+      assert stats.equip_statuses == %{}
 
       assert stats.modifiers.job_bonuses ==
                %{
@@ -677,6 +710,23 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.apply_equipment_modifiers(stats)
       assert result == stats
+    end
+
+    test "an empty worn cache clears only derived equipment runtime maps" do
+      stats = %Stats{
+        worn_items: [],
+        modifiers: %{equipment: %{atk: 9}, status_effects: %{def: 4}, job_bonuses: %{str: 2}},
+        equip_autobonuses: %{{7, 0} => %{primary: []}},
+        active_autobonuses: %{{7, 0} => 3},
+        equip_statuses: %{summer: {:infinite, 2}}
+      }
+
+      result = Stats.apply_equipment_modifiers(stats, nil)
+
+      assert result.modifiers == stats.modifiers
+      assert result.equip_autobonuses == %{}
+      assert result.active_autobonuses == %{}
+      assert result.equip_statuses == %{}
     end
 
     test "status effects remain unchanged (placeholder)" do
@@ -1162,6 +1212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
 
       item = %InventoryItem{
+        id: 77,
         nameid: @sword,
         amount: 1,
         equip: @right_hand,
@@ -1181,6 +1232,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       # from without a second reduction.
       assert [
                %{
+                 id: 77,
                  nameid: @sword,
                  refine: 7,
                  equip: @right_hand,
@@ -1348,6 +1400,54 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert with_shield.combat_stats.def == 150
       assert contribution == %{def: 70, mdef: 5}
       assert contribution.def == with_shield.combat_stats.def - without_shield.combat_stats.def
+    end
+
+    test "uses active-aware folds for shield and external marginal modifiers" do
+      registration = fn primary ->
+        {:autobonus, %{trigger: :attack, battle_flag: 0, primary: primary, secondary: []}, 1_000,
+         10_000}
+      end
+
+      armor = %ItemDefinition{
+        id: 90_272,
+        aegis_name: "test_active_armor",
+        name: "Test Active Armor",
+        type: :armor,
+        defense: 80,
+        on_equip: [registration.([{:bonus, :def_rate, 50}])]
+      }
+
+      shield = %ItemDefinition{
+        id: 90_273,
+        aegis_name: "test_active_shield",
+        name: "Test Active Shield",
+        type: :armor,
+        defense: 20,
+        on_equip: [registration.([{:bonus, :def, 10}, {:bonus, :mdef, 4}])]
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_272 -> {:ok, armor}
+        90_273 -> {:ok, shield}
+      end)
+
+      rows = [
+        equipped_row(72, 90_272, @armor_pos),
+        equipped_row(73, 90_273, @left_hand)
+      ]
+
+      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      active =
+        Stats.apply_equipment_modifiers(%{
+          folded
+          | active_autobonuses: %{{72, 0} => 1, {73, 0} => 1}
+        })
+
+      assert active.modifiers.equipment.def == 110
+      assert active.modifiers.equipment.def_rate == 50
+      assert active.modifiers.equipment.mdef == 4
+      assert Stats.shield_defense_contribution(active) == %{def: 45, mdef: 4}
     end
 
     test "a left-hand weapon (not a shield) contributes nothing" do
@@ -1845,6 +1945,335 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       )
     end
 
+    test "keys each ordered registration by persistent row id and zero-based local index" do
+      nested =
+        {:autobonus,
+         %{trigger: :attack, battle_flag: 0, primary: [{:bonus, :def, 99}], secondary: []}, 1_000,
+         1_000}
+
+      primary = [{:bonus, :atk, :refine}, {:status_start, :blessing, 5_000, 2}, nested]
+      secondary = [{:status_end, :blessing}]
+
+      first =
+        scripted_item(90_198,
+          on_equip: [
+            {:autobonus,
+             %{
+               trigger: :attack,
+               battle_flag: 3,
+               primary: primary,
+               secondary: secondary
+             }, 250, 7_000},
+            {:autobonus,
+             %{
+               trigger: :when_hit,
+               battle_flag: 5,
+               primary: [{:bonus, :def, 4}],
+               secondary: []
+             }, 500, 8_000}
+          ]
+        )
+
+      second =
+        scripted_item(90_199,
+          on_equip: [
+            {:autobonus,
+             %{
+               trigger: {:on_skill, 28},
+               battle_flag: 0,
+               primary: [{:grant_skill, 29, 3}],
+               secondary: []
+             }, 1_000, 9_000}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_198 -> {:ok, first}
+        90_199 -> {:ok, second}
+      end)
+
+      rows = [equipped_row(41, 90_198, @right_hand, 6), equipped_row(73, 90_199, @left_hand)]
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      assert Map.keys(result.equip_autobonuses) |> Enum.sort() == [{41, 0}, {41, 1}, {73, 0}]
+
+      assert result.equip_autobonuses[{41, 0}] == %{
+               item_id: 90_198,
+               refine: 6,
+               source_order: {0, 0},
+               trigger: :attack,
+               rate: 250,
+               duration_ms: 7_000,
+               battle_flag: 3,
+               primary: primary,
+               secondary: secondary,
+               primary_effects: [{:status_start, :blessing, 5_000, 2}],
+               secondary_effects: [{:status_end, :blessing}]
+             }
+
+      assert result.equip_autobonuses[{41, 1}].source_order == {0, 1}
+      assert result.equip_autobonuses[{73, 0}].source_order == {1, 0}
+      assert result.equip_autobonuses[{73, 0}].primary == [{:grant_skill, 29, 3}]
+      assert Enum.map(result.worn_items, & &1.id) == [41, 73]
+      assert result.equip_statuses == %{}
+
+      active = Stats.apply_equipment_modifiers(%{result | active_autobonuses: %{{41, 0} => 1}})
+      assert active.modifiers.equipment.atk == 6
+      assert active.equip_statuses == %{}
+      assert Map.keys(active.equip_autobonuses) |> Enum.sort() == [{41, 0}, {41, 1}, {73, 0}]
+
+      refolded = Stats.apply_equipment_modifiers(result)
+      assert refolded.equip_autobonuses == result.equip_autobonuses
+    end
+
+    test "keeps later lexical keys stable when preceding registrations toggle" do
+      registration = fn primary, rate ->
+        {:autobonus, %{trigger: :attack, battle_flag: 0, primary: primary, secondary: []}, rate,
+         10_000}
+      end
+
+      later_primary = [{:bonus, :atk, 7}]
+
+      item =
+        scripted_item(90_190,
+          on_equip: [
+            {:if, {:>, :base_level, 10},
+             [
+               {:if, {:>, :job_level, 5}, [registration.([{:bonus, :atk, 100}], 1_000)], []}
+             ], []},
+            registration.([{:bonus, :atk, 200}], {:-, :refine, 5}),
+            registration.(later_primary, 1_000)
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_190 -> {:ok, item} end)
+
+      row = equipped_row(19, 90_190, @armor_pos, 5)
+      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+
+      assert Map.keys(folded.equip_autobonuses) == [{19, 2}]
+      assert folded.equip_autobonuses[{19, 2}].primary == later_primary
+      assert folded.equip_autobonuses[{19, 2}].source_order == {0, 2}
+
+      toggled =
+        folded
+        |> Map.put(:active_autobonuses, %{{19, 2} => 8})
+        |> Map.update!(:progression, &%{&1 | base_level: 20, job_level: 10})
+        |> Stats.apply_equipment_modifiers([equipped_row(19, 90_190, @armor_pos, 6)])
+
+      assert Map.keys(toggled.equip_autobonuses) |> Enum.sort() == [{19, 0}, {19, 1}, {19, 2}]
+      assert toggled.active_autobonuses == %{{19, 2} => 8}
+      assert toggled.equip_autobonuses[{19, 2}].primary == later_primary
+      assert toggled.modifiers.equipment.atk == 7
+
+      gated_again =
+        toggled
+        |> Map.update!(:progression, &%{&1 | base_level: 1, job_level: 1})
+        |> Stats.apply_equipment_modifiers([row])
+
+      assert Map.keys(gated_again.equip_autobonuses) == [{19, 2}]
+      assert gated_again.active_autobonuses == %{{19, 2} => 8}
+      assert gated_again.modifiers.equipment.atk == 7
+    end
+
+    test "merges active primaries in worn source order rather than row-id order" do
+      autobonus = fn element ->
+        {:autobonus,
+         %{
+           trigger: :attack,
+           battle_flag: 0,
+           primary: [{:set, :atk_ele, element}],
+           secondary: []
+         }, 1_000, 10_000}
+      end
+
+      first = scripted_item(90_188, on_equip: [autobonus.(:fire)])
+      second = scripted_item(90_189, on_equip: [autobonus.(:wind)])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_188 -> {:ok, first}
+        90_189 -> {:ok, second}
+      end)
+
+      rows = [equipped_row(90, 90_188, @armor_pos), equipped_row(10, 90_189, @garment_pos)]
+      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      active =
+        Stats.apply_equipment_modifiers(%{
+          folded
+          | active_autobonuses: %{{10, 0} => 2, {90, 0} => 1}
+        })
+
+      assert active.equip_autobonuses[{90, 0}].source_order == {0, 0}
+      assert active.equip_autobonuses[{10, 0}].source_order == {1, 0}
+      assert active.modifiers.equipment.atk_ele == :wind
+    end
+
+    test "rejects an autobonus source without persistent row identity" do
+      item =
+        scripted_item(90_191,
+          on_equip: [
+            {:autobonus, %{trigger: :attack, battle_flag: 0, primary: [], secondary: []}, 1_000,
+             1_000}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_191 -> {:ok, item} end)
+
+      assert_raise ArgumentError, ~r/requires a persistent positive row id/, fn ->
+        Stats.apply_equipment_modifiers(
+          swordman(%Equipment{}, %{}),
+          [equipped(90_191, @armor_pos)]
+        )
+      end
+    end
+
+    test "retains registration row identity from an index-keyed inventory map" do
+      item =
+        scripted_item(90_192,
+          on_equip: [
+            {:autobonus, %{trigger: :attack, battle_flag: 0, primary: [], secondary: []}, 1_000,
+             1_000}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_192 -> {:ok, item} end)
+      row = equipped_row(88, 90_192, @armor_pos)
+
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), %{4 => row})
+
+      assert [%{id: 88}] = result.worn_items
+      assert Map.has_key?(result.equip_autobonuses, {88, 0})
+    end
+
+    test "rebuilds registrations and prunes only active keys whose source disappeared" do
+      registration = fn trigger ->
+        {:autobonus,
+         %{trigger: trigger, battle_flag: 0, primary: [{:bonus, :atk, 1}], secondary: []}, 1_000,
+         10_000}
+      end
+
+      first = scripted_item(90_196, on_equip: [registration.(:attack)])
+      second = scripted_item(90_197, on_equip: [registration.(:when_hit)])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_196 -> {:ok, first}
+        90_197 -> {:ok, second}
+      end)
+
+      rows = [equipped_row(11, 90_196, @armor_pos), equipped_row(12, 90_197, @garment_pos)]
+      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), rows)
+
+      active = %{{11, 0} => 4, {12, 0} => 9, {999, 0} => 2}
+
+      refolded =
+        Stats.apply_equipment_modifiers(%{folded | active_autobonuses: active}, [hd(rows)])
+
+      assert Map.keys(refolded.equip_autobonuses) == [{11, 0}]
+      assert refolded.active_autobonuses == %{{11, 0} => 4}
+    end
+
+    test "re-evaluates surviving active primary modifiers and grants from current inputs" do
+      primary = [
+        {:bonus, :atk, {:+, :base_level, :job_level}},
+        {:bonus, :str, {:stat, :str}},
+        {:bonus, :heal_power, {:skill_lv, 5}},
+        {:bonus, :critical, :refine},
+        {:bonus, :movement_speed, 5},
+        {:grant_skill, 28, {:skill_lv, 5}}
+      ]
+
+      item =
+        scripted_item(90_195,
+          on_equip: [
+            {:bonus, :atk, 10},
+            {:bonus, :movement_speed, 10},
+            {:grant_skill, 28, 3},
+            {:autobonus, %{trigger: :attack, battle_flag: 0, primary: primary, secondary: []},
+             1_000, 10_000}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_195 -> {:ok, item} end)
+
+      base = %{
+        swordman(%Equipment{}, %{})
+        | modifiers: %Modifiers{equipment: %{}, status_effects: %{}, job_bonuses: %{}}
+      }
+
+      row = equipped_row(31, 90_195, @armor_pos, 2)
+      folded = Stats.apply_equipment_modifiers(base, [row])
+      refute Map.has_key?(folded.modifiers.equipment, :critical)
+      assert folded.granted_skills == %{28 => 3}
+
+      current = %{
+        folded
+        | active_autobonuses: %{{31, 0} => 7},
+          base_stats: %{folded.base_stats | str: 12},
+          progression: %{
+            folded.progression
+            | base_level: 60,
+              job_level: 20,
+              learned_skills: %{5 => 6}
+          }
+      }
+
+      active = Stats.apply_equipment_modifiers(current)
+
+      assert active.active_autobonuses == %{{31, 0} => 7}
+      assert active.modifiers.equipment.atk == 90
+      assert active.modifiers.equipment.str == 12
+      assert active.modifiers.equipment.heal_power == 6
+      assert active.modifiers.equipment.critical == 2
+      assert active.modifiers.equipment.movement_speed == 10
+      assert active.granted_skills == %{28 => 6}
+
+      refined = Stats.apply_equipment_modifiers(active, [equipped_row(31, 90_195, @armor_pos, 7)])
+      assert refined.modifiers.equipment.critical == 7
+      assert refined.active_autobonuses == %{{31, 0} => 7}
+    end
+
+    test "collapses direct status providers with last source provider semantics" do
+      first =
+        scripted_item(90_193,
+          on_equip: [
+            {:status_start, :summer, 1_000, 1},
+            {:status_start, :summer, 1_500, 2}
+          ]
+        )
+
+      second = scripted_item(90_194, on_equip: [{:status_start, :summer, :infinite, 3}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_193 -> {:ok, first}
+        90_194 -> {:ok, second}
+      end)
+
+      first_row = equipped_row(51, 90_193, @armor_pos)
+      second_row = equipped_row(52, 90_194, @garment_pos)
+      base = swordman(%Equipment{}, %{})
+
+      both = Stats.apply_equipment_modifiers(base, [first_row, second_row])
+      assert both.equip_statuses == %{summer: {:infinite, 3}}
+
+      one = Stats.apply_equipment_modifiers(both, [first_row])
+      assert one.equip_statuses == %{summer: {1_500, 2}}
+
+      indexed_rows =
+        Map.new(1..40, fn key ->
+          provider = if key == 40, do: first_row, else: second_row
+          {key, %{provider | id: key + 100}}
+        end)
+
+      map_ordered = Stats.apply_equipment_modifiers(base, indexed_rows)
+
+      assert Enum.map(map_ordered.worn_items, & &1.id) == Enum.to_list(101..140)
+      assert map_ordered.equip_statuses == %{summer: {1_500, 2}}
+
+      none = Stats.apply_equipment_modifiers(one, [])
+      assert none.equip_statuses == %{}
+    end
+
     test "folds an on_equip program alongside the flat attack column, no double-count" do
       item = scripted_item(90_201, attack: 10, on_equip: [{:bonus, :atk, 5}])
       stub(ItemManagement, :get_item_by_id, fn 90_201 -> {:ok, item} end)
@@ -2032,10 +2461,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       one = with_equipped_items([equipped(90_216, @right_hand)])
       assert one.modifiers.equipment.atk_ele == :fire
 
-      # Constants overwrite rather than sum, so the last item folded in wins. The
-      # fold order is the equipped-item order, which is only meaningful for a list
-      # — the session passes a map, so with two elemental sources the winner is
-      # arbitrary. rAthena is equally order-dependent here.
+      # Constants overwrite rather than sum, so the last item folded in wins. Lists
+      # preserve caller order; indexed maps fold in canonical key order.
       both = with_equipped_items([equipped(90_216, @right_hand), equipped(90_217, @left_hand)])
       assert both.modifiers.equipment.atk_ele == :wind
     end

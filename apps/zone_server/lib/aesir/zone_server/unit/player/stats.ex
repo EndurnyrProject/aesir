@@ -135,6 +135,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           }
   end
 
+  @typedoc "Stable identity of one autobonus registration within an inventory row."
+  @type autobonus_key :: {pos_integer(), non_neg_integer()}
+
+  @typedoc "An evaluated autobonus registration derived from a worn item."
+  @type autobonus_registration :: %{
+          item_id: pos_integer(),
+          refine: non_neg_integer(),
+          source_order: {non_neg_integer(), non_neg_integer()},
+          trigger: :attack | :when_hit | {:on_skill, pos_integer()},
+          rate: pos_integer(),
+          duration_ms: pos_integer(),
+          battle_flag: non_neg_integer(),
+          primary: EquipScript.program(),
+          secondary: EquipScript.program(),
+          primary_effects: [EquipScript.effect()],
+          secondary_effects: [EquipScript.effect()]
+        }
+
+  @typedoc "A direct status desired by at least one currently worn item."
+  @type equip_status :: {pos_integer() | :infinite, integer()}
+
+  @typedoc """
+  Cached inventory identity and metadata used by equipment refolds.
+
+  A nullable row id is retained only for compatibility with legacy callers. Any
+  row whose equipment program contains an autobonus must have a positive id.
+  """
+  @type worn_item :: %{
+          id: pos_integer() | nil,
+          nameid: integer(),
+          refine: non_neg_integer(),
+          equip: non_neg_integer(),
+          card0: integer(),
+          card1: integer(),
+          card2: integer(),
+          card3: integer(),
+          craft: map() | nil
+        }
+
   defstruct base_stats: nil,
             # Common stats from Unit.Stats
             derived_stats: nil,
@@ -146,11 +185,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             equipment: nil,
             modifiers: %Modifiers{},
 
-            # Minimal identity of the worn items (nameid, refine, cards, and craft), cached by
+            # Minimal identity of worn inventory rows (id, nameid, refine, cards, craft), cached by
             # `apply_equipment_modifiers/2` so a recompute without an equipped-items
             # list can still re-evaluate the on_equip programs - their level inputs
             # (BaseLevel/JobLevel) change without any equipment change.
             worn_items: [],
+
+            # Derived proc registrations, live generations, and direct status
+            # requirements. Rebuilt or pruned by the deterministic equipment fold.
+            equip_autobonuses: %{},
+            active_autobonuses: %{},
+            equip_statuses: %{},
             right_hand: nil,
             left_hand: nil,
 
@@ -185,17 +230,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           progression: PlayerProgression.t() | nil,
           equipment: Equipment.t() | nil,
           modifiers: Modifiers.t(),
-          worn_items: [
-            %{
-              nameid: integer(),
-              refine: integer(),
-              equip: integer(),
-              card0: integer(),
-              card1: integer(),
-              card2: integer(),
-              card3: integer()
-            }
-          ],
+          worn_items: [worn_item()],
+          equip_autobonuses: %{autobonus_key() => autobonus_registration()},
+          active_autobonuses: %{autobonus_key() => pos_integer()},
+          equip_statuses: %{atom() => equip_status()},
           right_hand: WeaponHand.t() | nil,
           left_hand: WeaponHand.t() | nil,
           granted_skills: %{integer() => non_neg_integer()},
@@ -313,9 +351,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   ## Parameters
   - stats: The Stats struct to calculate
   - player_id: Optional player ID for status effect retrieval
-  - equipped_items: Optional list of equipped inventory items
+  - equipped_items: Optional list or index-keyed map of equipped inventory items
   """
-  @spec calculate_stats(t(), integer() | nil, [any()] | nil) :: t()
+  @spec calculate_stats(
+          t(),
+          integer() | nil,
+          [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil
+        ) :: t()
   def calculate_stats(%__MODULE__{} = stats, player_id \\ nil, equipped_items \\ nil) do
     stats
     |> apply_job_bonuses()
@@ -390,43 +432,45 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @doc """
   Applies equipment modifiers to stats from the equipped inventory items.
 
-  When `equipped_items` is a list of `InventoryItem`s, this rebuilds the worn
-  `Equipment` struct (so weapon-type/shield-dependent calculations such as
-  ASPD see the correct gear), caches item instance metadata in `worn_items`,
-  and folds the flat `item_db` bonuses plus each item's
-  `on_equip` program into `modifiers.equipment`. When `nil`, the fold reruns
+  When `equipped_items` is a list or index-keyed map of `InventoryItem`s, this
+  rebuilds the worn `Equipment` struct (so weapon-type/shield-dependent
+  calculations such as ASPD see the correct gear), caches item instance metadata
+  in `worn_items`,
+  and folds the flat `item_db` bonuses plus each item's structured `on_equip`
+  result into modifiers, proc registrations, and desired direct statuses.
+  Surviving active proc generations re-evaluate their primary programs through
+  the same equipment merge rules. When `nil`, the fold reruns
   from the cached `worn_items` instead - equipment cannot have changed, but the
   program level inputs (`BaseLevel`/`JobLevel`) follow the current progression,
   so a level-up recompute refreshes level-gated bonuses without threading the
   inventory through every call site. An empty cache has nothing to refold, so
-  that case keeps the stats untouched.
+  that case preserves legacy modifier state while clearing derived equipment
+  proc and direct-status runtime maps.
   """
-  @spec apply_equipment_modifiers(t(), [InventoryItem.t()] | nil) :: t()
+  @spec apply_equipment_modifiers(
+          t(),
+          [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil
+        ) :: t()
   def apply_equipment_modifiers(stats, equipped_items \\ nil)
 
-  def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil), do: stats
+  def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil) do
+    %{stats | equip_autobonuses: %{}, active_autobonuses: %{}, equip_statuses: %{}}
+  end
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
-    {equipment_bonuses, granted_skills} =
-      stats.worn_items
-      |> calculate_equipment_bonuses(stats.progression, equip_stat_params(stats))
-      |> split_granted_skills()
-
-    %{
-      stats
-      | granted_skills: granted_skills,
-        modifiers: %{stats.modifiers | equipment: equipment_bonuses}
-    }
+    stats
+    |> fold_equipment(stats.worn_items)
     |> put_weapon_hands(stats.worn_items)
   end
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items)
-      when is_list(equipped_items) do
+      when is_list(equipped_items) or is_map(equipped_items) do
     worn_items =
       equipped_items
       |> normalize_items()
       |> Enum.map(
         &%{
+          id: &1.id,
           nameid: &1.nameid,
           refine: &1.refine,
           equip: &1.equip,
@@ -438,19 +482,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         }
       )
 
-    {equipment_bonuses, granted_skills} =
-      worn_items
-      |> calculate_equipment_bonuses(stats.progression, equip_stat_params(stats))
-      |> split_granted_skills()
+    stats
+    |> Map.put(:equipment, equipment_from_inventory(equipped_items))
+    |> Map.put(:worn_items, worn_items)
+    |> fold_equipment(worn_items)
+    |> put_weapon_hands(worn_items)
+  end
+
+  defp fold_equipment(stats, worn_items) do
+    fold = equipment_fold_result(stats, worn_items)
+    {equipment_bonuses, granted_skills} = split_granted_skills(fold.bonuses)
 
     %{
       stats
-      | equipment: equipment_from_inventory(equipped_items),
-        worn_items: worn_items,
+      | equip_autobonuses: fold.registrations,
+        active_autobonuses: fold.active,
+        equip_statuses: fold.statuses,
         granted_skills: granted_skills,
         modifiers: %{stats.modifiers | equipment: equipment_bonuses}
     }
-    |> put_weapon_hands(worn_items)
+  end
+
+  defp equipment_fold_result(stats, worn_items) do
+    inputs = equip_script_inputs(stats.progression, equip_stat_params(stats), 0)
+    fold = fold_worn_items(worn_items, inputs)
+    active = Map.take(stats.active_autobonuses, Map.keys(fold.registrations))
+
+    bonuses =
+      active
+      |> Enum.sort_by(fn {key, _generation} -> fold.registrations[key].source_order end)
+      |> Enum.reduce(fold.bonuses, fn {key, _generation}, acc ->
+        registration = Map.fetch!(fold.registrations, key)
+        active_inputs = %{inputs | refine: registration.refine}
+        result = EquipScript.evaluate(registration.primary, active_inputs)
+        merge_equip_modifiers(acc, result.modifiers)
+      end)
+      |> finalize_equipment_bonuses()
+
+    Map.put(fold, :active, active) |> Map.put(:bonuses, bonuses)
   end
 
   defp put_weapon_hands(stats, worn_items) do
@@ -598,9 +667,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def shield_defense_contribution(%__MODULE__{equipment: %Equipment{} = equipment} = stats) do
     if shield?(equipment) do
       without_shield = Enum.reject(stats.worn_items, &worn_in_slot?(&1, :left_hand))
-      stat_params = equip_stat_params(stats)
-      full = calculate_equipment_bonuses(stats.worn_items, stats.progression, stat_params)
-      reduced = calculate_equipment_bonuses(without_shield, stats.progression, stat_params)
+      full = equipment_fold_result(stats, stats.worn_items).bonuses
+      reduced = equipment_fold_result(stats, without_shield).bonuses
 
       %{
         def: max(scaled_equipment_def(full) - scaled_equipment_def(reduced), 0),
@@ -703,7 +771,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def robe_view(%Equipment{garment: nameid}), do: view_of(nameid)
 
   defp normalize_items(items) when is_list(items), do: items
-  defp normalize_items(items) when is_map(items), do: Map.values(items)
+
+  defp normalize_items(items) when is_map(items) do
+    items
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map(&elem(&1, 1))
+  end
 
   defp view_of(nil), do: 0
 
@@ -1296,56 +1369,171 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp equip_stat_params(%__MODULE__{}), do: %{}
 
-  defp calculate_equipment_bonuses(worn_items, progression, stat_params) do
-    bonuses =
-      worn_items
-      |> Enum.reduce(
+  defp fold_worn_items(worn_items, inputs) do
+    worn_items
+    |> Enum.with_index()
+    |> Enum.reduce(
+      %{bonuses: empty_equipment_bonuses(), registrations: %{}, statuses: %{}},
+      fn {item, worn_ordinal}, fold -> fold_worn_item(item, worn_ordinal, fold, inputs) end
+    )
+  end
+
+  defp fold_worn_item(item, worn_ordinal, fold, inputs) do
+    case ItemManagement.get_item_by_id(item.nameid) do
+      {:ok, %ItemDefinition{} = item_def} ->
+        item_inputs = %{inputs | refine: item.refine}
+        result = evaluate_equip_script(item_def.on_equip, item_inputs)
+
         %{
-          atk: 0,
-          def: 0,
-          matk: 0,
-          wmatk_min: 0,
-          wmatk_max: 0,
-          aspd_rate: 100,
-          patk: 0,
-          smatk: 0,
-          res: 0,
-          mres: 0,
-          overrefine_band: 0,
-          refine_def: 0
-        },
-        fn item, acc ->
-          case ItemManagement.get_item_by_id(item.nameid) do
-            {:ok, %ItemDefinition{} = item_def} ->
-              acc
-              |> accumulate_item_bonus(item_def, item.refine)
-              |> apply_equip_script(item_def.on_equip, item.refine, progression, stat_params)
+          bonuses:
+            fold.bonuses
+            |> accumulate_item_bonus(item_def, item.refine)
+            |> merge_equip_modifiers(result.modifiers),
+          registrations:
+            install_autobonuses(
+              fold.registrations,
+              item_def.on_equip,
+              item,
+              item_inputs,
+              worn_ordinal
+            ),
+          statuses: install_equip_statuses(fold.statuses, result.effects)
+        }
 
-            _ ->
-              acc
-          end
-        end
-      )
+      _ ->
+        fold
+    end
+  end
 
+  defp install_autobonuses(registrations, nil, _item, _inputs, _worn_ordinal),
+    do: registrations
+
+  defp install_autobonuses(registrations, program, item, inputs, worn_ordinal) do
+    {_next_slot, lexical_registrations} = isolate_autobonuses(program, 0)
+
+    install_lexical_autobonuses(
+      lexical_registrations,
+      registrations,
+      item,
+      inputs,
+      worn_ordinal
+    )
+  end
+
+  defp install_lexical_autobonuses([], registrations, _item, _inputs, _worn_ordinal),
+    do: registrations
+
+  defp install_lexical_autobonuses(slots, registrations, item, inputs, worn_ordinal) do
+    row_id = registration_row_id!(item)
+
+    Enum.reduce(slots, registrations, fn slot, acc ->
+      install_autobonus_slot(acc, slot, row_id, item, inputs, worn_ordinal)
+    end)
+  end
+
+  defp install_autobonus_slot(
+         registrations,
+         {lexical_slot, isolated_program},
+         row_id,
+         item,
+         inputs,
+         worn_ordinal
+       ) do
+    case EquipScript.evaluate(isolated_program, inputs).autobonuses do
+      [] ->
+        registrations
+
+      [autobonus] ->
+        primary = EquipScript.evaluate(autobonus.primary, inputs)
+        secondary = EquipScript.evaluate(autobonus.secondary, inputs)
+
+        registration =
+          Map.merge(autobonus, %{
+            item_id: item.nameid,
+            refine: item.refine,
+            source_order: {worn_ordinal, lexical_slot},
+            primary_effects: primary.effects,
+            secondary_effects: secondary.effects
+          })
+
+        Map.put(registrations, {row_id, lexical_slot}, registration)
+    end
+  end
+
+  defp isolate_autobonuses(program, next_slot) do
+    Enum.reduce(program, {next_slot, []}, fn
+      {:autobonus, _spec, _rate, _duration} = autobonus, {slot, registrations} ->
+        {slot + 1, registrations ++ [{slot, [autobonus]}]}
+
+      {:if, condition, then_branch, else_branch}, {slot, registrations} ->
+        {after_then, then_registrations} = isolate_autobonuses(then_branch, slot)
+        {after_else, else_registrations} = isolate_autobonuses(else_branch, after_then)
+
+        wrapped_then =
+          Enum.map(then_registrations, fn {index, branch} ->
+            {index, [{:if, condition, branch, []}]}
+          end)
+
+        wrapped_else =
+          Enum.map(else_registrations, fn {index, branch} ->
+            {index, [{:if, condition, [], branch}]}
+          end)
+
+        {after_else, registrations ++ wrapped_then ++ wrapped_else}
+
+      _instruction, acc ->
+        acc
+    end)
+  end
+
+  defp registration_row_id!(%{id: id}) when is_integer(id) and id > 0, do: id
+
+  defp registration_row_id!(item) do
+    raise ArgumentError,
+          "worn item with autobonus registrations requires a persistent positive row id, " <>
+            "got: #{inspect(item.id)} for item #{inspect(item.nameid)}"
+  end
+
+  defp install_equip_statuses(statuses, effects) do
+    Enum.reduce(effects, statuses, fn
+      {:status_start, status, duration, value}, acc -> Map.put(acc, status, {duration, value})
+      _effect, acc -> acc
+    end)
+  end
+
+  defp empty_equipment_bonuses do
+    %{
+      atk: 0,
+      def: 0,
+      matk: 0,
+      wmatk_min: 0,
+      wmatk_max: 0,
+      aspd_rate: 100,
+      patk: 0,
+      smatk: 0,
+      res: 0,
+      mres: 0,
+      overrefine_band: 0,
+      refine_def: 0
+    }
+  end
+
+  defp finalize_equipment_bonuses(bonuses) do
     bonuses
     |> Map.update!(:def, &(&1 + div(bonuses.refine_def + 50, 100)))
     |> Map.delete(:refine_def)
   end
 
-  # Folds an item's `on_equip` bonus program (evaluated against the item's
-  # refine and the wearer's levels) into the equipment accumulator. Script keys
-  # (`:str`, `:hit`, `:critical`, ...) are not pre-seeded in the accumulator,
-  # so each bonus is merged with `Map.update/4` rather than a struct-style
-  # update; downstream readers all use `Map.get(..., 0)`.
-  #
-  # Numeric bonuses sum, except for the non-stackable destinations
-  # (`BonusKeys.max_destination?/1`), where the strongest single item wins.
-  # Constant-valued ones (`:atk_ele` from `bonus bAtkEle`) are not summable, so
-  # the last equipped item to set one wins.
-  defp apply_equip_script(acc, nil, _refine, _progression, _stat_params), do: acc
+  # Script keys (`:str`, `:hit`, `:critical`, ...) are not pre-seeded in the
+  # accumulator, so each bonus is merged with `Map.update/4`; downstream readers
+  # all use `Map.get(..., 0)`. Numeric bonuses sum except for non-stackable
+  # destinations, while constant-valued destinations use last-source-wins.
 
-  defp apply_equip_script(acc, program, refine, progression, stat_params) do
-    inputs = %{
+  defp evaluate_equip_script(nil, inputs), do: EquipScript.evaluate([], inputs)
+  defp evaluate_equip_script(program, inputs), do: EquipScript.evaluate(program, inputs)
+
+  defp equip_script_inputs(progression, stat_params, refine) do
+    %{
       refine: refine,
       base_level: progression.base_level,
       job_level: progression.job_level,
@@ -1353,10 +1541,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       stats: stat_params,
       job_id: progression.job_id
     }
+  end
 
-    program
-    |> EquipScript.eval(inputs)
-    |> Enum.reduce(acc, fn {key, value}, acc -> merge_equip_bonus(acc, key, value) end)
+  defp merge_equip_modifiers(acc, modifiers) do
+    Enum.reduce(modifiers, acc, fn {key, value}, acc -> merge_equip_bonus(acc, key, value) end)
   end
 
   defp merge_equip_bonus(acc, {:granted_skill, _} = key, level),
