@@ -212,6 +212,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       %{
         on_use: %{considered: 10, with_script: 6, transpiled: 5},
         on_equip: %{considered: 20, with_script: 12, transpiled: 3},
+        on_unequip: %{considered: 20, with_script: 8, transpiled: 2},
         failures: failures
       }
     end
@@ -220,7 +221,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       failures = [
         {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
         {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
-        {:on_equip, 2000, "X", {:unsupported, {:unknown_bonus_key, "bHealPower"}}}
+        {:on_equip, 2000, "X", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
+        {:on_unequip, 2776, "Cool Towel", {:unsupported, {:unsupported_command, "heal"}}}
       ]
 
       out = Importer.build_report(report(failures))
@@ -228,6 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert out =~ "| hook | items | with script | transpiled | unsupported |"
       assert out =~ "| on_use | 10 | 6 | 5 | 1 |"
       assert out =~ "| on_equip | 20 | 12 | 3 | 2 |"
+      assert out =~ "| on_unequip | 20 | 8 | 2 | 1 |"
     end
 
     test "renders the on_equip rejection-reason histogram sorted descending" do
@@ -255,7 +258,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     test "renders both hooks' full failure tables" do
       failures = [
         {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
-        {:on_equip, 2198, "Lapine Shield", {:unsupported, {:unknown_bonus_key, "bHealPower"}}}
+        {:on_equip, 2198, "Lapine Shield", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
+        {:on_unequip, 2776, "Cool Towel",
+         {:unsupported, {:status_lifecycle_mismatch, %{on_equip: [:sc_summer], on_unequip: []}}}}
       ]
 
       out = Importer.build_report(report(failures))
@@ -266,6 +271,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
       assert out =~
                "| 2198 | Lapine Shield | {:unsupported, {:unknown_bonus_key, \"bHealPower\"}} |"
+
+      assert out =~ "## on_unequip failures"
+
+      assert out =~
+               "| 2776 | Cool Towel | {:unsupported, {:status_lifecycle_mismatch, %{on_equip: [:sc_summer], on_unequip: []}}} |"
     end
 
     test "renders placeholders when a hook has no failures" do
@@ -274,6 +284,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert out =~ "## on_equip rejection reasons\n\n_none_"
       assert out =~ "## on_use failures\n\n_none_"
       assert out =~ "## on_equip failures\n\n_none_"
+      assert out =~ "## on_unequip failures\n\n_none_"
     end
 
     defp position(haystack, needle) do
@@ -350,20 +361,32 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       refute Map.has_key?(Importer.to_yaml_map(without_program), "on_equip")
     end
 
+    test "encodes on_unequip as DSL source via EquipScript.to_source/1 and omits it when nil" do
+      program = [{:status_end, :sc_summer}]
+
+      with_program = %ItemDefinition{id: 2776, aegis_name: "X", name: "X", on_unequip: program}
+      without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
+
+      assert %{"on_unequip" => source} = Importer.to_yaml_map(with_program)
+      assert source == "status_end(ctx, :sc_summer)"
+      refute Map.has_key?(Importer.to_yaml_map(without_program), "on_unequip")
+    end
+
     @tag :tmp_dir
-    test "round-trips an on_equip program back through the Loader", %{tmp_dir: dir} do
+    test "round-trips paired equipment programs back through the Loader", %{tmp_dir: dir} do
       definition = %ItemDefinition{
-        id: 490_160,
-        aegis_name: "ST_Orleans_Glove",
-        name: "Orleans's Glove",
+        id: 2776,
+        aegis_name: "Cool_Towel",
+        name: "Adventurer's Trusty Towel",
         type: :armor,
-        on_equip: [{:bonus, :smatk, 3}, {:bonus, :spl, 2}]
+        on_equip: [{:status_start, :sc_summer, :infinite, 0}],
+        on_unequip: [{:status_end, :sc_summer}]
       }
 
       yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
-      assert %{by_id: %{490_160 => ^definition}} = Loader.load()
+      assert %{by_id: %{2776 => ^definition}} = Loader.load()
     end
 
     @tag :tmp_dir

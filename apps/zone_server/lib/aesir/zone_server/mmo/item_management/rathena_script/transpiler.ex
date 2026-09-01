@@ -37,9 +37,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Transpiler do
   end
 
   @spec transpile_equip(String.t()) :: {:ok, EquipScript.program()} | {:error, term()}
-  def transpile_equip(script) when is_binary(script) do
+  def transpile_equip(script) when is_binary(script), do: transpile_equip(script, :equip)
+
+  @spec transpile_equip(String.t(), EquipCodegen.context()) ::
+          {:ok, EquipScript.program()} | {:error, term()}
+  def transpile_equip(script, context) when is_binary(script) do
     with {:ok, ast} <- parse(script) do
-      EquipCodegen.generate(ast)
+      EquipCodegen.generate(ast, context)
     end
   end
 

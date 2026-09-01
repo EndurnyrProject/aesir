@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             no_guild_storage: false,
             on_use: nil,
             on_equip: nil,
+            on_unequip: nil,
             attack_element: nil
 
   @type t() :: %__MODULE__{
@@ -82,6 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           no_guild_storage: boolean(),
           on_use: String.t() | nil,
           on_equip: EquipScript.program() | nil,
+          on_unequip: EquipScript.program() | nil,
           attack_element: atom()
         }
 

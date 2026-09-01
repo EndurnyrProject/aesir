@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
           by_aegis: %{String.t() => ItemDefinition.t()}
         }
 
-  @cache_file "items_v4.etf"
+  @cache_file "items_v5.etf"
   @overrides_file "script_overrides.yml"
 
   # Valid YAML keys -> struct field atoms. Sourced from the struct so the atoms
@@ -103,6 +103,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
   defp convert(:attack_element, v) when is_binary(v), do: String.to_atom(v)
   defp convert(:jobs, v), do: Enum.map(v, &String.to_atom/1)
   defp convert(:locations, v), do: Enum.map(v, &String.to_atom/1)
-  defp convert(:on_equip, v), do: EquipScript.parse!(v)
+  defp convert(key, v) when key in [:on_equip, :on_unequip], do: EquipScript.parse!(v)
   defp convert(_key, v), do: v
 end

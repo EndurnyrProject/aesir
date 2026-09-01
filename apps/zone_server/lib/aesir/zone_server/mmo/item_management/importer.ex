@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
 
   @typedoc "Transpile hook a failure belongs to."
-  @type hook :: :on_use | :on_equip
+  @type hook :: :on_use | :on_equip | :on_unequip
 
   @typedoc "A single unsupported-script failure row."
   @type failure :: {hook(), integer(), String.t(), term()}
@@ -37,7 +37,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
         }
 
   @typedoc "The full input to `build_report/1`."
-  @type report :: %{on_use: hook_summary(), on_equip: hook_summary(), failures: [failure()]}
+  @type report :: %{
+          on_use: hook_summary(),
+          on_equip: hook_summary(),
+          on_unequip: hook_summary(),
+          failures: [failure()]
+        }
 
   # rAthena's data has inconsistent casing (DelayConsume/Delayconsume,
   # ShadowGear/Shadowgear, ...), so types are matched on a downcased key.
@@ -117,17 +122,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   end
 
   @doc """
-  Renders the transpile coverage report: a per-hook summary table, a histogram
-  of `on_equip` rejection reasons grouped on the reason's leading term (with the
-  offending script token kept for the vocabulary-key/command tags, so the
-  high-yield backlog rows like `bMaxHP`/`bonus2` stand on their own), and the
-  full per-hook failure tables. The `on_equip` table is intentionally large - it
-  is the greppable expansion backlog.
+  Renders the transpile coverage report: a per-hook summary table, histograms
+  of equipment-hook rejection reasons grouped on the reason's leading term
+  (with the offending script token kept for vocabulary-key/command tags), and
+  the full per-hook failure tables. Equipment tables are intentionally large -
+  they are the greppable expansion backlog.
   """
   @spec build_report(report()) :: String.t()
-  def build_report(%{on_use: on_use, on_equip: on_equip, failures: failures}) do
-    {on_use_failures, on_equip_failures} =
-      Enum.split_with(failures, fn {hook, _id, _name, _reason} -> hook == :on_use end)
+  def build_report(%{
+        on_use: on_use,
+        on_equip: on_equip,
+        on_unequip: on_unequip,
+        failures: failures
+      }) do
+    failures_by_hook = Enum.group_by(failures, &elem(&1, 0))
+    on_use_failures = Map.get(failures_by_hook, :on_use, [])
+    on_equip_failures = Map.get(failures_by_hook, :on_equip, [])
+    on_unequip_failures = Map.get(failures_by_hook, :on_unequip, [])
 
     """
     # Transpile report
@@ -138,16 +149,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     | --- | --- | --- | --- | --- |
     #{summary_row(:on_use, on_use, length(on_use_failures))}
     #{summary_row(:on_equip, on_equip, length(on_equip_failures))}
+    #{summary_row(:on_unequip, on_unequip, length(on_unequip_failures))}
 
     ## on_equip rejection reasons
 
     #{histogram(on_equip_failures)}
+    ## on_unequip rejection reasons
+
+    #{histogram(on_unequip_failures)}
     ## on_use failures
 
     #{failure_table(on_use_failures)}
     ## on_equip failures
 
     #{failure_table(on_equip_failures)}
+    ## on_unequip failures
+
+    #{failure_table(on_unequip_failures)}
     """
   end
 
@@ -222,7 +240,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     Enum.map(value, &Atom.to_string/1)
   end
 
-  defp encode_value(:on_equip, value), do: EquipScript.to_source(value)
+  defp encode_value(field, value) when field in [:on_equip, :on_unequip],
+    do: EquipScript.to_source(value)
 
   defp encode_value(_field, value), do: value
 

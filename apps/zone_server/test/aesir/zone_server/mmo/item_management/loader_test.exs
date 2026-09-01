@@ -110,7 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       write_yaml(dir, @items_yaml)
       Loader.load()
 
-      assert File.exists?(Path.join([dir, ".cache", "items_v4.etf"]))
+      assert File.exists?(Path.join([dir, ".cache", "items_v5.etf"]))
     end
 
     @tag :tmp_dir
@@ -118,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load()
 
-      cache = Path.join([dir, ".cache", "items_v4.etf"])
+      cache = Path.join([dir, ".cache", "items_v5.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(yaml, 1_000_000)
       File.touch!(cache, 2_000_000)
@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load()
 
-      cache = Path.join([dir, ".cache", "items_v4.etf"])
+      cache = Path.join([dir, ".cache", "items_v5.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)
@@ -260,13 +260,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
-    test "touching script_overrides.yml invalidates the items_v4.etf cache", %{tmp_dir: dir} do
+    test "touching script_overrides.yml invalidates the items_v5.etf cache", %{tmp_dir: dir} do
       items = write_yaml(dir, @items_yaml)
       overrides = Path.join(dir, "script_overrides.yml")
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 1)\"\n")
       Loader.load()
 
-      cache = Path.join([dir, ".cache", "items_v4.etf"])
+      cache = Path.join([dir, ".cache", "items_v5.etf"])
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 2)\"\n")
       File.touch!(items, 1_000_000)
       File.touch!(cache, 2_000_000)
@@ -296,10 +296,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
+    test "parses paired on_equip and on_unequip DSL sources", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 2776
+        aegis_name: Cool_Towel
+        name: Adventurer's Trusty Towel
+        type: armor
+        on_equip: "status_start(ctx, :sc_summer, :infinite, 0)"
+        on_unequip: "status_end(ctx, :sc_summer)"
+      """)
+
+      assert %{
+               by_id: %{
+                 2776 => %ItemDefinition{
+                   on_equip: [{:status_start, :sc_summer, :infinite, 0}],
+                   on_unequip: [{:status_end, :sc_summer}]
+                 }
+               }
+             } = Loader.load()
+    end
+
+    @tag :tmp_dir
     test "on_equip defaults to nil when not present", %{tmp_dir: dir} do
       write_yaml(dir, @items_yaml)
 
-      assert %{by_id: %{501 => %ItemDefinition{on_equip: nil}}} = Loader.load()
+      assert %{by_id: %{501 => %ItemDefinition{on_equip: nil, on_unequip: nil}}} = Loader.load()
     end
 
     @tag :tmp_dir
