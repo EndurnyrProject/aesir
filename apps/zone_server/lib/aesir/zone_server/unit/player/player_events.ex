@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerEvents do
   changed", "leveled/job changed", "quest log changed"), not instructions to
   any particular consumer. Emitters stay decoupled from reactors: the session
   (and any future subscriber, e.g. an achievement tracker) reacts on its own.
-  Today the sole reactor is `Aesir.ZoneServer.Unit.Player.QuestInfoView`, which
-  re-evaluates quest-icon bubbles when the player's state changes.
+  The player session currently reacts by re-evaluating quest-icon bubbles and,
+  for inventory changes, reconciling statuses derived from equipped items.
 
   Emitters run inside the owning `PlayerSession` process; the event round-trips
   through PubSub back to that session as a `handle_info` message, matching the
@@ -20,7 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerEvents do
   @typedoc "A player-state change fact broadcast on the player's topic."
   @type event :: :inventory_changed | :progression_changed | :quest_changed | :vars_changed
 
-  @doc "Announces that the player's inventory gained or lost items."
+  @doc "Announces a committed inventory, equipment, or equipment-break change."
   @spec inventory_changed(non_neg_integer()) :: :ok
   def inventory_changed(char_id), do: broadcast(char_id, :inventory_changed)
 

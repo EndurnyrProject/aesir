@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipRegenHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
@@ -592,6 +593,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     # Restore the statuses persisted at logout (rAthena sc_data), consuming
     # the saved rows. Runs after registration for the same reason as the cart.
     state = StatusPersistence.restore_on_spawn(state)
+    {:noreply, state} = EquipProcHandler.reconcile_statuses(state)
 
     # Load the quest log (rAthena quest table). Non-consuming: the rows stay
     # the durable source of truth and are write-through updated on mutation.
@@ -687,8 +689,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # what they did without naming QuestInfo; the session reacts by re-evaluating
   # this player's quest-icon bubbles.
   @impl true
+  def handle_info(:inventory_changed, state) do
+    {:noreply, state} = EquipProcHandler.reconcile_statuses(state)
+    QuestInfoView.request_refresh()
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(event, state)
-      when event in [:inventory_changed, :progression_changed, :quest_changed, :vars_changed] do
+      when event in [:progression_changed, :quest_changed, :vars_changed] do
     QuestInfoView.request_refresh()
     {:noreply, state}
   end
@@ -921,6 +930,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info({:equip_autobonus_expire, key, generation}, state) do
+    EquipProcHandler.expire(state, key, generation)
+  end
+
+  @impl true
   def handle_info({:spirit_sphere_expire, generation}, state) do
     SpiritSphereHandler.expire(state, generation)
   end
@@ -1084,6 +1098,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:inventory, {:break_equip, slot}}, state) do
     InventoryManager.handle_break_equip(slot, state)
+  end
+
+  @impl true
+  def handle_cast({:equip_autobonus_activate, key}, state) do
+    EquipProcHandler.activate(state, key)
   end
 
   @impl true

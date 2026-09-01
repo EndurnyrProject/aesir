@@ -11,7 +11,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
@@ -27,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Unit.Player.SpiritSpheres
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusPersistence
+  alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -205,6 +208,35 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert {:ok, {_module, %{account_id: 100}, _pid}} = UnitRegistry.get_unit(:player, 1)
     end
 
+    test "reconciles loaded equip statuses after registration and persisted-status restore", %{
+      character: character
+    } do
+      expect(Stats, :calculate_stats, fn stats, 1, [] ->
+        %{stats | equip_statuses: %{sc_summer: {:infinite, 1}}}
+      end)
+
+      expect(StatusPersistence, :restore_on_spawn, fn state ->
+        assert {:ok, {_module, _game_state, _pid}} = UnitRegistry.get_unit(:player, 1)
+
+        assert :ok =
+                 StatusInterpreter.apply_status(:player, 1, :sc_summer,
+                   caster_id: 999,
+                   val1: 9,
+                   owner_refresh: :defer
+                 )
+
+        state
+      end)
+
+      expect(Stats, :calculate_stats, fn stats, 1 -> stats end)
+
+      assert {:ok, state} =
+               PlayerSession.init(%{character: character, connection_pid: self()})
+
+      assert state.applied_equip_statuses == %{sc_summer: {:infinite, 1}}
+      assert StatusStorage.get_status(:player, 1, :sc_summer).val1 == 1
+    end
+
     test "stores the negotiated client capabilities", %{character: character} do
       {:ok, state} =
         PlayerSession.init(%{
@@ -343,6 +375,59 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
                PlayerSession.terminate(:normal, %{state | pending_skill_text_input: pending})
 
       assert Process.cancel_timer(timer_ref) == false
+    end
+  end
+
+  describe "equipment proc routing" do
+    test "routes activation casts and generation-tagged expiry infos", %{character: character} do
+      key = {101, 0}
+
+      registration = equip_registration()
+
+      game_state = PlayerState.new(character)
+      stats = %{game_state.stats | equip_autobonuses: %{key => registration}}
+
+      state = %SessionState{
+        connection_pid: self(),
+        game_state: %{game_state | stats: stats}
+      }
+
+      stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
+      stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
+
+      assert {:noreply, active} =
+               PlayerSession.handle_cast({:equip_autobonus_activate, key}, state)
+
+      assert %{^key => token} = active.game_state.stats.active_autobonuses
+
+      assert {:noreply, expired} =
+               PlayerSession.handle_info({:equip_autobonus_expire, key, token}, active)
+
+      assert expired.game_state.stats.active_autobonuses == %{}
+    end
+
+    test "inventory changed reconciles statuses and requests quest refresh once", %{
+      character: character
+    } do
+      game_state = PlayerState.new(character)
+      stats = %{game_state.stats | equip_statuses: %{sc_summer: {:infinite, 4}}}
+
+      state = %SessionState{
+        connection_pid: self(),
+        game_state: %{game_state | stats: stats}
+      }
+
+      :ok = UnitRegistry.register_player(state.game_state, self())
+      stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+      stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
+
+      assert {:noreply, reconciled} = PlayerSession.handle_info(:inventory_changed, state)
+
+      assert reconciled.applied_equip_statuses == %{sc_summer: {:infinite, 4}}
+      assert StatusStorage.get_status(:player, 1, :sc_summer).val1 == 4
+      assert_receive :refresh_quest_info
+      refute_receive :refresh_quest_info
     end
   end
 
@@ -1446,8 +1531,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       source_character = %{character | id: 2, account_id: 200, name: "ResurrectionSource"}
       {:ok, _source_pid} = ResurrectionSource.start_link(PlayerState.new(source_character))
 
+      key = {101, 0}
+
+      :sys.replace_state(pid, fn state ->
+        stats = %{
+          state.game_state.stats
+          | equip_autobonuses: %{key => equip_registration()},
+            active_autobonuses: %{key => 3}
+        }
+
+        %{state | game_state: %{state.game_state | stats: stats}}
+      end)
+
       PlayerSession.apply_damage(pid, 1_000)
-      assert %{game_state: %{action_state: :dead}} = PlayerSession.get_state(pid)
+      assert %{game_state: dead_state} = PlayerSession.get_state(pid)
+      assert dead_state.action_state == :dead
+      assert dead_state.stats.equip_autobonuses == %{key => equip_registration()}
+      assert dead_state.stats.active_autobonuses == %{key => 3}
 
       assert :ok = PlayerSession.resurrect(pid, 2, 30)
 
@@ -1633,6 +1733,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       assert PlayerSession.get_state(pid).game_state.inventory[0].attribute == 0
       assert {:error, :repair_failed} = PlayerSession.repair_item(pid, 0)
     end
+  end
+
+  defp equip_registration do
+    %{
+      item_id: 501,
+      refine: 0,
+      source_order: {0, 0},
+      trigger: :attack,
+      rate: 1_000,
+      duration_ms: 60_000,
+      battle_flag: 0,
+      primary: [],
+      secondary: [],
+      primary_effects: [],
+      secondary_effects: []
+    }
   end
 
   defp build_state(character, connection_pid) do

@@ -164,6 +164,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManagerTest do
              Persistence.load_inventory(char.id)
   end
 
+  test "equipment break publishes inventory changed only after the committed success", %{
+    character: char,
+    stats: stats
+  } do
+    {:ok, equipped} =
+      Persistence.insert_item(char.id, %{
+        nameid: @sword,
+        amount: 1,
+        identify: 1,
+        equip: 2
+      })
+
+    session = state(char.id, stats)
+    session = %{session | game_state: %{session.game_state | inventory: %{0 => equipped}}}
+
+    :ok = Aesir.ZoneServer.Unit.UnitRegistry.register_player(session.game_state, self())
+    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{char.id}")
+
+    assert {:noreply, broken} = InventoryManager.handle_break_equip(:right_hand, session)
+    assert broken.game_state.inventory[0].attribute == 1
+    assert broken.game_state.inventory[0].equip == 0
+    assert_receive :inventory_changed
+
+    assert {:ok, {_module, committed, _pid}} =
+             Aesir.ZoneServer.Unit.UnitRegistry.get_unit(:player, char.id)
+
+    assert committed.inventory[0].attribute == 1
+    assert committed.inventory[0].equip == 0
+
+    assert {:noreply, ^broken} = InventoryManager.handle_break_equip(:right_hand, broken)
+    refute_receive :inventory_changed
+  end
+
   test "repairs one row and rejects a stale repeat", %{character: char, stats: stats} do
     broken =
       %InventoryItem{}

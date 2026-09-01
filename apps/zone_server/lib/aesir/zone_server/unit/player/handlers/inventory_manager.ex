@@ -201,7 +201,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
       {:ok, new_game_state, broken_item} ->
         announce_break(new_game_state.character_id, broken_item)
         push_broken_item(state.connection_pid, new_game_state, broken_item)
-        {:noreply, StateCommit.commit(state, new_game_state)}
+        state = StateCommit.commit(state, new_game_state)
+        PlayerEvents.inventory_changed(new_game_state.character_id)
+        {:noreply, state}
 
       {:error, _reason} ->
         {:noreply, state}

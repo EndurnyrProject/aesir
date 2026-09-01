@@ -19,11 +19,12 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   @moduledoc """
   The `PlayerSession` GenServer state: the authoritative `PlayerState` game
   state plus the process-level bookkeeping the session needs but the game state
-  must not carry (connection wiring, the single-dialog interaction lock, and the
-  pending skill-menu/party/guild/trade invite slots, and accepted trade handle).
+  must not carry (connection wiring, owned equip statuses, the single-dialog
+  interaction lock, pending invites, and accepted trade handle).
 
   All handlers thread this struct as their session state. Optional slots default
-  to `nil` except `homunculus_runtime`, which starts as a fresh `Runtime`.
+  to `nil`; equip-status ownership starts empty and `homunculus_runtime` starts as
+  a fresh `Runtime`.
   Handlers set and clear optional slots with struct updates rather than dynamic map keys.
   """
 
@@ -31,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   alias __MODULE__.PendingSkillTextInput
 
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
             connection_pid: nil,
             connection_monitor_ref: nil,
             client_capabilities: [],
+            applied_equip_statuses: %{},
             interaction_lock: nil,
             pending_skill_text_input: nil,
             pending_skill_menu: nil,
@@ -61,6 +64,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SessionState do
           connection_pid: pid(),
           connection_monitor_ref: reference() | nil,
           client_capabilities: [atom()],
+          applied_equip_statuses: %{atom() => Stats.equip_status()},
           interaction_lock: interaction_lock() | nil,
           pending_skill_text_input: PendingSkillTextInput.t() | nil,
           pending_skill_menu: map() | nil,

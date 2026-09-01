@@ -30,6 +30,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     :ok
   end
 
+  test "publishes inventory changes after equip, replacement, and unequip commits" do
+    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
+
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+
+    inventory = %{
+      0 => %InventoryItem{nameid: 1101, amount: 1, identify: 1},
+      1 => %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+    }
+
+    state = %{connection_pid: self(), game_state: %{game_state | inventory: inventory}}
+    test_pid = self()
+
+    stub(InventoryOps, :apply_change, fn 1000, _old, new, _change -> {:ok, new} end)
+    stub(Stats, :calculate_stats, fn stats, 1000, _equipped -> stats end)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _game_state ->
+      send(test_pid, :equipment_committed)
+      :ok
+    end)
+
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    assert {:noreply, equipped} = EquipmentHandler.handle_equip(0, 2, state)
+    assert_receive :equipment_committed
+    assert_receive :inventory_changed
+
+    assert {:noreply, replaced} = EquipmentHandler.handle_equip(1, 2, equipped)
+    assert_receive :equipment_committed
+    assert_receive :inventory_changed
+
+    assert {:noreply, _unequipped} = EquipmentHandler.handle_unequip(1, replaced)
+    assert_receive :equipment_committed
+    assert_receive :inventory_changed
+
+    assert {:noreply, _state} = EquipmentHandler.handle_equip(99, 2, state)
+    assert {:noreply, _state} = EquipmentHandler.handle_unequip(99, state)
+
+    stub(InventoryOps, :apply_change, fn 1000, _old, _new, _change ->
+      {:error, :write_failed}
+    end)
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+    refute_receive :inventory_changed
+  end
+
   test "sends an equip failure for an unidentified item" do
     game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
     item = %InventoryItem{nameid: 1101, amount: 1, identify: 0}
