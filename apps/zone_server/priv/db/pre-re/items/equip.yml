@@ -13979,6 +13979,10 @@
   locations:
     - left_hand
   name: Orleans's Server
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = bonus(ctx, :magic_damage_return, 5)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -17200,6 +17204,20 @@
   locations:
     - armor
   name: Chameleon Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (base_level(ctx) * 7))
+    ctx = bonus(ctx, :max_sp, div(base_level(ctx), 2))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :no_magic_damage, 100}], trigger: :when_hit, secondary: [], battle_flag: 338}, 10, 2000)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :mdef, 5)
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :def, 3)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   type: armor
   weight: 1700

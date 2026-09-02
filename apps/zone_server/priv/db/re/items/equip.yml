@@ -20967,6 +20967,10 @@
   locations:
     - left_hand
   name: Orleans's Server
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = bonus(ctx, :magic_damage_return, 5)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -21043,6 +21047,11 @@
   locations:
     - left_hand
   name: Guyak Shield
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 2)
+    ctx = bonus(ctx, :magic_damage_return, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :short_weapon_damage_return, 5}], trigger: :when_hit, secondary: [], battle_flag: 849}, 20, 1000)
+    ctx
   refineable: true
   type: armor
   view: 2
@@ -22137,6 +22146,10 @@
   locations:
     - left_hand
   name: Magic Reflect
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 10)
+    ctx = bonus(ctx, :magic_damage_return, if((refine(ctx) > 6), do: if((refine(ctx) > 8), do: ((3 + 3) + 3), else: (3 + 3)), else: 3))
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -25399,6 +25412,20 @@
   locations:
     - armor
   name: Chameleon Armor
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (base_level(ctx) * 7))
+    ctx = bonus(ctx, :max_sp, div(base_level(ctx), 2))
+    ctx = autobonus(ctx, %{primary: [{:bonus, :no_magic_damage, 100}], trigger: :when_hit, secondary: [], battle_flag: 338}, 10, 2000)
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      bonus(ctx, :mdef, 5)
+    else
+      if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+        bonus(ctx, :def, 3)
+      else
+        ctx
+      end
+    end
+    ctx
   refineable: true
   type: armor
   weight: 1700
@@ -76760,6 +76787,10 @@
   locations:
     - head_low
   name: Gangster Mask A
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_silence}, 1500)
+    ctx = bonus(ctx, :magic_damage_return, 1)
+    ctx
   type: armor
   view: 52
   weight: 100
@@ -99652,6 +99683,12 @@
   locations:
     - garment
   name: Battle Cape
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = bonus(ctx, :max_hp_rate, 3)
+    ctx = bonus(ctx, :magic_damage_return, 3)
+    ctx = bonus(ctx, {:subele, :all}, div(refine(ctx), 2))
+    ctx
   refineable: true
   type: armor
 - aegis_name: Manteau_Of_Storm
