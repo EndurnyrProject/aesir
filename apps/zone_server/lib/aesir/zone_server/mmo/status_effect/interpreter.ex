@@ -6,9 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   `Aesir.ZoneServer.Mmo.StatusEffect.Definition`, registered in
   `Aesir.ZoneServer.Mmo.StatusEffect.Effects`. This module drives their lifecycle:
 
-  1. `apply_status/4` checks immunity, prevention, conflicts and resistance
-     from the status metadata, then runs the module's `on_apply` callback and
-     stores the instance. An `on_apply` returning `:remove` vetoes the
+  1. `apply_status/4` checks status immunity, equipment magic immunity
+     (`{:error, :magic_immune}`), boss immunity, prevention, conflicts and
+     resistance, then runs the module's `on_apply` callback and stores the
+     instance. An `on_apply` returning `:remove` vetoes the
      application (e.g. Blessing being consumed as a cure).
   2. `process_tick/3` runs `on_tick` for periodic behavior.
   3. `on_damage/3` notifies every active status that the unit took damage.
@@ -16,6 +17,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   """
   require Logger
 
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Definition, as: SkillDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ContextBuilder
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
@@ -101,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
     duration_override = Keyword.get(status_params, :duration)
 
     with :ok <- check_immunity(entity_info, definition),
+         :ok <- check_magic_immunity(unit_type, unit_id),
          :ok <- check_boss_immunity(entity_info, unit_type, unit_id, status_params, definition),
          :ok <- check_prevented(unit_type, unit_id, definition),
          :ok <- check_conflicts(unit_type, unit_id, definition),
@@ -760,6 +766,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       {:error, :immune}
     else
       :ok
+    end
+  end
+
+  defp check_magic_immunity(unit_type, unit_id) do
+    target = {unit_type, unit_id}
+
+    with %{skill: skill, caster: caster} <- Origin.current(),
+         {:ok, %SkillDefinition{damage_kind: :magic, target_type: target_type}} <-
+           Catalog.by_name(skill),
+         true <- MagicDefense.immune?(target),
+         false <- target_type == :self and caster == target do
+      {:error, :magic_immune}
+    else
+      _ -> :ok
     end
   end
 

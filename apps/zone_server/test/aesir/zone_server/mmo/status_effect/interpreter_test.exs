@@ -4,13 +4,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -1158,6 +1161,131 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     end
   end
 
+  describe "apply_status/4 magic immunity" do
+    test "refuses a magic status at fifty percent equipment immunity" do
+      target_id = 40
+      register_player_with_magic_reduction(target_id, 50)
+
+      result =
+        Origin.with_skill(:mg_stonecurse, {:player, 41}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_stone,
+            caster_id: 41,
+            source_type: :player,
+            bypass_resistance: true
+          )
+        end)
+
+      assert result == {:error, :magic_immune}
+      refute StatusStorage.has_status?(:player, target_id, :sc_stone)
+    end
+
+    test "applies a magic status below fifty percent equipment immunity" do
+      target_id = 42
+      register_player_with_magic_reduction(target_id, 49)
+
+      result =
+        Origin.with_skill(:mg_stonecurse, {:player, 43}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_stone,
+            caster_id: 43,
+            source_type: :player,
+            bypass_resistance: true
+          )
+        end)
+
+      assert result == :ok
+      assert StatusStorage.has_status?(:player, target_id, :sc_stone)
+    end
+
+    test "refuses self-cast targeted support magic" do
+      target_id = 44
+      register_player_with_magic_reduction(target_id, 50)
+
+      result =
+        Origin.with_skill(:al_blessing, {:player, target_id}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_blessing,
+            val1: 1,
+            val2: 1,
+            caster_id: target_id,
+            source_type: :player,
+            bypass_resistance: true
+          )
+        end)
+
+      assert result == {:error, :magic_immune}
+      refute StatusStorage.has_status?(:player, target_id, :sc_blessing)
+    end
+
+    test "allows self-targeted magic cast by the wearer on themselves" do
+      target_id = 45
+      register_player_with_magic_reduction(target_id, 50)
+
+      result =
+        Origin.with_skill(:mg_energycoat, {:player, target_id}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_energycoat,
+            caster_id: target_id,
+            source_type: :player,
+            bypass_resistance: true
+          )
+        end)
+
+      assert result == :ok
+      assert StatusStorage.has_status?(:player, target_id, :sc_energycoat)
+    end
+
+    test "allows statuses from weapon skills" do
+      target_id = 46
+      register_player_with_magic_reduction(target_id, 50)
+
+      result =
+        Origin.with_skill(:sm_bash, {:player, 47}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_stun,
+            caster_id: 47,
+            source_type: :player,
+            bypass_resistance: true
+          )
+        end)
+
+      assert result == :ok
+      assert StatusStorage.has_status?(:player, target_id, :sc_stun)
+    end
+
+    test "applies with no origin without adding a magic-defense registry read" do
+      target_id = 48
+      register_player_with_magic_reduction(target_id, 50)
+      {:ok, {PlayerState, player, _pid}} = UnitRegistry.get_unit(:player, target_id)
+      entity_info = PlayerState.get_entity_info(player)
+
+      Mimic.copy(UnitRegistry)
+
+      expect(UnitRegistry, :get_unit_info, 2, fn :player, ^target_id ->
+        {:ok, entity_info}
+      end)
+
+      assert :ok =
+               Interpreter.apply_status(:player, target_id, :sc_stone, bypass_resistance: true)
+
+      assert StatusStorage.has_status?(:player, target_id, :sc_stone)
+    end
+
+    test "loaded magic statuses bypass equipment immunity" do
+      target_id = 49
+      register_player_with_magic_reduction(target_id, 100)
+
+      result =
+        Origin.with_skill(:mg_stonecurse, {:player, 50}, fn ->
+          Interpreter.apply_status(:player, target_id, :sc_stone,
+            caster_id: 50,
+            source_type: :player,
+            duration: 12_000,
+            loaded: true
+          )
+        end)
+
+      assert result == :ok
+      assert StatusStorage.has_status?(:player, target_id, :sc_stone)
+    end
+  end
+
   describe "apply_status/4 loaded (persisted restore)" do
     test "skips the resistance roll and stores the duration as-is" do
       target_id = 20
@@ -1740,6 +1868,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.InterpreterTest do
     Registry.register_module(AilmentResistanceStatus)
 
     StatusStorage.apply_status(:player, target_id, :sc_test_ailment_resistance, val1: rate)
+  end
+
+  defp register_player_with_magic_reduction(player_id, percent) do
+    player =
+      PlayerStateFixture.build(%{
+        character_id: player_id,
+        account_id: player_id,
+        stats: %{
+          combat_stats: %CombatStats{},
+          modifiers: %{equipment: %{no_magic_damage: percent}}
+        }
+      })
+
+    UnitRegistry.register_player(player, self())
   end
 
   # Helper to set up player mock with stats
