@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
     display_name: "Suffragium",
     max_level: 3,
     target_type: :self,
+    damage_kind: :magic,
     splash_radius: 18,
     sp_cost: List.duplicate(8, 3),
     cast_time: List.duplicate(1_000, 3),

@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    damage_kind: :magic,
     element: :earth,
     range: 2,
     cast_time: List.duplicate(800, 10),

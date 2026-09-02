@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
     display_name: "Teleport",
     max_level: 2,
     target_type: :self,
+    damage_kind: :magic,
     sp_cost: [10, 9]
 
   alias Aesir.ZoneServer.Map.Cell

@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
     max_level: 1,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     after_cast_delay: [3_000],
     sp_cost: [10],

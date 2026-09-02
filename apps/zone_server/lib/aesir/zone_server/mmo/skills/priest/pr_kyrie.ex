@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
     max_level: 10,
     target_type: :target_ally,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     cast_time: List.duplicate(1_600, 10),
     fixed_cast_time: List.duplicate(400, 10),

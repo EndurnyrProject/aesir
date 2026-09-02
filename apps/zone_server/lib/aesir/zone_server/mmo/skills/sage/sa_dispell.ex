@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
     max_level: 5,
     target_type: :target_any,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     sp_cost: List.duplicate(1, 5),
     cast_time: List.duplicate(1_600, 5),

@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
     max_level: 10,
     target_type: :ground,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     element: :ghost,
     hit_interval: 1_000,

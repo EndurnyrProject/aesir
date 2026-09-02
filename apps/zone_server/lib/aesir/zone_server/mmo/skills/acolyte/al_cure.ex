@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCure do
     display_name: "Cure",
     max_level: 1,
     target_type: :target_ally,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [15],
     after_cast_delay: [1_000]

@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HlifHeal do
     max_level: 5,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :magic,
     sp_cost: [13, 16, 19, 22, 25],
     cooldown: List.duplicate(20_000, 5),
     item_cost: [%{id: 545, amount: 1}]

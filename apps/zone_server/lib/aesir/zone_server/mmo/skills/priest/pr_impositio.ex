@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositio do
     display_name: "Impositio Manus",
     max_level: 5,
     target_type: :self,
+    damage_kind: :magic,
     splash_radius: 18,
     sp_cost: [59, 62, 65, 68, 71],
     cast_time: List.duplicate(1_000, 5),

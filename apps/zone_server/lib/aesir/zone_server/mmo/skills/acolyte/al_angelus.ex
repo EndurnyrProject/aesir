@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelus do
     display_name: "Angelus",
     max_level: 10,
     target_type: :self,
+    damage_kind: :magic,
     splash_radius: 18,
     sp_cost: [23, 26, 29, 32, 35, 38, 41, 44, 47, 50],
     cast_time: List.duplicate(350, 10),

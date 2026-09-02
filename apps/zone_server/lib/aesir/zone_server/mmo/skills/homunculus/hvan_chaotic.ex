@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanChaotic do
     max_level: 5,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :magic,
     sp_cost: List.duplicate(40, 5),
     cooldown: List.duplicate(3_000, 5)
 

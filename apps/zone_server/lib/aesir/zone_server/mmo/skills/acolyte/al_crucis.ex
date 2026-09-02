@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
     max_level: 10,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :magic,
     splash_radius: 15,
     sp_cost: List.duplicate(35, 10),
     cast_time: List.duplicate(350, 10),

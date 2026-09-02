@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 5,
     after_cast_delay: List.duplicate(3_000, 10),
     sp_cost: [20, 20, 20, 20, 20, 18, 16, 14, 12, 10],

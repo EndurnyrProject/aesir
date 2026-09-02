@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     max_level: 1,
     target_type: :ground,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     splash_radius: 1,
     hit_interval: 1_000,

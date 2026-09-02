@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcano do
     max_level: 5,
     target_type: :ground,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 2,
     element: :fire,
     unit_duration: [60_000, 120_000, 180_000, 240_000, 300_000],

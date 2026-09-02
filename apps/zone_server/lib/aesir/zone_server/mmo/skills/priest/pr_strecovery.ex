@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
     display_name: "Status Recovery",
     max_level: 1,
     target_type: :target_ally,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [5],
     after_cast_delay: [2_000],

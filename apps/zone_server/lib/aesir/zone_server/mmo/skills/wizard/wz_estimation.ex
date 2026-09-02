@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimation do
     max_level: 1,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [10]
 

@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoison do
     display_name: "Slow Poison",
     max_level: 4,
     target_type: :target_ally,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [6, 8, 10, 12],
     duration: [10_000, 20_000, 30_000, 40_000]

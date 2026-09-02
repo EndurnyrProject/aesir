@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     max_level: 10,
     target_type: :ground,
     damage_type: :damage,
+    damage_kind: :magic,
     range: 9,
     element: :water,
     knockback: 2,

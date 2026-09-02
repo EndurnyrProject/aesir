@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
     display_name: "Increase AGI",
     max_level: 10,
     target_type: :target_ally,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [18, 21, 24, 27, 30, 33, 36, 39, 42, 45],
     cast_time: List.duplicate(800, 10),

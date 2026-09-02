@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach do
     display_name: "Ruwach",
     max_level: 1,
     target_type: :self,
+    damage_kind: :magic,
     sp_cost: [10]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

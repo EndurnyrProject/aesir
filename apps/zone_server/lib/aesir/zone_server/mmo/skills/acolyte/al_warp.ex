@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
     max_level: 4,
     target_type: :ground,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     hit_interval: 1_000,
     unit_duration: [10_000, 15_000, 20_000, 25_000],

@@ -17,6 +17,93 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilion
 
+  @magic_skills [
+    :al_angelus,
+    :al_blessing,
+    :al_crucis,
+    :al_cure,
+    :al_decagi,
+    :al_heal,
+    :al_holylight,
+    :al_holywater,
+    :al_incagi,
+    :al_pneuma,
+    :al_ruwach,
+    :al_teleport,
+    :al_warp,
+    :all_resurrection,
+    :ba_dissonance,
+    :cr_grandcross,
+    :hlif_heal,
+    :hvan_caprice,
+    :hvan_chaotic,
+    :mg_coldbolt,
+    :mg_energycoat,
+    :mg_fireball,
+    :mg_firebolt,
+    :mg_firewall,
+    :mg_frostdiver,
+    :mg_lightningbolt,
+    :mg_napalmbeat,
+    :mg_safetywall,
+    :mg_sight,
+    :mg_soulstrike,
+    :mg_stonecurse,
+    :mg_thunderstorm,
+    :npc_darkstrike,
+    :npc_earthquake,
+    :npc_groundattack,
+    :npc_selfdestruction,
+    :npc_summonslave,
+    :pr_aspersio,
+    :pr_benedictio,
+    :pr_gloria,
+    :pr_impositio,
+    :pr_kyrie,
+    :pr_lexaeterna,
+    :pr_lexdivina,
+    :pr_magnificat,
+    :pr_magnus,
+    :pr_redemptio,
+    :pr_sanctuary,
+    :pr_slowpoison,
+    :pr_strecovery,
+    :pr_suffragium,
+    :pr_turnundead,
+    :sa_autospell,
+    :sa_castcancel,
+    :sa_deluge,
+    :sa_dispell,
+    :sa_elementfire,
+    :sa_elementground,
+    :sa_elementwater,
+    :sa_elementwind,
+    :sa_flamelauncher,
+    :sa_freecast,
+    :sa_frostweapon,
+    :sa_landprotector,
+    :sa_lightningloader,
+    :sa_magicrod,
+    :sa_seismicweapon,
+    :sa_spellbreaker,
+    :sa_violentgale,
+    :sa_volcano,
+    :wz_earthspike,
+    :wz_estimation,
+    :wz_firepillar,
+    :wz_frostnova,
+    :wz_heavendrive,
+    :wz_icewall,
+    :wz_jupitel,
+    :wz_meteor,
+    :wz_quagmire,
+    :wz_sightrasher,
+    :wz_sightblaster,
+    :wz_stormgust,
+    :wz_vermilion,
+    :wz_waterball
+  ]
+
   test "by_id/1 loads AL_INCAGI with correct structure" do
     assert {:ok, %Definition{} = def} = Catalog.by_id(29)
     assert def.name == :al_incagi
@@ -28,6 +115,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   test "by_name/1 finds the same record" do
     assert {:ok, %Definition{id: 29}} = Catalog.by_name(:al_incagi)
+  end
+
+  describe "magic-type skills" do
+    test "all implemented magic-type skills declare magic damage" do
+      assert length(@magic_skills) == 84
+
+      for skill <- @magic_skills do
+        assert {:ok, %Definition{damage_kind: :magic}} = Catalog.by_name(skill)
+      end
+    end
   end
 
   test "by_id/1 returns :error for an unknown skill" do

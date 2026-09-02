@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
     display_name: "Aqua Benedicta",
     max_level: 1,
     target_type: :self,
+    damage_kind: :magic,
     sp_cost: [10],
     cast_time: [800],
     fixed_cast_time: [200],

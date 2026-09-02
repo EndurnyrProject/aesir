@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     max_level: 10,
     target_type: :target_any,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     element: :holy,
     sp_cost: [13, 16, 19, 22, 25, 28, 31, 34, 37, 40],

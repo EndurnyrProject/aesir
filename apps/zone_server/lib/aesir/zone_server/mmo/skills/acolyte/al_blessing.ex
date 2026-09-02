@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
     display_name: "Blessing",
     max_level: 10,
     target_type: :target_ally,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [28, 32, 36, 40, 44, 48, 52, 56, 60, 64],
     duration: [

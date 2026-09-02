@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementwind do
     max_level: 1,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    damage_kind: :magic,
     element: :wind,
     range: 9,
     sp_cost: [30],

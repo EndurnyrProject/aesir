@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSight do
     max_level: 1,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :magic,
     element: :fire,
     range: 0,
     splash_radius: 3,

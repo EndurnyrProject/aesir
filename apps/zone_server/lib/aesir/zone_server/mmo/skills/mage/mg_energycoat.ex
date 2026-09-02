@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoat do
     max_level: 1,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 0,
     sp_cost: [30],
     fixed_cast_time: [5_000],

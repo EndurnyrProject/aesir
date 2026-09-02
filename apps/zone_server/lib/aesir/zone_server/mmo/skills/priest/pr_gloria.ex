@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrGloria do
     max_level: 5,
     target_type: :self,
     damage_type: :no_damage,
+    damage_kind: :magic,
     splash_radius: 18,
     cast_time: List.duplicate(0, 5),
     fixed_cast_time: List.duplicate(0, 5),

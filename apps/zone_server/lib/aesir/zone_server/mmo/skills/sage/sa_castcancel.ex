@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel do
     display_name: "Cast Cancel",
     max_level: 5,
     target_type: :self,
+    damage_kind: :magic,
     sp_cost: [2, 2, 2, 2, 2]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

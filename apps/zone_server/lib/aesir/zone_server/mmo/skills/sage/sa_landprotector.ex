@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotector do
     max_level: 5,
     target_type: :ground,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 2,
     unit_duration: [165_000, 210_000, 255_000, 300_000, 345_000],
     duration: [165_000, 210_000, 255_000, 300_000, 345_000],

@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweapon do
     max_level: 5,
     target_type: :target_ally,
     damage_type: :no_damage,
+    damage_kind: :magic,
     element: :water,
     range: 9,
     cast_time: List.duplicate(1000, 5),

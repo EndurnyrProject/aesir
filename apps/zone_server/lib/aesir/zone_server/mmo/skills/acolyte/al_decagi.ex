@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :no_damage,
+    damage_kind: :magic,
     range: 9,
     sp_cost: [15, 17, 19, 21, 23, 25, 27, 29, 31, 33],
     cast_time: List.duplicate(750, 10),

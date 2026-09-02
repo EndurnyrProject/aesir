@@ -49,7 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast do
     name: :sa_freecast,
     display_name: "Free Cast",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    damage_kind: :magic
 
   alias Aesir.ZoneServer.Mmo.Skill.Learned
 
