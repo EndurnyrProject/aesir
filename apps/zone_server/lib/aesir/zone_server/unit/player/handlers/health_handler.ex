@@ -195,6 +195,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp maybe_record_plagiarism(game_state, _skill_id, _skill_level), do: {game_state, false}
 
   @doc """
+  Applies rAthena's forced `heal` command semantics to signed HP and SP amounts.
+
+  Positive amounts restore without recovery modifiers or recovery-blocking statuses.
+  Negative HP uses the ordinary damage/death path; negative SP is drained to zero.
+  """
+  @spec apply_forced_heal(integer(), integer(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def apply_forced_heal(_hp, _sp, %{game_state: %{action_state: :dead}} = state),
+    do: {:noreply, state}
+
+  def apply_forced_heal(hp, sp, state) when is_integer(hp) and is_integer(sp) do
+    {:noreply, state} = apply_forced_hp(hp, state)
+    apply_forced_sp(sp, state)
+  end
+
+  defp apply_forced_hp(amount, state) when amount > 0, do: gain_hp(amount, state)
+  defp apply_forced_hp(amount, state) when amount < 0, do: apply_damage(-amount, nil, state)
+  defp apply_forced_hp(_amount, state), do: {:noreply, state}
+
+  defp apply_forced_sp(amount, state) when amount > 0 do
+    {:noreply,
+     put_sp(state, min(current_sp(state) + amount, state.game_state.stats.derived_stats.max_sp))}
+  end
+
+  defp apply_forced_sp(amount, state) when amount < 0, do: consume_sp(-amount, state)
+  defp apply_forced_sp(_amount, state), do: {:noreply, state}
+
+  @doc """
   Applies a heal to the player.
 
   Raises HP by `amount`, clamped at `max_hp`. No-op when the player is dead

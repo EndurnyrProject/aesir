@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   and parsed back to the tuple form at load time through a closed vocabulary
   (`parse!/1`): `bonus/3`, `autobonus/4`, `status_start/4`, `status_end/2`,
-  `refine/1`, `base_level/1`, `job_level/1`, `+ - *`, `div/2`, `min/2`,
+  `heal/3`, `refine/1`, `base_level/1`, `job_level/1`, `+ - *`, `div/2`, `min/2`,
   `max/2`, `pow/2`, comparisons, `&&`/`||`, `job_is/3`, `job_is_not/3`,
   `bool/2`, `if/else` statements, and the inline
   `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the source is
@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   ## Effects and autobonuses
 
-  Status lifecycle instructions evaluate their duration and value from the
+  Status lifecycle and forced-heal instructions evaluate their arguments from the
   same pure inputs as modifiers. Autobonus instructions keep their trigger,
   battle flag, and nested programs as validated data while evaluating rate and
   duration into ordered registrations. `:infinite` is reserved for status
@@ -180,10 +180,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           secondary: program()
         }
 
-  @typedoc "A status lifecycle effect emitted by an evaluated equipment program."
+  @typedoc "A runtime side effect emitted by an evaluated equipment program."
   @type effect ::
           {:status_start, atom(), pos_integer() | :infinite, integer()}
           | {:status_end, atom()}
+          | {:heal, integer(), integer()}
 
   @typedoc "A temporary equipment-program registration emitted by evaluation."
   @type autobonus :: %{
@@ -205,6 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:autobonus, autobonus_spec(), expr(), expr()}
           | {:status_start, atom(), expr() | :infinite, expr()}
           | {:status_end, atom()}
+          | {:heal, expr(), expr()}
           | {:if, condition(), [instr()], [instr()]}
 
   @typedoc "A bonus program: an ordered list of instructions."
@@ -309,6 +311,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "status_end(ctx, #{inspect(status)})"
   end
 
+  defp render_instr({:heal, hp, sp}) do
+    "heal(ctx, #{render_expr(hp)}, #{render_expr(sp)})"
+  end
+
   defp render_instr({:if, condition, then_branch, else_branch}) do
     "if #{render_cond(condition)} do\n" <>
       "#{indent(render_stmts(then_branch))}\nelse\n#{indent(render_stmts(else_branch))}\nend"
@@ -398,6 +404,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_instr!({:status_end, _, [{:ctx, _, c}, status]}) when is_atom(c) do
     {:status_end, validate_status!(status)}
+  end
+
+  defp parse_instr!({:heal, _, [{:ctx, _, c}, hp, sp]}) when is_atom(c) do
+    {:heal, parse_expr!(hp), parse_expr!(sp)}
   end
 
   defp parse_instr!({:if, _, [condition, [do: then_q, else: else_q]]}) do
@@ -742,6 +752,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_instr({:status_end, status}, _inputs, %Result{} = result) do
     %{result | effects: [{:status_end, status} | result.effects]}
+  end
+
+  defp eval_instr({:heal, hp_expr, sp_expr}, inputs, %Result{} = result) do
+    effect = {:heal, eval_expr(hp_expr, inputs), eval_expr(sp_expr, inputs)}
+    %{result | effects: [effect | result.effects]}
   end
 
   defp eval_instr({:if, condition, then_branch, else_branch}, inputs, acc) do

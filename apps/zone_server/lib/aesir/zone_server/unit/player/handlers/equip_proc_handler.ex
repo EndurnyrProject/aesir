@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
@@ -23,21 +24,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
         stats = %{stats | active_autobonuses: active}
         state = %{state | game_state: %{state.game_state | stats: stats}}
 
-        apply_effects(
-          registration.primary_effects,
-          state.game_state.character_id,
-          registration,
-          key,
-          :primary
-        )
+        state =
+          apply_effects(
+            registration.primary_effects,
+            state,
+            registration,
+            key,
+            :primary
+          )
 
-        apply_effects(
-          registration.secondary_effects,
-          state.game_state.character_id,
-          registration,
-          key,
-          :secondary
-        )
+        state =
+          apply_effects(
+            registration.secondary_effects,
+            state,
+            registration,
+            key,
+            :secondary
+          )
 
         state = recalculate_and_sync_skills(state, granted_skills)
 
@@ -113,9 +116,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
     end
   end
 
-  defp apply_effects(effects, character_id, registration, key, phase) do
-    Enum.each(effects, fn
-      {:status_start, status, duration, value} ->
+  defp apply_effects(effects, state, registration, key, phase) do
+    Enum.reduce(effects, state, fn
+      {:status_start, status, duration, value}, state ->
+        character_id = state.game_state.character_id
+
         params =
           [caster_id: character_id, val1: value, owner_refresh: :defer]
           |> maybe_put_duration(duration)
@@ -131,8 +136,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
             )
         end
 
-      {:status_end, status} ->
-        Interpreter.remove_status(:player, character_id, status, owner_refresh: :defer)
+        state
+
+      {:status_end, status}, state ->
+        Interpreter.remove_status(
+          :player,
+          state.game_state.character_id,
+          status,
+          owner_refresh: :defer
+        )
+
+        state
+
+      {:heal, hp, sp}, state ->
+        {:noreply, state} = HealthHandler.apply_forced_heal(hp, sp, state)
+        state
     end)
   end
 

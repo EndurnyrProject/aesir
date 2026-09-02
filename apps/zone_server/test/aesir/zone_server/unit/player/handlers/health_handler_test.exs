@@ -524,6 +524,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "apply_forced_heal/3" do
+    test "restores raw HP and SP through recovery-blocking statuses" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)
+      on_exit(fn -> StatusStorage.remove_status(:player, 1, :sc_norecover_state) end)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: current}}}} =
+               HealthHandler.apply_forced_heal(20, 30, build_state(70, :idle))
+
+      assert current.hp == 90
+      assert current.sp == 40
+    end
+
+    test "routes negative HP through damage and floors negative SP at zero" do
+      assert {:noreply, %{game_state: game_state}} =
+               HealthHandler.apply_forced_heal(-20, -30, build_state(70, :idle))
+
+      assert game_state.stats.current_state.hp == 50
+      assert game_state.stats.current_state.sp == 0
+      assert game_state.action_state == :idle
+    end
+  end
+
   describe "apply_heal/3" do
     test "publishes healed HP with the unchanged SP/AP maxima" do
       state = build_state(70, :idle)

@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.ParamChange
   alias Aesir.Net.SkillList
+  alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
@@ -134,6 +135,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandlerTest do
     assert lights_params[:caster_id] == 1
     assert lights_params[:val1] == 9
     refute Keyword.has_key?(lights_params, :duration)
+  end
+
+  test "activation applies signed heal effects in source order" do
+    registration = %{
+      registration()
+      | primary_effects: [{:heal, 0, 20}],
+        secondary_effects: [{:heal, 0, -5}]
+    }
+
+    state = state_with_registration(registration)
+    state = put_in(state.game_state.stats.current_state.sp, 10)
+    state = put_in(state.game_state.stats.derived_stats.max_sp, 100)
+
+    stub(CharacterPersistence, :update_stats, fn _character_id, _attrs, _opts -> {:ok, nil} end)
+    stub(Stats, :calculate_stats, fn stats, 1 -> stats end)
+    stub(UnitRegistry, :update_unit_state, fn :player, 1, _game_state -> :ok end)
+    stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
+
+    assert {:noreply, updated} = EquipProcHandler.activate(state, @key)
+    assert updated.game_state.stats.current_state.sp == 25
   end
 
   test "rejected status effects log context without rolling back the active modifier" do

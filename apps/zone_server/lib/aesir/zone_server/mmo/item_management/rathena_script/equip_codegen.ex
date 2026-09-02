@@ -229,12 +229,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   @spec compile_instrs(tuple(), env(), compile_context()) ::
           {:ok, [EquipScript.instr()]} | {:error, {:unsupported, detail()}}
   defp compile_instrs(stmt, env, context) do
-    case compile_context_instr(stmt, env, context) do
+    case compile_context_instr(normalize_command_name(stmt), env, context) do
       {:ok, instrs} when is_list(instrs) -> {:ok, instrs}
       {:ok, instr} -> {:ok, [instr]}
       {:error, _} = error -> error
     end
   end
+
+  defp normalize_command_name({:cmd, name, args}),
+    do: {:cmd, String.downcase(name), args}
+
+  defp normalize_command_name(stmt), do: stmt
 
   @autobonus_commands ~w(autobonus autobonus2 autobonus3)
   @nested_contexts [:autobonus_primary, :autobonus_secondary]
@@ -255,6 +260,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_context_instr({:cmd, "sc_end", args}, _env, context)
        when context in [:unequip | @nested_contexts],
        do: compile_status_end(args)
+
+  defp compile_context_instr({:cmd, "heal", args}, env, context)
+       when context in @nested_contexts,
+       do: compile_heal(args, env)
 
   defp compile_context_instr({:cmd, name, _args}, _env, context)
        when name in @nested_cosmetics and context in @nested_contexts,
@@ -371,6 +380,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp compile_status_end(args), do: unsupported({:status_end_shape, args})
+
+  defp compile_heal([hp_ast, sp_ast], env) do
+    with {:ok, hp} <- compile_expr(hp_ast, env),
+         {:ok, sp} <- compile_expr(sp_ast, env) do
+      {:ok, {:heal, hp, sp}}
+    end
+  end
+
+  defp compile_heal(args, _env), do: unsupported({:heal_shape, args})
 
   defp compile_status_duration({:name, symbol}, _env) do
     if String.upcase(symbol) == "INFINITE_TICK",
@@ -1227,7 +1245,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   defp compile_expr({:call, "min", [lhs, rhs]}, env), do: compile_math(:min, lhs, rhs, env)
   defp compile_expr({:call, "max", [lhs, rhs]}, env), do: compile_math(:max, lhs, rhs, env)
 
-  defp compile_expr({:call, name, _args}, _env), do: unsupported({:unsupported_call, name})
+  defp compile_expr({:call, name, args}, env) do
+    normalized_name = String.downcase(name)
+
+    if normalized_name == name do
+      unsupported({:unsupported_call, name})
+    else
+      compile_expr({:call, normalized_name, args}, env)
+    end
+  end
+
   defp compile_expr(other, _env), do: unsupported({:expression, other})
 
   @spec compile_math(:min | :max | :pow, term(), term(), %{String.t() => EquipScript.expr()}) ::

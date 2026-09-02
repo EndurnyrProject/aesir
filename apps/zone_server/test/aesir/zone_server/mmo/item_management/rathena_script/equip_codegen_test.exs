@@ -1100,6 +1100,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:grant_skill, ^heal_id, 5}]} = compile("skill AL_HEAL,5;")
     end
 
+    test "skill command is case-insensitive (id1599 Angra Manyu)" do
+      assert {:ok, %{id: meteor_id}} = Catalog.by_name(:wz_meteor)
+
+      assert {:ok, [{:grant_skill, ^meteor_id, 10}]} = compile(~s(Skill "WZ_METEOR",10;))
+    end
+
     test "skill by quoted name resolves like the bare-name form" do
       assert {:ok, %{id: heal_id}} = Catalog.by_name(:al_heal)
 
@@ -1137,6 +1143,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
 
       assert {:ok, [{:bonus, :heal_power, {:skill_lv, ^heal_id}}]} =
                compile("bonus bHealPower,getskilllv(\"AL_HEAL\");")
+    end
+
+    test "getskilllv call is case-insensitive (id1736 Double Bound)" do
+      assert {:ok, %{id: double_id}} = Catalog.by_name(:ac_double)
+
+      assert {:ok, [{:auto_cast, _spec, {:skill_lv, ^double_id}, 10}]} =
+               compile(~S|bonus3 bAutoSpell,"AC_DOUBLE",GetSkillLv("AC_DOUBLE"),10;|)
     end
 
     test "getskilllv is usable inside an input-pure condition" do
@@ -1359,10 +1372,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("autobonus2 #{inspect(nested)},10,1000;")
     end
 
-    test "unsupported nested gameplay and recursive autobonuses fail explicitly" do
-      assert {:error, {:unsupported, {:unsupported_command, "heal"}}} =
-               compile(~S'autobonus "{ heal 100,0; }",10,1000;')
+    test "nested heal compiles as a signed proc effect (id2005 Dea Staff)" do
+      heal_id = skill_id!(:al_heal)
 
+      script =
+        ~S'autobonus3 "{ }",20,1000,"AL_HEAL","{ specialeffect2 EF_MAGICALATTHIT; heal 0,200; }";'
+
+      assert {:ok, [{:autobonus, spec, 20, 1_000}]} = compile(script)
+      assert spec.trigger == {:on_skill, heal_id}
+      assert spec.primary == []
+      assert spec.secondary == [{:heal, 0, 200}]
+    end
+
+    test "direct equip healing remains unsupported" do
+      assert {:error, {:unsupported, {:unsupported_command, "heal"}}} =
+               compile("heal 100,0;")
+    end
+
+    test "invalid nested bonuses and recursive autobonuses fail explicitly" do
       assert {:error, {:unsupported, {:unknown_bonus_key, "bNotReal"}}} =
                compile(~S'autobonus "{ bonus bNotReal,1; }",10,1000;')
 

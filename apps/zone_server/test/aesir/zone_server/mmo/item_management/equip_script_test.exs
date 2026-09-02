@@ -240,6 +240,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
     end
 
+    test "round-trips and evaluates signed heal effects" do
+      program = [{:heal, {:*, :refine, 25}, -30}]
+
+      assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
+      assert EquipScript.evaluate(program, on(2)).effects == [{:heal, 50, -30}]
+    end
+
     test "rejects malformed status shapes and reserves :infinite for duration" do
       assert_raise ArgumentError, fn ->
         EquipScript.parse!("status_start(ctx, 10, 1_000, 1)")
