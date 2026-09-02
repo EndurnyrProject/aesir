@@ -10,11 +10,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule HalfDamage do
@@ -59,6 +61,48 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
   setup :set_mimic_from_context
   setup :verify_on_exit!
   setup :setup_ets_tables
+
+  test "reduces skill magic damage using the player target's equipment" do
+    target_id = 29
+    register_player_with_magic_reduction(target_id, 40)
+
+    assert {60, %{pre_delivery_prepared?: true}} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               target_id,
+               100,
+               %{dmg_type: :magic, skill_id: 19},
+               20
+             )
+  end
+
+  test "does not reduce magic damage without a skill id" do
+    target_id = 30
+    register_player_with_magic_reduction(target_id, 40)
+
+    assert {100, %{pre_delivery_prepared?: true}} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               target_id,
+               100,
+               %{dmg_type: :magic, skill_id: nil},
+               20
+             )
+  end
+
+  test "does not reduce physical skill damage" do
+    target_id = 31
+    register_player_with_magic_reduction(target_id, 40)
+
+    assert {100, %{pre_delivery_prepared?: true}} =
+             DamageApplication.prepare_unit_damage(
+               :player,
+               target_id,
+               100,
+               %{dmg_type: :physical, skill_id: 19},
+               20
+             )
+  end
 
   test "settles aggregate absorption proportionally and delivers once" do
     target_id = 10
@@ -541,6 +585,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
       skill_level: nil,
       from_caster?: true
     }
+  end
+
+  defp register_player_with_magic_reduction(target_id, percent) do
+    player =
+      PlayerStateFixture.build(%{
+        character_id: target_id,
+        account_id: target_id,
+        stats: %{
+          combat_stats: %CombatStats{},
+          modifiers: %{equipment: %{no_magic_damage: percent}}
+        }
+      })
+
+    UnitRegistry.register_player(player, self())
   end
 
   defp stub_unit_info(target_id) do

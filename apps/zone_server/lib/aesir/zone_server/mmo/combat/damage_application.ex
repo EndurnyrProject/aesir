@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Devotion
@@ -24,10 +25,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   alias Phoenix.PubSub
 
   @doc """
-  Resolves pre-delivery status damage modifiers for one hit.
+  Resolves pre-delivery equipment and status damage modifiers for one hit.
 
-  Attack paths that render damage must call this before constructing their
-  packet, then pass the returned hit information to `apply_unit_damage/6`.
+  Skill magic damage is reduced by the target's equipment before Devotion
+  rerouting and status absorption. Attack paths that render damage must call
+  this before constructing their packet, then pass the returned hit information
+  to `apply_unit_damage/6`.
   This keeps the visible number and HP loss identical while ensuring a
   consumable modifier such as Lex Aeterna runs exactly once.
 
@@ -47,6 +50,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
           integer() | Ref.t() | nil
         ) :: {integer(), map()}
   def prepare_unit_damage(target_type, target_id, damage, hit_info, attacker_id) do
+    damage =
+      if Map.get(hit_info, :dmg_type) == :magic and is_integer(Map.get(hit_info, :skill_id)),
+        do: MagicDefense.reduce(damage, target_type, target_id),
+        else: damage
+
     case reroute_to_crusader(target_type, target_id, damage, hit_info, attacker_id) do
       {:rerouted, _delivery} ->
         {0, Map.put(hit_info, :pre_delivery_prepared?, true)}
