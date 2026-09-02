@@ -113,11 +113,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   The player's walk speed (ms per straight cell) for a stats snapshot.
 
   The status-sourced `:movement_speed` modifier is a percentage adjustment to
-  the speed rate (positive = slower, negative = faster). The equipment-sourced
-  one uses the opposite, non-stackable convention of the `bonus bSpeedRate`
-  vocabulary — positive = faster — so it is subtracted, and only the strongest
-  equipped source contributes (the max-merge happens when the equipment
-  modifiers are folded).
+  the speed rate (positive = slower, negative = faster). Equipment uses the
+  opposite convention, so `bSpeedRate` keeps the strongest source while
+  `bSpeedAddRate` stacks; their sum is subtracted because positive means faster.
 
   The rate is floored at 40 and the resulting walk speed is clamped to the
   engine's MIN/MAX walk-speed bounds. With no speed modifier from either source
@@ -125,9 +123,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
   """
   @spec walk_speed_for(Stats.t()) :: pos_integer()
   def walk_speed_for(stats) do
+    equipment_speed =
+      Stats.get_equipment_modifier(stats, :movement_speed) +
+        Stats.get_equipment_modifier(stats, :movement_speed_add)
+
     speed_delta =
-      Stats.get_status_modifier(stats, :movement_speed) -
-        Stats.get_equipment_modifier(stats, :movement_speed) + hiding_speed_penalty(stats)
+      Stats.get_status_modifier(stats, :movement_speed) - equipment_speed +
+        hiding_speed_penalty(stats)
 
     speed_rate = max(100 + speed_delta, @min_speed_rate)
 

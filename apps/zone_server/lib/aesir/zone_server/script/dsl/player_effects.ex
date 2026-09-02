@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
 
   alias Aesir.Commons.StatusParams
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -288,9 +289,12 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
     stat_rate =
       case resource do
         :hp ->
+          equipment = stats.modifiers.equipment
+
           2 * PlayerStats.get_effective_stat(stats, :vit) +
             PlayerStats.get_item_heal_rate(stats) +
-            PlayerStats.get_equipment_modifier(stats, {:add_item_heal, item_id})
+            PlayerStats.get_equipment_modifier(stats, {:add_item_heal, item_id}) +
+            item_group_heal_rate(equipment, item_id)
 
         :sp ->
           2 * PlayerStats.get_effective_stat(stats, :int)
@@ -300,6 +304,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   end
 
   defp scale_consumable_recovery(amount, %Ctx{}, _resource), do: amount
+
+  defp item_group_heal_rate(equipment, item_id) do
+    Enum.reduce(equipment, 0, fn
+      {{:add_item_group_heal, group_key}, rate}, acc ->
+        if ItemGroups.member?(group_key, item_id), do: acc + rate, else: acc
+
+      _modifier, acc ->
+        acc
+    end)
+  end
 
   defp apply_heal(%Ctx{} = ctx, hp_fun, sp_fun) do
     stats = ctx.game_state.stats

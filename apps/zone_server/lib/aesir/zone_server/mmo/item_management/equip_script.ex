@@ -198,6 +198,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @typedoc "A single bonus program statement."
   @type instr ::
           {:bonus, dest(), expr()}
+          | {:paired_choice, atom(), expr(), expr()}
           | {:set, dest(), value()}
           | {:grant_skill, pos_integer(), expr()}
           | {:auto_cast, auto_cast_spec(), expr(), expr()}
@@ -280,6 +281,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "bonus(ctx, #{inspect(dest)}, #{render_expr(expr)})"
   end
 
+  defp render_instr({:paired_choice, dest, amount, rate}) do
+    "paired_choice(ctx, #{inspect(dest)}, #{render_expr(amount)}, #{render_expr(rate)})"
+  end
+
   defp render_instr({:set, dest, value}) do
     "set(ctx, #{inspect(dest)}, #{inspect(value)})"
   end
@@ -360,6 +365,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_instr!({:bonus, _, [{:ctx, _, c}, dest, expr]}) when is_atom(c) do
     {:bonus, validate_destination!(dest), parse_expr!(expr)}
+  end
+
+  defp parse_instr!({:paired_choice, _, [{:ctx, _, c}, dest, amount, rate]})
+       when is_atom(c) do
+    case validate_destination!(dest) do
+      :get_zeny -> {:paired_choice, :get_zeny, parse_expr!(amount), parse_expr!(rate)}
+      other -> malformed!("paired choice destination", other)
+    end
   end
 
   defp parse_instr!({:set, _, [{:ctx, _, c}, dest, value]}) when is_atom(c) do
@@ -638,12 +651,37 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
     modifiers =
       cond do
-        BonusKeys.overwrite_destination?(key) -> Map.put(modifiers, key, value)
-        BonusKeys.max_destination?(key) -> Map.update(modifiers, key, value, &max(&1, value))
-        true -> Map.update(modifiers, key, value, &(&1 + value))
+        BonusKeys.overwrite_destination?(key) ->
+          Map.put(modifiers, key, value)
+
+        BonusKeys.bitwise_destination?(key) ->
+          Map.update(modifiers, key, value, &Bitwise.bor(&1, value))
+
+        BonusKeys.max_destination?(key) ->
+          Map.update(modifiers, key, value, &max(&1, value))
+
+        true ->
+          Map.update(modifiers, key, value, &(&1 + value))
       end
 
     %{result | modifiers: modifiers}
+  end
+
+  defp eval_instr(
+         {:paired_choice, dest, amount_expr, rate_expr},
+         inputs,
+         %Result{modifiers: modifiers} = result
+       ) do
+    amount = eval_expr(amount_expr, inputs)
+    rate = eval_expr(rate_expr, inputs)
+
+    case Map.get(modifiers, dest, {0, 0}) do
+      {current_rate, _amount} when rate > current_rate ->
+        %{result | modifiers: Map.put(modifiers, dest, {rate, amount})}
+
+      _current ->
+        result
+    end
   end
 
   defp eval_instr({:set, key, value}, _inputs, %Result{} = result) do

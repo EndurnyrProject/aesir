@@ -484,6 +484,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
         {:ok, schema} = BonusKeys.vanish_schema(key)
         compile_vanish(schema, first_arg, second_arg, @normal_vanish_flag, env)
 
+      match?({:ok, _dest}, BonusKeys.paired_choice_destination(key)) ->
+        {:ok, dest} = BonusKeys.paired_choice_destination(key)
+        compile_paired_choice(dest, first_arg, second_arg, env)
+
       match?({:ok, _schema}, BonusKeys.pair_schema(key)) ->
         {:ok, schema} = BonusKeys.pair_schema(key)
         compile_pair_bonus(schema, first_arg, second_arg, env)
@@ -990,6 +994,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   defp compile_interval_bonus(_family, _value_arg, interval_arg, _env),
     do: unsupported({:unresolved_param, interval_arg})
+
+  @spec compile_paired_choice(
+          atom(),
+          term(),
+          term(),
+          %{String.t() => EquipScript.expr()}
+        ) :: {:ok, EquipScript.instr()} | {:error, {:unsupported, detail()}}
+  defp compile_paired_choice(dest, amount_arg, rate_arg, env) do
+    with {:ok, amount} <- compile_expr(amount_arg, env),
+         {:ok, rate} <- compile_expr(rate_arg, env) do
+      {:ok, {:paired_choice, dest, amount, rate}}
+    end
+  end
 
   # Both arguments of a pair key are amounts summing into a destination of their
   # own, so the key expands to two independent `:bonus` instructions rather than

@@ -168,6 +168,26 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert ctx.game_state.stats.current_state.hp == 200
     end
 
+    test "HP consumables include matching item-group healing bonuses" do
+      ctx =
+        Dsl.heal(
+          build_ctx(hp: 100, equipment: %{{:add_item_group_heal, :bluebox} => 30}),
+          hp: 100
+        )
+
+      assert ctx.game_state.stats.current_state.hp == 230
+    end
+
+    test "item-group healing ignores groups that do not contain the used item" do
+      ctx =
+        Dsl.heal(
+          build_ctx(hp: 100, equipment: %{{:add_item_group_heal, :ore} => 30}),
+          hp: 100
+        )
+
+      assert ctx.game_state.stats.current_state.hp == 200
+    end
+
     test "scaled recovery floors fractional results" do
       ctx = Dsl.heal(build_ctx(hp: 100, vit: 25), hp: 105)
 

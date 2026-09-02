@@ -307,7 +307,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
 
     test "records an :on_equip failure for an out-of-vocabulary equip script" do
       assert {%ItemDefinition{on_equip: nil}, {:on_equip, 501, "Red Potion", {:unsupported, _}}} =
-               Items.apply_transpile(definition(%{type: :weapon}), "bonus bNoRegen,2;")
+               Items.apply_transpile(definition(%{type: :weapon}), "bonus bClassChange,2;")
     end
 
     test "skips equip items without a script" do
@@ -391,13 +391,13 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
     end
 
     test "keeps attack_element even when the script is rejected as a whole" do
-      script = "bonus bAtkEle,Ele_Fire; bonus bNoRegen,2;"
+      script = "bonus bAtkEle,Ele_Fire; bonus bClassChange,2;"
 
       assert {:ok, %ItemDefinition{attack_element: :fire} = def} =
                Importer.to_definition(fireblend(script))
 
       assert {%ItemDefinition{attack_element: :fire, on_equip: nil},
-              {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bNoRegen"}}}} =
+              {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bClassChange"}}}} =
                Items.apply_transpile(def, script)
     end
 

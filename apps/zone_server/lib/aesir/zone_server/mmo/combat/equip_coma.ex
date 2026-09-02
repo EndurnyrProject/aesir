@@ -27,7 +27,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComa do
       false
     else
       roll = Keyword.get(opts, :roll, &default_roll/1)
-      rate = attacker |> EquipmentBonuses.coma_race_rate(target) |> clamp_rate()
+
+      rate =
+        EquipmentBonuses.coma_race_rate(attacker, target) +
+          EquipmentBonuses.coma_class_rate(attacker, target)
+
+      rate = clamp_rate(rate)
       successful?(rate, roll)
     end
   end

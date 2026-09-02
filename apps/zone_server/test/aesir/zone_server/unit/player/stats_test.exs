@@ -763,6 +763,11 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       refute result.combat_stats.max_weapon_damage
     end
 
+    test "bHitRate scales the computed Hit after flat contributions" do
+      assert combat_stats(%{hit: 25, hit_rate: 20}).hit == 240
+      assert combat_stats(%{hit: 25}).hit == 200
+    end
+
     test "positive equipment DEF rate scales only equipment hard DEF" do
       assert combat_stats(%{def: 81, def_rate: 50}).def == 121
     end
@@ -2499,6 +2504,58 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         with_equipped_items([equipped(90_219, @left_hand), equipped(90_218, @right_hand)])
 
       assert reversed.modifiers.equipment.movement_speed == 25
+    end
+
+    test "bSpeedAddRate stacks across items independently of bSpeedRate" do
+      boots =
+        scripted_item(90_264,
+          on_equip: [{:bonus, :movement_speed, 25}, {:bonus, :movement_speed_add, 15}]
+        )
+
+      cape =
+        scripted_item(90_265,
+          on_equip: [{:bonus, :movement_speed, 10}, {:bonus, :movement_speed_add, 20}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_264 -> {:ok, boots}
+        90_265 -> {:ok, cape}
+      end)
+
+      result =
+        with_equipped_items([equipped(90_264, @right_hand), equipped(90_265, @left_hand)])
+
+      assert result.modifiers.equipment.movement_speed == 25
+      assert result.modifiers.equipment.movement_speed_add == 35
+    end
+
+    test "no-regen masks combine and get-zeny keeps the highest-chance pair across items" do
+      first =
+        scripted_item(90_266,
+          on_equip: [
+            {:bonus, :no_regen, 1},
+            {:paired_choice, :get_zeny, 500, 10}
+          ]
+        )
+
+      second =
+        scripted_item(90_267,
+          on_equip: [
+            {:bonus, :no_regen, 2},
+            {:paired_choice, :get_zeny, 100, 25}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_266 -> {:ok, first}
+        90_267 -> {:ok, second}
+      end)
+
+      result =
+        with_equipped_items([equipped(90_266, @right_hand), equipped(90_267, @left_hand)])
+
+      assert result.modifiers.equipment.no_regen == 3
+      assert result.modifiers.equipment.get_zeny == {25, 100}
     end
 
     test "bPerfectHitRate keeps the strongest item while AddRate stacks" do

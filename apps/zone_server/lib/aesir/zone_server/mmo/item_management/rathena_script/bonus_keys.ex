@@ -131,7 +131,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bsprecovrate" => :sp_regen,
     "busesprate" => :sp_cost_rate,
     "bflee2" => :perfect_dodge,
+    "bhitrate" => :hit_rate,
     "bspeedrate" => :movement_speed,
+    "bspeedaddrate" => :movement_speed_add,
+    "bcriticallong" => :critical_long,
+    "bnoregen" => :no_regen,
     "bfixedcast" => :fixed_cast,
     "bhealpower" => :heal_power,
     "bhealpower2" => :heal_power2,
@@ -163,6 +167,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   @param_keys %{
     "baddrace" => %{family: :addrace, param: :race, unit: :percent},
     "bcomarace" => %{family: :coma_race, param: :race, unit: :per10k},
+    "bcomaclass" => %{family: :coma_class, param: :class, unit: :per10k},
     "bcriticaladdrace" => %{family: :critical_add_race, param: :race, unit: :percent},
     "baddele" => %{family: :addele, param: :element, unit: :percent},
     "baddsize" => %{family: :addsize, param: :size, unit: :percent},
@@ -194,6 +199,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
     "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
+    "badditemgrouphealrate" => %{
+      family: :add_item_group_heal,
+      param: :item_group,
+      unit: :percent
+    },
     "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent},
     "bmagicaddrace2" => %{family: :magic_addrace2, param: :race2, unit: :percent},
     "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent},
@@ -223,6 +233,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhpdrainrate" => %{first: :hp_drain_rate, second: :hp_drain_percent},
     "bspdrainrate" => %{first: :sp_drain_rate, second: :sp_drain_percent}
   }
+
+  @paired_choice_keys %{"bgetzenynum" => :get_zeny}
+  @bitwise_destinations MapSet.new([:no_regen])
 
   # Single-argument `bonus` keys whose lone argument is a param constant
   # (`bonus bIgnoreDefRace,RC_Brute;`) rather than an amount. rAthena treats
@@ -384,7 +397,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec destinations() :: [destination()]
   def destinations do
-    (Map.values(@keys) ++ Enum.flat_map(Map.values(@pair_keys), &[&1.first, &1.second]))
+    (Map.values(@keys) ++
+       Map.values(@paired_choice_keys) ++
+       Enum.flat_map(Map.values(@pair_keys), &[&1.first, &1.second]))
     |> Enum.uniq()
   end
 
@@ -396,6 +411,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec max_destination?(destination() | {atom(), atom() | pos_integer()}) :: boolean()
   def max_destination?(dest), do: MapSet.member?(@max_destinations, dest)
+
+  @doc "Whether a numeric destination combines contributions as a bit mask."
+  @spec bitwise_destination?(destination()) :: boolean()
+  def bitwise_destination?(dest), do: MapSet.member?(@bitwise_destinations, dest)
 
   @doc """
   The multiplier the codegen applies to a key's amount expression, for
@@ -421,6 +440,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
   """
   @spec pair_schema(String.t()) :: {:ok, pair_schema()} | :error
   def pair_schema(name) when is_binary(name), do: Map.fetch(@pair_keys, String.downcase(name))
+
+  @doc "Resolves a `bonus2` key whose amount stays paired with its strongest rate."
+  @spec paired_choice_destination(String.t()) :: {:ok, destination()} | :error
+  def paired_choice_destination(name) when is_binary(name),
+    do: Map.fetch(@paired_choice_keys, String.downcase(name))
 
   @doc """
   Resolves a single-argument `bonus` key whose lone argument is a param constant

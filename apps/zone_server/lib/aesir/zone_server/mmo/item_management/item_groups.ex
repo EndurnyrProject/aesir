@@ -15,6 +15,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups do
   @spec fetch(atom()) :: {:ok, Group.t()} | :error
   def fetch(key), do: Map.fetch(index(), key)
 
+  @doc "Whether an item appears in any subgroup of the named item group."
+  @spec member?(atom(), pos_integer()) :: boolean()
+  def member?(key, item_id) do
+    case fetch(key) do
+      {:ok, group} ->
+        Enum.any?(group.subgroups, fn subgroup ->
+          Enum.any?(subgroup.entries, &(&1.item_id == item_id))
+        end)
+
+      :error ->
+        false
+    end
+  end
+
   @doc "Returns runtime readiness only; it does not identify the catalog's game mode."
   @spec loaded?() :: boolean()
   def loaded?, do: not is_nil(:persistent_term.get(@pt_key, nil))

@@ -156,6 +156,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManagerTest do
       assert StatusManager.walk_speed_for(stats) == 112
     end
 
+    test "additive equipment speed stacks with the strongest speed rate", %{state: state} do
+      stats =
+        put_in(
+          state.game_state.stats,
+          [Access.key!(:modifiers), Access.key!(:equipment)],
+          %{movement_speed: 25, movement_speed_add: 10}
+        )
+
+      assert StatusManager.walk_speed_for(stats) == 97
+    end
+
     test "no equipment bonus leaves the base speed", %{state: state} do
       assert StatusManager.walk_speed_for(state.game_state.stats) == 150
     end

@@ -265,6 +265,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     read(attacker, :coma_race, race)
   end
 
+  @doc "Per-10,000 coma chance granted against the defender's class."
+  @spec coma_class_rate(Combatant.t(), Combatant.t()) :: rate()
+  def coma_class_rate(%Combatant{} = attacker, %Combatant{class: class}) do
+    read(attacker, :coma_class, class)
+  end
+
   @doc """
   Critical chance percentage points granted against the defender's race.
 
@@ -274,6 +280,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   @spec critical_add_race_rate(Combatant.t(), Combatant.t()) :: rate()
   def critical_add_race_rate(%Combatant{} = attacker, %Combatant{race: race}) do
     read(attacker, :critical_add_race, race)
+  end
+
+  @doc "Critical chance percentage points added to ordinary ranged attacks."
+  @spec critical_long_rate(Combatant.t()) :: rate()
+  def critical_long_rate(%Combatant{} = attacker) do
+    Map.get(attacker.equip_modifiers, :critical_long, 0)
   end
 
   @doc """

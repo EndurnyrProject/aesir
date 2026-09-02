@@ -129,6 +129,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       tuple_magic_addclass_dest: [{:bonus, {:magic_addclass, :boss}, 30}],
       tuple_race2_dest: [{:bonus, {:addrace2, :biolab}, 20}],
       tuple_item_heal_dest: [{:bonus, {:add_item_heal, 501}, 10}],
+      tuple_item_group_heal_dest: [{:bonus, {:add_item_group_heal, :food}, 10}],
+      tuple_coma_class_dest: [{:bonus, {:coma_class, :boss}, 250}],
+      paired_get_zeny_dest: [{:paired_choice, :get_zeny, 100, 25}],
+      flat_hit_rate: [{:bonus, :hit_rate, 15}],
+      flat_movement_speed_add: [{:bonus, :movement_speed_add, 20}],
+      flat_critical_long: [{:bonus, :critical_long, 7}],
+      flat_no_regen: [{:bonus, :no_regen, 3}],
       tuple_ignore_def_class_dest: [{:bonus, {:ignore_def_class, :normal}, 100}],
       tuple_ignore_def_class_rate_dest: [{:bonus, {:ignore_def_class, :boss}, 50}],
       tuple_magic_addrace2_dest: [{:bonus, {:magic_addrace2, :goblin}, 20}],
@@ -692,6 +699,40 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       program = [{:bonus, def_key, 10}, {:bonus, drop_key, 10_000}]
 
       assert EquipScript.eval(program, on(0)) == %{def_key => 10, drop_key => 10_000}
+    end
+
+    test "evaluates the new flat and parameterized bonuses" do
+      program = [
+        {:bonus, :hit_rate, 15},
+        {:bonus, :movement_speed_add, 20},
+        {:bonus, :critical_long, 7},
+        {:bonus, {:coma_class, :boss}, 250},
+        {:bonus, {:add_item_group_heal, :food}, 30}
+      ]
+
+      assert EquipScript.eval(program, on(0)) == %{
+               {:coma_class, :boss} => 250,
+               {:add_item_group_heal, :food} => 30,
+               hit_rate: 15,
+               movement_speed_add: 20,
+               critical_long: 7
+             }
+    end
+
+    test "combines no-regen contributions as a bitmask" do
+      program = [{:bonus, :no_regen, 1}, {:bonus, :no_regen, 2}]
+
+      assert EquipScript.eval(program, on(0)) == %{no_regen: 3}
+    end
+
+    test "keeps the amount paired with the highest get-zeny chance" do
+      program = [
+        {:paired_choice, :get_zeny, 500, 10},
+        {:paired_choice, :get_zeny, 100, 25},
+        {:paired_choice, :get_zeny, 900, 20}
+      ]
+
+      assert EquipScript.eval(program, on(0)) == %{get_zeny: {25, 100}}
     end
 
     test "refine 0 yields zeros and gates stay closed" do

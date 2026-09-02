@@ -980,8 +980,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     heal_matk_min = base_matk_min + wmatk_min
     heal_matk_max = base_matk_max + wmatk_max
 
+    hit =
+      stats
+      |> PlayerCombatCalc.calculate_hit()
+      |> apply_rate(get_equipment_modifier(stats, :hit_rate))
+      |> max(0)
+
     combat_stats = %Stats.CombatStats{
-      hit: PlayerCombatCalc.calculate_hit(stats),
+      hit: hit,
       flee: PlayerCombatCalc.calculate_flee(stats),
       critical: critical,
       critical_rate: critical_rate,
@@ -1550,9 +1556,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp merge_equip_bonus(acc, {:granted_skill, _} = key, level),
     do: Map.update(acc, key, level, &max(&1, level))
 
+  defp merge_equip_bonus(acc, :get_zeny, {rate, _bonus_amount} = bonus) do
+    case Map.get(acc, :get_zeny, {0, 0}) do
+      {current_rate, _current_amount} when rate > current_rate -> Map.put(acc, :get_zeny, bonus)
+      _current -> acc
+    end
+  end
+
   defp merge_equip_bonus(acc, key, value) when is_number(value) do
     cond do
       BonusKeys.overwrite_destination?(key) -> Map.put(acc, key, value)
+      BonusKeys.bitwise_destination?(key) -> Map.update(acc, key, value, &Bitwise.bor(&1, value))
       BonusKeys.max_destination?(key) -> Map.update(acc, key, value, &max(&1, value))
       true -> Map.update(acc, key, value, &(&1 + value))
     end

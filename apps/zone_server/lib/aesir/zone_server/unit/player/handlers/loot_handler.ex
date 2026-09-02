@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.Player.QuestView
@@ -43,7 +44,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.LootHandler do
   @spec mob_killed(map(), map(), (pos_integer() -> pos_integer())) :: {:noreply, map()}
   def mob_killed(payload, state, rng) do
     maybe_drop_items(payload, state, rng)
-    {:noreply, state}
+    {:noreply, maybe_credit_zeny(payload, state, rng)}
+  end
+
+  defp maybe_credit_zeny(%{mob_level: mob_level}, state, rng) do
+    case Map.get(state.game_state.stats.modifiers.equipment, :get_zeny) do
+      {rate, amount} when rate > 0 and amount != 0 ->
+        credit_random_zeny(rate, amount, mob_level, state, rng)
+
+      _missing ->
+        state
+    end
+  end
+
+  defp maybe_credit_zeny(_payload, state, _rng), do: state
+
+  defp credit_random_zeny(rate, amount, mob_level, state, rng) do
+    if rng.(100) <= min(rate, 100) do
+      max_amount = if amount > 0, do: amount, else: -mob_level * amount
+
+      {_reply, state} =
+        ScriptEffectHandler.apply_op({:credit_zeny, rng.(max(max_amount, 1))}, state)
+
+      state
+    else
+      state
+    end
   end
 
   @doc """

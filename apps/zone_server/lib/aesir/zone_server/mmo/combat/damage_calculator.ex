@@ -257,9 +257,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # wins over `:skip_crit`; otherwise the roll is skipped or rolled per opts.
   defp finalize_damage(damage, attacker, defender, opts) do
     cond do
-      Keyword.get(opts, :force_crit, false) -> apply_forced_critical_hit(damage, attacker)
-      Keyword.get(opts, :skip_crit, false) -> {:ok, %{damage: damage, is_critical: false}}
-      true -> apply_critical_hit(damage, attacker, defender)
+      Keyword.get(opts, :force_crit, false) ->
+        apply_forced_critical_hit(damage, attacker)
+
+      Keyword.get(opts, :skip_crit, false) ->
+        {:ok, %{damage: damage, is_critical: false}}
+
+      true ->
+        apply_critical_hit(
+          damage,
+          attacker,
+          defender,
+          Keyword.get(opts, :critical_rate_bonus, 0)
+        )
     end
   end
 
@@ -566,9 +576,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   """
   @spec apply_critical_hit(integer(), combatant(), combatant()) ::
           {:ok, CriticalHits.critical_result()}
-  def apply_critical_hit(base_damage, attacker, defender) do
-    race_rate = EquipmentBonuses.critical_add_race_rate(attacker, defender) * 10
-    apply_critical_hit_with_rate(base_damage, attacker, race_rate)
+  def apply_critical_hit(base_damage, attacker, defender),
+    do: apply_critical_hit(base_damage, attacker, defender, 0)
+
+  @doc "Applies critical hit calculation with an additional flat chance percentage."
+  @spec apply_critical_hit(integer(), combatant(), combatant(), integer()) ::
+          {:ok, CriticalHits.critical_result()}
+  def apply_critical_hit(base_damage, attacker, defender, additional_rate) do
+    rate =
+      (EquipmentBonuses.critical_add_race_rate(attacker, defender) + additional_rate) * 10
+
+    apply_critical_hit_with_rate(base_damage, attacker, rate)
   end
 
   defp apply_critical_hit_with_rate(base_damage, attacker, race_rate) do

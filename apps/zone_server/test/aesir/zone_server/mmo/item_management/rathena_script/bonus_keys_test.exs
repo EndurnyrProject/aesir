@@ -57,6 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :sp_cost_rate,
     :perfect_dodge,
     :movement_speed,
+    :hit_rate,
+    :movement_speed_add,
+    :critical_long,
+    :no_regen,
+    :get_zeny,
     :fixed_cast,
     :heal_power,
     :crit_atk_rate,
@@ -133,7 +138,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     end
 
     test "returns :error for an out-of-vocabulary key" do
-      assert BonusKeys.destination("bNoRegen") == :error
+      assert BonusKeys.destination("bClassChange") == :error
     end
 
     test "resolves the splash range key case-insensitively" do
@@ -273,6 +278,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
   @param_schemas %{
     "baddrace" => %{family: :addrace, param: :race, unit: :percent},
     "bcomarace" => %{family: :coma_race, param: :race, unit: :per10k},
+    "bcomaclass" => %{family: :coma_class, param: :class, unit: :per10k},
     "bcriticaladdrace" => %{family: :critical_add_race, param: :race, unit: :percent},
     "baddele" => %{family: :addele, param: :element, unit: :percent},
     "baddsize" => %{family: :addsize, param: :size, unit: :percent},
@@ -304,6 +310,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bdropaddrace" => %{family: :drop_add_race, param: :race, unit: :percent},
     "bfixedcastrate" => %{family: :skill_fixcast_rate, param: :skill, unit: :percent},
     "badditemhealrate" => %{family: :add_item_heal, param: :item, unit: :percent},
+    "badditemgrouphealrate" => %{
+      family: :add_item_group_heal,
+      param: :item_group,
+      unit: :percent
+    },
     "baddrace2" => %{family: :addrace2, param: :race2, unit: :percent},
     "bmagicaddrace2" => %{family: :magic_addrace2, param: :race2, unit: :percent},
     "bignoredefclassrate" => %{family: :ignore_def_class, param: :class, unit: :percent},
@@ -664,6 +675,27 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       expected = Resolver.effs() |> Map.values() |> Enum.uniq()
 
       assert Enum.sort(BonusKeys.param_domain(:status)) == Enum.sort(expected)
+    end
+  end
+
+  describe "new equipment bonus schemas" do
+    test "maps the supported general bonus keys" do
+      assert BonusKeys.destination("bHitRate") == {:ok, :hit_rate}
+      assert BonusKeys.destination("bSpeedAddRate") == {:ok, :movement_speed_add}
+      assert BonusKeys.destination("bCriticalLong") == {:ok, :critical_long}
+      assert BonusKeys.destination("bNoRegen") == {:ok, :no_regen}
+    end
+
+    test "maps class coma and item-group healing parameterized families" do
+      assert BonusKeys.param_schema("bComaClass") ==
+               {:ok, %{family: :coma_class, param: :class, unit: :per10k}}
+
+      assert BonusKeys.param_schema("bAddItemGroupHealRate") ==
+               {:ok, %{family: :add_item_group_heal, param: :item_group, unit: :percent}}
+    end
+
+    test "maps bGetZenyNum as a paired amount and chance bonus" do
+      assert BonusKeys.paired_choice_destination("bGetZenyNum") == {:ok, :get_zeny}
     end
   end
 end

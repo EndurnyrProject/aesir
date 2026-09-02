@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
@@ -88,13 +89,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   end
 
   defp calculate_hit(player, attacker, defender, divisions, double_attack?) do
-    primary_opts = if double_attack?, do: [skip_crit: true], else: []
+    primary_opts = [
+      skip_crit: double_attack?,
+      critical_rate_bonus: ranged_critical_rate(attacker)
+    ]
 
     with {:ok, primary} <- DamageCalculator.calculate_damage(attacker, defender, primary_opts),
          {:ok, primary, secondary} <- components(player, attacker, defender, primary) do
       {:ok, result(attacker, primary, secondary, divisions)}
     end
   end
+
+  defp ranged_critical_rate(%Combatant{weapon: %{type: weapon_type}} = attacker) do
+    if WeaponTypes.requires_ammo?(weapon_type),
+      do: EquipmentBonuses.critical_long_rate(attacker),
+      else: 0
+  end
+
+  defp ranged_critical_rate(_attacker), do: 0
 
   defp components(
          %PlayerState{stats: %Stats{}} = player,

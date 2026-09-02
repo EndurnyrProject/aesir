@@ -552,6 +552,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :movement_speed, 25}]} = compile("bonus bSpeedRate,25;")
     end
 
+    test "hit, additive speed, ranged critical, and no-regen keys compile directly" do
+      assert {:ok, [{:bonus, :hit_rate, 15}]} = compile("bonus bHitRate,15;")
+
+      assert {:ok, [{:bonus, :movement_speed_add, 20}]} =
+               compile("bonus bSpeedAddRate,20;")
+
+      assert {:ok, [{:bonus, :critical_long, 7}]} = compile("bonus bCriticalLong,7;")
+      assert {:ok, [{:bonus, :no_regen, 3}]} = compile("bonus bNoRegen,3;")
+    end
+
     test "bFlee2 is scaled x10 into per-mille perfect dodge" do
       assert {:ok, [{:bonus, :perfect_dodge, 30}]} = compile("bonus bFlee2,3;")
       assert {:ok, [{:bonus, :perfect_dodge, -20}]} = compile("bonus bFlee2,-2;")
@@ -660,6 +670,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "bAddItemHealRate keeps the item id verbatim as its param" do
       assert {:ok, [{:bonus, {:add_item_heal, 501}, 10}]} =
                compile("bonus2 bAddItemHealRate,501,10;")
+    end
+
+    test "class coma and item-group healing resolve their parameters" do
+      assert {:ok, [{:bonus, {:coma_class, :boss}, 250}]} =
+               compile("bonus2 bComaClass,Class_Boss,250;")
+
+      assert {:ok, [{:bonus, {:add_item_group_heal, :food}, 30}]} =
+               compile("bonus2 bAddItemGroupHealRate,IG_Food,30;")
+    end
+
+    test "bGetZenyNum preserves its amount and chance as one instruction" do
+      assert {:ok, [{:paired_choice, :get_zeny, 100, 25}]} =
+               compile("bonus2 bGetZenyNum,100,25;")
     end
 
     test "bAddRace2 resolves RC2 groups case-insensitively" do
@@ -937,8 +960,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "unknown bonus key" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoRegen"}}} =
-               compile("bonus bNoRegen,2;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bClassChange"}}} =
+               compile("bonus bClassChange,2;")
     end
 
     test "a conditional read outside the inputs is rejected" do
@@ -956,8 +979,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
 
     test "the first violation aborts the whole item" do
-      assert {:error, {:unsupported, {:unknown_bonus_key, "bNoRegen"}}} =
-               compile("bonus bStr,5; bonus bNoRegen,2; bonus bAgi,3;")
+      assert {:error, {:unsupported, {:unknown_bonus_key, "bClassChange"}}} =
+               compile("bonus bStr,5; bonus bClassChange,2; bonus bAgi,3;")
     end
 
     test "bonus with more than two args is rejected" do

@@ -43,6 +43,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
       passive_regen = Passives.regen(game_state)
       sitting_regen = Passives.sitting_regen(game_state)
 
+      {regen_modifiers, passive_regen, sitting_regen} =
+        block_equipment_regen(game_state, regen_modifiers, passive_regen, sitting_regen)
+
       accumulators = Map.put(game_state.regen_accumulators, :elapsed_ms, elapsed_ms)
 
       {hp_delta, sp_delta, accumulators} =
@@ -88,6 +91,25 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandler do
         bonus -> Map.update(acc, key, bonus, &(&1 + bonus))
       end
     end)
+  end
+
+  defp block_equipment_regen(game_state, modifiers, passive, sitting) do
+    mask = Map.get(game_state.stats.modifiers.equipment, :no_regen, 0)
+
+    {modifiers, passive, sitting} =
+      if Bitwise.band(mask, 1) != 0 do
+        {Map.put(modifiers, :hp_regen, -100), %{passive | skill_hp_regen: 0},
+         %{sitting | sitting_hp_regen: 0}}
+      else
+        {modifiers, passive, sitting}
+      end
+
+    if Bitwise.band(mask, 2) != 0 do
+      {Map.put(modifiers, :sp_regen, -100), %{passive | skill_sp_regen: 0},
+       %{sitting | sitting_sp_regen: 0}}
+    else
+      {modifiers, passive, sitting}
+    end
   end
 
   defp apply_regen(_state, 0, 0, _new_hp, _new_sp), do: :ok

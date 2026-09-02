@@ -133,6 +133,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComaTest do
     refute EquipComa.trigger?(attacker, target, roll: fn 9_999 -> false end)
   end
 
+  test "adds exact and wildcard class coma rates to the race rate" do
+    attacker =
+      CombatTestHelper.create_player_combatant()
+      |> with_modifiers(%{
+        {:coma_class, :boss} => 2_000,
+        {:coma_class, :all} => 500,
+        {:coma_race, :brute} => 1_000
+      })
+
+    target = CombatTestHelper.create_mob_combatant(race: :brute, class: :boss)
+
+    assert EquipComa.trigger?(attacker, target, roll: fn 3_500 -> true end)
+  end
+
+  test "does not apply a class-specific coma rate to another class" do
+    attacker =
+      CombatTestHelper.create_player_combatant()
+      |> with_modifiers(%{{:coma_class, :boss} => 2_000, {:coma_class, :all} => 500})
+
+    target = CombatTestHelper.create_mob_combatant(class: :normal)
+
+    assert EquipComa.trigger?(attacker, target, roll: fn 500 -> true end)
+  end
+
   test "matches player races from the active game mode" do
     player =
       %PlayerState{

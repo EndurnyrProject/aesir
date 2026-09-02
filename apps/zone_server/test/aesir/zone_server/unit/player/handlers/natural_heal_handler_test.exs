@@ -170,6 +170,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       assert updated.game_state.stats.current_state.sp == 50 + 3 * 14
     end
 
+    test "bNoRegen HP bit blocks every HP channel but leaves SP regeneration" do
+      stub(Passives, :regen, fn _ ->
+        %{skill_hp_regen: 50, skill_sp_regen: 0, allow_while_moving: false}
+      end)
+
+      stub(Passives, :sitting_regen, fn _ ->
+        %{sitting_hp_regen: 50, sitting_sp_regen: 0}
+      end)
+
+      state =
+        build_state(
+          hp: 100,
+          sp: 50,
+          action: :sitting,
+          movement: :standing,
+          equipment: %{no_regen: 1}
+        )
+
+      final = tick(state, 40)
+
+      assert final.game_state.stats.current_state.hp == 100
+      assert final.game_state.stats.current_state.sp > 50
+    end
+
+    test "bNoRegen SP bit blocks every SP channel but leaves HP regeneration" do
+      stub(Passives, :regen, fn _ ->
+        %{skill_hp_regen: 0, skill_sp_regen: 50, allow_while_moving: false}
+      end)
+
+      stub(Passives, :sitting_regen, fn _ ->
+        %{sitting_hp_regen: 0, sitting_sp_regen: 50}
+      end)
+
+      state =
+        build_state(
+          hp: 100,
+          sp: 50,
+          action: :sitting,
+          movement: :standing,
+          equipment: %{no_regen: 2}
+        )
+
+      final = tick(state, 40)
+
+      assert final.game_state.stats.current_state.hp > 100
+      assert final.game_state.stats.current_state.sp == 50
+    end
+
     test "regens HP while moving when SM_MOVINGRECOVERY is known" do
       stub(Passives, :regen, fn _ ->
         %{skill_hp_regen: 0, skill_sp_regen: 0, allow_while_moving: true}
@@ -268,6 +316,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
       assert_received {:send, _sp_channel, {_sp_tag, %ParamChange{var_id: @sp_sp}}}
       refute_received {:send, _hp_channel, {_hp_tag, %ParamChange{var_id: @sp_hp}}}
     end
+  end
+
+  defp tick(state, count) do
+    Enum.reduce(1..count, state, fn _, acc ->
+      {:noreply, next} = NaturalHealHandler.handle_tick(acc, 500)
+      next
+    end)
   end
 
   defp build_state(opts) do

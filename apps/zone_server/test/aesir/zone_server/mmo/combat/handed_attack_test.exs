@@ -167,6 +167,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
              HandedAttack.calculate(player(%{48 => 10}, :katar), attacker, plant)
   end
 
+  test "bCriticalLong applies only to ordinary ammunition-based ranged attacks" do
+    ranged =
+      accurate_player()
+      |> put_critical(0)
+      |> put_in([Access.key!(:weapon), Access.key!(:type)], :bow)
+      |> Map.put(:equip_modifiers, %{critical_long: 100})
+
+    melee =
+      accurate_player()
+      |> put_critical(0)
+      |> Map.put(:equip_modifiers, %{critical_long: 100})
+
+    assert {:ok, %HandedAttack{outcome: :critical}} =
+             HandedAttack.calculate(%PlayerState{}, ranged, defender())
+
+    assert {:ok, %HandedAttack{outcome: :hit}} =
+             HandedAttack.calculate(%PlayerState{}, melee, defender())
+  end
+
   test "minimal player context and mob combatants retain aggregate one-component behavior" do
     mob =
       CombatTestHelper.create_mob_combatant(atk: 50, dex: 200, luk: 0)
