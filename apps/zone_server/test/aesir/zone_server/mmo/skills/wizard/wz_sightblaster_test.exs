@@ -15,7 +15,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   defmodule FixtureUnit do
-    def get_entity_info(_state), do: %{stats: %{}}
+    def get_entity_info(state) do
+      %{stats: %{}, equip_modifiers: Map.get(state, :equip_modifiers, %{})}
+    end
   end
 
   setup :setup_ets_tables
@@ -153,6 +155,63 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     end)
 
     assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "a reflected contact consumes the status without knocking the reflector back" do
+    caster = living_player(1001, 50, 50)
+    target = %{instance_id: 2001, x: 55, y: 50, map_name: "prontera", movement_state: :moving}
+    register(:player, 1001, caster)
+    register(:mob, 2001, target)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster,
+        caster_id: 1001,
+        val1: 1
+      )
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, {:player, 1001}} end)
+    reject(&Combat.knockback/5)
+
+    assert :ok = Movement.set_position(:mob, 2001, %{target | x: 51}, "prontera")
+    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "a missed contact on a magic-immune player consumes the status without knockback" do
+    caster = living_player(1001, 50, 50)
+    immune = Map.put(living_player(2001, 55, 50), :equip_modifiers, %{no_magic_damage: 100})
+    register(:player, 1001, caster)
+    register(:player, 2001, immune)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster,
+        caster_id: 1001,
+        val1: 1
+      )
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, {:player, 2001}} end)
+    reject(&Combat.knockback/5)
+
+    assert :ok = Movement.set_position(:player, 2001, %{immune | x: 51}, "prontera")
+    refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
+  end
+
+  test "a partially magic-resistant player that takes the hit is still knocked back" do
+    caster = living_player(1001, 50, 50)
+    resistant = Map.put(living_player(2001, 55, 50), :equip_modifiers, %{no_magic_damage: 99})
+    register(:player, 1001, caster)
+    register(:player, 2001, resistant)
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1001, :sc_sightblaster,
+        caster_id: 1001,
+        val1: 1
+      )
+
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> {:ok, {:player, 2001}} end)
+    expect(Combat, :knockback, fn :player, 2001, 50, 50, 3 -> {:ok, {58, 50}} end)
+
+    assert :ok = Movement.set_position(:player, 2001, %{resistant | x: 51}, "prontera")
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
 

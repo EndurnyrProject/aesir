@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     option: :sight
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -38,18 +39,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   def on_tick(target, instance, _context), do: trigger_nearby(target, instance)
 
   @impl true
-  def on_contact({:player, caster_id}, instance, {target_type, target_id} = contact, _context) do
+  def on_contact({:player, caster_id}, instance, {_target_type, target_id} = contact, _context) do
     if living_contact?(contact) and hostile_contact?(caster_id, contact) do
       with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
            {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
-           {:ok, _ref} <-
+           {:ok, hit_ref} <-
              Combat.execute_magic_attack(caster, target_id,
                skill_id: @skill_id,
                skill_level: instance.val1,
                skill_ratio: @skill_ratio,
                element: :fire
              ) do
-        _ = Combat.knockback(target_type, target_id, x, y, @knockback)
+        knockback_contact(hit_ref, contact, x, y)
         :remove
       else
         {:error, _reason} -> {:ok, instance}
@@ -58,6 +59,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
       {:ok, instance}
     end
   end
+
+  # The hit only displaces the contact when it actually landed there. A reflected
+  # hit returns the caster's ref instead of the contact, and a hit into a player
+  # with complete magic reduction misses while still returning the contact ref,
+  # so that case is read from the gear directly; both leave the contact in place.
+  defp knockback_contact({target_type, target_id} = hit_ref, contact, x, y)
+       when hit_ref == contact do
+    unless MagicDefense.reduce(100, target_type, target_id) == 0 do
+      _ = Combat.knockback(target_type, target_id, x, y, @knockback)
+    end
+
+    :ok
+  end
+
+  defp knockback_contact(_hit_ref, _contact, _x, _y), do: :ok
 
   # rAthena gates the trigger on `battle_check_target(..., BCT_ENEMY)`, so a
   # friendly ground unit (the caster's own or an ally's Ice Wall) is never a

@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.PacketFactory
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -114,66 +115,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         )
         |> DamageShared.clamp_min_one()
 
-      coma_decision = decide_coma(attacker, target, [damage])
-
       hit_info =
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true,
-          coma?: coma_decision == true
+          from_caster?: true
         )
 
-      if damage > 1 do
-        EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
-      end
+      case MagicDefense.resolve(target, hit_info) do
+        :miss ->
+          broadcast_magic_miss(attacker, target, skill_id, skill_level)
+          {:ok, {target_type, target_id}}
 
-      {damage, hit_info} =
-        prepare_magic_hit(
-          target_type,
-          target_id,
-          damage,
-          hit_info,
-          damage_source(attacker, target_type)
-        )
+        :reflect ->
+          deliver_reflected_hits(attacker, target, [damage], hit_info, {skill_id, skill_level})
+          {:ok, {attacker.unit_type, attacker.unit_id}}
 
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          attacker.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          damage
-        )
-
-      delivery =
-        apply_and_broadcast_magic_damage(
-          target_type,
-          target_pid,
-          target_id,
-          damage,
-          hit_info,
-          attacker,
-          target,
-          packet
-        )
-
-      maybe_apply_magic_knockback(
-        delivery,
-        attacker,
-        target,
-        target_type,
-        skill_id,
-        magic_result(target_state, [damage], coma_decision),
-        opts
-      )
-
-      if delivery == :ok do
-        dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
-      end
-
-      with :ok <- delivery do
-        {:ok, {target_type, target_id}}
+        :hit ->
+          {target_type, target_pid, target_id, target_state, target}
+          |> deliver_magic_hits([damage], hit_info, attacker, {skill_id, skill_level}, opts)
+          |> magic_delivery_result({target_type, target_id})
       end
     end
   end
@@ -475,20 +436,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           opts
         )
 
-      with :ok <-
-             deliver_magic_hits(
-               {target_type, target_pid, target_id, target_state, target},
-               damages,
-               magic_hit_info(element,
-                 skill_id: skill_id,
-                 skill_level: skill_level,
-                 from_caster?: true
-               ),
-               attacker,
-               {skill_id, skill_level},
-               opts
-             ) do
-        {:ok, {target_type, target_id}}
+      hit_info =
+        magic_hit_info(element,
+          skill_id: skill_id,
+          skill_level: skill_level,
+          from_caster?: true
+        )
+
+      case MagicDefense.resolve(target, hit_info) do
+        :miss ->
+          broadcast_magic_miss(attacker, target, skill_id, skill_level)
+          {:ok, {target_type, target_id}}
+
+        :reflect ->
+          deliver_reflected_hits(attacker, target, damages, hit_info, {skill_id, skill_level})
+          {:ok, {attacker.unit_type, attacker.unit_id}}
+
+        :hit ->
+          {target_type, target_pid, target_id, target_state, target}
+          |> deliver_magic_hits(damages, hit_info, attacker, {skill_id, skill_level}, opts)
+          |> magic_delivery_result({target_type, target_id})
       end
     end
   end
@@ -762,8 +729,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       skill_id: Keyword.get(opts, :skill_id),
       skill_level: Keyword.get(opts, :skill_level),
       from_caster?: Keyword.get(opts, :from_caster?, false),
+      reflected: Keyword.get(opts, :reflected, false),
       coma?: Keyword.get(opts, :coma?, false)
     }
+  end
+
+  defp broadcast_magic_miss(attacker, target, skill_id, skill_level) do
+    packet =
+      PacketFactory.build_splash_damage_packet(
+        attacker.unit_id,
+        target.unit_id,
+        skill_id,
+        skill_level,
+        0,
+        div: 1
+      )
+
+    DamageApplication.broadcast_nearby(target, packet)
   end
 
   defp apply_and_broadcast_magic_damage(
@@ -838,67 +820,120 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
              skill_id: skill_id
            ) do
       damage = div(damage, divisor)
-      {tx, ty} = target.position
-
-      coma_decision = decide_coma_once(coma_decision, attacker, target, damage)
 
       hit_info =
         magic_hit_info(element,
           skill_id: skill_id,
           skill_level: skill_level,
-          from_caster?: true,
-          coma?: coma_decision == true
+          from_caster?: true
         )
 
-      source = damage_source(attacker, target_type)
+      case MagicDefense.resolve(target, hit_info) do
+        :miss ->
+          broadcast_magic_miss(attacker, target, skill_id, skill_level)
 
-      if damage > 1 do
-        EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+          result = %{
+            target_ref: target_ref,
+            target_state: target_state,
+            target: target,
+            target_type: target_type,
+            damage: 0,
+            coma_decision: coma_decision,
+            delivery: :miss
+          }
+
+          {[target_ref], coma_decision, result}
+
+        :reflect ->
+          deliver_reflected_hits(attacker, target, [damage], hit_info, {skill_id, skill_level})
+
+          caster_ref = {attacker.unit_type, attacker.unit_id}
+
+          result = %{
+            target_ref: caster_ref,
+            target_state: nil,
+            target: attacker,
+            target_type: attacker.unit_type,
+            damage: damage,
+            coma_decision: coma_decision,
+            delivery: :reflect
+          }
+
+          {[caster_ref], coma_decision, result}
+
+        :hit ->
+          deliver_magic_splash_hit(
+            {target_ref, target_pid, target_state, target_type, target},
+            attacker,
+            damage,
+            hit_info,
+            {skill_id, skill_level},
+            coma_decision
+          )
       end
-
-      {damage, hit_info} =
-        prepare_magic_hit(target_type, target_id, damage, hit_info, source)
-
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          attacker.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          damage
-        )
-
-      packet = Hallucination.maybe_garble(packet, target_type)
-      Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
-
-      delivery =
-        DamageApplication.apply_unit_damage(
-          target_type,
-          target_pid,
-          target_id,
-          damage,
-          hit_info,
-          source
-        )
-
-      if delivery == :ok do
-        dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
-      end
-
-      result = %{
-        target_ref: target_ref,
-        target_state: target_state,
-        target: target,
-        target_type: target_type,
-        damage: damage,
-        coma_decision: coma_decision,
-        delivery: delivery
-      }
-
-      {[target_ref], coma_decision, result}
     else
       _ -> {[], coma_decision, nil}
     end
+  end
+
+  defp deliver_magic_splash_hit(
+         {target_ref, target_pid, target_state, target_type, target},
+         attacker,
+         damage,
+         hit_info,
+         {skill_id, skill_level},
+         coma_decision
+       ) do
+    target_id = target.unit_id
+    {tx, ty} = target.position
+    coma_decision = decide_coma_once(coma_decision, attacker, target, damage)
+    hit_info = Map.put(hit_info, :coma?, coma_decision == true)
+    source = damage_source(attacker, target_type)
+
+    if damage > 1 do
+      EquipVanish.after_hit(attacker, target, target_pid, magic_attack_flag())
+    end
+
+    {damage, hit_info} =
+      prepare_magic_hit(target_type, target_id, damage, hit_info, source)
+
+    packet =
+      PacketFactory.build_splash_damage_packet(
+        attacker.unit_id,
+        target_id,
+        skill_id,
+        skill_level,
+        damage
+      )
+
+    packet = Hallucination.maybe_garble(packet, target_type)
+    Broadcast.to_in_range(target.map_name, tx, ty, Config.view_range(), packet)
+
+    delivery =
+      DamageApplication.apply_unit_damage(
+        target_type,
+        target_pid,
+        target_id,
+        damage,
+        hit_info,
+        source
+      )
+
+    if delivery == :ok do
+      dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
+    end
+
+    result = %{
+      target_ref: target_ref,
+      target_state: target_state,
+      target: target,
+      target_type: target_type,
+      damage: damage,
+      coma_decision: coma_decision,
+      delivery: delivery
+    }
+
+    {[target_ref], coma_decision, result}
   end
 
   defp merge_magic_splash_result(results, nil), do: results
@@ -917,11 +952,83 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     end)
   end
 
+  defp magic_delivery_result(:ok, target_ref), do: {:ok, target_ref}
+  defp magic_delivery_result(delivery, _target_ref), do: delivery
+
   defp successful_delivery(:ok, _delivery), do: :ok
   defp successful_delivery(_delivery, :ok), do: :ok
   defp successful_delivery({:local_effects, _effects} = delivery, _current), do: delivery
   defp successful_delivery(_previous, {:local_effects, _effects} = delivery), do: delivery
   defp successful_delivery(_previous, delivery), do: delivery
+
+  # Delivers a reflected hit to the caster's owning session. Unlike an ordinary
+  # hit this never assumes the current process owns the caster: a Sight Blaster
+  # tick runs in the status tick manager and a Homunculus bolt runs in its
+  # owner's session, so the owner pid is resolved from the registry and the
+  # damage is always queued rather than returned as aggregate-local effects.
+  defp deliver_reflected_hits(attacker, reflector, damages, hit_info, {skill_id, skill_level}) do
+    attacker_modifiers = DamageShared.attacker_modifiers(attacker)
+    hit_info = Map.put(hit_info, :reflected, true)
+    source = damage_source(reflector, attacker.unit_type)
+
+    prepared_hits =
+      Enum.map(damages, fn damage ->
+        damage
+        |> DamageShared.apply_element(hit_info.element, attacker, attacker_modifiers)
+        |> DamageShared.clamp_min_one()
+        |> then(&prepare_magic_hit(attacker.unit_type, attacker.unit_id, &1, hit_info, source))
+      end)
+
+    {hits, div} =
+      if separately_delivered?(prepared_hits) do
+        {prepared_hits, 1}
+      else
+        {_, prepared_hit_info} = List.first(prepared_hits)
+        total = prepared_hits |> Enum.map(&elem(&1, 0)) |> Enum.sum()
+        {[{total, prepared_hit_info}], length(prepared_hits)}
+      end
+
+    Enum.each(hits, fn {damage, prepared_hit_info} ->
+      packet =
+        PacketFactory.build_splash_damage_packet(
+          reflector.unit_id,
+          attacker.unit_id,
+          skill_id,
+          skill_level,
+          damage,
+          div: div
+        )
+
+      DamageApplication.broadcast_nearby(attacker, packet)
+      queue_reflected_damage(attacker, damage, prepared_hit_info, source)
+    end)
+
+    :ok
+  end
+
+  defp queue_reflected_damage(
+         %{unit_type: :homunculus, unit_id: unit_id},
+         damage,
+         hit_info,
+         source
+       ) do
+    with {:ok, {_module, _state, owner_pid}} <- UnitRegistry.get_unit(:homunculus, unit_id) do
+      effect =
+        DamageApplication.local_damage_effect({:homunculus, unit_id}, damage, hit_info, source)
+
+      GenServer.cast(owner_pid, effect)
+    end
+
+    :ok
+  end
+
+  defp queue_reflected_damage(%{unit_type: unit_type, unit_id: unit_id}, damage, hit_info, source) do
+    with {:ok, owner_pid, _state, ^unit_type} <- TargetResolver.resolve(unit_type, unit_id) do
+      DamageApplication.apply_unit_damage(unit_type, owner_pid, unit_id, damage, hit_info, source)
+    end
+
+    :ok
+  end
 
   defp deliver_magic_hits(
          {target_type, target_pid, target_id, target_state, target},

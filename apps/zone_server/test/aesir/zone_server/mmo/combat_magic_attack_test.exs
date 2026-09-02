@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
+  alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -27,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -37,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -44,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
   setup do
     Mimic.copy(EquipComa)
+    Mimic.copy(EquipVanish)
     Mimic.copy(Knockback)
     Mimic.copy(MagicAttack)
     :ok
@@ -105,6 +109,37 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       Map.merge(caster.stats.combat_stats, %{matk_min: min, matk_max: max, matk: max})
 
     put_in(caster.stats.combat_stats, combat_stats)
+  end
+
+  defp build_player(unit_id, x, equip_modifiers, equip_autobonuses) do
+    PlayerStateFixture.build(%{
+      character_id: unit_id,
+      account_id: unit_id,
+      x: x,
+      y: 150,
+      map_name: @map_name,
+      stats: %{
+        combat_stats: %CombatStats{
+          atk: 1,
+          matk: 100,
+          matk_min: 100,
+          matk_max: 100,
+          heal_matk_min: 100,
+          heal_matk_max: 100,
+          def: 1,
+          mdef: 1,
+          soft_mdef: 1,
+          hit: 1,
+          flee: 1,
+          critical: 1,
+          perfect_dodge: 1
+        },
+        derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
+        progression: %{base_level: 1, job_level: 1, learned_skills: %{}},
+        modifiers: %{equipment: equip_modifiers},
+        equip_autobonuses: equip_autobonuses
+      }
+    })
   end
 
   defp build_mob_state(unit_id, x, y) do
@@ -291,6 +326,179 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_attack/3" do
+    test "full magic immunity broadcasts a miss without target-side effects" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {70, 0}
+      defender_key = {71, 0}
+      test_pid = self()
+      target_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+
+      on_exit(fn -> Process.exit(target_pid, :kill) end)
+
+      caster = build_player(@caster_id, 150, %{}, %{attacker_key => autobonus(:attack, flag, 0)})
+
+      target =
+        build_player(@target_id, 151, %{no_magic_damage: 100}, %{
+          defender_key => autobonus(:when_hit, flag, 0)
+        })
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, target_pid)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      expect(Broadcast, :to_in_range, fn @map_name, 151, 150, _range, %SkillDamage{} = packet ->
+        assert packet.src_id == @caster_id
+        assert packet.target_id == @target_id
+        assert packet.damage == 0
+        assert packet.div == 1
+        :ok
+      end)
+
+      reject(&EquipVanish.after_hit/4)
+      reject(&EquipComa.trigger?/2)
+      reject(&PlayerSession.apply_damage/3)
+      reject(&Knockback.skill/5)
+
+      assert {:ok, {:player, @target_id}} =
+               MagicAttack.execute_magic_attack(caster, {:player, @target_id},
+                 skill_id: 19,
+                 skill_level: 1,
+                 element: :neutral,
+                 skip_range: true
+               )
+
+      send(target_pid, {:relay_barrier, self()})
+      assert_receive :relay_drained
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:source_session, {:equip_autobonus_activate, ^defender_key}}
+    end
+
+    test "magic damage return reflects into the caster's owning session without target-side effects" do
+      flag = BattleFlags.build(:magic, :long, true)
+      attacker_key = {72, 0}
+      defender_key = {73, 0}
+      test_pid = self()
+      caster_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+      target_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+
+      on_exit(fn ->
+        Process.exit(caster_pid, :kill)
+        Process.exit(target_pid, :kill)
+      end)
+
+      caster =
+        build_player(
+          @caster_id,
+          150,
+          %{no_magic_damage: 50, magic_damage_return: 100},
+          %{
+            attacker_key => autobonus(:attack, flag, 0)
+          }
+        )
+
+      target =
+        build_player(@target_id, 151, %{magic_damage_return: 100}, %{
+          defender_key => autobonus(:when_hit, flag, 0)
+        })
+
+      :ok = UnitRegistry.register_player(caster, caster_pid)
+      :ok = UnitRegistry.register_player(target, target_pid)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :player, @caster_id, 50, hit_info ->
+        assert hit_info.reflected
+        50
+      end)
+
+      expect(StatusInterpreter, :after_damage_taken, fn :player, @caster_id, hit_info ->
+        assert hit_info.reflected
+        0
+      end)
+
+      expect(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        assert packet.src_id == @target_id
+        assert packet.target_id == @caster_id
+        assert packet.damage == 50
+        assert packet.div == 1
+        :ok
+      end)
+
+      expect(PlayerSession, :apply_damage, fn pid, 50, {:player, @target_id} ->
+        assert pid == caster_pid
+        :ok
+      end)
+
+      reject(&EquipVanish.after_hit/4)
+      reject(&EquipComa.trigger?/2)
+      reject(&Knockback.skill/5)
+
+      assert {:ok, {:player, @caster_id}} =
+               MagicAttack.execute_magic_attack(caster, {:player, @target_id},
+                 skill_id: 19,
+                 skill_level: 1,
+                 element: :neutral,
+                 skip_range: true,
+                 base_distance: 5
+               )
+
+      send(target_pid, {:relay_barrier, self()})
+      assert_receive :relay_drained
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:source_session, {:equip_autobonus_activate, ^defender_key}}
+    end
+
+    test "a reflected hit lands on a reflecting caster exactly once" do
+      test_pid = self()
+      caster_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+      target_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+
+      on_exit(fn ->
+        Process.exit(caster_pid, :kill)
+        Process.exit(target_pid, :kill)
+      end)
+
+      caster = build_player(@caster_id, 150, %{magic_damage_return: 100}, %{})
+      target = build_player(@target_id, 151, %{magic_damage_return: 100}, %{})
+
+      :ok = UnitRegistry.register_player(caster, caster_pid)
+      :ok = UnitRegistry.register_player(target, target_pid)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      expect(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        assert packet.target_id == @caster_id
+        :ok
+      end)
+
+      expect(PlayerSession, :apply_damage, fn ^caster_pid, 100, {:player, @target_id} -> :ok end)
+
+      assert {:ok, {:player, @caster_id}} =
+               MagicAttack.execute_magic_attack(caster, {:player, @target_id},
+                 skill_id: 19,
+                 skill_level: 1,
+                 element: :neutral,
+                 skip_range: true
+               )
+
+      send(target_pid, {:relay_barrier, self()})
+      assert_receive :relay_drained
+      refute_received {:source_session, {:unit, {:apply_damage, _damage, _attacker}}}
+    end
+
     test "dispatches matching attacker and defender procs once for a multi-division magic hit" do
       flag = BattleFlags.build(:magic, :long, true)
       attacker_key = {10, 0}
@@ -1161,6 +1369,63 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_splash/4" do
+    test "a reflected splash round contributes the caster ref" do
+      test_pid = self()
+      target_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)
+
+      on_exit(fn -> Process.exit(target_pid, :kill) end)
+
+      caster = build_player(@caster_id, 150, %{}, %{})
+      target = build_player(@target_id, 151, %{magic_damage_return: 100}, %{})
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(target, target_pid)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, 2 ->
+        [{:player, @target_id}]
+      end)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+
+      expect(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, _target, _opts ->
+        {:ok, %{damage: 100, is_critical: false}}
+      end)
+
+      expect(StatusInterpreter, :absorb_damage, fn :player, @caster_id, 100, hit_info ->
+        assert hit_info.reflected
+        100
+      end)
+
+      expect(StatusInterpreter, :after_damage_taken, fn :player, @caster_id, hit_info ->
+        assert hit_info.reflected
+        0
+      end)
+
+      expect(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        assert packet.src_id == @target_id
+        assert packet.target_id == @caster_id
+        assert packet.damage == 100
+        :ok
+      end)
+
+      expect(PlayerSession, :apply_damage, fn pid, 100, {:player, @target_id} ->
+        assert pid == self()
+        :ok
+      end)
+
+      reject(&EquipVanish.after_hit/4)
+      reject(&EquipComa.trigger?/2)
+      reject(&Knockback.skill/5)
+
+      assert [{:player, @caster_id}] =
+               MagicAttack.execute_magic_splash(caster, @center, 1,
+                 skill_id: 17,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 element: :neutral
+               )
+    end
+
     test "line-of-sight splash uses rAthena's diagonal integer traversal" do
       caster = build_caster()
       visible_id = 2001

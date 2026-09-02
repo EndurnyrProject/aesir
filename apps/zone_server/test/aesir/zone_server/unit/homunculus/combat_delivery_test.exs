@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.LineTargets
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -416,6 +417,28 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
 
     assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, {:homunculus, ^gid}}}}
     assert_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, {:homunculus, ^gid}}}}
+  end
+
+  test "a reflected Homunculus bolt lands on the Homunculus through its owner session", %{
+    session: session,
+    gid: gid
+  } do
+    Mimic.copy(MagicDefense)
+    stub(MagicDefense, :resolve, fn _defender, _hit_info -> :reflect end)
+
+    homunculus = PlayerSession.get_state(session.pid).homunculus
+    mob = mob(1_800_003, homunculus.x + 1, homunculus.y, homunculus.map_name)
+    register_mob(mob)
+
+    assert {:ok, {:homunculus, gid}} ==
+             MagicAttack.execute_magic_damage(homunculus, {:mob, mob.instance_id}, 30,
+               skill_id: 8_004,
+               skill_level: 1,
+               skip_range: true
+             )
+
+    refute_receive {:"$gen_cast", {:combat, {:apply_damage, _damage, _attacker}}}
+    assert_eventually(fn -> PlayerSession.get_state(session.pid).homunculus.hp == 770 end)
   end
 
   test "splash, line, and skill-unit delivery include the typed Homunculus", %{
