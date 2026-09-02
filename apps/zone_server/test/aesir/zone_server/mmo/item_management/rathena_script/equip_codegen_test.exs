@@ -195,6 +195,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus2 bAddDamageClass,1917,10;")
     end
 
+    test "bAddDefMonster emits a monster-id-keyed physical reduction" do
+      assert {:ok, [{:bonus, {:add_def_monster, 1917}, 10}]} =
+               compile("bonus2 bAddDefMonster,1917,10;")
+    end
+
     test "bAddDamageClass rejects a non-literal monster id" do
       assert {:error, {:unsupported, {:unresolved_param, _}}} =
                compile("bonus2 bAddDamageClass,RC_Brute,10;")
@@ -258,6 +263,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "bAddMonsterDropItem bonus2 emits an item-keyed drop chance" do
       assert {:ok, [{:bonus, {:add_monster_drop, 519}, 100}]} =
                compile("bonus2 bAddMonsterDropItem,519,100;")
+    end
+
+    test "bAddMonsterDropItemGroup emits an item-group-keyed drop chance" do
+      assert {:ok, [{:bonus, {:add_monster_drop_group, :food}, 10_000}]} =
+               compile("bonus2 bAddMonsterDropItemGroup,IG_Food,10000;")
     end
 
     test "bAddMonsterDropItem bonus2 accepts a refine-scaled chance" do

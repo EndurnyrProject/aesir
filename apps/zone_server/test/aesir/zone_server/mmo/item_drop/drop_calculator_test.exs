@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
   alias Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Entry
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.SubGroup
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   setup :setup_ets_tables
@@ -257,6 +261,39 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculatorTest do
 
       assert [{1201, 1, _, _, false}] =
                DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
+    end
+
+    test "a guaranteed item-group bonus rolls and scatters every grant" do
+      previous_catalog = :persistent_term.get(ItemGroups, :missing)
+
+      on_exit(fn ->
+        case previous_catalog do
+          :missing -> :persistent_term.erase(ItemGroups)
+          catalog -> :persistent_term.put(ItemGroups, catalog)
+        end
+      end)
+
+      group = %Group{
+        key: :bonus_drop,
+        subgroups: [
+          %SubGroup{
+            number: 0,
+            algorithm: :all,
+            entries: [
+              %Entry{item_id: 501, amount: 2, identify?: true},
+              %Entry{item_id: 1201, identify?: false}
+            ]
+          }
+        ]
+      }
+
+      :persistent_term.put(ItemGroups, %{bonus_drop: group})
+      mods = %{{:add_monster_drop_group, :bonus_drop} => 10_000}
+
+      assert [
+               {501, 2, 150, 150, true},
+               {1201, 1, _x, _y, false}
+             ] = DropCalculator.roll_equipment_drops(mods, :brute, nil, "prontera", 150, 150)
     end
 
     test "an unresolvable item id is skipped" do

@@ -830,6 +830,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
     damage
     |> apply_taken_step(race_class)
+    |> apply_taken_step(EquipmentBonuses.def_monster_rate(defender, attacker))
     |> apply_taken_step(element)
     |> apply_taken_step(size)
     |> apply_taken_step(skill)

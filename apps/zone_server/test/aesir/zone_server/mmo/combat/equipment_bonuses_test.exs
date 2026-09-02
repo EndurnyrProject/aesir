@@ -151,6 +151,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
       assert %{race_class: 0} = EquipmentBonuses.attack_rates(attacker, player, nil, :neutral)
     end
 
+    test "def_monster_rate reads only the attacking monster id" do
+      defender =
+        CombatTestHelper.create_player_combatant()
+        |> with_equip_modifiers(%{{:add_def_monster, 1002} => 25})
+
+      matching_mob = CombatTestHelper.create_mob_combatant(monster_id: 1002)
+      other_mob = CombatTestHelper.create_mob_combatant(monster_id: 1099)
+      player = CombatTestHelper.create_player_combatant()
+
+      assert EquipmentBonuses.def_monster_rate(defender, matching_mob) == 25
+      assert EquipmentBonuses.def_monster_rate(defender, other_mob) == 0
+      assert EquipmentBonuses.def_monster_rate(defender, player) == 0
+    end
+
     test "skill_id nil returns 0 for the skill family" do
       attacker =
         CombatTestHelper.create_player_combatant()

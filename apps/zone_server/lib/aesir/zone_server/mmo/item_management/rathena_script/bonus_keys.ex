@@ -63,6 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
           | :skill
           | :status
           | :item
+          | :item_group
           | :race2
           | :interval
           | :monster
@@ -197,7 +198,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bignoremdefclassrate" => %{family: :ignore_mdef_class, param: :class, unit: :percent},
     "bsubrace2" => %{family: :subrace2, param: :race2, unit: :percent},
     "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
+    "baddmonsterdropitemgroup" => %{
+      family: :add_monster_drop_group,
+      param: :item_group,
+      unit: :per10k
+    },
     "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
+    "badddefmonster" => %{family: :add_def_monster, param: :monster, unit: :percent},
     "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
     "bspdrainvaluerace" => %{family: :sp_drain_race, param: :race, unit: :sp},
     "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},

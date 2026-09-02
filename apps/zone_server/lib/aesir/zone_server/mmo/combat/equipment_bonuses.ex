@@ -306,6 +306,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     min(read(attacker, :ignore_mdef_race, race) + read(attacker, :ignore_mdef_class, class), 100)
   end
 
+  @doc """
+  Percent physical damage reduction against one attacking monster database id.
+
+  Returns zero for non-monster attackers and reads only the exact monster id.
+  """
+  @spec def_monster_rate(Combatant.t(), Combatant.t()) :: rate()
+  def def_monster_rate(_defender, %Combatant{monster_id: nil}), do: 0
+
+  def def_monster_rate(%Combatant{} = defender, %Combatant{monster_id: monster_id}) do
+    Map.get(defender.equip_modifiers, {:add_def_monster, monster_id}, 0)
+  end
+
   # Per-monster physical damage bonus (`add_damage_class`), keyed on the target
   # monster's database id. Only mob defenders carry a `monster_id`; against any
   # other target the bonus is zero. Read exactly, with no `:all` fallback.

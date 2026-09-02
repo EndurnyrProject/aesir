@@ -146,6 +146,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       tuple_sp_regen_interval_dest: [{:bonus, {:sp_regen_bonus, 10_000}, 3}],
       tuple_sp_loss_interval_dest: [{:bonus, {:sp_loss_bonus, 4_000}, 2}],
       tuple_add_damage_class_dest: [{:bonus, {:add_damage_class, 1917}, 10}],
+      tuple_add_def_monster_dest: [{:bonus, {:add_def_monster, 1917}, 10}],
+      tuple_monster_drop_group_dest: [{:bonus, {:add_monster_drop_group, :food}, 10_000}],
       tuple_sp_gain_race_dest: [{:bonus, {:sp_gain_race, :undead}, 3}],
       tuple_sp_drain_race_dest: [{:bonus, {:sp_drain_race, :undead}, 4}],
       tuple_exp_add_class_dest: [{:bonus, {:exp_add_class, :all}, 10}],
@@ -669,6 +671,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       program = [{:bonus, :def2_rate, 25}, {:bonus, key, 3}, {:bonus, key, 4}]
 
       assert EquipScript.eval(program, on(0)) == %{key => 7, def2_rate: 25}
+    end
+
+    test "evaluates monster defense and item-group drop bonuses" do
+      def_key = {:add_def_monster, 1917}
+      drop_key = {:add_monster_drop_group, :food}
+      program = [{:bonus, def_key, 10}, {:bonus, drop_key, 10_000}]
+
+      assert EquipScript.eval(program, on(0)) == %{def_key => 10, drop_key => 10_000}
     end
 
     test "refine 0 yields zeros and gates stay closed" do

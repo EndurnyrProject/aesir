@@ -15,16 +15,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   spiral search comes up empty. No item is ever silently dropped from the
   result.
 
-  Pure: only persistent_term/ETS-backed reads (`ItemManagement`, `MapCache`,
-  `LevelPenalty`); no process state, no side effects. The drop bonus arrives as a
-  plain integer percent, resolved by the caller from the killer's merged status
-  modifiers, so no status lookups happen here.
+  Catalog reads use `:persistent_term`/ETS. Equipment item-group bonuses delegate
+  shared-pool groups to `ItemGroupPool`; all other drop calculation is process-free.
+  The drop bonus arrives as a plain integer percent, resolved by the caller from
+  the killer's merged status modifiers, so no status lookups happen here.
   """
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Roller
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
 
   @drop_rate_cap 9000
@@ -57,16 +59,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
   end
 
   @doc """
-  Rolls the killer's equipment bonus item drops (`bAddMonsterDropItem`) and
-  returns the items that dropped, scattered around `{x, y}` like the mob's own
-  drops.
+  Rolls the killer's equipment bonus item and item-group drops, scattering the
+  results around `{x, y}` like the mob's own drops.
 
-  Reads the killer's merged equipment modifiers for `{:add_monster_drop, item_id}`
-  (unconditional) and `{:add_monster_drop, item_id, gate}` entries. A gate is
-  either a race - dropped only when `mob_race` matches it, or when it is `:all` -
-  or a monster id, dropped only by that one monster. Each entry's value is a
-  chance out of 10_000 (`n/100 %`) rolled independently. Entries whose item id no
-  longer resolves are skipped.
+  Item entries use `{:add_monster_drop, item_id}` with an optional race or
+  monster-id gate. Group entries use `{:add_monster_drop_group, group_key}` and
+  are unconditional. Each value is a chance out of 10_000 rolled independently;
+  unresolved item ids and group keys are skipped.
   """
   @spec roll_equipment_drops(
           map(),
@@ -85,6 +84,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
 
   @spec roll_bonus_slot({term(), term()}, atom() | nil, integer() | nil) ::
           [{integer(), integer(), boolean()}]
+  defp roll_bonus_slot({{:add_monster_drop_group, group_key}, chance}, _mob_race, _mob_id)
+       when is_atom(group_key) and is_integer(chance),
+       do: maybe_bonus_group_drop(group_key, chance)
+
   defp roll_bonus_slot({{:add_monster_drop, nameid}, chance}, _mob_race, _mob_id)
        when is_integer(nameid) and is_integer(chance),
        do: maybe_bonus_drop(nameid, chance)
@@ -100,6 +103,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.DropCalculator do
        do: maybe_bonus_drop(nameid, chance)
 
   defp roll_bonus_slot(_entry, _mob_race, _mob_id), do: []
+
+  @spec maybe_bonus_group_drop(atom(), integer()) :: [{integer(), integer(), boolean()}]
+  defp maybe_bonus_group_drop(group_key, chance) do
+    if :rand.uniform(@max_rate) <= chance do
+      case ItemGroups.fetch(group_key) do
+        {:ok, group} ->
+          Enum.map(Roller.roll_full(group), fn grant ->
+            {grant.item_id, grant.amount, grant.identify?}
+          end)
+
+        :error ->
+          []
+      end
+    else
+      []
+    end
+  end
 
   @spec maybe_bonus_drop(integer(), integer()) :: [{integer(), integer(), boolean()}]
   defp maybe_bonus_drop(nameid, chance) do

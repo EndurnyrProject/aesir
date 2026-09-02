@@ -1714,6 +1714,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert reduced == base * 0.8
     end
 
+    test "add_def_monster reduces physical damage only from the matching monster id" do
+      matching_mob = CombatTestHelper.create_mob_combatant(monster_id: 1002)
+      other_mob = CombatTestHelper.create_mob_combatant(monster_id: 1099)
+      plain = CombatTestHelper.create_player_combatant()
+
+      equipped = %{
+        plain
+        | equip_modifiers: %{{:add_def_monster, 1002} => 25}
+      }
+
+      {:ok, baseline} = DamageCalculator.apply_modifier_pipeline(1000, matching_mob, plain)
+      {:ok, reduced} = DamageCalculator.apply_modifier_pipeline(1000, matching_mob, equipped)
+      {:ok, unmatched} = DamageCalculator.apply_modifier_pipeline(1000, other_mob, equipped)
+
+      assert reduced == baseline * 0.75
+      assert unmatched == baseline
+    end
+
     test "{:skill_atk, id} applies only when the :skill_id opt matches" do
       skill_id = 1234
 

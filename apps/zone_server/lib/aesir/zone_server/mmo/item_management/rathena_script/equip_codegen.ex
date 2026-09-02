@@ -1104,6 +1104,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     with {:ok, race2} <- resolve(&Resolver.resolve_race2/1, const), do: {:ok, {family, race2}}
   end
 
+  defp resolve_param(%{family: family, param: :item_group}, {:name, const}) do
+    with {:ok, group} <- resolve(&Resolver.resolve_item_group/1, const),
+         do: {:ok, {family, group}}
+  end
+
   # The `bAddItemHealRate` param is a bare item id kept verbatim - it is not
   # validated against the item catalog, which is not loaded during the import
   # mix task and which the runtime never needs to consult for this destination.
