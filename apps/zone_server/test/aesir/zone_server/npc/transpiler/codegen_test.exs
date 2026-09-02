@@ -1141,6 +1141,28 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ "Rathena.job_id(class(ctx)) + Rathena.job_id(:novice_high)"
   end
 
+  test "job values use numeric ids in comparisons" do
+    src =
+      gen!("if (Class > 0 && Class < 7 && BaseJob == Job_Thief && BaseClass == Job_Thief) close;")
+
+    assert src =~
+             "Rathena.job_id(class(ctx)) > 0 and Rathena.job_id(class(ctx)) < 7"
+
+    assert src =~
+             "Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief)"
+
+    assert src =~
+             "Rathena.job_id(base_class(ctx)) == Rathena.job_id(:thief)"
+  end
+
+  test "job values use numeric ids in switch expressions and clauses" do
+    src = gen!("switch(Class) { case 1: close; case Job_Thief: close; }")
+
+    assert src =~ "= Rathena.job_id(class(ctx))"
+    assert src =~ "1 ->"
+    assert src =~ "v when v == Rathena.job_id(:thief) ->"
+  end
+
   test "emotion maps to the self-form DSL op; a target arg is dropped" do
     src =
       gen!("""

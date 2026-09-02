@@ -1797,7 +1797,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     {tmp, bindings} =
       case expr do
         {:temp, name} -> {name, []}
-        _ -> tmp_var() |> then(fn t -> {t, ["#{t} = #{render(expr, env)}", ""]} end)
+        _ -> tmp_var() |> then(fn t -> {t, ["#{t} = #{render_numeric(expr, env)}", ""]} end)
       end
 
     case_lines = ["case #{tmp} do"] ++ List.flatten(clause_lines) ++ catch_all ++ ["end"]
@@ -1931,7 +1931,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         ["v when v in [#{Enum.map_join(ints, ", ", &render(&1, env))}] ->"]
 
       true ->
-        guards = Enum.map_join(values, " or ", fn v -> "v == #{render(v, env)}" end)
+        guards = Enum.map_join(values, " or ", fn v -> "v == #{render_numeric(v, env)}" end)
         ["v when #{guards} ->"]
     end
   end
@@ -2684,7 +2684,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     "Todo.call!(:expr, [#{inspect(inspect(other))}])"
   end
 
-  defp render_numeric({:name, "Class"} = expr, env), do: render_job_id(expr, env)
+  defp render_numeric({:name, name} = expr, env) when name in ["Class", "BaseJob", "BaseClass"],
+    do: render_job_id(expr, env)
 
   defp render_numeric({:name, "Job_" <> _} = expr, env), do: render_job_id(expr, env)
   defp render_numeric(expr, env), do: render(expr, env)
@@ -2794,7 +2795,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   # Renders an expression in boolean (condition) position.
   defp cond_str({:bin, op, l, r}, env) when is_map_key(@comparisons, op),
-    do: "#{render(l, env)} #{@comparisons[op]} #{render(r, env)}"
+    do: "#{render_numeric(l, env)} #{@comparisons[op]} #{render_numeric(r, env)}"
 
   defp cond_str({:bin, :&&, l, r}, env), do: "(#{cond_str(l, env)}) and (#{cond_str(r, env)})"
   defp cond_str({:bin, :||, l, r}, env), do: "(#{cond_str(l, env)}) or (#{cond_str(r, env)})"

@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.Comrade do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if base_job(ctx) == :thief do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
         ctx =
           ctx
           |> mes("[Brad]")
@@ -38,7 +38,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.Comrade do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :novice and base_job(ctx) != :thief do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) and
+               Rathena.job_id(base_job(ctx)) != Rathena.job_id(:thief) do
             ctx =
               ctx
               |> mes("[Comrade]")

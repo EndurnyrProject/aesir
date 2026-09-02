@@ -16,7 +16,7 @@ defmodule Aesir.Commons.Models.GuildStorageLog do
           guild_id: integer() | nil,
           char_id: integer() | nil,
           nameid: integer(),
-          amount: integer(),
+          amount: integer() | nil,
           refine: integer(),
           card0: integer(),
           card1: integer(),

@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutobonus
@@ -1207,9 +1208,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp send_equip_autobonuses(_combatant, _keys), do: :ok
 
-  @spec send_auto_cast(pid() | nil, EquipAutocast.proc()) :: :ok
-  defp send_auto_cast(nil, _proc), do: :ok
-
+  @spec send_auto_cast(pid(), EquipAutocast.proc()) :: :ok
   defp send_auto_cast(pid, {:auto_cast, skill_id, level, target}) do
     GenServer.cast(pid, {:skill, {:proc_cast, skill_id, level, target}})
   end

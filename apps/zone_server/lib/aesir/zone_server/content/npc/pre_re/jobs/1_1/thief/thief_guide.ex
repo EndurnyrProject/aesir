@@ -27,9 +27,9 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
   def on_talk(ctx) do
     ctx =
       if get_char_var(ctx, :Upper, 0) == 1 do
-        if get_char_var(ctx, :ADVJOB, 0) == :assassin_cross or
-             get_char_var(ctx, :ADVJOB, 0) == :stalker do
-          if class(ctx) == :novice_high do
+        if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:assassin_cross) or
+             get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:stalker) do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice_high) do
             ctx =
               ctx
               |> mes("[Thief Guide]")
@@ -115,7 +115,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
       end
 
     ctx =
-      if base_job(ctx) == :thief do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
         ctx =
           ctx
           |> mes("[Thief Guide]")
@@ -125,9 +125,10 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :novice and base_job(ctx) != :thief do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) and
+               Rathena.job_id(base_job(ctx)) != Rathena.job_id(:thief) do
             ctx = ctx |> mes("[Thief Guide]") |> mes("What the heck...?")
-            v2 = class(ctx)
+            v2 = Rathena.job_id(class(ctx))
 
             ctx =
               case v2 do

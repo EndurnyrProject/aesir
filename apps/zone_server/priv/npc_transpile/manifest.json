@@ -19692,7 +19692,7 @@
   },
   "pre-re/jobs/1-1/thief.txt|script|Comrade|moc_prydb1:42:133": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.Comrade",
-    "output_hash": "6c32e3b9d67fe9d5eb8d23c8189207d37a48f81ca51ebe9e8d3aa1ac705865d9",
+    "output_hash": "19998e841c67deb73370a1cb425116a3a709255025178ebd1a07f80d1891eb1e",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/thief/comrade.ex",
     "source_hash": "178f11201f81a97d1c2d026acff47cd78c72077a3ecf4fe017eeaf894c144990",
     "spawns": [
@@ -19709,7 +19709,7 @@
   },
   "pre-re/jobs/1-1/thief.txt|script|Mr. Irrelevant|moc_ruins:141:125": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.MrIrrelevant",
-    "output_hash": "0b602226e1b0d0940545e61631412f9e565cc456d1c59b8c136076729293707a",
+    "output_hash": "00b63252f83fe089147453b74a9fb67e84f57fcd9b88321dda7d9e0ee11365b8",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/thief/mr_irrelevant.ex",
     "source_hash": "ec7da85b0b20c324ccf2047ccfdf16051384ea6161591d8f56f921be535cdc0b",
     "spawns": [
@@ -19726,7 +19726,7 @@
   },
   "pre-re/jobs/1-1/thief.txt|script|Thief Guide|moc_prydb1:39:129": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide",
-    "output_hash": "a4b4a0432066e51b47ad498884b81b1a78254e2130eb173b348e1c0641404549",
+    "output_hash": "0b19b7225015055078dfde1e4d1cf429246837e103cdf1ad0cf67919eab4a46e",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/thief/thief_guide.ex",
     "source_hash": "00f0b76b3b1e4e25ff8499d7608a5b6591f233ad066ee04e7be07672f085757e",
     "spawns": [
@@ -20414,7 +20414,7 @@
   },
   "pre-re/other/resetskill.txt|script|Hypnotist#2|prontera:146:232": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Other.Resetskill.Hypnotist",
-    "output_hash": "4175664f1b857dccf6d0da109824fca57f96f137106e53b7a846e2379fae5fe8",
+    "output_hash": "6813a72ae2bcc79a80b04893326ca723cc8e253f0bc17bd813ec79a465a4a9f7",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/other/resetskill/hypnotist.ex",
     "source_hash": "b5a065f4862104104157e9ffca2b9cb3e04b3365bb7023ad1774bcb272d698d9",
     "spawns": [

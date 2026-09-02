@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.MrIrrelevant do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if base_job(ctx) == :thief do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
         ctx =
           ctx
           |> mes("[Mr. Irrelevant]")
@@ -41,7 +41,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.MrIrrelevant do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :novice and base_job(ctx) != :thief do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) and
+               Rathena.job_id(base_job(ctx)) != Rathena.job_id(:thief) do
             ctx = mes(ctx, "[Mr. Irrelevant]")
             v1 = :rand.uniform(4) - 1
 

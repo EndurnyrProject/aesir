@@ -106,8 +106,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
       else: 0
   end
 
-  defp ranged_critical_rate(_attacker), do: 0
-
   defp components(
          %PlayerState{stats: %Stats{}} = player,
          %Combatant{
