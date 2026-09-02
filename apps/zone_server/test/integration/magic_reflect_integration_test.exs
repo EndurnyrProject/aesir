@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Integration.MagicReflectIntegrationTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -167,7 +168,8 @@ defmodule Aesir.ZoneServer.Integration.MagicReflectIntegrationTest do
   end
 
   defp cast(caster, skill_id, target_id) do
-    level = get_player_state(caster.pid).stats.progression.learned_skills["#{skill_id}"] || 1
+    learned = get_player_state(caster.pid).stats.progression.learned_skills
+    level = max(Learned.learned_level(learned, skill_id), 1)
 
     simulate_incoming_message(caster.pid, %SkillCast{
       skill_id: skill_id,
