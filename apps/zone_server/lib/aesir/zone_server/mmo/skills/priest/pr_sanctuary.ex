@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   @moduledoc """
   Sanctuary (PR_SANCTUARY), a periodic 21-cell Holy field.
 
-  Every second it heals living non-undead/non-demon occupants below maximum HP.
-  Enemy undead and demons instead take the same amount as fixed Holy magic
+  Every second it heals living non-undead/non-demon occupants below maximum HP,
+  except magic-immune players, who receive no healing. Enemy undead and demons
+  instead take the same amount as fixed Holy magic
   damage. Successful offensive hits spend the group's shared `level + 3` quota;
   healing and failed hits do not.
 
@@ -49,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -169,7 +171,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   end
 
   defp heal_target(:player, unit_id, _pid, group) do
-    DamageApplication.apply_heal(:player, unit_id, heal_amount(group.level), group.caster_id)
+    unless MagicDefense.immune?({:player, unit_id}) do
+      DamageApplication.apply_heal(:player, unit_id, heal_amount(group.level), group.caster_id)
+    end
+
     {:cont, group}
   end
 

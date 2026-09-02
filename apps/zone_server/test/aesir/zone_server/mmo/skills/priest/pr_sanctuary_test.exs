@@ -22,12 +22,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :setup_ets_tables
@@ -294,20 +296,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
              PrSanctuary.on_interval(group(6, %{hits_remaining: 9}), 1_000)
   end
 
-  test "heals an injured player through the existing player damage application path" do
-    target = %PlayerState{
-      character_id: 2_001,
-      action_state: :idle,
-      stats: %{current_state: %{hp: 100}, derived_stats: %{max_hp: 1_000}}
-    }
+  test "does not heal a magic-immune player" do
+    target_id = 2_001
+    register_player(target_id, 50)
+    stub_tick([{:player, target_id}])
+    reject(&DamageApplication.apply_heal/4)
 
-    stub_tick([{:player, 2_001}])
+    assert {:ok, %Group{state: %{hits_remaining: 8}}} =
+             PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
+  end
 
-    stub(UnitRegistry, :get_unit, fn :player, 2_001 ->
-      {:ok, {PlayerState, target, self()}}
-    end)
+  test "heals a player below magic immunity through the existing player damage application path" do
+    target_id = 2_001
+    register_player(target_id, 49)
+    stub_tick([{:player, target_id}])
 
-    expect(DamageApplication, :apply_heal, fn :player, 2_001, 500, 1_000 -> :ok end)
+    expect(DamageApplication, :apply_heal, fn :player, ^target_id, 500, 1_000 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 8}}} =
              PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
@@ -466,6 +470,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     assert {:expire, %Group{state: %{hits_remaining: 0}}} =
              PrSanctuary.on_interval(group(1, %{hits_remaining: 4}), 1_000)
+  end
+
+  defp register_player(character_id, no_magic_damage) do
+    player =
+      PlayerStateFixture.build(%{
+        character_id: character_id,
+        account_id: character_id,
+        stats: %{
+          combat_stats: %CombatStats{},
+          current_state: %{hp: 100},
+          derived_stats: %{max_hp: 1_000},
+          modifiers: %{equipment: %{no_magic_damage: no_magic_damage}}
+        }
+      })
+
+    UnitRegistry.register_unit(:player, character_id, PlayerState, player, self())
   end
 
   test "an exhausted field expires without looking up targets" do

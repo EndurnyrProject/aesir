@@ -9,6 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.PlayerStateFixture
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
 
@@ -33,32 +36,51 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
   setup do
     Mimic.copy(UnitRegistry)
 
-    stub(UnitRegistry, :get_unit_info, fn unit_type, unit_id ->
-      {:ok,
-       %{
-         unit_id: unit_id,
-         unit_type: unit_type,
-         race: :human,
-         element: :neutral,
-         element_level: 1,
-         boss_flag: false,
-         size: :medium,
-         stats: %{max_hp: 1000, max_sp: 500, current_hp: 1000, current_sp: 500}
-       }}
+    stub(UnitRegistry, :get_unit, fn
+      :mob, _unit_id -> {:error, :not_found}
+      unit_type, unit_id -> call_original(UnitRegistry, :get_unit, [unit_type, unit_id])
     end)
 
-    stub(UnitRegistry, :get_unit, fn _unit_type, _unit_id -> {:error, :not_found} end)
+    stub(UnitRegistry, :get_unit_info, fn
+      :mob, unit_id ->
+        {:ok,
+         %{
+           unit_id: unit_id,
+           unit_type: :mob,
+           race: :human,
+           element: :neutral,
+           element_level: 1,
+           boss_flag: false,
+           size: :medium,
+           stats: %{max_hp: 1000, max_sp: 500, current_hp: 1000, current_sp: 500}
+         }}
+
+      :player, unit_id ->
+        call_original(UnitRegistry, :get_unit_info, [:player, unit_id])
+    end)
 
     Interpreter.init()
 
-    {:ok, unit_id: :rand.uniform(100_000)}
+    unit_id = :rand.uniform(100_000)
+    register_player(unit_id, %{})
+
+    {:ok, unit_id: unit_id}
   end
 
   describe "dispel/1" do
-    test "removes a dispellable buff", %{unit_id: unit_id} do
+    test "keeps statuses on a magic-immune player", %{unit_id: unit_id} do
+      register_player(unit_id, %{no_magic_damage: 50})
       StatusStorage.apply_status(:player, unit_id, :sc_blessing, val1: 10, duration: 60_000)
 
-      Dispel.dispel({:player, unit_id})
+      assert {:error, :magic_immune} = Dispel.dispel({:player, unit_id})
+      assert StatusStorage.has_status?(:player, unit_id, :sc_blessing)
+    end
+
+    test "removes a dispellable buff below magic immunity", %{unit_id: unit_id} do
+      register_player(unit_id, %{no_magic_damage: 49})
+      StatusStorage.apply_status(:player, unit_id, :sc_blessing, val1: 10, duration: 60_000)
+
+      assert :ok = Dispel.dispel({:player, unit_id})
 
       refute StatusStorage.has_status?(:player, unit_id, :sc_blessing)
     end
@@ -141,5 +163,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
 
       assert :ok = Dispel.dispel({:player, unit_id})
     end
+  end
+
+  defp register_player(unit_id, equip_modifiers) do
+    player =
+      PlayerStateFixture.build(%{
+        character_id: unit_id,
+        account_id: unit_id,
+        stats: %{
+          combat_stats: %CombatStats{},
+          modifiers: %{equipment: equip_modifiers}
+        }
+      })
+
+    UnitRegistry.register_unit(:player, unit_id, PlayerState, player, self())
   end
 end
