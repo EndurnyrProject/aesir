@@ -137,6 +137,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bhealpower2" => :heal_power2,
     "bcritatkrate" => :crit_atk_rate,
     "bshortatkrate" => :short_atk_rate,
+    "bperfecthitrate" => :perfect_hit_rate,
     "bperfecthitaddrate" => :perfect_hit,
     "bsplashrange" => :splash_range,
     "blongatkdef" => :long_atk_def,
@@ -155,7 +156,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bnocastcancel" => :no_cast_cancel
   }
 
-  @max_destinations MapSet.new([:movement_speed, :splash_range])
+  @max_destinations MapSet.new([:movement_speed, :perfect_hit_rate, :splash_range])
 
   @destination_scales %{perfect_dodge: 10}
 
@@ -175,6 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "bskillheal" => %{family: :skill_heal, param: :skill, unit: :percent},
     "baddskillblow" => %{family: :add_skill_blow, param: :skill, unit: :cells},
     "bexpaddrace" => %{family: :exp_add_race, param: :race, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},

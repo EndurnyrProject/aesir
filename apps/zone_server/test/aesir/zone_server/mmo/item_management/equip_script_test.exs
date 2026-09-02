@@ -136,6 +136,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       tuple_hp_loss_interval_dest: [{:bonus, {:hp_loss_bonus, 5_000}, 10}],
       flat_sp_gain_value: [{:bonus, :sp_gain_value, 5}],
       flat_heal_power2: [{:bonus, :heal_power2, 10}],
+      flat_perfect_hit_rate: [{:bonus, :perfect_hit_rate, 25}],
+      tuple_skill_heal_dest: [{:bonus, {:skill_heal, 28}, 3}],
       flat_magic_hp_gain_value: [{:bonus, :magic_hp_gain_value, 30}],
       tuple_ignore_mdef_class_dest: [{:bonus, {:ignore_mdef_class, :boss}, 50}],
       tuple_subrace2_dest: [{:bonus, {:subrace2, :goblin}, 15}],
@@ -626,6 +628,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, on(0)) == %{movement_speed: 25}
       assert EquipScript.eval(Enum.reverse(program), on(0)) == %{movement_speed: 25}
+    end
+
+    test "perfect-hit rate keeps the largest value while additive rate sums" do
+      program = [
+        {:bonus, :perfect_hit_rate, 25},
+        {:bonus, :perfect_hit_rate, 10},
+        {:bonus, :perfect_hit, 5},
+        {:bonus, :perfect_hit, 3}
+      ]
+
+      assert EquipScript.eval(program, on(0)) == %{perfect_hit_rate: 25, perfect_hit: 8}
     end
 
     test "defender proc siblings use last-writer semantics" do

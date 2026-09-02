@@ -30,9 +30,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   not the combat `matk_min`/`matk_max`. With no MATK weapon the band collapses
   and the heal is deterministic, equal to `base + base_matk`.
 
-  The caster's equipment heal-power bonus (`bonus bHealPower`) is a further
-  percent step applied after the HPlus one, and is deliberately kept separate
-  from the trait-derived HPlus rather than summed into it.
+  The caster's general and AL_HEAL-specific equipment heal bonuses
+  (`bHealPower` and `bSkillHeal`) are summed and applied together after HPlus.
+  They remain separate from the trait-derived HPlus bonus.
+
+  Pre-renewal uses its classic base formula without the renewal MATK term. Aesir
+  currently retains the renewal calculation in both modes; that formula split
+  remains part of the mode-specific skill-mechanics work.
 
   The cast computes the base heal amount only. The recipient's `received_heal_rate`
   bonus (SC_INCHEALRATE) is applied downstream on the generic `HealthHandler.apply_heal`
@@ -157,7 +161,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     matk_max = Map.get(combat_stats, :heal_matk_max, combat_stats.matk)
     heal = base + DamageShared.roll(matk_min, matk_max)
     hplus = Map.get(combat_stats, :hplus, 0)
-    heal_power = Map.get(combatant.equip_modifiers, :heal_power, 0)
+
+    heal_power =
+      Map.get(combatant.equip_modifiers, :heal_power, 0) +
+        Map.get(combatant.equip_modifiers, {:skill_heal, 28}, 0)
 
     heal
     |> then(&(&1 + div(&1 * hplus, 100)))

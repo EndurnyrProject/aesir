@@ -2501,6 +2501,35 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert reversed.modifiers.equipment.movement_speed == 25
     end
 
+    test "bPerfectHitRate keeps the strongest item while AddRate stacks" do
+      first =
+        scripted_item(90_262,
+          on_equip: [
+            {:bonus, :perfect_hit_rate, 25},
+            {:bonus, :perfect_hit, 2}
+          ]
+        )
+
+      second =
+        scripted_item(90_263,
+          on_equip: [
+            {:bonus, :perfect_hit_rate, 10},
+            {:bonus, :perfect_hit, 3}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_262 -> {:ok, first}
+        90_263 -> {:ok, second}
+      end)
+
+      result =
+        with_equipped_items([equipped(90_262, @right_hand), equipped(90_263, @left_hand)])
+
+      assert result.modifiers.equipment.perfect_hit_rate == 25
+      assert result.modifiers.equipment.perfect_hit == 5
+    end
+
     test "bFlee2 reaches perfect dodge in the per-mille units the roll uses" do
       item = scripted_item(90_220, on_equip: [{:bonus, :perfect_dodge, 30}])
       stub(ItemManagement, :get_item_by_id, fn 90_220 -> {:ok, item} end)

@@ -255,6 +255,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       AlHeal.cast(@caster, :self, 5, definition)
     end
 
+    test "AL_HEAL-specific rate adds to generic heal power and ignores other skill ids",
+         %{definition: definition} do
+      stub(PlayerState, :to_combatant, fn _ ->
+        combatant(
+          base_level: 50,
+          int: 50,
+          matk: 50,
+          heal_power: 10,
+          skill_heal: 15,
+          other_skill_heal: 100
+        )
+      end)
+
+      expect(Combat, :apply_heal, fn :player, 1000, 437, 1000 -> :ok end)
+      AlHeal.cast(@caster, :self, 5, definition)
+    end
+
     test "heal_power applies after hplus, as a separate percent step",
          %{definition: definition} do
       stub(PlayerState, :to_combatant, fn _ ->
@@ -308,7 +325,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
         heal_matk_max: Keyword.get(opts, :heal_matk_max, matk),
         hplus: Keyword.get(opts, :hplus, 0)
       },
-      equip_modifiers: %{heal_power: Keyword.get(opts, :heal_power, 0)}
+      equip_modifiers: %{
+        :heal_power => Keyword.get(opts, :heal_power, 0),
+        {:skill_heal, 28} => Keyword.get(opts, :skill_heal, 0),
+        {:skill_heal, 29} => Keyword.get(opts, :other_skill_heal, 0)
+      }
     }
   end
 

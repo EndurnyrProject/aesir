@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :heal_power,
     :crit_atk_rate,
     :short_atk_rate,
+    :perfect_hit_rate,
     :perfect_hit,
     :splash_range,
     :hp_drain_rate,
@@ -192,6 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "resolves the damage-side rate keys" do
       assert BonusKeys.destination("bCritAtkRate") == {:ok, :crit_atk_rate}
       assert BonusKeys.destination("bShortAtkRate") == {:ok, :short_atk_rate}
+      assert BonusKeys.destination("bPerfectHitRate") == {:ok, :perfect_hit_rate}
       assert BonusKeys.destination("bPerfectHitAddRate") == {:ok, :perfect_hit}
     end
 
@@ -223,6 +225,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.max_destination?(:movement_speed)
     end
 
+    test "perfect hit rate keeps only the strongest value" do
+      assert BonusKeys.max_destination?(:perfect_hit_rate)
+    end
+
     test "splash range does not stack" do
       assert BonusKeys.max_destination?(:splash_range)
     end
@@ -247,6 +253,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     test "unscaled destinations report a factor of 1" do
       assert BonusKeys.destination_scale(:atk) == 1
       assert BonusKeys.destination_scale(:movement_speed) == 1
+      assert BonusKeys.destination_scale(:perfect_hit_rate) == 1
       assert BonusKeys.destination_scale(:perfect_hit) == 1
       assert BonusKeys.destination_scale(:crit_atk_rate) == 1
       assert BonusKeys.destination_scale(:short_atk_rate) == 1
@@ -279,6 +286,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "bmagicaddsize" => %{family: :magic_addsize, param: :size, unit: :percent},
     "bmagicatkele" => %{family: :magic_atk_ele, param: :element, unit: :percent},
     "bskillatk" => %{family: :skill_atk, param: :skill, unit: :percent},
+    "bskillheal" => %{family: :skill_heal, param: :skill, unit: :percent},
     "baddskillblow" => %{family: :add_skill_blow, param: :skill, unit: :cells},
     "bexpaddrace" => %{family: :exp_add_race, param: :race, unit: :percent},
     "bignoredefracerate" => %{family: :ignore_def_race, param: :race, unit: :percent},

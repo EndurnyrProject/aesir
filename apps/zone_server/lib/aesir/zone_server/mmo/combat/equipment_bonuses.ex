@@ -208,15 +208,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   end
 
   @doc """
-  Per-mille chance the attacker's equipment grants to land a perfect hit
-  (`bPerfectHitAddRate`), an attack that ignores the defender's flee entirely.
+  Percent chance the attacker's equipment grants to land a perfect hit, an
+  attack that ignores the defender's flee entirely.
 
-  Ungated by weapon or target: any attacker's equipment can carry it, and mobs
-  read zero.
+  `bPerfectHitRate` keeps the strongest value while `bPerfectHitAddRate` stacks
+  additively; the final chance combines both. It is ungated by weapon or target,
+  and mobs read zero because they carry no equipment modifiers.
   """
   @spec perfect_hit_rate(Combatant.t()) :: rate()
   def perfect_hit_rate(%Combatant{} = attacker) do
-    Map.get(attacker.equip_modifiers, :perfect_hit, 0)
+    strongest = max(0, Map.get(attacker.equip_modifiers, :perfect_hit_rate, 0))
+    strongest + Map.get(attacker.equip_modifiers, :perfect_hit, 0)
   end
 
   @doc """

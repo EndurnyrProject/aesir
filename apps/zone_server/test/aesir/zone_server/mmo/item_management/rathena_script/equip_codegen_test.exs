@@ -460,6 +460,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile(~s(bonus2 bSkillAtk,"MG_FIREBOLT",15;))
     end
 
+    test "bSkillHeal resolves the quoted skill name to a keyed heal percentage" do
+      assert {:ok, [{:bonus, {:skill_heal, 28}, 3}]} =
+               compile(~s(bonus2 bSkillHeal,"AL_HEAL",3;))
+    end
+
     test "quoted skill name outside the catalog is unresolved_param" do
       assert {:error, {:unsupported, {:unresolved_param, "XX_NOTASKILL"}}} =
                compile(~s(bonus2 bSkillAtk,"XX_NOTASKILL",15;))
@@ -534,6 +539,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :crit_atk_rate, 20}]} = compile("bonus bCritAtkRate,20;")
       assert {:ok, [{:bonus, :short_atk_rate, 15}]} = compile("bonus bShortAtkRate,15;")
       assert {:ok, [{:bonus, :short_atk_rate, -10}]} = compile("bonus bShortAtkRate,-10;")
+      assert {:ok, [{:bonus, :perfect_hit_rate, 25}]} = compile("bonus bPerfectHitRate,25;")
       assert {:ok, [{:bonus, :perfect_hit, 50}]} = compile("bonus bPerfectHitAddRate,50;")
     end
 

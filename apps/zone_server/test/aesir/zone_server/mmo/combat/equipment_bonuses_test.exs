@@ -660,13 +660,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
   end
 
   describe "perfect_hit_rate/1" do
-    test "reads :perfect_hit regardless of weapon range" do
+    test "combines the strongest base rate with the additive rate for every weapon range" do
       for weapon_type <- [:sword, :bow] do
         attacker =
           CombatTestHelper.create_player_combatant(weapon_type: weapon_type)
-          |> with_equip_modifiers(%{perfect_hit: 30})
+          |> with_equip_modifiers(%{perfect_hit_rate: 25, perfect_hit: 15})
 
-        assert EquipmentBonuses.perfect_hit_rate(attacker) == 30
+        assert EquipmentBonuses.perfect_hit_rate(attacker) == 40
       end
     end
 
