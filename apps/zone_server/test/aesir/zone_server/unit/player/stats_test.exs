@@ -2632,6 +2632,29 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert both.modifiers.equipment.hp_drain_percent == 6
     end
 
+    test "magic reflect and immunity bonuses sum across worn items" do
+      first =
+        scripted_item(90_226,
+          on_equip: [{:bonus, :magic_damage_return, 5}, {:bonus, :no_magic_damage, 60}]
+        )
+
+      second =
+        scripted_item(90_227,
+          on_equip: [{:bonus, :magic_damage_return, 7}, {:bonus, :no_magic_damage, 60}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_226 -> {:ok, first}
+        90_227 -> {:ok, second}
+      end)
+
+      both =
+        with_equipped_items([equipped(90_226, @right_hand), equipped(90_227, @left_hand)])
+
+      assert both.modifiers.equipment.magic_damage_return == 12
+      assert both.modifiers.equipment.no_magic_damage == 120
+    end
+
     test "bHealPower lands on its own equipment key, separate from hplus" do
       item = scripted_item(90_221, on_equip: [{:bonus, :heal_power, 15}])
       stub(ItemManagement, :get_item_by_id, fn 90_221 -> {:ok, item} end)

@@ -628,6 +628,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:ok, [{:bonus, :short_weapon_damage_return, 5}]} =
                compile("bonus bShortWeaponDamageReturn,5;")
 
+      assert {:ok, [{:bonus, :magic_damage_return, 5}]} =
+               compile("bonus bMagicDamageReturn,5;")
+
+      assert {:ok, [{:bonus, :no_magic_damage, 100}]} =
+               compile("bonus bNoMagicDamage,100;")
+
       assert {:ok, [{:bonus, :item_heal_rate, 20}]} = compile("bonus bAddItemHealRate,20;")
     end
 

@@ -154,6 +154,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bnosizefix" => :no_size_fix,
     "bintravision" => :intravision,
     "bshortweapondamagereturn" => :short_weapon_damage_return,
+    "bmagicdamagereturn" => :magic_damage_return,
+    "bnomagicdamage" => :no_magic_damage,
     "bfixedcastrate" => :fixcast_rate,
     "badditemhealrate" => :item_heal_rate,
     "bnoknockback" => :no_knockback,

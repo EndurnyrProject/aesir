@@ -82,6 +82,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :intravision,
     :heal_power2,
     :short_weapon_damage_return,
+    :magic_damage_return,
+    :no_magic_damage,
     :fixcast_rate,
     :item_heal_rate,
     :no_knockback,
@@ -684,6 +686,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination("bSpeedAddRate") == {:ok, :movement_speed_add}
       assert BonusKeys.destination("bCriticalLong") == {:ok, :critical_long}
       assert BonusKeys.destination("bNoRegen") == {:ok, :no_regen}
+      assert BonusKeys.destination("bMagicDamageReturn") == {:ok, :magic_damage_return}
+      assert BonusKeys.destination("bNoMagicDamage") == {:ok, :no_magic_damage}
     end
 
     test "maps class coma and item-group healing parameterized families" do
