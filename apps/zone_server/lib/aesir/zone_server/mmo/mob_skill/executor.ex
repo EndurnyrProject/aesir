@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
@@ -200,16 +201,18 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.Executor do
   end
 
   defp invoke(module, state, raw_target, adapted_target, row, definition) do
-    cond do
-      function_exported?(module, :mob_cast, 5) ->
-        module.mob_cast(state, raw_target, row.level, definition, row)
+    Origin.with_skill(definition.name, {:mob, state.instance_id}, fn ->
+      cond do
+        function_exported?(module, :mob_cast, 5) ->
+          module.mob_cast(state, raw_target, row.level, definition, row)
 
-      function_exported?(module, :cast_with_origin, 5) ->
-        module.cast_with_origin(state, adapted_target, row.level, definition, :mob)
+        function_exported?(module, :cast_with_origin, 5) ->
+          module.cast_with_origin(state, adapted_target, row.level, definition, :mob)
 
-      true ->
-        module.cast(state, adapted_target, row.level, definition)
-    end
+        true ->
+          module.cast(state, adapted_target, row.level, definition)
+      end
+    end)
   end
 
   defp adapt_target({:unit, unit_type, id}, %{target_type: :ground}, state),

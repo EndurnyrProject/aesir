@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -956,7 +957,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   end
 
   defp invoke_npc_cast(module, caster, target, level, definition) do
-    case module.cast(caster, target, level, definition) do
+    result =
+      Origin.with_skill(definition.name, nil, fn ->
+        module.cast(caster, target, level, definition)
+      end)
+
+    case result do
       {:ok, _caster} -> {:ok, caster}
       {:ok, _caster, :no_consume} -> {:ok, caster}
       {:error, _reason} = error -> error
@@ -1253,7 +1259,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       case input do
         {:with_input, value} ->
           if function_exported?(module, :cast_with_input, 5) do
-            module.cast_with_input(caster, target, level, definition, value)
+            invoke_cast_with_input(module, caster, target, level, definition, value)
           else
             invoke_cast(module, caster, target, level, definition, origin)
           end
@@ -1292,12 +1298,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
       else: {:error, :invalid_caster_result}
   end
 
+  defp invoke_cast_with_input(module, caster, target, level, definition, value) do
+    Origin.with_skill(definition.name, caster_ref(caster), fn ->
+      module.cast_with_input(caster, target, level, definition, value)
+    end)
+  end
+
   defp invoke_cast(module, game_state, target, level, definition, origin) do
-    if function_exported?(module, :cast_with_origin, 5) do
-      module.cast_with_origin(game_state, target, level, definition, origin)
-    else
-      module.cast(game_state, target, level, definition)
-    end
+    Origin.with_skill(definition.name, caster_ref(game_state), fn ->
+      if function_exported?(module, :cast_with_origin, 5) do
+        module.cast_with_origin(game_state, target, level, definition, origin)
+      else
+        module.cast(game_state, target, level, definition)
+      end
+    end)
+  end
+
+  defp caster_ref(caster) do
+    adapter = Caster.for(caster)
+    {adapter.unit_type(caster), adapter.id(caster)}
   end
 
   # A ground-targeted skill without the `Skill.Ground` capability (e.g.

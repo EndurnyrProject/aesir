@@ -186,6 +186,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     def on_expire(_group), do: :ok
   end
 
+  defmodule OriginUnit do
+    alias Aesir.ZoneServer.Mmo.Skill.Origin
+
+    def on_interval(%{state: %{test_pid: test_pid}} = group, _now) do
+      send(test_pid, {:ground_origin, Origin.current()})
+      {:ok, group}
+    end
+
+    def on_expire(_group), do: :ok
+  end
+
   defmodule ForeignIdUnit do
     alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
 
@@ -228,6 +239,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :trap_unit -> {:ok, TrapUnit}
       :natural_expiry_unit -> {:ok, NaturalExpiryUnit}
       :failing_unit -> {:ok, FailingUnit}
+      :origin_unit -> {:ok, OriginUnit}
       :foreign_id_unit -> {:ok, ForeignIdUnit}
       :field_unit -> {:ok, FieldUnit}
       :water_ball_sequence -> {:ok, WaterBallSequenceUnit}
@@ -2080,6 +2092,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   end
 
   describe "tick/1" do
+    test "runs a ground callback with the origin stored on its group" do
+      now = 10_000
+      manager = start_manager(now)
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            skill_name: :origin_unit,
+            caster_type: :homunculus,
+            caster_id: 1_500_001,
+            next_tick_at: now,
+            state: %{test_pid: self()}
+          )
+        )
+
+      assert :ok = Manager.tick(manager)
+
+      assert_receive {:ground_origin, %{skill: :origin_unit, caster: {:homunculus, 1_500_001}}}
+    end
+
     test "runs only due groups, re-arms their deadline, and uses the injected clock" do
       now = 10_000
       manager = start_manager(now)

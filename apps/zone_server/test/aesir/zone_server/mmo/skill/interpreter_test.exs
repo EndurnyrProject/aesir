@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Id, as: SkillUnitId
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmProvoke
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Suffragium
@@ -57,6 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     @impl true
     def cast_with_origin(game_state, _target, _level, _definition, origin) do
       send(self(), {:cast_origin, origin})
+      send(self(), {:skill_origin, Aesir.ZoneServer.Mmo.Skill.Origin.current()})
       {:ok, game_state}
     end
 
@@ -312,9 +314,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       :ok
     end
 
-    test "normal casts dispatch normal origin" do
+    test "normal casts expose the player skill origin only during the callback" do
       assert {:ok, _} = Interpreter.cast(game_state(100, %{29 => 1}), 29, 1, :self)
       assert_received {:cast_origin, :normal}
+      assert_received {:skill_origin, %{skill: :origin_aware, caster: {:player, 1000}}}
+      assert Origin.current() == nil
     end
 
     test "timed Homunculus casts keep the shared begin shape and dispatch their origin" do

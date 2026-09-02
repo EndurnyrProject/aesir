@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog, as: SkillCatalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Emote
@@ -28,12 +29,15 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
     @moduledoc false
     @behaviour Active
 
+    alias Aesir.ZoneServer.Mmo.Skill.Origin
+
     @impl Active
     def validate(_caster, _target, _level, _definition), do: :ok
 
     @impl Active
     def cast(caster, target, level, definition) do
       send(self(), {:cast, caster.instance_id, target, level, definition.id})
+      send(self(), {:skill_origin, Origin.current()})
       {:ok, caster}
     end
   end
@@ -468,12 +472,14 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert_received {:status_attempted, :sc_bleeding}
     end
 
-    test "adapts a unit target from {:unit, type, id} to {:unit, id} for cast/4" do
+    test "direct cast/4 sees the mob skill origin" do
       stub_skill(9001, :fake_skill, CastOnly)
       stub_living_player_target()
 
       assert Executor.execute(mob(), row(%{skill_id: 9001, target: :target})) == :ok
       assert_received {:cast, 5001, {:unit, 42}, 3, 9001}
+      assert_received {:skill_origin, %{skill: :fake_skill, caster: {:mob, 5001}}}
+      assert Origin.current() == nil
     end
 
     test "adapts a ground target from {:ground, x, y, area} to {:ground, x, y} for cast/4" do

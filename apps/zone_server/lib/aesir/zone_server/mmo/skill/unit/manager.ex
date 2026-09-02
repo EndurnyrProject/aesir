@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Origin
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -2011,7 +2012,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp invoke(module, callback, args) do
-    {:ok, apply(module, callback, args)}
+    group = hd(args)
+
+    result =
+      Origin.with_skill(group.skill_name, {group.caster_type, group.caster_id}, fn ->
+        apply(module, callback, args)
+      end)
+
+    {:ok, result}
   rescue
     error -> {:error, {error, __STACKTRACE__}}
   catch
