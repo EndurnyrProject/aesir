@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     :matk,
     :def,
     :def_rate,
+    :def2_rate,
     :mdef,
     :hit,
     :flee,
@@ -182,6 +183,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
       assert BonusKeys.destination("bCastrate") == {:ok, :varcast_rate}
       assert BonusKeys.destination("BCASTRATE") == {:ok, :varcast_rate}
       assert BonusKeys.destination("bDefRate") == {:ok, :def_rate}
+      assert BonusKeys.destination("bDef2Rate") == {:ok, :def2_rate}
       assert BonusKeys.destination("bVariableCastrate") == {:ok, :varcast_rate}
       assert BonusKeys.destination("bDelayrate") == {:ok, :delay_rate}
       assert BonusKeys.destination("bLongAtkRate") == {:ok, :long_atk_rate}
@@ -302,6 +304,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeysTest do
     "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
     "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
     "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
+    "bspdrainvaluerace" => %{family: :sp_drain_race, param: :race, unit: :sp},
     "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},
     "bsubskill" => %{family: :sub_skill, param: :skill, unit: :percent},
     "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent}

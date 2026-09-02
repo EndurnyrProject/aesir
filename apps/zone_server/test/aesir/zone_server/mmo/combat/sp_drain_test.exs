@@ -12,11 +12,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SpDrainTest do
     %{CombatTestHelper.create_player_combatant() | equip_modifiers: modifiers}
   end
 
+  defp defender(race) do
+    %{CombatTestHelper.create_mob_combatant() | race: race}
+  end
+
   describe "roll/2" do
     test "restores the flat value without a percentage drain" do
       attacker = attacker(%{sp_drain_value: 7})
 
       assert SpDrain.roll(attacker, 400) == 7
+    end
+
+    test "adds matching and all-race flat drain values" do
+      attacker =
+        attacker(%{
+          :sp_drain_value => 2,
+          {:sp_drain_race, :undead} => 5,
+          {:sp_drain_race, :all} => 3
+        })
+
+      assert SpDrain.roll(attacker, 400) + SpDrain.race_value(attacker, defender(:undead)) == 10
+      assert SpDrain.roll(attacker, 400) + SpDrain.race_value(attacker, defender(:brute)) == 5
     end
 
     test "adds the percentage drain after a successful roll" do

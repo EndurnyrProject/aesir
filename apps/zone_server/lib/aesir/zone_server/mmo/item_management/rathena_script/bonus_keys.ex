@@ -94,6 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "bmatk" => :matk,
     "bdef" => :def,
     "bdefrate" => :def_rate,
+    "bdef2rate" => :def2_rate,
     "bmdef" => :mdef,
     "bhit" => :hit,
     "bflee" => :flee,
@@ -198,6 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.BonusKeys do
     "baddmonsterdropitem" => %{family: :add_monster_drop, param: :item, unit: :per10k},
     "badddamageclass" => %{family: :add_damage_class, param: :monster, unit: :percent},
     "bspgainrace" => %{family: :sp_gain_race, param: :race, unit: :sp},
+    "bspdrainvaluerace" => %{family: :sp_drain_race, param: :race, unit: :sp},
     "bexpaddclass" => %{family: :exp_add_class, param: :class, unit: :percent},
     "bsubskill" => %{family: :sub_skill, param: :skill, unit: :percent},
     "bsubdefele" => %{family: :sub_def_ele, param: :element, unit: :percent}

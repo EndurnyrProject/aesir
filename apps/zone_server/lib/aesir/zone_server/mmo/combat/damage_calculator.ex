@@ -698,8 +698,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp calculate_mastery_bonus(attacker), do: attacker.combat_stats.passive_atk
 
   defp calculate_soft_defense(%{unit_type: :player} = defender) do
-    # Renewal: soft_def = vit (direct VIT value)
-    defender.base_stats.vit
+    rate = max(0, 100 + Map.get(defender.equip_modifiers, :def2_rate, 0))
+    div(defender.base_stats.vit * rate, 100)
   end
 
   defp calculate_soft_defense(%{unit_type: :homunculus} = defender) do

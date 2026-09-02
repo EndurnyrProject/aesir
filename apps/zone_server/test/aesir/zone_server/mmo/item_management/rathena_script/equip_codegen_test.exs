@@ -52,6 +52,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
                compile("bonus bAspdRate,10; bonus bAtkRate,5; bonus bMatkRate,7;")
     end
 
+    test "bDef2Rate compiles to the soft-DEF percentage destination" do
+      assert {:ok, [{:bonus, :def2_rate, 25}]} = compile("bonus bDef2Rate,25;")
+    end
+
     test "additional item keys emit exact signed flat and parameterized destinations" do
       bash_id = skill_id!(:sm_bash)
 
@@ -199,6 +203,11 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "bSPGainRace emits a race-keyed sp-gain bonus" do
       assert {:ok, [{:bonus, {:sp_gain_race, :undead}, 3}]} =
                compile("bonus2 bSPGainRace,RC_Undead,3;")
+    end
+
+    test "bSPDrainValueRace emits a race-keyed flat SP drain" do
+      assert {:ok, [{:bonus, {:sp_drain_race, :undead}, 4}]} =
+               compile("bonus2 bSPDrainValueRace,RC_Undead,4;")
     end
 
     test "bExpAddClass emits a class-keyed exp bonus" do

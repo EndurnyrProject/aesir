@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SpDrain do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
 
   @per_mille 1_000
 
@@ -31,5 +32,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SpDrain do
     else
       0
     end
+  end
+
+  @doc "Returns the flat SP drain granted against the defender's race."
+  @spec race_value(Combatant.t(), Combatant.t()) :: integer()
+  def race_value(%Combatant{} = attacker, %Combatant{} = defender) do
+    EquipmentBonuses.sp_drain_race_value(attacker, defender)
   end
 end

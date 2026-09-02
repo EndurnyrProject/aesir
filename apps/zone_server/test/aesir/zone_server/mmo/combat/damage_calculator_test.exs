@@ -484,6 +484,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert final_damage < 200
     end
 
+    test "equipment def2_rate scales player soft DEF" do
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+      player = CombatTestHelper.create_player_combatant(vit: 40)
+      player = %{player | combat_stats: %{player.combat_stats | def: 0}}
+      boosted = %{player | equip_modifiers: %{def2_rate: 50}}
+
+      assert {:ok, base_damage} = DamageCalculator.apply_defense_formula(200, player)
+      assert {:ok, boosted_damage} = DamageCalculator.apply_defense_formula(200, boosted)
+      assert base_damage - boosted_damage == 20
+    end
+
     test "applies renewal defense formula to mob" do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
 

@@ -237,6 +237,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
     Map.get(attacker.equip_modifiers, :hp_drain_percent, 0)
   end
 
+  @doc "Flat SP restored by a normal attack against the defender's race."
+  @spec sp_drain_race_value(Combatant.t(), Combatant.t()) :: integer()
+  def sp_drain_race_value(%Combatant{} = attacker, %Combatant{race: race}) do
+    read(attacker, :sp_drain_race, race)
+  end
+
   @doc """
   Radius in cells of the area-of-effect the attacker's equipment adds around the
   primary target of a normal attack (`bSplashRange`). Zero means the attack hits

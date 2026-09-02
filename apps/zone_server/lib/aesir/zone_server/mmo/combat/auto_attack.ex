@@ -705,7 +705,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       dispatch_equip_autocasts(attacker, target, target_pid, normal_attack_flag(attacker))
 
       drain_hp(attacker, damage_result.damage)
-      drain_sp(attacker, damage_result.damage)
+      drain_sp(attacker, target, damage_result.damage)
       splash_attack(attacker, target)
       :ok
     end
@@ -829,7 +829,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           dispatch_equip_autocasts(attacker, target, target_pid, attack_flag)
 
           drain_hp(attacker, damage)
-          drain_sp(attacker, damage)
+          drain_sp(attacker, target, damage)
           splash_attack(attacker, target)
           {:snatcher, updated_player_state}
       end
@@ -955,8 +955,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
     end
   end
 
-  defp drain_sp(attacker, damage) do
-    case SpDrain.roll(attacker, damage) do
+  defp drain_sp(attacker, target, damage) do
+    sp = max(SpDrain.roll(attacker, damage) + SpDrain.race_value(attacker, target), 0)
+
+    case sp do
       0 -> :ok
       sp -> DamageApplication.apply_sp_heal(:player, attacker.unit_id, sp)
     end

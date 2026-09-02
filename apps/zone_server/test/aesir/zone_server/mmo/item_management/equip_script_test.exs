@@ -147,6 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       tuple_sp_loss_interval_dest: [{:bonus, {:sp_loss_bonus, 4_000}, 2}],
       tuple_add_damage_class_dest: [{:bonus, {:add_damage_class, 1917}, 10}],
       tuple_sp_gain_race_dest: [{:bonus, {:sp_gain_race, :undead}, 3}],
+      tuple_sp_drain_race_dest: [{:bonus, {:sp_drain_race, :undead}, 4}],
       tuple_exp_add_class_dest: [{:bonus, {:exp_add_class, :all}, 10}],
       flat_crit_rate: [{:bonus, :crit_rate, 5}],
       flat_sp_drain_value: [{:bonus, :sp_drain_value, 3}],
@@ -661,6 +662,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
                {:addrace, :brute} => 25,
                {:addrace, :undead} => 15
              }
+    end
+
+    test "evaluates soft-DEF rate and sums race-specific SP drain values" do
+      key = {:sp_drain_race, :undead}
+      program = [{:bonus, :def2_rate, 25}, {:bonus, key, 3}, {:bonus, key, 4}]
+
+      assert EquipScript.eval(program, on(0)) == %{key => 7, def2_rate: 25}
     end
 
     test "refine 0 yields zeros and gates stay closed" do
