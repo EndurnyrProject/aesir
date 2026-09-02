@@ -105,8 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.HomunculusStatusRiderSweepTest do
       if connected?, do: :ok, else: {:error, :miss}
     end)
 
-    stub(Combat, :execute_magic_attack, fn _caster, _target, _opts ->
-      if connected?, do: :ok, else: {:error, :miss}
+    stub(Combat, :execute_magic_attack, fn _caster, target, _opts ->
+      if connected?, do: {:ok, target}, else: {:error, :miss}
     end)
 
     stub(Combat, :knockback, fn _type, _id, _x, _y, _distance -> :ok end)

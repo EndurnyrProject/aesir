@@ -155,7 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
       assert opts[:element] == :holy
       assert opts[:ignore_mdef]
       assert opts[:skip_range]
-      :ok
+      {:ok, {:mob, target_id}}
     end)
 
     assert {:ok, %{character_id: 1_000}} =

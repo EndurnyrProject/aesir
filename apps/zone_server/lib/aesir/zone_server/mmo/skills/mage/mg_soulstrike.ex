@@ -41,7 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike do
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do
-      :ok -> {:ok, caster}
+      {:ok, _ref} -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end

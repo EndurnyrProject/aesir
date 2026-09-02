@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
     state = get_player_state(session.pid)
     assert StatusStorage.has_status?(:player, character.id, :sc_strangelights)
 
-    assert :ok =
+    assert {:ok, {:mob, mob.unit_id}} ==
              Combat.execute_magic_attack(state, mob.unit_id,
                skill_id: 19,
                skill_level: 1,

@@ -30,7 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgColdbolt do
   @impl Active
   def cast(caster, {:unit, target_id}, level, _definition) do
     case MagicAttack.execute_bolt(caster, target_id, 14, level, []) do
-      :ok -> {:ok, caster}
+      {:ok, _ref} -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end

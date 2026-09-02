@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Homunculus.HvanCaprice do
   def cast(caster, {:unit, target_ref}, level, _definition) do
     bolt_id = Enum.at(@bolts, :rand.uniform(4) - 1)
 
-    with :ok <- MagicAttack.execute_bolt(caster, target_ref, bolt_id, level, []) do
+    with {:ok, _ref} <- MagicAttack.execute_bolt(caster, target_ref, bolt_id, level, []) do
       {:ok, caster}
     end
   end

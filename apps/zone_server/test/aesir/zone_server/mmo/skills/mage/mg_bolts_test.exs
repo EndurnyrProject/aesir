@@ -84,7 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgBoltsTest do
           assert opts[:skill_ratio] == 100
           assert opts[:hit_count] == 7
           assert opts[:element] == unquote(element)
-          :ok
+          {:ok, {:mob, @target_id}}
         end)
 
         assert {:ok, ^caster} =

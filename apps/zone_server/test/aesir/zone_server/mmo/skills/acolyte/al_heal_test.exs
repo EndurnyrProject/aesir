@@ -113,7 +113,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
           assert Keyword.fetch!(opts, :element) == :holy
           assert Keyword.fetch!(opts, :skill_id) == 28
           assert Keyword.fetch!(opts, :skill_level) == 5
-          :ok
+          {:ok, {:mob, @ally_id}}
         end)
 
         assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
@@ -131,7 +131,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHealTest do
       end)
 
       stub(Combat, :resolve_combatant, fn _id -> {:ok, %{race: :undead}} end)
-      expect(Combat, :execute_magic_damage, fn _caster, @ally_id, 350, _opts -> :ok end)
+
+      expect(Combat, :execute_magic_damage, fn _caster, @ally_id, 350, _opts ->
+        {:ok, {:mob, @ally_id}}
+      end)
 
       assert {:ok, @caster} = AlHeal.cast(@caster, {:unit, @ally_id}, 5, definition)
     end

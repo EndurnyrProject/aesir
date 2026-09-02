@@ -9,7 +9,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
 
@@ -96,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
           assert opts[:hit_count] == hits
           assert opts[:element] == :ghost
           assert opts[:skill_ratio] == 100
-          :ok
+          {:ok, {:mob, @target_id}}
         end)
 
         assert {:ok, ^caster} =
@@ -113,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
 
       expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
         assert opts[:skill_ratio] == 100
-        :ok
+        {:ok, {:mob, @target_id}}
       end)
 
       assert {:ok, ^caster} = MgSoulstrike.cast(caster, {:unit, @target_id}, 8, definition)
@@ -128,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
 
       expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
         assert opts[:skill_ratio] == 100 + 5 * 8
-        :ok
+        {:ok, {:mob, @target_id}}
       end)
 
       assert {:ok, ^caster} = MgSoulstrike.cast(caster, {:unit, @target_id}, 8, definition)
@@ -143,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
 
       expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
         assert opts[:skill_ratio] == 100 + 5 * 3
-        :ok
+        {:ok, {:mob, @target_id}}
       end)
 
       assert {:ok, ^caster} = MgSoulstrike.cast(caster, {:unit, @target_id}, 3, definition)
@@ -198,16 +197,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
                MgFrostdiver.cast(caster, {:unit, @target_id}, 6, definition)
     end
 
-    test "applies sc_freeze for 3000*level ms when the roll succeeds" do
+    test "applies sc_freeze to the returned hit ref for 3000*level ms when the roll succeeds" do
       # Seed {1,2,3} yields :rand.uniform(100) == 27, below every freeze chance.
       :rand.seed(:exsss, {1, 2, 3})
       caster = caster()
       definition = definition(:mg_frostdiver)
+      hit_id = @target_id + 1
 
-      stub(Combat, :execute_magic_attack, fn _, _, _ -> :ok end)
-      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+      stub(Combat, :execute_magic_attack, fn _, _, _ -> {:ok, {:player, hit_id}} end)
 
-      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_freeze, params ->
+      expect(StatusInterpreter, :apply_status, fn :player, ^hit_id, :sc_freeze, params ->
         assert params[:duration] == 3000 * 4
         :ok
       end)
@@ -221,8 +220,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
       caster = caster()
       definition = definition(:mg_frostdiver)
 
-      stub(Combat, :execute_magic_attack, fn _, _, _ -> :ok end)
-      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+      stub(Combat, :execute_magic_attack, fn _, _, _ -> {:ok, {:mob, @target_id}} end)
       reject(&StatusInterpreter.apply_status/4)
 
       assert {:ok, ^caster} = MgFrostdiver.cast(caster, {:unit, @target_id}, 4, definition)

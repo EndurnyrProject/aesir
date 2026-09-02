@@ -103,7 +103,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
          level,
          definition
        ) do
-    attack_undead(caster, target_id, target_state, level, definition)
+    with {:ok, _ref} <- attack_undead(caster, target_id, target_state, level, definition) do
+      :ok
+    end
   end
 
   defp apply_resurrection(

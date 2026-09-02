@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
          :ok <- living_target(unit_type, target_id),
          {:ok, _map_data} <- MapCache.get(map_name),
          true <- LineOfSight.clear?(map_name, {x, y}, {target_x, target_y}),
-         :ok <- Combat.execute_magic_attack(caster, target_id, opts) do
+         {:ok, _ref} <- Combat.execute_magic_attack(caster, target_id, opts) do
       :ok
     else
       false -> {:error, :blocked_line_of_sight}

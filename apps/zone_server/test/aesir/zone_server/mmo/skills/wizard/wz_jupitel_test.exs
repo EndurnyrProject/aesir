@@ -235,7 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
       assert opts[:skip_range] == true
       assert opts[:base_distance] == 2
       assert opts[:origin] == {50, 60}
-      :ok
+      {:ok, {:mob, @target_id}}
     end)
 
     reject(&Combat.knockback/5)

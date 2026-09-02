@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
 
       expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 1, opts ->
         assert opts[:skill_ratio] == 200
-        :ok
+        {:ok, {:mob, @mob_id}}
       end)
 
       assert {:ok, ^caster} =
@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
 
       expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 5, opts ->
         assert opts[:skill_ratio] == 200
-        :ok
+        {:ok, {:mob, @mob_id}}
       end)
 
       assert {:ok, ^caster} =
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
 
       expect(MagicAttack, :execute_bolt, fn ^caster, @mob_id, 90, 3, opts ->
         assert opts[:skill_ratio] == 1800
-        :ok
+        {:ok, {:mob, @mob_id}}
       end)
 
       assert {:ok, ^caster} =

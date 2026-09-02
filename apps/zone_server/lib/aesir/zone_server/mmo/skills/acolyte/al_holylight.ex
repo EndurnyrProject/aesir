@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
     ]
 
     case Combat.execute_magic_attack(caster, target_id, opts) do
-      :ok ->
+      {:ok, _ref} ->
         unit_type = target_unit_type(target_id)
         StatusInterpreter.remove_status(unit_type, target_id, :sc_p_alter)
         StatusInterpreter.remove_status(unit_type, target_id, :sc_kyrie)

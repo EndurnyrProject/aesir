@@ -407,7 +407,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.CombatDeliveryTest do
                ignore_flee: true
              )
 
-    assert :ok =
+    assert {:ok, {:mob, mob.instance_id}} ==
              MagicAttack.execute_magic_damage(homunculus, {:mob, mob.instance_id}, 30,
                skill_id: 8_004,
                skill_level: 1,

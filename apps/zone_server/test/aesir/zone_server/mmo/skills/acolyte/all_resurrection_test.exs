@@ -102,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       assert opts[:skill_ratio] == 4
       assert opts[:element] == :holy
       assert opts[:skip_range]
-      :ok
+      {:ok, {:mob, 2_000}}
     end)
 
     caster = %{character_id: 1_000}
@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
       assert opts[:element] == :holy
       assert opts[:skip_range]
       refute opts[:ignore_mdef]
-      :ok
+      {:ok, {:mob, 2_000}}
     end)
 
     caster = %{character_id: 1_000}
@@ -170,7 +170,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, 2_000, opts ->
       assert opts[:skill_ratio] == 4
       refute opts[:bonus_matk]
-      :ok
+      {:ok, {:mob, 2_000}}
     end)
 
     caster = %{character_id: 1_000}

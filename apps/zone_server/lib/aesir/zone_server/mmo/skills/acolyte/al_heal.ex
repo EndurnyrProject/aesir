@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
                element: :holy,
                skip_range: true
              ) do
-          :ok -> {:ok, caster}
+          {:ok, _ref} -> {:ok, caster}
           {:error, _} = error -> error
         end
 

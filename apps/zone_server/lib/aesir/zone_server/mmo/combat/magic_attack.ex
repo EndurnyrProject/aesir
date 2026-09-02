@@ -88,11 +88,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   ## Returns
 
-    - `:ok` on success.
+    - `{:ok, hit_ref}` on success.
     - `{:error, reason}` when the target is invalid, friendly, dead, or out of range.
   """
   @spec execute_magic_damage(struct(), integer() | Ref.t(), non_neg_integer(), keyword()) ::
-          :ok | {:error, atom()}
+          {:ok, Ref.t()} | {:error, atom()}
   def execute_magic_damage(caster_state, target_ref, amount, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -172,7 +172,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
         dispatch_equip_autobonuses(attacker, target, magic_attack_flag())
       end
 
-      delivery
+      with :ok <- delivery do
+        {:ok, {target_type, target_id}}
+      end
     end
   end
 
@@ -389,10 +391,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   The selected bolt id is the damage and packet skill id. Canonical element and
   hit count cannot be overridden; callers may override the default per-hit ratio
-  for effects attached to the selected bolt.
+  for effects attached to the selected bolt. Returns the ref of the unit hit.
   """
   @spec execute_bolt(struct(), integer() | Ref.t(), integer(), pos_integer(), keyword()) ::
-          :ok | {:error, atom()}
+          {:ok, Ref.t()} | {:error, atom()}
   def execute_bolt(caster, target_ref, bolt_id, level, opts \\ [])
 
   def execute_bolt(caster, target_ref, bolt_id, level, opts)
@@ -441,10 +443,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
       checks still run (default `false`)
 
   ## Returns
-    - :ok if the skill connected
-    - {:error, reason} if the target was invalid, friendly, dead, or out of range
+    - `{:ok, hit_ref}` if the skill connected
+    - `{:error, reason}` if the target was invalid, friendly, dead, or out of range
   """
-  @spec execute_magic_attack(struct(), integer() | Ref.t(), keyword()) :: :ok | {:error, atom()}
+  @spec execute_magic_attack(struct(), integer() | Ref.t(), keyword()) ::
+          {:ok, Ref.t()} | {:error, atom()}
   def execute_magic_attack(caster_state, target_ref, opts) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
@@ -472,18 +475,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
           opts
         )
 
-      deliver_magic_hits(
-        {target_type, target_pid, target_id, target_state, target},
-        damages,
-        magic_hit_info(element,
-          skill_id: skill_id,
-          skill_level: skill_level,
-          from_caster?: true
-        ),
-        attacker,
-        {skill_id, skill_level},
-        opts
-      )
+      with :ok <-
+             deliver_magic_hits(
+               {target_type, target_pid, target_id, target_state, target},
+               damages,
+               magic_hit_info(element,
+                 skill_id: skill_id,
+                 skill_level: skill_level,
+                 from_caster?: true
+               ),
+               attacker,
+               {skill_id, skill_level},
+               opts
+             ) do
+        {:ok, {target_type, target_id}}
+      end
     end
   end
 

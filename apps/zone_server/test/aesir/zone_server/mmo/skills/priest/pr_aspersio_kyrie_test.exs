@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
       assert opts[:skill_level] == 3
       assert opts[:element] == :holy
       assert opts[:skip_range]
-      :ok
+      {:ok, {:mob, 2_000}}
     end)
 
     reject(&StatusInterpreter.apply_status/4)
@@ -206,7 +206,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
       {:ok, %{unit_type: :mob, race: :undead, element: {:undead, 1}}}
     end)
 
-    expect(Combat, :execute_magic_damage, fn ^caster, 2_000, 40, _opts -> :ok end)
+    expect(Combat, :execute_magic_damage, fn ^caster, 2_000, 40, _opts ->
+      {:ok, {:mob, 2_000}}
+    end)
+
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, updated} = SkillInterpreter.cast(caster, 68, 1, {:unit, 2_000})

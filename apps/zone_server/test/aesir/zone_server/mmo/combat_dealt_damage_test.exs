@@ -249,7 +249,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatDealtDamageTest do
     test "a magic attack never fires the hook", ctx do
       arm_proc_status()
 
-      assert :ok =
+      assert {:ok, {:mob, @mob_id}} =
                Combat.execute_magic_attack(ctx.player_state, @mob_id,
                  skill_id: @bolt_id,
                  skill_level: 1,

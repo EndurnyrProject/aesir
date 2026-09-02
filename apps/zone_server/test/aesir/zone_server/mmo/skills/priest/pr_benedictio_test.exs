@@ -296,7 +296,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
 
     stub(Combat, :execute_magic_attack, fn ^caster, target_id, opts ->
       send(test_pid, {:damage, target_id, opts})
-      :ok
+      {:ok, {:mob, target_id}}
     end)
 
     assert {:ok, ^caster} =

@@ -148,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      assert :ok =
+      assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 50,
                  skill_id: @skill_id,
                  skill_level: @skill_level
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      assert :ok =
+      assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 100,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
@@ -202,7 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      assert :ok =
+      assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 200,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
@@ -224,7 +224,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      assert :ok =
+      assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 50,
                  skill_id: @skill_id,
                  skill_level: @skill_level
@@ -252,7 +252,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       reject(&MobSession.apply_damage/3)
       expect(MobSession, :apply_coma, fn _pid, {:player, @caster_id} -> :ok end)
 
-      assert :ok =
+      assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 100,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
@@ -279,7 +279,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       reject(&MobSession.apply_damage/3)
       reject(&MobSession.apply_coma/2)
 
-      assert :ok =
+      assert {:ok, {:mob, @target_id}} =
                Combat.execute_magic_damage(caster, @target_id, 100,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
@@ -353,7 +353,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
         :ok
       end)
 
-      assert :ok =
+      assert {:ok, {:player, @target_id}} =
                Combat.execute_magic_damage(mob_caster, @target_id, 100,
                  skill_id: @skill_id,
                  skill_level: @skill_level,
@@ -393,7 +393,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
       on_exit(fn -> Process.exit(target_player, :kill) end)
       stub_player_target(target_player, self())
 
-      assert :ok =
+      assert {:ok, {:player, @target_id}} =
                Combat.execute_magic_damage(
                  build_mob_state(@caster_id, 150, 150, {:neutral, 1}),
                  @target_id,

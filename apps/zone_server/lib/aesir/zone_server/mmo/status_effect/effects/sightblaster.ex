@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     if living_contact?(contact) and hostile_contact?(caster_id, contact) do
       with {:ok, {_module, caster, _pid}} <- UnitRegistry.get_unit(:player, caster_id),
            {:ok, {x, y, _map_name}} <- SpatialIndex.get_unit_position(:player, caster_id),
-           :ok <-
+           {:ok, _ref} <-
              Combat.execute_magic_attack(caster, target_id,
                skill_id: @skill_id,
                skill_level: instance.val1,

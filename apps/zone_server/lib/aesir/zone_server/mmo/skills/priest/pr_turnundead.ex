@@ -51,7 +51,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrTurnundead do
          true <- undead?(target_state.__struct__.to_combatant(target_state)),
          target_stats <- target_state.__struct__.get_stats(target_state),
          caster_stats <- PlayerState.get_stats(caster),
-         :ok <- apply_damage(caster, target_id, caster_stats, target_stats, level, definition) do
+         {:ok, _ref} <-
+           apply_damage(caster, target_id, caster_stats, target_stats, level, definition) do
       {:ok, caster}
     else
       false -> {:error, :invalid_target}

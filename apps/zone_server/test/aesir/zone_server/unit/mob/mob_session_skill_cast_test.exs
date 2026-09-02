@@ -191,7 +191,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
         {:ok, {nil, living_player_state(), nil}}
       end)
 
-      expect(Combat, :execute_magic_attack, fn _caster, @target_id, _opts -> :ok end)
+      expect(Combat, :execute_magic_attack, fn _caster, @target_id, _opts ->
+        {:ok, {:player, @target_id}}
+      end)
 
       {:noreply, updated} =
         MobSession.handle_info({:ai, :tick}, build_mob_state(%{instance_id: mob_id}))
@@ -304,7 +306,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       expect(Combat, :execute_magic_attack, fn _caster, @target_id, opts ->
         assert opts[:skill_id] == 19
         assert opts[:element] == :fire
-        :ok
+        {:ok, {:player, @target_id}}
       end)
 
       before = System.system_time(:millisecond)
@@ -367,7 +369,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionSkillCastTest do
       expect(Combat, :execute_magic_attack, fn _caster, @target_id, opts ->
         assert opts[:skill_id] == 19
         assert opts[:element] == :fire
-        :ok
+        {:ok, {:player, @target_id}}
       end)
 
       before = System.system_time(:millisecond)

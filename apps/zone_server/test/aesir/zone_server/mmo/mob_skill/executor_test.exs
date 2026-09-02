@@ -364,7 +364,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         assert opts[:skill_level] == 3
         assert opts[:hit_count] == 3
         assert opts[:element] == :fire
-        :ok
+        {:ok, {:player, 42}}
       end)
 
       assert Executor.execute(caster, row(%{skill_id: 19, target: :target})) == :ok
@@ -427,7 +427,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       expect(Combat, :execute_magic_attack, fn ^caster, {:homunculus, ^gid}, opts ->
         assert opts[:skill_id] == 15
         assert opts[:skill_level] == 40
-        :ok
+        {:ok, {:homunculus, gid}}
       end)
 
       expect(StatusInterpreter, :apply_status, fn :homunculus, ^gid, :sc_freeze, opts ->

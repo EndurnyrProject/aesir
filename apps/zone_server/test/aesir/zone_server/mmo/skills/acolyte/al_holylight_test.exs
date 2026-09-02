@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
         assert opts[:skill_ratio] == 125
         assert opts[:hit_count] == 1
         assert opts[:element] == :holy
-        :ok
+        {:ok, {:player, @target_id}}
       end)
 
       assert {:ok, ^caster} = AlHolylight.cast(caster, {:unit, @target_id}, 1, definition())
@@ -73,7 +73,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
         :player, @target_id -> true
       end)
 
-      expect(Combat, :execute_magic_attack, fn ^caster, @target_id, _opts -> :ok end)
+      expect(Combat, :execute_magic_attack, fn ^caster, @target_id, _opts ->
+        {:ok, {:player, @target_id}}
+      end)
+
       expect(StatusInterpreter, :remove_status, fn :player, @target_id, :sc_p_alter -> :ok end)
       expect(StatusInterpreter, :remove_status, fn :player, @target_id, :sc_kyrie -> :ok end)
 

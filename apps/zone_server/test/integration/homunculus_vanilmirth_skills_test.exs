@@ -87,7 +87,10 @@ defmodule Aesir.ZoneServer.Integration.HomunculusVanilmirthSkillsTest do
 
     for {bolt_id, roll} <- Enum.with_index([14, 19, 20, 90], 1) do
       seed_rolls([{4, roll}])
-      expect(MagicAttack, :execute_bolt, fn ^caster, {:mob, 7_001}, ^bolt_id, 5, [] -> :ok end)
+
+      expect(MagicAttack, :execute_bolt, fn ^caster, {:mob, 7_001}, ^bolt_id, 5, [] ->
+        {:ok, {:mob, 7_001}}
+      end)
 
       assert {:ok, ^caster} =
                HvanCaprice.cast(caster, {:unit, {:mob, 7_001}}, 5, HvanCaprice.definition())

@@ -63,7 +63,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     register(:player, 1001, caster)
     register(:mob, 2001, target)
 
-    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> :ok end)
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
+      {:ok, {:mob, 2001}}
+    end)
+
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 -> {:ok, {54, 50}} end)
 
     assert {:ok, ^caster} = WzSightblaster.cast(caster, :self, 1, WzSightblaster.definition())
@@ -118,7 +121,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
     :ok = SpatialIndex.update_unit_position(:mob, 2001, 51, 50, "prontera")
 
-    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts -> :ok end)
+    expect(Combat, :execute_magic_attack, fn ^caster, 2001, _opts ->
+      {:ok, {:mob, 2001}}
+    end)
+
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 -> {:ok, {54, 50}} end)
 
     assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
@@ -139,7 +145,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
 
     expect(Combat, :execute_magic_attack, fn ^caster, 2001, opts ->
       assert opts == [skill_id: 1006, skill_level: 1, skill_ratio: 600, element: :fire]
-      :ok
+      {:ok, {:mob, 2001}}
     end)
 
     expect(Combat, :knockback, fn :mob, 2001, 50, 50, 3 ->

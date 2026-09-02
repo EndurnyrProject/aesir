@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguardTest do
 
       reject(&StatusInterpreter.before_weapon_hit/3)
 
-      assert :ok =
+      assert {:ok, {:player, 5000}} =
                Combat.execute_magic_attack(caster_state, 5000,
                  skill_id: 14,
                  skill_level: 10,

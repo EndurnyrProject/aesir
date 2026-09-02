@@ -124,7 +124,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
 
       assert [{:auto_cast, name, level, target}] = weapon_hit()
 
-      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts -> :ok end)
+      stub(Combat, :execute_magic_attack, fn _caster, target_id, _opts ->
+        {:ok, {:mob, target_id}}
+      end)
+
       {:ok, definition} = Aesir.ZoneServer.Mmo.Skill.Catalog.by_name(name)
 
       assert {:ok, _} = SkillInterpreter.auto_cast(game_state(), definition.id, level, target)
@@ -148,9 +151,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
       # dispatch would proc, then prove the bolt's own execution triggers none.
       test_pid = self()
 
-      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts ->
+      stub(Combat, :execute_magic_attack, fn _caster, target_id, _opts ->
         send(test_pid, :bolt_executed)
-        :ok
+        {:ok, {:mob, target_id}}
       end)
 
       :rand.seed(:exsss, @procs_seed)

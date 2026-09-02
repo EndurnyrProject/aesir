@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
            element: definition.element,
            skip_range: true
          ) do
-      :ok -> {:ok, caster}
+      {:ok, _ref} -> {:ok, caster}
       {:error, _reason} = error -> error
     end
   end

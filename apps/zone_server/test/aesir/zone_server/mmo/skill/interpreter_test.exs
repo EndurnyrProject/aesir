@@ -2065,7 +2065,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
 
     test "a successful offensive Resurrection charges SP and its Blue Gemstone" do
-      stub_offensive_resurrection(:ok)
+      stub_offensive_resurrection({:ok, {:mob, 2_000}})
 
       assert {:ok, updated} =
                Interpreter.complete_cast(resurrection_game_state(), 54, 1, {:unit, 2_000})
@@ -2492,7 +2492,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
   # applied. MG_FIREBOLT (19) costs 12 SP at level 1 and delays 1400ms.
   describe "auto_cast/4" do
     setup do
-      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts -> :ok end)
+      stub(Combat, :execute_magic_attack, fn _caster, target_id, _opts ->
+        {:ok, {:mob, target_id}}
+      end)
+
       :ok
     end
 
@@ -2562,7 +2565,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
   describe "proc_cast/4" do
     setup do
-      stub(Combat, :execute_magic_attack, fn _caster, _target_id, _opts -> :ok end)
+      stub(Combat, :execute_magic_attack, fn _caster, target_id, _opts ->
+        {:ok, {:mob, target_id}}
+      end)
+
       :ok
     end
 

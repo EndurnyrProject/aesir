@@ -25,7 +25,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
-  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
 
@@ -41,8 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
     ]
 
     case Combat.execute_magic_attack(caster, target, opts) do
-      :ok ->
-        maybe_freeze(caster, target, level)
+      {:ok, hit_ref} ->
+        maybe_freeze(caster, hit_ref, level)
         {:ok, caster}
 
       {:error, _reason} = error ->
@@ -50,9 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
     end
   end
 
-  defp maybe_freeze(caster, target, level) do
+  defp maybe_freeze(caster, {unit_type, unit_id}, level) do
     if :rand.uniform(100) <= freeze_chance(level) do
-      {unit_type, unit_id} = target_ref(target)
       {source_type, source_id} = source_ref(caster)
 
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,
@@ -71,12 +69,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}
   defp source_ref(%{instance_id: unit_id}), do: {:mob, unit_id}
   defp source_ref(%{world_gid: unit_id}), do: {:homunculus, unit_id}
-
-  defp target_ref({unit_type, unit_id}), do: {unit_type, unit_id}
-
-  defp target_ref(target_id) do
-    if UnitRegistry.unit_exists?(:mob, target_id),
-      do: {:mob, target_id},
-      else: {:player, target_id}
-  end
 end
