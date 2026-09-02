@@ -805,6 +805,10 @@
   locations:
     - right_hand
   name: Edge
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 30)
+    ctx = bonus(ctx, {:coma_class, :normal}, 10)
+    ctx
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -1100,6 +1104,7 @@
   locations:
     - right_hand
   name: Jeweled Sword
+  on_equip: bonus(ctx, {:add_monster_drop_group, :jewel}, 10000)
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -1124,6 +1129,7 @@
   locations:
     - right_hand
   name: Gaia Sword
+  on_equip: bonus(ctx, {:add_monster_drop_group, :ore}, 10000)
   range: 1
   refineable: true
   subtype: one_handed_sword
@@ -1541,6 +1547,13 @@
   locations:
     - both_hand
   name: Masamune
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 30)
+    ctx = bonus(ctx, :str, -5)
+    ctx = bonus(ctx, :aspd, 2)
+    ctx = bonus(ctx, :def_rate, -67)
+    ctx = bonus(ctx, :def2_rate, -67)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_sword
@@ -3392,6 +3405,12 @@
   locations:
     - right_hand
   name: Grimtooth
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = bonus(ctx, :def_rate, -50)
+    ctx = bonus(ctx, :def2_rate, -50)
+    ctx
   range: 1
   refineable: true
   subtype: dagger
@@ -3424,6 +3443,7 @@
   locations:
     - right_hand
   name: Zeny Knife
+  on_equip: paired_choice(ctx, :get_zeny, 100, 40)
   range: 1
   refineable: true
   subtype: dagger
@@ -5308,6 +5328,14 @@
   locations:
     - both_hand
   name: Guillotine
+  on_equip: |-
+    ctx = bonus(ctx, {:coma_race, :demi_human}, 30)
+    ctx = bonus(ctx, {:coma_race, :player_human}, 30)
+    ctx = bonus(ctx, {:sp_drain_race, :demi_human}, 2)
+    ctx = bonus(ctx, {:sp_drain_race, :player_human}, 2)
+    ctx = bonus(ctx, {:sp_gain_race, :demi_human}, 20)
+    ctx = bonus(ctx, {:sp_gain_race, :player_human}, 20)
+    ctx
   range: 1
   refineable: true
   subtype: two_handed_axe
@@ -6120,6 +6148,11 @@
   locations:
     - right_hand
   name: Gungnir
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :perfect_hit_rate, 25)
+    ctx = bonus(ctx, :hit, 30)
+    ctx
   range: 3
   refineable: true
   subtype: one_handed_spear
@@ -6231,6 +6264,11 @@
   locations:
     - right_hand
   name: Gungnir
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :wind)
+    ctx = bonus(ctx, :perfect_hit_rate, 25)
+    ctx = bonus(ctx, :hit, 30)
+    ctx
   range: 3
   refineable: true
   slots: 2
@@ -7932,6 +7970,11 @@
   locations:
     - right_hand
   name: Spike
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 40)
+    ctx = bonus(ctx, :def_rate, -67)
+    ctx = bonus(ctx, :def2_rate, -67)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -8040,6 +8083,13 @@
   locations:
     - right_hand
   name: Grand Cross
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = grant_skill(ctx, 77, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 77}, 3, 100)
+    ctx = bonus(ctx, {:sp_drain_race, :undead}, 1)
+    ctx = bonus(ctx, {:sp_gain_race, :undead}, 3)
+    ctx
   range: 1
   refineable: true
   subtype: mace
@@ -8264,6 +8314,11 @@
   locations:
     - right_hand
   name: Spike
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 40)
+    ctx = bonus(ctx, :def_rate, -67)
+    ctx = bonus(ctx, :def2_rate, -67)
+    ctx
   range: 1
   refineable: true
   slots: 2
@@ -8307,6 +8362,13 @@
   locations:
     - right_hand
   name: Grand Cross
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = grant_skill(ctx, 77, 3)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 77}, 3, 100)
+    ctx = bonus(ctx, {:sp_drain_race, :undead}, 1)
+    ctx = bonus(ctx, {:sp_gain_race, :undead}, 3)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -11390,6 +11452,7 @@
   locations:
     - both_hand
   name: Double Bound
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 46}, skill_lv(ctx, 46), 10)'
   range: 5
   refineable: true
   slots: 3
@@ -13492,6 +13555,13 @@
   locations:
     - both_hand
   name: Dea Staff
+  on_equip: |-
+    ctx = set(ctx, :atk_ele, :holy)
+    ctx = bonus(ctx, :matk_rate, (15 + div(refine(ctx), 2)))
+    ctx = bonus(ctx, :int, 6)
+    ctx = bonus(ctx, :vit, 2)
+    ctx = autobonus(ctx, %{primary: [], trigger: {:on_skill, 28}, secondary: [{:heal, 0, 200}], battle_flag: 0}, 20, 1000)
+    ctx
   range: 1
   refineable: true
   slots: 1
@@ -17097,6 +17167,14 @@
   name: Recuperative Armor
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, :no_regen, 1)
+    ctx = bonus(ctx, :no_regen, 2)
+    ctx = bonus(ctx, :hp_gain_value, 60)
+    ctx = bonus(ctx, :sp_gain_value, 6)
+    ctx = bonus(ctx, :magic_hp_gain_value, 60)
+    ctx = bonus(ctx, :magic_sp_gain_value, 6)
+    ctx
   type: armor
 - aegis_name: Chameleon_Armor
   armor_level: 1
@@ -17149,6 +17227,12 @@
   locations:
     - armor
   name: Sprint Mail
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :hp_regen, 5)
+    ctx = bonus(ctx, :item_heal_rate, 3)
+    ctx = bonus(ctx, {:skill_heal, 28}, 3)
+    ctx
   refineable: true
   slots: 1
   type: armor
@@ -17623,6 +17707,10 @@
   locations:
     - shoes
   name: Fricco's Shoes
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = bonus(ctx, {:add_item_group_heal, :potion}, 20)
+    ctx
   refineable: true
   type: armor
   weight: 500
@@ -21499,6 +21587,13 @@
   locations:
     - both_accessory
   name: Neo Skull Ring
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 5)
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :max_hp_rate, 5)
+    ctx = bonus(ctx, {:skill_heal, 28}, 5)
+    ctx = grant_skill(ctx, 10, 1)
+    ctx
   type: armor
 - aegis_name: Small_Fishing_Rod
   armor_level: 1
@@ -21943,6 +22038,11 @@
   name: Rocks
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:add_damage_class, 2047}, 10)
+    ctx = bonus(ctx, {:add_def_monster, 2048}, -10)
+    ctx = bonus(ctx, {:add_monster_drop, 6152, 2047}, 70)
+    ctx
   type: armor
   weight: 200
 - aegis_name: Magical_Stone_
@@ -21959,6 +22059,11 @@
   name: Rocks
   no_guild_storage: true
   no_trade: true
+  on_equip: |-
+    ctx = bonus(ctx, {:add_damage_class, 2049}, 10)
+    ctx = bonus(ctx, {:add_def_monster, 2050}, -10)
+    ctx = bonus(ctx, {:add_monster_drop, 6151, 2049}, 70)
+    ctx
   type: armor
   weight: 200
 - aegis_name: Will_Of_Exhausted_Angel
@@ -27081,6 +27186,7 @@
     - head_top
   name: Brazil National Flag Hat
   no_guild_storage: true
+  on_equip: bonus(ctx, :movement_speed_add, 25)
   refineable: true
   slots: 1
   type: armor
@@ -27897,6 +28003,13 @@
     - head_top
   name: Hyuke's Black Cat Ears
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :critical, 3)
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, :def_rate, -50)
+    ctx = bonus(ctx, :def2_rate, -50)
+    ctx
   refineable: true
   type: armor
   view: 368
@@ -31232,6 +31345,10 @@
     - head_low
   name: Well-Chewed Pencil
   no_guild_storage: true
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, :hit_rate, 3)
+    ctx
   type: armor
   view: 555
   weight: 100

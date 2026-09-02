@@ -1832,6 +1832,7 @@
   locations:
     - ammo
   name: Sharp Arrow
+  on_equip: bonus(ctx, :critical_long, 20)
   subtype: arrow
   type: ammo
   weight: 1
