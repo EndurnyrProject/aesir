@@ -346,6 +346,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.equip_autobonuses == %{}
       assert stats.active_autobonuses == %{}
       assert stats.equip_statuses == %{}
+      assert stats.card_unequip_effects == %{}
 
       assert stats.modifiers.job_bonuses ==
                %{
@@ -718,7 +719,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         modifiers: %{equipment: %{atk: 9}, status_effects: %{def: 4}, job_bonuses: %{str: 2}},
         equip_autobonuses: %{{7, 0} => %{primary: []}},
         active_autobonuses: %{{7, 0} => 3},
-        equip_statuses: %{summer: {:infinite, 2}}
+        equip_statuses: %{summer: {:infinite, 2}},
+        card_unequip_effects: %{{7, 0} => %{source_order: {0, 0}, effects: []}}
       }
 
       result = Stats.apply_equipment_modifiers(stats, nil)
@@ -727,6 +729,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.equip_autobonuses == %{}
       assert result.active_autobonuses == %{}
       assert result.equip_statuses == %{}
+      assert result.card_unequip_effects == %{}
     end
 
     test "status effects remain unchanged (placeholder)" do
@@ -1950,6 +1953,371 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       )
     end
 
+    test "folds a socketed card after its host without applying card static values" do
+      host =
+        scripted_item(90_180,
+          type: :weapon,
+          subtype: :one_handed_sword,
+          weapon_level: 4,
+          slots: 1,
+          attack: 10,
+          magic_attack: 20,
+          defense: 3,
+          on_equip: [{:set, :atk_ele, :fire}]
+        )
+
+      card =
+        scripted_item(90_181,
+          type: :card,
+          weapon_level: 4,
+          attack: 1_000,
+          magic_attack: 1_000,
+          defense: 1_000,
+          on_equip: [{:bonus, :atk, 5}, {:bonus, :matk, 5}, {:set, :atk_ele, :wind}]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_180 -> {:ok, host}
+        90_181 -> {:ok, card}
+      end)
+
+      stub(RefineDatabase, :level_info, fn :weapon, 4, 7 ->
+        %{bonus: 700, randombonus_max: 300}
+      end)
+
+      row = %{equipped_row(40, 90_180, @right_hand, 7) | card0: 90_181}
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+
+      assert result.modifiers.equipment.atk == 22
+      assert result.modifiers.equipment.def == 3
+      assert result.modifiers.equipment.matk == 5
+      assert result.modifiers.equipment.wmatk_min == 19
+      assert result.modifiers.equipment.wmatk_max == 35
+      assert result.modifiers.equipment.overrefine_band == 3
+      assert result.modifiers.equipment.atk_ele == :wind
+    end
+
+    test "folds valid cards in card0 through card3 order and caps oversized slot counts" do
+      host =
+        scripted_item(90_169, type: :armor, slots: 99, on_equip: [{:set, :atk_ele, :neutral}])
+
+      cards = [
+        scripted_item(90_170, type: :card, on_equip: [{:set, :atk_ele, :fire}]),
+        scripted_item(90_171, type: :card, on_equip: [{:set, :atk_ele, :wind}]),
+        scripted_item(90_172, type: :card, on_equip: [{:set, :atk_ele, :water}]),
+        scripted_item(90_173, type: :card, on_equip: [{:set, :atk_ele, :holy}])
+      ]
+
+      definitions = Map.new([host | cards], &{&1.id, &1})
+      stub(ItemManagement, :get_item_by_id, &Map.fetch(definitions, &1))
+
+      row = %{
+        equipped_row(37, 90_169, @armor_pos)
+        | card0: 90_170,
+          card1: 90_171,
+          card2: 90_172,
+          card3: 90_173
+      }
+
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+
+      assert result.modifiers.equipment.atk_ele == :holy
+    end
+
+    test "ignores zero, unknown, wrong-type, and out-of-range card IDs" do
+      host = scripted_item(90_176, type: :armor, slots: 3)
+      wrong_type = scripted_item(90_177, type: :etc, on_equip: [{:bonus, :atk, 100}])
+      out_of_range = scripted_item(90_178, type: :card, on_equip: [{:bonus, :atk, 1_000}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_176 -> {:ok, host}
+        90_177 -> {:ok, wrong_type}
+        90_999 -> :error
+        90_178 -> {:ok, out_of_range}
+      end)
+
+      row = %{
+        equipped_row(39, 90_176, @armor_pos)
+        | card0: 0,
+          card1: 90_999,
+          card2: 90_177,
+          card3: 90_178
+      }
+
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+
+      assert result.modifiers.equipment.atk == 0
+      assert result.equip_autobonuses == %{}
+      assert result.equip_statuses == %{}
+      assert result.card_unequip_effects == %{}
+    end
+
+    test "card programs receive host refine and wearer inputs from only the valid worn multiset" do
+      host = scripted_item(90_182, type: :armor, slots: 4)
+      wrong_type = scripted_item(90_184, type: :etc)
+
+      card =
+        scripted_item(90_183,
+          type: :card,
+          on_equip: [
+            {:if, {:equipped, [90_182, 90_183, 90_183]}, [{:bonus, :atk, 100}], []},
+            {:if, {:equipped, [90_999]}, [{:bonus, :atk, 1_000}], []},
+            {:if, {:equipped, [90_184]}, [{:bonus, :atk, 2_000}], []},
+            {:bonus, :atk,
+             {:+, :refine,
+              {:+, :base_level, {:+, :job_level, {:+, {:skill_lv, 5}, {:stat, :str}}}}}},
+            {:if, {:job_cmp, :==, :class, :novice}, [{:bonus, :atk, 1}], []}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_182 -> {:ok, host}
+        90_183 -> {:ok, card}
+        90_184 -> {:ok, wrong_type}
+        90_999 -> :error
+      end)
+
+      base = %{
+        swordman(%Equipment{}, %{})
+        | base_stats: %{str: 11, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
+          progression: %{
+            swordman(%Equipment{}, %{}).progression
+            | base_level: 20,
+              job_level: 7,
+              learned_skills: %{5 => 3}
+          },
+          modifiers: %Modifiers{
+            equipment: %{},
+            status_effects: %{},
+            job_bonuses: %{str: 2}
+          }
+      }
+
+      row = %{
+        equipped_row(42, 90_182, @armor_pos, 4)
+        | card0: 90_183,
+          card1: 90_183,
+          card2: 90_999,
+          card3: 90_184
+      }
+
+      result = Stats.apply_equipment_modifiers(base, [row])
+
+      assert result.modifiers.equipment.atk == 296
+    end
+
+    test "preserves every modifier destination semantic across host and duplicate cards" do
+      overwrite_key = {:def_set_race_rate, :player_human}
+
+      auto_cast = fn rate ->
+        {:auto_cast, %{trigger: :attack, skill_id: 28, flag: 3, force: 0}, 1, rate}
+      end
+
+      host =
+        scripted_item(90_174,
+          type: :armor,
+          slots: 2,
+          on_equip: [
+            {:bonus, :atk, 1},
+            {:set, :atk_ele, :fire},
+            {:bonus, overwrite_key, 100},
+            {:bonus, :movement_speed, 5},
+            {:bonus, :no_regen, 1},
+            {:paired_choice, :get_zeny, 500, 10},
+            {:grant_skill, 28, 2},
+            {:status_start, :summer, :infinite, 1},
+            auto_cast.(100)
+          ]
+        )
+
+      card =
+        scripted_item(90_175,
+          type: :card,
+          on_equip: [
+            {:bonus, :atk, 2},
+            {:set, :atk_ele, :wind},
+            {:bonus, overwrite_key, 200},
+            {:bonus, :movement_speed, 10},
+            {:bonus, :no_regen, 2},
+            {:paired_choice, :get_zeny, 100, 20},
+            {:grant_skill, 28, 3},
+            {:status_start, :summer, :infinite, 2},
+            auto_cast.(200)
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_174 -> {:ok, host}
+        90_175 -> {:ok, card}
+      end)
+
+      row = %{equipped_row(38, 90_174, @armor_pos) | card0: 90_175, card1: 90_175}
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+
+      assert result.modifiers.equipment.atk == 5
+      assert result.modifiers.equipment.atk_ele == :wind
+      assert result.modifiers.equipment[overwrite_key] == 200
+      assert result.modifiers.equipment.movement_speed == 10
+      assert result.modifiers.equipment.no_regen == 3
+      assert result.modifiers.equipment.get_zeny == {20, 100}
+      assert result.modifiers.equipment[{:auto_cast, {:attack, 28, 1, 3, 0}}] == 500
+      assert result.granted_skills == %{28 => 3}
+      assert result.equip_statuses == %{summer: {:infinite, 2}}
+    end
+
+    test "flattens host and duplicate-card autobonus slots under the host row identity" do
+      autobonus = fn bonus ->
+        {:autobonus,
+         %{trigger: :attack, battle_flag: 0, primary: [{:bonus, :atk, bonus}], secondary: []},
+         1_000, 10_000}
+      end
+
+      host = scripted_item(90_184, type: :armor, slots: 2, on_equip: [autobonus.(1)])
+      card = scripted_item(90_185, type: :card, on_equip: [autobonus.(2)])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_184 -> {:ok, host}
+        90_185 -> {:ok, card}
+      end)
+
+      row = %{equipped_row(43, 90_184, @armor_pos, 7) | card0: 90_185, card1: 90_185}
+      result = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+
+      assert Map.keys(result.equip_autobonuses) |> Enum.sort() == [{43, 0}, {43, 1}, {43, 2}]
+
+      assert Enum.map(0..2, fn slot ->
+               registration = result.equip_autobonuses[{43, slot}]
+
+               {registration.item_id, registration.source_identity, registration.refine,
+                registration.source_order}
+             end) == [
+               {90_184, {:host, 90_184}, 7, {0, 0}},
+               {90_185, {:card, 0, 90_185}, 7, {0, 1}},
+               {90_185, {:card, 1, 90_185}, 7, {0, 2}}
+             ]
+
+      active = %{
+        result
+        | active_autobonuses: %{{43, 0} => 10, {43, 1} => 11, {43, 2} => 12}
+      }
+
+      active = Stats.apply_equipment_modifiers(active)
+      assert active.modifiers.equipment.atk == 5
+
+      without_last_card = %{row | card1: 0}
+      pruned = Stats.apply_equipment_modifiers(active, [without_last_card])
+
+      assert Map.keys(pruned.equip_autobonuses) |> Enum.sort() == [{43, 0}, {43, 1}]
+      assert pruned.active_autobonuses == %{{43, 0} => 10, {43, 1} => 11}
+      assert pruned.modifiers.equipment.atk == 3
+    end
+
+    test "prunes an active generation when an earlier card proc source disappears" do
+      autobonus = fn bonus ->
+        {:autobonus,
+         %{trigger: :attack, battle_flag: 0, primary: [{:bonus, :atk, bonus}], secondary: []},
+         1_000, 10_000}
+      end
+
+      host = scripted_item(90_160, type: :armor, slots: 2)
+      earlier = scripted_item(90_161, type: :card, on_equip: [autobonus.(10)])
+      later = scripted_item(90_162, type: :card, on_equip: [autobonus.(20)])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_160 -> {:ok, host}
+        90_161 -> {:ok, earlier}
+        90_162 -> {:ok, later}
+      end)
+
+      row = %{equipped_row(46, 90_160, @armor_pos) | card0: 90_161, card1: 90_162}
+      folded = Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      old_generation = 77
+
+      active =
+        Stats.apply_equipment_modifiers(%{
+          folded
+          | active_autobonuses: %{{46, 0} => old_generation}
+        })
+
+      assert active.modifiers.equipment.atk == 10
+
+      shifted = Stats.apply_equipment_modifiers(active, [%{row | card0: 0}])
+
+      assert shifted.equip_autobonuses[{46, 0}].item_id == 90_162
+      assert shifted.active_autobonuses == %{}
+      assert shifted.modifiers.equipment.atk == 0
+      refute Map.has_key?(shifted.active_autobonuses, {46, 0})
+    end
+
+    test "records evaluated card cleanup by host row and socket order" do
+      host = scripted_item(90_186, type: :armor, slots: 3)
+
+      cleanup_card =
+        scripted_item(90_187,
+          type: :card,
+          on_unequip: [
+            {:heal, :refine, :base_level},
+            {:status_end, :summer}
+          ]
+        )
+
+      inert_card = scripted_item(90_179, type: :card)
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_186 -> {:ok, host}
+        90_187 -> {:ok, cleanup_card}
+        90_179 -> {:ok, inert_card}
+      end)
+
+      base = swordman(%Equipment{}, %{})
+      base = %{base | progression: %{base.progression | base_level: 20}}
+
+      row = %{
+        equipped_row(44, 90_186, @armor_pos, 7)
+        | card0: 90_187,
+          card1: 90_187,
+          card2: 90_179
+      }
+
+      second_row = %{equipped_row(45, 90_186, @garment_pos, 4) | card2: 90_187}
+      result = Stats.apply_equipment_modifiers(base, [row, second_row])
+
+      expected = %{
+        {44, 0} => %{
+          source_order: {0, 0},
+          effects: [{:heal, 7, 20}, {:status_end, :summer}]
+        },
+        {44, 1} => %{
+          source_order: {0, 1},
+          effects: [{:heal, 7, 20}, {:status_end, :summer}]
+        },
+        {45, 2} => %{
+          source_order: {1, 2},
+          effects: [{:heal, 4, 20}, {:status_end, :summer}]
+        }
+      }
+
+      assert result.card_unequip_effects == expected
+      assert Stats.apply_equipment_modifiers(result).card_unequip_effects == expected
+      assert Stats.apply_equipment_modifiers(result, []).card_unequip_effects == %{}
+    end
+
+    test "rejects card cleanup without persistent host row identity" do
+      host = scripted_item(90_167, type: :armor, slots: 1)
+      card = scripted_item(90_168, type: :card, on_unequip: [{:status_end, :summer}])
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_167 -> {:ok, host}
+        90_168 -> {:ok, card}
+      end)
+
+      row = %{equipped(90_167, @armor_pos) | card0: 90_168}
+
+      assert_raise ArgumentError, ~r/card cleanup requires a persistent positive row id/, fn ->
+        Stats.apply_equipment_modifiers(swordman(%Equipment{}, %{}), [row])
+      end
+    end
+
     test "keys each ordered registration by persistent row id and zero-based local index" do
       nested =
         {:autobonus,
@@ -2004,6 +2372,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert result.equip_autobonuses[{41, 0}] == %{
                item_id: 90_198,
+               source_identity: {:host, 90_198},
                refine: 6,
                source_order: {0, 0},
                trigger: :attack,

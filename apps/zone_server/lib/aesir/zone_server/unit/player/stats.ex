@@ -138,9 +138,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @typedoc "Stable identity of one autobonus registration within an inventory row."
   @type autobonus_key :: {pos_integer(), non_neg_integer()}
 
+  @typedoc "Identity of the host or socketed card source that owns an autobonus registration."
+  @type autobonus_source_identity :: {:host, pos_integer()} | {:card, 0..3, pos_integer()}
+
   @typedoc "An evaluated autobonus registration derived from a worn item."
   @type autobonus_registration :: %{
           item_id: pos_integer(),
+          source_identity: autobonus_source_identity(),
           refine: non_neg_integer(),
           source_order: {non_neg_integer(), non_neg_integer()},
           trigger: :attack | :when_hit | {:on_skill, pos_integer()},
@@ -156,11 +160,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   @typedoc "A direct status desired by at least one currently worn item."
   @type equip_status :: {pos_integer() | :infinite, integer()}
 
+  @typedoc "Stable identity of one card cleanup source within a worn host row."
+  @type card_source_key :: {pos_integer(), 0..3}
+
+  @typedoc "Evaluated card cleanup effects and their deterministic worn-source order."
+  @type card_cleanup :: %{
+          source_order: {non_neg_integer(), 0..3},
+          effects: [EquipScript.effect()]
+        }
+
   @typedoc """
   Cached inventory identity and metadata used by equipment refolds.
 
   A nullable row id is retained only for compatibility with legacy callers. Any
-  row whose equipment program contains an autobonus must have a positive id.
+  row contributing an autobonus or card cleanup source must have a positive id.
   """
   @type worn_item :: %{
           id: pos_integer() | nil,
@@ -191,11 +204,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
             # (BaseLevel/JobLevel) change without any equipment change.
             worn_items: [],
 
-            # Derived proc registrations, live generations, and direct status
-            # requirements. Rebuilt or pruned by the deterministic equipment fold.
+            # Derived proc registrations, live generations, direct status
+            # requirements, and card cleanup sources. Rebuilt or pruned by the
+            # deterministic equipment fold.
             equip_autobonuses: %{},
             active_autobonuses: %{},
             equip_statuses: %{},
+            card_unequip_effects: %{},
             right_hand: nil,
             left_hand: nil,
 
@@ -234,6 +249,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           equip_autobonuses: %{autobonus_key() => autobonus_registration()},
           active_autobonuses: %{autobonus_key() => pos_integer()},
           equip_statuses: %{atom() => equip_status()},
+          card_unequip_effects: %{card_source_key() => card_cleanup()},
           right_hand: WeaponHand.t() | nil,
           left_hand: WeaponHand.t() | nil,
           granted_skills: %{integer() => non_neg_integer()},
@@ -436,9 +452,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   rebuilds the worn `Equipment` struct (so weapon-type/shield-dependent
   calculations such as ASPD see the correct gear), caches item instance metadata
   in `worn_items`,
-  and folds the flat `item_db` bonuses plus each item's structured `on_equip`
-  result into modifiers, proc registrations, and desired direct statuses.
-  Surviving active proc generations re-evaluate their primary programs through
+  and folds each host's flat `item_db` bonuses followed by the host and valid
+  in-range card `on_equip` programs into modifiers, proc registrations, desired
+  direct statuses, and retained card cleanup effects. Surviving active proc
+  generations re-evaluate their primary programs through
   the same equipment merge rules. When `nil`, the fold reruns
   from the cached `worn_items` instead - equipment cannot have changed, but the
   program level inputs (`BaseLevel`/`JobLevel`) follow the current progression,
@@ -454,7 +471,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def apply_equipment_modifiers(stats, equipped_items \\ nil)
 
   def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil) do
-    %{stats | equip_autobonuses: %{}, active_autobonuses: %{}, equip_statuses: %{}}
+    %{
+      stats
+      | equip_autobonuses: %{},
+        active_autobonuses: %{},
+        equip_statuses: %{},
+        card_unequip_effects: %{}
+    }
   end
 
   def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
@@ -498,15 +521,26 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       | equip_autobonuses: fold.registrations,
         active_autobonuses: fold.active,
         equip_statuses: fold.statuses,
+        card_unequip_effects: fold.card_cleanups,
         granted_skills: granted_skills,
         modifiers: %{stats.modifiers | equipment: equipment_bonuses}
     }
   end
 
   defp equipment_fold_result(stats, worn_items) do
-    inputs = equip_script_inputs(stats.progression, equip_stat_params(stats), 0)
+    inputs =
+      stats.progression
+      |> equip_script_inputs(equip_stat_params(stats), 0)
+      |> Map.put(:equipped_item_counts, equipped_item_counts(worn_items))
+
     fold = fold_worn_items(worn_items, inputs)
-    active = Map.take(stats.active_autobonuses, Map.keys(fold.registrations))
+
+    active =
+      retain_active_autobonuses(
+        stats.active_autobonuses,
+        stats.equip_autobonuses,
+        fold.registrations
+      )
 
     bonuses =
       active
@@ -1375,11 +1409,58 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   defp equip_stat_params(%__MODULE__{}), do: %{}
 
+  defp equipped_item_counts(worn_items) do
+    Enum.reduce(worn_items, %{}, fn item, counts ->
+      counts = increment_equipped_count(counts, item.nameid)
+
+      case ItemManagement.get_item_by_id(item.nameid) do
+        {:ok, %ItemDefinition{} = item_def} ->
+          item
+          |> in_range_card_ids(item_def)
+          |> Enum.reduce(counts, &increment_valid_card_count/2)
+
+        _ ->
+          counts
+      end
+    end)
+  end
+
+  defp increment_equipped_count(counts, item_id) when is_integer(item_id) and item_id > 0,
+    do: Map.update(counts, item_id, 1, &(&1 + 1))
+
+  defp increment_equipped_count(counts, _item_id), do: counts
+
+  defp increment_valid_card_count(card_id, counts) when is_integer(card_id) and card_id > 0 do
+    case ItemManagement.get_item_by_id(card_id) do
+      {:ok, %ItemDefinition{type: :card}} -> increment_equipped_count(counts, card_id)
+      _ -> counts
+    end
+  end
+
+  defp increment_valid_card_count(_card_id, counts), do: counts
+
+  defp retain_active_autobonuses(active, previous_registrations, current_registrations) do
+    Map.filter(active, fn {key, _generation} ->
+      with {:ok, %{source_identity: identity}} when not is_nil(identity) <-
+             Map.fetch(previous_registrations, key),
+           {:ok, %{source_identity: ^identity}} <- Map.fetch(current_registrations, key) do
+        true
+      else
+        _ -> false
+      end
+    end)
+  end
+
   defp fold_worn_items(worn_items, inputs) do
     worn_items
     |> Enum.with_index()
     |> Enum.reduce(
-      %{bonuses: empty_equipment_bonuses(), registrations: %{}, statuses: %{}},
+      %{
+        bonuses: empty_equipment_bonuses(),
+        registrations: %{},
+        statuses: %{},
+        card_cleanups: %{}
+      },
       fn {item, worn_ordinal}, fold -> fold_worn_item(item, worn_ordinal, fold, inputs) end
     )
   end
@@ -1388,52 +1469,161 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     case ItemManagement.get_item_by_id(item.nameid) do
       {:ok, %ItemDefinition{} = item_def} ->
         item_inputs = %{inputs | refine: item.refine}
-        result = evaluate_equip_script(item_def.on_equip, item_inputs)
+        fold = %{fold | bonuses: accumulate_item_bonus(fold.bonuses, item_def, item.refine)}
 
-        %{
-          bonuses:
-            fold.bonuses
-            |> accumulate_item_bonus(item_def, item.refine)
-            |> merge_equip_modifiers(result.modifiers),
-          registrations:
-            install_autobonuses(
-              fold.registrations,
-              item_def.on_equip,
-              item,
-              item_inputs,
-              worn_ordinal
-            ),
-          statuses: install_equip_statuses(fold.statuses, result.effects)
-        }
+        [{item_def, nil} | card_sources(item, item_def)]
+        |> Enum.reduce({fold, 0}, fn source, {acc, next_slot} ->
+          apply_equipment_source(source, item, item_inputs, worn_ordinal, acc, next_slot)
+        end)
+        |> elem(0)
 
       _ ->
         fold
     end
   end
 
-  defp install_autobonuses(registrations, nil, _item, _inputs, _worn_ordinal),
-    do: registrations
+  defp apply_equipment_source(
+         {%ItemDefinition{} = source_def, card_slot},
+         item,
+         inputs,
+         worn_ordinal,
+         fold,
+         next_slot
+       ) do
+    result = evaluate_equip_script(source_def.on_equip, inputs)
+    {next_slot, lexical_registrations} = isolate_autobonuses(source_def.on_equip || [], next_slot)
 
-  defp install_autobonuses(registrations, program, item, inputs, worn_ordinal) do
-    {_next_slot, lexical_registrations} = isolate_autobonuses(program, 0)
+    registrations =
+      install_lexical_autobonuses(
+        lexical_registrations,
+        fold.registrations,
+        autobonus_source_identity(source_def.id, card_slot),
+        source_def.id,
+        item,
+        inputs,
+        worn_ordinal
+      )
 
-    install_lexical_autobonuses(
-      lexical_registrations,
-      registrations,
-      item,
-      inputs,
-      worn_ordinal
-    )
+    card_cleanups =
+      install_card_cleanup(
+        fold.card_cleanups,
+        source_def,
+        card_slot,
+        item,
+        inputs,
+        worn_ordinal
+      )
+
+    {%{
+       fold
+       | bonuses: merge_equip_modifiers(fold.bonuses, result.modifiers),
+         registrations: registrations,
+         statuses: install_equip_statuses(fold.statuses, result.effects),
+         card_cleanups: card_cleanups
+     }, next_slot}
   end
 
-  defp install_lexical_autobonuses([], registrations, _item, _inputs, _worn_ordinal),
-    do: registrations
+  defp install_card_cleanup(cleanups, _source_def, nil, _item, _inputs, _worn_ordinal),
+    do: cleanups
 
-  defp install_lexical_autobonuses(slots, registrations, item, inputs, worn_ordinal) do
+  defp install_card_cleanup(
+         cleanups,
+         %ItemDefinition{on_unequip: nil},
+         _card_slot,
+         _item,
+         _inputs,
+         _worn_ordinal
+       ),
+       do: cleanups
+
+  defp install_card_cleanup(
+         cleanups,
+         %ItemDefinition{on_unequip: program},
+         card_slot,
+         item,
+         inputs,
+         worn_ordinal
+       ) do
+    row_id = card_source_row_id!(item)
+
+    cleanup = %{
+      source_order: {worn_ordinal, card_slot},
+      effects: EquipScript.evaluate(program, inputs).effects
+    }
+
+    Map.put(cleanups, {row_id, card_slot}, cleanup)
+  end
+
+  defp card_source_row_id!(%{id: id}) when is_integer(id) and id > 0, do: id
+
+  defp card_source_row_id!(item) do
+    raise ArgumentError,
+          "worn host with card cleanup requires a persistent positive row id, " <>
+            "got: #{inspect(item.id)} for item #{inspect(item.nameid)}"
+  end
+
+  defp card_sources(item, %ItemDefinition{} = item_def) do
+    item
+    |> in_range_card_ids(item_def)
+    |> Enum.with_index()
+    |> Enum.flat_map(fn
+      {0, _slot} -> []
+      {card_id, slot} -> resolve_card(card_id, slot)
+    end)
+  end
+
+  defp in_range_card_ids(item, %ItemDefinition{slots: slots}) do
+    [:card0, :card1, :card2, :card3]
+    |> Enum.take(bounded_card_slots(slots))
+    |> Enum.map(&Map.fetch!(item, &1))
+  end
+
+  defp bounded_card_slots(slots) when is_integer(slots), do: slots |> max(0) |> min(4)
+  defp bounded_card_slots(_slots), do: 0
+
+  defp resolve_card(card_id, slot) do
+    case ItemManagement.get_item_by_id(card_id) do
+      {:ok, %ItemDefinition{type: :card} = card_def} -> [{card_def, slot}]
+      _ -> []
+    end
+  end
+
+  defp autobonus_source_identity(item_id, nil), do: {:host, item_id}
+  defp autobonus_source_identity(item_id, card_slot), do: {:card, card_slot, item_id}
+
+  defp install_lexical_autobonuses(
+         [],
+         registrations,
+         _source_identity,
+         _source_item_id,
+         _item,
+         _inputs,
+         _worn_ordinal
+       ),
+       do: registrations
+
+  defp install_lexical_autobonuses(
+         slots,
+         registrations,
+         source_identity,
+         source_item_id,
+         item,
+         inputs,
+         worn_ordinal
+       ) do
     row_id = registration_row_id!(item)
 
     Enum.reduce(slots, registrations, fn slot, acc ->
-      install_autobonus_slot(acc, slot, row_id, item, inputs, worn_ordinal)
+      install_autobonus_slot(
+        acc,
+        slot,
+        row_id,
+        source_identity,
+        source_item_id,
+        item,
+        inputs,
+        worn_ordinal
+      )
     end)
   end
 
@@ -1441,6 +1631,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
          registrations,
          {lexical_slot, isolated_program},
          row_id,
+         source_identity,
+         source_item_id,
          item,
          inputs,
          worn_ordinal
@@ -1455,7 +1647,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
         registration =
           Map.merge(autobonus, %{
-            item_id: item.nameid,
+            item_id: source_item_id,
+            source_identity: source_identity,
             refine: item.refine,
             source_order: {worn_ordinal, lexical_slot},
             primary_effects: primary.effects,
