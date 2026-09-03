@@ -7,6 +7,9 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.LegacyNet.SkillUnitGroupState, as: LegacySkillUnitGroupState
   alias Aesir.Net.ActionRequest
   alias Aesir.Net.Announcement
+  alias Aesir.Net.CardComposeRequest
+  alias Aesir.Net.CardComposeResult
+  alias Aesir.Net.CardTargetList
   alias Aesir.Net.CartInfo
   alias Aesir.Net.CartItemAdded
   alias Aesir.Net.CartItemRemoved
@@ -186,6 +189,53 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.VendingSaleReport
   alias Aesir.Net.VendingShopItem
   alias Aesir.Net.ZoneServerInfo
+
+  test "card composition messages preserve client indices, candidate order, and cards" do
+    assert_round_trip(
+      :card_target_list,
+      %CardTargetList{card_index: 5, equipment_indices: [12, 3, 8]}
+    )
+
+    assert_round_trip(
+      :card_compose_request,
+      %CardComposeRequest{card_index: 5, equipment_index: 12}
+    )
+
+    assert_round_trip(
+      :card_compose_result,
+      %CardComposeResult{
+        card_index: 5,
+        equipment_index: 12,
+        code: :CARD_COMPOSE_SUCCESS,
+        cards: [4_001, 4_002, 4_003, 4_004]
+      }
+    )
+
+    fields = Envelope.schema().fields
+
+    assert fields.card_target_list.tag == 203
+    assert fields.card_compose_request.tag == 204
+    assert fields.card_compose_result.tag == 205
+  end
+
+  test "card composition results round-trip every failure code" do
+    for code <- [
+          :CARD_COMPOSE_CARD_NOT_FOUND,
+          :CARD_COMPOSE_NOT_A_CARD,
+          :CARD_COMPOSE_SOURCE_EQUIPPED,
+          :CARD_COMPOSE_TARGET_NOT_FOUND,
+          :CARD_COMPOSE_SAME_INVENTORY_SLOT,
+          :CARD_COMPOSE_NOT_EQUIPMENT,
+          :CARD_COMPOSE_TARGET_UNIDENTIFIED,
+          :CARD_COMPOSE_TARGET_EQUIPPED,
+          :CARD_COMPOSE_LOCATION_MISMATCH,
+          :CARD_COMPOSE_NO_FREE_SOCKET,
+          :CARD_COMPOSE_ITEM_USE_DISABLED,
+          :CARD_COMPOSE_PERSISTENCE_FAILED
+        ] do
+      assert_round_trip(:card_compose_result, %CardComposeResult{code: code})
+    end
+  end
 
   test "Homunculus envelope fields append at 169 through 171" do
     fields = Envelope.schema().fields

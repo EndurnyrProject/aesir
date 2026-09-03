@@ -189,6 +189,9 @@
     {"field": 199, "tag": "navigation_request", "message": "NavigationRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 200, "tag": "navigation_cancel", "message": "NavigationCancel", "direction": "c2s", "servers": ["zone"]},
     {"field": 201, "tag": "navigation_failed", "message": "NavigationFailed", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 202, "tag": "navigation_ended", "message": "NavigationEnded", "direction": "s2c", "servers": ["zone"], "channel": "world"}
+    {"field": 202, "tag": "navigation_ended", "message": "NavigationEnded", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 203, "tag": "card_target_list", "message": "CardTargetList", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 204, "tag": "card_compose_request", "message": "CardComposeRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 205, "tag": "card_compose_result", "message": "CardComposeResult", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
   ]
 }

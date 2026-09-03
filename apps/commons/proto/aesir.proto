@@ -256,6 +256,10 @@ message Envelope {
     NavigationCancel navigation_cancel = 200;  // c2s zone
     NavigationFailed navigation_failed = 201;  // s2c zone world
     NavigationEnded navigation_ended = 202;  // s2c zone world
+    // 203-205: card compounding target discovery and confirmation
+    CardTargetList card_target_list = 203;  // s2c zone gameplay
+    CardComposeRequest card_compose_request = 204;  // c2s zone
+    CardComposeResult card_compose_result = 205;  // s2c zone gameplay
   }
 }
 
@@ -1423,6 +1427,44 @@ message ItemUseResult {
   uint32 index = 1;
   bool ok = 2;
   uint32 reason = 3;
+}
+
+// Server -> client, compatible equipment client indices for a card source.
+message CardTargetList {
+  uint32 card_index = 1;
+  repeated uint32 equipment_indices = 2;
+}
+
+// Client -> server, confirm compounding a card into an equipment client index.
+message CardComposeRequest {
+  uint32 card_index = 1;
+  uint32 equipment_index = 2;
+}
+
+// Outcome of a card compounding request. Values are prefixed because proto3
+// enum constants share the package namespace.
+enum CardComposeResultCode {
+  CARD_COMPOSE_SUCCESS = 0;
+  CARD_COMPOSE_CARD_NOT_FOUND = 1;
+  CARD_COMPOSE_NOT_A_CARD = 2;
+  CARD_COMPOSE_SOURCE_EQUIPPED = 3;
+  CARD_COMPOSE_TARGET_NOT_FOUND = 4;
+  CARD_COMPOSE_SAME_INVENTORY_SLOT = 5;
+  CARD_COMPOSE_NOT_EQUIPMENT = 6;
+  CARD_COMPOSE_TARGET_UNIDENTIFIED = 7;
+  CARD_COMPOSE_TARGET_EQUIPPED = 8;
+  CARD_COMPOSE_LOCATION_MISMATCH = 9;
+  CARD_COMPOSE_NO_FREE_SOCKET = 10;
+  CARD_COMPOSE_ITEM_USE_DISABLED = 11;
+  CARD_COMPOSE_PERSISTENCE_FAILED = 12;
+}
+
+// Server -> client, authoritative outcome and target cards after a card compounding request.
+message CardComposeResult {
+  uint32 card_index = 1;
+  uint32 equipment_index = 2;
+  CardComposeResultCode code = 3;
+  repeated uint32 cards = 4;
 }
 
 // Client -> server, the player clicked an NPC unit (replaces RO CZ_CONTACTNPC 0x0090).
