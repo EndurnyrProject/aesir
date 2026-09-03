@@ -246,8 +246,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   @nested_contexts [:autobonus_primary, :autobonus_secondary]
   @nested_cosmetics ~w(specialeffect2 active_transform showscript)
 
-  defp compile_context_instr({:cmd, name, args}, env, :equip)
-       when name in @autobonus_commands,
+  defp compile_context_instr({:cmd, name, args}, env, context)
+       when name in @autobonus_commands and context in [:equip, :unequip],
        do: compile_autobonus(name, args, env)
 
   defp compile_context_instr({:cmd, name, _args}, _env, context)
@@ -255,7 +255,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
        do: unsupported({:recursive_autobonus, name})
 
   defp compile_context_instr({:cmd, "sc_start", args}, env, context)
-       when context in [:equip | @nested_contexts],
+       when context in [:equip, :unequip | @nested_contexts],
        do: compile_status_start(args, env)
 
   defp compile_context_instr({:cmd, "sc_end", args}, _env, context)
@@ -263,7 +263,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
        do: compile_status_end(args)
 
   defp compile_context_instr({:cmd, "heal", args}, env, context)
-       when context in @nested_contexts,
+       when context in [:unequip | @nested_contexts],
        do: compile_heal(args, env)
 
   defp compile_context_instr({:cmd, name, _args}, _env, context)
@@ -271,7 +271,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
        do: {:ok, []}
 
   defp compile_context_instr(stmt, env, context)
-       when context in [:equip, :autobonus_primary],
+       when context in [:equip, :unequip, :autobonus_primary],
        do: compile_instr(stmt, env)
 
   defp compile_context_instr({:cmd, name, _args}, _env, _context),

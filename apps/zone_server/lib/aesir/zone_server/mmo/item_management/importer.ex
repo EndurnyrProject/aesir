@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
 
   @typedoc "Transpile hook a failure belongs to."
-  @type hook :: :on_use | :on_equip | :on_unequip
+  @type hook :: :on_use | :on_equip | :on_unequip | :card_on_equip | :card_on_unequip
 
   @typedoc "A single unsupported-script failure row."
   @type failure :: {hook(), integer(), String.t(), term()}
@@ -41,6 +41,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
           on_use: hook_summary(),
           on_equip: hook_summary(),
           on_unequip: hook_summary(),
+          card_on_equip: hook_summary(),
+          card_on_unequip: hook_summary(),
           failures: [failure()]
         }
 
@@ -123,22 +125,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
 
   @doc """
   Renders the transpile coverage report: a per-hook summary table, histograms
-  of equipment-hook rejection reasons grouped on the reason's leading term
+  of equipment and card rejection reasons grouped on the reason's leading term
   (with the offending script token kept for vocabulary-key/command tags), and
-  the full per-hook failure tables. Equipment tables are intentionally large -
-  they are the greppable expansion backlog.
+  the full per-hook failure tables. The tables are intentionally large - they
+  are the greppable expansion backlog.
   """
   @spec build_report(report()) :: String.t()
   def build_report(%{
         on_use: on_use,
         on_equip: on_equip,
         on_unequip: on_unequip,
+        card_on_equip: card_on_equip,
+        card_on_unequip: card_on_unequip,
         failures: failures
       }) do
     failures_by_hook = Enum.group_by(failures, &elem(&1, 0))
     on_use_failures = Map.get(failures_by_hook, :on_use, [])
     on_equip_failures = Map.get(failures_by_hook, :on_equip, [])
     on_unequip_failures = Map.get(failures_by_hook, :on_unequip, [])
+    card_on_equip_failures = Map.get(failures_by_hook, :card_on_equip, [])
+    card_on_unequip_failures = Map.get(failures_by_hook, :card_on_unequip, [])
 
     """
     # Transpile report
@@ -150,6 +156,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     #{summary_row(:on_use, on_use, length(on_use_failures))}
     #{summary_row(:on_equip, on_equip, length(on_equip_failures))}
     #{summary_row(:on_unequip, on_unequip, length(on_unequip_failures))}
+    #{summary_row(:card_on_equip, card_on_equip, length(card_on_equip_failures))}
+    #{summary_row(:card_on_unequip, card_on_unequip, length(card_on_unequip_failures))}
 
     ## on_equip rejection reasons
 
@@ -157,6 +165,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     ## on_unequip rejection reasons
 
     #{histogram(on_unequip_failures)}
+    ## card_on_equip rejection reasons
+
+    #{histogram(card_on_equip_failures)}
+    ## card_on_unequip rejection reasons
+
+    #{histogram(card_on_unequip_failures)}
     ## on_use failures
 
     #{failure_table(on_use_failures)}
@@ -166,6 +180,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
     ## on_unequip failures
 
     #{failure_table(on_unequip_failures)}
+    ## card_on_equip failures
+
+    #{failure_table(card_on_equip_failures)}
+    ## card_on_unequip failures
+
+    #{failure_table(card_on_unequip_failures)}
     """
   end
 

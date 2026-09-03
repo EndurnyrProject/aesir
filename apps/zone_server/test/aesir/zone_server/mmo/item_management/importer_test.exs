@@ -213,6 +213,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         on_use: %{considered: 10, with_script: 6, transpiled: 5},
         on_equip: %{considered: 20, with_script: 12, transpiled: 3},
         on_unequip: %{considered: 20, with_script: 8, transpiled: 2},
+        card_on_equip: %{considered: 30, with_script: 18, transpiled: 7},
+        card_on_unequip: %{considered: 30, with_script: 4, transpiled: 2},
         failures: failures
       }
     end
@@ -222,7 +224,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
         {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
         {:on_equip, 2000, "X", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
-        {:on_unequip, 2776, "Cool Towel", {:unsupported, {:unsupported_command, "heal"}}}
+        {:on_unequip, 2776, "Cool Towel", {:unsupported, {:unsupported_command, "heal"}}},
+        {:card_on_equip, 4001, "Poring Card", {:unsupported, {:unsupported_command, "set"}}},
+        {:card_on_unequip, 4002, "Fabre Card", {:unsupported, {:unsupported_command, "bonus"}}}
       ]
 
       out = Importer.build_report(report(failures))
@@ -231,6 +235,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert out =~ "| on_use | 10 | 6 | 5 | 1 |"
       assert out =~ "| on_equip | 20 | 12 | 3 | 2 |"
       assert out =~ "| on_unequip | 20 | 8 | 2 | 1 |"
+      assert out =~ "| card_on_equip | 30 | 18 | 7 | 1 |"
+      assert out =~ "| card_on_unequip | 30 | 4 | 2 | 1 |"
     end
 
     test "renders the on_equip rejection-reason histogram sorted descending" do
@@ -255,12 +261,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert max_pos < bonus2_pos
     end
 
-    test "renders both hooks' full failure tables" do
+    test "renders every hook's full failure table" do
       failures = [
         {:on_use, 501, "Red Potion", {:unsupported, "produce"}},
         {:on_equip, 2198, "Lapine Shield", {:unsupported, {:unknown_bonus_key, "bHealPower"}}},
         {:on_unequip, 2776, "Cool Towel",
-         {:unsupported, {:status_lifecycle_mismatch, %{on_equip: [:sc_summer], on_unequip: []}}}}
+         {:unsupported, {:status_lifecycle_mismatch, %{on_equip: [:sc_summer], on_unequip: []}}}},
+        {:card_on_equip, 4001, "Poring Card", {:unsupported, {:unknown_bonus_key, "bUnknown"}}},
+        {:card_on_unequip, 4002, "Fabre Card", {:unsupported, {:unsupported_command, "bonus"}}}
       ]
 
       out = Importer.build_report(report(failures))
@@ -276,6 +284,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
       assert out =~
                "| 2776 | Cool Towel | {:unsupported, {:status_lifecycle_mismatch, %{on_equip: [:sc_summer], on_unequip: []}}} |"
+
+      assert out =~ "## card_on_equip failures"
+      assert out =~ "| 4001 | Poring Card | {:unsupported, {:unknown_bonus_key, \"bUnknown\"}} |"
+      assert out =~ "## card_on_unequip failures"
+      assert out =~ "| 4002 | Fabre Card | {:unsupported, {:unsupported_command, \"bonus\"}} |"
+    end
+
+    test "renders separate card rejection histograms" do
+      failures = [
+        {:card_on_equip, 4001, "Poring Card", {:unsupported, {:unknown_bonus_key, "bUnknown"}}},
+        {:card_on_unequip, 4002, "Fabre Card", {:unsupported, {:unsupported_command, "bonus"}}}
+      ]
+
+      out = Importer.build_report(report(failures))
+
+      assert out =~ "## card_on_equip rejection reasons\n\n| reason | count |"
+      assert out =~ "| unknown_bonus_key bUnknown | 1 |"
+      assert out =~ "## card_on_unequip rejection reasons\n\n| reason | count |"
+      assert out =~ "| unsupported_command bonus | 1 |"
     end
 
     test "renders placeholders when a hook has no failures" do
@@ -285,6 +312,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       assert out =~ "## on_use failures\n\n_none_"
       assert out =~ "## on_equip failures\n\n_none_"
       assert out =~ "## on_unequip failures\n\n_none_"
+      assert out =~ "## card_on_equip failures\n\n_none_"
+      assert out =~ "## card_on_unequip failures\n\n_none_"
     end
 
     defp position(haystack, needle) do

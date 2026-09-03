@@ -282,6 +282,23 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
                )
     end
 
+    test "ordinary lifecycle validation rejects widened unequip instructions" do
+      item = definition(%{type: :armor})
+      equip_script = "sc_start SC_SUMMER,INFINITE_TICK,0;"
+
+      for {cleanup, instruction} <- [
+            {"heal 10,0;", {:heal, 10, 0}},
+            {"sc_start SC_MOONSTAR,1000,1;", {:status_start, :sc_moonstar, 1_000, 1}},
+            {"bonus bVit,1;", {:bonus, :vit, 1}}
+          ] do
+        assert {%ItemDefinition{on_equip: nil, on_unequip: nil},
+                {:on_unequip, 501, "Red Potion",
+                 {:unsupported,
+                  {:non_flat_status_lifecycle, %{allowed: :status_end, instruction: ^instruction}}}}} =
+                 Items.apply_transpile(item, nil, equip_script, cleanup)
+      end
+    end
+
     test "matches duplicate flat starts and ends by unique status ID" do
       assert {%ItemDefinition{on_equip: on_equip, on_unequip: on_unequip}, nil} =
                Items.apply_transpile(
@@ -295,9 +312,117 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
       assert length(on_unequip) == 1
     end
 
-    test "leaves on_equip nil for a card (cards are excluded)" do
-      assert {%ItemDefinition{on_equip: nil}, nil} =
+    test "sets on_equip from a supported card Script" do
+      assert {%ItemDefinition{on_equip: [{:bonus, :smatk, 3}], on_unequip: nil}, nil} =
                Items.apply_transpile(definition(%{type: :card}), "bonus bSMatk,3;")
+    end
+
+    test "stores direct and conditional card cleanup effects" do
+      cleanup = """
+      heal 10,-2;
+      sc_start SC_SUMMER,1000,3;
+      sc_end SC_HIDING;
+      if (BaseLevel > 50) {
+        heal -5,7;
+        sc_start SC_MOONSTAR,INFINITE_TICK,4;
+        sc_end SC_SUMMER;
+      }
+      """
+
+      assert {%ItemDefinition{
+                on_equip: [{:bonus, :vit, 2}],
+                on_unequip: [
+                  {:heal, 10, -2},
+                  {:status_start, :sc_summer, 1_000, 3},
+                  {:status_end, :sc_hiding},
+                  {:if, {:>, :base_level, 50},
+                   [
+                     {:heal, -5, 7},
+                     {:status_start, :sc_moonstar, :infinite, 4},
+                     {:status_end, :sc_summer}
+                   ], []}
+                ]
+              }, nil} =
+               Items.apply_transpile(
+                 definition(%{type: :card}),
+                 "bonus bVit,2;",
+                 nil,
+                 cleanup
+               )
+    end
+
+    test "attributes a malformed card Script to card_on_equip" do
+      script = "bonus bVit,"
+      assert {:error, reason} = Transpiler.transpile_equip(script, :equip)
+
+      card =
+        definition(%{
+          type: :card,
+          on_equip: [{:bonus, :str, 9}],
+          on_unequip: [{:status_end, :sc_summer}]
+        })
+
+      assert {%ItemDefinition{on_equip: nil, on_unequip: nil},
+              {:card_on_equip, 501, "Red Potion", ^reason}} =
+               Items.apply_transpile(card, script)
+    end
+
+    test "clears pre-existing programs from a scriptless card" do
+      card =
+        definition(%{
+          type: :card,
+          on_equip: [{:bonus, :str, 9}],
+          on_unequip: [{:status_end, :sc_summer}]
+        })
+
+      assert {%ItemDefinition{on_equip: nil, on_unequip: nil}, nil} =
+               Items.apply_transpile(card, nil, nil, nil)
+    end
+
+    test "rejects a non-empty card EquipScript visibly and atomically" do
+      assert {%ItemDefinition{on_equip: nil, on_unequip: nil},
+              {:card_on_equip, 501, "Red Potion",
+               {:unsupported, {:unexpected_card_equip_script, "bonus bDex,1;"}}}} =
+               Items.apply_transpile(
+                 definition(%{type: :card}),
+                 "bonus bVit,2;",
+                 "bonus bDex,1;",
+                 "sc_end SC_HIDING;"
+               )
+    end
+
+    test "clears both card programs when cleanup is malformed" do
+      cleanup = "sc_end SC_HIDING,"
+      assert {:error, reason} = Transpiler.transpile_equip(cleanup, :unequip)
+
+      card =
+        definition(%{
+          type: :card,
+          on_equip: [{:bonus, :str, 9}],
+          on_unequip: [{:status_end, :sc_summer}]
+        })
+
+      assert {%ItemDefinition{on_equip: nil, on_unequip: nil},
+              {:card_on_unequip, 501, "Red Potion", ^reason}} =
+               Items.apply_transpile(card, "bonus bVit,2;", nil, cleanup)
+    end
+
+    test "rejects transpiled modifier and proc cleanup programs as non-effects" do
+      for cleanup <- [
+            "bonus bVit,1;",
+            ~S'autobonus "{ bonus bVit,1; }",100,1000;'
+          ] do
+        assert {:ok, [instruction]} = Transpiler.transpile_equip(cleanup, :unequip)
+
+        assert {%ItemDefinition{on_equip: nil, on_unequip: nil},
+                {:card_on_unequip, 501, "Red Potion", {:unsupported, {:non_effect, ^instruction}}}} =
+                 Items.apply_transpile(
+                   definition(%{type: :card}),
+                   "bonus bStr,1;",
+                   nil,
+                   cleanup
+                 )
+      end
     end
 
     test "leaves on_equip nil with no failure for a comment/assignment-only script" do
@@ -370,11 +495,44 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
       refute Map.has_key?(equipment[2779], "on_equip")
       refute Map.has_key?(equipment[2779], "on_unequip")
 
+      cards =
+        "apps/zone_server/priv/db/pre-re/items/etc.yml"
+        |> YamlElixir.read_from_file!()
+        |> Map.new(&{&1["id"], &1})
+
+      assert cards[4001]["on_equip"] == "bonus(ctx, :agi, 1)"
+      refute Map.has_key?(cards[4001], "on_unequip")
+      refute Map.has_key?(cards[4002], "on_equip")
+      refute Map.has_key?(cards[4002], "on_unequip")
+      assert cards[4003]["on_equip"] == "bonus(ctx, :vit, 2)"
+      assert cards[4003]["on_unequip"] == "status_end(ctx, :sc_hiding)"
+
+      for id <- 4004..4007 do
+        refute Map.has_key?(cards[id], "on_equip")
+        refute Map.has_key?(cards[id], "on_unequip")
+      end
+
       report = File.read!("apps/zone_server/priv/db/pre-re/items/_transpile_report.md")
 
       assert report =~ "| on_use | 1 | 1 | 1 | 0 |"
       assert report =~ "| on_equip | 4 | 3 | 3 | 0 |"
       assert report =~ "| on_unequip | 1 | 1 | 1 | 0 |"
+      assert report =~ "| card_on_equip | 7 | 6 | 4 | 2 |"
+      assert report =~ "| card_on_unequip | 7 | 4 | 1 | 2 |"
+      assert report =~ "## card_on_equip rejection reasons"
+      assert report =~ "## card_on_unequip rejection reasons"
+      assert report =~ "| 4004 | Malformed Main Card | {:parse_error,"
+      assert report =~ "| 4005 | Modifier Cleanup Card | {:unsupported,"
+      assert report =~ "| 4006 | Future EquipScript Card | {:unsupported,"
+      assert report =~ "| 4007 | Malformed Cleanup Card | {:parse_error,"
+
+      [_, card_failure_tables] = String.split(report, "## card_on_equip failures\n\n")
+
+      [card_on_equip_failures, card_on_unequip_failures] =
+        String.split(card_failure_tables, "## card_on_unequip failures\n\n")
+
+      refute card_on_equip_failures =~ "4005 | Modifier Cleanup Card"
+      assert card_on_unequip_failures =~ "4005 | Modifier Cleanup Card"
     end
   end
 
@@ -454,6 +612,58 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
         "Type" => "Armor",
         "EquipScript" => "bonus bVit,2;",
         "UnEquipScript" => "sc_end SC_HIDING;"
+      },
+      %{
+        "Id" => 4001,
+        "AegisName" => "Supported_Card",
+        "Name" => "Supported Card",
+        "Type" => "Card",
+        "Script" => "bonus bAgi,1;"
+      },
+      %{
+        "Id" => 4002,
+        "AegisName" => "Scriptless_Card",
+        "Name" => "Scriptless Card",
+        "Type" => "Card"
+      },
+      %{
+        "Id" => 4003,
+        "AegisName" => "Cleanup_Card",
+        "Name" => "Cleanup Card",
+        "Type" => "Card",
+        "Script" => "bonus bVit,2;",
+        "UnEquipScript" => "sc_end SC_HIDING;"
+      },
+      %{
+        "Id" => 4004,
+        "AegisName" => "Malformed_Main_Card",
+        "Name" => "Malformed Main Card",
+        "Type" => "Card",
+        "Script" => "bonus bVit,",
+        "UnEquipScript" => "sc_end SC_HIDING;"
+      },
+      %{
+        "Id" => 4005,
+        "AegisName" => "Modifier_Cleanup_Card",
+        "Name" => "Modifier Cleanup Card",
+        "Type" => "Card",
+        "Script" => "bonus bStr,1;",
+        "UnEquipScript" => "bonus bDex,1;"
+      },
+      %{
+        "Id" => 4006,
+        "AegisName" => "Future_EquipScript_Card",
+        "Name" => "Future EquipScript Card",
+        "Type" => "Card",
+        "EquipScript" => "bonus bDex,1;"
+      },
+      %{
+        "Id" => 4007,
+        "AegisName" => "Malformed_Cleanup_Card",
+        "Name" => "Malformed Cleanup Card",
+        "Type" => "Card",
+        "Script" => "bonus bInt,1;",
+        "UnEquipScript" => "sc_end SC_HIDING,"
       }
     ])
 

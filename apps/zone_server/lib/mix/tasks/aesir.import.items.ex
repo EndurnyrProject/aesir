@@ -80,18 +80,41 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     unequip_script = Map.get(entry, "UnEquipScript")
     lifecycle_candidate? = lifecycle_candidate?(equip_script)
 
-    {definition, failure} =
-      apply_transpile(to_definition!(entry), script, equip_script, unequip_script)
+    {definition, failure, coverage} =
+      entry
+      |> to_definition!()
+      |> transpile_definition(script, equip_script, unequip_script)
 
     scripts =
-      hook_scripts(definition.type, script, equip_script, unequip_script, lifecycle_candidate?)
+      definition.type
+      |> hook_scripts(script, equip_script, unequip_script, lifecycle_candidate?)
+      |> Map.merge(coverage)
 
     {definition, scripts, failure}
+  end
+
+  defp transpile_definition(%ItemDefinition{type: :card} = definition, script, equip, unequip),
+    do: transpile_card(definition, script, equip, unequip)
+
+  defp transpile_definition(definition, script, equip_script, unequip_script) do
+    {definition, failure} = apply_transpile(definition, script, equip_script, unequip_script)
+    {definition, failure, %{}}
   end
 
   defp hook_scripts(type, script, _equip_script, _unequip_script, _lifecycle_candidate?)
        when type in @usable_types,
        do: %{on_use: script}
+
+  defp hook_scripts(:card, script, equip_script, unequip_script, _lifecycle_candidate?) do
+    main_script =
+      cond do
+        is_binary(script) -> script
+        non_empty_script?(equip_script) -> equip_script
+        true -> nil
+      end
+
+    %{card_on_equip: main_script, card_on_unequip: unequip_script}
+  end
 
   defp hook_scripts(type, script, equip_script, unequip_script, lifecycle_candidate?)
        when type in @equip_types do
@@ -126,6 +149,9 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   def apply_transpile(%ItemDefinition{type: type} = definition, script)
       when type in @equip_types and is_binary(script),
       do: transpile_ordinary_equipment(definition, script)
+
+  def apply_transpile(%ItemDefinition{type: :card} = definition, script),
+    do: apply_transpile(definition, script, nil, nil)
 
   def apply_transpile(%ItemDefinition{} = definition, _script), do: {definition, nil}
 
@@ -162,8 +188,55 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     end
   end
 
+  def apply_transpile(
+        %ItemDefinition{type: :card} = definition,
+        script,
+        equip_script,
+        unequip_script
+      ) do
+    {definition, failure, _coverage} =
+      transpile_card(definition, script, equip_script, unequip_script)
+
+    {definition, failure}
+  end
+
   def apply_transpile(%ItemDefinition{} = definition, script, _equip_script, _unequip_script),
     do: apply_transpile(definition, script)
+
+  defp transpile_card(definition, script, equip_script, unequip_script) do
+    empty_coverage = %{card_on_equip_transpiled?: false, card_on_unequip_transpiled?: false}
+
+    with :ok <- reject_card_equip_script(equip_script),
+         {:ok, equip_program} <- transpile_hook(script, :card_on_equip, :equip) do
+      main_transpiled? = equip_program != []
+
+      with {:ok, unequip_program} <-
+             transpile_hook(unequip_script, :card_on_unequip, :unequip),
+           :ok <- validate_card_cleanup(unequip_program) do
+        coverage = %{
+          card_on_equip_transpiled?: main_transpiled?,
+          card_on_unequip_transpiled?: unequip_program != []
+        }
+
+        {%{
+           definition
+           | on_equip: empty_to_nil(equip_program),
+             on_unequip: empty_to_nil(unequip_program)
+         }, nil, coverage}
+      else
+        {:error, {hook, reason}} ->
+          coverage = %{empty_coverage | card_on_equip_transpiled?: main_transpiled?}
+          reject_card(definition, hook, reason, coverage)
+      end
+    else
+      {:error, {hook, reason}} -> reject_card(definition, hook, reason, empty_coverage)
+    end
+  end
+
+  defp reject_card(definition, hook, reason, coverage) do
+    inert = %{definition | on_equip: nil, on_unequip: nil}
+    {inert, failure(definition, hook, reason), coverage}
+  end
 
   defp maybe_apply_lifecycle(definition, equip_script, unequip_script) do
     if lifecycle_candidate?(equip_script),
@@ -224,6 +297,32 @@ defmodule Mix.Tasks.Aesir.Import.Items do
 
   defp transpile_hook(_script, _hook, _context), do: {:ok, []}
 
+  defp reject_card_equip_script(script) do
+    if non_empty_script?(script),
+      do: {:error, {:card_on_equip, {:unsupported, {:unexpected_card_equip_script, script}}}},
+      else: :ok
+  end
+
+  defp non_empty_script?(script) when is_binary(script), do: String.trim(script) != ""
+  defp non_empty_script?(_script), do: false
+
+  defp validate_card_cleanup(program) do
+    case Enum.find(program, &(not effect_instruction?(&1))) do
+      nil -> :ok
+      instruction -> {:error, {:card_on_unequip, {:unsupported, {:non_effect, instruction}}}}
+    end
+  end
+
+  defp effect_instruction?({:status_start, _status, _duration, _value}), do: true
+  defp effect_instruction?({:status_end, _status}), do: true
+  defp effect_instruction?({:heal, _hp, _sp}), do: true
+
+  defp effect_instruction?({:if, _condition, then_program, else_program}) do
+    Enum.all?(then_program ++ else_program, &effect_instruction?/1)
+  end
+
+  defp effect_instruction?(_instruction), do: false
+
   defp validate_flat_lifecycle(program, hook, allowed) do
     case Enum.find(program, &(not lifecycle_instruction?(&1, allowed))) do
       nil ->
@@ -276,7 +375,14 @@ defmodule Mix.Tasks.Aesir.Import.Items do
 
   @spec summarize([{ItemDefinition.t(), map(), Importer.failure() | nil}]) :: Importer.report()
   defp summarize(entries) do
-    base = %{on_use: blank_hook(), on_equip: blank_hook(), on_unequip: blank_hook()}
+    base = %{
+      on_use: blank_hook(),
+      on_equip: blank_hook(),
+      on_unequip: blank_hook(),
+      card_on_equip: blank_hook(),
+      card_on_unequip: blank_hook()
+    }
+
     stats = Enum.reduce(entries, base, &tally/2)
     failures = entries |> Enum.map(&elem(&1, 2)) |> Enum.reject(&is_nil/1)
     Map.put(stats, :failures, failures)
@@ -298,6 +404,12 @@ defmodule Mix.Tasks.Aesir.Import.Items do
       else: acc
   end
 
+  defp tally({%ItemDefinition{type: :card} = definition, scripts, _failure}, acc) do
+    acc
+    |> tally_hook(definition, scripts, :card_on_equip)
+    |> tally_hook(definition, scripts, :card_on_unequip)
+  end
+
   defp tally({_definition, _scripts, _failure}, acc), do: acc
 
   defp tally_hook(acc, definition, scripts, hook) do
@@ -305,30 +417,40 @@ defmodule Mix.Tasks.Aesir.Import.Items do
       %{
         considered: stats.considered + 1,
         with_script: stats.with_script + count_if(is_binary(Map.fetch!(scripts, hook))),
-        transpiled: stats.transpiled + count_if(transpiled?(definition, hook))
+        transpiled: stats.transpiled + count_if(transpiled?(definition, scripts, hook))
       }
     end)
   end
 
-  defp transpiled?(%ItemDefinition{on_use: on_use}, :on_use), do: on_use != nil
-  defp transpiled?(%ItemDefinition{on_equip: on_equip}, :on_equip), do: on_equip != nil
-  defp transpiled?(%ItemDefinition{on_unequip: on_unequip}, :on_unequip), do: on_unequip != nil
+  defp transpiled?(%ItemDefinition{on_use: on_use}, _scripts, :on_use), do: on_use != nil
+
+  defp transpiled?(%ItemDefinition{on_equip: on_equip}, _scripts, :on_equip),
+    do: on_equip != nil
+
+  defp transpiled?(%ItemDefinition{on_unequip: on_unequip}, _scripts, :on_unequip),
+    do: on_unequip != nil
+
+  defp transpiled?(_definition, scripts, :card_on_equip),
+    do: Map.fetch!(scripts, :card_on_equip_transpiled?)
+
+  defp transpiled?(_definition, scripts, :card_on_unequip),
+    do: Map.fetch!(scripts, :card_on_unequip_transpiled?)
 
   defp count_if(true), do: 1
   defp count_if(false), do: 0
 
-  defp summary_line(
-         %{on_use: on_use, on_equip: on_equip, on_unequip: on_unequip, failures: failures},
-         report_path
-       ) do
+  defp summary_line(summary, report_path) do
+    failures = summary.failures
     failure_counts = Enum.frequencies_by(failures, &elem(&1, 0))
 
-    "on_use #{on_use.transpiled}/#{on_use.with_script} transpiled " <>
-      "(#{Map.get(failure_counts, :on_use, 0)} unsupported), " <>
-      "on_equip #{on_equip.transpiled}/#{on_equip.with_script} transpiled " <>
-      "(#{Map.get(failure_counts, :on_equip, 0)} unsupported), " <>
-      "on_unequip #{on_unequip.transpiled}/#{on_unequip.with_script} transpiled " <>
-      "(#{Map.get(failure_counts, :on_unequip, 0)} unsupported) -> #{report_path}"
+    [:on_use, :on_equip, :on_unequip, :card_on_equip, :card_on_unequip]
+    |> Enum.map_join(", ", fn hook ->
+      stats = Map.fetch!(summary, hook)
+
+      "#{hook} #{stats.transpiled}/#{stats.with_script} transpiled " <>
+        "(#{Map.get(failure_counts, hook, 0)} unsupported)"
+    end)
+    |> Kernel.<>(" -> #{report_path}")
   end
 
   defp read_source!(rathena, file, mode) do

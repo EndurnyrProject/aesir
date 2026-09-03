@@ -1370,11 +1370,36 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
       assert {:error, {:unsupported, {:unsupported_command, "sc_end"}}} =
                compile("sc_end SC_SUMMER;")
 
-      assert {:error, {:unsupported, {:unsupported_command, "sc_start"}}} =
+      assert {:ok, [{:status_start, :sc_summer, 1_000, 0}]} =
                compile("sc_start SC_SUMMER,1000,0;", :unequip)
 
-      assert {:error, {:unsupported, {:unsupported_command, "bonus"}}} =
-               compile("bonus bStr,1;", :unequip)
+      assert {:ok, [{:bonus, :str, 1}]} = compile("bonus bStr,1;", :unequip)
+    end
+
+    test "unequip context compiles direct and conditional effects" do
+      script = """
+      heal 10,-2;
+      sc_start SC_SUMMER,1000,3;
+      sc_end SC_HIDING;
+      if (BaseLevel > 50) {
+        heal -5,7;
+        sc_start SC_MOONSTAR,INFINITE_TICK,4;
+        sc_end SC_SUMMER;
+      }
+      """
+
+      assert {:ok,
+              [
+                {:heal, 10, -2},
+                {:status_start, :sc_summer, 1_000, 3},
+                {:status_end, :sc_hiding},
+                {:if, {:>, :base_level, 50},
+                 [
+                   {:heal, -5, 7},
+                   {:status_start, :sc_moonstar, :infinite, 4},
+                   {:status_end, :sc_summer}
+                 ], []}
+              ]} = compile(script, :unequip)
     end
 
     test "secondary programs reject gameplay commands with their nested reason" do
