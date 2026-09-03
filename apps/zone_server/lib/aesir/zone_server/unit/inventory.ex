@@ -51,6 +51,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
           ItemContainer.change()
           | {:equipped, non_neg_integer(), non_neg_integer(), [non_neg_integer()]}
           | {:unequipped, non_neg_integer()}
+          | {:card_compounded, non_neg_integer(), non_neg_integer(),
+             :card0 | :card1 | :card2 | :card3}
 
   @typedoc "Successful operation result: the new inventory plus the change."
   @type op_result :: {:ok, t(), change()} | {:error, atom()}
