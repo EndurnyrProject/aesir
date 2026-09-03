@@ -95,7 +95,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
   end
 
   test "successful compose commits persisted inventory and publishes ordered authoritative updates" do
-    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
+    character_id = System.unique_integer([:positive])
+    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{character_id}")
     stub(Items, :by_id, &item_lookup/1)
     reject(&Stats.calculate_stats/3)
 
@@ -112,7 +113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     }
 
     inventory = %{7 => card, 3 => target}
-    state = state(inventory)
+    state = state(inventory, %{character_id: character_id})
     request = %CardComposeRequest{card_index: 9, equipment_index: 5}
     test_pid = self()
 
@@ -122,7 +123,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     end)
 
     expect(InventoryOps, :apply_change, fn
-      1000,
+      ^character_id,
       ^inventory,
       %{7 => %InventoryItem{amount: 1}, 3 => %InventoryItem{card1: 4001}} = next,
       {:card_compounded, 7, 3, :card1} ->
@@ -135,7 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
         {:ok, persisted}
     end)
 
-    expect(UnitRegistry, :update_unit_state, fn :player, 1000, game_state ->
+    expect(UnitRegistry, :update_unit_state, fn :player, ^character_id, game_state ->
       send(test_pid, {:state_committed, game_state})
       :ok
     end)
