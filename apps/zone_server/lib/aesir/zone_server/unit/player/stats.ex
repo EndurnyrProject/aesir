@@ -1578,8 +1578,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     |> Enum.map(&Map.fetch!(item, &1))
   end
 
-  defp bounded_card_slots(slots) when is_integer(slots), do: slots |> max(0) |> min(4)
-  defp bounded_card_slots(_slots), do: 0
+  defp bounded_card_slots(slots), do: slots |> max(0) |> min(4)
 
   defp resolve_card(card_id, slot) do
     case ItemManagement.get_item_by_id(card_id) do
