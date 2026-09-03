@@ -72,6 +72,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.to_source(program) =~
                "if ((refine(ctx) > 3) && (refine(ctx) < 9)) do"
     end
+
+    test "renders an equipped-set condition with exact item order and multiplicity" do
+      program = [{:if, {:equipped, [501, 502, 501]}, [{:bonus, :str, 1}], []}]
+
+      assert EquipScript.to_source(program) ==
+               """
+               if equipped(ctx, [501, 502, 501]) do
+                 bonus(ctx, :str, 1)
+               else
+                 ctx
+               end
+               """
+               |> String.trim_trailing()
+    end
   end
 
   describe "to_source |> parse! round-trip" do
@@ -203,6 +217,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       job_cmp_or: [
         {:if, {:or, {:job_cmp, :==, :base_class, :mage}, {:job_cmp, :==, :base_class, :archer}},
          [{:bonus, :max_hp, {:*, :base_level, 5}}], []}
+      ],
+      equipped: [{:if, {:equipped, [501, 502, 501]}, [{:bonus, :str, 1}], []}],
+      negated_equipped: [
+        {:if, {:not, {:equipped, [4172, 4257, 4230, 4272]}}, [{:bonus, :flee, 20}], []}
       ],
       bool_as_int: [{:bonus, :def, {:+, 2, {:*, 3, {:bool, {:>, :refine, 5}}}}}]
     ]
@@ -536,6 +554,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       end
     end
 
+    test "rejects malformed equipped item id lists" do
+      invalid_conditions = [
+        "equipped(ctx, [])",
+        "equipped(ctx, [0])",
+        "equipped(ctx, [-1])",
+        "equipped(ctx, [501, :not_an_id])",
+        ~s|equipped(ctx, [501, "not_an_id"])|,
+        "equipped(ctx, [501 | 502])",
+        "equipped(ctx, 501)"
+      ]
+
+      for condition <- invalid_conditions do
+        assert_raise ArgumentError, fn ->
+          EquipScript.parse!("if #{condition} do\nctx\nend")
+        end
+      end
+    end
+
     test "raises on an out-of-vocabulary expression" do
       assert_raise ArgumentError, fn ->
         EquipScript.parse!("bonus(ctx, :smatk, rem(refine(ctx), 2))")
@@ -756,6 +792,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
 
       assert EquipScript.eval(program, on(5)) == %{str: 1}
       assert EquipScript.eval(program, on(10)) == %{}
+    end
+
+    test "an equipped-set condition matches every requested item with duplicate multiplicity" do
+      program = [{:if, {:equipped, [501, 502, 501]}, [{:bonus, :str, 1}], []}]
+
+      assert EquipScript.eval(
+               program,
+               on(0, equipped_item_counts: %{501 => 2, 502 => 1, 503 => 4})
+             ) == %{str: 1}
+    end
+
+    test "an equipped-set condition is false for missing items or duplicate multiplicity" do
+      program = [{:if, {:equipped, [501, 502, 501]}, [{:bonus, :str, 1}], []}]
+
+      assert EquipScript.eval(program, on(0, equipped_item_counts: %{501 => 1, 502 => 1})) == %{}
+      assert EquipScript.eval(program, on(0, equipped_item_counts: %{501 => 2})) == %{}
+      assert EquipScript.eval(program, on(0)) == %{}
+    end
+
+    test "a negated equipped-set condition inverts the multiset match" do
+      program = [{:if, {:not, {:equipped, [501, 502]}}, [{:bonus, :str, 1}], []}]
+
+      assert EquipScript.eval(program, on(0, equipped_item_counts: %{501 => 1, 502 => 1})) == %{}
+      assert EquipScript.eval(program, on(0, equipped_item_counts: %{501 => 1})) == %{str: 1}
+      assert EquipScript.eval(program, on(0)) == %{str: 1}
     end
 
     test "raises on an unrecognized expression node" do

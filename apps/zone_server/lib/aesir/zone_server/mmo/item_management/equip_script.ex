@@ -15,16 +15,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   and parsed back to the tuple form at load time through a closed vocabulary
   (`parse!/1`): `bonus/3`, `autobonus/4`, `status_start/4`, `status_end/2`,
   `heal/3`, `refine/1`, `base_level/1`, `job_level/1`, `+ - *`, `div/2`, `min/2`,
-  `max/2`, `pow/2`, comparisons, `&&`/`||`, `job_is/3`, `job_is_not/3`,
-  `bool/2`, `if/else` statements, and the inline
+  `max/2`, `pow/2`, comparisons, `&&`/`||`/`not`, `job_is/3`, `job_is_not/3`,
+  `bool/2`, `equipped/2`, `if/else` statements, and the inline
   `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the source is
   never compiled to code — the equip corpus (~13k items) is far past the BEAM
   clause-count ceiling — so `evaluate/2` interprets the tuple program against
   the `t:inputs/0` map during the stats recompute. `eval/2` remains the
   modifier-only compatibility entry point. The evaluator is
-  pure and deterministic in `(program, inputs)` — the three inputs (the item's
-  refine, the wearer's base and job level) are the only reads the vocabulary
-  admits, and there is no randomness. Level inputs change on level-up, which is
+  pure and deterministic in `(program, inputs)` — required item/level inputs
+  and optional wearer inputs are the only reads the vocabulary admits, and
+  there is no randomness. Level inputs change on level-up, which is
   why the stats recompute re-evaluates programs (`Stats.apply_equipment_modifiers`
   caches `worn_items` for exactly that refold).
 
@@ -96,8 +96,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type job_reader :: :class | :base_class | :base_job
 
   @typedoc """
-  The evaluation inputs: the item's refine and the wearer's levels, plus the
-  optional wearer learned-skills map read by `{:skill_lv, id}` expressions.
+  The evaluation inputs: the item's refine and the wearer's levels, plus
+  optional wearer learned skills, base stats, job, and equipped-item multiset.
   """
   @type inputs :: %{
           :refine => integer(),
@@ -105,7 +105,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           :job_level => integer(),
           optional(:learned_skills) => %{integer() => non_neg_integer()},
           optional(:stats) => %{atom() => integer()},
-          optional(:job_id) => integer()
+          optional(:job_id) => integer(),
+          optional(:equipped_item_counts) => %{pos_integer() => pos_integer()}
         }
 
   @typedoc """
@@ -130,7 +131,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @type condition ::
           {compare_op(), expr(), expr()}
           | {logic_op(), condition(), condition()}
+          | {:not, condition()}
           | {:job_cmp, :== | :!=, job_reader(), atom()}
+          | {:equipped, [pos_integer()]}
 
   @typedoc """
   A bonus destination: a flat atom for section-3 keys, or a `{family, param}`
@@ -235,7 +238,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   closed vocabulary; flat bonus destinations are validated through
   `BonusKeys.destinations/0`, and `{family, param}` tuple destinations through
   `BonusKeys.families/0` and `BonusKeys.family_param/1` (atom params against
-  the family's domain, skill params as positive integers). Any unknown call,
+  the family's domain, skill params as positive integers). Equipped-set item
+  ids must be a non-empty list of positive integers. Any unknown call,
   operator, destination, or malformed shape raises `ArgumentError` — corrupt
   data must not load silently.
   """
@@ -349,12 +353,16 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp render_cond({:and, l, r}), do: "(#{render_cond(l)} && #{render_cond(r)})"
   defp render_cond({:or, l, r}), do: "(#{render_cond(l)} || #{render_cond(r)})"
+  defp render_cond({:not, condition}), do: "not #{render_cond(condition)}"
 
   defp render_cond({:job_cmp, :==, reader, job}),
     do: "job_is(ctx, #{inspect(reader)}, #{inspect(job)})"
 
   defp render_cond({:job_cmp, :!=, reader, job}),
     do: "job_is_not(ctx, #{inspect(reader)}, #{inspect(job)})"
+
+  defp render_cond({:equipped, ids}),
+    do: "equipped(ctx, [#{Enum.join(ids, ", ")}])"
 
   defp indent(source) do
     source
@@ -460,11 +468,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     {:or, parse_cond!(l), parse_cond!(r)}
   end
 
+  defp parse_cond!({op, _, [condition]}) when op in [:!, :not],
+    do: {:not, parse_cond!(condition)}
+
   defp parse_cond!({:job_is, _, [{:ctx, _, c}, reader, job]}) when is_atom(c),
     do: {:job_cmp, :==, validate_job_reader!(reader), validate_job!(job)}
 
   defp parse_cond!({:job_is_not, _, [{:ctx, _, c}, reader, job]}) when is_atom(c),
     do: {:job_cmp, :!=, validate_job_reader!(reader), validate_job!(job)}
+
+  defp parse_cond!({:equipped, _, [{:ctx, _, c}, ids]}) when is_atom(c),
+    do: {:equipped, validate_item_ids!(ids)}
 
   defp parse_cond!(other), do: malformed!("condition", other)
 
@@ -548,6 +562,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp validate_skill_id!(id) when is_integer(id) and id > 0, do: id
   defp validate_skill_id!(id), do: malformed!("skill id", id)
+
+  defp validate_item_ids!([_ | _] = ids) do
+    if Enum.all?(ids, &(is_integer(&1) and &1 > 0)),
+      do: ids,
+      else: malformed!("equipped item ids", ids)
+  end
+
+  defp validate_item_ids!(ids), do: malformed!("equipped item ids", ids)
 
   defp validate_status!(status) when is_atom(status), do: status
   defp validate_status!(status), do: malformed!("status", status)
@@ -812,9 +834,18 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_cond({:!=, a, b}, inputs), do: eval_expr(a, inputs) != eval_expr(b, inputs)
   defp eval_cond({:and, a, b}, inputs), do: eval_cond(a, inputs) and eval_cond(b, inputs)
   defp eval_cond({:or, a, b}, inputs), do: eval_cond(a, inputs) or eval_cond(b, inputs)
+  defp eval_cond({:not, condition}, inputs), do: not eval_cond(condition, inputs)
 
   defp eval_cond({:job_cmp, :==, reader, job}, inputs), do: reader_job(reader, inputs) == job
   defp eval_cond({:job_cmp, :!=, reader, job}, inputs), do: reader_job(reader, inputs) != job
+
+  defp eval_cond({:equipped, ids}, inputs) do
+    counts = Map.get(inputs, :equipped_item_counts, %{})
+
+    ids
+    |> Enum.frequencies()
+    |> Enum.all?(fn {id, required} -> Map.get(counts, id, 0) >= required end)
+  end
 
   defp eval_cond(other, _inputs), do: malformed!("condition", other)
 

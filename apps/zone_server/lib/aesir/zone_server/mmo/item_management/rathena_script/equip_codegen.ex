@@ -81,7 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
     id); the level is an ordinary amount expression; the optional trigger flag is
     dropped, since an equip grant is always the worn-item temporary skill.
   - `if (cond) then [else]` — `{:if, cond, then, else}` when `cond` is an
-    input-pure boolean over comparisons / `&&` / `||`, or a job comparison:
+    input-pure boolean over comparisons / `&&` / `||`, an `isequipped(...)`
+    multiset check (optionally negated with `!`), or a job comparison:
     `Class`/`BaseClass`/`BaseJob` `==`/`!=` a `Job_*` constant compiles to
     `{:job_cmp, op, reader, job}`, resolved through `JobLineage` at runtime. A
     read outside this vocabulary, such as `eaclass()`, is unsupported.
@@ -1268,6 +1269,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
 
   @spec compile_cond(term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.condition()} | {:error, {:unsupported, detail()}}
+  defp compile_cond({:call, "isequipped", args}, _env) when args != [] do
+    with {:ok, ids} <- resolve_item_refs(args), do: {:ok, {:equipped, ids}}
+  end
+
+  defp compile_cond({:not, {:call, "isequipped", _args} = condition}, env) do
+    with {:ok, condition} <- compile_cond(condition, env), do: {:ok, {:not, condition}}
+  end
+
   # An equality/inequality between a job reader (`Class`/`BaseClass`/`BaseJob`)
   # and a `Job_*` constant compiles to a `{:job_cmp, ...}` condition resolved
   # through `JobLineage` at runtime; anything else is an ordinary numeric compare.
@@ -1303,6 +1312,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
       {:ok, {op, l, r}}
     end
   end
+
+  defp resolve_item_refs(args) do
+    Enum.reduce_while(args, {:ok, []}, fn arg, {:ok, ids} ->
+      case resolve_item_ref(arg) do
+        {:ok, id} -> {:cont, {:ok, [id | ids]}}
+        {:error, _} = error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, ids} -> {:ok, Enum.reverse(ids)}
+      {:error, _} = error -> error
+    end
+  end
+
+  defp resolve_item_ref({:int, id}), do: resolve(&Resolver.resolve_item/1, id)
+  defp resolve_item_ref({:name, symbol}), do: resolve(&Resolver.resolve_item/1, symbol)
+  defp resolve_item_ref({:str, symbol}), do: resolve(&Resolver.resolve_item/1, symbol)
+  defp resolve_item_ref(other), do: unsupported({:unresolved_param, other})
 
   # Classifies an `==`/`!=` operand pair as a job comparison when one side is a
   # job reader name and the other a `Job_*` constant (either order); otherwise

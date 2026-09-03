@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
   alias Aesir.ZoneServer.Mmo.AutoTriggerFlag
   alias Aesir.ZoneServer.Mmo.BattleFlag
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen
+  alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
 
@@ -11,6 +12,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     with {:ok, stmts} <- Parser.parse_body(script) do
       EquipCodegen.generate(stmts, context)
     end
+  end
+
+  defp compile_with_source_catalog(script) do
+    catalogs =
+      Resolver.source_catalogs(
+        [
+          %{"Id" => 501, "AegisName" => "Red_Potion"},
+          %{"Id" => 502, "AegisName" => "Orange_Potion"},
+          %{"Id" => 4172, "AegisName" => "Item_4172"},
+          %{"Id" => 4230, "AegisName" => "Item_4230"},
+          %{"Id" => 4257, "AegisName" => "Item_4257"},
+          %{"Id" => 4272, "AegisName" => "Item_4272"}
+        ],
+        []
+      )
+
+    Resolver.with_source_catalogs(catalogs, fn -> compile(script) end)
   end
 
   # Builds the expected normalized flag from the axis names it should contain,
@@ -32,6 +50,41 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     test "flat multi-key bonuses (id490160 ST_Orleans_Glove)" do
       assert {:ok, [{:bonus, :smatk, 3}, {:bonus, :spl, 2}, {:bonus, :crt, 2}]} =
                compile("bonus bSMatk,3; bonus bSpl,2; bonus bCrt,2;")
+    end
+
+    test "isequipped resolves a numeric item reference" do
+      assert {:ok, [{:if, {:equipped, [501]}, [{:bonus, :str, 1}], []}]} =
+               compile_with_source_catalog("if (isequipped(501)) bonus bStr,1;")
+    end
+
+    test "isequipped resolves multiple source item references and preserves duplicates" do
+      assert {:ok, [{:if, {:equipped, [501, 502, 501]}, [{:bonus, :str, 1}], []}]} =
+               compile_with_source_catalog(
+                 "if (isequipped(Red_Potion,Orange_Potion,Red_Potion)) bonus bStr,1;"
+               )
+    end
+
+    test "isequipped resolves a quoted source item reference" do
+      assert {:ok, [{:if, {:equipped, [501]}, [{:bonus, :str, 1}], []}]} =
+               compile_with_source_catalog(~s[if (isequipped("Red_Potion")) bonus bStr,1;])
+    end
+
+    test "Wander Man Card's negated isequipped condition remains input-pure" do
+      assert {:ok,
+              [
+                {:if, {:not, {:equipped, [4172, 4257, 4230, 4272]}},
+                 [{:auto_cast, %{trigger: :attack}, 1, 20}], []}
+              ]} =
+               compile_with_source_catalog(
+                 ~s[if (!isequipped(4172,4257,4230,4272)) bonus3 bAutoSpell,"RG_INTIMIDATE",1,20;]
+               )
+    end
+
+    test "an unknown isequipped reference rejects the whole script" do
+      assert {:error, {:unsupported, {:unresolved_param, "Missing_Item"}}} =
+               compile_with_source_catalog(
+                 "bonus bAgi,1; if (isequipped(Red_Potion,Missing_Item)) bonus bStr,1;"
+               )
     end
 
     test "hp/sp capacity keys compile to their flat and rate destinations" do
