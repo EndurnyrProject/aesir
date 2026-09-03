@@ -1992,6 +1992,10 @@
   locations:
     - armor
   name: Poring Card
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 2)
+    ctx = bonus(ctx, :perfect_dodge, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Fabre_Card
@@ -2000,6 +2004,10 @@
   locations:
     - right_hand
   name: Fabre Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Pupa_Card
@@ -2008,6 +2016,7 @@
   locations:
     - armor
   name: Pupa Card
+  on_equip: bonus(ctx, :max_hp, 700)
   type: card
   weight: 10
 - aegis_name: Drops_Card
@@ -2016,6 +2025,10 @@
   locations:
     - right_hand
   name: Drops Card
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :hit, 3)
+    ctx
   type: card
   weight: 10
 - aegis_name: Poring__Card
@@ -2024,6 +2037,7 @@
   locations:
     - right_hand
   name: Santa Poring Card
+  on_equip: bonus(ctx, {:addele, :shadow}, 20)
   type: card
   weight: 10
 - aegis_name: Lunatic_Card
@@ -2032,6 +2046,11 @@
   locations:
     - right_hand
   name: Lunatic Card
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 1)
+    ctx = bonus(ctx, :critical, 1)
+    ctx = bonus(ctx, :perfect_dodge, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Pecopeco_Egg_Card
@@ -2040,6 +2059,7 @@
   locations:
     - right_hand
   name: Peco Peco Egg Card
+  on_equip: bonus(ctx, {:addrace, :formless}, 20)
   type: card
   weight: 10
 - aegis_name: Picky_Card
@@ -2048,6 +2068,10 @@
   locations:
     - armor
   name: Picky Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :atk, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Chonchon_Card
@@ -2056,6 +2080,10 @@
   locations:
     - shoes
   name: Chonchon Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, :flee, 2)
+    ctx
   type: card
   weight: 10
 - aegis_name: Wilow_Card
@@ -2066,6 +2094,7 @@
     - head_mid
     - head_top
   name: Willow Card
+  on_equip: bonus(ctx, :max_sp, 80)
   type: card
   weight: 10
 - aegis_name: Picky__Card
@@ -2074,6 +2103,10 @@
   locations:
     - armor
   name: Picky Egg Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :max_hp, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Thief_Bug_Egg_Card
@@ -2082,6 +2115,7 @@
   locations:
     - left_hand
   name: Thief Bug Egg Card
+  on_equip: bonus(ctx, :max_hp, 400)
   type: card
   weight: 10
 - aegis_name: Andre_Egg_Card
@@ -2090,6 +2124,7 @@
   locations:
     - left_hand
   name: Andre Egg Card
+  on_equip: bonus(ctx, :max_hp_rate, 5)
   type: card
   weight: 10
 - aegis_name: Roda_Frog_Card
@@ -2098,6 +2133,10 @@
   locations:
     - armor
   name: Roda Frog Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 400)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Condor_Card
@@ -2106,6 +2145,7 @@
   locations:
     - garment
   name: Condor Card
+  on_equip: bonus(ctx, :flee, 10)
   type: card
   weight: 10
 - aegis_name: Thief_Bug_Card
@@ -2114,6 +2154,7 @@
   locations:
     - armor
   name: Thief Bug Card
+  on_equip: bonus(ctx, :agi, 1)
   type: card
   weight: 10
 - aegis_name: Savage_Babe_Card
@@ -2122,6 +2163,7 @@
   locations:
     - right_hand
   name: Savage Babe Card
+  on_equip: bonus(ctx, {:add_eff, :sc_stun}, 500)
   type: card
   weight: 10
 - aegis_name: Andre_Larva_Card
@@ -2130,6 +2172,10 @@
   locations:
     - right_hand
   name: Andre Larva Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :max_sp, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Hornet_Card
@@ -2138,6 +2184,10 @@
   locations:
     - right_hand
   name: Hornet Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :atk, 3)
+    ctx
   type: card
   weight: 10
 - aegis_name: Farmiliar_Card
@@ -2146,6 +2196,10 @@
   locations:
     - right_hand
   name: Familiar Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_blind}, 500)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Rocker_Card
@@ -2154,6 +2208,10 @@
   locations:
     - armor
   name: Rocker Card
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 1)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Spore_Card
@@ -2162,6 +2220,7 @@
   locations:
     - both_accessory
   name: Spore Card
+  on_equip: bonus(ctx, :vit, 2)
   type: card
   weight: 10
 - aegis_name: Desert_Wolf_Babe_Card
@@ -2170,6 +2229,7 @@
   locations:
     - armor
   name: Baby Desert Wolf Card
+  on_equip: bonus(ctx, :int, 1)
   type: card
   weight: 10
 - aegis_name: Plankton_Card
@@ -2178,6 +2238,10 @@
   locations:
     - right_hand
   name: Plankton Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_sleep}, 500)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Skeleton_Card
@@ -2186,6 +2250,10 @@
   locations:
     - right_hand
   name: Skeleton Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = bonus(ctx, {:add_eff, :sc_stun}, 200)
+    ctx
   type: card
   weight: 10
 - aegis_name: Thief_Bug_Female_Card
@@ -2194,6 +2262,10 @@
   locations:
     - right_hand
   name: Female Thief Bug Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, :flee, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Kukre_Card
@@ -2202,6 +2274,7 @@
   locations:
     - both_accessory
   name: Kukre Card
+  on_equip: bonus(ctx, :agi, 2)
   type: card
   weight: 10
 - aegis_name: Tarou_Card
@@ -2210,6 +2283,7 @@
   locations:
     - both_accessory
   name: Tarou Card
+  on_equip: bonus(ctx, :str, 2)
   type: card
   weight: 10
 - aegis_name: Wolf_Card
@@ -2218,6 +2292,10 @@
   locations:
     - right_hand
   name: Wolf Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 15)
+    ctx = bonus(ctx, :critical, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Mandragora_Card
@@ -2226,6 +2304,7 @@
   locations:
     - right_hand
   name: Mandragora Card
+  on_equip: bonus(ctx, {:addele, :wind}, 20)
   type: card
   weight: 10
 - aegis_name: Pecopeco_Card
@@ -2234,6 +2313,7 @@
   locations:
     - armor
   name: Peco Peco Card
+  on_equip: bonus(ctx, :max_hp_rate, 10)
   type: card
   weight: 10
 - aegis_name: Ambernite_Card
@@ -2242,6 +2322,7 @@
   locations:
     - left_hand
   name: Ambernite Card
+  on_equip: bonus(ctx, :def, 2)
   type: card
   weight: 10
 - aegis_name: Poporing_Card
@@ -2250,6 +2331,7 @@
   locations:
     - both_accessory
   name: Poporing Card
+  on_equip: grant_skill(ctx, 53, 1)
   type: card
   weight: 10
 - aegis_name: Worm_Tail_Card
@@ -2258,6 +2340,7 @@
   locations:
     - both_accessory
   name: Wormtail Card
+  on_equip: bonus(ctx, :dex, 2)
   type: card
   weight: 10
 - aegis_name: Hydra_Card
@@ -2266,6 +2349,10 @@
   locations:
     - right_hand
   name: Hydra Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 20)
+    ctx = bonus(ctx, {:addrace, :player_human}, 20)
+    ctx
   type: card
   weight: 10
 - aegis_name: Muka_Card
@@ -2274,6 +2361,7 @@
   locations:
     - both_accessory
   name: Muka Card
+  on_equip: bonus(ctx, :hp_regen, 10)
   type: card
   weight: 10
 - aegis_name: Snake_Card
@@ -2282,6 +2370,10 @@
   locations:
     - right_hand
   name: Snake Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 500)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Zombie_Card
@@ -2290,6 +2382,7 @@
   locations:
     - shoes
   name: Zombie Card
+  on_equip: bonus(ctx, :hp_regen, 20)
   type: card
   weight: 10
 - aegis_name: Stainer_Card
@@ -2300,6 +2393,10 @@
     - head_mid
     - head_top
   name: Stainer Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_silence}, 2000)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Creamy_Card
@@ -2308,6 +2405,7 @@
   locations:
     - both_accessory
   name: Creamy Card
+  on_equip: grant_skill(ctx, 26, 1)
   type: card
   weight: 10
 - aegis_name: Coco_Card
@@ -2318,6 +2416,10 @@
     - head_mid
     - head_top
   name: Coco Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_sleep}, 2000)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Steel_Chonchon_Card
@@ -2326,6 +2428,10 @@
   locations:
     - armor
   name: Steel Chonchon Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :wind}, 10)
+    ctx = bonus(ctx, :def, 2)
+    ctx
   type: card
   weight: 10
 - aegis_name: Andre_Card
@@ -2334,6 +2440,7 @@
   locations:
     - right_hand
   name: Andre Card
+  on_equip: bonus(ctx, :atk, 20)
   type: card
   weight: 10
 - aegis_name: Smokie_Card
@@ -2342,6 +2449,8 @@
   locations:
     - both_accessory
   name: Smokie Card
+  on_equip: grant_skill(ctx, 51, 1)
+  on_unequip: status_end(ctx, :sc_hiding)
   type: card
   weight: 10
 - aegis_name: Horn_Card
@@ -2350,6 +2459,7 @@
   locations:
     - left_hand
   name: Horn Card
+  on_equip: bonus(ctx, :long_atk_def, 35)
   type: card
   weight: 10
 - aegis_name: Martin_Card
@@ -2360,6 +2470,10 @@
     - head_mid
     - head_top
   name: Martin Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 2000)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ghostring_Card
@@ -2368,6 +2482,10 @@
   locations:
     - armor
   name: Ghostring Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :ghost)
+    ctx = bonus(ctx, :hp_regen, -25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Poison_Spore_Card
@@ -2376,6 +2494,7 @@
   locations:
     - both_accessory
   name: Poison Spore Card
+  on_equip: grant_skill(ctx, 52, 3)
   type: card
   weight: 10
 - aegis_name: Vadon_Card
@@ -2384,6 +2503,7 @@
   locations:
     - right_hand
   name: Vadon Card
+  on_equip: bonus(ctx, {:addele, :fire}, 20)
   type: card
   weight: 10
 - aegis_name: Thief_Bug_Male_Card
@@ -2392,6 +2512,7 @@
   locations:
     - shoes
   name: Male Thief Bug Card
+  on_equip: bonus(ctx, :agi, 2)
   type: card
   weight: 10
 - aegis_name: Yoyo_Card
@@ -2400,6 +2521,10 @@
   locations:
     - both_accessory
   name: Yoyo Card
+  on_equip: |-
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = bonus(ctx, :agi, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Elder_Wilow_Card
@@ -2410,6 +2535,7 @@
     - head_mid
     - head_top
   name: Elder Willow Card
+  on_equip: bonus(ctx, :int, 2)
   type: card
   weight: 10
 - aegis_name: Vitata_Card
@@ -2418,6 +2544,10 @@
   locations:
     - both_accessory
   name: Vitata Card
+  on_equip: |-
+    ctx = grant_skill(ctx, 28, 1)
+    ctx = bonus(ctx, :sp_cost_rate, 25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Angeling_Card
@@ -2426,6 +2556,7 @@
   locations:
     - armor
   name: Angeling Card
+  on_equip: set(ctx, :def_ele, :holy)
   type: card
   weight: 10
 - aegis_name: Marina_Card
@@ -2434,6 +2565,10 @@
   locations:
     - right_hand
   name: Marina Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 500)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dustiness_Card
@@ -2442,6 +2577,10 @@
   locations:
     - garment
   name: Dustiness Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :wind}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Metaller_Card
@@ -2450,6 +2589,10 @@
   locations:
     - right_hand
   name: Metaller Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_silence}, 500)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Thara_Frog_Card
@@ -2458,6 +2601,10 @@
   locations:
     - left_hand
   name: Thara Frog Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, 30)
+    ctx = bonus(ctx, {:subrace, :player_human}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Soldier_Andre_Card
@@ -2466,6 +2613,7 @@
   locations:
     - left_hand
   name: Soldier Andre Card
+  on_equip: bonus(ctx, {:subrace, :plant}, 30)
   type: card
   weight: 10
 - aegis_name: Goblin_Card
@@ -2474,6 +2622,10 @@
   locations:
     - right_hand
   name: Goblin Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :brute}, 20)
+    ctx = bonus(ctx, {:addrace, :player_doram}, 20)
+    ctx
   type: card
   weight: 10
 - aegis_name: Cornutus_Card
@@ -2482,6 +2634,10 @@
   locations:
     - armor
   name: Cornutus Card
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Anacondaq_Card
@@ -2490,6 +2646,7 @@
   locations:
     - right_hand
   name: Anacondaq Card
+  on_equip: bonus(ctx, {:addele, :poison}, 20)
   type: card
   weight: 10
 - aegis_name: Caramel_Card
@@ -2498,6 +2655,7 @@
   locations:
     - right_hand
   name: Caramel Card
+  on_equip: bonus(ctx, {:addrace, :insect}, 20)
   type: card
   weight: 10
 - aegis_name: Zerom_Card
@@ -2506,6 +2664,7 @@
   locations:
     - both_accessory
   name: Zerom Card
+  on_equip: bonus(ctx, :dex, 3)
   type: card
   weight: 10
 - aegis_name: Kaho_Card
@@ -2514,6 +2673,7 @@
   locations:
     - right_hand
   name: Kaho Card
+  on_equip: bonus(ctx, {:addele, :earth}, 20)
   type: card
   weight: 10
 - aegis_name: Orc_Warrior_Card
@@ -2522,6 +2682,10 @@
   locations:
     - left_hand
   name: Orc Warrior Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :brute}, 30)
+    ctx = bonus(ctx, {:subrace, :player_doram}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Megalodon_Card
@@ -2530,6 +2694,10 @@
   locations:
     - left_hand
   name: Megalodon Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, 2000)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Scorpion_Card
@@ -2538,6 +2706,7 @@
   locations:
     - right_hand
   name: Scorpion Card
+  on_equip: bonus(ctx, {:addrace, :plant}, 20)
   type: card
   weight: 10
 - aegis_name: Drainliar_Card
@@ -2546,6 +2715,7 @@
   locations:
     - right_hand
   name: Drainliar Card
+  on_equip: bonus(ctx, {:addele, :water}, 20)
   type: card
   weight: 10
 - aegis_name: Eggyra_Card
@@ -2554,6 +2724,7 @@
   locations:
     - shoes
   name: Eggyra Card
+  on_equip: bonus(ctx, :sp_regen, 15)
   type: card
   weight: 10
 - aegis_name: Orc_Zombie_Card
@@ -2562,6 +2733,10 @@
   locations:
     - garment
   name: Orc Zombie Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :undead}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Golem_Card
@@ -2570,6 +2745,10 @@
   locations:
     - right_hand
   name: Golem Card
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Pirate_Skel_Card
@@ -2578,6 +2757,7 @@
   locations:
     - both_accessory
   name: Pirate Skeleton Card
+  on_equip: grant_skill(ctx, 37, 5)
   type: card
   weight: 10
 - aegis_name: BigFoot_Card
@@ -2586,6 +2766,7 @@
   locations:
     - left_hand
   name: Bigfoot Card
+  on_equip: bonus(ctx, {:subrace, :insect}, 30)
   type: card
   weight: 10
 - aegis_name: Argos_Card
@@ -2594,6 +2775,10 @@
   locations:
     - left_hand
   name: Argos Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 2000)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Magnolia_Card
@@ -2602,6 +2787,10 @@
   locations:
     - right_hand
   name: Magnolia Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_curse}, 500)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Phen_Card
@@ -2610,6 +2799,10 @@
   locations:
     - both_accessory
   name: Phen Card
+  on_equip: |-
+    ctx = bonus(ctx, :no_cast_cancel, 1)
+    ctx = bonus(ctx, :varcast_rate, 25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Savage_Card
@@ -2618,6 +2811,7 @@
   locations:
     - armor
   name: Savage Card
+  on_equip: bonus(ctx, :vit, 3)
   type: card
   weight: 10
 - aegis_name: Mantis_Card
@@ -2626,6 +2820,7 @@
   locations:
     - both_accessory
   name: Mantis Card
+  on_equip: bonus(ctx, :str, 3)
   type: card
   weight: 10
 - aegis_name: Flora_Card
@@ -2634,6 +2829,7 @@
   locations:
     - right_hand
   name: Flora Card
+  on_equip: bonus(ctx, {:addrace, :fish}, 20)
   type: card
   weight: 10
 - aegis_name: Hode_Card
@@ -2642,6 +2838,10 @@
   locations:
     - garment
   name: Hode Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :earth}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Desert_Wolf_Card
@@ -2650,6 +2850,10 @@
   locations:
     - right_hand
   name: Desert Wolf Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addsize, :small}, 15)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Rafflesia_Card
@@ -2658,6 +2862,7 @@
   locations:
     - left_hand
   name: Rafflesia Card
+  on_equip: bonus(ctx, {:subrace, :fish}, 30)
   type: card
   weight: 10
 - aegis_name: Marine_Sphere_Card
@@ -2666,6 +2871,7 @@
   locations:
     - both_accessory
   name: Marine Sphere Card
+  on_equip: grant_skill(ctx, 7, 3)
   type: card
   weight: 10
 - aegis_name: Orc_Skeleton_Card
@@ -2674,6 +2880,7 @@
   locations:
     - right_hand
   name: Orc Skeleton Card
+  on_equip: bonus(ctx, {:addele, :holy}, 20)
   type: card
   weight: 10
 - aegis_name: Soldier_Skeleton_Card
@@ -2682,6 +2889,7 @@
   locations:
     - right_hand
   name: Soldier Skeleton Card
+  on_equip: bonus(ctx, :critical, 9)
   type: card
   weight: 10
 - aegis_name: Giearth_Card
@@ -2692,6 +2900,10 @@
     - head_mid
     - head_top
   name: Giearth Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_confusion}, 10000)
+    ctx = bonus(ctx, {:subele, :earth}, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: Frilldora_Card
@@ -2700,6 +2912,8 @@
   locations:
     - garment
   name: Frilldora Card
+  on_equip: grant_skill(ctx, 135, 1)
+  on_unequip: status_end(ctx, :sc_cloaking)
   type: card
   weight: 10
 - aegis_name: Sword_Fish_Card
@@ -2708,6 +2922,10 @@
   locations:
     - armor
   name: Swordfish Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :water)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Munak_Card
@@ -2716,6 +2934,11 @@
   locations:
     - left_hand
   name: Munak Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 1500)
+    ctx = bonus(ctx, {:subele, :earth}, 5)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Kobold_Card
@@ -2724,6 +2947,10 @@
   locations:
     - both_accessory
   name: Kobold Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :critical, 4)
+    ctx
   type: card
   weight: 10
 - aegis_name: Skel_Worker_Card
@@ -2732,6 +2959,10 @@
   locations:
     - right_hand
   name: Skeleton Worker Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addsize, :medium}, 15)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Obeaune_Card
@@ -2740,6 +2971,7 @@
   locations:
     - both_accessory
   name: Obeaune Card
+  on_equip: grant_skill(ctx, 35, 1)
   type: card
   weight: 10
 - aegis_name: Archer_Skeleton_Card
@@ -2748,6 +2980,7 @@
   locations:
     - right_hand
   name: Archer Skeleton Card
+  on_equip: bonus(ctx, :long_atk_rate, 10)
   type: card
   weight: 10
 - aegis_name: Marse_Card
@@ -2756,6 +2989,10 @@
   locations:
     - garment
   name: Marse Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :water}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Zenorc_Card
@@ -2764,6 +3001,10 @@
   locations:
     - right_hand
   name: Zenorc Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, :sc_poison}, 400)
+    ctx = bonus(ctx, :atk, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Matyr_Card
@@ -2772,6 +3013,10 @@
   locations:
     - shoes
   name: Matyr Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, :agi, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dokebi_Card
@@ -2780,6 +3025,10 @@
   locations:
     - armor
   name: Dokebi Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :wind)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Pasana_Card
@@ -2788,6 +3037,10 @@
   locations:
     - armor
   name: Pasana Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :fire)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sohee_Card
@@ -2796,6 +3049,10 @@
   locations:
     - shoes
   name: Sohee Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 15)
+    ctx = bonus(ctx, :sp_regen, 3)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sand_Man_Card
@@ -2804,6 +3061,10 @@
   locations:
     - armor
   name: Sandman Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :earth)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Whisper_Card
@@ -2812,6 +3073,10 @@
   locations:
     - garment
   name: Whisper Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 20)
+    ctx = bonus(ctx, {:subele, :ghost}, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Horong_Card
@@ -2820,6 +3085,8 @@
   locations:
     - both_accessory
   name: Horong Card
+  on_equip: grant_skill(ctx, 10, 1)
+  on_unequip: status_end(ctx, :sc_sight)
   type: card
   weight: 10
 - aegis_name: Requiem_Card
@@ -2828,6 +3095,7 @@
   locations:
     - right_hand
   name: Requiem Card
+  on_equip: bonus(ctx, {:add_eff, :sc_confusion}, 500)
   type: card
   weight: 10
 - aegis_name: Marc_Card
@@ -2836,6 +3104,10 @@
   locations:
     - armor
   name: Marc Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :water}, 5)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Mummy_Card
@@ -2844,6 +3116,7 @@
   locations:
     - right_hand
   name: Mummy Card
+  on_equip: bonus(ctx, :hit, 20)
   type: card
   weight: 10
 - aegis_name: Verit_Card
@@ -2852,6 +3125,10 @@
   locations:
     - shoes
   name: Verit Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 8)
+    ctx = bonus(ctx, :max_sp_rate, 8)
+    ctx
   type: card
   weight: 10
 - aegis_name: Myst_Card
@@ -2860,6 +3137,10 @@
   locations:
     - garment
   name: Myst Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :poison}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Jakk_Card
@@ -2868,6 +3149,10 @@
   locations:
     - garment
   name: Jakk Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :fire}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ghoul_Card
@@ -2878,6 +3163,10 @@
     - head_mid
     - head_top
   name: Ghoul Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_poison}, 2000)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Strouf_Card
@@ -2886,6 +3175,7 @@
   locations:
     - right_hand
   name: Strouf Card
+  on_equip: bonus(ctx, {:addrace, :demon}, 20)
   type: card
   weight: 10
 - aegis_name: Marduk_Card
@@ -2896,6 +3186,7 @@
     - head_mid
     - head_top
   name: Marduk Card
+  on_equip: bonus(ctx, {:res_eff, :sc_silence}, 10000)
   type: card
   weight: 10
 - aegis_name: Marionette_Card
@@ -2904,6 +3195,10 @@
   locations:
     - garment
   name: Marionette Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :ghost}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Argiope_Card
@@ -2912,6 +3207,10 @@
   locations:
     - armor
   name: Argiope Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :poison)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Hunter_Fly_Card
@@ -2920,6 +3219,10 @@
   locations:
     - right_hand
   name: Hunter Fly Card
+  on_equip: |-
+    ctx = bonus(ctx, :hp_drain_rate, 30)
+    ctx = bonus(ctx, :hp_drain_percent, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: Isis_Card
@@ -2928,6 +3231,10 @@
   locations:
     - garment
   name: Isis Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :shadow}, 30)
+    ctx = bonus(ctx, :flee, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Side_Winder_Card
@@ -2936,6 +3243,7 @@
   locations:
     - right_hand
   name: Sidewinder Card
+  on_equip: grant_skill(ctx, 48, 1)
   type: card
   weight: 10
 - aegis_name: Petit_Card
@@ -2944,6 +3252,7 @@
   locations:
     - right_hand
   name: Earth Petite Card
+  on_equip: bonus(ctx, {:addrace, :dragon}, 20)
   type: card
   weight: 10
 - aegis_name: Bathory_Card
@@ -2952,6 +3261,7 @@
   locations:
     - armor
   name: Bathory Card
+  on_equip: set(ctx, :def_ele, :shadow)
   type: card
   weight: 10
 - aegis_name: Petit__Card
@@ -2960,6 +3270,7 @@
   locations:
     - left_hand
   name: Sky Petite Card
+  on_equip: bonus(ctx, {:subrace, :dragon}, 30)
   type: card
   weight: 10
 - aegis_name: Phreeoni_Card
@@ -2968,6 +3279,7 @@
   locations:
     - right_hand
   name: Phreeoni Card
+  on_equip: bonus(ctx, :hit, 100)
   type: card
   weight: 10
 - aegis_name: Deviruchi_Card
@@ -2978,6 +3290,10 @@
     - head_mid
     - head_top
   name: Deviruchi Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Eddga_Card
@@ -2994,6 +3310,10 @@
   locations:
     - left_hand
   name: Medusa Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demon}, 15)
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Deviace_Card
@@ -3002,6 +3322,14 @@
   locations:
     - right_hand
   name: Deviace Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 7)
+    ctx = bonus(ctx, {:addrace, :player_human}, 7)
+    ctx = bonus(ctx, {:addrace, :brute}, 7)
+    ctx = bonus(ctx, {:addrace, :player_doram}, 7)
+    ctx = bonus(ctx, {:addrace, :plant}, 7)
+    ctx = bonus(ctx, {:addrace, :insect}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Minorous_Card
@@ -3010,6 +3338,10 @@
   locations:
     - right_hand
   name: Minorous Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addsize, :large}, 15)
+    ctx = bonus(ctx, :atk, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Nightmare_Card
@@ -3020,6 +3352,10 @@
     - head_mid
     - head_top
   name: Nightmare Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_sleep}, 10000)
+    ctx = bonus(ctx, :agi, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Golden_Bug_Card
@@ -3028,6 +3364,10 @@
   locations:
     - left_hand
   name: Golden Thief Bug Card
+  on_equip: |-
+    ctx = bonus(ctx, :no_magic_damage, 100)
+    ctx = bonus(ctx, :sp_cost_rate, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Baphomet__Card
@@ -3036,6 +3376,10 @@
   locations:
     - garment
   name: Bapho Jr. Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 3)
+    ctx = bonus(ctx, :critical, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Scorpion_King_Card
@@ -3044,6 +3388,7 @@
   locations:
     - right_hand
   name: Scorpion King Card
+  on_equip: bonus(ctx, {:addele, :undead}, 20)
   type: card
   weight: 10
 - aegis_name: Moonlight_Flower_Card
@@ -3052,6 +3397,7 @@
   locations:
     - shoes
   name: Moonlight Flower Card
+  on_equip: bonus(ctx, :movement_speed, 25)
   type: card
   weight: 10
 - aegis_name: Mistress_Card
@@ -3070,6 +3416,7 @@
   locations:
     - garment
   name: Raydric Card
+  on_equip: bonus(ctx, {:subele, :neutral}, 20)
   type: card
   weight: 10
 - aegis_name: Dracula_Card
@@ -3078,6 +3425,10 @@
   locations:
     - right_hand
   name: Dracula Card
+  on_equip: |-
+    ctx = bonus(ctx, :sp_drain_rate, 100)
+    ctx = bonus(ctx, :sp_drain_percent, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Orc_Load_Card
@@ -3086,6 +3437,7 @@
   locations:
     - armor
   name: Orc Lord Card
+  on_equip: bonus(ctx, :short_weapon_damage_return, 30)
   type: card
   weight: 10
 - aegis_name: Khalitzburg_Card
@@ -3094,6 +3446,7 @@
   locations:
     - left_hand
   name: Khalitzburg Card
+  on_equip: bonus(ctx, {:subrace, :demon}, 30)
   type: card
   weight: 10
 - aegis_name: Drake_Card
@@ -3102,6 +3455,7 @@
   locations:
     - right_hand
   name: Drake Card
+  on_equip: bonus(ctx, :no_size_fix, 1)
   type: card
   weight: 10
 - aegis_name: Anubis_Card
@@ -3110,6 +3464,7 @@
   locations:
     - left_hand
   name: Anubis Card
+  on_equip: bonus(ctx, {:subrace, :angel}, 30)
   type: card
   weight: 10
 - aegis_name: Joker_Card
@@ -3118,6 +3473,7 @@
   locations:
     - both_accessory
   name: Joker Card
+  on_equip: grant_skill(ctx, 50, 1)
   type: card
   weight: 10
 - aegis_name: Knight_Of_Abyss_Card
@@ -3126,6 +3482,7 @@
   locations:
     - right_hand
   name: Abysmal Knight Card
+  on_equip: bonus(ctx, {:addclass, :boss}, 25)
   type: card
   weight: 10
 - aegis_name: Evil_Druid_Card
@@ -3134,6 +3491,11 @@
   locations:
     - armor
   name: Evil Druid Card
+  on_equip: |-
+    ctx = set(ctx, :def_ele, :undead)
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Doppelganger_Card
@@ -3142,6 +3504,7 @@
   locations:
     - right_hand
   name: Doppelganger Card
+  on_equip: bonus(ctx, :aspd_rate, 10)
   type: card
   weight: 10
 - aegis_name: Orc_Hero_Card
@@ -3152,6 +3515,10 @@
     - head_mid
     - head_top
   name: Orc Hero Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 3)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Osiris_Card
@@ -3168,6 +3535,7 @@
   locations:
     - both_accessory
   name: Berzebub Card
+  on_equip: bonus(ctx, :varcast_rate, -30)
   type: card
   weight: 10
 - aegis_name: Maya_Card
@@ -3176,6 +3544,7 @@
   locations:
     - left_hand
   name: Maya Card
+  on_equip: bonus(ctx, :magic_damage_return, 50)
   type: card
   weight: 10
 - aegis_name: Baphomet_Card
@@ -3184,6 +3553,10 @@
   locations:
     - right_hand
   name: Baphomet Card
+  on_equip: |-
+    ctx = bonus(ctx, :hit, -10)
+    ctx = bonus(ctx, :splash_range, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Pharaoh_Card
@@ -3194,6 +3567,7 @@
     - head_mid
     - head_top
   name: Pharaoh Card
+  on_equip: bonus(ctx, :sp_cost_rate, -30)
   type: card
   weight: 10
 - aegis_name: Gargoyle_Card
@@ -3202,6 +3576,7 @@
   locations:
     - both_accessory
   name: Gargoyle Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12028, :insect}, 100)
   type: card
   weight: 10
 - aegis_name: Goat_Card
@@ -3210,6 +3585,14 @@
   locations:
     - armor
   name: Goat Card
+  on_equip: |-
+    if (refine(ctx) < 6) do
+      ctx = bonus(ctx, :def, 2)
+      ctx = bonus(ctx, :mdef, 5)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Gajomart_Card
@@ -3218,6 +3601,10 @@
   locations:
     - shoes
   name: Gajomart Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :plant}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :plant}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Galapago_Card
@@ -3226,6 +3613,12 @@
   locations:
     - both_accessory
   name: Galapago Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_item_group_heal, :juice}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 531, :insect}, 300)
+    ctx = bonus(ctx, {:add_monster_drop, 532, :insect}, 300)
+    ctx = bonus(ctx, {:add_monster_drop, 534, :insect}, 300)
+    ctx
   type: card
   weight: 10
 - aegis_name: Crab_Card
@@ -3234,6 +3627,10 @@
   locations:
     - right_hand
   name: Crab Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, {:add_damage_class, 1266}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Rice_Cake_Boy_Card
@@ -3242,6 +3639,11 @@
   locations:
     - both_accessory
   name: Dumpling Child Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_item_group_heal, :candy}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 529, :demi_human}, 300)
+    ctx = bonus(ctx, {:add_monster_drop, 530, :demi_human}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Goblin_Leader_Card
@@ -3250,6 +3652,7 @@
   locations:
     - right_hand
   name: Goblin Leader Card
+  on_equip: bonus(ctx, {:addrace2, :goblin}, 30)
   type: card
   weight: 10
 - aegis_name: Steam_Goblin_Card
@@ -3258,6 +3661,10 @@
   locations:
     - right_hand
   name: Goblin Steamrider Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :formless}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Goblin_Archer_Card
@@ -3266,6 +3673,10 @@
   locations:
     - right_hand
   name: Goblin Archer Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :undead}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Flying_Deleter_Card
@@ -3274,6 +3685,10 @@
   locations:
     - armor
   name: Sky Deleter Card
+  on_equip: |-
+    ctx = bonus(ctx, :hp_regen, -100)
+    ctx = bonus(ctx, :hp_gain_value, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Nine_Tail_Card
@@ -3282,6 +3697,14 @@
   locations:
     - garment
   name: Nine Tail Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 2)
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, :flee, 20)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Antique_Firelock_Card
@@ -3290,6 +3713,16 @@
   locations:
     - shoes
   name: Firelock Soldier Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = if (refine(ctx) > 8) do
+      ctx = bonus(ctx, :max_hp_rate, 10)
+      ctx = bonus(ctx, :max_sp_rate, 10)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Grand_Peco_Card
@@ -3300,6 +3733,7 @@
     - head_mid
     - head_top
   name: Grand Peco Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 75}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Grizzly_Card
@@ -3308,6 +3742,7 @@
   locations:
     - armor
   name: Grizzly Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_blind}, 300)
   type: card
   weight: 10
 - aegis_name: Gryphon_Card
@@ -3316,6 +3751,15 @@
   locations:
     - right_hand
   name: Gryphon Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 2)
+    ctx = bonus(ctx, :critical, 7)
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 62}, 5, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Gullinbursti_Card
@@ -3324,6 +3768,10 @@
   locations:
     - shoes
   name: Gullinbursti Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :fish}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :fish}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Gig_Card
@@ -3332,6 +3780,8 @@
   locations:
     - right_hand
   name: Gig Card
+  on_equip: bonus(ctx, {:sp_gain_race, :insect}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Nightmare_Terror_Card
@@ -3340,6 +3790,7 @@
   locations:
     - armor
   name: Nightmare Terror Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_curse}, 300)
   type: card
   weight: 10
 - aegis_name: Neraid_Card
@@ -3348,6 +3799,11 @@
   locations:
     - right_hand
   name: Nereid Card
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_gain_race, :brute}, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :player_doram}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Dark_Lord_Card
@@ -3356,6 +3812,7 @@
   locations:
     - shoes
   name: Dark Lord Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 83}, 5, 100)'
   type: card
   weight: 10
 - aegis_name: Dark_Illusion_Card
@@ -3366,6 +3823,11 @@
     - head_mid
     - head_top
   name: Dark Illusion Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, -10)
+    ctx = bonus(ctx, :max_sp_rate, -10)
+    ctx = bonus(ctx, :varcast_rate, -10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dark_Frame_Card
@@ -3374,6 +3836,7 @@
   locations:
     - armor
   name: Dark Frame Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stone}, 600)
   type: card
   weight: 10
 - aegis_name: Dark_Priest_Card
@@ -3382,6 +3845,15 @@
   locations:
     - right_hand
   name: Dark Priest Card
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_vanish_rate, 593}, 50)
+    ctx = bonus(ctx, {:sp_vanish_percent, 593}, 10)
+    ctx = if job_is(ctx, :base_job, :sage) do
+      bonus(ctx, :sp_drain_value, 1)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: The_Paper_Card
@@ -3390,6 +3862,10 @@
   locations:
     - right_hand
   name: The Paper Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 20)
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Demon_Pungus_Card
@@ -3398,6 +3874,7 @@
   locations:
     - armor
   name: Demon Pungus Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_sleep}, 600)
   type: card
   weight: 10
 - aegis_name: Deviling_Card
@@ -3406,6 +3883,18 @@
   locations:
     - garment
   name: Deviling Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 50)
+    ctx = bonus(ctx, {:subele, :water}, -50)
+    ctx = bonus(ctx, {:subele, :earth}, -50)
+    ctx = bonus(ctx, {:subele, :fire}, -50)
+    ctx = bonus(ctx, {:subele, :wind}, -50)
+    ctx = bonus(ctx, {:subele, :poison}, -50)
+    ctx = bonus(ctx, {:subele, :holy}, -50)
+    ctx = bonus(ctx, {:subele, :shadow}, -50)
+    ctx = bonus(ctx, {:subele, :ghost}, -50)
+    ctx = bonus(ctx, {:subele, :undead}, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Poison_Toad_Card
@@ -3414,6 +3903,10 @@
   locations:
     - both_accessory
   name: Poisonous Toad Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 52}, 1, 20)
+    ctx = bonus(ctx, {:add_skill_blow, 52}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dullahan_Card
@@ -3422,6 +3915,10 @@
   locations:
     - right_hand
   name: Dullahan Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :dragon}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dryad_Card
@@ -3432,6 +3929,10 @@
     - head_mid
     - head_top
   name: Dryad Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_monster_drop, 993, :plant}, 100)
+    ctx = bonus(ctx, {:subele, :earth}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dragon_Tail_Card
@@ -3440,6 +3941,12 @@
   locations:
     - garment
   name: Dragon Tail Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, {:skill_atk, 46}, 5)
+    ctx = bonus(ctx, {:skill_atk, 47}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dragon_Fly_Card
@@ -3448,6 +3955,7 @@
   locations:
     - garment
   name: Dragon Fly Card
+  on_equip: bonus(ctx, :agi, 1)
   type: card
   weight: 10
 - aegis_name: Driller_Card
@@ -3456,6 +3964,8 @@
   locations:
     - right_hand
   name: Driller Card
+  on_equip: bonus(ctx, {:sp_gain_race, :dragon}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Disguise_Card
@@ -3464,6 +3974,7 @@
   locations:
     - armor
   name: Disguise Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_silence}, (300 + (600 * bool(ctx, (stat(ctx, :vit) >= 77)))))
   type: card
   weight: 10
 - aegis_name: Diabolic_Card
@@ -3472,6 +3983,8 @@
   locations:
     - right_hand
   name: Diabolic Card
+  on_equip: bonus(ctx, {:sp_gain_race, :demon}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Vagabond_Wolf_Card
@@ -3480,6 +3993,7 @@
   locations:
     - garment
   name: Vagabond Wolf Card
+  on_equip: bonus(ctx, :str, 1)
   type: card
   weight: 10
 - aegis_name: Lava_Golem_Card
@@ -3488,6 +4002,7 @@
   locations:
     - right_hand
   name: Lava Golem Card
+  on_equip: bonus(ctx, {:addrace2, :golem}, 30)
   type: card
   weight: 10
 - aegis_name: Rideword_Card
@@ -3498,6 +4013,16 @@
     - head_mid
     - head_top
   name: Rideword Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = if job_is(ctx, :base_class, :acolyte) do
+      ctx = bonus(ctx, :int, 1)
+      ctx = bonus(ctx, :mdef, 1)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Raggler_Card
@@ -3506,6 +4031,10 @@
   locations:
     - shoes
   name: Raggler Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 1)
+    ctx = bonus(ctx, :vit, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Raydric_Archer_Card
@@ -3514,6 +4043,7 @@
   locations:
     - both_accessory
   name: Raydric Archer Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12030, :demon}, 100)
   type: card
   weight: 10
 - aegis_name: Leib_Olmai_Card
@@ -3524,6 +4054,10 @@
     - head_mid
     - head_top
   name: Leib Olmai Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :fire}, 10)
+    ctx = bonus(ctx, {:add_monster_drop, 990, :brute}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Wraith_Dead_Card
@@ -3532,6 +4066,7 @@
   locations:
     - armor
   name: Wraith Dead Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_curse}, 600)
   type: card
   weight: 10
 - aegis_name: Wraith_Card
@@ -3540,6 +4075,7 @@
   locations:
     - both_accessory
   name: Wraith Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12027, :undead}, 100)
   type: card
   weight: 10
 - aegis_name: Loli_Ruri_Card
@@ -3548,6 +4084,7 @@
   locations:
     - armor
   name: Loli Ruri Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 3, 50)'
   type: card
   weight: 10
 - aegis_name: Rotar_Zairo_Card
@@ -3556,6 +4093,10 @@
   locations:
     - right_hand
   name: Rotar Zairo Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :fish}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Lude_Card
@@ -3564,6 +4105,12 @@
   locations:
     - both_accessory
   name: Lude Card
+  on_equip: |-
+    if (job_is(ctx, :base_job, :novice) || job_is(ctx, :base_job, :super_novice)) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 8}, 1, 200)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Rybio_Card
@@ -3572,6 +4119,7 @@
   locations:
     - armor
   name: Rybio Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stun}, (300 + (600 * bool(ctx, (stat(ctx, :dex) >= 77)))))
   type: card
   weight: 10
 - aegis_name: Leaf_Cat_Card
@@ -3582,6 +4130,10 @@
     - head_mid
     - head_top
   name: Leaf Cat Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :water}, 10)
+    ctx = bonus(ctx, {:add_monster_drop, 991, :fish}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Marin_Card
@@ -3590,6 +4142,10 @@
   locations:
     - both_accessory
   name: Marin Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_monster_drop, 909}, 2000)
+    ctx = bonus(ctx, {:add_monster_drop, 7126}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Mastering_Card
@@ -3598,6 +4154,7 @@
   locations:
     - garment
   name: Mastering Card
+  on_equip: bonus(ctx, :luk, 1)
   type: card
   weight: 10
 - aegis_name: Maya_Puple_Card
@@ -3608,6 +4165,7 @@
     - head_mid
     - head_top
   name: Maya Purple Card
+  on_equip: bonus(ctx, :intravision, 1)
   type: card
   weight: 10
 - aegis_name: Merman_Card
@@ -3616,6 +4174,10 @@
   locations:
     - shoes
   name: Merman Card
+  on_equip: |-
+    ctx = bonus(ctx, :hp_regen, 10)
+    ctx = bonus(ctx, :sp_regen, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Megalith_Card
@@ -3624,6 +4186,12 @@
   locations:
     - shoes
   name: Megalith Card
+  on_equip: |-
+    if (refine(ctx) < 6) do
+      bonus(ctx, :mdef, 7)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Majoruros_Card
@@ -3632,6 +4200,7 @@
   locations:
     - armor
   name: Majoruros Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stun}, 600)
   type: card
   weight: 10
 - aegis_name: Civil_Servant_Card
@@ -3640,6 +4209,7 @@
   locations:
     - right_hand
   name: Mao Guai Card
+  on_equip: bonus(ctx, {:addele, :ghost}, 20)
   type: card
   weight: 10
 - aegis_name: Mutant_Dragon_Card
@@ -3648,6 +4218,10 @@
   locations:
     - right_hand
   name: Mutant Dragonoid Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 15)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, (3 + (2 * bool(ctx, (skill_lv(ctx, 17) == 10)))), 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Mini_Demon_Card
@@ -3656,6 +4230,11 @@
   locations:
     - shoes
   name: Mini Demon Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :brute}, -20)
+    ctx = bonus(ctx, {:subrace, :player_doram}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :brute}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Mimic_Card
@@ -3664,6 +4243,7 @@
   locations:
     - both_accessory
   name: Mimic Card
+  on_equip: bonus(ctx, {:add_monster_drop, 603}, 10)
   type: card
   weight: 10
 - aegis_name: Mystcase_Card
@@ -3674,6 +4254,7 @@
     - head_mid
     - head_top
   name: Myst Case Card
+  on_equip: bonus(ctx, {:add_monster_drop, 644}, 30)
   type: card
   weight: 10
 - aegis_name: Mysteltainn_Card
@@ -3682,6 +4263,10 @@
   locations:
     - left_hand
   name: Mysteltainn Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subsize, :small}, 25)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Miyabi_Ningyo_Card
@@ -3690,6 +4275,10 @@
   locations:
     - shoes
   name: Miyabi Doll Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, {:skill_atk, 15}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Violy_Card
@@ -3698,6 +4287,7 @@
   locations:
     - both_accessory
   name: Violy Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 318}, (1 + (4 * bool(ctx, (skill_lv(ctx, 318) == 5)))), 20)'
   type: card
   weight: 10
 - aegis_name: Wander_Man_Card
@@ -3706,6 +4296,18 @@
   locations:
     - garment
   name: Wanderer Card
+  on_equip: |-
+    ctx = if not equipped(ctx, [4172, 4257, 4230, 4272]) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 219}, 1, 20)
+    else
+      ctx
+    end
+    ctx = if job_is(ctx, :base_class, :thief) do
+      bonus(ctx, :flee, 20)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Vocal_Card
@@ -3714,6 +4316,7 @@
   locations:
     - garment
   name: Vocal Card
+  on_equip: bonus(ctx, :mdef, 3)
   type: card
   weight: 10
 - aegis_name: Bon_Gun_Card
@@ -3722,6 +4325,11 @@
   locations:
     - both_accessory
   name: Bongun Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 5}, 1, 20)
+    ctx = bonus(ctx, {:add_skill_blow, 5}, 5)
+    ctx = bonus(ctx, {:add_def_monster, 1026}, -100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Brilight_Card
@@ -3730,6 +4338,7 @@
   locations:
     - armor
   name: Brilight Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_silence}, 600)
   type: card
   weight: 10
 - aegis_name: Bloody_Murderer_Card
@@ -3738,6 +4347,10 @@
   locations:
     - right_hand
   name: Bloody Murderer Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :insect}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Blazzer_Card
@@ -3746,6 +4359,7 @@
   locations:
     - both_accessory
   name: Blazer Card
+  on_equip: bonus(ctx, {:add_monster_drop_group, :food}, 10000)
   type: card
   weight: 10
 - aegis_name: Sasquatch_Card
@@ -3754,6 +4368,7 @@
   locations:
     - armor
   name: Sasquatch Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_freeze}, 600)
   type: card
   weight: 10
 - aegis_name: Live_Peach_Tree_Card
@@ -3762,6 +4377,7 @@
   locations:
     - left_hand
   name: Enchanted Peach Tree Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 28}, (1 + (9 * bool(ctx, (skill_lv(ctx, 28) == 10)))), 20)'
   type: card
   weight: 10
 - aegis_name: Succubus_Card
@@ -3770,6 +4386,11 @@
   locations:
     - armor
   name: Succubus Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, -3)
+    ctx = bonus(ctx, :hp_regen, -20)
+    ctx = bonus(ctx, :max_hp, 1000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sageworm_Card
@@ -3778,6 +4399,11 @@
   locations:
     - both_accessory
   name: Sage Worm Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_monster_drop, 715}, 30)
+    ctx = bonus(ctx, {:add_monster_drop, 716}, 30)
+    ctx = bonus(ctx, {:add_monster_drop, 717}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Solider_Card
@@ -3786,6 +4412,10 @@
   locations:
     - armor
   name: Solider Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 2)
+    ctx = bonus(ctx, :mdef, 2)
+    ctx
   type: card
   weight: 10
 - aegis_name: Skeleton_General_Card
@@ -3794,6 +4424,10 @@
   locations:
     - shoes
   name: Skeleton General Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :insect}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :insect}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Skel_Prisoner_Card
@@ -3802,6 +4436,7 @@
   locations:
     - armor
   name: Skeleton Prisoner Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_sleep}, 300)
   type: card
   weight: 10
 - aegis_name: Stalactic_Golem_Card
@@ -3812,6 +4447,10 @@
     - head_mid
     - head_top
   name: Stalactic Golem Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 2000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Stem_Worm_Card
@@ -3820,6 +4459,7 @@
   locations:
     - both_accessory
   name: Stem Worm Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12032, :brute}, 100)
   type: card
   weight: 10
 - aegis_name: Stone_Shooter_Card
@@ -3828,6 +4468,10 @@
   locations:
     - right_hand
   name: Stone Shooter Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = bonus(ctx, :hit, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sting_Card
@@ -3836,6 +4480,14 @@
   locations:
     - left_hand
   name: Sting Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 2)
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, :mdef, 5)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Spring_Rabbit_Card
@@ -3844,6 +4496,11 @@
   locations:
     - both_accessory
   name: Spring Rabbit Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_item_group_heal, :meat}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 517, :brute}, 200)
+    ctx = bonus(ctx, {:add_monster_drop, 528, :brute}, 200)
+    ctx
   type: card
   weight: 10
 - aegis_name: Sleeper_Card
@@ -3852,6 +4509,7 @@
   locations:
     - both_accessory
   name: Sleeper Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12031, :fish}, 100)
   type: card
   weight: 10
 - aegis_name: C_Tower_Manager_Card
@@ -3862,6 +4520,10 @@
     - head_mid
     - head_top
   name: Tower Keeper Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :varcast_rate, -5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Shinobi_Card
@@ -3870,6 +4532,10 @@
   locations:
     - both_accessory
   name: Shinobi Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 135}, 5, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Increase_Soil_Card
@@ -3878,6 +4544,13 @@
   locations:
     - left_hand
   name: Mi Gao Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_def_monster, 1285}, 50)
+    ctx = bonus(ctx, {:add_def_monster, 1286}, 50)
+    ctx = bonus(ctx, {:add_def_monster, 1287}, 50)
+    ctx = bonus(ctx, {:add_def_monster, 1899}, 50)
+    ctx = bonus(ctx, {:add_def_monster, 1900}, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Wild_Ginseng_Card
@@ -3886,6 +4559,12 @@
   locations:
     - both_accessory
   name: Hermit Plant Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_item_group_heal, :herb}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 507, :plant}, 300)
+    ctx = bonus(ctx, {:add_monster_drop, 508, :plant}, 200)
+    ctx = bonus(ctx, {:add_monster_drop, 509, :plant}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Baby_Leopard_Card
@@ -3894,6 +4573,14 @@
   locations:
     - armor
   name: Baby Leopard Card
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 3)
+    ctx = if job_is(ctx, :base_class, :merchant) do
+      bonus(ctx, :unbreakable_armor, 1)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Anolian_Card
@@ -3902,6 +4589,7 @@
   locations:
     - armor
   name: Anolian Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 45}, (1 + (9 * bool(ctx, (skill_lv(ctx, 45) == 10)))), 30)'
   type: card
   weight: 10
 - aegis_name: Cookie_XMAS_Card
@@ -3910,6 +4598,10 @@
   locations:
     - shoes
   name: Christmas Cookie Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :angel}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :angel}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Amon_Ra_Card
@@ -3918,6 +4610,10 @@
   locations:
     - shoes
   name: Amon Ra Card
+  on_equip: |-
+    ctx = bonus(ctx, :all_stats, 1)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 73}, 10, (30 + (70 * bool(ctx, (stat(ctx, :int) >= 99)))))
+    ctx
   type: card
   weight: 10
 - aegis_name: Owl_Duke_Card
@@ -3926,6 +4622,7 @@
   locations:
     - both_accessory
   name: Owl Duke Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 66}, 3, 3)'
   type: card
   weight: 10
 - aegis_name: Owl_Baron_Card
@@ -3934,6 +4631,7 @@
   locations:
     - both_accessory
   name: Owl Baron Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 78}, 1, 30)'
   type: card
   weight: 10
 - aegis_name: Iron_Fist_Card
@@ -3942,6 +4640,10 @@
   locations:
     - shoes
   name: Iron Fist Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :formless}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :formless}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Arclouse_Card
@@ -3950,6 +4652,14 @@
   locations:
     - left_hand
   name: Arclouze Card
+  on_equip: |-
+    if (refine(ctx) < 6) do
+      ctx = bonus(ctx, :def, 2)
+      ctx = bonus(ctx, :mdef, 3)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Archangeling_Card
@@ -3960,6 +4670,16 @@
     - head_mid
     - head_top
   name: Arc Angeling Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = if (stat(ctx, :luk) >= 77) do
+      ctx = bonus(ctx, :hp_regen, 100)
+      ctx = bonus(ctx, :sp_regen, 100)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Apocalips_Card
@@ -3968,6 +4688,14 @@
   locations:
     - armor
   name: Apocalipse Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 2)
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, :max_hp, 800)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Antonio_Card
@@ -3976,6 +4704,7 @@
   locations:
     - armor
   name: Antonio Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 26}, 1, 500)'
   type: card
   weight: 10
 - aegis_name: Alarm_Card
@@ -3984,6 +4713,11 @@
   locations:
     - shoes
   name: Alarm Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 10}, 1, 200)
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = bonus(ctx, :vit, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Am_Mut_Card
@@ -3992,6 +4726,11 @@
   locations:
     - shoes
   name: Am Mut Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demi_human}, -20)
+    ctx = bonus(ctx, {:subrace, :player_human}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :demi_human}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Assulter_Card
@@ -4000,6 +4739,11 @@
   locations:
     - right_hand
   name: Assaulter Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 7)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Aster_Card
@@ -4008,6 +4752,10 @@
   locations:
     - right_hand
   name: Aster Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, {:add_damage_class, 1074}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ancient_Mummy_Card
@@ -4016,6 +4764,7 @@
   locations:
     - left_hand
   name: Ancient Mummy Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 32}, 5, 30)'
   type: card
   weight: 10
 - aegis_name: Ancient_Worm_Card
@@ -4024,6 +4773,10 @@
   locations:
     - shoes
   name: Ancient Worm Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :demon}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :demon}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Executioner_Card
@@ -4032,6 +4785,10 @@
   locations:
     - left_hand
   name: Executioner Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subsize, :large}, 25)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Elder_Card
@@ -4040,6 +4797,13 @@
   locations:
     - right_hand
   name: Elder Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_damage_class, 1285}, 40)
+    ctx = bonus(ctx, {:add_damage_class, 1286}, 40)
+    ctx = bonus(ctx, {:add_damage_class, 1287}, 40)
+    ctx = bonus(ctx, {:add_damage_class, 1899}, 40)
+    ctx = bonus(ctx, {:add_damage_class, 1900}, 40)
+    ctx
   type: card
   weight: 10
 - aegis_name: Alligator_Card
@@ -4048,6 +4812,7 @@
   locations:
     - both_accessory
   name: Alligator Card
+  on_equip: bonus(ctx, :long_atk_def, 5)
   type: card
   weight: 10
 - aegis_name: Alice_Card
@@ -4056,6 +4821,10 @@
   locations:
     - left_hand
   name: Alice Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subclass, :boss}, 40)
+    ctx = bonus(ctx, {:subclass, :normal}, -40)
+    ctx
   type: card
   weight: 10
 - aegis_name: Tirfing_Card
@@ -4064,6 +4833,10 @@
   locations:
     - left_hand
   name: Ogretooth Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subsize, :medium}, 25)
+    ctx = bonus(ctx, :def, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Orc_Lady_Card
@@ -4080,6 +4853,7 @@
   locations:
     - both_accessory
   name: Orc Archer Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12034, :demi_human}, 100)
   type: card
   weight: 10
 - aegis_name: Wild_Rose_Card
@@ -4088,6 +4862,14 @@
   locations:
     - shoes
   name: Wild Rose Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = if job_is(ctx, :base_class, :thief) do
+      bonus(ctx, :perfect_dodge, 50)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Wicked_Nymph_Card
@@ -4098,6 +4880,10 @@
     - head_mid
     - head_top
   name: Evil Nymph Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :max_sp, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Wooden_Golem_Card
@@ -4106,6 +4892,10 @@
   locations:
     - armor
   name: Wooden Golem Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, :hp_regen, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Wootan_Shooter_Card
@@ -4116,6 +4906,10 @@
     - head_mid
     - head_top
   name: Wootan Shooter Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_confusion}, 2000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Wootan_Fighter_Card
@@ -4126,6 +4920,10 @@
     - head_mid
     - head_top
   name: Wootan Fighter Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_bleeding}, 2000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Evil_Cloud_Hermit_Card
@@ -4134,6 +4932,7 @@
   locations:
     - both_accessory
   name: Cloud Hermit Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12029, :plant}, 100)
   type: card
   weight: 10
 - aegis_name: Incant_Samurai_Card
@@ -4150,6 +4949,7 @@
   locations:
     - both_accessory
   name: Wind Ghost Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 84}, (3 + (7 * bool(ctx, (skill_lv(ctx, 84) == 10)))), 20)'
   type: card
   weight: 10
 - aegis_name: Li_Me_Mang_Ryang_Card
@@ -4158,6 +4958,7 @@
   locations:
     - both_accessory
   name: Jing Guai Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12033, :angel}, 100)
   type: card
   weight: 10
 - aegis_name: Eclipse_Card
@@ -4166,6 +4967,7 @@
   locations:
     - garment
   name: Eclipse Card
+  on_equip: bonus(ctx, :vit, 1)
   type: card
   weight: 10
 - aegis_name: Explosion_Card
@@ -4174,6 +4976,10 @@
   locations:
     - shoes
   name: Explosion Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :dragon}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :dragon}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Injustice_Card
@@ -4182,6 +4988,7 @@
   locations:
     - right_hand
   name: Injustice Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 136}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Incubus_Card
@@ -4192,6 +4999,11 @@
     - head_mid
     - head_top
   name: Incubus Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, -3)
+    ctx = bonus(ctx, :sp_regen, -20)
+    ctx = bonus(ctx, :max_sp, 150)
+    ctx
   type: card
   weight: 10
 - aegis_name: Giant_Spider_Card
@@ -4200,6 +5012,7 @@
   locations:
     - armor
   name: Giant Spider Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_poison}, 600)
   type: card
   weight: 10
 - aegis_name: Giant_Honet_Card
@@ -4210,6 +5023,10 @@
     - head_mid
     - head_top
   name: Giant Hornet Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :wind}, 10)
+    ctx = bonus(ctx, {:add_monster_drop, 992, :insect}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dancing_Dragon_Card
@@ -4218,6 +5035,10 @@
   locations:
     - both_accessory
   name: Zhu Po Long Card
+  on_equip: |-
+    ctx = bonus(ctx, :agi, 1)
+    ctx = bonus(ctx, :critical, 3)
+    ctx
   type: card
   weight: 10
 - aegis_name: Shellfish_Card
@@ -4226,6 +5047,10 @@
   locations:
     - right_hand
   name: Shell Fish Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, {:add_damage_class, 1073}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Zombie_Master_Card
@@ -4234,6 +5059,8 @@
   locations:
     - right_hand
   name: Zombie Master Card
+  on_equip: bonus(ctx, {:sp_gain_race, :undead}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Zombie_Prisoner_Card
@@ -4242,6 +5069,10 @@
   locations:
     - shoes
   name: Zombie Prisoner Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subrace, :undead}, -20)
+    ctx = bonus(ctx, {:exp_add_race, :undead}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Lord_Of_Death_Card
@@ -4250,6 +5081,14 @@
   locations:
     - right_hand
   name: Lord of The Dead Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_eff, {:sc_stun, 22}}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_curse, 22}}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_silence, 22}}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_poison, 22}}, 500)
+    ctx = bonus(ctx, {:add_eff, {:sc_bleeding, 22}}, 500)
+    ctx = bonus(ctx, {:coma_class, :normal}, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Zherlthsh_Card
@@ -4258,6 +5097,11 @@
   locations:
     - left_hand
   name: Zealotus Card
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 2)
+    ctx = bonus(ctx, {:skill_atk, 316}, 10)
+    ctx = bonus(ctx, {:skill_atk, 324}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Gibbet_Card
@@ -4268,6 +5112,12 @@
     - head_mid
     - head_top
   name: Gibbet Card
+  on_equip: |-
+    if (refine(ctx) < 6) do
+      bonus(ctx, :mdef, 5)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Deleter_Card
@@ -4276,6 +5126,11 @@
   locations:
     - armor
   name: Earth Deleter Card
+  on_equip: |-
+    ctx = bonus(ctx, :sp_regen, -100)
+    ctx = bonus(ctx, :sp_gain_value, 10)
+    ctx
+  on_unequip: heal(ctx, 0, -100)
   type: card
   weight: 10
 - aegis_name: Geographer_Card
@@ -4284,6 +5139,7 @@
   locations:
     - armor
   name: Geographer Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 34}, (2 + (8 * bool(ctx, (skill_lv(ctx, 34) == 10)))), 30)'
   type: card
   weight: 10
 - aegis_name: Zipper_Bear_Card
@@ -4292,6 +5148,15 @@
   locations:
     - right_hand
   name: Zipper Bear Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 30)
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx = if job_is(ctx, :base_class, :merchant) do
+      bonus(ctx, :unbreakable_weapon, 1)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Tengu_Card
@@ -4300,6 +5165,7 @@
   locations:
     - both_accessory
   name: Tengu Card
+  on_equip: bonus(ctx, {:add_monster_drop_group, :recovery}, 10000)
   type: card
   weight: 10
 - aegis_name: Greatest_General_Card
@@ -4308,6 +5174,7 @@
   locations:
     - both_accessory
   name: Greatest General Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 261}, 5, (2 + (18 * bool(ctx, job_is(ctx, :base_class, :acolyte)))))'
   type: card
   weight: 10
 - aegis_name: Chepet_Card
@@ -4316,6 +5183,7 @@
   locations:
     - right_hand
   name: Chepet Card
+  on_equip: 'auto_cast(ctx, %{force: 1, flag: 849, trigger: :attack, skill_id: 28}, 5, 50)'
   type: card
   weight: 10
 - aegis_name: Choco_Card
@@ -4324,6 +5192,10 @@
   locations:
     - garment
   name: Choco Card
+  on_equip: |-
+    ctx = bonus(ctx, :perfect_dodge, 50)
+    ctx = bonus(ctx, :flee, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Karakasa_Card
@@ -4332,6 +5204,7 @@
   locations:
     - armor
   name: Karakasa Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_confusion}, (300 + (600 * bool(ctx, (stat(ctx, :str) >= 77)))))
   type: card
   weight: 10
 - aegis_name: Kapha_Card
@@ -4340,6 +5213,12 @@
   locations:
     - garment
   name: Kapha Card
+  on_equip: |-
+    if (refine(ctx) < 6) do
+      bonus(ctx, :mdef, 8)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Carat_Card
@@ -4350,6 +5229,14 @@
     - head_mid
     - head_top
   name: Carat Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = if (refine(ctx) > 8) do
+      bonus(ctx, :max_sp, 150)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Caterpillar_Card
@@ -4358,6 +5245,8 @@
   locations:
     - right_hand
   name: Caterpillar Card
+  on_equip: bonus(ctx, {:sp_gain_race, :plant}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Cat_O_Nine_Tail_Card
@@ -4366,6 +5255,10 @@
   locations:
     - shoes
   name: Cat O' Nine Tails Card
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, 3)
+    ctx = bonus(ctx, :magic_damage_return, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Kobold_Leader_Card
@@ -4374,6 +5267,7 @@
   locations:
     - right_hand
   name: Kobold Leader Card
+  on_equip: bonus(ctx, {:addrace2, :kobold}, 30)
   type: card
   weight: 10
 - aegis_name: Kobold_Archer_Card
@@ -4382,6 +5276,10 @@
   locations:
     - right_hand
   name: Kobold Archer Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :plant}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Cookie_Card
@@ -4390,6 +5288,10 @@
   locations:
     - both_accessory
   name: Cookie Card
+  on_equip: |-
+    ctx = bonus(ctx, :luk, 2)
+    ctx = bonus(ctx, {:skill_atk, 156}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Quve_Card
@@ -4398,6 +5300,12 @@
   locations:
     - both_accessory
   name: Quve Card
+  on_equip: |-
+    if (job_is(ctx, :base_job, :novice) || job_is(ctx, :base_job, :super_novice)) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 29}, 1, 100)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Kraben_Card
@@ -4406,6 +5314,7 @@
   locations:
     - armor
   name: Kraben Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_blind}, 600)
   type: card
   weight: 10
 - aegis_name: Cramp_Card
@@ -4416,6 +5325,7 @@
     - head_mid
     - head_top
   name: Cramp Card
+  on_equip: paired_choice(ctx, :get_zeny, 500, 1)
   type: card
   weight: 10
 - aegis_name: Cruiser_Card
@@ -4424,6 +5334,11 @@
   locations:
     - right_hand
   name: Cruiser Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :brute}, 7)
+    ctx = bonus(ctx, {:critical_add_race, :player_doram}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Cremy_Fear_Card
@@ -4432,6 +5347,7 @@
   locations:
     - armor
   name: Creamy Fear Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_confusion}, 600)
   type: card
   weight: 10
 - aegis_name: Clock_Card
@@ -4440,6 +5356,7 @@
   locations:
     - armor
   name: Clock Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 249}, (3 + (7 * bool(ctx, (skill_lv(ctx, 249) == 10)))), 30)'
   type: card
   weight: 10
 - aegis_name: Chimera_Card
@@ -4448,6 +5365,7 @@
   locations:
     - armor
   name: Chimera Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_poison}, (300 + (600 * bool(ctx, job_is(ctx, :base_job, :assassin)))))
   type: card
   weight: 10
 - aegis_name: Killer_Mantis_Card
@@ -4456,6 +5374,7 @@
   locations:
     - armor
   name: Killer Mantis Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_bleeding}, 600)
   type: card
   weight: 10
 - aegis_name: Tao_Gunka_Card
@@ -4464,6 +5383,11 @@
   locations:
     - armor
   name: Tao Gunka Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 100)
+    ctx = bonus(ctx, :def, -50)
+    ctx = bonus(ctx, :mdef, -50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Whisper_Boss_Card
@@ -4472,6 +5396,24 @@
   locations:
     - garment
   name: Giant Whisper Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = if (stat(ctx, :str) >= 80) do
+      bonus(ctx, :atk, 20)
+    else
+      ctx
+    end
+    ctx = if (stat(ctx, :vit) >= 80) do
+      bonus(ctx, :max_hp_rate, 3)
+    else
+      ctx
+    end
+    ctx = if (stat(ctx, :luk) >= 80) do
+      bonus(ctx, :critical, 3)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Tamruan_Card
@@ -4480,6 +5422,11 @@
   locations:
     - left_hand
   name: Tamruan Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 2)
+    ctx = bonus(ctx, {:skill_atk, 250}, 10)
+    ctx = bonus(ctx, {:skill_atk, 251}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Turtle_General_Card
@@ -4488,6 +5435,10 @@
   locations:
     - right_hand
   name: Turtle General Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addclass, :all}, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 7}, 10, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Toad_Card
@@ -4496,6 +5447,7 @@
   locations:
     - garment
   name: Toad Card
+  on_equip: bonus(ctx, :perfect_dodge, 10)
   type: card
   weight: 10
 - aegis_name: Kind_Of_Beetle_Card
@@ -4504,6 +5456,8 @@
   locations:
     - right_hand
   name: Beetle King Card
+  on_equip: bonus(ctx, {:sp_gain_race, :fish}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Tri_Joint_Card
@@ -4512,6 +5466,8 @@
   locations:
     - right_hand
   name: Tri Joint Card
+  on_equip: bonus(ctx, {:sp_gain_race, :formless}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Parasite_Card
@@ -4520,6 +5476,10 @@
   locations:
     - left_hand
   name: Parasite Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, {:subrace, :formless}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Panzer_Goblin_Card
@@ -4528,6 +5488,10 @@
   locations:
     - right_hand
   name: Panzer Goblin Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 10)
+    ctx = bonus(ctx, {:critical_add_race, :demon}, 7)
+    ctx
   type: card
   weight: 10
 - aegis_name: Permeter_Card
@@ -4538,6 +5502,10 @@
     - head_mid
     - head_top
   name: Permeter Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :shadow}, 15)
+    ctx = bonus(ctx, {:subele, :undead}, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: Fur_Seal_Card
@@ -4546,6 +5514,17 @@
   locations:
     - right_hand
   name: Seal Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 3)
+    ctx = bonus(ctx, :hit, 10)
+    ctx = if job_is(ctx, :base_class, :acolyte) do
+      ctx = bonus(ctx, {:critical_add_race, :undead}, 9)
+      ctx = bonus(ctx, {:critical_add_race, :demon}, 9)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Punk_Card
@@ -4554,6 +5533,7 @@
   locations:
     - garment
   name: Punk Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 92}, (1 + (4 * bool(ctx, (skill_lv(ctx, 92) == 5)))), 50)'
   type: card
   weight: 10
 - aegis_name: Penomena_Card
@@ -4562,6 +5542,7 @@
   locations:
     - left_hand
   name: Penomena Card
+  on_equip: bonus(ctx, {:subrace, :formless}, 30)
   type: card
   weight: 10
 - aegis_name: Pest_Card
@@ -4570,6 +5551,7 @@
   locations:
     - armor
   name: Pest Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_stone}, (300 + (600 * bool(ctx, (stat(ctx, :int) >= 77)))))
   type: card
   weight: 10
 - aegis_name: Fake_Angel_Card
@@ -4578,6 +5560,8 @@
   locations:
     - right_hand
   name: False Angel Card
+  on_equip: bonus(ctx, {:sp_gain_race, :angel}, 5)
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Mobster_Card
@@ -4586,6 +5570,14 @@
   locations:
     - right_hand
   name: Mobster Card
+  on_equip: |-
+    ctx = bonus(ctx, :crit_atk_rate, 15)
+    ctx = if job_is(ctx, :base_class, :thief) do
+      bonus(ctx, :critical, 4)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Knight_Windstorm_Card
@@ -4594,6 +5586,10 @@
   locations:
     - right_hand
   name: Stormy Knight Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 89}, 2, 20)
+    ctx = bonus(ctx, {:add_eff, :sc_freeze}, 2000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Freezer_Card
@@ -4602,6 +5598,14 @@
   locations:
     - shoes
   name: Freezer Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 300)
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, {:skill_atk, 5}, 10)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Bloody_Knight_Card
@@ -4610,6 +5614,7 @@
   locations:
     - right_hand
   name: Bloody Knight Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 83}, 1, 20)'
   type: card
   weight: 10
 - aegis_name: Hylozoist_Card
@@ -4626,6 +5631,10 @@
   locations:
     - left_hand
   name: High Orc Card
+  on_equip: |-
+    ctx = bonus(ctx, :def, 1)
+    ctx = bonus(ctx, :short_weapon_damage_return, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Garm_Baby_Card
@@ -4634,6 +5643,7 @@
   locations:
     - right_hand
   name: Hatii Babe Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 15}, 3, 50)'
   type: card
   weight: 10
 - aegis_name: Garm_Card
@@ -4642,6 +5652,7 @@
   locations:
     - armor
   name: Hatii Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, :sc_freeze}, 5000)
   type: card
   weight: 10
 - aegis_name: Harpy_Card
@@ -4650,6 +5661,10 @@
   locations:
     - garment
   name: Harpy Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 15)
+    ctx = bonus(ctx, {:skill_atk, 11}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: See_Otter_Card
@@ -4658,6 +5673,11 @@
   locations:
     - both_accessory
   name: Sea-Otter Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_item_group_heal, :fish}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 551, :fish}, 300)
+    ctx = bonus(ctx, {:add_monster_drop, 544, :fish}, 300)
+    ctx
   type: card
   weight: 10
 - aegis_name: Blood_Butterfly_Card
@@ -4666,6 +5686,11 @@
   locations:
     - both_accessory
   name: Bloody Butterfly Card
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, 30)
+    ctx = bonus(ctx, :no_cast_cancel, 1)
+    ctx = bonus(ctx, {:skill_atk, 18}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Hyegun_Card
@@ -4674,6 +5699,10 @@
   locations:
     - garment
   name: Yao Jun Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 15)
+    ctx = bonus(ctx, :critical, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Phendark_Card
@@ -4682,6 +5711,11 @@
   locations:
     - right_hand
   name: Phendark Card
+  on_equip: |-
+    ctx = bonus(ctx, {:sp_gain_race, :demi_human}, 5)
+    ctx = bonus(ctx, {:sp_gain_race, :player_human}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -5)
   type: card
   weight: 10
 - aegis_name: Dark_Snake_Lord_Card
@@ -4692,6 +5726,11 @@
     - head_mid
     - head_top
   name: Evil Snake Lord Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 3)
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 10000)
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Heater_Card
@@ -4700,6 +5739,14 @@
   locations:
     - both_accessory
   name: Heater Card
+  on_equip: |-
+    ctx = bonus(ctx, :critical, 3)
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      bonus(ctx, :perfect_dodge, 30)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Waste_Stove_Card
@@ -4708,6 +5755,10 @@
   locations:
     - armor
   name: Waste Stove Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, :int, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Venomous_Card
@@ -4716,6 +5767,7 @@
   locations:
     - armor
   name: Venomous Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, {:sc_poison, 31}}, 3000)
   type: card
   weight: 10
 - aegis_name: Noxious_Card
@@ -4724,6 +5776,10 @@
   locations:
     - garment
   name: Noxious Card
+  on_equip: |-
+    ctx = bonus(ctx, :long_atk_def, 10)
+    ctx = bonus(ctx, {:subele, :neutral}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Pitman_Card
@@ -4732,6 +5788,11 @@
   locations:
     - right_hand
   name: Pitman Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 90}, 5)
+    ctx = bonus(ctx, {:skill_atk, 91}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -50)
   type: card
   weight: 10
 - aegis_name: Ungoliant_Card
@@ -4742,6 +5803,10 @@
     - head_mid
     - head_top
   name: Ungoliant Card
+  on_equip: |-
+    ctx = bonus(ctx, :hp_regen, 10)
+    ctx = bonus(ctx, {:res_eff, :sc_bleeding}, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Porcellio_Card
@@ -4750,6 +5815,10 @@
   locations:
     - armor
   name: Porcellio Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 25)
+    ctx = bonus(ctx, :def, -5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Obsidian_Card
@@ -4758,6 +5827,7 @@
   locations:
     - armor
   name: Obsidian Card
+  on_equip: bonus(ctx, :vit, div(stat(ctx, :dex), 18))
   type: card
   weight: 10
 - aegis_name: Mineral_Card
@@ -4766,6 +5836,10 @@
   locations:
     - armor
   name: Mineral Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, -25)
+    ctx = bonus(ctx, :def, 3)
+    ctx
   type: card
   weight: 10
 - aegis_name: Teddy_Bear_Card
@@ -4774,6 +5848,7 @@
   locations:
     - left_hand
   name: Teddy Bear Card
+  on_equip: bonus(ctx, {:subrace, :undead}, 30)
   type: card
   weight: 10
 - aegis_name: Metaling_Card
@@ -4782,6 +5857,7 @@
   locations:
     - right_hand
   name: Metaling Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 215}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Rsx_0806_Card
@@ -4790,6 +5866,11 @@
   locations:
     - armor
   name: RSX-0806 Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 3)
+    ctx = bonus(ctx, :unbreakable_armor, 1)
+    ctx = bonus(ctx, :no_knockback, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Mole_Card
@@ -4800,6 +5881,7 @@
     - head_mid
     - head_top
   name: Holden Card
+  on_equip: bonus(ctx, :luk, 2)
   type: card
   weight: 10
 - aegis_name: Anopheles_Card
@@ -4808,6 +5890,7 @@
   locations:
     - both_accessory
   name: Anopheles Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12058, :insect}, 50)
   type: card
   weight: 10
 - aegis_name: Hill_Wind_Card
@@ -4816,6 +5899,12 @@
   locations:
     - right_hand
   name: Hill Wind Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 21}, 5)
+    ctx = bonus(ctx, {:skill_atk, 84}, 5)
+    ctx = bonus(ctx, {:skill_atk, 85}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -50)
   type: card
   weight: 10
 - aegis_name: Ygnizem_Card
@@ -4824,6 +5913,7 @@
   locations:
     - armor
   name: Egnigem Cenia Card
+  on_equip: bonus(ctx, :str, div(stat(ctx, :int), 18))
   type: card
   weight: 10
 - aegis_name: Armaia_Card
@@ -4832,6 +5922,7 @@
   locations:
     - both_accessory
   name: Armeyer Dinze Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12053, :fish}, 50)
   type: card
   weight: 10
 - aegis_name: Whikebain_Card
@@ -4840,6 +5931,7 @@
   locations:
     - both_accessory
   name: Wickebine Tres Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 217}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Erend_Card
@@ -4848,6 +5940,7 @@
   locations:
     - both_accessory
   name: Errende Ebecee Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 25}, 1, 50)'
   type: card
   weight: 10
 - aegis_name: Rawrel_Card
@@ -4856,6 +5949,11 @@
   locations:
     - right_hand
   name: Laurell Weinder Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 88}, 3)
+    ctx = bonus(ctx, {:skill_atk, 89}, 3)
+    ctx
+  on_unequip: heal(ctx, 0, -50)
   type: card
   weight: 10
 - aegis_name: Kavac_Card
@@ -4864,6 +5962,14 @@
   locations:
     - garment
   name: Kavach Icarus Card
+  on_equip: |-
+    if (refine(ctx) <= 4) do
+      ctx = bonus(ctx, :flee, 20)
+      ctx = bonus(ctx, :perfect_dodge, 10)
+      ctx
+    else
+      bonus(ctx, :flee, 10)
+    end
   type: card
   weight: 10
 - aegis_name: B_Ygnizem_Card
@@ -4872,6 +5978,12 @@
   locations:
     - shoes
   name: General Egnigem Cenia Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx = bonus(ctx, :max_sp_rate, 10)
+    ctx = bonus(ctx, {:hp_regen_bonus, 10000}, 50)
+    ctx = bonus(ctx, {:sp_regen_bonus, 10000}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Removal_Card
@@ -4880,6 +5992,10 @@
   locations:
     - armor
   name: Remover Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, (800 - (40 * refine(ctx))))
+    ctx = bonus(ctx, :hp_regen, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Gemini_Card
@@ -4890,6 +6006,22 @@
     - head_mid
     - head_top
   name: Gemini-S58 Card
+  on_equip: |-
+    ctx = if (stat(ctx, :agi) >= 90) do
+      ctx = bonus(ctx, {:res_eff, :sc_silence}, 3000)
+      ctx = bonus(ctx, {:res_eff, :sc_stun}, 3000)
+      ctx
+    else
+      ctx
+    end
+    ctx = if (stat(ctx, :vit) >= 80) do
+      ctx = bonus(ctx, {:res_eff, :sc_stone}, 5000)
+      ctx = bonus(ctx, {:res_eff, :sc_sleep}, 5000)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Gremlin_Card
@@ -4898,6 +6030,7 @@
   locations:
     - both_accessory
   name: Gremlin Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12043, :brute}, 50)
   type: card
   weight: 10
 - aegis_name: Beholder_Card
@@ -4906,6 +6039,7 @@
   locations:
     - both_accessory
   name: Beholder Card
+  on_equip: grant_skill(ctx, 275, 1)
   type: card
   weight: 10
 - aegis_name: B_Seyren_Card
@@ -4926,6 +6060,7 @@
     - head_mid
     - head_top
   name: Seyren Windsor Card
+  on_equip: bonus(ctx, :str, (refine(ctx) - 6))
   type: card
   weight: 10
 - aegis_name: B_Eremes_Card
@@ -4934,6 +6069,8 @@
   locations:
     - garment
   name: Assassin Cross Card
+  on_equip: grant_skill(ctx, 135, 3)
+  on_unequip: status_end(ctx, :sc_cloaking)
   type: card
   weight: 10
 - aegis_name: Eremes_Card
@@ -4942,6 +6079,10 @@
   locations:
     - right_hand
   name: Eremes Guile Card
+  on_equip: |-
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: B_Harword_Card
@@ -4950,6 +6091,10 @@
   locations:
     - right_hand
   name: MasterSmith Card
+  on_equip: |-
+    ctx = bonus(ctx, :break_weapon_rate, 1000)
+    ctx = bonus(ctx, :break_armor_rate, 700)
+    ctx
   type: card
   weight: 10
 - aegis_name: Harword_Card
@@ -4958,6 +6103,10 @@
   locations:
     - right_hand
   name: Howard Alt-Eisen Card
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, -5)
+    ctx = bonus(ctx, :hit, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: B_Magaleta_Card
@@ -4976,6 +6125,10 @@
     - head_mid
     - head_top
   name: Margaretha Sorin Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = auto_cast(ctx, %{force: 1, flag: 850, trigger: :when_hit, skill_id: 76}, 5, 150)
+    ctx
   type: card
   weight: 10
 - aegis_name: B_Katrinn_Card
@@ -4986,6 +6139,12 @@
     - head_mid
     - head_top
   name: High Wizard Card
+  on_equip: |-
+    ctx = bonus(ctx, {:ignore_mdef_class, :normal}, 100)
+    ctx = bonus(ctx, :varcast_rate, 100)
+    ctx = bonus(ctx, :sp_regen, -100)
+    ctx
+  on_unequip: heal(ctx, 0, -2000)
   type: card
   weight: 10
 - aegis_name: Katrinn_Card
@@ -4996,6 +6155,14 @@
     - head_mid
     - head_top
   name: Kathryne Keyron Card
+  on_equip: |-
+    ctx = bonus(ctx, :varcast_rate, (refine(ctx) * -1))
+    ctx = if (refine(ctx) >= 9) do
+      bonus(ctx, :matk_rate, 2)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: B_Shecil_Card
@@ -5004,6 +6171,11 @@
   locations:
     - right_hand
   name: Sniper Card
+  on_equip: |-
+    ctx = bonus(ctx, :hp_drain_rate, 50)
+    ctx = bonus(ctx, :hp_drain_percent, 20)
+    ctx = bonus(ctx, :hp_regen, -10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Shecil_Card
@@ -5012,6 +6184,10 @@
   locations:
     - right_hand
   name: Cecil Damon Card
+  on_equip: |-
+    ctx = bonus(ctx, :aspd_rate, 5)
+    ctx = bonus(ctx, :hit, -30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Venatu_Card
@@ -5020,6 +6196,7 @@
   locations:
     - armor
   name: Venatu Card
+  on_equip: bonus(ctx, :luk, div(stat(ctx, :agi), 18))
   type: card
   weight: 10
 - aegis_name: Dimik_Card
@@ -5028,6 +6205,7 @@
   locations:
     - armor
   name: Dimik Card
+  on_equip: bonus(ctx, :vit, (refine(ctx) - 5))
   type: card
   weight: 10
 - aegis_name: Archdam_Card
@@ -5036,6 +6214,10 @@
   locations:
     - armor
   name: Archdam Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 10)
+    ctx = bonus(ctx, :varcast_rate, 20)
+    ctx
   type: card
   weight: 10
 - aegis_name: Bacsojin_Card
@@ -5046,6 +6228,10 @@
     - head_mid
     - head_top
   name: White Lady Card
+  on_equip: |-
+    ctx = bonus(ctx, :heal_power, 30)
+    ctx = bonus(ctx, :sp_cost_rate, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: Chung_E_Card
@@ -5054,6 +6240,10 @@
   locations:
     - garment
   name: Green Maiden Card
+  on_equip: |-
+    ctx = bonus(ctx, :luk, (refine(ctx) - 5))
+    ctx = bonus(ctx, :critical, refine(ctx))
+    ctx
   type: card
   weight: 10
 - aegis_name: Apocalips_H_Card
@@ -5064,6 +6254,10 @@
     - head_mid
     - head_top
   name: Vesper Card
+  on_equip: |-
+    ctx = bonus(ctx, :dex, 2)
+    ctx = bonus(ctx, {:ignore_mdef_class, :boss}, 30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Orc_Baby_Card
@@ -5072,6 +6266,16 @@
   locations:
     - garment
   name: Orc Baby Card
+  on_equip: |-
+    if (refine(ctx) >= 9) do
+      ctx = bonus(ctx, {:subele, :neutral}, 15)
+      ctx = bonus(ctx, :flee, 15)
+      ctx
+    else
+      ctx = bonus(ctx, {:subele, :neutral}, 10)
+      ctx = bonus(ctx, :flee, 10)
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Lady_Tanee_Card
@@ -5080,6 +6284,12 @@
   locations:
     - shoes
   name: Lady Tanee Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp_rate, -40)
+    ctx = bonus(ctx, :max_sp_rate, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 513}, 200)
+    ctx = bonus(ctx, {:add_item_heal, 513}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Green_Iguana_Card
@@ -5088,6 +6298,7 @@
   locations:
     - both_accessory
   name: Grove Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12063, :formless}, 50)
   type: card
   weight: 10
 - aegis_name: Acidus_Card
@@ -5096,6 +6307,18 @@
   locations:
     - shoes
   name: Gold Acidus Card
+  on_equip: |-
+    if (refine(ctx) <= 4) do
+      ctx = bonus(ctx, :max_hp_rate, 8)
+      ctx = bonus(ctx, :max_sp_rate, 8)
+      ctx = bonus(ctx, :hp_regen, 5)
+      ctx = bonus(ctx, :sp_regen, 5)
+      ctx
+    else
+      ctx = bonus(ctx, :max_hp_rate, 4)
+      ctx = bonus(ctx, :max_sp_rate, 4)
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Acidus__Card
@@ -5106,6 +6329,14 @@
     - head_mid
     - head_top
   name: Blue Acidus Card
+  on_equip: |-
+    if (refine(ctx) <= 4) do
+      ctx = bonus(ctx, :sp_regen, 5)
+      ctx = bonus(ctx, :max_sp, 80)
+      ctx
+    else
+      bonus(ctx, :max_sp, 40)
+    end
   type: card
   weight: 10
 - aegis_name: Ferus_Card
@@ -5114,6 +6345,11 @@
   locations:
     - right_hand
   name: Red Ferus Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 80}, 5)
+    ctx = bonus(ctx, {:skill_atk, 83}, 5)
+    ctx
+  on_unequip: heal(ctx, 0, -50)
   type: card
   weight: 10
 - aegis_name: Ferus__Card
@@ -5122,6 +6358,10 @@
   locations:
     - shoes
   name: Green Ferus Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 1)
+    ctx = bonus(ctx, :max_hp_rate, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Novus__Card
@@ -5130,6 +6370,10 @@
   locations:
     - armor
   name: Yellow Novus Card
+  on_equip: |-
+    ctx = bonus(ctx, :max_hp, 500)
+    ctx = bonus(ctx, :hp_regen, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Novus_Card
@@ -5138,6 +6382,7 @@
   locations:
     - armor
   name: Red Novus Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, {:sc_confusion, 31}}, 3000)
   type: card
   weight: 10
 - aegis_name: Hydro_Card
@@ -5146,6 +6391,7 @@
   locations:
     - both_accessory
   name: Hydrolancer Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 277}, 1, 100)'
   type: card
   weight: 10
 - aegis_name: Dragon_Egg_Card
@@ -5154,6 +6400,7 @@
   locations:
     - both_accessory
   name: Dragon Egg Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12048, :dragon}, 50)
   type: card
   weight: 10
 - aegis_name: Detale_Card
@@ -5162,6 +6409,11 @@
   locations:
     - armor
   name: Detardeurus Card
+  on_equip: |-
+    ctx = bonus(ctx, :mdef, -20)
+    ctx = bonus(ctx, {:res_eff, :sc_freeze}, 10000)
+    ctx = auto_cast(ctx, %{force: 0, flag: 850, trigger: :when_hit, skill_id: 288}, 1, 70)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ancient_Mimic_Card
@@ -5170,6 +6422,7 @@
   locations:
     - armor
   name: Ancient Mimic Card
+  on_equip: bonus(ctx, :agi, div(stat(ctx, :luk), 18))
   type: card
   weight: 10
 - aegis_name: Deathword_Card
@@ -5186,6 +6439,12 @@
   locations:
     - both_accessory
   name: Plasma Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_monster_drop, 12118}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 12119}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 12120}, 50)
+    ctx = bonus(ctx, {:add_monster_drop, 12121}, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Breeze_Card
@@ -5194,6 +6453,10 @@
   locations:
     - right_hand
   name: Breeze Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, {:add_eff, :sc_bleeding}, 500)
+    ctx
   type: card
   weight: 10
 - aegis_name: Retribution_Card
@@ -5202,6 +6465,7 @@
   locations:
     - both_accessory
   name: Baroness of Retribution Card
+  on_equip: bonus(ctx, {:add_monster_drop, 12068, :angel}, 50)
   type: card
   weight: 10
 - aegis_name: Observation_Card
@@ -5210,6 +6474,7 @@
   locations:
     - armor
   name: Dame of Sentinel Card
+  on_equip: bonus(ctx, :dex, div(stat(ctx, :vit), 18))
   type: card
   weight: 10
 - aegis_name: Shelter_Card
@@ -5218,6 +6483,7 @@
   locations:
     - armor
   name: Mistress of Shelter Card
+  on_equip: bonus(ctx, :int, div(stat(ctx, :str), 18))
   type: card
   weight: 10
 - aegis_name: Solace_Card
@@ -5226,6 +6492,12 @@
   locations:
     - right_hand
   name: Lady Solace Card
+  on_equip: |-
+    if job_is(ctx, :base_job, :priest) do
+      auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 254}, 5, 20)
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Tha_Maero_Card
@@ -5234,6 +6506,10 @@
   locations:
     - right_hand
   name: Maero of Thanatos Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 30}, 3, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Tha_Odium_Card
@@ -5242,6 +6518,7 @@
   locations:
     - shoes
   name: Odium of Thanatos Card
+  on_equip: bonus(ctx, :agi, (refine(ctx) - 5))
   type: card
   weight: 10
 - aegis_name: Tha_Despero_Card
@@ -5250,6 +6527,7 @@
   locations:
     - left_hand
   name: Despero of Thanatos Card
+  on_equip: bonus(ctx, :int, (refine(ctx) - 6))
   type: card
   weight: 10
 - aegis_name: Tha_Dolor_Card
@@ -5258,6 +6536,7 @@
   locations:
     - right_hand
   name: Dolor of Thanatos Card
+  on_equip: bonus(ctx, {:magic_addrace, :angel}, 10)
   type: card
   weight: 10
 - aegis_name: Thanatos_Card
@@ -5266,6 +6545,12 @@
   locations:
     - right_hand
   name: Memory of Thanatos Card
+  on_equip: |-
+    ctx = bonus(ctx, {:def_ratio_atk_class, :all}, 1)
+    ctx = bonus(ctx, :sp_drain_value, -1)
+    ctx = bonus(ctx, :def, -30)
+    ctx = bonus(ctx, :flee, -30)
+    ctx
   type: card
   weight: 10
 - aegis_name: Aliza_Card
@@ -5274,6 +6559,7 @@
   locations:
     - armor
   name: Aliza Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 1011}, 1, (50 + (50 * bool(ctx, job_is(ctx, :base_job, :dancer)))))'
   type: card
   weight: 10
 - aegis_name: Alicel_Card
@@ -5282,6 +6568,10 @@
   locations:
     - armor
   name: Alicel Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 10)
+    ctx = bonus(ctx, :def, -5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Aliot_Card
@@ -5290,6 +6580,22 @@
   locations:
     - garment
   name: Aliot Card
+  on_equip: |-
+    ctx = if ((job_is(ctx, :base_class, :swordman) || job_is(ctx, :base_class, :merchant)) || job_is(ctx, :base_class, :thief)) do
+      ctx = bonus(ctx, :str, 2)
+      ctx = bonus(ctx, :max_hp_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx = if ((job_is(ctx, :base_class, :mage) || job_is(ctx, :base_class, :archer)) || job_is(ctx, :base_class, :acolyte)) do
+      ctx = bonus(ctx, :int, 2)
+      ctx = bonus(ctx, :max_sp_rate, 5)
+      ctx
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Kiel_Card
@@ -5300,6 +6606,7 @@
     - head_mid
     - head_top
   name: Kiel-D-01 Card
+  on_equip: bonus(ctx, :delay_rate, -30)
   type: card
   weight: 10
 - aegis_name: Skogul_Card
@@ -5308,6 +6615,7 @@
   locations:
     - armor
   name: Skogul Card
+  on_equip: bonus(ctx, {:add_eff_when_hit, {:sc_bleeding, 31}}, 3000)
   type: card
   weight: 10
 - aegis_name: Frus_Card
@@ -5316,6 +6624,14 @@
   locations:
     - armor
   name: Frus Card
+  on_equip: |-
+    ctx = bonus(ctx, :magic_damage_return, (refine(ctx) * 2))
+    ctx = if job_is(ctx, :base_class, :mage) do
+      bonus(ctx, :mdef, 3)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Skeggiold_Card
@@ -5324,6 +6640,7 @@
   locations:
     - right_hand
   name: Skeggiold Card
+  on_equip: bonus(ctx, {:magic_addrace, :demon}, 2)
   type: card
   weight: 10
 - aegis_name: Randgris_Card
@@ -5332,6 +6649,11 @@
   locations:
     - right_hand
   name: Randgris Card
+  on_equip: |-
+    ctx = bonus(ctx, :unbreakable_weapon, 1)
+    ctx = bonus(ctx, {:addclass, :all}, 10)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 289}, 1, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Gloom_Under_Night_Card
@@ -5340,6 +6662,12 @@
   locations:
     - armor
   name: Gloom Under Night Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addele, :holy}, 40)
+    ctx = bonus(ctx, {:addele, :shadow}, 40)
+    ctx = bonus(ctx, {:addrace, :angel}, 40)
+    ctx = bonus(ctx, {:addrace, :demon}, 40)
+    ctx
   type: card
   weight: 10
 - aegis_name: Agav_Card
@@ -5348,6 +6676,15 @@
   locations:
     - armor
   name: Agav Card
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 5)
+    ctx = bonus(ctx, :def, -10)
+    ctx = if job_is(ctx, :base_class, :mage) do
+      bonus(ctx, :max_sp, 100)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Echio_Card
@@ -5356,6 +6693,14 @@
   locations:
     - armor
   name: Echio Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 15)
+    ctx = if job_is(ctx, :base_class, :swordman) do
+      bonus(ctx, :max_hp, 500)
+    else
+      ctx
+    end
+    ctx
   type: card
   weight: 10
 - aegis_name: Vanberk_Card
@@ -5366,6 +6711,10 @@
     - head_mid
     - head_top
   name: Vanberk Card
+  on_equip: |-
+    ctx = bonus(ctx, :str, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :critical, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 5, 5000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Isilla_Card
@@ -5376,6 +6725,10 @@
     - head_mid
     - head_top
   name: Isilla Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :varcast_rate, -50}, {:bonus, :flee, 30}], trigger: :attack, secondary: [], battle_flag: 338}, 50, 5000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Hodremlin_Card
@@ -5384,6 +6737,10 @@
   locations:
     - left_hand
   name: Hodremlin Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subsize, :all}, 15)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :perfect_dodge, 300}], trigger: :when_hit, secondary: [], battle_flag: 851}, 3, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Seeker_Card
@@ -5392,6 +6749,11 @@
   locations:
     - left_hand
   name: Seeker Card
+  on_equip: |-
+    ctx = grant_skill(ctx, 16, 1)
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 3000)
+    ctx = bonus(ctx, :mdef, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Snowier_Card
@@ -5400,6 +6762,10 @@
   locations:
     - both_accessory
   name: Snowier Card
+  on_equip: |-
+    ctx = bonus(ctx, {:add_monster_drop, 536}, 2000)
+    ctx = bonus(ctx, {:add_item_heal, 536}, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Siroma_Card
@@ -5408,6 +6774,10 @@
   locations:
     - both_accessory
   name: Siroma Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 14}, 25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 14}, -25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ice_Titan_Card
@@ -5416,6 +6786,10 @@
   locations:
     - shoes
   name: Ice Titan Card
+  on_equip: |-
+    ctx = bonus(ctx, :vit, 2)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :def, 10}], trigger: :when_hit, secondary: [], battle_flag: 851}, 3, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Gazeti_Card
@@ -5424,6 +6798,7 @@
   locations:
     - both_accessory
   name: Gazeti Card
+  on_equip: 'auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 14}, 2, 100)'
   type: card
   weight: 10
 - aegis_name: Ktullanux_Card
@@ -5432,6 +6807,10 @@
   locations:
     - armor
   name: Ktullanux Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addele, :fire}, 50)
+    ctx = auto_cast(ctx, %{force: 0, flag: 851, trigger: :when_hit, skill_id: 88}, 10, 20)
+    ctx
   type: card
   weight: 10
 - aegis_name: Muscipular_Card
@@ -5440,6 +6819,10 @@
   locations:
     - left_hand
   name: Muscipular Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 28}, 1, 100)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 29}, 1, 100)
+    ctx
   type: card
   weight: 10
 - aegis_name: Drosera_Card
@@ -5448,6 +6831,7 @@
   locations:
     - right_hand
   name: Drosera Card
+  on_equip: bonus(ctx, :critical_long, 15)
   type: card
   weight: 10
 - aegis_name: Roween_Card
@@ -5456,6 +6840,12 @@
   locations:
     - garment
   name: Roween Card
+  on_equip: |-
+    ctx = bonus(ctx, :flee, 5)
+    ctx = bonus(ctx, :perfect_dodge, 30)
+    ctx = bonus(ctx, {:addele, :water}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :fish}, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: Galion_Card
@@ -5464,6 +6854,10 @@
   locations:
     - both_accessory
   name: Galion Card
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 5)
+    ctx = bonus(ctx, {:addele, :water}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Stapo_Card
@@ -5472,6 +6866,10 @@
   locations:
     - both_accessory
   name: Stapo Card
+  on_equip: |-
+    ctx = grant_skill(ctx, 151, 1)
+    ctx = grant_skill(ctx, 152, 1)
+    ctx
   type: card
   weight: 10
 - aegis_name: Atroce_Card
@@ -5480,6 +6878,10 @@
   locations:
     - right_hand
   name: Atroce Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 25)
+    ctx = autobonus(ctx, %{primary: [{:bonus, :aspd_rate, 100}], trigger: :attack, secondary: [], battle_flag: 849}, 5, 10000)
+    ctx
   type: card
   weight: 10
 - aegis_name: Byorgue_Card
@@ -5488,6 +6890,14 @@
   locations:
     - armor
   name: Byorgue Card
+  on_equip: |-
+    if job_is(ctx, :base_job, :rogue) do
+      ctx = bonus(ctx, :matk_rate, 10)
+      ctx = bonus(ctx, {:addclass, :all}, 10)
+      ctx
+    else
+      ctx
+    end
   type: card
   weight: 10
 - aegis_name: Sword_Guardian_Card
@@ -5512,6 +6922,10 @@
   locations:
     - garment
   name: Salamander Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 80}, 40)
+    ctx = bonus(ctx, {:skill_atk, 83}, 40)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ifrit_Card
@@ -5520,6 +6934,12 @@
   locations:
     - both_accessory
   name: Ifrit Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, div(job_level(ctx), 10))
+    ctx = bonus(ctx, :critical, div(job_level(ctx), 10))
+    ctx = bonus(ctx, :hit, div(job_level(ctx), 10))
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :when_hit, skill_id: 653}, 2, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Kasa_Card
@@ -5528,6 +6948,10 @@
   locations:
     - garment
   name: Kasa Card
+  on_equip: |-
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 17}, 5, 20)
+    ctx = auto_cast(ctx, %{force: 0, flag: 849, trigger: :attack, skill_id: 19}, 5, 20)
+    ctx
   type: card
   weight: 10
 - aegis_name: Magmaring_Card
@@ -5536,6 +6960,13 @@
   locations:
     - garment
   name: Magmaring Card
+  on_equip: |-
+    ctx = bonus(ctx, :atk, 5)
+    ctx = bonus(ctx, {:addele, :earth}, 10)
+    ctx = bonus(ctx, {:critical_add_race, :brute}, 15)
+    ctx = bonus(ctx, {:critical_add_race, :player_doram}, 15)
+    ctx = bonus(ctx, {:critical_add_race, :plant}, 15)
+    ctx
   type: card
   weight: 10
 - aegis_name: Imp_Card
@@ -5544,6 +6975,10 @@
   locations:
     - both_accessory
   name: Imp Card
+  on_equip: |-
+    ctx = bonus(ctx, {:skill_atk, 19}, 25)
+    ctx = bonus(ctx, {:skill_varcast_rate, 19}, -25)
+    ctx
   type: card
   weight: 10
 - aegis_name: Knocker_Card
@@ -5554,6 +6989,11 @@
     - head_mid
     - head_top
   name: Knocker Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :formless}, 5)
+    ctx = bonus(ctx, {:add_monster_drop, 756, :formless}, 10)
+    ctx = bonus(ctx, {:add_monster_drop, 757, :formless}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Zombie_Slaughter_Card
@@ -5562,6 +7002,13 @@
   locations:
     - shoes
   name: Zombie Slaughter Card
+  on_equip: |-
+    ctx = bonus(ctx, {:addrace, :demi_human}, 1)
+    ctx = bonus(ctx, {:addrace, :player_human}, 1)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 1)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 1)
+    ctx = bonus(ctx, :hp_gain_value, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ragged_Zombie_Card
@@ -5570,6 +7017,15 @@
   locations:
     - both_accessory
   name: Ragged Zombie Card
+  on_equip: |-
+    ctx = bonus(ctx, {:critical_add_race, :demi_human}, 5)
+    ctx = bonus(ctx, {:critical_add_race, :player_human}, 5)
+    ctx = bonus(ctx, {:addrace, :demi_human}, 1)
+    ctx = bonus(ctx, {:addrace, :player_human}, 1)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 1)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 1)
+    ctx = bonus(ctx, {:add_eff2, :sc_bleeding}, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Hell_Poodle_Card
@@ -5578,6 +7034,11 @@
   locations:
     - both_accessory
   name: Hell Poodle Card
+  on_equip: |-
+    ctx = bonus(ctx, :hit, 1)
+    ctx = bonus(ctx, {:add_item_heal, 517}, 100)
+    ctx = bonus(ctx, {:add_eff, {:sc_bleeding, 22}}, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Banshee_Card
@@ -5596,6 +7057,16 @@
   locations:
     - left_hand
   name: Flame Skull Card
+  on_equip: |-
+    ctx = bonus(ctx, {:res_eff, :sc_blind}, 3000)
+    ctx = bonus(ctx, {:res_eff, :sc_stun}, 3000)
+    ctx = bonus(ctx, {:res_eff, :sc_curse}, 3000)
+    ctx = bonus(ctx, {:res_eff, :sc_stone}, 3000)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_blind}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stun}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_curse}, 500)
+    ctx = bonus(ctx, {:add_eff_when_hit, :sc_stone}, 500)
+    ctx
   type: card
   weight: 10
 - aegis_name: Necromancer_Card
@@ -5612,6 +7083,13 @@
   locations:
     - shoes
   name: Fallen Bishop Hibram Card
+  on_equip: |-
+    ctx = bonus(ctx, :matk_rate, 10)
+    ctx = bonus(ctx, :max_sp_rate, -50)
+    ctx = bonus(ctx, {:magic_addrace, :angel}, 50)
+    ctx = bonus(ctx, {:magic_addrace, :demi_human}, 50)
+    ctx = bonus(ctx, {:magic_addrace, :player_human}, 50)
+    ctx
   type: card
   weight: 10
 - aegis_name: Tatacho_Card
@@ -5620,6 +7098,10 @@
   locations:
     - left_hand
   name: Tatacho Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :neutral}, 20)
+    ctx = bonus(ctx, {:addele, :neutral}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Aqua_Elemental_Card
@@ -5628,6 +7110,10 @@
   locations:
     - left_hand
   name: Aqua Elemental Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :water}, 20)
+    ctx = bonus(ctx, {:addele, :water}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Draco_Card
@@ -5636,6 +7122,10 @@
   locations:
     - left_hand
   name: Draco Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :earth}, 20)
+    ctx = bonus(ctx, {:addele, :earth}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Luciola_Vespa_Card
@@ -5644,6 +7134,10 @@
   locations:
     - left_hand
   name: Luciola Vespa Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :wind}, 20)
+    ctx = bonus(ctx, {:addele, :wind}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Centipede_Card
@@ -5652,6 +7146,10 @@
   locations:
     - left_hand
   name: Centipede Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :poison}, 20)
+    ctx = bonus(ctx, {:addele, :poison}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Cornus_Card
@@ -5660,6 +7158,10 @@
   locations:
     - left_hand
   name: Cornus Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :holy}, 20)
+    ctx = bonus(ctx, {:addele, :holy}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Dark_Shadow_Card
@@ -5668,6 +7170,10 @@
   locations:
     - left_hand
   name: Dark Shadow Card
+  on_equip: |-
+    ctx = bonus(ctx, {:subele, :shadow}, 20)
+    ctx = bonus(ctx, {:addele, :shadow}, 5)
+    ctx
   type: card
   weight: 10
 - aegis_name: Banshee_Master_Card
@@ -5676,6 +7182,10 @@
   locations:
     - armor
   name: Banshee Master Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :matk, 10)
+    ctx
   type: card
   weight: 10
 - aegis_name: Ant_Buyanne_Card
@@ -5684,6 +7194,7 @@
   locations:
     - armor
   name: Entweihen Crothen Card
+  on_equip: bonus(ctx, :matk, 100)
   type: card
   weight: 10
 - aegis_name: Centipede_Larva_Card
@@ -5692,6 +7203,10 @@
   locations:
     - right_hand
   name: Centipede Larva Card
+  on_equip: |-
+    ctx = bonus(ctx, :int, 1)
+    ctx = bonus(ctx, :matk, 3)
+    ctx
   type: card
   weight: 10
 - aegis_name: Hilsrion_Card
@@ -5700,12 +7215,14 @@
   locations:
     - right_hand
   name: Hillsrion Card
+  on_equip: bonus(ctx, :atk, 25)
   type: card
   weight: 10
 - aegis_name: Strength1
   buy: 20
   id: 4700
   name: STR+1
+  on_equip: bonus(ctx, :str, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -5713,6 +7230,7 @@
   buy: 20
   id: 4701
   name: STR+2
+  on_equip: bonus(ctx, :str, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -5720,6 +7238,7 @@
   buy: 20
   id: 4702
   name: STR+3
+  on_equip: bonus(ctx, :str, 3)
   subtype: enchant
   type: card
   weight: 10
@@ -5727,6 +7246,7 @@
   buy: 20
   id: 4703
   name: STR+4
+  on_equip: bonus(ctx, :str, 4)
   subtype: enchant
   type: card
   weight: 10
@@ -5734,6 +7254,7 @@
   buy: 20
   id: 4704
   name: STR+5
+  on_equip: bonus(ctx, :str, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -5741,6 +7262,7 @@
   buy: 20
   id: 4705
   name: STR+6
+  on_equip: bonus(ctx, :str, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -5748,6 +7270,7 @@
   buy: 20
   id: 4706
   name: STR+7
+  on_equip: bonus(ctx, :str, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -5755,6 +7278,7 @@
   buy: 20
   id: 4707
   name: STR+8
+  on_equip: bonus(ctx, :str, 8)
   subtype: enchant
   type: card
   weight: 10
@@ -5762,6 +7286,7 @@
   buy: 20
   id: 4708
   name: STR+9
+  on_equip: bonus(ctx, :str, 9)
   subtype: enchant
   type: card
   weight: 10
@@ -5769,6 +7294,7 @@
   buy: 20
   id: 4709
   name: STR+10
+  on_equip: bonus(ctx, :str, 10)
   subtype: enchant
   type: card
   weight: 10
@@ -5776,6 +7302,7 @@
   buy: 20
   id: 4710
   name: INT+1
+  on_equip: bonus(ctx, :int, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -5783,6 +7310,7 @@
   buy: 20
   id: 4711
   name: INT+2
+  on_equip: bonus(ctx, :int, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -5790,6 +7318,7 @@
   buy: 20
   id: 4712
   name: INT+3
+  on_equip: bonus(ctx, :int, 3)
   subtype: enchant
   type: card
   weight: 10
@@ -5797,6 +7326,7 @@
   buy: 20
   id: 4713
   name: INT+4
+  on_equip: bonus(ctx, :int, 4)
   subtype: enchant
   type: card
   weight: 10
@@ -5804,6 +7334,7 @@
   buy: 20
   id: 4714
   name: INT+5
+  on_equip: bonus(ctx, :int, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -5811,6 +7342,7 @@
   buy: 20
   id: 4715
   name: INT+6
+  on_equip: bonus(ctx, :int, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -5818,6 +7350,7 @@
   buy: 20
   id: 4716
   name: INT+7
+  on_equip: bonus(ctx, :int, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -5825,6 +7358,7 @@
   buy: 20
   id: 4717
   name: INT+8
+  on_equip: bonus(ctx, :int, 8)
   subtype: enchant
   type: card
   weight: 10
@@ -5832,6 +7366,7 @@
   buy: 20
   id: 4718
   name: INT+9
+  on_equip: bonus(ctx, :int, 9)
   subtype: enchant
   type: card
   weight: 10
@@ -5839,6 +7374,7 @@
   buy: 20
   id: 4719
   name: INT+10
+  on_equip: bonus(ctx, :int, 10)
   subtype: enchant
   type: card
   weight: 10
@@ -5846,6 +7382,7 @@
   buy: 20
   id: 4720
   name: DEX+1
+  on_equip: bonus(ctx, :dex, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -5853,6 +7390,7 @@
   buy: 20
   id: 4721
   name: DEX+2
+  on_equip: bonus(ctx, :dex, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -5860,6 +7398,7 @@
   buy: 20
   id: 4722
   name: DEX+3
+  on_equip: bonus(ctx, :dex, 3)
   subtype: enchant
   type: card
   weight: 10
@@ -5867,6 +7406,7 @@
   buy: 20
   id: 4723
   name: DEX+4
+  on_equip: bonus(ctx, :dex, 4)
   subtype: enchant
   type: card
   weight: 10
@@ -5874,6 +7414,7 @@
   buy: 20
   id: 4724
   name: DEX+5
+  on_equip: bonus(ctx, :dex, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -5881,6 +7422,7 @@
   buy: 20
   id: 4725
   name: DEX+6
+  on_equip: bonus(ctx, :dex, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -5888,6 +7430,7 @@
   buy: 20
   id: 4726
   name: DEX+7
+  on_equip: bonus(ctx, :dex, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -5895,6 +7438,7 @@
   buy: 20
   id: 4727
   name: DEX+8
+  on_equip: bonus(ctx, :dex, 8)
   subtype: enchant
   type: card
   weight: 10
@@ -5902,6 +7446,7 @@
   buy: 20
   id: 4728
   name: DEX+9
+  on_equip: bonus(ctx, :dex, 9)
   subtype: enchant
   type: card
   weight: 10
@@ -5909,6 +7454,7 @@
   buy: 20
   id: 4729
   name: DEX+10
+  on_equip: bonus(ctx, :dex, 10)
   subtype: enchant
   type: card
   weight: 10
@@ -5916,6 +7462,7 @@
   buy: 20
   id: 4730
   name: AGI+1
+  on_equip: bonus(ctx, :agi, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -5923,6 +7470,7 @@
   buy: 20
   id: 4731
   name: AGI+2
+  on_equip: bonus(ctx, :agi, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -5930,6 +7478,7 @@
   buy: 20
   id: 4732
   name: AGI+3
+  on_equip: bonus(ctx, :agi, 3)
   subtype: enchant
   type: card
   weight: 10
@@ -5937,6 +7486,7 @@
   buy: 20
   id: 4733
   name: AGI+4
+  on_equip: bonus(ctx, :agi, 4)
   subtype: enchant
   type: card
   weight: 10
@@ -5944,6 +7494,7 @@
   buy: 20
   id: 4734
   name: AGI+5
+  on_equip: bonus(ctx, :agi, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -5951,6 +7502,7 @@
   buy: 20
   id: 4735
   name: AGI+6
+  on_equip: bonus(ctx, :agi, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -5958,6 +7510,7 @@
   buy: 20
   id: 4736
   name: AGI+7
+  on_equip: bonus(ctx, :agi, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -5965,6 +7518,7 @@
   buy: 20
   id: 4737
   name: AGI+8
+  on_equip: bonus(ctx, :agi, 8)
   subtype: enchant
   type: card
   weight: 10
@@ -5972,6 +7526,7 @@
   buy: 20
   id: 4738
   name: AGI+9
+  on_equip: bonus(ctx, :agi, 9)
   subtype: enchant
   type: card
   weight: 10
@@ -5979,6 +7534,7 @@
   buy: 20
   id: 4739
   name: AGI+10
+  on_equip: bonus(ctx, :agi, 10)
   subtype: enchant
   type: card
   weight: 10
@@ -5986,6 +7542,7 @@
   buy: 20
   id: 4740
   name: VIT+1
+  on_equip: bonus(ctx, :vit, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -5993,6 +7550,7 @@
   buy: 20
   id: 4741
   name: VIT+2
+  on_equip: bonus(ctx, :vit, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -6000,6 +7558,7 @@
   buy: 20
   id: 4742
   name: VIT+3
+  on_equip: bonus(ctx, :vit, 3)
   subtype: enchant
   type: card
   weight: 10
@@ -6007,6 +7566,7 @@
   buy: 20
   id: 4743
   name: VIT+4
+  on_equip: bonus(ctx, :vit, 4)
   subtype: enchant
   type: card
   weight: 10
@@ -6014,6 +7574,7 @@
   buy: 20
   id: 4744
   name: VIT+5
+  on_equip: bonus(ctx, :vit, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -6021,6 +7582,7 @@
   buy: 20
   id: 4745
   name: VIT+6
+  on_equip: bonus(ctx, :vit, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -6028,6 +7590,7 @@
   buy: 20
   id: 4746
   name: VIT+7
+  on_equip: bonus(ctx, :vit, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -6035,6 +7598,7 @@
   buy: 20
   id: 4747
   name: VIT+8
+  on_equip: bonus(ctx, :vit, 8)
   subtype: enchant
   type: card
   weight: 10
@@ -6042,6 +7606,7 @@
   buy: 20
   id: 4748
   name: VIT+9
+  on_equip: bonus(ctx, :vit, 9)
   subtype: enchant
   type: card
   weight: 10
@@ -6049,6 +7614,7 @@
   buy: 20
   id: 4749
   name: VIT+10
+  on_equip: bonus(ctx, :vit, 10)
   subtype: enchant
   type: card
   weight: 10
@@ -6056,6 +7622,7 @@
   buy: 20
   id: 4750
   name: LUK+1
+  on_equip: bonus(ctx, :luk, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -6063,6 +7630,7 @@
   buy: 20
   id: 4751
   name: LUK+2
+  on_equip: bonus(ctx, :luk, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -6070,6 +7638,7 @@
   buy: 20
   id: 4752
   name: LUK+3
+  on_equip: bonus(ctx, :luk, 3)
   subtype: enchant
   type: card
   weight: 10
@@ -6077,6 +7646,7 @@
   buy: 20
   id: 4753
   name: LUK+4
+  on_equip: bonus(ctx, :luk, 4)
   subtype: enchant
   type: card
   weight: 10
@@ -6084,6 +7654,7 @@
   buy: 20
   id: 4754
   name: LUK+5
+  on_equip: bonus(ctx, :luk, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -6091,6 +7662,7 @@
   buy: 20
   id: 4755
   name: LUK+6
+  on_equip: bonus(ctx, :luk, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -6098,6 +7670,7 @@
   buy: 20
   id: 4756
   name: LUK+7
+  on_equip: bonus(ctx, :luk, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -6105,6 +7678,7 @@
   buy: 20
   id: 4757
   name: LUK+8
+  on_equip: bonus(ctx, :luk, 8)
   subtype: enchant
   type: card
   weight: 10
@@ -6112,6 +7686,7 @@
   buy: 20
   id: 4758
   name: LUK+9
+  on_equip: bonus(ctx, :luk, 9)
   subtype: enchant
   type: card
   weight: 10
@@ -6119,6 +7694,7 @@
   buy: 20
   id: 4759
   name: LUK+10
+  on_equip: bonus(ctx, :luk, 10)
   subtype: enchant
   type: card
   weight: 10
@@ -6126,6 +7702,7 @@
   buy: 20
   id: 4760
   name: MATK+1%
+  on_equip: bonus(ctx, :matk_rate, 1)
   subtype: enchant
   type: card
   weight: 10
@@ -6133,6 +7710,7 @@
   buy: 20
   id: 4761
   name: MATK+2%
+  on_equip: bonus(ctx, :matk_rate, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -6140,6 +7718,7 @@
   buy: 20
   id: 4762
   name: FLEE+6
+  on_equip: bonus(ctx, :flee, 6)
   subtype: enchant
   type: card
   weight: 10
@@ -6147,6 +7726,7 @@
   buy: 20
   id: 4763
   name: FLEE+12
+  on_equip: bonus(ctx, :flee, 12)
   subtype: enchant
   type: card
   weight: 10
@@ -6154,6 +7734,7 @@
   buy: 20
   id: 4764
   name: CRI+5
+  on_equip: bonus(ctx, :critical, 5)
   subtype: enchant
   type: card
   weight: 10
@@ -6161,6 +7742,7 @@
   buy: 20
   id: 4765
   name: CRI+7
+  on_equip: bonus(ctx, :critical, 7)
   subtype: enchant
   type: card
   weight: 10
@@ -6168,6 +7750,7 @@
   buy: 20
   id: 4766
   name: ATK+2%
+  on_equip: bonus(ctx, {:addclass, :all}, 2)
   subtype: enchant
   type: card
   weight: 10
@@ -6175,6 +7758,7 @@
   buy: 20
   id: 4767
   name: ATK+3%
+  on_equip: bonus(ctx, {:addclass, :all}, 3)
   subtype: enchant
   type: card
   weight: 10
