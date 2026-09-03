@@ -14,10 +14,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.Stats
 
-  @spec activate(SessionState.t(), Stats.autobonus_key()) :: {:noreply, SessionState.t()}
-  def activate(%{game_state: %{stats: stats}} = state, key) do
+  @spec activate(SessionState.t(), Stats.autobonus_key(), Stats.autobonus_source_identity()) ::
+          {:noreply, SessionState.t()}
+  def activate(%{game_state: %{stats: stats}} = state, key, expected_source_identity) do
     case Map.fetch(stats.equip_autobonuses, key) do
-      {:ok, registration} ->
+      {:ok, %{source_identity: ^expected_source_identity} = registration} ->
         granted_skills = Stats.granted_skills(stats)
         generation = System.unique_integer([:monotonic, :positive])
         active = Map.put(stats.active_autobonuses, key, generation)
@@ -52,7 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
 
         {:noreply, state}
 
-      :error ->
+      _stale_or_missing ->
         {:noreply, state}
     end
   end
@@ -74,25 +75,70 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipProcHandler do
   @spec reconcile_statuses(SessionState.t()) :: {:noreply, SessionState.t()}
   def reconcile_statuses(%{game_state: game_state} = state) do
     character_id = game_state.character_id
-    desired = game_state.stats.equip_statuses
-    applied = state.applied_equip_statuses
+    desired_statuses = game_state.stats.equip_statuses
+    current_cleanups = game_state.stats.card_unequip_effects
+    previous_granted_skills = Stats.granted_skills(game_state.stats)
 
-    removed = Map.keys(applied) -- Map.keys(desired)
-    changed = Enum.reject(desired, fn {status, params} -> applied[status] == params end)
+    state =
+      state.applied_card_unequip_effects
+      |> removed_cleanups(current_cleanups)
+      |> Enum.reduce(state, &apply_card_cleanup/2)
 
-    Enum.each(removed, &remove_equip_status(&1, character_id))
+    state.applied_equip_statuses
+    |> Map.keys()
+    |> Enum.sort()
+    |> Enum.each(&remove_equip_status(&1, character_id))
 
-    Enum.each(changed, fn {status, {duration, value}} ->
-      if Map.has_key?(applied, status), do: remove_equip_status(status, character_id)
+    desired_statuses
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.each(fn {status, {duration, value}} ->
       apply_equip_status(status, duration, value, character_id)
     end)
 
-    state = %{state | applied_equip_statuses: desired}
+    state = %{
+      state
+      | applied_equip_statuses: desired_statuses,
+        applied_card_unequip_effects: current_cleanups
+    }
 
-    if removed == [] and changed == [] do
-      {:noreply, state}
-    else
-      {:noreply, StatusManager.recalculate_after_status_change(state)}
+    {:noreply, recalculate_and_sync_skills(state, previous_granted_skills)}
+  end
+
+  defp removed_cleanups(previous, current) do
+    previous
+    |> Map.drop(Map.keys(current))
+    |> Enum.sort_by(fn {_key, cleanup} -> cleanup.source_order end)
+  end
+
+  defp apply_card_cleanup({_key, %{effects: effects}}, state) do
+    Enum.reduce(effects, state, fn
+      {:status_start, status, duration, value}, state ->
+        apply_cleanup_status(status, duration, value, state.game_state.character_id)
+        state
+
+      {:status_end, status}, state ->
+        remove_equip_status(status, state.game_state.character_id)
+        state
+
+      {:heal, hp, sp}, state ->
+        {:noreply, state} = HealthHandler.apply_forced_heal(hp, sp, state)
+        state
+    end)
+  end
+
+  defp apply_cleanup_status(status, duration, value, character_id) do
+    params =
+      [caster_id: character_id, val1: value, owner_refresh: :defer]
+      |> maybe_put_duration(duration)
+
+    case Interpreter.apply_status(:player, character_id, status, params) do
+      :ok ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning(
+          "Card cleanup status #{status} rejected for player #{character_id}: #{inspect(reason)}"
+        )
     end
   end
 

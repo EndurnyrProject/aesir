@@ -243,7 +243,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stats = %{
         state.game_state.stats
         | equip_autobonuses: %{
-            key => %{trigger: {:on_skill, 29}, rate: 1_000, source_order: 0}
+            key => %{
+              trigger: {:on_skill, 29},
+              rate: 1_000,
+              source_order: 0,
+              source_identity: {:host, 501}
+            }
           }
       }
 
@@ -261,7 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       expect(UnitRegistry, :get_player_pid, fn 1000 -> {:ok, self()} end)
 
       assert {:noreply, _state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^key, {:host, 501}}}
     end
 
     test "rejected named skill use does not dispatch an equipment autobonus" do
@@ -271,7 +276,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stats = %{
         state.game_state.stats
         | equip_autobonuses: %{
-            key => %{trigger: {:on_skill, 29}, rate: 1_000, source_order: 0}
+            key => %{
+              trigger: {:on_skill, 29},
+              rate: 1_000,
+              source_order: 0,
+              source_identity: {:host, 501}
+            }
           }
       }
 
@@ -285,7 +295,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       reject(&UnitRegistry.get_player_pid/1)
 
       assert {:noreply, ^state} = SkillHandler.handle_use_skill(state, 29, 1, 1000)
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key, _}}
     end
 
     test "proc-origin skill casts do not recursively dispatch named-skill autobonuses" do
@@ -295,7 +305,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       stats = %{
         state.game_state.stats
         | equip_autobonuses: %{
-            key => %{trigger: {:on_skill, 29}, rate: 1_000, source_order: 0}
+            key => %{
+              trigger: {:on_skill, 29},
+              rate: 1_000,
+              source_order: 0,
+              source_identity: {:host, 501}
+            }
           }
       }
 
@@ -308,7 +323,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandlerTest do
       reject(&UnitRegistry.get_player_pid/1)
 
       assert {:noreply, _state} = SkillHandler.handle_proc_cast(state, 29, 1, :self)
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^key, _}}
     end
 
     test "publishes the final resource projection after consuming SP" do

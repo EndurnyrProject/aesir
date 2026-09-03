@@ -66,7 +66,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   defp autobonus(trigger, battle_flag, source_order) do
-    %{trigger: trigger, battle_flag: battle_flag, rate: 1_000, source_order: source_order}
+    %{
+      trigger: trigger,
+      battle_flag: battle_flag,
+      rate: 1_000,
+      source_order: source_order,
+      source_identity: {:host, source_order + 1}
+    }
   end
 
   defp relay_gen_casts(test_pid) do
@@ -374,8 +380,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       send(target_pid, {:relay_barrier, self()})
       assert_receive :relay_drained
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:source_session, {:equip_autobonus_activate, ^defender_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:source_session, {:equip_autobonus_activate, ^defender_key, _}}
     end
 
     test "magic damage return reflects into the caster's owning session without target-side effects" do
@@ -453,8 +459,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       send(target_pid, {:relay_barrier, self()})
       assert_receive :relay_drained
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:source_session, {:equip_autobonus_activate, ^defender_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:source_session, {:equip_autobonus_activate, ^defender_key, _}}
     end
 
     test "a reflected hit lands on a reflecting caster exactly once" do
@@ -550,11 +556,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  hit_count: 2
                )
 
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, {:host, 1}}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, {:host, 1}}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
     end
 
     test "drops a defender proc when its player session has despawned" do
@@ -595,7 +601,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 1
                )
 
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
     end
 
     test "splash magic dispatches attacker and defender procs once per target" do
@@ -677,13 +683,13 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  skill_level: 1
                )
 
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^second_defender_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^second_defender_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^second_defender_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^second_defender_key, _}}
     end
 
     test "multi-hit magic issues one combined blow from its final logical result" do
@@ -773,7 +779,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  element: :fire
                )
 
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
     end
 
     test "applies explicit magic damage to a targetable skill-unit cell" do
@@ -1262,8 +1268,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       assert_received {:packet, %SkillDamage{skill_id: 28}}
       assert_received {:damage, _}
-      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
     end
 
     test "returns an error when the target is out of range" do
@@ -1340,9 +1346,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
 
       send(source_session, {:relay_barrier, self()})
       assert_receive :relay_drained, 100
-      assert_received {:source_session, {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:source_session, {:equip_autobonus_activate, ^attacker_key}}
-      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
+      assert_received {:source_session, {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:source_session, {:equip_autobonus_activate, ^attacker_key, _}}
+      refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
     end
 
     test "applies explicit fixed elemental damage without invoking the MATK calculator" do

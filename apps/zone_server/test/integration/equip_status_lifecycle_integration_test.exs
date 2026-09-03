@@ -29,6 +29,9 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
   @weapon_provider 991_004
   @rental_provider 991_005
   @restricted_provider 991_006
+  @card_armor_host 991_007
+  @card_head_host 991_008
+  @status_card 991_009
   @status :sc_summer
   @status_params {:infinite, 7}
 
@@ -45,7 +48,10 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
       @weapon_provider =>
         status_item(@weapon_provider, [:right_hand], type: :weapon, subtype: :one_handed_sword),
       @rental_provider => status_item(@rental_provider, [:armor]),
-      @restricted_provider => status_item(@restricted_provider, [:armor], jobs: [:novice])
+      @restricted_provider => status_item(@restricted_provider, [:armor], jobs: [:novice]),
+      @card_armor_host => card_host(@card_armor_host, [:armor]),
+      @card_head_host => card_host(@card_head_host, [:head_top]),
+      @status_card => status_card()
     }
 
     stub(Items, :by_id, fn item_id ->
@@ -73,6 +79,59 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
     equipment = get_player_state(session.pid).stats.modifiers.equipment
     assert equipment.aspd_rate == 100
     assert equipment |> Map.delete(:aspd_rate) |> Map.values() |> Enum.all?(&(&1 == 0))
+  end
+
+  test "login adopts card cleanup and duplicate cards rebuild status as each host leaves" do
+    character = insert_character("StatusCards")
+    armor = seed_item(character.id, @card_armor_host, equip: @armor, card0: @status_card)
+    head = seed_item(character.id, @card_head_host, equip: @head_top, card0: @status_card)
+    session = start_session(character)
+    initial_sp = get_player_state(session.pid).stats.current_state.sp
+
+    assert initial_sp == character.sp
+
+    assert eventually(fn ->
+             state = PlayerSession.get_state(session.pid)
+
+             status_state?(session.pid, character.id, @status_params) and
+               state.applied_card_unequip_effects == %{
+                 {armor.id, 0} => %{source_order: {0, 0}, effects: [{:heal, 0, 5}]},
+                 {head.id, 0} => %{source_order: {1, 0}, effects: [{:heal, 0, 5}]}
+               } and
+               state.game_state.stats.current_state.sp == initial_sp
+           end)
+
+    assert :ok =
+             StatusInterpreter.apply_status(:player, character.id, :sc_strangelights,
+               caster_id: character.id,
+               duration: 30_000,
+               bypass_resistance: true,
+               owner_refresh: :defer
+             )
+
+    unequip(session.pid, armor.id)
+
+    assert eventually(fn ->
+             state = PlayerSession.get_state(session.pid)
+
+             status_state?(session.pid, character.id, @status_params) and
+               state.applied_card_unequip_effects == %{
+                 {head.id, 0} => %{source_order: {0, 0}, effects: [{:heal, 0, 5}]}
+               } and
+               state.game_state.stats.current_state.sp == initial_sp + 5 and
+               StatusStorage.has_status?(:player, character.id, :sc_strangelights)
+           end)
+
+    unequip(session.pid, head.id)
+
+    assert eventually(fn ->
+             state = PlayerSession.get_state(session.pid)
+
+             status_absent?(session.pid, character.id) and
+               state.applied_card_unequip_effects == %{} and
+               state.game_state.stats.current_state.sp == initial_sp + 10 and
+               StatusStorage.has_status?(:player, character.id, :sc_strangelights)
+           end)
   end
 
   test "equip, duplicate providers, ordinary unequip, and replacement reconcile one status" do
@@ -199,6 +258,21 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
       name: "Plain Item #{id}",
       type: :armor,
       locations: locations
+    }
+  end
+
+  defp card_host(id, locations) do
+    %{plain_item(id, locations) | slots: 1}
+  end
+
+  defp status_card do
+    %ItemDefinition{
+      id: @status_card,
+      aegis_name: "STATUS_CARD",
+      name: "Status Card",
+      type: :card,
+      on_equip: [{:status_start, @status, elem(@status_params, 0), elem(@status_params, 1)}],
+      on_unequip: [{:heal, 0, 5}]
     }
   end
 

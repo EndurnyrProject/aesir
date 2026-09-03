@@ -261,7 +261,12 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
     assert_receive {:secondary_effect, :sc_summer}
     first_generation = active_generation(session.pid, key)
     assert StatusStorage.has_status?(:player, character.id, :sc_summer)
-    GenServer.cast(session.pid, {:equip_autobonus_activate, key})
+    registration = get_player_state(session.pid).stats.equip_autobonuses[key]
+
+    GenServer.cast(
+      session.pid,
+      {:equip_autobonus_activate, key, registration.source_identity}
+    )
 
     assert eventually(fn -> active_generation(session.pid, key) != first_generation end)
     assert_receive {:secondary_effect, :sc_summer}

@@ -397,7 +397,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
       stub(StatusSync, :send_stat_updates, fn _connection_pid, _stats -> :ok end)
 
       assert {:noreply, active} =
-               PlayerSession.handle_cast({:equip_autobonus_activate, key}, state)
+               PlayerSession.handle_cast(
+                 {:equip_autobonus_activate, key, registration.source_identity},
+                 state
+               )
 
       assert %{^key => token} = active.game_state.stats.active_autobonuses
 
@@ -1738,6 +1741,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   defp equip_registration do
     %{
       item_id: 501,
+      source_identity: {:host, 501},
       refine: 0,
       source_order: {0, 0},
       trigger: :attack,

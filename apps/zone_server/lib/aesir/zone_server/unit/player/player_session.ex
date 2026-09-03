@@ -1101,8 +1101,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
-  def handle_cast({:equip_autobonus_activate, key}, state) do
-    EquipProcHandler.activate(state, key)
+  def handle_cast({:equip_autobonus_activate, key, source_identity}, state) do
+    EquipProcHandler.activate(state, key, source_identity)
   end
 
   @impl true

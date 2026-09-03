@@ -1486,11 +1486,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
       GenServer.cast(self(), {:skill, {:proc_cast, proc_skill_id, level, proc_target}})
     end)
 
-    keys = EquipAutobonus.on_skill(game_state.stats.equip_autobonuses, skill_id)
+    registrations = game_state.stats.equip_autobonuses
+    keys = EquipAutobonus.on_skill(registrations, skill_id)
 
     with [_ | _] <- keys,
          {:ok, pid} <- UnitRegistry.get_player_pid(game_state.character_id) do
-      Enum.each(keys, &GenServer.cast(pid, {:equip_autobonus_activate, &1}))
+      Enum.each(keys, fn key ->
+        source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
+        GenServer.cast(pid, {:equip_autobonus_activate, key, source_identity})
+      end)
     end
 
     :ok

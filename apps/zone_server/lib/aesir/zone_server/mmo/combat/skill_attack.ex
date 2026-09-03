@@ -1198,9 +1198,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     )
   end
 
-  defp send_equip_autobonuses(%{unit_type: :player, unit_id: unit_id}, [_ | _] = keys) do
+  defp send_equip_autobonuses(
+         %{unit_type: :player, unit_id: unit_id, equip_autobonuses: registrations},
+         [_ | _] = keys
+       ) do
     with {:ok, pid} <- UnitRegistry.get_player_pid(unit_id) do
-      Enum.each(keys, &GenServer.cast(pid, {:equip_autobonus_activate, &1}))
+      Enum.each(keys, fn key ->
+        source_identity = registrations |> Map.fetch!(key) |> Map.fetch!(:source_identity)
+        GenServer.cast(pid, {:equip_autobonus_activate, key, source_identity})
+      end)
     end
 
     :ok

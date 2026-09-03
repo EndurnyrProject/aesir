@@ -60,7 +60,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   end
 
   defp autobonus(trigger, battle_flag, source_order) do
-    %{trigger: trigger, battle_flag: battle_flag, rate: 1_000, source_order: source_order}
+    %{
+      trigger: trigger,
+      battle_flag: battle_flag,
+      rate: 1_000,
+      source_order: source_order,
+      source_identity: {:host, source_order + 1}
+    }
   end
 
   test "physical skill hit dispatches matching procs once despite display divisions" do
@@ -122,11 +128,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                display_hit_count: 5
              )
 
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, {:host, 1}}}
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, {:host, 1}}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key, _}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, _}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, _}}
   end
 
   test "misc skill hit dispatches only misc attacker and defender procs" do
@@ -184,9 +190,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
                base_damage: 40
              )
 
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key}}
-    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key}}
-    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key}}
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^attacker_key, {:host, 1}}}
+    assert_received {:"$gen_cast", {:equip_autobonus_activate, ^defender_key, {:host, 1}}}
+    refute_received {:"$gen_cast", {:equip_autobonus_activate, ^wrong_key, _}}
   end
 
   test "streams every multi-hit fragment through delivery before calculating the next" do
