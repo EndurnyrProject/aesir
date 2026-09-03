@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.Net.CardTargetList
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.UseItem
@@ -173,6 +174,50 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
+  describe "handle_use_item/2 with a card" do
+    test "opens target discovery without a use script or consumption" do
+      card = %InventoryItem{id: 1, nameid: 4001, amount: 2}
+      weapon = %InventoryItem{id: 2, nameid: 1101, amount: 1, identify: 1}
+
+      card_definition = %ItemDefinition{
+        id: 4001,
+        aegis_name: "Poring_Card",
+        name: "Poring Card",
+        type: :card,
+        locations: [:right_hand],
+        on_use: nil
+      }
+
+      weapon_definition = %ItemDefinition{
+        id: 1101,
+        aegis_name: "Sword",
+        name: "Sword",
+        type: :weapon,
+        locations: [:right_hand],
+        slots: 1
+      }
+
+      stub(Items, :by_id, fn
+        4001 -> {:ok, card_definition}
+        1101 -> {:ok, weapon_definition}
+      end)
+
+      reject(&InventoryOps.remove/4)
+      expect(PlayerState, :server_index, fn 2 -> 0 end)
+
+      game_state = %{base_state() | inventory: %{0 => card, 4 => weapon}}
+      state = %{connection_pid: self(), game_state: game_state}
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(2, state)
+
+      assert_received {:send, :gameplay,
+                       {:card_target_list, %CardTargetList{card_index: 2, equipment_indices: [6]}}}
+
+      refute_received {:send, :gameplay, {:item_use_result, _}}
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+  end
+
   describe "handle_use_item/2 with a non-usable item" do
     test "sends ItemUseResult{ok: false}, consumes nothing" do
       definition = %{usable_definition(@red_potion_id, nil) | on_use: nil}
@@ -193,6 +238,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   end
 
   describe "handle_use_item/2 with item use disabled (script disable_items)" do
+    test "rejects card discovery with the existing disabled result and consumes nothing" do
+      card = %InventoryItem{id: 1, nameid: 4001, amount: 1}
+
+      definition = %ItemDefinition{
+        id: 4001,
+        aegis_name: "Poring_Card",
+        name: "Poring Card",
+        type: :card,
+        locations: [:right_hand]
+      }
+
+      stub(Items, :by_id, fn 4001 -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      game_state = %{base_state() | inventory: %{0 => card}, disable_item_use: true}
+      state = %{connection_pid: self(), game_state: game_state}
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(2, state)
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result, %ItemUseResult{index: 2, ok: false, reason: 4}}}
+
+      refute_received {:send, :gameplay, {:card_target_list, _}}
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+
     test "rejects the request, sends ItemUseResult{ok: false}, consumes nothing" do
       definition = usable_definition(@red_potion_id, ~s|heal(ctx, hp: 45, sp: 0)|)
       stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
@@ -243,7 +314,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
 
       assert_received {:send, :gameplay,
                        {:item_use_result,
-                        %ItemUseResult{index: @red_potion_client_index, ok: false}}}
+                        %ItemUseResult{
+                          index: @red_potion_client_index,
+                          ok: false,
+                          reason: 1
+                        }}}
     end
   end
 

@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   @moduledoc """
-  Handles UseItem: runs a consumable's compiled `on_use` script and consumes one unit.
+  Handles UseItem for card discovery and consumable effects.
 
-  Modeled on `SkillLearningHandler`: validates the request, runs the effect
+  Cards open stateless target discovery without running or consuming anything.
+  The existing consumable path validates other items, runs the effect
   synchronously inside the player session, commits the resulting state and (only
   on success) consumes exactly one unit of the item. The client is told the
   outcome with an `ItemUseResult` and, on success, an `ItemRemoved` delta for the
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
@@ -40,10 +42,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
     with {:ok, item} <- fetch_item(game_state.inventory, server_index),
          {:ok, definition} <- fetch_definition(item.nameid),
-         :ok <- item_use_enabled?(state),
-         :ok <- usable?(definition) do
-      run_effect(client_index, server_index, definition.id, state)
+         :ok <- item_use_enabled?(state) do
+      use_definition(definition, client_index, server_index, state)
     else
+      {:error, reason} -> reject(client_index, reason, state)
+    end
+  end
+
+  defp use_definition(%{type: :card}, _client_index, server_index, state) do
+    CardHandler.open_picker(server_index, state)
+  end
+
+  defp use_definition(definition, client_index, server_index, state) do
+    case usable?(definition) do
+      :ok -> run_effect(client_index, server_index, definition.id, state)
       {:error, reason} -> reject(client_index, reason, state)
     end
   end

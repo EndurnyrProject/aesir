@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   require Logger
 
   alias Aesir.Net.ActionRequest
+  alias Aesir.Net.CardComposeRequest
   alias Aesir.Net.CartMountRequest
   alias Aesir.Net.ChatRequest
   alias Aesir.Net.EmoteRequest
@@ -80,6 +81,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.WaitingRoomLeaveRequest
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
@@ -120,6 +122,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     SkillCast,
     GroundSkillCast,
     UseItem,
+    CardComposeRequest,
     EquipItem,
     UnequipItem,
     PickupItemRequest,
@@ -267,6 +270,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # `index` is the client index (server index + 2); the handler subtracts the offset.
   def handle_message(%UseItem{index: index}, state) do
     ItemHandler.handle_use_item(index, state)
+  end
+
+  def handle_message(%CardComposeRequest{} = request, state) do
+    CardHandler.handle_compose(request, state)
   end
 
   # CartMountRequest - Player mounts (true) or unmounts (false) the pushcart.
