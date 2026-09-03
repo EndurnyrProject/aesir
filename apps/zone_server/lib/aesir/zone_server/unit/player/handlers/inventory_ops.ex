@@ -9,8 +9,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   when the commit succeeds. On any DB failure the transaction rolls back and the
   caller's in-memory state must stay exactly as it was.
 
-  All multi-row changes (stack splits and equip-with-conflict, which unequips
-  the conflicting items) run in one transaction so they roll back atomically.
+  All multi-row changes (stack splits, card compounding, and equip-with-conflict,
+  which unequips the conflicting items) run in one transaction so they roll back atomically.
 
   Inserted rows obtain their real DB `id` here; that id is reflected back into
   the returned inventory map so memory and the database never diverge.
@@ -174,6 +174,33 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
 
   def persist_change(_char_id, old_inventory, new_inventory, {:reduced, index, left}) do
     update_at(old_inventory, new_inventory, index, %{amount: left})
+  end
+
+  def persist_change(
+        _char_id,
+        old_inventory,
+        new_inventory,
+        {:card_compounded, card_index, equipment_index, card_field}
+      ) do
+    equipment = PlayerState.get_by_index(new_inventory, equipment_index)
+    equipment_attrs = %{card_field => Map.fetch!(equipment, card_field)}
+
+    case Map.get(new_inventory, card_index) do
+      nil ->
+        card = PlayerState.get_by_index(old_inventory, card_index)
+
+        with {:ok, inventory} <-
+               update_at(old_inventory, new_inventory, equipment_index, equipment_attrs),
+             {:ok, _deleted} <- Persistence.delete_item(card) do
+          {:ok, inventory}
+        end
+
+      %InventoryItem{amount: amount} ->
+        with {:ok, inventory} <-
+               update_at(old_inventory, new_inventory, card_index, %{amount: amount}) do
+          update_at(old_inventory, inventory, equipment_index, equipment_attrs)
+        end
+    end
   end
 
   def persist_change(_char_id, old_inventory, new_inventory, {:identified, index}) do

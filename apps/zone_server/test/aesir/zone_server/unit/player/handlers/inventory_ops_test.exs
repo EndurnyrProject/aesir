@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
   @jur 1250
   @guard 2101
   @potion 501
+  @card 4001
 
   @right_hand 2
   @left_hand 32
@@ -253,6 +254,125 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
 
       rows = Persistence.load_inventory(char.id)
       assert Enum.map(rows, & &1.amount) |> Enum.sort() == [4, 30_000]
+    end
+  end
+
+  describe "apply_change/4 — card compounded" do
+    test "deletes a one-unit card source and persists the target socket", %{character: char} do
+      card = seed_item(char.id, @card, 1)
+      equipment = seed_item(char.id, @sword, 1)
+      old_inventory = %{7 => card, 3 => equipment}
+      new_inventory = %{3 => %{equipment | card0: @card}}
+      change = {:card_compounded, 7, 3, :card0}
+
+      assert {:ok, persisted} =
+               InventoryOps.apply_change(char.id, old_inventory, new_inventory, change)
+
+      assert Map.keys(persisted) == [3]
+      refute Map.has_key?(persisted, 7)
+      assert persisted[3] == Repo.get!(InventoryItem, equipment.id)
+      assert persisted[3].card0 == @card
+      assert is_nil(Repo.get(InventoryItem, card.id))
+    end
+
+    test "decrements a stacked card and preserves both persisted session indices", %{
+      character: char
+    } do
+      card = seed_item(char.id, @card, 3)
+      equipment = seed_item(char.id, @sword, 1, %{card0: 40_002})
+      old_inventory = %{7 => card, 3 => equipment}
+
+      new_inventory = %{
+        7 => %{card | amount: 2},
+        3 => %{equipment | card1: @card}
+      }
+
+      change = {:card_compounded, 7, 3, :card1}
+
+      assert {:ok, persisted} =
+               InventoryOps.apply_change(char.id, old_inventory, new_inventory, change)
+
+      assert Map.keys(persisted) |> Enum.sort() == [3, 7]
+      assert persisted[7] == Repo.get!(InventoryItem, card.id)
+      assert persisted[3] == Repo.get!(InventoryItem, equipment.id)
+      assert persisted[7].amount == 2
+      assert persisted[3].card0 == 40_002
+      assert persisted[3].card1 == @card
+    end
+
+    test "source deletion failure rolls back the target socket write and preserves caller memory",
+         %{
+           character: char
+         } do
+      card = seed_item(char.id, @card, 1)
+      equipment = seed_item(char.id, @sword, 1)
+      old_inventory = %{7 => card, 3 => equipment}
+      new_inventory = %{3 => %{equipment | card0: @card}}
+      change = {:card_compounded, 7, 3, :card0}
+      test_pid = self()
+      write_ref = make_ref()
+      equipment_row_id = equipment.id
+
+      stub(Persistence, :update_item, fn
+        %InventoryItem{id: ^equipment_row_id} = item, %{card0: @card} = attrs ->
+          send(test_pid, {write_ref, :target_written})
+          Mimic.call_original(Persistence, :update_item, [item, attrs])
+      end)
+
+      stub(Persistence, :delete_item, fn _item ->
+        send(test_pid, {write_ref, :source_write_failed})
+        {:error, :source_write_failed}
+      end)
+
+      assert {:error, :source_write_failed} =
+               InventoryOps.apply_change(char.id, old_inventory, new_inventory, change)
+
+      assert_receive {^write_ref, first_write}
+      assert first_write == :target_written
+      assert_receive {^write_ref, second_write}
+      assert second_write == :source_write_failed
+      assert Repo.get!(InventoryItem, card.id).amount == 1
+      assert Repo.get!(InventoryItem, equipment.id).card0 == 0
+    end
+
+    test "target persistence failure rolls back the source decrement and preserves caller memory",
+         %{
+           character: char
+         } do
+      card = seed_item(char.id, @card, 3)
+      equipment = seed_item(char.id, @sword, 1)
+      old_inventory = %{7 => card, 3 => equipment}
+
+      new_inventory = %{
+        7 => %{card | amount: 2},
+        3 => %{equipment | card0: @card}
+      }
+
+      change = {:card_compounded, 7, 3, :card0}
+      test_pid = self()
+      write_ref = make_ref()
+      card_row_id = card.id
+      equipment_row_id = equipment.id
+
+      stub(Persistence, :update_item, fn
+        %InventoryItem{id: ^card_row_id} = item, %{amount: 2} = attrs ->
+          send(test_pid, {write_ref, :source_written})
+          Mimic.call_original(Persistence, :update_item, [item, attrs])
+
+        %InventoryItem{id: ^equipment_row_id}, %{card0: @card} ->
+          send(test_pid, {write_ref, :target_write_failed})
+          {:error, :target_write_failed}
+      end)
+
+      assert {:error, :target_write_failed} =
+               InventoryOps.apply_change(char.id, old_inventory, new_inventory, change)
+
+      assert_receive {^write_ref, first_write}
+      assert first_write == :source_written
+      assert_receive {^write_ref, second_write}
+      assert second_write == :target_write_failed
+      assert Repo.get!(InventoryItem, card.id).amount == 3
+      assert Repo.get!(InventoryItem, equipment.id).card0 == 0
     end
   end
 
