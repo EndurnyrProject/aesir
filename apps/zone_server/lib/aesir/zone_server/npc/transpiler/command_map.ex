@@ -94,6 +94,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   - `%{shape: :opt_read, dsl: name}` — a read with one optional integer
     argument (`is_party_leader({<party id>})`): zero args → `name(ctx)`, one
     arg → `name(ctx, arg)`; any longer form stays a stub.
+  - `%{shape: :strcharinfo, dsl: name}` — `strcharinfo(type{,<char id>})`:
+    exactly one integer selector and one optional integer character id; every
+    other arity stays a stub.
   - `%{shape: :quest_check, dsl: name}` — `checkquest(id)` /
     `checkquest(id, HUNTING)` (and `questprogress`, the same core aliased):
     the default args-truncation rule (above) would silently drop the
@@ -259,7 +262,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "getequiprefinecost" => %{dsl: "getequiprefinecost", args: [:equip_slot, :int, :int]},
     "getiteminfo" => %{dsl: "getiteminfo", args: [:item, :int]},
     "getmonsterinfo" => %{dsl: "getmonsterinfo", args: [:int, :int]},
-    "strcharinfo" => %{dsl: "char_name", args: [:int]},
+    "strcharinfo" => %{shape: :strcharinfo, dsl: "char_name"},
     "jobname" => %{dsl: "job_name", args: [:int]},
     "isbegin_quest" => %{dsl: "isbegin_quest", args: [:int]},
     "is_party_leader" => %{shape: :opt_read, dsl: "party_leader?"},

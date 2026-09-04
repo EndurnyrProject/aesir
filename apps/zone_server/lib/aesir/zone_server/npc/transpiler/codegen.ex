@@ -2648,6 +2648,9 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:call, name, args}, env) do
     case CommandMap.call_read(name) do
+      {:ok, %{shape: :strcharinfo, dsl: dsl}} ->
+        strcharinfo_call(dsl, name, args, env)
+
       {:ok, %{shape: :nullary, dsl: dsl}} when args == [] ->
         "#{dsl}(ctx)"
 
@@ -2751,6 +2754,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         "Todo.call!(#{atom_lit(name)}, [#{Enum.map_join(args, ", ", &render(&1, env))}])"
     end
   end
+
+  defp strcharinfo_call(dsl, _name, [type], env),
+    do: "#{dsl}(ctx, #{typed_arg(type, :int, env)})"
+
+  defp strcharinfo_call(dsl, _name, [type, char_id], env),
+    do: "#{dsl}(ctx, #{typed_arg(type, :int, env)}, #{typed_arg(char_id, :int, env)})"
+
+  defp strcharinfo_call(_dsl, name, args, env), do: unsupported_call(name, args, env)
 
   # `checkquest`/`questprogress`: 1-arg form defaults the DSL's own
   # `:havequest` mode; the 2-arg form resolves the mode constant. Any other

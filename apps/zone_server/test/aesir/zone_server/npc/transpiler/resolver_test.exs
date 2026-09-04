@@ -4,6 +4,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.ResolverTest do
 
   alias Aesir.ZoneServer.Npc.Transpiler.Resolver
 
+  describe "date constants" do
+    test "resolve selectors, months, and weekdays to integer source" do
+      assert Resolver.constant("DT_YYYYMMDD") == {:ok, "9"}
+      assert Resolver.constant("JANUARY") == {:ok, "1"}
+      assert Resolver.constant("DECEMBER") == {:ok, "12"}
+      assert Resolver.constant("SUNDAY") == {:ok, "0"}
+      assert Resolver.constant("SATURDAY") == {:ok, "6"}
+    end
+
+    test "unknown constants retain the existing fallback behavior" do
+      assert Resolver.constant("DT_NOPE") == :error
+      assert Resolver.constant("NOT_A_CONSTANT") == :error
+    end
+  end
+
   describe "refine cost constants" do
     test "resolve REFINE_COST_* to cost-type atoms" do
       assert Resolver.constant("REFINE_COST_NORMAL") == {:ok, ":normal"}

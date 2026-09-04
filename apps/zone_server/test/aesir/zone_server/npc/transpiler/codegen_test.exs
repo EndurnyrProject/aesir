@@ -110,6 +110,35 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     assert src =~ ~S{ctx |> mes(to_string(char_name(ctx, 0))) |> close()}
   end
 
+  test "strcharinfo renders exactly its one- and two-integer-argument forms" do
+    src =
+      gen!("""
+      mes strcharinfo(0);
+      mes strcharinfo(.@type, getcharid(0));
+      close;
+      """)
+
+    assert src =~ "char_name(ctx, 0)"
+    assert src =~ "char_name(ctx, get_local(ctx, :type, 0), getcharid(ctx, 0))"
+    refute src =~ "Todo.call!(:strcharinfo"
+  end
+
+  test "strcharinfo stubs zero, three, and greater argument counts" do
+    src =
+      gen!("""
+      mes strcharinfo();
+      mes strcharinfo(0, 1, 2);
+      mes strcharinfo(0, 1, 2, 3);
+      close;
+      """)
+
+    assert src =~ "Todo.call!(:strcharinfo, [])"
+    assert src =~ "Todo.call!(:strcharinfo, [0, 1, 2])"
+    assert src =~ "Todo.call!(:strcharinfo, [0, 1, 2, 3])"
+    refute src =~ "char_name(ctx)"
+    refute src =~ "char_name(ctx, 0, 1, 2)"
+  end
+
   test "branch bodies pipe; a lone rebind just drops the dead binding" do
     src =
       gen!("""

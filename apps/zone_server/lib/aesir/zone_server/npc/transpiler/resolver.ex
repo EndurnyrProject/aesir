@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   alias Aesir.ZoneServer.Mmo.Emotion
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver, as: ItemResolver
   alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
+  alias Aesir.ZoneServer.Script.Rathena
 
   @doc """
   Resolves a bare constant to an Elixir literal source string: booleans to
@@ -73,18 +74,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Resolver do
   # The only monster-info selector currently used by the imported corpus.
   def constant("MOB_NAME"), do: {:ok, "1"}
 
-  # rAthena `enum e_date_type` selectors (`gettime`'s argument), matching the
-  # `DT_*` order in `src/map/date.hpp` (DT_MIN is 0, the first real type is 1).
-  def constant("DT_SECOND"), do: {:ok, "1"}
-  def constant("DT_MINUTE"), do: {:ok, "2"}
-  def constant("DT_HOUR"), do: {:ok, "3"}
-  def constant("DT_DAYOFWEEK"), do: {:ok, "4"}
-  def constant("DT_DAYOFMONTH"), do: {:ok, "5"}
-  def constant("DT_MONTH"), do: {:ok, "6"}
-  def constant("DT_YEAR"), do: {:ok, "7"}
-  def constant("DT_DAYOFYEAR"), do: {:ok, "8"}
-
   def constant(symbol) do
+    case Rathena.date_constant(symbol) do
+      {:ok, value} -> {:ok, Integer.to_string(value)}
+      :error -> non_date_constant(symbol)
+    end
+  end
+
+  defp non_date_constant(symbol) do
     case job_mapid_constant(symbol) do
       {:ok, value} ->
         {:ok, Integer.to_string(value)}
