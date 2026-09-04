@@ -93,6 +93,21 @@ defmodule Aesir.ZoneServer.Navigation.RouterTest do
            ] = route.legs
   end
 
+  test "skips portal seeds that cannot beat an available direct route" do
+    detour = portal("detour", "start", {9, 9}, "slow_mid", {0, 0})
+    put_graph(graph([detour], %{}))
+
+    stub(Pathfinding, :find_path, fn map_data, start, goal, opts ->
+      send(self(), {:path_requested, goal})
+      call_original(Pathfinding, :find_path, [map_data, start, goal, opts])
+    end)
+
+    assert {:ok, route} = Router.route({"start", 0, 0}, [{"start", {1, 0}}], walk_speed: 1.0)
+    assert [%Leg{exit_portal: nil, arrive: {1, 0}}] = route.legs
+    assert_received {:path_requested, {1, 0}}
+    refute_received {:path_requested, {9, 9}}
+  end
+
   test "skips a graph map excluded at request time" do
     :ok = MapFlags.set_runtime("blocked_mid", :gvg, true)
 

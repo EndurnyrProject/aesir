@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Navigation.Router do
   alias Aesir.ZoneServer.Navigation.Route.Leg
   alias Aesir.ZoneServer.Navigation.Target
   alias Aesir.ZoneServer.Pathfinding
+  alias Aesir.ZoneServer.Unit.MovementEngine
 
   @typedoc "A map name and cell coordinate."
   @type origin :: {String.t(), non_neg_integer(), non_neg_integer()}
@@ -32,7 +33,16 @@ defmodule Aesir.ZoneServer.Navigation.Router do
     direct_routes =
       direct_routes(map_data, origin_cell, origin_map, candidates, excluded, walk_speed)
 
-    seeds = portal_seeds(map_data, origin_cell, origin_map, excluded, walk_speed)
+    seeds =
+      portal_seeds(
+        map_data,
+        origin_cell,
+        origin_map,
+        excluded,
+        walk_speed,
+        best_cost(direct_routes)
+      )
+
     portal_routes = portal_routes(seeds, candidates, excluded, walk_speed, origin_map)
 
     case direct_routes ++ portal_routes do
@@ -62,10 +72,11 @@ defmodule Aesir.ZoneServer.Navigation.Router do
     end)
   end
 
-  defp portal_seeds(map_data, origin, origin_map, excluded, walk_speed) do
+  defp portal_seeds(map_data, origin, origin_map, excluded, walk_speed, direct_cost) do
     origin_map
     |> PortalGraph.exits_on()
     |> Enum.reject(&MapSet.member?(excluded, &1.to_map))
+    |> Enum.filter(&can_beat_direct?(&1, origin, walk_speed, direct_cost))
     |> Enum.flat_map(fn portal ->
       case Pathfinding.find_path(map_data, origin, {portal.x, portal.y}, []) do
         {:ok, path} ->
@@ -269,6 +280,24 @@ defmodule Aesir.ZoneServer.Navigation.Router do
         }
       ]
     }
+  end
+
+  defp best_cost([]), do: :infinity
+  defp best_cost(routes), do: routes |> Enum.min_by(& &1.cost) |> Map.fetch!(:cost)
+
+  defp can_beat_direct?(_portal, _origin, _walk_speed, :infinity), do: true
+
+  defp can_beat_direct?(portal, {origin_x, origin_y}, walk_speed, direct_cost) do
+    dx = abs(portal.x - origin_x)
+    dy = abs(portal.y - origin_y)
+    diagonal_steps = min(dx, dy)
+    straight_steps = max(dx, dy) - diagonal_steps
+
+    minimum_cost =
+      diagonal_steps * MovementEngine.diagonal_cost() +
+        straight_steps * MovementEngine.straight_cost()
+
+    travel_time(minimum_cost, walk_speed) < direct_cost
   end
 
   defp route_option(cost, route), do: %{cost: cost, route: route}
