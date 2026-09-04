@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       row = row!(@frost_nova_mob_id, "WZ_FROSTNOVA", target: :self)
 
       Mimic.copy(Resistance)
-      stub(Resistance, :roll_success, fn _success_rate -> true end)
+      stub(Resistance, :roll_success, fn success_rate -> success_rate > 0 end)
       Mimic.allow(Resistance, self(), mob.pid)
 
       complete_mob_cast(mob, row, char_id)
