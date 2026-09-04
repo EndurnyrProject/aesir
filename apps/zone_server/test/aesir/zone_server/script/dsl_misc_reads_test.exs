@@ -170,6 +170,14 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert doy == Date.day_of_year(NaiveDateTime.local_now()) - 1
     end
 
+    test "type 9 returns YYYYMMDD" do
+      before = NaiveDateTime.local_now()
+      value = Dsl.gettime(ctx(), 9)
+      after_call = NaiveDateTime.local_now()
+
+      assert value in [date_number(before), date_number(after_call)]
+    end
+
     test "an out-of-range type returns -1" do
       assert Dsl.gettime(ctx(), 0) == -1
       assert Dsl.gettime(ctx(), 99) == -1
@@ -205,6 +213,9 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       assert Dsl.getmonsterinfo(ctx(), 1002, 2) == -1
     end
   end
+
+  defp date_number(%NaiveDateTime{year: year, month: month, day: day}),
+    do: year * 10_000 + month * 100 + day
 
   describe "client-packet effects short-circuit without a player" do
     test "cutin/3 returns the ctx unchanged when there is no char to send to" do

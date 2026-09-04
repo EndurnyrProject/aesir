@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Script.Rathena do
   @moduledoc """
-  Tiny runtime helpers bridging rAthena script semantics into transpiled
-  Elixir NPC modules.
+  Runtime helpers bridging rAthena semantics into transpiled and interpreted
+  scripts.
 
   rAthena has no booleans: conditions are integers (`0` false, anything else
   true), comparisons evaluate to `1`/`0`, `+` concatenates when either side is
@@ -13,9 +13,76 @@ defmodule Aesir.ZoneServer.Script.Rathena do
   rAthena's raw byte offsets.
   """
 
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
+
+  @typedoc """
+  The character fields `strcharinfo/2` reads. A `PlayerState` satisfies it;
+  party and guild names are resolved from the ids on demand.
+  """
+  @type character_info :: %{
+          :character_name => String.t(),
+          :map_name => String.t(),
+          :party_id => non_neg_integer(),
+          :guild_id => non_neg_integer(),
+          optional(atom()) => term()
+        }
+
+  @date_constants ~w(DT_SECOND DT_MINUTE DT_HOUR DT_DAYOFWEEK DT_DAYOFMONTH DT_MONTH DT_YEAR DT_DAYOFYEAR DT_YYYYMMDD)
+                  |> Enum.with_index(1)
+                  |> Map.new()
+                  |> Map.merge(
+                    ~w(JANUARY FEBRUARY MARCH APRIL MAY JUNE JULY AUGUST SEPTEMBER OCTOBER NOVEMBER DECEMBER)
+                    |> Enum.with_index(1)
+                    |> Map.new()
+                  )
+                  |> Map.merge(
+                    ~w(SUNDAY MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY)
+                    |> Enum.with_index()
+                    |> Map.new()
+                  )
+
+  @doc "Resolves a date selector, month, or weekday constant to its script integer."
+  @spec date_constant(String.t()) :: {:ok, integer()} | :error
+  def date_constant(symbol), do: Map.fetch(@date_constants, symbol)
+
+  @doc "Returns the selected calendar component from a supplied local timestamp."
+  @spec gettime(NaiveDateTime.t(), integer()) :: integer()
+  def gettime(%NaiveDateTime{second: second}, 1), do: second
+  def gettime(%NaiveDateTime{minute: minute}, 2), do: minute
+  def gettime(%NaiveDateTime{hour: hour}, 3), do: hour
+
+  def gettime(%NaiveDateTime{} = timestamp, 4),
+    do: timestamp |> NaiveDateTime.to_date() |> Date.day_of_week() |> rem(7)
+
+  def gettime(%NaiveDateTime{day: day}, 5), do: day
+  def gettime(%NaiveDateTime{month: month}, 6), do: month
+  def gettime(%NaiveDateTime{year: year}, 7), do: year
+
+  def gettime(%NaiveDateTime{} = timestamp, 8),
+    do: timestamp |> NaiveDateTime.to_date() |> Date.day_of_year() |> Kernel.-(1)
+
+  def gettime(%NaiveDateTime{year: year, month: month, day: day}, 9),
+    do: year * 10_000 + month * 100 + day
+
+  def gettime(%NaiveDateTime{}, _selector), do: -1
+
+  @doc """
+  rAthena `strcharinfo`: `0` name, `1` party name, `2` guild name, `3` map.
+  Any other selector, a missing character, or a missing party/guild reads as `""`.
+  """
+  @spec strcharinfo(character_info() | nil, integer()) :: String.t()
+  def strcharinfo(%{character_name: name}, 0), do: name
+  def strcharinfo(%{party_id: party_id}, 1), do: social_name(PartyManager.get(party_id))
+  def strcharinfo(%{guild_id: guild_id}, 2), do: social_name(GuildManager.get(guild_id))
+  def strcharinfo(%{map_name: map_name}, 3), do: map_name
+  def strcharinfo(_info, _selector), do: ""
+
+  defp social_name({:ok, %{name: name}}), do: name
+  defp social_name(_missing), do: ""
 
   @doc "rAthena truthiness: `0` and `\"\"` are false, everything else true."
   @spec truthy?(term()) :: boolean()

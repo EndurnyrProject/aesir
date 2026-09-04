@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Script.DslTest do
   use ExUnit.Case, async: true
+  import Mimic
   use Mimic
 
   import ExUnit.CaptureLog
@@ -11,6 +12,7 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   alias Aesir.Net.ProgressBar
   alias Aesir.Net.Viewpoint
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapCache
@@ -1608,6 +1610,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
   end
 
   describe "job-change reads" do
+    setup :setup_ets_tables
+
     test "can_change_job?/1 requires learned NV_BASIC at level 9" do
       {:ok, %{id: nv_basic_id}} = Catalog.by_name(:nv_basic)
 
@@ -1626,12 +1630,47 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       assert Dsl.getskilllv(ctx, :unknown_skill_name) == 0
     end
 
-    test "char_name/2 returns the character name for type 0 and map for type 3" do
-      ctx = build_ctx(character_name: "Bob")
+    test "char_name/2 reads name, party, guild, and map from the attached player" do
+      stub(PartyManager, :get, fn 7 -> {:ok, %{name: "Adventurers"}} end)
+      stub(GuildManager, :get, fn 9 -> {:ok, %{name: "Knights"}} end)
+      ctx = build_ctx(character_name: "Bob", party_id: 7, guild_id: 9)
 
       assert Dsl.char_name(ctx, 0) == "Bob"
+      assert Dsl.char_name(ctx, 1) == "Adventurers"
+      assert Dsl.char_name(ctx, 2) == "Knights"
       assert Dsl.char_name(ctx, 3) == "prontera"
+      assert Dsl.char_name(ctx, 4) == ""
+    end
+
+    test "char_name/2 reads empty party and guild names when the character has none" do
+      stub(PartyManager, :get, fn 0 -> {:error, :not_found} end)
+      stub(GuildManager, :get, fn 0 -> {:error, :not_found} end)
+      ctx = build_ctx()
+
       assert Dsl.char_name(ctx, 1) == ""
+      assert Dsl.char_name(ctx, 2) == ""
+    end
+
+    test "char_name/2 raises on a detached ctx" do
+      assert_raise ArgumentError, fn -> Dsl.char_name(%{build_ctx() | game_state: nil}, 0) end
+    end
+
+    test "char_name/3 reads self from the active ctx rather than the registry" do
+      ctx = build_ctx(character_name: "Fresh")
+      stale = build_game_state(character_name: "Stale")
+      :ok = UnitRegistry.register_unit(:player, ctx.char_id, PlayerState, stale, self())
+
+      assert Dsl.char_name(ctx, 0, ctx.char_id) == "Fresh"
+    end
+
+    test "char_name/3 reads another online player and returns empty when offline" do
+      other = build_game_state(character_name: "Other")
+      :ok = UnitRegistry.register_unit(:player, 2, PlayerState, other, self())
+
+      assert Dsl.char_name(build_ctx(), 0, 2) == "Other"
+      assert Dsl.char_name(build_ctx(), 3, 2) == "prontera"
+      assert Dsl.char_name(build_ctx(), 99, 2) == ""
+      assert Dsl.char_name(build_ctx(), 0, 999) == ""
     end
 
     test "job_name/2 humanizes a class atom and resolves a job id" do
@@ -1679,6 +1718,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
   end
 
+  defp setup_ets_tables(context), do: Aesir.TestEtsSetup.setup_ets_tables(context)
+
   defp build_ctx(opts \\ []) do
     %Ctx{
       char_id: 1,
@@ -1722,6 +1763,8 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       character_id: 1,
       account_id: 100,
       character_name: Keyword.get(opts, :character_name, "Alice"),
+      party_id: Keyword.get(opts, :party_id, 0),
+      guild_id: Keyword.get(opts, :guild_id, 0),
       sex: Keyword.get(opts, :sex, "M"),
       x: 50,
       y: 50,

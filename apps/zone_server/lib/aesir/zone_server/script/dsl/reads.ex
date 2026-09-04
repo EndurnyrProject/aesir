@@ -37,8 +37,10 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Internal
+  alias Aesir.ZoneServer.Script.Rathena
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc """
   Whether the attached player has a Falcon: `1` when the Falcon option bit is
@@ -140,15 +142,21 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
 
   def getskilllv(%Ctx{game_state: gs}, skill), do: Internal.learned_level(gs, skill)
 
-  @doc """
-  `strcharinfo(type)`: the character's name (type `0`) or current map (type `3`).
-  rAthena's party/guild info types are not modelled and return an empty string.
-  """
+  @doc "`strcharinfo(type)` for the attached character (see `Rathena.strcharinfo/2`)."
   @spec char_name(Ctx.t(), integer()) :: String.t()
   def char_name(%Ctx{game_state: nil}, _type), do: no_player!("char_name/2")
-  def char_name(%Ctx{game_state: gs}, 0), do: gs.character_name
-  def char_name(%Ctx{game_state: gs}, 3), do: gs.map_name
-  def char_name(%Ctx{}, _type), do: ""
+  def char_name(%Ctx{game_state: game_state}, type), do: Rathena.strcharinfo(game_state, type)
+
+  @doc "`strcharinfo(type, char_id)`: the same read for any online character, `\"\"` when offline."
+  @spec char_name(Ctx.t(), integer(), integer()) :: String.t()
+  def char_name(%Ctx{char_id: char_id} = ctx, type, char_id), do: char_name(ctx, type)
+
+  def char_name(%Ctx{}, type, char_id) do
+    case UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {_module, game_state, _pid}} -> Rathena.strcharinfo(game_state, type)
+      {:error, :not_found} -> ""
+    end
+  end
 
   @doc "The display name of a job, given its class atom or id (rAthena `jobname`)."
   @spec job_name(Ctx.t(), atom() | integer()) :: String.t()
@@ -691,30 +699,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
 
   @doc """
   A calendar-date component in server local time (rAthena `gettime`), selected
-  by `type` (the `DT_*` constants, 1-8): `1` second, `2` minute, `3` hour,
-  `4` day of week (`0` Sunday .. `6` Saturday), `5` day of month (`1`-`31`),
-  `6` month (`1`-`12`), `7` full year, `8` day of year (`0`-based, Jan 1 is
-  `0`), matching the C `struct tm` fields rAthena reads. Any other type returns
-  `-1`, like rAthena's out-of-range guard. Pure read; the ctx is ignored.
+  by `type` (the `DT_*` constants, 1-9). Invalid selectors return `-1`.
+  Pure read; the ctx is ignored.
   """
   @spec gettime(Ctx.t(), integer()) :: integer()
-  def gettime(%Ctx{}, type) when type in 1..8 do
-    now = NaiveDateTime.local_now()
-
-    %{
-      1 => now.second,
-      2 => now.minute,
-      3 => now.hour,
-      4 => Date.day_of_week(now, :sunday) - 1,
-      5 => now.day,
-      6 => now.month,
-      7 => now.year,
-      8 => Date.day_of_year(now) - 1
-    }
-    |> Map.fetch!(type)
-  end
-
-  def gettime(%Ctx{}, _type), do: -1
+  def gettime(%Ctx{}, type), do: Rathena.gettime(NaiveDateTime.local_now(), type)
 
   @doc """
   The unit id (gid) of the NPC running the script (rAthena `getnpcid`, type-0

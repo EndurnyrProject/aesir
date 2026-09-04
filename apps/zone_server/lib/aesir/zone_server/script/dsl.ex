@@ -243,6 +243,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate can_change_job?(ctx), to: Reads
   defdelegate getskilllv(ctx, skill), to: Reads
   defdelegate char_name(ctx, type), to: Reads
+  defdelegate char_name(ctx, type, char_id), to: Reads
   defdelegate job_name(ctx, job), to: Reads
   defdelegate eaclass(ctx), to: Reads
   defdelegate eaclass(ctx, job), to: Reads

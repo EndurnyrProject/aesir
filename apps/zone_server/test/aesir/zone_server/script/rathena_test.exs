@@ -5,8 +5,76 @@ defmodule Aesir.ZoneServer.Script.RathenaTest do
   """
 
   use ExUnit.Case, async: true
+  import Mimic
 
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Script.Rathena
+
+  describe "date_constant/1" do
+    test "resolves date selectors, months, and weekdays" do
+      assert Enum.map(1..9, &{:ok, &1}) ==
+               Enum.map(
+                 ~w(DT_SECOND DT_MINUTE DT_HOUR DT_DAYOFWEEK DT_DAYOFMONTH DT_MONTH DT_YEAR DT_DAYOFYEAR DT_YYYYMMDD),
+                 &Rathena.date_constant/1
+               )
+
+      assert Enum.map(1..12, &{:ok, &1}) ==
+               Enum.map(
+                 ~w(JANUARY FEBRUARY MARCH APRIL MAY JUNE JULY AUGUST SEPTEMBER OCTOBER NOVEMBER DECEMBER),
+                 &Rathena.date_constant/1
+               )
+
+      assert Enum.map(0..6, &{:ok, &1}) ==
+               Enum.map(
+                 ~w(SUNDAY MONDAY TUESDAY WEDNESDAY THURSDAY FRIDAY SATURDAY),
+                 &Rathena.date_constant/1
+               )
+    end
+
+    test "returns :error for an unknown symbol" do
+      assert Rathena.date_constant("DT_NOPE") == :error
+    end
+  end
+
+  describe "gettime/2" do
+    test "extracts all selectors from one supplied timestamp" do
+      timestamp = ~N[2024-03-03 14:05:07]
+
+      assert Enum.map(1..9, &Rathena.gettime(timestamp, &1)) ==
+               [7, 5, 14, 0, 3, 3, 2024, 62, 20_240_303]
+    end
+
+    test "returns -1 for invalid selectors" do
+      timestamp = ~N[2024-03-03 14:05:07]
+
+      assert Rathena.gettime(timestamp, 0) == -1
+      assert Rathena.gettime(timestamp, 10) == -1
+    end
+  end
+
+  describe "strcharinfo/2" do
+    test "returns name, party, guild, and map for selectors 0 through 3" do
+      stub(PartyManager, :get, fn 7 -> {:ok, %{name: "Einherjar"}} end)
+      stub(GuildManager, :get, fn 9 -> {:ok, %{name: "Valhalla"}} end)
+      info = %{character_name: "Aesir", map_name: "prontera", party_id: 7, guild_id: 9}
+
+      assert Enum.map(0..3, &Rathena.strcharinfo(info, &1)) ==
+               ["Aesir", "Einherjar", "Valhalla", "prontera"]
+    end
+
+    test "returns an empty string for a missing party, guild, or character and invalid selectors" do
+      stub(PartyManager, :get, fn 0 -> {:error, :not_found} end)
+      stub(GuildManager, :get, fn 0 -> {:error, :not_found} end)
+      info = %{character_name: "Aesir", map_name: "prontera", party_id: 0, guild_id: 0}
+
+      assert Rathena.strcharinfo(info, 1) == ""
+      assert Rathena.strcharinfo(info, 2) == ""
+      assert Rathena.strcharinfo(info, -1) == ""
+      assert Rathena.strcharinfo(info, 4) == ""
+      assert Rathena.strcharinfo(nil, 0) == ""
+    end
+  end
 
   describe "atoi/1" do
     test "parses the leading integer of a string" do
