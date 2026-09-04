@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.15.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.14.0...aesir-v0.15.0) (2026-09-04)
+
+
+### Features
+
+* **items:** evaluate gettime and strcharinfo in equip scripts ([4301d24](https://github.com/EndurnyrProject/aesir/commit/4301d2474a3029625b698724a398f61e5413dbcf))
+* **navigation-graph:** Created task to generate graph cache ([dd36ff1](https://github.com/EndurnyrProject/aesir/commit/dd36ff1421d8ac7ba7509abd77fcbb0b67cb68c8))
+* **npc:** transpile strcharinfo char ids and date constants ([b0642e1](https://github.com/EndurnyrProject/aesir/commit/b0642e145be3348356bf326bf435806a66c135a0))
+* **script:** resolve strcharinfo and date reads through Rathena helpers ([9057505](https://github.com/EndurnyrProject/aesir/commit/905750561eab382aaa2df90a174706ed24920e77))
+
+
+### Bug Fixes
+
+* **navigation:** Improving the navigation (a lot) ([660bad2](https://github.com/EndurnyrProject/aesir/commit/660bad2eadc5a0c2c8394d7e8630f3898dfa7c88))
+* **tests:** Fixing some flaky integration tests ([f4a85ae](https://github.com/EndurnyrProject/aesir/commit/f4a85ae36b04d5e401d33cc7fd747c6921f17763))
+
 ## [0.14.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.13.0...aesir-v0.14.0) (2026-09-03)
 
 
