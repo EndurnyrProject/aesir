@@ -50,53 +50,13 @@ An Elixir umbrella (`apps/`) with four OTP applications:
 
 ## Network & Protocol
 
-The wire protocol is a single Protobuf schema, not hand-rolled binary packet modules.
+The wire protocol is a single Protobuf schema, not hand-rolled binary packets.
+`apps/commons/proto/aesir.proto` is the single source of truth; `Aesir.Commons.Network.Proto`
+generates the `Aesir.Net.*` structs from it, every frame carries exactly one `Aesir.Net.Envelope`,
+and transport is QUIC (`QuicListener`/`QuicConnection`, framing in `QuinnetCodec`).
 
-1. **Schema**: `apps/commons/proto/aesir.proto` is the single source of truth for every message.
-   The Elixir side generates `Aesir.Net.*` structs from it via `protox`; the Rust client generates
-   the same schema with `prost`.
-
-2. **Proto host**: `Aesir.Commons.Network.Proto` uses `use Protox` to generate the message structs
-   at compile time (e.g. `Aesir.Net.Envelope`, `Aesir.Net.LoginRequest`). The `.proto` is tracked
-   as an `@external_resource` so edits force a recompile.
-
-3. **Envelope**: Every reliable frame and datagram carries exactly one `Aesir.Net.Envelope`. It has
-   a `seq` (per-sender monotonic counter for correlation) and a `oneof body` that selects the
-   concrete message. Field numbers are grouped by category (16-31 control, 32-63 client intents,
-   64+ authoritative/world).
-
-4. **Framing**: `Aesir.Commons.Network.QuinnetCodec` handles channel framing around each Envelope.
-
-5. **Transport**: `Aesir.Commons.Network.QuicListener` builds the `:quic` server child spec;
-   `Aesir.Commons.Network.QuicConnection` owns a connection and forwards decoded messages to the
-   server's `c:Aesir.Commons.Network.QuicConnection.handle_message/3` callback. Each server wires a
-   `DynamicSupervisor` + `QuicListener` into its supervision tree with its own `impl_module`.
-
-### Adding or changing a message
-
-1. Edit `apps/commons/proto/aesir.proto` (add the `message`, then add it to the `Envelope` `oneof`
-   with a free field number in the right category range).
-2. Annotate the new `oneof` line with its routing metadata — `// <direction> <servers> [channel]`,
-   e.g. `NavigateTo navigate_to = 188;  // s2c zone world`. `Aesir.Commons.Network.ProtoManifest`
-   parses these at compile time and an unannotated field fails the build; `MessageRouter.route/1`
-   is generated from them, so an `s2c zone` message is routable the moment it is declared.
-3. Recompile commons; the `Aesir.Net.*` struct is generated automatically.
-4. Run `mix aesir.gen.proto_routing` to refresh `apps/commons/proto/routing.json`, the sidecar the
-   Rust client reads (a test fails when it is stale).
-5. Build/encode and decode through the generated structs:
-
-```elixir
-alias Aesir.Net.{Envelope, LoginRequest}
-
-{:ok, iodata, _size} =
-  %Envelope{seq: 1, body: {:login_request, %LoginRequest{username: "u", password: "p"}}}
-  |> Envelope.encode()
-
-{:ok, %Envelope{body: {tag, msg}}} = Envelope.decode(binary)
-```
-
-6. Handle the new `{tag, msg}` body in the relevant server's `handle_message/3` (account/char) or in
-   the zone server's player-session packet routing.
+To add or change a message, load the **aesir-protocol** skill (Envelope numbering, routing
+annotations, `mix aesir.gen.proto_routing`, `MessageRouter`, and when not to add a message).
 
 ## Session Management
 
@@ -164,48 +124,13 @@ scripts, NPC registry/verifier, warps) and then starts the runtime supervisors.
 
 ## NPC System & Scripting DSL
 
-Recent major work. NPCs are declarative Elixir modules with no compile-time coupling to the engine.
+NPCs are declarative Elixir modules under `content/npc/<map>/` with no compile-time coupling to
+the engine: `Npc` (`use` macro with a `spawn:` placement list and an `on_talk/1` callback),
+`Npc.Registry` (boot-time `:persistent_term` index composed with the `GameMode` overlay),
+`Npc.Verifier`, `Npc.Warps` (from `priv/db/re/warps/*.yml`), and `Script.Dsl` / `Script.Ctx` /
+`Script.Interaction` for dialog, effect, and read ops.
 
-- **`Npc`** - A `use` macro that injects the `@behaviour`, imports `Script.Dsl`, and accepts a
-  `spawn:` list. A placement requires `map`, `x`, `y`, and `sprite`; `dir` defaults to `0` and
-  `name` to `""`. NPC bodies default to `scope: :shared`; set `scope: :renewal` or
-  `:pre_renewal` only for mode-specific behavior. A placement inherits its body's scope unless
-  its spawn map sets its own `scope:`. Requires an `on_talk/1` callback (`on_init/1` optional).
-- **`Npc.Registry`** - Boot-time index (in `:persistent_term`) of placements, with cell and
-  unit-id lookups. It composes shared bodies and placements with the boot-selected `GameMode`
-  overlay before building any lookup, label, touch, or event index. NPC gids are synthetic hashes
-  of `{map, x, y, unique_name}`.
-- **`Npc.Verifier`** - Reports active same-cell/same-name collisions without blocking boot.
-- **`Npc.Warps`** - Warp NPCs loaded from `priv/db/re/warps/*.yml` (imported from rAthena).
-- **`Script.Dsl`** - The DSL: effect ops `(ctx, args) -> ctx` (`heal`, `sc_start`, `warp`,
-  `give_item`, `delitem`, `pay_zeny`, `set_char_var`, ...), read ops `(ctx) -> value` (`zeny`,
-  `count_item`, `get_char_var`, `base_level`, `class`, ...), and blocking dialog primitives
-  (`mes`, `next`, `select`, `input`, `close`). State mutations are routed to the player session via
-  `{:script_apply, op}`.
-- **`Script.Ctx`** - The execution context threaded through every DSL call.
-- **`Script.Interaction`** - A suspendable coroutine process (supervised Task) that *is* the running
-  script; blocking dialog primitives suspend it on a `receive` until the client responds.
-
-Example NPC (`content/npc/<map>/<name>.ex`):
-
-```elixir
-defmodule Aesir.ZoneServer.Content.Npc.Morocc.TurbanThief do
-  use Aesir.ZoneServer.Npc,
-    spawn: [%{map: "morocc", x: 208, y: 90, dir: 6, sprite: 58, name: "Turban Thief"}]
-
-  @impl true
-  def on_talk(ctx) do
-    if get_char_var(ctx, :sphmask_q, 0) == 1 do
-      ctx |> mes("Go away!") |> close()
-    else
-      ctx
-      |> mes("Want to buy?")
-      |> select(["Yes", "No"])
-      |> handle_choice()
-    end
-  end
-end
-```
+Load the **aesir-npc** skill before writing or porting any NPC, warp, or script buildin.
 
 ## Data & Content Pipeline
 
@@ -232,27 +157,10 @@ after shipped data: keyed rows override, maps merge, and spawns append-only per 
 kept, import spawns added); warps and shops append. Restart after edits, or call the relevant
 catalog's `reload/0`.
 
-NPC import is separate from the DB-mode importer flow: no-argument
-`mix aesir.import.npcs` follows both enabled `npc/re/scripts_main.conf` and
-`npc/pre-re/scripts_main.conf` graphs in one all-scope run, deduplicating shared sources; it is
-independent of `AESIR_DB_MODE`. `--only` is targeted, incremental, and non-authoritative: it may
-select disabled sources but never prunes unrelated manifest records or outputs. A no-argument run
-is authoritative for disabled sources: it removes only manifest-owned untouched stale outputs after
-validation, drops records for already-missing outputs, and retains an edited stale output as a
-reported failure. A hand-written output collision is reported and diverted to `_conflicts/`, while
-unrelated processing may continue; multiply-owned manifest paths block the import. Post-write stale
-removal is non-transactional: active writes and successful removals persist, while a failed removal
-and its manifest record remain retryable.
-
-Helper resolution is direct for a scope-independent target. A shared caller to one or more overlay
-targets emits `GameMode` branches, raising in a missing active mode; known incompatible scope blocks
-import, while a globally unknown helper remains a `Todo` stub.
-
-The checked generated NPC corpus and `priv/npc_transpile/manifest.json` predate mode scopes; this
-stack did not migrate them. Before any pre-renewal boot or deployment, remove only the `output_path`
-files listed in the current manifest, preserving every other `content/npc` file; remove the manifest;
-then run one clean no-`--only` all-scope regeneration from the repository root. Do not delete the
-content directory. The user owns that regeneration after this stack.
+NPC import has its own rules (all-scope runs independent of `AESIR_DB_MODE`, `--only` semantics,
+manifest ownership, `_conflicts/` and stale-output handling, helper resolution, and the pending
+pre-renewal corpus regeneration). Read the transpiler section of the **aesir-npc** skill before
+running `mix aesir.import.npcs`.
 
 ## Testing Approach
 
@@ -265,26 +173,7 @@ Tests follow standard Elixir patterns with some custom helpers:
 5. **End-to-end**: Zone features (warps, NPC interactions, quests) have integration tests driving the
    real subsystems; mirror the existing ones when adding gameplay.
 
-### Example Test Pattern
-
-```elixir
-defmodule MyTest do
-  use ExUnit.Case, async: true
-  import Mimic
-
-  alias Module.Under.Test
-
-  setup :verify_on_exit!
-
-  test "some functionality" do
-    stub(Dependency, :some_function, fn -> {:ok, expected_result} end)
-
-    result = Module.Under.Test.function_to_test()
-
-    assert result == expected_result
-  end
-end
-```
+Mimic conventions, integration-test isolation, and known flaky tests are in the **aesir-workflow** skill.
 
 ## Build, Lint, and Test
 
@@ -303,6 +192,12 @@ Always run the full test suite before considering a task done.
 ## Tool Preferences
 
 - For Elixir/Hex library documentation, prefer the docs MCP tooling over guessing from memory.
+
+## Delegation
+
+- Use `Explore`, `Scout`, or `codebase-memory-scout` for read-only lookups, and pass
+  `model: "haiku"` for mechanical search or extraction work.
+- Reserve `general-purpose` and the default model for work that writes, edits, or needs judgment.
 
 ## Code Style
 

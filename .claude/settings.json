@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./config/*.secret.exs)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./.mcp.json)",
+      "Read(./**/*.pem)",
+      "Read(./secrets/**)"
+    ]
+  }
+}
