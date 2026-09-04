@@ -1224,6 +1224,88 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegenTest do
     end
   end
 
+  describe "dynamic equipment reads" do
+    test "gettime compiles selectors and date constants" do
+      assert {:ok,
+              [
+                {:if, {:==, {:gettime, 6}, 9}, [{:bonus, :all_stats, 4}], []}
+              ]} = compile("if (gettime(DT_MONTH) == SEPTEMBER) bonus bAllStats,4;")
+    end
+
+    test "date constants are case-insensitive" do
+      assert compile("bonus bVit,GETTIME(dt_month);") ==
+               compile("bonus bVit,GETTIME(DT_MONTH);")
+    end
+
+    test "gettime remains numeric, case-insensitive, and inlineable through locals" do
+      assert {:ok,
+              [
+                {:if, {:or, {:==, {:gettime, 6}, 1}, {:==, {:gettime, 6}, 2}},
+                 [{:bonus, :str, 2}], []},
+                {:bonus, :vit, {:gettime, 4}}
+              ]} =
+               compile(
+                 ".@m = GeTtImE(DT_MONTH); if (.@m == JANUARY || .@m == FEBRUARY) bonus bStr,2; bonus bVit,gettime(DT_DAYOFWEEK);"
+               )
+    end
+
+    test "attached map equality and inequality compile as typed string conditions" do
+      assert {:ok,
+              [
+                {:if, {:string_cmp, :==, {:char_info, 3}, "job3_rang02"}, [{:bonus, :str, 1}],
+                 []},
+                {:if, {:string_cmp, :!=, "1@lab", {:char_info, 3}}, [{:bonus, :vit, 1}], []}
+              ]} =
+               compile(
+                 ~S|if (StrCharInfo(3) == "job3_rang02") bonus bStr,1; if ("1@lab" != strcharinfo(3)) bonus bVit,1;|
+               )
+    end
+
+    test "completed string comparisons remain numeric boolean expressions" do
+      assert {:ok,
+              [
+                {:if, {:==, {:bool, {:string_cmp, :==, {:char_info, 3}, "map"}}, 1},
+                 [{:bonus, :str, 1}], []}
+              ]} = compile(~S|if ((strcharinfo(3) == "map") == 1) bonus bStr,1;|)
+    end
+
+    test "equipment character info accepts exactly one selector" do
+      assert {:error, {:unsupported, {:string_expression, {:call, "strcharinfo", []}}}} =
+               compile(~S|if (strcharinfo() == "map") bonus bStr,1;|)
+
+      assert {:error, {:unsupported, {:string_expression, {:call, "strcharinfo", [_, _]}}}} =
+               compile(~S|if (strcharinfo(3, 42) == "map") bonus bStr,1;|)
+    end
+
+    test "string-variable mixed comparisons reject as string expressions" do
+      assert {:error, {:unsupported, {:string_expression, {:var, :local, "name", :str}}}} =
+               compile(~S|if (.@name$ == 1) bonus bStr,1;|)
+    end
+
+    test "string vocabulary does not widen into numeric expressions" do
+      assert {:error,
+              {:unsupported,
+               {:string_expression, {:bin, :+, {:call, "strcharinfo", [int: 3]}, {:int, 1}}}}} =
+               compile(~S|if (strcharinfo(3) + 1 == 1) bonus bStr,1;|)
+
+      assert {:error,
+              {:unsupported,
+               {:string_expression,
+                {:ternary, {:int, 1}, {:call, "strcharinfo", [int: 3]}, {:int, 0}}}}} =
+               compile(~S|if ((1 ? strcharinfo(3) : 0) == 1) bonus bStr,1;|)
+
+      for script <- [
+            ~S|if (strcharinfo(3) == 3) bonus bStr,1;|,
+            ~S|if (strcharinfo(3) < "map") bonus bStr,1;|,
+            ~S|bonus bStr,strcharinfo(3)+1;|,
+            ~S|.@name$ = strcharinfo(0); bonus bStr,1;|,
+            ~S|bonus bStr,1 ? "map" : 0;|
+          ] do
+        assert {:error, {:unsupported, _reason}} = compile(script)
+      end
+    end
+  end
+
   describe "readparam read" do
     test "a base stat readparam resolves to a stat expression" do
       assert {:ok, [{:bonus, :atk, {:div, {:stat, :str}, 10}}]} =

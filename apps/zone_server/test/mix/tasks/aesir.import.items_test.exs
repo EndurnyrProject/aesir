@@ -68,6 +68,157 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
                Items.apply_transpile(definition(%{type: :weapon}), "bonus bPAtk,20;")
     end
 
+    test "transpiles the bRO anniversary calendar gate" do
+      script =
+        "if (gettime(DT_MONTH) == SEPTEMBER && gettime(DT_DAYOFMONTH)>=10 && gettime(DT_DAYOFMONTH)<=24) bonus bAllStats,4;"
+
+      assert {%ItemDefinition{on_equip: [{:if, condition, [{:bonus, :all_stats, 4}], []}]}, nil} =
+               Items.apply_transpile(
+                 definition(%{id: 5432, name: "bRO 4th Anniversary Hat", type: :armor}),
+                 script
+               )
+
+      assert condition ==
+               {:and, {:and, {:==, {:gettime, 6}, 9}, {:>=, {:gettime, 5}, 10}},
+                {:<=, {:gettime, 5}, 24}}
+    end
+
+    test "transpiles both mode-specific Will of Exhausted Angel map gates" do
+      for map <- ["job3_rang02", "job3_arch02"] do
+        script =
+          "if (strcharinfo(3) == \"#{map}\") { bonus2 bAddDefMonster,1761,50; bonus2 bAddDefMonster,1762,50; }"
+
+        assert {%ItemDefinition{
+                  on_equip: [
+                    {:if, {:string_cmp, :==, {:char_info, 3}, ^map},
+                     [
+                       {:bonus, {:add_def_monster, 1761}, 50},
+                       {:bonus, {:add_def_monster, 1762}, 50}
+                     ], []}
+                  ]
+                }, nil} =
+                 Items.apply_transpile(
+                   definition(%{id: 2798, name: "Will Of Exhausted Angel", type: :armor}),
+                   script
+                 )
+      end
+    end
+
+    test "transpiles Gorilla Model Hat's calendar local without losing later commands" do
+      script = """
+      bonus bStr,2;
+      .@m = gettime(DT_MONTH);
+      if (.@m == 1 || .@m == 2) { bonus bStr,2; bonus bVit,2; }
+      bonus4 bAutoSpell,"KN_BOWLINGBASH",1,20,1;
+      if (getrefine()>10) { bonus bStr,3; }
+      """
+
+      assert {%ItemDefinition{
+                on_equip: [
+                  {:bonus, :str, 2},
+                  {:if, {:or, {:==, {:gettime, 6}, 1}, {:==, {:gettime, 6}, 2}},
+                   [{:bonus, :str, 2}, {:bonus, :vit, 2}], []},
+                  {:auto_cast, %{force: 1, flag: 849, skill_id: 62, trigger: :attack}, 1, 20},
+                  {:if, {:>, :refine, 10}, [{:bonus, :str, 3}], []}
+                ]
+              }, nil} =
+               Items.apply_transpile(
+                 definition(%{id: 18_930, name: "Gorilla Model Hat", type: :armor}),
+                 script
+               )
+    end
+
+    test "transpiles Costume Santa Hat's numeric month gate" do
+      script = """
+      if (gettime(DT_MONTH) == 12) {
+        bonus bMaxHP,1000;
+        bonus bMaxSP,100;
+        bonus bAspd,3;
+        bonus2 bAddClass,Class_All,10;
+        bonus bMatkRate,10;
+        bonus bHealPower,10;
+      }
+      """
+
+      assert {%ItemDefinition{
+                on_equip: [
+                  {:if, {:==, {:gettime, 6}, 12},
+                   [
+                     {:bonus, :max_hp, 1_000},
+                     {:bonus, :max_sp, 100},
+                     {:bonus, :aspd, 3},
+                     {:bonus, {:addclass, :all}, 10},
+                     {:bonus, :matk_rate, 10},
+                     {:bonus, :heal_power, 10}
+                   ], []}
+                ]
+              }, nil} =
+               Items.apply_transpile(
+                 definition(%{id: 19_982, name: "Costume Santa Hat", type: :armor}),
+                 script
+               )
+    end
+
+    test "reports Adam's Apple In Mouth's next honest bonus-key blocker" do
+      script = """
+      bonus bMdef,-5;
+      bonus2 bSubRace,RC_Angel,-15;
+      bonus2 bSubEle,Ele_Holy,-15;
+      if (strcharinfo(3) == "1@lab") {
+        bonus2 bAddClass,Class_Boss,15;
+        bonus2 bMagicAddClass,Class_Boss,15;
+        bonus2 bAddDamageClass,1088,15;
+        bonus2 bAddDamageClass,1089,15;
+        bonus2 bAddDamageClass,1090,15;
+        bonus2 bAddDamageClass,1092,15;
+        bonus2 bAddDamageClass,1093,15;
+        bonus2 bAddDamageClass,1096,15;
+        bonus2 bAddDamageClass,1120,15;
+        bonus2 bAddMagicDamageClass,1088,15;
+        bonus2 bAddMagicDamageClass,1089,15;
+        bonus2 bAddMagicDamageClass,1090,15;
+        bonus2 bAddMagicDamageClass,1092,15;
+        bonus2 bAddMagicDamageClass,1093,15;
+        bonus2 bAddMagicDamageClass,1096,15;
+        bonus2 bAddMagicDamageClass,1120,15;
+      }
+      """
+
+      assert {%ItemDefinition{on_equip: nil},
+              {:on_equip, 15_976, "Adam's Apple In Mouth",
+               {:unsupported, {:unknown_bonus_key, "bAddMagicDamageClass"}}}} =
+               Items.apply_transpile(
+                 definition(%{id: 15_976, name: "Adam's Apple In Mouth", type: :armor}),
+                 script
+               )
+    end
+
+    test "keeps throwable ammo scripts unsupported and inactive" do
+      scripts = [
+        {13_272, "Throwing Cure Free",
+         """
+         sc_end SC_BLEEDING;
+         sc_end SC_CURSE;
+         sc_end SC_SILENCE;
+         sc_end SC_POISON;
+         sc_end SC_ORCISH;
+         sc_end SC_CHANGEUNDEAD;
+         sc_end SC_BLIND;
+         sc_end SC_CONFUSION;
+         sc_end SC_DPOISON;
+         itemheal 500,0;
+         """},
+        {13_281, "Throwing Concentrated White Potion Z",
+         "sc_start SC_EXTRACT_WHITE_POTION_Z,500000,20; itemheal 1000,0;"},
+        {13_282, "Throwing Vitata 500", "sc_start2 SC_VITATA_500,500000,20,5; itemheal 0,200;"}
+      ]
+
+      for {id, name, script} <- scripts do
+        assert {%ItemDefinition{on_equip: nil}, {:on_equip, ^id, ^name, {:unsupported, _reason}}} =
+                 Items.apply_transpile(definition(%{id: id, name: name, type: :ammo}), script)
+      end
+    end
+
     test "stores a flat direct status lifecycle only when both hooks transpile" do
       assert {%ItemDefinition{on_equip: on_equip, on_unequip: on_unequip}, nil} =
                Items.apply_transpile(

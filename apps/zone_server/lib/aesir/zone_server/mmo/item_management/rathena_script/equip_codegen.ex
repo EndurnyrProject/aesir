@@ -1193,8 +1193,20 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp compile_expr({:call, "getrefine", []}, _env), do: {:ok, :refine}
+
+  defp compile_expr({:call, "gettime", [selector]}, env) do
+    with {:ok, selector} <- compile_expr(selector, env), do: {:ok, {:gettime, selector}}
+  end
+
   defp compile_expr({:name, "BaseLevel"}, _env), do: {:ok, :base_level}
   defp compile_expr({:name, "JobLevel"}, _env), do: {:ok, :job_level}
+
+  defp compile_expr({:name, symbol} = ast, _env) do
+    case Resolver.resolve_date_constant(String.upcase(symbol)) do
+      {:ok, value} -> {:ok, value}
+      {:error, _reason} -> unsupported({:expression, ast})
+    end
+  end
 
   defp compile_expr({:ternary, cond_ast, then_ast, else_ast}, env) do
     with {:ok, condition} <- compile_cond(cond_ast, env),
@@ -1287,7 +1299,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
              do: {:ok, {:job_cmp, op, reader, job}}
 
       :not_job ->
-        compile_binary_cond(op, lhs, rhs, env)
+        compile_equality_cond(op, lhs, rhs, env)
     end
   end
 
@@ -1303,6 +1315,43 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.EquipCodegen do
   end
 
   defp compile_cond(other, _env), do: unsupported({:condition, other})
+
+  defp compile_equality_cond(op, lhs, rhs, env) do
+    if string_shaped?(lhs) or string_shaped?(rhs) do
+      with {:ok, left} <- compile_string_expr(lhs, env),
+           {:ok, right} <- compile_string_expr(rhs, env) do
+        {:ok, {:string_cmp, op, left, right}}
+      end
+    else
+      compile_binary_cond(op, lhs, rhs, env)
+    end
+  end
+
+  defp compile_string_expr({:str, value}, _env), do: {:ok, value}
+
+  defp compile_string_expr({:call, name, [selector]}, env) do
+    if String.downcase(name) == "strcharinfo" do
+      with {:ok, selector} <- compile_expr(selector, env), do: {:ok, {:char_info, selector}}
+    else
+      unsupported({:string_expression, {:call, name, [selector]}})
+    end
+  end
+
+  defp compile_string_expr(ast, _env), do: unsupported({:string_expression, ast})
+
+  defp string_shaped?({:str, _value}), do: true
+  defp string_shaped?({:var, _scope, _name, :str}), do: true
+
+  defp string_shaped?({:call, name, _args}),
+    do: String.downcase(name) == "strcharinfo"
+
+  defp string_shaped?({:ternary, _condition, then_ast, else_ast}),
+    do: string_shaped?(then_ast) or string_shaped?(else_ast)
+
+  defp string_shaped?({:bin, op, lhs, rhs}) when op in @arith_ops,
+    do: string_shaped?(lhs) or string_shaped?(rhs)
+
+  defp string_shaped?(_ast), do: false
 
   @spec compile_binary_cond(atom(), term(), term(), %{String.t() => EquipScript.expr()}) ::
           {:ok, EquipScript.condition()} | {:error, {:unsupported, detail()}}

@@ -1,16 +1,19 @@
 defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   use ExUnit.Case, async: true
+  import Mimic
   use Mimic
 
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Refine.RefineDatabase
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -131,6 +134,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   describe "from_character/1" do
     test "creates Stats struct from Character model" do
       character = %Character{
+        name: "Crusader",
+        last_map: "prontera",
         str: 10,
         agi: 15,
         vit: 20,
@@ -170,7 +175,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.derived_stats.aspd > 0
     end
 
-    test "equipment folding has no clock or timer dependency" do
+    test "equipment folding does not use UTC clocks or timers" do
       source =
         "../../../../../lib/aesir/zone_server/unit/player/stats.ex"
         |> Path.expand(__DIR__)
@@ -1951,6 +1956,113 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         %ItemDefinition{id: id, aegis_name: "scripted_#{id}", name: "Scripted #{id}"},
         Map.new(fields)
       )
+    end
+
+    test "uses the supplied local time and character info for host programs" do
+      item =
+        scripted_item(90_159,
+          on_equip: [
+            {:if,
+             {:and, {:==, {:gettime, 1}, 7}, {:string_cmp, :==, {:char_info, 0}, "Crusader"}},
+             [{:bonus, :atk, 12}], []}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn 90_159 -> {:ok, item} end)
+
+      stats = swordman(%Equipment{}, %{})
+      wearer = %{character_name: "Crusader", map_name: "prontera", party_id: 0, guild_id: 0}
+
+      matching =
+        Stats.apply_equipment_modifiers(stats, [equipped(90_159, @armor_pos)], %{
+          local_time: ~N[2026-09-04 13:30:07],
+          character_info: wearer
+        })
+
+      non_matching =
+        Stats.apply_equipment_modifiers(stats, [equipped(90_159, @armor_pos)], %{
+          local_time: ~N[2026-09-04 13:30:08],
+          character_info: wearer
+        })
+
+      assert matching.modifiers.equipment.atk == 12
+      assert non_matching.modifiers.equipment.atk == 0
+    end
+
+    test "reuses one time and character info for cards, registrations, effects, and active programs" do
+      dynamic_match = fn selector, value ->
+        {:and, {:==, {:gettime, 1}, 7}, {:string_cmp, :==, {:char_info, selector}, value}}
+      end
+
+      host =
+        scripted_item(90_150,
+          type: :armor,
+          slots: 1,
+          on_equip: [
+            {:if, dynamic_match.(0, "Crusader"), [{:bonus, :atk, 1}], []},
+            {:autobonus,
+             %{
+               trigger: :attack,
+               battle_flag: 0,
+               primary: [
+                 {:if, dynamic_match.(1, "Party"),
+                  [{:bonus, :atk, 4}, {:status_start, :sc_summer, 1_000, 1}], []}
+               ],
+               secondary: [
+                 {:if, dynamic_match.(2, "Guild"), [{:status_end, :sc_summer}], []}
+               ]
+             }, {:gettime, 1}, 1_000}
+          ]
+        )
+
+      card =
+        scripted_item(90_151,
+          type: :card,
+          on_equip: [
+            {:if, dynamic_match.(3, "prontera"), [{:bonus, :atk, 2}], []}
+          ],
+          on_unequip: [
+            {:if, dynamic_match.(3, "prontera"), [{:heal, {:gettime, 1}, {:gettime, 1}}], []}
+          ]
+        )
+
+      stub(ItemManagement, :get_item_by_id, fn
+        90_150 -> {:ok, host}
+        90_151 -> {:ok, card}
+      end)
+
+      stub(PartyManager, :get, fn 7 -> {:ok, %{name: "Party"}} end)
+      stub(GuildManager, :get, fn 9 -> {:ok, %{name: "Guild"}} end)
+      stats = swordman(%Equipment{}, %{})
+
+      inputs = %{
+        local_time: ~N[2026-09-04 13:30:07],
+        character_info: %{
+          character_name: "Crusader",
+          map_name: "prontera",
+          party_id: 7,
+          guild_id: 9
+        }
+      }
+
+      row = %{equipped_row(150, 90_150, @armor_pos) | card0: 90_151}
+      folded = Stats.apply_equipment_modifiers(stats, [row], inputs)
+      registration = folded.equip_autobonuses[{150, 0}]
+
+      assert folded.modifiers.equipment.atk == 3
+      assert registration.rate == 7
+      assert registration.primary_effects == [{:status_start, :sc_summer, 1_000, 1}]
+      assert registration.secondary_effects == [{:status_end, :sc_summer}]
+
+      assert folded.card_unequip_effects[{150, 0}].effects == [
+               {:heal, 7, 7}
+             ]
+
+      active =
+        %{folded | active_autobonuses: %{{150, 0} => 1}}
+        |> Stats.apply_equipment_modifiers(nil, inputs)
+
+      assert active.modifiers.equipment.atk == 7
     end
 
     test "folds a socketed card after its host without applying card static values" do

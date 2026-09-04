@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   alias Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.CatalogNotLoadedError
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Script.Rathena
 
   @typedoc "An unresolvable rAthena symbol, carried verbatim for the coverage report."
   @type error :: {:error, {:unknown_symbol, String.t()}}
@@ -391,6 +392,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   # (e.g. `SC_HALLUCINATION` and `SC_Hallucination`). Resolving on the folded
   # key covers every casing without hand-listing each variant.
   @statuses_folded Map.new(@statuses, fn {symbol, atom} -> {String.downcase(symbol), atom} end)
+
+  @doc "Resolves a date selector, month, or weekday constant."
+  @spec resolve_date_constant(String.t()) :: {:ok, integer()} | error()
+  def resolve_date_constant(symbol) do
+    case Rathena.date_constant(symbol) do
+      {:ok, value} -> {:ok, value}
+      :error -> unknown(symbol)
+    end
+  end
 
   @spec resolve_status(String.t()) :: {:ok, atom()} | error()
   def resolve_status(symbol) when is_binary(symbol) do

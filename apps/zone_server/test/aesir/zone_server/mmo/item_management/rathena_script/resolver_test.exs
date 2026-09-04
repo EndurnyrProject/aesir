@@ -11,6 +11,22 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.ResolverTest do
   setup :set_mimic_private
   setup :verify_on_exit!
 
+  describe "resolve_date_constant/1" do
+    test "resolves date selectors, months, and weekdays" do
+      assert Resolver.resolve_date_constant("DT_SECOND") == {:ok, 1}
+      assert Resolver.resolve_date_constant("DT_YYYYMMDD") == {:ok, 9}
+      assert Resolver.resolve_date_constant("JANUARY") == {:ok, 1}
+      assert Resolver.resolve_date_constant("DECEMBER") == {:ok, 12}
+      assert Resolver.resolve_date_constant("SUNDAY") == {:ok, 0}
+      assert Resolver.resolve_date_constant("SATURDAY") == {:ok, 6}
+    end
+
+    test "preserves the unknown-symbol error" do
+      assert Resolver.resolve_date_constant("DT_NOPE") ==
+               {:error, {:unknown_symbol, "DT_NOPE"}}
+    end
+  end
+
   describe "resolve_status/1" do
     test "maps SC_BLESSING to the effect-module atom" do
       assert {:ok, :sc_blessing} = Resolver.resolve_status("SC_BLESSING")

@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Loader do
           by_aegis: %{String.t() => ItemDefinition.t()}
         }
 
-  @cache_file "items_v5.etf"
+  @cache_file "items_v6.etf"
   @overrides_file "script_overrides.yml"
 
   # Valid YAML keys -> struct field atoms. Sourced from the struct so the atoms

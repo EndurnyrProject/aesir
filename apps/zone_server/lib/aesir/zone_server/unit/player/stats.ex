@@ -62,6 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
   alias Aesir.ZoneServer.Unit.Stats
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @riding_option_bit Option.id(:riding)
   @novice_high_job_id 4001
@@ -377,7 +378,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def calculate_stats(%__MODULE__{} = stats, player_id \\ nil, equipped_items \\ nil) do
     stats
     |> apply_job_bonuses()
-    |> apply_equipment_modifiers(equipped_items)
+    |> apply_equipment_modifiers(equipped_items, %{character_info: character_info(player_id)})
     |> apply_status_effects(player_id)
     |> apply_passive_modifiers()
     |> calculate_derived_stats()
@@ -456,7 +457,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   in-range card `on_equip` programs into modifiers, proc registrations, desired
   direct statuses, and retained card cleanup effects. Surviving active proc
   generations re-evaluate their primary programs through
-  the same equipment merge rules. When `nil`, the fold reruns
+  the same equipment merge rules. `extra_inputs` is merged into every program's
+  inputs: `:character_info` (the wearer's `PlayerState`, read by `strcharinfo`)
+  and `:local_time` (read by `gettime`; captured once per fold when absent).
+  When `equipped_items` is `nil`, the fold reruns
   from the cached `worn_items` instead - equipment cannot have changed, but the
   program level inputs (`BaseLevel`/`JobLevel`) follow the current progression,
   so a level-up recompute refreshes level-gated bonuses without threading the
@@ -466,11 +470,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec apply_equipment_modifiers(
           t(),
-          [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil
+          [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil,
+          EquipScript.inputs() | %{}
         ) :: t()
-  def apply_equipment_modifiers(stats, equipped_items \\ nil)
+  def apply_equipment_modifiers(stats, equipped_items \\ nil, extra_inputs \\ %{})
 
-  def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil) do
+  def apply_equipment_modifiers(%__MODULE__{worn_items: []} = stats, nil, _extra_inputs) do
     %{
       stats
       | equip_autobonuses: %{},
@@ -480,13 +485,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     }
   end
 
-  def apply_equipment_modifiers(%__MODULE__{} = stats, nil) do
+  def apply_equipment_modifiers(%__MODULE__{} = stats, nil, extra_inputs) do
     stats
-    |> fold_equipment(stats.worn_items)
+    |> fold_equipment(stats.worn_items, extra_inputs)
     |> put_weapon_hands(stats.worn_items)
   end
 
-  def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items)
+  def apply_equipment_modifiers(%__MODULE__{} = stats, equipped_items, extra_inputs)
       when is_list(equipped_items) or is_map(equipped_items) do
     worn_items =
       equipped_items
@@ -508,12 +513,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     stats
     |> Map.put(:equipment, equipment_from_inventory(equipped_items))
     |> Map.put(:worn_items, worn_items)
-    |> fold_equipment(worn_items)
+    |> fold_equipment(worn_items, extra_inputs)
     |> put_weapon_hands(worn_items)
   end
 
-  defp fold_equipment(stats, worn_items) do
-    fold = equipment_fold_result(stats, worn_items)
+  # NOTE: the wearer's map/party/guild come from its last committed registry
+  # snapshot; rAthena does not recompute on those changes either.
+  defp character_info(nil), do: nil
+
+  defp character_info(player_id) do
+    case UnitRegistry.get_unit(:player, player_id) do
+      {:ok, {_module, game_state, _pid}} -> game_state
+      {:error, :not_found} -> nil
+    end
+  end
+
+  defp fold_equipment(stats, worn_items, extra_inputs) do
+    fold = equipment_fold_result(stats, worn_items, extra_inputs)
     {equipment_bonuses, granted_skills} = split_granted_skills(fold.bonuses)
 
     %{
@@ -527,11 +543,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     }
   end
 
-  defp equipment_fold_result(stats, worn_items) do
+  defp equipment_fold_result(stats, worn_items, extra_inputs) do
     inputs =
       stats.progression
       |> equip_script_inputs(equip_stat_params(stats), 0)
       |> Map.put(:equipped_item_counts, equipped_item_counts(worn_items))
+      |> Map.merge(extra_inputs)
+      |> Map.put_new_lazy(:local_time, &NaiveDateTime.local_now/0)
 
     fold = fold_worn_items(worn_items, inputs)
 
@@ -701,8 +719,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   def shield_defense_contribution(%__MODULE__{equipment: %Equipment{} = equipment} = stats) do
     if shield?(equipment) do
       without_shield = Enum.reject(stats.worn_items, &worn_in_slot?(&1, :left_hand))
-      full = equipment_fold_result(stats, stats.worn_items).bonuses
-      reduced = equipment_fold_result(stats, without_shield).bonuses
+      inputs = %{local_time: NaiveDateTime.local_now()}
+      full = equipment_fold_result(stats, stats.worn_items, inputs).bonuses
+      reduced = equipment_fold_result(stats, without_shield, inputs).bonuses
 
       %{
         def: max(scaled_equipment_def(full) - scaled_equipment_def(reduced), 0),

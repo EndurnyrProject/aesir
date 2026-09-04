@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
   use ExUnit.Case, async: true
+  import Mimic
 
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
 
@@ -79,6 +81,25 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       assert EquipScript.to_source(program) ==
                """
                if equipped(ctx, [501, 502, 501]) do
+                 bonus(ctx, :str, 1)
+               else
+                 ctx
+               end
+               """
+               |> String.trim_trailing()
+    end
+
+    test "renders dynamic reads with their closed source forms" do
+      assert EquipScript.to_source([{:bonus, :str, {:gettime, {:+, :refine, 1}}}]) ==
+               "bonus(ctx, :str, gettime(ctx, (refine(ctx) + 1)))"
+
+      program = [
+        {:if, {:string_cmp, :!=, "prontera", {:char_info, 3}}, [{:bonus, :str, 1}], []}
+      ]
+
+      assert EquipScript.to_source(program) ==
+               """
+               if ("prontera" != char_info(ctx, 3)) do
                  bonus(ctx, :str, 1)
                else
                  ctx
@@ -222,7 +243,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
       negated_equipped: [
         {:if, {:not, {:equipped, [4172, 4257, 4230, 4272]}}, [{:bonus, :flee, 20}], []}
       ],
-      bool_as_int: [{:bonus, :def, {:+, 2, {:*, 3, {:bool, {:>, :refine, 5}}}}}]
+      bool_as_int: [{:bonus, :def, {:+, 2, {:*, 3, {:bool, {:>, :refine, 5}}}}}],
+      gettime_expr: [{:bonus, :str, {:gettime, {:+, :refine, 1}}}],
+      char_info_eq: [
+        {:if, {:string_cmp, :==, {:char_info, 3}, "prontera"}, [{:bonus, :str, 1}], []}
+      ],
+      char_info_ne: [
+        {:if, {:string_cmp, :!=, "Test Guild", {:char_info, {:+, 1, 1}}}, [{:bonus, :int, 1}], []}
+      ],
+      string_literals_eq: [
+        {:if, {:string_cmp, :==, "prontera", "prontera"}, [{:bonus, :dex, 1}], []}
+      ]
     ]
 
     for {name, program} <- programs do
@@ -408,6 +439,75 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     end
   end
 
+  describe "dynamic reads" do
+    test "gettime evaluates selector expressions against the supplied local timestamp" do
+      program = [{:bonus, :str, {:gettime, {:+, 5, 4}}}]
+      local_time = ~N[2026-09-04 12:34:56]
+
+      assert EquipScript.eval(program, on(0, local_time: local_time)) == %{str: 20_260_904}
+    end
+
+    test "string equality and inequality evaluate character-info selector expressions" do
+      program = [
+        {:if, {:string_cmp, :==, {:char_info, {:+, 1, 2}}, "prontera"}, [{:bonus, :str, 1}], []},
+        {:if, {:string_cmp, :!=, "Other Guild", {:char_info, 2}}, [{:bonus, :int, 1}], []}
+      ]
+
+      stub(GuildManager, :get, fn 9 -> {:ok, %{name: "Test Guild"}} end)
+
+      character_info = %{
+        character_name: "Test Hero",
+        map_name: "prontera",
+        party_id: 0,
+        guild_id: 9
+      }
+
+      assert EquipScript.eval(program, on(0, character_info: character_info)) == %{str: 1, int: 1}
+    end
+
+    test "invalid selectors retain the shared fallback values" do
+      program = [
+        {:bonus, :str, {:gettime, 99}},
+        {:if, {:string_cmp, :==, {:char_info, 99}, ""}, [{:bonus, :int, 1}], []}
+      ]
+
+      inputs =
+        on(0,
+          local_time: ~N[2026-09-04 12:34:56],
+          character_info: %{
+            character_name: "Test Hero",
+            map_name: "prontera",
+            party_id: 0,
+            guild_id: 0
+          }
+        )
+
+      assert EquipScript.eval(program, inputs) == %{str: -1, int: 1}
+    end
+
+    test "gettime requires the fold's local time while char_info reads empty without a character" do
+      error =
+        assert_raise KeyError, fn ->
+          EquipScript.eval([{:bonus, :str, {:gettime, 1}}], on(0))
+        end
+
+      assert error.key == :local_time
+
+      program = [{:if, {:string_cmp, :==, {:char_info, 3}, ""}, [{:bonus, :str, 1}], []}]
+      assert EquipScript.eval(program, on(0)) == %{str: 1}
+    end
+
+    test "fetches dynamic inputs only when their expressions are reached" do
+      program = [
+        {:if, {:>, :refine, 0}, [{:bonus, :str, {:gettime, 1}}], [{:bonus, :str, 2}]},
+        {:if, {:and, {:>, :refine, 0}, {:string_cmp, :==, {:char_info, 3}, "prontera"}},
+         [{:bonus, :int, 1}], []}
+      ]
+
+      assert EquipScript.eval(program, on(0)) == %{str: 2}
+    end
+  end
+
   describe "corpus round-trip over the imported equip.yml" do
     test "every on_equip program round-trips through to_source |> parse! and evals cleanly for refine 0..20" do
       programs =
@@ -587,6 +687,44 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
     test "raises when a comparison sits where an expression is expected" do
       assert_raise ArgumentError, fn ->
         EquipScript.parse!("bonus(ctx, :smatk, refine(ctx) > 2)")
+      end
+    end
+
+    test "rejects malformed dynamic read source forms" do
+      invalid_sources = [
+        "bonus(ctx, :str, gettime(1))",
+        "bonus(ctx, :str, gettime(ctx))",
+        "bonus(ctx, :str, gettime(ctx, 1, 2))",
+        ~s|if char_info(ctx) == "prontera" do\nctx\nend|,
+        ~s|if char_info(ctx, 3, 1) == "prontera" do\nctx\nend|
+      ]
+
+      for source <- invalid_sources do
+        assert_raise ArgumentError, fn -> EquipScript.parse!(source) end
+      end
+    end
+
+    test "keeps strings out of arithmetic, ordering, assignments, and ternaries" do
+      invalid_sources = [
+        ~s|bonus(ctx, :str, char_info(ctx, 3))|,
+        ~s|bonus(ctx, :str, 1 + "prontera")|,
+        ~s|if char_info(ctx, 3) < "prontera" do\nctx\nend|,
+        ~s|if char_info(ctx, 3) == 3 do\nctx\nend|,
+        ~s|ctx = "prontera"\nctx|,
+        ~s|bonus(ctx, :str, if(refine(ctx) > 0, do: char_info(ctx, 3), else: ""))|
+      ]
+
+      for source <- invalid_sources do
+        assert_raise ArgumentError, fn -> EquipScript.parse!(source) end
+      end
+    end
+
+    test "rejects unsupported string comparison IR shapes during evaluation" do
+      assert_raise ArgumentError, fn ->
+        EquipScript.eval(
+          [{:if, {:string_cmp, :>, {:char_info, 3}, "prontera"}, [{:bonus, :str, 1}], []}],
+          on(0, character_info: %{})
+        )
       end
     end
 

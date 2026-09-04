@@ -14,17 +14,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   and parsed back to the tuple form at load time through a closed vocabulary
   (`parse!/1`): `bonus/3`, `autobonus/4`, `status_start/4`, `status_end/2`,
-  `heal/3`, `refine/1`, `base_level/1`, `job_level/1`, `+ - *`, `div/2`, `min/2`,
-  `max/2`, `pow/2`, comparisons, `&&`/`||`/`not`, `job_is/3`, `job_is_not/3`,
-  `bool/2`, `equipped/2`, `if/else` statements, and the inline
+  `heal/3`, `refine/1`, `base_level/1`, `job_level/1`, `gettime/2`, `char_info/2`,
+  `+ - *`, `div/2`, `min/2`, `max/2`, `pow/2`, numeric comparisons, string
+  equality/inequality, `&&`/`||`/`not`, `job_is/3`, `job_is_not/3`, `bool/2`,
+  `equipped/2`, `if/else` statements, and the inline
   `if(cond, do: a, else: b)` ternary expression. Unlike `on_use` the source is
   never compiled to code — the equip corpus (~13k items) is far past the BEAM
   clause-count ceiling — so `evaluate/2` interprets the tuple program against
   the `t:inputs/0` map during the stats recompute. `eval/2` remains the
   modifier-only compatibility entry point. The evaluator is
-  pure and deterministic in `(program, inputs)` — required item/level inputs
-  and optional wearer inputs are the only reads the vocabulary admits, and
-  there is no randomness. Level inputs change on level-up, which is
+  pure and deterministic in `(program, inputs)` — required item/level inputs,
+  the fold's local timestamp, an optional attached-character snapshot, and
+  other optional wearer inputs are the only reads the vocabulary admits. There
+  is no randomness. Level inputs change on level-up, which is
   why the stats recompute re-evaluates programs (`Stats.apply_equipment_modifiers`
   caches `worn_items` for exactly that refold).
 
@@ -87,6 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Learned
+  alias Aesir.ZoneServer.Script.Rathena
 
   @type arith_op :: :+ | :- | :* | :div | :min | :max | :pow
   @type compare_op :: :> | :< | :>= | :<= | :== | :!=
@@ -97,7 +100,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   @typedoc """
   The evaluation inputs: the item's refine and the wearer's levels, plus
-  optional wearer learned skills, base stats, job, and equipped-item multiset.
+  optional wearer learned skills, base stats, job, equipped-item multiset,
+  fixed local timestamp, and attached-character information.
   """
   @type inputs :: %{
           :refine => integer(),
@@ -106,7 +110,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           optional(:learned_skills) => %{integer() => non_neg_integer()},
           optional(:stats) => %{atom() => integer()},
           optional(:job_id) => integer(),
-          optional(:equipped_item_counts) => %{pos_integer() => pos_integer()}
+          optional(:equipped_item_counts) => %{pos_integer() => pos_integer()},
+          optional(:local_time) => NaiveDateTime.t(),
+          optional(:character_info) => Rathena.character_info() | nil
         }
 
   @typedoc """
@@ -126,10 +132,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
           | {:skill_lv, pos_integer()}
           | {:stat, atom()}
           | {:bool, condition()}
+          | {:gettime, expr()}
+
+  @typedoc "An attached-character string expression."
+  @type string_expr :: String.t() | {:char_info, expr()}
 
   @typedoc "An input-pure boolean condition gating an `:if` instruction or a ternary."
   @type condition ::
           {compare_op(), expr(), expr()}
+          | {:string_cmp, :== | :!=, string_expr(), string_expr()}
           | {logic_op(), condition(), condition()}
           | {:not, condition()}
           | {:job_cmp, :== | :!=, job_reader(), atom()}
@@ -334,6 +345,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp render_expr({:skill_lv, id}), do: "skill_lv(ctx, #{id})"
   defp render_expr({:stat, stat}), do: "stat(ctx, #{inspect(stat)})"
   defp render_expr({:bool, condition}), do: "bool(ctx, #{render_cond(condition)})"
+  defp render_expr({:gettime, selector}), do: "gettime(ctx, #{render_expr(selector)})"
   defp render_expr({:div, l, r}), do: "div(#{render_expr(l)}, #{render_expr(r)})"
   defp render_expr({:min, l, r}), do: "min(#{render_expr(l)}, #{render_expr(r)})"
   defp render_expr({:max, l, r}), do: "max(#{render_expr(l)}, #{render_expr(r)})"
@@ -351,6 +363,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     "(#{render_expr(l)} #{op} #{render_expr(r)})"
   end
 
+  defp render_cond({:string_cmp, op, left, right}) when op in [:==, :!=] do
+    "(#{render_string_expr(left)} #{op} #{render_string_expr(right)})"
+  end
+
   defp render_cond({:and, l, r}), do: "(#{render_cond(l)} && #{render_cond(r)})"
   defp render_cond({:or, l, r}), do: "(#{render_cond(l)} || #{render_cond(r)})"
   defp render_cond({:not, condition}), do: "not #{render_cond(condition)}"
@@ -363,6 +379,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp render_cond({:equipped, ids}),
     do: "equipped(ctx, [#{Enum.join(ids, ", ")}])"
+
+  defp render_string_expr(value) when is_binary(value),
+    do: inspect(value, printable_limit: :infinity)
+
+  defp render_string_expr({:char_info, selector}),
+    do: "char_info(ctx, #{render_expr(selector)})"
 
   defp indent(source) do
     source
@@ -446,6 +468,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp parse_expr!({:bool, _, [{:ctx, _, c}, condition]}) when is_atom(c),
     do: {:bool, parse_cond!(condition)}
 
+  defp parse_expr!({:gettime, _, [{:ctx, _, c}, selector]}) when is_atom(c),
+    do: {:gettime, parse_expr!(selector)}
+
   defp parse_expr!({op, _, [l, r]}) when op in [:+, :-, :*, :div, :min, :max, :pow] do
     {op, parse_expr!(l), parse_expr!(r)}
   end
@@ -456,7 +481,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp parse_expr!(other), do: malformed!("expression", other)
 
-  defp parse_cond!({op, _, [l, r]}) when op in @compare_ops do
+  defp parse_cond!({op, _, [left, right]}) when op in [:==, :!=] do
+    if string_expr_source?(left) or string_expr_source?(right) do
+      {:string_cmp, op, parse_string_expr!(left), parse_string_expr!(right)}
+    else
+      {op, parse_expr!(left), parse_expr!(right)}
+    end
+  end
+
+  defp parse_cond!({op, _, [l, r]}) when op in [:>, :<, :>=, :<=] do
     {op, parse_expr!(l), parse_expr!(r)}
   end
 
@@ -481,6 +514,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
     do: {:equipped, validate_item_ids!(ids)}
 
   defp parse_cond!(other), do: malformed!("condition", other)
+
+  defp string_expr_source?(value) when is_binary(value), do: true
+  defp string_expr_source?({:char_info, _, _args}), do: true
+  defp string_expr_source?(_value), do: false
+
+  defp parse_string_expr!(value) when is_binary(value), do: value
+
+  defp parse_string_expr!({:char_info, _, [{:ctx, _, c}, selector]}) when is_atom(c),
+    do: {:char_info, parse_expr!(selector)}
+
+  defp parse_string_expr!(other), do: malformed!("string expression", other)
 
   defp validate_destination!(dest) when is_atom(dest) do
     if dest in BonusKeys.destinations(), do: dest, else: malformed!("bonus destination", dest)
@@ -810,6 +854,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
 
   defp eval_expr({:bool, condition}, inputs), do: if(eval_cond(condition, inputs), do: 1, else: 0)
 
+  defp eval_expr({:gettime, selector}, inputs) do
+    Rathena.gettime(Map.fetch!(inputs, :local_time), eval_expr(selector, inputs))
+  end
+
   defp eval_expr({:+, a, b}, inputs), do: eval_expr(a, inputs) + eval_expr(b, inputs)
   defp eval_expr({:-, a, b}, inputs), do: eval_expr(a, inputs) - eval_expr(b, inputs)
   defp eval_expr({:*, a, b}, inputs), do: eval_expr(a, inputs) * eval_expr(b, inputs)
@@ -832,6 +880,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   defp eval_cond({:<=, a, b}, inputs), do: eval_expr(a, inputs) <= eval_expr(b, inputs)
   defp eval_cond({:==, a, b}, inputs), do: eval_expr(a, inputs) == eval_expr(b, inputs)
   defp eval_cond({:!=, a, b}, inputs), do: eval_expr(a, inputs) != eval_expr(b, inputs)
+
+  defp eval_cond({:string_cmp, :==, left, right}, inputs),
+    do: eval_string_expr(left, inputs) == eval_string_expr(right, inputs)
+
+  defp eval_cond({:string_cmp, :!=, left, right}, inputs),
+    do: eval_string_expr(left, inputs) != eval_string_expr(right, inputs)
+
   defp eval_cond({:and, a, b}, inputs), do: eval_cond(a, inputs) and eval_cond(b, inputs)
   defp eval_cond({:or, a, b}, inputs), do: eval_cond(a, inputs) or eval_cond(b, inputs)
   defp eval_cond({:not, condition}, inputs), do: not eval_cond(condition, inputs)
@@ -848,6 +903,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   end
 
   defp eval_cond(other, _inputs), do: malformed!("condition", other)
+
+  defp eval_string_expr(value, _inputs) when is_binary(value), do: value
+
+  defp eval_string_expr({:char_info, selector}, inputs) do
+    Rathena.strcharinfo(Map.get(inputs, :character_info), eval_expr(selector, inputs))
+  end
+
+  defp eval_string_expr(other, _inputs), do: malformed!("string expression", other)
 
   # The wearer's job for a reader. An absent `:job_id` input reads as job 0
   # (Novice); `JobLineage` normalizes trans/baby variants for the base readers.
