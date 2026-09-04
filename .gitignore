@@ -137,7 +137,9 @@ docs/superpowers
 .worktrees
 
 # Generated data caches (rebuilt from priv/db/*/*.yml on boot)
-apps/zone_server/priv/db/**/.cache/
+apps/zone_server/priv/db/**/.cache/*
+!apps/zone_server/priv/db/re/warps/.cache/portal_graph.etf
+!apps/zone_server/priv/db/pre-re/warps/.cache/portal_graph.etf
 apps/zone_server/priv/db/import/*
 !apps/zone_server/priv/db/import/README.md
 

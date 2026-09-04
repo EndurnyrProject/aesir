@@ -39,16 +39,23 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.Builder do
     fingerprint = fingerprint(inputs)
     cache = Path.join([Source.base_dir("warps"), ".cache", @cache_file])
 
-    with {:ok, binary} <- File.read(cache),
-         {:ok, %{inputs: ^inputs, fingerprint: ^fingerprint, graph: graph}} <-
-           decode_cache(binary) do
-      graph
+    if Keyword.get(opts, :force, false) do
+      rebuild(cache, fingerprint)
     else
-      _ ->
-        graph = build()
-        write_cache!(cache, %{inputs: inputs, fingerprint: fingerprint, graph: graph})
+      with {:ok, binary} <- File.read(cache),
+           {:ok, %{fingerprint: ^fingerprint, graph: graph}} <- decode_cache(binary) do
         graph
+      else
+        _ -> rebuild(cache, fingerprint)
+      end
     end
+  end
+
+  @spec rebuild(Path.t(), [binary()]) :: Aesir.ZoneServer.Navigation.PortalGraph.t()
+  defp rebuild(cache, fingerprint) do
+    graph = build()
+    write_cache!(cache, %{fingerprint: fingerprint, graph: graph})
+    graph
   end
 
   @spec build() :: Aesir.ZoneServer.Navigation.PortalGraph.t()
