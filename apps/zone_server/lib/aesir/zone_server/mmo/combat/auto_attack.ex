@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -126,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, projectile?: true),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: nil}),
          :ok <- validate_player_target(attacker, target, target_type) do
       {:ok, target_pid, target_state, target_type, target}
     end
@@ -284,27 +286,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   end
 
   defp resolve_attack_replacement(player_state, attacker, target, target_id, opts) do
-    case weapon_skill_hit_result(attacker, target) do
-      :hit ->
-        SkillAttack.execute_skill_attack(player_state, target_id, opts)
+    with :ok <-
+           Rules.validate_target(attacker, target, %{skill_id: Keyword.fetch!(opts, :skill_id)}) do
+      case weapon_skill_hit_result(attacker, target) do
+        :hit ->
+          SkillAttack.execute_skill_attack(player_state, target_id, opts)
 
-      :miss ->
-        damage_result = %{damage: 0, is_critical: false}
+        :miss ->
+          damage_result = %{damage: 0, is_critical: false}
 
-        packet =
-          PacketFactory.build_skill_damage_packet(
-            attacker,
-            target,
-            Keyword.fetch!(opts, :skill_id),
-            Keyword.fetch!(opts, :skill_level),
-            damage_result,
-            div: Keyword.get(opts, :display_hit_count, 1)
-          )
+          packet =
+            PacketFactory.build_skill_damage_packet(
+              attacker,
+              target,
+              Keyword.fetch!(opts, :skill_id),
+              Keyword.fetch!(opts, :skill_level),
+              damage_result,
+              div: Keyword.get(opts, :display_hit_count, 1)
+            )
 
-        DamageApplication.broadcast_nearby(target, packet)
+          DamageApplication.broadcast_nearby(target, packet)
+      end
+
+      :ok
     end
-
-    :ok
   end
 
   defp weapon_skill_hit_result(attacker, target) do
@@ -777,7 +782,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
     hit_info = %{
       dmg_type: :physical,
-      is_short: true,
+      is_short: attacker.attack_range <= 3,
       element: swing.primary_element,
       skill_id: nil,
       skill_level: nil,
@@ -1112,7 +1117,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :mob ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: true,
+          is_short: attacker_combatant.attack_range <= 3,
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
@@ -1148,7 +1153,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :player ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: true,
+          is_short: attacker_combatant.attack_range <= 3,
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,
@@ -1187,7 +1192,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
       :homunculus ->
         hit_info = %{
           dmg_type: :physical,
-          is_short: true,
+          is_short: attacker_combatant.attack_range <= 3,
           element: attacker_combatant.weapon.element,
           skill_id: nil,
           skill_level: nil,

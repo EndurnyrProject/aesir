@@ -13,11 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @doc "Validates that `target` is a living enemy of `attacker`."
-  @spec validate_enemy(map(), map()) :: :ok | {:error, :invalid_target | :target_dead}
+  @spec validate_enemy(map(), map()) :: :ok | {:error, atom()}
   def validate_enemy(attacker, target) do
     if alive?(target) do
       attacker_combatant = relationship_combatant(attacker)
@@ -28,9 +29,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
            enrich_homunculus(attacker_combatant, versus),
            enrich_homunculus(target_combatant, versus),
            versus
-         ),
-         do: :ok,
-         else: {:error, :invalid_target}
+         ) do
+        Rules.validate_target(attacker_combatant, target_combatant, %{skill_id: nil})
+      else
+        {:error, :invalid_target}
+      end
     else
       {:error, :target_dead}
     end
@@ -89,7 +92,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
       unit_type: unit_type(unit),
       party_id: Map.get(unit, :party_id, 0),
       guild_id: Map.get(unit, :guild_id, 0),
-      map_name: Map.get(unit, :map_name)
+      map_name: Map.get(unit, :map_name),
+      monster_id: Map.get(unit, :monster_id) || Map.get(unit, :mob_id)
     }
 
     unit

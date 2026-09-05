@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Ref
@@ -105,7 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
-         :ok <- Targeting.validate_enemy(attacker, target) do
+         :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       damage =
         amount
         |> DamageShared.apply_element(
@@ -269,6 +271,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          :ok <- ensure_living_target(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- Rules.validate_target(caster, target, %{skill_id: skill_id}),
          {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
          damage <-
            skill_unit_damage(
@@ -423,7 +426,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          target <- target_state.__struct__.to_combatant(target_state),
          target_id <- target.unit_id,
          :ok <- AttackValidator.validate(attacker, target, opts),
-         :ok <- Targeting.validate_enemy(attacker, target) do
+         :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       damages =
         magic_hit_damages(
           attacker,
@@ -813,6 +817,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,

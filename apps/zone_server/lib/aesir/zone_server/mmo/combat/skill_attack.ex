@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :skill_level,
       :damage_result,
       :display_hits,
+      :element,
       :ranged,
       :coma?,
       :knockback_options
@@ -55,6 +56,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.Ref
@@ -252,7 +255,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
-         :ok <- Targeting.validate_enemy(attacker, target) do
+         :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       if weapon_hit_intercepted?(attacker, target_type, target, %{}) do
         {:ok, :miss}
       else
@@ -287,6 +291,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       skill_level: skill_level,
       damage_result: damage_result,
       display_hits: display_hits,
+      element: element,
       ranged: ranged?,
       coma?: coma?,
       knockback_options: knockback_options
@@ -299,9 +304,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_id,
         skill_level,
         damage_result,
-        display_hits,
-        ranged?,
-        coma?
+        %{display_hits: display_hits, element: element, ranged?: ranged?, coma?: coma?}
       )
 
     result = logical_skill_result([%{hit?: true, damage: damage}], target_hp, coma?)
@@ -357,7 +360,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
-         :ok <- Targeting.validate_enemy(attacker, target) do
+         :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       hit_opts = %{
         display_hits: display_hits,
         hit_rate_bonus_pct: hit_rate_bonus_pct,
@@ -589,7 +593,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          }
        ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
-         target <- target_state.__struct__.to_combatant(target_state) do
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       hit_opts = %{
         display_hits: nil,
         hit_rate_bonus_pct: 0,
@@ -757,6 +762,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            misc_target_combatant(target_state, misc_opts.owner_derived_trap?),
          target_id <- target.unit_id,
          :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(
              attacker,
@@ -887,6 +893,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
                skill_level: skill_level,
                damage_result: damage_result,
                display_hits: display_hits,
+               element: physical_attack_element(attacker, calc_opts),
                ranged: ranged?,
                coma?: decide_coma(:unchecked, attacker, target, damage_result.damage) == true,
                knockback_options: knockback_options
@@ -1069,6 +1076,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
        ) do
     %{display_hits: display_hits, ranged: ranged?} = hit_opts
     {calc_opts, damage_calculator} = damage_calculation(calc_context)
+    element = physical_attack_element(attacker, calc_opts)
 
     case damage_calculator.(attacker, target, calc_opts) do
       {:ok, damage_result} ->
@@ -1081,9 +1089,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             skill_id,
             skill_level,
             damage_result,
-            display_hits,
-            ranged?,
-            coma_decision == true
+            %{
+              display_hits: display_hits,
+              element: element,
+              ranged?: ranged?,
+              coma?: coma_decision == true
+            }
           )
 
         {%{hit?: true, damage: damage}, coma_decision}
@@ -1108,14 +1119,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          skill_id,
          skill_level,
          damage_result,
-         display_hits,
-         ranged?,
-         coma?
+         hit_metadata
        ) do
+    %{display_hits: display_hits, element: element, ranged?: ranged?, coma?: coma?} = hit_metadata
+
     hit_info = %{
       dmg_type: :physical,
       is_short: not ranged? and attacker.attack_range <= 3,
-      element: :neutral,
+      element: element,
       skill_id: skill_id,
       skill_level: skill_level,
       coma?: coma?
@@ -1232,6 +1243,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   defp damage_calculation(calc_opts),
     do: {calc_opts, &DamageCalculator.calculate_damage/3}
+
+  defp physical_attack_element(attacker, calc_opts) do
+    Keyword.get(calc_opts, :element) ||
+      Map.get(
+        ModifierCalculator.get_all_modifiers(attacker.unit_type, attacker.unit_id),
+        :attack_element,
+        attacker.weapon.element
+      )
+  end
 
   defp decide_coma(:unchecked, attacker, target, damage) when damage > 0,
     do: EquipComa.trigger?(attacker, target)
