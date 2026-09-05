@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell, as: SkillUnitCell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapCombatTarget
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -154,6 +155,42 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         else: &DamageCalculator.calculate_damage/3
 
     execute_single_target_attack(caster_state, target_id, opts, calculator, %{})
+  end
+
+  @doc """
+  Executes a physical hit owned by a supported player field.
+
+  This restricted entry preserves the ordinary validation, calculation, hooks,
+  and settlement path while replacing only enemy authorization with the exact
+  source group's field authorization. The supplied skill id and level must
+  match the authoritative group.
+  """
+  @spec execute_field_skill_attack(struct(), Ref.t(), Group.t(), keyword()) ::
+          :ok
+          | {:ok,
+             %{
+               hit?: boolean(),
+               damage: non_neg_integer(),
+               target_survives?: boolean(),
+               coma?: boolean()
+             }}
+          | {:error, atom()}
+  def execute_field_skill_attack(caster_state, target_ref, %Group{} = group, opts) do
+    calculator =
+      if Keyword.get(opts, :simple_defense, false),
+        do: &DamageCalculator.calculate_damage_simple_defense/3,
+        else: &DamageCalculator.calculate_damage/3
+
+    with :ok <- validate_field_skill_opts(group, opts) do
+      execute_single_target_attack(
+        caster_state,
+        target_ref,
+        opts,
+        calculator,
+        %{},
+        &Targeting.validate_field_target(group, &1, &2)
+      )
+    end
   end
 
   @doc """
@@ -354,6 +391,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          damage_calculator,
          weapon_hit_metadata
        ) do
+    execute_single_target_attack(
+      caster_state,
+      target_id,
+      opts,
+      damage_calculator,
+      weapon_hit_metadata,
+      &Targeting.validate_enemy/2
+    )
+  end
+
+  defp execute_single_target_attack(
+         caster_state,
+         target_id,
+         opts,
+         damage_calculator,
+         weapon_hit_metadata,
+         authorize_target
+       ) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
@@ -370,7 +425,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
-         :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- authorize_target.(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       hit_opts = %{
         display_hits: display_hits,
@@ -438,6 +493,48 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       opts,
       &DamageCalculator.calculate_damage/3
     )
+  end
+
+  @doc """
+  Executes a physical splash owned by a supported player field.
+
+  Selection and delivery both validate the exact source group. Connected
+  targets are always returned as typed references for field follow-up effects.
+  """
+  @spec execute_field_splash_attack(
+          struct(),
+          {integer(), integer()},
+          non_neg_integer(),
+          Group.t(),
+          keyword()
+        ) :: [Ref.t()]
+  def execute_field_splash_attack(caster_state, center, radius, %Group{} = group, opts) do
+    case validate_field_skill_opts(group, opts) do
+      :ok ->
+        attacker = caster_state.__struct__.to_combatant(caster_state)
+        {skill_id, skill_level, calc_opts} = multi_target_opts(opts)
+        hits = Keyword.get(opts, :hit_count, 1)
+
+        group
+        |> SplashTargets.select_field(center, radius, attacker)
+        |> hit_targets(
+          attacker,
+          skill_id,
+          skill_level,
+          calc_opts,
+          hits,
+          %{
+            ranged?: Keyword.get(opts, :ranged, false),
+            ignore_flee?: Keyword.get(opts, :ignore_flee, false),
+            typed_results?: true,
+            knockback_options: knockback_options(opts)
+          },
+          &Targeting.validate_field_target(group, &1, &2)
+        )
+
+      {:error, _reason} ->
+        []
+    end
   end
 
   @doc """
@@ -574,7 +671,23 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     {skill_id, skill_level, calc_opts}
   end
 
-  defp hit_targets(targets, attacker, skill_id, skill_level, calc_opts, hits, result_opts) do
+  defp validate_field_skill_opts(%Group{skill_id: skill_id, level: level}, opts) do
+    case {Keyword.fetch(opts, :skill_id), Keyword.fetch(opts, :skill_level)} do
+      {{:ok, ^skill_id}, {:ok, ^level}} -> :ok
+      _mismatch -> {:error, :field_skill_mismatch}
+    end
+  end
+
+  defp hit_targets(
+         targets,
+         attacker,
+         skill_id,
+         skill_level,
+         calc_opts,
+         hits,
+         result_opts,
+         authorize_target \\ fn _attacker, _target -> :ok end
+       ) do
     Enum.flat_map(targets, fn {_unit_type, _target_id} = target_ref ->
       apply_splash_hits(
         attacker,
@@ -583,7 +696,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         skill_level,
         calc_opts,
         hits,
-        result_opts
+        result_opts,
+        authorize_target
       )
     end)
   end
@@ -600,10 +714,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            ignore_flee?: ignore_flee?,
            typed_results?: typed_results?,
            knockback_options: knockback_options
-         }
+         },
+         authorize_target
        ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- authorize_target.(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       hit_opts = %{
         display_hits: nil,
@@ -659,6 +776,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   """
   @spec execute_misc_attack(struct(), integer() | Ref.t(), keyword()) :: :ok | {:error, atom()}
   def execute_misc_attack(caster_state, target_id, opts) do
+    execute_misc_attack_with(caster_state, target_id, opts, &Targeting.validate_enemy/2)
+  end
+
+  @doc """
+  Executes one misc hit owned by a supported player field.
+
+  The exact group authorizes the target at delivery time; all misc calculation,
+  hooks, packets, and settlement remain shared with `execute_misc_attack/3`.
+  """
+  @spec execute_field_misc_attack(struct(), Ref.t(), Group.t(), keyword()) ::
+          :ok | {:error, atom()}
+  def execute_field_misc_attack(caster_state, target_ref, %Group{} = group, opts) do
+    with :ok <- validate_field_skill_opts(group, opts) do
+      execute_misc_attack_with(
+        caster_state,
+        target_ref,
+        opts,
+        &Targeting.validate_field_target(group, &1, &2)
+      )
+    end
+  end
+
+  defp execute_misc_attack_with(caster_state, target_ref, opts, authorize_target) do
     attacker = caster_state.__struct__.to_combatant(caster_state)
     skill_id = Keyword.fetch!(opts, :skill_id)
     skill_level = Keyword.fetch!(opts, :skill_level)
@@ -667,13 +807,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
     apply_misc_hit(
       attacker,
-      target_id,
+      target_ref,
       skill_id,
       skill_level,
       element,
       base_damage,
       1,
       %{
+        authorize_target: authorize_target,
         ignore_element?: Keyword.get(opts, :ignore_element, false),
         owner_derived_trap?: false,
         knockback_options: knockback_options(opts)
@@ -734,6 +875,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              base_damage,
              display_hits,
              %{
+               authorize_target: &Targeting.validate_enemy/2,
                ignore_element?: ignore_element?,
                owner_derived_trap?: target_skill_units?,
                knockback_options: knockback_options(opts)
@@ -741,6 +883,75 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            ) do
         :ok -> [target_id]
         _ -> []
+      end
+    end)
+  end
+
+  @doc """
+  Executes a split-capable misc splash owned by a supported player field.
+
+  The exact group authorizes selection, the split divisor, and each actual
+  delivery. The function preserves the existing misc splash geometry and
+  settlement behavior and returns after dispatching all eligible targets.
+  """
+  @spec execute_field_misc_splash(
+          struct(),
+          {integer(), integer()},
+          non_neg_integer(),
+          Group.t(),
+          keyword()
+        ) :: :ok
+  def execute_field_misc_splash(caster_state, center, radius, %Group{} = group, opts) do
+    if validate_field_skill_opts(group, opts) == :ok do
+      attacker = caster_state.__struct__.to_combatant(caster_state)
+      skill_id = group.skill_id
+      skill_level = group.level
+      authorize_target = &Targeting.validate_field_target(group, &1, &2)
+
+      targets =
+        group
+        |> SplashTargets.select_field(center, radius, attacker,
+          shoot_range_los: Keyword.get(opts, :shoot_range_los, false)
+        )
+        |> eligible_misc_targets(attacker, skill_id, authorize_target)
+
+      base_damage =
+        opts
+        |> Keyword.fetch!(:base_damage)
+        |> split_base_damage(targets, Keyword.get(opts, :split, false))
+
+      Enum.each(targets, fn target_ref ->
+        apply_misc_hit(
+          attacker,
+          target_ref,
+          skill_id,
+          skill_level,
+          Keyword.get(opts, :element, :neutral),
+          base_damage,
+          display_hit_count!(opts),
+          %{
+            authorize_target: authorize_target,
+            ignore_element?: Keyword.get(opts, :ignore_element, false),
+            owner_derived_trap?: false,
+            knockback_options: knockback_options(opts)
+          }
+        )
+      end)
+    end
+
+    :ok
+  end
+
+  defp eligible_misc_targets(targets, attacker, skill_id, authorize_target) do
+    Enum.filter(targets, fn target_ref ->
+      with {:ok, _target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
+           :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+           {:ok, target} <- misc_target_combatant(target_state, false),
+           :ok <- authorize_target.(attacker, target),
+           :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+        true
+      else
+        _ineligible -> false
       end
     end)
   end
@@ -771,7 +982,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          {:ok, target} <-
            misc_target_combatant(target_state, misc_opts.owner_derived_trap?),
          target_id <- target.unit_id,
-         :ok <- Targeting.validate_enemy(attacker, target),
+         :ok <- misc_opts.authorize_target.(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}),
          {:ok, %{damage: damage}} <-
            MiscDamageCalculator.calculate_misc_damage(

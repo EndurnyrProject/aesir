@@ -13,9 +13,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @field_skills %{
+    92 => :wz_quagmire,
+    115 => :ht_skidtrap,
+    116 => :ht_landmine,
+    117 => :ht_anklesnare,
+    118 => :ht_shockwave,
+    119 => :ht_sandman,
+    120 => :ht_flasher,
+    121 => :ht_freezingtrap,
+    122 => :ht_blastmine,
+    123 => :ht_claymoretrap,
+    229 => :am_demonstration
+  }
 
   @doc "Validates that `target` is a living enemy of `attacker`."
   @spec validate_enemy(map(), map()) :: :ok | {:error, atom()}
@@ -33,6 +48,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
         Rules.validate_target(attacker_combatant, target_combatant, %{skill_id: nil})
       else
         {:error, :invalid_target}
+      end
+    else
+      {:error, :target_dead}
+    end
+  end
+
+  @doc """
+  Validates a target selected and delivered by a supported player-owned field.
+
+  The source group must identify the actual player caster, map, and one of the
+  finite Quagmire, Demonstration, or Hunter trap skills. Those fields may reach
+  normally protected player-side targets only while PvP or GvG is active; PvE
+  and off-hours maps retain ordinary enemy targeting. The field's concrete
+  skill identity is always checked by siege objective rules.
+  """
+  @spec validate_field_target(Group.t(), map(), map()) :: :ok | {:error, atom()}
+  def validate_field_target(%Group{} = group, attacker, target) do
+    if alive?(target) do
+      attacker = relationship_combatant(attacker)
+      target = relationship_combatant(target)
+
+      with :ok <- validate_field_source(group, attacker),
+           :ok <- validate_field_target_map(group, target),
+           :ok <- validate_field_self(group, target),
+           :ok <- validate_field_relationship(group, attacker, target) do
+        Rules.validate_target(attacker, target, %{skill_id: group.skill_id})
       end
     else
       {:error, :target_dead}
@@ -70,6 +111,40 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     do: MapFlags.get(map_name, :pvp) or MapFlags.get(map_name, :gvg)
 
   def versus_map?(_map_name), do: false
+
+  defp validate_field_source(
+         %Group{
+           caster_type: :player,
+           caster_id: caster_id,
+           map_name: map_name,
+           skill_id: skill_id,
+           skill_name: skill_name
+         },
+         %{unit_type: :player, unit_id: caster_id, map_name: map_name}
+       )
+       when is_binary(map_name) do
+    case Map.fetch(@field_skills, skill_id) do
+      {:ok, ^skill_name} when not is_nil(skill_name) -> :ok
+      _mismatch -> {:error, :invalid_field_source}
+    end
+  end
+
+  defp validate_field_source(%Group{}, _attacker), do: {:error, :invalid_field_source}
+
+  defp validate_field_target_map(%Group{map_name: map_name}, %{map_name: map_name}), do: :ok
+  defp validate_field_target_map(%Group{}, _target), do: {:error, :different_map}
+
+  defp validate_field_self(
+         %Group{caster_type: caster_type, caster_id: caster_id},
+         %{unit_type: caster_type, unit_id: caster_id}
+       ),
+       do: {:error, :invalid_target}
+
+  defp validate_field_self(%Group{}, _target), do: :ok
+
+  defp validate_field_relationship(group, attacker, target) do
+    if versus_map?(group.map_name), do: :ok, else: validate_enemy(attacker, target)
+  end
 
   defp versus_context(map_name) when is_binary(map_name) do
     cond do
