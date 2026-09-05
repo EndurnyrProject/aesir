@@ -352,6 +352,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSession do
     {:noreply, state |> MobState.apply_walk_delay(duration, now) |> MobState.stop_movement()}
   end
 
+  def handle_cast({:movement, {:knockback, expected_x, expected_y, map_name, x, y}}, state) do
+    MovementHandler.handle_knockback(expected_x, expected_y, map_name, x, y, state)
+  end
+
   def handle_cast({:movement, {:displace, expected_x, expected_y, map_name, x, y}}, state) do
     MovementHandler.handle_displacement(state, expected_x, expected_y, map_name, x, y)
   end

@@ -261,12 +261,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert damage > 0
 
     assert_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, "prontera", 66, 60}}}
+                    {:movement, {:knockback, _expected_x, _expected_y, "prontera", 66, 60}}}
 
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 
@@ -280,7 +280,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 
@@ -312,7 +312,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 
@@ -327,7 +327,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 
@@ -342,7 +342,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 
@@ -358,7 +358,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert damage > 0
 
     assert_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, "prontera", 56, 64}}}
+                    {:movement, {:knockback, _expected_x, _expected_y, "prontera", 56, 64}}}
   end
 
   test "impact rejects an unaffiliated player through the central relation check until PvP exists" do
@@ -371,7 +371,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 
@@ -388,7 +388,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     refute_receive {:session_cast, {:combat, {:apply_damage, _damage, _attacker_id}}}, 20
 
     refute_receive {:session_cast,
-                    {:movement, {:displace, _expected_x, _expected_y, _map, _x, _y}}},
+                    {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}},
                    20
   end
 

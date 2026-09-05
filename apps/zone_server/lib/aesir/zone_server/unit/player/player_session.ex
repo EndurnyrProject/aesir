@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
+  alias Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler, as: HomunculusMovementHandler
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Player.GuildSync
@@ -387,6 +388,23 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @spec gain_homunculus_exp(pid(), pos_integer(), non_neg_integer(), String.t()) :: :ok
   def gain_homunculus_exp(owner_pid, gid, base_exp, mob_map) do
     GenServer.cast(owner_pid, {:homunculus, {:gain_exp, gid, base_exp, mob_map}})
+  end
+
+  @doc "Requests offensive knockback of this owner's exact active Homunculus endpoint."
+  @spec knockback_homunculus(
+          pid(),
+          pos_integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: :ok
+  def knockback_homunculus(owner_pid, gid, expected_x, expected_y, map_name, x, y) do
+    GenServer.cast(
+      owner_pid,
+      {:homunculus, {:knockback, gid, expected_x, expected_y, map_name, x, y}}
+    )
   end
 
   @doc "Requests displacement of this owner's exact active Homunculus endpoint."
@@ -1001,6 +1019,22 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_cast(
+        {:homunculus, {:knockback, gid, expected_x, expected_y, map_name, x, y}},
+        state
+      ) do
+    {:noreply,
+     HomunculusMovementHandler.knockback(
+       state,
+       gid,
+       expected_x,
+       expected_y,
+       map_name,
+       x,
+       y
+     )}
+  end
+
   def handle_cast({:homunculus, command}, state) do
     HomunculusCommandHandler.cast(command, state)
   end
@@ -1051,6 +1085,10 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   # and sends a client-visible MoveStop packet. The warp cast (on-touch warp
   # NPCs, AL_WARP, GM @warp) delegates too.
   @impl true
+  def handle_cast({:movement, {:knockback, expected_x, expected_y, map_name, x, y}}, state) do
+    MovementHandler.handle_knockback(expected_x, expected_y, map_name, x, y, state)
+  end
+
   def handle_cast({:movement, {:displace, expected_x, expected_y, map_name, x, y}}, state) do
     MovementHandler.handle_displacement(state, expected_x, expected_y, map_name, x, y)
   end

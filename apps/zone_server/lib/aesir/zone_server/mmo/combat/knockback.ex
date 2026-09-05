@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -65,12 +66,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
          {:ok, {module, state, pid}} <- displacement_owner(unit_type, unit_id),
          :ok <- ensure_living(state),
          {:ok, _map} <- MapCache.get(map_name) do
-      if module.is_boss?(state) or knockback_immune?(module, state) do
+      if Rules.ground?(map_name) or module.is_boss?(state) or knockback_immune?(module, state) do
         {:ok, {x, y}}
       else
         {dx, dy} = {sign(x - from_x), sign(y - from_y)}
         destination = blow_path(map_name, x, y, dx, dy, distance)
-        request_displacement(unit_type, unit_id, pid, {x, y, map_name}, destination)
+        request_knockback(unit_type, unit_id, pid, {x, y, map_name}, destination)
       end
     end
   end
@@ -168,6 +169,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Knockback do
       nil -> attacker.position
       origin -> origin
     end
+  end
+
+  defp request_knockback(_unit_type, _unit_id, _pid, {x, y, _map_name}, {x, y}),
+    do: {:ok, {x, y}}
+
+  defp request_knockback(:homunculus, unit_id, pid, {x, y, map_name}, {dst_x, dst_y}) do
+    PlayerSession.knockback_homunculus(pid, unit_id, x, y, map_name, dst_x, dst_y)
+    {:ok, {dst_x, dst_y}}
+  end
+
+  defp request_knockback(_unit_type, _unit_id, pid, {x, y, map_name}, {dst_x, dst_y}) do
+    GenServer.cast(pid, {:movement, {:knockback, x, y, map_name, dst_x, dst_y}})
+    {:ok, {dst_x, dst_y}}
   end
 
   defp request_displacement(_unit_type, _unit_id, _pid, {x, y, _map_name}, {x, y}),

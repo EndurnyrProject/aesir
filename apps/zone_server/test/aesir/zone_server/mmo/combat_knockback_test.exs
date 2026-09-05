@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     assert {:ok, {156, 150}} =
              Knockback.skill(attacker, target, 18, result, base_distance: 3)
 
-    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 156, 150}}}
+    assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 156, 150}}}
     refute_received {:"$gen_cast", {:movement, _movement}}
   end
 
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     for opts <- gated_options do
       assert {:ok, {153, 150}} = Knockback.skill(attacker, target, 18, result, opts)
 
-      assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+      assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
       refute_received {:"$gen_cast", {:movement, _movement}}
     end
   end
@@ -117,7 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
                native_requires_survival: true
              )
 
-    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 154, 150}}}
+    assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 154, 150}}}
   end
 
   test "skill misses and zero final distance do not request knockback" do
@@ -160,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     assert {:ok, {149, 150}} =
              Knockback.skill(attacker, target, 18, result, origin: {152, 150})
 
-    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 149, 150}}}
+    assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 149, 150}}}
   end
 
   test "skill keeps existing boss knockback immunity" do
@@ -210,7 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatKnockbackTest do
     {from_x, from_y} = @from
     assert {:ok, {153, 150}} = Combat.knockback(:mob, @mob_id, from_x, from_y, 5)
 
-    assert_received {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+    assert_received {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
   end
 
   test "hostile knockback and pull leave a boss mob unchanged" do

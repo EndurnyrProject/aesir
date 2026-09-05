@@ -378,10 +378,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
         assert_receive {
           :"$gen_cast",
-          {:movement, {:displace, 101, 100, ^map_name, ^dst_x, ^dst_y}}
+          {:movement, {:knockback, 101, 100, ^map_name, ^dst_x, ^dst_y}}
         }
       else
-        refute_receive {:"$gen_cast", {:movement, {:displace, _, _, _, _, _}}}
+        refute_receive {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
       end
     end
   end
@@ -441,10 +441,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
     assert_receive {
       :"$gen_cast",
-      {:movement, {:displace, 101, 100, ^map_name, 103, 100}}
+      {:movement, {:knockback, 101, 100, ^map_name, 103, 100}}
     }
 
-    refute_receive {:"$gen_cast", {:movement, {:displace, _, _, _, _, _}}}
+    refute_receive {:"$gen_cast", {:movement, {:knockback, _, _, _, _, _}}}
   end
 
   test "staged HP-less misses and calculation errors return before delivery" do

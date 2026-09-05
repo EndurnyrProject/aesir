@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -42,6 +43,26 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.Handlers.MovementHandler do
     case path(session, destination) do
       {:ok, cells} -> start_path(session, cells, nil, false)
       {:error, _reason} -> stop(session, true)
+    end
+  end
+
+  @doc "Rejects offensive knockback on current castle ground before displacement commit."
+  @spec knockback(
+          SessionState.t(),
+          pos_integer(),
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer()
+        ) :: SessionState.t()
+  def knockback(%SessionState{} = session, gid, expected_x, expected_y, map_name, x, y) do
+    current_map = if session.homunculus, do: session.homunculus.map_name
+
+    if is_binary(current_map) and Rules.ground?(current_map) do
+      session
+    else
+      displace(session, gid, expected_x, expected_y, map_name, x, y)
     end
   end
 

@@ -173,7 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert_receive {:event, :damage}
     assert_receive {:event, :walk_delay}
 
-    assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+    assert_receive {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
     refute_receive {:"$gen_cast", {:movement, _movement}}
   end
 
@@ -220,7 +220,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
       {dst_x, dst_y} = destination
 
-      assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, ^dst_x, ^dst_y}}}
+      assert_receive {:"$gen_cast",
+                      {:movement, {:knockback, 151, 150, @map_name, ^dst_x, ^dst_y}}}
+
       refute_receive {:"$gen_cast", {:movement, _movement}}
     end
   end
@@ -273,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
                native_requires_survival: true
              )
 
-    assert_receive {:"$gen_cast", {:movement, {:displace, 151, 150, @map_name, 153, 150}}}
+    assert_receive {:"$gen_cast", {:movement, {:knockback, 151, 150, @map_name, 153, 150}}}
   end
 
   test "player-owned ground damage marks eligible recipient for coma" do

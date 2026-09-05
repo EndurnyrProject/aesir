@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Pathfinding
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -104,6 +105,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.MovementHandler do
 
       {:error, _reason} ->
         {:noreply, state}
+    end
+  end
+
+  @doc "Rejects offensive knockback on current castle ground before displacement commit."
+  @spec handle_knockback(
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer(),
+          MobState.t()
+        ) :: {:noreply, MobState.t()}
+  def handle_knockback(expected_x, expected_y, map_name, x, y, %MobState{} = state) do
+    if Rules.ground?(state.map_name) do
+      {:noreply, state}
+    else
+      handle_displacement(state, expected_x, expected_y, map_name, x, y)
     end
   end
 

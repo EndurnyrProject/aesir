@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.Packets, as: NpcPackets
@@ -575,6 +576,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   end
 
   def publish_force_stop_movement(%SessionState{}), do: :ok
+
+  @doc "Rejects offensive knockback on current castle ground before displacement commit."
+  @spec handle_knockback(
+          integer(),
+          integer(),
+          String.t(),
+          integer(),
+          integer(),
+          SessionState.t()
+        ) :: {:noreply, SessionState.t()}
+  def handle_knockback(expected_x, expected_y, map_name, x, y, %SessionState{} = state) do
+    if Rules.ground?(state.game_state.map_name) do
+      {:noreply, state}
+    else
+      handle_displacement(state, expected_x, expected_y, map_name, x, y)
+    end
+  end
 
   @doc """
   Commits displacement only when the live session still matches its expected cell.
