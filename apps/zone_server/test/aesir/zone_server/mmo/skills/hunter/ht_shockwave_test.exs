@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwaveTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Unit.Resource
 
   @caster_id 1_000
@@ -14,6 +15,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwaveTest do
 
   setup do
     Mimic.copy(Resource)
+    Mimic.copy(Trap)
+
+    stub(Trap, :enemy?, fn
+      %Group{caster_type: :player}, {:mob, _id} -> true
+      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
+      %Group{}, {_type, _id} -> false
+    end)
+
     :ok
   end
 

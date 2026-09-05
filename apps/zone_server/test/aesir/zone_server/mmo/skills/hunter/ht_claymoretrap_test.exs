@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
@@ -12,6 +12,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SkillAttack)
+    :ok
+  end
 
   @caster_id 1000
 
@@ -80,11 +85,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
 
   describe "detonation" do
     test "enemy contact applies one split Fire misc roll and requests self-used plus a spend command" do
-      stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
-        {:ok, {PlayerState, %PlayerState{character_id: @caster_id}, self()}}
+      caster = %PlayerState{character_id: @caster_id, map_name: "prontera"}
+      target = %{instance_id: 2001, map_name: "prontera", hp: 100}
+
+      stub(UnitRegistry, :get_unit, fn
+        :player, @caster_id -> {:ok, {PlayerState, caster, self()}}
+        :mob, 2001 -> {:ok, {Map, target, self()}}
       end)
 
-      expect(Combat, :execute_misc_splash, fn caster, {50, 50}, 2, opts ->
+      expect(SkillAttack, :execute_field_misc_splash, fn caster, {50, 50}, 2, %Group{}, opts ->
         assert caster.character_id == @caster_id
         assert opts[:base_damage] >= 450 and opts[:base_damage] <= 545
         assert opts[:element] == :fire
@@ -97,7 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
     end
 
     test "the owner does not trigger their own trap" do
-      reject(&Combat.execute_misc_splash/4)
+      reject(&SkillAttack.execute_field_misc_splash/5)
 
       assert {:ok, %Group{}} =
                HtClaymoretrap.on_touch(group(%{base_damage: 500}), {:player, @caster_id})
@@ -105,14 +114,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
 
     test "an unavailable caster leaves the trap armed without damage or a spend command" do
       stub(UnitRegistry, :get_unit, fn :player, @caster_id -> {:error, :not_found} end)
-      reject(&Combat.execute_misc_splash/4)
+      reject(&SkillAttack.execute_field_misc_splash/5)
 
       assert {:ok, %Group{}} =
                HtClaymoretrap.on_touch(group(%{base_damage: 500}), {:mob, 2001})
     end
 
     test "natural armed expiry only transitions the trap itself, without damage or a spend command" do
-      reject(&Combat.execute_misc_splash/4)
+      reject(&SkillAttack.execute_field_misc_splash/5)
       reject(&UnitRegistry.get_unit/2)
 
       assert :ok = HtClaymoretrap.on_natural_expiry(group(%{base_damage: 500}))

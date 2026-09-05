@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   use ExUnit.Case, async: true
   import Mimic
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap
@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   setup :verify_on_exit!
 
   setup do
+    Mimic.copy(SkillAttack)
     Mimic.copy(Trap)
     Mimic.copy(Resource)
     :ok
@@ -42,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
     stub(Trap, :resolve_caster, fn _group -> {:ok, @caster} end)
     stub(Trap, :roll_damage, fn 500 -> 500 end)
 
-    expect(Combat, :execute_misc_attack, fn @caster, {:homunculus, @gid}, opts ->
+    expect(SkillAttack, :execute_misc_attack, fn @caster, {:homunculus, @gid}, opts ->
       assert opts[:skill_id] == 116
       :ok
     end)
@@ -64,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
 
     stub(SpatialIndex, :get_unit_position, fn :homunculus, @gid -> {:ok, {51, 50, "trap_hom"}} end)
 
-    expect(Combat, :execute_splash_attack, fn @caster, {51, 50}, 1, opts ->
+    expect(SkillAttack, :execute_splash_attack, fn @caster, {51, 50}, 1, opts ->
       assert opts[:typed_results]
       [{:homunculus, @gid}]
     end)
@@ -90,8 +91,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtHomunculusTrapsTest do
   end
 
   test "player-side Homunculus contact leaves every trap armed" do
-    reject(&Combat.execute_misc_attack/3)
-    reject(&Combat.execute_splash_attack/4)
+    reject(&SkillAttack.execute_field_misc_attack/4)
+    reject(&SkillAttack.execute_field_splash_attack/5)
     reject(&StatusInterpreter.apply_status/4)
     reject(&Resource.drain_sp_percent/2)
 

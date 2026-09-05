@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   import Mimic
 
   alias Aesir.ZoneServer.CombatTestHelper
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap
@@ -16,6 +16,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SkillAttack)
+    :ok
+  end
 
   test "Water damage overrides a Fire endow and cannot crit at maximum CRI" do
     attacker = CombatTestHelper.create_player_combatant(luk: 300)
@@ -83,13 +88,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     test_pid = self()
     caster = %PlayerState{character_id: 1000, map_name: "prontera", x: 50, y: 50}
 
-    stub(UnitRegistry, :get_unit, fn :player, 1000 ->
-      {:ok, {PlayerState, caster, self()}}
+    target = %{instance_id: 2001, map_name: "prontera", hp: 100}
+
+    stub(UnitRegistry, :get_unit, fn
+      :player, 1000 -> {:ok, {PlayerState, caster, self()}}
+      :mob, 2001 -> {:ok, {Map, target, self()}}
     end)
 
     expect(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {60, 70, "prontera"}} end)
 
-    expect(Combat, :execute_splash_attack, fn ^caster, {60, 70}, 1, opts ->
+    expect(SkillAttack, :execute_field_splash_attack, fn ^caster, {60, 70}, 1, %Group{}, opts ->
       assert opts[:skill_id] == 121
       assert opts[:skill_level] == 3
       assert opts[:skill_ratio] == 100
@@ -119,10 +127,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   test "same-number mob and Homunculus collision freezes only the typed connected hit" do
     caster = %PlayerState{character_id: 1000, map_name: "prontera", x: 50, y: 50}
 
-    stub(UnitRegistry, :get_unit, fn :player, 1000 -> {:ok, {PlayerState, caster, self()}} end)
+    target = %{instance_id: 2001, map_name: "prontera", hp: 100}
+
+    stub(UnitRegistry, :get_unit, fn
+      :player, 1000 -> {:ok, {PlayerState, caster, self()}}
+      :mob, 2001 -> {:ok, {Map, target, self()}}
+    end)
+
     stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {51, 50, "prontera"}} end)
 
-    expect(Combat, :execute_splash_attack, fn ^caster, {51, 50}, 1, opts ->
+    expect(SkillAttack, :execute_field_splash_attack, fn ^caster, {51, 50}, 1, %Group{}, opts ->
       assert opts[:typed_results]
       [{:mob, 2001}]
     end)
@@ -151,7 +165,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     stub(UnitRegistry, :get_unit, fn :mob, 1000 -> {:ok, {MobState, caster, self()}} end)
     stub(SpatialIndex, :get_unit_position, fn :player, 2001 -> {:ok, {51, 50, "prontera"}} end)
 
-    stub(Combat, :execute_splash_attack, fn ^caster, {51, 50}, 1, opts ->
+    stub(SkillAttack, :execute_splash_attack, fn ^caster, {51, 50}, 1, opts ->
       assert opts[:typed_results]
       [{:player, 2002}]
     end)
@@ -166,7 +180,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   end
 
   test "same-side contact and unavailable combatants leave the trap armed" do
-    reject(&Combat.execute_splash_attack/4)
+    reject(&SkillAttack.execute_field_splash_attack/5)
+    reject(&SkillAttack.execute_splash_attack/4)
     reject(&StatusInterpreter.apply_status/4)
 
     assert {:ok, %Group{}} = HtFreezingtrap.on_touch(group(), {:player, 2001})

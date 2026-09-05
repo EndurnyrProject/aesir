@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
     item_cost: [%{id: 1065, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -50,15 +51,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
   defp trigger(group, {mover_type, mover_id}) do
     with {:ok, caster} <- Combat.resolve_combatant(group.caster_type, group.caster_id),
          {:ok, {x, y, _map}} <- SpatialIndex.get_unit_position(mover_type, mover_id) do
-      group.map_name
-      |> Combat.splash_targets({x, y}, definition().splash_radius, caster)
-      |> Enum.filter(&Trap.enemy?(group, &1))
+      group
+      |> splash_targets({x, y}, definition().splash_radius, caster)
       |> Enum.each(&apply_sleep(&1, group))
 
       :expire
     else
       _ -> {:ok, group}
     end
+  end
+
+  defp splash_targets(%Group{caster_type: :player} = group, center, radius, caster),
+    do: SplashTargets.select_field(group, center, radius, caster)
+
+  defp splash_targets(%Group{caster_type: :mob} = group, center, radius, caster) do
+    group.map_name
+    |> Combat.splash_targets(center, radius, caster)
+    |> Enum.filter(&Trap.enemy?(group, &1))
   end
 
   defp apply_sleep({unit_type, unit_id}, group) do

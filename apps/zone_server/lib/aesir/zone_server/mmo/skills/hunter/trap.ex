@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   enemy contact.
   """
 
+  alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -69,14 +70,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Trap do
   end
 
   @doc """
-  Whether `mover` is a hostile PvE target relative to this trap's caster.
+  Whether `mover` may trigger this trap relative to its exact caster group.
 
-  Player traps target mobs. Mob traps target players and Homunculi. Same-side
-  contacts do not trigger harmful traps; PvP and mob-on-mob targeting remain
-  out of scope.
+  Player traps follow the supported field policy, including active versus maps.
+  Mob traps retain their PvE player and Homunculus hostility.
   """
   @spec enemy?(Group.t(), {atom(), integer()}) :: boolean()
-  def enemy?(%Group{caster_type: :player}, {:mob, _mover_id}), do: true
+  def enemy?(%Group{caster_type: :player, caster_id: caster_id}, {:player, caster_id}),
+    do: false
+
+  def enemy?(%Group{caster_type: :player} = group, {mover_type, mover_id}) do
+    with {:ok, {_caster_module, caster, _caster_pid}} <-
+           UnitRegistry.get_unit(:player, group.caster_id),
+         {:ok, {_target_module, target, _target_pid}} <-
+           UnitRegistry.get_unit(mover_type, mover_id) do
+      Targeting.validate_field_target(group, caster, target) == :ok
+    else
+      _unavailable -> false
+    end
+  end
 
   def enemy?(%Group{caster_type: :mob}, {mover_type, _mover_id})
       when mover_type in [:player, :homunculus],

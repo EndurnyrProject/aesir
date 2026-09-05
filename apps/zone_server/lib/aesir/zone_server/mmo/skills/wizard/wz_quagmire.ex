@@ -74,12 +74,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   defp params_for(level, _unit_type, _unit_id), do: [level: level, val1: level, val2: 10 * level]
 
   defp enemy?(%Group{} = group, {target_type, target_id}) do
-    with {:ok, {_module, caster, _pid}} <-
+    with {:ok, {_caster_module, caster, _caster_pid}} <-
            UnitRegistry.get_unit(group.caster_type, group.caster_id),
-         {:ok, {_module, target, _pid}} <- UnitRegistry.get_unit(target_type, target_id) do
-      Targeting.validate_enemy(caster, target) == :ok
+         {:ok, {_target_module, target, _target_pid}} <-
+           UnitRegistry.get_unit(target_type, target_id) do
+      field_target?(group, caster, target)
     else
-      _ -> false
+      _unavailable -> false
     end
   end
+
+  defp field_target?(%Group{caster_type: :player} = group, caster, target),
+    do: Targeting.validate_field_target(group, caster, target) == :ok
+
+  defp field_target?(%Group{caster_type: :mob}, caster, target),
+    do: Targeting.validate_enemy(caster, target) == :ok
+
+  defp field_target?(%Group{}, _caster, _target), do: false
 end

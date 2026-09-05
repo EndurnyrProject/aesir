@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
@@ -15,7 +16,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
   setup :verify_on_exit!
 
   setup do
+    Mimic.copy(SplashTargets)
     Mimic.copy(StatusInterpreter)
+    Mimic.copy(Trap)
+
+    stub(Trap, :enemy?, fn
+      %Group{caster_type: :player}, {:mob, _id} -> true
+      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
+      %Group{}, {_type, _id} -> false
+    end)
+
     :ok
   end
 
@@ -78,7 +88,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
     caster = %{unit_type: :player, unit_id: @caster_id}
     stub(Combat, :resolve_combatant, fn :player, @caster_id -> {:ok, caster} end)
     stub(SpatialIndex, :get_unit_position, fn :mob, 2001 -> {:ok, {50, 50, "prontera"}} end)
-    stub(Combat, :splash_targets, fn "prontera", {50, 50}, 2, ^caster -> [{:mob, 2001}] end)
+
+    stub(SplashTargets, :select_field, fn %Group{}, {50, 50}, 2, ^caster ->
+      [{:mob, 2001}]
+    end)
 
     test_pid = self()
 
@@ -103,8 +116,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandmanTest do
       {:ok, {80, 75, "prontera"}}
     end)
 
-    expect(Combat, :splash_targets, fn "prontera", {80, 75}, 2, ^caster ->
-      [activator, {:mob, 2002}, {:player, 3001}]
+    expect(SplashTargets, :select_field, fn %Group{}, {80, 75}, 2, ^caster ->
+      [activator, {:mob, 2002}]
     end)
 
     test_pid = self()

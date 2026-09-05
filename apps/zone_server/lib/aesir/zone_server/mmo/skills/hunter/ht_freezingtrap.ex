@@ -19,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
     sp_cost: [10, 10, 10, 10, 10],
     item_cost: [%{id: 1065, amount: 2}]
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
       definition = definition()
 
       caster
-      |> Combat.execute_splash_attack({x, y}, definition.splash_radius,
+      |> execute_splash({x, y}, definition.splash_radius, group,
         skill_id: definition.id,
         skill_level: group.level,
         skill_ratio: 100,
@@ -82,6 +82,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
       _ -> {:ok, group}
     end
   end
+
+  defp execute_splash(caster, center, radius, %Group{caster_type: :player} = group, opts),
+    do: SkillAttack.execute_field_splash_attack(caster, center, radius, group, opts)
+
+  defp execute_splash(caster, center, radius, %Group{caster_type: :mob}, opts),
+    do: SkillAttack.execute_splash_attack(caster, center, radius, opts)
 
   defp freeze(group, {unit_type, unit_id}) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_freeze,

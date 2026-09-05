@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrap
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -18,6 +19,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrapTest do
   setup do
     Mimic.copy(Knockback)
     Mimic.copy(StatusInterpreter)
+    Mimic.copy(Trap)
+
+    stub(Trap, :enemy?, fn
+      %Group{caster_type: :player}, {:mob, _id} -> true
+      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
+      %Group{}, {_type, _id} -> false
+    end)
+
+    :ok
   end
 
   defp group(attrs \\ []) do

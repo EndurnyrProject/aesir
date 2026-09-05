@@ -28,7 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
     sp_cost: List.duplicate(15, 5),
     item_cost: [%{id: 1065, amount: 2}]
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
 
     case Trap.resolve_caster(group) do
       {:ok, caster_state} ->
-        Combat.execute_misc_splash(caster_state, center, definition.splash_radius,
+        execute_splash(caster_state, center, definition.splash_radius, group,
           skill_id: definition.id,
           skill_level: group.level,
           base_damage: Trap.roll_damage(base_damage),
@@ -91,4 +91,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
         {:ok, group}
     end
   end
+
+  defp execute_splash(caster_state, center, radius, %Group{caster_type: :player} = group, opts),
+    do: SkillAttack.execute_field_misc_splash(caster_state, center, radius, group, opts)
+
+  defp execute_splash(caster_state, center, radius, %Group{caster_type: :mob}, opts),
+    do: SkillAttack.execute_misc_splash(caster_state, center, radius, opts)
 end

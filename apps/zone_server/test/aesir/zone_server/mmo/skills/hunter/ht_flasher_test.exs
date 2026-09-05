@@ -6,11 +6,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher
+  alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(Trap)
+
+    stub(Trap, :enemy?, fn
+      %Group{caster_type: :player}, {:mob, _id} -> true
+      %Group{caster_type: :mob}, {type, _id} when type in [:player, :homunculus] -> true
+      %Group{}, {_type, _id} -> false
+    end)
+
+    :ok
+  end
 
   defp group(attrs \\ []) do
     struct(

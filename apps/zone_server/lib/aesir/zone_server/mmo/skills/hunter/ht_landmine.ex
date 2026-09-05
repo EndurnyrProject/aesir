@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
     sp_cost: List.duplicate(10, 5),
     item_cost: [%{id: 1065, amount: 1}]
 
-  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
@@ -71,7 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
 
     case Trap.resolve_caster(group) do
       {:ok, caster_state} ->
-        case Combat.execute_misc_attack(caster_state, mover,
+        case execute_attack(caster_state, mover, group,
                skill_id: definition.id,
                skill_level: group.level,
                base_damage: Trap.roll_damage(base_damage),
@@ -95,4 +95,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmine do
         {:ok, group}
     end
   end
+
+  defp execute_attack(caster_state, mover, %Group{caster_type: :player} = group, opts),
+    do: SkillAttack.execute_field_misc_attack(caster_state, mover, group, opts)
+
+  defp execute_attack(caster_state, mover, %Group{caster_type: :mob}, opts),
+    do: SkillAttack.execute_misc_attack(caster_state, mover, opts)
 end

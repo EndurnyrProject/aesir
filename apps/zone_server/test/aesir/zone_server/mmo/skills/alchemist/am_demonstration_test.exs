@@ -5,8 +5,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
   import Mimic
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
   alias Aesir.ZoneServer.Mmo.Skill.Unit
@@ -19,6 +20,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
 
   setup :setup_ets_tables
   setup :verify_on_exit!
+
+  setup do
+    Mimic.copy(SkillAttack)
+    Mimic.copy(SplashTargets)
+    :ok
+  end
 
   @caster_id 1_000
   @map_name "prontera"
@@ -158,23 +165,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
   describe "on_interval/2" do
     test "applies Fire physical weapon damage and rolls weapon break only after a confirmed hit" do
       test_pid = self()
-      caster = %PlayerState{character_id: @caster_id}
+      caster = caster_with_bottle()
 
       stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
         {:ok, {PlayerState, caster, self()}}
       end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 1, @caster_id -> [{:player, 2_000}] end)
+      stub(SplashTargets, :select_field, fn %Group{}, @center, 1, _caster ->
+        [{:player, 2_000}]
+      end)
 
-      stub(Combat, :execute_skill_attack, fn ^caster,
-                                             2_000,
-                                             skill_id: 229,
-                                             skill_level: 3,
-                                             skill_ratio: 160,
-                                             element: :fire,
-                                             skip_crit: true,
-                                             skip_range: true,
-                                             report_hit: true ->
+      stub(SkillAttack, :execute_field_skill_attack, fn ^caster,
+                                                        {:player, 2_000},
+                                                        %Group{},
+                                                        skill_id: 229,
+                                                        skill_level: 3,
+                                                        skill_ratio: 160,
+                                                        element: :fire,
+                                                        skip_crit: true,
+                                                        skip_range: true,
+                                                        report_hit: true ->
         {:ok, %{hit?: true, damage: 1, target_survives?: true}}
       end)
 
@@ -195,15 +205,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
     end
 
     test "does not roll weapon break when the physical tick misses" do
-      caster = %PlayerState{character_id: @caster_id}
+      caster = caster_with_bottle()
 
       stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
         {:ok, {PlayerState, caster, self()}}
       end)
 
-      stub(Combat, :splash_targets, fn @map_name, @center, 1, @caster_id -> [{:mob, 2_000}] end)
+      stub(SplashTargets, :select_field, fn %Group{}, @center, 1, _caster ->
+        [{:mob, 2_000}]
+      end)
 
-      stub(Combat, :execute_skill_attack, fn ^caster, 2_000, _opts ->
+      stub(SkillAttack, :execute_field_skill_attack, fn ^caster, {:mob, 2_000}, %Group{}, _opts ->
         {:ok, %{hit?: false, damage: 0, target_survives?: true}}
       end)
 
@@ -214,7 +226,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
 
     test "expires gracefully when the caster is gone" do
       stub(UnitRegistry, :get_unit, fn :player, @caster_id -> {:error, :not_found} end)
-      reject(&Combat.splash_targets/4)
+      reject(&SplashTargets.select_field/4)
 
       assert {:expire, %Group{}} = AmDemonstration.on_interval(group(3), 500)
     end

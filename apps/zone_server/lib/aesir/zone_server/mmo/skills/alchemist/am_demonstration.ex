@@ -22,8 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
     sp_cost: List.duplicate(10, 5),
     item_cost: [%{id: 7135, amount: 1}]
 
-  alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
+  alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
+  alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -76,8 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   def on_interval(%Group{caster_id: caster_id} = group, _now) do
     case UnitRegistry.get_unit(:player, caster_id) do
       {:ok, {PlayerState, caster, _pid}} ->
-        group.map_name
-        |> Combat.splash_targets(group.center, @radius, caster_id)
+        group
+        |> SplashTargets.select_field(group.center, @radius, PlayerState.to_combatant(caster))
         |> Enum.each(&hit(caster, group, &1))
 
         {:ok, group}
@@ -88,8 +89,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   end
 
   @spec hit(PlayerState.t(), Group.t(), {atom(), integer()}) :: :ok
-  defp hit(caster, group, {unit_type, target_id}) do
-    case Combat.execute_skill_attack(caster, target_id,
+  defp hit(caster, group, {unit_type, target_id} = target_ref) do
+    case SkillAttack.execute_field_skill_attack(caster, target_ref, group,
            skill_id: group.skill_id,
            skill_level: group.level,
            skill_ratio: skill_ratio(group.level),

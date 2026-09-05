@@ -319,6 +319,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
       Map.merge(
         %{
           character_id: id,
+          map_name: "prontera",
           party_id: 0,
           guild_id: 0,
           action_state: :idle,
@@ -330,6 +331,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmireTest do
   end
 
   defp mob(id, attrs \\ []) do
-    struct(MobState, Map.merge(%{instance_id: id, hp: 100, is_dead: false}, Map.new(attrs)))
+    struct(
+      MobState,
+      Map.merge(%{instance_id: id, map_name: "prontera", hp: 100, is_dead: false}, Map.new(attrs))
+    )
   end
 end

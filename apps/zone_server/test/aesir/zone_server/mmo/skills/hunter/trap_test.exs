@@ -1,18 +1,38 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Trap
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @stats %{dex: 10, int: 10, base_level: 10}
+
+  setup :verify_on_exit!
+
+  setup do
+    caster = %PlayerState{character_id: 10, map_name: "prontera"}
+    target = %{instance_id: 20, map_name: "prontera", hp: 100}
+
+    stub(UnitRegistry, :get_unit, fn
+      :player, 10 -> {:ok, {PlayerState, caster, self()}}
+      :mob, 20 -> {:ok, {Map, target, self()}}
+      _type, _id -> {:error, :not_found}
+    end)
+
+    :ok
+  end
 
   defp group(caster_type, origin, paid_return? \\ false, skill_name \\ :ht_landmine) do
     %Group{
       group_id: 1,
+      skill_id: 116,
       skill_name: skill_name,
       caster_id: 10,
       caster_type: caster_type,
+      map_name: "prontera",
       state: %{cast_origin: origin, paid_return?: paid_return?}
     }
   end
