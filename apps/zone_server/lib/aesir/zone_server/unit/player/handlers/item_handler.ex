@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.Net.ItemUseResult
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
@@ -42,7 +43,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
     with {:ok, item} <- fetch_item(game_state.inventory, server_index),
          {:ok, definition} <- fetch_definition(item.nameid),
-         :ok <- item_use_enabled?(state) do
+         :ok <- item_use_enabled?(state),
+         :ok <- item_allowed?(item.nameid, game_state.map_name) do
       use_definition(definition, client_index, server_index, state)
     else
       {:error, reason} -> reject(client_index, reason, state)
@@ -153,6 +155,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
     do: {:error, :disabled}
 
   defp item_use_enabled?(%{}), do: :ok
+
+  @spec item_allowed?(pos_integer(), String.t()) :: :ok | {:error, :item_not_allowed}
+  defp item_allowed?(item_id, map_name) do
+    if Rules.item_allowed?(item_id, map_name),
+      do: :ok,
+      else: {:error, :item_not_allowed}
+  end
 
   # Stable uint32 reject codes mirrored by the Lifthrasir client (0 reserved for
   # ok / success, which the success path sends as ItemUseResult{ok: true}).

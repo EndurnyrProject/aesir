@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Ammo
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -135,8 +136,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   end
 
   @impl true
-  def castable_state(%PlayerState{}, _skill_id, phase) when phase in [:begin, :completion],
-    do: :ok
+  def castable_state(%PlayerState{map_name: map_name}, skill_id, phase)
+      when phase in [:begin, :completion] do
+    if Rules.skill_allowed?(skill_id, map_name),
+      do: :ok,
+      else: {:error, :skill_not_allowed}
+  end
 
   @impl true
   def castable_status(%PlayerState{}, _skill_id), do: :ok
