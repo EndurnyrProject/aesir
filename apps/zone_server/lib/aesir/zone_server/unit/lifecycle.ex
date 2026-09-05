@@ -2,18 +2,27 @@ defmodule Aesir.ZoneServer.Unit.Lifecycle.Event do
   @moduledoc "A normalized player or mob lifecycle transition."
 
   alias Aesir.ZoneServer.Unit
+  alias Aesir.ZoneServer.Unit.Ref
 
   @type reason :: :death | :disconnect | :termination | :warp
 
+  @typedoc "Compact attribution sampled when a lethal transition is accepted."
+  @type kill_credit :: %{
+          attacker: Ref.t() | nil,
+          character_id: pos_integer() | nil,
+          guild_id: pos_integer() | nil
+        }
+
   @enforce_keys [:unit_type, :unit_id, :reason]
-  defstruct [:unit_type, :unit_id, :reason, :old_map, :new_map]
+  defstruct [:unit_type, :unit_id, :reason, :old_map, :new_map, :kill_credit]
 
   @type t() :: %__MODULE__{
           unit_type: Unit.unit_type(),
           unit_id: integer(),
           reason: reason(),
           old_map: String.t() | nil,
-          new_map: String.t() | nil
+          new_map: String.t() | nil,
+          kill_credit: kill_credit() | nil
         }
 end
 
@@ -31,14 +40,22 @@ defmodule Aesir.ZoneServer.Unit.Lifecycle do
   @spec subscribe() :: :ok | {:error, term()}
   def subscribe, do: Phoenix.PubSub.subscribe(Aesir.PubSub, @topic)
 
-  @doc "Publishes one unit-death event."
+  @doc "Publishes one unit-death event without kill credit."
   @spec publish_death(Unit.unit_type(), integer(), String.t()) :: :ok | {:error, term()}
   def publish_death(unit_type, unit_id, map_name) do
+    publish_death(unit_type, unit_id, map_name, nil)
+  end
+
+  @doc "Publishes one unit-death event with optional kill credit."
+  @spec publish_death(Unit.unit_type(), integer(), String.t(), Event.kill_credit() | nil) ::
+          :ok | {:error, term()}
+  def publish_death(unit_type, unit_id, map_name, kill_credit) do
     publish(%Event{
       unit_type: unit_type,
       unit_id: unit_id,
       reason: :death,
-      old_map: map_name
+      old_map: map_name,
+      kill_credit: kill_credit
     })
   end
 

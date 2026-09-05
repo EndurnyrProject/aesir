@@ -276,7 +276,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       Mimic.copy(OnHitEffects)
       Mimic.copy(HpDrain)
 
-      expect(MobSession, :apply_damage, fn _pid, 350, 1001 -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 350, {:player, 1001} -> :ok end)
       expect(Passives, :after_normal_hit, fn ^player_state, _hit -> :ok end)
       expect(EquipBreak, :resolve, fn ^stats, {:mob, ^target_state} -> [] end)
       expect(StatusInterpreter, :on_dealt_damage, fn :player, 1001, _hit -> [] end)
@@ -364,7 +364,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         50
       end)
 
-      expect(MobSession, :apply_damage, fn ^test_pid, 50, 1001 -> :ok end)
+      expect(MobSession, :apply_damage, fn ^test_pid, 50, {:player, 1001} -> :ok end)
       expect(PlayerSession, :apply_coma, fn ^splash_owner, {:player, 1001} -> :ok end)
       reject(&PlayerSession.apply_damage/3)
       reject(&MobSession.apply_coma/2)
@@ -446,7 +446,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       end)
 
       reject(&MobSession.apply_coma/2)
-      expect(MobSession, :apply_damage, fn _pid, 50, 1001 -> :ok end)
+      expect(MobSession, :apply_damage, fn _pid, 50, {:player, 1001} -> :ok end)
       stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
       capture_log(fn ->

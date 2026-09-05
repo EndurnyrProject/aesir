@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   alias Aesir.ZoneServer.Unit.Mob.MvpReward
   alias Aesir.ZoneServer.Unit.Mob.QuestHuntCredit
   alias Aesir.ZoneServer.Unit.Mob.SpawnView
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
   alias Phoenix.PubSub
@@ -62,7 +63,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
           updated_mob,
           attacker_ref,
           reward_owner_id,
-          MobState.hit_type(state, attacker)
+          MobState.hit_type(state, attacker),
+          kill_credit(attacker_ref, reward_owner_id)
         )
     end
   end
@@ -175,13 +177,34 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     end
   end
 
-  defp handle_death(state, attacker_ref, reward_owner_id, kill_bf) do
+  defp kill_credit(attacker_ref, reward_owner_id) do
+    %{
+      attacker: attacker_ref,
+      character_id: reward_owner_id,
+      guild_id: reward_owner_guild_id(reward_owner_id)
+    }
+  end
+
+  defp reward_owner_guild_id(nil), do: nil
+
+  defp reward_owner_guild_id(character_id) do
+    case UnitRegistry.get_unit(:player, character_id) do
+      {:ok, {PlayerState, %PlayerState{guild_id: guild_id}, _pid}}
+      when is_integer(guild_id) and guild_id > 0 ->
+        guild_id
+
+      _other ->
+        nil
+    end
+  end
+
+  defp handle_death(state, attacker_ref, reward_owner_id, kill_bf, kill_credit) do
     # Mark as dead
     updated_state = state |> MobState.advance_deferred_epoch() |> MobState.set_dead()
 
     # Notify nearby players of mob death
     SpawnView.notify_despawn(updated_state)
-    Lifecycle.publish_death(:mob, state.instance_id, state.map_name)
+    Lifecycle.publish_death(:mob, state.instance_id, state.map_name, kill_credit)
 
     announce_kill(state, attacker_ref, reward_owner_id, kill_bf)
 

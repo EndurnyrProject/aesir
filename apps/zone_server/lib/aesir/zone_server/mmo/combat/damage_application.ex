@@ -627,8 +627,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   defp typed_source({_unit_type, _unit_id} = source), do: typed_attacker(source)
   defp typed_source(source_id) when is_integer(source_id), do: {:player, source_id}
 
-  defp mob_attacker({:homunculus, _unit_id} = attacker), do: attacker
-  defp mob_attacker(attacker), do: attacker_id(attacker)
+  defp mob_attacker({_unit_type, _unit_id} = attacker), do: typed_attacker(attacker)
+  defp mob_attacker(attacker), do: attacker
 
   defp attacker_id({_unit_type, unit_id}), do: unit_id
   defp attacker_id(unit_id), do: unit_id
