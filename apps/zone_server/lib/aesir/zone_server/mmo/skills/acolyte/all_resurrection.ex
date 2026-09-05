@@ -3,9 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   Resurrection (`ALL_RESURRECTION`), reviving a player corpse or attacking a
   living undead enemy.
 
-  Renewal references:
-  - `db/re/skill_db.yml:2003-2052`
-  - `src/map/skills/acolyte/resurrection.cpp:15-74`
+  In both Renewal and pre-renewal, player-corpse revival is unavailable on
+  siege ground while the separate living-undead attack remains available.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 54,
@@ -28,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -42,9 +42,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   def validate(_caster, {:unit, target_id}, _level, _definition) do
     with {:ok, _target_pid, target_state, unit_type} <- TargetResolver.resolve(target_id) do
       cond do
-        unit_type == :player and Unit.corpse?(target_state) -> :ok
-        Unit.living?(target_state) and undead?(target_state) -> :ok
-        true -> {:error, :invalid_target}
+        unit_type == :player and Unit.corpse?(target_state) ->
+          ensure_revival_allowed(target_state)
+
+        Unit.living?(target_state) and undead?(target_state) ->
+          :ok
+
+        true ->
+          {:error, :invalid_target}
       end
     end
   end
@@ -86,11 +91,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
          caster_id,
          _target_id,
          target_pid,
-         _target_state,
+         target_state,
          level,
          _definition
        ) do
-    PlayerSession.resurrect(target_pid, caster_id, hp_percent(level))
+    with :ok <- ensure_revival_allowed(target_state) do
+      PlayerSession.resurrect(target_pid, caster_id, hp_percent(level))
+    end
   end
 
   defp apply_resurrection(
@@ -119,6 +126,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
          _definition
        ),
        do: {:error, :invalid_target}
+
+  defp ensure_revival_allowed(%{map_name: map_name}) do
+    if Rules.ground?(map_name), do: {:error, :invalid_target}, else: :ok
+  end
 
   defp hp_percent(level), do: Enum.at([10, 30, 50, 80], level - 1)
 

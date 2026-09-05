@@ -3,9 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   Redemptio (`PR_REDEMPTIO`), the Priest platinum skill that revives nearby
   party corpses at the cost of leaving its caster at one HP.
 
-  Renewal references:
-  - `db/re/skill_db.yml:18437-18456`
-  - `src/map/skills/acolyte/redemptio.cpp:18-99`
+  In both Renewal and pre-renewal, the revival and its caster self-cost are
+  unavailable on siege ground.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1014,
@@ -27,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit
@@ -37,15 +37,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   @behaviour Active
 
   # NOTE: Remove the catalog-only boundary when Priest quest/grant acquisition exists.
-  # NOTE: Add WoE/GvG, Battleground, negative PvP-score, and Hell Power gates when
-  # Aesir gains each corresponding competitive-mode or status concept.
+  # NOTE: Add Battleground, negative PvP-score, and Hell Power gates when Aesir gains
+  # each corresponding competitive-mode or status concept.
   # NOTE: Add restart-full, resurrection-EXP, and Redemptio-EXP options here when
   # Aesir gains a matching server-config surface or one of those rules becomes required.
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, atom()}
   def validate(%{party_id: 0}, :self, 1, _definition), do: {:error, :party_required}
-  def validate(%{party_id: party_id}, :self, 1, _definition) when party_id > 0, do: :ok
+
+  def validate(%{party_id: party_id, map_name: map_name}, :self, 1, _definition)
+      when party_id > 0 do
+    if Rules.ground?(map_name), do: {:error, :invalid_target}, else: :ok
+  end
 
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -53,7 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
   def cast(%{party_id: 0}, :self, 1, _definition), do: {:error, :party_required}
 
   def cast(%{character_id: caster_id, party_id: party_id} = caster, :self, 1, definition) do
-    with {:ok, party} <- PartyManager.get(party_id),
+    with false <- Rules.ground?(caster.map_name),
+         {:ok, party} <- PartyManager.get(party_id),
          [_corpse | _rest] = corpses <- eligible_corpses(party, caster, definition.splash_radius) do
       Enum.each(corpses, fn {target_pid, _target_state} ->
         PlayerSession.resurrect(target_pid, caster_id, 50)
@@ -61,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptio do
 
       {:ok, set_hp_to_one(caster)}
     else
+      true -> {:error, :invalid_target}
       [] -> {:error, :no_targets}
       {:error, _reason} -> {:error, :party_required}
     end

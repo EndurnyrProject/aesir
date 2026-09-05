@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
@@ -104,6 +105,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
           game_state.map_name,
           dest_map
         )
+      end
+
+      unless Rules.status_allowed?(:sc_endure, dest_map) do
+        StatusInterpreter.remove_status(:player, game_state.character_id, :sc_endure)
       end
 
       :ok = PlayerSession.recalculate_stats(self(), false)

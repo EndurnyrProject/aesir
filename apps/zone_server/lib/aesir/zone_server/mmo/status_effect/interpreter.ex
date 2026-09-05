@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -92,7 +93,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   defp apply_known_status(unit_type, unit_id, status_id, status_params, definition) do
     with :ok <- ensure_eligible_target(unit_type, definition),
-         :ok <- ensure_living_target(unit_type, unit_id) do
+         :ok <- ensure_living_target(unit_type, unit_id),
+         :ok <- ensure_status_allowed(unit_type, unit_id, status_id) do
       if Keyword.get(status_params, :loaded, false) do
         apply_loaded_status(unit_type, unit_id, status_id, status_params, definition)
       else
@@ -100,6 +102,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
       end
     end
   end
+
+  defp ensure_status_allowed(unit_type, unit_id, :sc_endure) do
+    case UnitRegistry.get_unit(unit_type, unit_id) do
+      {:ok, {_module, %{map_name: map_name}, _pid}} ->
+        if Rules.status_allowed?(:sc_endure, map_name),
+          do: :ok,
+          else: {:error, :status_not_allowed}
+
+      {:error, :not_found} ->
+        :ok
+    end
+  end
+
+  defp ensure_status_allowed(_unit_type, _unit_id, _status_id), do: :ok
 
   defp apply_new_status(unit_type, unit_id, status_id, status_params, definition) do
     entity_info = get_entity_info(unit_type, unit_id)
