@@ -1357,6 +1357,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(UnitRegistry, :get_unit, fn
         :mob, 3001 -> {:error, :not_found}
         :player, 3001 -> {:ok, {PlayerState, target_state, target_pid}}
+        :player, 1001 -> {:ok, {PlayerState, player_state, self()}}
       end)
 
       stub(UnitRegistry, :get_player_pid, fn 3001 -> {:ok, target_pid} end)
@@ -1365,8 +1366,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         assert Combat.execute_attack(stats, player_state, 3001) == :ok
       end)
 
-      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}}}}}
-      assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 50}}
+      assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 40, {:player, 1001}}}}}
+      assert_receive {:packet, %DamageDealt{src_id: 1001, target_id: 3001, damage: 40}}
     end
 
     test "a target break decision for a player victim casts to the victim session",
