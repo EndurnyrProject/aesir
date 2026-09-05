@@ -8,6 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.PreRenewal do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
 
   @impl true
+  def emperium_damage_mode, do: :normal
+
+  @impl true
   def calculate_hit(%MobDefinition{} = mob_data) do
     mob_data.level + mob_data.stats.dex
   end

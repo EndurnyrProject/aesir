@@ -41,6 +41,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
+  @emperium_mob_id 1288
+
   @typedoc """
   Result of damage calculation containing final damage and critical hit status.
   """
@@ -213,6 +215,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_calculator) do
     attacker = select_weapon_hand(attacker, attack_path)
+
+    if emperium_plant_contact?(defender, opts) do
+      calculate_emperium_plant_contact(attacker, defender, opts)
+    else
+      calculate_ordinary_pipeline_damage(
+        attacker,
+        defender,
+        opts,
+        attack_path,
+        defense_calculator
+      )
+    end
+  end
+
+  defp calculate_ordinary_pipeline_damage(
+         attacker,
+         defender,
+         opts,
+         attack_path,
+         defense_calculator
+       ) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
 
@@ -228,6 +251,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       finalize_damage(final_damage, attacker, defender, opts)
     end
   end
+
+  defp calculate_emperium_plant_contact(attacker, defender, opts) do
+    {unit_type, unit_id} = get_unit_type_and_id(attacker)
+    attacker_modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
+    forced_element = Keyword.get(opts, :element)
+    attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
+
+    elemental_damage =
+      DamageShared.apply_element(1, attack_element, defender, attacker_modifiers)
+
+    damage = if elemental_damage > 0, do: 1, else: 0
+
+    with {:ok, result} <- finalize_damage(1, attacker, defender, opts) do
+      {:ok, %{result | damage: damage}}
+    end
+  end
+
+  defp emperium_plant_contact?(
+         %Combatant{unit_type: :mob, monster_id: @emperium_mob_id},
+         opts
+       ) do
+    is_nil(Keyword.get(opts, :skill_id)) and
+      Mechanics.mob_formulas().emperium_damage_mode() == :plant
+  end
+
+  defp emperium_plant_contact?(_defender, _opts), do: false
 
   # P.Atk (renewal 4th-job attacker stat): a percentage multiplier on base ATK
   # applied before the skill ratio. rAthena battle.cpp:5532.

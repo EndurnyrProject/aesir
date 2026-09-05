@@ -12,11 +12,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
+
+  @emperium_mob_id 1288
 
   @enforce_keys [
     :primary,
@@ -145,7 +148,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttack do
 
   defp components(_player, _attacker, _defender, primary), do: {:ok, primary, nil}
 
+  defp scale(%{damage: 0} = result, _rate), do: result
   defp scale(result, rate), do: %{result | damage: max(div(result.damage * rate, 100), 1)}
+
+  defp plant_mode?(%Combatant{unit_type: :mob, monster_id: @emperium_mob_id}) do
+    Mechanics.mob_formulas().emperium_damage_mode() == :plant
+  end
 
   defp plant_mode?(%Combatant{race: :plant}), do: true
   defp plant_mode?(_defender), do: false

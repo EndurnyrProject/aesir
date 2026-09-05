@@ -8,6 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas do
   @typedoc "Mob definition used by formula implementations."
   @type mob_data :: MobDefinition.t()
 
+  @typedoc "Ordinary-hit damage profile used by the Emperium."
+  @type emperium_damage_mode :: :plant | :normal
+
+  @callback emperium_damage_mode() :: emperium_damage_mode()
   @callback calculate_hit(mob_data()) :: integer()
   @callback calculate_flee(mob_data()) :: integer()
   @callback calculate_perfect_dodge(mob_data()) :: integer()
