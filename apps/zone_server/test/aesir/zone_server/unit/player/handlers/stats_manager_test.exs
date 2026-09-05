@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManagerTest do
     state = state()
     recalculated = recalculated_stats(state.game_state.stats)
 
-    expect(Stats, :calculate_stats, fn stats, 1000 ->
+    expect(Stats, :calculate_stats, fn stats, 1000, nil, "prontera" ->
       assert stats.base_stats.str == 20
       recalculated
     end)
@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatsManagerTest do
     state = state()
     recalculated = recalculated_stats(state.game_state.stats)
 
-    expect(Stats, :calculate_stats, fn stats, 1000 ->
+    expect(Stats, :calculate_stats, fn stats, 1000, nil, "prontera" ->
       assert stats == state.game_state.stats
       recalculated
     end)

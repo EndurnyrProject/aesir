@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   alias Aesir.ZoneServer.Npc.Warps
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.Player.Handlers.NavigationHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -32,7 +33,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
   CZ_NOTIFY_ACTORINIT).
   """
   @spec handle_map_loaded(map()) :: {:noreply, map()}
-  def handle_map_loaded(%{game_state: %{pending_map_load: :warp} = game_state} = state) do
+  def handle_map_loaded(%{game_state: %{pending_map_load: :warp}} = state) do
+    {:noreply, state} = StatsManager.handle_recalculate_stats(state)
+    game_state = state.game_state
+
     Logger.debug("Player #{game_state.character_id} finished loading warp destination map")
 
     # The client already holds inventory/skills/stats from the initial load, so
@@ -55,7 +59,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     {:noreply, NavigationHandler.on_map_loaded(state)}
   end
 
-  def handle_map_loaded(%{connection_pid: connection_pid, game_state: game_state} = state) do
+  def handle_map_loaded(%{connection_pid: connection_pid} = state) do
+    {:noreply, state} = StatsManager.handle_recalculate_stats(state)
+    game_state = state.game_state
+
     Logger.debug("Player #{game_state.character_id} finished loading map (LoadEndAck)")
 
     StatusSync.send_params(connection_pid, %{

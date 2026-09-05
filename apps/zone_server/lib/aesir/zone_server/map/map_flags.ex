@@ -21,6 +21,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   alias Aesir.ZoneServer.Map.MapFlags.StaticFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @pt_key __MODULE__
 
@@ -89,7 +92,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   """
   @spec set_runtime(map_name(), flag(), boolean()) :: :ok
   def set_runtime(map_name, flag, value) when flag in @flags do
+    previous = get(map_name, flag)
     :ets.insert(overlay_table(), {{map_name, flag}, value})
+    notify_gvg_transition(map_name, flag, previous, get(map_name, flag))
     :ok
   end
 
@@ -100,7 +105,9 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
   """
   @spec clear_runtime(map_name(), flag()) :: :ok
   def clear_runtime(map_name, flag) when flag in @flags do
+    previous = get(map_name, flag)
     :ets.delete(overlay_table(), {map_name, flag})
+    notify_gvg_transition(map_name, flag, previous, get(map_name, flag))
     :ok
   end
 
@@ -154,6 +161,21 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
         built
     end
   end
+
+  defp notify_gvg_transition(map_name, :gvg, previous, current) when previous != current do
+    UnitRegistry.list_players()
+    |> Enum.each(fn player_id ->
+      case UnitRegistry.get_unit(:player, player_id) do
+        {:ok, {_module, %PlayerState{map_name: ^map_name}, pid}} when is_pid(pid) ->
+          PlayerSession.recalculate_stats(pid, false)
+
+        _other ->
+          :ok
+      end
+    end)
+  end
+
+  defp notify_gvg_transition(_map_name, _flag, _previous, _current), do: :ok
 
   @spec overlay_table() :: :ets.tid()
   defp overlay_table, do: table_for(:map_flag_overrides)

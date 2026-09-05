@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -104,6 +105,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
           dest_map
         )
       end
+
+      :ok = PlayerSession.recalculate_stats(self(), false)
 
       MessageRouter.send_to(connection_pid, %MapMove{map_name: dest_map, x: fx, y: fy})
 

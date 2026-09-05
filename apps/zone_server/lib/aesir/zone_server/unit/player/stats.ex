@@ -375,14 +375,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
           integer() | nil,
           [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil
         ) :: t()
-  def calculate_stats(%__MODULE__{} = stats, player_id \\ nil, equipped_items \\ nil) do
+  def calculate_stats(stats, player_id \\ nil, equipped_items \\ nil)
+
+  def calculate_stats(%__MODULE__{} = stats, player_id, equipped_items) do
+    character_info = character_info(player_id)
+
+    calculate_stats(
+      stats,
+      player_id,
+      equipped_items,
+      calculation_map(character_info),
+      character_info
+    )
+  end
+
+  @doc "Calculates all stats with an explicit map context for map transitions."
+  @spec calculate_stats(
+          t(),
+          integer() | nil,
+          [InventoryItem.t()] | %{optional(any()) => InventoryItem.t()} | nil,
+          String.t() | nil
+        ) :: t()
+  def calculate_stats(%__MODULE__{} = stats, player_id, equipped_items, map_name) do
+    calculate_stats(stats, player_id, equipped_items, map_name, character_info(player_id))
+  end
+
+  defp calculate_stats(stats, player_id, equipped_items, map_name, character_info) do
     stats
     |> apply_job_bonuses()
-    |> apply_equipment_modifiers(equipped_items, %{character_info: character_info(player_id)})
+    |> apply_equipment_modifiers(equipped_items, %{character_info: character_info})
     |> apply_status_effects(player_id)
     |> apply_passive_modifiers()
     |> calculate_derived_stats()
-    |> calculate_combat_stats()
+    |> calculate_combat_stats(map_name)
   end
 
   @doc """
@@ -527,6 +552,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       {:error, :not_found} -> nil
     end
   end
+
+  defp calculation_map(%{map_name: map_name}), do: map_name
+  defp calculation_map(_character_info), do: nil
 
   defp fold_equipment(stats, worn_items, extra_inputs) do
     fold = equipment_fold_result(stats, worn_items, extra_inputs)
@@ -988,7 +1016,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   @doc "Calculates combat-related stats under the active ruleset."
   @spec calculate_combat_stats(t()) :: t()
-  def calculate_combat_stats(%__MODULE__{} = stats) do
+  def calculate_combat_stats(%__MODULE__{} = stats), do: calculate_combat_stats(stats, nil)
+
+  @doc "Calculates combat-related stats under the active ruleset and map context."
+  @spec calculate_combat_stats(t(), String.t() | nil) :: t()
+  def calculate_combat_stats(%__MODULE__{} = stats, map_name) do
     alias Aesir.ZoneServer.Unit.Player.CombatCalculations, as: PlayerCombatCalc
 
     formulas = Mechanics.player_formulas()
@@ -1041,7 +1073,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     combat_stats = %Stats.CombatStats{
       hit: hit,
-      flee: PlayerCombatCalc.calculate_flee(stats),
+      flee: PlayerCombatCalc.calculate_flee(stats, map_name),
       critical: critical,
       critical_rate: critical_rate,
       perfect_dodge: PlayerCombatCalc.calculate_perfect_dodge(stats),

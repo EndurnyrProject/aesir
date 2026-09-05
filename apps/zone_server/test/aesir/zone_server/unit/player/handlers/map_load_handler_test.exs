@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.QuestLog
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
   setup :set_mimic_from_context
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
     end)
 
     Registry.load_definitions()
+    :ok = UnitRegistry.register_player(PlayerState.new(character()), self())
     :ok
   end
 

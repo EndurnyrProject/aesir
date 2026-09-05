@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
 
   alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @typedoc "Player stats structure used for calculations"
@@ -38,21 +39,30 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
     Mechanics.player_formulas().hit(values)
   end
 
-  @doc "Calculates player FLEE under the active ruleset."
+  @doc "Calculates player FLEE under the active ruleset without map-specific adjustments."
   @impl true
   @spec calculate_flee(player_stats()) :: integer()
-  def calculate_flee(%Stats{} = stats) do
+  def calculate_flee(%Stats{} = stats), do: calculate_flee(stats, nil)
+
+  @doc "Calculates player FLEE under the active ruleset and map context."
+  @spec calculate_flee(player_stats(), String.t() | nil) :: integer()
+  def calculate_flee(%Stats{} = stats, map_name) do
     values = %{
       agi: Stats.get_effective_stat(stats, :agi),
       luk: Stats.get_effective_stat(stats, :luk),
       con: Stats.get_effective_stat(stats, :con),
       base_level: stats.progression.base_level,
-      flat_bonus:
-        Stats.get_status_modifier(stats, :flee) +
-          Stats.get_equipment_modifier(stats, :flee) + Passives.flee_bonus(stats)
+      flat_bonus: Stats.get_equipment_modifier(stats, :flee) + Passives.flee_bonus(stats)
     }
 
-    Mechanics.player_formulas().flee(values)
+    base_flee = Mechanics.player_formulas().flee(values)
+
+    adjusted_flee =
+      if is_binary(map_name) and Rules.active?(map_name),
+        do: base_flee - div(base_flee * 20, 100),
+        else: base_flee
+
+    max(adjusted_flee + Stats.get_status_modifier(stats, :flee), 1)
   end
 
   @doc "Calculates player perfect dodge under the active ruleset."

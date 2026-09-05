@@ -906,8 +906,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
 
   describe "stats management" do
     test "update_base_stat recalculates and sends updates", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id ->
+      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
+        assert map_name == character.last_map
         %{stats | base_stats: %{stats.base_stats | str: 20}}
       end)
 
@@ -932,8 +933,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "sync recalculate_stats via call updates all stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id ->
+      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
+        assert map_name == character.last_map
         stats
       end)
 
@@ -956,8 +958,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "async recalculate_stats via cast updates stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id ->
+      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
+        assert map_name == character.last_map
 
         %{
           stats
@@ -988,8 +991,9 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     end
 
     test "recalculate_stats via pubsub message updates stats", %{character: character} do
-      expect(Stats, :calculate_stats, fn stats, player_id ->
+      expect(Stats, :calculate_stats, fn stats, player_id, nil, map_name ->
         assert player_id == character.id
+        assert map_name == character.last_map
         %{stats | base_stats: %{stats.base_stats | str: 25}}
       end)
 

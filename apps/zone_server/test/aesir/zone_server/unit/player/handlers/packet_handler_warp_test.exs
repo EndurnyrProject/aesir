@@ -29,14 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
 
   describe "handle_map_loaded :warp branch" do
     test "MapLoaded after a warp respawns the player without re-syncing inventory/skills/stats" do
-      game_state = %PlayerState{
-        character_id: 1000,
-        map_name: "geffen",
-        x: 100,
-        y: 120,
-        view_range: 14,
-        pending_map_load: :warp
-      }
+      game_state = pending_warp_state("geffen", 100, 120)
 
       state = %{game_state: game_state, connection_pid: self()}
 
@@ -53,14 +46,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
       warp = warp_at("geffen", 100, 120, xs: 1, ys: 1)
       stub(Warps, :for_map, fn "geffen" -> {:ok, [warp]} end)
 
-      game_state = %PlayerState{
-        character_id: 1000,
-        map_name: "geffen",
-        x: 100,
-        y: 120,
-        view_range: 14,
-        pending_map_load: :warp,
-        last_warp_at: System.monotonic_time(:millisecond)
+      game_state = %{
+        pending_warp_state("geffen", 100, 120)
+        | last_warp_at: System.monotonic_time(:millisecond)
       }
 
       state = %{game_state: game_state, connection_pid: self()}
@@ -72,14 +60,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
     end
 
     test "a spawn cell outside any warp area casts nothing on map load" do
-      game_state = %PlayerState{
-        character_id: 1000,
-        map_name: "geffen",
-        x: 100,
-        y: 120,
-        view_range: 14,
-        pending_map_load: :warp
-      }
+      game_state = pending_warp_state("geffen", 100, 120)
 
       state = %{game_state: game_state, connection_pid: self()}
 
@@ -128,6 +109,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerWarpTest do
       assert_received {:"$gen_cast", {:movement, {:warp, "izlude", 150, 190}}}
       assert new_state.game_state.last_warp_at == nil
     end
+  end
+
+  defp pending_warp_state(map, x, y) do
+    character(map, x, y)
+    |> PlayerState.new()
+    |> Map.put(:pending_map_load, :warp)
   end
 
   defp warp_at(map, x, y, opts) do
