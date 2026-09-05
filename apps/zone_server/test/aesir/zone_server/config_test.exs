@@ -55,10 +55,10 @@ defmodule Aesir.ZoneServer.ConfigTest do
   end
 
   describe "guild progression accessors" do
-    test "default to relaxed pre-WoE values when unset" do
+    test "use the shipped guild defaults" do
       assert Config.guild_exp_rate() == 100
       assert Config.guild_exp_limit() == 50
-      assert Config.guild_skills_gvg_only() == false
+      assert Config.guild_skills_gvg_only() == true
       assert Config.guild_aura_affects_master() == false
     end
   end

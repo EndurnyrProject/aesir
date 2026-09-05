@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -18,6 +19,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.RecallActivesTest do
   setup :verify_on_exit!
   setup :set_mimic_from_context
   setup :setup_ets_tables
+
+  setup do
+    stub(Config, :guild_skills_gvg_only, fn -> false end)
+    :ok
+  end
 
   @master_id 1
   @guild_id 5

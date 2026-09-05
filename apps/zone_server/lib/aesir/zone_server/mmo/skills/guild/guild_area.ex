@@ -11,9 +11,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
 
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
 
   def validate_master(%PlayerState{guild_id: guild_id, character_id: char_id, map_name: map_name}) do
     cond do
-      Config.guild_skills_gvg_only() and not MapFlags.get(map_name, :gvg) ->
+      Config.guild_skills_gvg_only() and not Rules.ground?(map_name) ->
         {:error, :not_gvg_ground}
 
       match?({:ok, %{master_char_id: ^char_id}}, GuildManager.get(guild_id)) ->
@@ -42,15 +42,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea do
   the caster's live position.
   """
   @spec guildmates_in_range(PlayerState.t(), pos_integer()) :: [non_neg_integer()]
-  def guildmates_in_range(%PlayerState{character_id: char_id, guild_id: guild_id}, radius) do
-    case SpatialIndex.get_unit_position(:player, char_id) do
-      {:ok, {x, y, map_name}} ->
-        :player
-        |> SpatialIndex.get_units_in_range(map_name, x, y, radius)
-        |> Enum.filter(&same_guild?(&1, guild_id))
-
-      {:error, :not_found} ->
-        []
+  def guildmates_in_range(
+        %PlayerState{character_id: char_id, guild_id: guild_id} = caster,
+        radius
+      ) do
+    with :ok <- validate_master(caster),
+         {:ok, {x, y, map_name}} <- SpatialIndex.get_unit_position(:player, char_id) do
+      :player
+      |> SpatialIndex.get_units_in_range(map_name, x, y, radius)
+      |> Enum.filter(&same_guild?(&1, guild_id))
+    else
+      _not_allowed_or_missing -> []
     end
   end
 

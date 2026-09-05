@@ -16,7 +16,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
-    on_exit(&ClusterTestHelper.clear_all/0)
+    previous = Application.fetch_env!(:zone_server, :guild_skills_gvg_only)
+    Application.put_env(:zone_server, :guild_skills_gvg_only, false)
+
+    on_exit(fn ->
+      Application.put_env(:zone_server, :guild_skills_gvg_only, previous)
+      ClusterTestHelper.clear_all()
+    end)
+
     :ok
   end
 
@@ -93,25 +100,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GuildSeamTest do
                PlayerCaster.knows?(caster(1, nil), @gd_extension, 1, :begin)
     end
 
-    test "the GvG gate is map-aware when enabled and passes on the relaxed default" do
+    test "the guild ground gate is map-aware and supports an explicit relaxation" do
       {master, guild} = guild_fixture("SeamGvg", %{"10004" => 3})
       me = %{caster(master.id, guild.guild_id) | map_name: "prontera"}
-
-      # Relaxed default (flag off): castable on a non-gvg map.
+      Application.put_env(:zone_server, :guild_skills_gvg_only, false)
       assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
 
       Application.put_env(:zone_server, :guild_skills_gvg_only, true)
-      on_exit(fn -> Application.delete_env(:zone_server, :guild_skills_gvg_only) end)
-
-      # Flag on, non-gvg map: rejected.
       assert {:error, :not_gvg_ground} = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
 
-      # Flag on, gvg-active map: permitted.
-      :ok = MapFlags.set_runtime("prontera", :gvg, true)
+      :ok = MapFlags.set_runtime("prontera", :gvg_castle, true)
       assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
 
-      # Flag off again: castable regardless of the map's gvg state.
-      Application.delete_env(:zone_server, :guild_skills_gvg_only)
+      Application.put_env(:zone_server, :guild_skills_gvg_only, false)
       assert :ok = PlayerCaster.knows?(me, @gd_extension, 1, :begin)
     end
   end

@@ -236,14 +236,14 @@ defmodule Aesir.ZoneServer.Config do
   def guild_exp_limit, do: Application.get_env(:zone_server, :guild_exp_limit, 50)
 
   @doc """
-  Whether guild active skills are castable only on GvG ground.
+  Whether guild active skills require GvG ground.
 
-  Defaults to `false` until WoE exists; flip to the faithful restriction once
-  GvG maps land.
+  Defaults to `true`. An explicit `false` keeps the custom ground relaxation;
+  all other skill, item, and status restrictions still apply.
   """
   @spec guild_skills_gvg_only() :: boolean()
   def guild_skills_gvg_only,
-    do: Application.get_env(:zone_server, :guild_skills_gvg_only, false)
+    do: Application.get_env(:zone_server, :guild_skills_gvg_only, true)
 
   @doc "Whether guild auras also buff the guild master (excluded by default)."
   @spec guild_aura_affects_master() :: boolean()

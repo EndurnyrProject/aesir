@@ -9,8 +9,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.Recall do
   session, so a member dying or logging out mid-recall is a safe no-op.
   """
 
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -19,7 +22,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.Recall do
   # The reference summon ring: eight surrounding cells plus the center.
   @ring [{-1, 0}, {1, 0}, {0, 1}, {0, -1}, {-1, 1}, {1, -1}, {-1, -1}, {1, 1}, {0, 0}]
 
-  defdelegate validate_master(caster), to: Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea
+  @doc "Validates that the caster is the guild master and the destination permits recall."
+  @spec validate_master(PlayerState.t()) :: :ok | {:error, :not_guild_master | :not_gvg_ground}
+  def validate_master(%PlayerState{guild_id: guild_id}) when guild_id in [nil, 0],
+    do: {:error, :not_guild_master}
+
+  def validate_master(%PlayerState{guild_id: guild_id, character_id: char_id, map_name: map_name}) do
+    case GuildManager.get(guild_id) do
+      {:ok, %{master_char_id: ^char_id}} ->
+        if Config.guild_skills_gvg_only() and not Rules.ground?(map_name),
+          do: {:error, :not_gvg_ground},
+          else: :ok
+
+      _not_master_or_missing ->
+        {:error, :not_guild_master}
+    end
+  end
 
   @doc """
   Warps up to `max_calls` online guild members (`:all` = no cap) next to the
@@ -27,7 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.Recall do
   """
   @spec summon_members(PlayerState.t(), pos_integer() | :all) :: :ok
   def summon_members(%PlayerState{} = caster, max_calls) do
-    with {:ok, guild} <- GuildManager.get(caster.guild_id),
+    with :ok <- validate_master(caster),
+         {:ok, guild} <- GuildManager.get(caster.guild_id),
          {:ok, {x, y, map_name}} <-
            SpatialIndex.get_unit_position(:player, caster.character_id) do
       guild.members
@@ -48,9 +67,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Guild.Recall do
   end
 
   defp resolve_session(char_id) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} -> [pid]
-      {:error, :not_found} -> []
+    case UnitRegistry.get_unit(:player, char_id) do
+      {:ok, {_module, %PlayerState{map_name: map_name}, pid}} ->
+        if not MapFlags.get(map_name, :nowarp) or Rules.ground?(map_name), do: [pid], else: []
+
+      {:error, :not_found} ->
+        []
     end
   end
 

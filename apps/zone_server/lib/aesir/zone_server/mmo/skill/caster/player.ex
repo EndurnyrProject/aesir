@@ -7,7 +7,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
-  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Skill.Cooldown
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -118,10 +117,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Caster.Player do
   defp check_guild_master(%GuildState{master_char_id: char_id}, char_id), do: :ok
   defp check_guild_master(%GuildState{}, _char_id), do: {:error, :not_guild_master}
 
-  # Guild actives are restricted to GvG ground only when the config flag is on;
-  # the shipped default is relaxed (castable anywhere) until the flip.
   defp check_gvg_gate(%PlayerState{map_name: map_name}) do
-    if Config.guild_skills_gvg_only() and not MapFlags.get(map_name, :gvg),
+    if Config.guild_skills_gvg_only() and not Rules.ground?(map_name),
       do: {:error, :not_gvg_ground},
       else: :ok
   end
