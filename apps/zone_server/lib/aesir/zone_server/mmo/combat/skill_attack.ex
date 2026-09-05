@@ -282,11 +282,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @spec deliver_prepared_skill_hit(PreparedHit.t()) :: :ok
   def deliver_prepared_skill_hit(%PreparedHit{} = prepared) do
     %PreparedHit{
-      attacker: attacker,
+      attacker: prepared_attacker,
       target_type: target_type,
-      target_pid: target_pid,
-      target_hp: target_hp,
-      target: target,
+      target: prepared_target,
       skill_id: skill_id,
       skill_level: skill_level,
       damage_result: damage_result,
@@ -297,18 +295,30 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       knockback_options: knockback_options
     } = prepared
 
-    damage =
-      deliver_calculated_skill_hit(
-        attacker,
-        {target_type, target_pid, target},
-        skill_id,
-        skill_level,
-        damage_result,
-        %{display_hits: display_hits, element: element, ranged?: ranged?, coma?: coma?}
-      )
+    with {:ok, target_pid, target_state, ^target_type} <-
+           TargetResolver.resolve({target_type, prepared_target.unit_id}),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
+         {:ok, _attacker_pid, attacker_state, attacker_type} <-
+           TargetResolver.resolve({prepared_attacker.unit_type, prepared_attacker.unit_id}),
+         ^attacker_type <- prepared_attacker.unit_type,
+         attacker <- attacker_state.__struct__.to_combatant(attacker_state),
+         :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
+      damage =
+        deliver_calculated_skill_hit(
+          attacker,
+          {target_type, target_pid, target},
+          skill_id,
+          skill_level,
+          damage_result,
+          %{display_hits: display_hits, element: element, ranged?: ranged?, coma?: coma?}
+        )
 
-    result = logical_skill_result([%{hit?: true, damage: damage}], target_hp, coma?)
-    maybe_apply_skill_knockback(attacker, target, skill_id, result, knockback_options)
+      result = logical_skill_result([%{hit?: true, damage: damage}], target_state, coma?)
+      maybe_apply_skill_knockback(attacker, target, skill_id, result, knockback_options)
+    end
+
+    :ok
   end
 
   @doc """

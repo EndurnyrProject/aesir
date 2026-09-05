@@ -78,25 +78,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
   end
 
   defp damage_target(caster, definition, {unit_type, target_id}) do
+    hit_info = %{
+      dmg_type: :magic,
+      is_short: false,
+      element: definition.element,
+      skill_id: definition.id,
+      skill_level: 1,
+      from_caster?: true
+    }
+
     with {:ok, target_pid, _target_state, ^unit_type} <-
-           TargetResolver.resolve(unit_type, target_id) do
-      hit_info = %{
-        element: definition.element,
-        skill_id: definition.id,
-        skill_level: 1,
-        damage_kind: :magic,
-        pre_delivery_prepared?: true
-      }
-
-      DamageApplication.apply_unit_damage(
-        unit_type,
-        target_pid,
-        target_id,
-        caster.hp,
-        hit_info,
-        damage_source(caster, unit_type)
-      )
-
+           TargetResolver.resolve(unit_type, target_id),
+         :ok <-
+           DamageApplication.apply_unit_damage(
+             unit_type,
+             target_pid,
+             target_id,
+             caster.hp,
+             hit_info,
+             damage_source(caster, unit_type)
+           ) do
       Combat.knockback(unit_type, target_id, caster.x, caster.y, definition.knockback)
     end
   end
@@ -111,13 +112,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction do
     end
   end
 
-  defp damage_source(%MobState{owner_player_id: nil, instance_id: instance_id}, :player),
+  defp damage_source(%MobState{owner_player_id: nil, instance_id: instance_id}, _target_type),
     do: {:mob, instance_id}
 
   defp damage_source(%MobState{owner_player_id: owner_player_id}, :player),
     do: {:player, owner_player_id}
 
-  defp damage_source(caster, _target_type), do: source_id(caster)
+  defp damage_source(%MobState{owner_player_id: owner_player_id}, _target_type),
+    do: owner_player_id
 
   defp source_id(%MobState{owner_player_id: nil, instance_id: instance_id}), do: instance_id
   defp source_id(%MobState{owner_player_id: owner_player_id}), do: owner_player_id

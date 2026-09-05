@@ -561,8 +561,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
     target_state = %TestUnit{combatant: target, hp: 100}
     test_pid = self()
 
-    stub(TargetResolver, :resolve, fn {:mob, 2001} ->
-      {:ok, self(), target_state, :mob}
+    stub(TargetResolver, :resolve, fn
+      {:mob, 2001} -> {:ok, self(), target_state, :mob}
+      {:player, 1001} -> {:ok, self(), caster_state, :player}
     end)
 
     stub(TargetResolver, :ensure_targetable, fn ^target_state, :mob -> :ok end)
