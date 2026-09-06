@@ -1026,8 +1026,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     formulas = Mechanics.player_formulas()
     values = formula_values(stats)
 
-    critical_basis =
-      formulas.critical(%{luk: values.luk, raw_luk: stats.base_stats.luk})
+    critical_basis = formulas.critical(values)
 
     base_atk =
       values
@@ -1111,24 +1110,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     raw_def = Map.get(equipment_modifiers, :def, 0)
     rate = max(0, 100 + Map.get(equipment_modifiers, :def_rate, 0))
     div(raw_def * rate, 100)
-  end
-
-  defp calculate_critical(
-         %{strategy: :display_first} = basis,
-         passive_critical,
-         flat_critical,
-         critical_rate,
-         right_hand
-       ) do
-    critical =
-      trunc(
-        (basis.display_base + div(passive_critical, 10) + flat_critical) *
-          (100 + critical_rate) / 100
-      )
-      |> apply_katar_critical(right_hand)
-
-    roll_rate = basis.roll_rate + (critical - basis.roll_display_base) * 10
-    {critical, roll_rate}
   end
 
   defp calculate_critical(

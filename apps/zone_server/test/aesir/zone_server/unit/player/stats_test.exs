@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
@@ -43,13 +44,14 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     def str_bonus(level, _ctx), do: level
   end
 
+  setup :set_mimic_private
   setup :setup_ets_tables
   setup :verify_on_exit!
 
   # Real equip.yml ids.
   @sword 1101
   @knife 1201
-  @mace 1340
+  @mace 1501
   @javelin 1401
   @lance 1410
   @bow 1701
@@ -60,7 +62,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   @wedding_veil 2206
   @sunglasses 2201
   @flu_mask 2218
-  @adventurers_backpack 2576
+  @muffler 2501
   # Two-handed bow that has a non-zero view (11) — used for the shield_view bug test.
   @ixion_wing 18_129
 
@@ -73,6 +75,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   @head_mid_pos 512
   @head_low_pos 1
   @garment_pos 4
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
 
   defp equipped(nameid, equip) do
     %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
@@ -219,6 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.progression.status_point == 25
     end
 
+    @tag game_mode: :renewal
     test "loads trait stats, trait_point, and ap into runtime state" do
       # Dragon Knight (trait job) at base level 200 so the recomputed max_ap
       # (base_ap table = 200) is high enough that the loaded ap survives the clamp.
@@ -259,6 +266,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.current_state.ap == 5
     end
 
+    @tag game_mode: :renewal
     test "row 26: a trait job's max_ap equals the base_ap table value at its level" do
       character = %Character{
         base_level: 200,
@@ -299,6 +307,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert stats.derived_stats.max_ap == 0
     end
 
+    @tag game_mode: :renewal
     test "ap is clamped down to max_ap (trait job over cap, non-trait job to 0)" do
       over_cap = %Character{
         base_level: 200,
@@ -332,6 +341,34 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       assert Stats.from_character(over_cap).current_state.ap == 200
       assert Stats.from_character(non_trait).current_state.ap == 0
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic construction keeps trait-derived combat slots and AP inert on an available job" do
+      character = %Character{
+        base_character()
+        | class: 1,
+          base_level: 99,
+          pow: 30,
+          sta: 4,
+          wis: 5,
+          spl: 6,
+          con: 7,
+          crt: 8,
+          trait_point: 12,
+          ap: 5,
+          max_ap: 200
+      }
+
+      stats = Stats.from_character(character)
+
+      for stat <- [:patk, :smatk, :res, :mres, :hplus, :crate],
+          do: assert(Map.fetch!(stats.combat_stats, stat) == 0)
+
+      assert stats.base_stats.pow == 30
+      assert stats.progression.trait_point == 12
+      assert stats.current_state.ap == 0
+      assert stats.derived_stats.max_ap == 0
     end
 
     test "denormalizes the option riding bit into stats.riding" do
@@ -761,10 +798,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      # Renewal combat HIT/FLEE retain their canonical baselines at zero stats.
-      assert result.combat_stats.hit == 175
-      assert result.combat_stats.flee == 100
-      assert result.combat_stats.critical == 0
+      assert result.combat_stats.hit == mode_value(175, 1)
+      assert result.combat_stats.flee == mode_value(100, 1)
+      assert result.combat_stats.critical == 1
       assert result.combat_stats.atk == 0
       assert result.combat_stats.def == 0
       refute result.combat_stats.ignore_size_penalty
@@ -772,8 +808,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
 
     test "bHitRate scales the computed Hit after flat contributions" do
-      assert combat_stats(%{hit: 25, hit_rate: 20}).hit == 240
-      assert combat_stats(%{hit: 25}).hit == 200
+      assert combat_stats(%{hit: 25, hit_rate: 20}).hit == mode_value(240, 30)
+      assert combat_stats(%{hit: 25}).hit == mode_value(200, 25)
     end
 
     test "positive equipment DEF rate scales only equipment hard DEF" do
@@ -809,9 +845,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      assert result.combat_stats.def == 30 + 11 + 120
+      assert result.combat_stats.def == mode_value(161, 131)
       assert result.combat_stats.mdef == 10
-      assert result.combat_stats.soft_mdef == 45
+      assert result.combat_stats.soft_mdef == mode_value(45, 40)
       assert result.base_stats.vit == 40
     end
 
@@ -850,10 +886,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      # Status effects add to the renewal combat baselines.
-      assert result.combat_stats.hit == 185
-      assert result.combat_stats.flee == 110
-      assert result.combat_stats.critical == 10
+      assert result.combat_stats.hit == mode_value(185, 10)
+      assert result.combat_stats.flee == mode_value(110, 11)
+      assert result.combat_stats.critical == 11
       assert result.combat_stats.atk == 10
       assert result.combat_stats.def == 10
     end
@@ -900,7 +935,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      assert result.combat_stats.critical == 5
+      assert result.combat_stats.critical == mode_value(6, 1)
     end
 
     test "Spear Mastery grants +4 per level on foot with a one-handed spear" do
@@ -955,7 +990,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
-  describe "renewal MATK and MDEF" do
+  describe "mode-specific MATK and MDEF" do
     defp caster(base_stats, base_level) do
       %Stats{
         base_stats: base_stats,
@@ -966,23 +1001,22 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       }
     end
 
-    test "status MATK follows the renewal formula" do
+    test "status MATK follows the active mode's formula" do
       stats =
         caster(%{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30}, 80)
 
       result = Stats.calculate_combat_stats(stats)
 
-      # INT + INT/2 + DEX/5 + LUK/3 + level/4 = 40 + 20 + 6 + 10 + 20 = 96
-      assert result.combat_stats.matk == 96
+      assert result.combat_stats.matk == mode_value(96, 104)
     end
 
-    test "without a MATK weapon matk_min == matk_max == matk == base_matk" do
+    test "without a MATK weapon the band contains only status MATK" do
       stats = caster(%{str: 0, agi: 0, vit: 0, int: 40, dex: 30, luk: 30}, 80)
 
       result = Stats.calculate_combat_stats(stats)
 
-      assert result.combat_stats.matk_min == 96
-      assert result.combat_stats.matk_max == 96
+      assert result.combat_stats.matk_min == mode_value(96, 65)
+      assert result.combat_stats.matk_max == mode_value(96, 104)
       assert result.combat_stats.matk == result.combat_stats.matk_max
     end
 
@@ -997,20 +1031,18 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      # base 96 + flat (equipment 30 + status 20) on both ends, no variance band
-      assert result.combat_stats.matk_min == 146
-      assert result.combat_stats.matk_max == 146
-      assert result.combat_stats.matk == 146
+      assert result.combat_stats.matk_min == mode_value(146, 115)
+      assert result.combat_stats.matk_max == mode_value(146, 154)
+      assert result.combat_stats.matk == result.combat_stats.matk_max
     end
 
-    test "soft MDEF follows the renewal formula" do
+    test "soft MDEF follows the active mode's formula" do
       stats =
         caster(%{str: 0, agi: 0, vit: 20, int: 40, dex: 30, luk: 0}, 80)
 
       result = Stats.calculate_combat_stats(stats)
 
-      # INT + level/4 + (DEX + VIT)/5 = 40 + 20 + 10 = 70
-      assert result.combat_stats.soft_mdef == 70
+      assert result.combat_stats.soft_mdef == mode_value(70, 50)
     end
 
     test "hard MDEF is 0 without gear or status" do
@@ -1038,6 +1070,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   end
 
   describe "derived combat stats (patk/smatk/res/mres/hplus/crate)" do
+    @tag game_mode: :renewal
     test "sums status and equipment modifiers into each slot" do
       stats = %Stats{
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
@@ -1080,6 +1113,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.crate == 0
     end
 
+    @tag game_mode: :renewal
     test "clamps above 32767 down to 32767" do
       stats = %Stats{
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
@@ -1119,6 +1153,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   end
 
   describe "trait-stat derivation (SP-B, formula rows 1-11)" do
+    @describetag game_mode: :renewal
     defp trait_stats(base_stats) do
       %Stats{
         base_stats: base_stats,
@@ -1191,13 +1226,15 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.crate == 23
       assert CriticalHits.apply_critical_damage(1_000, result) == 1_630
     end
+  end
 
-    test "row 11: CRT never feeds the classic critical stat" do
+  describe "trait-independent critical" do
+    test "row 11: CRT never feeds the ordinary critical stat" do
       base = %{@zero | luk: 30}
       no_crt = base |> trait_stats() |> Stats.calculate_combat_stats()
       high_crt = base |> Map.put(:crt, 100) |> trait_stats() |> Stats.calculate_combat_stats()
 
-      assert no_crt.combat_stats.critical == 10
+      assert high_crt.combat_stats.critical_rate == no_crt.combat_stats.critical_rate
       assert high_crt.combat_stats.critical == no_crt.combat_stats.critical
     end
   end
@@ -1626,8 +1663,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       reverted = armed |> Stats.apply_equipment_modifiers([]) |> Stats.calculate_combat_stats()
 
-      assert bare.combat_stats.critical == 18
-      assert armed.combat_stats.critical == 36
+      assert bare.combat_stats.critical_rate == mode_value(180, 195)
+      assert armed.combat_stats.critical_rate == mode_value(360, 390)
+      assert bare.combat_stats.critical == mode_value(18, 19)
+      assert armed.combat_stats.critical == mode_value(36, 39)
       assert armed.right_hand.subtype == :katar
       assert armed.left_hand == nil
       assert reverted.combat_stats.critical == bare.combat_stats.critical
@@ -1640,7 +1679,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
       armored = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [armor])
 
-      assert armored.combat_stats.def == bare.combat_stats.def + 10
+      assert armored.combat_stats.def == bare.combat_stats.def + mode_value(10, 1)
     end
 
     test "nil equipped_items leaves equipment and modifiers untouched" do
@@ -1703,20 +1742,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       refute Map.has_key?(result.modifiers.equipment, {:granted_skill, 28})
     end
 
-    test "equipping Soul Staff (magic_attack 200, weapon_level 3) opens a +-15% MATK band" do
+    test "Soul Staff contributes its mode-specific MATK band" do
       staff = equipped(@soul_staff, @both_hand)
+      base = swordman(%Equipment{}, %{})
+      mage = %{base | progression: %{base.progression | job_id: 2, base_level: 73}}
 
-      bare = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [])
-      staffed = Stats.calculate_stats(swordman(%Equipment{}, %{}), nil, [staff])
+      bare = Stats.calculate_stats(mage, nil, [])
+      staffed = Stats.calculate_stats(mage, nil, [staff])
 
       assert bare.combat_stats.matk_min == bare.combat_stats.matk_max
 
-      # rAthena status.cpp:6306: variance = matk * wlv / 10 = 200 * 3 / 10 = 60;
-      # weapon band contributes min += matk - variance = 140, max += matk +
-      # variance = 260. Soul Staff's `on_equip` (bonus bInt,5) additionally lifts
-      # base MATK by 7 (INT + INT/2 delta), shifting both ends equally.
-      assert staffed.combat_stats.matk_min == bare.combat_stats.matk_min + 147
-      assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + 267
+      assert staffed.right_hand.item_id == @soul_staff
+      assert staffed.combat_stats.matk_min == bare.combat_stats.matk_min + mode_value(147, 5)
+      assert staffed.combat_stats.matk_max == bare.combat_stats.matk_max + mode_value(267, 6)
       assert staffed.combat_stats.matk_min < staffed.combat_stats.matk_max
       assert staffed.combat_stats.matk == staffed.combat_stats.matk_max
     end
@@ -1760,10 +1798,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.modifiers.equipment.res == 13
       assert result.modifiers.equipment.mres == 8
 
-      assert result.combat_stats.patk == 8
-      assert result.combat_stats.smatk == 8
-      assert result.combat_stats.res == 13
-      assert result.combat_stats.mres == 8
+      assert result.combat_stats.patk == mode_value(8, 0)
+      assert result.combat_stats.smatk == mode_value(8, 0)
+      assert result.combat_stats.res == mode_value(13, 0)
+      assert result.combat_stats.mres == mode_value(8, 0)
     end
   end
 
@@ -1849,6 +1887,13 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.mres == 0
     end
 
+    @tag game_mode: :pre_renewal
+    test "classic has no weapon-level-5 or armor-level-2 refinement data" do
+      assert RefineDatabase.level_info(:weapon, 5, 10) == nil
+      assert RefineDatabase.level_info(:armor, 2, 10) == nil
+    end
+
+    @tag game_mode: :renewal
     test "a wlv5 weapon's refine grants patk/smatk riders" do
       wlv5 = %ItemDefinition{
         id: 90_104,
@@ -1889,6 +1934,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.smatk == 0
     end
 
+    @tag game_mode: :renewal
     test "an armor-lv2 refine grants res/mres riders" do
       armor2 = %ItemDefinition{
         id: 90_105,
@@ -2798,6 +2844,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.combat_stats.critical == baseline.combat_stats.critical + 4
     end
 
+    @tag game_mode: :renewal
     test "an on_equip :pow bonus raises patk and base ATK via the SP-B derivation" do
       item = scripted_item(90_203, on_equip: [{:bonus, :pow, 3}])
       stub(ItemManagement, :get_item_by_id, fn 90_203 -> {:ok, item} end)
@@ -2816,8 +2863,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       unrefined = with_equipped(refined(90_204, @armor_pos, 0))
       refined_7 = with_equipped(refined(90_204, @armor_pos, 7))
 
-      assert unrefined.combat_stats.critical == 0
-      assert refined_7.combat_stats.critical == 7
+      assert unrefined.combat_stats.critical == 1
+      assert refined_7.combat_stats.critical == 8
     end
 
     defp with_equipped_items(items) do
@@ -2864,8 +2911,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
         assert Stats.get_effective_stat(result, trait) == 0
       end
 
-      # STR 3 flows into base ATK = trunc(STR + level/4) = 3; POW stays 0 so patk is 0.
-      assert result.combat_stats.atk == 3
+      assert result.combat_stats.atk == mode_value(4, 3)
       assert result.combat_stats.patk == 0
     end
 
@@ -2885,11 +2931,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = with_equipped(equipped(90_212, @armor_pos))
 
-      # base MATK = INT + INT/2 = 15, then +50% -> div(15 * 150, 100) = 22
-      assert result.combat_stats.matk_max == 22
-      assert result.combat_stats.matk_min == 22
-      # the renewal heal band excludes the item rate
-      assert result.combat_stats.heal_matk_max == 15
+      assert result.combat_stats.matk_max == mode_value(22, 21)
+      assert result.combat_stats.matk_min == mode_value(22, 16)
+      assert result.combat_stats.heal_matk_min == mode_value(15, 11)
+      assert result.combat_stats.heal_matk_max == mode_value(15, 14)
     end
 
     test "signed equipment DEF rates fold additively before scaling" do
@@ -3199,7 +3244,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       baseline = level_75_stats(%{}).derived_stats.max_sp
 
       assert level_75_stats(%{max_sp: 200}).derived_stats.max_sp == baseline + 200
-      assert level_75_stats(%{max_sp_rate: 10}).derived_stats.max_sp == trunc(baseline * 1.10)
+      assert baseline == 85
+      assert level_75_stats(%{max_sp_rate: 10}).derived_stats.max_sp == mode_value(93, 94)
     end
   end
 
@@ -3232,7 +3278,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
 
     test "robe_view returns item view for equipped garment" do
-      equipment = Stats.equipment_from_inventory([equipped(@adventurers_backpack, @garment_pos)])
+      {:ok, garment} = ItemManagement.get_item_by_id(@muffler)
+      stub(ItemManagement, :get_item_by_id, fn @muffler -> {:ok, %{garment | view: 2}} end)
+      equipment = Stats.equipment_from_inventory([equipped(@muffler, @garment_pos)])
       assert Stats.robe_view(equipment) == 2
     end
 
@@ -3274,7 +3322,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
   end
 
   describe "status ASPD modifiers" do
-    test "flat :aspd status scales with AGI / 200" do
+    test "flat ASPD uses the active stat or attack-delay scaling" do
       base_stats = status_stats(%{})
       base = base_stats.derived_stats.aspd
       agi = Stats.get_effective_stat(base_stats, :agi)
@@ -3282,19 +3330,20 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       # A flat bonus of 200 contributes exactly 200 * AGI / 200 = AGI points.
       boosted = status_stats(%{aspd: 200}).derived_stats.aspd
 
-      assert boosted == min(base + agi, 193)
+      assert boosted == mode_value(min(base + agi, 193), 190)
       assert boosted > base
     end
 
-    test "flat :aspd is clamped at 193" do
-      assert status_stats(%{aspd: 2000}).derived_stats.aspd == 193
+    test "flat ASPD is clamped at the active mode's cap" do
+      assert status_stats(%{aspd: 2000}).derived_stats.aspd == mode_value(193, 190)
     end
 
-    test "aspd_rate status grants its percent of the distance to 195" do
+    test "ASPD rate applies to the active formula before the final cap" do
       base = status_stats(%{}).derived_stats.aspd
       boosted = status_stats(%{aspd_rate: 5}).derived_stats.aspd
 
-      assert boosted == base + div(max(195 - base, 2) * 5, 100)
+      assert base == mode_value(161, 157)
+      assert boosted == mode_value(162, 160)
       assert boosted > base
     end
 
@@ -3307,7 +3356,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       unpenalized = status_stats(%{aspd_rate: 5}).derived_stats.aspd
       penalized = status_stats(%{aspd_rate: 5, aspd_penalty_rate: 250}).derived_stats.aspd
 
-      assert penalized == 200 - div((200 - unpenalized) * 1_250, 1_000)
+      assert unpenalized == mode_value(162, 160)
+      assert penalized == mode_value(153, 149)
       assert penalized < unpenalized
     end
 
@@ -3350,7 +3400,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       # boost lands as exactly the effective AGI.
       agi = Stats.get_effective_stat(base, :agi)
 
-      assert boosted.derived_stats.aspd == min(base.derived_stats.aspd + agi, 193)
+      assert boosted.derived_stats.aspd ==
+               mode_value(min(base.derived_stats.aspd + agi, 193), 190)
+
       assert boosted.derived_stats.aspd > base.derived_stats.aspd
       assert Stats.get_effective_stat(boosted, :int) == Stats.get_effective_stat(base, :int) + 10
       assert Stats.get_effective_stat(boosted, :str) == Stats.get_effective_stat(base, :str) + 5
@@ -3360,10 +3412,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
   describe "SA_ADVANCEDBOOK weapon gating" do
     defp advancedbook_stats(learned_skills, equipped_items) do
-      # AGI 200 makes the AGI / 200 scaling of flat ASPD bonuses exactly 1,
-      # so the skill's +3 lands as +3 on the final ASPD.
+      # Renewal AGI 200 makes the flat bonus exact; classic AGI 80 avoids its cap.
       %Stats{
-        base_stats: %{str: 10, agi: 200, vit: 25, int: 30, dex: 20, luk: 10},
+        base_stats: %{str: 10, agi: mode_value(200, 80), vit: 25, int: 30, dex: 20, luk: 10},
         progression: %{
           base_level: 50,
           job_level: 25,
@@ -3406,7 +3457,9 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert book_with_skill.combat_stats.atk == book_no_skill.combat_stats.atk + 15
 
       assert book_with_skill.derived_stats.aspd ==
-               min(book_no_skill.derived_stats.aspd + 3, 193)
+               min(book_no_skill.derived_stats.aspd + 3, mode_value(193, 190))
+
+      assert book_with_skill.derived_stats.aspd > book_no_skill.derived_stats.aspd
     end
   end
 

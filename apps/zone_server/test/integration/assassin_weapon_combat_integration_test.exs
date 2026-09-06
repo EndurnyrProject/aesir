@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
   test "real equip requests publish right, left, dual-dagger, and Katar snapshots" do
     player = start_assassin(items: [@knife, @knife_slotted, @jur], luk: 30)
-    base_critical = player_state(player).stats.combat_stats.critical
+    base_critical_rate = player_state(player).stats.combat_stats.critical_rate
 
     equip!(player, @knife, @right_hand)
     state = player_state(player)
@@ -88,7 +88,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
     assert state.stats.right_hand.item_id == @jur
     assert state.stats.right_hand.subtype == :katar
     assert state.stats.left_hand == nil
-    assert state.stats.combat_stats.critical == base_critical * 2
+    assert state.stats.combat_stats.critical_rate == base_critical_rate * 2
+    assert state.stats.combat_stats.critical == div(base_critical_rate * 2, 10)
   end
 
   test "normal, Double Attack, dual-dagger, and Katar packets equal real mob HP loss" do

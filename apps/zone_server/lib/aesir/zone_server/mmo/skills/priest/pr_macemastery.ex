@@ -1,11 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery do
   @moduledoc """
-  Mace Mastery (PR_MACEMASTERY). Grants flat weapon ATK and critical while
-  wielding a mace or two-handed mace.
+  Mace Mastery (PR_MACEMASTERY) grants 3 weapon ATK per level with either mace type.
 
-  rAthena Renewal: `+3` weapon ATK per level (`battle.cpp:2366-2370`) and
-  `+10` critical per level (`status.cpp:4528-4532`), both gated on `W_MACE` or
-  `W_2HMACE`.
+  Renewal also grants 10 critical tenths per level. Classic grants no critical bonus.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 65,
@@ -14,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery do
     max_level: 10,
     target_type: :passive
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 
   @behaviour Passive
@@ -25,8 +23,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery do
   def atk_bonus(_level, _ctx), do: 0
 
   @impl Passive
-  def critical_bonus(level, %{weapon_type: weapon}) when weapon in [:mace, :two_handed_mace],
-    do: 10 * level
+  def critical_bonus(level, %{weapon_type: weapon}) when weapon in [:mace, :two_handed_mace] do
+    case GameMode.mode() do
+      :renewal -> 10 * level
+      :pre_renewal -> 0
+    end
+  end
 
   def critical_bonus(_level, _ctx), do: 0
 end

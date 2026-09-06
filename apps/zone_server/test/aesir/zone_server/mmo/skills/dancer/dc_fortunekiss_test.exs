@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekiss
@@ -43,18 +44,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
   end
 
   test "snapshots level values that grant critical through the stat pipeline" do
-    for {level, expected_critical} <- [{1, 35}, {10, 52}] do
+    {base_rate, cases} =
+      %{
+        renewal: {324, [{1, 340}, {10, 508}]},
+        pre_renewal: {353, [{1, 370}, {10, 543}]}
+      }[GameMode.mode()]
+
+    for {level, expected_rate} <- cases do
       caster = player(32_900 + level)
       register(caster)
 
-      assert calculate_stats(caster.character_id).combat_stats.critical == 34
+      baseline = calculate_stats(caster.character_id)
+      assert Stats.get_effective_stat(baseline, :luk) == 103
+      assert baseline.combat_stats.critical_rate == base_rate
       assert {:ok, _result} = DcFortunekiss.cast(caster, :self, level, DcFortunekiss.definition())
 
       assert %{val1: ^level, expires_at: expires_at, started_at: started_at} =
                StatusStorage.get_status(:player, caster.character_id, :sc_fortunekiss)
 
       assert expires_at - started_at == 180_000
-      assert calculate_stats(caster.character_id).combat_stats.critical == expected_critical
+      result = calculate_stats(caster.character_id)
+      assert result.combat_stats.critical_rate == expected_rate
+      assert result.combat_stats.critical == div(expected_rate, 10)
     end
   end
 

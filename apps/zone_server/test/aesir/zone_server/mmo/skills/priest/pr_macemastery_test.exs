@@ -4,17 +4,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemasteryTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrMacemastery
 
-  test "grants 3 ATK and 10 internal critical tenths per level while wielding a mace" do
-    assert PrMacemastery.atk_bonus(1, %{weapon_type: :mace}) == 3
-    assert PrMacemastery.atk_bonus(10, %{weapon_type: :mace}) == 30
-    assert PrMacemastery.critical_bonus(1, %{weapon_type: :mace}) == 10
-    assert PrMacemastery.critical_bonus(5, %{weapon_type: :mace}) == 50
-    assert PrMacemastery.critical_bonus(10, %{weapon_type: :mace}) == 100
+  test "grants 3 ATK per level while wielding either mace type" do
+    for weapon <- [:mace, :two_handed_mace] do
+      assert PrMacemastery.atk_bonus(1, %{weapon_type: weapon}) == 3
+      assert PrMacemastery.atk_bonus(10, %{weapon_type: weapon}) == 30
+    end
   end
 
-  test "grants the same bonuses while wielding a two-handed mace" do
-    assert PrMacemastery.atk_bonus(10, %{weapon_type: :two_handed_mace}) == 30
-    assert PrMacemastery.critical_bonus(10, %{weapon_type: :two_handed_mace}) == 100
+  @tag game_mode: :renewal
+  test "Renewal grants 10 critical tenths per level with either mace type" do
+    for weapon <- [:mace, :two_handed_mace] do
+      assert PrMacemastery.critical_bonus(1, %{weapon_type: weapon}) == 10
+      assert PrMacemastery.critical_bonus(5, %{weapon_type: weapon}) == 50
+      assert PrMacemastery.critical_bonus(10, %{weapon_type: weapon}) == 100
+    end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic grants no critical bonus with either mace type" do
+    for weapon <- [:mace, :two_handed_mace] do
+      assert PrMacemastery.critical_bonus(1, %{weapon_type: weapon}) == 0
+      assert PrMacemastery.critical_bonus(5, %{weapon_type: weapon}) == 0
+      assert PrMacemastery.critical_bonus(10, %{weapon_type: weapon}) == 0
+    end
   end
 
   test "grants no bonuses with other weapons" do

@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   # Real equip.yml ids whose subtype matches the weapon atoms under test.
   @weapon_ids %{
     one_handed_sword: 1101,
-    mace: 1340,
+    mace: 1501,
     bow: 1701,
     knuckle: 1801,
     one_handed_axe: 1301,
@@ -350,9 +350,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
   end
 
   describe "critical_bonus/1" do
+    @tag game_mode: :renewal
     test "PR_MACEMASTERY level 5 with a mace grants 50 critical" do
       player = build_player(%{65 => 5}, :mace)
       assert Passives.critical_bonus(player) == 50
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Mace Mastery grants ATK but no critical" do
+      player = build_player(%{65 => 5}, :mace)
+      assert Passives.atk_bonus(player) == 15
+      assert Passives.critical_bonus(player) == 0
     end
 
     test "PR_MACEMASTERY grants no critical with another weapon" do

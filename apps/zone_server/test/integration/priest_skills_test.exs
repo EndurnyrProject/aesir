@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.LearnSkill
@@ -105,7 +106,8 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
 
     mastery_level = learned[catalog_id(:pr_macemastery)]
     assert PrMacemastery.atk_bonus(mastery_level, %{weapon_type: :mace}) == 3
-    assert PrMacemastery.critical_bonus(mastery_level, %{weapon_type: :mace}) == 10
+    expected_critical = %{renewal: 10, pre_renewal: 0}[GameMode.mode()]
+    assert PrMacemastery.critical_bonus(mastery_level, %{weapon_type: :mace}) == expected_critical
     refute Map.has_key?(learned, catalog_id(:pr_redemptio))
   end
 

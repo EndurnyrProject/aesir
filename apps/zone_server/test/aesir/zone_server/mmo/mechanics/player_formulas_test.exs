@@ -55,6 +55,21 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
               %{strategy: :exact_tenths, base_rate: 80}, 31}
   end
 
+  test "base ATK includes secondary stats and LUK and swaps the ranged primary stat" do
+    values = %{str: 55, dex: 47, luk: 32, base_level: 57, pow: 4}
+
+    assert {Renewal.base_atk(values, false), Renewal.base_atk(values, true)} == {109, 102}
+    assert {PreRenewal.base_atk(values, false), PreRenewal.base_atk(values, true)} == {95, 80}
+  end
+
+  test "Renewal soft MDEF truncates after combining fractional level and stat terms" do
+    values = %{int: 30, base_level: 7, dex: 3, vit: 1}
+
+    assert Renewal.soft_mdef(values) == 32
+    assert PreRenewal.soft_mdef(values) == 30
+    assert Renewal.soft_mdef(%{values | int: 0, base_level: 0, dex: 0, vit: 0}) == 0
+  end
+
   test "classic formulas clamp Quagmire-shaped negative effective stats" do
     stats = %{
       stats_fixture()
@@ -383,41 +398,32 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
     assert critical.critical_rate === 80
   end
 
-  test "renewal critical basis is identical to the legacy reconstruction" do
+  test "Renewal critical keeps effective LUK, level and modifier tenths through rate and Katar stages" do
     stub(Mechanics, :player_formulas, fn -> Renewal end)
+    stub(Passives, :critical_bonus, fn _stats -> 7 end)
+    fixture = stats_fixture()
 
-    for raw_luk <- -5..35,
-        effective_bonus <- [-7, -1, 0, 1, 7],
-        {equip_critical, status_critical, rate} <- [{-4, -3, -20}, {0, 0, 0}, {3, 7, 10}],
-        katar? <- [false, true] do
-      fixture = stats_fixture()
+    stats = %{
+      fixture
+      | base_stats: %UnitStats.BaseStats{fixture.base_stats | luk: 20},
+        right_hand: weapon_hand(:katar, :right_hand),
+        modifiers: %Modifiers{
+          equipment: %{luk: 1, critical: 1},
+          status_effects: %{critical: 1, critical_rate: 50}
+        }
+    }
 
-      stats = %{
-        fixture
-        | base_stats: %UnitStats.BaseStats{fixture.base_stats | luk: raw_luk},
-          right_hand: if(katar?, do: weapon_hand(:katar, :right_hand)),
-          modifiers: %Modifiers{
-            equipment: %{luk: effective_bonus, critical: equip_critical},
-            status_effects: %{critical: status_critical, critical_rate: rate}
-          }
-      }
+    result = Stats.calculate_combat_stats(stats)
+    assert {result.combat_stats.critical_rate, result.combat_stats.critical} == {318, 31}
 
-      result = Stats.calculate_combat_stats(stats)
+    attacker = %{
+      base_stats: result.base_stats,
+      combat_stats: result.combat_stats,
+      equip_modifiers: %{}
+    }
 
-      display =
-        legacy_critical_display(
-          raw_luk + effective_bonus,
-          equip_critical,
-          status_critical,
-          rate,
-          katar?
-        )
-
-      legacy_rate = clamp(div(raw_luk * 10, 3), 0, 1_000) + (display - div(raw_luk, 3)) * 10
-
-      assert {result.combat_stats.critical, result.combat_stats.critical_rate} ===
-               {display, legacy_rate}
-    end
+    assert {:ok, critical} = DamageCalculator.apply_critical_hit(100, attacker)
+    assert critical.critical_rate == 318
   end
 
   test "mounted normal, baby, transcendent, and unknown jobs classify without a public normalizer" do
@@ -533,11 +539,27 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   end
 
   defp inputs(defaults, overrides), do: Map.merge(defaults, Map.new(overrides))
+end
 
-  defp legacy_critical_display(luk, equip, status, rate, katar?) do
-    display = trunc((trunc(luk / 3) + equip + status) * (100 + rate) / 100)
-    display * if(katar?, do: 2, else: 1)
+defmodule Aesir.ZoneServer.Mmo.Mechanics.CriticalBasisTest do
+  use ExUnit.Case,
+    async: true,
+    parameterize: [
+      %{luk: 0, base_level: 1, renewal: 10, classic: 10},
+      %{luk: 20, base_level: 9, renewal: 70, classic: 76},
+      %{luk: 20, base_level: 10, renewal: 71, classic: 76},
+      %{luk: 20, base_level: 99, renewal: 79, classic: 76},
+      %{luk: 21, base_level: 60, renewal: 79, classic: 80},
+      %{luk: 35, base_level: 200, renewal: 135, classic: 126},
+      %{luk: -5, base_level: 99, renewal: 19, classic: 10}
+    ]
+
+  alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal
+  alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal
+
+  test "each mode retains its native critical tenths before display rounding", context do
+    values = %{luk: context.luk, base_level: context.base_level}
+    assert Renewal.critical(values) == %{strategy: :exact_tenths, base_rate: context.renewal}
+    assert PreRenewal.critical(values) == %{strategy: :exact_tenths, base_rate: context.classic}
   end
-
-  defp clamp(value, low, high), do: value |> max(low) |> min(high)
 end

@@ -75,7 +75,8 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
       assert stats.derived_stats.aspd <= 193
     end
 
-    test "applies shield penalty to ASPD" do
+    @tag game_mode: :renewal
+    test "Renewal applies its shield penalty to ASPD" do
       character = %Character{
         str: 10,
         agi: 30,
@@ -96,6 +97,30 @@ defmodule Aesir.ZoneServer.Unit.Player.AspdTest do
 
       # Shield should reduce ASPD
       assert stats_no_shield.derived_stats.aspd > stats_with_shield.derived_stats.aspd
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic shield equipment leaves weapon delay unchanged" do
+      character = %Character{
+        str: 10,
+        agi: 30,
+        vit: 10,
+        int: 10,
+        dex: 20,
+        luk: 10,
+        base_level: 30,
+        job_level: 15,
+        class: 0
+      }
+
+      bare = stats_with(character, [equipped(@knife, @right_hand)])
+
+      shielded =
+        stats_with(character, [equipped(@knife, @right_hand), equipped(@guard, @left_hand)])
+
+      assert Stats.shield_view(shielded.equipment) == 1
+      assert bare.derived_stats.aspd == 145
+      assert shielded.derived_stats.aspd == 145
     end
 
     test "ranged weapons use different formula" do

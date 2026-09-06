@@ -6,8 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
 
   @impl true
-  def base_atk(%{str: str, pow: pow, base_level: level}, _ranged?) do
-    trunc(str + level / 4) + 5 * pow
+  def base_atk(%{str: str, dex: dex, luk: luk, pow: pow, base_level: level}, ranged?) do
+    {primary, secondary} = if ranged?, do: {dex, str}, else: {str, dex}
+    stat_tenths = primary * 10 + secondary * 2 + div(luk * 10, 3) + div(level * 10, 4)
+    div(stat_tenths, 10) + 5 * pow
   end
 
   @impl true
@@ -21,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
 
   @impl true
   def soft_mdef(%{int: int, dex: dex, vit: vit, base_level: level}) do
-    int + div(level, 4) + div(dex + vit, 5)
+    int + div(5 * level + 4 * (dex + vit), 20)
   end
 
   @impl true
@@ -38,13 +40,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   end
 
   @impl true
-  def critical(%{luk: luk, raw_luk: raw_luk}) do
-    %{
-      strategy: :display_first,
-      display_base: trunc(luk / 3),
-      roll_rate: raw_luk |> then(&div(&1 * 10, 3)) |> max(0) |> min(1_000),
-      roll_display_base: div(raw_luk, 3)
-    }
+  def critical(%{luk: luk, base_level: level}) do
+    %{strategy: :exact_tenths, base_rate: 10 + 3 * max(luk, 0) + div(level, 10)}
   end
 
   @impl true

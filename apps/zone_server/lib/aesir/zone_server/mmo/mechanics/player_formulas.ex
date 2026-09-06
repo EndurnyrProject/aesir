@@ -38,15 +38,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           base_level: non_neg_integer(),
           flat_bonus: integer()
         }
-  @type critical_inputs :: %{luk: integer(), raw_luk: integer()}
-  @type critical_basis ::
-          %{
-            strategy: :display_first,
-            display_base: integer(),
-            roll_rate: integer(),
-            roll_display_base: integer()
-          }
-          | %{strategy: :exact_tenths, base_rate: integer()}
+  @type critical_inputs :: %{luk: integer(), base_level: non_neg_integer()}
+  @type critical_basis :: %{strategy: :exact_tenths, base_rate: integer()}
   @type perfect_dodge_inputs :: %{luk: integer()}
   @type matk_band :: %{min: integer(), max: integer()}
 

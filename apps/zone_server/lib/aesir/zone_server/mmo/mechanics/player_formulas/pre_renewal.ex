@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   end
 
   @impl true
-  def critical(%{luk: luk, raw_luk: _raw_luk}) do
+  def critical(%{luk: luk}) do
     %{strategy: :exact_tenths, base_rate: 10 + div(max(luk, 0) * 10, 3)}
   end
 
