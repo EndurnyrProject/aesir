@@ -28,16 +28,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
   describe "import overlay" do
     @tag :tmp_dir
     test "overrides and appends recipes identically in both modes", %{tmp_dir: root} do
-      previous = [
-        {:commons, :game_mode, Application.get_env(:commons, :game_mode)},
-        {:zone_server, :db_root, Application.get_env(:zone_server, :db_root)}
-      ]
+      previous = Application.fetch_env(:zone_server, :db_root)
 
       on_exit(fn ->
-        Enum.each(previous, fn
-          {app, key, nil} -> Application.delete_env(app, key)
-          {app, key, value} -> Application.put_env(app, key, value)
-        end)
+        case previous do
+          :error -> Application.delete_env(:zone_server, :db_root)
+          {:ok, value} -> Application.put_env(:zone_server, :db_root, value)
+        end
 
         ArrowCrafting.reload()
       end)
@@ -68,10 +65,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
       """)
 
       Application.put_env(:zone_server, :db_root, root)
-      Application.put_env(:commons, :game_mode, :renewal)
       assert :ok = ArrowCrafting.reload()
 
-      renewal = {ArrowCrafting.all(), ArrowCrafting.for_source(1), ArrowCrafting.for_source(3)}
+      recipes = {ArrowCrafting.all(), ArrowCrafting.for_source(1), ArrowCrafting.for_source(3)}
 
       assert {
                [
@@ -81,13 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
                ],
                {:ok, %Recipe{source_id: 1, makes: [%{item_id: 201, amount: 3}]}},
                {:ok, %Recipe{source_id: 3, makes: [%{item_id: 203, amount: 4}]}}
-             } = renewal
-
-      Application.put_env(:commons, :game_mode, :pre_renewal)
-      assert :ok = ArrowCrafting.reload()
-
-      assert {ArrowCrafting.all(), ArrowCrafting.for_source(1), ArrowCrafting.for_source(3)} ==
-               renewal
+             } = recipes
     end
   end
 

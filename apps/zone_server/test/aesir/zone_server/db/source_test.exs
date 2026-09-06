@@ -1,44 +1,33 @@
 defmodule Aesir.ZoneServer.Db.SourceTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.DbTestSetup
 
   @moduletag :tmp_dir
 
-  setup do
-    previous = [
-      {:commons, :game_mode, Application.get_env(:commons, :game_mode)},
-      {:zone_server, :db_root, Application.get_env(:zone_server, :db_root)}
-    ]
-
-    on_exit(fn ->
-      Enum.each(previous, fn
-        {app, key, nil} -> Application.delete_env(app, key)
-        {app, key, value} -> Application.put_env(app, key, value)
-      end)
-    end)
-
-    :ok
+  setup context do
+    {:ok, _} = DbTestSetup.configure_root(context, "items")
+    {:ok, mode_dir: Layout.mode_dir(GameMode.mode())}
   end
 
-  test "orders glob-domain base files before import files", %{tmp_dir: root} do
-    Application.put_env(:commons, :game_mode, :renewal)
-    Application.put_env(:zone_server, :db_root, root)
-
-    base_a = write_file(root, "re/items/a.yml", "[]")
-    base_z = write_file(root, "re/items/z.yml", "[]")
+  test "orders glob-domain base files before import files", %{tmp_dir: root, mode_dir: mode_dir} do
+    base_a = write_file(root, Path.join(mode_dir, "items/a.yml"), "[]")
+    base_z = write_file(root, Path.join(mode_dir, "items/z.yml"), "[]")
     import_b = write_file(root, "import/items/b.yml", "[]")
     import_y = write_file(root, "import/items/y.yml", "[]")
 
     assert Source.sources("items") == [base_a, base_z, import_b, import_y]
-    assert Source.base_dir("items") == Path.join(root, "re/items")
+    assert Source.base_dir("items") == Path.join([root, mode_dir, "items"])
   end
 
-  test "resolves a file-domain base file and its import counterpart", %{tmp_dir: root} do
-    Application.put_env(:commons, :game_mode, :renewal)
-    Application.put_env(:zone_server, :db_root, root)
-
-    base = write_file(root, "re/refine/refine.yml", "{}")
+  test "resolves a file-domain base file and its import counterpart", %{
+    tmp_dir: root,
+    mode_dir: mode_dir
+  } do
+    base = write_file(root, Path.join(mode_dir, "refine/refine.yml"), "{}")
 
     assert Source.sources("refine/refine.yml") == [base]
 
@@ -48,46 +37,55 @@ defmodule Aesir.ZoneServer.Db.SourceTest do
     assert Source.base_dir("refine/refine.yml") == Path.dirname(base)
   end
 
-  test "reports the configured database mode" do
-    Application.put_env(:commons, :game_mode, :pre_renewal)
+  @tag game_mode: :renewal
+  test "reports the renewal database mode" do
+    assert Source.mode() == :renewal
+  end
 
+  @tag game_mode: :pre_renewal
+  test "reports the pre-renewal database mode" do
     assert Source.mode() == :pre_renewal
   end
 
   test "resolves an explicitly empty base file", %{tmp_dir: root} do
-    Application.put_env(:commons, :game_mode, :renewal)
-    Application.put_env(:zone_server, :db_root, root)
+    base = write_file(root, "arrows.yml", "[]")
 
-    base = write_file(root, "re/level_penalty.yml", "[]")
-
-    assert Source.sources("level_penalty.yml") == [base]
+    assert Source.sources("arrows.yml") == [base]
   end
 
   test "resolves shared domains from the root in both modes", %{tmp_dir: root} do
-    Application.put_env(:zone_server, :db_root, root)
     arrows = write_file(root, "arrows.yml", "[]")
 
-    for mode <- [:renewal, :pre_renewal] do
-      Application.put_env(:commons, :game_mode, mode)
-      assert Source.sources("arrows.yml") == [arrows]
-      assert Source.base_dir("arrows.yml") == root
-    end
+    assert Source.sources("arrows.yml") == [arrows]
+    assert Source.base_dir("arrows.yml") == root
   end
 
-  test "raises with the expected pre-renewal path and importer", %{tmp_dir: root} do
-    Application.put_env(:commons, :game_mode, :pre_renewal)
-    Application.put_env(:zone_server, :db_root, root)
+  @tag game_mode: :renewal
+  test "raises with the expected renewal path and importer" do
+    error = assert_raise RuntimeError, fn -> Source.sources("items") end
 
+    assert error.message =~ "priv/db/re/items"
+    assert error.message =~ "mix aesir.import.items --mode re"
+  end
+
+  @tag game_mode: :pre_renewal
+  test "raises with the expected pre-renewal path and importer" do
     error = assert_raise RuntimeError, fn -> Source.sources("items") end
 
     assert error.message =~ "priv/db/pre-re/items"
     assert error.message =~ "mix aesir.import.items --mode pre-re"
   end
 
-  test "reports the skill-tree importer when mode data is missing", %{tmp_dir: root} do
-    Application.put_env(:commons, :game_mode, :pre_renewal)
-    Application.put_env(:zone_server, :db_root, root)
+  @tag game_mode: :renewal
+  test "reports the skill-tree importer when renewal data is missing" do
+    error = assert_raise RuntimeError, fn -> Source.sources("skill_tree") end
 
+    assert error.message =~ "priv/db/re/skill_tree"
+    assert error.message =~ "mix aesir.import.skill_tree --mode re"
+  end
+
+  @tag game_mode: :pre_renewal
+  test "reports the skill-tree importer when pre-renewal data is missing" do
     error = assert_raise RuntimeError, fn -> Source.sources("skill_tree") end
 
     assert error.message =~ "priv/db/pre-re/skill_tree"

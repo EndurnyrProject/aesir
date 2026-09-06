@@ -39,9 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.ImportOverlayTest do
     tmp_dir: items_dir
   } do
     root = root(items_dir)
-    write_yaml(root, "re/items/items.yml", @base_items)
+    write_yaml(items_dir, "items.yml", @base_items)
 
-    write_yaml(root, "re/items/script_overrides.yml", """
+    write_yaml(items_dir, "script_overrides.yml", """
     - id: 501
       on_use: "heal(ctx, hp: 999)"
     """)
@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.ImportOverlayTest do
   } do
     root = root(items_dir)
 
-    write_yaml(root, "re/spawns/base.yml", """
+    write_yaml(Path.dirname(items_dir), "spawns/base.yml", """
     - map: base_map
       spawns:
         - mob: 1002
@@ -108,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.ImportOverlayTest do
 
   test "items reload names an import file with unknown YAML keys", %{tmp_dir: items_dir} do
     root = root(items_dir)
-    write_yaml(root, "re/items/items.yml", @base_items)
+    write_yaml(items_dir, "items.yml", @base_items)
 
     import =
       write_yaml(root, "import/items/invalid.yml", """

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.JobManagement.Job
   alias Aesir.ZoneServer.Mmo.JobManagement.Loader
 
@@ -163,7 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.LoaderTest do
 
     @tag :tmp_dir
     test "raises when the domain has no base data", %{tmp_dir: _dir} do
-      assert_raise RuntimeError, ~r/no renewal data for db "jobs"/, fn ->
+      assert_raise RuntimeError, ~r/no #{GameMode.mode()} data for db "jobs"/, fn ->
         Loader.load()
       end
     end

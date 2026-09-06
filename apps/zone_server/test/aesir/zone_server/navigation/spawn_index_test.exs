@@ -49,8 +49,8 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndexTest do
       :ok = SpawnIndex.reload()
     end)
 
-    {:ok, _} = DbTestSetup.configure_root(%{tmp_dir: root}, "spawns")
-    path = Path.join(root, "re/spawns/spawns.yml")
+    {:ok, tmp_dir: directory} = DbTestSetup.configure_root(%{tmp_dir: root}, "spawns")
+    path = Path.join(directory, "spawns.yml")
 
     File.write!(path, spawns_yaml("before"))
     :ok = Spawns.reload()
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Navigation.SpawnIndexTest do
     assert SpawnIndex.maps_for_mob(1002) == ["before"]
 
     File.write!(path, spawns_yaml("after"))
-    File.rm!(Path.join(root, "re/spawns/.cache/spawns_v2.etf"))
+    File.rm!(Path.join(directory, ".cache/spawns_v2.etf"))
     :ok = Spawns.reload()
     assert SpawnIndex.maps_for_mob(1002) == ["before"]
 

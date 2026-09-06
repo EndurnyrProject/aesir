@@ -67,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.drop(100, 100) == 100
   end
 
+  @tag game_mode: :renewal
   test "drop/2 works through reload/0 + the priv/db/re/level_penalty.yml file" do
     :ok = LevelPenalty.reload()
 
@@ -76,20 +77,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
   end
 
   @tag :tmp_dir
+  @tag game_mode: :renewal
   test "reload/0 applies an import breakpoint override", %{tmp_dir: root} do
-    previous = [
-      {:commons, :game_mode, Application.get_env(:commons, :game_mode)},
-      {:zone_server, :db_root, Application.get_env(:zone_server, :db_root)}
-    ]
-
-    on_exit(fn ->
-      Enum.each(previous, fn
-        {app, key, nil} -> Application.delete_env(app, key)
-        {app, key, value} -> Application.put_env(app, key, value)
-      end)
-
-      LevelPenalty.reload()
-    end)
+    configure_root(root)
 
     File.mkdir_p!(Path.join(root, "re"))
     File.write!(Path.join([root, "re", "level_penalty.yml"]), "4: 90\n")
@@ -101,11 +91,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     File.mkdir_p!(Path.dirname(import))
     File.write!(import, "4: 42\n")
 
-    Application.put_env(:commons, :game_mode, :renewal)
-    Application.put_env(:zone_server, :db_root, root)
-
     assert :ok = LevelPenalty.reload()
     assert LevelPenalty.drop(104, 100) == 42
+  end
+
+  @tag :tmp_dir
+  @tag game_mode: :pre_renewal
+  test "import overrides do not enable renewal-only penalties in pre-renewal", %{tmp_dir: root} do
+    configure_root(root)
+    import = Path.join([root, "import", "level_penalty.yml"])
+    File.mkdir_p!(Path.dirname(import))
+    File.write!(import, "4: 42\n")
+
+    assert :ok = LevelPenalty.reload()
+    assert LevelPenalty.drop(104, 100) == 100
+    assert LevelPenalty.exp(120, 100) == 100
+    assert LevelPenalty.mvp_drop(115, 100) == 100
+    assert LevelPenalty.mvp_exp(130, 100) == 100
   end
 
   test "exp/2 returns the rate on an exact breakpoint" do
@@ -125,7 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.exp(100, 100) == 100
   end
 
-  test "exp/2 works through reload/0 + the priv/db/re/level_penalty_exp.yml file" do
+  test "exp/2 reloads the active mode's table" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.exp(100, 100) == 100
@@ -140,7 +142,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.mvp_drop(85, 100) == 60
   end
 
-  test "mvp_drop/2 works through reload/0 + the priv/db/re/level_penalty_mvp_drop.yml file" do
+  test "mvp_drop/2 reloads the active mode's table" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.mvp_drop(100, 100) == 100
@@ -155,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     assert LevelPenalty.mvp_exp(70, 100) == 80
   end
 
-  test "mvp_exp/2 works through reload/0 + the priv/db/re/level_penalty_mvp_exp.yml file" do
+  test "mvp_exp/2 reloads the active mode's table" do
     :ok = LevelPenalty.reload()
 
     assert LevelPenalty.mvp_exp(100, 100) == 100
@@ -165,6 +167,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
   # reloaded table from one that was never refreshed. Seeding a sentinel
   # breakpoint first and asserting it is gone afterwards proves reload/0 actually
   # replaced each table, which asserting 100 at zero difference does not.
+  @tag game_mode: :renewal
   test "reload/0 refreshes all four tables from their priv/db files" do
     sentinel = %{10 => 42}
 
@@ -182,5 +185,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
     refute LevelPenalty.mvp_exp(110, 100) == 42
     assert LevelPenalty.mvp_drop(110, 100) == 100
     assert LevelPenalty.mvp_exp(110, 100) == 100
+  end
+
+  @tag game_mode: :pre_renewal
+  test "reload/0 clears seeded penalties and restores neutral classic rates" do
+    assert :ok = LevelPenalty.reload()
+
+    for difference <- [-30, 0, 30] do
+      assert LevelPenalty.drop(100 + difference, 100) == 100
+      assert LevelPenalty.exp(100 + difference, 100) == 100
+      assert LevelPenalty.mvp_drop(100 + difference, 100) == 100
+      assert LevelPenalty.mvp_exp(100 + difference, 100) == 100
+    end
+  end
+
+  defp configure_root(root) do
+    previous = Application.fetch_env(:zone_server, :db_root)
+    Application.put_env(:zone_server, :db_root, root)
+
+    on_exit(fn ->
+      case previous do
+        :error -> Application.delete_env(:zone_server, :db_root)
+        {:ok, value} -> Application.put_env(:zone_server, :db_root, value)
+      end
+
+      LevelPenalty.reload()
+    end)
   end
 end
