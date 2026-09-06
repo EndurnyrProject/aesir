@@ -158,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
 
     StatusSync.send_params(connection_pid, %{
       StatusParams.status_point() => stats.progression.status_point,
-      u_param => StatPoint.cost_to_raise(new_value)
+      u_param => StatPoint.next_cost(new_value, stats.progression.job_id)
     })
 
     StatusSync.send_stat_updates(connection_pid, stats)
@@ -190,7 +190,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandler do
 
     StatusSync.send_params(connection_pid, %{
       StatusParams.trait_point() => stats.progression.trait_point,
-      u_param => 1
+      u_param =>
+        if(new_value < StatPoint.max_trait_parameter(stats.progression.job_id), do: 1, else: 0)
     })
 
     StatusSync.send_stat_updates(connection_pid, stats)

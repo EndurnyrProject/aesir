@@ -54,6 +54,16 @@ defmodule Aesir.ZoneServer.Mmo.StatPoint do
   def cost_to_raise(value), do: Mechanics.stat_cost().cost_to_raise(value)
 
   @doc """
+  Client-visible cost of the next primary-stat increase, or zero at the job's cap.
+
+  Spending calculations use `cost_to_raise/1` and `points_needed/2` instead.
+  """
+  @spec next_cost(non_neg_integer(), non_neg_integer()) :: non_neg_integer()
+  def next_cost(value, job_id) do
+    if value >= max_parameter(job_id), do: 0, else: cost_to_raise(value)
+  end
+
+  @doc """
   Total status points to raise a stat by `increase` from `current`.
   """
   @spec points_needed(non_neg_integer(), integer()) :: non_neg_integer()

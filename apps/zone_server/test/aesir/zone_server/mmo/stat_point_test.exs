@@ -28,14 +28,18 @@ defmodule Aesir.ZoneServer.Mmo.StatPointTest do
   end
 
   describe "cost formula" do
-    test "cost_to_raise uses the renewal formula at boundaries" do
-      assert StatPoint.cost_to_raise(1) == 2
-      assert StatPoint.cost_to_raise(9) == 2
-      assert StatPoint.cost_to_raise(10) == 2
-      assert StatPoint.cost_to_raise(11) == 3
+    test "displayed next cost is zero at the cap without changing raw spending costs" do
+      assert StatPoint.next_cost(98, 1) == 11
+      assert StatPoint.next_cost(99, 1) == 0
+      assert StatPoint.next_cost(100, 1) == 0
       assert StatPoint.cost_to_raise(99) == 11
-      assert StatPoint.cost_to_raise(100) == 16
-      assert StatPoint.cost_to_raise(105) == 20
+    end
+
+    @tag game_mode: :renewal
+    test "displayed next cost respects the higher trait-job primary cap" do
+      assert StatPoint.next_cost(134, 4252) == 40
+      assert StatPoint.next_cost(135, 4252) == 0
+      assert StatPoint.cost_to_raise(135) == 44
     end
 
     test "points_needed sums per-point costs" do
@@ -68,15 +72,24 @@ defmodule Aesir.ZoneServer.Mmo.StatPointTest do
       assert StatPoint.trait_points_at(200) == 0
     end
 
+    @tag game_mode: :renewal
     test "trait points are cumulative from level 201" do
       assert StatPoint.trait_points_at(201) == 3
       assert StatPoint.trait_points_at(205) == 19
       assert StatPoint.trait_points_at(275) == 285
     end
 
+    @tag game_mode: :renewal
     test "trait_gain is the cumulative table delta" do
       assert StatPoint.trait_gain(200, 201) == 3
       assert StatPoint.trait_gain(204, 205) == 7
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic has no trait grants even at levels present in the shared point table" do
+      assert StatPoint.trait_points_at(201) == 0
+      assert StatPoint.trait_points_at(275) == 0
+      assert StatPoint.trait_gain(200, 205) == 0
     end
 
     test "trait_gain is 0 below level 201" do
@@ -85,14 +98,53 @@ defmodule Aesir.ZoneServer.Mmo.StatPointTest do
   end
 
   describe "job-aware caps" do
+    @tag game_mode: :renewal
     test "max_parameter is 135 for trait jobs and 99 otherwise" do
       assert StatPoint.max_parameter(4252) == 135
       assert StatPoint.max_parameter(4054) == 99
     end
 
+    @tag game_mode: :renewal
     test "max_trait_parameter is 100 for trait jobs and 0 otherwise" do
       assert StatPoint.max_trait_parameter(4252) == 100
       assert StatPoint.max_trait_parameter(4054) == 0
     end
+
+    @tag game_mode: :pre_renewal
+    test "classic caps primary stats at 99 and refuses all trait allocation" do
+      for job <- [0, 1, 4054, 4252] do
+        assert StatPoint.max_parameter(job) == 99
+        assert StatPoint.max_trait_parameter(job) == 0
+      end
+    end
+  end
+end
+
+defmodule Aesir.ZoneServer.Mmo.StatPointCostTest do
+  use ExUnit.Case,
+    async: true,
+    parameterize: [
+      %{value: 0, renewal: 2, classic: 1},
+      %{value: 1, renewal: 2, classic: 2},
+      %{value: 9, renewal: 2, classic: 2},
+      %{value: 10, renewal: 2, classic: 2},
+      %{value: 11, renewal: 3, classic: 3},
+      %{value: 99, renewal: 11, classic: 11},
+      %{value: 100, renewal: 16, classic: 11},
+      %{value: 104, renewal: 16, classic: 12},
+      %{value: 105, renewal: 20, classic: 12},
+      %{value: 135, renewal: 44, classic: 15}
+    ]
+
+  alias Aesir.ZoneServer.Mmo.StatPoint
+
+  @tag game_mode: :renewal
+  test "Renewal cost at each boundary", %{value: value, renewal: expected} do
+    assert StatPoint.cost_to_raise(value) == expected
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic cost at each boundary", %{value: value, classic: expected} do
+    assert StatPoint.cost_to_raise(value) == expected
   end
 end

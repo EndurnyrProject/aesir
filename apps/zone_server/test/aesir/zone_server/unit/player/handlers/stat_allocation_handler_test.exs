@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   import Mimic
 
   alias Aesir.Commons.GameMode
+  alias Aesir.Commons.Models.Character
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.StatUpResult
   alias Aesir.ZoneServer.CharacterPersistence
@@ -16,9 +17,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  # dragon_knight (trait/4th job) vs rune_knight (classic 3rd job)
   @trait_job 4252
-  @classic_job 4054
+  @classic_job 1
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
   end
 
   defp character(class) do
-    %Aesir.Commons.Models.Character{
+    %Character{
       id: 1000,
       account_id: 2000,
       name: "Trait",
@@ -71,24 +71,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       crt: 0,
       status_point: 0,
       trait_point: 0,
-      base_level: 210,
-      job_level: 70,
+      base_level: if(class == @trait_job, do: 210, else: 99),
+      job_level: if(class == @trait_job, do: 70, else: 50),
       class: class
     }
   end
 
   describe "trait-stat allocation" do
+    @tag game_mode: :pre_renewal
     test "pre-renewal refuses POW without entering the trait success path" do
-      stub(GameMode, :mode, fn -> :pre_renewal end)
+      state = state(@classic_job, [pow: 10], trait_point: 5)
+      stats_binary = :erlang.term_to_binary(state.game_state.stats)
+
       reject(&Mechanics.stat_cost/0)
       reject(&Stats.calculate_stats/2)
       reject(&UnitRegistry.update_unit_state/3)
       reject(&CharacterPersistence.update_character/3)
       reject(&StatusSync.send_params/2)
       reject(&StatusSync.send_stat_updates/2)
-
-      state = state(@trait_job, [pow: 10], trait_point: 5)
-      stats_binary = :erlang.term_to_binary(state.game_state.stats)
 
       assert {:noreply, new_state} =
                StatAllocationHandler.handle_status_up(StatusParams.pow(), 1, state)
@@ -100,8 +100,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       assert_received {:ack, %StatUpResult{stat_id: ^pow_id, ok: false, value: 10}}
     end
 
+    @tag game_mode: :renewal
     test "renewal POW allocation spends exactly 1 trait point and raises pow by 1" do
-      stub(GameMode, :mode, fn -> :renewal end)
       state = state(@trait_job, [pow: 10], trait_point: 5)
 
       {:noreply, new_state} =
@@ -111,6 +111,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       assert new_state.game_state.stats.progression.trait_point == 4
     end
 
+    @tag game_mode: :renewal
     test "acks ok and pushes the upow cost indicator with value 1" do
       StatAllocationHandler.handle_status_up(
         StatusParams.pow(),
@@ -126,6 +127,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       assert_received {:params, %{^upow => 1, ^trait_point => 4}}
     end
 
+    @tag game_mode: :renewal
     test "persists the stat, the trait-point balance, and vitals" do
       test_pid = self()
 
@@ -156,6 +158,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
              }
     end
 
+    @tag game_mode: :renewal
+    test "the last trait increase spends one point and clears its next-cost indicator" do
+      state = state(@trait_job, [pow: 99], trait_point: 5)
+
+      assert {:noreply, result} =
+               StatAllocationHandler.handle_status_up(StatusParams.pow(), 1, state)
+
+      assert result.game_state.stats.base_stats.pow == 100
+      assert result.game_state.stats.progression.trait_point == 4
+      upow = StatusParams.upow()
+      assert_received {:params, %{^upow => 0}}
+    end
+
+    @tag game_mode: :renewal
     test "cannot raise a trait stat past the cap of 100" do
       state = state(@trait_job, [pow: 100], trait_point: 5)
 
@@ -167,6 +183,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       assert_received {:ack, %StatUpResult{stat_id: ^pow_id, ok: false, value: 100}}
     end
 
+    @tag game_mode: :renewal
     test "an amount larger than the pool spends only what is available" do
       state = state(@trait_job, [pow: 10], trait_point: 3)
 
@@ -189,7 +206,54 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
     end
   end
 
-  describe "classic-stat allocation on a trait job" do
+  describe "primary-stat allocation" do
+    test "shared primary allocation respects the cap and spends the exact cost" do
+      state = state(@classic_job, [str: 98], status_point: 100)
+
+      assert {:noreply, result} =
+               StatAllocationHandler.handle_status_up(StatusParams.str(), 10, state)
+
+      assert result.game_state.stats.base_stats.str == 99
+      assert result.game_state.stats.progression.status_point == 89
+      str_id = StatusParams.str()
+      assert_received {:ack, %StatUpResult{stat_id: ^str_id, ok: true, value: 99}}
+      ustr = StatusParams.ustr()
+      assert_received {:params, %{^ustr => 0}}
+    end
+
+    test "shared bulk allocation stops before an unaffordable point" do
+      state = state(@classic_job, [str: 9], status_point: 6)
+
+      assert {:noreply, result} =
+               StatAllocationHandler.handle_status_up(StatusParams.str(), 10, state)
+
+      assert result.game_state.stats.base_stats.str == 11
+      assert result.game_state.stats.progression.status_point == 2
+    end
+
+    test "capped and unaffordable primary requests have no success side effects" do
+      states = [
+        state(@classic_job, [str: 99], status_point: 100),
+        state(@classic_job, [str: 5], status_point: 1)
+      ]
+
+      reject(&Stats.calculate_stats/2)
+      reject(&UnitRegistry.update_unit_state/3)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&StatusSync.send_params/2)
+      reject(&StatusSync.send_stat_updates/2)
+
+      for state <- states do
+        assert {:noreply, ^state} =
+                 StatAllocationHandler.handle_status_up(StatusParams.str(), 1, state)
+
+        value = state.game_state.stats.base_stats.str
+        str_id = StatusParams.str()
+        assert_received {:ack, %StatUpResult{stat_id: ^str_id, ok: false, value: ^value}}
+      end
+    end
+
+    @tag game_mode: :renewal
     test "STR can be raised toward the 135 cap with the renewal scaling cost" do
       state = state(@trait_job, [str: 130], status_point: 999)
 
@@ -197,12 +261,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
         StatAllocationHandler.handle_status_up(StatusParams.str(), 1, state)
 
       assert new_state.game_state.stats.base_stats.str == 131
-      assert new_state.game_state.stats.progression.status_point < 999
+      assert new_state.game_state.stats.progression.status_point == 959
     end
 
     test "publishes recalculated maxima and post-clamp current resources" do
       test_pid = self()
-      state = state(@trait_job, [vit: 10], status_point: 999)
+
+      {job, max_ap} =
+        %{renewal: {@trait_job, 100}, pre_renewal: {@classic_job, 0}}[GameMode.mode()]
+
+      state = state(job, [vit: 10], status_point: 999)
 
       stats = %{
         state.game_state.stats
@@ -213,7 +281,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
       state = %{state | game_state: game_state}
 
       stub(Stats, :calculate_stats, fn recalculated, 1000 ->
-        derived = struct(recalculated.derived_stats, max_hp: 250, max_sp: 200, max_ap: 100)
+        derived = struct(recalculated.derived_stats, max_hp: 250, max_sp: 200, max_ap: max_ap)
         %{recalculated | derived_stats: derived}
       end)
 
@@ -223,8 +291,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
                  max_hp: 250,
                  sp: 200,
                  max_sp: 200,
-                 ap: 100,
-                 max_ap: 100
+                 ap: ^max_ap,
+                 max_ap: ^max_ap
                } = member
 
         {:ok, %{}}
@@ -240,7 +308,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
 
       assert new_state.game_state.stats.current_state.hp == 250
       assert new_state.game_state.stats.current_state.sp == 200
-      assert new_state.game_state.stats.current_state.ap == 100
+      assert new_state.game_state.stats.current_state.ap == max_ap
 
       stats = new_state.game_state.stats
       assert_received {:persisted, attrs}
@@ -252,8 +320,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatAllocationHandlerTest do
                max_hp: 250,
                sp: 200,
                max_sp: 200,
-               ap: 100,
-               max_ap: 100
+               ap: max_ap,
+               max_ap: max_ap
              }
     end
   end

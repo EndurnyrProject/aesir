@@ -12,7 +12,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.Character
+  alias Aesir.Commons.StatusParams
   alias Aesir.Net.NavigationEnded
+  alias Aesir.Net.ParamChange
   alias Aesir.Net.QuestEntry
   alias Aesir.Net.QuestList
   alias Aesir.Net.StatusChange
@@ -76,6 +78,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandlerTest do
       game_state: PlayerState.new(character()),
       connection_pid: self()
     }
+  end
+
+  test "initial load reports zero next cost at the primary cap and normal cost below it" do
+    state = session_state()
+    state = put_in(state.game_state.stats.base_stats.str, 99)
+    {:noreply, _state} = MapLoadHandler.handle_map_loaded(state)
+
+    ustr = StatusParams.ustr()
+    uagi = StatusParams.uagi()
+    assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^ustr, value: cost}}}
+    assert cost == 0
+    assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^uagi, value: 2}}}
   end
 
   test "the initial load sends the owner their own restored sprite state" do

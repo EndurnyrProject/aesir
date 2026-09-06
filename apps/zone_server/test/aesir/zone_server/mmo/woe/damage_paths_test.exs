@@ -1,4 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.DamagePathsTest do
+  @moduledoc """
+  Tests damage delivery and objective guards with real status application.
+  Positive fixture rolls are pinned while zero-chance paths, including absent reflection, stay false.
+  """
   use Aesir.ZoneServer.IntegrationCase
 
   @moduletag :capture_log
@@ -18,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamagePathsTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skills.Npc.NpcSelfdestruction
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
@@ -27,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.DamagePathsTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup do
+    stub(Resistance, :roll_success, fn chance -> chance > 0 end)
     :ok = MapFlags.reload()
     :ok = CastleDb.reload()
     :ok = CastleStore.init()

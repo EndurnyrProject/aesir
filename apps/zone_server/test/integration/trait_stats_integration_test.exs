@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.StatUp
+  alias Aesir.Net.StatUpResult
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.JobManagement.JobChange
   alias Aesir.ZoneServer.Mmo.StatPoint
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
   @dragon_knight 4252
 
   describe "trait-stat lifecycle" do
+    @describetag game_mode: :renewal, integration_pre_re: false
     test "change, accrue, allocate, and reset drive the full trait-point pool" do
       %{pid: pid, character: char} =
         start_char(class: @rune_knight, base_level: 200, job_level: 70)
@@ -108,6 +110,25 @@ defmodule Aesir.ZoneServer.Integration.TraitStatsIntegrationTest do
       assert Repo.get(Character, char_id).class == @rune_knight
       assert Repo.get(Character, char_id).trait_point == 0
     end
+  end
+
+  @tag game_mode: :pre_renewal, integration_re: false
+  test "classic rejects a trait request on a valid live character without mutation" do
+    %{pid: pid, character: character} = start_char(class: 1, base_level: 99, job_level: 50)
+    before = get_player_state(pid)
+    pow_id = StatusParams.pow()
+
+    simulate_incoming_message(pid, %StatUp{stat_id: pow_id, amount: 1})
+    assert_receive {:packet_sent, %StatUpResult{stat_id: ^pow_id, ok: false, value: 0}, _}
+
+    after_state = get_player_state(pid)
+    assert after_state.stats.base_stats == before.stats.base_stats
+    assert after_state.stats.progression == before.stats.progression
+    assert after_state.stats.current_state.ap == 0
+    assert after_state.stats.derived_stats.max_ap == 0
+    persisted = Repo.get!(Character, character.id)
+    assert persisted.pow == 0
+    assert persisted.trait_point == 0
   end
 
   defp start_char(attrs) do

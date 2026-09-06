@@ -77,15 +77,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MapLoadHandler do
     })
 
     base_stats = game_state.stats.base_stats
+    job_id = game_state.stats.progression.job_id
 
     StatusSync.send_params(connection_pid, %{
       StatusParams.status_point() => game_state.stats.progression.status_point,
-      StatusParams.ustr() => StatPoint.cost_to_raise(base_stats.str),
-      StatusParams.uagi() => StatPoint.cost_to_raise(base_stats.agi),
-      StatusParams.uvit() => StatPoint.cost_to_raise(base_stats.vit),
-      StatusParams.uint() => StatPoint.cost_to_raise(base_stats.int),
-      StatusParams.udex() => StatPoint.cost_to_raise(base_stats.dex),
-      StatusParams.uluk() => StatPoint.cost_to_raise(base_stats.luk)
+      StatusParams.ustr() => StatPoint.next_cost(base_stats.str, job_id),
+      StatusParams.uagi() => StatPoint.next_cost(base_stats.agi, job_id),
+      StatusParams.uvit() => StatPoint.next_cost(base_stats.vit, job_id),
+      StatusParams.uint() => StatPoint.next_cost(base_stats.int, job_id),
+      StatusParams.udex() => StatPoint.next_cost(base_stats.dex, job_id),
+      StatusParams.uluk() => StatPoint.next_cost(base_stats.luk, job_id)
     })
 
     StatusSync.send_stat_updates(connection_pid, game_state.stats)
