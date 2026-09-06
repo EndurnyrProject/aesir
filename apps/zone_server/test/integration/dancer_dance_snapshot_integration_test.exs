@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
     assert eventually(fn -> get_player_state(dancer.pid).action_state == :idle end)
 
     shorten_status(char_id, 2_000)
-    end_player_session(dancer)
+    :ok = GenServer.stop(dancer.pid, :normal)
     assert eventually(fn -> not Process.alive?(dancer.pid) end)
 
     assert [%CharacterStatus{status_type: "sc_humming", remaining_ms: saved_ms}] =
@@ -152,7 +152,9 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
         position: {160, 160}
       )
 
-    on_exit(fn -> end_player_session(restored) end)
+    on_exit(fn ->
+      if Process.alive?(restored.pid), do: GenServer.stop(restored.pid, :normal)
+    end)
 
     assert_status(restored, :sc_humming)
     status = StatusStorage.get_status(:player, char_id, :sc_humming)

@@ -33,6 +33,7 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
 
@@ -184,6 +185,7 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
     test "a Battle Orders cooldown survives the master's relog" do
       {master_session, guild_id} = create_guild("Orderers", "OrderMaster")
       seed_learned_skills(guild_id, %{"10010" => 1})
+      :ok = MapFlags.set_runtime("prontera", :gvg, true)
 
       simulate_incoming_message(master_session.pid, %SkillCast{
         skill_id: @gd_battleorder,

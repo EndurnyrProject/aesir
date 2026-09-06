@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
     assert StatusStorage.has_status?(:player, char_id, :sc_whistle)
 
     shorten_song(char_id, 2_000)
-    end_player_session(session)
+    :ok = GenServer.stop(session.pid, :normal)
 
     assert eventually(fn -> not Process.alive?(session.pid) end)
     refute StatusStorage.has_status?(:player, char_id, :sc_whistle)
@@ -149,7 +149,9 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
         position: {160, 160}
       )
 
-    on_exit(fn -> end_player_session(restored) end)
+    on_exit(fn ->
+      if Process.alive?(restored.pid), do: GenServer.stop(restored.pid, :normal)
+    end)
 
     assert eventually(fn -> StatusStorage.has_status?(:player, char_id, :sc_whistle) end)
     assert_finite_song(char_id, saved_ms)

@@ -385,6 +385,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTrapIntegrationTest do
   test "Skid Trap moves and stops real MobSessions at every level and becomes visibly used" do
     stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
 
+    caster = build_caster()
+    UnitRegistry.register_unit(:player, @caster_id, PlayerState, caster, self())
+
     for repetition <- 1..3, level <- 1..5 do
       index = (repetition - 1) * 5 + level
       y = 20 + index * 8

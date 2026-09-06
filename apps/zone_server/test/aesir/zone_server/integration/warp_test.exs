@@ -23,7 +23,12 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.SpatialIndex
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+  alias Aesir.ZoneServer.Unit.Stats.CurrentState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -40,6 +45,12 @@ defmodule Aesir.ZoneServer.Integration.WarpTest do
       movement_state: :standing,
       movement_intent: :none,
       walk_path: [],
+      stats: %Stats{
+        base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
+        current_state: %CurrentState{hp: 100, sp: 100},
+        progression: %PlayerProgression{base_level: 1, job_level: 1, job_id: 0},
+        equipment: %Equipment{}
+      },
       view_range: 14,
       visible_players: MapSet.new([2001]),
       visible_mobs: MapSet.new()
