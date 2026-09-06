@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -94,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       |> put_hit(20)
       |> put_critical(1_000)
 
-    target = defender() |> put_flee(20)
+    target = defender() |> put_flee(zero_rate_flee())
     double_attack = player(%{48 => 10}, :dagger)
 
     :rand.seed(:exsss, {2, 3, 4})
@@ -113,7 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
 
   test "failed Double Attack adds no HIT and leaves one display division" do
     attacker = with_hands(hand(:right_hand, 100), nil) |> put_hit(20)
-    target = defender() |> put_flee(20)
+    target = defender() |> put_flee(zero_rate_flee())
+    :rand.seed(:exsss, {2, 3, 4})
 
     assert {:ok,
             %HandedAttack{
@@ -270,6 +272,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
       overrefine_band: 0,
       slot: slot
     }
+  end
+
+  defp zero_rate_flee do
+    case GameMode.mode() do
+      :renewal -> 20
+      :pre_renewal -> 100
+    end
   end
 
   defp put_hit(combatant, hit), do: put_in(combatant.combat_stats.hit, hit)

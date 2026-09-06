@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ActionRequest
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.SkillDamage
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AutoAttack
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
@@ -54,17 +56,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
   @as_poisonreact 139
 
   setup do
-    previous = Application.get_env(:zone_server, :natural_break_rate)
-    Application.put_env(:zone_server, :natural_break_rate, 0)
-
-    on_exit(fn ->
-      if is_nil(previous) do
-        Application.delete_env(:zone_server, :natural_break_rate)
-      else
-        Application.put_env(:zone_server, :natural_break_rate, previous)
-      end
-    end)
-
+    stub(Config, :natural_break_rate, fn -> 0 end)
     :ok
   end
 
@@ -154,7 +146,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
     defender = MobState.to_combatant(mob_state(target))
     attacker = PlayerState.to_combatant(player_state(double))
-    flee = attacker.combat_stats.hit - 5
+    rate_base = if GameMode.mode() == :renewal, do: 0, else: 80
+    flee = rate_base + attacker.combat_stats.hit - 5
     defender = %{defender | combat_stats: %{defender.combat_stats | flee: flee, perfect_dodge: 0}}
 
     :rand.seed(:exsss, {1, 1, 1})
@@ -293,10 +286,12 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
   end
 
   test "break, drain, Enchant Poison, Poison React, and passive division hooks stay swing-scoped" do
-    Application.put_env(:zone_server, :natural_break_rate, 10_000)
+    stub(Config, :natural_break_rate, fn -> 10_000 end)
 
     breaker =
       start_assassin(equipped: [right: @knife, left: @knife_slotted], skills: mastery_skills())
+
+    allow(Config, self(), breaker.pid)
 
     break_target = start_target(unique_id(), race: :formless)
     send_attack(breaker, break_target.unit_id)
@@ -310,7 +305,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
              |> Enum.count(&(&1.attribute == 1)) == 1
            end)
 
-    Application.put_env(:zone_server, :natural_break_rate, 0)
+    stub(Config, :natural_break_rate, fn -> 0 end)
 
     drainer =
       start_assassin(

@@ -77,29 +77,40 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       assert Enum.uniq(results) == [:miss]
     end
 
-    test "handles balanced hit/flee scenarios" do
-      attacker = %{hit: 180, char_id: 1}
-      target = %{flee: 100, perfect_dodge: 0, unit_id: 2}
-
-      # renewal hit rate = 180 - 100 = 80%
-      # Run multiple times to get statistical distribution
-      results =
-        for _ <- 1..100 do
-          HitCalculations.calculate_hit_result(attacker, target)
-        end
-
-      # Should have both hits and misses in a large sample
-      unique_results = results |> Enum.uniq() |> Enum.sort()
-      assert :hit in unique_results
-      assert :miss in unique_results
-      refute :perfect_dodge in unique_results
-
-      # Roughly 80% should be hits (allowing for random variance)
-      hit_count = Enum.count(results, &(&1 == :hit))
-      # Allow reasonable variance
-      assert hit_count >= 60
-      assert hit_count <= 95
+    @tag game_mode: :renewal
+    test "handles balanced Renewal hit/flee scenarios" do
+      assert_balanced_hit_rate(180)
     end
+
+    @tag game_mode: :pre_renewal
+    test "handles balanced classic hit/flee scenarios" do
+      assert_balanced_hit_rate(100)
+    end
+  end
+
+  defp assert_balanced_hit_rate(hit) do
+    :rand.seed(:exsss, {13, 17, 19})
+    attacker = %{hit: hit, char_id: 1}
+    target = %{flee: 100, perfect_dodge: 0, unit_id: 2}
+
+    # Both fixtures have an 80% hit rate under their booted ruleset.
+    # Run multiple times to get statistical distribution
+    results =
+      for _ <- 1..100 do
+        HitCalculations.calculate_hit_result(attacker, target)
+      end
+
+    # Should have both hits and misses in a large sample
+    unique_results = results |> Enum.uniq() |> Enum.sort()
+    assert :hit in unique_results
+    assert :miss in unique_results
+    refute :perfect_dodge in unique_results
+
+    # Roughly 80% should be hits (allowing for random variance)
+    hit_count = Enum.count(results, &(&1 == :hit))
+    # Allow reasonable variance
+    assert hit_count >= 60
+    assert hit_count <= 95
   end
 
   describe "calculate_hit_rate/2" do
@@ -127,39 +138,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       assert HitCalculations.calculate_hit_rate(attacker, target) == 0
     end
 
-    test "calculates edge cases correctly" do
-      # Full renewal HIT/FLEE values with an 80-point difference
-      attacker = %{hit: 180}
-      target = %{flee: 100}
-      assert HitCalculations.calculate_hit_rate(attacker, target) == 80
-
-      # Very low effective rate
-      attacker = %{hit: 81}
-      target = %{flee: 1}
-      assert HitCalculations.calculate_hit_rate(attacker, target) == 80
-
-      # Zero FLEE
-      attacker = %{hit: 80}
-      target = %{flee: 0}
-      assert HitCalculations.calculate_hit_rate(attacker, target) == 80
-    end
-
-    test "hit_rate_bonus_pct is a relative bonus applied after the base clamp, not a flat hit addition" do
-      # 180 - 150 = 30. A +50% relative bonus (Pierce at level 10) scales
-      # it to 30 * 150 / 100 = 45, not a flat 30 + 50 = 80.
-      attacker = %{hit: 180, hit_rate_bonus_pct: 50}
-      target = %{flee: 150}
-
-      assert HitCalculations.calculate_hit_rate(attacker, target) == 45
-    end
-
-    test "hit_rate_bonus_pct defaults to 0 (no change) when absent" do
-      attacker = %{hit: 170}
-      target = %{flee: 110}
-
-      assert HitCalculations.calculate_hit_rate(attacker, target) == 60
-    end
-
     test "hit_rate_bonus_pct cannot rescue a rate already clamped to 0" do
       attacker = %{hit: 0, hit_rate_bonus_pct: 2000}
       target = %{flee: 1000}
@@ -175,26 +153,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       assert HitCalculations.calculate_hit_rate(attacker, target) == 100
     end
 
-    test "calculates various scenarios correctly" do
-      test_cases = [
-        # 170 - 110 = 60
-        {%{hit: 170}, %{flee: 110}, 60},
-        # 230 - 80 = 150 -> 100 (clamped)
-        {%{hit: 230}, %{flee: 80}, 100},
-        # 140 - 150 = -10 -> 0 (clamped)
-        {%{hit: 140}, %{flee: 150}, 0},
-        # 200 - 120 = 80
-        {%{hit: 200}, %{flee: 120}, 80},
-        # 280 - 200 = 80
-        {%{hit: 280}, %{flee: 200}, 80}
-      ]
-
-      for {attacker, target, expected} <- test_cases do
-        result = HitCalculations.calculate_hit_rate(attacker, target)
-
-        assert result == expected,
-               "Expected #{expected} for hit: #{attacker.hit}, flee: #{target.flee}, got: #{result}"
-      end
+    test "a negative relative bonus is clamped back to zero" do
+      assert HitCalculations.calculate_hit_rate(%{hit: 200, hit_rate_bonus_pct: -200}, %{flee: 0}) ==
+               0
     end
   end
 
@@ -397,5 +358,36 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       # hit rate = 400 - 110 = 290 -> 100%, so every attack hits.
       assert Enum.all?(results, &(&1 == :hit))
     end
+  end
+end
+
+defmodule Aesir.ZoneServer.Mmo.Combat.HitRateExamplesTest do
+  use ExUnit.Case,
+    async: true,
+    parameterize: [
+      %{attacker: %{hit: 170}, flee: 110, renewal: 60, classic: 100},
+      %{attacker: %{hit: 230}, flee: 80, renewal: 100, classic: 100},
+      %{attacker: %{hit: 140}, flee: 150, renewal: 0, classic: 70},
+      %{attacker: %{hit: 200}, flee: 120, renewal: 80, classic: 100},
+      %{attacker: %{hit: 280}, flee: 200, renewal: 80, classic: 100},
+      %{attacker: %{hit: 180}, flee: 100, renewal: 80, classic: 100},
+      %{attacker: %{hit: 81}, flee: 1, renewal: 80, classic: 100},
+      %{attacker: %{hit: 80}, flee: 0, renewal: 80, classic: 100},
+      %{attacker: %{hit: 100}, flee: 100, renewal: 0, classic: 80},
+      %{attacker: %{hit: 180, hit_rate_bonus_pct: 50}, flee: 150, renewal: 45, classic: 100},
+      %{attacker: %{hit: 100, hit_rate_bonus_pct: 50}, flee: 150, renewal: 0, classic: 45},
+      %{attacker: %{hit: 200, hit_rate_bonus_pct: -50}, flee: 50, renewal: 50, classic: 50}
+    ]
+
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
+
+  @tag game_mode: :renewal
+  test "Renewal base and relative bonuses", %{attacker: attacker, flee: flee, renewal: expected} do
+    assert HitCalculations.calculate_hit_rate(attacker, %{flee: flee}) == expected
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic base and relative bonuses", %{attacker: attacker, flee: flee, classic: expected} do
+    assert HitCalculations.calculate_hit_rate(attacker, %{flee: flee}) == expected
   end
 end

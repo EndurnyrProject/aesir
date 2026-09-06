@@ -107,7 +107,24 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
              {80, 1, 1}
 
     assert {Renewal.hit_rate_base(), Renewal.hit(inputs), Renewal.flee(inputs)} ===
-             {0, 171, 96}
+             {0, 172, 97}
+  end
+
+  test "Renewal accuracy uses full levels, integer LUK terms and CON; classic ignores LUK and CON" do
+    inputs = %{base_level: 55, dex: 75, agi: 75, luk: 47, con: 7, flat_bonus: 3}
+
+    assert {Renewal.hit(inputs), Renewal.flee(inputs)} == {337, 256}
+    assert {PreRenewal.hit(inputs), PreRenewal.flee(inputs)} == {133, 133}
+
+    penalized = %{inputs | flat_bonus: -1_000}
+    assert {Renewal.hit(penalized), Renewal.flee(penalized)} == {1, 1}
+  end
+
+  test "player perfect dodge uses per-mille units in both modes" do
+    for {luk, expected} <- [{0, 10}, {4, 14}, {47, 57}, {50, 60}, {99, 109}] do
+      assert Renewal.perfect_dodge(%{luk: luk}) == expected
+      assert PreRenewal.perfect_dodge(%{luk: luk}) == expected
+    end
   end
 
   test "classic production HIT and FLEE floor the combined flat modifiers" do

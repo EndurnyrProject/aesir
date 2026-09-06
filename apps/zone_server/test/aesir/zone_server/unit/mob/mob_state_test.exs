@@ -204,14 +204,13 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   end
 
   describe "to_combatant/1 magic stats" do
-    test "carries matk, mdef and soft_mdef in combat_stats" do
+    test "carries matk and hard mdef in combat_stats" do
       state = build_mob_state()
 
       combatant = MobState.to_combatant(state)
 
       assert combatant.combat_stats.matk == 60
       assert combatant.combat_stats.mdef == 10
-      assert combatant.combat_stats.soft_mdef == div(20 + 25, 4)
     end
 
     test "mob MATK band is deterministic: matk_min == matk_max == matk" do
@@ -224,7 +223,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert combatant.combat_stats.matk_min == combatant.combat_stats.matk
     end
 
-    test "soft_mdef uses renewal non-PC formula div(int + level, 4)" do
+    @tag game_mode: :renewal
+    test "Renewal soft_mdef uses non-player level scaling" do
+      assert MobState.to_combatant(build_mob_state()).combat_stats.soft_mdef == 11
+
       base = build_mob_state()
       %MobDefinition{} = base_mob_data = base.mob_data
 
@@ -239,6 +241,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       combatant = MobState.to_combatant(state)
 
       assert combatant.combat_stats.soft_mdef == 20
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic soft_mdef uses INT and half VIT" do
+      base = build_mob_state()
+      assert MobState.to_combatant(base).combat_stats.soft_mdef == 45
+
+      mob_data = %{base.mob_data | level: 50, stats: %{base.mob_data.stats | int: 30}}
+      assert MobState.to_combatant(%{base | mob_data: mob_data}).combat_stats.soft_mdef == 55
+    end
+
+    test "combatants do not gain natural perfect dodge from mob LUK" do
+      assert MobState.to_combatant(build_mob_state()).combat_stats.perfect_dodge == 0
     end
   end
 

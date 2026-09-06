@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
 
@@ -128,6 +129,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
       )
 
     caster_state = get_player_state(caster.pid)
+    expect(Resistance, :roll_success, fn _chance -> true end)
 
     assert :ok =
              StatusInterpreter.apply_status(:player, ally.character.id, :sc_stun,

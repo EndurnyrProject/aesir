@@ -29,12 +29,12 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
 
   @impl true
   def hit(%{dex: dex, luk: luk, con: con, base_level: level, flat_bonus: flat_bonus}) do
-    trunc(dex + luk / 3 + level / 4) + 2 * con + flat_bonus + 175
+    max(level + dex + div(luk, 3) + 2 * con + flat_bonus + 175, 1)
   end
 
   @impl true
   def flee(%{agi: agi, luk: luk, con: con, base_level: level, flat_bonus: flat_bonus}) do
-    trunc(agi + luk / 5 + level / 4) + 2 * con + flat_bonus + 100
+    max(level + agi + div(luk, 5) + 2 * con + flat_bonus + 100, 1)
   end
 
   @impl true
@@ -48,7 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   end
 
   @impl true
-  def perfect_dodge(%{luk: luk}), do: trunc(luk / 5)
+  def perfect_dodge(%{luk: luk}), do: max(luk, 0) + 10
 
   @impl true
   def aspd(inputs) do

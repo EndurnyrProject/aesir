@@ -11,14 +11,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
       name: "Test Mob",
       level: 25,
       hp: 1000,
-      stats: %{
-        str: 40,
-        agi: 30,
-        vit: 50,
-        int: 20,
-        dex: 35,
-        luk: 15
-      },
+      stats: %{str: 40, agi: 30, vit: 50, int: 20, dex: 35, luk: 15},
       atk: 50,
       matk: 60,
       def: 25,
@@ -37,379 +30,71 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
     Map.merge(default_mob, overrides)
   end
 
-  describe "calculate_hit/1" do
-    test "calculates renewal hit using level + dex + 150" do
-      mob =
-        create_test_mob(%{
-          level: 30,
-          stats: %{dex: 45}
-        })
-
-      hit = CombatCalculations.calculate_hit(mob)
-
-      # 30 + 45 + 150 = 225
-      assert hit == 225
-    end
-
-    test "handles low level mob" do
-      mob =
-        create_test_mob(%{
-          level: 5,
-          stats: %{dex: 10}
-        })
-
-      hit = CombatCalculations.calculate_hit(mob)
-
-      # 5 + 10 + 150 = 165
-      assert hit == 165
-    end
-
-    test "handles high level mob" do
-      mob =
-        create_test_mob(%{
-          level: 80,
-          stats: %{dex: 90}
-        })
-
-      hit = CombatCalculations.calculate_hit(mob)
-
-      # 80 + 90 + 150 = 320
-      assert hit == 320
-    end
-
-    test "boss mob scenario" do
-      boss_mob =
-        create_test_mob(%{
-          level: 99,
-          stats: %{dex: 120}
-        })
-
-      hit = CombatCalculations.calculate_hit(boss_mob)
-
-      # 99 + 120 + 150 = 369
-      assert hit == 369
+  test "mobs have no natural perfect dodge, regardless of LUK" do
+    for luk <- [0, 3, 25, 30, 42, 47, 50, 60, 85, 255] do
+      mob = create_test_mob(%{stats: %{luk: luk}})
+      assert CombatCalculations.calculate_perfect_dodge(mob) == 0
     end
   end
 
-  describe "calculate_flee/1" do
-    test "calculates renewal flee using level + agi + 100" do
+  test "ASPD follows attack delay with a minimum of 100" do
+    for {delay, expected} <- [
+          {200, 180},
+          {500, 150},
+          {600, 140},
+          {800, 120},
+          {1000, 100},
+          {1200, 100},
+          {2000, 100},
+          {3000, 100}
+        ] do
+      mob = create_test_mob(%{attack_delay: delay})
+      assert CombatCalculations.calculate_aspd(mob) == expected
+    end
+  end
+
+  test "base attack preserves database ATK for weak, ordinary and boss mobs" do
+    for atk <- [10, 25, 75, 80, 150, 300, 500] do
+      assert CombatCalculations.calculate_base_attack(create_test_mob(%{atk: atk})) == atk
+    end
+  end
+
+  test "hard defense preserves database DEF" do
+    for defense <- [0, 5, 15, 30, 40, 60, 120, 200, 250] do
+      assert CombatCalculations.calculate_defense(create_test_mob(%{def: defense})) == defense
+    end
+  end
+
+  test "magic attack and hard MDEF preserve database values" do
+    mob = create_test_mob(%{matk: 95, mdef: 22})
+    assert CombatCalculations.calculate_magic_attack(mob) == 95
+    assert CombatCalculations.calculate_magic_defense(mob) == 22
+  end
+
+  test "implements all required CombatCalculations callbacks" do
+    functions = CombatCalculations.__info__(:functions)
+
+    for callback <- [
+          :calculate_hit,
+          :calculate_flee,
+          :calculate_perfect_dodge,
+          :calculate_aspd,
+          :calculate_base_attack,
+          :calculate_defense
+        ] do
+      assert {callback, 1} in functions
+    end
+  end
+
+  test "all callbacks handle normal, zero and maximum reasonable stats" do
+    for {level, stat} <- [{45, 50}, {1, 0}, {200, 255}] do
       mob =
         create_test_mob(%{
-          level: 35,
-          stats: %{agi: 55}
-        })
-
-      flee = CombatCalculations.calculate_flee(mob)
-
-      # 35 + 55 + 100 = 190
-      assert flee == 190
-    end
-
-    test "handles slow mob with low AGI" do
-      slow_mob =
-        create_test_mob(%{
-          level: 20,
-          stats: %{agi: 10}
-        })
-
-      flee = CombatCalculations.calculate_flee(slow_mob)
-
-      # 20 + 10 + 100 = 130
-      assert flee == 130
-    end
-
-    test "handles fast mob with high AGI" do
-      fast_mob =
-        create_test_mob(%{
-          level: 40,
-          stats: %{agi: 80}
-        })
-
-      flee = CombatCalculations.calculate_flee(fast_mob)
-
-      # 40 + 80 + 100 = 220
-      assert flee == 220
-    end
-
-    test "agile boss scenario" do
-      agile_boss =
-        create_test_mob(%{
-          level: 85,
-          stats: %{agi: 95}
-        })
-
-      flee = CombatCalculations.calculate_flee(agile_boss)
-
-      # 85 + 95 + 100 = 280
-      assert flee == 280
-    end
-  end
-
-  describe "calculate_perfect_dodge/1" do
-    test "calculates perfect dodge using formula: luk/5" do
-      mob =
-        create_test_mob(%{
-          stats: %{luk: 50}
-        })
-
-      perfect_dodge = CombatCalculations.calculate_perfect_dodge(mob)
-
-      # 50/5 = 10
-      assert perfect_dodge == 10
-    end
-
-    test "handles fractional values by truncating" do
-      mob =
-        create_test_mob(%{
-          stats: %{luk: 47}
-        })
-
-      perfect_dodge = CombatCalculations.calculate_perfect_dodge(mob)
-
-      # 47/5 = 9 (trunc 9.4)
-      assert perfect_dodge == 9
-    end
-
-    test "handles very low LUK" do
-      unlucky_mob =
-        create_test_mob(%{
-          stats: %{luk: 3}
-        })
-
-      perfect_dodge = CombatCalculations.calculate_perfect_dodge(unlucky_mob)
-
-      # 3/5 = 0 (truncated)
-      assert perfect_dodge == 0
-    end
-
-    test "handles high LUK boss" do
-      lucky_boss =
-        create_test_mob(%{
-          stats: %{luk: 85}
-        })
-
-      perfect_dodge = CombatCalculations.calculate_perfect_dodge(lucky_boss)
-
-      # 85/5 = 17
-      assert perfect_dodge == 17
-    end
-
-    test "normal mob range" do
-      scenarios = [
-        # 25/5 = 5
-        {25, 5},
-        # 30/5 = 6
-        {30, 6},
-        # 42/5 = 8
-        {42, 8},
-        # 60/5 = 12
-        {60, 12}
-      ]
-
-      for {luk, expected} <- scenarios do
-        mob = create_test_mob(%{stats: %{luk: luk}})
-        result = CombatCalculations.calculate_perfect_dodge(mob)
-        assert result == expected, "Failed for LUK: #{luk}, expected: #{expected}, got: #{result}"
-      end
-    end
-  end
-
-  describe "calculate_aspd/1" do
-    test "calculates ASPD from attack delay: max(100, 200 - attack_delay/10)" do
-      mob =
-        create_test_mob(%{
-          attack_delay: 1000
-        })
-
-      aspd = CombatCalculations.calculate_aspd(mob)
-
-      # max(100, 200 - 1000/10) = max(100, 100) = 100
-      assert aspd == 100
-    end
-
-    test "handles fast attacking mob" do
-      fast_mob =
-        create_test_mob(%{
-          attack_delay: 800
-        })
-
-      aspd = CombatCalculations.calculate_aspd(fast_mob)
-
-      # max(100, 200 - 800/10) = max(100, 120) = 120
-      assert aspd == 120
-    end
-
-    test "handles slow attacking mob" do
-      slow_mob =
-        create_test_mob(%{
-          attack_delay: 2000
-        })
-
-      aspd = CombatCalculations.calculate_aspd(slow_mob)
-
-      # max(100, 200 - 2000/10) = max(100, 0) = 100
-      assert aspd == 100
-    end
-
-    test "handles very fast mob" do
-      very_fast_mob =
-        create_test_mob(%{
-          attack_delay: 500
-        })
-
-      aspd = CombatCalculations.calculate_aspd(very_fast_mob)
-
-      # max(100, 200 - 500/10) = max(100, 150) = 150
-      assert aspd == 150
-    end
-
-    test "handles extreme attack delays" do
-      scenarios = [
-        # Very fast
-        {200, 180},
-        # Fast
-        {600, 140},
-        # Slow but above minimum
-        {1200, 80},
-        # Very slow, clamped to minimum
-        {3000, 100}
-      ]
-
-      for {delay, expected} <- scenarios do
-        mob = create_test_mob(%{attack_delay: delay})
-        result = CombatCalculations.calculate_aspd(mob)
-        assert result == max(100, expected), "Failed for delay: #{delay}"
-      end
-    end
-  end
-
-  describe "calculate_base_attack/1" do
-    test "returns the mob's base atk" do
-      mob = create_test_mob(%{atk: 75})
-
-      assert CombatCalculations.calculate_base_attack(mob) == 75
-    end
-
-    test "handles weak mob" do
-      weak_mob = create_test_mob(%{atk: 10})
-
-      assert CombatCalculations.calculate_base_attack(weak_mob) == 10
-    end
-
-    test "handles boss mob" do
-      boss_mob = create_test_mob(%{atk: 500})
-
-      assert CombatCalculations.calculate_base_attack(boss_mob) == 500
-    end
-
-    test "various mob attack values" do
-      for atk <- [25, 80, 150, 300] do
-        mob = create_test_mob(%{atk: atk})
-        assert CombatCalculations.calculate_base_attack(mob) == atk
-      end
-    end
-  end
-
-  describe "calculate_defense/1" do
-    test "returns def value directly from mob definition" do
-      mob =
-        create_test_mob(%{
-          def: 40
-        })
-
-      defense = CombatCalculations.calculate_defense(mob)
-
-      assert defense == 40
-    end
-
-    test "handles low defense mob" do
-      squishy_mob =
-        create_test_mob(%{
-          def: 5
-        })
-
-      defense = CombatCalculations.calculate_defense(squishy_mob)
-
-      assert defense == 5
-    end
-
-    test "handles high defense mob" do
-      tanky_mob =
-        create_test_mob(%{
-          def: 200
-        })
-
-      defense = CombatCalculations.calculate_defense(tanky_mob)
-
-      assert defense == 200
-    end
-
-    test "various defense values" do
-      defense_values = [0, 15, 30, 60, 120, 250]
-
-      for def_val <- defense_values do
-        mob = create_test_mob(%{def: def_val})
-        result = CombatCalculations.calculate_defense(mob)
-        assert result == def_val
-      end
-    end
-  end
-
-  describe "calculate_magic_attack/1" do
-    test "returns the mob's matk value directly" do
-      mob = create_test_mob(%{matk: 95})
-
-      assert CombatCalculations.calculate_magic_attack(mob) == 95
-    end
-  end
-
-  describe "calculate_magic_defense/1" do
-    test "returns the mob's mdef value directly (hard MDEF)" do
-      mob = create_test_mob(%{mdef: 22})
-
-      assert CombatCalculations.calculate_magic_defense(mob) == 22
-    end
-  end
-
-  describe "calculate_soft_mdef/1" do
-    test "uses renewal non-PC formula: div(int + level, 4)" do
-      mob =
-        create_test_mob(%{
-          level: 50,
-          stats: %{str: 1, agi: 1, vit: 1, int: 30, dex: 1, luk: 1}
-        })
-
-      assert CombatCalculations.calculate_soft_mdef(mob) == div(30 + 50, 4)
-    end
-  end
-
-  describe "integration with behavior" do
-    test "implements all required CombatCalculations callbacks" do
-      functions = CombatCalculations.__info__(:functions)
-
-      expected_functions = [
-        {:calculate_hit, 1},
-        {:calculate_flee, 1},
-        {:calculate_perfect_dodge, 1},
-        {:calculate_aspd, 1},
-        {:calculate_base_attack, 1},
-        {:calculate_defense, 1}
-      ]
-
-      for expected_func <- expected_functions do
-        assert expected_func in functions, "Missing function: #{inspect(expected_func)}"
-      end
-    end
-
-    test "all callbacks work with valid mob data" do
-      mob =
-        create_test_mob(%{
-          level: 45,
-          stats: %{str: 50, agi: 40, vit: 60, int: 30, dex: 55, luk: 25},
-          atk: 80,
-          matk: 95,
-          def: 35,
-          attack_delay: 1000
+          level: level,
+          stats: %{str: stat, agi: stat, vit: stat, int: stat, dex: stat, luk: stat},
+          atk: 9999,
+          def: 999,
+          attack_delay: 100
         })
 
       assert is_integer(CombatCalculations.calculate_hit(mob))
@@ -419,48 +104,136 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculationsTest do
       assert is_integer(CombatCalculations.calculate_base_attack(mob))
       assert is_integer(CombatCalculations.calculate_defense(mob))
     end
+
+    mob = create_test_mob(%{atk: 1, def: 0, attack_delay: 1000})
+    assert CombatCalculations.calculate_base_attack(mob) == 1
+    assert CombatCalculations.calculate_defense(mob) == 0
+    assert CombatCalculations.calculate_aspd(mob) == 100
+  end
+end
+
+defmodule Aesir.ZoneServer.Unit.Mob.AccuracyTest do
+  use ExUnit.Case,
+    async: true,
+    parameterize: [
+      %{
+        level: 30,
+        dex: 45,
+        agi: 55,
+        int: 30,
+        vit: 1,
+        renewal: {225, 185, 15},
+        classic: {75, 85, 30}
+      },
+      %{
+        level: 5,
+        dex: 10,
+        agi: 10,
+        int: 20,
+        vit: 50,
+        renewal: {165, 115, 6},
+        classic: {15, 15, 45}
+      },
+      %{
+        level: 80,
+        dex: 90,
+        agi: 80,
+        int: 20,
+        vit: 50,
+        renewal: {320, 260, 25},
+        classic: {170, 160, 45}
+      },
+      %{
+        level: 99,
+        dex: 120,
+        agi: 95,
+        int: 20,
+        vit: 50,
+        renewal: {369, 294, 29},
+        classic: {219, 194, 45}
+      },
+      %{
+        level: 35,
+        dex: 35,
+        agi: 55,
+        int: 20,
+        vit: 50,
+        renewal: {220, 190, 13},
+        classic: {70, 90, 45}
+      },
+      %{
+        level: 20,
+        dex: 35,
+        agi: 10,
+        int: 20,
+        vit: 50,
+        renewal: {205, 130, 10},
+        classic: {55, 30, 45}
+      },
+      %{
+        level: 40,
+        dex: 35,
+        agi: 80,
+        int: 20,
+        vit: 50,
+        renewal: {225, 220, 15},
+        classic: {75, 120, 45}
+      },
+      %{
+        level: 85,
+        dex: 35,
+        agi: 95,
+        int: 20,
+        vit: 50,
+        renewal: {270, 280, 26},
+        classic: {120, 180, 45}
+      },
+      %{
+        level: 50,
+        dex: 1,
+        agi: 1,
+        int: 30,
+        vit: 1,
+        renewal: {201, 151, 20},
+        classic: {51, 51, 30}
+      },
+      %{level: 1, dex: 0, agi: 0, int: 0, vit: 0, renewal: {151, 101, 0}, classic: {1, 1, 0}}
+    ]
+
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Unit.Mob.CombatCalculations
+
+  setup context do
+    mob = %MobDefinition{
+      id: 1001,
+      aegis_name: "test_mob",
+      name: "Test Mob",
+      level: context.level,
+      hp: 1000,
+      stats: %{dex: context.dex, agi: context.agi, int: context.int, vit: context.vit},
+      attack_range: 1,
+      walk_speed: 200,
+      attack_delay: 1200,
+      attack_motion: 500,
+      client_attack_motion: 400,
+      damage_motion: 300,
+      element: {:neutral, 1},
+      race: :formless,
+      size: :medium
+    }
+
+    {:ok, mob: mob}
   end
 
-  describe "edge cases and boundary conditions" do
-    test "handles zero stats" do
-      minimal_mob =
-        create_test_mob(%{
-          level: 1,
-          stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},
-          atk: 1,
-          def: 0,
-          attack_delay: 1000
-        })
+  @tag game_mode: :renewal
+  test "Renewal adds actor baselines and level-scaled soft MDEF", %{mob: mob, renewal: expected} do
+    assert {CombatCalculations.calculate_hit(mob), CombatCalculations.calculate_flee(mob),
+            CombatCalculations.calculate_soft_mdef(mob)} == expected
+  end
 
-      # Should not crash with minimal stats
-      # 1 + 0 + 150
-      assert CombatCalculations.calculate_hit(minimal_mob) == 151
-      # 1 + 0 + 100
-      assert CombatCalculations.calculate_flee(minimal_mob) == 101
-      # 0/5
-      assert CombatCalculations.calculate_perfect_dodge(minimal_mob) == 0
-      assert CombatCalculations.calculate_base_attack(minimal_mob) == 1
-      assert CombatCalculations.calculate_defense(minimal_mob) == 0
-      assert CombatCalculations.calculate_aspd(minimal_mob) == 100
-    end
-
-    test "handles maximum reasonable stats" do
-      maxed_mob =
-        create_test_mob(%{
-          level: 200,
-          stats: %{str: 255, agi: 255, vit: 255, int: 255, dex: 255, luk: 255},
-          atk: 9999,
-          def: 999,
-          attack_delay: 100
-        })
-
-      # Should handle high values without overflow
-      assert is_integer(CombatCalculations.calculate_hit(maxed_mob))
-      assert is_integer(CombatCalculations.calculate_flee(maxed_mob))
-      assert is_integer(CombatCalculations.calculate_perfect_dodge(maxed_mob))
-      assert is_integer(CombatCalculations.calculate_base_attack(maxed_mob))
-      assert is_integer(CombatCalculations.calculate_defense(maxed_mob))
-      assert is_integer(CombatCalculations.calculate_aspd(maxed_mob))
-    end
+  @tag game_mode: :pre_renewal
+  test "classic uses unshifted accuracy and VIT-based soft MDEF", %{mob: mob, classic: expected} do
+    assert {CombatCalculations.calculate_hit(mob), CombatCalculations.calculate_flee(mob),
+            CombatCalculations.calculate_soft_mdef(mob)} == expected
   end
 end

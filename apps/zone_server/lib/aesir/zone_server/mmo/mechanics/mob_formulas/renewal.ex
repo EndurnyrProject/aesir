@@ -21,9 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal do
   end
 
   @impl true
-  def calculate_perfect_dodge(%MobDefinition{} = mob_data) do
-    trunc(mob_data.stats.luk / 5)
-  end
+  def calculate_perfect_dodge(%MobDefinition{}), do: 0
 
   @impl true
   def calculate_aspd(%MobDefinition{} = mob_data) do

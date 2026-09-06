@@ -54,168 +54,33 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
     test_stats
   end
 
-  describe "calculate_hit/1" do
-    test "calculates renewal HIT with its combat baseline" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{dex: 80, luk: 60},
-          progression: %{base_level: 60}
-        })
+  describe "accuracy modifiers" do
+    test "HIT includes status, equipment and passive bonuses" do
+      stats = create_test_stats()
+      base_hit = CombatCalculations.calculate_hit(stats)
 
-      hit = CombatCalculations.calculate_hit(stats)
+      stub(Stats, :get_status_modifier, fn _stats, :hit -> 10 end)
+      assert CombatCalculations.calculate_hit(stats) == base_hit + 10
 
-      # 175 + 80 + 60/3 + 60/4 = 290
-      assert hit == 290
+      stats = %{stats | modifiers: %{equipment: %{hit: 7}, passive: %{hit: 3}}}
+      assert CombatCalculations.calculate_hit(stats) == base_hit + 20
     end
 
-    test "handles fractional values by truncating" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{dex: 75, luk: 50},
-          progression: %{base_level: 55}
-        })
+    test "FLEE includes status, equipment and passive bonuses" do
+      stats = create_test_stats()
+      base_flee = CombatCalculations.calculate_flee(stats)
 
-      hit = CombatCalculations.calculate_hit(stats)
-
-      # 175 + 75 + trunc(50/3 + 55/4) = 280
-      assert hit == 280
-    end
-
-    test "includes status effect modifiers" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{dex: 80, luk: 60},
-          progression: %{base_level: 60}
-        })
-
-      # Mock status modifier returning +10 hit
-      stub(Stats, :get_status_modifier, fn _stats, :hit ->
-        10
-      end)
-
-      hit = CombatCalculations.calculate_hit(stats)
-
-      # Base 290 + 10 modifier = 300
-      assert hit == 300
-    end
-
-    test "handles minimum stats" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{dex: 1, luk: 1},
-          progression: %{base_level: 1}
-        })
-
-      hit = CombatCalculations.calculate_hit(stats)
-
-      # 175 + 1 + trunc(1/3 + 1/4) = 176
-      assert hit == 176
-    end
-
-    test "includes the passive HIT bonus" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{dex: 80, luk: 60},
-          progression: %{base_level: 60},
-          modifiers: %{passive: %{hit: 3}}
-        })
-
-      hit = CombatCalculations.calculate_hit(stats)
-
-      # Base 290 + 3 passive = 293
-      assert hit == 293
-    end
-
-    test "handles high level scenario" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{dex: 120, luk: 80},
-          progression: %{base_level: 99}
-        })
-
-      hit = CombatCalculations.calculate_hit(stats)
-
-      # 175 + 120 + trunc(80/3 + 99/4) = 346
-      assert hit == 346
-    end
-  end
-
-  describe "calculate_flee/1" do
-    test "calculates renewal FLEE with its combat baseline" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{agi: 90, luk: 50},
-          progression: %{base_level: 60}
-        })
-
-      flee = CombatCalculations.calculate_flee(stats)
-
-      # 100 + 90 + 50/5 + 60/4 = 215
-      assert flee == 215
-    end
-
-    test "handles fractional values by truncating" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{agi: 75, luk: 47},
-          progression: %{base_level: 55}
-        })
-
-      flee = CombatCalculations.calculate_flee(stats)
-
-      # 100 + 75 + trunc(47/5 + 55/4) = 198
-      assert flee == 198
-    end
-
-    test "includes status effect modifiers" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{agi: 90, luk: 50},
-          progression: %{base_level: 60}
-        })
-
-      # Mock status modifier returning +15 flee
-      stub(Stats, :get_status_modifier, fn _stats, :flee ->
-        15
-      end)
-
-      flee = CombatCalculations.calculate_flee(stats)
-
-      # Base 215 + 15 modifier = 230
-      assert flee == 230
-    end
-
-    test "AGI build scenario" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{agi: 99, luk: 70},
-          progression: %{base_level: 85}
-        })
-
-      flee = CombatCalculations.calculate_flee(stats)
-
-      # 100 + 99 + 70/5 + 85/4 = 234
-      assert flee == 234
-    end
-
-    test "includes the passive flee bonus term" do
-      stats =
-        create_test_stats(%{
-          base_stats: %{agi: 90, luk: 50},
-          progression: %{base_level: 60}
-        })
+      stub(Stats, :get_status_modifier, fn _stats, :flee -> 15 end)
+      assert CombatCalculations.calculate_flee(stats) == base_flee + 15
 
       stub(Passives, :flee_bonus, fn _stats -> 20 end)
-
-      flee = CombatCalculations.calculate_flee(stats)
-
-      # Base 215 + 20 passive bonus = 235
-      assert flee == 235
+      stats = %{stats | modifiers: %{equipment: %{flee: 7}}}
+      assert CombatCalculations.calculate_flee(stats) == base_flee + 42
     end
   end
 
   describe "calculate_perfect_dodge/1" do
-    test "calculates perfect dodge: LUK/5" do
+    test "calculates perfect dodge in per-mille units: LUK + 10" do
       stats =
         create_test_stats(%{
           base_stats: %{luk: 50}
@@ -223,11 +88,10 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       perfect_dodge = CombatCalculations.calculate_perfect_dodge(stats)
 
-      # 50/5 = 10
-      assert perfect_dodge == 10
+      assert perfect_dodge == 60
     end
 
-    test "handles fractional values by truncating" do
+    test "retains LUK precision in per-mille units" do
       stats =
         create_test_stats(%{
           base_stats: %{luk: 47}
@@ -235,8 +99,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       perfect_dodge = CombatCalculations.calculate_perfect_dodge(stats)
 
-      # 47/5 = 9 (trunc 9.4)
-      assert perfect_dodge == 9
+      assert perfect_dodge == 57
     end
 
     test "includes status effect modifiers" do
@@ -252,8 +115,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       perfect_dodge = CombatCalculations.calculate_perfect_dodge(stats)
 
-      # Base 10 + 5 modifier = 15
-      assert perfect_dodge == 15
+      assert perfect_dodge == 65
     end
 
     test "includes the equipment modifier (bFlee2, already in per-mille units)" do
@@ -263,8 +125,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
           modifiers: %{equipment: %{perfect_dodge: 30}}
         })
 
-      # Base 10 + 30 per-mille from equipment
-      assert CombatCalculations.calculate_perfect_dodge(stats) == 40
+      assert CombatCalculations.calculate_perfect_dodge(stats) == 90
     end
 
     test "high LUK scenario" do
@@ -275,8 +136,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       perfect_dodge = CombatCalculations.calculate_perfect_dodge(stats)
 
-      # 99/5 = 19
-      assert perfect_dodge == 19
+      assert perfect_dodge == 109
     end
 
     test "low LUK scenario" do
@@ -287,8 +147,7 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
 
       perfect_dodge = CombatCalculations.calculate_perfect_dodge(stats)
 
-      # 4/5 = 0 (truncated)
-      assert perfect_dodge == 0
+      assert perfect_dodge == 14
     end
   end
 
@@ -447,5 +306,59 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
       assert is_integer(CombatCalculations.calculate_base_attack(stats))
       assert is_integer(CombatCalculations.calculate_defense(stats))
     end
+  end
+end
+
+defmodule Aesir.ZoneServer.Unit.Player.AccuracyTest do
+  use ExUnit.Case,
+    async: true,
+    parameterize: [
+      %{level: 60, dex: 80, agi: 90, luk: 60, con: 0, renewal: {335, 262}, classic: {140, 150}},
+      %{level: 55, dex: 75, agi: 75, luk: 50, con: 0, renewal: {321, 240}, classic: {130, 130}},
+      %{level: 55, dex: 75, agi: 75, luk: 47, con: 0, renewal: {320, 239}, classic: {130, 130}},
+      %{level: 1, dex: 1, agi: 1, luk: 1, con: 0, renewal: {177, 102}, classic: {2, 2}},
+      %{level: 99, dex: 120, agi: 99, luk: 80, con: 0, renewal: {420, 314}, classic: {219, 198}},
+      %{level: 60, dex: 80, agi: 90, luk: 50, con: 0, renewal: {331, 260}, classic: {140, 150}},
+      %{level: 85, dex: 80, agi: 99, luk: 70, con: 0, renewal: {363, 298}, classic: {165, 184}},
+      %{level: 55, dex: 75, agi: 75, luk: 47, con: 7, renewal: {334, 253}, classic: {130, 130}}
+    ]
+
+  alias Aesir.ZoneServer.Unit.Player.CombatCalculations
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
+  alias Aesir.ZoneServer.Unit.Stats.BaseStats
+
+  setup context do
+    stats = %Stats{
+      base_stats: %BaseStats{
+        dex: context.dex,
+        agi: context.agi,
+        luk: context.luk,
+        con: context.con
+      },
+      progression: %PlayerProgression{base_level: context.level},
+      modifiers: %Modifiers{}
+    }
+
+    {:ok, stats: stats}
+  end
+
+  @tag game_mode: :renewal
+  test "Renewal applies full levels, LUK, CON and actor baselines", %{
+    stats: stats,
+    renewal: expected
+  } do
+    assert {CombatCalculations.calculate_hit(stats), CombatCalculations.calculate_flee(stats)} ==
+             expected
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic applies full levels without LUK, CON or actor baselines", %{
+    stats: stats,
+    classic: expected
+  } do
+    assert {CombatCalculations.calculate_hit(stats), CombatCalculations.calculate_flee(stats)} ==
+             expected
   end
 end

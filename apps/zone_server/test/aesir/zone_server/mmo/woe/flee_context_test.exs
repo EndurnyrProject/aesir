@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.FleeContextTest do
   defp stats_with_base_flee_200(status_flee) do
     {agi, luk, base_level} =
       case GameMode.mode() do
-        :renewal -> {75, 0, 100}
+        :renewal -> {75, 0, 25}
         :pre_renewal -> {100, 0, 100}
       end
 

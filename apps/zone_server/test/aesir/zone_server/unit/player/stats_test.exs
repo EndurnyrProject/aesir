@@ -2792,9 +2792,10 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = with_equipped(equipped(90_202, @armor_pos))
 
-      assert result.combat_stats.hit == 182
-      assert result.combat_stats.flee == 105
-      assert result.combat_stats.critical == 4
+      baseline = with_equipped_items([])
+      assert result.combat_stats.hit == baseline.combat_stats.hit + 7
+      assert result.combat_stats.flee == baseline.combat_stats.flee + 5
+      assert result.combat_stats.critical == baseline.combat_stats.critical + 4
     end
 
     test "an on_equip :pow bonus raises patk and base ATK via the SP-B derivation" do
@@ -3074,7 +3075,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = with_equipped(equipped(90_220, @armor_pos))
 
-      assert result.combat_stats.perfect_dodge == 30
+      assert result.combat_stats.perfect_dodge == 40
+      assert with_equipped_items([]).combat_stats.perfect_dodge == 10
     end
 
     test "bSplashRange does not stack across items — the widest one wins" do

@@ -81,8 +81,11 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     assert eventually(fn -> not StatusStorage.has_status?(:player, assassin_id, :sc_cloaking) end)
 
     apply_cloaking(assassin_id, 3)
-    :rand.seed(:exsss, {1, 2, 3})
+    hp_before = get_player_state(assassin.pid).stats.current_state.hp
+    # The first roll clears natural perfect dodge; DEX 999 guarantees the accuracy check.
+    :rand.seed(:exsss, {17, 19, 23})
     assert :ok = Combat.execute_mob_attack(get_mob_state(mob.pid), assassin_id)
+    assert eventually(fn -> get_player_state(assassin.pid).stats.current_state.hp < hp_before end)
     assert eventually(fn -> not StatusStorage.has_status?(:player, assassin_id, :sc_cloaking) end)
 
     detector =

@@ -116,15 +116,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
       iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
       100
 
-      iex> attacker = %{hit: 170}
-      iex> target = %{flee: 110}
-      iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
-      60
-
-      iex> attacker = %{hit: 180, hit_rate_bonus_pct: 50}
-      iex> target = %{flee: 150}
-      iex> Aesir.ZoneServer.Mmo.Combat.HitCalculations.calculate_hit_rate(attacker, target)
-      45
+  With HIT 170 and FLEE 110, the rate is 60% in Renewal and 100% in classic.
+  With HIT 180, FLEE 150 and a 50% relative bonus, the rate is 45% in Renewal
+  and 100% in classic.
   """
   @spec calculate_hit_rate(attacker_stats(), target_stats()) :: 0..100
   def calculate_hit_rate(attacker_stats, target_stats) do

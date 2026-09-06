@@ -39,11 +39,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.CombatCalculations do
   end
 
   @doc """
-  Calculates the mob perfect-dodge stat.
+  Returns zero natural perfect dodge for mobs in both rulesets.
 
-  ## Formula
-
-      perfect_dodge = trunc(luk / 5)
+  LUK grants natural perfect dodge only to players.
   """
   @impl true
   @spec calculate_perfect_dodge(mob_data()) :: integer()
