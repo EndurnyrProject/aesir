@@ -1,6 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
+  @moduledoc """
+  Verifies the real shared recipe catalog, so reload tests run serially and restore
+  the catalog afterwards. Temporary configuration reads are private Mimic stubs.
+  """
+
   use ExUnit.Case, async: false
 
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting
   alias Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting.Recipe
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
@@ -28,16 +34,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
   describe "import overlay" do
     @tag :tmp_dir
     test "overrides and appends recipes identically in both modes", %{tmp_dir: root} do
-      previous = Application.fetch_env(:zone_server, :db_root)
-
-      on_exit(fn ->
-        case previous do
-          :error -> Application.delete_env(:zone_server, :db_root)
-          {:ok, value} -> Application.put_env(:zone_server, :db_root, value)
-        end
-
-        ArrowCrafting.reload()
-      end)
+      :ok = DbTestSetup.stub_root(root)
+      on_exit(fn -> ArrowCrafting.reload() end)
 
       File.write!(Path.join(root, "arrows.yml"), """
       - source: 1
@@ -64,7 +62,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
             amount: 4
       """)
 
-      Application.put_env(:zone_server, :db_root, root)
       assert :ok = ArrowCrafting.reload()
 
       recipes = {ArrowCrafting.all(), ArrowCrafting.for_source(1), ArrowCrafting.for_source(3)}

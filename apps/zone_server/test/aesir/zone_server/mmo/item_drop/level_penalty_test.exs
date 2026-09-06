@@ -1,6 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
+  @moduledoc """
+  Exercises the real cached penalty lookups and reloads. Their shared tables are
+  seeded and cleared in serialized tests; configuration reads remain process-local.
+  """
+
   use ExUnit.Case, async: false
 
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
 
   @table %{
@@ -200,16 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemDrop.LevelPenaltyTest do
   end
 
   defp configure_root(root) do
-    previous = Application.fetch_env(:zone_server, :db_root)
-    Application.put_env(:zone_server, :db_root, root)
-
-    on_exit(fn ->
-      case previous do
-        :error -> Application.delete_env(:zone_server, :db_root)
-        {:ok, value} -> Application.put_env(:zone_server, :db_root, value)
-      end
-
-      LevelPenalty.reload()
-    end)
+    :ok = DbTestSetup.stub_root(root)
+    on_exit(fn -> LevelPenalty.reload() end)
   end
 end
