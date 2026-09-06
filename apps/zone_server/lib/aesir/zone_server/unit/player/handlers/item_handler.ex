@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatsManager
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
   alias Aesir.ZoneServer.Unit.Player.InventoryView
@@ -107,7 +108,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
 
         PlayerEvents.inventory_changed(char_id)
 
-        {:noreply, committed}
+        {:noreply, SkillHandler.drain_warp(committed)}
 
       {:error, reason} ->
         Logger.warning(

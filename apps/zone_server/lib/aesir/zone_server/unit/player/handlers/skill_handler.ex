@@ -1379,11 +1379,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler do
     %{state | game_state: clean_game_state, interaction_lock: {pid, ref, @system_dialog_gid}}
   end
 
-  # Executes any warp directive the skill staged on pending_warp (SP and
-  # cooldowns are already committed at this point). Clears the field before
-  # calling WarpHandler so the warp state is clean. On error the directive is
-  # still cleared to avoid re-triggering on a subsequent cast.
-  defp drain_warp(%{game_state: game_state} = state) do
+  @doc """
+  Executes and clears a warp directive staged by a successful skill effect.
+
+  The directive is cleared before calling `WarpHandler` and remains cleared
+  when the destination is invalid, preventing a later cast from retrying it.
+  """
+  @spec drain_warp(map()) :: map()
+  def drain_warp(%{game_state: game_state} = state) do
     case game_state.pending_warp do
       nil ->
         state

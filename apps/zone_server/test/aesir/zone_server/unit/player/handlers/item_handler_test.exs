@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.UseItem
   alias Aesir.ZoneServer.CharacterPersistence
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   @red_potion_client_index 2
   @red_potion_id 501
   @warp_item_id 502
+  @fly_wing_id 601
 
   # Private mode (not global) keeps stubs process-local so background mob
   # sessions never hit them; async stays false because each test redefines the
@@ -37,6 +39,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     Mimic.copy(Items)
     Mimic.copy(InventoryOps)
     Mimic.copy(ItemEffectHandler)
+    Mimic.copy(Cell)
 
     stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
     stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
@@ -75,6 +78,38 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       assert_received {:send, :gameplay,
                        {:item_use_result,
                         %ItemUseResult{index: @red_potion_client_index, ok: true, reason: 0}}}
+    end
+
+    test "Fly Wing consumes once and returns the relocated session state" do
+      source = "itemskill(ctx, 26, level: 1)"
+      ScriptCompiler.compile_all!([item_def(@fly_wing_id, source)])
+
+      state = state_with_potion(@fly_wing_id)
+      definition = usable_definition(@fly_wing_id, source)
+
+      stub(Items, :by_id, fn @fly_wing_id -> {:ok, definition} end)
+      stub(Cell, :random_traversable, fn "prontera" -> {:ok, {42, 77}} end)
+
+      expect(InventoryOps, :remove, fn 1000, inventory, @red_potion_slot, 1 ->
+        {:ok, %{@red_potion_slot => %{inventory[@red_potion_slot] | amount: 4}},
+         {:reduced, @red_potion_slot, 4}}
+      end)
+
+      expect(WarpHandler, :warp, fn session, "prontera", 42, 77 ->
+        assert session.game_state.pending_warp == nil
+        assert session.game_state.inventory[@red_potion_slot].amount == 4
+
+        relocated = %{session.game_state | x: 42, y: 77, pending_map_load: :warp}
+        {:ok, %{session | game_state: relocated}}
+      end)
+
+      assert {:noreply, committed} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert committed.game_state.x == 42
+      assert committed.game_state.y == 77
+      assert committed.game_state.pending_warp == nil
+      assert committed.game_state.inventory[@red_potion_slot].amount == 4
     end
   end
 
