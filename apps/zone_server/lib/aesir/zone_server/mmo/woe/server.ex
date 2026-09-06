@@ -2,20 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   @moduledoc """
   Per-node GenServer owning the WoE agit lifecycle.
 
-  `start/0` arms every FE castle (`gvg` mapflag, Emperium summon with the
-  capture owner-event, siege flag), `stop/0` disarms them (clear `gvg`,
-  despawn the Emperiums, roll-call the owners), and `capture/4` funnels an
-  Emperium break through the atomic `CastleStore.capture` claim before
-  persisting ownership, broadcasting the conquest, and arming the Emperium
-  respawn timer.
+  `start/0` arms every FE castle (`gvg` mapflag, Emperium summon, siege flag),
+  and `stop/0` disarms them (clear `gvg`, despawn the Emperiums, roll-call the
+  owners). Attributed mob-death lifecycle events claim a matching live
+  Emperium before eligible conquest is persisted and announced.
 
-  The respawn timers live here so they outlive the transient owner-event that
-  triggered the capture. `capture/4` runs the CAS inside this server's
-  `handle_call`; none of the follow-up work (ETS write, fire-and-forget
-  persistence, PubSub broadcast, timer arm) calls back into the killer's
-  `PlayerSession`, so the synchronous call cannot deadlock. Re-arming a
-  castle's timer (a second capture) cancels the previous one, and a stale
-  timer fire never touches the current timer's bookkeeping.
+  The respawn timers live here so they outlive the dead Emperium. Re-arming a
+  castle's timer cancels the previous one, and a stale timer fire never touches
+  the current timer's bookkeeping.
   """
 
   use GenServer
@@ -33,10 +27,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
+  alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
+  alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @emperium_mob_id 1288
-  @emperium_event "WoeController::OnEmperiumBreak"
+  @guild_approval_skill_id 10_000
 
   @type t :: %__MODULE__{
           active?: boolean(),
@@ -53,9 +50,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   @doc """
   AgitStart: arms every FE castle (idempotent).
 
-  Sets the `:gvg` mapflag, summons the Emperium (mob 1288) with the
-  `WoeController::OnEmperiumBreak` owner-event, records its unit id, and marks
-  the castle under siege, then broadcasts the WoE-begun message.
+  Sets the `:gvg` mapflag, summons the Emperium (mob 1288), records its unit
+  id, and marks the castle under siege, then broadcasts the WoE-begun message.
   """
   @spec start() :: :ok
   def start do
@@ -79,23 +75,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     GenServer.call(via_name(), :active?)
   end
 
-  @doc """
-  Atomically claims `castle_id` for `guild_id` on an Emperium break.
-
-  Called from the Emperium owner-event on the killer's `PlayerSession`. On a
-  winning claim the owner is persisted, the conquest is broadcast, and the
-  Emperium respawn timer is armed for the new epoch; a stale epoch or an ended
-  siege returns `{:error, reason}` and changes nothing. `char_id` is the
-  killer's character id (reserved for the owner-event context).
-  """
-  @spec capture(non_neg_integer(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          {:ok, :captured} | {:error, term()}
-  def capture(castle_id, epoch, guild_id, char_id) do
-    GenServer.call(via_name(), {:capture, castle_id, epoch, guild_id, char_id})
-  end
-
   @impl true
   def init(:ok) do
+    :ok = Lifecycle.subscribe()
     {:ok, %__MODULE__{}}
   end
 
@@ -135,20 +117,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   @impl true
-  def handle_call({:capture, castle_id, epoch, guild_id, _char_id}, _from, state) do
-    case CastleStore.capture(castle_id, epoch, guild_id) do
-      {:ok, new_epoch} ->
-        Persistence.persist(castle_id, guild_id)
-        announce_conquest(castle_id, guild_id)
-        timers = arm_respawn_timer(state.respawn_timers, castle_id, new_epoch)
-        {:reply, {:ok, :captured}, %{state | respawn_timers: timers}}
-
-      {:error, reason} ->
-        {:reply, {:error, reason}, state}
+  def handle_info(
+        {:unit_lifecycle,
+         %Event{unit_type: :mob, unit_id: unit_id, reason: :death, old_map: map_name} = event},
+        state
+      )
+      when is_binary(map_name) do
+    case CastleDb.by_map(map_name) do
+      {:ok, castle} -> handle_emperium_break(castle, unit_id, event.kill_credit, state)
+      :error -> {:noreply, state}
     end
   end
 
-  @impl true
+  def handle_info({:unit_lifecycle, %Event{}}, state), do: {:noreply, state}
+
   def handle_info({:respawn_emperium, castle_id, expected_epoch, token}, state) do
     case Map.fetch(state.respawn_timers, castle_id) do
       {:ok, {_ref, ^token}} ->
@@ -172,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   defp arm_castle(%Castle{id: id, map: map, emperium: {x, y}}) do
-    case Coordinator.summon_mob(map, @emperium_mob_id, x, y, event: @emperium_event) do
+    case Coordinator.summon_mob(map, @emperium_mob_id, x, y, []) do
       {:ok, unit_id} ->
         MapFlags.set_runtime(map, :gvg, true)
         CastleStore.set_emperium(id, unit_id)
@@ -191,15 +173,28 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
   defp disarm_castle(%Castle{id: id, map: map}) do
     MapFlags.clear_runtime(map, :gvg)
-    MobSupervisor.kill_by_event(map, @emperium_event)
+    despawn_emperium(map, CastleStore.get(id).emperium_unit_id)
     CastleStore.set_emperium(id, nil)
     CastleStore.set_siege(id, false)
+  end
+
+  defp despawn_emperium(_map, nil), do: :ok
+
+  defp despawn_emperium(map, unit_id) do
+    case UnitRegistry.get_unit(:mob, unit_id) do
+      {:ok, {_module, _mob, pid}} ->
+        UnitRegistry.unregister_unit(:mob, unit_id)
+        MobSupervisor.terminate_mob(map, pid)
+
+      {:error, :not_found} ->
+        :ok
+    end
   end
 
   defp respawn_emperium(castle_id) do
     case CastleDb.by_id(castle_id) do
       {:ok, %Castle{map: map, emperium: {x, y}}} ->
-        case Coordinator.summon_mob(map, @emperium_mob_id, x, y, event: @emperium_event) do
+        case Coordinator.summon_mob(map, @emperium_mob_id, x, y, []) do
           {:ok, unit_id} ->
             CastleStore.set_emperium(castle_id, unit_id)
 
@@ -212,6 +207,43 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
       :error ->
         Logger.error("Respawn timer fired for unknown castle #{castle_id}")
     end
+  end
+
+  defp handle_emperium_break(castle, unit_id, kill_credit, state) do
+    guild_id = eligible_conqueror(castle.id, kill_credit)
+
+    case CastleStore.claim_break(castle.id, unit_id, guild_id) do
+      {:ok, castle_state} ->
+        record_conquest(castle.id, guild_id)
+
+        timers =
+          arm_respawn_timer(state.respawn_timers, castle.id, castle_state.epoch)
+
+        {:noreply, %{state | respawn_timers: timers}}
+
+      {:error, _reason} ->
+        {:noreply, state}
+    end
+  end
+
+  defp eligible_conqueror(castle_id, %{guild_id: guild_id})
+       when is_integer(guild_id) and guild_id > 0 do
+    with false <- CastleStore.owner(castle_id) == guild_id,
+         {:ok, guild} <- Manager.get(guild_id),
+         true <- State.skill_level(guild, @guild_approval_skill_id) > 0 do
+      guild_id
+    else
+      _not_eligible -> nil
+    end
+  end
+
+  defp eligible_conqueror(_castle_id, _kill_credit), do: nil
+
+  defp record_conquest(_castle_id, nil), do: :ok
+
+  defp record_conquest(castle_id, guild_id) do
+    Persistence.persist(castle_id, guild_id)
+    announce_conquest(castle_id, guild_id)
   end
 
   defp arm_respawn_timer(timers, castle_id, epoch) do

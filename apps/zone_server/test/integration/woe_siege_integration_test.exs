@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
   @moduledoc """
   End-to-end coverage of the WoE siege loop against the real subsystems:
-  `Woe.Server`, `CastleStore`, `Woe.Persistence`, `MapFlags`, the mob
-  owner-event capture path, the same-map respawn hook, and the map-aware
-  guild-skill GvG gate.
+  `Woe.Server`, `CastleStore`, `Woe.Persistence`, `MapFlags`, attributed mob
+  lifecycle capture, the same-map respawn hook, and the map-aware guild-skill
+  GvG gate.
 
   Each test boots its own per-test seeded world (see `IntegrationCase`), so a
   `Woe.Server` is started in-test via `start_supervised!` — the app-level
@@ -41,13 +41,13 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
   alias Aesir.ZoneServer.Mmo.Woe.Server, as: WoeServer
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
+  alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.MobSession
-  alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @castle_id 0
-  @emperium_event "WoeController::OnEmperiumBreak"
+  @approval_skill_id 10_000
   @emperium_item_id 714
   @gd_battleorder 10_010
 
@@ -66,6 +66,7 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
 
       with_env(:woe_emperium_respawn_ms, 100, fn ->
         {master_on_prontera, guild_id} = create_guild("SiegeGuild", "SiegeMaster")
+        seed_learned_skills(guild_id, %{"#{@approval_skill_id}" => 1})
 
         killer =
           relocate_character(master_on_prontera, castle().map, castle().emperium)
@@ -83,7 +84,8 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
         assert %{emperium_unit_id: old_unit_id} = CastleStore.get(@castle_id)
         assert is_integer(old_unit_id)
 
-        {:ok, {_module, _mob, mob_pid}} = UnitRegistry.get_unit(:mob, old_unit_id)
+        {:ok, {_module, mob, mob_pid}} = UnitRegistry.get_unit(:mob, old_unit_id)
+        assert mob.owner_event == nil
         :ok = MobSession.apply_damage(mob_pid, 999_999, killer.character.id)
 
         assert_eventually(fn -> CastleStore.owner(@castle_id) == guild_id end)
@@ -127,9 +129,15 @@ defmodule Aesir.ZoneServer.Integration.WoeSiegeIntegrationTest do
       refute WoeServer.active?()
       refute MapFlags.get(castle().map, :gvg)
       assert CastleStore.get(@castle_id).siege_active? == false
-      assert MobSupervisor.count_by_event(castle().map, @emperium_event) == 0
 
-      assert WoeServer.capture(@castle_id, 0, 999, 1) == {:error, :not_active}
+      assert :ok =
+               Lifecycle.publish_death(:mob, 999, castle().map, %{
+                 attacker: {:player, 1},
+                 character_id: 1,
+                 guild_id: 999
+               })
+
+      assert WoeServer.active?() == false
       assert CastleStore.owner(@castle_id) == nil
     end
   end

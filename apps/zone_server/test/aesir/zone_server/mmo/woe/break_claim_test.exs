@@ -81,6 +81,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.BreakClaimTest do
              {:error, :stale_emperium}
 
     assert CastleStore.get(castle_id) == replacement
+
+    assert {:ok, second_round} = CastleStore.claim_break(castle_id, 2_345, 999)
+    assert second_round.owner_guild_id == 999
+    assert second_round.epoch == 2
+    assert second_round.emperium_unit_id == nil
   end
 
   test "classifies inactive and unknown castles as not active", %{castle_id: castle_id} do

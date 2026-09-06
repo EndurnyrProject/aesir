@@ -5,11 +5,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   Each castle is one flat tuple in `:castle_states`:
   `{castle_id, owner_guild_id, siege_active?, epoch, emperium_unit_id}`.
 
-  `capture/3` compares `{siege_active?, epoch}`, while `claim_break/3` compares
-  `{siege_active?, emperium_unit_id}`. Both use `:ets.select_replace` so the
-  winning call replaces the whole row in one atomic operation. This is the
-  correctness boundary of the siege — no offer/claim protocol between
-  sessions, just one atomic claim on the shared store.
+  `claim_break/3` compares `{siege_active?, emperium_unit_id}` and uses
+  `:ets.select_replace` so the winning call replaces the whole row in one
+  atomic operation. This is the correctness boundary of the siege — no
+  offer/claim protocol between sessions, just one atomic claim on the shared
+  store.
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
@@ -156,42 +156,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
     end
   end
 
-  @doc """
-  Atomically captures the castle for `guild_id`.
-
-  Succeeds only while the castle is under siege and still at `expected_epoch`;
-  the winning call replaces the row with the new owner and `expected_epoch + 1`
-  in one atomic operation, making concurrent captures exactly-once. The loser
-  reports `:stale_epoch` (a newer capture won) or `:not_active` (siege ended or
-  the castle is unknown).
-  """
-  @spec capture(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          {:ok, non_neg_integer()} | {:error, :stale_epoch | :not_active}
-  def capture(castle_id, expected_epoch, guild_id) do
-    ms = [
-      {{castle_id, :_, true, expected_epoch, :"$1"}, [],
-       [{{castle_id, guild_id, true, expected_epoch + 1, :"$1"}}]}
-    ]
-
-    case :ets.select_replace(table_for(:castle_states), ms) do
-      1 -> {:ok, expected_epoch + 1}
-      0 -> classify_failure(castle_id)
-    end
-  end
-
   @spec classify_break_failure(non_neg_integer()) ::
           {:error, :stale_emperium | :not_active}
   defp classify_break_failure(castle_id) do
     case :ets.lookup(table_for(:castle_states), castle_id) do
       [{^castle_id, _, true, _, _}] -> {:error, :stale_emperium}
-      _ -> {:error, :not_active}
-    end
-  end
-
-  @spec classify_failure(non_neg_integer()) :: {:error, :stale_epoch | :not_active}
-  defp classify_failure(castle_id) do
-    case :ets.lookup(table_for(:castle_states), castle_id) do
-      [{^castle_id, _, true, _, _}] -> {:error, :stale_epoch}
       _ -> {:error, :not_active}
     end
   end
