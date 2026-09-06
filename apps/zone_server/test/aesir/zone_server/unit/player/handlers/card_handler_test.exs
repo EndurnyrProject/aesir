@@ -173,7 +173,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
   end
 
   test "persistence failure emits only the persistence result and preserves session state" do
-    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:1000")
+    character_id = System.unique_integer([:positive])
+    :ok = Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{character_id}")
     stub(Items, :by_id, &item_lookup/1)
     reject(&Stats.calculate_stats/3)
     reject(&UnitRegistry.update_unit_state/3)
@@ -181,7 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     card = %InventoryItem{id: 1, nameid: 4001, amount: 1}
     target = %InventoryItem{id: 2, nameid: 1101, amount: 1, identify: 1}
     inventory = %{7 => card, 3 => target}
-    state = state(inventory)
+    state = state(inventory, %{character_id: character_id})
     request = %CardComposeRequest{card_index: 9, equipment_index: 5}
 
     expect(PlayerState, :server_index, 2, fn
@@ -190,7 +191,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
     end)
 
     expect(InventoryOps, :apply_change, fn
-      1000, ^inventory, %{3 => %InventoryItem{card0: 4001}}, {:card_compounded, 7, 3, :card0} ->
+      ^character_id,
+      ^inventory,
+      %{3 => %InventoryItem{card0: 4001}},
+      {:card_compounded, 7, 3, :card0} ->
         {:error, {:db, :timeout}}
     end)
 
@@ -200,7 +204,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CardHandlerTest do
       end)
 
     assert log =~
-             "Card compose persist failed for character 1000 " <>
+             "Card compose persist failed for character #{character_id} " <>
                "(source inventory row 1 at slot 7, target inventory row 2 at slot 3): " <>
                "{:db, :timeout}"
 

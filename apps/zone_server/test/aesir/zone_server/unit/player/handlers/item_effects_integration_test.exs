@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
   use ExUnit.Case, async: false
   use Mimic
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
 
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem

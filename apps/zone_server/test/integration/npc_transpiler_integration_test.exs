@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.NpcTranspilerIntegrationTest do
   import Aesir.TestEtsSetup
   import Bitwise
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
 
   @moduletag :capture_log
 

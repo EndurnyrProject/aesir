@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.TraitStatsIntegrationTest do
   use Aesir.DataCase, async: true
   use Mimic
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
 
   import Aesir.TestEtsSetup
 

@@ -2,8 +2,10 @@
 # from inside a test reloads a module that other umbrella apps already copied
 # in this VM, which makes the code server report
 # "Module ... must be purged before deleting" mid-run.
+alias Aesir.GameModeTestSupport
+
 Mimic.copy(Aesir.Commons.Auth)
 Mimic.copy(Aesir.Commons.GameMode)
 Mimic.copy(Aesir.Commons.SessionManager)
 
-ExUnit.start()
+GameModeTestSupport.start()

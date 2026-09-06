@@ -1,5 +1,7 @@
+alias Aesir.GameModeTestSupport
+
 Mimic.copy(Application)
 
-ExUnit.start(exclude: [:distributed])
+GameModeTestSupport.start(exclude: [:distributed])
 
 Ecto.Adapters.SQL.Sandbox.mode(Aesir.Repo, :manual)

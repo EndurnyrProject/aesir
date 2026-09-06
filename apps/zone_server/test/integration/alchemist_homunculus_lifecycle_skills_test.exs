@@ -17,7 +17,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
   @map "prontera"
   @alchemist_class 18
   @call 243

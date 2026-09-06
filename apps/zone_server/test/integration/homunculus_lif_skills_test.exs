@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifSkillsTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
   @map "prontera"
   @red_slim_potion 545
 

@@ -18,8 +18,20 @@ defmodule Aesir.MixProject do
 
   defp aliases do
     [
-      "test.integration": ["test --only integration"]
+      "test.integration": &test_integration/1
     ]
+  end
+
+  defp test_integration(args) do
+    Mix.Task.run("app.config")
+
+    selector =
+      case Application.get_env(:commons, :game_mode, :renewal) do
+        :renewal -> "integration_re:true"
+        :pre_renewal -> "integration_pre_re:true"
+      end
+
+    Mix.Task.run("test", ["--only", selector | args])
   end
 
   defp dialyzer do

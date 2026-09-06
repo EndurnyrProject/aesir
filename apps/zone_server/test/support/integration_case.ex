@@ -8,6 +8,14 @@ defmodule Aesir.ZoneServer.IntegrationCase do
   This allows testing real game mechanics end-to-end while keeping network I/O
   deterministic.
 
+  ## Game mode selection
+
+  Shared integrations inherit both `integration_re: true` and `integration_pre_re: true`.
+  A mode-specific case must disable the opposite inherited flag and set `game_mode`;
+  for example, a Renewal describe uses `game_mode: :renewal, integration_pre_re: false`.
+  Run `mix test.integration` from the umbrella root to select the booted mode's family.
+  Explicit selectors must use `:true`, since bare tag filters also match false values.
+
   ## Isolation
 
   Each test boots its OWN ETS world: the EtsTable is started with a fresh random
@@ -39,7 +47,7 @@ defmodule Aesir.ZoneServer.IntegrationCase do
       use ExUnit.Case, async: false
       use Mimic
 
-      @moduletag :integration
+      @moduletag integration_re: true, integration_pre_re: true
 
       import Aesir.TestEtsSetup
       import Aesir.TestWait

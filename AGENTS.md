@@ -173,6 +173,15 @@ Tests follow standard Elixir patterns with some custom helpers:
 5. **End-to-end**: Zone features (warps, NPC interactions, quests) have integration tests driving the
    real subsystems; mirror the existing ones when adding gameplay.
 
+Shared unit tests remain untagged and run in both modes. Tests requiring a particular boot mode use
+`@tag game_mode: :renewal` or `:pre_renewal`, with `@describetag`/`@moduletag` for suitable groups.
+Pure tests calling both formula implementations directly remain untagged.
+
+`IntegrationCase` gives shared integrations both `integration_re: true` and `integration_pre_re: true`.
+A mode-specific integration must also set its opposite integration tag to `false`; a `game_mode` tag
+alone cannot override an ExUnit include filter. Keep paired cases in the same files. Explicit CLI
+integration selectors must include `:true` because a bare tag also matches a tag set to `false`.
+
 Mimic conventions, integration-test isolation, and known flaky tests are in the **aesir-workflow** skill.
 
 ## Build, Lint, and Test
@@ -183,7 +192,10 @@ Mimic conventions, integration-test isolation, and known flaky tests are in the 
 - **Run zone server**: `mix aesir.zone`
 - **Format code**: `mix format`
 - **Lint code**: `mix credo --strict`
-- **Run all tests**: `mix test`
+- **Run unit tests and doctests for the booted mode**: `mix test`
+- **Run integrations for the booted mode (umbrella root)**: `mix test.integration`
+- **Run pre-renewal unit tests**: `AESIR_DB_MODE=pre_renewal mix test`
+- **Run pre-renewal integrations**: `AESIR_DB_MODE=pre_renewal mix test.integration`
 - **Run a single test file**: `mix test path/to/test_file.exs`
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
 

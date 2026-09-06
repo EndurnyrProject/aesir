@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
 
   import Aesir.TestEtsSetup
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
 
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character

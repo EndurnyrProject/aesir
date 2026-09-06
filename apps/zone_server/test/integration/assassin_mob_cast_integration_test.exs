@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
   @moduletag :capture_log
 
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations

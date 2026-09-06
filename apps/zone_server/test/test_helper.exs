@@ -1,3 +1,5 @@
+alias Aesir.GameModeTestSupport
+
 Mimic.copy(Application)
 Mimic.copy(Aesir.Commons.GameMode)
 Mimic.copy(Aesir.ZoneServer.Mmo.Mechanics)
@@ -104,10 +106,11 @@ Mimic.copy(Aesir.ZoneServer.Map.MapFlags.StaticFlags)
 Mimic.copy(Aesir.ZoneServer.Config)
 Mimic.copy(Aesir.Repo)
 
-# Integration tests (tagged `:integration`, mostly via `Aesir.ZoneServer.IntegrationCase`)
-# are excluded from the default run. Run them explicitly with:
-#   mix test --include integration      # unit + integration
-#   mix test --only integration         # integration only
+# Integration tests are excluded from the default run. From the umbrella root:
+#   mix test.integration   # integrations for the booted game mode
+# Explicit selectors must use :true so opposite-mode tags overridden to false stay excluded:
+#   AESIR_DB_MODE=renewal mix test --only integration_re:true
+#   AESIR_DB_MODE=pre_renewal mix test --only integration_pre_re:true
 # Bump the default `assert_receive`/`refute_receive` timeout (100ms) to absorb
 # timing jitter in the full-stack integration tests (e.g. npc_events warp flakes).
-ExUnit.start(exclude: [:integration], assert_receive_timeout: 500)
+GameModeTestSupport.start(assert_receive_timeout: 500)

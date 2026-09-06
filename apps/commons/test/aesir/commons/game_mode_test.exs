@@ -8,8 +8,14 @@ defmodule Aesir.Commons.GameModeTest do
   setup :set_mimic_private
   setup :verify_on_exit!
 
-  test "resolves renewal in the test environment" do
+  @tag game_mode: :renewal
+  test "resolves the renewal boot mode" do
     assert GameMode.mode() == :renewal
+  end
+
+  @tag game_mode: :pre_renewal
+  test "resolves the pre-renewal boot mode" do
+    assert GameMode.mode() == :pre_renewal
   end
 
   test "reads the configured mode when it has not been cached" do

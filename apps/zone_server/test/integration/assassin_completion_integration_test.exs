@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
   use Mimic
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
   @moduletag :capture_log
 
   alias Aesir.Commons.Models.Account

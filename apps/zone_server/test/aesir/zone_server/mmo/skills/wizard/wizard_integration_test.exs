@@ -1,7 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
   use ExUnit.Case, async: false
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
 
   import Aesir.TestEtsSetup
   import Mimic

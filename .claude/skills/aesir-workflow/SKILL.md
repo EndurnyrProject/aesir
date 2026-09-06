@@ -70,9 +70,16 @@ usability check and misses the real logic. Grep both.
 ## Build, lint, test
 
 - `mix format` and `mix credo --strict` before considering work done.
-- `mix test` runs unit tests; **integration tests are excluded by default** — decide
-  deliberately whether they're in scope for your gate (`mix test --include integration` or
-  the focused `test/integration/` dir).
+- `mix test` runs shared and matching-mode unit tests/doctests; **integrations are excluded by default**.
+  From the umbrella root, `mix test.integration` selects the booted mode's integrations. Set
+  `AESIR_DB_MODE=renewal` or `AESIR_DB_MODE=pre_renewal` before starting each separate VM.
+  Explicit integration selectors are `--only integration_re:true` and
+  `--only integration_pre_re:true`; use the selector matching the environment.
+- Shared unit tests are untagged; boot-dependent cases use `game_mode: :renewal` or `:pre_renewal`.
+  Shared integrations inherit both integration flags from `IntegrationCase`; mode-specific cases
+  must set the opposite flag to `false` as well as setting `game_mode`. Use explicit `:true` CLI
+  values because bare selectors also match false tags. Native includes and file:line selection
+  can override exclusions; they never change the runtime mode.
 - Prefer targeted test runs while iterating; full suite before finishing.
 - After changing an importer or codegen (items, NPCs), **`mix compile` first** — mix tasks
   have silently run stale dev beams and regenerated output with old code. Sanity-check the
@@ -115,7 +122,7 @@ its **own** ETS world and background processes — do not reach for the old boot
 
 - `test/integration/npc_events_integration_test.exs` — OnTimer/OnMyMobDead timing.
 - The unit- and integration-suite flakes previously listed here are fixed; both suites now run
-  green repeatedly (`mix test` and `mix test --only integration`).
+  green repeatedly under Renewal (`mix test` and `mix test.integration`).
   The root causes are worth recognising elsewhere:
   - A file that stubs without claiming a Mimic mode inherits a leaked global mode from the
     previous module. Files that stub need `setup :set_mimic_private`; files that go global

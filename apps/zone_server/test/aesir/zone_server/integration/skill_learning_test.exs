@@ -10,7 +10,7 @@ defmodule Aesir.ZoneServer.Integration.SkillLearningTest do
   """
   use ExUnit.Case, async: true
 
-  @moduletag :integration
+  @moduletag integration_re: true, integration_pre_re: true
   import Mimic
 
   alias Aesir.Net.LearnSkillResult
