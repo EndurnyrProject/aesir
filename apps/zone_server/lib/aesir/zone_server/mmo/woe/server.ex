@@ -242,7 +242,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
   defp eligible_conqueror(_castle_id, _kill_credit), do: nil
 
-  defp record_conquest(_castle_id, nil), do: :ok
+  defp record_conquest(castle_id, nil) do
+    Logger.warning(
+      "Emperium break for castle #{castle_id} claimed without eligible guild credit; ownership retained"
+    )
+  end
 
   defp record_conquest(castle_id, guild_id) do
     Persistence.persist(castle_id, guild_id)

@@ -86,11 +86,21 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   end
 
   @doc """
-  Toggles whether the castle is under siege. Atomic single-element update.
+  Toggles whether the castle is under siege.
+
+  Deactivation also advances the existing epoch so delayed work from the ended
+  siege cannot become valid again after a restart.
   """
   @spec set_siege(non_neg_integer(), boolean()) :: :ok
-  def set_siege(castle_id, siege_active?) do
-    :ets.update_element(table_for(:castle_states), castle_id, {3, siege_active?})
+  def set_siege(castle_id, false) do
+    table = table_for(:castle_states)
+    :ets.update_element(table, castle_id, {3, false})
+    :ets.update_counter(table, castle_id, {4, 1})
+    :ok
+  end
+
+  def set_siege(castle_id, true) do
+    :ets.update_element(table_for(:castle_states), castle_id, {3, true})
     :ok
   end
 

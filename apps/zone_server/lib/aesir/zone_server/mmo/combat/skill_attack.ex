@@ -10,8 +10,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     @enforce_keys [
       :attacker,
       :target_type,
-      :target_pid,
-      :target_hp,
       :target,
       :skill_id,
       :skill_level,
@@ -288,7 +286,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     calc_opts = physical_skill_calc_opts(caster_state, opts)
     validator_opts = physical_skill_validator_opts(opts)
 
-    with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
+    with {:ok, _target_pid, target_state, target_type} <- TargetResolver.resolve(target_id),
          :ok <- TargetResolver.ensure_targetable(target_state, target_type),
          target <- target_state.__struct__.to_combatant(target_state),
          :ok <- AttackValidator.validate(attacker, target, validator_opts),
@@ -298,7 +296,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         {:ok, :miss}
       else
         prepare_staged_skill_hit(
-          {attacker, target_type, target_pid, target},
+          {attacker, target_type, target},
           skill_id,
           skill_level,
           calc_opts,
@@ -307,7 +305,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             hit_rate_bonus_pct: hit_rate_bonus_pct,
             ignore_flee: Keyword.get(opts, :ignore_flee, false),
             ranged: Keyword.get(opts, :ranged, false),
-            target_state: target_state,
             knockback_options: knockback_options(opts)
           }
         )
@@ -1058,7 +1055,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   end
 
   defp prepare_staged_skill_hit(
-         {attacker, target_type, target_pid, target},
+         {attacker, target_type, target},
          skill_id,
          skill_level,
          calc_opts,
@@ -1069,7 +1066,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       hit_rate_bonus_pct: hit_rate_bonus_pct,
       ignore_flee: ignore_flee?,
       ranged: ranged?,
-      target_state: target_state,
       knockback_options: knockback_options
     } = hit_opts
 
@@ -1107,8 +1103,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              %PreparedHit{
                attacker: attacker,
                target_type: target_type,
-               target_pid: target_pid,
-               target_hp: target_hp(target_state),
                target: target,
                skill_id: skill_id,
                skill_level: skill_level,

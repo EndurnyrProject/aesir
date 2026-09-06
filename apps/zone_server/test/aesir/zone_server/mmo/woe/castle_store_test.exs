@@ -72,6 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
 
       :ok = CastleStore.set_siege(castle_id, false)
       refute CastleStore.get(castle_id).siege_active?
+      assert CastleStore.get(castle_id).epoch == 1
     end
 
     test "record and clear the emperium unit" do

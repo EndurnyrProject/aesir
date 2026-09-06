@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
   @moduletag :capture_log
 
   import Aesir.TestWait
+  import ExUnit.CaptureLog
 
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Guild.Manager
@@ -120,18 +121,63 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     drain_summons(length(CastleDb.all()))
     assert_receive {:announcement, "WoE has begun"}, 200
 
-    first_unit_id = CastleStore.get(castle.id).emperium_unit_id
-    publish_break(castle, first_unit_id, nil)
-    second_unit_id = assert_rearmed(castle.id, first_unit_id, 1)
+    log =
+      capture_log(fn ->
+        first_unit_id = CastleStore.get(castle.id).emperium_unit_id
+        publish_break(castle, first_unit_id, nil)
+        second_unit_id = assert_rearmed(castle.id, first_unit_id, 1)
 
-    publish_break(castle, second_unit_id, credit(7))
-    third_unit_id = assert_rearmed(castle.id, second_unit_id, 2)
+        publish_break(castle, second_unit_id, credit(7))
+        third_unit_id = assert_rearmed(castle.id, second_unit_id, 2)
 
-    publish_break(castle, third_unit_id, credit(9))
-    _fourth_unit_id = assert_rearmed(castle.id, third_unit_id, 3)
+        publish_break(castle, third_unit_id, credit(9))
+        _fourth_unit_id = assert_rearmed(castle.id, third_unit_id, 3)
+      end)
 
+    assert length(Regex.scan(~r/without eligible guild credit/, log)) == 3
     assert CastleStore.owner(castle.id) == 9
     refute_receive {:announcement, _}, 100
+  end
+
+  test "only a matching claimed objective with invalid credit logs" do
+    Application.put_env(:zone_server, :woe_emperium_respawn_ms, 20)
+    on_exit(fn -> Application.delete_env(:zone_server, :woe_emperium_respawn_ms) end)
+
+    test_pid = self()
+    stub_summons(test_pid)
+    stub(Announcement, :to_all, fn _opts -> :ok end)
+    stub(Persistence, :persist, fn _castle_id, _guild_id -> :ok end)
+
+    stub(Manager, :get, fn guild_id ->
+      {:ok,
+       %State{
+         guild_id: guild_id,
+         name: "Eligible",
+         master_char_id: 501,
+         learned_skills: %{@approval_skill_id => 1}
+       }}
+    end)
+
+    castle = hd(CastleDb.all())
+    assert :ok = Server.start()
+    drain_summons(length(CastleDb.all()))
+    live_unit_id = CastleStore.get(castle.id).emperium_unit_id
+
+    log =
+      capture_log(fn ->
+        assert :ok = Lifecycle.publish_death(:player, live_unit_id, castle.map, credit(7))
+        publish_break(castle, live_unit_id + 1, nil)
+        publish_break(castle, live_unit_id, credit(7))
+        replacement_id = assert_rearmed(castle.id, live_unit_id, 1)
+        publish_break(castle, live_unit_id, nil)
+        publish_break(castle, replacement_id, credit(7))
+        ended_unit_id = assert_rearmed(castle.id, replacement_id, 2)
+        assert :ok = Server.stop()
+        publish_break(castle, ended_unit_id, nil)
+        refute Server.active?()
+      end)
+
+    assert length(Regex.scan(~r/without eligible guild credit/, log)) == 1
   end
 
   test "player collisions, non-deaths, stale units, and duplicate deaths cannot claim" do
@@ -227,7 +273,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     restarted_unit_id = CastleStore.get(castle.id).emperium_unit_id
     castle_map = castle.map
     assert restarted_unit_id != ended_unit_id
-    assert CastleStore.get(castle.id).epoch == 1
+    assert CastleStore.get(castle.id).epoch == 2
 
     refute_receive {:summon, ^castle_map, @emperium_mob_id, _, _, _, _}, 300
     assert CastleStore.get(castle.id).emperium_unit_id == restarted_unit_id

@@ -168,6 +168,42 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
     assert CastleStore.owner(@castle_id) == guild_id
   end
 
+  test "queued conquest ejection is invalidated across siege restart", %{castle: castle} do
+    {attacker, guild_id} = guild_player(castle)
+    grant_approval(guild_id)
+    outsider = start_player_session(character: character_fixture(castle.map, castle.respawn))
+    :ok = WoeServer.start()
+    old_id = CastleStore.get(@castle_id).emperium_unit_id
+    source_map = castle.map
+    flush_packets()
+    :ok = :sys.suspend(outsider.pid)
+
+    try do
+      legal_break(attacker, old_id)
+      assert_eventually(fn -> CastleStore.owner(@castle_id) == guild_id end)
+
+      assert_eventually(fn ->
+        {:messages, messages} = Process.info(outsider.pid, :messages)
+
+        Enum.any?(messages, fn
+          {:"$gen_cast", {:movement, {:castle_ejection, @castle_id, ^source_map, 1}}} ->
+            true
+
+          _other ->
+            false
+        end)
+      end)
+
+      :ok = WoeServer.stop()
+      :ok = WoeServer.start()
+    after
+      :ok = :sys.resume(outsider.pid)
+    end
+
+    assert get_player_state(outsider.pid).map_name == castle.map
+    refute_packet_sent(MapMove)
+  end
+
   test "sampled lethal credit survives logout before processing and duplicates cannot claim a new siege",
        %{castle: castle, server: server} do
     {attacker, guild_id} = guild_player(castle)
