@@ -494,13 +494,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
 
   describe "to_combatant/1 weapon type resolution" do
     setup do
-      game_mode = {
-        Application.fetch_env(:commons, :game_mode),
-        :persistent_term.get(GameMode, nil)
-      }
-
-      on_exit(fn -> restore_game_mode(game_mode) end)
-
       character = %Character{
         id: 1,
         name: "TestPlayer",
@@ -569,12 +562,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert combatant.attack_range == 1
     end
 
-    test "uses the active game mode race and leaves secondary groups empty", %{state: state} do
-      set_game_mode(:renewal)
+    @tag game_mode: :renewal
+    test "uses player-human in renewal and leaves secondary groups empty", %{state: state} do
       assert %{race: :player_human, race2: []} = PlayerState.to_combatant(state)
+      assert GameMode.mode() == :renewal
+    end
 
-      set_game_mode(:pre_renewal)
+    @tag game_mode: :pre_renewal
+    test "uses demi-human in pre-renewal and leaves secondary groups empty", %{state: state} do
       assert %{race: :demi_human, race2: []} = PlayerState.to_combatant(state)
+      assert GameMode.mode() == :pre_renewal
     end
 
     test "adds the passive range bonus to the weapon's attack range", %{state: state} do
@@ -798,24 +795,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert PlayerState.client_index(0) == 2
       assert PlayerState.server_index(2) == 0
       assert PlayerState.server_index(PlayerState.client_index(7)) == 7
-    end
-  end
-
-  defp set_game_mode(mode) do
-    Application.put_env(:commons, :game_mode, mode)
-    :persistent_term.erase(GameMode)
-  end
-
-  defp restore_game_mode({configured_mode, cached_mode}) do
-    case configured_mode do
-      {:ok, mode} -> Application.put_env(:commons, :game_mode, mode)
-      :error -> Application.delete_env(:commons, :game_mode)
-    end
-
-    if cached_mode do
-      :persistent_term.put(GameMode, cached_mode)
-    else
-      :persistent_term.erase(GameMode)
     end
   end
 

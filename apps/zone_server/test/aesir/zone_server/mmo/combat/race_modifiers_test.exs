@@ -4,17 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
 
-  setup do
-    game_mode = {
-      Application.fetch_env(:commons, :game_mode),
-      :persistent_term.get(GameMode, nil)
-    }
-
-    on_exit(fn -> restore_game_mode(game_mode) end)
-
-    :ok
-  end
-
   describe "demon_bane_atk/2" do
     test "adds level * (base_level/20 + 3) ATK vs undead and demon" do
       attacker = %{demon_bane_level: 5, progression: %{base_level: 40}}
@@ -146,30 +135,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
   end
 
   describe "player_race/0" do
-    test "returns the race for the active game mode" do
-      set_game_mode(:renewal)
+    @tag game_mode: :renewal
+    test "returns player-human without changing the renewal boot mode" do
       assert RaceModifiers.player_race() == :player_human
+      assert GameMode.mode() == :renewal
+    end
 
-      set_game_mode(:pre_renewal)
+    @tag game_mode: :pre_renewal
+    test "returns demi-human without changing the pre-renewal boot mode" do
       assert RaceModifiers.player_race() == :demi_human
-    end
-  end
-
-  defp set_game_mode(mode) do
-    Application.put_env(:commons, :game_mode, mode)
-    :persistent_term.erase(GameMode)
-  end
-
-  defp restore_game_mode({configured_mode, cached_mode}) do
-    case configured_mode do
-      {:ok, mode} -> Application.put_env(:commons, :game_mode, mode)
-      :error -> Application.delete_env(:commons, :game_mode)
-    end
-
-    if cached_mode do
-      :persistent_term.put(GameMode, cached_mode)
-    else
-      :persistent_term.erase(GameMode)
+      assert GameMode.mode() == :pre_renewal
     end
   end
 

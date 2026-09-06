@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -178,7 +180,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     :ok = UnitRegistry.register_unit(:mob, target.instance_id, MobState, target, self())
     :ok = SpatialIndex.add_unit(:mob, target.instance_id, 100, 100, "prontera")
 
+    expect(Resistance, :roll_success, fn _rate -> true end)
     manager = start_manager(fn _type, _id, _map -> true end)
+    allow(Resistance, self(), manager)
     interval_group = timed_group(9, next_tick_at: 1_000, expires_at: 5_000)
 
     assert :ok = Manager.register(manager, interval_group)

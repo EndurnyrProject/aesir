@@ -8,17 +8,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComaTest do
   alias Aesir.ZoneServer.PlayerStateFixture
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
-  setup do
-    game_mode = {
-      Application.fetch_env(:commons, :game_mode),
-      :persistent_term.get(GameMode, nil)
-    }
-
-    on_exit(fn -> restore_game_mode(game_mode) end)
-
-    :ok
-  end
-
   test "rolls the signed exact-race plus :all rate" do
     attacker =
       CombatTestHelper.create_player_combatant()
@@ -157,50 +146,59 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipComaTest do
     assert EquipComa.trigger?(attacker, target, roll: fn 500 -> true end)
   end
 
-  test "matches player races from the active game mode" do
-    player =
-      %PlayerState{
-        character_id: 2_003,
-        map_name: "prontera",
-        x: 100,
-        y: 100,
-        stats: %{}
-      }
-      |> PlayerStateFixture.build()
-
+  @tag game_mode: :renewal
+  test "renewal players match player-human coma but not demi-human coma" do
+    target = player_target()
     attacker = CombatTestHelper.create_player_combatant()
     no_roll = [roll: fn _rate -> flunk("unexpected roll") end]
 
-    set_game_mode(:renewal)
-    renewal_target = PlayerState.to_combatant(player)
-    renewal_attacker = with_modifiers(attacker, %{{:coma_race, :player_human} => 10_000})
-    assert EquipComa.trigger?(renewal_attacker, renewal_target, no_roll)
+    assert EquipComa.trigger?(
+             with_modifiers(attacker, %{{:coma_race, :player_human} => 10_000}),
+             target,
+             no_roll
+           )
 
-    set_game_mode(:pre_renewal)
-    pre_renewal_target = PlayerState.to_combatant(player)
-    refute EquipComa.trigger?(renewal_attacker, pre_renewal_target, no_roll)
+    refute EquipComa.trigger?(
+             with_modifiers(attacker, %{{:coma_race, :demi_human} => 10_000}),
+             target,
+             no_roll
+           )
 
-    pre_renewal_attacker = with_modifiers(attacker, %{{:coma_race, :demi_human} => 10_000})
-    assert EquipComa.trigger?(pre_renewal_attacker, pre_renewal_target, no_roll)
+    assert GameMode.mode() == :renewal
+  end
+
+  @tag game_mode: :pre_renewal
+  test "pre-renewal players match demi-human coma but not player-human coma" do
+    target = player_target()
+    attacker = CombatTestHelper.create_player_combatant()
+    no_roll = [roll: fn _rate -> flunk("unexpected roll") end]
+
+    assert EquipComa.trigger?(
+             with_modifiers(attacker, %{{:coma_race, :demi_human} => 10_000}),
+             target,
+             no_roll
+           )
+
+    refute EquipComa.trigger?(
+             with_modifiers(attacker, %{{:coma_race, :player_human} => 10_000}),
+             target,
+             no_roll
+           )
+
+    assert GameMode.mode() == :pre_renewal
   end
 
   defp with_modifiers(combatant, modifiers), do: %{combatant | equip_modifiers: modifiers}
 
-  defp set_game_mode(mode) do
-    Application.put_env(:commons, :game_mode, mode)
-    :persistent_term.erase(GameMode)
-  end
-
-  defp restore_game_mode({configured_mode, cached_mode}) do
-    case configured_mode do
-      {:ok, mode} -> Application.put_env(:commons, :game_mode, mode)
-      :error -> Application.delete_env(:commons, :game_mode)
-    end
-
-    if cached_mode do
-      :persistent_term.put(GameMode, cached_mode)
-    else
-      :persistent_term.erase(GameMode)
-    end
+  defp player_target do
+    %PlayerState{
+      character_id: 2_003,
+      map_name: "prontera",
+      x: 100,
+      y: 100,
+      stats: %{}
+    }
+    |> PlayerStateFixture.build()
+    |> PlayerState.to_combatant()
   end
 end
