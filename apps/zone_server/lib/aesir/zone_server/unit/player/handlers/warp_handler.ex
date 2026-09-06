@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager, as: SkillUnitManager
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
@@ -64,6 +65,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
   across same-map movement); a same-map warp (e.g. `AL_TELEPORT` level 1)
   leaves it untouched.
 
+  A corpse remains dead when relocated; warp itself never performs resurrection
+  or death-penalty work.
+
   Item scripts supply only partial session state, so that path releases a guild
   claim using the current `guild_id` and `self()`. If a guild change overtakes
   the prior guild's queued update, the old claim can briefly outlive membership.
@@ -92,6 +96,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
       new_game_state =
         game_state
         |> PlayerState.relocate(dest_map, fx, fy)
+        |> preserve_corpse(game_state)
         |> Map.put(:pending_map_load, :warp)
 
       state = state |> StateCommit.commit(new_game_state) |> SkillMenuHandler.clear()
@@ -143,6 +148,31 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         )
 
         {:noreply, state}
+    end
+  end
+
+  @doc """
+  Conditionally ejects a castle outsider to this session's current save point.
+
+  Current session and castle state are authoritative: stale map, epoch, siege,
+  ownership, and owner-occupant requests are ignored.
+  """
+  @spec handle_castle_ejection(
+          non_neg_integer(),
+          String.t(),
+          non_neg_integer(),
+          SessionState.t()
+        ) :: {:noreply, SessionState.t()}
+  def handle_castle_ejection(castle_id, source_map, capture_epoch, state) do
+    game_state = state.game_state
+    castle_state = CastleStore.get(castle_id)
+
+    if game_state.map_name == source_map and castle_state.siege_active? and
+         castle_state.epoch == capture_epoch and is_integer(castle_state.owner_guild_id) and
+         castle_state.owner_guild_id > 0 and game_state.guild_id != castle_state.owner_guild_id do
+      handle_warp(game_state.save_map, game_state.save_x, game_state.save_y, state)
+    else
+      {:noreply, state}
     end
   end
 
@@ -270,6 +300,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WarpHandler do
         max(abs(dx), abs(dy)) == radius do
       {x + dx, y + dy}
     end
+  end
+
+  defp preserve_corpse(relocated, original) do
+    if PlayerState.corpse?(original), do: %{relocated | action_state: :dead}, else: relocated
   end
 
   # Player map names are canonically stored without the ".gat" suffix (matching

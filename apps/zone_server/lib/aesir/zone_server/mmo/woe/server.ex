@@ -30,6 +30,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @emperium_mob_id 1288
@@ -215,6 +217,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     case CastleStore.claim_break(castle.id, unit_id, guild_id) do
       {:ok, castle_state} ->
         record_conquest(castle.id, guild_id)
+        queue_castle_ejections(castle, guild_id, castle_state.epoch)
 
         timers =
           arm_respawn_timer(state.respawn_timers, castle.id, castle_state.epoch)
@@ -244,6 +247,22 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   defp record_conquest(castle_id, guild_id) do
     Persistence.persist(castle_id, guild_id)
     announce_conquest(castle_id, guild_id)
+  end
+
+  defp queue_castle_ejections(_castle, nil, _capture_epoch), do: :ok
+
+  defp queue_castle_ejections(%Castle{id: castle_id, map: map}, owner_guild_id, capture_epoch) do
+    UnitRegistry.list_players()
+    |> Enum.each(fn character_id ->
+      case UnitRegistry.get_unit(:player, character_id) do
+        {:ok, {PlayerState, %PlayerState{map_name: ^map, guild_id: guild_id}, pid}}
+        when is_pid(pid) and guild_id != owner_guild_id ->
+          PlayerSession.eject_from_castle(pid, castle_id, map, capture_epoch)
+
+        _other ->
+          :ok
+      end
+    end)
   end
 
   defp arm_respawn_timer(timers, castle_id, epoch) do

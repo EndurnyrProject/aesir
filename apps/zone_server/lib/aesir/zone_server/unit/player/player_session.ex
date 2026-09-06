@@ -448,6 +448,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:movement, {:warp, map_name, x, y}})
   end
 
+  @doc "Queues a castle ejection for authoritative validation by this player session."
+  @spec eject_from_castle(pid(), non_neg_integer(), String.t(), non_neg_integer()) :: :ok
+  def eject_from_castle(pid, castle_id, source_map, capture_epoch) do
+    GenServer.cast(pid, {:movement, {:castle_ejection, castle_id, source_map, capture_epoch}})
+  end
+
   @doc """
   Warps this player after collecting `zeny` as an entry fee — the
   `warpwaitingpc` path. `map_name` may be a map name, `:random` (a random cell
@@ -1109,6 +1115,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:movement, {:warp, map_name, x, y}}, state) do
     WarpHandler.handle_warp(map_name, x, y, state)
+  end
+
+  @impl true
+  def handle_cast(
+        {:movement, {:castle_ejection, castle_id, source_map, capture_epoch}},
+        state
+      ) do
+    WarpHandler.handle_castle_ejection(castle_id, source_map, capture_epoch, state)
   end
 
   @impl true
