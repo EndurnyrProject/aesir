@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   @caster_id 1000
@@ -676,6 +677,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
   test "negative hit divisions floor the total before reporting equal client hits" do
     test_pid = self()
     mob_state = build_mob_state(10)
+    attacker = caster(101)
 
     stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
       {:ok, {MobState, mob_state, test_pid}}
@@ -697,7 +699,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     assert :ok =
              Combat.apply_skill_unit_damage(
-               caster(100),
+               attacker,
                :mob,
                @target_id,
                85,
@@ -713,7 +715,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
 
     assert :ok =
              Combat.apply_skill_unit_damage(
-               caster(100),
+               attacker,
                :mob,
                @target_id,
                85,
@@ -726,6 +728,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     assert_received {:broadcast, rounded_damage, 20}
     assert_received {:damage, ^rounded_damage}
     assert rounded_damage == div(raw_damage, 20) * 20
+    assert rounded_damage < raw_damage
   end
 
   test "threads the skill id into the ground-unit magic calculation" do

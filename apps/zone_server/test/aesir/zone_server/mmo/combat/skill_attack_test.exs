@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
@@ -1159,7 +1160,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       _, _ -> %{}
     end)
 
-    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, 1_944, hit_info ->
+    # Classic retains its minimum one-point soft DEF after equipment DEF-ignore.
+    expected_damage = if GameMode.mode() == :renewal, do: 1_944, else: 1_943
+
+    expect(StatusInterpreter, :absorb_damage, fn :mob, 2001, ^expected_damage, hit_info ->
       assert hit_info.is_short == false
       1_900
     end)

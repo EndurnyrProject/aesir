@@ -211,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
     end
 
     test "lv5 defender reduces long-range weapon hits by 80%" do
-      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow)
+      attacker = CombatTestHelper.create_player_combatant(weapon_type: :bow, flat_atk: 1_000)
       defender = CombatTestHelper.create_mob_combatant(def: 0)
 
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
@@ -221,7 +221,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
 
       reduced = damage_with_defender(attacker, defender, 5)
 
-      assert_in_delta reduced / baseline, 0.20, 0.02
+      assert baseline > 1_000
+      assert reduced == div(baseline * 20, 100)
     end
 
     test "lv5 defender leaves melee weapon hits untouched" do
