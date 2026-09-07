@@ -15,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
     }
   end
 
-  describe "compute/3" do
+  describe "compute/3 shared behavior" do
     test "instant when the base cast time is 0" do
       assert CastTime.compute(definition([0]), 1, %{dex: 50, int: 50}) ==
                %{fixed: 0, variable: 0, total: 0}
@@ -25,6 +25,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
       assert CastTime.compute(definition([]), 1, %{dex: 50, int: 50}) ==
                %{fixed: 0, variable: 0, total: 0}
     end
+
+    test "reads the per-level cast time array" do
+      assert %{total: total} =
+               CastTime.compute(definition([1_000, 2_000, 3_000]), 3, %{dex: 0, int: 0})
+
+      assert total == 3_000
+    end
+
+    test "an instant skill stays instant despite fixed-cast modifiers" do
+      assert CastTime.compute(definition([0]), 1, %{dex: 0, int: 0, fixed_cast: 500}) ==
+               %{fixed: 0, variable: 0, total: 0}
+    end
+  end
+
+  describe "compute/3 Renewal" do
+    @describetag game_mode: :renewal
 
     test "uses an explicit fixed cast when the variable cast list is empty" do
       assert CastTime.compute(definition([], [500]), 1, %{dex: 50, int: 50}) ==
@@ -53,13 +69,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
     test "no reduction when dex and int are 0" do
       assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0}) ==
                %{fixed: 200, variable: 800, total: 1_000}
-    end
-
-    test "reads the per-level cast time array" do
-      assert %{total: total} =
-               CastTime.compute(definition([1_000, 2_000, 3_000]), 3, %{dex: 0, int: 0})
-
-      assert total == 3_000
     end
 
     test "applies one varcast reduction after the sqrt step, leaving fixed cast untouched" do
@@ -140,7 +149,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
     end
   end
 
-  describe "compute/3 fixed_cast delta" do
+  describe "compute/3 Renewal fixed_cast delta" do
+    @describetag game_mode: :renewal
+
     test "a negative delta shortens the fixed cast in flat milliseconds" do
       assert CastTime.compute(definition([1_000], [350]), 1, %{
                dex: 0,
@@ -167,18 +178,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
                %{fixed: 150, variable: 800, total: 950}
     end
 
-    test "an instant skill stays instant" do
-      assert CastTime.compute(definition([0]), 1, %{dex: 0, int: 0, fixed_cast: 500}) ==
-               %{fixed: 0, variable: 0, total: 0}
-    end
-
     test "fixed_cast defaults to 0 when absent" do
       assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0}) ==
                %{fixed: 350, variable: 650, total: 1_000}
     end
   end
 
-  describe "compute/3 fixcast_rate" do
+  describe "compute/3 Renewal fixcast_rate" do
+    @describetag game_mode: :renewal
+
     test "a negative rate scales the fixed cast down by a percentage" do
       assert CastTime.compute(definition([1_000], [350]), 1, %{
                dex: 0,
@@ -226,6 +234,87 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CastTimeTest do
     test "fixcast_rate defaults to 0 when absent" do
       assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0}) ==
                %{fixed: 350, variable: 650, total: 1_000}
+    end
+  end
+
+  describe "compute/3 pre-renewal" do
+    @describetag game_mode: :pre_renewal
+
+    test "uses one DEX-scaled variable component and ignores INT" do
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 99, int: 999}) ==
+               %{fixed: 0, variable: 340, total: 340}
+    end
+
+    test "has no stat reduction at zero DEX" do
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 0, int: 0}) ==
+               %{fixed: 0, variable: 1_000, total: 1_000}
+    end
+
+    test "becomes instant at or above 150 DEX" do
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 150, int: 0}) ==
+               %{fixed: 0, variable: 0, total: 0}
+
+      assert CastTime.compute(definition([1_000]), 1, %{dex: 200, int: 0}) ==
+               %{fixed: 0, variable: 0, total: 0}
+    end
+
+    test "ignores a declared fixed component" do
+      assert CastTime.compute(definition([1_000], [350]), 1, %{dex: 0, int: 0}) ==
+               %{fixed: 0, variable: 1_000, total: 1_000}
+    end
+
+    test "a fixed-only definition is instant" do
+      assert CastTime.compute(definition([], [500]), 1, %{dex: 0, int: 0}) ==
+               %{fixed: 0, variable: 0, total: 0}
+    end
+
+    test "ignores Renewal-only modifier channels" do
+      stats = %{
+        dex: 0,
+        int: 0,
+        varcast_reductions: [100],
+        varcast_rate: -100,
+        fixed_cast: 500,
+        fixcast_rate: 100
+      }
+
+      assert CastTime.compute(definition([1_000], [350]), 1, stats) ==
+               %{fixed: 0, variable: 1_000, total: 1_000}
+    end
+
+    test "applies skill and early rates before the first truncation" do
+      stats = %{dex: 99, int: 0, classic_skill_rate: -20, classic_early_rate: -25}
+
+      assert CastTime.compute(definition([1_000]), 1, stats) ==
+               %{fixed: 0, variable: 204, total: 204}
+    end
+
+    test "applies late reductions after the early-stage truncation" do
+      stats = %{dex: 99, int: 0, classic_late_reductions: [33]}
+
+      assert CastTime.compute(definition([1_001]), 1, stats) ==
+               %{fixed: 0, variable: 227, total: 227}
+    end
+
+    test "caps each late reduction and never inverts the cast" do
+      stats = %{dex: 0, int: 0, classic_late_reductions: [150]}
+
+      assert CastTime.compute(definition([1_000]), 1, stats) ==
+               %{fixed: 0, variable: 0, total: 0}
+    end
+
+    test "an over-large early reduction floors the cast at zero" do
+      stats = %{dex: 0, int: 0, classic_early_rate: -150}
+
+      assert CastTime.compute(definition([1_000]), 1, stats) ==
+               %{fixed: 0, variable: 0, total: 0}
+    end
+
+    test "ignore_dex preserves the full single-component cast" do
+      definition = %{definition([1_000]) | ignore_dex: true}
+
+      assert CastTime.compute(definition, 1, %{dex: 150, int: 500}) ==
+               %{fixed: 0, variable: 1_000, total: 1_000}
     end
   end
 end

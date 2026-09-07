@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.GatType
   alias Aesir.ZoneServer.Map.MapData
@@ -198,11 +199,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
     :ok
   end
 
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
+
   defp put_test_map(map) do
     :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
   end
 
-  test "definition matches the Renewal level 1 and level 10 data" do
+  test "definition matches the declared level 1 and level 10 data" do
     definition = WzSightrasher.definition()
 
     assert definition.id == 81
@@ -230,10 +235,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
 
     refute StatusStorage.has_status?(:player, @caster.character_id, :sc_sight)
 
-    assert {:casting, ^game_state, %{fixed: 80, total: total}} =
+    assert {:casting, ^game_state, %{fixed: fixed, total: total}} =
              Interpreter.begin_cast(game_state, 81, 1, :self)
 
-    assert total > 80
+    assert fixed == mode_value(80, 0)
+    assert total > fixed
 
     reject(&Combat.execute_magic_splash/4)
     reject(&Combat.knockback/5)
@@ -255,10 +261,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
         duration: 10_000
       )
 
-    assert {:casting, ^game_state, %{fixed: 80, total: total}} =
+    assert {:casting, ^game_state, %{fixed: fixed, total: total}} =
              Interpreter.begin_cast(game_state, 81, 1, :self)
 
-    assert total > 80
+    assert fixed == mode_value(80, 0)
+    assert total > fixed
 
     :ok = StatusStorage.remove_status(:player, @caster.character_id, :sc_sight)
 

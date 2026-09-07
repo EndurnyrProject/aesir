@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     :ok
   end
 
-  test "catalog exposes the verified Renewal definition" do
+  test "catalog exposes the declared definition" do
     assert {:ok, definition} = Catalog.by_id(262)
     assert definition.name == :mo_absorbspirits
     assert definition.target_type == :target_any
@@ -54,22 +54,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     assert effect_state.stats.current_state.sp == 100
   end
 
-  test "self absorption charges five SP before applying the capped reward through the session" do
-    Mimic.copy(Broadcast)
-    Mimic.copy(CharacterPersistence)
-    Mimic.copy(PlayerStats)
-    Mimic.copy(StatusSync)
-    Mimic.copy(UnitRegistry)
-    stub_commit()
-
-    game_state = player_state(1, 100, %{262 => 1}) |> with_spheres(2)
-    state = %SessionState{connection_pid: self(), game_state: game_state}
+  @tag game_mode: :renewal
+  test "self absorption charges five SP before applying the capped reward after its cast" do
+    state = settlement_state()
 
     assert {:noreply, casting} = SkillHandler.handle_use_skill(state, 262, 1, 1)
     token = casting.game_state.casting.token
     Process.cancel_timer(casting.game_state.casting.timer_ref)
 
     assert {:noreply, settled} = SkillHandler.handle_cast_complete(casting, token)
+    assert settled.game_state.stats.current_state.sp == 100
+    assert SpiritSpheres.count(settled.game_state.spirit_spheres) == 0
+  end
+
+  @tag game_mode: :pre_renewal
+  test "self absorption settles immediately when classic ignores its fixed-only cast" do
+    assert {:noreply, settled} = SkillHandler.handle_use_skill(settlement_state(), 262, 1, 1)
+
+    assert settled.game_state.casting == nil
     assert settled.game_state.stats.current_state.sp == 100
     assert SpiritSpheres.count(settled.game_state.spirit_spheres) == 0
   end
@@ -140,6 +142,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
                1,
                MoAbsorbspirits.definition()
              )
+  end
+
+  defp settlement_state do
+    Mimic.copy(Broadcast)
+    Mimic.copy(CharacterPersistence)
+    Mimic.copy(PlayerStats)
+    Mimic.copy(StatusSync)
+    Mimic.copy(UnitRegistry)
+    stub_commit()
+
+    game_state = player_state(1, 100, %{262 => 1}) |> with_spheres(2)
+    %SessionState{connection_pid: self(), game_state: game_state}
   end
 
   defp player_state(id, sp, learned \\ %{}) do

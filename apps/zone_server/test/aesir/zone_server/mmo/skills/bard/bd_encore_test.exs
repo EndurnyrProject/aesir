@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -181,8 +182,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     for skill_id <- @eligible_ids do
       caster = player(%{skill_id: skill_id, level: 1})
       assert {:casting, ^caster, info} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
-      assert info.fixed == 300
-      assert info.total > 300
+      assert info.fixed == mode_value(300, 0)
+      assert info.total > info.fixed
 
       assert {:ok, definition} = Catalog.by_id(skill_id)
       assert definition.after_cast_delay == List.duplicate(300, definition.max_level)
@@ -229,6 +230,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert caster.stats.current_state.sp == 100
     assert caster.skill_cooldowns == %{}
     assert caster.act_delay_until == 0
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp player(memory, learned \\ nil, sp \\ 100, modifiers \\ %{}) do

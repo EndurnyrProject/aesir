@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -18,6 +19,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
 
   defp caster(party_id \\ 0) do
     %{
@@ -73,7 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     }
   end
 
-  test "exposes the exact Renewal definition" do
+  test "exposes the declared definition and active timing" do
     assert {:ok, definition} = Catalog.by_id(1014)
 
     assert definition.name == :pr_redemptio
@@ -88,11 +93,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     assert definition.sp_cost == [800]
     assert definition.ignore_dex
 
-    assert CastTime.compute(definition, 1, %{dex: 200, int: 200}) == %{
-             fixed: 800,
-             variable: 2_400,
-             total: 3_200
-           }
+    assert CastTime.compute(definition, 1, %{dex: 200, int: 200}) ==
+             mode_value(
+               %{fixed: 800, variable: 2_400, total: 3_200},
+               %{fixed: 0, variable: 3_200, total: 3_200}
+             )
   end
 
   test "requires party membership" do
