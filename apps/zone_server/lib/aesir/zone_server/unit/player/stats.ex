@@ -1088,6 +1088,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         base_def + get_status_modifier(stats, :def) +
           scaled_equipment_def(stats.modifiers.equipment),
       mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
+      soft_def: formulas.soft_def(values),
       soft_mdef: formulas.soft_mdef(values),
       passive_atk: passive_atk,
       hit_rate_bonus_pct: Passives.hit_rate_bonus_pct(stats),

@@ -766,7 +766,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_soft_defense(%{unit_type: :player} = defender) do
     rate = max(0, 100 + Map.get(defender.equip_modifiers, :def2_rate, 0))
-    div(defender.base_stats.vit * rate, 100)
+
+    soft_def =
+      Map.get(defender.combat_stats, :soft_def) ||
+        Mechanics.player_formulas().soft_def(%{
+          vit: defender.base_stats.vit,
+          agi: defender.base_stats.agi,
+          base_level: defender.progression.base_level
+        })
+
+    div(soft_def * rate, 100)
   end
 
   defp calculate_soft_defense(%{unit_type: :homunculus} = defender) do

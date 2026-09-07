@@ -39,7 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulas.Renewal do
   end
 
   @impl true
-  def calculate_soft_defense(%MobDefinition{}), do: 0
+  def calculate_soft_defense(%MobDefinition{} = mob_data) do
+    div(mob_data.level + mob_data.stats.vit, 2)
+  end
 
   @impl true
   def calculate_magic_attack(%MobDefinition{} = mob_data) do

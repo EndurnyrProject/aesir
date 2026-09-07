@@ -3,7 +3,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   Renewal formulas use trait attributes, AGI/DEX-scaled ASPD, and the current HP/SP model.
   """
 
-  @behaviour Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
+  alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
+
+  @behaviour PlayerFormulas
 
   @impl true
   def base_atk(%{str: str, dex: dex, luk: luk, pow: pow, base_level: level}, ranged?) do
@@ -13,7 +15,13 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   end
 
   @impl true
-  def base_def(%{vit: vit, base_level: level}), do: trunc(vit / 2 + level / 6)
+  def base_def(_values), do: 0
+
+  @impl true
+  @spec soft_def(PlayerFormulas.soft_def_inputs()) :: non_neg_integer()
+  def soft_def(%{vit: vit, agi: agi, base_level: level}) do
+    max(div(5 * (level + vit) + 2 * agi, 10), 0)
+  end
 
   @impl true
   def base_matk(%{int: int, dex: dex, luk: luk, spl: spl, base_level: level}) do

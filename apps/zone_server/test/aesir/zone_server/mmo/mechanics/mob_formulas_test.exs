@@ -14,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MobFormulasTest do
              Renewal.calculate_flee(mob),
              Renewal.calculate_soft_defense(mob),
              Renewal.calculate_soft_mdef(mob)
-           } === {235, 180, 0, 17}
+           } === {235, 180, 45, 17}
 
     assert {
              PreRenewal.calculate_hit(mob),

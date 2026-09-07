@@ -845,7 +845,8 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
 
       result = Stats.calculate_combat_stats(stats)
 
-      assert result.combat_stats.def == mode_value(161, 131)
+      assert result.combat_stats.def == 131
+      assert result.combat_stats.soft_def == mode_value(50, 40)
       assert result.combat_stats.mdef == 10
       assert result.combat_stats.soft_mdef == mode_value(45, 40)
       assert result.base_stats.vit == 40

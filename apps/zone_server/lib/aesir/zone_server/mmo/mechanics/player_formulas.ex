@@ -11,6 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
           base_level: non_neg_integer()
         }
   @type base_def_inputs :: %{vit: integer(), base_level: non_neg_integer()}
+  @typedoc "Effective player attributes used to derive status DEF before per-hit modifiers."
+  @type soft_def_inputs :: %{vit: integer(), agi: integer(), base_level: non_neg_integer()}
   @type base_matk_inputs :: %{
           int: integer(),
           dex: integer(),
@@ -101,6 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas do
 
   @callback base_atk(base_atk_inputs(), ranged? :: boolean()) :: integer()
   @callback base_def(base_def_inputs()) :: integer()
+  @doc "Derives player status DEF, independent of equipment hard DEF."
+  @callback soft_def(soft_def_inputs()) :: non_neg_integer()
   @callback base_matk(base_matk_inputs()) :: matk_band()
   @callback soft_mdef(soft_mdef_inputs()) :: integer()
   @callback hit_rate_base() :: 0 | 80

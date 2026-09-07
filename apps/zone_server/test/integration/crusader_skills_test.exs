@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
     test "the link breaks when the Crusader dies, and the killing redirect leaves the devotee unharmed" do
       %{crusader: crusader, devotee: devotee} = devoted_pair(crusader_attrs: %{hp: 5, max_hp: 5})
 
-      mob = spawn_mob(9_613, {151, 150})
+      mob = spawn_mob(9_613, {151, 150}, level: 100)
       devotee_hp = current_hp(devotee.pid)
 
       assert :ok = Combat.execute_mob_attack(mob_state(mob), devotee.character.id)
@@ -240,7 +240,7 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
   describe "Reflect Shield" do
     test "returns part of a melee mob's damage to it without looping" do
       crusader = start_solo_crusader(9_640, {150, 150}, %{vit: 1})
-      mob = spawn_mob(9_641, {151, 150}, hp: 100_000)
+      mob = spawn_mob(9_641, {151, 150}, hp: 100_000, level: 100)
 
       toggle_defensive(CrReflectshield, crusader.pid, 10)
 

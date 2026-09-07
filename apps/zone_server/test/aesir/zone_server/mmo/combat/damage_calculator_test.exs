@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -319,16 +320,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       defender =
         CombatTestHelper.create_player_combatant(vit: 40, base_level: 10)
         |> Map.put(:element, {:neutral, 1})
+        |> put_in([Access.key(:combat_stats), :def], 20)
 
       opts = [base_damage: 400, skill_ratio: 200, element: :fire, skip_crit: true]
+      baseline = if GameMode.mode() == :renewal, do: 1_122, else: 920
+      boosted = if GameMode.mode() == :renewal, do: 1_409, else: 1_160
 
-      assert {:ok, %{damage: 800, is_critical: false}} =
+      assert {:ok, %{damage: ^baseline, is_critical: false}} =
                DamageCalculator.calculate_damage(attacker, defender, opts)
 
       :ok = StatusStorage.apply_status(:homunculus, homunculus_id, :sc_fleet, val2: 0, val3: 25)
       assert %{atk_rate: 25} = ModifierCalculator.get_all_modifiers(:homunculus, homunculus_id)
 
-      assert {:ok, %{damage: 1_010, is_critical: false}} =
+      assert {:ok, %{damage: ^boosted, is_critical: false}} =
                DamageCalculator.calculate_damage(attacker, defender, opts)
     end
 
@@ -493,7 +497,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, base_damage} = DamageCalculator.apply_defense_formula(200, player)
       assert {:ok, boosted_damage} = DamageCalculator.apply_defense_formula(200, boosted)
-      assert base_damage - boosted_damage == 20
+      assert base_damage - boosted_damage == if(GameMode.mode() == :renewal, do: 13, else: 20)
     end
 
     test "applies renewal defense formula to mob" do
@@ -578,7 +582,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       defender = CombatTestHelper.create_player_combatant(unit_id: 7_001, vit: 80)
       defender = %{defender | combat_stats: %{defender.combat_stats | def: 200}}
       reference = CombatTestHelper.create_player_combatant(unit_id: 7_002, vit: 1)
-      reference = %{reference | combat_stats: %{reference.combat_stats | def: 1}}
+
+      reference = %{
+        reference
+        | combat_stats: Map.merge(reference.combat_stats, %{def: 1, soft_def: 1})
+      }
 
       :ok = StatusStorage.apply_status(:player, 7_001, :sc_defset, val1: 1)
       on_exit(fn -> StatusStorage.remove_status(:player, 7_001, :sc_defset) end)
@@ -2136,7 +2144,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       end)
 
       :rand.seed(:exsss, {11, 22, 33})
-      {:ok, result} = DamageCalculator.calculate_damage(attacker, defender)
+      {:ok, result} = DamageCalculator.calculate_damage(attacker, defender, base_damage: 1_000)
       result.damage
     end
 
@@ -2208,7 +2216,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       end)
 
       :rand.seed(:exsss, {11, 22, 33})
-      {:ok, result} = DamageCalculator.calculate_damage(attacker, defender, ranged: true)
+
+      {:ok, result} =
+        DamageCalculator.calculate_damage(attacker, defender, ranged: true, base_damage: 1_000)
 
       assert_in_delta result.damage / baseline, 0.80, 0.02
     end

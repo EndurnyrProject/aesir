@@ -4,7 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
   classic defensive stats, and no trait-derived combat slots.
   """
 
-  @behaviour Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
+  alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
+
+  @behaviour PlayerFormulas
 
   @impl true
   def base_atk(values, ranged?) do
@@ -20,6 +22,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.PreRenewal do
 
   @impl true
   def base_def(_values), do: 0
+
+  @impl true
+  @spec soft_def(PlayerFormulas.soft_def_inputs()) :: non_neg_integer()
+  def soft_def(%{vit: vit}), do: max(vit, 0)
 
   @impl true
   def base_matk(%{int: int}) do

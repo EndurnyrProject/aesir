@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -60,6 +62,85 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     assert {Renewal.base_atk(values, false), Renewal.base_atk(values, true)} == {109, 102}
     assert {PreRenewal.base_atk(values, false), PreRenewal.base_atk(values, true)} == {95, 80}
+  end
+
+  test "physical stat defense is soft, with mode-specific fractional rounding" do
+    values = %{vit: 30, agi: 4, base_level: 7}
+
+    assert {Renewal.base_def(values), PreRenewal.base_def(values)} == {0, 0}
+    assert Renewal.soft_def(values) == 19
+    assert PreRenewal.soft_def(values) == 30
+
+    zero = %{vit: 0, agi: 0, base_level: 0}
+    assert Renewal.soft_def(zero) == 0
+    assert PreRenewal.soft_def(zero) == 0
+  end
+
+  test "physical defense consumes effective soft stats separately from equipment hard DEF" do
+    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+    stats =
+      %{
+        stats_fixture()
+        | modifiers: %Modifiers{
+            equipment: %{vit: 10, agi: 1, def: 20, def_rate: 25},
+            status_effects: %{def: 5}
+          }
+      }
+      |> Stats.calculate_combat_stats()
+
+    expected_soft = if GameMode.mode() == :renewal, do: 58, else: 40
+    expected_damage = if GameMode.mode() == :renewal, do: 879, else: 660
+
+    assert stats.combat_stats.def == 30
+    assert Map.fetch!(stats.combat_stats, :soft_def) == expected_soft
+
+    defender = %{
+      CombatTestHelper.create_player_combatant()
+      | base_stats: stats.base_stats,
+        progression: stats.progression,
+        combat_stats: stats.combat_stats,
+        equip_modifiers: stats.modifiers.equipment
+    }
+
+    assert {:ok, ^expected_damage} = DamageCalculator.apply_defense_formula(1_000, defender)
+
+    boosted = %{defender | equip_modifiers: Map.put(defender.equip_modifiers, :def2_rate, 50)}
+    boosted = put_in(boosted.combat_stats.res, 0)
+    expected_boosted = if GameMode.mode() == :renewal, do: 850, else: 640
+    assert {:ok, ^expected_boosted} = DamageCalculator.apply_defense_formula(1_000, boosted)
+
+    stub(ModifierCalculator, :get_all_modifiers, fn
+      :player, 1001 -> %{def2_rate: 20}
+      _, _ -> %{}
+    end)
+
+    expected_status = if GameMode.mode() == :renewal, do: 833, else: 628
+    assert {:ok, ^expected_status} = DamageCalculator.apply_defense_formula(1_000, boosted)
+
+    attacker = CombatTestHelper.create_mob_combatant()
+    opts = [base_damage: 1_000, skip_crit: true]
+    expected_ignore_status = if GameMode.mode() == :renewal, do: 937, else: 700
+
+    assert {:ok, %{damage: ^expected_ignore_status}} =
+             DamageCalculator.calculate_damage_ignoring_status_def(attacker, boosted, opts)
+
+    ignore_hard = %{attacker | equip_modifiers: %{{:ignore_def_race, :all} => 100}}
+    expected_ignore_hard = if GameMode.mode() == :renewal, do: 896, else: 928
+
+    assert {:ok, ^expected_ignore_hard} =
+             DamageCalculator.apply_defense_formula(1_000, boosted, ignore_hard)
+  end
+
+  test "legacy player defense derives soft DEF only when its snapshot is absent" do
+    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+    defender = CombatTestHelper.create_player_combatant(vit: 30, agi: 4, base_level: 7)
+    defender = put_in(defender.combat_stats.def, 0)
+    expected = if GameMode.mode() == :renewal, do: 981, else: 970
+    assert {:ok, ^expected} = DamageCalculator.apply_defense_formula(1_000, defender)
+
+    supplied = put_in(defender.combat_stats[:soft_def], 10)
+    assert {:ok, 990} = DamageCalculator.apply_defense_formula(1_000, supplied)
   end
 
   test "Renewal soft MDEF truncates after combining fractional level and stat terms" do
