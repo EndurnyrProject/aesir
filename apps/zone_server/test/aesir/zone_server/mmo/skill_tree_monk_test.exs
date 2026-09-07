@@ -3,9 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -33,6 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
                        {"MO_COMBOFINISH", 5, [{"MO_CHAINCOMBO", 3}]}
                      ])
 
+  @classic_entries @canonical_entries
+                   |> MapSet.put({"MO_KITRANSLATION", 1, []})
+                   |> MapSet.put({"MO_BALKYOUNG", 1, []})
+
   @learning_order [
     {:mo_ironhand, 10},
     {:mo_callspirits, 5},
@@ -56,8 +62,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
   end
 
   test "every Monk entry and prerequisite resolves without a loader drop" do
+    expected_entries = expected_entries()
+
     names =
-      @canonical_entries
+      expected_entries
       |> Enum.flat_map(fn {name, _max_level, requires} ->
         [name | Enum.map(requires, &elem(&1, 0))]
       end)
@@ -69,12 +77,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
 
     log = capture_log(&SkillTree.reload/0)
 
-    for {name, _max_level, _requires} <- @canonical_entries do
+    for {name, _max_level, _requires} <- expected_entries do
       refute log =~ ~s(references unimplemented skill "#{name}")
     end
 
     {:ok, monk_id} = AvailableJobs.job_name_to_id(:monk)
-    assert length(monk_owned_entries(monk_id)) == MapSet.size(@canonical_entries)
+    assert length(monk_owned_entries(monk_id)) == MapSet.size(expected_entries)
   end
 
   test "runtime entries preserve every canonical maximum and prerequisite edge" do
@@ -91,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
       end)
       |> MapSet.new()
 
-    assert resolved == @canonical_entries
+    assert resolved == expected_entries()
   end
 
   test "Monk inherits every resolved Novice and Acolyte entry" do
@@ -101,32 +109,34 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
     monk_tree = SkillTree.tree_for(monk_id)
 
     for parent_id <- [novice_id, acolyte_id],
-        {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
-      assert monk_tree[skill_id].owner_job_id == parent_entry.owner_job_id
+        {skill_id, parent_entry} <- inherited_entries(parent_id) do
+      assert Map.fetch!(monk_tree, skill_id).owner_job_id == parent_entry.owner_job_id
     end
+
+    assert Map.has_key?(monk_tree, catalog_id(:nv_trickdead)) == mode_value(true, false)
 
     for {name, _max_level} <- @learning_order do
       assert monk_tree[catalog_id(name)].owner_job_id == monk_id
     end
   end
 
-  test "Ki Translation and Ki Explosion are catalogued but not ordinarily learnable" do
+  test "Ki Translation and Ki Explosion are permanent grants, not ordinary point learning" do
     {:ok, monk_id} = AvailableJobs.job_name_to_id(:monk)
     tree = SkillTree.tree_for(monk_id)
-
-    kitranslation_id = catalog_id(:mo_kitranslation)
-    balkyoung_id = catalog_id(:mo_balkyoung)
-
-    refute Map.has_key?(tree, kitranslation_id)
-    refute Map.has_key?(tree, balkyoung_id)
-
     progression = monk_progression(monk_id, skill_point: 1)
 
-    assert {:error, :not_in_tree} = SkillTree.can_learn(progression, kitranslation_id)
-    assert {:error, :not_in_tree} = SkillTree.can_learn(progression, balkyoung_id)
-
-    names = MapSet.new(tree, fn {skill_id, _entry} -> catalog_name(skill_id) end)
-    assert MapSet.disjoint?(names, MapSet.new(~w(MO_KITRANSLATION MO_BALKYOUNG)))
+    for {skill_name, skill_id} <- [
+          mo_kitranslation: catalog_id(:mo_kitranslation),
+          mo_balkyoung: catalog_id(:mo_balkyoung)
+        ] do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert definition.name == skill_name
+      assert definition.quest_skill
+      assert definition.quest_owner_job == :monk
+      assert Map.has_key?(tree, skill_id) == mode_value(false, true)
+      assert {:error, :not_in_tree} = SkillTree.can_learn(progression, skill_id)
+      assert {:ok, %{^skill_id => 1}} = Grant.grant(%{}, skill_id, 1)
+    end
   end
 
   test "a Monk can learn exactly the 15 normal skills after canonical prerequisites and cannot exceed any max level" do
@@ -169,6 +179,22 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
       {entry["name"], entry["max_level"], requires}
     end)
+  end
+
+  defp expected_entries do
+    mode_value(@canonical_entries, @classic_entries)
+  end
+
+  defp inherited_entries(parent_id) do
+    entries = SkillTree.tree_for(parent_id)
+
+    if GameMode.mode() == :pre_renewal,
+      do: Map.delete(entries, catalog_id(:nv_trickdead)),
+      else: entries
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp monk_owned_entries(monk_id) do

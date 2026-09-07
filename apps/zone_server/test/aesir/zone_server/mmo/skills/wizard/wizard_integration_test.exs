@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.EstimationResult
   alias Aesir.Net.SkillUnitSnapshot
   alias Aesir.Net.SkillUnitSpawn
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.Skill.Unit, as: SkillUnit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
@@ -241,15 +243,44 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
              WzEstimation.validate(caster, {:unit, @caster_id}, 1, WzEstimation.definition())
   end
 
-  test "Wizard platinum skills remain registered but cannot be learned from normal points" do
+  test "Estimation follows the mode-specific Wizard tree and remains ordinary for Sage" do
     {:ok, wizard_id} = AvailableJobs.job_name_to_id(:wizard)
+    {:ok, sage_id} = AvailableJobs.job_name_to_id(:sage)
+    {:ok, definition} = Catalog.by_name(:wz_estimation)
 
+    wizard = %PlayerProgression{job_id: wizard_id, skill_point: 1, learned_skills: %{}}
+    sage = %PlayerProgression{job_id: sage_id, skill_point: 1, learned_skills: %{}}
+
+    refute definition.quest_skill
+
+    case GameMode.mode() do
+      :renewal ->
+        refute Map.has_key?(SkillTree.tree_for(wizard_id), definition.id)
+        assert {:error, :not_in_tree} = SkillTree.can_learn(wizard, definition.id)
+
+      :pre_renewal ->
+        assert Map.has_key?(SkillTree.tree_for(wizard_id), definition.id)
+        assert :ok = SkillTree.can_learn(wizard, definition.id)
+    end
+
+    assert :ok = SkillTree.can_learn(sage, definition.id)
+    assert {:error, :not_grantable} = Grant.grant(%{}, definition.id, 1)
+  end
+
+  test "Sight Blaster is a permanent Wizard grant, not ordinary point learning" do
+    {:ok, wizard_id} = AvailableJobs.job_name_to_id(:wizard)
+    {:ok, definition} = Catalog.by_name(:wz_sightblaster)
+    skill_id = definition.id
     progression = %PlayerProgression{job_id: wizard_id, skill_point: 1, learned_skills: %{}}
 
-    for skill_name <- [:wz_estimation, :wz_sightblaster] do
-      {:ok, definition} = Catalog.by_name(skill_name)
-      assert {:error, :not_in_tree} = SkillTree.can_learn(progression, definition.id)
-    end
+    assert definition.quest_skill
+    assert definition.quest_owner_job == :wizard
+
+    assert Map.has_key?(SkillTree.tree_for(wizard_id), skill_id) ==
+             (GameMode.mode() == :pre_renewal)
+
+    assert {:error, :not_in_tree} = SkillTree.can_learn(progression, skill_id)
+    assert {:ok, %{^skill_id => 1}} = Grant.grant(%{}, skill_id, 1)
   end
 
   test "the twelve normal Wizard skills learn in prerequisite order" do

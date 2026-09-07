@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -31,8 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
     inherited_ids =
       [:novice, :thief]
       |> Enum.flat_map(fn job ->
-        for {skill_id, parent_entry} <- SkillTree.tree_for(job_id(job)) do
-          assert assassin_tree[skill_id] == parent_entry
+        for {skill_id, parent_entry} <- inherited_entries(job_id(job)) do
+          assert Map.fetch!(assassin_tree, skill_id) == parent_entry
           skill_id
         end
       end)
@@ -43,8 +44,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
       |> Enum.filter(&(&1.owner_job_id == assassin_id))
       |> MapSet.new(& &1.skill_id)
 
-    assert owned_ids == MapSet.new(132..141)
-    assert map_size(assassin_tree) == 10 + length(Enum.uniq(inherited_ids))
+    assert owned_ids == expected_owned_ids()
+    assert map_size(assassin_tree) == MapSet.size(owned_ids) + length(Enum.uniq(inherited_ids))
   end
 
   test "every Assassin skill opens exactly at its complete prerequisite boundary" do
@@ -91,6 +92,22 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
 
     capped = progression(learned_skills: %{right => 5})
     assert {:error, :max_level} = SkillTree.learn(capped, right)
+  end
+
+  defp expected_owned_ids do
+    ordinary = MapSet.new(132..141)
+
+    if GameMode.mode() == :pre_renewal,
+      do: ordinary |> MapSet.put(1_003) |> MapSet.put(1_004),
+      else: ordinary
+  end
+
+  defp inherited_entries(parent_id) do
+    entries = SkillTree.tree_for(parent_id)
+
+    if GameMode.mode() == :pre_renewal,
+      do: Map.delete(entries, catalog_id(:nv_trickdead)),
+      else: entries
   end
 
   defp normalized_entry_set(entries) do

@@ -6,9 +6,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   import ExUnit.CaptureLog
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Mmo.SkillTree.Entry
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
@@ -69,6 +71,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
     definition.id
   end
 
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
+
   defp swordman_progression(attrs) do
     Map.merge(
       %PlayerProgression{
@@ -119,13 +125,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       assert max_level == 10
     end
 
-    test "inherited Novice skills are kept when implemented, unimplemented ones filtered out" do
+    test "inherited Novice skills follow the active mode's inheritance markers" do
       tree = SkillTree.tree_for(@swordman_id)
 
       assert Map.has_key?(tree, catalog_id(:nv_firstaid))
-      assert Map.has_key?(tree, catalog_id(:nv_trickdead))
+      assert Map.has_key?(tree, catalog_id(:nv_trickdead)) == mode_value(true, false)
       assert Map.has_key?(tree, catalog_id(:nv_basic))
-      assert map_size(tree) == 13
+      assert map_size(tree) == mode_value(13, 12)
     end
 
     test "entry/2 returns :error for a skill not in the job tree" do
@@ -140,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   describe "reload/0" do
     test "rebuilds the index" do
       assert :ok = SkillTree.reload()
-      assert map_size(SkillTree.tree_for(@swordman_id)) == 13
+      assert map_size(SkillTree.tree_for(@swordman_id)) == mode_value(13, 12)
     end
   end
 
@@ -441,6 +447,28 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   end
 
   describe "quest skill lineage" do
+    test "Trick Dead stays grant-only across both inheritance layouts" do
+      {:ok, novice_id} = AvailableJobs.job_name_to_id(:novice)
+      trick_dead_id = catalog_id(:nv_trickdead)
+
+      assert {:ok, %Definition{quest_skill: true, quest_owner_job: :novice}} =
+               Catalog.by_id(trick_dead_id)
+
+      assert Map.has_key?(SkillTree.tree_for(novice_id), trick_dead_id)
+
+      assert Map.has_key?(SkillTree.tree_for(@swordman_id), trick_dead_id) ==
+               mode_value(true, false)
+
+      novice = swordman_progression(job_id: novice_id)
+      swordman = swordman_progression(learned_skills: %{trick_dead_id => 1})
+
+      assert {:error, :not_in_tree} = SkillTree.learn(novice, trick_dead_id)
+      assert {:ok, %{^trick_dead_id => 1}} = Grant.grant(%{}, trick_dead_id, 1)
+
+      assert %{owner_job_id: ^novice_id, level: 1, upgradable: false} =
+               Enum.find(SkillTree.available_for(swordman), &(&1.skill_id == trick_dead_id))
+    end
+
     test "Assassin quest skills stay outside point spending and on the Assassin branch" do
       {:ok, assassin_id} = AvailableJobs.job_name_to_id(:assassin)
       progression = swordman_progression(job_id: assassin_id, learned_skills: %{})
@@ -449,9 +477,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
         assert {:ok, %Definition{} = definition} = Catalog.by_id(skill_id)
         assert definition.quest_skill
         assert definition.quest_owner_job == :assassin
-        refute Map.has_key?(SkillTree.tree_for(assassin_id), skill_id)
+
+        assert Map.has_key?(SkillTree.tree_for(assassin_id), skill_id) ==
+                 mode_value(false, true)
+
         refute Enum.any?(SkillTree.available_for(progression), &(&1.skill_id == skill_id))
         assert {:error, :not_in_tree} = SkillTree.learn(progression, skill_id)
+        assert {:ok, %{^skill_id => 1}} = Grant.grant(%{}, skill_id, 1)
 
         for job <- [
               :assassin,

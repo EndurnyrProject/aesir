@@ -3,9 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -30,6 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
                     {"HT_SPRINGTRAP", 5, [{"HT_REMOVETRAP", 1}, {"HT_FALCON", 1}]}
                   ])
 
+  @classic_entries MapSet.put(@hunter_entries, {"HT_PHANTASMIC", 1, []})
+
   test "Hunter YAML declares only the approved canonical entries" do
     assert MapSet.size(@hunter_entries) == 17
     assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@hunter_entries)
@@ -43,21 +47,22 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
 
     inherited_ids =
       for parent_id <- [novice_id, archer_id],
-          {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
-        assert hunter_tree[skill_id] == parent_entry
-        assert hunter_tree[skill_id].owner_job_id == parent_entry.owner_job_id
+          {skill_id, parent_entry} <- inherited_entries(parent_id) do
+        assert Map.fetch!(hunter_tree, skill_id) == parent_entry
+        assert Map.fetch!(hunter_tree, skill_id).owner_job_id == parent_entry.owner_job_id
         skill_id
       end
 
     owned = hunter_owned_entries(hunter_id)
+    expected = expected_entries()
 
-    assert normalized_entry_set(owned) == normalized_entry_set(@hunter_entries)
-    assert length(owned) == 17
-    assert map_size(hunter_tree) == 17 + length(Enum.uniq(inherited_ids))
+    assert normalized_entry_set(owned) == normalized_entry_set(expected)
+    assert length(owned) == MapSet.size(expected)
+    assert map_size(hunter_tree) == MapSet.size(expected) + length(Enum.uniq(inherited_ids))
 
     log = capture_log(&SkillTree.reload/0)
 
-    for {name, _max_level, _requires} <- @hunter_entries do
+    for {name, _max_level, _requires} <- expected do
       assert {:ok, _definition} = Catalog.by_name(atomize(name))
       refute log =~ ~s(references unimplemented skill "#{name}")
     end
@@ -162,13 +167,33 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
              )
   end
 
-  test "Phantasmic Arrow is catalogued but excluded from ordinary Hunter learning" do
+  test "Phantasmic Arrow is a permanent grant, not ordinary Hunter learning" do
     {:ok, hunter_id} = AvailableJobs.job_name_to_id(:hunter)
     phantasmic = catalog_id(:ht_phantasmic)
     tree = SkillTree.tree_for(hunter_id)
 
-    refute Map.has_key?(tree, phantasmic)
+    assert {:ok, definition} = Catalog.by_id(phantasmic)
+    assert definition.quest_skill
+    assert definition.quest_owner_job == :hunter
+    assert Map.has_key?(tree, phantasmic) == mode_value(false, true)
     assert {:error, :not_in_tree} = SkillTree.can_learn(hunter_progression(hunter_id), phantasmic)
+    assert {:ok, %{^phantasmic => 1}} = Grant.grant(%{}, phantasmic, 1)
+  end
+
+  defp expected_entries do
+    mode_value(@hunter_entries, @classic_entries)
+  end
+
+  defp inherited_entries(parent_id) do
+    entries = SkillTree.tree_for(parent_id)
+
+    if GameMode.mode() == :pre_renewal,
+      do: Map.delete(entries, catalog_id(:nv_trickdead)),
+      else: entries
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp normalized_entry_set(entries) do

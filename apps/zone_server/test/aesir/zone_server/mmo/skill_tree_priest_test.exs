@@ -3,9 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -35,13 +37,17 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
                         ]}
                      ])
 
+  @classic_entries MapSet.put(@canonical_entries, {"PR_REDEMPTIO", 1, []})
+
   test "priest.yml contains exactly the normal Renewal Priest entries" do
     assert MapSet.new(normalized_entries()) == @canonical_entries
   end
 
   test "every Priest entry and prerequisite resolves without a loader drop" do
+    expected_entries = expected_entries()
+
     names =
-      @canonical_entries
+      expected_entries
       |> Enum.flat_map(fn {name, _max_level, requires} ->
         [name | Enum.map(requires, &elem(&1, 0))]
       end)
@@ -53,12 +59,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
 
     log = capture_log(&SkillTree.reload/0)
 
-    for {name, _max_level, _requires} <- @canonical_entries do
+    for {name, _max_level, _requires} <- expected_entries do
       refute log =~ ~s(references unimplemented skill "#{name}")
     end
 
     {:ok, priest_id} = AvailableJobs.job_name_to_id(:priest)
-    assert length(priest_owned_entries(priest_id)) == MapSet.size(@canonical_entries)
+    assert length(priest_owned_entries(priest_id)) == MapSet.size(expected_entries)
   end
 
   test "runtime entries preserve every canonical maximum and prerequisite edge" do
@@ -75,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
       end)
       |> MapSet.new()
 
-    assert resolved == @canonical_entries
+    assert resolved == expected_entries()
   end
 
   test "Priest inherits every resolved Novice and Acolyte entry" do
@@ -85,21 +91,26 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
     priest_tree = SkillTree.tree_for(priest_id)
 
     for parent_id <- [novice_id, acolyte_id],
-        {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
-      assert priest_tree[skill_id].owner_job_id == parent_entry.owner_job_id
+        {skill_id, parent_entry} <- inherited_entries(parent_id) do
+      assert Map.fetch!(priest_tree, skill_id).owner_job_id == parent_entry.owner_job_id
     end
+
+    assert Map.has_key?(priest_tree, catalog_id(:nv_trickdead)) == mode_value(true, false)
 
     for name <- [:mg_srecovery, :mg_safetywall, :all_resurrection] do
       assert priest_tree[catalog_id(name)].owner_job_id == priest_id
     end
   end
 
-  test "Redemptio is catalogued but not ordinarily learnable and High Priest is excluded" do
+  test "Redemptio is a permanent grant, not ordinary point learning" do
     {:ok, priest_id} = AvailableJobs.job_name_to_id(:priest)
     redemptio_id = catalog_id(:pr_redemptio)
     tree = SkillTree.tree_for(priest_id)
 
-    refute Map.has_key?(tree, redemptio_id)
+    assert {:ok, definition} = Catalog.by_id(redemptio_id)
+    assert definition.quest_skill
+    assert definition.quest_owner_job == :priest
+    assert Map.has_key?(tree, redemptio_id) == mode_value(false, true)
 
     progression = %PlayerProgression{
       base_level: 99,
@@ -113,6 +124,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
     }
 
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression, redemptio_id)
+    assert {:ok, %{^redemptio_id => 1}} = Grant.grant(%{}, redemptio_id, 1)
 
     names = MapSet.new(tree, fn {skill_id, _entry} -> catalog_name(skill_id) end)
     assert MapSet.disjoint?(names, MapSet.new(~w(HP_ASSUMPTIO HP_BASILICA HP_MEDITATIO)))
@@ -128,6 +140,22 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
       {entry["name"], entry["max_level"], requires}
     end)
+  end
+
+  defp expected_entries do
+    mode_value(@canonical_entries, @classic_entries)
+  end
+
+  defp inherited_entries(parent_id) do
+    entries = SkillTree.tree_for(parent_id)
+
+    if GameMode.mode() == :pre_renewal,
+      do: Map.delete(entries, catalog_id(:nv_trickdead)),
+      else: entries
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp priest_owned_entries(priest_id) do

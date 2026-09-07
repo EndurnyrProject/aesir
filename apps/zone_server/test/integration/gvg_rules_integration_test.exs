@@ -888,6 +888,8 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
   defp hp(player), do: get_player_state(player.pid).stats.current_state.hp
 
   defp fixed_hit(attacker, defender) do
+    :rand.seed(:exsss, {17, 19, 23})
+
     SkillAttack.execute_skill_attack(get_player_state(attacker.pid), defender.character.id,
       skill_id: 5,
       skill_level: 1,

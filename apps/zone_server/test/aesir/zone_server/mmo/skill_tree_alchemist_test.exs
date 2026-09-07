@@ -3,9 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   test "Alchemist tree loads all Phase 1 skills and inherits Merchant without pruning" do
     log = capture_log(&SkillTree.reload/0)
@@ -14,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
     tree = SkillTree.tree_for(alchemist_id)
     owned_entries = Enum.filter(Map.values(tree), &(&1.owner_job_id == alchemist_id))
 
-    assert length(owned_entries) == 15
+    assert length(owned_entries) == mode_value(15, 16)
 
     for {name, max_level, requires} <- [
           {:am_axemastery, 10, []},
@@ -36,6 +39,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
       {:ok, definition} = Catalog.by_name(name)
       entry = tree[definition.id]
 
+      refute log =~
+               ~s(references unimplemented skill "#{name |> Atom.to_string() |> String.upcase()}")
+
       assert entry.max_level == max_level
 
       assert entry.requires ==
@@ -49,8 +55,18 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAlchemistTest do
     assert Map.has_key?(tree, discount.id)
 
     {:ok, bioethics} = Catalog.by_name(:am_bioethics)
-    refute Map.has_key?(tree, bioethics.id)
+    bioethics_id = bioethics.id
+    assert bioethics.quest_skill
+    assert bioethics.quest_owner_job == :alchemist
+    assert Map.has_key?(tree, bioethics_id) == mode_value(false, true)
 
-    assert log == ""
+    progression = %PlayerProgression{job_id: alchemist_id, skill_point: 1, learned_skills: %{}}
+    assert {:error, :not_in_tree} = SkillTree.can_learn(progression, bioethics_id)
+    assert {:ok, %{^bioethics_id => 1}} = Grant.grant(%{}, bioethics_id, 1)
+    refute log =~ ~s(references unimplemented skill "AM_BIOETHICS")
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 end

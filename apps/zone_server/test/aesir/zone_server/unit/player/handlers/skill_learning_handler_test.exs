@@ -178,20 +178,55 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
                         %LearnSkillResult{skill_id: ^sword_id, ok: false, reason: 2}}}
     end
 
-    test "rejects active quest skills outside the normal Wizard tree" do
+    test "rejects the Sight Blaster permanent grant from ordinary learning" do
       state = player_state(@wizard_id, 1, %{})
+      skill_id = catalog_id(:wz_sightblaster)
 
       reject(&CharacterPersistence.update_character/3)
 
-      for skill_name <- [:wz_estimation, :wz_sightblaster] do
-        skill_id = catalog_id(skill_name)
+      assert {:noreply, ^state} = SkillLearningHandler.handle_learn_skill(skill_id, state)
 
-        assert {:noreply, ^state} = SkillLearningHandler.handle_learn_skill(skill_id, state)
+      assert_received {:send, :gameplay,
+                       {:learn_skill_result,
+                        %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
+    end
 
-        assert_received {:send, :gameplay,
-                         {:learn_skill_result,
-                          %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
-      end
+    @tag game_mode: :renewal
+    test "rejects Estimation outside the Renewal Wizard tree" do
+      state = player_state(@wizard_id, 1, %{})
+      skill_id = catalog_id(:wz_estimation)
+
+      reject(&CharacterPersistence.update_character/3)
+
+      assert {:noreply, ^state} = SkillLearningHandler.handle_learn_skill(skill_id, state)
+
+      assert_received {:send, :gameplay,
+                       {:learn_skill_result,
+                        %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "learns Estimation from the classic Wizard tree" do
+      state = player_state(@wizard_id, 1, %{})
+      skill_id = catalog_id(:wz_estimation)
+
+      stub(PlayerStats, :calculate_stats, fn stats, 1000 -> stats end)
+      stub(UnitRegistry, :update_unit_state, fn :player, 1000, _game_state -> :ok end)
+      stub(StatusSync, :send_params, fn _connection_pid, _params -> :ok end)
+
+      expect(CharacterPersistence, :update_character, fn 1000, attrs, async: true ->
+        assert attrs.skill_point == 0
+        assert attrs.learned_skills == %{Integer.to_string(skill_id) => 1}
+        {:ok, %{}}
+      end)
+
+      assert {:noreply, new_state} =
+               SkillLearningHandler.handle_learn_skill(skill_id, state)
+
+      progression = new_state.game_state.stats.progression
+      assert progression.skill_point == 0
+      assert progression.learned_skills[skill_id] == 1
+      assert_received {:send, :bulk, {:skill_list, %SkillList{}}}
     end
   end
 

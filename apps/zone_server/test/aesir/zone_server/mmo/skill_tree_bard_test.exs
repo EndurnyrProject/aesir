@@ -3,9 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -29,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
                   {"BD_INTOABYSS", 1, [{"BD_LULLABY", 1}]},
                   {"BD_SIEGFRIED", 5, [{"BA_POEMBRAGI", 10}]}
                 ])
+
+  @classic_entries MapSet.put(@bard_entries, {"BA_PANGVOICE", 1, []})
 
   @inherited_names MapSet.new(~w(
                      NV_BASIC NV_FIRSTAID NV_TRICKDEAD
@@ -83,21 +87,22 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
 
     inherited_ids =
       for parent_id <- [novice_id, archer_id],
-          {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
-        assert bard_tree[skill_id] == parent_entry
-        assert bard_tree[skill_id].owner_job_id == parent_entry.owner_job_id
+          {skill_id, parent_entry} <- inherited_entries(parent_id) do
+        assert Map.fetch!(bard_tree, skill_id) == parent_entry
+        assert Map.fetch!(bard_tree, skill_id).owner_job_id == parent_entry.owner_job_id
         skill_id
       end
 
     owned = bard_owned_entries(bard_id)
+    expected = expected_entries()
 
-    assert normalized_entry_set(owned) == normalized_entry_set(@bard_entries)
-    assert length(owned) == 18
-    assert map_size(bard_tree) == 18 + length(Enum.uniq(inherited_ids))
+    assert normalized_entry_set(owned) == normalized_entry_set(expected)
+    assert length(owned) == MapSet.size(expected)
+    assert map_size(bard_tree) == MapSet.size(expected) + length(Enum.uniq(inherited_ids))
 
     log = capture_log(&SkillTree.reload/0)
 
-    for {name, max_level, _requires} <- @bard_entries do
+    for {name, max_level, _requires} <- expected do
       lowercase_name = atomize(name)
       assert Atom.to_string(lowercase_name) == String.downcase(name)
       assert {:ok, definition} = Catalog.by_name(lowercase_name)
@@ -133,9 +138,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     resolved_names =
       bard_id |> SkillTree.tree_for() |> Map.keys() |> MapSet.new(&catalog_name/1)
 
-    owned_names = MapSet.new(@bard_entries, fn {name, _max_level, _requires} -> name end)
+    owned_names = MapSet.new(expected_entries(), fn {name, _max_level, _requires} -> name end)
 
-    assert resolved_names == MapSet.union(@inherited_names, owned_names)
+    assert resolved_names == MapSet.union(expected_inherited_names(), owned_names)
   end
 
   test "a Bard can learn every ensemble in full Novice to Archer to Bard order" do
@@ -174,7 +179,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression(dancer_id), musical_lesson)
   end
 
-  test "Pang Voice remains a Bard-owned quest skill outside ordinary learning" do
+  test "Pang Voice remains a Bard-owned permanent grant outside ordinary learning" do
     {:ok, bard_id} = AvailableJobs.job_name_to_id(:bard)
     {:ok, archer_id} = AvailableJobs.job_name_to_id(:archer)
     pang_voice = catalog_id(:ba_pangvoice)
@@ -186,8 +191,31 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     assert definition.quest_owner_job == :bard
     assert SkillTree.quest_skill_available?(bard_id, definition)
     refute SkillTree.quest_skill_available?(archer_id, definition)
-    refute Map.has_key?(bard_tree, pang_voice)
+    assert Map.has_key?(bard_tree, pang_voice) == mode_value(false, true)
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression(bard_id), pang_voice)
+    assert {:ok, %{^pang_voice => 1}} = Grant.grant(%{}, pang_voice, 1)
+  end
+
+  defp expected_entries do
+    mode_value(@bard_entries, @classic_entries)
+  end
+
+  defp expected_inherited_names do
+    if GameMode.mode() == :pre_renewal,
+      do: MapSet.delete(@inherited_names, "NV_TRICKDEAD"),
+      else: @inherited_names
+  end
+
+  defp inherited_entries(parent_id) do
+    entries = SkillTree.tree_for(parent_id)
+
+    if GameMode.mode() == :pre_renewal,
+      do: Map.delete(entries, catalog_id(:nv_trickdead)),
+      else: entries
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp learn_all(progression, order) do

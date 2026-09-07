@@ -123,6 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
   end
 
   describe "prerequisite gating" do
+    @tag game_mode: :renewal
     test "Discount and Overcharge are learnable with no prerequisites" do
       for name <- [:mc_discount, :mc_overcharge] do
         assert :ok =
@@ -133,11 +134,51 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMerchantTest do
       end
     end
 
+    @tag game_mode: :renewal
     test "Pushcart is learnable with no prerequisites" do
       assert :ok =
                SkillTree.can_learn(
                  merchant_progression(learned_skills: %{}),
                  catalog_id(:mc_pushcart)
+               )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Discount and Overcharge require their preceding skills at level 3" do
+      empty = merchant_progression(learned_skills: %{})
+      discount = catalog_id(:mc_discount)
+      overcharge = catalog_id(:mc_overcharge)
+
+      assert {:error, :missing_prerequisite} = SkillTree.can_learn(empty, discount)
+      assert {:error, :missing_prerequisite} = SkillTree.can_learn(empty, overcharge)
+
+      assert :ok =
+               SkillTree.can_learn(
+                 merchant_progression(learned_skills: %{catalog_id(:mc_inccarry) => 3}),
+                 discount
+               )
+
+      assert :ok =
+               SkillTree.can_learn(
+                 merchant_progression(learned_skills: %{discount => 3}),
+                 overcharge
+               )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Pushcart requires Increase Weight Limit at level 5" do
+      pushcart = catalog_id(:mc_pushcart)
+
+      assert {:error, :missing_prerequisite} =
+               SkillTree.can_learn(
+                 merchant_progression(learned_skills: %{catalog_id(:mc_inccarry) => 4}),
+                 pushcart
+               )
+
+      assert :ok =
+               SkillTree.can_learn(
+                 merchant_progression(learned_skills: %{catalog_id(:mc_inccarry) => 5}),
+                 pushcart
                )
     end
 

@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -84,9 +85,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
 
     inherited_ids =
       for parent_id <- [novice_id, archer_id],
-          {skill_id, parent_entry} <- SkillTree.tree_for(parent_id) do
-        assert dancer_tree[skill_id] == parent_entry
-        assert dancer_tree[skill_id].owner_job_id == parent_entry.owner_job_id
+          {skill_id, parent_entry} <- inherited_entries(parent_id) do
+        assert Map.fetch!(dancer_tree, skill_id) == parent_entry
+        assert Map.fetch!(dancer_tree, skill_id).owner_job_id == parent_entry.owner_job_id
         skill_id
       end
 
@@ -137,7 +138,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
 
     owned_names = MapSet.new(@dancer_entries, fn {name, _max_level, _requires} -> name end)
 
-    assert resolved_names == MapSet.union(@inherited_names, owned_names)
+    assert resolved_names == MapSet.union(expected_inherited_names(), owned_names)
   end
 
   test "a Dancer can learn every ensemble in full Novice to Archer to Dancer order" do
@@ -163,6 +164,20 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
       {:ok, definition} = Catalog.by_id(skill_id)
       assert final.learned_skills[skill_id] == definition.max_level
     end
+  end
+
+  defp expected_inherited_names do
+    if GameMode.mode() == :pre_renewal,
+      do: MapSet.delete(@inherited_names, "NV_TRICKDEAD"),
+      else: @inherited_names
+  end
+
+  defp inherited_entries(parent_id) do
+    entries = SkillTree.tree_for(parent_id)
+
+    if GameMode.mode() == :pre_renewal,
+      do: Map.delete(entries, catalog_id(:nv_trickdead)),
+      else: entries
   end
 
   defp learn_all(progression, order) do

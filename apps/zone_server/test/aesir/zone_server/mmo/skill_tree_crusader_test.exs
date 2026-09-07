@@ -3,9 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
 
   import ExUnit.CaptureLog
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Grant
   alias Aesir.ZoneServer.Mmo.SkillTree
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
@@ -29,6 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
                        {"CR_DEFENDER", 5, [{"CR_SHIELDBOOMERANG", 1}]},
                        {"CR_SPEARQUICKEN", 10, [{"KN_SPEARMASTERY", 10}]}
                      ])
+
+  @classic_entries MapSet.put(@canonical_entries, {"CR_SHRINK", 1, []})
 
   @learning_order [
     {:kn_spearmastery, 10},
@@ -56,8 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
   end
 
   test "every Crusader entry and prerequisite resolves without a loader drop" do
+    expected_entries = expected_entries()
+
     names =
-      @canonical_entries
+      expected_entries
       |> Enum.flat_map(fn {name, _max_level, requires} ->
         [name | Enum.map(requires, &elem(&1, 0))]
       end)
@@ -69,12 +75,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
 
     log = capture_log(&SkillTree.reload/0)
 
-    for {name, _max_level, _requires} <- @canonical_entries do
+    for {name, _max_level, _requires} <- expected_entries do
       refute log =~ ~s(references unimplemented skill "#{name}")
     end
 
     {:ok, crusader_id} = AvailableJobs.job_name_to_id(:crusader)
-    assert length(crusader_owned_entries(crusader_id)) == MapSet.size(@canonical_entries)
+    assert length(crusader_owned_entries(crusader_id)) == MapSet.size(expected_entries)
   end
 
   test "runtime entries preserve every canonical maximum and prerequisite edge" do
@@ -91,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
       end)
       |> MapSet.new()
 
-    assert resolved == @canonical_entries
+    assert resolved == expected_entries()
   end
 
   test "Crusader inherits every resolved Swordman entry" do
@@ -114,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
     inherited_names =
       swordman_id |> SkillTree.tree_for() |> Map.keys() |> MapSet.new(&catalog_name/1)
 
-    own_names = MapSet.new(@canonical_entries, fn {name, _max, _reqs} -> name end)
+    own_names = MapSet.new(expected_entries(), fn {name, _max, _reqs} -> name end)
 
     assert resolved_names == MapSet.union(inherited_names, own_names)
 
@@ -122,6 +128,19 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
                    AL_TELEPORT AL_WARP AL_HOLYWATER AL_HOLYLIGHT AL_CRUCIS) do
       refute MapSet.member?(resolved_names, name), "#{name} must not leak into the Crusader tree"
     end
+  end
+
+  test "Shrink is a permanent grant, not ordinary point learning" do
+    {:ok, crusader_id} = AvailableJobs.job_name_to_id(:crusader)
+    shrink_id = catalog_id(:cr_shrink)
+    assert {:ok, definition} = Catalog.by_id(shrink_id)
+    assert definition.quest_skill
+    assert definition.quest_owner_job == :crusader
+    assert Map.has_key?(SkillTree.tree_for(crusader_id), shrink_id) == mode_value(false, true)
+
+    progression = crusader_progression(crusader_id, skill_point: 1)
+    assert {:error, :not_in_tree} = SkillTree.can_learn(progression, shrink_id)
+    assert {:ok, %{^shrink_id => 1}} = Grant.grant(%{}, shrink_id, 1)
   end
 
   test "Crusader owns every entry of its own tree" do
@@ -230,6 +249,14 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
       {entry["name"], entry["max_level"], requires}
     end)
+  end
+
+  defp expected_entries do
+    mode_value(@canonical_entries, @classic_entries)
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp crusader_owned_entries(crusader_id) do
