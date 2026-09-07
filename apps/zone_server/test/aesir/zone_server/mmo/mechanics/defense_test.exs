@@ -32,14 +32,14 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.DefenseTest do
     end
   end
 
-  test "renewal magic mitigation preserves current boundaries and negative MDEF behavior" do
+  test "renewal magic mitigation treats negative hard MDEF as zero" do
     cases = [
       {100, 10, 5, 86.81818181818181},
       {100, 0, 0, 100.0},
       {100, 100, 5, 50.0},
-      {100, -50, 5, 185.0},
-      {100, -100, 0, 9010.0},
-      {100, -101, 0, -8990.0}
+      {100, -50, 5, 95.0},
+      {100, -100, 0, 100.0},
+      {100, -101, 0, 100.0}
     ]
 
     for {damage, hard_mdef, soft_mdef, expected} <- cases do

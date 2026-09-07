@@ -1,15 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   @moduledoc """
-  Tests for the renewal magic damage calculator.
+  Tests for both boot-mode magic pipelines with independently computed values.
 
-  Numbers are hand-computed against the rAthena renewal MDEF formula
-  (`battle.cpp:6105`): `dmg = matk * (1000 + hardMDEF) / (1000 + 10*hardMDEF) - softMDEF`,
-  floored at 1. Magic always hits and never crits.
+  Renewal MDEF uses the rational curve; classic uses integer percentage
+  reduction. Element follows MDEF in both modes, while cardfix and trait
+  applicability differ. Magic always hits and never crits.
   """
 
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
@@ -111,11 +112,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     result.damage
   end
 
+  defp mode_value(renewal, pre_renewal) do
+    case GameMode.mode() do
+      :renewal -> renewal
+      :pre_renewal -> pre_renewal
+    end
+  end
+
   describe "calculate_magic_damage/3" do
     test "baseline single hit applies MDEF reduction and floors" do
-      # matk 100, ratio 100, neutral vs neutral, hard 10 / soft 5:
-      # 100 * 1010 / 1100 = 91.818..., - 5 = 86.818... -> trunc 86
-      assert {:ok, %{damage: 86, is_critical: false}} =
+      # Renewal: trunc(100 * 1010 / 1100 - 5). Classic: 100 * 90% - 5.
+      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
@@ -131,16 +138,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "skill_ratio scales the base MATK" do
-      # ratio 300: skilled = 300; 300 * 1010 / 1100 = 275.454..., - 5 = 270.454... -> 270
-      assert {:ok, %{damage: 270, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(270, 265), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5),
                  skill_ratio: 300
                )
     end
 
     test "bonus_matk adds a flat amount after the skill ratio" do
-      # skilled = div(100*100,100) + 50 = 150; 150 * 1010 / 1100 = 137.727..., - 5 = 132.727 -> 132
-      assert {:ok, %{damage: 132, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(132, 130), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5),
                  bonus_matk: 50
                )
@@ -155,9 +160,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                )
     end
 
-    test "element modifier multiplies before MDEF reduction" do
-      # fire vs earth (level 1) = 2.0: skilled 100 -> 200; 200 * 1010 / 1100 = 183.636, - 5 = 178.636 -> 178
-      assert {:ok, %{damage: 178, is_critical: false}} =
+    test "element modifier multiplies after MDEF reduction" do
+      expected = if GameMode.mode() == :renewal, do: 172, else: 127
+
+      assert {:ok, %{damage: ^expected, is_critical: false}} =
                MagicDamageCalculator.calculate_magic_damage(
                  attacker(100),
                  defender(10, 5, {:earth, 1}),
@@ -168,12 +174,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     test "status damage_multiplier scales damage" do
       stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{damage_multiplier: 0.5} end)
 
-      # skilled 100, element 1.0, *1.5 = 150; 150 * 1010 / 1100 = 137.727, - 5 = 132.727 -> 132
-      assert {:ok, %{damage: 132, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(132, 130), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
-    test "target race and size select consecutive Renewal magic bonuses" do
+    test "target race and size select the matching magic bonuses" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :player, 1001 ->
           %{
@@ -198,7 +203,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(100), target)
     end
 
-    test "target size and race bonuses apply before S.MAtk and the skill ratio" do
+    test "target size and race bonuses surround the skill ratio by mode" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :player, 1001 ->
           %{{:magic_addsize, :large} => 5, {:magic_addrace, :demon} => 5}
@@ -212,15 +217,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
         |> Map.put(:size, :large)
         |> Map.put(:race, :demon)
 
-      # rAthena cardfix: 50 -> 52 (+5% size) -> 54 (+5% race), then 200% = 108.
-      # Applying cardfix after the ratio would incorrectly produce 110.
-      assert {:ok, %{damage: 108, is_critical: false}} =
+      # Renewal: 50 -> 52 -> 54, then double. Classic: double, then factor1102.
+      assert {:ok, %{damage: mode_value(108, 110), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(50), target,
                  skill_ratio: 200
                )
     end
 
-    test "negative magic cardfix truncates the removed amount like APPLY_CARDFIX_RE" do
+    test "negative magic cardfix truncates the removed amount" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :player, 1001 -> %{{:magic_addsize, :large} => -5}
         _, _ -> %{}
@@ -252,18 +256,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(100), target)
     end
 
-    test "hard mdef of -100 uses -99 and does not crash" do
-      # effective -99: 100 * (1000-99) / (1000-990) - 0 = 100 * 901 / 10 = 9010
-      assert {:ok, %{damage: 9010, is_critical: false}} =
+    test "negative hard MDEF is zero in Renewal and a percentage vulnerability in classic" do
+      assert {:ok, %{damage: mode_value(100, 200), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(-100, 0))
     end
 
-    test "ignore_mdef bypasses hard and soft MDEF but preserves MRes" do
+    test "ignore_mdef bypasses hard and soft MDEF but preserves applicable MRes" do
       target = defender(500, 50, {:neutral, 1}, %{mres: 400})
 
-      # MRes first reduces 100 to 60. IgnoreDefense then bypasses both MDEF
-      # components, leaving that supported pre-defense reduction intact.
-      assert {:ok, %{damage: 60, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(60, 100), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), target,
                  ignore_mdef: true
                )
@@ -279,8 +280,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
         defender(500, 100, {:earth, 1})
         |> Map.put(:size, :large)
 
-      # Size cardfix raises 100 to 120, then fire vs earth doubles it to 240.
-      assert {:ok, %{damage: 240, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(240, 180), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), target,
                  element: :fire,
                  ignore_mdef: true
@@ -288,7 +288,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "ignore_mdef false preserves the existing MDEF pipeline" do
-      assert {:ok, %{damage: 86, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5),
                  ignore_mdef: false
                )
@@ -300,10 +300,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(attacker(1), defender(0, 100))
     end
 
-    test "smatk raises base_matk by a percentage before the skill ratio" do
-      # smatk 50: base_matk 100 + 100*50/100 = 150; skilled 150;
-      # 150 * 1010 / 1100 = 137.727..., - 5 = 132.727... -> trunc 132
-      assert {:ok, %{damage: 132, is_critical: false}} =
+    test "smatk raises Renewal base MATK and is inert in classic" do
+      assert {:ok, %{damage: mode_value(132, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(
                  attacker(100, %{smatk: 50}),
                  defender(10, 5)
@@ -311,14 +309,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "attacker without :smatk key applies no S.MAtk bonus" do
-      assert {:ok, %{damage: 86, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
-    test "mres reduces magic damage on the soft-capped curve before MDEF" do
-      # skilled 100; mres 400 -> reduction 400/800*0.8 = 0.4 -> 100 - 40 = 60
-      # 60 * 1010 / 1100 = 55.09..., - 5 = 50.09... -> trunc 50
-      assert {:ok, %{damage: 50, is_critical: false}} =
+    test "mres reduces Renewal pre-MDEF damage and is inert in classic" do
+      assert {:ok, %{damage: mode_value(50, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(
                  attacker(100),
                  defender(10, 5, {:neutral, 1}, %{mres: 400})
@@ -326,7 +322,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "defender combat_stats without :mres takes full magic damage (no crash)" do
-      assert {:ok, %{damage: 86, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
@@ -348,7 +344,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
     end
 
     test "rolls the band per call: a degenerate band (min == max) is deterministic" do
-      assert {:ok, %{damage: 86, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(
                  banded_attacker(100, 100),
                  defender(10, 5)
@@ -365,7 +361,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                    defender(10, 5)
                  )
 
-        assert damage >= 1 and damage <= 86
+        assert damage >= 1 and damage <= mode_value(86, 85)
       end
     end
   end
@@ -378,7 +374,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      assert {:ok, %{damage: 132, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(132, 130), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
@@ -389,18 +385,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
         _, _ -> %{}
       end)
 
-      assert {:ok, %{damage: 80, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(80, 75), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
-    test "magic_damage_reduction shrugs off a percent of final magic damage" do
-      # reduction 50: 86.818... * 0.5 = 43.409... -> trunc 43
+    test "magic_damage_reduction follows the mode's defender cardfix stage" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :mob, 2001 -> %{magic_damage_reduction: 50}
         _, _ -> %{}
       end)
 
-      assert {:ok, %{damage: 43, is_critical: false}} =
+      assert {:ok, %{damage: mode_value(40, 43), is_critical: false}} ==
                MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5))
     end
 
@@ -454,21 +449,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
                MagicDamageCalculator.calculate_magic_damage(dragon_attacker, resisted)
     end
 
-    test "resist applies before MDEF's soft-MDEF subtraction, not after" do
-      # Regression test: subtraction does not commute with a later percentage
-      # multiply. rAthena runs the defender's subrace cardfix inside the same
-      # early battle_calc_cardfix as magic_addrace, well before the MDEF
-      # formula's `- soft` term (battle.cpp:809-914).
-      #
-      # matk 1000, hard_mdef 0, soft_mdef 50, resist 20% (Dragonology lv5):
-      #   correct (resist folded into the pre-MDEF cardfix): 1000*0.80 - 50 = 750
-      #   wrong (resist applied as a late percentage multiply after MDEF):
-      #     (1000 - 50) * 0.80 = 760
+    test "resist applies before Renewal MDEF and after classic MDEF" do
+      # Renewal: 1000 * 80% - 50. Classic: (1000 - 50) * 80%.
       dragon_attacker = attacker(1000) |> Map.put(:race, :dragon)
       resisted = defender(0, 50) |> Map.put(:dragonology_level, 5)
 
-      assert {:ok, %{damage: 750}} =
+      assert {:ok, %{damage: damage}} =
                MagicDamageCalculator.calculate_magic_damage(dragon_attacker, resisted)
+
+      assert damage == mode_value(750, 760)
     end
 
     test "leaves magic damage unchanged from a non-Dragon attacker" do
@@ -487,6 +476,51 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   end
 
   describe "equipment magic damage families" do
+    test "secondary race groups reach their own mode-specific cardfix stage" do
+      attacker =
+        c_attacker(11, %{
+          {:magic_addrace, :demon} => 20,
+          {:magic_addrace2, :goblin} => 30,
+          {:magic_addele, :earth} => 50
+        })
+
+      defender = c_defender(0, 0, race: :demon, race2: [:goblin], element: {:earth, 1})
+
+      assert {:ok, %{damage: mode_value(25, 24), is_critical: false}} ==
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+    end
+
+    test "partial ignore and skill-rate context retain their separate rounding stages" do
+      attacker = c_attacker(100, %{{:ignore_mdef_race, :formless} => 50})
+      defender = c_defender(11, 5)
+
+      assert {:ok, %{damage: mode_value(90, 89), is_critical: false}} ==
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+
+      attacker = c_attacker(101, %{{:skill_atk, 14} => 30})
+      defender = c_defender(30, 7, equip_modifiers: %{{:sub_skill, 14} => 20})
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{matk_rate: 50}
+        _, _ -> %{}
+      end)
+
+      assert {:ok, %{damage: mode_value(256, 227), is_critical: false}} ==
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender,
+                 skill_id: 14,
+                 skill_ratio: 200,
+                 bonus_matk: 13
+               )
+    end
+
+    test "offensive and defensive Dragonology are separate channels" do
+      attacker = c_attacker(1000, %{}, race: :dragon, dragonology_level: 5)
+      defender = c_defender(0, 50, race: :dragon, dragonology_level: 5)
+
+      assert {:ok, %{damage: mode_value(830, 836), is_critical: false}} ==
+               MagicDamageCalculator.calculate_magic_damage(attacker, defender)
+    end
+
     test "status and equipment magic_addrace sum once into a single cardfix step" do
       stub(ModifierCalculator, :get_all_modifiers, fn
         :player, 1001 -> %{{:magic_addrace, :demon} => 10}
@@ -550,9 +584,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
       assert {:ok, %{damage: 95}} =
                MagicDamageCalculator.calculate_magic_damage(full_ignore, defender)
 
-      # ignore 0: unchanged 86, matching the plain-map baseline.
-      assert {:ok, %{damage: 86}} =
+      assert {:ok, %{damage: damage}} =
                MagicDamageCalculator.calculate_magic_damage(no_ignore, defender)
+
+      assert damage == mode_value(86, 85)
     end
 
     test "defender subele reduces magic damage keyed on the spell element" do

@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Defense.Renewal do
   @impl true
   @spec apply_mdef(number(), Defense.magic_context()) :: number()
   def apply_mdef(damage, %{hard_mdef: hard_mdef, soft_mdef: soft_mdef}) do
-    effective_hard_mdef = if hard_mdef == -100, do: -99, else: hard_mdef
+    effective_hard_mdef = max(hard_mdef, 0)
 
     damage * (1000 + effective_hard_mdef) / (1000 + 10 * effective_hard_mdef) - soft_mdef
   end

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.Elements
+  alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
@@ -27,6 +28,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
     physical_attack: %{
       renewal: PhysicalAttack.Renewal,
       pre_renewal: PhysicalAttack.PreRenewal
+    },
+    magic_damage: %{
+      renewal: MagicDamage.Renewal,
+      pre_renewal: MagicDamage.PreRenewal
     },
     cast_time: %{
       renewal: CastTime.Renewal,
@@ -76,6 +81,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   @doc "Returns the active player physical-attack implementation."
   @spec physical_attack() :: module()
   def physical_attack, do: implementation(:physical_attack)
+
+  @doc "Returns the active ordinary magic-damage implementation."
+  @spec magic_damage() :: module()
+  def magic_damage, do: implementation(:magic_damage)
 
   @doc "Returns the active cast-time implementation."
   @spec cast_time() :: module()

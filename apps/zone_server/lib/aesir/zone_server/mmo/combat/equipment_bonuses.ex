@@ -93,12 +93,44 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
         skill_id \\ nil,
         attack_flag \\ 0
       ) do
+    rates =
+      defense_rates(defender, attacker, attack_element, status_modifiers, skill_id, attack_flag)
+
     %{
-      race_class:
+      race_class: rates.race + rates.race2 + rates.class,
+      element: rates.element,
+      size: rates.size,
+      skill: rates.skill
+    }
+  end
+
+  @doc "Reads separate magic defense channels without merging race, class and secondary groups."
+  @spec magic_defense_rates(
+          Combatant.t(),
+          Combatant.t(),
+          atom(),
+          map(),
+          pos_integer() | nil,
+          BattleFlags.flag()
+        ) :: %{
+          race: rate(),
+          race2: rate(),
+          class: rate(),
+          element: rate(),
+          size: rate(),
+          skill: rate()
+        }
+  def magic_defense_rates(defender, attacker, element, status_modifiers, skill_id, attack_flag) do
+    defense_rates(defender, attacker, element, status_modifiers, skill_id, attack_flag)
+  end
+
+  defp defense_rates(defender, attacker, attack_element, status_modifiers, skill_id, attack_flag) do
+    %{
+      race:
         read(defender, :subrace, attacker.race, attack_flag) +
-          read(defender, :subclass, attacker.class, attack_flag) +
-          status_subrace(status_modifiers, attacker.race) +
-          read_race2(defender, :subrace2, attacker.race2),
+          status_subrace(status_modifiers, attacker.race),
+      race2: read_race2(defender, :subrace2, attacker.race2),
+      class: read(defender, :subclass, attacker.class, attack_flag),
       element:
         read(defender, :subele, attack_element, attack_flag) +
           read(defender, :sub_def_ele, element_atom(attacker.element)) +
@@ -148,6 +180,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
   """
   @spec magic_attack_rates(Combatant.t(), Combatant.t(), pos_integer() | nil, atom()) :: %{
           race: rate(),
+          race2: rate(),
           class: rate(),
           element_target: rate(),
           size: rate(),
@@ -161,9 +194,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses do
         spell_element
       ) do
     %{
-      race:
-        read(attacker, :magic_addrace, defender.race) +
-          read_race2(attacker, :magic_addrace2, defender.race2),
+      race: read(attacker, :magic_addrace, defender.race),
+      race2: read_race2(attacker, :magic_addrace2, defender.race2),
       class: read(attacker, :magic_addclass, defender.class),
       element_target: read(attacker, :magic_addele, element_atom(defender.element)),
       size: read(attacker, :magic_addsize, defender.size),

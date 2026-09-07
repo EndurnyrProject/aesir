@@ -53,7 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
              }
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
-               race: 30,
+               race: 0,
+               race2: 30,
                class: 0,
                element_target: 0,
                size: 0,
@@ -97,6 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
+               race2: 0,
                class: 0,
                element_target: 0,
                size: 0,
@@ -449,6 +451,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, 200, :earth) == %{
                race: 15,
+               race2: 0,
                class: 10,
                element_target: 8,
                size: 11,
@@ -480,6 +483,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
 
       assert EquipmentBonuses.magic_attack_rates(attacker, defender, nil, :neutral) == %{
                race: 0,
+               race2: 0,
                class: 0,
                element_target: 0,
                size: 0,
@@ -487,6 +491,34 @@ defmodule Aesir.ZoneServer.Mmo.Combat.EquipmentBonusesTest do
                skill: 0
              }
     end
+  end
+
+  test "magic defense reads retain separate groups while shared defense keeps its contract" do
+    attacker = %{
+      CombatTestHelper.create_mob_combatant(race: :demon, class: :boss)
+      | race2: [:goblin]
+    }
+
+    defender =
+      CombatTestHelper.create_player_combatant()
+      |> with_equip_modifiers(%{
+        {:subrace, :demon} => 10,
+        {:subrace, :all} => 2,
+        {:subclass, :boss} => 20,
+        {:subrace2, :goblin} => 5,
+        {:subele, :fire} => 30,
+        {:subsize, :medium} => 7,
+        {:sub_skill, 14} => 9
+      })
+
+    statuses = %{subrace_demon: 3, subele_fire: 4}
+    flag = BattleFlags.build(:magic, :long, true)
+
+    assert EquipmentBonuses.magic_defense_rates(defender, attacker, :fire, statuses, 14, flag) ==
+             %{race: 15, race2: 5, class: 20, element: 34, size: 7, skill: 9}
+
+    assert EquipmentBonuses.damage_taken_rates(defender, attacker, :fire, statuses, 14, flag) ==
+             %{race_class: 40, element: 34, size: 7, skill: 9}
   end
 
   describe "ignore_def_rate/2" do
