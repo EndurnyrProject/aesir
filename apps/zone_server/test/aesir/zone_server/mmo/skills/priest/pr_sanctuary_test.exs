@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.EtsTable
@@ -32,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -402,13 +404,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     assert {:ok, %Group{state: %{hits_remaining: 7}}} =
              PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
 
+    water_damage = if GameMode.mode() == :renewal, do: 582, else: 777
     assert_received {:damage_packet, 2_001, 1_000, 971}
-    assert_received {:damage_packet, 2_002, 1_000, 582}
+    assert_received {:damage_packet, 2_002, 1_000, ^water_damage}
     assert_received {:damage_packet, 2_003, 1_000, 1}
     refute_received {:damage_packet, 2_004, _, _}
 
     assert_received {:delivered_damage, 971}
-    assert_received {:delivered_damage, 582}
+    assert_received {:delivered_damage, ^water_damage}
     assert_received {:delivered_damage, 1}
 
     for _ <- 1..3 do

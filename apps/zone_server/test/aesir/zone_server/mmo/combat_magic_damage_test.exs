@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.SkillDamage
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   setup do
@@ -162,9 +164,11 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
 
       expect(EquipComa, :trigger?, fn _attacker, _target -> false end)
 
-      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 125, hit_info ->
+      expected_damage = if GameMode.mode() == :renewal, do: 125, else: 150
+
+      expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, ^expected_damage, hit_info ->
         refute hit_info.coma?
-        125
+        expected_damage
       end)
 
       stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
@@ -185,9 +189,14 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicDamageTest do
                )
 
       assert_received {:packet,
-                       %SkillDamage{damage: 125, div: 1, skill_id: @skill_id, level: @skill_level}}
+                       %SkillDamage{
+                         damage: ^expected_damage,
+                         div: 1,
+                         skill_id: @skill_id,
+                         level: @skill_level
+                       }}
 
-      assert_received {:damage, 125}
+      assert_received {:damage, ^expected_damage}
     end
 
     test "passes the amount through unchanged for matching element (neutral vs neutral)" do

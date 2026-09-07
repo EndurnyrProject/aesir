@@ -78,7 +78,7 @@ defmodule Aesir.ZoneServer.Integration.MagicReflectIntegrationTest do
         full = reflected_damage(scenario())
         halved = reflected_damage(scenario(caster: [equip: %{no_magic_damage: 50}]))
 
-        assert full > 0
+        assert full > 1
         assert halved == full - div(full * 50, 100)
       end)
     end
@@ -199,6 +199,13 @@ defmodule Aesir.ZoneServer.Integration.MagicReflectIntegrationTest do
   defp reflected_damage({caster, target}) do
     equip_player_with(target, %{magic_damage_return: 100})
     before = current_hp(caster.pid)
+
+    # Compare the same real MATK roll in each caster's process, including classic variance.
+    :sys.replace_state(caster.pid, fn state ->
+      :rand.seed(:exsss, {1, 2, 3})
+      state
+    end)
+
     cast(caster, @coldbolt, target.character.id)
     assert_eventually(fn -> current_hp(caster.pid) < before end)
     before - current_hp(caster.pid)
