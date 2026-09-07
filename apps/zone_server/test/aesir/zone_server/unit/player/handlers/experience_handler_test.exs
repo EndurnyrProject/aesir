@@ -210,8 +210,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       assert {110, 110} == capture_kill_grant(equipment, :fish)
     end
 
+    @tag game_mode: :renewal
     test "a mob of the player race reads the :player_human bonus" do
       assert {115, 115} == capture_kill_grant(%{{:exp_add_race, :player_human} => 15}, :player)
+      assert {100, 100} == capture_kill_grant(%{{:exp_add_race, :demi_human} => 15}, :player)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a mob of the player race reads the :demi_human bonus" do
+      assert {115, 115} == capture_kill_grant(%{{:exp_add_race, :demi_human} => 15}, :player)
+      assert {100, 100} == capture_kill_grant(%{{:exp_add_race, :player_human} => 15}, :player)
     end
 
     test "no equipment leaves the grant untouched" do
@@ -241,6 +249,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       state_with(base_level: from_level)
     end
 
+    @tag game_mode: :renewal
     test "leveling 200 -> 201 grants +3 trait points" do
       {:noreply, new_state} =
         ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(200, 201))
@@ -248,6 +257,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       assert new_state.game_state.stats.progression.trait_point == 3
     end
 
+    @tag game_mode: :renewal
     test "leveling 204 -> 205 grants +7 trait points" do
       {:noreply, new_state} =
         ExperienceHandler.handle_gain_exp(100, 0, stub_level_up(204, 205))
@@ -269,6 +279,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
       assert new_state.game_state.stats.progression.trait_point == 0
     end
 
+    @tag game_mode: :renewal
     test "trait_point is persisted" do
       test_pid = self()
 
@@ -300,6 +311,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ExperienceHandlerTest do
              }
     end
 
+    @tag game_mode: :renewal
     test "trait_point is synced" do
       test_pid = self()
 

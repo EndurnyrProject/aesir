@@ -6,7 +6,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
+  alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LevelPenalty
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
@@ -35,6 +37,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   setup do
     Mimic.copy(ProgressionHandler)
     Mimic.copy(Broadcast)
+    Mimic.copy(Config)
     Mimic.copy(Coordinator)
     Mimic.copy(PartyManager)
     :ok
@@ -60,8 +63,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   end
 
   test "owner and Homunculus split separately then aggregate owner rewards and companion ten-percent" do
-    Application.put_env(:zone_server, :exp_bonus_attacker, 0)
-    on_exit(fn -> Application.delete_env(:zone_server, :exp_bonus_attacker) end)
+    stub(Config, :exp_bonus_attacker, fn -> 0 end)
 
     player = player_state(1, "prontera", 100)
     homunculus = homunculus_state(20, 1, "prontera", 100)
@@ -84,8 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   end
 
   test "typed grants carry the killed boss's class" do
-    Application.put_env(:zone_server, :exp_bonus_attacker, 0)
-    on_exit(fn -> Application.delete_env(:zone_server, :exp_bonus_attacker) end)
+    stub(Config, :exp_bonus_attacker, fn -> 0 end)
 
     player = player_state(1, "prontera", 100)
     UnitRegistry.register_unit(:player, 1, PlayerState, player, self())
@@ -109,13 +110,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   end
 
   test "party equal-share-only recipients grant no companion EXP" do
-    Application.put_env(:zone_server, :exp_bonus_attacker, 0)
-    Application.put_env(:zone_server, :party_even_share_bonus, 0)
-
-    on_exit(fn ->
-      Application.delete_env(:zone_server, :exp_bonus_attacker)
-      Application.delete_env(:zone_server, :party_even_share_bonus)
-    end)
+    stub(Config, :exp_bonus_attacker, fn -> 0 end)
+    stub(Config, :party_even_share_bonus, fn -> 0 end)
 
     owner = %{player_state(1, "prontera", 100) | party_id: 10}
     recipient = %{player_state(2, "prontera", 100) | party_id: 10}
@@ -149,8 +145,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
       :brute
     )
 
-    assert_receive {:progression, {:mob_kill_exp, 20, 10, :brute, _mob_class}}
-    assert_receive {:progression, {:mob_kill_exp, 20, 10, :brute, _mob_class}}
+    {base_share, job_share} = mode_value({20, 10}, {50, 25})
+
+    assert_receive {:progression, {:mob_kill_exp, ^base_share, ^job_share, :brute, _mob_class}}
+
+    assert_receive {:progression, {:mob_kill_exp, ^base_share, ^job_share, :brute, _mob_class}}
     refute_receive {:"$gen_cast", {:homunculus, {:gain_exp, 20, _amount, "prontera"}}}, 50
   end
 
@@ -168,8 +167,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   end
 
   test "typed loot keeps earliest owner order when aggregated damage ties" do
-    Application.put_env(:zone_server, :first_attack_loot_bonus, 0)
-    on_exit(fn -> Application.delete_env(:zone_server, :first_attack_loot_bonus) end)
+    stub(Config, :first_attack_loot_bonus, fn -> 0 end)
 
     state =
       mob_state()
@@ -184,8 +182,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
   end
 
   test "an owned mob keeps EXP and loot weight after leaving the registry" do
-    Application.put_env(:zone_server, :exp_bonus_attacker, 0)
-    on_exit(fn -> Application.delete_env(:zone_server, :exp_bonus_attacker) end)
+    stub(Config, :exp_bonus_attacker, fn -> 0 end)
 
     player = player_state(1, "prontera", 100)
     owned_mob = %{MobState.configure_summon(mob_state(), owner_player_id: 1) | instance_id: 20}
@@ -369,6 +366,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.HomunculusRewardsTest do
       x: 50,
       y: 50
     }
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp entry({source_type, _id} = contributor, owner_id, damage, order) do

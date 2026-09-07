@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   no broadcast, and a level-up past `party_share_level` auto-disabling
   `exp_share` for every connected client.
 
-  `Party.Manager`, `Party.ExpShare`, `Unit.Mob.KillExp` and the renewal
-  level-gap penalty (`LevelPenalty`) all run for real against a live Horde
+  `Party.Manager`, `Party.ExpShare`, `Unit.Mob.KillExp` and the active mode's
+  level-gap policy (`LevelPenalty`) all run for real against a live Horde
   entry and DB rows; only the usual integration-test I/O (map cache, spatial
   index) goes through the real ETS-backed implementations `IntegrationCase`
   already wires up, mirroring `warp_test.exs`/`cart_integration_test.exs`.
@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.PartyActionResult
@@ -45,7 +46,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Unit.Mob.KillExp
 
-  # rAthena `level_penalty.yml` `Type: Exp` breakpoint: diff -31 -> 10%.
+  # Renewal scales this -31 level gap to 10%; classic has no level-gap penalty.
   @mob_level 19
   @killer_level 50
   @base_exp 100
@@ -68,10 +69,12 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       leader_state = get_player_state(leader.pid)
       ally_state = get_player_state(ally.pid)
 
-      assert leader_state.stats.progression.base_exp == 5
-      assert leader_state.stats.progression.job_exp == 2
-      assert ally_state.stats.progression.base_exp == 5
-      assert ally_state.stats.progression.job_exp == 2
+      {base_share, job_share} = mode_value({5, 2}, {50, 25})
+
+      assert leader_state.stats.progression.base_exp == base_share
+      assert leader_state.stats.progression.job_exp == job_share
+      assert ally_state.stats.progression.base_exp == base_share
+      assert ally_state.stats.progression.job_exp == job_share
     end
 
     test "a third member on a different map is excluded from the split" do
@@ -90,8 +93,12 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       ally_state = get_player_state(ally.pid)
       elsewhere_state = get_player_state(elsewhere.pid)
 
-      assert leader_state.stats.progression.base_exp == 5
-      assert ally_state.stats.progression.base_exp == 5
+      {base_share, job_share} = mode_value({5, 2}, {50, 25})
+
+      assert leader_state.stats.progression.base_exp == base_share
+      assert leader_state.stats.progression.job_exp == job_share
+      assert ally_state.stats.progression.base_exp == base_share
+      assert ally_state.stats.progression.job_exp == job_share
       assert elsewhere_state.stats.progression.base_exp == 0
       assert elsewhere_state.stats.progression.job_exp == 0
     end
@@ -114,8 +121,10 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       leader_state = get_player_state(leader.pid)
       ally_state = get_player_state(ally.pid)
 
-      assert leader_state.stats.progression.base_exp == 10
-      assert leader_state.stats.progression.job_exp == 5
+      {base_reward, job_reward} = mode_value({10, 5}, {100, 50})
+
+      assert leader_state.stats.progression.base_exp == base_reward
+      assert leader_state.stats.progression.job_exp == job_reward
       assert ally_state.stats.progression.base_exp == 0
       assert ally_state.stats.progression.job_exp == 0
     end
@@ -144,36 +153,37 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
 
   describe "cross-map member state" do
     test "job changes reach every member and survive disconnect and runtime reconstruction" do
-      {:ok, parent_job} = JobManagement.get_job_by_id(4054)
+      {parent_job_id, target_job_id, base_level} = mode_value({4054, 4252, 200}, {1, 7, 50})
+      {:ok, parent_job} = JobManagement.get_job_by_id(parent_job_id)
 
       %{sessions: [leader, changer], party_id: party_id} =
         form_party(
           [
-            {"RemoteLeader", 200, "prontera"},
-            {"RemoteChanger", 200, "geffen"}
+            {"RemoteLeader", base_level, "prontera"},
+            {"RemoteChanger", base_level, "geffen"}
           ],
           observe_party_updates: true,
-          character_attrs: %{class: 4054, job_level: parent_job.max_job_level}
+          character_attrs: %{class: parent_job_id, job_level: parent_job.max_job_level}
         )
 
       flush_packets()
       flush_observed_party_updates()
 
-      send(changer.pid, {:progression, {:change_job, 4252}})
+      send(changer.pid, {:progression, {:change_job, target_job_id}})
 
       changer_id = changer.character.id
 
       assert_receive {:party_update, "RemoteLeader",
                       %PartyMemberUpdate{
                         party_id: ^party_id,
-                        member: %{char_id: ^changer_id, job_id: 4252} = leader_member
+                        member: %{char_id: ^changer_id, job_id: ^target_job_id} = leader_member
                       }},
                      2_000
 
       assert_receive {:party_update, "RemoteChanger",
                       %PartyMemberUpdate{
                         party_id: ^party_id,
-                        member: %{char_id: ^changer_id, job_id: 4252} = own_member
+                        member: %{char_id: ^changer_id, job_id: ^target_job_id} = own_member
                       }},
                      2_000
 
@@ -188,7 +198,8 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
       assert leader_member.max_sp == changed_state.stats.derived_stats.max_sp
       assert leader_member.ap == changed_state.stats.current_state.ap
       assert leader_member.max_ap == changed_state.stats.derived_stats.max_ap
-      assert leader_member.ap > 0
+      assert leader_member.ap == leader_member.max_ap
+      assert leader_member.max_ap > 0 == mode_value(true, false)
       assert leader_member.online
       assert leader_member.map == "geffen"
 
@@ -221,6 +232,10 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
     end
   end
 
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
+
   defp kill_mob(killer_pid) do
     %{character_id: char_id, map_name: map_name} = get_player_state(killer_pid)
     KillExp.distribute(%{char_id => 1}, @base_exp, @job_exp, @mob_level, map_name, :formless)
@@ -242,6 +257,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
         leader_name,
         %{
           base_level: leader_level,
+          job_level: 9,
           last_map: leader_map,
           last_x: 150,
           last_y: 150
@@ -274,6 +290,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
         name,
         %{
           base_level: level,
+          job_level: 9,
           last_map: map_name,
           last_x: 150,
           last_y: 150

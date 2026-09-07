@@ -408,6 +408,8 @@ defmodule Aesir.ZoneServer.Integration.PvpCombatIntegrationTest do
   end
 
   defp auto_attack(attacker, target_id) do
+    :rand.seed(:exsss, {100, 200, 300})
+
     Combat.execute_attack(
       get_player_stats(attacker.pid),
       get_player_state(attacker.pid),

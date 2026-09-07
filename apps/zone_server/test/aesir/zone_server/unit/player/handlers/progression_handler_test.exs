@@ -161,6 +161,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   end
 
   describe "handle_add_base_level/2 trait-point grant" do
+    @tag game_mode: :renewal
     test "leveling 200 -> 201 grants +3 trait points" do
       state = state_with(job_id: @dragon_knight_id, base_level: 200)
 
@@ -169,6 +170,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert new_state.game_state.stats.progression.trait_point == 3
     end
 
+    @tag game_mode: :renewal
     test "leveling 204 -> 205 grants +7 trait points" do
       state = state_with(job_id: @dragon_knight_id, base_level: 204)
 
@@ -185,7 +187,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert new_state.game_state.stats.progression.trait_point == 0
     end
 
-    test "a non-4th-job character gains 0 trait points across a level-up" do
+    test "a Swordman stops at level 99 and gains no trait points" do
       state = state_with(job_id: @swordman_id, base_level: 90)
 
       {:noreply, new_state} = ProgressionHandler.handle_add_base_level(20, state)
@@ -194,6 +196,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert new_state.game_state.stats.progression.trait_point == 0
     end
 
+    @tag game_mode: :renewal
     test "trait_point is persisted" do
       test_pid = self()
 
@@ -209,6 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert_received {:persisted, %{trait_point: 3}}
     end
 
+    @tag game_mode: :renewal
     test "trait_point is synced as a ParamChange" do
       state = state_with(job_id: @dragon_knight_id, base_level: 200)
 
@@ -735,6 +739,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   end
 
   describe "apply_job_change/2 4th-job gating" do
+    @describetag game_mode: :renewal
+
     test "rejects a wrong-parent char with requirements_not_met, mutating nothing" do
       reject(&CharacterPersistence.update_character/3)
       reject(&Broadcast.to_player/2)
@@ -770,6 +776,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   end
 
   describe "apply_job_change/2 trait-point grant and zeroing" do
+    @describetag game_mode: :renewal
+
     test "entering a trait job from a non-trait job grants +7 trait points" do
       state = state_with(job_id: @rune_knight_id, base_level: 200, job_level: 70, trait_point: 0)
 
@@ -844,6 +852,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   end
 
   describe "reset_stats/1" do
+    @tag game_mode: :renewal
     test "on a level-210 dragon_knight resets classic to 1, trait to 0, restores pools with +7" do
       state = state_with(job_id: @dragon_knight_id, base_level: 210)
 
@@ -887,7 +896,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
         {:ok, %{}}
       end)
 
-      state = state_with(job_id: @dragon_knight_id, base_level: 210)
+      state = state_with(job_id: @swordman_id, base_level: 90)
 
       ProgressionHandler.reset_stats(state)
 
@@ -911,7 +920,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     end
 
     test "syncs the recalculated classic stats to the client" do
-      state = state_with(job_id: @dragon_knight_id, base_level: 210)
+      state = state_with(job_id: @swordman_id, base_level: 90)
 
       ProgressionHandler.reset_stats(state)
 

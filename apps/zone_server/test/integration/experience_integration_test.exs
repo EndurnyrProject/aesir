@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Integration.ExperienceIntegrationTest do
         start_player_session(
           id: 7001,
           name: "Slayer",
-          base_level: 1,
+          base_level: 2,
           job_level: 1,
           map_name: "prontera",
           position: {150, 150}
@@ -43,8 +43,8 @@ defmodule Aesir.ZoneServer.Integration.ExperienceIntegrationTest do
       progression = get_player_state(player.pid).stats.progression
       assert progression.base_exp == 10
       assert progression.job_exp == 5
-      # 10 base exp is far below the level-2 threshold, so no level is gained.
-      assert progression.base_level == 1
+      # Both active tables require more than 10 EXP to advance from level 2.
+      assert progression.base_level == 2
     end
 
     test "the killer's bExpAddRace equipment boosts the reward for a matching race" do
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Integration.ExperienceIntegrationTest do
     start_player_session(
       id: id,
       name: "Slayer#{id}",
-      base_level: 1,
+      base_level: 2,
       job_level: 1,
       map_name: "prontera",
       position: {150, 150}
