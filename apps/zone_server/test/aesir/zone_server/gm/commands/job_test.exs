@@ -82,6 +82,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     refute_receive {:progression, {:change_job, _}}
   end
 
+  @tag game_mode: :renewal
   test "allows an eligible 4th-job change, broadcasting {:change_job, id}" do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
@@ -89,6 +90,18 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
 
     assert {:ok, _} = Job.execute([to_string(@dragon_knight_id)], eligible)
     assert_receive {:progression, {:change_job, @dragon_knight_id}}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "rejects a fourth-job change absent from the classic job corpus, broadcasting nothing" do
+    PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    eligible_by_level = ctx([], job_id: @rune_knight_id, base_level: 200, job_level: 70)
+
+    assert {:error, "You do not meet the requirements for that job"} =
+             Job.execute([to_string(@dragon_knight_id)], eligible_by_level)
+
+    refute_receive {:progression, {:change_job, _}}
   end
 
   test "is rejected with a message when the job is gender-locked for the caller's sex, broadcasting nothing" do

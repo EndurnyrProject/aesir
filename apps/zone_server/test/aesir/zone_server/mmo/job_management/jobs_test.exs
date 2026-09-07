@@ -8,8 +8,17 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
   @dense_value_tables [:base_hp, :base_sp, :base_ap, :base_exp, :job_exp]
 
   describe "registry" do
-    test "loads the full renewal job set" do
+    @tag game_mode: :renewal
+    test "loads the Renewal job set through fourth jobs" do
       assert length(Jobs.all()) == 172
+      assert {:ok, %Job{name: :dragon_knight}} = Jobs.by_name(:dragon_knight)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "loads the trans-era job set without fourth jobs" do
+      assert length(Jobs.all()) == 74
+      assert {:ok, %Job{name: :lord_knight}} = Jobs.by_name(:lord_knight)
+      assert :error = Jobs.by_name(:dragon_knight)
     end
 
     test "all job ids are unique" do
@@ -102,8 +111,19 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
       assert {:error, :level_out_of_range} = JobManagement.get_base_hp(:novice, 9_999)
     end
 
-    test "reads weapon aspd and reports unknown weapon types" do
+    @tag game_mode: :renewal
+    test "reads Renewal weapon ASPD entries" do
+      assert {:ok, 47} = JobManagement.get_base_aspd(:swordman, :one_handed_sword)
       assert {:ok, 5} = JobManagement.get_base_aspd(:swordman, :shield)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "reads classic weapon delays without a shield entry" do
+      assert {:ok, 550} = JobManagement.get_base_aspd(:swordman, :one_handed_sword)
+      assert {:error, :weapon_type_not_found} = JobManagement.get_base_aspd(:swordman, :shield)
+    end
+
+    test "reports unknown weapon types" do
       assert {:error, :weapon_type_not_found} = JobManagement.get_base_aspd(:swordman, :huuma)
     end
 
@@ -125,9 +145,15 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobsTest do
                JobManagement.get_bonus_stats(:swordman, 7)
     end
 
+    @tag game_mode: :renewal
     test "trait job bonus stats sum pow/sta/... up to the max job level" do
       assert {:ok, %Job.BonusStats{level: 60, pow: 10, sta: 7, wis: 3, spl: 5, con: 7, crt: 8}} =
                JobManagement.get_bonus_stats(:dragon_knight, 60)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "trait job bonus stats are unavailable with the classic job corpus" do
+      assert {:error, :job_not_found} = JobManagement.get_bonus_stats(:dragon_knight, 60)
     end
 
     test "validates base and job levels against the job maxima" do

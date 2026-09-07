@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.TraitJobsTest do
   end
 
   describe "change_allowed?/2" do
+    @tag game_mode: :renewal
     test "ok for the right parent at base 200 / job 70" do
       progression = %PlayerProgression{job_id: 4054, base_level: 200, job_level: 70}
 
@@ -43,10 +44,23 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.TraitJobsTest do
       assert TraitJobs.change_allowed?(progression, 4252) == {:error, :requirements_not_met}
     end
 
+    @tag game_mode: :renewal
     test "ok for a summoner parent (max_job_level 60) at base 200 / job 60" do
       progression = %PlayerProgression{job_id: 4218, base_level: 200, job_level: 60}
 
       assert TraitJobs.change_allowed?(progression, 4308) == :ok
+    end
+
+    @tag game_mode: :pre_renewal
+    test "rejects fourth-job targets absent from the classic job corpus" do
+      capped_rune_knight = %PlayerProgression{job_id: 4054, base_level: 200, job_level: 70}
+      capped_summoner = %PlayerProgression{job_id: 4218, base_level: 200, job_level: 60}
+
+      assert TraitJobs.change_allowed?(capped_rune_knight, 4252) ==
+               {:error, :requirements_not_met}
+
+      assert TraitJobs.change_allowed?(capped_summoner, 4308) ==
+               {:error, :requirements_not_met}
     end
 
     test "always ok for a non-trait target job" do
