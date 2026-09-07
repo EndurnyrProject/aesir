@@ -74,6 +74,12 @@ defmodule Aesir.ZoneServer.Integration.PvpCombatIntegrationTest do
         flush_packets()
         hp_before = get_player_state(defender.pid).stats.current_state.hp
 
+        # The hit roll runs in the caster session, not this test process.
+        :sys.replace_state(attacker.pid, fn state ->
+          :rand.seed(:exsss, {1, 2, 3})
+          state
+        end)
+
         cast_skill(attacker, @bash, defender.character.id)
 
         packet = positive_skill_packet(@bash, defender.character.id)

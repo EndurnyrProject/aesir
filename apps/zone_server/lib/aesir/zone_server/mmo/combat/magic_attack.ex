@@ -231,9 +231,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   behavior for player targets: its total damage is divided by the hit count while
   the client receives the multi-hit animation.
 
-  `:damage_scale` (default `1`) multiplies the final computed damage before it is
-  applied and re-clamps to a floor of 1 - the seam Grand Cross uses to halve the
-  self-damage its own footprint deals to its caster.
+  `:damage_scale` (default `1`) multiplies the computed damage before delivery
+  and re-clamps to a floor of 1.
 
   The canonical skill knockback options are `:base_distance`, `:origin`,
   `:native_enabled`, `:native_target_types`, and `:native_requires_survival`.
@@ -263,91 +262,161 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     hit_count = Keyword.get(opts, :hit_count, 1)
     bonus_matk = Keyword.get(opts, :bonus_matk, 0)
     fixed_damage = Keyword.get(opts, :fixed_damage)
-    dst_delay = Keyword.get(opts, :dst_delay, 0)
     divide_hits? = unit_type == :player and Keyword.get(opts, :divide_hits_for_player?, false)
 
-    with {:ok, target_pid, target_state, target_type} <-
-           resolve_skill_unit_target(unit_type, target_id),
-         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
-         :ok <- ensure_living_target(target_state, target_type),
-         target <- target_state.__struct__.to_combatant(target_state),
-         :ok <- Rules.validate_target(caster, target, %{skill_id: skill_id}),
-         {:ok, {tx, ty, map_name}} <- SpatialIndex.get_unit_position(unit_type, target_id),
-         damage <-
-           skill_unit_damage(
-             caster,
-             target,
-             element,
-             skill_ratio,
-             hit_count,
-             bonus_matk,
-             skill_id,
-             fixed_damage
-           ),
-         damage <- if(divide_hits?, do: div(damage, hit_count), else: damage),
-         damage <- scale_damage(damage, Keyword.get(opts, :damage_scale, 1)) do
+    with {:ok, prepared} <- prepare_skill_unit_hit(caster, {unit_type, target_id}, skill_id) do
+      damage =
+        skill_unit_damage(
+          caster,
+          prepared.target,
+          element,
+          skill_ratio,
+          hit_count,
+          bonus_matk,
+          skill_id,
+          fixed_damage
+        )
+
+      damage = if divide_hits?, do: div(damage, hit_count), else: damage
+      damage = scale_damage(damage, Keyword.get(opts, :damage_scale, 1))
+
       {damage, packet_divisions} =
         case Keyword.fetch(opts, :hit_divisions) do
           {:ok, hit_divisions} -> normalize_hit_divisions(damage, hit_divisions)
           :error -> {damage, if(divide_hits?, do: -hit_count, else: hit_count)}
         end
 
-      coma_decision = decide_coma(caster, target, [damage])
-
-      hit_info =
-        magic_hit_info(element,
-          skill_id: skill_id,
+      deliver_skill_unit_hit(
+        prepared,
+        damage,
+        Keyword.merge(opts,
           skill_level: skill_level,
-          from_caster?: false,
-          coma?: coma_decision == true
+          element: element,
+          packet_divisions: packet_divisions
         )
+      )
+    end
+  end
 
-      {damage, hit_info} =
-        prepare_magic_hit(
-          target_type,
-          target_id,
-          damage,
-          hit_info,
-          damage_source(caster, target_type)
-        )
+  @typedoc "A resolved ground target consumed synchronously by its preparing callback."
+  @type prepared_ground_hit :: %{
+          caster: struct(),
+          target: struct(),
+          target_state: struct(),
+          target_pid: pid(),
+          target_type: atom(),
+          target_id: integer(),
+          position: {integer(), integer(), String.t()},
+          skill_id: integer()
+        }
 
-      packet =
-        PacketFactory.build_splash_damage_packet(
-          caster.unit_id,
-          target_id,
-          skill_id,
-          skill_level,
-          damage,
-          div: packet_divisions,
-          dst_delay: dst_delay
-        )
+  @doc "Resolves and validates a ground target without rolling damage or delivering effects."
+  @spec prepare_skill_unit_hit(struct(), Ref.t(), integer()) ::
+          {:ok, prepared_ground_hit()} | {:error, atom()}
+  def prepare_skill_unit_hit(caster, {unit_type, target_id}, skill_id) do
+    with {:ok, target_pid, target_state, target_type} <-
+           resolve_skill_unit_target(unit_type, target_id),
+         :ok <- TargetResolver.ensure_targetable(target_state, target_type),
+         :ok <- ensure_living_target(target_state, target_type),
+         target <- target_state.__struct__.to_combatant(target_state),
+         :ok <- Rules.validate_target(caster, target, %{skill_id: skill_id}),
+         {:ok, position} <- SpatialIndex.get_unit_position(unit_type, target_id) do
+      {:ok,
+       %{
+         caster: caster,
+         target: target,
+         target_state: target_state,
+         target_pid: target_pid,
+         target_type: target_type,
+         target_id: target_id,
+         position: position,
+         skill_id: skill_id
+       }}
+    end
+  end
 
-      packet = Hallucination.maybe_garble(packet, target_type)
-      Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
-      delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
+  @doc """
+  Delivers a calculated ground hit through recipient hooks, packets and owner mutation.
 
-      if delivery == :ok do
-        dispatch_equip_autobonuses(caster, target, magic_attack_flag())
-      end
-
-      if dst_delay > 0 do
-        apply_walk_delay(unit_type, target_pid, dst_delay)
-      end
-
-      result = magic_result(target_state, [damage], coma_decision)
-
-      maybe_apply_magic_knockback(
-        delivery,
-        caster,
-        target,
-        target_type,
-        skill_id,
-        result,
+  Consume the prepared target immediately in the same callback. The nonnegative
+  amount is already formula-complete: element, defense, scaling and hit division
+  are not recalculated. Element and level options describe the hit to its recipients.
+  """
+  @spec deliver_skill_unit_hit(prepared_ground_hit(), non_neg_integer(), keyword()) :: :ok
+  def deliver_skill_unit_hit(
+        %{
+          caster: caster,
+          target: target,
+          target_state: target_state,
+          target_pid: target_pid,
+          target_type: target_type,
+          target_id: target_id,
+          position: {tx, ty, map_name},
+          skill_id: skill_id
+        },
+        damage,
         opts
       )
+      when is_integer(damage) and damage >= 0 do
+    skill_level = Keyword.fetch!(opts, :skill_level)
+    element = Keyword.fetch!(opts, :element)
+    packet_divisions = Keyword.get(opts, :packet_divisions, 1)
+    dst_delay = Keyword.get(opts, :dst_delay, 0)
+    coma_decision = decide_coma(caster, target, [damage])
 
-      :ok
+    hit_info =
+      magic_hit_info(element,
+        skill_id: skill_id,
+        skill_level: skill_level,
+        from_caster?: false,
+        coma?: coma_decision == true
+      )
+
+    {damage, hit_info} =
+      prepare_magic_hit(
+        target_type,
+        target_id,
+        damage,
+        hit_info,
+        damage_source(caster, target_type)
+      )
+
+    packet =
+      PacketFactory.build_splash_damage_packet(
+        caster.unit_id,
+        target_id,
+        skill_id,
+        skill_level,
+        damage,
+        div: packet_divisions,
+        dst_delay: dst_delay
+      )
+
+    packet = Hallucination.maybe_garble(packet, target_type)
+    Broadcast.to_in_range(map_name, tx, ty, Config.view_range(), packet)
+    delivery = apply_magic_damage(target_type, target_pid, target_id, damage, hit_info, caster)
+
+    if delivery == :ok do
+      dispatch_equip_autobonuses(caster, target, magic_attack_flag())
     end
+
+    if dst_delay > 0 do
+      apply_walk_delay(target_type, target_pid, dst_delay)
+    end
+
+    result = magic_result(target_state, [damage], coma_decision)
+
+    maybe_apply_magic_knockback(
+      delivery,
+      caster,
+      target,
+      target_type,
+      skill_id,
+      result,
+      opts
+    )
+
+    :ok
   end
 
   @doc """
@@ -548,9 +617,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     hits
   end
 
-  # Post-calculation damage scale for a skill-unit hit (Grand Cross halves its
-  # own caster's self-damage). A scale of 1 is the untouched default; any other
-  # factor multiplies the computed damage and re-clamps to a floor of 1.
+  # A scale of 1 preserves the computed amount; other factors retain the hit floor.
   defp scale_damage(damage, 1), do: damage
   defp scale_damage(damage, scale), do: max(1, trunc(damage * scale))
 

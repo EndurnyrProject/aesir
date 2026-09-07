@@ -54,10 +54,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.StopTest do
       sex: "M",
       str: 1,
       agi: 1,
-      vit: 1,
+      vit: 0,
       int: 1,
       dex: 1,
-      luk: 1,
+      luk: 0,
       base_level: 1,
       job_level: 1,
       class: 0

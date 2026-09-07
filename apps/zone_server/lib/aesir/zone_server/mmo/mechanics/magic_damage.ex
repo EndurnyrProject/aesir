@@ -43,6 +43,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.MagicDamage do
   @doc "Calculates an ordinary magic hit without lookups or random draws."
   @callback calculate(integer(), context()) :: pos_integer()
 
+  @doc "Applies only the mode's attacker card channels, without other damage stages."
+  @callback attacker_cardfix(integer(), attack_rates()) :: integer()
+
   @doc "Applies the skill ratio, post-ratio flat addition and shared status channels."
   @spec skill_damage(integer(), context()) :: integer()
   def skill_damage(matk, context) do

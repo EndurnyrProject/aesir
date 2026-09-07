@@ -157,6 +157,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat do
               ),
               to: MagicAttack
 
+  @doc "Prepares a validated ground target without calculating or delivering damage."
+  @spec prepare_skill_unit_hit(struct(), {atom(), integer()}, integer()) ::
+          {:ok, MagicAttack.prepared_ground_hit()} | {:error, atom()}
+  defdelegate prepare_skill_unit_hit(caster, target_ref, skill_id), to: MagicAttack
+
+  @doc "Delivers a formula-complete ground amount through the ordinary recipient hooks."
+  @spec deliver_skill_unit_hit(MagicAttack.prepared_ground_hit(), non_neg_integer(), keyword()) ::
+          :ok
+  defdelegate deliver_skill_unit_hit(prepared, amount, opts), to: MagicAttack
+
   @doc """
   Deals damage to a target entity (used by status effects).
 

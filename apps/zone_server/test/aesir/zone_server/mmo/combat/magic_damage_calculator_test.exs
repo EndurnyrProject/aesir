@@ -120,6 +120,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   end
 
   describe "calculate_magic_damage/3" do
+    test "skill IDs select rate metadata, not a different formula or physical-stat requirement" do
+      for id <- [14, 254] do
+        assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==
+                 MagicDamageCalculator.calculate_magic_damage(attacker(100), defender(10, 5),
+                   skill_id: id
+                 )
+      end
+    end
+
     test "baseline single hit applies MDEF reduction and floors" do
       # Renewal: trunc(100 * 1010 / 1100 - 5). Classic: 100 * 90% - 5.
       assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==

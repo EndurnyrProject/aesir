@@ -127,6 +127,62 @@ defmodule Aesir.ZoneServer.Mmo.CombatSkillUnitTest do
     }
   end
 
+  test "prepared ground delivery uses the supplied amount without another element or calculation stage" do
+    mob = build_mob_state(50)
+    attacker = caster(100)
+    test_pid = self()
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:ok, {MobState, mob, test_pid}} end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id -> {:ok, {150, 150, @map_name}} end)
+
+    reject(&MagicDamageCalculator.calculate_magic_damage/3)
+
+    expect(StatusInterpreter, :absorb_damage, fn :mob, @target_id, 103, info ->
+      assert info.element == :holy
+      assert info.from_caster? == false
+      send(test_pid, :absorbed)
+      97
+    end)
+
+    expect(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, packet ->
+      assert packet.damage == 97
+      assert packet.skill_id == 85
+      assert packet.level == 1
+      :ok
+    end)
+
+    expect(MobSession, :apply_damage, fn ^test_pid, 97, @caster_id -> :ok end)
+    expect(MobSession, :apply_walk_delay, fn ^test_pid, 60 -> :ok end)
+
+    assert {:ok, prepared} = Combat.prepare_skill_unit_hit(attacker, {:mob, @target_id}, 85)
+    assert prepared.target.unit_id == @target_id
+    refute_received :absorbed
+
+    assert :ok =
+             Combat.deliver_skill_unit_hit(prepared, 103,
+               skill_level: 1,
+               element: :holy,
+               dst_delay: 60
+             )
+
+    assert_received :absorbed
+  end
+
+  test "ground preparation rejects dead targets before any calculation or delivery" do
+    mob = %{build_mob_state(0) | hp: 0, is_dead: true}
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id -> {:ok, {MobState, mob, self()}} end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id -> {:ok, {150, 150, @map_name}} end)
+
+    reject(&MagicDamageCalculator.calculate_magic_damage/3)
+    reject(&MobSession.apply_damage/3)
+    reject(&Broadcast.to_in_range/5)
+
+    assert {:error, :target_dead} =
+             Combat.prepare_skill_unit_hit(caster(100), {:mob, @target_id}, 85)
+  end
+
   test "player-owned ground damage applies equipment blow after delivery and walk delay" do
     test_pid = self()
     mob_state = %{build_mob_state(0) | x: 151}

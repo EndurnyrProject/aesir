@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
@@ -38,7 +39,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   alias Aesir.ZoneServer.Mmo.Mechanics
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
-  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @emperium_mob_id 1288
@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
     with {:ok, critical} <- finalize_damage(0, attacker, defender, opts) do
-      parts = player_attack_parts(attacker, opts, attack_path, critical.is_critical)
+      parts = DamageInputs.player_attack_parts(attacker, opts, attack_path, critical.is_critical)
 
       mastery =
         parts.mastery_atk + demon_bane_bonus(attacker, defender) +
@@ -369,7 +369,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         do: :omit_equipment_def_ignore,
         else: :apply_equipment_def_ignore
 
-    {hard, soft} = defense_values(defender, attacker, status_mode, ignore_mode, modifiers)
+    {hard, soft} =
+      DamageInputs.physical_defense(defender, attacker, status_mode, ignore_mode, modifiers)
 
     %{
       hard_def: hard,
@@ -483,43 +484,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp calculate_unit_base_attack(%{unit_type: :player} = attacker, opts) do
-    parts = player_attack_parts(attacker, opts, :primary, Keyword.get(opts, :force_crit, false))
+    parts =
+      DamageInputs.player_attack_parts(
+        attacker,
+        opts,
+        :primary,
+        Keyword.get(opts, :force_crit, false)
+      )
+
     {:ok, Mechanics.physical_attack().base_attack(parts)}
   end
 
-  defp calculate_unit_base_attack(%{unit_type: :homunculus} = attacker, _opts) do
-    min_atk = attacker.combat_stats.atk_min
-    max_atk = attacker.combat_stats.atk_max
-
-    weapon_atk =
-      if max_atk > min_atk,
-        do: min_atk + :rand.uniform(max_atk - min_atk + 1) - 1,
-        else: min_atk
-
-    {:ok, attacker.combat_stats.atk + weapon_atk}
-  end
-
-  defp calculate_unit_base_attack(%{unit_type: :mob} = attacker, _opts) do
-    # Renewal mob melee (rAthena status_base_atk_min/max + battle_calc_base_damage):
-    # the weapon hit rolls uniformly across the 80%-120% band of the mob's ATK,
-    # then the mob's base ATK (STR + base level) is added flat.
-    atk = attacker.combat_stats.atk
-    atk_min = div(atk * 80, 100)
-    atk_max = div(atk * 120, 100)
-
-    weapon_atk =
-      if atk_max > atk_min do
-        atk_min + :rand.uniform(atk_max - atk_min) - 1
-      else
-        atk_min
-      end
-
-    batk = attacker.base_stats.str + attacker.progression.base_level
-
-    {:ok, weapon_atk + batk}
-  end
-
-  defp calculate_unit_base_attack(_attacker, _opts), do: {:error, :unknown_unit_type}
+  defp calculate_unit_base_attack(attacker, _opts),
+    do: DamageInputs.non_player_base_attack(attacker)
 
   @doc """
   Applies the composable modifier pipeline to damage.
@@ -647,7 +624,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     modifiers = ModifierCalculator.get_all_modifiers(unit_type, unit_id)
 
     {modified_hard_def, modified_soft_def} =
-      defense_values(defender, attacker, status_def_mode, def_ignore_mode, modifiers)
+      DamageInputs.physical_defense(
+        defender,
+        attacker,
+        status_def_mode,
+        def_ignore_mode,
+        modifiers
+      )
 
     base_damage =
       case def_formula do
@@ -674,52 +657,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
 
     {:ok, final_damage}
-  end
-
-  defp defense_values(defender, attacker, status_def_mode, def_ignore_mode, modifiers) do
-    {unit_type, unit_id} = get_unit_type_and_id(defender)
-
-    case StatusStorage.get_status(unit_type, unit_id, :sc_defset) do
-      %{val1: value} when is_integer(value) ->
-        hard_def = ignore_hard_def(value, attacker, defender, def_ignore_mode)
-        soft_def = if status_def_mode == :ignore_status_def, do: 0, else: value
-        {hard_def, soft_def}
-
-      _missing ->
-        ordinary_defense_values(
-          defender,
-          attacker,
-          status_def_mode,
-          def_ignore_mode,
-          modifiers
-        )
-    end
-  end
-
-  defp ordinary_defense_values(
-         defender,
-         attacker,
-         status_def_mode,
-         def_ignore_mode,
-         modifiers
-       ) do
-    hard_def = ignore_hard_def(defender.combat_stats.def, attacker, defender, def_ignore_mode)
-
-    soft_def =
-      if status_def_mode == :ignore_status_def do
-        0
-      else
-        calculate_soft_defense(defender) + divine_protection_bonus(attacker, defender)
-      end
-
-    {modified_hard_def, modified_soft_def} =
-      apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers)
-
-    if status_def_mode == :ignore_status_def do
-      {modified_hard_def, 0}
-    else
-      {modified_hard_def, modified_soft_def}
-    end
   end
 
   defp defense_base_damage(:simple, total_atk, hard_def, soft_def),
@@ -834,103 +771,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp selected_weapon(weapon, hand) do
     %{weapon | type: hand.subtype, element: hand.element}
-  end
-
-  defp player_attack_parts(attacker, opts, attack_path, critical?) do
-    snapshot = attacker.combat_stats.physical_attack
-
-    right = Map.get(attacker, :right_hand)
-    left = Map.get(attacker, :left_hand)
-    hand = if attack_path == :secondary, do: left, else: right || left
-
-    parts = %{
-      status_atk: snapshot.status_atk,
-      flat_atk: snapshot.flat_atk,
-      mastery_atk: snapshot.mastery_atk,
-      hand: if(hand, do: hand.slot, else: :right_hand),
-      source: :weapon,
-      weapon_atk: 0,
-      refine_atk: 0,
-      overrefine_atk: 0
-    }
-
-    case Keyword.get(opts, :shield_base) do
-      nil -> roll_player_weapon(parts, snapshot, hand, attacker.combat_stats, critical?)
-      shield -> %{parts | source: :shield, weapon_atk: shield, flat_atk: 0, mastery_atk: 0}
-    end
-  end
-
-  defp roll_player_weapon(parts, _snapshot, nil, _combat_stats, _critical?), do: parts
-
-  defp roll_player_weapon(parts, snapshot, hand, combat_stats, critical?) do
-    inputs = %{
-      base_atk: hand.base_atk,
-      refine_atk: hand.refine_atk,
-      weapon_level: hand.weapon_level,
-      primary_stat:
-        if(WeaponTypes.is_ranged?(hand.subtype), do: snapshot.dex, else: snapshot.str),
-      dex: snapshot.dex,
-      arrow?: WeaponTypes.requires_ammo?(hand.subtype),
-      critical?: critical?,
-      max_weapon_damage?: Map.get(combat_stats, :max_weapon_damage, false)
-    }
-
-    {minimum, maximum} = Mechanics.physical_attack().weapon_bounds(inputs)
-
-    %{
-      parts
-      | weapon_atk: DamageShared.roll(minimum, maximum + 1),
-        refine_atk: hand.refine_atk,
-        overrefine_atk: DamageShared.overrefine_roll(hand.overrefine_band)
-    }
-  end
-
-  defp calculate_soft_defense(%{unit_type: :player} = defender) do
-    rate = max(0, 100 + Map.get(defender.equip_modifiers, :def2_rate, 0))
-
-    soft_def =
-      Map.get(defender.combat_stats, :soft_def) ||
-        Mechanics.player_formulas().soft_def(%{
-          vit: defender.base_stats.vit,
-          agi: defender.base_stats.agi,
-          base_level: defender.progression.base_level
-        })
-
-    div(soft_def * rate, 100)
-  end
-
-  defp calculate_soft_defense(%{unit_type: :homunculus} = defender) do
-    defender.combat_stats.soft_def
-  end
-
-  defp calculate_soft_defense(%{unit_type: :mob} = defender) do
-    defender.combat_stats.soft_def
-  end
-
-  defp calculate_soft_defense(%{unit_type: :skill_unit} = defender) do
-    defender.combat_stats.soft_def
-  end
-
-  # Reduces the defender's hard DEF by the attacker's equipment
-  # ignore-def-by-race/class percent before the renewal formula. A nil attacker
-  # (legacy 2-arity call) or a 0 rate leaves hard DEF bit-identical.
-  defp ignore_hard_def(hard_def, _attacker, _defender, :omit_equipment_def_ignore),
-    do: hard_def
-
-  defp ignore_hard_def(hard_def, nil, _defender, :apply_equipment_def_ignore), do: hard_def
-
-  defp ignore_hard_def(hard_def, attacker, defender, :apply_equipment_def_ignore) do
-    rate = EquipmentBonuses.ignore_def_rate(attacker, defender)
-    div(hard_def * (100 - rate), 100)
-  end
-
-  # Divine Protection (AL_DP): flat soft-DEF added to the defender when the
-  # attacker is undead/demon. nil attacker (e.g. the legacy 2-arity call) means
-  # no attacker context, so no Divine Protection is applied.
-  defp divine_protection_bonus(nil, _defender), do: 0
-
-  defp divine_protection_bonus(attacker, defender) do
-    RaceModifiers.divine_protection_def(defender, attacker.race)
   end
 
   # Modifier application functions (unified from original Combat module)
@@ -1084,27 +924,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     scaled_atk = (damage + flat_atk) * (100 + atk_rate) / 100
 
     DamageShared.apply_damage_multiplier(scaled_atk, modifiers)
-  end
-
-  defp apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers) do
-    hard_def_bonus = Map.get(modifiers, :def_bonus, 0)
-    soft_def_bonus = Map.get(modifiers, :vit_bonus, 0)
-    # :def_rate is an additive percent delta on hard DEF (Freeze's -50, Provoke,
-    # SignumCrucis, DeadlyPoison); the skill-status family scales eDEF.
-    # :def2_rate is the soft-DEF analogue (rAthena status_calc_def2 percent
-    # statuses: Angelus, Provoke, Poison).
-    def_rate = Map.get(modifiers, :def_rate, 0)
-    def2_rate = Map.get(modifiers, :def2_rate, 0)
-
-    defense_multiplier = 1.0 + Map.get(modifiers, :defense_multiplier, 0.0)
-
-    modified_hard_def =
-      trunc((hard_def + hard_def_bonus) * defense_multiplier * (100 + def_rate) / 100)
-
-    modified_soft_def =
-      trunc((soft_def + soft_def_bonus) * defense_multiplier * (100 + def2_rate) / 100)
-
-    {modified_hard_def, modified_soft_def}
   end
 
   # :phys_damage_reduction is the percent of final physical damage the defender
