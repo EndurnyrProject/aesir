@@ -625,6 +625,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       subtype: item_def.subtype,
       element: weapon_element(item_def, item),
       base_atk: item_def.attack,
+      weapon_level: item_def.weapon_level,
       refine_atk: refine_atk,
       overrefine_band: overrefine_band,
       slot: slot
@@ -1028,10 +1029,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     critical_basis = formulas.critical(values)
 
-    base_atk =
-      values
-      |> formulas.base_atk(equipped_weapon_type(stats) in @ranged_weapons)
-      |> apply_rate(get_equipment_modifier(stats, :atk_rate))
+    status_atk = formulas.base_atk(values, equipped_weapon_type(stats) in @ranged_weapons)
+    base_atk = apply_rate(status_atk, get_equipment_modifier(stats, :atk_rate))
 
     %{min: base_matk_min, max: base_matk_max} = formulas.base_matk(values)
     base_def = formulas.base_def(values)
@@ -1079,6 +1078,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       atk:
         base_atk + get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) +
           skill_passive_atk,
+      physical_attack: %{
+        status_atk: status_atk,
+        flat_atk:
+          get_status_modifier(stats, :atk) + get_equipment_modifier(stats, :atk) -
+            hand_attack(stats.right_hand) - hand_attack(stats.left_hand),
+        mastery_atk: passive_atk,
+        str: values.str,
+        dex: values.dex
+      },
       matk_min: matk_min,
       matk_max: matk_max,
       matk: matk_max,
@@ -1105,6 +1113,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     %{stats | combat_stats: combat_stats}
   end
+
+  defp hand_attack(nil), do: 0
+  defp hand_attack(hand), do: hand.base_atk + hand.refine_atk
 
   @spec scaled_equipment_def(map()) :: integer()
   defp scaled_equipment_def(equipment_modifiers) do

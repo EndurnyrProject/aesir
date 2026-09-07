@@ -1545,6 +1545,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert Stats.weapon_type(armed.equipment) == :one_handed_sword
 
       assert armed.right_hand == %WeaponHand{
+               weapon_level: 1,
                item_id: @sword,
                subtype: :one_handed_sword,
                element: :neutral,
@@ -1616,6 +1617,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert armed.combat_stats.atk == 71
 
       assert armed.right_hand == %WeaponHand{
+               weapon_level: 4,
                item_id: 90_301,
                subtype: :dagger,
                element: :fire,
@@ -1626,6 +1628,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
              }
 
       assert armed.left_hand == %WeaponHand{
+               weapon_level: 3,
                item_id: 90_302,
                subtype: :dagger,
                element: :wind,

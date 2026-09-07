@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.Elements
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.Sizes
   alias Aesir.ZoneServer.Mmo.Mechanics.StatCost
@@ -22,6 +23,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
     mob_formulas: %{
       renewal: MobFormulas.Renewal,
       pre_renewal: MobFormulas.PreRenewal
+    },
+    physical_attack: %{
+      renewal: PhysicalAttack.Renewal,
+      pre_renewal: PhysicalAttack.PreRenewal
     },
     cast_time: %{
       renewal: CastTime.Renewal,
@@ -67,6 +72,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   @doc "Returns the active mob formula implementation."
   @spec mob_formulas() :: module()
   def mob_formulas, do: implementation(:mob_formulas)
+
+  @doc "Returns the active player physical-attack implementation."
+  @spec physical_attack() :: module()
+  def physical_attack, do: implementation(:physical_attack)
 
   @doc "Returns the active cast-time implementation."
   @spec cast_time() :: module()

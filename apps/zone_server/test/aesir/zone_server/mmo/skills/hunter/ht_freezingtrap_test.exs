@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   setup do
@@ -23,7 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
   end
 
   test "Water damage overrides a Fire endow and cannot crit at maximum CRI" do
-    attacker = CombatTestHelper.create_player_combatant(luk: 300)
+    attacker = CombatTestHelper.create_player_combatant(luk: 0, flat_atk: 100)
+    attacker = put_in(attacker.combat_stats[:critical_rate], 1_000)
     defender = CombatTestHelper.create_mob_combatant(element: {:fire, 1}, def: 0)
 
     stub(ModifierCalculator, :get_all_modifiers, fn

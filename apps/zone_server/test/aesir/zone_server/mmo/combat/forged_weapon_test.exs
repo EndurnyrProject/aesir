@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
@@ -52,17 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ForgedWeaponTest do
     assert length(Enum.uniq(plain_rolls)) > 1
     assert Enum.uniq(star_contributions) == [40]
 
-    status_atk =
-      maximized_plain.base_stats.str * 2 +
-        div(maximized_plain.base_stats.dex, 5) +
-        div(maximized_plain.base_stats.luk, 3) +
-        div(maximized_plain.progression.base_level, 4) +
-        5 * maximized_plain.base_stats.pow
-
-    expected_max =
-      status_atk +
-        div(maximized_plain.combat_stats.atk * 120, 100) +
-        maximized_plain.combat_stats.passive_atk
+    expected_max = if GameMode.mode() == :renewal, do: 28, else: 26
 
     assert Enum.uniq(maximized_rolls) == [expected_max]
     assert Enum.uniq(maximized_star_contributions) == [40]

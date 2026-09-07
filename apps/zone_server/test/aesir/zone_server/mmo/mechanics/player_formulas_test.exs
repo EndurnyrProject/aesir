@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   import Mimic
 
   alias Aesir.Commons.GameMode
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -17,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
   alias Aesir.ZoneServer.Mmo.Skill.Passives
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Unit.Player.CombatCalculations
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Modifiers
   alias Aesir.ZoneServer.Unit.Player.WeaponHand
@@ -62,6 +64,104 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     assert {Renewal.base_atk(values, false), Renewal.base_atk(values, true)} == {109, 102}
     assert {PreRenewal.base_atk(values, false), PreRenewal.base_atk(values, true)} == {95, 80}
+  end
+
+  test "an unarmed real player uses status ATK once instead of rolling the display aggregate" do
+    stats = Stats.calculate_combat_stats(stats_fixture())
+
+    attacker = %{
+      CombatTestHelper.create_player_combatant()
+      | base_stats: stats.base_stats,
+        progression: stats.progression,
+        combat_stats: stats.combat_stats
+    }
+
+    expected = if GameMode.mode() == :renewal, do: 198, else: 86
+    assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(attacker)
+  end
+
+  test "real equipment projects weapon level without leaving weapon ATK in the flat bucket" do
+    stats =
+      stats_fixture()
+      |> Stats.apply_equipment_modifiers([%InventoryItem{nameid: 1501, equip: 2, refine: 0}])
+      |> Stats.calculate_combat_stats()
+
+    assert Map.fetch!(stats.right_hand, :weapon_level) == 1
+    assert stats.combat_stats.physical_attack.flat_atk == 0
+  end
+
+  test "real weapon damage uses mode-specific component eligibility rather than modifying aggregate ATK" do
+    stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+
+    stats =
+      %{stats_fixture() | modifiers: %Modifiers{status_effects: %{max_weapon_damage: true}}}
+      |> Stats.apply_equipment_modifiers([%InventoryItem{nameid: 1201, equip: 2, refine: 0}])
+      |> Stats.calculate_combat_stats()
+
+    attacker = %{
+      CombatTestHelper.create_player_combatant(weapon_type: :dagger)
+      | base_stats: stats.base_stats,
+        progression: stats.progression,
+        combat_stats: stats.combat_stats,
+        right_hand: stats.right_hand,
+        equip_modifiers: Map.put(stats.modifiers.equipment, {:addrace, :brute}, 100)
+    }
+
+    defender =
+      CombatTestHelper.create_mob_combatant(
+        def: 0,
+        soft_def: 0,
+        size: :large,
+        element: {:earth, 1}
+      )
+
+    expected = if GameMode.mode() == :renewal, do: 244, else: 278
+
+    assert {:ok, %{damage: ^expected, is_critical: false}} =
+             DamageCalculator.calculate_damage(attacker, defender,
+               element: :fire,
+               skip_crit: true
+             )
+  end
+
+  test "combatant projection preserves effective melee, musical and ammo weapon inputs" do
+    for {subtype, renewal, classic} <- [
+          {:dagger, 552, 334},
+          {:musical, 708, 490},
+          {:bow, 708, 626}
+        ] do
+      hand = %{weapon_hand(subtype, :right_hand) | base_atk: 200, weapon_level: 3, refine_atk: 10}
+
+      stats =
+        %{
+          stats_fixture()
+          | right_hand: hand,
+            derived_stats: %UnitStats.DerivedStats{max_hp: 100, max_sp: 10},
+            modifiers: %Modifiers{
+              equipment: %{atk: 210, str: 10, dex: 85},
+              status_effects: %{max_weapon_damage: true}
+            }
+        }
+        |> Stats.calculate_combat_stats()
+
+      attacker =
+        PlayerState.to_combatant(%PlayerState{
+          character_id: 1001,
+          stats: stats,
+          x: 150,
+          y: 150,
+          map_name: "prontera",
+          option: 0
+        })
+
+      assert attacker.right_hand == hand
+      assert %{str: 60, dex: 120, flat_atk: 0} = attacker.combat_stats.physical_attack
+      expected = if GameMode.mode() == :renewal, do: renewal, else: classic
+      assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(attacker)
+
+      changed_display = put_in(attacker.combat_stats.atk, 9_999)
+      assert {:ok, ^expected} = DamageCalculator.calculate_base_attack(changed_display)
+    end
   end
 
   test "physical stat defense is soft, with mode-specific fractional rounding" do
@@ -578,6 +678,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
   defp weapon_hand(subtype, slot) do
     %WeaponHand{
+      weapon_level: 1,
       item_id: 1,
       subtype: subtype,
       element: :neutral,

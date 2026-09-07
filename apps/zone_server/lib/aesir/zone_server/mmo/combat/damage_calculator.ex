@@ -4,13 +4,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   This module consolidates the duplicate damage calculation logic that was
   previously split between player and mob combat systems. It provides a
-  single, authoritative implementation of the Renewal damage formula.
+  single physical-damage entry point with mode-specific player arithmetic.
 
   ## Key Features
 
   - Unified damage calculation for all unit types (players, mobs, future units)
   - Composable modifier pipeline (size, race, element, status effects)
-  - Renewal defense formula implementation
+  - Mode-specific player attack components and defense formulas
   - Critical hit processing
 
   ## Usage
@@ -58,14 +58,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   @type combatant :: Combatant.t()
 
   @doc """
-  Calculates damage from attacker to defender using unified Renewal formula.
+  Calculates physical damage using the booted ruleset.
 
   This is the main entry point for all damage calculations, regardless of
   unit type (player, mob, future units). The function handles:
 
   1. Base attack calculation (delegated to unit-specific logic)
   2. Modifier applications (size, race, element, status effects)
-  3. Defense calculations (Renewal formula)
+  3. Mode-specific defense and component ordering
   4. Critical hit processing
 
   ## Parameters
@@ -110,9 +110,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       (e.g. Envenom's poison, Sand Attack's earth). Default `nil` (resolve
       normally).
 
-  The skill ratio is applied to base attack before the size/race/element/status
-  modifier pipeline. todo: faithful-enough Renewal ordering; card-vs-ratio
-  edge cases are not modeled.
+  Player weapon hits use the active physical-attack component pipeline, including
+  mode-specific ratio, element and cardfix ordering. Non-player hits and explicit
+  `:base_damage` replacements retain the shared scalar modifier pipeline.
   """
   @spec calculate_damage(combatant(), combatant(), keyword()) ::
           {:ok, damage_result()} | {:error, atom()}
@@ -122,7 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       defender,
       opts,
       :primary,
-      &apply_defense_formula/3
+      :normal
     )
   end
 
@@ -144,7 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       defender,
       opts,
       :secondary,
-      &apply_defense_formula_without_equipment_def_ignore/3
+      :normal
     )
   end
 
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       defender,
       opts,
       :ignore_attacker_cards,
-      &apply_defense_formula/3
+      :normal
     )
   end
 
@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       defender,
       opts,
       :primary,
-      &apply_defense_formula_ignoring_status_def/3
+      :ignore_status
     )
   end
 
@@ -202,30 +202,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       defender,
       opts,
       :primary,
-      &apply_defense_formula_simple/3
+      :simple
     )
   end
 
-  defp calculate_damage_with(attacker, defender, opts, attack_path, defense_calculator) do
+  defp calculate_damage_with(attacker, defender, opts, attack_path, defense_mode) do
     case Keyword.get(opts, :fixed_damage) do
-      nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_calculator)
+      nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
       fixed_damage -> {:ok, %{damage: fixed_damage, is_critical: false}}
     end
   end
 
-  defp calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_calculator) do
+  defp calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
     attacker = select_weapon_hand(attacker, attack_path)
 
-    if emperium_plant_contact?(defender, opts) do
-      calculate_emperium_plant_contact(attacker, defender, opts)
-    else
-      calculate_ordinary_pipeline_damage(
-        attacker,
-        defender,
-        opts,
-        attack_path,
-        defense_calculator
-      )
+    cond do
+      emperium_plant_contact?(defender, opts) ->
+        calculate_emperium_plant_contact(attacker, defender, opts)
+
+      attacker.unit_type == :player and not Keyword.has_key?(opts, :base_damage) ->
+        calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
+
+      true ->
+        calculate_ordinary_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
     end
   end
 
@@ -234,7 +233,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          defender,
          opts,
          attack_path,
-         defense_calculator
+         defense_mode
        ) do
     skill_ratio = Keyword.get(opts, :skill_ratio, 100)
     bonus_atk = Keyword.get(opts, :bonus_atk, 0)
@@ -247,9 +246,137 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          total_atk = modified_atk + demon_bane_bonus(attacker, defender),
          total_atk = total_atk + beast_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
-         {:ok, final_damage} <- defense_calculator.(total_atk, defender, attacker) do
+         {:ok, final_damage} <-
+           scalar_defense(total_atk, defender, attacker, attack_path, defense_mode) do
       finalize_damage(final_damage, attacker, defender, opts)
     end
+  end
+
+  defp scalar_defense(damage, defender, attacker, _path, :ignore_status),
+    do: apply_defense_formula_ignoring_status_def(damage, defender, attacker)
+
+  defp scalar_defense(damage, defender, attacker, _path, :simple),
+    do: apply_defense_formula_simple(damage, defender, attacker)
+
+  defp scalar_defense(damage, defender, attacker, :secondary, :normal),
+    do: apply_defense_formula_without_equipment_def_ignore(damage, defender, attacker)
+
+  defp scalar_defense(damage, defender, attacker, _path, :normal),
+    do: apply_defense_formula(damage, defender, attacker)
+
+  defp calculate_player_pipeline_damage(attacker, defender, opts, attack_path, defense_mode) do
+    with {:ok, critical} <- finalize_damage(0, attacker, defender, opts) do
+      parts = player_attack_parts(attacker, opts, attack_path, critical.is_critical)
+
+      mastery =
+        parts.mastery_atk + demon_bane_bonus(attacker, defender) +
+          beast_bane_bonus(attacker, defender)
+
+      parts = if parts.source == :shield, do: parts, else: %{parts | mastery_atk: mastery}
+
+      context =
+        player_damage_context(
+          attacker,
+          defender,
+          opts,
+          attack_path,
+          defense_mode,
+          parts,
+          critical
+        )
+
+      damage = Mechanics.physical_attack().calculate(parts, context)
+      {:ok, %{critical | damage: damage}}
+    end
+  end
+
+  defp player_damage_context(attacker, defender, opts, attack_path, defense_mode, parts, critical) do
+    {attacker_type, attacker_id} = get_unit_type_and_id(attacker)
+    {defender_type, defender_id} = get_unit_type_and_id(defender)
+    attacker_modifiers = ModifierCalculator.get_all_modifiers(attacker_type, attacker_id)
+    defender_modifiers = ModifierCalculator.get_all_modifiers(defender_type, defender_id)
+    element = Keyword.get(opts, :element) || resolve_attack_element(attacker, attacker_modifiers)
+    skill_id = Keyword.get(opts, :skill_id)
+    attack_rates = EquipmentBonuses.attack_rates(attacker, defender, skill_id, element)
+    ranged? = ranged_hit?(attacker, opts)
+    flag = BattleFlags.build(:weapon, if(ranged?, do: :long, else: :short), not is_nil(skill_id))
+
+    taken_rates =
+      EquipmentBonuses.damage_taken_rates(
+        defender,
+        attacker,
+        element,
+        defender_modifiers,
+        skill_id,
+        flag
+      )
+
+    card_rates =
+      if attack_path in [:secondary, :ignore_attacker_cards],
+        do: %{race_class: 0, element: 0, size: 0},
+        else: Map.take(attack_rates, [:race_class, :element, :size])
+
+    %{
+      size_rate:
+        if(parts.source == :shield,
+          do: 100,
+          else: trunc(apply_size_modifier(100, attacker, defender))
+        ),
+      weapon_element: DamageShared.apply_element(1, element, defender, attacker_modifiers),
+      neutral_element: DamageShared.apply_element(1, :neutral, defender, attacker_modifiers),
+      attacker_rates: card_rates,
+      defender_rates: %{
+        race_class:
+          taken_rates.race_class + RaceModifiers.dragonology_resist_rate(defender, attacker.race),
+        monster: EquipmentBonuses.def_monster_rate(defender, attacker),
+        element: taken_rates.element,
+        size: taken_rates.size,
+        long_def: EquipmentBonuses.long_range_defense_rate(defender, defender_modifiers, ranged?),
+        ranged: EquipmentBonuses.ranged_damage_taken_rate(defender, defender_modifiers, ranged?)
+      },
+      defense:
+        player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
+      defense_mode: if(defense_mode == :simple, do: :simple, else: :normal),
+      skill_id: skill_id,
+      skill_ratio: Keyword.get(opts, :skill_ratio, 100),
+      bonus_atk: Keyword.get(opts, :bonus_atk, 0),
+      skill_atk_rate: attack_rates.skill,
+      skill_taken_rate: taken_rates.skill,
+      global_race_rate: RaceModifiers.dragonology_atk_rate(attacker, defender.race),
+      weapon_bonus: Map.get(attacker_modifiers, :watk, 0),
+      flat_bonus:
+        Map.get(attacker_modifiers, :damage_bonus, 0) + Map.get(attacker_modifiers, :atk_bonus, 0),
+      atk_rate: Map.get(attacker_modifiers, :atk_rate, 0),
+      damage_multiplier: Map.get(attacker_modifiers, :damage_multiplier, 0),
+      equipment_atk_rate: Map.get(attacker.equip_modifiers, :atk_rate, 0),
+      long_atk_rate: EquipmentBonuses.long_atk_rate(attacker),
+      short_atk_rate: EquipmentBonuses.short_atk_rate(attacker),
+      patk: Map.get(attacker.combat_stats, :patk, 0),
+      res: Map.get(defender.combat_stats, :res, 0),
+      critical?: critical.is_critical,
+      crate: Map.get(attacker.combat_stats, :crate, 0),
+      crit_atk_rate: Map.get(attacker.equip_modifiers, :crit_atk_rate, 0),
+      physical_reduction: Map.get(defender_modifiers, :phys_damage_reduction, 0)
+    }
+  end
+
+  defp player_defense_context(defender, attacker, attack_path, defense_mode, modifiers) do
+    status_mode =
+      if defense_mode == :ignore_status, do: :ignore_status_def, else: :apply_status_def
+
+    ignore_mode =
+      if attack_path == :secondary,
+        do: :omit_equipment_def_ignore,
+        else: :apply_equipment_def_ignore
+
+    {hard, soft} = defense_values(defender, attacker, status_mode, ignore_mode, modifiers)
+
+    %{
+      hard_def: hard,
+      soft_def: soft,
+      attacker_level: attacker_level(attacker),
+      ignore_soft_def?: defense_mode == :ignore_status
+    }
   end
 
   defp calculate_emperium_plant_contact(attacker, defender, opts) do
@@ -327,6 +454,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   This function delegates to unit-specific base attack calculation logic
   while providing a unified interface.
+
+  Player combatants carry a physical snapshot separating status, flat equipment
+  and mastery ATK; only the selected hand supplies weapon variance. The aggregate
+  display ATK is not an input to this calculation.
   """
   @spec calculate_base_attack(combatant()) :: {:ok, integer()} | {:error, atom()}
   def calculate_base_attack(attacker), do: calculate_base_attack(attacker, [])
@@ -352,13 +483,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp calculate_unit_base_attack(%{unit_type: :player} = attacker, opts) do
-    weapon_component =
-      case Keyword.get(opts, :shield_base) do
-        nil -> calculate_weapon_attack(attacker) + calculate_mastery_bonus(attacker)
-        shield_base -> shield_base
-      end
-
-    {:ok, player_status_atk(attacker) + weapon_component}
+    parts = player_attack_parts(attacker, opts, :primary, Keyword.get(opts, :force_crit, false))
+    {:ok, Mechanics.physical_attack().base_attack(parts)}
   end
 
   defp calculate_unit_base_attack(%{unit_type: :homunculus} = attacker, _opts) do
@@ -394,17 +520,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   end
 
   defp calculate_unit_base_attack(_attacker, _opts), do: {:error, :unknown_unit_type}
-
-  # Player stat-derived base attack (rAthena status->batk): the weapon-independent
-  # portion the shield damage base builds on. (STR*2) + (DEX/5) + (LUK/3) +
-  # base_level/4 + 5*POW.
-  defp player_status_atk(%{base_stats: stats, progression: progression}) do
-    stats.str * 2 +
-      div(stats.dex, 5) +
-      div(stats.luk, 3) +
-      div(progression.base_level, 4) +
-      5 * Map.get(stats, :pow, 0)
-  end
 
   @doc """
   Applies the composable modifier pipeline to damage.
@@ -704,28 +819,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
        )
        when not is_nil(right) or not is_nil(left) do
     selected = if attack_path == :secondary, do: left, else: right || left
-    shared_atk = attacker.combat_stats.atk - hand_atk(right) - hand_atk(left)
-
-    combat_stats =
-      attacker.combat_stats
-      |> Map.put(:atk, shared_atk + hand_atk(selected))
-      |> Map.put(:overrefine_band, hand_overrefine_band(selected))
 
     weapon =
-      if attack_path == :secondary,
+      if attack_path == :secondary or is_nil(right),
         do: selected_weapon(attacker.weapon, selected),
-        else: attacker.weapon
+        else: %{attacker.weapon | type: selected.subtype}
 
-    %{attacker | combat_stats: combat_stats, weapon: weapon}
+    %{attacker | weapon: weapon}
   end
 
   defp select_weapon_hand(attacker, _attack_path), do: attacker
-
-  defp hand_atk(nil), do: 0
-  defp hand_atk(hand), do: hand.base_atk + hand.refine_atk
-
-  defp hand_overrefine_band(nil), do: 0
-  defp hand_overrefine_band(hand), do: hand.overrefine_band
 
   defp selected_weapon(weapon, nil), do: weapon
 
@@ -733,36 +836,54 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     %{weapon | type: hand.subtype, element: hand.element}
   end
 
-  defp calculate_weapon_attack(%{unit_type: :player} = attacker) do
-    # Renewal player weapon ATK: the equipped weapon's accumulated flat ATK
-    # (combat_stats.atk, includes the refine bonus) rolls uniformly across an
-    # 80%-120% weapon-level variance band, mirroring the mob variance shape
-    # (calculate_base_attack/1 for :mob). Not a full port of rAthena's
-    # battle_calc_weapon_attack (no eatk/statusatk/star-crumb buckets).
-    atk = attacker.combat_stats.atk
-    atk_min = div(atk * 80, 100)
-    atk_max = div(atk * 120, 100)
+  defp player_attack_parts(attacker, opts, attack_path, critical?) do
+    snapshot = attacker.combat_stats.physical_attack
 
-    weapon_attack =
-      cond do
-        Map.get(attacker.combat_stats, :max_weapon_damage, false) ->
-          atk_max
+    right = Map.get(attacker, :right_hand)
+    left = Map.get(attacker, :left_hand)
+    hand = if attack_path == :secondary, do: left, else: right || left
 
-        atk_max > atk_min ->
-          atk_min + :rand.uniform(atk_max - atk_min) - 1
+    parts = %{
+      status_atk: snapshot.status_atk,
+      flat_atk: snapshot.flat_atk,
+      mastery_atk: snapshot.mastery_atk,
+      hand: if(hand, do: hand.slot, else: :right_hand),
+      source: :weapon,
+      weapon_atk: 0,
+      refine_atk: 0,
+      overrefine_atk: 0
+    }
 
-        true ->
-          atk_min
-      end
-
-    # Overrefine (rAthena battle.cpp:2413-2420): a per-hit rnd()%band + 1 extra.
-    overrefine_band = Map.get(attacker.combat_stats, :overrefine_band, 0)
-    overrefine_extra = DamageShared.overrefine_roll(overrefine_band)
-
-    max(1, weapon_attack + overrefine_extra)
+    case Keyword.get(opts, :shield_base) do
+      nil -> roll_player_weapon(parts, snapshot, hand, attacker.combat_stats, critical?)
+      shield -> %{parts | source: :shield, weapon_atk: shield, flat_atk: 0, mastery_atk: 0}
+    end
   end
 
-  defp calculate_mastery_bonus(attacker), do: attacker.combat_stats.passive_atk
+  defp roll_player_weapon(parts, _snapshot, nil, _combat_stats, _critical?), do: parts
+
+  defp roll_player_weapon(parts, snapshot, hand, combat_stats, critical?) do
+    inputs = %{
+      base_atk: hand.base_atk,
+      refine_atk: hand.refine_atk,
+      weapon_level: hand.weapon_level,
+      primary_stat:
+        if(WeaponTypes.is_ranged?(hand.subtype), do: snapshot.dex, else: snapshot.str),
+      dex: snapshot.dex,
+      arrow?: WeaponTypes.requires_ammo?(hand.subtype),
+      critical?: critical?,
+      max_weapon_damage?: Map.get(combat_stats, :max_weapon_damage, false)
+    }
+
+    {minimum, maximum} = Mechanics.physical_attack().weapon_bounds(inputs)
+
+    %{
+      parts
+      | weapon_atk: DamageShared.roll(minimum, maximum + 1),
+        refine_atk: hand.refine_atk,
+        overrefine_atk: DamageShared.overrefine_roll(hand.overrefine_band)
+    }
+  end
 
   defp calculate_soft_defense(%{unit_type: :player} = defender) do
     rate = max(0, 100 + Map.get(defender.equip_modifiers, :def2_rate, 0))

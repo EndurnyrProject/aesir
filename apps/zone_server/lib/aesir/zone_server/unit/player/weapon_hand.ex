@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.WeaponHand do
     :subtype,
     :element,
     :base_atk,
+    :weapon_level,
     :refine_atk,
     :overrefine_band,
     :slot
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Unit.Player.WeaponHand do
           subtype: atom(),
           element: atom(),
           base_atk: integer(),
+          weapon_level: pos_integer(),
           refine_atk: non_neg_integer(),
           overrefine_band: non_neg_integer(),
           slot: :right_hand | :left_hand

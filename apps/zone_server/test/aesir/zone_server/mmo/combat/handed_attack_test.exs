@@ -264,6 +264,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
 
   defp hand(slot, base_atk \\ 100, subtype \\ :dagger) do
     %WeaponHand{
+      weapon_level: 1,
       item_id: if(subtype == :katar, do: @katar_id, else: @dagger_id),
       subtype: subtype,
       element: :neutral,

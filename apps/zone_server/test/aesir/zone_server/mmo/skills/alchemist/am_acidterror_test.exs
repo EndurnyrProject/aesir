@@ -236,6 +236,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
       },
       combat_stats: %{
         atk: 100,
+        physical_attack: %{status_atk: 0, flat_atk: 100, mastery_atk: 0, str: 10, dex: 1},
         def: 0,
         passive_atk: 0,
         hit: Keyword.get(opts, :hit, 200),

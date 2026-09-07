@@ -116,9 +116,6 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
       accurate_player(unit_id: 1101, weapon_element: :neutral)
       |> Map.put(:right_hand, hand(:right_hand, :dagger, :neutral))
       |> Map.put(:left_hand, hand(:left_hand, :dagger, :holy))
-      |> then(fn attacker ->
-        %{attacker | combat_stats: Map.put(attacker.combat_stats, :atk, 300)}
-      end)
       |> maximize_weapon_damage()
 
     assert {:ok, primary} =
@@ -328,6 +325,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
   defp accurate_player(opts \\ []) do
     opts
     |> Keyword.put_new(:dex, 500)
+    |> Keyword.put_new(:flat_atk, 500)
     |> CombatTestHelper.create_player_combatant()
     |> Map.put(:equip_modifiers, %{perfect_hit_rate: 100})
   end
@@ -338,6 +336,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumDamageProfileTest do
 
   defp hand(slot, subtype, element) do
     %WeaponHand{
+      weapon_level: 1,
       item_id: 1,
       subtype: subtype,
       element: element,

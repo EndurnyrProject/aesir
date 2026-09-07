@@ -58,7 +58,10 @@ defmodule Aesir.ZoneServer.Unit.Stats do
   defmodule CombatStats do
     @moduledoc false
 
+    alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
+
     defstruct atk: nil,
+              physical_attack: nil,
               matk: nil,
               matk_min: nil,
               matk_max: nil,
@@ -88,6 +91,7 @@ defmodule Aesir.ZoneServer.Unit.Stats do
     @typedoc "Battle-related statistics"
     @type t() :: %__MODULE__{
             atk: non_neg_integer() | nil,
+            physical_attack: PhysicalAttack.snapshot() | nil,
             matk: non_neg_integer() | nil,
             matk_min: non_neg_integer() | nil,
             matk_max: non_neg_integer() | nil,

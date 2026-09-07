@@ -7,9 +7,14 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   """
 
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
+  alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.WeaponTypes
 
   @doc """
-  Creates a basic player combatant for testing.
+  Creates a basic player combatant with explicit physical attack components.
+
+  `:flat_atk` and `:passive_atk` arrange independent equipment and mastery
+  contributions; the status contribution uses the booted player formula.
   """
   @spec create_player_combatant(keyword()) :: Combatant.t()
   def create_player_combatant(opts \\ []) do
@@ -36,7 +41,20 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
     opts = Keyword.merge(defaults, opts)
 
     # Calculate derived stats from base stats and level
-    base_atk = calculate_base_atk(opts[:str], opts[:dex], opts[:base_level])
+    status_atk =
+      Mechanics.player_formulas().base_atk(
+        %{
+          str: opts[:str],
+          dex: opts[:dex],
+          luk: opts[:luk],
+          pow: 0,
+          base_level: opts[:base_level]
+        },
+        WeaponTypes.is_ranged?(opts[:weapon_type])
+      )
+
+    flat_atk = Keyword.get(opts, :flat_atk, 0)
+    mastery_atk = Keyword.get(opts, :passive_atk, 0)
     base_def = calculate_base_def(opts[:vit], opts[:base_level])
     hit = calculate_hit(opts[:dex], opts[:base_level])
     flee = calculate_flee(opts[:agi], opts[:base_level])
@@ -54,7 +72,14 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
         luk: opts[:luk]
       },
       combat_stats: %{
-        atk: base_atk,
+        atk: status_atk + flat_atk + mastery_atk,
+        physical_attack: %{
+          status_atk: status_atk,
+          flat_atk: flat_atk,
+          mastery_atk: mastery_atk,
+          str: opts[:str],
+          dex: opts[:dex]
+        },
         def: base_def,
         hit: hit,
         flee: flee,
@@ -199,11 +224,6 @@ defmodule Aesir.ZoneServer.CombatTestHelper do
   end
 
   # Private calculation functions following Ragnarok formulas
-
-  defp calculate_base_atk(str, dex, base_level) do
-    # Simplified base ATK calculation
-    trunc(str * base_level / 4) + dex
-  end
 
   defp calculate_base_def(vit, base_level) do
     # Simplified base DEF calculation

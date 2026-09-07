@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.Elements
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.Sizes
   alias Aesir.ZoneServer.Mmo.Mechanics.StatCost
@@ -26,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
             StatCost.Renewal,
             Defense.Renewal,
             Elements.Renewal,
-            Sizes.Renewal
+            Sizes.Renewal,
+            PhysicalAttack.Renewal
           ],
           pre_renewal: [
             PlayerFormulas.PreRenewal,
@@ -35,7 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
             StatCost.PreRenewal,
             Defense.PreRenewal,
             Elements.PreRenewal,
-            Sizes.PreRenewal
+            Sizes.PreRenewal,
+            PhysicalAttack.PreRenewal
           ]
         ] do
       stub(GameMode, :mode, fn -> mode end)
@@ -47,7 +50,8 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
         stat_cost,
         defense,
         elements,
-        sizes
+        sizes,
+        physical_attack
       ] = implementations
 
       assert Mechanics.player_formulas() == player_formulas
@@ -57,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
       assert Mechanics.defense() == defense
       assert Mechanics.elements() == elements
       assert Mechanics.sizes() == sizes
+      assert Mechanics.physical_attack() == physical_attack
     end
   end
 end

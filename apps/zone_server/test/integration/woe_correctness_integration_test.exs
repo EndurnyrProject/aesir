@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
   Legal combat and attributed conquest through isolated siege worlds.
   Run in separate boot-selected Renewal and pre-renewal VMs.
 
-  The maximized unarmed classic contact has 241 status ATK + 238 variance ATK;
-  40 hard DEF and 80 soft DEF leave 207, then castle ground retains 165.
+  The unarmed classic contact has 199 status ATK and no weapon variance;
+  40 hard DEF and 80 soft DEF leave 39, then castle ground retains 31.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -101,7 +101,7 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
       assert loss == 1
     else
       assert get_player_state(attacker.pid).stats.combat_stats.atk == 199
-      assert loss == 165
+      assert loss == 31
     end
   end
 

@@ -115,6 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
   defp weapon_hand(slot, base_atk) do
     %WeaponHand{
+      weapon_level: 1,
       item_id: 1201,
       subtype: :dagger,
       element: :neutral,
