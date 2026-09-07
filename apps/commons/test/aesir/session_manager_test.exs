@@ -5,6 +5,7 @@ defmodule Aesir.Commons.SessionManagerTest do
   alias Aesir.Commons.SessionManager
 
   setup do
+    ClusterTestHelper.clear_all()
     on_exit(&ClusterTestHelper.clear_all/0)
     :ok
   end
