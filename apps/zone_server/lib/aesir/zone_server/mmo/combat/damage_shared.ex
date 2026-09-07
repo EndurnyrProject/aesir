@@ -22,10 +22,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageShared do
   tuple passes through unchanged.
 
   `attacker_modifiers` carries the attacker's status modifiers. An
-  `{:element_ratio, element}` entry matching `attack_element` adds its
-  percentage points to the element ratio — the seam through which the Sage
-  element fields (Volcano, Deluge, Violent Gale) reach the damage pipeline,
-  mirroring rAthena's src-side `battle_attr_fix` bonus (`battle.cpp:529-551`).
+  `{:element_ratio, element}` entry matching `attack_element` is the seam through which the Sage
+  element fields (Volcano, Deluge, Violent Gale) reach the damage pipeline. Renewal adds those
+  points to the table ratio; classic multiplies the pre-table damage by the field percentage.
   """
   @spec apply_element(number(), ElementModifiers.element(), map(), map()) :: number()
   def apply_element(damage, attack_element, defender, attacker_modifiers \\ %{}) do

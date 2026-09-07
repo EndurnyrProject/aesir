@@ -1,7 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.SizeModifiersTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
 
   # weapon_type => {small, medium, large}
   @table %{
@@ -19,10 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SizeModifiersTest do
     two_handed_staff: {100, 100, 100},
     bow: {100, 100, 75},
     musical: {75, 100, 75},
-    whip: {75, 100, 75},
     book: {100, 100, 50},
     katar: {75, 100, 75},
-    knuckle: {100, 100, 75},
     revolver: {100, 100, 100},
     rifle: {100, 100, 100},
     gatling: {100, 100, 100},
@@ -44,6 +47,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SizeModifiersTest do
       test "#{weapon_type} vs large is #{large}" do
         assert SizeModifiers.get_modifier(unquote(weapon_type), :large) == unquote(large)
       end
+    end
+  end
+
+  describe "mode-specific rows" do
+    test "knuckle uses the active medium and large modifiers" do
+      assert SizeModifiers.get_modifier(:knuckle, :small) == 100
+      assert SizeModifiers.get_modifier(:knuckle, :medium) == mode_value(100, 75)
+      assert SizeModifiers.get_modifier(:knuckle, :large) == mode_value(75, 50)
+    end
+
+    test "whip uses the active large modifier" do
+      assert SizeModifiers.get_modifier(:whip, :small) == 75
+      assert SizeModifiers.get_modifier(:whip, :medium) == 100
+      assert SizeModifiers.get_modifier(:whip, :large) == mode_value(75, 50)
     end
   end
 

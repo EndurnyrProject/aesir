@@ -5,15 +5,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
 
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
 
   describe "apply_element/3" do
     test "neutral attack vs neutral defender is a 1.0 multiplier" do
       assert DamageShared.apply_element(100, :neutral, %{element: {:neutral, 1}}) == 100.0
     end
 
-    test "applies a known weakness multiplier" do
-      assert DamageShared.apply_element(100, :water, %{element: {:fire, 1}}) == 200.0
+    test "applies the active weakness multiplier" do
+      assert DamageShared.apply_element(100, :water, %{element: {:fire, 1}}) ==
+               mode_value(200.0, 150.0)
     end
 
     test "defaults to {:neutral, 1} when defender has no element" do
@@ -101,22 +107,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageSharedTest do
 
   describe "apply_element/4 field ratio bonus" do
     test "the attacker's matching element_ratio modifier raises the ratio" do
-      # fire vs earth is 2.0; Volcano lv5 adds 20 points => 2.2
-      assert_in_delta DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
-                        {:element_ratio, :fire} => 20
-                      }),
-                      220.0,
-                      0.0001
+      assert_in_delta(
+        DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
+          {:element_ratio, :fire} => 20
+        }),
+        mode_value(220.0, 180.0),
+        0.0001
+      )
     end
 
     test "an element_ratio for a different element is ignored" do
       assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{
                {:element_ratio, :water} => 20
-             }) == 200.0
+             }) == mode_value(200.0, 150.0)
     end
 
     test "no attacker modifiers leaves the ratio untouched" do
-      assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{}) == 200.0
+      assert DamageShared.apply_element(100, :fire, %{element: {:earth, 1}}, %{}) ==
+               mode_value(200.0, 150.0)
     end
   end
 

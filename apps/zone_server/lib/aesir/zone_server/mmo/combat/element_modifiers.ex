@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiers do
   Public element interaction API.
 
   A modifier of `1.0` deals normal damage, values above or below it increase or reduce damage,
-  and `0.0` is immunity. Element-field `ratio_bonus` remains additive percentage points in both
-  modes. Pre-renewal per-skill multiplicative conversion is deferred to Phase 2.
+  and `0.0` is immunity. Element fields add percentage points to Renewal's table ratio. Classic
+  fields multiply damage before the table modifier, represented here by multiplying both factors.
   """
 
   alias Aesir.ZoneServer.Mmo.Mechanics
@@ -48,8 +48,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiers do
   @doc """
   Returns the damage modifier for an attack and defense element.
 
-  `defense_level` defaults to `1`. `ratio_bonus` defaults to `0` and adds percentage points after
-  the mode-specific table lookup and level handling.
+  `defense_level` defaults to `1`. `ratio_bonus` defaults to `0`; each mode composes it with the
+  selected table row according to that ruleset.
   """
   @spec get_modifier(element(), element(), element_level(), number()) :: float()
   def get_modifier(attack_element, defense_element, defense_level \\ 1, ratio_bonus \\ 0) do

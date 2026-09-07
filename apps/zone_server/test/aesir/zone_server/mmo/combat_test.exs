@@ -1320,6 +1320,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         :ok
       end)
 
+      :rand.seed(:exsss, {100, 200, 300})
       %{player_state: player_state, stats: stats, target_state: target_state}
     end
 

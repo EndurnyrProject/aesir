@@ -1,27 +1,32 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
 
   describe "get_modifier/3" do
     test "neutral vs neutral should be 1.0" do
       assert ElementModifiers.get_modifier(:neutral, :neutral, 1) == 1.0
     end
 
-    test "water vs fire should be 2.0 (weakness)" do
-      assert ElementModifiers.get_modifier(:water, :fire, 1) == 2.0
+    test "water vs fire uses the active weakness row" do
+      assert ElementModifiers.get_modifier(:water, :fire, 1) == mode_value(2.0, 1.5)
     end
 
-    test "fire vs water should be 0.9 (resistance)" do
-      assert ElementModifiers.get_modifier(:fire, :water, 1) == 0.9
+    test "fire vs water uses the active resistance row" do
+      assert ElementModifiers.get_modifier(:fire, :water, 1) == mode_value(0.9, 0.5)
     end
 
     test "poison vs poison should be 0.0 (immunity)" do
       assert ElementModifiers.get_modifier(:poison, :poison, 1) == 0.0
     end
 
-    test "holy vs undead should be 1.25 (strong vs undead)" do
-      assert ElementModifiers.get_modifier(:holy, :undead, 1) == 1.25
+    test "holy vs undead uses the active weakness row" do
+      assert ElementModifiers.get_modifier(:holy, :undead, 1) == mode_value(1.25, 1.5)
     end
 
     test "element level 2 should increase resistance" do
@@ -34,11 +39,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
     end
 
     test "element level 2 should increase weakness" do
-      # Base water vs fire is 2.0 at level 1
       base_modifier = ElementModifiers.get_modifier(:water, :fire, 1)
       level_2_modifier = ElementModifiers.get_modifier(:water, :fire, 2)
 
-      assert base_modifier == 2.0
+      assert base_modifier == mode_value(2.0, 1.5)
       assert level_2_modifier > base_modifier
     end
 
@@ -68,11 +72,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
     end
   end
 
-  describe "get_modifier/4 ratio bonus" do
-    # rAthena battle.cpp:531-551 (renewal): the field's enchant points are added
-    # to the element table's ratio, after the defense-level scaling.
-    test "adds the bonus percentage points on top of the element ratio" do
-      assert ElementModifiers.get_modifier(:fire, :earth, 1, 20) == 2.2
+  describe "get_modifier/4 field bonus" do
+    test "adds ratio points in Renewal and multiplies classic table damage" do
+      assert_in_delta(
+        ElementModifiers.get_modifier(:fire, :earth, 1, 20),
+        mode_value(2.2, 1.8),
+        0.0001
+      )
     end
 
     test "a zero bonus leaves the ratio untouched" do
@@ -80,9 +86,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiersTest do
                ElementModifiers.get_modifier(:fire, :earth, 1)
     end
 
-    test "the bonus applies after the defense-level scaling, not before" do
-      # fire vs water is 0.9 at level 1; level 4 scales it to 0.36, then +0.20.
-      assert_in_delta ElementModifiers.get_modifier(:fire, :water, 4, 20), 0.56, 0.0001
+    test "the bonus composes with the active level-four row" do
+      assert_in_delta(
+        ElementModifiers.get_modifier(:fire, :water, 4, 20),
+        mode_value(0.56, 0.0),
+        0.0001
+      )
     end
   end
 end

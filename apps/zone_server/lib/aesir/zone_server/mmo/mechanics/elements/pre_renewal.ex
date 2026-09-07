@@ -2,9 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
   @moduledoc """
   Pre-renewal element damage modifiers.
 
-  The static table is transcribed from `rAthena db/pre-re/attr_fix.yml`.
-  Each level contains attack-element rows and defense-element columns. Integer percentages are
-  divided by 100 at lookup; the canonical `Dark` element is exposed as `:shadow`.
+  Each defense level has its own attack-element rows and defense-element columns. Integer
+  percentages are divided by 100 at lookup; the canonical dark element is exposed as `:shadow`.
+  Element-field bonuses multiply damage before the table modifier, so the combined modifier is
+  the table value multiplied by the field's percentage factor.
   """
 
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.Elements
@@ -87,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
           number()
         ) :: float()
   def get_modifier(attack_element, defense_element, defense_level, ratio_bonus) do
-    base_modifier(attack_element, defense_element, defense_level) + ratio_bonus / 100
+    base_modifier(attack_element, defense_element, defense_level) * (100 + ratio_bonus) / 100
   end
 
   defp base_modifier(attack_element, defense_element, defense_level)

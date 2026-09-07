@@ -69,9 +69,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.ElementsTest do
     assert Renewal.get_modifier(:water, :fire, 99, 0) == 2.0
   end
 
-  test "ratio bonuses remain additive percentage points in both modes" do
+  test "field bonuses add Renewal ratio points and multiply classic damage" do
     assert_in_delta Renewal.get_modifier(:fire, :earth, 4, 20), 2.8, 1.0e-12
-    assert_in_delta PreRenewal.get_modifier(:fire, :earth, 4, 20), 2.2, 1.0e-12
-    assert_in_delta PreRenewal.get_modifier(:fire, :earth, 4, 1), 2.01, 1.0e-12
+    assert_in_delta PreRenewal.get_modifier(:fire, :earth, 4, 20), 2.4, 1.0e-12
+    assert_in_delta PreRenewal.get_modifier(:fire, :earth, 4, 1), 2.02, 1.0e-12
   end
 end

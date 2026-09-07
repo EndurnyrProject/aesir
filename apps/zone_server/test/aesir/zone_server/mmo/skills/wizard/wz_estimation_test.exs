@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Net.EstimationResult
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
@@ -18,8 +19,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
 
   setup :verify_on_exit!
 
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
+
   describe "definition/0" do
-    test "matches Renewal Estimation data" do
+    test "matches the declared Estimation data" do
       definition = WzEstimation.definition()
 
       assert definition.id == 93
@@ -49,17 +54,47 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimationTest do
                race: 8,
                mdef: 44,
                element: 3,
-               water_modifier: 200,
-               earth_modifier: 90,
-               fire_modifier: 25,
-               wind_modifier: 100,
-               poison_modifier: 100,
-               holy_modifier: 75,
-               shadow_modifier: 100,
-               ghost_modifier: 100,
-               undead_modifier: 75,
                server_tick: server_tick
              } = result
+
+      modifiers =
+        Map.take(result, [
+          :water_modifier,
+          :earth_modifier,
+          :fire_modifier,
+          :wind_modifier,
+          :poison_modifier,
+          :holy_modifier,
+          :shadow_modifier,
+          :ghost_modifier,
+          :undead_modifier
+        ])
+
+      assert modifiers ==
+               mode_value(
+                 %{
+                   water_modifier: 200,
+                   earth_modifier: 90,
+                   fire_modifier: 25,
+                   wind_modifier: 100,
+                   poison_modifier: 100,
+                   holy_modifier: 75,
+                   shadow_modifier: 100,
+                   ghost_modifier: 100,
+                   undead_modifier: 75
+                 },
+                 %{
+                   water_modifier: 150,
+                   earth_modifier: 50,
+                   fire_modifier: 25,
+                   wind_modifier: 100,
+                   poison_modifier: 125,
+                   holy_modifier: 100,
+                   shadow_modifier: 100,
+                   ghost_modifier: 100,
+                   undead_modifier: 100
+                 }
+               )
 
       assert is_integer(server_tick)
     end

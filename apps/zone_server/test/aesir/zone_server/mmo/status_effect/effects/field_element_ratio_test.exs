@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
@@ -59,6 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
     :ok
   end
 
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+  end
+
   defp fire_attacker do
     CombatTestHelper.create_player_combatant(
       unit_id: @attacker_id,
@@ -76,9 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
 
       assert {:ok, _} = DamageCalculator.calculate_damage(fire_attacker(), earth_defender())
 
-      # fire vs earth is 2.0 on the table; the field adds 20 points => 2.2
       assert_received {:element_ratio, :fire, 20, ratio}
-      assert_in_delta ratio, 2.2, 0.0001
+      assert_in_delta ratio, mode_value(2.2, 1.8), 0.0001
     end
 
     test "a magic fire attack inside Volcano lv5 gains 20 ratio points end to end" do
@@ -98,14 +102,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
                MagicDamageCalculator.calculate_magic_damage(caster, target, element: :fire)
 
       assert_received {:element_ratio, :fire, 20, ratio}
-      assert_in_delta ratio, 2.2, 0.0001
+      assert_in_delta ratio, mode_value(2.2, 1.8), 0.0001
     end
 
     test "without Volcano the same fire attack keeps the plain table ratio" do
       assert {:ok, _} = DamageCalculator.calculate_damage(fire_attacker(), earth_defender())
 
       assert_received {:element_ratio, :fire, 0, ratio}
-      assert_in_delta ratio, 2.0, 0.0001
+      assert_in_delta ratio, mode_value(2.0, 1.5), 0.0001
     end
 
     test "Volcano does not touch a non-fire attack" do
@@ -155,9 +159,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FieldElementRatioTest do
 
       assert {:ok, _} = DamageCalculator.calculate_damage(attacker, earth_defender())
 
-      # wind vs earth is 0.9 on the table; the field adds 20 points => 1.1
       assert_received {:element_ratio, :wind, 20, ratio}
-      assert_in_delta ratio, 1.1, 0.0001
+      assert_in_delta ratio, mode_value(1.1, 0.6), 0.0001
     end
   end
 

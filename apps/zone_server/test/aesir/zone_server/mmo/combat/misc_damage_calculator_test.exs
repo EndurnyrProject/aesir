@@ -1,15 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
   @moduledoc """
-  Tests for the renewal BF_MISC damage calculator.
+  Tests for the mode-aware BF_MISC damage calculator.
 
-  Misc damage applies the element modifier and the renewal hard-DEF (eDEF)
-  reduction `dmg * (4000 + eDEF) / (4000 + 10*eDEF)`, ignores soft-DEF and MDEF,
-  and floors at 1. Misc never crits.
+  Misc damage applies the active element modifier, ignores DEF and MDEF, floors at 1, and never
+  crits.
   """
 
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
 
@@ -21,6 +21,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
     Mimic.copy(ModifierCalculator)
     stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
     :ok
+  end
+
+  defp mode_value(renewal, pre_renewal) do
+    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
   end
 
   defp attacker do
@@ -61,15 +65,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                )
     end
 
-    test "applies the element modifier (no defense)" do
-      # fire vs earth (level 1) = 2.0: 100 -> 200; no DEF reduction
-      assert {:ok, %{damage: 200, is_critical: false}} =
+    test "applies the active element modifier without defense" do
+      assert {:ok, %{damage: damage, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(
                  attacker(),
                  defender(10, element: {:earth, 1}),
                  base_damage: 100,
                  element: :fire
                )
+
+      assert damage == mode_value(200, 150)
     end
 
     test "ignore_element bypasses the element table without changing misc damage otherwise" do
@@ -97,51 +102,52 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculatorTest do
                )
     end
 
-    test "a matching {:element_ratio, _} attacker modifier raises the element ratio" do
-      # Attacker standing on a fire field: fire vs earth L1 = 2.0, plus 20 ratio
-      # points -> 2.2. 100 -> 220. (Volcano/Deluge/Violent Gale reaching BF_MISC.)
+    test "a matching {:element_ratio, _} attacker modifier applies the active field rule" do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
         %{{:element_ratio, :fire} => 20}
       end)
 
-      assert {:ok, %{damage: 220, is_critical: false}} =
+      assert {:ok, %{damage: damage, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(
                  attacker(),
                  defender(10, element: {:earth, 1}),
                  base_damage: 100,
                  element: :fire
                )
+
+      assert damage == mode_value(220, 180)
     end
 
     test "a non-matching {:element_ratio, _} modifier is ignored" do
-      # Wind-field ratio does not touch a fire attack.
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
         %{{:element_ratio, :wind} => 20}
       end)
 
-      assert {:ok, %{damage: 200, is_critical: false}} =
+      assert {:ok, %{damage: damage, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(
                  attacker(),
                  defender(10, element: {:earth, 1}),
                  base_damage: 100,
                  element: :fire
                )
+
+      assert damage == mode_value(200, 150)
     end
 
-    test "the ratio bonus is added unclamped over an immunity (0.0 + 20 pts -> 0.20)" do
-      # Faithful to rAthena: the element-ratio points are added to the raw
-      # attribute ratio with no floor, so poison-on-poison (0.0) + 20 -> 0.20.
+    test "the field bonus preserves Renewal recovery but classic immunity" do
       stub(ModifierCalculator, :get_all_modifiers, fn :player, 1001 ->
         %{{:element_ratio, :poison} => 20}
       end)
 
-      assert {:ok, %{damage: 20, is_critical: false}} =
+      assert {:ok, %{damage: damage, is_critical: false}} =
                MiscDamageCalculator.calculate_misc_damage(
                  attacker(),
                  defender(10, element: {:poison, 1}),
                  base_damage: 100,
                  element: :poison
                )
+
+      assert damage == mode_value(20, 1)
     end
   end
 end
