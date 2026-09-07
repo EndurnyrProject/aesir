@@ -135,9 +135,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       defender = CombatTestHelper.create_mob_combatant()
 
-      # LUK 300 -> crit rate capped at 1000/1000, so both attackers always crit
+      # LUK 400 caps critical rate in both modes, so both attackers always crit
       # regardless of the RNG seed, isolating the crate factor (1.4 vs 1.4+0.01*50).
-      base = CombatTestHelper.create_player_combatant(luk: 300, str: 60, base_level: 90)
+      base = CombatTestHelper.create_player_combatant(luk: 400, str: 60, base_level: 90)
       no_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 0)}
       high_crate = %{base | combat_stats: Map.put(base.combat_stats, :crate, 50)}
 
@@ -632,23 +632,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert {:ok, %{critical_rate: 50}} = DamageCalculator.apply_critical_hit(100, attacker)
     end
 
-    test "preserves LUK's tenths remainder when Mace Mastery changes displayed critical" do
+    test "legacy display-only critical does not invent a remainder from LUK" do
       attacker = CombatTestHelper.create_player_combatant(luk: 5)
       attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 6)}
 
-      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 66}, 100 ->
-        %{damage: 100, is_critical: false, critical_rate: 66}
+      expect(CriticalHits, :calculate_critical_hit, fn %{critical: 60}, 100 ->
+        %{damage: 100, is_critical: false, critical_rate: 60}
       end)
 
-      assert {:ok, %{critical_rate: 66}} = DamageCalculator.apply_critical_hit(100, attacker)
+      assert {:ok, %{critical_rate: 60}} = DamageCalculator.apply_critical_hit(100, attacker)
     end
 
-    test "adds display-scale status and equipment critical without losing LUK precision" do
+    test "an exact snapshot takes precedence over legacy display and raw LUK" do
       attacker = CombatTestHelper.create_player_combatant(luk: 5)
 
-      # LUK 5 contributes 16 tenths; the display value 20 represents its base
-      # 1 plus Mace Mastery 5, status 10, and equipment 4.
-      attacker = %{attacker | combat_stats: Map.put(attacker.combat_stats, :critical, 20)}
+      attacker = %{
+        attacker
+        | combat_stats: Map.merge(attacker.combat_stats, %{critical: 20, critical_rate: 206})
+      }
 
       expect(CriticalHits, :calculate_critical_hit, fn %{critical: 206}, 100 ->
         %{damage: 100, is_critical: false, critical_rate: 206}
@@ -666,6 +667,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
           {:critical_add_race, :demon} => 40
         })
 
+      attacker = put_in(attacker.combat_stats[:critical_rate], 0)
       defender = CombatTestHelper.create_mob_combatant(race: :brute)
 
       expect(CriticalHits, :calculate_critical_hit, fn %{critical: 90}, 100 ->
@@ -674,6 +676,24 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
       assert {:ok, %{critical_rate: 90}} =
                DamageCalculator.apply_critical_hit(100, attacker, defender)
+    end
+
+    test "raw combatant fallback includes the active natural basis and level" do
+      attacker = CombatTestHelper.create_player_combatant(luk: 20, base_level: 99)
+      expected = if GameMode.mode() == :renewal, do: 79, else: 76
+
+      assert {:ok, %{critical_rate: ^expected}} =
+               DamageCalculator.apply_critical_hit(100, attacker)
+    end
+
+    test "race and additional critical rates are combined before the final clamp" do
+      attacker = CombatTestHelper.create_player_combatant(luk: 400)
+      attacker = put_in(attacker.combat_stats[:critical_rate], 1_200)
+      attacker = %{attacker | equip_modifiers: %{{:critical_add_race, :brute} => -10}}
+      defender = CombatTestHelper.create_mob_combatant(race: :brute)
+
+      assert {:ok, %{critical_rate: 950}} =
+               DamageCalculator.apply_critical_hit(100, attacker, defender, -15)
     end
 
     test "uses the defender race and preserves the existing critical chance clamp" do

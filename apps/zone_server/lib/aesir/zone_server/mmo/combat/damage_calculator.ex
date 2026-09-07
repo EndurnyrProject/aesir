@@ -641,7 +641,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   defp apply_critical_hit_with_rate(base_damage, attacker, race_rate) do
     base_rate =
       computed_critical_rate(attacker) ||
-        CriticalHits.calculate_critical_rate(%{luk: attacker.base_stats.luk})
+        CriticalHits.calculate_critical_rate(%{
+          luk: attacker.base_stats.luk,
+          base_level: Map.get(Map.get(attacker, :progression) || %{}, :base_level, 0)
+        })
 
     attacker_for_crit = %{
       luk: attacker.base_stats.luk,
@@ -687,12 +690,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
        when is_integer(critical_rate),
        do: critical_rate
 
-  defp computed_critical_rate(%{base_stats: %{luk: luk}, combat_stats: %{critical: critical}})
-       when is_integer(luk) and is_integer(critical) do
-    base_critical = div(luk, 3)
-
-    CriticalHits.calculate_critical_rate_from_luk(luk) + (critical - base_critical) * 10
-  end
+  defp computed_critical_rate(%{combat_stats: %{critical: critical}})
+       when is_integer(critical),
+       do: critical * 10
 
   defp computed_critical_rate(_attacker), do: nil
 

@@ -431,6 +431,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
       assert {result.combat_stats.critical_rate, result.combat_stats.critical} ===
                {expected_rate, expected_display}
 
+      assert CriticalHits.calculate_critical_rate(result) === expected_rate
       assert {:ok, critical} = DamageCalculator.apply_critical_hit(100, attacker)
       assert critical.critical_rate === expected_rate
     end
@@ -496,6 +497,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
 
     result = Stats.calculate_combat_stats(stats)
     assert {result.combat_stats.critical_rate, result.combat_stats.critical} == {318, 31}
+    assert CriticalHits.calculate_critical_rate(result) == 318
 
     attacker = %{
       base_stats: result.base_stats,

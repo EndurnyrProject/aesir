@@ -1,37 +1,47 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
   doctest CriticalHits
 
   describe "calculate_critical_rate/1" do
-    test "calculates correct critical rate from LUK value using rAthena formula" do
-      # LUK * 10/3 formula
-      assert CriticalHits.calculate_critical_rate(%{luk: 30}) == 100
-      assert CriticalHits.calculate_critical_rate(%{luk: 99}) == 330
-      assert CriticalHits.calculate_critical_rate(%{luk: 1}) == 3
-      assert CriticalHits.calculate_critical_rate(%{luk: 150}) == 500
+    test "raw LUK uses the active natural critical basis without an implied level" do
+      assert CriticalHits.calculate_critical_rate(%{luk: 30}) == mode_value(100, 110)
+      assert CriticalHits.calculate_critical_rate(%{luk: 99}) == mode_value(307, 340)
+      assert CriticalHits.calculate_critical_rate(%{luk: 1}) == 13
+      assert CriticalHits.calculate_critical_rate(%{luk: 150}) == mode_value(460, 510)
+      assert CriticalHits.calculate_critical_rate(%{luk: 300}) == mode_value(910, 1_000)
+    end
+
+    test "raw-stat fallback retains the mode-specific level term" do
+      assert CriticalHits.calculate_critical_rate(%{luk: 20, base_level: 9}) == mode_value(70, 76)
+
+      assert CriticalHits.calculate_critical_rate(%{luk: 20, base_level: 10}) ==
+               mode_value(71, 76)
+
+      assert CriticalHits.calculate_critical_rate(%{luk: 20, base_level: 99}) ==
+               mode_value(79, 76)
     end
 
     test "caps critical rate at 1000 (100%)" do
       # High LUK values should be capped
-      assert CriticalHits.calculate_critical_rate(%{luk: 300}) == 1000
+      assert CriticalHits.calculate_critical_rate(%{luk: 400}) == 1000
       assert CriticalHits.calculate_critical_rate(%{luk: 999}) == 1000
       assert CriticalHits.calculate_critical_rate(%{luk: 1000}) == 1000
     end
 
     test "handles zero and negative LUK gracefully" do
-      assert CriticalHits.calculate_critical_rate(%{luk: 0}) == 0
-      # Note: negative LUK shouldn't happen in practice but our formula handles it
-      assert CriticalHits.calculate_critical_rate(%{luk: -10}) == 0
+      assert CriticalHits.calculate_critical_rate(%{luk: 0}) == 10
+      assert CriticalHits.calculate_critical_rate(%{luk: -10}) == 10
     end
 
     test "works with PlayerStats struct" do
-      # Create a mock PlayerStats with effective_stat function
       player_stats = %PlayerStats{
         base_stats: %{luk: 50},
+        progression: %{base_level: 60},
         modifiers: %{
           job_bonuses: %{luk: 5},
           equipment: %{luk: 10},
@@ -39,38 +49,43 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
         }
       }
 
-      # Should use effective LUK (50 + 5 + 10 = 65)
-      # 65 * 10/3 = 216.67 -> 216
+      # Effective LUK65, with the natural basis and level term where applicable.
       result = CriticalHits.calculate_critical_rate(player_stats)
-      assert result == 216
+      assert result == mode_value(211, 226)
     end
 
     test "handles missing LUK field in map" do
       # Should default to LUK 1 when field is missing
-      assert CriticalHits.calculate_critical_rate(%{str: 50}) == 3
-      assert CriticalHits.calculate_critical_rate(%{}) == 3
+      assert CriticalHits.calculate_critical_rate(%{str: 50}) == 13
+      assert CriticalHits.calculate_critical_rate(%{}) == 13
     end
 
     test "uses a computed critical rate when one is supplied" do
       assert CriticalHits.calculate_critical_rate(%{critical: 600, luk: 30}) == 600
+      assert CriticalHits.calculate_critical_rate(%{critical: 0, luk: 400}) == 0
+      assert CriticalHits.calculate_critical_rate(%{critical: -10}) == 0
+      assert CriticalHits.calculate_critical_rate(%{critical: 1_010}) == 1_000
+
+      assert CriticalHits.calculate_critical_rate(%{combat_stats: %{critical_rate: 0}, luk: 400}) ==
+               0
     end
   end
 
   describe "calculate_critical_rate_from_luk/1" do
     test "calculates rate directly from LUK value" do
-      assert CriticalHits.calculate_critical_rate_from_luk(30) == 100
-      assert CriticalHits.calculate_critical_rate_from_luk(99) == 330
-      assert CriticalHits.calculate_critical_rate_from_luk(1) == 3
+      assert CriticalHits.calculate_critical_rate_from_luk(30) == mode_value(100, 110)
+      assert CriticalHits.calculate_critical_rate_from_luk(99) == mode_value(307, 340)
+      assert CriticalHits.calculate_critical_rate_from_luk(1) == 13
     end
 
     test "caps at 1000 for high LUK values" do
-      assert CriticalHits.calculate_critical_rate_from_luk(300) == 1000
+      assert CriticalHits.calculate_critical_rate_from_luk(400) == 1000
       assert CriticalHits.calculate_critical_rate_from_luk(999) == 1000
     end
 
     test "handles edge cases" do
-      assert CriticalHits.calculate_critical_rate_from_luk(0) == 0
-      assert CriticalHits.calculate_critical_rate_from_luk(-5) == 0
+      assert CriticalHits.calculate_critical_rate_from_luk(0) == 10
+      assert CriticalHits.calculate_critical_rate_from_luk(-5) == 10
     end
   end
 
@@ -175,8 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       assert Map.has_key?(result, :damage)
       assert Map.has_key?(result, :critical_rate)
 
-      # Critical rate should be correct
-      assert result.critical_rate == 100
+      assert result.critical_rate == mode_value(100, 110)
 
       critical_damage = CriticalHits.apply_critical_damage(base_damage, stats)
 
@@ -197,12 +211,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
 
       assert result.damage == 0
       assert is_boolean(result.is_critical)
-      assert result.critical_rate == 166
+      assert result.critical_rate == mode_value(160, 176)
     end
 
     test "works with high LUK stats" do
       # Should cap at 1000 (100% critical)
-      stats = %{luk: 300}
+      stats = %{luk: 400}
       base_damage = 200
 
       result = CriticalHits.calculate_critical_hit(stats, base_damage)
@@ -218,8 +232,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       base_damage = 200
       equip = %{crit_atk_rate: 50}
 
-      always_crit = %{luk: 300, equip_modifiers: equip}
-      never_crit = %{luk: 0, equip_modifiers: equip}
+      always_crit = %{critical: 1_000, equip_modifiers: equip}
+      never_crit = %{critical: 0, equip_modifiers: equip}
 
       crit_result = CriticalHits.calculate_critical_hit(always_crit, base_damage)
       assert crit_result.is_critical
@@ -240,7 +254,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
 
       # All should have same critical rate
       critical_rates = Enum.map(results, & &1.critical_rate)
-      assert Enum.all?(critical_rates, &(&1 == 166))
+      assert Enum.all?(critical_rates, &(&1 == mode_value(160, 176)))
 
       # All damages should be either base or the renewal critical factor (100 * 1.4 = 140)
       damages = Enum.map(results, & &1.damage)
@@ -253,17 +267,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       # Test cases based on rAthena source code
       test_cases = [
         # Minimum case
-        %{luk: 1, expected_rate: 3},
+        %{luk: 1, expected_rate: 13},
         # Early game
-        %{luk: 30, expected_rate: 100},
+        %{luk: 30, expected_rate: mode_value(100, 110)},
         # Mid game
-        %{luk: 60, expected_rate: 200},
+        %{luk: 60, expected_rate: mode_value(190, 210)},
         # High stats
-        %{luk: 99, expected_rate: 330},
+        %{luk: 99, expected_rate: mode_value(307, 340)},
         # Very high
-        %{luk: 150, expected_rate: 500},
+        %{luk: 150, expected_rate: mode_value(460, 510)},
         # Capped
-        %{luk: 300, expected_rate: 1000}
+        %{luk: 400, expected_rate: 1000}
       ]
 
       for %{luk: luk_val, expected_rate: expected} <- test_cases do
@@ -305,5 +319,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
       assert critical_count >= 0
       assert critical_count <= 5
     end
+  end
+
+  defp mode_value(renewal, classic) do
+    if GameMode.mode() == :renewal, do: renewal, else: classic
   end
 end
