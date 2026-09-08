@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageOpsTest do
 
   @potion 501
   @poring_card 4001
-  @restricted 598
+  @restricted 1173
   @sword 1101
 
   setup :verify_on_exit!

@@ -1,16 +1,20 @@
 defmodule Aesir.ZoneServer.Unit.Player.AppearanceTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.SpriteChange
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.LookType
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
 
+  setup :set_mimic_private
   setup :setup_ets_tables
+  setup :verify_on_exit!
 
   @gid 1001
 
@@ -20,12 +24,11 @@ defmodule Aesir.ZoneServer.Unit.Player.AppearanceTest do
   @wedding_veil 2206
   @sunglasses 2201
   @flu_mask 2218
-  @adventurers_backpack 2576
-  # Two-handed bow with a non-zero view (11); occupies both hands.
-  @ixion_wing 18_129
+  @muffler 2501
+  @muramasa 1173
 
   # Known views: wedding_veil => 44, sunglasses => 12, flu_mask => 8,
-  # adventurers_backpack => 2, guard => 1, ixion_wing => 11, sword => 0.
+  # guard => 1, Muramasa's two-handed-sword class => 3, sword => 0.
 
   # EQP position bitmasks.
   @right_hand 2
@@ -100,9 +103,9 @@ defmodule Aesir.ZoneServer.Unit.Player.AppearanceTest do
 
     test "a two-handed weapon emits one weapon SpriteChange with shield val 0" do
       old = %Equipment{}
-      new = Stats.equipment_from_inventory([equipped(@ixion_wing, @both_hand)])
+      new = Stats.equipment_from_inventory([equipped(@muramasa, @both_hand)])
 
-      assert [%SpriteChange{gid: @gid, type: type, val: 11, val2: 0}] =
+      assert [%SpriteChange{gid: @gid, type: type, val: 3, val2: 0}] =
                Appearance.diff(@gid, old, new)
 
       assert type == LookType.weapon()
@@ -111,12 +114,19 @@ defmodule Aesir.ZoneServer.Unit.Player.AppearanceTest do
 
   describe "spawn_fields/1" do
     test "maps each equipment slot to the matching spawn field" do
+      {:ok, muffler} = ItemManagement.get_item_by_id(@muffler)
+
+      stub(ItemManagement, :get_item_by_id, fn
+        @muffler -> {:ok, %{muffler | view: 2}}
+        item_id -> Mimic.call_original(ItemManagement, :get_item_by_id, [item_id])
+      end)
+
       equipment =
         Stats.equipment_from_inventory([
           equipped(@wedding_veil, @head_top_pos),
           equipped(@sunglasses, @head_mid_pos),
           equipped(@flu_mask, @head_low_pos),
-          equipped(@adventurers_backpack, @garment_pos),
+          equipped(@muffler, @garment_pos),
           equipped(@guard, @left_hand)
         ])
 

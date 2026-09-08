@@ -646,11 +646,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionInventoryTest do
     test "equipping ammo acks success with no SpriteChange", %{equip_char: character} do
       Mimic.copy(Broadcast)
       stub(Broadcast, :to_visible_players, fn _gs, _packet, _opts -> :ok end)
-      # 13210 = Slug Ammunition L (ammo, view 0, no job/level requirement).
-      seed_item(character.id, 13210, 1)
+      # Arrow 1750 is available in both modes and requires an Archer-family job.
+      character = %{character | class: 3}
+      seed_item(character.id, 1750, 1)
       {:ok, state} = PlayerSession.init(%{character: character, connection_pid: self()})
 
-      server_index = index_of(state.game_state.inventory, 13210)
+      server_index = index_of(state.game_state.inventory, 1750)
 
       {:noreply, new_state} =
         PlayerSession.handle_info(

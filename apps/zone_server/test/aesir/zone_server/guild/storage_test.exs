@@ -1,5 +1,6 @@
 defmodule Aesir.ZoneServer.Guild.StorageTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.State
@@ -8,9 +9,12 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
 
   @guild_storage 10_016
   @red_potion 501
-  @restricted_item 9895
-  @restricted_card 6846
+  @restricted_item 1173
+  @restricted_card 4001
   @unknown_card 999_999
+
+  setup :set_mimic_private
+  setup :verify_on_exit!
 
   describe "capacity/1" do
     test "returns zero when the guild has not learned Guild Storage Expansion" do
@@ -88,6 +92,15 @@ defmodule Aesir.ZoneServer.Guild.StorageTest do
     end
 
     test "rejects an item holding a restricted card in any card slot" do
+      card = def!(@restricted_card)
+
+      # Classic ships no restricted card, so clone a real shared card privately
+      # to retain the card-slot restriction contract without changing the catalog.
+      stub(ItemManagement, :get_item_by_id, fn
+        @restricted_card -> {:ok, %{card | no_guild_storage: true}}
+        item_id -> Mimic.call_original(ItemManagement, :get_item_by_id, [item_id])
+      end)
+
       for card_slot <- [:card0, :card1, :card2, :card3] do
         assert {:error, :no_guild_storage} =
                  Storage.depositable(item([{card_slot, @restricted_card}]), def!(@red_potion))

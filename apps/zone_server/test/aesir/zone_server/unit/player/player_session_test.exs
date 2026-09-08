@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapCache
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -723,13 +724,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
     test "player_entered_view spawn derives appearance from the unit's equipped gear", %{
       character: character
     } do
-      # Ribbon (2208) is a head_top with sprite view 17; Adventurer's Backpack
-      # (2576) is a garment with view 2. accessory3 used to be hardcoded 0 and
-      # robe came from a stale character field; both must now reflect the gear.
+      # Ribbon 2208 is a head_top with sprite view 17. Classic has no garment
+      # view rows, so a private Muffler 2501 clone preserves the shared robe path.
+      {:ok, muffler} = ItemManagement.get_item_by_id(2501)
+
+      stub(ItemManagement, :get_item_by_id, fn
+        2501 -> {:ok, %{muffler | view: 2}}
+        item_id -> Mimic.call_original(ItemManagement, :get_item_by_id, [item_id])
+      end)
+
       equipment =
         Stats.equipment_from_inventory([
           %InventoryItem{nameid: 2208, equip: 0x100},
-          %InventoryItem{nameid: 2576, equip: 0x004}
+          %InventoryItem{nameid: 2501, equip: 0x004}
         ])
 
       other_character = %{character | id: 2, account_id: 200, name: "OtherPlayer"}

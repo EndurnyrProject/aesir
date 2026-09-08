@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Unit.Trade.ExchangeTest do
 
   @potion 501
   @sword 1101
+  @no_trade_item 1173
 
   setup :setup_ets_tables
 
@@ -157,7 +158,7 @@ defmodule Aesir.ZoneServer.Unit.Trade.ExchangeTest do
   end
 
   defp failure_case(:no_trade, a, b) do
-    failure_with_item(a, b, 766, %{}, :no_trade)
+    failure_with_item(a, b, @no_trade_item, %{}, :no_trade)
   end
 
   defp failure_case(:equipped, a, b) do

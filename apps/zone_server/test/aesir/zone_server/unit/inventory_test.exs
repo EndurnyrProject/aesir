@@ -3,8 +3,8 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
   Pure-domain tests for `Aesir.ZoneServer.Unit.Inventory`.
 
   No DB, no sockets: inventory maps are built with real `%InventoryItem{}`
-  structs via `PlayerState.from_list/1` and equip uses real item ids from
-  `priv/db/re/items/equip.yml` resolved through `ItemManagement.get_item_by_id/1`.
+  structs via `PlayerState.from_list/1` and equip uses real ids from the active
+  item database, resolved through `ItemManagement.get_item_by_id/1`.
   """
   use ExUnit.Case, async: true
 
@@ -22,7 +22,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
   @body_armor 2301
   @ring 2601
   @earring 2602
-  @amistr_cap 5766
+  @ribbon 2208
 
   # EQP position bitmasks (rAthena enum equip_pos).
   @right_hand 2
@@ -361,7 +361,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
     end
 
     test "equips a head_top headgear regardless of the client position", %{ctx: ctx} do
-      inv = inventory([item(nameid: @amistr_cap, amount: 1)])
+      inv = inventory([item(nameid: @ribbon, amount: 1)])
 
       assert {:ok, %{0 => %InventoryItem{equip: @head_top}}, {:equipped, 0, @head_top, []}} =
                Inventory.equip(inv, 0, 0, ctx)
