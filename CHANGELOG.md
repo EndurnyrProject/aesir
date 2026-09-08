@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.15.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.14.0...aesir-v0.15.0) (2026-09-08)
+
+
+### Features
+
+* **combat:** authorize attacks owned by siege fields ([599f243](https://github.com/EndurnyrProject/aesir/commit/599f24337cf8435f1e1177a89d57252fa6e7239c))
+* **combat:** settle castle-ground damage and returns ([81b3766](https://github.com/EndurnyrProject/aesir/commit/81b376612529023ee4ac7e93c22b9271abfc10e1))
+* **guild:** activate siege ground and recall restrictions ([877a3b1](https://github.com/EndurnyrProject/aesir/commit/877a3b1052172c7e165180eccaebdf07982bfe0a))
+* **items:** evaluate gettime and strcharinfo in equip scripts ([4301d24](https://github.com/EndurnyrProject/aesir/commit/4301d2474a3029625b698724a398f61e5413dbcf))
+* **navigation-graph:** Created task to generate graph cache ([dd36ff1](https://github.com/EndurnyrProject/aesir/commit/dd36ff1421d8ac7ba7509abd77fcbb0b67cb68c8))
+* **npc:** transpile strcharinfo char ids and date constants ([b0642e1](https://github.com/EndurnyrProject/aesir/commit/b0642e145be3348356bf326bf435806a66c135a0))
+* **script:** resolve strcharinfo and date reads through Rathena helpers ([9057505](https://github.com/EndurnyrProject/aesir/commit/905750561eab382aaa2df90a174706ed24920e77))
+* **units:** preserve typed lethal kill credit ([2015fef](https://github.com/EndurnyrProject/aesir/commit/2015fef50d0f9f33219363c4192af3af8212f422))
+* **woe:** apply mode-specific emperium hit profiles ([e23e130](https://github.com/EndurnyrProject/aesir/commit/e23e130a84771f050beb1df1cc44fa43b615983b))
+* **woe:** apply versus targeting to existing fields and traps ([316f2fe](https://github.com/EndurnyrProject/aesir/commit/316f2fe458613b2704f3356cbbed6a312aafcc12))
+* **woe:** block offensive knockback on castle ground ([d764f57](https://github.com/EndurnyrProject/aesir/commit/d764f57d74ad9fc5c2aad578e47228522d18d556))
+* **woe:** calculate and refresh active-gvg flee ([63cee48](https://github.com/EndurnyrProject/aesir/commit/63cee482af796e8034eaca6ff6eccb6720bbf69f))
+* **woe:** capture from attributed emperium death events ([b1e3100](https://github.com/EndurnyrProject/aesir/commit/b1e3100b3e2b48b45eaf5e138bc58b1c27a749e7))
+* **woe:** claim breaks by live emperium identity ([4b56dc4](https://github.com/EndurnyrProject/aesir/commit/4b56dc4bd5edb7b3aa516b276dcede2baf2a14a6))
+* **woe:** define finite siege ground policies ([5b49498](https://github.com/EndurnyrProject/aesir/commit/5b49498767b15ff64c5156388ccfb080fe45b5ab))
+* **woe:** eject castle outsiders after conquest ([dc39274](https://github.com/EndurnyrProject/aesir/commit/dc3927487259b24f66289b2f911b20f66db38545))
+* **woe:** enforce cast and item restrictions separately ([dcc4cd7](https://github.com/EndurnyrProject/aesir/commit/dcc4cd7a1219e901444b07c2de696d9d0e99f750))
+* **woe:** enforce emperium attack eligibility ([f3a6163](https://github.com/EndurnyrProject/aesir/commit/f3a616381bf6dd1fe5e33171c7feb1128c066734))
+* **woe:** restrict castle revival and endure effects ([3ab9714](https://github.com/EndurnyrProject/aesir/commit/3ab9714de33307ccab909ba953e3023fbfec24f7))
+
+
+### Bug Fixes
+
+* clear final dual-mode Dialyzer gate ([b1c7839](https://github.com/EndurnyrProject/aesir/commit/b1c783955d88006e6ef74bcb22b13eaff9d4ff46))
+* **combat:** align critical-rate fallback representations ([8d4148a](https://github.com/EndurnyrProject/aesir/commit/8d4148a769949907db08793f141784bb402ae2ac))
+* **combat:** correct mode-specific magic damage stages ([fd9b183](https://github.com/EndurnyrProject/aesir/commit/fd9b183e29dff6241bc7167a04f3b21777e1a206))
+* **combat:** separate mode-aware physical attack components ([5b69319](https://github.com/EndurnyrProject/aesir/commit/5b693198f34ba22f8337c7ed6938ab953dc04131))
+* **combat:** separate physical defense stat buckets ([c7c4ac3](https://github.com/EndurnyrProject/aesir/commit/c7c4ac36829a1364418811b5a95524066504095c))
+* **crusader:** own mode-specific Grand Cross damage ([9676f88](https://github.com/EndurnyrProject/aesir/commit/9676f8804e83fa3a98cd1a0ee3c65b9b572346a9))
+* Fixed flaky boss test ([30dac42](https://github.com/EndurnyrProject/aesir/commit/30dac4219756d7a069245c0ab470797ac08f8e81))
+* **homunculus:** derive stats through mode-aware formulas ([896f418](https://github.com/EndurnyrProject/aesir/commit/896f418d223c2224dc33bc365a0ecce6b8e775a9))
+* **items:** deliver item-triggered warps ([975ba41](https://github.com/EndurnyrProject/aesir/commit/975ba41afb6aaca8947fec51b401460c88d43f1b))
+* **navigation:** Improving the navigation (a lot) ([660bad2](https://github.com/EndurnyrProject/aesir/commit/660bad2eadc5a0c2c8394d7e8630f3898dfa7c88))
+* **tests:** Fixing some flaky integration tests ([f4a85ae](https://github.com/EndurnyrProject/aesir/commit/f4a85ae36b04d5e401d33cc7fd747c6921f17763))
+* **woe:** cover alternate and delayed damage delivery ([2538453](https://github.com/EndurnyrProject/aesir/commit/2538453b8b98c34c79133816a88bccb967c86feb))
+* **woe:** invalidate stale conquest work ([3c5b73b](https://github.com/EndurnyrProject/aesir/commit/3c5b73b453e1726c94f61fcc36afaf1a587be9cb))
+
 ## [0.14.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.13.0...aesir-v0.14.0) (2026-09-03)
 
 
