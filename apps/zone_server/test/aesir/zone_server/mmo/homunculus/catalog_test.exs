@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalogs
   alias Aesir.ZoneServer.Mmo.Homunculus.ExpTable
@@ -61,7 +63,52 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
     }
   }
 
+  @classic_evolution %{
+    lif: %{
+      "hp" => {1, 10},
+      "sp" => {10, 20},
+      "str" => {1, 5},
+      "agi" => {1, 4},
+      "vit" => {1, 5},
+      "int" => {4, 10},
+      "dex" => {1, 10},
+      "luk" => {1, 3}
+    },
+    amistr: %{
+      "hp" => {10, 20},
+      "sp" => {1, 10},
+      "str" => {1, 10},
+      "agi" => {1, 5},
+      "vit" => {4, 10},
+      "int" => {1, 3},
+      "dex" => {1, 4},
+      "luk" => {1, 5}
+    },
+    filir: %{
+      "hp" => {5, 15},
+      "sp" => {5, 15},
+      "str" => {4, 10},
+      "agi" => {1, 10},
+      "vit" => {1, 3},
+      "int" => {1, 4},
+      "dex" => {1, 5},
+      "luk" => {1, 5}
+    },
+    vanilmirth: %{
+      "hp" => {1, 30},
+      "sp" => {1, 30},
+      "str" => {1, 10},
+      "agi" => {1, 10},
+      "vit" => {1, 10},
+      "int" => {1, 10},
+      "dex" => {1, 10},
+      "luk" => {1, 10}
+    }
+  }
+
   setup do
+    # These serialized tests exercise actual shared catalog publication and restore it on exit.
+    on_exit(fn -> Catalogs.reload() end)
     Catalogs.reload()
   end
 
@@ -104,27 +151,42 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
     for {family, offset} <- Enum.with_index(families), id <- [6001 + offset, 6009 + offset] do
       {:ok, row} = Catalog.by_id(id)
 
+      expected =
+        Map.new(@ranges[family], fn {stat, {base, min, max, evolution_min, evolution_max}} ->
+          {evolution_min, evolution_max} =
+            case GameMode.mode() do
+              :renewal -> {evolution_min, evolution_max}
+              :pre_renewal -> @classic_evolution[family][stat]
+            end
+
+          {stat, {base, min, max, evolution_min, evolution_max}}
+        end)
+
       assert Map.new(row.stats, fn {stat, range} ->
                {stat,
                 {range.base, range.growth_min, range.growth_max, range.evolution_min,
                  range.evolution_max}}
-             end) == @ranges[family]
+             end) == expected
     end
   end
 
-  test "pins every Renewal level 1 through 99 EXP value" do
+  test "pins every EXP value and the complete level interval for the active mode" do
     table = ExpTable.all()
 
+    {max_level, checksum} =
+      %{
+        renewal: {99, "2d0400d80a4f8ea87e2da8aeaed1f378d9fe3c07fe9bfb8616dd06e1413d412c"},
+        pre_renewal: {98, "9ecc6d11eb263aef8f01fe2dc49b703c5092b695aa3970b5226b2e91be29f6da"}
+      }[GameMode.mode()]
+
     canonical =
-      Enum.map_join(1..99, "\n", fn level ->
+      Enum.map_join(1..max_level, "\n", fn level ->
         "#{level}:#{Map.fetch!(table, level)}"
       end)
 
-    assert Base.encode16(:crypto.hash(:sha256, canonical), case: :lower) ==
-             "2d0400d80a4f8ea87e2da8aeaed1f378d9fe3c07fe9bfb8616dd06e1413d412c"
-
-    assert Map.keys(table) |> Enum.sort() == Enum.to_list(1..99)
-    assert ExpTable.exp_for(100) == :error
+    assert Base.encode16(:crypto.hash(:sha256, canonical), case: :lower) == checksum
+    assert Map.keys(table) |> Enum.sort() == Enum.to_list(1..max_level)
+    assert ExpTable.exp_for(max_level + 1) == :error
   end
 
   test "pins every rank, prerequisite, form, and fixed-point intimacy rule" do
@@ -164,9 +226,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   end
 
   test "orchestrated reload replaces data only after successful validation" do
-    path = Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
-    exp_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
-    trees_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
+    path = catalog_path("species.yml")
+    exp_path = catalog_path("exp.yml")
+    trees_path = catalog_path("skill_trees.yml")
     rows = YamlElixir.read_from_file!(path)
     changed = put_in(hd(rows)["food"], "Fresh_Test_Food")
 
@@ -175,10 +237,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
 
     File.write!(temp, Ymlr.document!([changed | tl(rows)]))
 
-    on_exit(fn ->
-      Catalogs.reload()
-      File.rm(temp)
-    end)
+    on_exit(fn -> File.rm(temp) end)
 
     assert :ok = Catalogs.reload(temp, exp_path, trees_path)
     assert {:ok, %{food: "Fresh_Test_Food"}} = Catalog.by_id(6001)
@@ -193,20 +252,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   end
 
   test "malformed and incomplete corpora fail explicit validation" do
-    species =
-      YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
-      )
-
-    exp =
-      YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
-      )
-
-    trees =
-      YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
-      )
+    species = YamlElixir.read_from_file!(catalog_path("species.yml"))
+    exp = YamlElixir.read_from_file!(catalog_path("exp.yml", :renewal))
+    trees = YamlElixir.read_from_file!(catalog_path("skill_trees.yml"))
 
     assert_raise ArgumentError, ~r/expected 16/, fn -> Catalog.validate!(tl(species)) end
 
@@ -271,7 +319,6 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   test "successful orchestrated reload publishes one complete generation", %{tmp_dir: dir} do
     [species_path, exp_path, trees_path] = write_changed_triplet(dir)
     generation = Catalogs.generation()
-    on_exit(fn -> Catalogs.reload() end)
 
     assert :ok = Catalogs.reload(species_path, exp_path, trees_path)
     assert Catalogs.generation() == generation + 1
@@ -302,9 +349,9 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
 
   @tag :tmp_dir
   test "failed orchestrated reload preserves all three installed catalogs", %{tmp_dir: dir} do
-    species_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
-    exp_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
-    trees_path = Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
+    species_path = catalog_path("species.yml")
+    exp_path = catalog_path("exp.yml")
+    trees_path = catalog_path("skill_trees.yml")
 
     prior = {Catalogs.generation(), Catalog.all(), ExpTable.all(), SkillTree.all()}
     species = YamlElixir.read_from_file!(species_path)
@@ -320,15 +367,8 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
   end
 
   test "runtime cross-validation rejects unknown and missing species skills" do
-    species =
-      YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
-      )
-
-    trees =
-      YamlElixir.read_from_file!(
-        Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
-      )
+    species = YamlElixir.read_from_file!(catalog_path("species.yml"))
+    trees = YamlElixir.read_from_file!(catalog_path("skill_trees.yml"))
 
     inconsistent = put_in(species, [Access.at(0), "skills", Access.at(0)], 9999)
 
@@ -341,19 +381,23 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.CatalogTest do
     end
   end
 
+  defp catalog_path(name, mode \\ GameMode.mode()) do
+    Application.app_dir(:zone_server, "priv/db/#{Layout.mode_dir(mode)}/homunculus/#{name}")
+  end
+
   defp write_changed_triplet(dir) do
     species =
-      Application.app_dir(:zone_server, "priv/db/re/homunculus/species.yml")
+      catalog_path("species.yml")
       |> YamlElixir.read_from_file!()
       |> put_in([Access.at(0), "food"], "Atomic_Test_Food")
 
     exp =
-      Application.app_dir(:zone_server, "priv/db/re/homunculus/exp.yml")
+      catalog_path("exp.yml")
       |> YamlElixir.read_from_file!()
       |> put_in([Access.at(0), "exp"], 102)
 
     trees =
-      Application.app_dir(:zone_server, "priv/db/re/homunculus/skill_trees.yml")
+      catalog_path("skill_trees.yml")
       |> YamlElixir.read_from_file!()
       |> put_in([Access.at(0), "skill"], "HLIF_HEAL_TEST")
 

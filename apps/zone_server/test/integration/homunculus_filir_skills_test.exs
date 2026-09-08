@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -107,8 +108,9 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
       assert cast.homunculus.sp == 100 - cost
       assert cast.homunculus.cooldowns[@moon] > System.monotonic_time(:millisecond)
 
-      assert_receive {:"$gen_cast", {:combat, {:apply_damage, ^ratio, {:homunculus, @gid}}}}
-      assert_receive {:combat_packet, %SkillDamage{damage: ^ratio, div: ^divisions}}
+      damage = %{renewal: ratio, pre_renewal: ratio - 1}[GameMode.mode()]
+      assert_receive {:"$gen_cast", {:combat, {:apply_damage, ^damage, {:homunculus, @gid}}}}
+      assert_receive {:combat_packet, %SkillDamage{damage: ^damage, div: ^divisions}}
       refute_receive {:"$gen_cast", {:combat, {:apply_damage, _, _}}}
       refute_receive {:combat_packet, %SkillDamage{}}
       clear_units()
@@ -136,7 +138,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     assert {:ok, direct_cast} =
              CastingHandler.begin(direct, @moon, 1, {:unit, {:mob, @mob_gid}})
 
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, 220, {:homunculus, @gid}}}}
+    damage = %{renewal: 220, pre_renewal: 219}[GameMode.mode()]
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, ^damage, {:homunculus, @gid}}}}
     clear_units()
 
     ai =
@@ -153,7 +156,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
     assert {:noreply, ai_cast} = AiHandler.tick(armed.homunculus_runtime.ai_timer_ref, armed)
     AiHandler.cancel(ai_cast)
 
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, 220, {:homunculus, @gid}}}}
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, ^damage, {:homunculus, @gid}}}}
     assert ai_cast.homunculus.sp == direct_cast.homunculus.sp
     assert Map.has_key?(ai_cast.homunculus.cooldowns, @moon)
   end
@@ -212,7 +215,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
       assert {:ok, cast} =
                CastingHandler.begin(session, @sbr44, rank, {:unit, {:mob, @mob_gid}})
 
-      expected_damage = 40_000 * rank
+      expected_damage = 40_000 * rank - %{renewal: 0, pre_renewal: 1}[GameMode.mode()]
 
       assert_receive {:"$gen_cast",
                       {:combat, {:apply_damage, ^expected_damage, {:homunculus, @gid}}}}
@@ -373,7 +376,8 @@ defmodule Aesir.ZoneServer.Integration.HomunculusFilirSkillsTest do
              CastingHandler.begin(session, @sbr44, 3, {:unit, {:mob, @mob_gid}})
 
     assert_receive :delivered_after_commit
-    assert_receive {:"$gen_cast", {:combat, {:apply_damage, 120_000, {:homunculus, @gid}}}}
+    damage = %{renewal: 120_000, pre_renewal: 119_999}[GameMode.mode()]
+    assert_receive {:"$gen_cast", {:combat, {:apply_damage, ^damage, {:homunculus, @gid}}}}
     assert cast.homunculus.intimacy_hundredths == 100
     assert cast.homunculus.sp == 99
     assert Repo.get!(Homunculus, row.id).intimacy_hundredths == 100
