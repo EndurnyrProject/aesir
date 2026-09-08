@@ -723,10 +723,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
 
     test "a landed player swing carries coma to a Homunculus owner" do
-      test_pid = self()
       attacker = combatant(1001, :player)
       player_state = %FakeUnit{combatant: attacker, x: 150, y: 150}
-      target_pid = spawn(fn -> relay_once(test_pid) end)
+      target_pid = start_relay()
 
       target_state = %HomunculusState{
         id: 1,
@@ -1247,8 +1246,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
         ] do
       test "a target #{decision_slot} decision breaks #{equip_location} on the target session",
            %{player_state: player_state, stats: stats, target_state: target_state} do
-        test_pid = self()
-        target_pid = spawn(fn -> relay_once(test_pid) end)
+        target_pid = start_relay()
         decision_slot = unquote(decision_slot)
         equip_location = unquote(equip_location)
 
@@ -1327,8 +1325,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
     test "a hostile player takes primary-swing damage on a :pvp map",
          %{player_state: player_state, stats: stats, target_state: target_state} do
-      test_pid = self()
-      target_pid = spawn(fn -> relay_once(test_pid) end)
+      target_pid = start_relay()
 
       stub(UnitRegistry, :get_unit, fn
         :mob, 3001 -> {:error, :not_found}
@@ -1348,8 +1345,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
     test "differently-affiliated players fight on a :gvg map",
          %{player_state: player_state, stats: stats, target_state: target_state} do
-      test_pid = self()
-      target_pid = spawn(fn -> relay_once(test_pid) end)
+      target_pid = start_relay()
 
       stub(MapFlags, :get, fn
         "prontera", :gvg -> true
@@ -1374,8 +1370,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
 
     test "a target break decision for a player victim casts to the victim session",
          %{player_state: player_state, stats: stats, target_state: target_state} do
-      test_pid = self()
-      target_pid = spawn(fn -> relay(test_pid, 2) end)
+      target_pid = start_relay(2)
 
       stub(UnitRegistry, :get_unit, fn
         :mob, 3001 -> {:error, :not_found}
@@ -1467,17 +1462,28 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
     end
   end
 
-  # Forwards received messages back to the test process so casts sent to a
-  # distinct target pid can be asserted without the test process being the sink.
-  defp relay_once(test_pid), do: relay(test_pid, 1)
+  test "target relay remains available when damage dispatch is delayed" do
+    target_pid = start_relay()
+    monitor = Process.monitor(target_pid)
+
+    refute_receive {:DOWN, ^monitor, :process, ^target_pid, _reason}, 1_100
+
+    PlayerSession.apply_damage(target_pid, 50, {:player, 1001})
+
+    assert_receive {:relayed, {:"$gen_cast", {:unit, {:apply_damage, 50, {:player, 1001}}}}}
+  end
+
+  # Keep the target alive until its casts arrive; test supervision handles cleanup.
+  defp start_relay(remaining \\ 1) do
+    test_pid = self()
+    start_supervised!({Task, fn -> relay(test_pid, remaining) end})
+  end
 
   defp relay(_test_pid, 0), do: :ok
 
   defp relay(test_pid, remaining) do
     receive do
       msg -> send(test_pid, {:relayed, msg})
-    after
-      1_000 -> :ok
     end
 
     relay(test_pid, remaining - 1)
