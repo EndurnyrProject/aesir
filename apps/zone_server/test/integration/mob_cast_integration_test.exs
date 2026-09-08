@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   @moduledoc """
-  End-to-end coverage that mob-cast rows read from `MobSkill.Db` resolve into
+  End-to-end coverage that imported and explicitly controlled mob-cast rows resolve into
   real effects through the converged dispatch path: `MobSkill.Executor` ->
   `Skill.Catalog` -> the same `Skill.Active` modules a player cast runs.
 
-  Every scenario drives a real row against a real `Executor.execute/2` call,
+  Every scenario drives a row against a real `Executor.execute/2` call,
   a real `PlayerSession`/`MobSession`, and asserts the observable outcome
   (damage packets, HP, status storage, spatial position) rather than
   stubbing the mechanic under test - a catalog or convergence regression that
@@ -38,43 +38,37 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   @map "prontera"
 
-  # Wounded Morocc: carries both a level 5 `SA_DISPELL` row and a level 5
-  # `SA_LANDPROTECTOR` row, plus a level 10 `MG_FIREBOLT` row. Level 5 makes
-  # the skill's `50 + 10*lv`% roll a certainty, so the assertions do not
-  # depend on randomness.
-  @mob_id 3235
+  # Shared Wounded Morocc supplies level 10 Fire Bolt; Moonlight Flower's
+  # level 5 Dispel is certain, and Beelzebub supplies level 5 Land Protector.
+  @mob_id 1_917
+  @dispel_mob_id 1_150
+  @land_protector_mob_id 1_874
 
   # Tengu: carries `NPC_STUNATTACK` rows, weapon-class hit + status rider.
   @stun_mob_id 1_405
 
-  # Corrupted Soul: carries `NPC_EARTHQUAKE` (self-targeted ground shockwave).
-  @earthquake_mob_id 2_475
+  # Baphomet carries a self-targeted Earthquake row in both corpora.
+  @earthquake_mob_id 1_039
 
-  # Egnigem Cenia: carries a level 5 `HT_SHOCKWAVE` row targeting `around2`.
-  @shockwave_mob_id 2_952
+  # Wind Ghost carries a level 5 Shockwave row targeting around2.
+  @shockwave_mob_id 1_450
 
   # Evil Nymph: carries an `AL_HEAL` row targeting `friend`.
   @heal_mob_id 1_416
 
-  # Nydhoggur Memory: carries an `NPC_SUMMONSLAVE` row summoning a single
-  # Scorpion (mob id 2143, `condition.val1`).
-  @summon_mob_id 2_142
-  @summon_slave_id 2_143
+  # Doppelganger's level 1 summon row names one Nightmare slave.
+  @summon_mob_id 1_046
+  @summon_slave_id 1_427
 
   # Wind Ghost: carries `WZ_JUPITEL` rows, which are castable by mobs.
   @jupitel_mob_id 1_450
 
-  # Nidhoggr's Shadow carries level 11 WZ_METEOR; Dark Shadow carries level 21
-  # WZ_VERMILION. Both exceed the player skill definitions' level 10 maximum.
-  @meteor_mob_id 2_110
-  @vermilion_mob_id 2_100
+  # Dark Lord and Baphomet carry levels above the player definitions' maxima.
+  @meteor_mob_id 1_272
+  @vermilion_mob_id 1_039
 
-  # Gloom Under Night carries level 5 HT_FREEZINGTRAP around-self rows.
-  @freezing_trap_mob_id 2_431
-
-  # Kavach Icarus carries BA_MUSICALSTRIKE; Atroce Slave carries BA_FROSTJOKER.
-  @musical_strike_mob_id 2_226
-  @frost_joker_mob_id 2_437
+  # Marionette carries level 5 Freezing Trap around-self rows.
+  @freezing_trap_mob_id 1_459
 
   # These mobs carry the status rows exercised by the caster-generic sweep.
   @provoke_mob_id 1_057
@@ -87,6 +81,26 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
   setup :set_mimic_private
   setup :verify_on_exit!
+
+  @tag game_mode: :renewal, integration_pre_re: false
+  test "newer hosts retain their imported utility, ground and Bard rows" do
+    for {mob_id, skill, opts} <- [
+          {3_235, "SA_DISPELL", [level: 5]},
+          {3_235, "SA_LANDPROTECTOR", [level: 5]},
+          {3_235, "MG_FIREBOLT", [level: 10]},
+          {2_475, "NPC_EARTHQUAKE", []},
+          {2_952, "HT_SHOCKWAVE", [level: 5]},
+          {2_110, "WZ_METEOR", [level: 11]},
+          {2_100, "WZ_VERMILION", [level: 21]},
+          {2_431, "HT_FREEZINGTRAP", [level: 5]},
+          {2_226, "BA_MUSICALSTRIKE", [level: 5]},
+          {2_437, "BA_FROSTJOKER", [level: 3, target: :self]}
+        ] do
+      row!(mob_id, skill, opts)
+    end
+
+    assert %{condition: %{val1: 2_143}} = row!(2_142, "NPC_SUMMONSLAVE")
+  end
 
   defp row!(mob_id, skill_name, opts \\ []) do
     level = Keyword.get(opts, :level)
@@ -120,8 +134,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
   end
 
-  defp caster_targeting(char_id) do
-    mob = spawn_test_mob(@map, {150, 150}, mob_id: @mob_id)
+  defp caster_targeting(char_id, mob_id \\ @mob_id) do
+    mob = spawn_test_mob(@map, {150, 150}, mob_id: mob_id)
     %{get_mob_state(mob.pid) | target_ref: {:player, char_id}}
   end
 
@@ -257,7 +271,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       # Bleeding tick to land, and their damage removes SC_HIDING (`on_damage`)
       # before the dispel ever runs. Have the caster ready first, then apply the
       # statuses and dispel back to back.
-      caster = caster_targeting(char_id)
+      caster = caster_targeting(char_id, @dispel_mob_id)
 
       :ok =
         StatusInterpreter.apply_status(:player, char_id, :sc_blessing,
@@ -269,7 +283,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_bleeding, duration: 1_800_000)
       :ok = StatusInterpreter.apply_status(:player, char_id, :sc_hiding, duration: 1_800_000)
 
-      assert :ok = Executor.execute(caster, row!(@mob_id, "SA_DISPELL", level: 5))
+      assert :ok = Executor.execute(caster, row!(@dispel_mob_id, "SA_DISPELL", level: 5))
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
 
@@ -303,7 +317,10 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       reject(&Targeting.validate_enemy/2)
 
       assert :ok =
-               Executor.execute(caster_targeting(char_id), row!(@mob_id, "SA_DISPELL", level: 5))
+               Executor.execute(
+                 caster_targeting(char_id, @dispel_mob_id),
+                 row!(@dispel_mob_id, "SA_DISPELL", level: 5)
+               )
 
       refute StatusStorage.has_status?(:player, char_id, :sc_blessing)
     end
@@ -360,7 +377,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       assert :ok =
                Executor.execute(
-                 caster_targeting(char_id),
+                 caster_targeting(char_id, @shockwave_mob_id),
                  row!(@shockwave_mob_id, "HT_SHOCKWAVE", level: 5)
                )
 
@@ -386,8 +403,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       assert :ok =
                Executor.execute(
-                 caster_targeting(char_id),
-                 row!(@mob_id, "SA_LANDPROTECTOR", level: 5)
+                 caster_targeting(char_id, @land_protector_mob_id),
+                 row!(@land_protector_mob_id, "SA_LANDPROTECTOR", level: 5)
                )
 
       assert %Group{} = group = Enum.find(Storage.all(), &(&1.skill_name == :sa_landprotector))
@@ -674,7 +691,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
     end
   end
 
-  describe "retained Bard rows" do
+  describe "controlled Bard rows through shared execution" do
     test "BA_MUSICALSTRIKE resolves through Executor as one real damage event" do
       Mimic.copy(HitCalculations)
       stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
@@ -692,11 +709,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
       caster = caster_targeting(victim.character.id)
       flush_packets()
 
-      assert :ok =
-               Executor.execute(
-                 caster,
-                 row!(@musical_strike_mob_id, "BA_MUSICALSTRIKE", level: 5)
-               )
+      assert :ok = Executor.execute(caster, bard_row(316))
 
       victim_id = victim.character.id
       assert_receive {:packet_sent, %SkillDamage{skill_id: 316, target_id: ^victim_id}, _}, 1_000
@@ -718,8 +731,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, victim.character.id) end)
 
-      mob = spawn_test_mob(@map, {150, 150}, mob_id: @frost_joker_mob_id)
-      row = row!(@frost_joker_mob_id, "BA_FROSTJOKER", level: 3, target: :self)
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @mob_id)
+      row = bard_row(318)
 
       Mimic.copy(Resistance)
       stub(Resistance, :roll_success, fn _success_rate -> true end)
@@ -753,8 +766,8 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
 
       on_exit(fn -> StatusStorage.clear_unit_statuses(:player, victim.character.id) end)
 
-      mob = spawn_test_mob(@map, {150, 150}, mob_id: @frost_joker_mob_id, hp: 1, max_hp: 1)
-      row = row!(@frost_joker_mob_id, "BA_FROSTJOKER", level: 3, target: :self)
+      mob = spawn_test_mob(@map, {150, 150}, mob_id: @mob_id, hp: 1, max_hp: 1)
+      row = bard_row(318)
 
       Mimic.copy(Resistance)
       stub(Resistance, :roll_success, fn _success_rate -> true end)
@@ -778,6 +791,28 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
         3_200
       )
     end
+  end
+
+  defp bard_row(skill_id) do
+    {skill, level, target} =
+      case skill_id do
+        316 -> {"BA_MUSICALSTRIKE", 5, :target}
+        318 -> {"BA_FROSTJOKER", 3, :self}
+      end
+
+    %{
+      skill: skill,
+      skill_id: skill_id,
+      state: :attack,
+      level: level,
+      target: target,
+      cast_time: 0,
+      delay: 5_000,
+      rate: 10_000,
+      cancelable: true,
+      emotion: nil,
+      condition: %{type: :always, value: 0, val1: nil, val2: nil, val3: nil, val4: nil, val5: nil}
+    }
   end
 
   describe "WZ_JUPITEL deferred effect" do

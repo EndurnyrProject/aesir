@@ -15,11 +15,10 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
   alias Aesir.ZoneServer.Unit.Mob.MobState
 
   @map "prontera"
-  @cloaking_mob_id 3_230
-  @sonic_blow_mob_id 2_475
+  @cloaking_mob_id 1_119
+  @sonic_blow_mob_id 1_098
   @grimtooth_mob_id 1_304
-  @venom_dust_mob_id 2_850
-  @splasher_mob_id 3_740
+  @venom_dust_mob_id 1_429
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -30,9 +29,25 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
     :ok
   end
 
-  test "Gertie Wie selects and completes her level 1 Cloaking row without player state" do
+  @tag game_mode: :renewal, integration_pre_re: false
+  test "newer Assassin hosts retain their imported rows" do
+    for {mob_id, skill, state, expected} <- [
+          {3_230, "AS_CLOAKING", :attack,
+           [level: 1, target: :self, cast_time: 200, delay: 10_000, rate: 200]},
+          {2_475, "AS_SONICBLOW", :attack,
+           [level: 10, target: :target, cast_time: 800, delay: 5_000, rate: 500]},
+          {2_850, "AS_VENOMDUST", :angry,
+           [level: 1, target: :target, cast_time: 1_500, delay: 5_000, rate: 500]},
+          {3_740, "AS_SPLASHER", :attack,
+           [level: 5, target: :target, cast_time: 0, delay: 5_000, rate: 100]}
+        ] do
+      assert_row(row!(mob_id, skill, state: state), expected)
+    end
+  end
+
+  test "Frilldora selects and completes its level 1 Cloaking row without player state" do
     row = row!(@cloaking_mob_id, "AS_CLOAKING", state: :attack)
-    assert_row(row, level: 1, target: :self, cast_time: 200, delay: 10_000, rate: 200)
+    assert_row(row, level: 1, target: :self, cast_time: 200, delay: 5_000, rate: 2_000)
     assert definition!(135).target_type == :self
 
     mob = spawn_test_mob(@map, {150, 150}, mob_id: @cloaking_mob_id)
@@ -53,7 +68,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
     end)
   end
 
-  test "Corrupted Soul and Giant Spider execute Sonic Blow and Grimtooth at imported levels" do
+  test "Anubis and Giant Spider execute Sonic Blow and Grimtooth at imported levels" do
     target =
       start_player_session(
         id: 9_871,
@@ -96,7 +111,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
     assert_eventually(fn -> current_hp(target.pid) < after_sonic end)
   end
 
-  test "Dolomedes Ringleader places Venom Dust without a gemstone or player resources" do
+  test "Argiope places Venom Dust without a gemstone or player resources" do
     target =
       start_player_session(
         id: 9_872,
@@ -138,7 +153,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
     |> Enum.each(&Storage.delete(&1.group_id))
   end
 
-  test "Gaster selects its real Venom Splasher row without a learned passive" do
+  test "a mob selects a controlled Venom Splasher row without a learned passive" do
     target =
       start_player_session(
         id: 9_873,
@@ -149,11 +164,23 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
         max_sp: 555
       )
 
-    row = row!(@splasher_mob_id, "AS_SPLASHER", state: :attack)
-    assert_row(row, level: 5, target: :target, cast_time: 0, delay: 5_000, rate: 100)
+    row = %{
+      skill: "AS_SPLASHER",
+      skill_id: 141,
+      state: :attack,
+      level: 5,
+      target: :target,
+      cast_time: 0,
+      delay: 5_000,
+      rate: 100,
+      cancelable: false,
+      emotion: nil,
+      condition: %{type: :always, value: 0, val1: nil, val2: nil, val3: nil, val4: nil, val5: nil}
+    }
+
     assert definition!(141).range == 1
 
-    mob = spawn_test_mob(@map, {150, 150}, mob_id: @splasher_mob_id)
+    mob = spawn_test_mob(@map, {150, 150}, mob_id: 1_002)
     caster_id = get_mob_state(mob.pid).instance_id
     target_id = target.character.id
     sp_before = current_sp(target.pid)

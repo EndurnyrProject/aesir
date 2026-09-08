@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
   alias Aesir.ZoneServer.Unit.Stats.CombatStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -46,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert definition.hp_cost_rate == []
   end
 
+  @tag game_mode: :renewal
   test "the imported Gaster row resolves to the mob-safe skill" do
     assert %{skill_id: 141, skill: "AS_SPLASHER", level: 5, cast_time: 0, delay: 5_000} =
              Enum.find(Db.rows_for(3_740), &(&1.skill_id == 141))
@@ -53,15 +55,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert {:ok, %{requires: []}} = Catalog.by_id(141)
   end
 
-  test "the imported Gaster row reaches the mob terminal ratio through the real executor" do
+  @tag game_mode: :pre_renewal
+  test "Gaster has no imported classic Splasher row" do
+    assert Db.rows_for(3_740) == []
+    assert {:ok, %{requires: []}} = Catalog.by_id(141)
+  end
+
+  test "a controlled Splasher row reaches the mob terminal ratio through the real executor" do
     target = player_target(4_100)
     register_player(target)
 
-    caster =
-      %{mob_target(3_100) | mob_id: 3_740, target_ref: {:player, target.character_id}, sp: 0}
-
+    caster = %{mob_target(3_100) | target_ref: {:player, target.character_id}, sp: 0}
     register_mob(caster)
-    assert row = Enum.find(Db.rows_for(caster.mob_id), &(&1.skill_id == 141))
+
+    row = %{skill: "AS_SPLASHER", skill_id: 141, level: 5, target: :target}
 
     expect(Combat, :execute_forced_no_card_splash, fn ^caster, {100, 100}, 2, opts ->
       assert opts[:skill_level] == 5

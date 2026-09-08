@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.MobManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
@@ -71,8 +72,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
     end
 
     test "calculates attack", %{poring: poring} do
-      # Poring has atk: 1 (rAthena Attack)
-      assert MobManagement.calculate_attack(poring) == 1
+      expected = %{renewal: 1, pre_renewal: 7}[GameMode.mode()]
+      assert MobManagement.calculate_attack(poring) == expected
     end
 
     test "calculates hit rate", %{poring: poring} do
@@ -125,12 +126,16 @@ defmodule Aesir.ZoneServer.Mmo.MobManagementTest do
     test "loads mvp_drops as MobDrop structs, not raw maps" do
       assert {:ok, baphomet} = MobManagement.get_mob_by_id(1039)
 
-      assert baphomet.mvp_exp == 109_044
+      expected_exp = %{renewal: 109_044, pre_renewal: 53_625}[GameMode.mode()]
+      assert baphomet.mvp_exp == expected_exp
       assert [%MobDrop{} | _] = baphomet.mvp_drops
 
       assert Enum.all?(baphomet.mvp_drops, &match?(%MobDrop{}, &1))
 
-      assert %MobDrop{item: "Bs_Making_S", rate: 5000} = hd(baphomet.mvp_drops)
+      {item, rate} =
+        %{renewal: {"Bs_Making_S", 5000}, pre_renewal: {"Yggdrasilberry", 2000}}[GameMode.mode()]
+
+      assert %MobDrop{item: ^item, rate: ^rate} = hd(baphomet.mvp_drops)
     end
 
     test "a non-MVP mob carries the field defaults" do
