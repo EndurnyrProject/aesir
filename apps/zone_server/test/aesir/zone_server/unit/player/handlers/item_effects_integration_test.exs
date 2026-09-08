@@ -102,6 +102,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
       assert {:noreply, committed} = ItemHandler.handle_use_item(@client_index, state)
 
       assert committed.game_state.inventory[@slot].amount == 4
+      assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
       assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
     end
   end
@@ -125,9 +126,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemEffectsIntegrationTest do
 
         state = state_with(@worn_out_scroll_id, unquote(job_id))
 
-        assert {:noreply, _committed} = ItemHandler.handle_use_item(@client_index, state)
+        assert {:noreply, committed} = ItemHandler.handle_use_item(@client_index, state)
 
+        assert committed.game_state.inventory[@slot].amount == 4
         assert_received {:status_applied, unquote(status)}
+        assert_received {:send, :gameplay, {:item_removed, %ItemRemoved{amount: 1}}}
         assert_received {:send, :gameplay, {:item_use_result, %ItemUseResult{ok: true}}}
       end
     end

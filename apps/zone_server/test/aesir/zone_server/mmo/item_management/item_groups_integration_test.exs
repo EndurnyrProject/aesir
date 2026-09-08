@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
 
   @moduletag integration_re: true, integration_pre_re: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -50,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     :ok = ItemGroups.reload()
     :ok = ScriptCompiler.compile_all!()
 
-    source = "getitem groupranditem(IG_GiftBox, 6), 1; end;"
+    source = "getitem groupranditem(IG_GiftBox, #{giftbox_subgroup()}), 1; end;"
 
     {:ok, generated} =
       Codegen.generate(source, %{
@@ -74,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     {:ok, character: character}
   end
 
+  @tag game_mode: :renewal, integration_re: true, integration_pre_re: false
   test "a real box grants all entries and one weighted pool entry before being consumed", %{
     character: character
   } do
@@ -97,6 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     assert Enum.all?(all.entries, &(amounts[&1.item_id] == &1.amount))
   end
 
+  @tag game_mode: :renewal, integration_re: true, integration_pre_re: false
   test "the transpiled Lazy Young Man grants GiftBox contents through an NPC interaction", %{
     character: character
   } do
@@ -104,7 +107,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     state = session_state(character, %{0 => palm_juice})
     state = put_in(state.game_state.vars["MaxWeight"], 100_000)
     {:ok, session} = Session.start_link(state)
-    {:ok, interaction} = Interaction.start(session, LazyYoungMan, npc_ctx(state.game_state))
+
+    {:ok, interaction} =
+      Interaction.start(session, LazyYoungMan, npc_ctx(state.game_state, LazyYoungMan))
 
     assert_receive {:send, _channel, {:npc_dialog, %NpcDialog{expect: :NEXT}}}, 500
     continue(interaction)
@@ -121,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     assert MapSet.member?(valid_ids, granted.nameid)
   end
 
+  @tag game_mode: :renewal, integration_re: true, integration_pre_re: false
   test "a full inventory keeps the box and restores the shared pool", %{character: character} do
     box = insert_item(character.id, @box_id)
 
@@ -148,7 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
   } do
     state = session_state(character, %{})
     {:ok, session} = Session.start_link(state)
-    {:ok, interaction} = Interaction.start(session, module, npc_ctx(state.game_state))
+    {:ok, interaction} = Interaction.start(session, module, npc_ctx(state.game_state, module))
     monitor = Process.monitor(interaction)
 
     assert_receive {:DOWN, ^monitor, :process, ^interaction, :normal}, 500
@@ -207,13 +213,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
     %SessionState{connection_pid: self(), game_state: game_state}
   end
 
-  defp npc_ctx(game_state) do
+  defp npc_ctx(game_state, npc) do
     %Ctx{
       char_id: game_state.character_id,
       account_id: game_state.account_id,
       connection_pid: self(),
       game_state: game_state,
-      source: {:npc, LazyYoungMan.npc_id()},
+      source: {:npc, npc.npc_id()},
       npc_gid: @npc_gid
     }
   end
@@ -228,6 +234,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsIntegrationTest do
 
   defp inventory_amounts(inventory) do
     Map.new(inventory, fn {_index, item} -> {item.nameid, item.amount} end)
+  end
+
+  defp giftbox_subgroup do
+    Map.fetch!(%{renewal: 6, pre_renewal: 1}, GameMode.mode())
   end
 
   defp hd_subgroup_entries(group), do: hd(group.subgroups).entries

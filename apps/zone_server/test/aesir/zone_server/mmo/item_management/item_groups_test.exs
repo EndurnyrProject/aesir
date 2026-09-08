@@ -33,11 +33,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemGroupsTest do
     Aesir.ZoneServer.DbTestSetup.configure_root(context, "item_groups")
   end
 
-  test "fetch resolves the ORE group from the runtime catalog" do
+  @tag game_mode: :renewal
+  test "Renewal keeps ORE pooled, GiftBox subgroup 6, and Old Ore Box" do
     assert {:ok, %Group{key: :ore, subgroups: [subgroup]}} = ItemGroups.fetch(:ore)
     assert subgroup.number == 1
     assert subgroup.algorithm == :shared_pool
     assert Enum.any?(subgroup.entries, &(&1.item_id == 1002 and &1.rate == 30))
+
+    assert {:ok, %Group{subgroups: [%{number: 6, algorithm: :random}]}} =
+             ItemGroups.fetch(:giftbox)
+
+    assert {:ok, %Group{key: :old_ore_box}} = ItemGroups.fetch(:old_ore_box)
+    assert :error = ItemGroups.fetch(:does_not_exist)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "pre-renewal keeps ORE random, GiftBox subgroup 1, and omits Old Ore Box" do
+    assert {:ok, %Group{key: :ore, subgroups: [subgroup]}} = ItemGroups.fetch(:ore)
+    assert subgroup.number == 1
+    assert subgroup.algorithm == :random
+    assert Enum.any?(subgroup.entries, &(&1.item_id == 1002 and &1.rate == 30))
+
+    assert {:ok, %Group{subgroups: [%{number: 1, algorithm: :random}]}} =
+             ItemGroups.fetch(:giftbox)
+
+    assert :error = ItemGroups.fetch(:old_ore_box)
     assert :error = ItemGroups.fetch(:does_not_exist)
   end
 

@@ -1,0 +1,13 @@
+---
+# Hand-authored on_use scripts that the rAthena -> Aesir transpiler cannot
+# reproduce. Keyed by item id, merged over the generated on_use at load time.
+# Never touched by `mix aesir.import.items`.
+- id: 604
+  on_use: "summon_random_mob(ctx, aggressive: true)"
+- id: 618
+  on_use: |
+    case class(ctx) do
+      :mage -> sc_start(ctx, :sc_increaseagi, 60_000, 10)
+      :swordman -> sc_start(ctx, :sc_blessing, 60_000, 10)
+      _ -> ctx
+    end
