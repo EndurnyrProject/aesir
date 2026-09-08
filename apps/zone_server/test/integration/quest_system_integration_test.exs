@@ -1,20 +1,19 @@
 defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   @moduledoc """
   End-to-end acceptance of the quest system, driving the real subsystems through
-  the ported `Suspicious Cat#night2` NPC
-  (`content/npc/re/quests/quests_morocc/suspicious_cat_94_98.ex`).
+  a shared test NPC and quest definitions that exist in both active corpora.
 
   The loop, all through production code paths:
 
-  1. Accept the Verit hunting quest (`2289`) through the NPC dialog -- a real
-     `Script.Interaction` routing `{:npc, {:script_apply, op}}` to a real `PlayerSession`,
-     asserting the `QuestAdded` push.
-  2. Hunt: `{:quest_kill, 2355}` ticks the session's `QuestLog`, pushing one
+  1. Accept hunting quest `1100` through an NPC dialog and real
+     `Script.Interaction`, routing `{:npc, {:script_apply, op}}` to a real
+     `PlayerSession` and asserting the `QuestAdded` push.
+  2. Hunt: `{:quest_kill, 1178}` ticks the session's `QuestLog`, pushing one
      `QuestHuntProgress` per moved objective and clamping at the target of 20.
   3. A partied kill through the real `QuestHuntCredit.credit/4` fan-out credits a
      nearby party member's own session.
-  4. Turn in: gated on `checkquest(2289, HUNTING) == 2`, the NPC `changequest`s
-     `2289 -> 2290` (asserting `QuestRemoved` + `QuestAdded`) and grants `getexp`.
+  4. Turn in: gated on `checkquest(1100, HUNTING) == 2`, the NPC `changequest`s
+     `1100 -> 2290` (asserting `QuestRemoved` + `QuestAdded`) and grants `getexp`.
   5. Relog: `QuestPersistence.load_on_spawn/1` restores the cooldown quest and the
      map-load flow re-sends it in the `QuestList` dump.
 
@@ -39,10 +38,6 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.Net.QuestList
   alias Aesir.Net.QuestRemoved
   alias Aesir.Repo
-
-  alias Aesir.ZoneServer.Content.Npc.Re.Quests.QuestsMorocc.SuspiciousCat9498,
-    as: SuspiciousCat
-
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
@@ -55,15 +50,37 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
   alias Aesir.ZoneServer.Unit.Player.QuestPersistence
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @verit_mob 2355
-  @verit_hunt 2289
-  @verit_cooldown 2290
+  @hunt_mob 1178
+  @hunt_quest 1100
+  @cooldown_quest 2290
   @target 20
+
+  defmodule QuestFixtureNpc do
+    use Aesir.ZoneServer.Npc,
+      spawn: [%{map: "prontera", x: 150, y: 150, sprite: 547, name: "Quest Fixture"}]
+
+    @hunt_quest 1100
+    @cooldown_quest 2290
+
+    @impl true
+    def on_talk(ctx) do
+      case checkquest(ctx, @hunt_quest, :hunting) do
+        -1 ->
+          ctx |> mes("Hunt twenty monsters.") |> next() |> setquest(@hunt_quest) |> close()
+
+        2 ->
+          ctx |> changequest(@hunt_quest, @cooldown_quest) |> getexp(300_000, 100_000) |> close()
+
+        _ ->
+          close(ctx)
+      end
+    end
+  end
 
   setup {Aesir.MimicMode, :global}
 
   setup do
-    gid = NpcRegistry.entity_id(hd(SuspiciousCat.spawn()))
+    gid = NpcRegistry.entity_id(hd(QuestFixtureNpc.spawn()))
     {:ok, gid: gid}
   end
 
@@ -73,30 +90,27 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       player = start_player_session(character: char, position: {150, 150}, map_name: "prontera")
       flush_packets()
 
-      # 1. Accept quest 2289 through the NPC dialog.
+      # 1. Accept quest 1100 through the NPC dialog.
       {:ok, ipid} = start_talk(player, gid)
       continue(ipid, gid)
-      choose(ipid, gid, 2)
-      Enum.each(1..5, fn _ -> continue(ipid, gid) end)
-      choose(ipid, gid, 1)
 
-      assert_receive {:packet_sent, %QuestAdded{quest: %QuestEntry{quest_id: @verit_hunt}}, _},
+      assert_receive {:packet_sent, %QuestAdded{quest: %QuestEntry{quest_id: @hunt_quest}}, _},
                      500
 
       await_interaction_end(ipid)
 
       assert %Entry{state: :active, counts: [0]} =
-               get_player_state(player.pid).quest_log[@verit_hunt]
+               get_player_state(player.pid).quest_log[@hunt_quest]
 
       # 2. Hunt: exact-mob kill ticks push progress and clamp at the target.
       flush_packets()
 
-      Enum.each(1..(@target + 2), fn _ -> send(player.pid, {:loot, {:quest_kill, @verit_mob}}) end)
+      Enum.each(1..(@target + 2), fn _ -> send(player.pid, {:loot, {:quest_kill, @hunt_mob}}) end)
 
       # get_state is a serialized GenServer.call, so it only returns once every
       # queued {:quest_kill} handle_info has run -- a barrier, no sleep needed.
       hunted = get_player_state(player.pid)
-      assert hunted.quest_log[@verit_hunt].counts == [@target]
+      assert hunted.quest_log[@hunt_quest].counts == [@target]
 
       progress = collect_packets_of_type(QuestHuntProgress)
       assert length(progress) == @target
@@ -104,18 +118,16 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       assert Enum.all?(progress, &(&1.needed == @target))
       assert Enum.map(progress, & &1.count) == Enum.to_list(1..@target)
 
-      # 3. Turn in, gated on checkquest(2289, HUNTING) == 2.
+      # 3. Turn in, gated on checkquest(1100, HUNTING) == 2.
       level_before = get_player_state(player.pid).stats.progression.base_level
       base_exp_id = StatusParams.base_exp()
       flush_packets()
 
       {:ok, ipid2} = start_talk(player, gid)
-      continue(ipid2, gid)
-      choose(ipid2, gid, 2)
 
-      assert_receive {:packet_sent, %QuestRemoved{quest_id: @verit_hunt}, _}, 500
+      assert_receive {:packet_sent, %QuestRemoved{quest_id: @hunt_quest}, _}, 500
 
-      assert_receive {:packet_sent, %QuestAdded{quest: %QuestEntry{quest_id: @verit_cooldown}},
+      assert_receive {:packet_sent, %QuestAdded{quest: %QuestEntry{quest_id: @cooldown_quest}},
                       _},
                      500
 
@@ -124,8 +136,8 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       await_interaction_end(ipid2)
 
       turned_in = get_player_state(player.pid)
-      refute Map.has_key?(turned_in.quest_log, @verit_hunt)
-      assert %Entry{state: :active} = turned_in.quest_log[@verit_cooldown]
+      refute Map.has_key?(turned_in.quest_log, @hunt_quest)
+      assert %Entry{state: :active} = turned_in.quest_log[@cooldown_quest]
       assert turned_in.stats.progression.base_level > level_before
 
       # 4. Relog: the cooldown quest is restored from character_quests.
@@ -136,17 +148,17 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
           game_state: %{character_id: char.id, quest_log: %{}}
         })
 
-      assert %Entry{state: :active} = loaded.game_state.quest_log[@verit_cooldown]
-      refute Map.has_key?(loaded.game_state.quest_log, @verit_hunt)
+      assert %Entry{state: :active} = loaded.game_state.quest_log[@cooldown_quest]
+      refute Map.has_key?(loaded.game_state.quest_log, @hunt_quest)
 
       # ...and the map-load flow re-sends it in the full QuestList dump.
       relog = start_player_session(character: char, position: {150, 150}, map_name: "prontera")
-      assert %Entry{state: :active} = get_player_state(relog.pid).quest_log[@verit_cooldown]
+      assert %Entry{state: :active} = get_player_state(relog.pid).quest_log[@cooldown_quest]
 
       flush_packets()
       simulate_incoming_message(relog.pid, %MapLoaded{})
       list = assert_packet_sent(QuestList)
-      assert Enum.any?(list.quests, &(&1.quest_id == @verit_cooldown and &1.state == 1))
+      assert Enum.any?(list.quests, &(&1.quest_id == @cooldown_quest and &1.state == 1))
     end
   end
 
@@ -157,7 +169,7 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       member =
         start_player_session(character: member_char, position: {150, 150}, map_name: "prontera")
 
-      {:ok, _gs} = PlayerSession.script_apply(member.pid, {:setquest, @verit_hunt})
+      {:ok, _gs} = PlayerSession.script_apply(member.pid, {:setquest, @hunt_quest})
 
       killer_id = 990_001
 
@@ -188,13 +200,13 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
 
       flush_packets()
 
-      QuestHuntCredit.credit(killer_id, @verit_mob, "prontera", {150, 150})
+      QuestHuntCredit.credit(killer_id, @hunt_mob, "prontera", {150, 150})
 
       assert_receive {:packet_sent,
-                      %QuestHuntProgress{quest_id: @verit_hunt, count: 1, needed: @target}, _},
+                      %QuestHuntProgress{quest_id: @hunt_quest, count: 1, needed: @target}, _},
                      500
 
-      assert get_player_state(member.pid).quest_log[@verit_hunt].counts == [1]
+      assert get_player_state(member.pid).quest_log[@hunt_quest].counts == [1]
     end
   end
 
@@ -238,21 +250,16 @@ defmodule Aesir.ZoneServer.Integration.QuestSystemIntegrationTest do
       account_id: player.character.account_id,
       connection_pid: session_state.connection_pid,
       game_state: session_state.game_state,
-      source: {:npc, SuspiciousCat.npc_id()},
+      source: {:npc, QuestFixtureNpc.npc_id()},
       npc_gid: gid
     }
 
-    Interaction.start(player.pid, SuspiciousCat, ctx)
+    Interaction.start(player.pid, QuestFixtureNpc, ctx)
   end
 
   defp continue(pid, gid) do
     assert_receive {:packet_sent, %NpcDialog{expect: :NEXT}, _}, 500
     send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:continue, true}}})
-  end
-
-  defp choose(pid, gid, choice) do
-    assert_receive {:packet_sent, %NpcDialog{expect: :MENU}, _}, 500
-    send(pid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, choice}}})
   end
 
   defp await_interaction_end(pid) do
