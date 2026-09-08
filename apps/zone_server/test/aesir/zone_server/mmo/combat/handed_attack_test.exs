@@ -232,6 +232,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HandedAttackTest do
   defp accurate_player do
     CombatTestHelper.create_player_combatant(dex: 200, luk: 0)
     |> put_hit(200)
+    |> put_critical(0)
   end
 
   defp defender do
