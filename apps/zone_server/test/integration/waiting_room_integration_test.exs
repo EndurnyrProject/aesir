@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Integration.WaitingRoomIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Net.WaitingRoomJoinRequest
+  alias Aesir.Net.WaitingRoomJoinResult
   alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
@@ -29,7 +30,9 @@ defmodule Aesir.ZoneServer.Integration.WaitingRoomIntegrationTest do
     p3 = start_player_session(position: {152, 150})
 
     simulate_incoming_message(p1.pid, %WaitingRoomJoinRequest{room_id: @room_gid})
+    assert_receive {:packet_sent, %WaitingRoomJoinResult{room_id: @room_gid, result: 0}, _}
     simulate_incoming_message(p2.pid, %WaitingRoomJoinRequest{room_id: @room_gid})
+    assert_receive {:packet_sent, %WaitingRoomJoinResult{room_id: @room_gid, result: 0}, _}
     assert_eventually(fn -> length(WaitingRoom.members(@room_gid)) == 2 end)
 
     assert {:ok, room} = WaitingRoom.get(@room_gid)
@@ -37,7 +40,8 @@ defmodule Aesir.ZoneServer.Integration.WaitingRoomIntegrationTest do
 
     # A third player is rejected: the owner NPC occupies one slot (limit 3 => 2).
     simulate_incoming_message(p3.pid, %WaitingRoomJoinRequest{room_id: @room_gid})
-    assert_eventually(fn -> length(WaitingRoom.members(@room_gid)) == 2 end)
+    assert_receive {:packet_sent, %WaitingRoomJoinResult{room_id: @room_gid, result: 1}, _}
+    assert length(WaitingRoom.members(@room_gid)) == 2
 
     assert %Ctx{} = Dsl.warpwaitingpc(npc_ctx(), "prontera", 200, 200, 2)
 
