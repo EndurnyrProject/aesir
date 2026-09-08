@@ -3,6 +3,9 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Db.Layout
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.MapData
   alias Aesir.ZoneServer.Navigation.Exclusions
@@ -16,14 +19,13 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
   setup %{tmp_dir: root} do
     setup_ets_tables(%{})
 
-    previous_root = Application.get_env(:zone_server, :db_root)
-    Application.put_env(:zone_server, :db_root, root)
+    :ok = DbTestSetup.stub_root(root)
 
     sources = [
-      write_file(root, "re/warps/fixture.yml", "[]"),
+      write_file(root, mode_path("warps", "fixture.yml"), "[]"),
       write_file(root, "navigation.yml", "[]"),
       write_file(root, "map_flags.yml", "[]"),
-      write_file(root, "re/castles/fixture.yml", "[]")
+      write_file(root, mode_path("castles", "fixture.yml"), "[]")
     ]
 
     Enum.each(sources, &File.touch!(&1, 1_000_000))
@@ -32,7 +34,6 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
     :persistent_term.erase(PortalGraph)
 
     on_exit(fn ->
-      restore_env(:db_root, previous_root)
       :persistent_term.erase(PortalGraph)
       :persistent_term.erase(Exclusions)
       :persistent_term.put(Warps, %{by_map: %{}})
@@ -90,13 +91,14 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraphTest do
     :ets.insert(EtsTable.table_for(:map_cache), {map_data.name, map_data})
   end
 
+  defp mode_path(domain, file) do
+    Path.join(Layout.rel_path(domain, GameMode.mode()), file)
+  end
+
   defp write_file(root, relative_path, contents) do
     path = Path.join(root, relative_path)
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, contents)
     path
   end
-
-  defp restore_env(key, nil), do: Application.delete_env(:zone_server, key)
-  defp restore_env(key, value), do: Application.put_env(:zone_server, key, value)
 end

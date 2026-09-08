@@ -3,6 +3,9 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Db.Layout
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.GatType
@@ -20,13 +23,12 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
   setup %{tmp_dir: root} do
     setup_ets_tables(%{})
 
-    previous_root = Application.get_env(:zone_server, :db_root)
-    Application.put_env(:zone_server, :db_root, root)
+    :ok = DbTestSetup.stub_root(root)
 
-    warp_source = write_file(root, "re/warps/fixture.yml", "[]")
+    warp_source = write_file(root, mode_path("warps", "fixture.yml"), "[]")
     exclusion_source = write_file(root, "navigation.yml", "[]")
     map_flags_source = write_file(root, "map_flags.yml", "[]")
-    castle_source = write_file(root, "re/castles/fixture.yml", "[]")
+    castle_source = write_file(root, mode_path("castles", "fixture.yml"), "[]")
     map_source = write_file(root, "maps.mcache", "fixture")
 
     for source <- [warp_source, exclusion_source, map_flags_source, castle_source, map_source] do
@@ -37,7 +39,6 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
     :persistent_term.erase(PortalGraph)
 
     on_exit(fn ->
-      restore_env(:db_root, previous_root)
       :persistent_term.erase(PortalGraph)
       :persistent_term.erase(Exclusions)
       :persistent_term.put(Warps, %{by_map: %{}})
@@ -249,7 +250,13 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
     cache_map(MapData.new("nav_b", 4, 4))
   end
 
-  defp cache_path(root), do: Path.join(root, "re/warps/.cache/portal_graph.etf")
+  defp cache_path(root) do
+    Path.join([root, Layout.rel_path("warps", GameMode.mode()), ".cache", "portal_graph.etf"])
+  end
+
+  defp mode_path(domain, file) do
+    Path.join(Layout.rel_path(domain, GameMode.mode()), file)
+  end
 
   defp warp(id, map, {x, y}, to_map, {to_x, to_y}) do
     %Warp{
@@ -278,7 +285,4 @@ defmodule Aesir.ZoneServer.Navigation.PortalGraph.BuilderTest do
     File.write!(path, contents)
     path
   end
-
-  defp restore_env(key, nil), do: Application.delete_env(:zone_server, key)
-  defp restore_env(key, value), do: Application.put_env(:zone_server, key, value)
 end

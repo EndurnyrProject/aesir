@@ -1,8 +1,11 @@
 defmodule Aesir.ZoneServer.Navigation.ExclusionsTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.Commons.GameMode
   alias Aesir.TestEtsSetup
+  alias Aesir.ZoneServer.Db.Layout
   alias Aesir.ZoneServer.Db.Source
+  alias Aesir.ZoneServer.DbTestSetup
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Navigation.Exclusions
 
@@ -29,12 +32,8 @@ defmodule Aesir.ZoneServer.Navigation.ExclusionsTest do
 
   @tag :tmp_dir
   test "loads static exclusions from navigation data and its import overlay", %{tmp_dir: root} do
-    previous_root = Application.get_env(:zone_server, :db_root)
-
-    on_exit(fn ->
-      restore_db_root(previous_root)
-      :ok = Exclusions.reload()
-    end)
+    :ok = DbTestSetup.stub_root(root)
+    on_exit(fn -> Exclusions.reload() end)
 
     base = write_file(root, "navigation.yml", "- hidden_base\n")
     import = write_file(root, "import/navigation.yml", "- hidden_import\n")
@@ -55,9 +54,7 @@ defmodule Aesir.ZoneServer.Navigation.ExclusionsTest do
         """
       )
 
-    castles = write_file(root, "re/castles/castles.yml", "[]")
-
-    Application.put_env(:zone_server, :db_root, root)
+    castles = write_file(root, mode_path("castles", "castles.yml"), "[]")
 
     assert Source.sources("navigation.yml") == [base, import]
     assert Exclusions.sources() == [base, import, map_flags, castles]
@@ -75,13 +72,14 @@ defmodule Aesir.ZoneServer.Navigation.ExclusionsTest do
     end
   end
 
+  defp mode_path(domain, file) do
+    Path.join(Layout.rel_path(domain, GameMode.mode()), file)
+  end
+
   defp write_file(root, relative_path, contents) do
     path = Path.join(root, relative_path)
     File.mkdir_p!(Path.dirname(path))
     File.write!(path, contents)
     path
   end
-
-  defp restore_db_root(nil), do: Application.delete_env(:zone_server, :db_root)
-  defp restore_db_root(root), do: Application.put_env(:zone_server, :db_root, root)
 end
