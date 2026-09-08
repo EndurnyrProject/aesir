@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
   @moduledoc """
-  Pure Renewal stat derivation for original and evolved Homunculi.
+  Mode-aware stat derivation for original and evolved Homunculi.
 
   Durable maximum HP and SP are retained as raw growth values. Passive bonuses
   and transient status modifiers are applied only to the returned runtime
@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
   """
 
   alias Aesir.ZoneServer.Mmo.Homunculus.Catalog
+  alias Aesir.ZoneServer.Mmo.Mechanics
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
 
   @brain_surgery 8003
@@ -36,7 +37,22 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
     effective = effective_stats(base, modifiers)
     max_hp = state.raw_max_hp + div(state.raw_max_hp * 2 * skin, 100)
     max_sp = state.raw_max_sp + div(state.raw_max_sp * brain, 100)
-    combat = combat_stats(state, base, effective, modifiers, brain, skin)
+
+    inputs = %{
+      level: state.level,
+      base_attack_delay_ms: state.raw_attack_delay_ms,
+      raw: base_stats(state, 0),
+      base: base,
+      effective: effective,
+      skin_rank: skin,
+      modifiers:
+        Map.new([:def, :mdef, :hit, :flee, :hom_aspd_rate], &{&1, modifier(modifiers, &1)})
+    }
+
+    %{combat_stats: combat, attack_delay_ms: delay} =
+      Mechanics.homunculus_formulas().derive(inputs)
+
+    combat = Map.merge(combat, %{hp_regen_rate: 5 * skin, sp_regen_rate: 3 * brain})
 
     %{
       state
@@ -50,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
         max_hp: max_hp,
         sp: min(state.sp, max_sp),
         max_sp: max_sp,
-        attack_delay_ms: attack_delay(state.raw_attack_delay_ms, effective, modifiers),
+        attack_delay_ms: delay,
         combat_stats: combat
     }
   end
@@ -128,60 +144,6 @@ defmodule Aesir.ZoneServer.Mmo.Homunculus.Stats do
 
   defp effective_stats(base, modifiers) do
     Map.new(base, fn {stat, value} -> {stat, value + modifier(modifiers, stat)} end)
-  end
-
-  defp combat_stats(state, base, effective, modifiers, brain, skin) do
-    level = state.level
-
-    %{
-      atk: 2 * level + effective.str,
-      atk_min: div(effective.str + effective.dex, 5),
-      atk_max: div(effective.luk + effective.str + effective.dex, 3),
-      def: hard_def(base, effective, level, skin, modifiers),
-      soft_def: soft_def(base, effective),
-      hit: max(level + effective.dex + 150 + modifier(modifiers, :hit), 1),
-      flee: max(level + effective.agi + modifier(modifiers, :flee), 1),
-      perfect_dodge: max(effective.luk + 10 + modifier(modifiers, :perfect_dodge), 0),
-      critical: max(div(level, 10) + 10 + 3 * effective.luk + modifier(modifiers, :critical), 1),
-      matk: matk_max(effective, level),
-      matk_min: matk_min(effective, level),
-      matk_max: matk_max(effective, level),
-      mdef: hard_mdef(base, effective, level, modifiers),
-      soft_mdef: soft_mdef(base, effective),
-      hp_regen_rate: 5 * skin,
-      sp_regen_rate: 3 * brain
-    }
-  end
-
-  defp hard_def(base, effective, level, skin, modifiers) do
-    base.vit + div(level, 2) + 4 * skin + div(effective.vit, 5) - div(base.vit, 5) +
-      modifier(modifiers, :def)
-  end
-
-  defp soft_def(base, effective) do
-    base.vit + div(base.agi, 2) +
-      trunc((effective.vit - base.vit) / 2 + (effective.agi - base.agi) / 5)
-  end
-
-  defp hard_mdef(base, effective, level, modifiers) do
-    trunc((base.vit + level) / 4 + base.int / 2) + div(effective.int, 5) - div(base.int, 5) +
-      modifier(modifiers, :mdef)
-  end
-
-  defp soft_mdef(base, effective) do
-    div(base.vit + base.int, 2) + effective.int - base.int +
-      trunc((effective.dex - base.dex) / 5 + (effective.vit - base.vit) / 5)
-  end
-
-  defp matk_min(stats, level), do: stats.int + level + div(stats.int + stats.dex, 5)
-  defp matk_max(stats, level), do: stats.int + level + div(stats.luk + stats.int + stats.dex, 3)
-
-  defp attack_delay(base_delay, stats, modifiers) do
-    stat_delay =
-      base_delay - div(base_delay * stats.dex, 1_000) - div(stats.agi * base_delay, 250)
-
-    haste = modifiers |> Map.get(:hom_aspd_rate, 0) |> trunc() |> min(1_000) |> max(0)
-    stat_delay |> max(100) |> Kernel.*(1_000 - haste) |> div(1_000) |> max(100)
   end
 
   defp ranked(_values, 0), do: 0

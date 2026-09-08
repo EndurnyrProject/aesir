@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.Elements
+  alias Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
@@ -24,6 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
     mob_formulas: %{
       renewal: MobFormulas.Renewal,
       pre_renewal: MobFormulas.PreRenewal
+    },
+    homunculus_formulas: %{
+      renewal: HomunculusFormulas.Renewal,
+      pre_renewal: HomunculusFormulas.PreRenewal
     },
     physical_attack: %{
       renewal: PhysicalAttack.Renewal,
@@ -77,6 +82,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics do
   @doc "Returns the active mob formula implementation."
   @spec mob_formulas() :: module()
   def mob_formulas, do: implementation(:mob_formulas)
+
+  @doc "Returns the active Homunculus stat formula implementation."
+  @spec homunculus_formulas() :: module()
+  def homunculus_formulas, do: implementation(:homunculus_formulas)
 
   @doc "Returns the active player physical-attack implementation."
   @spec physical_attack() :: module()

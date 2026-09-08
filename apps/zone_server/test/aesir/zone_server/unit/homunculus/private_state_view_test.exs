@@ -5,10 +5,23 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.PrivateStateViewTest do
   alias Aesir.Net.HomunculusCooldown
   alias Aesir.Net.HomunculusHpRange
   alias Aesir.Net.HomunculusHpThreshold
+  alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Homunculus.Ai.Config
+  alias Aesir.ZoneServer.Mmo.Homunculus.Stats
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.PrivateStateView
   alias Aesir.ZoneServer.Unit.Homunculus.Runtime
+
+  test "recomputed owner critical display never becomes the combatant's actual chance" do
+    state = Stats.recompute(active_state())
+    packet = PrivateStateView.build(state, %Runtime{private_dirty: false})
+
+    assert packet.stats.critical == 6
+    assert state.combat_stats.critical_rate == 0
+    assert CriticalHits.calculate_critical_rate(HomunculusState.to_combatant(state)) == 0
+    assert packet.stats.matk == state.combat_stats.matk_max
+    assert state.combat_stats.matk_min == state.combat_stats.matk_max
+  end
 
   test "projects every owner-private field with deterministic skills, cooldowns, and AI" do
     now = 10_000

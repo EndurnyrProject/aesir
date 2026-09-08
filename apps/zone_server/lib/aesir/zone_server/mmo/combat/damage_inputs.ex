@@ -80,10 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
     min_atk = attacker.combat_stats.atk_min
     max_atk = attacker.combat_stats.atk_max
 
-    weapon_atk =
-      if max_atk > min_atk,
-        do: min_atk + :rand.uniform(max_atk - min_atk + 1) - 1,
-        else: min_atk
+    weapon_atk = DamageShared.roll(min_atk, max_atk)
 
     {:ok, attacker.combat_stats.atk + weapon_atk}
   end

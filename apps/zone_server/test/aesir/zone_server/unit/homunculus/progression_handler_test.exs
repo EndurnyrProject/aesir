@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
   use Aesir.DataCase, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -334,20 +335,22 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.ProgressionHandlerTest do
     assert evolved.size == :medium
     assert evolved.race == :demi_human
     assert evolved.element == {:neutral, 1}
-    assert evolved.attack_delay_ms == 623
+    assert evolved.attack_delay_ms == %{renewal: 623, pre_renewal: 661}[GameMode.mode()]
     assert evolved.intimacy_hundredths == 1_000
     assert evolved.level == 42
     assert evolved.exp == 123
     assert evolved.skill_points == 4
     assert evolved.learned_skills == %{8_001 => 3}
-    assert evolved.max_hp == original.max_hp + 800
-    assert evolved.max_sp == original.max_sp + 220
-    assert evolved.str == original.str + 10
-    assert evolved.agi == original.agi + 10
-    assert evolved.vit == original.vit + 20
-    assert evolved.int == original.int + 30
-    assert evolved.dex == original.dex + 20
-    assert evolved.luk == original.luk + 10
+
+    bonuses =
+      %{
+        renewal: %{max_hp: 800, max_sp: 220, str: 10, agi: 10, vit: 20, int: 30, dex: 20, luk: 10},
+        pre_renewal: %{max_hp: 1, max_sp: 10, str: 1, agi: 1, vit: 1, int: 4, dex: 1, luk: 1}
+      }[GameMode.mode()]
+
+    for {stat, bonus} <- bonuses do
+      assert Map.fetch!(evolved, stat) == Map.fetch!(original, stat) + bonus
+    end
 
     preserved_fields = [
       :id,

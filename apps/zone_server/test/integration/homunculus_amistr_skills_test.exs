@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
   use Aesir.ZoneServer.IntegrationCase
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Homunculus
@@ -187,16 +188,16 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
 
   test "Adamantium Skin uses the existing stat path for original and evolved Amistr only" do
     for {class_id, rank, expected_hp, expected_def, expected_regen} <- [
-          {6002, 1, 1_020, 24, 5},
-          {6002, 5, 1_100, 40, 25},
-          {6010, 5, 1_100, 40, 25}
+          {6002, 1, 1_020, %{renewal: 24, pre_renewal: 8}, 5},
+          {6002, 5, 1_100, %{renewal: 40, pre_renewal: 24}, 25},
+          {6010, 5, 1_100, %{renewal: 40, pre_renewal: 24}, 25}
         ] do
       updated =
         amistr(%{class_id: class_id, learned_skills: %{8007 => rank}})
         |> Stats.recompute()
 
       assert updated.max_hp == expected_hp
-      assert updated.combat_stats.def == expected_def
+      assert updated.combat_stats.def == expected_def[GameMode.mode()]
       assert updated.combat_stats.hp_regen_rate == expected_regen
     end
 
@@ -205,7 +206,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusAmistrSkillsTest do
       |> Stats.recompute()
 
     assert wrong_species.max_hp == 1_000
-    assert wrong_species.combat_stats.def == 20
+    assert wrong_species.combat_stats.def == %{renewal: 20, pre_renewal: 4}[GameMode.mode()]
     assert wrong_species.combat_stats.hp_regen_rate == 0
   end
 

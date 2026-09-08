@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
   alias Aesir.ZoneServer.Mmo.Mechanics.CastTime
   alias Aesir.ZoneServer.Mmo.Mechanics.Defense
   alias Aesir.ZoneServer.Mmo.Mechanics.Elements
+  alias Aesir.ZoneServer.Mmo.Mechanics.HomunculusFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.MagicDamage
   alias Aesir.ZoneServer.Mmo.Mechanics.MobFormulas
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
@@ -30,7 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
             Elements.Renewal,
             Sizes.Renewal,
             PhysicalAttack.Renewal,
-            MagicDamage.Renewal
+            MagicDamage.Renewal,
+            HomunculusFormulas.Renewal
           ],
           pre_renewal: [
             PlayerFormulas.PreRenewal,
@@ -41,7 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
             Elements.PreRenewal,
             Sizes.PreRenewal,
             PhysicalAttack.PreRenewal,
-            MagicDamage.PreRenewal
+            MagicDamage.PreRenewal,
+            HomunculusFormulas.PreRenewal
           ]
         ] do
       stub(GameMode, :mode, fn -> mode end)
@@ -55,7 +58,8 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
         elements,
         sizes,
         physical_attack,
-        magic_damage
+        magic_damage,
+        homunculus_formulas
       ] = implementations
 
       assert Mechanics.player_formulas() == player_formulas
@@ -67,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.MechanicsTest do
       assert Mechanics.sizes() == sizes
       assert Mechanics.physical_attack() == physical_attack
       assert Mechanics.magic_damage() == magic_damage
+      assert Mechanics.homunculus_formulas() == homunculus_formulas
     end
   end
 end

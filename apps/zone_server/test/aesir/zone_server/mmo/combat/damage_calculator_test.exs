@@ -69,6 +69,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     :ok
   end
 
+  test "Homunculus normal weapon rolls exclude the upper endpoint and add status ATK once" do
+    attacker = %{unit_type: :homunculus, combat_stats: %{atk: 111, atk_min: 14, atk_max: 15}}
+    :rand.seed(:exsss, {17, 19, 23})
+
+    for _ <- 1..32 do
+      assert {:ok, 125} = DamageCalculator.calculate_base_attack(attacker)
+    end
+
+    equal = put_in(attacker.combat_stats.atk_max, 14)
+    seed = :rand.export_seed()
+    assert {:ok, 125} = DamageCalculator.calculate_base_attack(equal)
+    assert :rand.export_seed() == seed
+    assert {:ok, 400} = DamageCalculator.calculate_base_attack(attacker, base_damage: 400)
+    assert :rand.export_seed() == seed
+  end
+
   test "player fixtures carry explicit attack components instead of an aggregate compatibility shape" do
     attacker = CombatTestHelper.create_player_combatant(flat_atk: 6, passive_atk: 4)
     status = mode_value(10, 7)
