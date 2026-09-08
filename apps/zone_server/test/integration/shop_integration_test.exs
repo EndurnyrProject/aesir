@@ -18,8 +18,8 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
   The shop and the buy item are selected dynamically from the loaded `prontera`
   corpus (first affordable buy-priced item), so the test never hard-codes
   upstream content that an importer re-run could change. The sell item is a real
-  item-DB entry with a positive `sell` value (the corpus buy items ship none),
-  so the sell path runs un-stubbed too.
+  item-DB entry with a positive effective sell price, so the sell path runs
+  un-stubbed too.
   """
 
   use Aesir.ZoneServer.IntegrationCase
@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
   alias Aesir.Net.ParamChange
   alias Aesir.Repo
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Npc.Shop
   alias Aesir.ZoneServer.Npc.Shops
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
@@ -64,6 +65,7 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
     test "drives the full loop through a live PlayerSession", %{buy: buy, sell: sell} do
       %{shop: shop, nameid: buy_nameid, price: buy_price} = buy
       sell_def = sell.item
+      sell_price = ItemDefinition.sell_price(sell_def)
       gid = Shop.Registry.entity_id(shop)
 
       character =
@@ -94,7 +96,7 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
 
       sell_entry = Enum.find(sell_items, &(&1.nameid == sell_def.id))
       assert sell_entry.amount == @seed_amount
-      assert sell_entry.sell_price == sell_def.sell
+      assert sell_entry.sell_price == sell_price
       sell_index = sell_entry.inventory_index
       flush_packets()
 
@@ -134,7 +136,7 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
       })
 
       assert_receive {:packet_sent, %ItemRemoved{amount: @sell_amount}, _}, 1_000
-      after_sell_zeny = after_buy_zeny + sell_def.sell * @sell_amount
+      after_sell_zeny = after_buy_zeny + sell_price * @sell_amount
 
       assert_receive {:packet_sent, %ParamChange{var_id: @zeny_param, value: ^after_sell_zeny},
                       _},
@@ -182,12 +184,12 @@ defmodule Aesir.ZoneServer.Integration.ShopIntegrationTest do
     item.buy
   end
 
-  # Any real item-DB entry with a positive sell price, distinct from the buy item
-  # (the corpus buy items ship no sell value, so a separate sellable item is seeded).
+  # Any real item-DB entry with a positive effective sell price, distinct from
+  # the buy item. An unset explicit sell value uses the normal half-buy fallback.
   defp sell_pick(exclude_nameid) do
     item =
       ItemManagement.get_all_items()
-      |> Enum.find(&(&1.sell > 0 and &1.id != exclude_nameid))
+      |> Enum.find(&(ItemDefinition.sell_price(&1) > 0 and &1.id != exclude_nameid))
 
     %{item: item}
   end

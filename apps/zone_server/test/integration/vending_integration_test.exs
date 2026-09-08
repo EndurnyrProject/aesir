@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
   alias Aesir.Net.LearnSkill
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.ParamChange
+  alias Aesir.Net.SkillInfo
   alias Aesir.Net.SkillList
   alias Aesir.Net.VendingBoardRemoved
   alias Aesir.Net.VendingBoardShown
@@ -256,8 +257,9 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
     on_exit(fn -> StatusStorage.remove_status(:player, character.id, @push_cart_status) end)
 
     flush_packets()
-    learn(session.pid, :mc_pushcart)
-    learn(session.pid, :mc_vending)
+    learn_levels(session.pid, :mc_inccarry, 5)
+    learn_levels(session.pid, :mc_pushcart, 3)
+    learn(session.pid, :mc_vending, 1)
     mount!(session.pid)
 
     inv_index = client_index_of(get_player_state(session.pid).inventory, @potion)
@@ -331,10 +333,18 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
     character
   end
 
-  defp learn(pid, skill_name) do
+  defp learn_levels(pid, skill_name, levels) do
+    Enum.each(1..levels, &learn(pid, skill_name, &1))
+  end
+
+  defp learn(pid, skill_name, expected_level) do
     {:ok, definition} = Catalog.by_name(skill_name)
-    simulate_incoming_message(pid, %LearnSkill{skill_id: definition.id})
-    assert_receive {:packet_sent, %SkillList{}, _}, 1_000
+    skill_id = definition.id
+    simulate_incoming_message(pid, %LearnSkill{skill_id: skill_id})
+    assert_receive {:packet_sent, %SkillList{skills: skills}, _}, 1_000
+
+    assert %SkillInfo{skill_id: ^skill_id, level: ^expected_level} =
+             Enum.find(skills, &(&1.skill_id == skill_id))
   end
 
   defp mount!(pid) do
