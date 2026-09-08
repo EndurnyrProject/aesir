@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
   import Ecto.Query
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
@@ -72,9 +73,11 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
       assert eventually(fn -> get_player_state(member_session.pid).guild_tax == 50 end)
       flush_packets()
 
-      # The real kill-exp ingress: 200_002 base -> 100_001 taxed to the guild
-      # (crossing the level-2 threshold of 100_000), 100_001 kept by the member.
-      send(member_session.pid, {:progression, {:mob_kill_exp, 200_002, 0, nil, nil}})
+      taxed_exp = first_threshold() + 1
+
+      # The real kill-exp ingress is split evenly: one threshold plus one to
+      # the guild, with the same untaxed remainder kept by the member.
+      send(member_session.pid, {:progression, {:mob_kill_exp, taxed_exp * 2, 0, nil, nil}})
 
       assert eventually(fn ->
                case GuildManager.get(guild_id) do
@@ -94,7 +97,7 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
 
       # The member kept exactly the untaxed remainder (level 98 -> threshold far above).
       member_progression = get_player_state(member_session.pid).stats.progression
-      assert member_progression.base_exp == 100_001
+      assert member_progression.base_exp == taxed_exp
 
       # Both online sessions hear about it (their packets share this mailbox):
       # one GuildLevelUp each, plus the refreshed snapshot.
@@ -287,6 +290,10 @@ defmodule Aesir.ZoneServer.Integration.GuildProgressionIntegrationTest do
 
       refute StatusStorage.has_status?(:player, master_id, :sc_gd_leadership)
     end
+  end
+
+  defp first_threshold do
+    Map.fetch!(%{renewal: 100_000, pre_renewal: 2_000_000}, GameMode.mode())
   end
 
   defp create_guild(name, master_name) do

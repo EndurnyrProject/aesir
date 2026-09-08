@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
   use Aesir.DataCase, async: false
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
@@ -42,12 +43,13 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
   describe "contribute_exp/2" do
     test "accumulates exp below the first threshold without leveling" do
       {_master, state} = guild_fixture("ExpAccum")
+      contribution = first_threshold() - 1
 
-      assert :ok = Manager.contribute_exp(state.guild_id, 99_999)
+      assert :ok = Manager.contribute_exp(state.guild_id, contribution)
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 1
-      assert after_state.exp == 99_999
+      assert after_state.exp == contribution
       assert after_state.skill_points == 0
     end
 
@@ -55,7 +57,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       {_master, state} = guild_fixture("ExpLevel")
       Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{state.guild_id}")
 
-      assert :ok = Manager.contribute_exp(state.guild_id, 100_005)
+      assert :ok = Manager.contribute_exp(state.guild_id, first_threshold() + 5)
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 2
@@ -73,8 +75,8 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
     test "a multi-level jump grants one point per level" do
       {_master, state} = guild_fixture("ExpJump")
 
-      # levels 1 + 2 thresholds (100k + 400k) plus 7 spare
-      assert :ok = Manager.contribute_exp(state.guild_id, 500_007)
+      assert :ok =
+               Manager.contribute_exp(state.guild_id, first_threshold() + second_threshold() + 7)
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 3
@@ -87,7 +89,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       Application.put_env(:zone_server, :guild_exp_rate, 200)
       on_exit(fn -> Application.delete_env(:zone_server, :guild_exp_rate) end)
 
-      assert :ok = Manager.contribute_exp(state.guild_id, 50_000)
+      assert :ok = Manager.contribute_exp(state.guild_id, div(first_threshold(), 2))
 
       {:ok, after_state} = Manager.get(state.guild_id)
       assert after_state.level == 2
@@ -118,7 +120,7 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
 
     test "progression survives an entry restart" do
       {_master, state} = guild_fixture("ExpRestart")
-      assert :ok = Manager.contribute_exp(state.guild_id, 100_005)
+      assert :ok = Manager.contribute_exp(state.guild_id, first_threshold() + 5)
 
       ClusterTestHelper.clear_all()
       assert {:ok, rebuilt} = Manager.ensure_started(state.guild_id)
@@ -131,14 +133,14 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
   describe "View.guild_info/1 progression fields" do
     test "carries level, exp, next_exp, points, and learned skills" do
       {_master, state} = guild_fixture("ViewProg")
-      :ok = Manager.contribute_exp(state.guild_id, 100_005)
+      :ok = Manager.contribute_exp(state.guild_id, first_threshold() + 5)
       {:ok, after_state} = Manager.get(state.guild_id)
 
       info = View.guild_info(%{after_state | learned_skills: %{10_004 => 3}})
 
       assert info.level == 2
       assert info.exp == 5
-      assert info.next_exp == 400_000
+      assert info.next_exp == second_threshold()
       assert info.skill_points == 1
       assert [%{skill_id: 10_004, level: 3, max_level: 10}] = info.skills
     end
@@ -150,6 +152,14 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       info = View.guild_info(%{guild_state | level: 50})
       assert info.next_exp == 0
     end
+  end
+
+  defp first_threshold do
+    Map.fetch!(%{renewal: 100_000, pre_renewal: 2_000_000}, GameMode.mode())
+  end
+
+  defp second_threshold do
+    Map.fetch!(%{renewal: 400_000, pre_renewal: 4_000_000}, GameMode.mode())
   end
 
   defp grant_points(guild_id, points) do

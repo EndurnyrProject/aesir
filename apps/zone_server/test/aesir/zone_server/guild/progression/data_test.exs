@@ -4,10 +4,18 @@ defmodule Aesir.ZoneServer.Guild.Progression.DataTest do
   alias Aesir.ZoneServer.Guild.Progression.Data
 
   describe "exp_for_next/1" do
-    test "returns the exp required to leave the given level" do
+    @tag game_mode: :renewal
+    test "returns the Renewal exp required to leave the given level" do
       assert Data.exp_for_next(1) == {:ok, 100_000}
       assert Data.exp_for_next(2) == {:ok, 400_000}
       assert Data.exp_for_next(49) == {:ok, 240_100_000}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "returns the pre-renewal exp required to leave the given level" do
+      assert Data.exp_for_next(1) == {:ok, 2_000_000}
+      assert Data.exp_for_next(2) == {:ok, 4_000_000}
+      assert Data.exp_for_next(49) == {:ok, 1_999_999_999}
     end
 
     test "returns :max_level at or beyond the level cap" do
@@ -27,9 +35,16 @@ defmodule Aesir.ZoneServer.Guild.Progression.DataTest do
       assert Data.level_for_exp(0) == {1, 0}
     end
 
-    test "consuming thresholds carries the remainder" do
+    @tag game_mode: :renewal
+    test "consuming Renewal thresholds carries the remainder" do
       assert Data.level_for_exp(100_000) == {2, 0}
       assert Data.level_for_exp(100_000 + 400_000 + 5) == {3, 5}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "consuming pre-renewal thresholds carries the remainder" do
+      assert Data.level_for_exp(2_000_000) == {2, 0}
+      assert Data.level_for_exp(2_000_000 + 4_000_000 + 5) == {3, 5}
     end
 
     test "clamps at the level cap" do
