@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.Inventory.Persistence, as: InventoryPersistence
   alias Aesir.ZoneServer.Unit.Player.Handlers.RefineOps
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -103,6 +104,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
   end
 
   describe "apply/6 - downgrade" do
+    @tag game_mode: :renewal
     test "decrements refine and consumes the hd ore", %{character: char, stats: stats} do
       seed_inv(char.id, @sword, 1, %{refine: 7})
       seed_inv(char.id, @hd_oridecon, 1)
@@ -118,6 +120,23 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       assert %{^index => %InventoryItem{refine: 6}} = new_state.inventory
       assert new_state.zeny == 100_000 - 20_000
       assert Aesir.ZoneServer.Unit.Inventory.held_amount(new_state.inventory, @hd_oridecon) == 0
+    end
+
+    @tag game_mode: :pre_renewal
+    test "rejects the unavailable hd cost without writing", %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 7})
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      assert {^state, {:error, :not_refinable}} =
+               RefineOps.apply(state, index, @sword, :hd, false,
+                 success_roll: 9999,
+                 break_roll: 9999
+               )
+
+      assert [%InventoryItem{refine: 7}] = InventoryPersistence.load_inventory(char.id)
+      assert Repo.get!(Character, char.id).zeny == 100_000
     end
   end
 
@@ -151,6 +170,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
   end
 
   describe "apply/6 - fail (blessing-protected)" do
+    @tag game_mode: :renewal
     test "consumes ore, zeny, and the blessing but leaves refine unchanged", %{
       character: char,
       stats: stats
@@ -171,6 +191,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       assert new_state.zeny == 100_000 - 50
       assert Aesir.ZoneServer.Unit.Inventory.held_amount(new_state.inventory, @phracon) == 0
       assert Aesir.ZoneServer.Unit.Inventory.held_amount(new_state.inventory, @blessing) == 0
+    end
+
+    @tag game_mode: :pre_renewal
+    test "rejects blessing when its item is absent without consuming", %{
+      character: char,
+      stats: stats
+    } do
+      assert {:error, :item_not_found} =
+               ItemManagement.get_item_by_aegis("Blacksmith_Blessing")
+
+      seed_inv(char.id, @sword, 1, %{refine: 7})
+      seed_inv(char.id, @phracon, 1)
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      assert {^state, {:error, :no_blessing}} =
+               RefineOps.apply(state, index, @sword, :normal, true,
+                 success_roll: 9999,
+                 break_roll: 0
+               )
+
+      assert Aesir.ZoneServer.Unit.Inventory.held_amount(inventory, @phracon) == 1
+      assert Repo.get!(Character, char.id).zeny == 100_000
     end
   end
 
@@ -307,6 +351,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       :ok
     end
 
+    @tag game_mode: :renewal
     test "publishes one server_announce on a flagged broadcast_success outcome", %{
       character: char,
       stats: stats
@@ -328,6 +373,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       refute_receive {:server_announce, _other}, 200
     end
 
+    @tag game_mode: :renewal
     test "publishes one server_announce on a flagged broadcast_failure break outcome", %{
       character: char,
       stats: stats
@@ -350,6 +396,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.RefineOpsTest do
       assert_receive {:server_announce, event}, 1000
       assert event.message == %{nameid: @sword, refine: 12}
       refute_receive {:server_announce, _other}, 200
+    end
+
+    @tag game_mode: :pre_renewal
+    test "the highest classic success remains unannounced", %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 9})
+      seed_inv(char.id, @phracon, 1)
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      {_new_state, result} =
+        RefineOps.apply(state, index, @sword, :normal, false,
+          success_roll: 0,
+          break_roll: 9999
+        )
+
+      assert result == {:ok, :success, 10}
+      refute_receive {:server_announce, _event}, 200
+    end
+
+    @tag game_mode: :pre_renewal
+    test "the highest classic break remains unannounced", %{character: char, stats: stats} do
+      seed_inv(char.id, @sword, 1, %{refine: 9})
+      seed_inv(char.id, @phracon, 1)
+
+      inventory = inv_map(char.id)
+      index = index_of(inventory, @sword)
+      state = build_state(char, stats, inventory)
+
+      {_new_state, result} =
+        RefineOps.apply(state, index, @sword, :normal, false,
+          success_roll: 9999,
+          break_roll: 0
+        )
+
+      assert result == {:ok, :broke}
+      refute_receive {:server_announce, _event}, 200
     end
 
     test "publishes nothing when the refine level is unflagged", %{

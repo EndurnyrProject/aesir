@@ -9,9 +9,10 @@ defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
     1. A forced success on an equipped weapon-lv1 sword (`Phracon`, `:normal`)
        increments `refine`, consumes the ore and zeny, and raises the
        equipped `combat_stats.atk`.
-    2. A forced break on an equipped weapon-lv1 sword at `+12` (`Bradium`,
-       `:normal`) destroys the inventory row, consumes zeny, and drops the
-       equipped atk contribution once stats are recalculated.
+    2. A forced break at the active mode's risky weapon-lv1 boundary
+       (`+12` with Bradium in Renewal, `+7` with Phracon in pre-renewal)
+       destroys the inventory row, consumes zeny, and drops the equipped atk
+       contribution once stats are recalculated.
 
   `RefineOps.apply/5` (the arity `ScriptEffectHandler` calls) is stubbed to
   forward into the real `apply/6` with injected `success_roll`/`break_roll` so
@@ -23,6 +24,7 @@ defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -114,9 +116,10 @@ defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
 
   describe "forced break on an equipped weapon-lv1 sword" do
     test "destroys the row, consumes zeny, and drops the equipped atk contribution" do
+      %{refine: refine, material: material, price: price} = break_fixture()
       character = insert_character(zeny: 200_000)
-      seed_inventory(character.id, nameid: @sword, amount: 1, refine: 12, equip: @right_hand)
-      seed_inventory(character.id, nameid: @bradium, amount: 1)
+      seed_inventory(character.id, nameid: @sword, amount: 1, refine: refine, equip: @right_hand)
+      seed_inventory(character.id, nameid: material, amount: 1)
 
       session = start_session(character)
 
@@ -139,13 +142,24 @@ defmodule Aesir.ZoneServer.Integration.RefineIntegrationTest do
       state = get_player_state(session.pid)
       refute item_by_nameid(state.inventory, @sword)
       assert state.stats.combat_stats.atk < atk_before
-      assert state.zeny == 200_000 - 100_000
+      assert state.zeny == 200_000 - price
+      assert Inventory.held_amount(state.inventory, material) == 0
 
       assert InventoryPersistence.load_inventory(character.id)
              |> Enum.filter(&(&1.nameid == @sword)) == []
 
-      assert Repo.get!(Character, character.id).zeny == 200_000 - 100_000
+      assert Repo.get!(Character, character.id).zeny == 200_000 - price
     end
+  end
+
+  defp break_fixture do
+    Map.fetch!(
+      %{
+        renewal: %{refine: 12, material: @bradium, price: 100_000},
+        pre_renewal: %{refine: 7, material: @phracon, price: 50}
+      },
+      GameMode.mode()
+    )
   end
 
   defp start_session(character) do
