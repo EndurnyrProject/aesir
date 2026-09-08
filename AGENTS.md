@@ -192,14 +192,14 @@ Mimic conventions, integration-test isolation, and known flaky tests are in the 
 - **Run zone server**: `mix aesir.zone`
 - **Format code**: `mix format`
 - **Lint code**: `mix credo --strict`
-- **Run unit tests and doctests for the booted mode**: `mix test`
-- **Run integrations for the booted mode (umbrella root)**: `mix test.integration`
-- **Run pre-renewal unit tests**: `AESIR_DB_MODE=pre_renewal mix test`
-- **Run pre-renewal integrations**: `AESIR_DB_MODE=pre_renewal mix test.integration`
+- **Run Renewal unit tests and doctests**: `AESIR_DB_MODE=renewal mix test`
+- **Run Renewal integrations (umbrella root)**: `AESIR_DB_MODE=renewal mix test.integration`
+- **Run pre-renewal unit tests and doctests**: `AESIR_DB_MODE=pre_renewal mix test`
+- **Run pre-renewal integrations (umbrella root)**: `AESIR_DB_MODE=pre_renewal mix test.integration`
 - **Run a single test file**: `mix test path/to/test_file.exs`
 - **Run a single test**: `mix test path/to/test_file.exs:line_number`
 
-Always run the full test suite before considering a task done.
+Before considering cross-mode work done, run all four mode-specific unit/doctest and integration commands serially.
 
 ## Tool Preferences
 

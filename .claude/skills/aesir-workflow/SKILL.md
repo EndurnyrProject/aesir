@@ -71,10 +71,11 @@ usability check and misses the real logic. Grep both.
 
 - `mix format` and `mix credo --strict` before considering work done.
 - `mix test` runs shared and matching-mode unit tests/doctests; **integrations are excluded by default**.
-  From the umbrella root, `mix test.integration` selects the booted mode's integrations. Set
-  `AESIR_DB_MODE=renewal` or `AESIR_DB_MODE=pre_renewal` before starting each separate VM.
-  Explicit integration selectors are `--only integration_re:true` and
-  `--only integration_pre_re:true`; use the selector matching the environment.
+  Run the complete supported matrix serially from the umbrella root:
+  `AESIR_DB_MODE=renewal mix test`, `AESIR_DB_MODE=renewal mix test.integration`,
+  `AESIR_DB_MODE=pre_renewal mix test`, and
+  `AESIR_DB_MODE=pre_renewal mix test.integration`. The integration alias selects the booted mode's
+  explicit `integration_re:true` or `integration_pre_re:true` family.
 - Shared unit tests are untagged; boot-dependent cases use `game_mode: :renewal` or `:pre_renewal`.
   Shared integrations inherit both integration flags from `IntegrationCase`; mode-specific cases
   must set the opposite flag to `false` as well as setting `game_mode`. Use explicit `:true` CLI
@@ -122,7 +123,7 @@ its **own** ETS world and background processes — do not reach for the old boot
 
 - `test/integration/npc_events_integration_test.exs` — OnTimer/OnMyMobDead timing.
 - The unit- and integration-suite flakes previously listed here are fixed; both suites now run
-  green repeatedly under Renewal (`mix test` and `mix test.integration`).
+  green in Renewal and pre-renewal using the four explicit commands above.
   The root causes are worth recognising elsewhere:
   - A file that stubs without claiming a Mimic mode inherits a leaked global mode from the
     previous module. Files that stub need `setup :set_mimic_private`; files that go global
