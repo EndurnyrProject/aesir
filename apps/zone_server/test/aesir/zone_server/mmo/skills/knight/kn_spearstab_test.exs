@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstab
   alias Aesir.ZoneServer.Unit.Broadcast
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -20,29 +21,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   @target_id 2000
-  @spear 1400
+  @spear 1401
   @sword 1101
   @right_hand 2
   @map_name "prontera"
 
   defp build_caster(nameid \\ @spear, x \\ 150, y \\ 150) do
+    item = %InventoryItem{nameid: nameid, amount: 1, equip: 0, identify: 1}
+
+    assert {:ok, inventory, {:equipped, 0, _mask, []}} =
+             Inventory.equip(%{0 => item}, 0, @right_hand, %{job_id: 7, base_level: 50})
+
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},
       combat_stats: %{atk: 1, def: 1, hit: 400, flee: 1, perfect_dodge: 1},
       derived_stats: %{max_hp: 100, max_sp: 50, aspd: 150},
-      progression: %PlayerProgression{base_level: 1, job_level: 1, learned_skills: %{}},
-      equipment:
-        Stats.equipment_from_inventory([
-          %InventoryItem{nameid: nameid, amount: 1, equip: @right_hand, identify: 1}
-        ])
+      progression: %PlayerProgression{
+        base_level: 50,
+        job_level: 30,
+        job_id: 7,
+        learned_skills: %{}
+      },
+      equipment: Stats.equipment_from_inventory(Map.values(inventory))
     }
 
     %PlayerState{
       character_id: 1000,
       account_id: 1000,
+      inventory: inventory,
       x: x,
       y: y,
       map_name: @map_name,
@@ -71,7 +81,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
 
   describe "validate/4" do
     test "accepts a one-handed or two-handed spear" do
-      assert :ok = KnSpearstab.validate(build_caster(1400), {:unit, @target_id}, 5, definition())
+      for weapon_id <- [@spear, 1410] do
+        caster = build_caster(weapon_id)
+        assert caster.stats.equipment.right_hand == weapon_id
+        assert :ok = KnSpearstab.validate(caster, {:unit, @target_id}, 5, definition())
+      end
     end
 
     test "rejects a player wielding any other weapon" do

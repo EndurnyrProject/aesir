@@ -2,25 +2,49 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquicken
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
-  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   @caster_id 3000
-  @one_handed_spear_id 1400
+  @one_handed_spear_id 1401
   @two_handed_spear_id 1410
   @dagger_id 1201
 
-  defp caster(equipment \\ %Equipment{}),
-    do: %PlayerState{character_id: @caster_id, stats: %{equipment: equipment}}
+  defp caster(weapon_id \\ nil) do
+    inventory =
+      if weapon_id do
+        item = %InventoryItem{nameid: weapon_id, amount: 1, equip: 0, identify: 1}
+
+        assert {:ok, inventory, {:equipped, 0, _mask, []}} =
+                 Inventory.equip(%{0 => item}, 0, 2, %{job_id: 14, base_level: 70})
+
+        inventory
+      else
+        %{}
+      end
+
+    %PlayerState{
+      character_id: @caster_id,
+      inventory: inventory,
+      stats: %Stats{
+        equipment: Stats.equipment_from_inventory(Map.values(inventory)),
+        progression: %PlayerProgression{base_level: 70, job_level: 40, job_id: 14}
+      }
+    }
+  end
 
   defp mob_caster do
     mob_data = %MobDefinition{
@@ -96,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
     test "rejects a cast without a spear equipped" do
       assert {:error, :requires_spear} =
                CrSpearquicken.validate(
-                 caster(%Equipment{right_hand: @dagger_id}),
+                 caster(@dagger_id),
                  :self,
                  1,
                  %{}
@@ -110,7 +134,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
     test "allows a cast with a one-handed spear equipped" do
       assert :ok =
                CrSpearquicken.validate(
-                 caster(%Equipment{right_hand: @one_handed_spear_id}),
+                 caster(@one_handed_spear_id),
                  :self,
                  1,
                  %{}
@@ -120,7 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
     test "allows a cast with a two-handed spear equipped" do
       assert :ok =
                CrSpearquicken.validate(
-                 caster(%Equipment{right_hand: @two_handed_spear_id}),
+                 caster(@two_handed_spear_id),
                  :self,
                  1,
                  %{}
@@ -137,7 +161,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
   describe "cast/4" do
     test "lv1 applies sc_spearquicken with val1=1, val2=7 and the tabulated duration" do
       {:ok, definition} = Catalog.by_name(:cr_spearquicken)
-      caster = caster(%Equipment{right_hand: @one_handed_spear_id})
+      caster = caster(@one_handed_spear_id)
 
       expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_spearquicken, params ->
         assert params[:val1] == 1
@@ -152,7 +176,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
 
     test "lv10 applies sc_spearquicken with val1=10, val2=7 and the tabulated duration" do
       {:ok, definition} = Catalog.by_name(:cr_spearquicken)
-      caster = caster(%Equipment{right_hand: @two_handed_spear_id})
+      caster = caster(@two_handed_spear_id)
 
       expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_spearquicken, params ->
         assert params[:val1] == 10
@@ -166,7 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
 
     test "a mistargeted {:unit, id} row still buffs the caster, not the given id" do
       {:ok, definition} = Catalog.by_name(:cr_spearquicken)
-      caster = caster(%Equipment{right_hand: @one_handed_spear_id})
+      caster = caster(@one_handed_spear_id)
 
       expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_spearquicken, params ->
         assert params[:val1] == 4

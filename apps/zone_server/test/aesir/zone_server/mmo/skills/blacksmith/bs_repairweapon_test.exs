@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.SkillCastFailed
   alias Aesir.Net.SkillMenuReply
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon
   alias Aesir.ZoneServer.Unit.ItemContainer
@@ -13,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   setup do
@@ -36,12 +38,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
         0 => item(1101, 1),
         1 => item(1110, 1),
         2 => item(1119, 1),
-        3 => item(1100, 1),
+        3 => item(1138, 1),
         4 => item(2101, 1),
-        5 => item(1341, 1),
-        6 => item(15_282, 1),
-        7 => item(1101, 0),
-        8 => item(501, 1)
+        5 => item(1101, 0),
+        6 => item(501, 1)
       })
 
     register(target)
@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
           {1101, 1_002},
           {1110, 998},
           {1119, 999},
-          {1100, 756},
+          {1138, 756},
           {2101, 999}
         ] do
       register(player(2, %{0 => item(equipment_id, 1)}))
@@ -89,15 +89,58 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
              BsRepairweapon.on_menu_reply(caster, %{id: 0, extras: []}, 1)
   end
 
+  @tag game_mode: :renewal
   test "revalidates level 5 weapons and level 2 armor before calling the target session" do
     reject(&PlayerSession.repair_item/2)
     caster = %{player(1, %{9 => item(756, 0), 10 => item(999, 0)}) | target_id: 2}
 
+    assert {:ok, %{type: :weapon, weapon_level: 5}} = Items.by_id(1341)
+    assert {:ok, %{type: :armor, armor_level: 2}} = Items.by_id(15_282)
+
     for item_id <- [1341, 15_282] do
       register(player(2, %{0 => item(item_id, 1)}))
 
+      assert {:error, :no_repairable_items} =
+               BsRepairweapon.cast(caster, {:unit, 2}, 1, definition())
+
       assert {:error, :unrepairable_item} =
                BsRepairweapon.on_menu_reply(caster, %{id: 0, extras: []}, 1)
+    end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "absent newer equipment is not offered or repaired" do
+    reject(&PlayerSession.repair_item/2)
+    caster = %{player(1, %{9 => item(756, 0), 10 => item(999, 0)}) | target_id: 2}
+
+    for item_id <- [1341, 15_282] do
+      assert :error = Items.by_id(item_id)
+      register(player(2, %{0 => item(item_id, 1)}))
+
+      assert {:error, :no_repairable_items} =
+               BsRepairweapon.cast(caster, {:unit, 2}, 1, definition())
+
+      assert {:error, :unknown_item} =
+               BsRepairweapon.on_menu_reply(caster, %{id: 0, extras: []}, 1)
+    end
+  end
+
+  test "revalidates a repaired or replaced row before calling the target session" do
+    reject(&PlayerSession.repair_item/2)
+    register(player(2, %{0 => item(1101, 1)}))
+    caster = player(1, %{9 => item(1_002, 0)})
+
+    assert {:ok, offered} = BsRepairweapon.cast(caster, {:unit, 2}, 1, definition())
+    assert offered.pending_menu_offer.entry_ids == [0]
+
+    for {replacement, reason} <- [
+          {item(1101, 0), :repair_failed},
+          {item(501, 1), :unrepairable_item}
+        ] do
+      register(player(2, %{0 => replacement}))
+
+      assert {:error, ^reason} =
+               BsRepairweapon.on_menu_reply(offered, %{id: 0, extras: []}, 1)
     end
   end
 

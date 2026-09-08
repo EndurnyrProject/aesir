@@ -10,16 +10,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   @caster_id 1_000
   @target_id 2_000
   @map "prontera"
-  @spear_id 1_400
+  @spear_id 1_401
 
   defp definition do
     {:ok, definition} = Catalog.by_name(:kn_spearboomerang)
@@ -99,11 +101,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
   end
 
   defp spear_caster(x: x, y: y) do
-    player(
-      x: x,
-      y: y,
-      inventory: [%InventoryItem{nameid: @spear_id, amount: 1, equip: 2, identify: 1}]
-    )
+    caster = unarmed_caster(x: x, y: y)
+    item = %InventoryItem{nameid: @spear_id, amount: 1, equip: 0, identify: 1}
+
+    assert {:ok, inventory, {:equipped, 0, 2, []}} =
+             Inventory.equip(%{0 => item}, 0, 2, %{
+               job_id: caster.stats.progression.job_id,
+               base_level: caster.stats.progression.base_level
+             })
+
+    stats = %{caster.stats | equipment: Stats.equipment_from_inventory(Map.values(inventory))}
+    %{caster | inventory: inventory, stats: stats}
   end
 
   defp unarmed_caster(x: x, y: y) do

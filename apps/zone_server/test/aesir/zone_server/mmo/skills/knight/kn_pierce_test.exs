@@ -6,20 +6,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce
+  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
   alias Aesir.ZoneServer.Unit.Stats.BaseStats
   alias Aesir.ZoneServer.Unit.Stats.DerivedStats
 
+  setup :set_mimic_private
   setup :verify_on_exit!
 
   @target_id 4000
-  @one_handed_spear 1400
+  @one_handed_spear 1401
   @two_handed_spear 1410
   @sword 1101
   @right_hand 2
-  @both_hand 3
+  @both_hand 34
 
   defp definition do
     {:ok, definition} = Catalog.by_name(:kn_pierce)
@@ -27,17 +29,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
   end
 
   defp build_caster(weapon_nameid, equip_slot \\ @right_hand) do
+    item = %InventoryItem{nameid: weapon_nameid, amount: 1, equip: 0, identify: 1}
+
+    assert {:ok, inventory, {:equipped, 0, ^equip_slot, []}} =
+             Inventory.equip(%{0 => item}, 0, equip_slot, %{job_id: 7, base_level: 50})
+
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 10, int: 10, dex: 1, luk: 1},
       derived_stats: %DerivedStats{max_hp: 1000, max_sp: 100},
-      progression: %PlayerProgression{base_level: 50, job_level: 30, learned_skills: %{}},
-      equipment:
-        Stats.equipment_from_inventory([
-          %InventoryItem{nameid: weapon_nameid, amount: 1, equip: equip_slot, identify: 1}
-        ])
+      progression: %PlayerProgression{
+        base_level: 50,
+        job_level: 30,
+        job_id: 7,
+        learned_skills: %{}
+      },
+      equipment: Stats.equipment_from_inventory(Map.values(inventory))
     }
 
-    %PlayerState{character_id: 1000, stats: stats}
+    %PlayerState{character_id: 1000, inventory: inventory, stats: stats}
   end
 
   describe "catalog registration" do
