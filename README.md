@@ -58,10 +58,24 @@ or use the `start_servers.sh` script.
 
 ## Testing
 
-Each application within the umbrella has its own test suite. To run tests for the entire project:
+Run the test matrix serially from the umbrella root, without setting environment variables:
 
 ```bash
-mix test
+mix test.re                  # Renewal unit tests and doctests
+mix test.integration.re      # Renewal integrations
+mix test.pre_re              # Pre-renewal unit tests and doctests
+mix test.integration.pre_re  # Pre-renewal integrations
+```
+
+These aliases select the mode before boot and override an inherited `AESIR_DB_MODE`.
+Run each command separately because the game mode is cached for the node's lifetime.
+`mix test` and `mix test.integration` still use `AESIR_DB_MODE`, defaulting to Renewal
+when it is unset. Unit runs exclude integrations.
+
+All aliases accept normal test arguments, for example:
+
+```bash
+mix test.pre_re apps/commons/test/aesir/commons/game_mode_test.exs --seed 0
 ```
 
 To run tests for a specific application (e.g., `account_server`):

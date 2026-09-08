@@ -72,10 +72,11 @@ usability check and misses the real logic. Grep both.
 - `mix format` and `mix credo --strict` before considering work done.
 - `mix test` runs shared and matching-mode unit tests/doctests; **integrations are excluded by default**.
   Run the complete supported matrix serially from the umbrella root:
-  `AESIR_DB_MODE=renewal mix test`, `AESIR_DB_MODE=renewal mix test.integration`,
-  `AESIR_DB_MODE=pre_renewal mix test`, and
-  `AESIR_DB_MODE=pre_renewal mix test.integration`. The integration alias selects the booted mode's
-  explicit `integration_re:true` or `integration_pre_re:true` family.
+  `mix test.re`, `mix test.integration.re`, `mix test.pre_re`, and
+  `mix test.integration.pre_re`, each in a separate Mix invocation. These aliases override an
+  inherited `AESIR_DB_MODE` before boot and forward normal test arguments. Plain `mix test` and
+  `mix test.integration` retain environment-based selection (Renewal by default). The integration
+  alias selects the booted mode's explicit `integration_re:true` or `integration_pre_re:true` family.
 - Shared unit tests are untagged; boot-dependent cases use `game_mode: :renewal` or `:pre_renewal`.
   Shared integrations inherit both integration flags from `IntegrationCase`; mode-specific cases
   must set the opposite flag to `false` as well as setting `game_mode`. Use explicit `:true` CLI

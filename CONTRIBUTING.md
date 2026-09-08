@@ -104,11 +104,14 @@ mix format
 # Run linting
 mix credo --strict
 
-# Run tests
-mix test
+# Run both modes serially from the umbrella root
+mix test.re
+mix test.integration.re
+mix test.pre_re
+mix test.integration.pre_re
 
 # Run all quality checks
-mix format && mix credo --strict && mix test
+mix format && mix credo --strict && mix test.re && mix test.integration.re && mix test.pre_re && mix test.integration.pre_re
 ```
 
 #### 5. Preparing for Review

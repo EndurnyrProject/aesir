@@ -13,13 +13,30 @@ defmodule Aesir.MixProject do
   end
 
   def cli do
-    [preferred_envs: ["test.integration": :test]]
+    [
+      preferred_envs: [
+        "test.integration": :test,
+        "test.re": :test,
+        "test.pre_re": :test,
+        "test.integration.re": :test,
+        "test.integration.pre_re": :test
+      ]
+    ]
   end
 
   defp aliases do
     [
-      "test.integration": &test_integration/1
+      "test.integration": &test_integration/1,
+      "test.re": &test_mode("renewal", "test", &1),
+      "test.pre_re": &test_mode("pre_renewal", "test", &1),
+      "test.integration.re": &test_mode("renewal", "test.integration", &1),
+      "test.integration.pre_re": &test_mode("pre_renewal", "test.integration", &1)
     ]
+  end
+
+  defp test_mode(mode, task, args) do
+    System.put_env("AESIR_DB_MODE", mode)
+    Mix.Task.run(task, args)
   end
 
   defp test_integration(args) do
