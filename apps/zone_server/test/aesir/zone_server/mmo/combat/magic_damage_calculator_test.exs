@@ -120,6 +120,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculatorTest do
   end
 
   describe "calculate_magic_damage/3" do
+    test "unsupported plain-map unit types use no status modifiers" do
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :unknown, _id -> flunk("unsupported unit type reached modifier storage")
+        _type, _id -> %{}
+      end)
+
+      unknown = %{attacker(100) | unit_type: :unknown}
+
+      assert {:ok, %{damage: 100, is_critical: false}} =
+               MagicDamageCalculator.calculate_magic_damage(unknown, defender(0, 0))
+    end
+
     test "skill IDs select rate metadata, not a different formula or physical-stat requirement" do
       for id <- [14, 254] do
         assert {:ok, %{damage: mode_value(86, 85), is_critical: false}} ==

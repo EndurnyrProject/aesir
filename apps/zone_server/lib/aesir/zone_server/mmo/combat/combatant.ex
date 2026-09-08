@@ -151,6 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
             luk: integer()
           },
           combat_stats: %{
+            optional(:ignore_size_penalty) => boolean(),
             optional(:soft_def) => integer(),
             atk: integer(),
             def: integer(),

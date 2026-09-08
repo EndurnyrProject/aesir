@@ -1513,7 +1513,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     ])
   end
 
-  defp target_hp(hp) when is_integer(hp), do: hp
   defp target_hp(%{stats: %{current_state: %{hp: hp}}}) when is_integer(hp), do: hp
   defp target_hp(%{hp: hp}) when is_integer(hp), do: hp
   defp target_hp(_target_state), do: nil

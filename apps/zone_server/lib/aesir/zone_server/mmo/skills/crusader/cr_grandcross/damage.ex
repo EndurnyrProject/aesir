@@ -109,7 +109,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage do
 
   defp classic_defense(amount, {hard, soft}),
     do:
-      ClassicDefense.apply_def(amount, %{hard_def: hard, soft_def: soft, ignore_soft_def?: false})
+      ClassicDefense.apply_def(amount, %{
+        hard_def: hard,
+        soft_def: soft,
+        attacker_level: nil,
+        ignore_soft_def?: false
+      })
 
   defp classic_magic_defense(damage, %{ignore_mdef?: true}), do: damage
 
