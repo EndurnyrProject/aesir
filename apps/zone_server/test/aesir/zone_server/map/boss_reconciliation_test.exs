@@ -7,6 +7,10 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
   second time by `spawn_all_mobs`. These tests drive the real path --
   `BossRespawn.reconcile/0`, `Coordinator.init/1`, then the first tick with a
   player on the map -- and assert every case yields exactly one boss.
+
+  Future-deadline cases freeze UTC just before a second boundary. Persistence
+  truncates deadlines to seconds, leaving a real 1 ms timer without allowing
+  setup time to turn the arranged future deadline into an overdue one.
   """
 
   use Aesir.DataCase, async: false
@@ -57,6 +61,7 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
     :ok
   end
 
+  setup :set_mimic_private
   setup :setup_ets_tables
   setup :verify_on_exit!
 
@@ -103,6 +108,7 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
     end
 
     test "a future deadline skips the first spawn and the boss appears when its timer fires" do
+      stub(DateTime, :utc_now, fn -> ~U[2026-01-01 00:00:00.999000Z] end)
       write_deadline(@one_boss, @osiris_id, 1)
       :ok = BossRespawn.reconcile()
 
@@ -133,6 +139,7 @@ defmodule Aesir.ZoneServer.Map.BossReconciliationTest do
     end
 
     test "two pending rows for the same mob id resolve to two bosses, not one" do
+      stub(DateTime, :utc_now, fn -> ~U[2026-01-01 00:00:00.999000Z] end)
       write_deadline(@two_bosses, @osiris_id, -60)
       write_deadline(@two_bosses, @osiris_id, 1)
       :ok = BossRespawn.reconcile()
