@@ -39,19 +39,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
   @type finding :: %{field: atom(), aesir: term(), source: term()}
 
   @numeric_fields [
-    {["Range"], "Size", :range, false, false},
-    {["HitCount"], "Count", :hit_count, false, true},
-    {["SplashArea"], "Area", :splash_radius, false, false},
-    {["Knockback"], "Amount", :knockback, false, false},
-    {["CastTime"], "Time", :cast_time, false, false},
-    {["FixedCastTime"], "Time", :fixed_cast_time, false, false},
-    {["AfterCastActDelay"], "Time", :after_cast_delay, false, false},
-    {["Cooldown"], "Time", :cooldown, false, false},
-    {["Requires", "SpCost"], "Amount", :sp_cost, true, false},
-    {["Requires", "HpCost"], "Amount", :hp_cost, false, false},
-    {["Requires", "HpRateCost"], "Amount", :hp_cost_rate, false, false},
-    {["Requires", "ZenyCost"], "Amount", :zeny_cost, false, false},
-    {["Requires", "SpiritSphereCost"], "Amount", :sphere_cost, false, false}
+    {["Range"], "Size", :range, false},
+    {["HitCount"], "Count", :hit_count, false},
+    {["SplashArea"], "Area", :splash_radius, false},
+    {["Knockback"], "Amount", :knockback, false},
+    {["CastTime"], "Time", :cast_time, false},
+    {["FixedCastTime"], "Time", :fixed_cast_time, false},
+    {["AfterCastActDelay"], "Time", :after_cast_delay, false},
+    {["Cooldown"], "Time", :cooldown, false},
+    {["Requires", "SpCost"], "Amount", :sp_cost, true},
+    {["Requires", "HpCost"], "Amount", :hp_cost, false},
+    {["Requires", "HpRateCost"], "Amount", :hp_cost_rate, false},
+    {["Requires", "ZenyCost"], "Amount", :zeny_cost, false},
+    {["Requires", "SpiritSphereCost"], "Amount", :sphere_cost, false}
   ]
 
   @element_overrides %{"Dark" => :shadow}
@@ -122,6 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
       compare_element(definition, source_row, max_level) ++
       compare_requires_ammo(definition, source_row) ++
       compare_require_weapon(definition, source_row) ++
+      compare_vulture_range(definition, source_row) ++
       compare_item_cost(definition, source_row)
   end
 
@@ -150,12 +151,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
   defp render_option(%{field: field, source: source}, definition, mode) do
     case mode_keyed_other_value(Map.get(definition, field), mode) do
       {:ok, other_value} when other_value != source ->
-        "#{field}: [#{mode}: #{inspect(source)}, #{other_mode(mode)}: #{inspect(other_value)}]"
+        "#{field}: [#{mode}: #{render_value(source)}, #{other_mode(mode)}: #{render_value(other_value)}]"
 
       _not_diverging ->
-        "#{field}: #{inspect(source)}"
+        "#{field}: #{render_value(source)}"
     end
   end
+
+  @doc "Renders one value for a report; integer sequences never print as charlists."
+  @spec render_value(term()) :: String.t()
+  def render_value(value), do: inspect(value, charlists: :as_lists)
 
   @spec mode_keyed_other_value(term(), Aesir.Commons.GameMode.t()) :: {:ok, term()} | :error
   defp mode_keyed_other_value(value, mode) do
@@ -172,7 +177,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
   def other_mode(:pre_renewal), do: :renewal
 
   @spec numeric_fields(Aesir.Commons.GameMode.t()) :: [
-          {[String.t()], String.t(), atom(), boolean(), boolean()}
+          {[String.t()], String.t(), atom(), boolean()}
         ]
   defp numeric_fields(:pre_renewal),
     do: Enum.reject(@numeric_fields, &(elem(&1, 2) == :fixed_cast_time))
@@ -204,23 +209,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
   end
 
   @spec compare_numeric_field(
-          {[String.t()], String.t(), atom(), boolean(), boolean()},
+          {[String.t()], String.t(), atom(), boolean()},
           Definition.t(),
           map(),
           integer()
         ) ::
           [finding()]
-  defp compare_numeric_field(
-         {path, subkey, field, sp_cost?, normalize_positive?},
-         definition,
-         source_row,
-         max_level
-       ) do
+  defp compare_numeric_field({path, subkey, field, sp_cost?}, definition, source_row, max_level) do
     source_value = fetch_path(source_row, path, 0)
-    raw_sequence = expand_levels(source_value, subkey, max_level)
 
     source_sequence =
-      if normalize_positive?, do: Enum.map(raw_sequence, &max(abs(&1), 1)), else: raw_sequence
+      source_value
+      |> expand_levels(subkey, max_level)
+      |> Enum.map(&normalize_source_value(field, &1))
 
     aesir_value = Map.fetch!(definition, field)
     aesir_sequence = aesir_numeric_sequence(aesir_value, max_level, sp_cost?)
@@ -231,6 +232,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
       [%{field: field, aesir: aesir_value, source: source_sequence}]
     end
   end
+
+  # Both fields encode a flag in the sign and the value in the magnitude: a
+  # negative `HitCount` is still that many hits, and a negative `Range` is still
+  # that many cells (the sign only asks for the weapon's reach on a server
+  # configured to use it, which is not the default Aesir follows).
+  @spec normalize_source_value(atom(), integer()) :: integer()
+  defp normalize_source_value(:hit_count, value), do: max(abs(value), 1)
+  defp normalize_source_value(:range, value), do: abs(value)
+  defp normalize_source_value(_field, value), do: value
 
   @spec aesir_numeric_sequence(integer() | [integer() | :all], pos_integer(), boolean()) :: [
           integer()
@@ -322,6 +332,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
     else
       [%{field: :require_weapon, aesir: aesir_weapons, source: source_weapons}]
     end
+  end
+
+  # The source marks a skill whose range trains with Vulture's Eye by a flag on
+  # the row; Aesir declares the same thing as a boolean definition field.
+  @spec compare_vulture_range(Definition.t(), map()) :: [finding()]
+  defp compare_vulture_range(%Definition{vulture_range: aesir_flag}, source_row) do
+    source_flag =
+      source_row |> fetch_path(["Flags", "AlterRangeVulture"], false) |> then(&(&1 == true))
+
+    if source_flag == aesir_flag,
+      do: [],
+      else: [%{field: :vulture_range, aesir: aesir_flag, source: source_flag}]
   end
 
   @spec compare_item_cost(Definition.t(), map()) :: [finding()]

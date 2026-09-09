@@ -15,7 +15,8 @@ defmodule Mix.Tasks.Aesir.Audit.Skills do
   `range`, `hit_count`, `element`, `splash_radius`, `knockback`, `cast_time`,
   `fixed_cast_time` (renewal only), `after_cast_delay`, `cooldown`,
   `sp_cost`, `hp_cost`, `hp_cost_rate`, `zeny_cost`, `sphere_cost`,
-  `item_cost`, `requires_ammo`, `require_weapon`. A skill present in the
+  `item_cost`, `requires_ammo`, `require_weapon`, `vulture_range`. A skill
+  present in the
   job's tree but absent from the source database is a strict finding for a
   renewal run (`missing in source`); for a pre-renewal run it is only
   informational (`renewal-only`), since renewal-only content is expected to
@@ -152,7 +153,7 @@ defmodule Mix.Tasks.Aesir.Audit.Skills do
   defp notes(row) do
     case Audit.negative_hit_count_levels(row, Map.fetch!(row, "MaxLevel")) do
       [] -> []
-      negatives -> ["negative source HitCount values: #{inspect(negatives)}"]
+      negatives -> ["negative source HitCount values: #{Audit.render_value(negatives)}"]
     end
   end
 
@@ -218,7 +219,7 @@ defmodule Mix.Tasks.Aesir.Audit.Skills do
   @spec table_rows(result()) :: [String.t()]
   defp table_rows({:ok, name, _definition, findings, _notes}) do
     Enum.map(findings, fn %{field: field, aesir: aesir, source: source} ->
-      "| #{name} | #{field} | #{inspect(aesir)} | #{inspect(source)} |"
+      "| #{name} | #{field} | #{Audit.render_value(aesir)} | #{Audit.render_value(source)} |"
     end)
   end
 

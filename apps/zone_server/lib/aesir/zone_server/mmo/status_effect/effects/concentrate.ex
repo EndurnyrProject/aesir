@@ -2,8 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Concentrate do
   @moduledoc """
   Improve Concentration (SC_CONCENTRATE).
 
-  Raises AGI and DEX by a percentage (val2) of the stat above its job bonus
-  (val3 for AGI, val4 for DEX). Blocked by Quagmire.
+  Raises AGI and DEX by a percentage (val2) of the stat above the caster's
+  equipment modifier for it (val3 for AGI, val4 for DEX), so gear-granted
+  points are excluded from the percentage. Blocked by Quagmire.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_concentrate,

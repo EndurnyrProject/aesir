@@ -1043,6 +1043,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert Interpreter.effective_range(definition, gs, 1) == 1
     end
+
+    test "a vulture_range skill gains the caster's Vulture's Eye level" do
+      definition = %{enemy_definition(9) | vulture_range: true}
+
+      assert Interpreter.effective_range(definition, game_state(100, %{44 => 7}), 1) == 16
+    end
+
+    test "a vulture_range skill is unchanged for a caster who has not learned it" do
+      definition = %{enemy_definition(9) | vulture_range: true}
+
+      assert Interpreter.effective_range(definition, game_state(100, %{}), 1) == 9
+    end
+
+    test "a skill without the flag ignores the caster's Vulture's Eye" do
+      definition = enemy_definition(9)
+
+      assert Interpreter.effective_range(definition, game_state(100, %{44 => 7}), 1) == 9
+    end
+
+    test "a mob caster gains nothing from the flag" do
+      definition = %{enemy_definition(9) | vulture_range: true}
+      mob = struct(MobState, instance_id: 5000, mob_data: %{skill_range: 9})
+
+      assert Interpreter.effective_range(definition, mob, 1) == 9
+    end
   end
 
   test "an enemy skill targeting another player is rejected as :invalid_target" do

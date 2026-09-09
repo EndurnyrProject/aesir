@@ -690,6 +690,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   @doc """
+  The player's reach in cells: the equipped weapon's own range plus every
+  attack-range bonus their learned passives grant (Vulture's Eye grants one
+  cell per level while a bow is wielded).
+
+  Every reach question reads this one value - the basic-attack gate, the
+  move-to-attack approach, the combatant snapshot the damage layer sees, and a
+  skill declaring the weapon's own range - so a range passive can never apply
+  to some of them and not others.
+  """
+  @spec attack_range(t()) :: non_neg_integer()
+  def attack_range(%{equipment: equipment} = stats) do
+    range = equipment |> weapon_type() |> WeaponTypes.get_attack_range()
+
+    range + passive_range(stats)
+  end
+
+  @spec passive_range(t()) :: integer()
+  defp passive_range(%{modifiers: %{passive: passive}}) when is_map(passive),
+    do: Map.get(passive, :range, 0)
+
+  defp passive_range(_stats), do: 0
+
+  @doc """
   Returns the equipped weapon type atom (the right-hand item's `subtype`), or
   `:fist` when no weapon is worn or the item cannot be resolved.
   """

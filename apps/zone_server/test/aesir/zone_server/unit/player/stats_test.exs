@@ -1359,6 +1359,32 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "attack_range/1" do
+    test "is the equipped weapon's own reach when no passive widens it" do
+      equipment = Stats.equipment_from_inventory([equipped(@bow, @both_hand)])
+
+      assert Stats.attack_range(%Stats{equipment: equipment}) ==
+               Stats.attack_range(%Stats{equipment: equipment, modifiers: %Modifiers{}})
+
+      assert Stats.attack_range(%Stats{equipment: %Equipment{}}) == 1
+    end
+
+    test "adds the passive attack-range bonus to the weapon's reach" do
+      equipment = Stats.equipment_from_inventory([equipped(@bow, @both_hand)])
+      bare = Stats.attack_range(%Stats{equipment: equipment})
+
+      stats = %Stats{equipment: equipment, modifiers: %Modifiers{passive: %{range: 4}}}
+
+      assert Stats.attack_range(stats) == bare + 4
+    end
+
+    test "an unarmed reach of one cell still gains the passive bonus" do
+      stats = %Stats{equipment: %Equipment{}, modifiers: %Modifiers{passive: %{range: 4}}}
+
+      assert Stats.attack_range(stats) == 5
+    end
+  end
+
   describe "validate_shield/1 and shield_stats/2" do
     test "validate_shield is :ok with a shield equipped" do
       equipment = Stats.equipment_from_inventory([equipped(@guard, @left_hand)])

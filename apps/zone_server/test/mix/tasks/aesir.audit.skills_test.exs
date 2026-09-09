@@ -70,6 +70,23 @@ defmodule Mix.Tasks.Aesir.Audit.SkillsTest do
       assert report =~ "```elixir\nrange: 9\n```"
     end
 
+    test "renders a per-level integer sequence in the table as a list, never as a charlist" do
+      definition = %Definition{
+        id: 5,
+        name: :sm_bash,
+        display_name: "Bash",
+        max_level: 10,
+        after_cast_delay: []
+      }
+
+      findings = [%{field: :after_cast_delay, aesir: [], source: List.duplicate(100, 3)}]
+      results = [{:ok, :sm_bash, definition, findings, []}]
+
+      report = Task.render_report(:swordman, :renewal, results)
+
+      assert report =~ "| sm_bash | after_cast_delay | [] | [100, 100, 100] |"
+    end
+
     test "renders a missing-in-source skill as a strict row" do
       results = [{:missing, :sm_ghost}]
 

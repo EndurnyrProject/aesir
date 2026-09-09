@@ -21,7 +21,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
-  alias Aesir.ZoneServer.Mmo.WeaponTypes
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.QuestLog
@@ -1020,7 +1019,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def to_combatant(%__MODULE__{} = state) do
     weapon_type = PlayerStats.weapon_type(state.stats.equipment)
     learned = state.stats.progression.learned_skills
-    passive_range = passive_range(state.stats.modifiers)
 
     Combatant.new!(%{
       unit_id: state.character_id,
@@ -1044,7 +1042,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       },
       right_hand: state.stats.right_hand,
       left_hand: state.stats.left_hand,
-      attack_range: WeaponTypes.get_attack_range(weapon_type) + passive_range,
+      attack_range: PlayerStats.attack_range(state.stats),
       attack_delay_ms: AttackSpeed.calculate_delay_from_stats(state.stats),
       position: {state.x, state.y},
       map_name: state.map_name,
@@ -1063,12 +1061,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
 
   defp riding?(option) when is_integer(option), do: (option &&& @riding_option_bit) != 0
   defp riding?(_option), do: false
-
-  defp passive_range(nil), do: 0
-
-  defp passive_range(modifiers) do
-    modifiers |> Map.get(:passive, %{}) |> Map.get(:range, 0)
-  end
 
   defp defense_element(%{modifiers: %{status_effects: %{} = status_effects}}) do
     Map.get(status_effects, :element_override, {:neutral, 1})

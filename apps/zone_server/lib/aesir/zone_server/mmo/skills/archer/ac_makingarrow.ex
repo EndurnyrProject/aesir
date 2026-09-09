@@ -1,21 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcMakingarrow do
   @moduledoc """
-  Arrow Crafting (AC_MAKINGARROW). Archer quest skill: converts 1 material item
-  from the inventory into a fixed set of arrows.
+  Arrow Crafting (AC_MAKINGARROW). An Archer quest skill that converts one
+  material item from the inventory into a fixed set of arrows. A cast consumes
+  exactly one source item and yields every stack that material's recipe makes.
 
-  rAthena (`db/re/skill_db.yml` id 147): self-targeted, no damage, SP 10,
-  MaxLevel 1. The recipes live in `create_arrow_db.yml` (imported to
-  `priv/db/arrows.yml`, served by `ItemManagement.ArrowCrafting`);
-  `skill_arrow_create` consumes exactly 1 source item and produces every
-  `Make` entry of its recipe.
+  The skill is identical in both modes - one level, the same SP, the same
+  self-cast with no damage - and the recipe table itself is era-independent, so
+  the same materials craft the same arrows in renewal and pre-renewal alike.
 
-  rAthena presents the material list through a dedicated client packet
-  (`clif_arrow_create_list`). Aesir has no such wire message, so the cast
-  stages `pending_interaction` on the returned `PlayerState` and the skill
-  handler opens a `Script.Interaction` dialog (this module's `on_talk/1`)
-  listing the craftable materials instead — same window the NPC scripts use.
-  The `State: Recover_Weight_Rate` (not-overweight) cast requirement is not
-  enforced; the interpreter has no weight-state gate yet.
+  The original game shows the material list through a dedicated client packet.
+  Aesir has no such wire message, so the cast stages `pending_interaction` on
+  the returned `PlayerState` and the skill handler opens a `Script.Interaction`
+  dialog (this module's `on_talk/1`) listing the craftable materials instead -
+  the same window the NPC scripts use.
+
+  The original also refuses the cast while the archer is overweight; the
+  interpreter has no weight-state gate yet, so that requirement is not
+  enforced.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 147,

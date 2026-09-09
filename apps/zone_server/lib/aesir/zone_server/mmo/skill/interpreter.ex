@@ -51,6 +51,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
 
+  # Vulture's Eye: the passive whose learned level widens a `vulture_range` skill.
+  @vulture_skill_id 44
+
   defmodule Deferred do
     @moduledoc "Deferred effect plus the owner-local resources settled on reply."
 
@@ -1102,10 +1105,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
   The cast-range of a skill for a given caster and level, in cells (Chebyshev).
 
   Resolves the definition's declared range at `level` first (`Definition.range_at_level/2`,
-  a no-op for a flat range). rAthena encodes melee skills as `range: -1` ("use the
-  weapon's range"); that is resolved to the caster's equipped-weapon attack range at
-  cast time. Exposed so the session handler can size the move-to-range approach for an
-  out-of-range cast.
+  a no-op for a flat range). A negative declared range means "use the weapon's range"
+  and resolves to the caster's equipped-weapon attack range at cast time. A skill
+  declaring `vulture_range: true` (the bow skills whose reach trains with Vulture's
+  Eye) adds a player caster's learned Vulture's Eye level to its flat range; no other
+  caster kind gains anything. Exposed so the session handler can size the move-to-range
+  approach for an out-of-range cast.
   """
   @spec effective_range(Definition.t(), Active.caster(), non_neg_integer()) :: non_neg_integer()
   def effective_range(definition, game_state, level) do
@@ -1119,10 +1124,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Interpreter do
 
   defp base_range(definition, game_state, level) do
     case Definition.range_at_level(definition, level) do
-      range when range >= 0 -> range
+      range when range >= 0 -> range + vulture_range_bonus(definition, game_state)
       _weapon_range_sentinel -> weapon_range(game_state)
     end
   end
+
+  defp vulture_range_bonus(%{vulture_range: true}, %PlayerState{} = game_state) do
+    game_state.stats.progression.learned_skills
+    |> Learned.learned_level(@vulture_skill_id)
+  end
+
+  defp vulture_range_bonus(_definition, _game_state), do: 0
 
   defp skill_effective_range(module, game_state, level, definition, base_range) do
     if function_exported?(module, :effective_range, 4) do

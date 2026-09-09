@@ -16,6 +16,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `require_weapon` restricts ordinary player casts to the listed equipped
   right-hand weapon subtypes. An empty list (the default) accepts any weapon.
 
+  `vulture_range` marks a skill whose cast range grows with the caster's
+  Vulture's Eye: the interpreter adds that skill's learned level to the
+  declared range for a player caster. It is mode-invariant.
+
   Any mode-keyable option (see `resolve_mode/2`) may be given as
   `[renewal: value, pre_renewal: value]` instead of a plain value, so a skill
   whose renewal and pre-renewal numbers diverge declares both from the same
@@ -106,6 +110,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
             requires: [:player_state],
             requires_ammo: false,
             require_weapon: [],
+            vulture_range: false,
             status: nil,
             quest_skill: false,
             quest_owner_job: nil
@@ -141,6 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
           requires: [Requirement.t()],
           requires_ammo: boolean(),
           require_weapon: [atom()],
+          vulture_range: boolean(),
           status: atom() | nil,
           quest_skill: boolean(),
           quest_owner_job: atom() | nil
@@ -189,6 +195,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     requires: {:list, {:enum, Requirement.all()}},
     requires_ammo: :boolean,
     require_weapon: {:list, :atom},
+    vulture_range: :boolean,
     status: :atom,
     quest_skill: :boolean,
     quest_owner_job: :atom
@@ -221,6 +228,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     requires: [:player_state],
     requires_ammo: false,
     require_weapon: [],
+    vulture_range: false,
     status: nil,
     quest_skill: false,
     quest_owner_job: nil

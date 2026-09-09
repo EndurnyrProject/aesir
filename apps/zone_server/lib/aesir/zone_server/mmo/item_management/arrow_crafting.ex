@@ -1,13 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting do
   @moduledoc """
-  Registry of AC_MAKINGARROW crafting recipes, loaded as data from
-  `priv/db/arrows.yml` (imported from rAthena's `create_arrow_db.yml` by
-  `mix aesir.import.arrows`).
+  Registry of Arrow Crafting recipes, loaded as data from `priv/db/arrows.yml`
+  (written by `mix aesir.import.arrows`). The recipes are era-independent: one
+  shared table serves both renewal and pre-renewal.
 
-  Each recipe converts 1 source item into a fixed set of produced items
-  (`skill_arrow_create` consumes exactly one source per craft). The index is
-  cached in `:persistent_term`; `reload/0` rebuilds it after the data file
-  changes in a long-running session. Same API shape as `Items` / `Mobs`.
+  Each recipe converts 1 source item into a fixed set of produced items; a
+  craft consumes exactly one source. The index is cached in `:persistent_term`;
+  `reload/0` rebuilds it after the data file changes in a long-running session.
+  Same API shape as `Items` / `Mobs`.
   """
 
   alias Aesir.ZoneServer.Db.Source

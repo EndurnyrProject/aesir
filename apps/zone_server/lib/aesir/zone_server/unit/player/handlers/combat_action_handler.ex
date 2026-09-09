@@ -352,8 +352,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   # Private functions
 
   defp check_attack_range(state, target_id) do
-    weapon_type = get_weapon_type(state.game_state.stats)
-    attack_range = WeaponTypes.get_attack_range(weapon_type)
+    attack_range = Stats.attack_range(state.game_state.stats)
 
     case get_target_position(target_id) do
       {:ok, {target_x, target_y}} ->
@@ -669,8 +668,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp prepare_combat_context(state, target_id, {target_x, target_y}) do
-    weapon_type = get_weapon_type(state.game_state.stats)
-    attack_range = WeaponTypes.get_attack_range(weapon_type)
+    attack_range = Stats.attack_range(state.game_state.stats)
     current_pos = {state.game_state.x, state.game_state.y}
     optimal_pos = pick_attack_cell(state, target_id, {target_x, target_y}, attack_range)
 
@@ -850,8 +848,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   defp recalculate_combat_path(state, {new_target_x, new_target_y}) do
-    weapon_type = get_weapon_type(state.game_state.stats)
-    attack_range = WeaponTypes.get_attack_range(weapon_type)
+    attack_range = Stats.attack_range(state.game_state.stats)
 
     # Calculate new optimal position (occupancy-aware, shared with the approach path)
     optimal_pos =
@@ -879,8 +876,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
       )
     end)
   end
-
-  defp get_weapon_type(%{equipment: equipment}), do: Stats.weapon_type(equipment)
 
   defp cancel_combo_for_target_change(
          %{game_state: %{combo: %Combo{target: {_type, id}}}} = state,

@@ -1,12 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration do
   @moduledoc """
-  Improve Concentration (AC_CONCENTRATION). Self-buff applying SC_CONCENTRATE,
-  raising AGI and DEX by (2 + level)% of the caster's stat above its equipment
-  bonus, then revealing hidden/cloaked units within radius 3 of the caster.
+  Improve Concentration (AC_CONCENTRATION). A self-buff raising the caster's
+  AGI and DEX by `(2 + level)` percent for one to four minutes, then sweeping
+  the square around the caster once to strip concealment from everyone standing
+  in it. The percentage applies only to the stat the archer actually owns:
+  whatever AGI and DEX gear and cards contribute is subtracted first, so the
+  buff cannot be inflated with equipment.
 
-  rAthena (status.cpp SC_CONCENTRATE): val2 = 2 + level; val3/val4 store the
-  caster's equipment/card AGI/DEX bonus (param_bonus[1]/[4]) so the percentage
-  applies to the base stat only.
+  The buff is identical in both modes: the same percentage per level, the same
+  durations, the same exclusion of gear-granted stats, and the same one-shot
+  reveal over the same area. It is suppressed while the caster stands in a
+  Quagmire in both modes as well.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 45,
@@ -16,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration do
     max_level: 10,
     target_type: :self,
     damage_type: :no_damage,
+    splash_radius: 3,
     sp_cost: [25, 30, 35, 40, 45, 50, 55, 60, 65, 70],
     duration: [
       60_000,
@@ -41,7 +46,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration do
 
   @behaviour Active
 
-  @reveal_radius 3
   @hidden_statuses [:sc_hiding, :sc_cloaking]
 
   @impl Active
@@ -56,16 +60,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentration do
     ]
 
     with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_concentrate, params) do
-      reveal_hidden(caster_id)
+      reveal_hidden(caster_id, definition.splash_radius)
       {:ok, caster}
     end
   end
 
-  defp reveal_hidden(caster_id) do
+  defp reveal_hidden(caster_id, radius) do
     case SpatialIndex.get_unit_position(:player, caster_id) do
       {:ok, {x, y, map_name}} ->
         map_name
-        |> SpatialIndex.get_all_units_in_range(x, y, @reveal_radius)
+        |> SpatialIndex.get_all_units_in_range(x, y, radius)
         |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
         |> Enum.each(&Helpers.remove_statuses(&1, @hidden_statuses))
 

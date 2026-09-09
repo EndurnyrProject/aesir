@@ -37,12 +37,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcChargearrowTest do
       assert d.target_type == :target_enemy
       assert d.damage_type == :damage
       assert d.damage_kind == :weapon
-      assert d.range == -1
+      assert d.range == 9
+      assert d.vulture_range == true
       assert d.knockback == 6
       assert d.requires_ammo == true
-      assert d.cast_time == [400]
-      assert d.fixed_cast_time == [800]
       assert d.sp_cost == [15]
+    end
+
+    test "the cast is split renewal but a single long cast pre-renewal" do
+      assert AcChargearrow.definition(:renewal).cast_time == [400]
+      assert AcChargearrow.definition(:renewal).fixed_cast_time == [800]
+      assert AcChargearrow.definition(:pre_renewal).cast_time == [1_500]
+    end
+
+    test "the skill is bow-only in both modes" do
+      assert AcChargearrow.definition(:renewal).require_weapon == [:bow]
+      assert AcChargearrow.definition(:pre_renewal).require_weapon == [:bow]
     end
   end
 

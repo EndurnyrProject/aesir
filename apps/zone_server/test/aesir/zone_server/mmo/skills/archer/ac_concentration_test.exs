@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Archer.AcConcentrationTest do
       assert definition.damage_type == :no_damage
       assert definition.max_level == 10
       assert definition.sp_cost == [25, 30, 35, 40, 45, 50, 55, 60, 65, 70]
+      assert definition.splash_radius == 3
     end
 
     test "is registered as an active skill" do

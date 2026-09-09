@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
       name: :sm_bash,
       display_name: "Bash",
       max_level: 10,
-      range: -1,
+      range: 1,
       sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15]
     }
 
@@ -104,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
     test "returns one finding per differing field" do
       row = put_in(@matching_row["Range"], 9)
 
-      assert [%{field: :range, aesir: -1, source: source}] =
+      assert [%{field: :range, aesir: 1, source: source}] =
                Audit.compare(@definition, row, :renewal)
 
       assert source == List.duplicate(9, 10)
@@ -124,6 +124,45 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
              )
 
       assert Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :fixed_cast_time))
+    end
+
+    test "a negative source Range compares by its magnitude" do
+      definition = %{@definition | range: 9}
+      row = put_in(@matching_row["Range"], -9)
+
+      refute Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :range))
+    end
+
+    test "an Aesir weapon-range sentinel against a negative source Range is a finding" do
+      definition = %{@definition | range: -1}
+      row = put_in(@matching_row["Range"], -9)
+
+      assert [%{field: :range, aesir: -1, source: source}] =
+               Enum.filter(Audit.compare(definition, row, :renewal), &(&1.field == :range))
+
+      assert source == List.duplicate(9, 10)
+    end
+
+    test "a source Vulture range flag must be declared as vulture_range" do
+      row = put_in(@matching_row["Flags"], %{"AlterRangeVulture" => true})
+
+      assert [%{field: :vulture_range, aesir: false, source: true}] =
+               Enum.filter(
+                 Audit.compare(@definition, row, :renewal),
+                 &(&1.field == :vulture_range)
+               )
+    end
+
+    test "a declared vulture_range matching the source flag is not a finding" do
+      definition = %{@definition | vulture_range: true}
+      row = put_in(@matching_row["Flags"], %{"AlterRangeVulture" => true})
+
+      assert Audit.compare(definition, row, :renewal) == []
+
+      refute Enum.any?(
+               Audit.compare(@definition, @matching_row, :renewal),
+               &(&1.field == :vulture_range)
+             )
     end
 
     test "a source HitCount of 0 normalizes to 1 and matches Aesir's default hit_count" do
@@ -191,6 +230,39 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
       suggestion = Audit.suggest(definition, findings, :renewal)
 
       assert suggestion == "```elixir\nrange: 9\n```"
+    end
+
+    test "renders a per-level integer sequence as a list, never as a charlist" do
+      definition = %Definition{
+        id: 5,
+        name: :sm_bash,
+        display_name: "Bash",
+        max_level: 10,
+        after_cast_delay: []
+      }
+
+      findings = [%{field: :after_cast_delay, aesir: [], source: List.duplicate(100, 10)}]
+
+      suggestion = Audit.suggest(definition, findings, :renewal)
+
+      assert suggestion =~ "after_cast_delay: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100]"
+    end
+
+    test "renders a mode-keyed option's other-mode value as a list too" do
+      definition = %Definition{
+        id: 5,
+        name: :sm_bash,
+        display_name: "Bash",
+        max_level: 10,
+        after_cast_delay: [renewal: [], pre_renewal: List.duplicate(100, 3)]
+      }
+
+      findings = [%{field: :after_cast_delay, aesir: [], source: List.duplicate(50, 3)}]
+
+      suggestion = Audit.suggest(definition, findings, :renewal)
+
+      assert suggestion =~
+               "after_cast_delay: [renewal: [50, 50, 50], pre_renewal: [100, 100, 100]]"
     end
 
     test "renders a mode-keyed option when the other mode's value differs from the source" do
