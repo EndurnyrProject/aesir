@@ -1614,6 +1614,7 @@ enum PartyError {
   TARGET_OFFLINE = 7;
   NOT_MEMBER = 8;
   NOT_SAME_MAP = 9;
+  BASIC_SKILL_REQUIRED = 10;
 }
 
 // Server -> client, acknowledgement of a party request. `action` names the

@@ -3,20 +3,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic do
   Basic Skill (NV_BASIC). A pure gating passive: it contributes no stat bonuses
   and has no cast, but its learned level gates basic player actions.
 
-  In rAthena each gated client action checks `pc_checkskill(sd, NV_BASIC)`
-  (only when `battle_config.basic_skill_check` is on, and bypassed by
-  `SU_BASIC_SKILL` >= 1, which is not yet implemented here):
+  Each gated action checks the caster's learned Basic Skill level before it is
+  allowed to proceed, regardless of any bypass a summoner-class basic-skill
+  substitute would otherwise grant (not implemented here):
 
-    | NV_BASIC level | Unlocks        | rAthena source        |
-    |----------------|----------------|-----------------------|
-    | >= 1           | trade          | clif.cpp:12515        |
-    | >= 2           | emotions       | clif.cpp:11636        |
-    | >= 3           | sit / stand    | clif.cpp:11739        |
-    | >= 4           | create chat room | clif.cpp:12378      |
-    | >= 7           | create party   | clif.cpp:13806, 13829 |
+    | NV_BASIC level | Unlocks           |
+    |-----------------|-------------------|
+    | >= 1            | trade             |
+    | >= 2            | emotions          |
+    | >= 3            | sit / stand       |
+    | >= 4            | create chat room  |
+    | >= 7            | create/join party |
+
+  Renewal and pre-renewal gate these actions identically: the level
+  requirements above, and the set of gated actions, are mode-independent.
 
   Declaring `@behaviour Skill.Passive` with no callbacks registers the skill as
-  passive-capable (matching rAthena's `INF_PASSIVE_SKILL`); the `use Skill`
+  a passive with no stat or combat contribution; the `use Skill`
   `@before_compile` hook injects no-op defaults for every passive channel, which
   is exactly correct since NV_BASIC contributes nothing.
 

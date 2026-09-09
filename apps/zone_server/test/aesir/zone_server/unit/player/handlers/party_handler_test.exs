@@ -50,10 +50,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
     account
   end
 
+  @nv_basic_id 1
+
+  # Every fixture is trained to full Basic Skill (level 9) by default, since
+  # this file's cases exercise party mechanics, not the Basic Skill gate
+  # itself (covered separately in the "Basic Skill gate" describe block).
   defp character_fixture(attrs) do
     {:ok, character} =
       attrs
-      |> Enum.into(%{char_num: 0, class: 0, base_level: 1})
+      |> Enum.into(%{
+        char_num: 0,
+        class: 0,
+        base_level: 1,
+        learned_skills: %{@nv_basic_id => 9}
+      })
       |> Character.new()
       |> Repo.insert()
 
@@ -182,6 +192,44 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandlerTest do
                           success: false,
                           error: :ALREADY_IN_PARTY
                         }}}
+    end
+  end
+
+  describe "handle_create_request/2 Basic Skill gate" do
+    test "a requester with NV_BASIC below level 7 acks BASIC_SKILL_REQUIRED" do
+      low_skill =
+        character_fixture("TooGreen", %{learned_skills: %{@nv_basic_id => 6}})
+
+      assert {:noreply, _state} =
+               PartyHandler.handle_create_request(
+                 %PartyCreateRequest{name: "TooGreenParty"},
+                 state_for(low_skill)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:party_action_result,
+                        %PartyActionResult{
+                          action: "create",
+                          success: false,
+                          error: :BASIC_SKILL_REQUIRED
+                        }}}
+
+      assert Repo.get(Character, low_skill.id).party_id == 0
+    end
+
+    test "a requester with NV_BASIC at level 7 creates a party and acks success" do
+      trained =
+        character_fixture("JustEnough", %{learned_skills: %{@nv_basic_id => 7}})
+
+      assert {:noreply, _state} =
+               PartyHandler.handle_create_request(
+                 %PartyCreateRequest{name: "JustEnoughParty"},
+                 state_for(trained)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:party_action_result,
+                        %PartyActionResult{action: "create", success: true, error: :NONE}}}
     end
   end
 

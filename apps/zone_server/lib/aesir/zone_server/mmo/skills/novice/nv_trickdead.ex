@@ -2,8 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvTrickdead do
   @moduledoc """
   Play Dead (NV_TRICKDEAD). Toggles SC_TRICKDEAD on the caster.
 
-  The caster feigns death; re-casting removes the status (the player stands back
-  up). SC_TRICKDEAD has no duration (persistent toggle), so no params are passed.
+  The caster feigns death; re-casting removes the status (the player stands
+  back up). SC_TRICKDEAD has no duration (persistent toggle), so no params
+  are passed.
+
+  Renewal and pre-renewal both apply the toggle as a permanent status with no
+  duration and no other side effect; the mechanic is not mode-gated.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 143,

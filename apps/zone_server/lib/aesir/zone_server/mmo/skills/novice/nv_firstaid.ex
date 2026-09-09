@@ -1,10 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Novice.NvFirstaid do
   @moduledoc """
-  First Aid (NV_FIRSTAID). Restores a flat 5 HP to the caster.
+  First Aid (NV_FIRSTAID). Restores a flat 5 HP to the caster, clamped to max
+  HP. The heal amount is fixed and does not scale with skill level (the skill
+  only has one level). The 3 SP cost is charged by the interpreter
+  (`sp_cost`), so the cast only mutates HP and returns the updated caster
+  state.
 
-  rAthena: `status->heal(bl, 5, 0, 0)` - a fixed 5 HP heal regardless of level,
-  clamped to max HP. The 3 SP cost is charged by the interpreter (`sp_cost`), so
-  the cast only mutates HP and returns the updated caster state.
+  Renewal and pre-renewal heal for the same flat 5 HP at the same 3 SP cost;
+  the mechanic is not mode-gated.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 142,

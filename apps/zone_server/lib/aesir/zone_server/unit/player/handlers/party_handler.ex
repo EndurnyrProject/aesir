@@ -43,22 +43,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   alias Aesir.Net.PartyLeaveRequest
   alias Aesir.Net.PartyOptionsRequest
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @invite_ttl_ms 30_000
 
-  @doc "Creates a party led by the requester (design \"Create\")."
+  @doc """
+  Creates a party led by the requester (design "Create"). Gated by the
+  learned Basic Skill level (>= 7), matching the same requirement in both
+  renewal and pre-renewal.
+  """
   @spec handle_create_request(PartyCreateRequest.t(), SessionState.t()) ::
           {:noreply, SessionState.t()}
   def handle_create_request(%PartyCreateRequest{name: name}, state) do
     result =
-      with {:ok, requester} <- fetch_character(requester_char_id(state)),
+      with :ok <- nv_basic_gate(state, :party),
+           {:ok, requester} <- fetch_character(requester_char_id(state)),
            :ok <- require_no_party(requester) do
         PartyManager.create(name, requester)
       end
@@ -200,6 +208,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
     end
   end
 
+  # Returns `:ok` when the player lacks a stats struct (e.g. pre-spawn), so an
+  # early client action never crashes the session.
+  defp nv_basic_gate(
+         %{
+           game_state: %PlayerState{stats: %Stats{progression: %{learned_skills: learned_skills}}}
+         },
+         action
+       )
+       when is_map(learned_skills) do
+    NvBasic.allows_action?(learned_skills, action)
+  end
+
+  defp nv_basic_gate(_state, _action), do: :ok
+
   defp requester_char_id(%{game_state: game_state}), do: game_state.character_id
 
   defp fetch_character(char_id) do
@@ -326,6 +348,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PartyHandler do
   defp map_error(:not_member), do: :NOT_MEMBER
   defp map_error(:not_same_map), do: :NOT_SAME_MAP
   defp map_error(:not_found), do: :NOT_MEMBER
+  defp map_error(:basic_skill_level), do: :BASIC_SKILL_REQUIRED
 
   defp map_error(other) do
     Logger.warning("Unmapped party error reason #{inspect(other)}, defaulting to NOT_MEMBER")

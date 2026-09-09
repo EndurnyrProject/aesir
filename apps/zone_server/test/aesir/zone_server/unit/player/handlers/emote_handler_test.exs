@@ -5,14 +5,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandlerTest do
   alias Aesir.ZoneServer.Mmo.Emotion
   alias Aesir.ZoneServer.Unit.Emote
   alias Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
 
   setup :verify_on_exit!
 
   @char_id 42
+  @nv_basic_id 1
 
   defp state(overrides \\ %{}) do
     game_state = Map.merge(%{character_id: @char_id, last_emote_at: nil}, overrides)
     %{game_state: game_state, connection_pid: self()}
+  end
+
+  defp state_with_nv_basic(level) do
+    %{
+      game_state: %PlayerState{
+        character_id: @char_id,
+        last_emote_at: nil,
+        stats: %Stats{progression: %{learned_skills: %{@nv_basic_id => level}}}
+      },
+      connection_pid: self()
+    }
   end
 
   describe "handle_emote/2" do
@@ -61,6 +75,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EmoteHandlerTest do
 
       st = state()
       assert {:noreply, ^st} = EmoteHandler.handle_emote(Emotion.id(:chat_prohibit), st)
+    end
+
+    test "an emote is refused when NV_BASIC is below level 2" do
+      reject(&Emote.show/2)
+
+      st = state_with_nv_basic(1)
+      assert {:noreply, ^st} = EmoteHandler.handle_emote(Emotion.id(:surprise), st)
+    end
+
+    test "an emote passes when NV_BASIC is at level 2" do
+      expect(Emote, :show, fn {:player, @char_id}, _type -> :ok end)
+
+      st = state_with_nv_basic(2)
+      {:noreply, new_state} = EmoteHandler.handle_emote(Emotion.id(:surprise), st)
+      assert is_integer(new_state.game_state.last_emote_at)
     end
 
     test "a dice emote is reshuffled to a value within the dice range" do
