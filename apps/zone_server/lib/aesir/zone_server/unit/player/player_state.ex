@@ -12,12 +12,12 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.AttackSpeed
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
-  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Option
+  alias Aesir.ZoneServer.Mmo.Race
   alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Combo
@@ -955,7 +955,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   def get_process_pid(%__MODULE__{process_pid: pid}), do: pid
 
   @impl Aesir.ZoneServer.Unit
-  def get_race(%__MODULE__{}), do: :human
+  def get_race(%__MODULE__{}), do: Race.player_race()
 
   @impl Aesir.ZoneServer.Unit
   def get_element(%__MODULE__{}), do: {:neutral, 1}
@@ -1035,7 +1035,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
       max_sp: state.stats.derived_stats.max_sp,
       progression: state.stats.progression,
       element: defense_element(state.stats),
-      race: RaceModifiers.player_race(),
+      race: get_race(state),
       size: :medium,
       weapon: %{
         type: weapon_type,

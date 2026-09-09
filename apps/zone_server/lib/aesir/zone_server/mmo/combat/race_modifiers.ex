@@ -6,42 +6,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   Demon Bane (`demon_bane_atk/2`), Beast Bane (`beast_bane_atk/2`), Divine Protection
   (`divine_protection_def/2`), and Dragonology (`dragonology_atk_rate/2`,
   `dragonology_matk_rate/2`, `dragonology_resist_rate/2`), plus the race
-  taxonomy and predicates. Card / equipment race bonuses (`bonus2 bAddRace, ...`)
-  belong to the scripted item-bonus engine, which does not exist yet.
-
-  Race types in Ragnarok Online:
-  - :formless - Slimes, plants, and other basic life forms
-  - :undead - Undead monsters and players
-  - :brute - Animal-like monsters
-  - :plant - Plant monsters
-  - :insect - Bug-type monsters
-  - :fish - Aquatic monsters
-  - :demon - Demonic monsters
-  - :demi_human - Human-like monsters
-  - :player_human - Player combatants (renewal `RC_Player_Human`)
-  - :player_doram - Doram player combatants (renewal `RC_Player_Doram`); no
-    Aesir unit carries this race yet, so bonuses keyed to it are inert
-  - :angel - Holy/angelic monsters
-  - :dragon - Dragon-type monsters
-  - :boss - Special boss monsters (receives different modifiers)
+  predicates. Shared race types and the mode-specific human-player race belong
+  to `Aesir.ZoneServer.Mmo.Race`. Card and equipment race bonuses belong to the
+  scripted item-bonus engine.
   """
 
-  alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Race
 
-  @type race ::
-          :formless
-          | :undead
-          | :brute
-          | :plant
-          | :insect
-          | :fish
-          | :demon
-          | :demi_human
-          | :player_human
-          | :player_doram
-          | :angel
-          | :dragon
-          | :boss
+  @typedoc "A combatant's primary race."
+  @type race :: Race.t()
 
   # Races against which Demon Bane / Divine Protection apply. Only mobs carry
   # these, so both bonuses are PvE-only in practice.
@@ -142,12 +115,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   Gets the player race for the active game mode.
   """
   @spec player_race() :: :player_human | :demi_human
-  def player_race do
-    case GameMode.mode() do
-      :renewal -> :player_human
-      :pre_renewal -> :demi_human
-    end
-  end
+  defdelegate player_race(), to: Race
 
   @doc """
   Checks if a race is considered undead.
@@ -158,10 +126,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   def undead?(_), do: false
 
   @doc """
-  Checks if a race is considered a boss.
-  Bosses typically have special resistances and mechanics.
+  Checks the `:boss` classification label for compatibility with existing callers.
+  Boss classification is independent of a unit's race.
   """
-  @spec boss?(race()) :: boolean()
+  @spec boss?(atom()) :: boolean()
   def boss?(:boss), do: true
   def boss?(_), do: false
 end

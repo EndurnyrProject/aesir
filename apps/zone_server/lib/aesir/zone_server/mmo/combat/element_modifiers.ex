@@ -7,35 +7,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiers do
   fields multiply damage before the table modifier, represented here by multiplying both factors.
   """
 
+  alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.Mechanics
 
   @typedoc "Element used by attacks and defenses."
-  @type element ::
-          :neutral
-          | :water
-          | :earth
-          | :fire
-          | :wind
-          | :poison
-          | :holy
-          | :shadow
-          | :ghost
-          | :undead
+  @type element :: Element.t()
   @typedoc "Defense element level."
-  @type element_level :: 1..4
-
-  @element_ids %{
-    neutral: 0,
-    water: 1,
-    earth: 2,
-    fire: 3,
-    wind: 4,
-    poison: 5,
-    holy: 6,
-    shadow: 7,
-    ghost: 8,
-    undead: 9
-  }
+  @type element_level :: Element.level()
 
   @doc """
   Returns the numeric wire id for an element atom.
@@ -43,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.ElementModifiers do
   Unknown elements fall back to `0` (neutral).
   """
   @spec id(element()) :: non_neg_integer()
-  def id(element), do: Map.get(@element_ids, element, 0)
+  defdelegate id(element), to: Element
 
   @doc """
   Returns the damage modifier for an attack and defense element.

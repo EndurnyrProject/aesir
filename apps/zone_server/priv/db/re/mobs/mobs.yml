@@ -114816,7 +114816,7 @@
   modes:
     - boss
   name: Dummy (Human Player)
-  race: player
+  race: player_human
   size: medium
   stats:
     agi: 0
@@ -114841,7 +114841,7 @@
   modes:
     - boss
   name: Dummy (Doram Player)
-  race: player
+  race: player_doram
   size: small
   stats:
     agi: 0

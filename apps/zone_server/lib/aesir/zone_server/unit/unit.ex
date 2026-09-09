@@ -7,31 +7,16 @@ defmodule Aesir.ZoneServer.Unit do
   for status effect calculations, combat operations, and other game mechanics.
   """
 
-  @type entity_race ::
-          :human
-          | :demi_human
-          | :undead
-          | :beast
-          | :brute
-          | :demon
-          | :dragon
-          | :angel
-          | :formless
-          | :insect
-          | :fish
-          | :plant
-  @type entity_element ::
-          :neutral
-          | :water
-          | :earth
-          | :fire
-          | :wind
-          | :poison
-          | :holy
-          | :shadow
-          | :ghost
-          | :undead
-  @type entity_size :: :small | :medium | :large
+  alias Aesir.ZoneServer.Mmo.Element
+  alias Aesir.ZoneServer.Mmo.Race
+  alias Aesir.ZoneServer.Mmo.Size
+
+  @typedoc "An entity's primary race."
+  @type entity_race :: Race.t()
+  @typedoc "An entity's elemental property."
+  @type entity_element :: Element.t()
+  @typedoc "An entity's size category."
+  @type entity_size :: Size.t()
   @type unit_type :: :player | :mob | :npc | :pet | :homunculus | :mercenary | :skill_unit
 
   @doc """

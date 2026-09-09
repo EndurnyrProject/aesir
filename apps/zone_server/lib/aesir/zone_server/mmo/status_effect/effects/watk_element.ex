@@ -26,21 +26,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
     ],
     no_save: true
 
-  @elements %{
-    0 => :neutral,
-    1 => :water,
-    2 => :earth,
-    3 => :fire,
-    4 => :wind,
-    5 => :poison,
-    6 => :holy,
-    7 => :shadow,
-    8 => :ghost,
-    9 => :undead
-  }
+  alias Aesir.ZoneServer.Mmo.Element
 
   @impl true
   def modifiers(instance, _context) do
-    %{attack_element: Map.fetch!(@elements, instance.val1)}
+    %{attack_element: Element.from_id!(instance.val1)}
   end
 end

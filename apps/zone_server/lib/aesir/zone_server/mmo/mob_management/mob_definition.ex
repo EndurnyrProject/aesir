@@ -3,28 +3,20 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
   Static mob data: the core attributes and properties of a mob type.
   """
 
+  alias Aesir.ZoneServer.Mmo.Element
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
+  alias Aesir.ZoneServer.Mmo.Race
+  alias Aesir.ZoneServer.Mmo.Size
 
   @typedoc """
   Mob size categories
   """
-  @type size :: :small | :medium | :large
+  @type size :: Size.t()
 
   @typedoc """
-  Mob race types
+  Mob race types, including the distinct player races used by training dummies.
   """
-  @type race ::
-          :formless
-          | :undead
-          | :brute
-          | :plant
-          | :insect
-          | :fish
-          | :demon
-          | :demi_human
-          | :angel
-          | :dragon
-          | :player
+  @type race :: Race.t()
 
   @typedoc """
   Secondary mob group classifications
@@ -34,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.MobDefinition do
   @typedoc """
   Element types with level
   """
-  @type element :: {atom(), integer()}
+  @type element :: {Element.t(), Element.level()}
 
   @enforce_keys [
     :id,

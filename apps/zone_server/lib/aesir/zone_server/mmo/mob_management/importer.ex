@@ -32,9 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.MobManagement.Importer do
     "demihuman" => :demi_human,
     "angel" => :angel,
     "dragon" => :dragon,
-    "player" => :player,
-    "player_human" => :player,
-    "player_doram" => :player
+    "player_human" => :player_human,
+    "player_doram" => :player_doram
   }
 
   @elements %{

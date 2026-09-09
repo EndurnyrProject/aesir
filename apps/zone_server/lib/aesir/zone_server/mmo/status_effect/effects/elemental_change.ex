@@ -28,22 +28,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ElementalChange do
     calc_flags: [:def_ele],
     icon: :armor_property
 
-  @elements %{
-    0 => :neutral,
-    1 => :water,
-    2 => :earth,
-    3 => :fire,
-    4 => :wind,
-    5 => :poison,
-    6 => :holy,
-    7 => :shadow,
-    8 => :ghost,
-    9 => :undead
-  }
+  alias Aesir.ZoneServer.Mmo.Element
 
   @impl true
   def modifiers(instance, _context) do
-    element = Map.fetch!(@elements, instance.val2)
+    element = Element.from_id!(instance.val2)
     %{element_override: {element, cap_level(instance.val1)}}
   end
 

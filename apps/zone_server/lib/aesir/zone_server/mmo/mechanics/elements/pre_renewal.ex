@@ -11,19 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
   @behaviour Aesir.ZoneServer.Mmo.Mechanics.Elements
 
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
-
-  @element_indexes %{
-    neutral: 0,
-    water: 1,
-    earth: 2,
-    fire: 3,
-    wind: 4,
-    poison: 5,
-    holy: 6,
-    shadow: 7,
-    ghost: 8,
-    undead: 9
-  }
+  alias Aesir.ZoneServer.Mmo.Element
 
   @tables {
     # Defense level 1
@@ -93,7 +81,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.Elements.PreRenewal do
 
   defp base_modifier(attack_element, defense_element, defense_level)
        when defense_level in 1..4 do
-    case {@element_indexes[attack_element], @element_indexes[defense_element]} do
+    case {Element.id(attack_element, nil), Element.id(defense_element, nil)} do
       {nil, _defense_index} ->
         1.0
 

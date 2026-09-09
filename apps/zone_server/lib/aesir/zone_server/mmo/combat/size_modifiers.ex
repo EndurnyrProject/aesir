@@ -8,11 +8,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SizeModifiers do
   """
 
   alias Aesir.ZoneServer.Mmo.Mechanics
+  alias Aesir.ZoneServer.Mmo.Size
 
   @typedoc "Weapon type used by the combat pipeline."
   @type weapon_type :: atom()
   @typedoc "Target size used by weapon-size modifiers."
-  @type size :: :small | :medium | :large
+  @type size :: Size.t()
 
   @doc """
   Gets the damage modifier percent for a weapon type and target size.
