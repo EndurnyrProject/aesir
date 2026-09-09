@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
       packet builders;
     * by capability - `active_module_for/1`, `ground_module_for/1`,
       `passive_module_for/1`, `passive_modules/0`, `menu_module_for/1`,
-      `performance_module_for/1` from each module's `__skill_capabilities__/0`.
+      `performance_module_for/1` from each module's `__skill_capabilities__/0`;
+    * by module alone - `module_for/1`, regardless of capability.
 
   Discovery walks the `:zone_server` application manifest and keeps the modules
   exporting `__skill_capabilities__/0`, which `use Skill` injects. Reading the
@@ -37,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
            by_id: %{integer() => Definition.t()},
            by_name: %{atom() => Definition.t()},
            requirements: %{integer() => [Requirement.t()]},
+           modules: %{atom() => module()},
            active: %{atom() => module()},
            ground: %{atom() => module()},
            passive: %{atom() => module()},
@@ -58,6 +60,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
 
   @spec requirements_for(integer()) :: {:ok, [Requirement.t()]} | :error
   def requirements_for(id), do: Map.fetch(index().requirements, id)
+
+  @doc "The skill module for `name`, regardless of its capabilities (active, passive, ...)."
+  @spec module_for(atom()) :: {:ok, module()} | :error
+  def module_for(name), do: Map.fetch(index().modules, name)
 
   @spec active_module_for(atom()) :: {:ok, module()} | :error
   def active_module_for(name), do: Map.fetch(index().active, name)
@@ -167,6 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
       by_id: Map.new(definitions, &{&1.id, &1}),
       by_name: Map.new(definitions, &{&1.name, &1}),
       requirements: Map.new(definitions, &{&1.id, &1.requires}),
+      modules: Map.new(modules, &{&1.skill_name(), &1}),
       active: modules_with_capability(modules, :active),
       ground: modules_with_capability(modules, :ground),
       passive: modules_with_capability(modules, :passive),
