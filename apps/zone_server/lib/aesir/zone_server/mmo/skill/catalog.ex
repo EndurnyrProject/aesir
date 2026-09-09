@@ -14,9 +14,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   exporting `__skill_capabilities__/0`, which `use Skill` injects. Reading the
   manifest rather than the code server means modules defined in test files are
   structurally excluded, and the catalog does not recompile when a skill module
-  changes. The indexes are built lazily on first access and cached in
-  `:persistent_term`; `reload/0` rebuilds them after adding or editing skills in
-  a long-running session.
+  changes. Definitions are indexed for the booted game mode: `by_id/1`, `by_name/1`
+  and `all/0` return each skill's `definition(GameMode.mode())`. The indexes are
+  built lazily on first access and cached in `:persistent_term`; `reload/0`
+  rebuilds them for the current mode after adding or editing skills in a
+  long-running session.
 
   New skills are added by creating a module under `Aesir.ZoneServer.Mmo.Skills`
   that does `use Skill` - no registration step. Job namespaces and the
@@ -24,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   convention, and absent future modules simply have no catalog entry. This
   replaces the former per-capability registries.
   """
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
 
@@ -142,7 +145,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   @spec build() :: index()
   defp build do
     modules = discover()
-    definitions = modules |> Enum.map(& &1.definition()) |> Enum.sort_by(& &1.id)
+    mode = GameMode.mode()
+    definitions = modules |> Enum.map(& &1.definition(mode)) |> Enum.sort_by(& &1.id)
     performance = modules_with_capability(modules, :performance)
     ensemble = modules_with_capability(modules, :ensemble)
 

@@ -91,6 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
   end
 
   describe "mode-keyed use Skill options" do
+    @tag game_mode: :renewal
     test "a mode-keyed option resolves per mode through definition/0 and definition/1" do
       [{module, _bytecode}] =
         Code.compile_string("""
@@ -105,6 +106,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest do
         """)
 
       assert module.definition().sp_cost == [10]
+      assert module.definition(:renewal).sp_cost == [10]
+      assert module.definition(:pre_renewal).sp_cost == [12]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a mode-keyed option resolves definition/0 to the pre-renewal entry when booted pre-renewal" do
+      [{module, _bytecode}] =
+        Code.compile_string("""
+        defmodule Aesir.ZoneServer.Mmo.Skill.DefinitionTest.ModeKeyedSkillPreRenewal do
+          use Aesir.ZoneServer.Mmo.Skill,
+            id: 9_009,
+            name: :mode_keyed_skill_pre_renewal,
+            display_name: "Mode Keyed Skill Pre-Renewal",
+            max_level: 1,
+            sp_cost: [renewal: [10], pre_renewal: [12]]
+        end
+        """)
+
+      assert module.definition().sp_cost == [12]
       assert module.definition(:renewal).sp_cost == [10]
       assert module.definition(:pre_renewal).sp_cost == [12]
     end

@@ -20,8 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `[renewal: value, pre_renewal: value]` instead of a plain value, so a skill
   whose renewal and pre-renewal numbers diverge declares both from the same
   `use Skill` call. `<SkillModule>.definition/1` selects the resolved
-  `Definition` for a given `Aesir.Commons.GameMode.t()`; `definition/0` is the
-  renewal struct.
+  `Definition` for a given `Aesir.Commons.GameMode.t()`; `definition/0` resolves
+  the booted mode (`Aesir.Commons.GameMode.mode/0`).
 
   Use `build!/2` to construct a validated definition from `use` options.
   """

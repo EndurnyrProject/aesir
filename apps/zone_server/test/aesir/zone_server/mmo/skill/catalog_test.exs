@@ -104,6 +104,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     :wz_waterball
   ]
 
+  @tag game_mode: :renewal
+  test "by_name/1 returns the renewal definition when booted in renewal mode" do
+    assert {:ok, defn} = Catalog.by_name(:sm_bash)
+    assert defn == SmBash.definition(:renewal)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "by_name/1 returns the pre-renewal definition when booted in pre-renewal mode" do
+    assert {:ok, defn} = Catalog.by_name(:sm_bash)
+    assert defn == SmBash.definition(:pre_renewal)
+  end
+
   test "by_id/1 loads AL_INCAGI with correct structure" do
     assert {:ok, %Definition{} = def} = Catalog.by_id(29)
     assert def.name == :al_incagi

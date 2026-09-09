@@ -58,6 +58,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
       end
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -108,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
       def skill_name, do: @skill_definition.renewal.name
 
       @doc false
-      def definition, do: @skill_definition.renewal
+      def definition, do: definition(GameMode.mode())
 
       @doc false
       def definition(mode), do: @skill_definition[mode]
