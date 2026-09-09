@@ -1,9 +1,15 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmTwohand do
   @moduledoc """
-  Two-Handed Sword Mastery (SM_TWOHAND). Adds flat ATK while wielding a
+  Two-Handed Sword Mastery (SM_TWOHAND). Adds mastery ATK while wielding a
   two-handed sword.
 
-  rAthena: +4 ATK per skill level for two-handed swords.
+  Renewal: +4 mastery ATK per skill level, carried in the renewal attack
+  breakdown's own mastery term and therefore applied after a skill's damage
+  ratio rather than being scaled by it.
+
+  Pre-renewal: the same +4 per level for the two-handed sword. Classic adds it
+  directly to weapon damage; that placement difference is owned by the
+  physical-attack formula family, so this passive only reports the amount.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 3,

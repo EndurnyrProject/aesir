@@ -164,6 +164,44 @@ defmodule Aesir.ZoneServer.Mmo.CombatSplashTest do
     assert Enum.sort(typed_hits) == [{:mob, 2001}, {:mob, 2002}]
   end
 
+  test "execute_splash_attack resolves a distance-keyed skill_ratio per target" do
+    caster = build_caster()
+    test_pid = self()
+
+    stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, _range ->
+      [{:mob, 2001}, {:mob, 2002}]
+    end)
+
+    stub(UnitRegistry, :get_unit, fn
+      :mob, 2001 -> {:ok, {MobState, build_mob_state(2001, 151, 150), self()}}
+      :mob, 2002 -> {:ok, {MobState, build_mob_state(2002, 152, 150), self()}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn
+      :mob, 2001 -> {:ok, {151, 150, @map_name}}
+      :mob, 2002 -> {:ok, {152, 150, @map_name}}
+    end)
+
+    stub(DamageCalculator, :calculate_damage, fn _attacker, target, opts ->
+      send(test_pid, {:ratio, target.unit_id, opts[:skill_ratio]})
+      {:ok, %{damage: 50, is_critical: false}}
+    end)
+
+    stub(PacketFactory, :build_skill_damage_packet, fn _a, _t, _id, _lvl, _res -> :packet end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, :packet -> :ok end)
+    stub(MobSession, :apply_damage, fn _pid, 50, @caster_id -> :ok end)
+
+    Combat.execute_splash_attack(caster, @center, 2,
+      skill_id: 7,
+      skill_level: 5,
+      skill_ratio: fn distance -> if distance <= 1, do: 200, else: 150 end,
+      skip_crit: true
+    )
+
+    assert_received {:ratio, 2001, 200}
+    assert_received {:ratio, 2002, 150}
+  end
+
   test "execute_splash_attack forwards an explicit element without changing the default" do
     caster = build_caster()
     target = build_mob_state(2001, 151, 150)

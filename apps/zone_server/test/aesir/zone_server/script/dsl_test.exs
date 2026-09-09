@@ -142,13 +142,37 @@ defmodule Aesir.ZoneServer.Script.DslTest do
     end
 
     test "consumables gain five percent per learned Potion Research level" do
-      stub(Catalog, :by_name, fn :am_learningpotion -> {:ok, %{id: 227}} end)
-      stub(Learned, :learned_level, fn %{}, 227 -> 4 end)
+      stub(Catalog, :by_name, fn
+        :am_learningpotion -> {:ok, %{id: 227}}
+        :sm_recovery -> {:ok, %{id: 4}}
+      end)
+
+      stub(Learned, :learned_level, fn
+        %{}, 227 -> 4
+        %{}, 4 -> 0
+      end)
 
       ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
 
       assert ctx.game_state.stats.current_state.hp == 220
       assert ctx.game_state.stats.current_state.sp == 130
+    end
+
+    test "HP consumables gain ten percent per learned Increase HP Recovery level" do
+      stub(Catalog, :by_name, fn
+        :sm_recovery -> {:ok, %{id: 4}}
+        :am_learningpotion -> {:ok, %{id: 227}}
+      end)
+
+      stub(Learned, :learned_level, fn
+        %{}, 4 -> 5
+        %{}, 227 -> 0
+      end)
+
+      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 250
+      assert ctx.game_state.stats.current_state.sp == 110
     end
 
     test "HP consumables include the item heal rate bonus" do

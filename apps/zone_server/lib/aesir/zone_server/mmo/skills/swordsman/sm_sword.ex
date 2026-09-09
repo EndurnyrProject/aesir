@@ -1,9 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmSword do
   @moduledoc """
-  Sword Mastery (SM_SWORD). Adds flat ATK while wielding a one-handed sword or
-  dagger.
+  Sword Mastery (SM_SWORD). Adds mastery ATK while wielding a one-handed sword
+  or a dagger.
 
-  rAthena: +4 ATK per skill level for single-handed swords/daggers.
+  Renewal: +4 mastery ATK per skill level. Mastery ATK is its own term in the
+  renewal attack breakdown, added after a skill's damage ratio, so the bonus is
+  never amplified by a skill's percentage.
+
+  Pre-renewal: the same +4 per level for the same two weapon classes. Classic
+  folds the bonus straight into weapon damage instead of keeping a separate
+  mastery term; that placement difference belongs to the physical-attack
+  formula family, not to this passive, which only reports the flat amount.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 2,

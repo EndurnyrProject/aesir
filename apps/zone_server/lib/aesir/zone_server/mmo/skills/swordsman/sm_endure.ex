@@ -1,8 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmEndure do
   @moduledoc """
-  Endure (SM_ENDURE). Self-casts SC_ENDURE.
+  Endure (SM_ENDURE). Self-buff that shrugs off incoming blows.
 
-  rAthena: val1 = skill level (MDEF bonus), duration per level from skill_db.
+  Renewal: grants MDEF equal to the skill level for a duration that grows from
+  10 seconds at level 1 to 37 seconds at level 10, on a 10 second cooldown. The
+  buff also wears off early once the carrier has absorbed seven hits.
+
+  Pre-renewal: identical MDEF, identical per-level durations, identical
+  cooldown and the same seven hit budget. Nothing about the skill is
+  era-gated.
+
+  In the source the hit budget is only spent by non-player attackers outside
+  arena and siege maps; here every hit spends one, which shortens the buff in
+  player-versus-player.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 8,

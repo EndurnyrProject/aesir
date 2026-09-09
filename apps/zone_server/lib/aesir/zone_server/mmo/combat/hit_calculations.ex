@@ -26,14 +26,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
 
   `perfect_hit` is the equipment-granted percent chance to bypass the accuracy
   roll; call sites that carry no equipment context may omit it and it reads
-  as 0. `hit_rate_bonus_pct` is a relative percent bonus applied to the
-  already-clamped base hit rate (e.g. a skill granting `+X%` accuracy for its
-  own attack only); omitted call sites read as 0 (no change).
+  as 0. `skill_hit_rate_bonus_pct` and `hit_rate_bonus_pct` are relative percent
+  bonuses applied in that order to the already-clamped base hit rate: the first
+  is the cast skill's own accuracy bonus, the second the attacker's standing
+  bonus from passives and gear. They compound; omitted call sites read as 0.
   """
   @type attacker_stats :: %{
           :hit => non_neg_integer(),
           :char_id => integer(),
           optional(:perfect_hit) => non_neg_integer(),
+          optional(:skill_hit_rate_bonus_pct) => integer(),
           optional(:hit_rate_bonus_pct) => integer()
         }
 
@@ -98,13 +100,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
   The mode base is `0` in renewal and `80` in pre-renewal.
 
   The result is clamped to 0-100% range to prevent impossible values, then
-  scaled by the attacker's optional `hit_rate_bonus_pct` (a relative percent
-  bonus applied to that clamped rate, not to the raw `hit` stat — e.g. a
-  skill's own `+5%` per level accuracy bonus) and clamped again.
+  scaled by the attacker's two optional relative bonuses and clamped again.
+  Both are percentages applied to the clamped rate rather than additions to the
+  raw `hit` stat: `skill_hit_rate_bonus_pct` is the cast skill's own accuracy
+  bonus (a skill's `+5%` per level) and applies first, `hit_rate_bonus_pct` is
+  the attacker's standing bonus from passives and gear and applies to that
+  already-boosted rate. The two therefore **compound**: `+50%` and `+20%` give
+  `1.8x`, not `1.7x`.
 
   ## Parameters
-    - attacker_stats: Map containing attacker's hit stat and optional
-      hit_rate_bonus_pct
+    - attacker_stats: Map containing attacker's hit stat and the optional
+      skill_hit_rate_bonus_pct and hit_rate_bonus_pct
     - target_stats: Map containing target's flee stat
 
   ## Returns
@@ -127,11 +133,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
 
     clamped_hit_rate = max(0, min(100, raw_hit_rate))
 
-    bonus_pct = Map.get(attacker_stats, :hit_rate_bonus_pct, 0)
-    scaled_hit_rate = div(clamped_hit_rate * (100 + bonus_pct), 100)
+    scaled_hit_rate =
+      clamped_hit_rate
+      |> scale_by(Map.get(attacker_stats, :skill_hit_rate_bonus_pct, 0))
+      |> scale_by(Map.get(attacker_stats, :hit_rate_bonus_pct, 0))
 
     max(0, min(100, scaled_hit_rate))
   end
+
+  defp scale_by(hit_rate, 0), do: hit_rate
+  defp scale_by(hit_rate, bonus_pct), do: div(hit_rate * (100 + bonus_pct), 100)
 
   @doc """
   Checks if perfect dodge is triggered

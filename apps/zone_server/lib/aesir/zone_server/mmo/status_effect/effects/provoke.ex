@@ -5,10 +5,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Provoke do
   Raises the target's ATK (val2) while lowering its DEF (val3), drawing its
   attention to the caster. Wakes targets out of Freeze, Stone, Sleep and
   Trick Dead.
+
+  Undead and status-immune targets cannot be taunted at all, in either mode.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_provoke,
     no_dispel: false,
+    immunity: [:undead, :status_immune],
     properties: [:debuff],
     calc_flags: [:atk, :def, :def2, :hit],
     end_on_start: [:sc_freeze, :sc_stone, :sc_sleep, :sc_trickdead],

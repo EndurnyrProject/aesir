@@ -1704,7 +1704,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       :ok
     end
 
-    test "a skill accuracy bonus composes with the attacker's persistent bonus" do
+    test "a skill accuracy bonus reaches the roll separately from the persistent bonus" do
       Mimic.copy(HitCalculations)
       attacker = combatant(1001, :player, hit_rate_bonus_pct: 20)
       target = combatant(2001, :mob)
@@ -1714,7 +1714,9 @@ defmodule Aesir.ZoneServer.Mmo.CombatTest do
       stub(UnitRegistry, :get_unit, fn :mob, 2001 -> {:ok, {FakeUnit, target_state, self()}} end)
 
       expect(HitCalculations, :calculate_hit_result, fn attacker_stats, _defender_stats ->
-        assert attacker_stats.hit_rate_bonus_pct == 55
+        # Kept apart so the two compound on the clamped rate instead of summing.
+        assert attacker_stats.skill_hit_rate_bonus_pct == 35
+        assert attacker_stats.hit_rate_bonus_pct == 20
         :miss
       end)
 

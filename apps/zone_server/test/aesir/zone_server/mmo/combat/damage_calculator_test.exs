@@ -488,6 +488,29 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result == 100
     end
 
+    test "adds a percentage of the attack as second-element damage (Magnum Break's fire aura)" do
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+
+      stub(ElementModifiers, :get_modifier, fn
+        :fire, _, _, _ -> 2.0
+        _, _, _, _ -> 1.0
+      end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ ->
+        %{{:pseudo_element_atk, :fire} => 20}
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant(weapon_element: :neutral)
+      defender = CombatTestHelper.create_mob_combatant(element: {:earth, 1})
+
+      assert {:ok, result} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
+
+      # 100 neutral, plus 20% of the attack resolved as fire against a defender
+      # the fire table doubles against: 100 + 100 * 0.2 * 2.0
+      assert result == 140
+    end
+
     test "adds flat weapon ATK (:watk) granted by statuses (SC_LOUD / Impositio)" do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)

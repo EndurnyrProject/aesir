@@ -530,10 +530,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     skill_id = Keyword.get(opts, :skill_id)
     attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
 
+    sized_damage = apply_size_modifier(base_damage, attacker, defender)
+
     total_atk =
-      base_damage
-      |> apply_size_modifier(attacker, defender)
+      sized_damage
       |> apply_element_modifier(attack_element, defender, attacker_modifiers)
+      |> add_pseudo_element_damage(sized_damage, defender, attacker_modifiers)
       |> apply_status_effect_damage_modifiers(attacker_modifiers)
       |> apply_equipment_attack_families(
         attacker,
@@ -777,6 +779,27 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
 
   defp apply_element_modifier(damage, attack_element, defender, attacker_modifiers) do
     DamageShared.apply_element(damage, attack_element, defender, attacker_modifiers)
+  end
+
+  # A weapon-property buff that turns part of the attack into a second element
+  # (Magnum Break's fire aura) contributes `{:pseudo_element_atk, element} =>
+  # percent`. That percentage of the attack is resolved against the defender
+  # with its own element and added on top of the ordinary elemental damage,
+  # rather than replacing the attack element.
+  defp add_pseudo_element_damage(damage, base_damage, defender, attacker_modifiers) do
+    Enum.reduce(attacker_modifiers, damage, fn
+      {{:pseudo_element_atk, element}, percent}, acc when is_integer(percent) and percent > 0 ->
+        acc +
+          DamageShared.apply_element(
+            base_damage * percent / 100,
+            element,
+            defender,
+            attacker_modifiers
+          )
+
+      _modifier, acc ->
+        acc
+    end)
   end
 
   # Attacker percent damage families. Each family (race+class, element, size,

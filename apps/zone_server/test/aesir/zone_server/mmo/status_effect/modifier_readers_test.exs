@@ -92,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
              ])
 
   # Tuple-shaped keys read by the damage calculators.
-  @read_tuple_tags [:element_ratio, :magic_addsize, :magic_addrace]
+  @read_tuple_tags [:element_ratio, :magic_addsize, :magic_addrace, :pseudo_element_atk]
 
   test "every key emitted by an effect's modifiers/2 has a reader" do
     dead =

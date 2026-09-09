@@ -9,10 +9,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmFatalblowTest do
     assert SmFatalblow.skill_name() == :sm_fatalblow
   end
 
-  test "returns a stun rider when bash level > 5" do
+  @tag game_mode: :renewal
+  test "renewal stuns for four and a half seconds when bash level > 5" do
     assert {:apply_status, :sc_stun, opts} = SmFatalblow.skill_rider(:sm_bash, 6, 1, @ctx)
     assert Keyword.get(opts, :chance) == (6 - 5) * 50 * 10
     assert Keyword.get(opts, :duration) == 4_500
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic stuns for a full five seconds when bash level > 5" do
+    assert {:apply_status, :sc_stun, opts} = SmFatalblow.skill_rider(:sm_bash, 6, 1, @ctx)
+    assert Keyword.get(opts, :chance) == (6 - 5) * 50 * 10
+    assert Keyword.get(opts, :duration) == 5_000
   end
 
   test "returns :none when bash level <= 5" do

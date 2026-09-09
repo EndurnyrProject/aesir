@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   hits/splashes.
   """
 
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -464,9 +465,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:skill_ratio` - percent of base attack the skill deals
+    - `:skill_ratio` - percent of base attack the skill deals, or a one-arity
+      function of the target's Chebyshev distance from `{x, y}` returning that
+      percent, for a skill whose ratio falls off with distance (Magnum Break's
+      inner and outer rings)
     - `:element` - optional attack-element override
     - `:skip_crit` - skip the critical roll
+    - `:hit_rate_bonus_pct` - relative percent bonus applied to each target's
+      already-clamped hit rate, as documented by `execute_skill_attack/3`
+      (default `0`)
     - `:hit_count` - number of hits each connected target takes, each rolling
       its own hit/flee check and its own damage (default `1`); a target
       counts as hit if any of its hits connect
@@ -524,7 +531,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             ranged?: Keyword.get(opts, :ranged, false),
             ignore_flee?: Keyword.get(opts, :ignore_flee, false),
             typed_results?: true,
-            knockback_options: knockback_options(opts)
+            knockback_options: knockback_options(opts),
+            hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0)
           },
           &Targeting.validate_field_target(group, &1, &2)
         )
@@ -565,7 +573,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       ranged?: Keyword.get(opts, :ranged, false),
       ignore_flee?: Keyword.get(opts, :ignore_flee, false),
       typed_results?: Keyword.get(opts, :typed_results, false),
-      knockback_options: knockback_options(opts)
+      knockback_options: knockback_options(opts),
+      hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
+      splash_center: center
     }
 
     selection_opts = Keyword.take(opts, [:target_skill_units])
@@ -616,7 +626,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           ranged?: false,
           ignore_flee?: false,
           typed_results?: false,
-          knockback_options: knockback_options(opts)
+          knockback_options: knockback_options(opts),
+          hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0)
         })
 
       {:error, _reason} ->
@@ -710,8 +721,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
            ranged?: ranged?,
            ignore_flee?: ignore_flee?,
            typed_results?: typed_results?,
-           knockback_options: knockback_options
-         },
+           knockback_options: knockback_options,
+           hit_rate_bonus_pct: hit_rate_bonus_pct
+         } = result_opts,
          authorize_target
        ) do
     with {:ok, target_pid, target_state, target_type} <- TargetResolver.resolve(target_ref),
@@ -721,11 +733,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       hit_opts = %{
         display_hits: nil,
-        hit_rate_bonus_pct: 0,
+        hit_rate_bonus_pct: hit_rate_bonus_pct,
         ignore_flee: ignore_flee?,
         ranged: ranged?,
         weapon_hit_metadata: %{}
       }
+
+      calc_opts = resolve_distance_ratio(calc_opts, result_opts, target_state)
 
       {results, coma_decision} =
         Enum.map_reduce(1..hits//1, :unchecked, fn _, decision ->
@@ -747,6 +761,22 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       _ -> []
     end
   end
+
+  # A splash skill whose per-level ratio depends on how far the victim stands
+  # from the centre (Magnum Break's inner and outer rings) passes `:skill_ratio`
+  # as a one-arity function of that Chebyshev distance. Every other caller
+  # passes a plain percent, which falls through untouched.
+  defp resolve_distance_ratio({opts, calculator}, result_opts, target_state) do
+    with {cx, cy} <- Map.get(result_opts, :splash_center),
+         ratio_fun when is_function(ratio_fun, 1) <- Keyword.get(opts, :skill_ratio) do
+      distance = Geometry.chebyshev_distance(cx, cy, target_state.x, target_state.y)
+      {Keyword.put(opts, :skill_ratio, ratio_fun.(distance)), calculator}
+    else
+      _not_distance_keyed -> {opts, calculator}
+    end
+  end
+
+  defp resolve_distance_ratio(calc_opts, _result_opts, _target_state), do: calc_opts
 
   defp connected_target_result(false, _target_ref, _typed_results?), do: []
   defp connected_target_result(true, target_ref, true), do: [target_ref]
@@ -1517,13 +1547,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   defp target_hp(%{hp: hp}) when is_integer(hp), do: hp
   defp target_hp(_target_state), do: nil
 
+  # The cast skill's own accuracy bonus and the attacker's standing bonus stay
+  # separate: they compound on the clamped hit rate rather than summing.
   defp hit_stats(attacker, hit_rate_bonus_pct) do
     %{
       hit: attacker.combat_stats.hit,
       char_id: attacker.unit_id,
       perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker),
-      hit_rate_bonus_pct:
-        hit_rate_bonus_pct + Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0)
+      skill_hit_rate_bonus_pct: hit_rate_bonus_pct,
+      hit_rate_bonus_pct: Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0)
     }
   end
 

@@ -376,7 +376,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitRateExamplesTest do
       %{attacker: %{hit: 100}, flee: 100, renewal: 0, classic: 80},
       %{attacker: %{hit: 180, hit_rate_bonus_pct: 50}, flee: 150, renewal: 45, classic: 100},
       %{attacker: %{hit: 100, hit_rate_bonus_pct: 50}, flee: 150, renewal: 0, classic: 45},
-      %{attacker: %{hit: 200, hit_rate_bonus_pct: -50}, flee: 50, renewal: 50, classic: 50}
+      %{attacker: %{hit: 200, hit_rate_bonus_pct: -50}, flee: 50, renewal: 50, classic: 50},
+      # Bash 10 (+50% skill) stacked with Weaponry Research 10 (+20% passive)
+      # compounds to 1.8x, not the 1.7x the two would give if summed: in
+      # Renewal 30 * 1.5 * 1.2 = 54, never 30 * 1.7 = 51.
+      %{
+        attacker: %{hit: 70, skill_hit_rate_bonus_pct: 50, hit_rate_bonus_pct: 20},
+        flee: 40,
+        renewal: 54,
+        classic: 100
+      },
+      # Either bonus alone is a single relative step, so both spellings agree.
+      %{attacker: %{hit: 70, skill_hit_rate_bonus_pct: 50}, flee: 40, renewal: 45, classic: 100},
+      %{attacker: %{hit: 70, hit_rate_bonus_pct: 50}, flee: 40, renewal: 45, classic: 100}
     ]
 
   alias Aesir.ZoneServer.Mmo.Combat.HitCalculations

@@ -1,9 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmRecovery do
   @moduledoc """
-  Increase HP Recovery (SM_RECOVERY). Boosts the natural HP recovery tick.
+  Increase HP Recovery (SM_RECOVERY). Feeds the separate skill-driven HP
+  regeneration channel.
 
-  rAthena (renewal, `status_calc_regen`): adds `skill_lv * 5 + skill_lv * max_hp / 500`
-  to the per-tick HP regen. Contributes no SP recovery.
+  Renewal: adds `level * 5 + level * max_hp / 500` HP to every skill-regen tick,
+  a channel distinct from the base HP tick and with its own interval. It never
+  contributes SP.
+
+  Pre-renewal: the identical amount on the identical channel; nothing about
+  this passive's regeneration contribution is era-gated.
+
+  In both modes the skill also raises the potency of HP-restoring consumables
+  by 10 percent per level, stacking additively with the potion-research
+  passive, VIT and the item heal bonuses.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 4,

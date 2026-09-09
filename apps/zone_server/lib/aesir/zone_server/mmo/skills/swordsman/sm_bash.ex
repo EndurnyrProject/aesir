@@ -2,9 +2,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
   @moduledoc """
   Bash (SM_BASH). Single-target physical strike on an enemy.
 
-  rAthena: base 100% + 30% per level weapon damage, weapon element, no crit.
-  On a confirmed hit it applies any skill riders contributed by learned passives
-  (notably SM_FATALBLOW's stun above level 5) to the target.
+  Renewal: a melee-range weapon strike for 100% + 30% per level of weapon
+  damage, never a critical, carrying the equipped weapon's own attack element
+  (the skill declares no element of its own, so the combat layer keeps the
+  weapon element or whatever endow currently overrides it). Every weapon class
+  except the bow may cast it. On a confirmed hit it applies the skill riders
+  contributed by learned passives - Fatal Blow's stun above Bash level 5.
+
+  Pre-renewal: identical ratio, element, weapon restriction and rider wiring.
+  Only the length of the Fatal Blow stun differs, and that constant lives with
+  the Fatal Blow passive.
+
+  In both modes the strike is also more likely to connect than an ordinary
+  attack: the roll's already-clamped hit rate is raised by 5% per level,
+  relative, not by a flat addition to the accuracy stat.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 5,
@@ -15,7 +26,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
     target_type: :target_enemy,
     damage_type: :damage,
     range: -1,
-    sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15]
+    sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15],
+    require_weapon: [
+      :book,
+      :dagger,
+      :fist,
+      :gatling,
+      :grenade,
+      :huuma,
+      :katar,
+      :knuckle,
+      :mace,
+      :musical,
+      :one_handed_axe,
+      :one_handed_spear,
+      :one_handed_sword,
+      :revolver,
+      :rifle,
+      :shotgun,
+      :staff,
+      :two_handed_axe,
+      :two_handed_mace,
+      :two_handed_spear,
+      :two_handed_sword,
+      :whip
+    ]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -31,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100 + 30 * level,
+      hit_rate_bonus_pct: 5 * level,
       skip_crit: true,
       report_hit: true
     ]

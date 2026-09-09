@@ -178,6 +178,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     assert length(defn.duration) == defn.max_level
   end
 
+  @tag game_mode: :renewal
   test "by_id/1 loads SM_MAGNUM with correct target, damage type and cooldown" do
     assert {:ok, %Definition{} = defn} = Catalog.by_id(7)
     assert defn.name == :sm_magnum
@@ -185,6 +186,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
     assert defn.damage_type == :damage
     assert defn.max_level == 10
     assert defn.cooldown == List.duplicate(2000, defn.max_level)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "by_id/1 loads SM_MAGNUM without a cooldown in pre-renewal mode" do
+    assert {:ok, %Definition{} = defn} = Catalog.by_id(7)
+    assert defn.name == :sm_magnum
+    assert defn.target_type == :self
+    assert defn.damage_type == :damage
+    assert defn.max_level == 10
+    assert defn.cooldown == List.duplicate(0, defn.max_level)
   end
 
   test "by_id/1 loads SM_ENDURE with correct target and damage type" do

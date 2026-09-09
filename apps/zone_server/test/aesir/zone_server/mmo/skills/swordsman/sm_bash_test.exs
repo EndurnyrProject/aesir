@@ -111,6 +111,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
     assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 5, definition())
   end
 
+  @tag game_mode: :renewal
   test "cast/4 applies sc_stun to a mob target at level 6 with SM_FATALBLOW when the roll succeeds" do
     caster = build_caster(%{145 => 1})
 
@@ -119,6 +120,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
       assert params[:duration] == 4_500
+      :ok
+    end)
+
+    assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, 6, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "cast/4 applies the longer classic sc_stun at level 6 with SM_FATALBLOW" do
+    caster = build_caster(%{145 => 1})
+
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
+      assert params[:duration] == 5_000
       :ok
     end)
 
@@ -170,5 +186,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
 
     assert {:error, :target_out_of_range} =
              SmBash.cast(caster, {:unit, @target_id}, 6, definition())
+  end
+
+  test "restricts casting to every weapon class except bows in both modes" do
+    for mode <- [:renewal, :pre_renewal] do
+      allowed = SmBash.definition(mode).require_weapon
+
+      assert length(allowed) == 22
+      refute :bow in allowed
+    end
+  end
+
+  test "asks the combat layer for five percent more accuracy per level in both modes" do
+    caster = build_caster(%{})
+
+    for level <- [1, 5, 10] do
+      expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert opts[:hit_rate_bonus_pct] == 5 * level
+        {:ok, %{hit?: false}}
+      end)
+
+      assert {:ok, ^caster} = SmBash.cast(caster, {:unit, @target_id}, level, definition())
+    end
   end
 end

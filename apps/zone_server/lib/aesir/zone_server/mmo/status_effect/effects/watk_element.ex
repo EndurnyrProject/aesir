@@ -1,16 +1,21 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
   @moduledoc """
-  Weapon Element Endow (SC_WATK_ELEMENT).
+  Weapon Element Property (SC_WATK_ELEMENT).
 
-  Overrides the carrier's physical attack element for the buff duration.
-  Mirrors rAthena, where `val1` holds the element id used as the attack
-  element in `battle_attr_fix`. Here `val1` is the rAthena element id and is
-  mapped to the codebase's element atom, exposed via the `attack_element`
-  modifier that the damage calculator prefers over the weapon's base element.
+  Carries a weapon element in `val1` and serves two shapes, chosen by `val2`.
 
-  Every endow contributes that same modifier and aggregation sums colliding
-  keys, so the endows list each other in `end_on_start` (replace-on-cast) to
-  keep two of them from ever being live at once.
+  With no `val2`, it is a full endow: the carrier's physical attack element
+  becomes `val1` for the buff duration, exposed as the `attack_element`
+  modifier the damage calculator prefers over the weapon's base element. Every
+  endow contributes that same modifier and aggregation sums colliding keys, so
+  the endows list each other in `end_on_start` (replace-on-cast) to keep two of
+  them from ever being live at once.
+
+  With a `val2` percentage, it is a partial property instead: the attack keeps
+  its own element and additionally deals `val2` percent of itself as `val1`
+  element damage. Magnum Break's ten-second fire aura is this shape. The two
+  shapes are mutually exclusive on one instance - a percentage never overrides
+  the attack element.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_watk_element,
@@ -29,6 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.WatkElement do
   alias Aesir.ZoneServer.Mmo.Element
 
   @impl true
+  def modifiers(%{val2: percent} = instance, _context)
+      when is_integer(percent) and percent > 0 do
+    %{{:pseudo_element_atk, Element.from_id!(instance.val1)} => percent}
+  end
+
   def modifiers(instance, _context) do
     %{attack_element: Element.from_id!(instance.val1)}
   end
