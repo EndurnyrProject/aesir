@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsDagger do
   @moduledoc """
-  Smith Dagger (BS_DAGGER). Forges daggers from prepared materials.
+  Smith Dagger (BS_DAGGER). Forges daggers through the shared forge flow, each
+  level unlocking the next weapon tier.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

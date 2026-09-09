@@ -21,6 +21,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
     assert definition.sp_cost == List.duplicate(10, 5)
   end
 
+  test "stuns for 4.5 seconds in renewal and 5 seconds in classic" do
+    assert BsHammerfall.definition(:renewal).duration == List.duplicate(4_500, 5)
+    assert BsHammerfall.definition(:pre_renewal).duration == List.duplicate(5_000, 5)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic impacts stun for 5 seconds" do
+    caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 10, y: 20}
+
+    expect(Combat, :splash_targets, fn "prontera", {30, 40}, 2, 1_000 -> [{:mob, 2_003}] end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob,
+                                                2_003,
+                                                :sc_stun,
+                                                [
+                                                  caster_id: 1_000,
+                                                  val1: 3,
+                                                  duration: 5_000,
+                                                  success_rate: 50
+                                                ] ->
+      :ok
+    end)
+
+    payload = %{caster_id: 1_000, map_name: "prontera", center: {30, 40}, level: 3}
+    assert :ok = BsHammerfall.deferred(payload, caster)
+  end
+
   test "schedules the impact one second after casting" do
     caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 10, y: 20}
 
@@ -48,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfallTest do
     assert high_vit_duration < low_vit_duration
   end
 
+  @tag game_mode: :renewal
   test "delayed impacts attempt level-scaled stun on mobs without dealing damage" do
     caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 10, y: 20}
     chances = [30, 40, 50, 60, 70]

@@ -327,6 +327,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert calculated.combat_stats.hit_rate_bonus_pct == 10
     end
 
+    @tag game_mode: :renewal
     test "contributes no flat HIT, only the multiplicative hit rate" do
       # Renewal grants Weapon Research a hidden multiplicative bonus on the
       # already-clamped hit rate and NO flat HIT. Flat HIT is the pre-renewal
@@ -339,6 +340,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       player = build_player(%{107 => 10}, :one_handed_sword)
 
       assert Passives.hit_bonus(player) == 0
+      assert Passives.hit_rate_bonus_pct(player) == 20
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic adds a flat 2 HIT per level on top of the multiplicative hit rate" do
+      player = build_player(%{107 => 10}, :one_handed_sword)
+
+      assert Passives.hit_bonus(player) == 20
       assert Passives.hit_rate_bonus_pct(player) == 20
     end
 

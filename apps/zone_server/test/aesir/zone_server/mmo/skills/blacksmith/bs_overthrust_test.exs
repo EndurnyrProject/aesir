@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
   alias Aesir.ZoneServer.Party.Member
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -34,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
     assert {:ok, BsOverthrust} = Catalog.active_module_for(:bs_overthrust)
   end
 
+  @tag game_mode: :renewal
   test "applies the larger caster rate and coarser party rate at every level" do
     caster = player_state(1)
     member = player_state(2)
@@ -64,6 +66,50 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
     end
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic recipients get a flat 5 percent while the caster keeps 5 per level" do
+    caster = player_state(1)
+    member = player_state(2)
+    assert :ok = UnitRegistry.register_unit(:player, 2, PlayerState, member, self())
+
+    stub(PartyManager, :get, fn 10 -> {:ok, party_state()} end)
+    test_pid = self()
+
+    stub(StatusInterpreter, :apply_status, fn :player, target_id, :sc_overthrust, params ->
+      send(test_pid, {:status, target_id, params[:val1], params[:duration]})
+      :ok
+    end)
+
+    assert {:ok, definition} = Catalog.by_id(113)
+
+    for {level, caster_rate, duration} <- [{1, 5, 20_000}, {3, 15, 60_000}, {5, 25, 100_000}] do
+      assert {:ok, ^caster} = BsOverthrust.cast(caster, :self, level, definition)
+      assert_receive {:status, 1, 5, ^duration}
+      assert_receive {:status, 2, 5, ^duration}
+      assert_receive {:status, 1, ^caster_rate, ^duration}
+      refute_receive {:status, _, _, _}
+    end
+  end
+
+  test "requires a weapon for the cast and skips bare-handed party recipients" do
+    assert {:ok, definition} = Catalog.by_id(113)
+    refute :fist in definition.require_weapon
+    assert :dagger in definition.require_weapon
+    assert :two_handed_staff in definition.require_weapon
+
+    caster = player_state(1)
+
+    bare =
+      put_in(player_state(2).stats.equipment, %Equipment{})
+
+    assert :ok = UnitRegistry.register_unit(:player, 2, PlayerState, bare, self())
+    stub(PartyManager, :get, fn 10 -> {:ok, party_state()} end)
+
+    expect(StatusInterpreter, :apply_status, 2, fn :player, 1, :sc_overthrust, _params -> :ok end)
+
+    assert {:ok, ^caster} = BsOverthrust.cast(caster, :self, 1, definition)
+  end
+
   defp player_state(char_id) do
     %Character{
       id: char_id,
@@ -85,7 +131,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsOverthrustTest do
       party_id: 10
     }
     |> PlayerState.new()
+    |> equip_axe()
   end
+
+  defp equip_axe(%PlayerState{stats: stats} = player),
+    do: %{player | stats: %{stats | equipment: %Equipment{right_hand: 1301}}}
 
   defp party_state do
     %PartyState{

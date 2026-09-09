@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsEnchantedstone do
   @moduledoc """
-  Enchanted Stone Craft (BS_ENCHANTEDSTONE). Crafts elemental stones from raw materials.
+  Enchanted Stone Craft (BS_ENCHANTEDSTONE). Crafts elemental stones through the
+  shared forge flow with a 15 to 35% base bonus by level, and Star Crumbs at a
+  sure rate.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

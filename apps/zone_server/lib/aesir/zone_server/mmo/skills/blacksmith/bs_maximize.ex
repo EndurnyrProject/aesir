@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsMaximize do
   @moduledoc """
-  Maximize Power (BS_MAXIMIZE).
+  Maximize Power (BS_MAXIMIZE). Toggles maximum weapon damage: while active every
+  weapon hit rolls its top damage, natural SP regeneration stops, and one SP drains
+  every level seconds; casting again ends it. Costs 10 SP.
 
-  Toggles maximum weapon damage. While active, it drains one SP every skill
-  level seconds; casting it again ends the effect.
+  Renewal and pre-renewal agree.
   """
 
   # Requirement gap closed: this player-only cast crashes when invoked by a mob.

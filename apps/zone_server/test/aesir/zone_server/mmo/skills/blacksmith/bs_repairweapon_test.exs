@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "has a 2.5 second fixed cast, 30 SP cost, and range 2" do
     definition = definition()
 
@@ -30,6 +31,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweaponTest do
     assert definition.fixed_cast_time == [2_500]
     assert definition.sp_cost == [30]
     assert definition.range == 2
+  end
+
+  @tag game_mode: :pre_renewal
+  test "casts in a flat 7.5 seconds in classic" do
+    definition = definition()
+
+    assert definition.cast_time == [7_500]
+    assert definition.fixed_cast_time == []
+    assert definition.sp_cost == [30]
   end
 
   test "offers only broken rows with a repairable equipment level" do

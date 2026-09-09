@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.SuccessRate do
   @moduledoc """
-  Calculates deterministic Renewal production chances in hundredths of a percent.
+  Calculates deterministic production chances in hundredths of a percent; the
+  formulas are shared by renewal and pre-renewal.
 
   Random terms are supplied by the caller; `pharmacy_roll/2` derives one from a
   caller-injected rng, and this module never touches the rng backend directly.

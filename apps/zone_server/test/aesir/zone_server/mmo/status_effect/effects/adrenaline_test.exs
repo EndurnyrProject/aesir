@@ -36,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
   setup :verify_on_exit!
   setup :setup_ets_tables
 
+  @tag game_mode: :renewal
   test "Adrenaline Rush grants flat ASPD and level-scaled HIT" do
     for {level, hit} <- Enum.zip(1..5, [8, 11, 14, 17, 20]) do
       assert %{aspd: 7, hit: hit} ==
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "Adrenaline Rush II grants flat ASPD" do
     for level <- [1, 5] do
       assert %{aspd: 6} ==
@@ -50,14 +52,32 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.AdrenalineTest do
     end
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic Adrenaline Rush is a 30 percent caster rate and 20 percent party rate with no HIT" do
+    own = %{caster_id: 1, target_id: 1}
+    received = %{caster_id: 1, target_id: 2}
+
+    assert %{aspd_rate: 30} ==
+             Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5}, own)
+
+    assert %{aspd_rate: 20} ==
+             Adrenaline.modifiers(%StatusEntry{type: :sc_adrenaline, val1: 5}, received)
+
+    assert %{aspd_rate: 30} ==
+             Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1}, own)
+
+    assert %{aspd_rate: 20} ==
+             Adrenaline2.modifiers(%StatusEntry{type: :sc_adrenaline2, val1: 1}, received)
+  end
+
   test "status definitions are discoverable with their calculation flags and weapon requirements" do
-    assert %{id: :sc_adrenaline, calc_flags: [:aspd, :hit], icon: :adrenaline} =
+    assert %{id: :sc_adrenaline, calc_flags: [:aspd, :aspd_rate, :hit], icon: :adrenaline} =
              Adrenaline.metadata()
 
     assert %{require_weapon: [:one_handed_axe, :two_handed_axe, :mace]} =
              Adrenaline.metadata()
 
-    assert %{id: :sc_adrenaline2, calc_flags: [:aspd], icon: :adrenaline2} =
+    assert %{id: :sc_adrenaline2, calc_flags: [:aspd, :aspd_rate], icon: :adrenaline2} =
              Adrenaline2.metadata()
 
     assert %{require_weapon: @adrenaline2_weapons} = Adrenaline2.metadata()

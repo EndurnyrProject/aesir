@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSkintemper do
   @moduledoc """
-  Skin Tempering (BS_SKINTEMPER). An always-on passive that reduces fire damage
-  by 5% per level and neutral damage by 1% per level.
+  Skin Tempering (BS_SKINTEMPER). An always-on passive that reduces fire damage by
+  5% per level and neutral damage by 1% per level.
+
+  Renewal and pre-renewal agree.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive

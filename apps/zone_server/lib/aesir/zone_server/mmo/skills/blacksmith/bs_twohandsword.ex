@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsTwohandsword do
   @moduledoc """
-  Smith Two-handed Sword (BS_TWOHANDSWORD). Forges two-handed swords from prepared materials.
+  Smith Two-handed Sword (BS_TWOHANDSWORD). Forges two-handed swords through the shared forge flow, each
+  level unlocking the next weapon tier.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

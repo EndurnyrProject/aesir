@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsWeaponperfect do
   @moduledoc """
-  Weapon Perfection (BS_WEAPONPERFECT) removes physical weapon size penalties for the caster and nearby party members.
+  Weapon Perfection (BS_WEAPONPERFECT). Removes weapon size penalties for the
+  caster and every same-map party member within the default 14-cell area, for 10 s
+  per level and 18 down to 10 SP; a Hilt Binding caster adds 10% duration.
+
+  Renewal and pre-renewal agree.
   """
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

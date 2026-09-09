@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsKnuckle do
   @moduledoc """
-  Smith Knucklebrace (BS_KNUCKLE). Forges knuckles from prepared materials.
+  Smith Knucklebrace (BS_KNUCKLE). Forges knuckles through the shared forge flow, each
+  level unlocking the next weapon tier.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

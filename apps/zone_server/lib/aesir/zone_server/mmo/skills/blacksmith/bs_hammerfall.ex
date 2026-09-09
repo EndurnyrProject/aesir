@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
   @moduledoc """
-  Hammer Fall (BS_HAMMERFALL) attempts to stun enemies in a 5x5 ground-targeted
-  area after a one-second delay without dealing damage.
+  Hammer Fall (BS_HAMMERFALL). One second after the cast, tries to stun every enemy
+  in a 5x5 area around the targeted cell with a 20 plus 10 per level percent chance,
+  dealing no damage, for 10 SP with a bladed or blunt weapon.
+
+  Renewal stuns for 4.5 s; pre-renewal for 5 s.
   """
 
   # Requirement gap closed: this player-only cast crashes when invoked by a mob.
@@ -16,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
     range: 1,
     splash_radius: 2,
     sp_cost: List.duplicate(10, 5),
+    duration: [renewal: List.duplicate(4_500, 5), pre_renewal: List.duplicate(5_000, 5)],
     require_weapon: [:dagger, :one_handed_sword, :one_handed_axe, :two_handed_axe, :mace]
 
   alias Aesir.ZoneServer.Mmo.Combat
@@ -28,7 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
   @behaviour Active
 
   @delay_ms 1_000
-  @stun_duration_ms 4_500
 
   @typedoc "The ground impact captured when Hammer Fall is cast."
   @type impact :: %{
@@ -66,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHammerfall do
         StatusInterpreter.apply_status(:mob, target_id, :sc_stun,
           caster_id: caster_id,
           val1: level,
-          duration: @stun_duration_ms,
+          duration: Enum.at(definition().duration, level - 1),
           success_rate: 20 + level * 10
         )
 

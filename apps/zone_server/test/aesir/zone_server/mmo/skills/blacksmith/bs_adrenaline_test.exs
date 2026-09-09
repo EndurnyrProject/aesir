@@ -82,6 +82,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenalineTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "Advanced Adrenaline Rush is complete behind its prerequisite gate" do
     caster = player(1301)
     definition = BsAdrenaline2.definition()

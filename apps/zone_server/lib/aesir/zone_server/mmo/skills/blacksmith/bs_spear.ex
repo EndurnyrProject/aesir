@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSpear do
   @moduledoc """
-  Smith Spear (BS_SPEAR). Forges spears from prepared materials.
+  Smith Spear (BS_SPEAR). Forges spears through the shared forge flow, each
+  level unlocking the next weapon tier.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

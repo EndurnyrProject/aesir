@@ -231,4 +231,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreedTest do
       dropped_at: 0
     }
   end
+
+  test "has no delay in renewal and a 1 second delay in classic" do
+    assert BsGreed.definition(:renewal).after_cast_delay == []
+    assert BsGreed.definition(:pre_renewal).after_cast_delay == [1_000]
+    assert BsGreed.definition().sp_cost == [10]
+  end
 end

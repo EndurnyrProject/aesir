@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSword do
   @moduledoc """
-  Smith Sword (BS_SWORD). Forges one-handed swords from prepared materials.
+  Smith Sword (BS_SWORD). Forges one-handed swords through the shared forge flow, each
+  level unlocking the next weapon tier.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

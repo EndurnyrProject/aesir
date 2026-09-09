@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsIron do
   @moduledoc """
-  Iron Tempering (BS_IRON). Refines iron from raw materials.
+  Iron Tempering (BS_IRON). Refines iron from ore through the shared forge flow
+  with a 45 to 65% base bonus by level.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

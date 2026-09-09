@@ -1,8 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline2 do
   @moduledoc """
-  Advanced Adrenaline Rush (BS_ADRENALINE2) shares an attack-speed buff with
-  nearby party members wielding a supported weapon. Casting remains unavailable
-  until its external empowerment prerequisite is implemented.
+  Advanced Adrenaline Rush (BS_ADRENALINE2). Shares an attack-speed buff with the
+  caster and every same-map party member wielding a supported weapon within the
+  default 14-cell area, for 150 s and 64 SP. Casting stays unavailable until its
+  external empowerment prerequisite exists.
+
+  Renewal: a flat +6 attack speed. Pre-renewal: a 30 percent attack speed rate for
+  the caster and 20 percent for recipients (the status reads who cast it).
   """
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Adrenaline2
@@ -47,11 +51,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline2 do
       duration: PartyBuff.duration_for_caster(caster, Enum.at(definition.duration, level - 1))
     ]
 
-    case PartyBuff.apply(caster, :sc_adrenaline2, params, definition.splash_radius, fn member ->
-           eligible_weapon?(member, definition.require_weapon)
-         end) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+    with :ok <-
+           PartyBuff.apply(caster, :sc_adrenaline2, params, definition.splash_radius, fn member ->
+             eligible_weapon?(member, definition.require_weapon)
+           end) do
+      {:ok, caster}
     end
   end
 

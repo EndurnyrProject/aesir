@@ -1,7 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon do
   @moduledoc """
-  Weapon Repair (BS_REPAIRWEAPON). Offers one repairable broken equipment row
-  from the caster or a nearby player and repairs it with the caster's material.
+  Weapon Repair (BS_REPAIRWEAPON). Offers one repairable broken equipment row from
+  the caster or a player within 2 cells and repairs it with the caster's material:
+  Iron Ore, Iron, Steel, or Rough Oridecon for weapon levels 1 to 4, Steel for level
+  1 armor. Renewal's level 5 weapons and level 2 armor cannot be repaired.
+
+  Renewal casts in 2.5 s plus 2.5 s fixed; pre-renewal in 7.5 s. Both cost 30 SP.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -12,8 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsRepairweapon do
     target_type: :target_ally,
     damage_type: :no_damage,
     range: 2,
-    cast_time: [2_500],
-    fixed_cast_time: [2_500],
+    cast_time: [renewal: [2_500], pre_renewal: [7_500]],
+    fixed_cast_time: [renewal: [2_500], pre_renewal: []],
     sp_cost: [30]
 
   alias Aesir.Commons.Models.InventoryItem

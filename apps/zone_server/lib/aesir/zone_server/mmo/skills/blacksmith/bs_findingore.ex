@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsFindingore do
   @moduledoc """
-  Ore Discovery (BS_FINDINGORE). Enables the chance to find ore while defeating monsters.
+  Ore Discovery (BS_FINDINGORE). A passive that lets defeated monsters drop ore.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

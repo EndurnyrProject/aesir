@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed do
   @moduledoc """
-  Greed (BS_GREED). Collects every ground item within two cells into the caster's inventory.
+  Greed (BS_GREED). Collects every ground item within two cells into the caster's
+  inventory for 10 SP, honouring party pickup rules and item ownership.
+
+  Pre-renewal adds a 1 s delay after the cast; renewal has none.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -11,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsGreed do
     target_type: :self,
     splash_radius: 2,
     sp_cost: [10],
+    after_cast_delay: [renewal: [], pre_renewal: [1_000]],
     quest_skill: true,
     quest_owner_job: :blacksmith
 

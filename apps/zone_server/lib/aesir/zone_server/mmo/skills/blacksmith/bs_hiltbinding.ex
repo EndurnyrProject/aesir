@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsHiltbinding do
   @moduledoc """
-  Hilt Binding (BS_HILTBINDING) grants a small STR and ATK bonus and extends
-  Blacksmith party buffs cast by its owner.
+  Hilt Binding (BS_HILTBINDING). A passive granting 1 STR and 4 ATK and extending
+  the owner's Adrenaline Rush, Weapon Perfection, and Power-Thrust casts by 10%.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

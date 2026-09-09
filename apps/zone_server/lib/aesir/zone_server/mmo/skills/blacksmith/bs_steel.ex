@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsSteel do
   @moduledoc """
-  Steel Tempering (BS_STEEL). Refines steel from raw materials.
+  Steel Tempering (BS_STEEL). Refines steel from iron and coal through the shared
+  forge flow with a 35 to 55% base bonus by level.
+
+  Renewal and pre-renewal agree.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

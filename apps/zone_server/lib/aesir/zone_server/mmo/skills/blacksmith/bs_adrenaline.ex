@@ -1,7 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline do
   @moduledoc """
-  Adrenaline Rush (BS_ADRENALINE) shares an attack-speed and HIT buff with
-  nearby party members wielding an axe or mace.
+  Adrenaline Rush (BS_ADRENALINE). Shares an attack-speed buff with the caster and
+  every same-map party member wielding an axe or mace within the default 14-cell
+  area, for 30 s per level and 20 to 32 SP; a Hilt Binding caster adds 10% duration.
+
+  Renewal: a flat +7 attack speed plus 5 plus 3 per level HIT for everyone.
+  Pre-renewal: a 30 percent attack speed rate for the caster and 20 percent for
+  recipients (the status reads who cast it), with no HIT.
   """
 
   # Requirement gap closed: this player-only cast crashes when invoked by a mob.
@@ -37,11 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsAdrenaline do
       duration: PartyBuff.duration_for_caster(caster, Enum.at(definition.duration, level - 1))
     ]
 
-    case PartyBuff.apply(caster, :sc_adrenaline, params, definition.splash_radius, fn member ->
-           eligible_weapon?(member, definition.require_weapon)
-         end) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
+    with :ok <-
+           PartyBuff.apply(caster, :sc_adrenaline, params, definition.splash_radius, fn member ->
+             eligible_weapon?(member, definition.require_weapon)
+           end) do
+      {:ok, caster}
     end
   end
 
