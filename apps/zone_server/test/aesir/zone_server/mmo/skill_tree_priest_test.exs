@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -40,7 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
   @classic_entries MapSet.put(@canonical_entries, {"PR_REDEMPTIO", 1, []})
 
   test "priest.yml contains exactly the normal Renewal Priest entries" do
-    assert MapSet.new(normalized_entries()) == @canonical_entries
+    assert MapSet.new(normalized_entries()) == @classic_entries
   end
 
   test "every Priest entry and prerequisite resolves without a loader drop" do
@@ -95,7 +94,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
       assert Map.fetch!(priest_tree, skill_id).owner_job_id == parent_entry.owner_job_id
     end
 
-    assert Map.has_key?(priest_tree, catalog_id(:nv_trickdead)) == mode_value(true, false)
+    refute Map.has_key?(priest_tree, catalog_id(:nv_trickdead))
 
     for name <- [:mg_srecovery, :mg_safetywall, :all_resurrection] do
       assert priest_tree[catalog_id(name)].owner_job_id == priest_id
@@ -110,7 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
     assert {:ok, definition} = Catalog.by_id(redemptio_id)
     assert definition.quest_skill
     assert definition.quest_owner_job == :priest
-    assert Map.has_key?(tree, redemptio_id) == mode_value(false, true)
+    assert Map.has_key?(tree, redemptio_id)
 
     progression = %PlayerProgression{
       base_level: 99,
@@ -131,10 +130,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "priest.yml")
-
-    [%{"job" => "priest", "inherit" => ["novice", "acolyte"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "priest", "tree" => tree} = Enum.find(rows, &(&1["job"] == "priest"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
@@ -142,20 +140,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreePriestTest do
     end)
   end
 
-  defp expected_entries do
-    mode_value(@canonical_entries, @classic_entries)
-  end
+  defp expected_entries, do: @classic_entries
 
   defp inherited_entries(parent_id) do
-    entries = SkillTree.tree_for(parent_id)
-
-    if GameMode.mode() == :pre_renewal,
-      do: Map.delete(entries, catalog_id(:nv_trickdead)),
-      else: entries
-  end
-
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+    parent_id
+    |> SkillTree.tree_for()
+    |> Map.delete(catalog_id(:nv_trickdead))
   end
 
   defp priest_owned_entries(priest_id) do

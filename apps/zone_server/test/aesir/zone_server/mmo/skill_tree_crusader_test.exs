@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -56,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
   ]
 
   test "crusader.yml contains exactly the normal Renewal Crusader entries" do
-    assert MapSet.new(normalized_entries()) == @canonical_entries
+    assert MapSet.new(normalized_entries()) == @classic_entries
   end
 
   test "every Crusader entry and prerequisite resolves without a loader drop" do
@@ -136,7 +135,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
     assert {:ok, definition} = Catalog.by_id(shrink_id)
     assert definition.quest_skill
     assert definition.quest_owner_job == :crusader
-    assert Map.has_key?(SkillTree.tree_for(crusader_id), shrink_id) == mode_value(false, true)
+    assert Map.has_key?(SkillTree.tree_for(crusader_id), shrink_id)
 
     progression = crusader_progression(crusader_id, skill_point: 1)
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression, shrink_id)
@@ -240,10 +239,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "crusader.yml")
-
-    [%{"job" => "crusader", "inherit" => ["swordman"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "crusader", "tree" => tree} = Enum.find(rows, &(&1["job"] == "crusader"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
@@ -251,13 +249,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeCrusaderTest do
     end)
   end
 
-  defp expected_entries do
-    mode_value(@canonical_entries, @classic_entries)
-  end
-
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
-  end
+  defp expected_entries, do: @classic_entries
 
   defp crusader_owned_entries(crusader_id) do
     crusader_id

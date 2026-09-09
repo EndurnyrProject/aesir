@@ -8,7 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeSageTest do
   alias Aesir.ZoneServer.Mmo.SkillTree.Entry
 
   # The Sage tree's canonical membership, transcribed from rAthena
-  # db/re/skill_tree.yml:1017-1141 minus SA_ABRACADABRA (deferred).
+  # db/re/skill_tree.yml:1017-1141, including SA_ABRACADABRA (no compiled
+  # module - permanently deferred, not merely unimplemented yet).
   #
   # This list is FIXED: it describes what the Sage tree *is*, not what is
   # implemented yet. Landing a skill must never require editing it. An earlier
@@ -21,7 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeSageTest do
     SA_AUTOSPELL SA_FLAMELAUNCHER SA_FROSTWEAPON SA_LIGHTNINGLOADER
     SA_SEISMICWEAPON SA_DRAGONOLOGY SA_VOLCANO SA_DELUGE SA_VIOLENTGALE
     SA_LANDPROTECTOR SA_DISPELL SA_CREATECON SA_ELEMENTWATER SA_ELEMENTGROUND
-    SA_ELEMENTFIRE SA_ELEMENTWIND
+    SA_ELEMENTFIRE SA_ELEMENTWIND SA_ABRACADABRA
   )
 
   test "boots without an unknown job warning for sage" do
@@ -33,7 +34,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeSageTest do
   end
 
   test "no sage tree entry is silently dropped by a typo" do
-    for name <- tree_entry_names() do
+    # SA_ABRACADABRA is the one known-unimplemented (deferred Hindsight)
+    # skill: rAthena lists it, Aesir has no module for it, so it never
+    # resolves. Every other name must still resolve, keeping this a real
+    # typo check.
+    for name <- tree_entry_names(), name != "SA_ABRACADABRA" do
       resolves? = match?({:ok, _}, Catalog.by_name(atomize(name)))
 
       assert resolves? or name in @sage_tree_skills,
@@ -62,8 +67,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeSageTest do
   end
 
   defp tree_entry_names do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "sage.yml")
-    [%{"tree" => tree}] = DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"tree" => tree} = Enum.find(rows, &(&1["job"] == "sage"))
     Enum.map(tree, & &1["name"])
   end
 

@@ -191,22 +191,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
                         %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
     end
 
-    @tag game_mode: :renewal
-    test "rejects Estimation outside the Renewal Wizard tree" do
-      state = player_state(@wizard_id, 1, %{})
-      skill_id = catalog_id(:wz_estimation)
-
-      reject(&CharacterPersistence.update_character/3)
-
-      assert {:noreply, ^state} = SkillLearningHandler.handle_learn_skill(skill_id, state)
-
-      assert_received {:send, :gameplay,
-                       {:learn_skill_result,
-                        %LearnSkillResult{skill_id: ^skill_id, ok: false, reason: 1}}}
-    end
-
-    @tag game_mode: :pre_renewal
-    test "learns Estimation from the classic Wizard tree" do
+    test "learns Estimation from the Wizard tree" do
       state = player_state(@wizard_id, 1, %{})
       skill_id = catalog_id(:wz_estimation)
 

@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -58,7 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
   ]
 
   test "monk.yml contains exactly the normal Renewal Monk entries" do
-    assert MapSet.new(normalized_entries()) == @canonical_entries
+    assert MapSet.new(normalized_entries()) == @classic_entries
   end
 
   test "every Monk entry and prerequisite resolves without a loader drop" do
@@ -113,7 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
       assert Map.fetch!(monk_tree, skill_id).owner_job_id == parent_entry.owner_job_id
     end
 
-    assert Map.has_key?(monk_tree, catalog_id(:nv_trickdead)) == mode_value(true, false)
+    refute Map.has_key?(monk_tree, catalog_id(:nv_trickdead))
 
     for {name, _max_level} <- @learning_order do
       assert monk_tree[catalog_id(name)].owner_job_id == monk_id
@@ -133,7 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
       assert definition.name == skill_name
       assert definition.quest_skill
       assert definition.quest_owner_job == :monk
-      assert Map.has_key?(tree, skill_id) == mode_value(false, true)
+      assert Map.has_key?(tree, skill_id)
       assert {:error, :not_in_tree} = SkillTree.can_learn(progression, skill_id)
       assert {:ok, %{^skill_id => 1}} = Grant.grant(%{}, skill_id, 1)
     end
@@ -170,10 +169,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "monk.yml")
-
-    [%{"job" => "monk", "inherit" => ["novice", "acolyte"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "monk", "tree" => tree} = Enum.find(rows, &(&1["job"] == "monk"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
@@ -181,20 +179,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeMonkTest do
     end)
   end
 
-  defp expected_entries do
-    mode_value(@canonical_entries, @classic_entries)
-  end
+  defp expected_entries, do: @classic_entries
 
   defp inherited_entries(parent_id) do
-    entries = SkillTree.tree_for(parent_id)
-
-    if GameMode.mode() == :pre_renewal,
-      do: Map.delete(entries, catalog_id(:nv_trickdead)),
-      else: entries
-  end
-
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+    parent_id
+    |> SkillTree.tree_for()
+    |> Map.delete(catalog_id(:nv_trickdead))
   end
 
   defp monk_owned_entries(monk_id) do

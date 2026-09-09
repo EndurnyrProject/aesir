@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   import ExUnit.CaptureLog
   import Mimic
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -71,10 +70,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
     definition.id
   end
 
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
-  end
-
   defp swordman_progression(attrs) do
     Map.merge(
       %PlayerProgression{
@@ -129,9 +124,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       tree = SkillTree.tree_for(@swordman_id)
 
       assert Map.has_key?(tree, catalog_id(:nv_firstaid))
-      assert Map.has_key?(tree, catalog_id(:nv_trickdead)) == mode_value(true, false)
+      refute Map.has_key?(tree, catalog_id(:nv_trickdead))
       assert Map.has_key?(tree, catalog_id(:nv_basic))
-      assert map_size(tree) == mode_value(13, 12)
+      assert map_size(tree) == 12
     end
 
     test "entry/2 returns :error for a skill not in the job tree" do
@@ -146,7 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
   describe "reload/0" do
     test "rebuilds the index" do
       assert :ok = SkillTree.reload()
-      assert map_size(SkillTree.tree_for(@swordman_id)) == mode_value(13, 12)
+      assert map_size(SkillTree.tree_for(@swordman_id)) == 12
     end
   end
 
@@ -456,8 +451,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
 
       assert Map.has_key?(SkillTree.tree_for(novice_id), trick_dead_id)
 
-      assert Map.has_key?(SkillTree.tree_for(@swordman_id), trick_dead_id) ==
-               mode_value(true, false)
+      refute Map.has_key?(SkillTree.tree_for(@swordman_id), trick_dead_id)
 
       novice = swordman_progression(job_id: novice_id)
       swordman = swordman_progression(learned_skills: %{trick_dead_id => 1})
@@ -478,8 +472,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
         assert definition.quest_skill
         assert definition.quest_owner_job == :assassin
 
-        assert Map.has_key?(SkillTree.tree_for(assassin_id), skill_id) ==
-                 mode_value(false, true)
+        assert Map.has_key?(SkillTree.tree_for(assassin_id), skill_id)
 
         refute Enum.any?(SkillTree.available_for(progression), &(&1.skill_id == skill_id))
         assert {:error, :not_in_tree} = SkillTree.learn(progression, skill_id)

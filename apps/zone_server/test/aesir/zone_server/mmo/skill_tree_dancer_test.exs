@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -166,18 +165,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
     end
   end
 
-  defp expected_inherited_names do
-    if GameMode.mode() == :pre_renewal,
-      do: MapSet.delete(@inherited_names, "NV_TRICKDEAD"),
-      else: @inherited_names
-  end
+  defp expected_inherited_names, do: MapSet.delete(@inherited_names, "NV_TRICKDEAD")
 
   defp inherited_entries(parent_id) do
-    entries = SkillTree.tree_for(parent_id)
-
-    if GameMode.mode() == :pre_renewal,
-      do: Map.delete(entries, catalog_id(:nv_trickdead)),
-      else: entries
+    parent_id
+    |> SkillTree.tree_for()
+    |> Map.delete(catalog_id(:nv_trickdead))
   end
 
   defp learn_all(progression, order) do
@@ -199,10 +192,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeDancerTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "dancer.yml")
-
-    [%{"job" => "dancer", "inherit" => ["novice", "archer"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "dancer", "tree" => tree} = Enum.find(rows, &(&1["job"] == "dancer"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})

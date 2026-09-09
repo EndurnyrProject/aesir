@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -76,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
 
   test "Bard YAML pins every ordinary skill and no quest skill" do
     assert MapSet.size(@bard_entries) == 18
-    assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@bard_entries)
+    assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@classic_entries)
   end
 
   test "Bard entries resolve through the catalog with lowercase names and pinned levels" do
@@ -191,31 +190,19 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
     assert definition.quest_owner_job == :bard
     assert SkillTree.quest_skill_available?(bard_id, definition)
     refute SkillTree.quest_skill_available?(archer_id, definition)
-    assert Map.has_key?(bard_tree, pang_voice) == mode_value(false, true)
+    assert Map.has_key?(bard_tree, pang_voice)
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression(bard_id), pang_voice)
     assert {:ok, %{^pang_voice => 1}} = Grant.grant(%{}, pang_voice, 1)
   end
 
-  defp expected_entries do
-    mode_value(@bard_entries, @classic_entries)
-  end
+  defp expected_entries, do: @classic_entries
 
-  defp expected_inherited_names do
-    if GameMode.mode() == :pre_renewal,
-      do: MapSet.delete(@inherited_names, "NV_TRICKDEAD"),
-      else: @inherited_names
-  end
+  defp expected_inherited_names, do: MapSet.delete(@inherited_names, "NV_TRICKDEAD")
 
   defp inherited_entries(parent_id) do
-    entries = SkillTree.tree_for(parent_id)
-
-    if GameMode.mode() == :pre_renewal,
-      do: Map.delete(entries, catalog_id(:nv_trickdead)),
-      else: entries
-  end
-
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+    parent_id
+    |> SkillTree.tree_for()
+    |> Map.delete(catalog_id(:nv_trickdead))
   end
 
   defp learn_all(progression, order) do
@@ -237,10 +224,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeBardTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "bard.yml")
-
-    [%{"job" => "bard", "inherit" => ["novice", "archer"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "bard", "tree" => tree} = Enum.find(rows, &(&1["job"] == "bard"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})

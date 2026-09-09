@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -34,9 +33,15 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
 
   @classic_entries MapSet.put(@hunter_entries, {"HT_PHANTASMIC", 1, []})
 
+  # HT_POWER has no compiled module (permanently deferred, like Sage's
+  # SA_ABRACADABRA): rAthena's raw db lists it in the Hunter tree, but
+  # SkillTree drops it at load, so it never reaches the resolved tree and
+  # must not be part of @classic_entries (the resolved-tree expectation).
+  @raw_entries MapSet.put(@classic_entries, {"HT_POWER", 1, [{"AC_DOUBLE", 10}]})
+
   test "Hunter YAML declares only the approved canonical entries" do
     assert MapSet.size(@hunter_entries) == 17
-    assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@hunter_entries)
+    assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@raw_entries)
   end
 
   test "Hunter resolves its selected skills and inherits Novice and Archer entries" do
@@ -175,25 +180,17 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
     assert {:ok, definition} = Catalog.by_id(phantasmic)
     assert definition.quest_skill
     assert definition.quest_owner_job == :hunter
-    assert Map.has_key?(tree, phantasmic) == mode_value(false, true)
+    assert Map.has_key?(tree, phantasmic)
     assert {:error, :not_in_tree} = SkillTree.can_learn(hunter_progression(hunter_id), phantasmic)
     assert {:ok, %{^phantasmic => 1}} = Grant.grant(%{}, phantasmic, 1)
   end
 
-  defp expected_entries do
-    mode_value(@hunter_entries, @classic_entries)
-  end
+  defp expected_entries, do: @classic_entries
 
   defp inherited_entries(parent_id) do
-    entries = SkillTree.tree_for(parent_id)
-
-    if GameMode.mode() == :pre_renewal,
-      do: Map.delete(entries, catalog_id(:nv_trickdead)),
-      else: entries
-  end
-
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+    parent_id
+    |> SkillTree.tree_for()
+    |> Map.delete(catalog_id(:nv_trickdead))
   end
 
   defp normalized_entry_set(entries) do
@@ -205,10 +202,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeHunterTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "hunter.yml")
-
-    [%{"job" => "hunter", "inherit" => ["novice", "archer"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "hunter", "tree" => tree} = Enum.find(rows, &(&1["job"] == "hunter"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})

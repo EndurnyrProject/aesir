@@ -5,7 +5,6 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
   @moduletag integration_re: true, integration_pre_re: true
   @moduletag :capture_log
 
-  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -108,12 +107,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
       |> Enum.filter(&(&1.owner_job_id == assassin_job_id))
       |> MapSet.new(& &1.skill_id)
 
-    expected_owned_ids =
-      if GameMode.mode() == :renewal,
-        do: MapSet.new(132..141),
-        else: MapSet.new(@assassin_skill_ids)
-
-    assert owned_tree_ids == expected_owned_ids
+    assert owned_tree_ids == MapSet.new(@assassin_skill_ids)
 
     progression = %PlayerProgression{
       job_id: assassin_job_id,

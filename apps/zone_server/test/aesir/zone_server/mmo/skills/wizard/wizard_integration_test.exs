@@ -6,7 +6,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
   import Aesir.TestEtsSetup
   import Mimic
 
-  alias Aesir.Commons.GameMode
   alias Aesir.Net.EstimationResult
   alias Aesir.Net.SkillUnitSnapshot
   alias Aesir.Net.SkillUnitSpawn
@@ -243,7 +242,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
              WzEstimation.validate(caster, {:unit, @caster_id}, 1, WzEstimation.definition())
   end
 
-  test "Estimation follows the mode-specific Wizard tree and remains ordinary for Sage" do
+  test "Estimation is an ordinary Wizard and Sage tree entry" do
     {:ok, wizard_id} = AvailableJobs.job_name_to_id(:wizard)
     {:ok, sage_id} = AvailableJobs.job_name_to_id(:sage)
     {:ok, definition} = Catalog.by_name(:wz_estimation)
@@ -253,16 +252,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
 
     refute definition.quest_skill
 
-    case GameMode.mode() do
-      :renewal ->
-        refute Map.has_key?(SkillTree.tree_for(wizard_id), definition.id)
-        assert {:error, :not_in_tree} = SkillTree.can_learn(wizard, definition.id)
-
-      :pre_renewal ->
-        assert Map.has_key?(SkillTree.tree_for(wizard_id), definition.id)
-        assert :ok = SkillTree.can_learn(wizard, definition.id)
-    end
-
+    assert Map.has_key?(SkillTree.tree_for(wizard_id), definition.id)
+    assert :ok = SkillTree.can_learn(wizard, definition.id)
     assert :ok = SkillTree.can_learn(sage, definition.id)
     assert {:error, :not_grantable} = Grant.grant(%{}, definition.id, 1)
   end
@@ -276,8 +267,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
     assert definition.quest_skill
     assert definition.quest_owner_job == :wizard
 
-    assert Map.has_key?(SkillTree.tree_for(wizard_id), skill_id) ==
-             (GameMode.mode() == :pre_renewal)
+    assert Map.has_key?(SkillTree.tree_for(wizard_id), skill_id)
 
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression, skill_id)
     assert {:ok, %{^skill_id => 1}} = Grant.grant(%{}, skill_id, 1)

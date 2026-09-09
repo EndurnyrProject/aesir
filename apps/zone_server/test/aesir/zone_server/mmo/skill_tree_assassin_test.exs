@@ -1,7 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
   use ExUnit.Case, async: false
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -21,8 +20,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
                       {"AS_SPLASHER", 10, [{"AS_POISONREACT", 5}, {"AS_VENOMDUST", 5}]}
                     ])
 
+  @classic_entries MapSet.union(
+                     @assassin_entries,
+                     MapSet.new([{"AS_SONICACCEL", 1, []}, {"AS_VENOMKNIFE", 1, []}])
+                   )
+
   test "Assassin YAML declares exactly the approved ordinary entries" do
-    assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@assassin_entries)
+    assert normalized_entry_set(normalized_entries()) == normalized_entry_set(@classic_entries)
   end
 
   test "resolved tree contains each Novice and Thief entry once plus IDs 132 through 141" do
@@ -95,19 +99,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
   end
 
   defp expected_owned_ids do
-    ordinary = MapSet.new(132..141)
-
-    if GameMode.mode() == :pre_renewal,
-      do: ordinary |> MapSet.put(1_003) |> MapSet.put(1_004),
-      else: ordinary
+    132..141 |> MapSet.new() |> MapSet.put(1_003) |> MapSet.put(1_004)
   end
 
   defp inherited_entries(parent_id) do
-    entries = SkillTree.tree_for(parent_id)
-
-    if GameMode.mode() == :pre_renewal,
-      do: Map.delete(entries, catalog_id(:nv_trickdead)),
-      else: entries
+    parent_id
+    |> SkillTree.tree_for()
+    |> Map.delete(catalog_id(:nv_trickdead))
   end
 
   defp normalized_entry_set(entries) do
@@ -117,10 +115,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeAssassinTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "assassin.yml")
-
-    [%{"job" => "assassin", "inherit" => ["novice", "thief"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "assassin", "tree" => tree} = Enum.find(rows, &(&1["job"] == "assassin"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})

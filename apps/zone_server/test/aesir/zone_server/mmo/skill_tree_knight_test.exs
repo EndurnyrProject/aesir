@@ -3,7 +3,6 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeKnightTest do
 
   import ExUnit.CaptureLog
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DataLoader
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -33,6 +32,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeKnightTest do
 
   @classic_entries MapSet.put(@canonical_entries, {"KN_CHARGEATK", 1, []})
 
+  # KN_ONEHAND has no compiled module (permanently deferred, like Sage's
+  # SA_ABRACADABRA): rAthena's raw db lists it in the Knight tree, but
+  # SkillTree drops it at load, so it never reaches the resolved tree and
+  # must not be part of @classic_entries (the resolved-tree expectation).
+  @raw_entries MapSet.put(@classic_entries, {"KN_ONEHAND", 1, [{"KN_TWOHANDQUICKEN", 10}]})
+
   @learning_order [
     {:kn_spearmastery, 10},
     {:kn_pierce, 10},
@@ -47,7 +52,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeKnightTest do
   ]
 
   test "knight.yml contains exactly the normal Renewal Knight entries" do
-    assert MapSet.new(normalized_entries()) == @canonical_entries
+    assert MapSet.new(normalized_entries()) == @raw_entries
   end
 
   test "every Knight entry and prerequisite resolves without a loader drop" do
@@ -113,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeKnightTest do
     assert {:ok, definition} = Catalog.by_id(chargeatk_id)
     assert definition.quest_skill
     assert definition.quest_owner_job == :knight
-    assert Map.has_key?(tree, chargeatk_id) == mode_value(false, true)
+    assert Map.has_key?(tree, chargeatk_id)
 
     progression = knight_progression(knight_id, skill_point: 1)
 
@@ -195,10 +200,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeKnightTest do
   end
 
   defp normalized_entries do
-    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "knight.yml")
-
-    [%{"job" => "knight", "inherit" => ["swordman"], "tree" => tree}] =
-      DataLoader.parse_file(path)
+    path = Path.join(Application.app_dir(:zone_server, "priv/db/re/skill_tree"), "skill_tree.yml")
+    rows = DataLoader.parse_file(path)
+    %{"job" => "knight", "tree" => tree} = Enum.find(rows, &(&1["job"] == "knight"))
 
     Enum.map(tree, fn entry ->
       requires = Enum.map(Map.get(entry, "requires", []), &{&1["name"], &1["level"]})
@@ -206,13 +210,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeKnightTest do
     end)
   end
 
-  defp expected_entries do
-    mode_value(@canonical_entries, @classic_entries)
-  end
-
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
-  end
+  defp expected_entries, do: @classic_entries
 
   defp knight_owned_entries(knight_id) do
     knight_id
