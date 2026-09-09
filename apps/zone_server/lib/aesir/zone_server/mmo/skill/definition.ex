@@ -16,9 +16,17 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   `require_weapon` restricts ordinary player casts to the listed equipped
   right-hand weapon subtypes. An empty list (the default) accepts any weapon.
 
+  Any mode-keyable option (see `resolve_mode/2`) may be given as
+  `[renewal: value, pre_renewal: value]` instead of a plain value, so a skill
+  whose renewal and pre-renewal numbers diverge declares both from the same
+  `use Skill` call. `<SkillModule>.definition/1` selects the resolved
+  `Definition` for a given `Aesir.Commons.GameMode.t()`; `definition/0` is the
+  renewal struct.
+
   Use `build!/2` to construct a validated definition from `use` options.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.DefinitionValidation
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Requirement
@@ -218,6 +226,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     quest_owner_job: nil
   }
 
+  @mode_keyable [
+    :range,
+    :element,
+    :knockback,
+    :hit_count,
+    :splash_radius,
+    :hit_interval,
+    :unit_duration,
+    :hp_cost,
+    :hp_cost_rate,
+    :sp_cost,
+    :sphere_cost,
+    :zeny_cost,
+    :duration,
+    :cast_time,
+    :fixed_cast_time,
+    :after_cast_delay,
+    :cooldown,
+    :item_cost,
+    :require_weapon,
+    :requires_ammo,
+    :max_level
+  ]
+
   @doc """
   Builds a validated `Definition` from `use`-macro options.
 
@@ -230,6 +262,31 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
     metadata = DefinitionValidation.validate!(@metadata_schema, opts, module, @defaults)
     validate_quest_owner!(metadata, module)
     struct!(__MODULE__, metadata)
+  end
+
+  @doc """
+  Resolves mode-keyed values in `opts` for `mode`.
+
+  A value on a field listed in `@mode_keyable` is mode-keyed only when it is
+  a keyword list whose keys are exactly `:renewal` and `:pre_renewal`, in
+  either order; such a value resolves to its entry for `mode`. Every other
+  value - a plain value, a malformed keyed list, or a keyed value on a field
+  that isn't mode-keyable - passes through unchanged, so `build!/2`'s schema
+  validation rejects it downstream and names the offending module.
+  """
+  @spec resolve_mode(keyword(), GameMode.t()) :: keyword()
+  def resolve_mode(opts, mode) do
+    Enum.map(opts, fn {field, value} -> {field, resolve_value(field, value, mode)} end)
+  end
+
+  defp resolve_value(field, value, mode) when field in @mode_keyable do
+    if mode_keyed?(value), do: Keyword.fetch!(value, mode), else: value
+  end
+
+  defp resolve_value(_field, value, _mode), do: value
+
+  defp mode_keyed?(value) do
+    Keyword.keyword?(value) and Enum.sort(Keyword.keys(value)) == [:pre_renewal, :renewal]
   end
 
   defp validate_quest_owner!(%{quest_skill: true, quest_owner_job: nil}, module) do

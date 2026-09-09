@@ -18,8 +18,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     * `Skill.Ensemble` - the skill is an ensemble
 
   A skill declares only the behaviours it needs and can mix several at once.
-  `use Skill` builds and stores the validated definition, exposes `skill_name/0`
-  and `definition/0`, and - through a `@before_compile` hook - reads the declared
+  `use Skill` builds and stores one validated definition per game mode (any
+  mode-keyable option may be given as `[renewal: value, pre_renewal: value]`,
+  see `Skill.Definition`), exposes `skill_name/0`, `definition/0`, and
+  `definition/1`, and - through a `@before_compile` hook - reads the declared
   `@behaviour`s to:
 
     * publish the skill's capabilities via `__skill_capabilities__/0` for
@@ -86,7 +88,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
     quote bind_quoted: [opts: opts] do
       @before_compile Aesir.ZoneServer.Mmo.Skill
 
-      @skill_definition Aesir.ZoneServer.Mmo.Skill.Definition.build!(opts, __MODULE__)
+      @skill_definition Map.new([:renewal, :pre_renewal], fn mode ->
+                          {mode,
+                           Aesir.ZoneServer.Mmo.Skill.Definition.build!(
+                             Aesir.ZoneServer.Mmo.Skill.Definition.resolve_mode(opts, mode),
+                             __MODULE__
+                           )}
+                        end)
 
       # Whether this module explicitly passed `requires:` (vs relying on the default).
       # Recorded at compile time so the mob-skill requirement manifest can detect a
@@ -97,16 +105,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill do
       def __requires_declared__, do: @requires_declared
 
       @doc false
-      def skill_name, do: @skill_definition.name
+      def skill_name, do: @skill_definition.renewal.name
 
       @doc false
-      def definition, do: @skill_definition
+      def definition, do: @skill_definition.renewal
+
+      @doc false
+      def definition(mode), do: @skill_definition[mode]
     end
   end
 
   defmacro __before_compile__(env) do
     mod = env.module
-    definition = Module.get_attribute(mod, :skill_definition)
+    definition = Module.get_attribute(mod, :skill_definition).renewal
     behaviours = Module.get_attribute(mod, :behaviour) || []
 
     ground? = Ground in behaviours
