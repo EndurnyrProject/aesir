@@ -71,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     }
   end
 
+  @tag game_mode: :renewal
   test "definition publishes one eight-display-hit Katar attack" do
     skill = definition()
 
@@ -86,6 +87,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert AsSonicblow.__requires_declared__()
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic trades the cooldown for a 2 second delay and stuns for 5 seconds" do
+    skill = definition()
+
+    assert skill.after_cast_delay == List.duplicate(2_000, 10)
+    assert skill.cooldown == []
+    assert skill.duration == List.duplicate(5_000, 10)
+    assert skill.require_weapon == [:katar]
+  end
+
   test "player validation requires a Katar while mobs bypass equipment" do
     assert :ok = AsSonicblow.validate(player(), {:unit, @target_id}, 1, definition())
 
@@ -98,6 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
              AsSonicblow.validate(mob(@caster_id, 100, 100), {:unit, @target_id}, 1, definition())
   end
 
+  @tag game_mode: :renewal
   test "minimum level uses the strict below-half ratio and one mechanical hit" do
     caster = player()
     target = mob(@target_id, 49, 100)
@@ -125,6 +137,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert {:ok, ^caster} = AsSonicblow.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic ignores low HP, folds Sonic Acceleration into the ratio, and stuns for 5 seconds" do
+    caster = player()
+    target = mob(@target_id, 49, 100)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+
+    expect(Combat, :execute_sonic_blow_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 350
+      assert opts[:accelerated] == false
+      assert opts[:acceleration] == %{hit_rate: 50, damage_rate: 100}
+      {:ok, %{hit?: true, damage: 0, target_survives?: true}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, opts ->
+      assert opts[:duration] == 5_000
+      assert opts[:success_rate] == 12
+      :ok
+    end)
+
+    assert {:ok, ^caster} = AsSonicblow.cast(caster, {:unit, @target_id}, 1, definition())
+
+    accelerated = player(%{1003 => 1})
+
+    expect(Combat, :execute_sonic_blow_attack, fn ^accelerated, @target_id, opts ->
+      assert opts[:skill_ratio] == 880
+      assert opts[:accelerated] == true
+      {:ok, %{hit?: false, damage: 0, target_survives?: true}}
+    end)
+
+    assert {:ok, ^accelerated} =
+             AsSonicblow.cast(accelerated, {:unit, @target_id}, 10, definition())
+  end
+
+  @tag game_mode: :renewal
   test "exactly half HP does not receive the low-HP multiplier" do
     caster = player()
     target = mob(@target_id, 50, 100)
@@ -139,6 +185,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert {:ok, ^caster} = AsSonicblow.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
+  @tag game_mode: :renewal
   test "maximum level marks a granted player for exact final acceleration" do
     accel_id = 1003
     caster = player(%{accel_id => 1})
@@ -155,6 +202,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblowTest do
     assert {:ok, ^caster} = AsSonicblow.cast(caster, {:unit, @target_id}, 10, definition())
   end
 
+  @tag game_mode: :renewal
   test "mob Sonic Blow gets low-HP damage and Stun but never acceleration" do
     caster = mob(@caster_id, 100, 100)
 

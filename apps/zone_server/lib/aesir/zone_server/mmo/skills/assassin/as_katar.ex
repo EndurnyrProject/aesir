@@ -1,5 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsKatar do
-  @moduledoc "Katar Mastery (AS_KATAR). Adds ATK while wielding a Katar."
+  @moduledoc """
+  Katar Mastery (AS_KATAR). Adds 3 ATK per level while wielding a katar.
+
+  Renewal and pre-renewal agree.
+  """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 134,
     name: :as_katar,

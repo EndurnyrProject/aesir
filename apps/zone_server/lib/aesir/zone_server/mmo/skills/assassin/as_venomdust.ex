@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
   @moduledoc """
-  Venom Dust (AS_VENOMDUST), a five-cell Poison field.
+  Venom Dust (AS_VENOMDUST). A five-cell cross of poison that every second poisons
+  enemies within a cell of each cell, for 5 s per level, 20 SP, and a Red Gemstone.
+
+  Renewal poisons for 18 s; pre-renewal for 60 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 140,
@@ -10,10 +13,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
     max_level: 10,
     target_type: :ground,
     damage_type: :no_damage,
+    element: :poison,
     range: 2,
     hit_interval: 1_000,
     unit_duration: Enum.to_list(5_000..50_000//5_000),
     sp_cost: List.duplicate(20, 10),
+    duration: [renewal: List.duplicate(18_000, 10), pre_renewal: List.duplicate(60_000, 10)],
     item_cost: [%{id: 716, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Combat
@@ -67,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdust do
 
   defp apply_poison({unit_type, unit_id}, group) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
-      duration: 18_000,
+      duration: Enum.at(definition().duration, group.level - 1),
       caster_id: group.caster_id,
       source_type: group.caster_type
     )

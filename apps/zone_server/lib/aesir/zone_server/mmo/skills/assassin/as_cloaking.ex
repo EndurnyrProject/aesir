@@ -1,6 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsCloaking do
   @moduledoc """
-  Cloaking (AS_CLOAKING), a self-toggle concealment skill.
+  Cloaking (AS_CLOAKING). A self toggle for 15 SP that hides the caster, doubles
+  CRIT, drains 1 SP every 0.5 to 9 s by level, and below level 3 needs an impassable
+  neighbouring cell; movement is heavily slowed below level 3 and mildly slowed
+  (30% minus 3% per level) from level 3 up.
+
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 135,

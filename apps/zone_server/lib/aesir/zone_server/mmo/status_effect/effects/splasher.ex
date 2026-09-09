@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
   @moduledoc """
-  Target-owned Venom Splasher countdown.
+  Target-owned Venom Splasher countdown (SC_SPLASHER). Explodes into a 2-cell
+  poison weapon splash from the arming caster and poisons everything hit.
+
+  Renewal: 400% plus 100% per level, poison 18 s. Pre-renewal: 500% plus 50% per
+  level, poison 60 s. Both add 20% per Poison React level of a player caster.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_splasher,
@@ -12,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
     immunity: [:status_immune],
     icon: :splasher
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -71,13 +76,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
   end
 
   defp damage_ratio(%StatusEntry{val1: level, source_type: :player, state: state}),
-    do: 400 + 100 * level + 20 * Map.fetch!(state, :poison_react_level)
+    do: base_ratio(level) + 20 * Map.fetch!(state, :poison_react_level)
 
-  defp damage_ratio(%StatusEntry{val1: level}), do: 400 + 100 * level
+  defp damage_ratio(%StatusEntry{val1: level}), do: base_ratio(level)
+
+  @doc "Renewal explodes at 400% plus 100% per level; pre-renewal at 500% plus 50% per level."
+  @spec base_ratio(pos_integer()) :: pos_integer()
+  def base_ratio(level) do
+    case GameMode.mode() do
+      :renewal -> 400 + 100 * level
+      :pre_renewal -> 500 + 50 * level
+    end
+  end
+
+  @doc "The poison left by the explosion lasts 18 s in renewal and 60 s in pre-renewal."
+  @spec poison_duration() :: pos_integer()
+  def poison_duration, do: if(GameMode.mode() == :renewal, do: 18_000, else: 60_000)
 
   defp apply_poison({unit_type, unit_id}, instance) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
-      duration: 18_000,
+      duration: poison_duration(),
       caster_id: instance.source_id,
       source_type: instance.source_type
     )

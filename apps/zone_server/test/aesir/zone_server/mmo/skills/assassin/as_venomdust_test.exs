@@ -67,6 +67,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     assert placement.duration == 50_000
   end
 
+  @tag game_mode: :renewal
   test "queries every cell at range one, deduplicates targets, and skips existing Poison" do
     caster = %{unit_type: :player, unit_id: 1_000, map_name: "prontera"}
     poisoned_target = 2_001
@@ -87,6 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     assert {:ok, %Group{}} = AsVenomdust.on_interval(group(1), 1_000)
   end
 
+  @tag game_mode: :renewal
   test "preserves a mob caster as the typed Poison source" do
     caster = %{unit_type: :mob, unit_id: 3_000, map_name: "prontera"}
     mob_group = %{group(1) | caster_type: :mob, caster_id: 3_000}
@@ -100,6 +102,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomdustTest do
     end)
 
     assert {:ok, %Group{}} = AsVenomdust.on_interval(mob_group, 1_000)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic poisons for a full minute" do
+    caster = %{unit_type: :player, unit_id: 1_000, map_name: "prontera"}
+
+    expect(Combat, :resolve_combatant, fn :player, 1_000 -> {:ok, caster} end)
+    stub(Combat, :splash_targets, fn "prontera", _cell, 1, ^caster -> [{:mob, 2_000}] end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 2_000, :sc_poison, params ->
+      assert params == [duration: 60_000, caster_id: 1_000, source_type: :player]
+      :ok
+    end)
+
+    assert {:ok, %Group{}} = AsVenomdust.on_interval(group(1), 1_000)
+    assert AsVenomdust.definition(:renewal).duration == List.duplicate(18_000, 10)
   end
 
   test "commits one Red Gemstone only after player placement succeeds" do

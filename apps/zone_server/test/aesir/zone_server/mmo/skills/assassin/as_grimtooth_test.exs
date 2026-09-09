@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     assert definition.range == [3, 4, 5, 6, 7]
     assert definition.splash_radius == 1
     assert definition.sp_cost == List.duplicate(3, 5)
+    assert definition.require_weapon == [:katar]
     assert definition.requires == []
     assert {:ok, ^definition} = Catalog.by_id(137)
 

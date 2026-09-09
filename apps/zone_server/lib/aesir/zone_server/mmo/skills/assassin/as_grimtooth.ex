@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
   @moduledoc """
-  Grimtooth (AS_GRIMTOOTH), a target-centered ranged Katar sweep.
+  Grimtooth (AS_GRIMTOOTH). From Hiding, a katar sweep centred on the target at 3
+  to 7 cells for 3 SP: 100% plus 20% per level weapon damage over a 3x3 area,
+  riding a one-second Quagmire on non-immune mobs.
+
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 137,
@@ -13,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth do
     damage_kind: :weapon,
     range: [3, 4, 5, 6, 7],
     splash_radius: 1,
-    sp_cost: List.duplicate(3, 5)
+    sp_cost: List.duplicate(3, 5),
+    require_weapon: [:katar]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active

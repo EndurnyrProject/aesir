@@ -1,7 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
   @moduledoc """
-  Enchant Poison (AS_ENCHANTPOISON) endows the caster or a nearby party ally's
-  weapon with Poison and enables its ordinary-swing Poison proc.
+  Enchant Poison (AS_ENCHANTPOISON). Endows the caster's or a nearby party ally's
+  weapon with the poison element for 15 s plus 15 s per level and 20 SP; ordinary
+  swings then poison 2.5% plus 0.5% per level of the time for 10 s per level.
+
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 138,
@@ -11,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsEnchantpoison do
     max_level: 10,
     target_type: :target_ally,
     damage_type: :no_damage,
+    element: :poison,
     range: 1,
     sp_cost: List.duplicate(20, 10),
     duration: Enum.map(1..10, &(30_000 + 15_000 * (&1 - 1)))

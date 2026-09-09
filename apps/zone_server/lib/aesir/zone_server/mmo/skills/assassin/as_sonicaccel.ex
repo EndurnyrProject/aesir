@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicaccel do
-  @moduledoc "Sonic Acceleration (AS_SONICACCEL), the Assassin Sonic Blow quest passive."
+  @moduledoc """
+  Sonic Acceleration (AS_SONICACCEL). The Assassin quest passive that sharpens Sonic
+  Blow.
+
+  Renewal: 90% more HIT and 90% more damage on Sonic Blow. Pre-renewal: 50% more HIT
+  and a tenth more damage.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1003,

@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the Throw Venom Knife quest skill" do
     assert {:ok, AsVenomknife} = Catalog.active_module_for(:as_venomknife)
     assert {:ok, definition} = Catalog.by_id(1004)
@@ -42,6 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     assert definition.requires_ammo
     assert definition.quest_skill
     assert definition.quest_owner_job == :assassin
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic costs 15 SP, throws at 100 percent, and poisons for a minute" do
+    assert {:ok, definition} = Catalog.by_id(1004)
+    assert definition.sp_cost == [15]
+    assert definition.duration == [60_000]
+    assert AsVenomknife.skill_ratio() == 100
   end
 
   test "validation requires the equipped Venom Knife item" do
@@ -69,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
              )
   end
 
+  @tag game_mode: :renewal
   test "a confirmed hit uses the forced neutral long no-card Auto Guard-exempt path and attempts Poison" do
     caster = %PlayerState{
       character_id: 1_000,
@@ -117,6 +127,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsVenomknifeTest do
     assert_uncommitted(wrong_ammo)
   end
 
+  @tag game_mode: :renewal
   test "successful completion spends 35 SP and stages exactly one Venom Knife removal" do
     caster = player_state(1771)
     stub_target()

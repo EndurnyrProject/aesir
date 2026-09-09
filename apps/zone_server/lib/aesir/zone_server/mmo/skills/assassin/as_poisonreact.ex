@@ -1,6 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsPoisonreact do
   @moduledoc """
-  Poison React (AS_POISONREACT) arms a reactive counter stance on the caster.
+  Poison React (AS_POISONREACT). Arms a counter stance for 15 s plus 5 s per level
+  (capped at 60 s) and 25 to 60 SP: ordinary hits are answered half the time by a
+  level 5 Envenom for level/2 charges, and a poison-element attack switches the
+  stance to one boosted swing (+30% per level) that poisons half the time for 60 s.
+
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 139,

@@ -195,9 +195,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   @doc """
   Executes Sonic Blow through the ordinary primary-hand weapon path.
 
-  When `:accelerated` is true, the player's HIT gains 90% for this attack and
-  the fully calculated damage gains 90% immediately before delivery. Mob
-  casters are never accelerated.
+  When `:accelerated` is true, the player's HIT and the fully calculated damage
+  gain the `:acceleration` rates (`%{hit_rate: 90, damage_rate: 190}` by
+  default, the renewal Sonic Acceleration bonus) immediately before delivery.
+  Mob casters are never accelerated.
   """
   @spec execute_sonic_blow_attack(struct(), integer() | Ref.t(), keyword()) ::
           :ok
@@ -211,30 +212,31 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           | {:error, atom()}
   def execute_sonic_blow_attack(caster_state, target_id, opts) do
     accelerated? = Keyword.get(opts, :accelerated, false) and match?(%PlayerState{}, caster_state)
-    caster_state = maybe_accelerate_hit(caster_state, accelerated?)
-    opts = Keyword.delete(opts, :accelerated)
+    rates = Keyword.get(opts, :acceleration, %{hit_rate: 90, damage_rate: 190})
+    caster_state = maybe_accelerate_hit(caster_state, accelerated?, rates.hit_rate)
+    opts = Keyword.drop(opts, [:accelerated, :acceleration])
 
     calculator =
       if accelerated?,
-        do: &calculate_accelerated_damage/3,
+        do: &calculate_accelerated_damage(&1, &2, &3, rates.damage_rate),
         else: &DamageCalculator.calculate_damage/3
 
     execute_single_target_attack(caster_state, target_id, opts, calculator, %{})
   end
 
-  defp calculate_accelerated_damage(attacker, defender, calc_opts) do
+  defp calculate_accelerated_damage(attacker, defender, calc_opts, damage_rate) do
     with {:ok, result} <- DamageCalculator.calculate_damage(attacker, defender, calc_opts) do
-      {:ok, %{result | damage: div(result.damage * 190, 100)}}
+      {:ok, %{result | damage: div(result.damage * damage_rate, 100)}}
     end
   end
 
-  defp maybe_accelerate_hit(%PlayerState{stats: stats} = caster, true) do
+  defp maybe_accelerate_hit(%PlayerState{stats: stats} = caster, true, hit_rate) do
     hit = stats.combat_stats.hit
-    combat_stats = %{stats.combat_stats | hit: hit + div(hit * 90, 100)}
+    combat_stats = %{stats.combat_stats | hit: hit + div(hit * hit_rate, 100)}
     %{caster | stats: %{stats | combat_stats: combat_stats}}
   end
 
-  defp maybe_accelerate_hit(caster, _accelerated?), do: caster
+  defp maybe_accelerate_hit(caster, _accelerated?, _hit_rate), do: caster
 
   @doc """
   Executes the forced-hit, no-attacker-card physical path used by Venom Knife.

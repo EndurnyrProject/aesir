@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsRight do
-  @moduledoc "Righthand Mastery (AS_RIGHT). Raises right-hand dual-wield damage."
+  @moduledoc """
+  Righthand Mastery (AS_RIGHT). Raises right-hand dual-wield damage to 50% plus 10%
+  per level.
+
+  Renewal and pre-renewal agree.
+  """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 132,
     name: :as_right,

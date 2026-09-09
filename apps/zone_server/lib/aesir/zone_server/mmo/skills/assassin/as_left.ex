@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsLeft do
-  @moduledoc "Lefthand Mastery (AS_LEFT). Raises left-hand dual-wield damage."
+  @moduledoc """
+  Lefthand Mastery (AS_LEFT). Raises left-hand dual-wield damage to 30% plus 10% per
+  level.
+
+  Renewal and pre-renewal agree.
+  """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 133,
     name: :as_left,

@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
              Splasher.on_tick({:mob, 2_000}, instance, %{})
   end
 
+  @tag game_mode: :renewal
   test "a player terminal tick uses the current target cell and snapshotted passive ratio" do
     expect(StatusInterpreter, :expire_status_if_current, fn
       :mob, 2_000, :sc_splasher, _instance -> true
@@ -68,6 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
              )
   end
 
+  @tag game_mode: :renewal
   test "a mob terminal tick omits player passive resources and empty areas stay valid" do
     expect(StatusInterpreter, :expire_status_if_current, fn
       :player, 4_000, :sc_splasher, _instance -> true
@@ -108,6 +110,49 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SplasherTest do
     expect(SpecialEffect, :play, fn {:player, 4_000}, :splasher -> :ok end)
 
     assert :remove = Splasher.on_tick({:player, 4_000}, instance, %{})
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic explodes at 500 plus 50 per level and poisons for a minute" do
+    assert Splasher.base_ratio(10) == 1_000
+    assert Splasher.base_ratio(1) == 550
+    assert Splasher.poison_duration() == 60_000
+
+    expect(StatusInterpreter, :expire_status_if_current, fn
+      :mob, 2_000, :sc_splasher, _instance -> true
+    end)
+
+    source = %PlayerState{
+      character_id: 1_000,
+      map_name: "prontera",
+      action_state: :idle,
+      stats: %{current_state: %{hp: 100}}
+    }
+
+    expect(TargetResolver, :resolve, fn :player, 1_000 -> {:ok, self(), source, :player} end)
+
+    expect(TargetResolver, :resolve_target_position, fn {:mob, 2_000} ->
+      {:ok, :mob, {120, 121, "prontera"}}
+    end)
+
+    expect(Combat, :execute_forced_no_card_splash, fn ^source, {120, 121}, 2, opts ->
+      assert opts[:skill_ratio] == 1_200
+      [{:mob, 2_001}]
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, 2_001, :sc_poison, params ->
+      assert params[:duration] == 60_000
+      :ok
+    end)
+
+    expect(SpecialEffect, :play, fn {:mob, 2_000}, :splasher -> :ok end)
+
+    assert :remove =
+             Splasher.on_tick(
+               {:mob, 2_000},
+               entry(remaining_ms: 500, level: 10, poison_react_level: 10),
+               %{}
+             )
   end
 
   test "source or target loss cleans the terminal status without exploding" do

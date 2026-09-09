@@ -1,5 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
-  @moduledoc "Sonic Blow (AS_SONICBLOW), one primary weapon hit displayed as eight."
+  @moduledoc """
+  Sonic Blow (AS_SONICBLOW). One katar strike displayed as eight hits, stunning
+  10 plus 2 per level percent of the time, for 16 to 34 SP at 1 cell.
+
+  Renewal: 200% plus 100% per level, half again below half HP; Sonic Acceleration
+  adds 90% HIT and 90% damage; a 4.5 s stun and a 1 s cooldown with no delay.
+  Pre-renewal: 300% plus 50% per level; Sonic Acceleration adds a tenth of the
+  damage and 50% HIT; a 5 s stun and a 2 s delay with no cooldown.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 136,
@@ -12,9 +20,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
     range: 1,
     hit_count: 1,
     sp_cost: Enum.to_list(16..34//2),
-    cooldown: List.duplicate(1_000, 10),
+    after_cast_delay: [renewal: [], pre_renewal: List.duplicate(2_000, 10)],
+    cooldown: [renewal: List.duplicate(1_000, 10), pre_renewal: []],
+    duration: [renewal: List.duplicate(4_500, 10), pre_renewal: List.duplicate(5_000, 10)],
     require_weapon: [:katar]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -42,8 +53,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
       opts = [
         skill_id: definition.id,
         skill_level: level,
-        skill_ratio: skill_ratio(level, below_half?(target)),
+        skill_ratio: skill_ratio(level, below_half?(target), accelerated?),
         accelerated: accelerated?,
+        acceleration: acceleration(),
         hit_count: 1,
         display_hit_count: 8,
         skip_crit: true,
@@ -53,7 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
 
       case Combat.execute_sonic_blow_attack(caster, target_ref, opts) do
         {:ok, %{hit?: true}} ->
-          apply_stun(caster, target_type, target_ref, level)
+          apply_stun(caster, target_type, target_ref, level, definition)
           {:ok, caster}
 
         {:ok, %{hit?: false}} ->
@@ -65,11 +77,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
     end
   end
 
-  @doc "Returns Sonic Blow's Renewal weapon ratio before Sonic Acceleration."
-  @spec skill_ratio(pos_integer(), boolean()) :: pos_integer()
-  def skill_ratio(level, below_half?) do
-    ratio = 200 + 100 * level
-    if below_half?, do: div(ratio * 3, 2), else: ratio
+  @doc """
+  The weapon ratio. Renewal: 200% plus 100% per level, half again against a target
+  below half HP (Sonic Acceleration is applied later as a 190% damage rate).
+  Pre-renewal: 300% plus 50% per level, plus a tenth with Sonic Acceleration.
+  """
+  @spec skill_ratio(pos_integer(), boolean(), boolean()) :: pos_integer()
+  def skill_ratio(level, below_half?, accelerated?) do
+    case GameMode.mode() do
+      :renewal ->
+        ratio = 200 + 100 * level
+        if below_half?, do: div(ratio * 3, 2), else: ratio
+
+      :pre_renewal ->
+        ratio = 300 + 50 * level
+        if accelerated?, do: ratio + div(ratio, 10), else: ratio
+    end
+  end
+
+  # Sonic Acceleration: renewal adds 90% HIT and 90% damage at delivery; classic adds
+  # 50% HIT (its damage share already sits in the ratio).
+  defp acceleration do
+    case GameMode.mode() do
+      :renewal -> %{hit_rate: 90, damage_rate: 190}
+      :pre_renewal -> %{hit_rate: 50, damage_rate: 100}
+    end
   end
 
   defp accelerated?(%PlayerState{stats: %{progression: %{learned_skills: learned}}}) do
@@ -83,12 +115,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSonicblow do
 
   defp below_half?(%{hp: hp, max_hp: max_hp}), do: hp * 2 < max_hp
 
-  defp apply_stun(caster, target_type, target_ref, level) do
+  defp apply_stun(caster, target_type, target_ref, level, definition) do
     {source_type, caster_id} = caster_ref(caster)
 
     _ =
       StatusInterpreter.apply_status(target_type, unit_id(target_ref), :sc_stun,
-        duration: 4_500,
+        duration: Enum.at(definition.duration, level - 1),
         success_rate: 10 + 2 * level,
         caster_id: caster_id,
         source_type: source_type

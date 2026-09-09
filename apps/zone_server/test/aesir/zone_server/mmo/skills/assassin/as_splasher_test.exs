@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobSkill.Db
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
   setup :setup_ets_tables
   setup :verify_on_exit!
 
+  @tag game_mode: :renewal
   test "defines Venom Splasher's exact player and mob-safe contract" do
     assert {:ok, definition} = Catalog.by_id(141)
     assert definition.name == :as_splasher
@@ -47,6 +49,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert definition.hp_cost_rate == []
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic casts in a flat second, cools down 7.5 to 12 seconds, and needs a Red Gemstone" do
+    assert {:ok, definition} = Catalog.by_id(141)
+    assert definition.cast_time == List.duplicate(1_000, 10)
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == Enum.to_list(7_500..12_000//500)
+    assert definition.item_cost == [%{id: 716, amount: 1}]
+    assert definition.duration == List.duplicate(60_000, 10)
+  end
+
   @tag game_mode: :renewal
   test "the imported Gaster row resolves to the mob-safe skill" do
     assert %{skill_id: 141, skill: "AS_SPLASHER", level: 5, cast_time: 0, delay: 5_000} =
@@ -61,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert {:ok, %{requires: []}} = Catalog.by_id(141)
   end
 
+  @tag game_mode: :renewal
   test "a controlled Splasher row reaches the mob terminal ratio through the real executor" do
     target = player_target(4_100)
     register_player(target)
@@ -91,6 +104,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     refute StatusStorage.has_status?(:player, target.character_id, :sc_splasher)
   end
 
+  @tag game_mode: :pre_renewal
+  test "a classic Splasher row reaches the mob terminal ratio once the target is weakened" do
+    target = player_target(4_100)
+    target = put_in(target.stats.current_state.hp, 70)
+    target = put_in(target.stats.derived_stats.max_hp, 100)
+    register_player(target)
+
+    caster = %{mob_target(3_100) | target_ref: {:player, target.character_id}, sp: 0}
+    register_mob(caster)
+
+    row = %{skill: "AS_SPLASHER", skill_id: 141, level: 5, target: :target}
+
+    expect(Combat, :execute_forced_no_card_splash, fn ^caster, {100, 100}, 2, opts ->
+      assert opts[:skill_level] == 5
+      assert opts[:skill_ratio] == 750
+      []
+    end)
+
+    expect(SpecialEffect, :play, fn {:player, 4_100}, :splasher -> :ok end)
+
+    assert :ok = Executor.execute(caster, row)
+
+    entry = StatusStorage.get_status(:player, target.character_id, :sc_splasher)
+    assert :stop == run_exact_ticks(:player, target.character_id, entry.generation)
+  end
+
   test "a player arms target-owned tickless state with a Poison React snapshot" do
     caster = player_caster(%{139 => 7})
     target = mob_target(2_000)
@@ -112,6 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert entry.expires_at == entry.started_at + 10_500
   end
 
+  @tag game_mode: :renewal
   test "the real manager chain keeps absolute Splasher deadlines through terminal explosion" do
     source = player_caster(%{})
     register_player(source)
@@ -168,6 +208,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "the player cast path commits only SP and the DB cooldown after arming" do
     caster = player_caster(%{139 => 6, 141 => 3})
     target = mob_target(2_025)
@@ -180,6 +221,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     assert updated.stats.current_state.sp == 84
     assert updated.inventory == caster.inventory
     assert updated.skill_cooldowns[141] in (now + 8_500)..(now + 9_500)
+
+    assert %{state: %{poison_react_level: 6}} =
+             StatusStorage.get_status(:mob, target.instance_id, :sc_splasher)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "the classic cast path needs a weakened target and cools down 8.5 seconds at level 3" do
+    caster = player_caster(%{139 => 6, 141 => 3})
+    caster = %{caster | inventory: %{1 => %InventoryItem{nameid: 716, amount: 2}}}
+    target = %{mob_target(2_025) | hp: 75}
+    register_mob(target)
+    now = System.monotonic_time(:millisecond)
+
+    assert {:ok, updated} =
+             SkillInterpreter.complete_cast(caster, 141, 3, {:unit, target.instance_id})
+
+    assert updated.stats.current_state.sp == 84
+    assert updated.inventory[1].amount == 1
+    assert updated.skill_cooldowns[141] in (now + 8_000)..(now + 9_000)
 
     assert %{state: %{poison_react_level: 6}} =
              StatusStorage.get_status(:mob, target.instance_id, :sc_splasher)
@@ -264,6 +324,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
     end)
   end
 
+  @tag game_mode: :renewal
   test "only one natural current-generation terminal tick explodes" do
     caster = player_caster(%{139 => 10})
     target = mob_target(2_060)
@@ -350,6 +411,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsSplasherTest do
                1,
                AsSplasher.definition()
              )
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic validation refuses a target above three quarters of its HP" do
+    full = mob_target(2_200)
+    register_mob(full)
+
+    assert {:error, :invalid_target} =
+             AsSplasher.validate(player_caster(%{}), {:unit, 2_200}, 1, AsSplasher.definition())
+
+    weakened = %{mob_target(2_201) | hp: 75}
+    register_mob(weakened)
+
+    assert :ok =
+             AsSplasher.validate(player_caster(%{}), {:unit, 2_201}, 1, AsSplasher.definition())
   end
 
   defp drive_manager_ticks(message, state, due_at) do
