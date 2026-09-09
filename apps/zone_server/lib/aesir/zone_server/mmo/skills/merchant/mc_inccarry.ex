@@ -2,7 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McInccarry do
   @moduledoc """
   Enlarge Weight Limit (MC_INCCARRY). Grants `+2000 * skill level` max weight.
 
-  rAthena (`status.cpp:3679`): `sd->max_weight += 2000 * skill`.
+  Renewal and pre-renewal agree: +2000 carry weight per level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 36,

@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
       assert definition.splash_radius == 1
       assert definition.knockback == 2
       assert definition.element == :neutral
+      assert definition.range == 1
       assert definition.sp_cost == [12]
     end
   end
@@ -81,6 +82,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
   end
 
   describe "cast/4" do
+    test "a caster without a cart (a mob) hits at the 250% ceiling" do
+      caster = %{mob_id: 77, x: 1, y: 1}
+
+      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+
+      expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
+        assert opts[:skill_ratio] == 250
+        assert opts[:element] == :neutral
+        []
+      end)
+
+      assert {:ok, ^caster} = McCartrevolution.cast(caster, {:unit, @target_id}, 1, definition())
+    end
+
     test "without a mounted cart returns {:error, :no_cart} and deals no damage" do
       reject(&Combat.execute_splash_attack/4)
       reject(&Combat.knockback/5)
@@ -111,6 +126,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McCartrevolutionTest do
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == expected_ratio
         assert opts[:skip_crit] == true
+        assert opts[:element] == :neutral
         assert opts[:base_distance] == 2
         assert opts[:origin] == {15, 25}
         assert opts[:native_target_types] == [:mob]

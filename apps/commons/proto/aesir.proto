@@ -1165,6 +1165,7 @@ enum VendingOpenResultCode {
   VEND_ITEM_NOT_IN_CART = 6;
   VEND_INSUFFICIENT_STOCK = 7;
   VEND_INVALID_STATE = 8;
+  VEND_INSUFFICIENT_SP = 9;
 }
 
 // Server -> client, outcome of a vending open attempt.

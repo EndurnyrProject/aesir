@@ -7,8 +7,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.LoudTest do
   defp entry(overrides), do: struct(%StatusEntry{type: :sc_loud, state: %{}}, overrides)
 
   describe "modifiers/2" do
-    test "grants +4 STR and +30 base ATK" do
+    @tag game_mode: :renewal
+    test "renewal grants +4 STR and +30 base ATK" do
       assert %{str: 4, watk: 30} = Loud.modifiers(entry([]), %{})
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic grants +4 STR only" do
+      assert %{str: 4} == Loud.modifiers(entry([]), %{})
     end
   end
 

@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
   import Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.PartyBuff
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McLoud
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
@@ -17,14 +18,51 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
       assert definition.target_type == :self
       assert definition.max_level == 1
       assert definition.sp_cost == [8]
+    end
+
+    test "renewal casts with a variable and fixed cast, a delay, and a cooldown" do
+      definition = McLoud.definition(:renewal)
       assert definition.cast_time == [1000]
       assert definition.fixed_cast_time == [300]
       assert definition.after_cast_delay == [1000]
       assert definition.cooldown == [30_000]
     end
+
+    test "classic casts instantly with no delay and no cooldown" do
+      definition = McLoud.definition(:pre_renewal)
+      assert definition.cast_time == [0]
+      assert definition.fixed_cast_time == [0]
+      assert definition.after_cast_delay == [0]
+      assert definition.cooldown == [0]
+    end
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
+    test "renewal shares the uproar with party members within the default area size" do
+      {:ok, definition} = Catalog.by_id(155)
+      caster = %{character_id: 4000, party_id: 9}
+
+      expect(PartyBuff, :apply, fn ^caster, :sc_loud, [duration: 300_000], 14 -> :ok end)
+
+      assert {:ok, ^caster} = McLoud.cast(caster, :self, 1, definition)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic applies SC_LOUD to the caster only" do
+      {:ok, definition} = Catalog.by_id(155)
+      caster = %{character_id: 4000, party_id: 9}
+
+      reject(&PartyBuff.apply/4)
+
+      expect(StatusInterpreter, :apply_status, fn :player, 4000, :sc_loud, duration: 300_000 ->
+        :ok
+      end)
+
+      assert {:ok, ^caster} = McLoud.cast(caster, :self, 1, definition)
+    end
+
+    @tag game_mode: :pre_renewal
     test "applies SC_LOUD on first cast" do
       {:ok, definition} = Catalog.by_id(155)
       caster = %{character_id: 4000}
@@ -36,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
       assert {:ok, ^caster} = McLoud.cast(caster, :self, 1, definition)
     end
 
+    @tag game_mode: :pre_renewal
     test "re-casting refreshes SC_LOUD instead of toggling it off" do
       {:ok, definition} = Catalog.by_id(155)
       caster = %{character_id: 4000}
@@ -48,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McLoudTest do
       assert {:ok, ^caster} = McLoud.cast(caster, :self, 1, definition)
     end
 
+    @tag game_mode: :pre_renewal
     test "propagates error from apply_status" do
       {:ok, definition} = Catalog.by_id(155)
       caster = %{character_id: 4000}

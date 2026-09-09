@@ -4,9 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McChangecart do
   sprite tier to the highest one the caster's base level permits.
 
   Requires a cart mounted (else `{:error, :no_cart}`). The base-level gate and the
-  tier selection live in `CartHandler.change_cart_tier/2`, which mirrors rAthena's
-  `clif_parse_ChangeCart` thresholds; when the caster's base level grants no tier
+  tier selection live in `CartHandler.change_cart_tier/2`, which uses the client's
+  base-level thresholds; when the caster's base level grants no tier
   above the current one the cast fizzles without spending SP.
+
+  Renewal and pre-renewal agree: the cart look is chosen by base level and the skill has no other effect.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 154,

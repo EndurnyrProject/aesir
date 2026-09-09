@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McPushcart do
   Merchant tree. Its learned level parameterizes the `SC_PUSHCART` walk-speed
   modifier and gates the cart mount flow, which reads the level rather than any
   passive channel here.
+
+  Renewal and pre-renewal agree: a mounted cart slows walking by 50% minus 5% per level (no penalty at level 10), and the cart look tier follows the level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 39,

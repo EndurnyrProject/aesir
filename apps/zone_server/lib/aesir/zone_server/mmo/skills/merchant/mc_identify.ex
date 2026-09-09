@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McIdentify do
   @moduledoc """
   Item Appraisal (MC_IDENTIFY). Offers the caster's unidentified inventory slots
   and identifies the selected row.
+
+  Renewal and pre-renewal agree: a menu of unidentified inventory slots, identifying the chosen one for 10 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 40,

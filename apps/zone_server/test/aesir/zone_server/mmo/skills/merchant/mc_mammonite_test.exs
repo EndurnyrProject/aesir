@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammoniteTest do
   test "Catalog.by_id/1 resolves mc_mammonite with the correct zeny_cost" do
     assert {:ok, definition} = Catalog.by_id(42)
     assert definition.name == :mc_mammonite
+    assert definition.range == 1
 
     assert definition.zeny_cost == [
              100,
@@ -67,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammoniteTest do
       assert opts[:skill_level] == 1
       assert opts[:skill_ratio] == 150
       assert opts[:skip_crit] == true
+      assert opts[:skip_range] == true
       :ok
     end)
 

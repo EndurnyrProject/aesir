@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
       job_level: 50,
       class: 0,
       hp: 800,
-      sp: 300,
+      sp: Keyword.get(opts, :sp, 300),
       learned_skills: Keyword.get(opts, :learned_skills, %{})
     }
   end
@@ -99,6 +99,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   end
 
   describe "open_shop/3" do
+    test "opening the shop costs the skill's 30 SP" do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level))
+
+      assert {:ok, new_state} = VendingHandler.open_shop(base, "Cheap Pots", [{0, 5, 100}])
+
+      assert new_state.game_state.stats.current_state.sp == 270
+    end
+
+    test "an invalid state transition leaves SP untouched" do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level))
+      vending = %{base | game_state: %{base.game_state | action_state: :moving}}
+
+      assert {:error, :invalid_transition} =
+               VendingHandler.open_shop(vending, "Shop", [{0, 5, 100}])
+
+      assert vending.game_state.stats.current_state.sp == 300
+    end
+
+    test "with less than 30 SP the shop does not open" do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level), sp: 29)
+
+      assert {:error, :insufficient_sp} = VendingHandler.open_shop(base, "Shop", [{0, 5, 100}])
+      assert :error = Registry.get(@char_id)
+    end
+
     test "with a mounted cart and MC_VENDING learned enters :vending, registers, broadcasts" do
       mount_cart()
       base = state(learned_skills: learned(@vending_level))
@@ -150,6 +178,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandlerTest do
   end
 
   describe "handle_open/3" do
+    test "reports VEND_INSUFFICIENT_SP when the caster cannot pay the skill" do
+      mount_cart()
+      base = state(learned_skills: learned(@vending_level), sp: 10)
+
+      assert {:noreply, ^base} = VendingHandler.handle_open(base, "Shop", [{0, 5, 100}])
+
+      assert_received {:send, :gameplay,
+                       {:vending_open_result,
+                        %Aesir.Net.VendingOpenResult{result: :VEND_INSUFFICIENT_SP}}}
+    end
+
     test "confirms a successful open with VendingOpenResult{ok: true}" do
       mount_cart()
       stub(UnitRegistry, :update_unit_state, fn :player, @char_id, _gs -> :ok end)

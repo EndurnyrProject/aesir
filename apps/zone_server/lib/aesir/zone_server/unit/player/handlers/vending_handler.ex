@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Mmo.ItemManagement.CreatorNames
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.Skills.Merchant.McVending
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -41,6 +42,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
   alias Aesir.ZoneServer.Unit.Inventory.Weight, as: InventoryWeight
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartOps
+  alias Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -108,10 +110,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
          {:ok, level} <- ensure_vending_learned(gs),
          {:ok, shop_items} <- Vending.validate_open(gs.cart, entries, McVending.max_slots(level)),
          shop = %{title: title, owner_char_id: char_id, items: shop_items},
-         {:ok, new_gs} <- PlayerState.transition_to(gs, :vending, shop) do
+         {:ok, new_gs} <- PlayerState.transition_to(gs, :vending, shop),
+         {:reply, :ok, state} <-
+           HealthHandler.try_consume_sp(sp_cost(level), %{state | game_state: new_gs}) do
       Registry.put(char_id, self(), shop)
       broadcast_board(new_gs, %VendingBoardShown{unit_id: char_id, title: title})
-      {:ok, %{state | game_state: new_gs}}
+      {:ok, state}
+    else
+      {:reply, error, _state} -> error
+      error -> error
     end
   end
 
@@ -166,6 +173,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
 
   @spec open_code(atom()) :: atom()
   defp open_code(:no_cart), do: :VEND_NO_CART
+  defp open_code(:insufficient_sp), do: :VEND_INSUFFICIENT_SP
   defp open_code(:skill_not_learned), do: :VEND_SKILL_NOT_LEARNED
   defp open_code(:too_many_slots), do: :VEND_TOO_MANY_SLOTS
   defp open_code(:invalid_amount), do: :VEND_INVALID_AMOUNT
@@ -645,6 +653,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
       {:error, :no_cart}
     end
   end
+
+  @spec sp_cost(pos_integer()) :: non_neg_integer()
+  defp sp_cost(level), do: Catalog.sp_cost_at(McVending.definition().sp_cost, level)
 
   @spec ensure_vending_learned(PlayerState.t()) ::
           {:ok, pos_integer()} | {:error, :skill_not_learned}

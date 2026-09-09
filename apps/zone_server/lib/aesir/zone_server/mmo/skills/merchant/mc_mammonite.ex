@@ -3,6 +3,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammonite do
   Mammonite (MC_MAMMONITE). A single-target physical strike paid for in zeny
   and SP. It deals 100% base weapon damage plus 50% per skill level and cannot
   critically hit.
+
+  Renewal and pre-renewal agree: 100% plus 50% per level weapon damage with the weapon's element, no critical, one cell of reach, 5 SP, and 100 zeny per level; Unfair Trick cuts the zeny by 20% in renewal and 10% in pre-renewal.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 42,
@@ -12,7 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammonite do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,
-    range: -1,
+    range: 1,
     sp_cost: [5, 5, 5, 5, 5, 5, 5, 5, 5, 5],
     zeny_cost: [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
@@ -27,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McMammonite do
       skill_id: definition.id,
       skill_level: level,
       skill_ratio: 100 + 50 * level,
-      skip_crit: true
+      skip_crit: true,
+      skip_range: true
     ]
 
     case Combat.execute_skill_attack(caster, target_id, opts) do

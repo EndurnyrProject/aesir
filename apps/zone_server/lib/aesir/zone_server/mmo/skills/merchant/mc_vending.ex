@@ -4,16 +4,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McVending do
 
   It carries no combat or stat bonus; it exists to be learnable in the Merchant
   tree and to gate the vending flow. Its learned level parameterizes the maximum
-  number of shop slots a merchant may open (`2 + level`, capped at the rAthena
-  `MAX_VENDING` of 12), which the vending handler reads rather than any passive
-  channel here.
+  number of shop slots a merchant may open (`2 + level`, capped at 12), and the
+  vending handler charges its 30 SP when the shop opens.
+
+  Renewal and pre-renewal agree: opening a shop needs a mounted cart, costs 30 SP, and allows 2 slots plus 1 per level up to 12.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 41,
     name: :mc_vending,
     display_name: "Vending",
     max_level: 10,
-    target_type: :passive
+    target_type: :passive,
+    sp_cost: [30, 30, 30, 30, 30, 30, 30, 30, 30, 30]
 
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 
@@ -24,8 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McVending do
   @doc """
   Maximum number of shop slots for the given learned `MC_VENDING` level.
 
-  Mirrors rAthena's `vending_openvending` cap: `2 + level`, clamped to
-  `MAX_VENDING` (12).
+  `2 + level`, clamped to 12.
   """
   @spec max_slots(pos_integer()) :: pos_integer()
   def max_slots(level) when is_integer(level) and level > 0, do: min(2 + level, @max_slots)

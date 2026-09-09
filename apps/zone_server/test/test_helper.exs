@@ -3,6 +3,7 @@ alias Aesir.GameModeTestSupport
 Mimic.copy(Application)
 Mimic.copy(DateTime)
 Mimic.copy(Aesir.Commons.GameMode)
+Mimic.copy(Aesir.ZoneServer.Mmo.Skill.PartyBuff)
 Mimic.copy(Aesir.ZoneServer.Mmo.Mechanics)
 Mimic.copy(Aesir.ZoneServer.Mmo.JobManagement)
 Mimic.copy(Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs)

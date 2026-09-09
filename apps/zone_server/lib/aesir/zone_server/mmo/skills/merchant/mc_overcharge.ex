@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Merchant.McOvercharge do
   @moduledoc """
   Overcharge (MC_OVERCHARGE). Increases prices when selling to NPC shops.
+
+  Renewal and pre-renewal agree: NPC sell prices rise by 5% plus 2% per level, minus 1% at level 10 (24% at most).
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

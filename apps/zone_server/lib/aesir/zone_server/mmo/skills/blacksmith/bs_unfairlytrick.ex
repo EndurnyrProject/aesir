@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsUnfairlytrick do
   @moduledoc """
   Unfair Trick (BS_UNFAIRLYTRICK). Reduces the zeny cost of zeny-consuming
-  skills by 20%.
+  skills (Mammonite and, in renewal, Cart Termination).
+
+  Renewal: 20% off. Pre-renewal: 10% off.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -13,10 +15,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Blacksmith.BsUnfairlytrick do
     quest_skill: true,
     quest_owner_job: :blacksmith
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 
   @behaviour Passive
 
   @impl Passive
-  def zeny_cost_reduction(_level, _ctx), do: 20
+  def zeny_cost_reduction(_level, _ctx) do
+    case GameMode.mode() do
+      :renewal -> 20
+      :pre_renewal -> 10
+    end
+  end
 end

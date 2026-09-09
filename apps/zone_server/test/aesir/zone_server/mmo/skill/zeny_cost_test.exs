@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ZenyCostTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "Unfair Trick lets a player with exactly 80 zeny pay a 100 zeny skill cost" do
     stub(Catalog, :by_id, fn
       6 -> {:ok, zeny_definition([100])}
@@ -84,6 +85,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ZenyCostTest do
     stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
 
     gs = game_state(100, 80, %{6 => 1, 1012 => 1})
+
+    assert {:ok, updated} = Interpreter.cast(gs, 6, 1, :self)
+    assert updated.zeny == 0
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Unfair Trick lets a player with exactly 90 zeny pay a 100 zeny skill cost" do
+    stub(Catalog, :by_id, fn
+      6 -> {:ok, zeny_definition([100])}
+      1012 -> {:ok, BsUnfairlytrick.definition()}
+    end)
+
+    stub(SmProvoke, :cast, fn caster, :self, 1, _definition -> {:ok, caster} end)
+
+    gs = game_state(100, 90, %{6 => 1, 1012 => 1})
 
     assert {:ok, updated} = Interpreter.cast(gs, 6, 1, :self)
     assert updated.zeny == 0
@@ -104,6 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ZenyCostTest do
     assert updated.zeny == 500
   end
 
+  @tag game_mode: :renewal
   test "Unfair Trick reduces a level 10 cost from 1000 to 800 zeny" do
     stub(Catalog, :by_id, fn
       6 -> {:ok, zeny_definition(Enum.map(1..10, &(&1 * 100)))}
@@ -113,6 +130,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.ZenyCostTest do
     stub(SmProvoke, :cast, fn caster, :self, 10, _definition -> {:ok, caster} end)
 
     gs = game_state(100, 800, %{6 => 10, 1012 => 1})
+
+    assert {:ok, updated} = Interpreter.cast(gs, 6, 10, :self)
+    assert updated.zeny == 0
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Unfair Trick reduces a level 10 cost from 1000 to 900 zeny" do
+    stub(Catalog, :by_id, fn
+      6 -> {:ok, zeny_definition(Enum.map(1..10, &(&1 * 100)))}
+      1012 -> {:ok, BsUnfairlytrick.definition()}
+    end)
+
+    stub(SmProvoke, :cast, fn caster, :self, 10, _definition -> {:ok, caster} end)
+
+    gs = game_state(100, 900, %{6 => 10, 1012 => 1})
 
     assert {:ok, updated} = Interpreter.cast(gs, 6, 10, :self)
     assert updated.zeny == 0

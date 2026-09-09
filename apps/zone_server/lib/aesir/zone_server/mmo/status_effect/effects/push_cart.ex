@@ -12,13 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PushCart do
     - `val2` — the cart sprite tier (`1`/`2`/`3`). Drives the `:cart1`/`:cart2`/`:cart3`
       sprite bit. An unset tier (`0`/`nil`) falls back to `:cart1`.
 
-  The speed penalty mirrors rAthena `status_calc_speed` (`status.cpp`):
-
-      if (sd && pc_iscarton(sd))
-          speed += speed * (50 - 5 * pc_checkskill(sd, MC_PUSHCART)) / 100;
-
-  expressed as a `:movement_speed` percentage modifier (positive = slower) folded
-  into `walk_speed` by the status `:speed` recalc bridge.
+  The speed penalty is `50 - 5 * level` percent (none at level 10) in both
+  modes, expressed as a `:movement_speed` percentage modifier (positive =
+  slower) folded into `walk_speed` by the status `:speed` recalc bridge.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_push_cart,
