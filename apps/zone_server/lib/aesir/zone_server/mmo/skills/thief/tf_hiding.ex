@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfHiding do
   @moduledoc """
   Hiding (TF_HIDING). Toggles SC_HIDING on the caster.
 
-  rAthena: SP 10, self-targeted. Re-casting removes the status; a fresh
+  SP 10, self-targeted. Re-casting removes the status; a fresh
   application lasts `30000 * level` ms.
+
+  Renewal and pre-renewal agree: toggles Hiding for 30 s per level at 10 SP; recasting ends it.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 51,

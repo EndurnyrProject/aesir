@@ -15,6 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfBackslidingTest do
     definition
   end
 
+  test "the definition declares the five-cell slide" do
+    assert TfBacksliding.definition().knockback == 5
+  end
+
   test "Catalog.by_id/1 resolves TF_BACKSLIDING" do
     assert definition().name == :tf_backsliding
     assert definition().max_level == 1

@@ -15,6 +15,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDoubleTest do
     assert {:ok, TfDouble} = Catalog.passive_module_for(:tf_double)
   end
 
+  test "the definition declares the two hits of a double attack" do
+    assert TfDouble.definition().hit_count == 2
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic double attack chance is 5 percent per level" do
+    assert %{multi_hit: 2, chance: 25, hit_bonus: 5} =
+             TfDouble.attack_proc(5, %{weapon_type: :dagger})
+  end
+
+  @tag game_mode: :renewal
   test "a successful dagger proc carries learned HIT with its two hits" do
     assert TfDouble.attack_proc(5, %{weapon_type: :dagger}) ==
              %{multi_hit: 2, chance: 35, hit_bonus: 5}

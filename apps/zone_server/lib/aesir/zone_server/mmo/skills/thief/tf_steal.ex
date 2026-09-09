@@ -2,13 +2,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSteal do
   @moduledoc """
   Steal (TF_STEAL). Attempts to steal one item from a mob, once per instance.
 
-  rAthena renewal (`pc_steal_item`): rate% = `(dex - mob_dex)/2 + 6*level + 4`,
+  Steal chance: rate% = `(dex - mob_dex)/2 + 6*level + 4`,
   rolled out of 100; bosses and mobs already stolen from reject outright. On a
   successful roll the mob's drop table is walked in order (`steal_protected`
   entries skipped) and the first drop whose `rnd(10000) <= rate` wins. The
   atomic rate roll, drop roll and `stolen_from` flip run inside the mob's own
   process (`MobSession.attempt_steal/3`) so a mob can only be stolen from once
   regardless of concurrent attempts. Items only.
+
+  Renewal: the steal chance ((caster DEX − target DEX) / 2 + 6 per level + 4 percent) is rolled once, then each drop is tried at its own rate. Pre-renewal: the chance is never rolled alone; every drop's rate is scaled by it. Both modes: a chance below 1 percent fails, bosses and already-stolen monsters refuse, and the first drop to succeed is taken.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 50,

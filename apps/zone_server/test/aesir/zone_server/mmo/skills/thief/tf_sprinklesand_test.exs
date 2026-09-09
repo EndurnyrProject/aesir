@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
     assert {:ok, ^caster} = TfSprinklesand.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
+  @tag game_mode: :renewal
   test "applies sc_blind for 18000ms when the 20% roll succeeds" do
     # Seed {1,1,1} yields :rand.uniform(100) == 8, at or below the 20% chance.
     :rand.seed(:exsss, {1, 1, 1})
@@ -58,6 +59,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesandTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
       assert params[:duration] == 18_000
+      :ok
+    end)
+
+    assert {:ok, ^caster} = TfSprinklesand.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic applies sc_blind for 30000ms when the 20% roll succeeds" do
+    # Seed {1,1,1} yields :rand.uniform(100) == 8, at or below the 20% chance.
+    :rand.seed(:exsss, {1, 1, 1})
+    caster = caster()
+
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
+      assert params[:duration] == 30_000
       :ok
     end)
 

@@ -8,6 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDetoxifyTest do
 
   setup :verify_on_exit!
 
+  test "the definition carries the poison property" do
+    assert TfDetoxify.definition().element == :poison
+  end
+
   test "Catalog.by_id/1 resolves TF_DETOXIFY" do
     assert {:ok, definition} = Catalog.by_id(53)
     assert definition.name == :tf_detoxify

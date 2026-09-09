@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
           weapon_type: atom(),
           base_level: pos_integer(),
           job_level: non_neg_integer(),
+          job_id: non_neg_integer() | nil,
           max_hp: pos_integer(),
           max_sp: pos_integer(),
           vit: non_neg_integer(),

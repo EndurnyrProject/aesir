@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDetoxify do
   @moduledoc """
   Detoxify (TF_DETOXIFY). Removes Poison and Deadly Poison from an ally.
 
-  rAthena: id 53, max level 1, SP 10, range 9.
+  id 53, max level 1, SP 10, range 9.
+
+  Renewal and pre-renewal agree: ends Poison and Deadly Poison on the target for 10 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 53,
@@ -10,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfDetoxify do
     display_name: "Detoxify",
     max_level: 1,
     target_type: :target_ally,
+    element: :poison,
     range: 9,
     sp_cost: [10]
 

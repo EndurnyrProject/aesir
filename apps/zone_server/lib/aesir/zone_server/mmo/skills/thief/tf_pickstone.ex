@@ -2,7 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
   @moduledoc """
   Find Stone (TF_PICKSTONE). Produces 1 Stone (item id 7049).
 
-  rAthena: self-targeted, no damage, SP 2, fixed cast 500ms.
+  self-targeted, no damage, SP 2, fixed cast 500ms.
+
+  Renewal: 2 SP and a 0.5 s fixed cast. Pre-renewal: 3 SP and a 0.5 s variable cast. Both grant one Stone.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 151,
@@ -10,8 +12,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstone do
     display_name: "Find Stone",
     max_level: 1,
     target_type: :self,
-    sp_cost: [2],
-    fixed_cast_time: [500],
+    sp_cost: [renewal: [2], pre_renewal: [3]],
+    cast_time: [renewal: [], pre_renewal: [500]],
+    fixed_cast_time: [renewal: [500], pre_renewal: []],
     quest_skill: true,
     quest_owner_job: :thief
 

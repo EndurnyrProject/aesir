@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
   @moduledoc """
   Sand Attack (TF_SPRINKLESAND). Earth-element weapon strike that can blind.
 
-  rAthena renewal: 130% weapon damage, earth element, no crit, range 1. On a
+  130% weapon damage, earth element, no crit, range 1. On a
   connecting hit it rolls 20% to apply `sc_blind` for 18000 ms.
+
+  Renewal and pre-renewal agree on the hit: 130% earth-element weapon damage at one cell, blinding 20% of the time from a player and 15% from a monster. The blind lasts 18 s in renewal and 30 s in pre-renewal.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 149,
@@ -19,12 +21,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
     quest_skill: true,
     quest_owner_job: :thief
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
-  @blind_chance 20
+  @player_blind_chance 20
+  @mob_blind_chance 15
 
   @behaviour Active
 
@@ -53,18 +57,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfSprinklesand do
   end
 
   defp maybe_blind(caster, target) do
-    if :rand.uniform(100) <= @blind_chance do
+    if :rand.uniform(100) <= blind_chance(caster) do
       {unit_type, unit_id} = target_ref(target)
       {source_type, source_id} = source_ref(caster)
 
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
-        duration: 18_000,
+        duration: blind_duration_ms(),
         caster_id: source_id,
         source_type: source_type
       )
     end
 
     :ok
+  end
+
+  defp blind_chance(%{character_id: _}), do: @player_blind_chance
+  defp blind_chance(_non_player), do: @mob_blind_chance
+
+  defp blind_duration_ms do
+    case GameMode.mode() do
+      :renewal -> 18_000
+      :pre_renewal -> 30_000
+    end
   end
 
   defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}

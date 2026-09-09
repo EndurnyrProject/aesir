@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   `Aesir.ZoneServer.Unit.Player.Handlers.BreakOps`'s Ops-layer contract.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -36,6 +37,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   @spec attempt_steal(MobState.t(), non_neg_integer(), pos_integer()) ::
           {:ok, non_neg_integer(), MobState.t()} | {:error, reason()}
   def attempt_steal(%MobState{mob_data: mob_data} = state, caster_dex, skill_level) do
+    rate = steal_rate(caster_dex, mob_data.stats.dex, skill_level)
+
     cond do
       :boss in (mob_data.modes || []) ->
         {:error, :boss}
@@ -43,16 +46,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
       state.stolen_from ->
         {:error, :already_stolen}
 
-      :rand.uniform(100) > steal_rate(caster_dex, mob_data.stats.dex, skill_level) ->
+      chance_fails?(rate) ->
         {:error, :miss}
 
       true ->
-        case steal_drop(mob_data.drops) do
+        scale = if GameMode.mode() == :renewal, do: 100, else: rate
+
+        case steal_drop(mob_data.drops, scale) do
           {:ok, item_id} -> {:ok, item_id, MobState.mark_stolen(state)}
           :error -> {:error, :no_drop}
         end
     end
   end
+
+  # Renewal rolls the steal chance once and then each drop at its own rate;
+  # classic never rolls the chance alone and scales every drop's rate by it.
+  defp chance_fails?(rate) when rate < 1, do: true
+  defp chance_fails?(rate), do: GameMode.mode() == :renewal and :rand.uniform(100) > rate
 
   @doc """
   Attempts to steal zeny from a mob (RG_STEALCOIN).
@@ -104,19 +114,19 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOps do
   # each remaining drop's own `rnd(10000) <= rate`. The first roll to succeed
   # wins; an unresolvable item name is treated as a miss on that drop rather
   # than aborting the whole steal.
-  @spec steal_drop([MobDrop.t()]) :: {:ok, non_neg_integer()} | :error
-  defp steal_drop([]), do: :error
+  @spec steal_drop([MobDrop.t()], integer()) :: {:ok, non_neg_integer()} | :error
+  defp steal_drop([], _scale), do: :error
 
-  defp steal_drop([%MobDrop{steal_protected: true} | rest]), do: steal_drop(rest)
+  defp steal_drop([%MobDrop{steal_protected: true} | rest], scale), do: steal_drop(rest, scale)
 
-  defp steal_drop([%MobDrop{item: item, rate: rate} | rest]) do
-    if :rand.uniform(10_000) <= rate do
+  defp steal_drop([%MobDrop{item: item, rate: rate} | rest], scale) do
+    if :rand.uniform(10_000) <= div(rate * scale, 100) do
       case ItemManagement.get_item_by_aegis(item) do
         {:ok, %{id: item_id}} -> {:ok, item_id}
-        {:error, _reason} -> steal_drop(rest)
+        {:error, _reason} -> steal_drop(rest, scale)
       end
     else
-      steal_drop(rest)
+      steal_drop(rest, scale)
     end
   end
 end

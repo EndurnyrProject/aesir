@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.Envenom do
   Shared Envenom weapon hit and Poison rider.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -17,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.Envenom do
       bonus_atk: 15 * level,
       element: :poison,
       skip_crit: true,
+      skip_range: true,
       report_hit: true
     ]
 
@@ -39,13 +41,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Shared.Envenom do
       {source_type, source_id} = source_ref(caster)
 
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,
-        duration: 18_000,
+        duration: poison_duration_ms(),
         caster_id: source_id,
         source_type: source_type
       )
     end
 
     :ok
+  end
+
+  defp poison_duration_ms do
+    case GameMode.mode() do
+      :renewal -> 18_000
+      :pre_renewal -> 60_000
+    end
   end
 
   defp source_ref(%{character_id: unit_id}), do: {:player, unit_id}

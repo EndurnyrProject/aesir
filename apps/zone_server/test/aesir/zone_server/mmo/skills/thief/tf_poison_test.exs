@@ -24,7 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     assert definition().target_type == :target_enemy
     assert definition().damage_type == :damage
     assert definition().element == :poison
-    assert definition().range == -1
+    assert definition().range == 2
     assert definition().sp_cost == List.duplicate(12, 10)
   end
 
@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
     assert {:ok, ^caster} = TfPoison.cast(caster, {:unit, @target_id}, 6, definition())
   end
 
+  @tag game_mode: :renewal
   test "applies sc_poison for 18000ms when the roll succeeds" do
     # Seed {1,2,3} yields :rand.uniform(100) == 27, at or below 4*6+10 = 34.
     :rand.seed(:exsss, {1, 2, 3})
@@ -58,6 +59,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPoisonTest do
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
       assert params == [duration: 18_000, caster_id: 1_000, source_type: :player]
+      :ok
+    end)
+
+    assert {:ok, ^caster} = TfPoison.cast(caster, {:unit, @target_id}, 6, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic applies sc_poison for 60000ms when the roll succeeds" do
+    # Seed {1,2,3} yields :rand.uniform(100) == 27, at or below 4*6+10 = 34.
+    :rand.seed(:exsss, {1, 2, 3})
+    caster = caster()
+
+    stub(Combat, :execute_skill_attack, fn ^caster, @target_id, _opts -> {:ok, %{hit?: true}} end)
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_poison, params ->
+      assert params == [duration: 60_000, caster_id: 1_000, source_type: :player]
       :ok
     end)
 

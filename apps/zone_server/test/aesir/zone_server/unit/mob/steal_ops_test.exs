@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
   use ExUnit.Case, async: true
 
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
+  alias Aesir.ZoneServer.Mmo.MobManagement.MobDrop
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -35,6 +36,32 @@ defmodule Aesir.ZoneServer.Unit.Mob.StealOpsTest do
     }
 
     MobState.new(1, mob_data, spawn_ref, "prontera", 0, 0)
+  end
+
+  defp stealable_mob(dex, drop_rate) do
+    state = mob_state()
+
+    mob_data = %{
+      state.mob_data
+      | stats: %{state.mob_data.stats | dex: dex},
+        drops: [%MobDrop{item: "Red_Potion", rate: drop_rate}]
+    }
+
+    %{state | mob_data: mob_data}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic steal scales each drop's rate by the steal chance instead of rolling the chance first" do
+    # caster DEX 400 vs mob DEX 1 at level 10: chance (400 - 1) / 2 + 64 = 263 percent,
+    # so a 50 percent drop is lifted past certainty; renewal would still roll the drop at 50 percent.
+    for _ <- 1..30 do
+      assert {:ok, 501, stolen} = StealOps.attempt_steal(stealable_mob(1, 5_000), 400, 10)
+      assert stolen.stolen_from
+    end
+  end
+
+  test "a steal chance below one percent fails without touching the drops in both modes" do
+    assert {:error, :miss} = StealOps.attempt_steal(stealable_mob(200, 10_000), 1, 1)
   end
 
   test "uses the Renewal mug rate and zeny formulas, then marks coins as stolen" do

@@ -48,6 +48,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
+  test "a monster caster flings for 30 and can only stun" do
+    caster = %{instance_id: 77}
+    :rand.seed(:exsss, {9, 9, 9})
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(Combat, :execute_misc_attack, fn ^caster, @target_id, opts ->
+      assert opts[:base_damage] == 30
+      :ok
+    end)
+
+    reject(&StatusInterpreter.apply_status/4)
+
+    assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  test "the definition consumes one Stone per cast" do
+    assert definition().item_cost == [%{id: 7049, amount: 1}]
+  end
+
+  test "renewal has a 100 ms after-cast delay and classic none" do
+    assert TfThrowstone.definition(:renewal).after_cast_delay == [100]
+    assert TfThrowstone.definition(:pre_renewal).after_cast_delay == [0]
+  end
+
+  @tag game_mode: :renewal
   test "applies sc_stun for 4500ms when the 3% stun roll succeeds, without rolling blind" do
     # Seed {1,1,185} yields :rand.uniform(100) == 1, at or below the 3% stun chance.
     :rand.seed(:exsss, {1, 1, 185})
@@ -64,7 +89,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
-  test "applies sc_blind for 18000ms only when the stun roll fails and the blind roll succeeds" do
+  @tag game_mode: :pre_renewal
+  test "classic applies sc_stun for 5000ms when the 3% stun roll succeeds, without rolling blind" do
+    # Seed {1,1,185} yields :rand.uniform(100) == 1, at or below the 3% stun chance.
+    :rand.seed(:exsss, {1, 1, 185})
+    caster = caster()
+
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, params ->
+      assert params[:duration] == 5_000
+      :ok
+    end)
+
+    assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :renewal
+  test "applies sc_blind for 20000ms only when the stun roll fails and the blind roll succeeds" do
     # Seed {1,1,20} yields rolls 76 (stun fails, > 3%) then 3 (blind succeeds, <= 3%).
     :rand.seed(:exsss, {1, 1, 20})
     caster = caster()
@@ -73,7 +116,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfThrowstoneTest do
     stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
-      assert params[:duration] == 18_000
+      assert params[:duration] == 20_000
+      :ok
+    end)
+
+    assert {:ok, ^caster} = TfThrowstone.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic applies sc_blind for 30000ms only when the stun roll fails and the blind roll succeeds" do
+    # Seed {1,1,20} yields rolls 76 (stun fails, > 3%) then 3 (blind succeeds, <= 3%).
+    :rand.seed(:exsss, {1, 1, 20})
+    caster = caster()
+
+    stub(Combat, :execute_misc_attack, fn ^caster, @target_id, _opts -> :ok end)
+    stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_blind, params ->
+      assert params[:duration] == 30_000
       :ok
     end)
 

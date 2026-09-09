@@ -21,8 +21,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Thief.TfPickstoneTest do
     assert definition.name == :tf_pickstone
     assert definition.max_level == 1
     assert definition.target_type == :self
-    assert definition.sp_cost == [2]
-    assert definition.fixed_cast_time == [500]
+    assert TfPickstone.definition(:renewal).sp_cost == [2]
+    assert TfPickstone.definition(:renewal).fixed_cast_time == [500]
+    assert TfPickstone.definition(:renewal).cast_time == []
+    assert TfPickstone.definition(:pre_renewal).sp_cost == [3]
+    assert TfPickstone.definition(:pre_renewal).fixed_cast_time == []
+    assert TfPickstone.definition(:pre_renewal).cast_time == [500]
   end
 
   test "cast/4 grants 1x Stone (id 7049) and stages the change for client notify" do

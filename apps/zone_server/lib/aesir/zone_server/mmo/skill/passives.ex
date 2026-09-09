@@ -541,6 +541,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
         if(stats.equipment, do: PlayerStats.weapon_type(stats.equipment), else: :bare_hands),
       base_level: stats.progression.base_level,
       job_level: stats.progression.job_level,
+      job_id: Map.get(stats.progression, :job_id),
       max_hp: derived_stat(stats.derived_stats, :max_hp),
       max_sp: derived_stat(stats.derived_stats, :max_sp),
       vit: stats.base_stats.vit,
