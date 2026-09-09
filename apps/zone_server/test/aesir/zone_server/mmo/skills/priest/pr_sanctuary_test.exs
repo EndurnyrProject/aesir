@@ -130,6 +130,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     end)
   end
 
+  @tag game_mode: :renewal
   test "loads the exact Renewal cast, cost, and timing data" do
     assert {:ok, definition} = Catalog.by_id(70)
     assert definition.name == :pr_sanctuary
@@ -146,6 +147,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
     assert definition.unit_duration ==
              [3_900, 6_900, 9_900, 12_900, 15_900, 18_900, 21_900, 24_900, 27_900, 30_900]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "loads the classic single 5 second cast" do
+    assert {:ok, definition} = Catalog.by_id(70)
+    assert definition.cast_time == List.duplicate(5_000, 10)
+    assert definition.fixed_cast_time == []
+    assert definition.sp_cost == [15, 18, 21, 24, 27, 30, 33, 36, 39, 42]
+    assert definition.item_cost == [%{id: 717, amount: 1}]
   end
 
   test "places the 21-cell path-checked field with a level plus three offensive quota" do
@@ -319,6 +329,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
              PrSanctuary.on_interval(group(5, %{hits_remaining: 8}), 1_000)
   end
 
+  @tag game_mode: :renewal
   test "uses 777 healing above level six and skips full HP, corpses, and Emperium" do
     injured = mob(2_001, :formless, :neutral)
     full = mob(2_002, :formless, :neutral, 1_000)
@@ -333,6 +344,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     end)
 
     expect(MobSession, :heal, 1, fn _pid, 777 -> :ok end)
+
+    assert {:ok, %Group{state: %{hits_remaining: 10}}} =
+             PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic fields heal the Emperium like any other injured mob" do
+    injured = mob(2_001, :formless, :neutral)
+    emperium = mob(1_288, :angel, :holy)
+    targets = [{:mob, 2_001}, {:mob, 1_288}]
+    states = %{2_001 => injured, 1_288 => emperium}
+    stub_tick(targets)
+
+    stub(UnitRegistry, :get_unit, fn :mob, id ->
+      {:ok, {MobState, Map.fetch!(states, id), self()}}
+    end)
+
+    expect(MobSession, :heal, 2, fn _pid, 777 -> :ok end)
 
     assert {:ok, %Group{state: %{hits_remaining: 10}}} =
              PrSanctuary.on_interval(group(7, %{hits_remaining: 10}), 1_000)
@@ -427,7 +456,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
     targets = [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}]
 
     states = %{
-      2_001 => mob(2_001, :undead, :neutral),
+      2_001 => mob(2_001, :undead, :undead),
       2_002 => mob(2_002, :demon, :neutral),
       2_003 => mob(2_003, :formless, :undead)
     }
@@ -456,7 +485,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuaryTest do
 
   test "stops offensive processing exactly when the shared quota reaches zero" do
     targets = Enum.map(2_001..2_006, &{:mob, &1})
-    states = Map.new(2_001..2_006, &{&1, mob(&1, :undead, :neutral)})
+    states = Map.new(2_001..2_006, &{&1, mob(&1, :undead, :undead)})
     stub_tick(targets, targets)
     stub(UnitRegistry, :get_unit, fn :mob, id -> {:ok, {MobState, states[id], self()}} end)
 

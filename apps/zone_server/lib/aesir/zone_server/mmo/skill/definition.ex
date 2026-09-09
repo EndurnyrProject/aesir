@@ -235,6 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Definition do
   }
 
   @mode_keyable [
+    :target_type,
     :range,
     :element,
     :knockback,

@@ -1,23 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   @moduledoc """
-  B.S. Sacramenti (PR_BENEDICTIO), an immediate 3x3 Holy blessing and attack.
+  B.S. Sacramenti (PR_BENEDICTIO). An immediate 3x3 blessing cast by three Acolyte-
+  family players standing in a row: the two side companions each pay 10 SP.
 
-  Casting requires two living, skill-capable Acolyte-family players in the
-  caster-relative side cells. The participants do not need to share a party and
-  their own SP is not part of candidate selection. At completion each selected
-  participant independently attempts to spend 10 SP; either failure is ignored.
-
-  The ground cell then receives two immediate passes. Living players that are
-  neither undead nor demon receive SC_BENEDICTIO. Living enemy characters that
-  are undead by race or element, or demon by race, receive one 100% Holy magic
-  hit that ignores MDEF. No skill-unit group or persistent field is created.
-
-  Renewal references:
-
-  * `db/re/skill_db.yml:2426-2459` -- metadata, cost, area, and duration
-  * `src/map/skill.cpp:7907-8001,8012-8078` -- candidate selection and charging
-  * `src/map/skill.cpp:8552-8557,9388-9390` -- exact-two gate and cast completion
-  * `src/map/skills/acolyte/bssacramenti.cpp:12-38` -- the two immediate area passes
+  Living players in the area that are neither undead nor demon receive the holy
+  armor blessing for 40 s per level; living demon enemies and enemies of undead
+  defence element instead take the Heal formula's offensive amount at the cast
+  level as fixed magic damage that ignores MDEF and carries no element. Renewal
+  and pre-renewal agree apart from the Heal formula itself: 9-cell range, 20 SP,
+  no cast.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 69,
@@ -29,16 +20,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     damage_type: :no_damage,
     damage_kind: :magic,
     range: 9,
-    element: :holy,
+    element: :neutral,
     splash_radius: 1,
     sp_cost: List.duplicate(20, 5),
     duration: [40_000, 80_000, 120_000, 160_000, 200_000]
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -148,9 +141,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     opts = [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 100,
       element: definition.element,
-      ignore_mdef: true,
       skip_range: true
     ]
 
@@ -159,16 +150,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
     |> Enum.each(fn {unit_type, target_id} ->
       with {:ok, {module, state, _pid}} <- UnitRegistry.get_unit(unit_type, target_id),
            true <- undead_or_demon?(module, state) do
-        Combat.execute_magic_attack(caster, target_id, opts)
+        Combat.execute_magic_damage(caster, target_id, strike_damage(caster, level), opts)
       else
         _other -> :ok
       end
     end)
   end
 
+  defp strike_damage(caster, level),
+    do: AlHeal.compute_heal(PlayerState.to_combatant(caster), level, true, definition().id)
+
   defp undead_or_demon?(module, state) do
     combatant = module.to_combatant(state)
-    combatant.race in [:undead, :demon] or elem(combatant.element, 0) == :undead
+    combatant.race == :demon or RaceModifiers.undead_target?(combatant)
   end
 
   defp units_in_square(map_name, x, y, radius) do

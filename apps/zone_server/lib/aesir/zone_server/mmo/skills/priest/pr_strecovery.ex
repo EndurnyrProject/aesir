@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   @moduledoc """
-  Status Recovery (PR_STRECOVERY).
+  Status Recovery (PR_STRECOVERY). Cures Stone, Freeze, Stun, and Sleep on an ally,
+  or blinds an undead target one second after the cast.
 
-  rAthena Renewal: `db/re/skill_db.yml:2565-2580` and
-  `src/map/skills/acolyte/statusrecovery.cpp:13-46`.
+  Renewal blinds for 18 s; pre-renewal for 30 s. Both modes reach 9 cells for 5 SP
+  with a 2 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 72,
@@ -17,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
     range: 9,
     sp_cost: [5],
     after_cast_delay: [2_000],
-    duration: [18_000]
+    duration: [renewal: [18_000], pre_renewal: [30_000]]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
@@ -32,7 +33,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   @behaviour Active
 
   @undead_delay_ms 1_000
-  @blind_duration_ms 18_000
   @supported_body_statuses [:sc_stone, :sc_freeze, :sc_stun, :sc_sleep]
 
   # NOTE: StoneWait is Aesir's :wait phase of sc_stone and is cured above.
@@ -67,29 +67,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
         %{character_id: caster_id} = caster,
         {:unit, {unit_type, target_id} = target_ref},
         _level,
-        _definition
+        definition
       ) do
     with {:ok, %{unit_type: ^unit_type} = target} <- Combat.resolve_combatant(target_ref) do
-      cure_or_defer(caster, caster_id, unit_type, target_id, target)
+      cure_or_defer(caster, caster_id, unit_type, target_id, target, definition)
     end
   end
 
-  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, _level, _definition) do
+  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, _level, definition) do
     with {:ok, %{unit_type: unit_type} = target} <- Combat.resolve_combatant(target_id) do
-      cure_or_defer(caster, caster_id, unit_type, target_id, target)
+      cure_or_defer(caster, caster_id, unit_type, target_id, target, definition)
     end
   end
 
   @doc "Applies the scheduled undead Blind. Ignores the caster state - it acts on the target."
   @impl Active
   @spec deferred(map(), PlayerState.t()) :: :ok | {:error, atom()}
-  def deferred(%{unit_type: unit_type, target_id: target_id, caster_id: caster_id}, _caster) do
-    apply_undead_effect(unit_type, target_id, caster_id)
+  def deferred(
+        %{unit_type: unit_type, target_id: target_id, caster_id: caster_id, duration: duration},
+        _caster
+      ) do
+    apply_undead_effect(unit_type, target_id, caster_id, duration)
   end
 
-  defp cure_or_defer(caster, caster_id, unit_type, target_id, target) do
+  defp cure_or_defer(caster, caster_id, unit_type, target_id, target, definition) do
     if undead?(target) do
-      payload = %{unit_type: unit_type, target_id: target_id, caster_id: caster_id}
+      payload = %{
+        unit_type: unit_type,
+        target_id: target_id,
+        caster_id: caster_id,
+        duration: hd(definition.duration)
+      }
+
       Skill.defer(__MODULE__, payload, @undead_delay_ms)
     else
       cure_body_statuses(unit_type, target_id)
@@ -99,12 +108,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
   end
 
   @doc false
-  @spec apply_undead_effect(:player | :mob | :homunculus, integer(), integer()) ::
+  @spec apply_undead_effect(:player | :mob | :homunculus, integer(), integer(), pos_integer()) ::
           :ok | {:error, atom()}
-  def apply_undead_effect(unit_type, target_id, caster_id) do
+  def apply_undead_effect(unit_type, target_id, caster_id, duration) do
     StatusInterpreter.apply_status(unit_type, target_id, :sc_blind,
       caster_id: caster_id,
-      duration: @blind_duration_ms
+      duration: duration
     )
   end
 
@@ -114,10 +123,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrStrecovery do
     end)
   end
 
-  defp undead?(%{race: race} = target),
-    do: RaceModifiers.undead?(race) or undead_element?(Map.get(target, :element))
-
-  defp undead_element?({:undead, _level}), do: true
-  defp undead_element?(:undead), do: true
-  defp undead_element?(_element), do: false
+  defp undead?(target), do: RaceModifiers.undead_target?(target)
 end

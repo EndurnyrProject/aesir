@@ -200,6 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
       refute Caster.Player.cast_stats(caster, 29) == Caster.Player.cast_stats(caster, 30)
     end
 
+    @tag game_mode: :renewal
     test "keeps equipment and Bragi early while Suffragium remains late" do
       caster =
         player(
@@ -219,6 +220,30 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
                classic_skill_rate: -5,
                classic_late_reductions: [20]
              } = Caster.Player.cast_stats(caster, 29)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Suffragium contributes its 45 percent late reduction" do
+      caster =
+        player(
+          equipment_modifiers: %{
+            {:skill_varcast_rate, 29} => -5,
+            varcast_rate: -10
+          }
+        )
+
+      stub(UnitRegistry, :get_unit_info, fn :player, 101 -> {:ok, %{stats: %{}}} end)
+      apply_classic_cast_statuses(:player, caster.character_id)
+
+      assert %{
+               varcast_reductions: reductions,
+               varcast_rate: -15,
+               classic_early_rate: -30,
+               classic_skill_rate: -5,
+               classic_late_reductions: [45]
+             } = Caster.Player.cast_stats(caster, 29)
+
+      assert Enum.sort(reductions) == [20, 45]
     end
   end
 
@@ -340,6 +365,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
                expected_homunculus_cast_stats(caster)
     end
 
+    @tag game_mode: :renewal
     test "keeps Bragi early while Suffragium remains late for homunculi" do
       caster = homunculus(dex: 20, int: 30)
 
@@ -353,6 +379,24 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CasterLifecycleTest do
                classic_skill_rate: 0,
                classic_late_reductions: [20]
              } = Caster.Homunculus.cast_stats(caster, 8_001)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Suffragium contributes its 45 percent late reduction for homunculi" do
+      caster = homunculus(dex: 20, int: 30)
+
+      stub(UnitRegistry, :get_unit_info, fn :homunculus, 301 -> {:ok, %{stats: %{}}} end)
+      apply_classic_cast_statuses(:homunculus, caster.world_gid)
+
+      assert %{
+               varcast_reductions: reductions,
+               varcast_rate: 0,
+               classic_early_rate: -20,
+               classic_skill_rate: 0,
+               classic_late_reductions: [45]
+             } = Caster.Homunculus.cast_stats(caster, 8_001)
+
+      assert Enum.sort(reductions) == [20, 45]
     end
   end
 

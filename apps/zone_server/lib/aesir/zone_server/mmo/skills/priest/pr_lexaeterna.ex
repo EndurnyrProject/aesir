@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexaeterna do
   @moduledoc """
-  Lex Aeterna (PR_LEXAETERNA). Marks an enemy so its next qualifying hit deals
-  double damage.
+  Lex Aeterna (PR_LEXAETERNA). Marks an enemy so its next damaging hit is doubled,
+  for up to 10 minutes.
 
-  rAthena renewal: `db/re/skill_db.yml:2716-2730`.
+  Renewal and pre-renewal agree on the mark: 9-cell range, 10 SP, and a 3 s delay.
+  The classic-only exception that keeps the mark through a weapon hit of Soul
+  Destroyer is out of scope until that transcendent skill exists.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 78,

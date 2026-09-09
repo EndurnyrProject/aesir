@@ -1,10 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoison do
   @moduledoc """
-  Slow Poison (PR_SLOWPOISON).
+  Slow Poison (PR_SLOWPOISON). Suspends Poison and Deadly Poison damage ticks on an
+  ally for 10 s per level.
 
-  rAthena Renewal: `db/re/skill_db.yml:2534-2564`. The status suspends Poison
-  and Deadly Poison damage ticks while their natural-regeneration penalties are
-  absent; it does not add arbitrary regeneration.
+  Renewal and pre-renewal agree: 9-cell range and 6 to 12 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 71,

@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexdivina do
   @moduledoc """
-  Lex Divina (PR_LEXDIVINA). Delays a certain Silence application by one second,
-  or removes an existing Silence from the target.
+  Lex Divina (PR_LEXDIVINA). Silences the target one second after the cast, or lifts
+  an existing Silence.
 
-  rAthena renewal: `db/re/skill_db.yml:2675-2692` and
-  `src/map/skills/acolyte/lexdivina.cpp:12-22`.
+  Renewal and pre-renewal agree: 5-cell range, 30 to 60 s of Silence, 20 down to 10
+  SP, and a 3 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 76,

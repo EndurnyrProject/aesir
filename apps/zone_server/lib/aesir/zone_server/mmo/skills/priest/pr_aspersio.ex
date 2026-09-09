@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
   @moduledoc """
-  Aspersio (PR_ASPERSIO). Endows a player with Holy weapon element or deals
-  fixed Holy magic damage to an undead enemy.
+  Aspersio (PR_ASPERSIO). Endows a player's weapon with the holy element for 1 minute
+  plus 30 s per level, or deals 40 fixed holy magic damage to an undead enemy.
 
-  rAthena Renewal: `db/re/skill_db.yml:2380-2425`, `skill.cpp:4419-4428`,
-  `skills/acolyte/aspersio.cpp:26-28`, and `battle.cpp:5897-5899`.
+  Renewal and pre-renewal agree: 9-cell range, 14 to 30 SP, one Holy Water, and a
+  2 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 68,
@@ -83,12 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersio do
     end
   end
 
-  defp undead?(%{race: race} = target),
-    do: RaceModifiers.undead?(race) or undead_element?(Map.get(target, :element))
-
-  defp undead_element?({:undead, _level}), do: true
-  defp undead_element?(:undead), do: true
-  defp undead_element?(_element), do: false
+  defp undead?(target), do: RaceModifiers.undead_target?(target)
 
   defp target_kind(target_id) do
     case Combat.resolve_combatant(target_id) do

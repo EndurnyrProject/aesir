@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
+  @tag game_mode: :renewal
   test "Impositio Manus exposes its exact Renewal metadata" do
     assert {:ok, definition} = Catalog.by_id(66)
 
@@ -34,6 +35,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert definition.duration == List.duplicate(120_000, 5)
   end
 
+  @tag game_mode: :pre_renewal
+  test "Impositio Manus exposes its classic single-target metadata" do
+    {:ok, definition} = Catalog.by_id(66)
+
+    assert definition.target_type == :target_ally
+    assert definition.range == 9
+    assert definition.sp_cost == [13, 16, 19, 22, 25]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.after_cast_delay == List.duplicate(3_000, 5)
+    assert definition.cooldown == []
+    assert definition.duration == List.duplicate(60_000, 5)
+  end
+
+  @tag game_mode: :renewal
   test "Suffragium exposes its exact Renewal metadata" do
     assert {:ok, definition} = Catalog.by_id(67)
 
@@ -49,6 +65,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert definition.duration == [60_000, 60_000, 60_000]
   end
 
+  @tag game_mode: :pre_renewal
+  test "Suffragium exposes its classic single-target metadata" do
+    {:ok, definition} = Catalog.by_id(67)
+
+    assert definition.target_type == :target_ally
+    assert definition.range == 9
+    assert definition.sp_cost == [8, 8, 8]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.after_cast_delay == [2_000, 2_000, 2_000]
+    assert definition.cooldown == []
+    assert definition.duration == [30_000, 20_000, 10_000]
+  end
+
+  @tag game_mode: :renewal
   test "Impositio Manus applies exact parameters to eligible nearby party members" do
     {:ok, definition} = Catalog.by_id(66)
     caster = caster_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
@@ -69,6 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert {:ok, ^caster} = PrImpositio.cast(caster, :self, 5, definition)
   end
 
+  @tag game_mode: :renewal
   test "Suffragium applies exact parameters to eligible nearby party members" do
     {:ok, definition} = Catalog.by_id(67)
     caster = caster_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
@@ -86,6 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert {:ok, ^caster} = PrSuffragium.cast(caster, :self, 3, definition)
   end
 
+  @tag game_mode: :renewal
   test "Suffragium only affects the caster without a party" do
     {:ok, definition} = Catalog.by_id(67)
     caster = caster_state(1, party_id: 0)
@@ -100,6 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert {:ok, ^caster} = PrSuffragium.cast(caster, :self, 3, definition)
   end
 
+  @tag game_mode: :renewal
   test "Impositio Manus only affects the caster without a party" do
     {:ok, definition} = Catalog.by_id(66)
     caster = caster_state(1, party_id: 0)
@@ -114,10 +148,42 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrImpositioSuffragiumTest do
     assert {:ok, ^caster} = PrImpositio.cast(caster, :self, 2, definition)
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic Impositio Manus buffs one targeted player and never its party" do
+    {:ok, definition} = Catalog.by_id(66)
+    caster = caster_state(1, party_id: 10)
+
+    reject(&PartyManager.get/1)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 2, :sc_impositio, params ->
+      assert params == [val1: 5, val2: 25, caster_id: 1, duration: 60_000]
+      :ok
+    end)
+
+    assert {:ok, ^caster} = PrImpositio.cast(caster, {:unit, 2}, 5, definition)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Suffragium buffs one targeted player with its level duration" do
+    {:ok, definition} = Catalog.by_id(67)
+    caster = caster_state(1, party_id: 10)
+
+    reject(&PartyManager.get/1)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 2, :sc_suffragium, params ->
+      assert params == [val1: 3, caster_id: 1, duration: 10_000]
+      :ok
+    end)
+
+    assert {:ok, ^caster} = PrSuffragium.cast(caster, {:unit, 2}, 3, definition)
+  end
+
+  @tag game_mode: :renewal
   test "Suffragium skips dead, distant, cross-map, and missing party members" do
     assert_ineligible_members_skipped(PrSuffragium, 67, :sc_suffragium)
   end
 
+  @tag game_mode: :renewal
   test "Impositio Manus skips dead, distant, cross-map, and missing party members" do
     assert_ineligible_members_skipped(PrImpositio, 66, :sc_impositio)
   end

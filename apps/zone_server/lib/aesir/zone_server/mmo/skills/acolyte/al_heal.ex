@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     combatant = caster.__struct__.to_combatant(caster)
     target = Active.resolve_target_id(caster, target)
     offensive? = offensive_target?(combatant, target)
-    amount = compute_heal(combatant, level, offensive?)
+    amount = compute_heal(combatant, level, offensive?, 28)
 
     if offensive? do
       attack_undead(caster, target, amount, level)
@@ -153,14 +153,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     {:ok, caster}
   end
 
-  defp compute_heal(combatant, level, offensive?) do
+  @doc """
+  The Heal amount for `combatant` at `level`; an offensive cast (undead target)
+  halves the base. Shared with B.S. Sacramenti, whose strike uses the same formula;
+  `skill_id` scopes the per-skill heal bonus from equipment to the casting skill.
+  """
+  @spec compute_heal(map(), pos_integer(), boolean(), pos_integer()) :: non_neg_integer()
+  def compute_heal(combatant, level, offensive?, skill_id) do
     combat_stats = combatant.combat_stats
     matk_min = Map.get(combat_stats, :heal_matk_min, combat_stats.matk)
     matk_max = Map.get(combat_stats, :heal_matk_max, combat_stats.matk)
 
     heal_power =
       Map.get(combatant.equip_modifiers, :heal_power, 0) +
-        Map.get(combatant.equip_modifiers, {:skill_heal, 28}, 0)
+        Map.get(combatant.equip_modifiers, {:skill_heal, skill_id}, 0)
 
     Formula.calculate(GameMode.mode(), %{
       base_level: combatant.progression.base_level,

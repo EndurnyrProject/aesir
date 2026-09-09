@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     assert {:error, :immune} = PrSlowpoison.cast(caster, :self, 1, definition)
   end
 
+  @tag game_mode: :renewal
   test "Status Recovery uses Renewal id, cost, range, delay, and blind duration" do
     assert {:ok, definition} = Catalog.by_id(72)
     assert definition.name == :pr_strecovery
@@ -62,6 +63,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     assert definition.sp_cost == [5]
     assert definition.after_cast_delay == [2_000]
     assert definition.duration == [18_000]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "Status Recovery blinds undead for 30 seconds in classic" do
+    assert {:ok, definition} = Catalog.by_id(72)
+    assert definition.duration == [30_000]
+    assert definition.sp_cost == [5]
   end
 
   test "Status Recovery removes every supported non-undead body-state status" do
@@ -96,7 +104,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
     target_id = 2_000
 
     stub(Combat, :resolve_combatant, fn ^target_id ->
-      {:ok, %{unit_type: :mob, race: :undead}}
+      {:ok, %{unit_type: :mob, race: :undead, element: {:undead, 1}}}
     end)
 
     reject(&StatusInterpreter.remove_status/3)
@@ -149,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSlowpoisonStrecoveryTest do
       :ok
     end)
 
-    assert :ok = PrStrecovery.apply_undead_effect(:mob, 2_000, 1_000)
+    assert :ok = PrStrecovery.apply_undead_effect(:mob, 2_000, 1_000, 18_000)
   end
 
   test "Poison suppresses its damage tick while Slow Poison is active" do

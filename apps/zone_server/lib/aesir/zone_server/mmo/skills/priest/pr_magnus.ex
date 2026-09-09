@@ -1,10 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
   @moduledoc """
-  Magnus Exorcismus (PR_MAGNUS), a persistent Holy ground field.
+  Magnus Exorcismus (PR_MAGNUS). A 33-cell holy field pulsing every three seconds,
+  each pulse striking level times at 130% MATK against undead and demons.
 
-  The field follows rAthena's dedicated 33-cell layout and pulses every three
-  seconds. Renewal damages ordinary hostile targets with base Holy magic; only
-  undead and demon targets receive the source's additional 30% skill ratio.
+  Renewal: every other enemy on the field takes 100% MATK per hit; a 4 s cast plus
+  1 s fixed, a 1 s delay, a 6 s cooldown, and 4 to 13 s of field. Pre-renewal: only
+  undead and demons are struck; a 15 s cast, a 4 s delay, no cooldown, and 5 to 14 s
+  of field. Both modes cost 40 to 58 SP and one Blue Gemstone.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 79,
@@ -18,14 +20,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
     element: :holy,
     splash_radius: 3,
     hit_interval: 3_000,
-    unit_duration: Enum.to_list(4_000..13_000//1_000),
+    unit_duration: [
+      renewal: Enum.to_list(4_000..13_000//1_000),
+      pre_renewal: Enum.to_list(5_000..14_000//1_000)
+    ],
     sp_cost: Enum.to_list(40..58//2),
-    cast_time: List.duplicate(4_000, 10),
-    fixed_cast_time: List.duplicate(1_000, 10),
-    after_cast_delay: List.duplicate(1_000, 10),
-    cooldown: List.duplicate(6_000, 10),
+    cast_time: [renewal: List.duplicate(4_000, 10), pre_renewal: List.duplicate(15_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 10), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(1_000, 10), pre_renewal: List.duplicate(4_000, 10)],
+    cooldown: [renewal: List.duplicate(6_000, 10), pre_renewal: []],
     item_cost: [%{id: 717, amount: 1}]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -68,8 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
     {1, 3}
   ]
 
-  # NOTE: PR_MAGNUS cannot react to rAthena's RemovedByFireRain until Fire Rain
-  # exists; its implementation must destroy overlapping Magnus groups.
+  # NOTE: Fire Rain should destroy overlapping Magnus fields once it exists; that
+  # removal belongs to Fire Rain's implementation.
 
   @behaviour Ground
 
@@ -118,36 +124,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
 
   @spec hit(Group.t(), struct(), struct(), {atom(), integer()}) :: :ok
   defp hit(group, definition, caster, {unit_type, target_id}) do
-    case Combat.resolve_combatant(unit_type, target_id) do
-      {:ok, target} ->
-        Combat.apply_skill_unit_damage(
-          caster,
-          unit_type,
-          target_id,
-          group.skill_id,
-          group.level,
-          definition.element,
-          skill_ratio(target),
-          hit_count: group.level
-        )
-
-      {:error, _reason} ->
-        :ok
+    with {:ok, target} <- Combat.resolve_combatant(unit_type, target_id),
+         ratio when is_integer(ratio) <- skill_ratio(target) do
+      Combat.apply_skill_unit_damage(
+        caster,
+        unit_type,
+        target_id,
+        group.skill_id,
+        group.level,
+        definition.element,
+        ratio,
+        hit_count: group.level
+      )
     end
 
     :ok
   end
 
-  @spec skill_ratio(map()) :: pos_integer()
-  defp skill_ratio(%{race: :demon}), do: 130
-
-  defp skill_ratio(%{race: race} = target) do
-    if RaceModifiers.undead?(race) or undead_element?(Map.get(target, :element)),
-      do: 130,
-      else: 100
+  # 130% against undead (defence element) and demons. Other targets take 100% in
+  # renewal and are left untouched (nil) in pre-renewal.
+  @spec skill_ratio(map()) :: pos_integer() | nil
+  defp skill_ratio(target) do
+    cond do
+      Map.get(target, :race) == :demon or RaceModifiers.undead_target?(target) -> 130
+      GameMode.mode() == :renewal -> 100
+      true -> nil
+    end
   end
-
-  defp undead_element?({:undead, _level}), do: true
-  defp undead_element?(:undead), do: true
-  defp undead_element?(_element), do: false
 end

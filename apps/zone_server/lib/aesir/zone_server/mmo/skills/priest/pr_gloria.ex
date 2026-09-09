@@ -1,9 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrGloria do
   @moduledoc """
-  Gloria (PR_GLORIA), the Renewal party-wide LUK buff.
+  Gloria (PR_GLORIA). Grants 30 LUK to the caster and every living same-map party
+  member nearby for 10 s plus 5 s per level and 20 SP.
 
-  Self-cast: grants the caster and every eligible nearby party member a flat LUK
-  bonus for the skill's duration.
+  Renewal reaches party members within 18 cells; pre-renewal reaches the default
+  14-cell area. Neither mode has a cast time.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 75,
@@ -14,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrGloria do
     target_type: :self,
     damage_type: :no_damage,
     damage_kind: :magic,
-    splash_radius: 18,
+    splash_radius: [renewal: 18, pre_renewal: 14],
     cast_time: List.duplicate(0, 5),
     fixed_cast_time: List.duplicate(0, 5),
     after_cast_delay: List.duplicate(2_000, 5),

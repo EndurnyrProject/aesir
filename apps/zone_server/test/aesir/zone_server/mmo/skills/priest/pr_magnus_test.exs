@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
   end
 
   describe "skill data" do
+    @tag game_mode: :renewal
     test "loads rAthena's cast, cost, catalyst, interval, duration, and hit tables" do
       assert {:ok, definition} = Catalog.by_name(:pr_magnus)
       assert definition.id == 79
@@ -46,6 +47,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
       assert definition.item_cost == [%{id: 717, amount: 1}]
     end
 
+    @tag game_mode: :pre_renewal
+    test "loads the classic 15 second cast, 4 second delay, and longer field" do
+      assert {:ok, definition} = Catalog.by_name(:pr_magnus)
+      assert definition.unit_duration == Enum.to_list(5_000..14_000//1_000)
+      assert definition.cast_time == List.duplicate(15_000, 10)
+      assert definition.fixed_cast_time == []
+      assert definition.after_cast_delay == List.duplicate(4_000, 10)
+      assert definition.cooldown == []
+      assert definition.item_cost == [%{id: 717, amount: 1}]
+    end
+
     test "is registered as an active ground skill" do
       assert {:ok, PrMagnus} = Catalog.active_module_for(:pr_magnus)
       assert {:ok, PrMagnus} = Catalog.ground_module_for(:pr_magnus)
@@ -53,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "returns rAthena's exact 33-cell layout with path checking and level duration" do
       assert {:ok, placement} = PrMagnus.on_place(group(10))
 
@@ -101,13 +114,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
   end
 
   describe "on_interval/2" do
+    @tag game_mode: :renewal
     test "hits only targets on the 33-cell footprint and gives the +30 ratio only to undead and demon" do
       test_pid = self()
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
       stub(Combat, :resolve_combatant, fn
         :mob, 2_001 -> {:ok, %{race: :formless, element: {:neutral, 1}}}
-        :mob, 2_002 -> {:ok, %{race: :undead, element: {:neutral, 1}}}
+        :mob, 2_002 -> {:ok, %{race: :undead, element: {:undead, 1}}}
         :mob, 2_003 -> {:ok, %{race: :demon, element: {:fire, 1}}}
       end)
 
@@ -135,6 +149,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnusTest do
       assert_received {:hit, 2_002, 130}
       assert_received {:hit, 2_003, 130}
       refute_received {:hit, 2_004, _}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic fields strike only undead and demons" do
+      test_pid = self()
+      stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
+
+      stub(Combat, :resolve_combatant, fn
+        :mob, 2_001 -> {:ok, %{race: :formless, element: {:neutral, 1}}}
+        :mob, 2_002 -> {:ok, %{race: :undead, element: {:undead, 1}}}
+        :mob, 2_003 -> {:ok, %{race: :demon, element: {:fire, 1}}}
+      end)
+
+      stub(Combat, :splash_targets, fn @map_name, @center, 3, @caster_id ->
+        [{:mob, 2_001}, {:mob, 2_002}, {:mob, 2_003}]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :mob, _id -> {:ok, {150, 150, @map_name}} end)
+
+      stub(Combat, :apply_skill_unit_damage, fn
+        %{unit_id: @caster_id}, :mob, target_id, 79, 10, :holy, ratio, hit_count: 10 ->
+          send(test_pid, {:hit, target_id, ratio})
+          :ok
+      end)
+
+      assert {:ok, %Group{}} = PrMagnus.on_interval(group(10, [{150, 150}]), 0)
+
+      refute_received {:hit, 2_001, _}
+      assert_received {:hit, 2_002, 130}
+      assert_received {:hit, 2_003, 130}
     end
 
     test "does not damage candidates whose combatant has disappeared" do

@@ -1460,6 +1460,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert reduced.total < unreduced.total
     end
 
+    @tag game_mode: :renewal
     test "Suffragium reduces variable cast time and persists through the cast lifecycle" do
       gs = game_state(100, %{29 => 1})
 
@@ -1489,6 +1490,33 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:ok, _updated} = Interpreter.complete_cast(gs, 29, 1, :self)
       assert StatusStorage.has_status?(:player, 1000, :sc_suffragium)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Suffragium level 3 cuts the cast by 45 percent" do
+      gs = game_state(100, %{29 => 1})
+
+      stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: gs.stats}} end)
+
+      assert {:casting, _gs, unreduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+
+      assert {:ok, suffragium} =
+               Suffragium.on_apply(
+                 {:player, 1000},
+                 %StatusEntry{type: :sc_suffragium, val1: 3, state: %{}},
+                 %{}
+               )
+
+      :ok =
+        StatusStorage.apply_status(:player, 1000, :sc_suffragium,
+          duration: 30_000,
+          val1: 3,
+          state: suffragium.state
+        )
+
+      assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
+      assert reduced.fixed == unreduced.fixed
+      assert reduced.total - reduced.fixed == round((unreduced.total - unreduced.fixed) * 0.55)
     end
 
     test "composes multiple status cast reductions multiplicatively, not additively" do

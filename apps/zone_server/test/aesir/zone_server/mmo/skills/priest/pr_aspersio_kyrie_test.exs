@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
              PrAspersio.cast(caster, {:unit, 2_000}, 3, PrAspersio.definition())
   end
 
+  @tag game_mode: :renewal
   test "Kyrie exposes its Renewal timing and SP tables" do
     assert {:ok, definition} = Catalog.by_id(73)
 
@@ -88,6 +89,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrAspersioKyrieTest do
     assert definition.after_cast_delay == List.duplicate(2_000, 10)
     assert definition.sp_cost == [20, 20, 20, 25, 25, 25, 30, 30, 30, 35]
     assert definition.duration == List.duplicate(120_000, 10)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "Kyrie casts in a flat 2 seconds in classic" do
+    assert {:ok, definition} = Catalog.by_id(73)
+    assert definition.cast_time == List.duplicate(2_000, 10)
+    assert definition.fixed_cast_time == []
+    assert definition.sp_cost == [20, 20, 20, 25, 25, 25, 30, 30, 30, 35]
   end
 
   test "Kyrie derives its barrier HP and hit count from the target's max HP" do

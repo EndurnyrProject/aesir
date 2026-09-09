@@ -107,6 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
              )
   end
 
+  @tag game_mode: :renewal
   test "Turn Undead exposes the exact capped Renewal instant-kill score" do
     caster = %{luk: 50, int: 80, base_level: 99}
     target = %{hp: 1, max_hp: 1_000}
@@ -117,11 +118,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
              700
   end
 
-  test "Turn Undead scales its Renewal MATK fallback by skill level" do
-    assert PrTurnundead.fallback_skill_ratio(1) == 100
-    assert PrTurnundead.fallback_skill_ratio(10) == 1_000
+  @tag game_mode: :pre_renewal
+  test "Turn Undead's classic score weighs the level and missing HP differently" do
+    caster = %{luk: 50, int: 80, base_level: 99}
+
+    assert PrTurnundead.instant_kill_score(caster, %{hp: 500, max_hp: 1_000}, 10) == 529
+    assert PrTurnundead.instant_kill_score(caster, %{hp: 1, max_hp: 1_000}, 10) == 629
+    assert PrTurnundead.fallback_damage(caster, 10) == 279
   end
 
+  @tag game_mode: :renewal
+  test "Turn Undead scales its Renewal MATK fallback by skill level in percent" do
+    assert PrTurnundead.fallback_skill_ratio(1) == 1
+    assert PrTurnundead.fallback_skill_ratio(10) == 10
+
+    assert PrTurnundead.instant_kill_score(
+             %{luk: 50, int: 80, base_level: 99},
+             %{hp: 500, max_hp: 1_000},
+             10
+           ) == 479
+  end
+
+  @tag game_mode: :renewal
   test "Turn Undead exposes its complete cast and targeting metadata" do
     assert {:ok, definition} = Catalog.by_id(77)
 
@@ -136,6 +154,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
     assert definition.sp_cost == List.duplicate(20, 10)
   end
 
+  @tag game_mode: :pre_renewal
+  test "Turn Undead casts in a flat second in classic" do
+    assert {:ok, definition} = Catalog.by_id(77)
+    assert definition.cast_time == List.duplicate(1_000, 10)
+    assert definition.fixed_cast_time == []
+    assert definition.sp_cost == List.duplicate(20, 10)
+  end
+
+  @tag game_mode: :renewal
   test "Turn Undead's failed roll bypasses MDEF while preserving its magic hit path" do
     {:ok, definition} = Catalog.by_id(77)
     target_id = 2_000
@@ -151,9 +178,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrLexTurnundeadTest do
     :rand.seed(:exsss, {1, 2, 3})
 
     expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, ^target_id, opts ->
-      assert opts[:skill_ratio] == 100
+      assert opts[:skill_ratio] == 1
       assert opts[:element] == :holy
       assert opts[:ignore_mdef]
+      assert opts[:skip_range]
+      {:ok, {:mob, target_id}}
+    end)
+
+    assert {:ok, %{character_id: 1_000}} =
+             PrTurnundead.cast(%{character_id: 1_000}, {:unit, target_id}, 1, definition)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Turn Undead skips the kill roll on a status-immune target and deals its fixed fallback" do
+    {:ok, definition} = Catalog.by_id(77)
+    target_id = 2_000
+
+    target = %TargetState{
+      combatant: %{race: :undead, element: {:undead, 1}, status_immune: true},
+      stats: %{hp: 1, max_hp: 100}
+    }
+
+    stub(TargetResolver, :resolve, fn ^target_id -> {:ok, self(), target, :mob} end)
+    stub(PlayerState, :get_stats, fn _caster -> %{luk: 99, int: 80, base_level: 70} end)
+    reject(&Combat.execute_magic_attack/3)
+
+    expect(Combat, :execute_magic_damage, fn %{character_id: 1_000}, ^target_id, 160, opts ->
+      assert opts[:element] == :holy
       assert opts[:skip_range]
       {:ok, {:mob, target_id}}
     end)

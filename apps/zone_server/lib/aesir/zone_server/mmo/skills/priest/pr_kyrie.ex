@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
   @moduledoc """
-  Kyrie Eleison (PR_KYRIE). Applies a physical-damage barrier to a player.
+  Kyrie Eleison (PR_KYRIE). Shields a player with a barrier absorbing 10 plus 2 per
+  level percent of max HP over level/2 plus 5 hits for 2 minutes. Monsters cannot
+  carry the barrier.
 
-  rAthena Renewal: `db/re/skill_db.yml:2581-2618` and
-  `src/map/status.cpp:10332-10335,10914-10921`. The first status gate rejects
-  mob carriers; the second block derives barrier HP and hit count from the
-  target's max HP and selected skill level.
+  Renewal casts in 1.6 s plus 0.4 s fixed; pre-renewal in 2 s. Both modes cost 20 to
+  35 SP with a 2 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 73,
@@ -18,8 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrKyrie do
     damage_type: :no_damage,
     damage_kind: :magic,
     range: 9,
-    cast_time: List.duplicate(1_600, 10),
-    fixed_cast_time: List.duplicate(400, 10),
+    cast_time: [renewal: List.duplicate(1_600, 10), pre_renewal: List.duplicate(2_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(400, 10), pre_renewal: []],
     after_cast_delay: List.duplicate(2_000, 10),
     sp_cost: [20, 20, 20, 25, 25, 25, 30, 30, 30, 35],
     duration: List.duplicate(120_000, 10)

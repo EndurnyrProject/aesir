@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
   use Mimic
 
   alias Aesir.Commons.GameMode
+  alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.CastTime
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
@@ -36,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
       stats: %{
         current_state: %{hp: 1_000, sp: 1_000},
         progression: %{
+          base_level: 50,
           base_exp: 123_456,
           job_exp: 65_432,
           job_id: 8,
@@ -88,15 +90,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     assert definition.damage_kind == :magic
     assert definition.element == :holy
     assert definition.splash_radius == 14
-    assert definition.cast_time == [3_200]
-    assert definition.fixed_cast_time == [800]
-    assert definition.sp_cost == [800]
+    assert definition.cast_time == mode_value([3_200], [4_000])
+    assert definition.fixed_cast_time == mode_value([800], [])
+    assert definition.sp_cost == mode_value([800], [400])
     assert definition.ignore_dex
 
     assert CastTime.compute(definition, 1, %{dex: 200, int: 200}) ==
              mode_value(
                %{fixed: 800, variable: 2_400, total: 3_200},
-               %{fixed: 0, variable: 3_200, total: 3_200}
+               %{fixed: 0, variable: 4_000, total: 4_000}
              )
   end
 
@@ -120,6 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     assert {:error, :not_in_tree} = SkillTree.can_learn(progression, 1014)
   end
 
+  @tag game_mode: :renewal
   test "revives a nearby same-map party corpse at 50 percent and leaves the caster at one HP" do
     target_pid = self()
     target = corpse(2_000, 114, 100)
@@ -141,6 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     assert updated.stats.progression.job_exp == 65_432
   end
 
+  @tag game_mode: :renewal
   test "Renewal completion charges only the normal 800 SP cost and no experience" do
     target_pid = self()
     target = corpse(2_000, 114, 100)
@@ -159,6 +163,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrRedemptioTest do
     assert updated.stats.current_state == %CurrentState{hp: 1, sp: 200}
     assert updated.stats.progression.base_exp == 123_456
     assert updated.stats.progression.job_exp == 65_432
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion drains all SP and charges base experience for each revive short of five" do
+    target_pid = self()
+    target = corpse(2_000, 114, 100)
+
+    stub(PartyManager, :get, fn 7 -> {:ok, party_state([1_000, 2_000])} end)
+
+    stub(UnitRegistry, :get_unit, fn :player, 2_000 ->
+      {:ok, {PlayerState, target, target_pid}}
+    end)
+
+    stub(PlayerSession, :resurrect, fn ^target_pid, 1_000, 50 -> :ok end)
+    stub(ModifierCalculator, :get_all_modifiers, fn :player, 1_000 -> %{} end)
+
+    caster = caster(7)
+    next_level = Leveling.next_base_exp(caster.stats.progression)
+    assert next_level > 0
+
+    assert {:ok, updated} = Interpreter.complete_cast(caster, 1014, 1, :self)
+
+    assert updated.stats.current_state == %CurrentState{hp: 1, sp: 0}
+    assert updated.stats.progression.base_exp == 123_456 - div(next_level * 4, 500)
+    assert updated.stats.progression.job_exp == 65_432
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic still needs the listed 400 SP" do
+    assert %{sp: 1_000} = PrRedemptio.dynamic_cost(caster(7), :self, 1, PrRedemptio.definition())
+
+    low = put_in(caster(7).stats.current_state.sp, 300)
+    assert %{sp: 400} = PrRedemptio.dynamic_cost(low, :self, 1, PrRedemptio.definition())
   end
 
   test "fails without changing caster HP when no party corpse is eligible" do

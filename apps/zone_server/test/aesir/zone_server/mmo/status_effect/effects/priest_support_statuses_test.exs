@@ -158,6 +158,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
     assert kyrie.state == %{shield_hp: 50, hits_remaining: 5}
   end
 
+  @tag game_mode: :renewal
   test "Benedictio, Gloria, and Impositio reach the combat and stat readers", %{player: player} do
     baseline = Stats.calculate_stats(player.stats, @player_id, [])
 
@@ -181,6 +182,19 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
 
     assert boosted.combat_stats.matk_min == supported.combat_stats.matk_min + 25
     assert boosted.combat_stats.matk_max == supported.combat_stats.matk_max + 25
+    assert ModifierCalculator.get_all_modifiers(:player, @player_id).watk == 25
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Impositio raises weapon attack only", %{player: player} do
+    baseline = Stats.calculate_stats(player.stats, @player_id, [])
+
+    :ok = Interpreter.apply_status(:player, @player_id, :sc_impositio, duration: 30_000, val2: 25)
+
+    boosted = Stats.calculate_stats(player.stats, @player_id, [])
+
+    assert boosted.combat_stats.matk_min == baseline.combat_stats.matk_min
+    assert boosted.combat_stats.matk_max == baseline.combat_stats.matk_max
     assert ModifierCalculator.get_all_modifiers(:player, @player_id).watk == 25
   end
 
@@ -264,5 +278,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PriestSupportStatusesTest do
       class: 0
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :renewal
+  test "Suffragium cuts variable cast by 5 plus 5 per level and survives a cast" do
+    assert Suffragium.reduction(3) == 20
+
+    instance = %{val1: 3, state: %{}}
+
+    assert Suffragium.on_committed_action({:player, @player_id}, instance, {:skill, 28}, %{}) ==
+             {:ok, instance}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Suffragium cuts cast by 15 per level and is consumed by the next skill cast" do
+    assert Suffragium.reduction(3) == 45
+
+    instance = %{val1: 3, state: %{}}
+
+    assert Suffragium.on_committed_action({:player, @player_id}, instance, {:skill, 28}, %{}) ==
+             :remove
+
+    assert Suffragium.on_committed_action({:player, @player_id}, instance, :normal_attack, %{}) ==
+             {:ok, instance}
   end
 end

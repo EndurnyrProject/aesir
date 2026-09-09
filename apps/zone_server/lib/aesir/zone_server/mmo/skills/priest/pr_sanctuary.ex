@@ -1,18 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   @moduledoc """
-  Sanctuary (PR_SANCTUARY), a periodic 21-cell Holy field.
+  Sanctuary (PR_SANCTUARY). A 21-cell holy field that every second heals living
+  non-undead, non-demon occupants below full HP (100 per level, 777 from level 7)
+  and instead strikes enemy undead and demons for that amount as fixed holy magic
+  damage, pushing them 2 cells. Successful strikes spend a shared quota of level plus
+  3; heals and failed strikes do not. Magic-immune players receive no healing.
 
-  Every second it heals living non-undead/non-demon occupants below maximum HP,
-  except magic-immune players, who receive no healing. Enemy undead and demons
-  instead take the same amount as fixed Holy magic
-  damage. Successful offensive hits spend the group's shared `level + 3` quota;
-  healing and failed hits do not.
-
-  Renewal references:
-
-  * `db/re/skill_db.yml:2460-2533` -- metadata, costs, timing, and unit flags
-  * `src/map/skill.cpp:5752-6343,6923-6973,12417-12421` -- tick and quota behavior
-  * `src/map/skills/acolyte/sanctuary.cpp:9-13` -- placement layout
+  Renewal: a 4 s cast plus 1 s fixed, and the Emperium is never healed. Pre-renewal:
+  a 5 s variable cast, and the Emperium heals like any other mob. Both modes cost
+  15 to 42 SP and one Blue Gemstone.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 70,
@@ -31,8 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     splash_radius: 2,
     knockback: 2,
     hit_interval: 1_000,
-    cast_time: List.duplicate(4_000, 10),
-    fixed_cast_time: List.duplicate(1_000, 10),
+    cast_time: [renewal: List.duplicate(4_000, 10), pre_renewal: List.duplicate(5_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 10), pre_renewal: []],
     unit_duration: [
       3_900,
       6_900,
@@ -48,9 +44,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     sp_cost: [15, 18, 21, 24, 27, 30, 33, 36, 39, 42],
     item_cost: [%{id: 717, amount: 1}]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -165,7 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
     cond do
       undead_or_demon?(module, state) and MapSet.member?(enemies, target) -> :damage
       undead_or_demon?(module, state) -> :skip
-      full_hp?(state) or emperium?(state) -> :skip
+      full_hp?(state) or protected_emperium?(state) -> :skip
       true -> :heal
     end
   end
@@ -229,7 +227,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   defp finish_interval(group), do: {:ok, group}
 
   defp undead_or_demon?(module, state) do
-    module.get_race(state) in [:undead, :demon] or elem(module.get_element(state), 0) == :undead
+    module.get_race(state) == :demon or
+      RaceModifiers.undead_target?(%{element: module.get_element(state)})
   end
 
   defp full_hp?(%PlayerState{
@@ -241,10 +240,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSanctuary do
   defp full_hp?(%HomunculusState{hp: hp, max_hp: max_hp}), do: hp >= max_hp
   defp full_hp?(_state), do: true
 
-  defp emperium?(%MobState{mob_id: 1_288}), do: true
+  defp protected_emperium?(%MobState{mob_id: 1_288}), do: GameMode.mode() == :renewal
 
-  # NOTE: Exclude rAthena's CLASS_BATTLEFIELD mobs once Aesir models that mob classification.
-  defp emperium?(_state), do: false
+  # NOTE: Exclude battlefield-class mobs once Aesir models that mob classification.
+  defp protected_emperium?(_state), do: false
 
   defp heal_amount(level) when level <= 6, do: 100 * level
   defp heal_amount(_level), do: 777

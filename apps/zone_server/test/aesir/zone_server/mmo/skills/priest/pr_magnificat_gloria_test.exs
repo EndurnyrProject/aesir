@@ -75,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     }
   end
 
+  @tag game_mode: :renewal
   test "Magnificat exposes the exact Renewal definition" do
     assert {:ok, definition} = Catalog.by_id(74)
     assert definition.name == :pr_magnificat
@@ -89,6 +90,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     assert definition.sp_cost == List.duplicate(40, 5)
   end
 
+  @tag game_mode: :pre_renewal
+  test "Magnificat reaches the default party area with a flat 4 second cast in classic" do
+    assert {:ok, definition} = Catalog.by_id(74)
+    assert definition.splash_radius == 14
+    assert definition.cast_time == List.duplicate(4_000, 5)
+    assert definition.fixed_cast_time == []
+    assert definition.sp_cost == List.duplicate(40, 5)
+  end
+
+  @tag game_mode: :renewal
   test "Gloria exposes the exact Renewal definition" do
     assert {:ok, definition} = Catalog.by_id(75)
     assert definition.name == :pr_gloria
@@ -101,6 +112,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     assert definition.after_cast_delay == List.duplicate(2_000, 5)
     assert definition.duration == [10_000, 15_000, 20_000, 25_000, 30_000]
     assert definition.sp_cost == List.duplicate(20, 5)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "Gloria reaches the default party area in classic" do
+    assert {:ok, definition} = Catalog.by_id(75)
+    assert definition.splash_radius == 14
+    assert definition.duration == [10_000, 15_000, 20_000, 25_000, 30_000]
   end
 
   test "both skills are runtime-discoverable active skills" do
@@ -136,6 +154,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     assert {:ok, ^caster} = PrGloria.cast(caster, :self, 4, definition)
   end
 
+  @tag game_mode: :renewal
   test "Magnificat reaches a living same-map party member within 18 cells" do
     assert {:ok, definition} = Catalog.by_id(74)
     caster = player_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
@@ -152,6 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     assert {:ok, ^caster} = PrMagnificat.cast(caster, :self, 1, definition)
   end
 
+  @tag game_mode: :renewal
   test "Gloria reaches a living same-map party member within 18 cells" do
     assert {:ok, definition} = Catalog.by_id(75)
     caster = player_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
@@ -166,6 +186,35 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnificatGloriaTest do
     end)
 
     assert {:ok, ^caster} = PrGloria.cast(caster, :self, 2, definition)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Magnificat and Gloria reach party members within 14 cells only" do
+    caster = player_state(1, party_id: 10, map: "prontera", x: 150, y: 150)
+    assert :ok = register_member(2, map: "prontera", x: 168, y: 150)
+    assert :ok = register_member(3, map: "prontera", x: 164, y: 150)
+
+    party = %{
+      party_state()
+      | members: Map.put(party_state().members, 3, party_member(3, "prontera"))
+    }
+
+    expect(PartyManager, :get, 2, fn 10 -> {:ok, party} end)
+
+    expect(StatusInterpreter, :apply_status, 2, fn :player, target_id, :sc_magnificat, _params ->
+      assert target_id in [1, 3]
+      :ok
+    end)
+
+    expect(StatusInterpreter, :apply_status, 2, fn :player, target_id, :sc_gloria, _params ->
+      assert target_id in [1, 3]
+      :ok
+    end)
+
+    {:ok, magnificat} = Catalog.by_id(74)
+    {:ok, gloria} = Catalog.by_id(75)
+    assert {:ok, ^caster} = PrMagnificat.cast(caster, :self, 1, magnificat)
+    assert {:ok, ^caster} = PrGloria.cast(caster, :self, 2, gloria)
   end
 
   test "both buffs exclude corpses, distant members, cross-map members, and missing snapshots" do

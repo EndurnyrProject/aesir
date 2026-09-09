@@ -1,11 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
   @moduledoc """
-  Suffragium (PR_SUFFRAGIUM).
+  Suffragium (PR_SUFFRAGIUM). Shortens the variable cast time of the next casts.
 
-  Renewal references:
-  - `db/re/skill_db.yml:2331-2379` — ID, levels, party radius, timings, cost, and duration.
-  - `src/map/skills/acolyte/suffragium.cpp:11-27` — self/no-party and same-map party propagation.
-  - `src/map/status.cpp:11787-11793` and `src/map/skill.cpp:10322-10326` — Renewal VCT reduction and persistent lifecycle.
+  Renewal: a self-cast that also reaches every living same-map party member within
+  18 cells, cutting variable cast by 10, 15, or 20% for a full minute (the buff is
+  not consumed by casting), with a 1 s cast plus 0.5 s fixed, a 1 s delay, and a
+  30 s cooldown. Pre-renewal: a single-target support cast at 9 cells cutting cast
+  time by 15% per level for 30, 20, or 10 s, consumed by the receiver's next skill
+  cast, with no cast time and a 2 s delay. Both modes cost 8 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 67,
@@ -13,15 +15,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
     status: :sc_suffragium,
     display_name: "Suffragium",
     max_level: 3,
-    target_type: :self,
+    target_type: [renewal: :self, pre_renewal: :target_ally],
     damage_kind: :magic,
-    splash_radius: 18,
+    range: 9,
+    splash_radius: [renewal: 18, pre_renewal: 0],
     sp_cost: List.duplicate(8, 3),
-    cast_time: List.duplicate(1_000, 3),
-    fixed_cast_time: List.duplicate(500, 3),
-    after_cast_delay: List.duplicate(1_000, 3),
-    cooldown: List.duplicate(30_000, 3),
-    duration: List.duplicate(60_000, 3)
+    cast_time: [renewal: List.duplicate(1_000, 3), pre_renewal: []],
+    fixed_cast_time: [renewal: List.duplicate(500, 3), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(1_000, 3), pre_renewal: List.duplicate(2_000, 3)],
+    cooldown: [renewal: List.duplicate(30_000, 3), pre_renewal: []],
+    duration: [renewal: List.duplicate(60_000, 3), pre_renewal: [30_000, 20_000, 10_000]]
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -39,16 +42,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrSuffragium do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
-    params = [val1: level, caster_id: caster_id, duration: 60_000]
+    params = params(caster_id, level, definition)
 
-    case StatusInterpreter.apply_status(:player, caster_id, :sc_suffragium, params) do
-      :ok ->
-        splash_to_party(caster_id, caster, definition.splash_radius, params)
-        {:ok, caster}
+    with :ok <- StatusInterpreter.apply_status(:player, caster_id, :sc_suffragium, params) do
+      if definition.target_type == :self,
+        do: splash_to_party(caster_id, caster, definition.splash_radius, params)
 
-      {:error, _reason} = error ->
-        error
+      {:ok, caster}
     end
+  end
+
+  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
+    with :ok <-
+           StatusInterpreter.apply_status(
+             :player,
+             target_id,
+             :sc_suffragium,
+             params(caster_id, level, definition)
+           ) do
+      {:ok, caster}
+    end
+  end
+
+  defp params(caster_id, level, definition) do
+    [val1: level, caster_id: caster_id, duration: Enum.at(definition.duration, level - 1)]
   end
 
   defp splash_to_party(caster_id, caster, splash_radius, params) do

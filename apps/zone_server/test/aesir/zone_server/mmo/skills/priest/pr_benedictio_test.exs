@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobDefinition
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
   alias Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -165,7 +166,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     assert definition.damage_type == :no_damage
     assert definition.damage_kind == :magic
     assert definition.range == 9
-    assert definition.element == :holy
+    assert definition.element == :neutral
     assert definition.splash_radius == 1
     assert definition.sp_cost == List.duplicate(20, 5)
     assert definition.duration == [40_000, 80_000, 120_000, 160_000, 200_000]
@@ -279,10 +280,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
     refute_received {:buff, 2_004}
   end
 
-  test "the immediate enemy pass deals Holy magic only to undead and demon characters" do
+  test "the immediate enemy pass deals Heal-formula magic only to undead and demon characters" do
     test_pid = self()
-    {caster, _west, _east} = register_formation()
-    register_mob(mob(3_001, :undead, :neutral, 160, 160))
+    {_minimal, _west, _east} = register_formation()
+    caster = register_player(%{real_player(@caster_id, 150, 150) | dir: 4})
+    register_mob(mob(3_001, :undead, :undead, 160, 160))
     register_mob(mob(3_002, :formless, :undead, 161, 161))
     register_mob(mob(3_003, :demon, :dark, 159, 160))
     register_mob(mob(3_004, :brute, :neutral, 160, 159))
@@ -294,24 +296,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
       [{:mob, 3_001}, {:mob, 3_002}, {:mob, 3_003}, {:mob, 3_004}]
     end)
 
-    stub(Combat, :execute_magic_attack, fn ^caster, target_id, opts ->
-      send(test_pid, {:damage, target_id, opts})
+    stub(Combat, :execute_magic_damage, fn ^caster, target_id, damage, opts ->
+      send(test_pid, {:damage, target_id, damage, opts})
       {:ok, {:mob, target_id}}
     end)
 
     assert {:ok, ^caster} =
              PrBenedictio.cast(caster, {:ground, 160, 160}, 5, PrBenedictio.definition())
 
+    expected = AlHeal.compute_heal(PlayerState.to_combatant(caster), 5, true, 69)
+    assert expected > 0
+
     for target_id <- [3_001, 3_002, 3_003] do
-      assert_received {:damage, ^target_id, opts}
+      assert_received {:damage, ^target_id, ^expected, opts}
       assert opts[:skill_id] == 69
       assert opts[:skill_level] == 5
-      assert opts[:skill_ratio] == 100
-      assert opts[:element] == :holy
-      assert opts[:ignore_mdef]
+      assert opts[:element] == :neutral
       assert opts[:skip_range]
     end
 
-    refute_received {:damage, 3_004, _opts}
+    refute_received {:damage, 3_004, _damage, _opts}
   end
 end
