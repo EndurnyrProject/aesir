@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   end
 
   describe "registration & metadata" do
+    @tag game_mode: :renewal
     test "is a Fire ground misc skill with range 3 and splash 2, registered in the catalog" do
       assert {:ok, HtClaymoretrap} = Catalog.ground_module_for(:ht_claymoretrap)
       d = HtClaymoretrap.definition()
@@ -52,6 +53,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
       assert d.sp_cost == List.duplicate(15, 5)
       assert d.item_cost == [%{id: 1065, amount: 2}]
       assert d.cast_time == List.duplicate(500, 5)
+      assert HtClaymoretrap.definition(:pre_renewal).cast_time == []
+      assert HtClaymoretrap.definition(:pre_renewal).after_cast_delay == []
       assert d.fixed_cast_time == List.duplicate(300, 5)
       assert d.after_cast_delay == List.duplicate(1_000, 5)
       assert d.unit_duration == [20_000, 40_000, 60_000, 80_000, 100_000]
@@ -59,6 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrapTest do
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "lays one visible trigger cell with placer-stamped damage" do
       stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
         {:ok, %{stats: %{dex: 50, int: 40, base_level: 50}}}

@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtShockwave do
   @moduledoc """
   Shockwave Trap (HT_SHOCKWAVE), a hidden contact trap that drains maximum SP.
+
+  Renewal and pre-renewal agree: drains SP from whoever steps on it, lasting 200 s down to 40 s by level, for 45 SP and two traps.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 118,

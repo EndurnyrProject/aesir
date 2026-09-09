@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBeastbane do
 
   Passive that adds flat physical ATK against Brute and Insect targets. The
   combatant's learned level drives the physical weapon damage pipeline.
+
+  Renewal and pre-renewal agree: +4 ATK per level against brute and insect targets (plus STR under the Hunter spirit).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 126,

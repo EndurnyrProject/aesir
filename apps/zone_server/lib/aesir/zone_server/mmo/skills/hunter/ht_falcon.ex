@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFalcon do
 
   Passive permission to equip a Falcon. Learning it does not equip a Falcon or
   grant stat bonuses.
+
+  Renewal and pre-renewal agree: allows renting a falcon.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 127,

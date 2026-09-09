@@ -65,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
   defp maybe_learn(learned, skill_id, level), do: Map.put(learned, skill_id, level)
 
   describe "definition" do
+    @tag game_mode: :renewal
     test "publishes the canonical Blitz Beat metadata and both capabilities" do
       definition = HtBlitzbeat.definition()
 
@@ -78,6 +79,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       assert definition.range == 5
       assert definition.sp_cost == [10, 13, 16, 19, 22]
       assert definition.cast_time == List.duplicate(800, 5)
+      assert HtBlitzbeat.definition(:pre_renewal).cast_time == List.duplicate(1500, 5)
+      assert HtBlitzbeat.definition(:pre_renewal).fixed_cast_time == []
       assert definition.fixed_cast_time == List.duplicate(200, 5)
       assert definition.after_cast_delay == List.duplicate(1_000, 5)
       assert definition.hit_count == 1
@@ -106,6 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
                HtBlitzbeat.validate(player(), {:unit, 2001}, 5, HtBlitzbeat.definition())
     end
 
+    @tag game_mode: :renewal
     test "delivers total Falcon damage through the shared one-cell misc splash" do
       caster = player()
       definition = HtBlitzbeat.definition()
@@ -115,7 +119,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       end)
 
       expect(Combat, :execute_misc_splash, fn ^caster, {151, 150}, 1, opts ->
-        assert opts == [
+        refute opts[:split]
+
+        assert Keyword.delete(opts, :split) == [
                  skill_id: 129,
                  skill_level: 5,
                  base_damage: 1_380,
@@ -194,12 +200,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
       assert_receive {:skill, {:deferred, HtBlitzbeat, _}}
     end
 
+    @tag game_mode: :renewal
     test "deferred delivery reuses the captured center without charging or changing caster state" do
       caster = player(sp: 3)
 
       expect(Combat, :execute_misc_splash, fn ^caster, {151, 150}, 1, opts ->
         assert opts[:base_damage] == 1_380
         assert opts[:display_hit_count] == 5
+        refute opts[:split]
         [2002]
       end)
 
@@ -207,6 +215,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeatTest do
                HtBlitzbeat.deferred(%{center: {151, 150}, skill_level: 5}, caster)
 
       assert caster.stats.current_state.sp == 3
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic deferred delivery splits the total between the enemies hit" do
+      caster = player(sp: 3)
+
+      expect(Combat, :execute_misc_splash, fn ^caster, {151, 150}, 1, opts ->
+        assert opts[:base_damage] == 790
+        assert opts[:display_hit_count] == 5
+        assert opts[:split]
+        [2002, 2003]
+      end)
+
+      assert :ok = HtBlitzbeat.deferred(%{center: {151, 150}, skill_level: 5}, caster)
     end
   end
 end

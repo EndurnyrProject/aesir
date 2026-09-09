@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
   every other armed eligible trap in that same area used (visible, inert, for
   1.5 seconds) without invoking any of their own detonation callbacks. Natural
   armed expiry only transitions this trap itself to its used phase.
+
+  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35) over a 2-cell splash, with a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX/2 + 75) × (100 + INT)/100 and an instant cast. Both cost two traps.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 123,
@@ -22,9 +24,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtClaymoretrap do
     splash_radius: 2,
     hit_interval: 1_000,
     unit_duration: [20_000, 40_000, 60_000, 80_000, 100_000],
-    cast_time: List.duplicate(500, 5),
-    fixed_cast_time: List.duplicate(300, 5),
-    after_cast_delay: List.duplicate(1_000, 5),
+    cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []],
+    fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     sp_cost: List.duplicate(15, 5),
     item_cost: [%{id: 1065, amount: 2}]
 

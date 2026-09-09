@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
   end
 
   describe "catalog registration & metadata" do
+    @tag game_mode: :renewal
     test "publishes a grant-only Hunter quest skill matching the rAthena table" do
       assert {:ok, %{name: :ht_phantasmic}} = Catalog.by_id(1009)
       assert {:ok, HtPhantasmic} = Catalog.active_module_for(:ht_phantasmic)
@@ -33,9 +34,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
       assert d.damage_type == :damage
       assert d.damage_kind == :weapon
       assert d.element == :wind
-      assert d.range == -1
+      assert d.range == 9
+      assert d.vulture_range == false
+      assert d.require_weapon == [:bow]
       assert d.knockback == 3
-      assert d.sp_cost == [50]
+      assert HtPhantasmic.definition(:renewal).sp_cost == [50]
+      assert HtPhantasmic.definition(:renewal).element == :wind
+      assert HtPhantasmic.definition(:pre_renewal).sp_cost == [10]
+      assert HtPhantasmic.definition(:pre_renewal).element == :neutral
       assert d.item_cost == []
       assert d.requires_ammo == false
       assert d.quest_skill == true
@@ -69,6 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "forwards survival-gated native and equipment blow through the ordinary contract" do
       caster = caster()
       caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 1009} => 2})
@@ -78,6 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
         assert opts[:skill_id] == 1009
         assert opts[:skill_level] == 1
         assert opts[:skill_ratio] == 500
+        assert opts[:skip_range] == true
         assert opts[:element] == :wind
         assert opts[:hit_count] == 1
         assert opts[:skip_crit] == true
@@ -104,5 +112,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmicTest do
       assert {:error, :target_out_of_range} =
                HtPhantasmic.cast(caster, {:unit, @target_id}, 1, definition())
     end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic strikes for 150 percent" do
+    assert HtPhantasmic.skill_ratio() == 150
   end
 end

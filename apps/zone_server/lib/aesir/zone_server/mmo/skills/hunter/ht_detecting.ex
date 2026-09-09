@@ -1,4 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtDetecting do
+  @moduledoc """
+  Detecting (HT_DETECTING). Reveals hidden units in a 3-cell area.
+
+  Renewal and pre-renewal agree: reveals hidden units in a 3-cell area 3 to 9 cells away for 8 SP.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 130,
     name: :ht_detecting,

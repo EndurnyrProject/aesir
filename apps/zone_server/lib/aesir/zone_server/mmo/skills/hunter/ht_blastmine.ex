@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
   Enemy contact or natural armed expiry rolls one placement-stamped damage
   value and splits it across living enemies in the trap-centered 3x3 area. The
   manager owns the visible used phase after either detonation path.
+
+  Renewal: damage stamped at placement as level × DEX × (3 + base level/100) × (1 + INT/35), two traps, a 0.5 s cast plus 0.3 s fixed and a 1 s delay. Pre-renewal: level × (DEX/2 + 50) × (100 + INT)/100, one trap, and an instant cast with no delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 122,
@@ -20,11 +22,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlastmine do
     splash_radius: 1,
     hit_interval: 1_000,
     unit_duration: [25_000, 20_000, 15_000, 10_000, 5_000],
-    cast_time: List.duplicate(500, 5),
-    fixed_cast_time: List.duplicate(300, 5),
-    after_cast_delay: List.duplicate(1_000, 5),
+    cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []],
+    fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     sp_cost: List.duplicate(10, 5),
-    item_cost: [%{id: 1065, amount: 2}]
+    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]]
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground

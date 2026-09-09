@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
   @moduledoc """
   Freezing Trap (HT_FREEZINGTRAP), an activator-centered Water weapon trap.
+
+  Renewal: two traps. Pre-renewal: one trap. Both freeze the first enemy on contact for 3 s per level after a water-element hit.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 121,
@@ -17,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrap do
     hit_interval: 1_000,
     unit_duration: [150_000, 120_000, 90_000, 60_000, 30_000],
     sp_cost: [10, 10, 10, 10, 10],
-    item_cost: [%{id: 1065, amount: 2}]
+    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]]
 
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Skill.Ground

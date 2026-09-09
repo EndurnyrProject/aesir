@@ -85,4 +85,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.TrapTest do
     assert Trap.enemy?(group(:mob, :mob), {:player, 20})
     refute Trap.enemy?(group(:mob, :mob), {:mob, 20})
   end
+
+  @tag game_mode: :renewal
+  test "renewal trap damage is level times DEX scaled by base level and INT for every mine" do
+    stats = %{dex: 100, int: 35, base_level: 100}
+    assert Trap.base_damage(2, stats, :ht_landmine) == 1600
+    assert Trap.base_damage(2, stats, :ht_claymoretrap) == 1600
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic trap damage has its own formula per mine" do
+    stats = %{dex: 100, int: 100, base_level: 99}
+    assert Trap.base_damage(2, stats, :ht_landmine) == 700
+    assert Trap.base_damage(2, stats, :ht_blastmine) == 400
+    assert Trap.base_damage(2, stats, :ht_claymoretrap) == 500
+  end
 end

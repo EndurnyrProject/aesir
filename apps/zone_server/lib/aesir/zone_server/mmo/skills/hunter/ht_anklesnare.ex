@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtAnklesnare do
   link id, and the target is pulled onto the trap cell through its owning
   session. Either side ending releases only the matching peer; stale links
   self-heal through status ticks and finite durations.
+
+  Renewal and pre-renewal agree: a single-cell snare holding the first enemy that steps on it, lasting 250 s down to 50 s by level, for 12 SP and one trap.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 117,

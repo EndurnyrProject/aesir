@@ -3,14 +3,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.FormulasTest do
 
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas
 
+  @tag game_mode: :renewal
   test "calculates Renewal Blitz Beat base damage with integer stat steps" do
     for {blitz_level, steel_crow_level, agi, dex, expected} <- [
           {0, 0, 0, 0, 0},
           {1, 0, 1, 9, 20},
           {5, 10, 99, 99, 276}
         ] do
-      assert Formulas.blitz_beat_base_damage(blitz_level, steel_crow_level, agi, dex) == expected
+      assert Formulas.blitz_beat_base_damage(blitz_level, steel_crow_level, %{
+               agi: agi,
+               dex: dex,
+               int: 0
+             }) ==
+               expected
     end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Blitz Beat base damage reads DEX, INT, and Steel Crow, never the level" do
+    assert Formulas.blitz_beat_base_damage(5, 0, %{agi: 99, dex: 0, int: 0}) == 80
+    assert Formulas.blitz_beat_base_damage(1, 10, %{agi: 0, dex: 100, int: 50}) == 210
   end
 
   test "calculates automatic Blitz Beat chance on the thousand-point roll scale" do

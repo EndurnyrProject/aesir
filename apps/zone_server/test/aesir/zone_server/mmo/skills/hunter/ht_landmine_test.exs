@@ -41,6 +41,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
   end
 
   describe "registration & metadata" do
+    @tag game_mode: :renewal
     test "is an Earth ground misc skill with range 3, registered in the catalog" do
       assert {:ok, HtLandmine} = Catalog.ground_module_for(:ht_landmine)
       d = HtLandmine.definition()
@@ -53,12 +54,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
       assert d.item_cost == [%{id: 1065, amount: 1}]
       assert d.unit_duration == [200_000, 160_000, 120_000, 80_000, 40_000]
       assert d.cast_time == List.duplicate(500, 5)
+      assert HtLandmine.definition(:pre_renewal).cast_time == []
+      assert HtLandmine.definition(:pre_renewal).after_cast_delay == []
       assert d.fixed_cast_time == List.duplicate(300, 5)
       assert d.after_cast_delay == List.duplicate(1_000, 5)
     end
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "lays a single cell and the placer-stamped base damage (no arming delay)" do
       stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
         {:ok, %{stats: %{dex: 50, int: 40, base_level: 50}}}
@@ -168,5 +172,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtLandmineTest do
       assert :expire = HtLandmine.on_touch(mob_group, {:player, 3000})
       assert {:ok, %Group{}} = HtLandmine.on_touch(mob_group, {:mob, 4001})
     end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic mines deal their stamped damage without variance" do
+    assert Aesir.ZoneServer.Mmo.Skills.Hunter.Trap.roll_damage(500) == 500
   end
 end

@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtTalkiebox do
   broadcasts the stored text as a `ChatMessage` keyed on that cell's freshly
   allocated id, and the used cell is removed five seconds later through the
   same `expires_at` timing index every trap already uses - no new timer.
+
+  Renewal and pre-renewal agree: a message trap lasting 10 minutes for 1 SP and one trap.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 125,

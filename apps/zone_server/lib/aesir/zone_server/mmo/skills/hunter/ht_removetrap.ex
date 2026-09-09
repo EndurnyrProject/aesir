@@ -1,4 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtRemovetrap do
+  @moduledoc """
+  Remove Trap (HT_REMOVETRAP). Picks up a placed trap.
+
+  Renewal and pre-renewal agree: picks up a trap within 2 cells for 5 SP, returning the trap item.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 124,
     name: :ht_removetrap,

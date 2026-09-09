@@ -46,12 +46,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasherTest do
     )
   end
 
+  @tag game_mode: :renewal
   test "registers canonical costs and armed durations" do
     assert {:ok, HtFlasher} = Catalog.ground_module_for(:ht_flasher)
     definition = HtFlasher.definition()
     assert definition.id == 120
     assert definition.sp_cost == [12, 12, 12, 12, 12]
     assert definition.item_cost == [%{id: 1065, amount: 2}]
+    assert HtFlasher.definition(:pre_renewal).item_cost == [%{id: 1065, amount: 1}]
     assert definition.unit_duration == [150_000, 120_000, 90_000, 60_000, 30_000]
   end
 

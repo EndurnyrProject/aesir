@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
   @moduledoc """
   Flasher (HT_FLASHER), a hidden contact trap that attempts to Blind its activator.
+
+  Renewal: two traps. Pre-renewal: one trap. Both blind whoever steps on it for 150 s down to 30 s of trap life by level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 120,
@@ -13,7 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFlasher do
     hit_interval: 1_000,
     unit_duration: [150_000, 120_000, 90_000, 60_000, 30_000],
     sp_cost: [12, 12, 12, 12, 12],
-    item_cost: [%{id: 1065, amount: 2}]
+    item_cost: [renewal: [%{id: 1065, amount: 2}], pre_renewal: [%{id: 1065, amount: 1}]]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group

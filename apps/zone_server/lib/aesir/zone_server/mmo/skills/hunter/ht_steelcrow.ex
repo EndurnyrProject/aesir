@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSteelcrow do
 
   Passive damage input for Falcon attacks. Learning it does not grant direct
   stat bonuses.
+
+  Renewal: +6 Blitz Beat damage per level. Pre-renewal: +3 per level (doubled inside the classic formula).
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 128,

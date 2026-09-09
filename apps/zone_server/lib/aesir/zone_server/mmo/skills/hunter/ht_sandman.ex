@@ -1,4 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSandman do
+  @moduledoc """
+  Sandman (HT_SANDMAN). A sleep trap.
+
+  Renewal and pre-renewal agree: a 2-cell sleep trap lasting 150 s down to 30 s by level, for 12 SP and one trap.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 119,
     name: :ht_sandman,

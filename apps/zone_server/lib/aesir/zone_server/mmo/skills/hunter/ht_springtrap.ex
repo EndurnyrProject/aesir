@@ -1,4 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSpringtrap do
+  @moduledoc """
+  Spring Trap (HT_SPRINGTRAP). Springs a trap from a distance.
+
+  Renewal and pre-renewal agree: springs a trap 4 to 8 cells away for 10 SP.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 131,
     name: :ht_springtrap,

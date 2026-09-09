@@ -6,6 +6,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   cast-time, and action-delay handling. Automatic casts are queued from the
   confirmed ordinary bow-hit passive seam and reuse the same captured-center
   splash delivery without entering the cast interpreter.
+
+  Renewal: each of the level's hits deals 20 × level + 6 × Steel Crow + 2 × (AGI/2) + 2 × (DEX/10), with a 0.8 s cast plus 0.2 s fixed. Pre-renewal: each hit deals (DEX/10 + INT/2 + 3 × Steel Crow + 40) × 2 regardless of level, with a 1.5 s cast. Both auto-fire on a bow hit with a falcon at LUK × 10/3 + 1 per thousand; a
+  pre-renewal automatic cast divides its total between the enemies it hits, while
+  renewal gives every target the full total. Vulture's Eye extends the cast range.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 129,
@@ -17,18 +21,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
     damage_kind: :misc,
     element: :neutral,
     range: 5,
+    vulture_range: true,
     hit_count: 1,
     splash_radius: 1,
     sp_cost: [10, 13, 16, 19, 22],
-    cast_time: List.duplicate(800, 5),
-    fixed_cast_time: List.duplicate(200, 5),
+    cast_time: [renewal: List.duplicate(800, 5), pre_renewal: List.duplicate(1500, 5)],
+    fixed_cast_time: [renewal: List.duplicate(200, 5), pre_renewal: []],
     after_cast_delay: List.duplicate(1_000, 5)
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Passive
-  alias Aesir.ZoneServer.Mmo.Skills.Archer.AcVulture
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas
   alias Aesir.ZoneServer.Mmo.Skills.Hunter.HtSteelcrow
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
@@ -38,7 +43,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   @behaviour Active
   @behaviour Passive
 
-  @vulture_id AcVulture.definition().id
   @steel_crow_id HtSteelcrow.definition().id
 
   @impl Active
@@ -47,19 +51,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   end
 
   @impl Active
-  def effective_range(
-        %PlayerState{stats: %Stats{progression: progression}},
-        _level,
-        _definition,
-        base_range
-      ) do
-    base_range + Map.get(progression.learned_skills, @vulture_id, 0)
-  end
-
-  @impl Active
   def cast(caster, {:unit, target_id}, level, _definition) do
     with {:ok, %{position: center}} <- Combat.resolve_combatant(target_id) do
-      deliver(caster, center, level)
+      deliver(caster, center, level, false)
       {:ok, caster}
     end
   end
@@ -99,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   @spec deferred(%{center: {integer(), integer()}, skill_level: pos_integer()}, PlayerState.t()) ::
           :ok
   def deferred(%{center: center, skill_level: level}, %PlayerState{} = caster) do
-    deliver(caster, center, level)
+    deliver(caster, center, level, GameMode.mode() == :pre_renewal)
   end
 
   defp automatic_eligible?(
@@ -111,11 +105,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
       Stats.weapon_type(stats.equipment) == :bow
   end
 
-  defp deliver(%PlayerState{stats: stats} = caster, center, level) do
+  defp deliver(%PlayerState{stats: stats} = caster, center, level, split?) do
     steel_crow_level = Map.get(stats.progression.learned_skills, @steel_crow_id, 0)
-    agi = Stats.get_effective_stat(stats, :agi)
-    dex = Stats.get_effective_stat(stats, :dex)
-    per_hit_damage = Formulas.blitz_beat_base_damage(level, steel_crow_level, agi, dex)
+
+    caster_stats = %{
+      agi: Stats.get_effective_stat(stats, :agi),
+      dex: Stats.get_effective_stat(stats, :dex),
+      int: Stats.get_effective_stat(stats, :int)
+    }
+
+    per_hit_damage = Formulas.blitz_beat_base_damage(level, steel_crow_level, caster_stats)
     total_damage = per_hit_damage * level
     definition = definition()
 
@@ -124,7 +123,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
       skill_level: level,
       base_damage: total_damage,
       element: definition.element,
-      display_hit_count: level
+      display_hit_count: level,
+      split: split?
     )
 
     :ok

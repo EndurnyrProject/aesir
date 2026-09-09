@@ -70,12 +70,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtFreezingtrapTest do
     )
   end
 
+  @tag game_mode: :renewal
   test "declares the exact definition and typed lifecycle" do
     definition = HtFreezingtrap.definition()
     assert definition.id == 121
     assert definition.max_level == 5
     assert definition.sp_cost == [10, 10, 10, 10, 10]
     assert definition.item_cost == [%{id: 1065, amount: 2}]
+    assert HtFreezingtrap.definition(:pre_renewal).item_cost == [%{id: 1065, amount: 1}]
     assert definition.unit_duration == [150_000, 120_000, 90_000, 60_000, 30_000]
 
     assert {:ok, placement} = HtFreezingtrap.on_place(group())

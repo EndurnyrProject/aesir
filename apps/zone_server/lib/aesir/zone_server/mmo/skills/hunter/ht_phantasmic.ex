@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic do
   consumed, only an equipped bow. Knockback fires only when the strike
   connects and the prepared damage is not predicted to be lethal - a miss or
   a killing blow leaves the target in place.
+
+  Renewal: 500% wind-element weapon damage for 50 SP. Pre-renewal: 150% weapon damage with the weapon's own element for 10 SP. Both need a bow, reach a flat 9 cells (Vulture's Eye does not extend it), and push 3 cells.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1009,
@@ -17,19 +19,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic do
     max_level: 1,
     target_type: :target_enemy,
     damage_type: :damage,
-    range: -1,
-    element: :wind,
+    range: 9,
+    require_weapon: [:bow],
+    element: [renewal: :wind, pre_renewal: :neutral],
     knockback: 3,
-    sp_cost: [50],
+    sp_cost: [renewal: [50], pre_renewal: [10]],
     quest_skill: true,
     quest_owner_job: :hunter
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
 
   @behaviour Active
+
+  @doc "Renewal strikes for 500% weapon damage; classic for 150%."
+  @spec skill_ratio() :: pos_integer()
+  def skill_ratio, do: if(GameMode.mode() == :renewal, do: 500, else: 150)
 
   @impl Active
   def validate(%PlayerState{stats: %{equipment: equipment}}, _target, _level, _definition) do
@@ -41,7 +49,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtPhantasmic do
     opts = [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 500,
+      skill_ratio: skill_ratio(),
+      skip_range: true,
       element: definition.element,
       hit_count: 1,
       skip_crit: true,

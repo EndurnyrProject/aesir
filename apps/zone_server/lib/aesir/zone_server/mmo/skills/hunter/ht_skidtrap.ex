@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtSkidtrap do
   A hidden contact trap that pushes an eligible enemy away from its caster's
   placement origin and applies Stop. The manager turns a successful `:expire`
   result into the shared visible used lifecycle.
+
+  Renewal and pre-renewal agree: slides whoever steps on it 5 plus level cells, lasting 300 s down to 60 s, for 10 SP and one trap.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 115,

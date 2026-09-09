@@ -1,16 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas do
+  alias Aesir.Commons.GameMode
+
   @moduledoc """
   Deterministic calculations shared by Hunter skills.
   """
 
-  @spec blitz_beat_base_damage(
-          non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer(),
-          non_neg_integer()
-        ) :: non_neg_integer()
-  def blitz_beat_base_damage(blitz_level, steel_crow_level, agi, dex) do
-    20 * blitz_level + 6 * steel_crow_level + 2 * div(agi, 2) + 2 * div(dex, 10)
+  @spec blitz_beat_base_damage(non_neg_integer(), non_neg_integer(), map()) :: non_neg_integer()
+  def blitz_beat_base_damage(blitz_level, steel_crow_level, %{agi: agi, dex: dex, int: int}) do
+    case GameMode.mode() do
+      :renewal -> 20 * blitz_level + 6 * steel_crow_level + 2 * div(agi, 2) + 2 * div(dex, 10)
+      :pre_renewal -> (div(dex, 10) + div(int, 2) + 3 * steel_crow_level + 40) * 2
+    end
   end
 
   @doc "Returns the inclusive threshold for a random roll in 0..999, used as `roll <= threshold`."

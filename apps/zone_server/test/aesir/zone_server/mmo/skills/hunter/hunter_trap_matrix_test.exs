@@ -215,6 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HunterTrapMatrixTest do
     @natural_expiry_callback? trap.natural_expiry == :become_used
 
     describe "#{trap.name}" do
+      @tag game_mode: :renewal
       test "declares its canonical catalog row" do
         assert {:ok, definition} = Catalog.by_name(@trap.name)
         assert Catalog.ground_module_for(@trap.name) == {:ok, @trap.module}
