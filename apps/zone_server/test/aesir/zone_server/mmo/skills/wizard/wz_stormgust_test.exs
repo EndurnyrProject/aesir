@@ -64,9 +64,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
   end
 
   describe "on_interval/2" do
+    @tag game_mode: :renewal
     test "hits each in-footprint mob once via the magic calculator and knocks it back" do
       test_pid = self()
       stub_caster()
+      stub(StatusInterpreter, :apply_status, fn _type, _id, :sc_freeze, _params -> :ok end)
 
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
         [{:mob, 2001}, {:mob, 2002}]
@@ -118,6 +120,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
       assert {:ok, %Group{state: %{hit_counts: %{}}}} = WzStormgust.on_interval(group(), 0)
     end
 
+    @tag game_mode: :pre_renewal
+
     test "does not freeze before the 3rd accumulated hit" do
       stub_caster()
 
@@ -136,7 +140,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
                WzStormgust.on_interval(group(), 0)
     end
 
-    test "freezes on the 3rd accumulated hit and does not reset the counter" do
+    @tag game_mode: :pre_renewal
+
+    test "freezes on the 3rd accumulated hit and resets the counter" do
       stub_caster()
 
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
@@ -153,11 +159,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
 
       seeded = group(%{hit_counts: %{2001 => 2}})
 
-      assert {:ok, %Group{state: %{hit_counts: %{2001 => 3}}}} =
+      assert {:ok, %Group{state: %{hit_counts: %{2001 => 0}}}} =
                WzStormgust.on_interval(seeded, 0)
     end
 
-    test "does not re-freeze after the counter passes 3" do
+    @tag game_mode: :pre_renewal
+
+    test "keeps counting when the freeze does not land" do
       stub_caster()
 
       stub(Combat, :splash_targets, fn @map_name, @center, 2, @caster_id ->
@@ -169,12 +177,48 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgustTest do
       end)
 
       reject(&Combat.knockback/5)
-      reject(&StatusInterpreter.apply_status/4)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_freeze, _params ->
+        {:error, :immune}
+      end)
 
       seeded = group(%{hit_counts: %{2001 => 3}})
 
       assert {:ok, %Group{state: %{hit_counts: %{2001 => 4}}}} =
                WzStormgust.on_interval(seeded, 0)
     end
+  end
+
+  test "carries the per-mode data" do
+    assert WzStormgust.definition(:renewal).fixed_cast_time == List.duplicate(1500, 10)
+    assert WzStormgust.definition(:pre_renewal).fixed_cast_time == []
+
+    assert WzStormgust.definition(:pre_renewal).cast_time == [
+             6000,
+             7000,
+             8000,
+             9000,
+             10_000,
+             11_000,
+             12_000,
+             13_000,
+             14_000,
+             15_000
+           ]
+
+    assert WzStormgust.definition(:pre_renewal).after_cast_delay == List.duplicate(5000, 10)
+    assert WzStormgust.definition(:pre_renewal).cooldown == []
+  end
+
+  @tag game_mode: :renewal
+  test "renewal deals 70 plus 50 per level and freezes 65 minus 5 per level percent per hit" do
+    assert WzStormgust.skill_ratio(1) == 120
+    assert WzStormgust.freeze_chance(10) == 15
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic deals 100 plus 40 per level and freezes on the third hit" do
+    assert WzStormgust.skill_ratio(1) == 140
+    assert WzStormgust.freeze_chance(10) == nil
   end
 end

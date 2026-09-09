@@ -61,6 +61,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     manager
   end
 
+  @tag game_mode: :renewal
+
   test "definition and waiting placement match Renewal levels 1 and 10" do
     definition = WzFirepillar.definition()
 
@@ -72,6 +74,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillarTest do
     assert definition.element == :fire
     assert definition.range == 9
     assert definition.hit_count == 3
+
+    assert WzFirepillar.definition(:pre_renewal).cast_time == [
+             3000,
+             2700,
+             2400,
+             2100,
+             1800,
+             1500,
+             1200,
+             900,
+             600,
+             300
+           ]
+
+    assert WzFirepillar.definition(:pre_renewal).fixed_cast_time == []
     assert definition.splash_radius == 2
     assert definition.hit_interval == 2_000
     assert definition.sp_cost == List.duplicate(75, 10)

@@ -60,6 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     manager
   end
 
+  @tag game_mode: :renewal
+
   test "matches Renewal data" do
     definition = WzMeteor.definition()
 
@@ -100,6 +102,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     assert placement.state == %{ignore_land_protector: true}
   end
 
+  @tag game_mode: :renewal
+
   test "skips impacts scheduled onto land protector cells" do
     :ok =
       Storage.insert(
@@ -135,6 +139,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     assert {:ok, %Group{state: %{meteor_schedule: []}}} = WzMeteor.on_interval(group, 700)
   end
 
+  @tag game_mode: :renewal
   test "uses the exact Renewal HitCount table for each level" do
     for {count, level} <- Enum.with_index([2, 3, 3, 4, 4, 5, 5, 6, 6, 7], 1) do
       assert {:ok, %Group{state: %{meteor_schedule: schedule}}} =
@@ -143,6 +148,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
       assert length(schedule) == count
     end
   end
+
+  @tag game_mode: :renewal
 
   test "the manager owns a deterministic schedule of random Meteor impacts" do
     stub(Catalog, :ground_module_for, fn :wz_meteor -> {:ok, WzMeteor} end)
@@ -159,6 +166,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
              }
            } = Storage.get(1)
   end
+
+  @tag game_mode: :renewal
 
   test "each due impact deals Fire damage and attempts level-scaled Stun after damage" do
     stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
@@ -198,6 +207,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     assert {:ok, %Group{state: %{meteor_schedule: []}}} = WzMeteor.on_interval(group, 700)
   end
 
+  @tag game_mode: :renewal
+
   test "late manager cadence applies every missed impact once without spawning meteor processes" do
     test_pid = self()
     stub(Catalog, :ground_module_for, fn :wz_meteor -> {:ok, WzMeteor} end)
@@ -222,6 +233,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
     assert Process.alive?(manager)
     assert %Group{state: %{meteor_schedule: []}} = Storage.get(1)
   end
+
+  @tag game_mode: :renewal
 
   test "skips impacts after caster loss while preserving the schedule through expiry" do
     stub(Catalog, :ground_module_for, fn :wz_meteor -> {:ok, WzMeteor} end)
@@ -255,5 +268,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteorTest do
              lifecycle_policy: %LifecyclePolicy{on_caster_loss: :skip_action},
              state: %{meteor_schedule: [_first, _second]}
            } = Storage.get(1)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic drops the same 2 to 7 meteors at 100 percent each with a 5 s stun" do
+    assert Enum.map(1..10, &WzMeteor.meteor_count/1) == [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
+    assert WzMeteor.skill_ratio() == 100
+    assert WzMeteor.definition(:pre_renewal).unit_duration == List.duplicate(5_000, 10)
+    assert WzMeteor.definition(:pre_renewal).cast_time == List.duplicate(15_000, 10)
+    assert WzMeteor.definition(:pre_renewal).fixed_cast_time == []
+
+    assert WzMeteor.definition(:pre_renewal).after_cast_delay == [
+             2000,
+             3000,
+             3000,
+             4000,
+             4000,
+             5000,
+             5000,
+             6000,
+             6000,
+             7000
+           ]
+
+    assert WzMeteor.definition(:pre_renewal).cooldown == []
+    assert WzMeteor.definition(:pre_renewal).hit_count == 1
+  end
+
+  @tag game_mode: :renewal
+  test "renewal drops 2 to 7 meteors at 125 percent each" do
+    assert Enum.map(1..10, &WzMeteor.meteor_count/1) == [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
+    assert WzMeteor.skill_ratio() == 125
   end
 end

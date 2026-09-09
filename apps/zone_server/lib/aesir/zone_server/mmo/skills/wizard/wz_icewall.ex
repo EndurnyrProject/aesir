@@ -1,14 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzIcewall do
   @moduledoc """
-  Ice Wall (WZ_ICEWALL), a five-cell, directional, destructible terrain wall.
+  Ice Wall (WZ_ICEWALL). A five-cell, directional, destructible terrain wall.
 
-  Each cell starts with `200 + 200 * level` HP and loses 50 HP every second,
-  matching rAthena's skill-unit timer. The unit manager owns the cell mutation,
-  visibility updates, target indexes, and terrain cleanup; this skill only
-  describes its placement.
+  Each cell starts with 200 plus 200 per level HP and loses 50 HP every second. The unit
+  manager owns the cell mutation, visibility updates, target indexes, and terrain
+  cleanup; this skill only describes its placement and refuses to cast under Volcano.
 
-  rAthena forbids casting Ice Wall while the caster is under Volcano
-  (`status.cpp:2194`); `validate/4` rejects it before SP is charged.
+  Renewal and pre-renewal agree on the wall: 20 SP and a 4 s per level plus 4 s lifetime.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 87,

@@ -1,22 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   @moduledoc """
-  Storm Gust (WZ_STORMGUST). Ground-targeted persistent skill-unit.
+  Storm Gust (WZ_STORMGUST). A 5x5 water field ticking every 450 ms for 4.5 s that
+  pushes 2 cells on every hit.
 
-  The cast itself deals no damage: as a `target_type: :ground` skill, `use Skill`
-  auto-derives a `cast/4` that places this skill's ground unit at the target cell.
-  The unit's 5x5 water field then ticks every `hit_interval` ms for its lifetime
-  (`Skill.Ground` callbacks below). Each tick resolves the caster's combatant once,
-  hits every offensive target inside the footprint with renewal magic damage
-  (`Combat.MagicDamageCalculator`, MATK/MDEF/water), knocks each target back, and
-  accumulates a per-group hit counter; on a target's 3rd accumulated hit it
-  applies Freeze. Matching rAthena the counter is never reset, so it carries
-  across overlapping casts. If the caster is gone (logged out/dead) the field
-  still ticks and expires but deals no damage that tick. SP and cooldown are
-  deducted by the interpreter from the definition.
-
-  rAthena (`skill_db` id 89): `Layout: 4` (filled 5x5), `Interval: 450`,
-  `Knockback: 2`, `Element: Water`, `Status: Freeze`, unit lifetime
-  `Duration1: 4500`.
+  Renewal: 70% plus 50% per level MATK per hit, each hit freezing with a 65% minus 5%
+  per level chance, with a 4.5 to 6.3 s cast plus 1.5 s fixed, a 1 s delay, and a 6 s
+  cooldown. Pre-renewal: 100% plus 40% per level, a freeze on the third accumulated hit
+  (the count resets once the freeze lands), a 6 to 15 s variable cast, a 5 s delay,
+  and no cooldown. The classic counter is kept per field, not per target across fields.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 89,
@@ -34,17 +25,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     hit_interval: 450,
     unit_duration: List.duplicate(4_500, 10),
     sp_cost: List.duplicate(78, 10),
-    cast_time: [4500, 4700, 4900, 5100, 5300, 5500, 5700, 5900, 6100, 6300],
-    after_cast_delay: List.duplicate(1000, 10),
-    cooldown: List.duplicate(6000, 10)
+    cast_time: [
+      renewal: [4500, 4700, 4900, 5100, 5300, 5500, 5700, 5900, 6100, 6300],
+      pre_renewal: [6000, 7000, 8000, 9000, 10_000, 11_000, 12_000, 13_000, 14_000, 15_000]
+    ],
+    fixed_cast_time: [renewal: List.duplicate(1500, 10), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(1000, 10), pre_renewal: List.duplicate(5000, 10)],
+    cooldown: [renewal: List.duplicate(6000, 10), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
-  # rAthena freezes a target on its 3rd accumulated hit; the counter never resets.
+  # the source freezes a target on its 3rd accumulated hit; the counter never resets.
   @freeze_threshold 3
 
   @behaviour Ground
@@ -73,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
           |> Combat.splash_targets(center, definition.splash_radius, group.caster_id)
           |> Enum.reduce(group.state.hit_counts, fn {unit_type, target_id}, counts ->
             hit(group, definition, caster, unit_type, target_id, cx, cy)
-            bump_and_maybe_freeze(counts, unit_type, target_id)
+            bump_and_maybe_freeze(counts, unit_type, target_id, freeze_chance(group.level))
           end)
 
         {:ok, %{group | state: %{group.state | hit_counts: updated_counts}}}
@@ -100,19 +96,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
     :ok
   end
 
-  # rAthena renewal `WZ_STORMGUST` ratio (`skills/mage/stormgust.cpp:21`):
   # base_skillratio (100) - 30 + 50 * skill_lv.
+  @doc "Renewal deals 70% plus 50% per level; classic 100% plus 40% per level."
   @spec skill_ratio(non_neg_integer()) :: non_neg_integer()
-  defp skill_ratio(level), do: 70 + 50 * level
+  def skill_ratio(level) do
+    case GameMode.mode() do
+      :renewal -> 70 + 50 * level
+      :pre_renewal -> 100 + 40 * level
+    end
+  end
 
-  @spec bump_and_maybe_freeze(map(), atom(), integer()) :: map()
-  defp bump_and_maybe_freeze(counts, unit_type, target_id) do
+  @doc """
+  Renewal freezes each hit with a 65 minus 5 per level percent chance and keeps
+  no counter (`nil` in classic, where the third accumulated hit freezes).
+  """
+  @spec freeze_chance(pos_integer()) :: pos_integer() | nil
+  def freeze_chance(level) do
+    case GameMode.mode() do
+      :renewal -> 65 - 5 * level
+      :pre_renewal -> nil
+    end
+  end
+
+  @spec bump_and_maybe_freeze(map(), atom(), integer(), pos_integer() | nil) :: map()
+  # Classic counts hits and freezes on the third; renewal rolls a chance per hit.
+  defp bump_and_maybe_freeze(counts, unit_type, target_id, nil) do
     count = Map.get(counts, target_id, 0) + 1
 
-    if count == @freeze_threshold do
+    frozen? =
+      count >= @freeze_threshold and
+        StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze, []) == :ok
+
+    Map.put(counts, target_id, if(frozen?, do: 0, else: count))
+  end
+
+  defp bump_and_maybe_freeze(counts, unit_type, target_id, chance) do
+    if :rand.uniform(100) <= chance do
       StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze, [])
     end
 
-    Map.put(counts, target_id, count)
+    counts
   end
 end

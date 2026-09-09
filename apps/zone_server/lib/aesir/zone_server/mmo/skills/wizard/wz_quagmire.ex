@@ -1,15 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzQuagmire do
   @moduledoc """
-  Quagmire (WZ_QUAGMIRE), a source-owned enemy ground field.
+  Quagmire (WZ_QUAGMIRE). A 3x3 enemy ground field with a 9-cell range, 5 to 25 s
+  duration, 5 to 25 SP, and at most three fields per caster (the fourth cast removes
+  the oldest).
 
-  Renewal data is from rAthena `db/re/skill_db.yml:3791-3850`: ID 92,
-  `Layout: 2` (3x3), nine-cell range, 5–25 second duration, 5–25 SP, enemy
-  targeting, and `ActiveInstance: 3` (`:3806`). The fourth cast removes the
-  earliest-expiring field first. `src/map/skill.cpp:6512-6515` applies the status only to a
-  valid enemy; `src/map/status.cpp:11443-11445` sets the AGI/DEX penalty to
-  `5 * level` for players and `10 * level` for non-players. The database
-  interval is `-1`; the 1,000 ms manager interval only reconciles source-owned
-  support for stationary occupants and does not add a Renewal combat tick.
+  Occupants lose 5 AGI and DEX per level (10 per level for non-players) and move at
+  half speed. The 1 s manager interval only reconciles support for stationary
+  occupants and adds no combat tick. Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 92,

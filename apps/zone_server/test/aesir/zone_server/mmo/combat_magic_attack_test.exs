@@ -312,6 +312,7 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "player bolt modules" do
+    @tag game_mode: :renewal
     test "preserve their canonical ids and Earth Care ratio through the shared helper" do
       caster = build_caster()
 
@@ -992,6 +993,8 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
                  element: :fire
                )
     end
+
+    @tag game_mode: :renewal
 
     test "Earth Spike level 1 damages a live mob through the magic pipeline" do
       caster = build_caster()

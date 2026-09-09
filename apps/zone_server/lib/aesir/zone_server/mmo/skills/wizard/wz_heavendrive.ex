@@ -7,8 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendrive do
   map bounds, and walkability before calling this module; no persistent skill
   unit is created.
 
-  Renewal values come from rAthena `db/re/skill_db.yml:3730-3790`; the 125%
-  MATK ratio comes from `src/map/skills/mage/heavensdrive.cpp:20-24`.
+
+  Renewal: 125% MATK per hit with a fixed cast part, a 0.5 s delay, and a 1 s cooldown. Pre-renewal: 100% MATK per hit, a 1 s per level variable cast, a 1 s delay, and no cooldown.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 91,
@@ -22,24 +22,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendrive do
     range: 9,
     element: :earth,
     splash_radius: 2,
-    cast_time: [1_100, 1_300, 1_500, 1_700, 1_900],
-    fixed_cast_time: List.duplicate(800, 5),
-    after_cast_delay: List.duplicate(500, 5),
-    cooldown: List.duplicate(1_000, 5),
+    cast_time: [
+      renewal: [1_100, 1_300, 1_500, 1_700, 1_900],
+      pre_renewal: [1000, 2000, 3000, 4000, 5000]
+    ],
+    fixed_cast_time: [renewal: List.duplicate(800, 5), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1000, 5)],
+    cooldown: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     sp_cost: [28, 32, 36, 40, 44]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   @behaviour Active
 
+  @doc "Renewal deals 125% MATK per hit; classic 100%."
+  @spec skill_ratio() :: pos_integer()
+  def skill_ratio, do: if(GameMode.mode() == :renewal, do: 125, else: 100)
+
   @impl Active
   def cast(caster, {:ground, x, y}, level, definition) do
     opts = [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 125,
+      skill_ratio: skill_ratio(),
       element: definition.element,
       split: false,
       hit_count: level

@@ -1,17 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
   @moduledoc """
-  Fire Pillar (WZ_FIREPILLAR). A single-cell, waiting Fire field that explodes
-  when an enemy enters its activation area.
+  Fire Pillar (WZ_FIREPILLAR). A single-cell fire field that waits up to 30 s for an
+  enemy to enter its activation area, then bursts for one second over the splash area.
 
-  It waits for up to 30 seconds, then an enemy within its Range-1 activation area
-  activates a one-second Fire burst over the canonical splash area. The burst's hit count
-  is level + 2 and its target delay is the Renewal `Duration2` table.
-
-  Verified against rAthena Renewal: `db/re/skill_db.yml:2861-3014`,
-  `src/map/skills/mage/firepillar.cpp:12-31`, `src/map/battle.cpp:5993-6001`,
-  and `src/map/skill.cpp:5833-5839, 6975-6978, 7086-7125, 12455-12460`.
-  The level-gated Blue Gemstone requirement is local because
-  `Skill.Definition.item_cost` cannot express a level threshold.
+  The burst strikes level plus 2 times at 40% plus 20% per level MATK (a player's damage
+  is split across the hits) for 75 SP, needing a Blue Gemstone below level 6. The
+  level-gated gemstone is checked locally because the item cost field cannot express a
+  level threshold. Renewal casts in 0.19 to 1.92 s plus a fixed part; pre-renewal in
+  0.3 to 3 s. The two modes otherwise agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 80,
@@ -28,8 +24,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFirepillar do
     splash_radius: 2,
     hit_interval: 2_000,
     unit_duration: List.duplicate(30_000, 10),
-    cast_time: [1920, 1728, 1536, 1344, 1152, 960, 768, 576, 384, 192],
-    fixed_cast_time: [480, 432, 384, 336, 288, 240, 192, 144, 96, 48],
+    cast_time: [
+      renewal: [1920, 1728, 1536, 1344, 1152, 960, 768, 576, 384, 192],
+      pre_renewal: [3000, 2700, 2400, 2100, 1800, 1500, 1200, 900, 600, 300]
+    ],
+    fixed_cast_time: [renewal: [480, 432, 384, 336, 288, 240, 192, 144, 96, 48], pre_renewal: []],
     after_cast_delay: List.duplicate(1000, 10),
     sp_cost: List.duplicate(75, 10)
 

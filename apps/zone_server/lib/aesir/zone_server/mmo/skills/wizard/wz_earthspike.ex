@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike do
   @moduledoc """
-  Earth Spike (`WZ_EARTHSPIKE`) is a targeted Earth magic attack.
+  Earth Spike (WZ_EARTHSPIKE). A bolt of earth magic striking once per level.
 
-  Renewal sources: rAthena `db/re/skill_db.yml:3669-3729` defines the level,
-  target, range, hits, element, timing, and SP tables; `earthspike.cpp:13-24`
-  routes the skill through magic combat and raises each hit to 200% MATK.
+  Renewal: 200% MATK per hit (nine times that under the Earth Care option), 14 to 30
+  SP, and a fixed cast part. Pre-renewal: 100% MATK per hit, 12 to 20 SP, a 0.7 s per
+  level variable cast, and a 1 s plus 0.2 s per level delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 90,
@@ -17,11 +17,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike do
     damage_kind: :magic,
     element: :earth,
     range: 9,
-    cast_time: [800, 1400, 2000, 2600, 3200],
-    fixed_cast_time: [400, 600, 800, 1000, 1200],
-    after_cast_delay: [1400, 1400, 1400, 1400, 1400],
-    sp_cost: [14, 18, 22, 26, 30]
+    cast_time: [
+      renewal: [800, 1400, 2000, 2600, 3200],
+      pre_renewal: [700, 1400, 2100, 2800, 3500]
+    ],
+    fixed_cast_time: [renewal: [400, 600, 800, 1000, 1200], pre_renewal: []],
+    after_cast_delay: [
+      renewal: List.duplicate(1400, 5),
+      pre_renewal: [1000, 1200, 1400, 1600, 1800]
+    ],
+    sp_cost: [renewal: [14, 18, 22, 26, 30], pre_renewal: [12, 14, 16, 18, 20]]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.MagicAttack
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -36,7 +43,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspike do
     end
   end
 
-  defp skill_ratio(%{character_id: caster_id}) do
-    if StatusStorage.has_status?(:player, caster_id, :sc_earth_care_option), do: 1800, else: 200
+  @doc "Renewal deals 200% MATK (nine times that under the Earth Care option); classic deals 100%."
+  @spec skill_ratio(map()) :: pos_integer()
+  def skill_ratio(caster) do
+    case {GameMode.mode(), Map.get(caster, :character_id)} do
+      {:renewal, id} when is_integer(id) ->
+        if StatusStorage.has_status?(:player, id, :sc_earth_care_option), do: 1800, else: 200
+
+      {:renewal, _} ->
+        200
+
+      {:pre_renewal, _} ->
+        100
+    end
   end
 end

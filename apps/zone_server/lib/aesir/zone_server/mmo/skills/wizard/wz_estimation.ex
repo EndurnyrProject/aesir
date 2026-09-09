@@ -1,9 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEstimation do
   @moduledoc """
-  Estimation (WZ_ESTIMATION), a single-target monster inspection skill.
+  Sense (WZ_ESTIMATION). Inspects a monster and sends its data to the caster only;
+  player targets are rejected.
 
-  Renewal data comes from rAthena `db/re/skill_db.yml:3851-3863`. rAthena's
-  `SkillSense` rejects player targets and sends monster data only to the caster.
+  Renewal and pre-renewal agree: a 9-cell range and 10 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 93,

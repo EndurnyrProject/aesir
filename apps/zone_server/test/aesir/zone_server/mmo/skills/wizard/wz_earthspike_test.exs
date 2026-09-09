@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
   end
 
   describe "definition/0" do
+    @tag game_mode: :renewal
     test "matches the rAthena Renewal table" do
       definition = WzEarthspike.definition()
 
@@ -63,10 +64,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
       assert definition.fixed_cast_time == [400, 600, 800, 1000, 1200]
       assert definition.after_cast_delay == List.duplicate(1400, 5)
       assert definition.cooldown == []
+      assert WzEarthspike.definition(:pre_renewal).sp_cost == [12, 14, 16, 18, 20]
+      assert WzEarthspike.definition(:pre_renewal).cast_time == [700, 1400, 2100, 2800, 3500]
+      assert WzEarthspike.definition(:pre_renewal).fixed_cast_time == []
+
+      assert WzEarthspike.definition(:pre_renewal).after_cast_delay == [
+               1000,
+               1200,
+               1400,
+               1600,
+               1800
+             ]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic deals 100 percent MATK" do
+      assert WzEarthspike.skill_ratio(%{character_id: 1}) == 100
     end
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "level 1 resolves one 200% Earth hit against a mob target" do
       caster = caster()
       definition = WzEarthspike.definition()
@@ -80,6 +98,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
                WzEarthspike.cast(caster, {:unit, @mob_id}, 1, definition)
     end
 
+    @tag game_mode: :renewal
+
     test "level 5 passes five 200% Earth hits to the magic pipeline" do
       caster = caster()
       definition = WzEarthspike.definition()
@@ -92,6 +112,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzEarthspikeTest do
       assert {:ok, ^caster} =
                WzEarthspike.cast(caster, {:unit, @mob_id}, 5, definition)
     end
+
+    @tag game_mode: :renewal
 
     test "Earth Care option raises each hit from 200% to 1800% MATK" do
       caster = caster()

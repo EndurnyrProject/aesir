@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
     icon: :wz_sightblaster,
     option: :sight
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -29,7 +30,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @skill_id 1006
-  @skill_ratio 600
   @knockback 3
 
   @impl true
@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
              Combat.execute_magic_attack(caster, target_id,
                skill_id: @skill_id,
                skill_level: instance.val1,
-               skill_ratio: @skill_ratio,
+               skill_ratio: skill_ratio(),
                element: :fire
              ) do
         knockback_contact(hit_ref, contact, x, y)
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
 
   defp knockback_contact(_hit_ref, _contact, _x, _y), do: :ok
 
-  # rAthena gates the trigger on `battle_check_target(..., BCT_ENEMY)`, so a
+  # The source gates the trigger on the enemy relationship, so a
   # friendly ground unit (the caster's own or an ally's Ice Wall) is never a
   # target. A `CombatTarget` cell carries no caster identity, so its owning
   # group's caster relation is resolved here; mob and player contacts fall
@@ -132,4 +132,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Sightblaster do
   end
 
   defp living_contact?(_contact), do: true
+
+  # Renewal strikes for 600% MATK; classic for 100%.
+  defp skill_ratio, do: if(GameMode.mode() == :renewal, do: 600, else: 100)
 end

@@ -2651,6 +2651,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
     end
 
     # WZ_METEOR carries a real cooldown, unlike the single-target bolts above.
+    @tag game_mode: :renewal
     test "arms the skill's cooldown, so procs cannot outpace the skill itself" do
       stub(Combat, :resolve_target_position, fn 2001 -> {:ok, :mob, {14, 12, "prontera"}} end)
       stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)

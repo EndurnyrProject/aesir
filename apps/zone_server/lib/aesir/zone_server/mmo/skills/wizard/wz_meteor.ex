@@ -1,13 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   @moduledoc """
-  Meteor Storm (WZ_METEOR), a scheduled Fire ground attack.
+  Meteor Storm (WZ_METEOR). Drops 2 to 7 meteors over a 3-cell area, one per second, each
+  a fire splash that stuns 3% per level.
 
-  rAthena `skills/mage/meteorstorm.cpp:13-22` schedules one random impact per
-  second within the 7x7 target area. `skill.cpp:12437-12439` lands each impact
-  700 ms after its visual effect begins. The skill-unit manager owns that
-  schedule, so casts never create a process per meteor. Renewal damage is base
-  MATK plus 25 (`meteorstorm.cpp:25-29`), and each successful impact attempts
-  Stun at `3 * skill_lv` percent for `Duration2` (`meteorstorm.cpp:31-33`).
+  Renewal: 125% MATK per meteor, a 4.5 s stun, a 6.3 s cast plus 1.5 s fixed, a 1 s delay,
+  and a 2.5 to 7 s cooldown. Pre-renewal: 100% MATK per meteor, a 5 s stun, a 15 s variable
+  cast, a 2 to 7 s delay, and no cooldown; its data lists one hit per meteor.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 83,
@@ -21,16 +19,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
     range: 9,
     element: :fire,
     splash_radius: 3,
-    hit_count: 2,
+    hit_count: [renewal: 2, pre_renewal: 1],
     hit_interval: 1_000,
-    unit_duration: List.duplicate(4_500, 10),
+    unit_duration: [renewal: List.duplicate(4_500, 10), pre_renewal: List.duplicate(5_000, 10)],
     duration: [2_000, 3_000, 3_000, 4_000, 4_000, 5_000, 5_000, 6_000, 6_000, 7_000],
     sp_cost: [20, 24, 30, 34, 40, 44, 50, 54, 60, 64],
-    cast_time: List.duplicate(6_300, 10),
-    fixed_cast_time: List.duplicate(1_500, 10),
-    after_cast_delay: List.duplicate(1_000, 10),
-    cooldown: [2_500, 3_000, 3_500, 4_000, 4_500, 5_000, 5_500, 6_000, 6_500, 7_000]
+    cast_time: [renewal: List.duplicate(6_300, 10), pre_renewal: List.duplicate(15_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(1_500, 10), pre_renewal: []],
+    after_cast_delay: [
+      renewal: List.duplicate(1_000, 10),
+      pre_renewal: [2000, 3000, 3000, 4000, 4000, 5000, 5000, 6000, 6000, 7000]
+    ],
+    cooldown: [
+      renewal: [2_500, 3_000, 3_500, 4_000, 4_500, 5_000, 5_500, 6_000, 6_500, 7_000],
+      pre_renewal: []
+    ]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -38,7 +43,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
-  @hit_counts [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
+  @meteors [2, 3, 3, 4, 4, 5, 5, 6, 6, 7]
+
+  @doc "The number of meteors dropped at `level` (clamped to the table), 2 to 7 in both modes."
+  @spec meteor_count(pos_integer()) :: pos_integer()
+  def meteor_count(level), do: Enum.at(@meteors, min(level, length(@meteors)) - 1)
+
+  @doc "Renewal deals 125% MATK per impact; classic 100%."
+  @spec skill_ratio() :: pos_integer()
+  def skill_ratio, do: if(GameMode.mode() == :renewal, do: 125, else: 100)
 
   @behaviour Ground
 
@@ -63,8 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
   @spec schedule(Group.t(), (pos_integer() -> non_neg_integer())) :: {:ok, Group.t()}
   def schedule(%Group{center: {x, y}, created_at: created_at, level: level} = group, rng) do
     definition = definition()
-    idx = min(level, definition.max_level) - 1
-    count = Enum.at(@hit_counts, idx)
+    count = meteor_count(level)
     radius = definition.splash_radius
 
     schedule =
@@ -113,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzMeteor do
            group.skill_id,
            group.level,
            definition.element,
-           125
+           skill_ratio()
          ) do
       :ok ->
         StatusInterpreter.apply_status(unit_type, target_id, :sc_stun,

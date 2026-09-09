@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
-  @moduledoc "Water Ball (WZ_WATERBALL) consumes nearby water into an invisible hit sequence."
+  @moduledoc """
+  Water Ball (WZ_WATERBALL) consumes nearby water into an invisible hit sequence.
+
+  Renewal and pre-renewal agree: 100% plus 30% per level MATK per ball. Renewal
+  casts in 0.64 s per level plus a fixed part; pre-renewal in 1 s per level.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 86,
@@ -12,8 +17,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterball do
     damage_kind: :magic,
     element: :water,
     range: 9,
-    cast_time: [640, 1_280, 1_920, 2_560, 3_200],
-    fixed_cast_time: [160, 320, 480, 640, 800],
+    cast_time: [
+      renewal: [640, 1_280, 1_920, 2_560, 3_200],
+      pre_renewal: [1000, 2000, 3000, 4000, 5000]
+    ],
+    fixed_cast_time: [renewal: [160, 320, 480, 640, 800], pre_renewal: []],
     sp_cost: [15, 20, 20, 25, 25]
 
   alias Aesir.ZoneServer.Map.Cell, as: MapCell

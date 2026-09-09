@@ -59,6 +59,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "creates the canonical 13x13 Wind field and timing" do
       assert {:ok, placement} = WzVermilion.on_place(group())
 
@@ -67,12 +68,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       assert {156, 156} in placement.cells
       assert placement.interval == 1_250
       assert placement.initial_delay == 0
-      assert placement.duration == 18_000
+      assert placement.duration == 1_000
       assert placement.lifecycle_policy.on_caster_loss == :skip_action
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic keeps the field alive for 4 seconds" do
+      assert {:ok, placement} = WzVermilion.on_place(group())
+
+      assert length(placement.cells) == 169
+      assert placement.interval == 1_250
+      assert placement.duration == 4_000
     end
   end
 
   describe "definition/0" do
+    @tag game_mode: :renewal
     test "matches the Renewal level tables" do
       definition = WzVermilion.definition()
 
@@ -85,7 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       assert definition.splash_radius == 6
       assert definition.hit_interval == 1_250
       assert definition.hit_count == 20
-      assert definition.unit_duration == List.duplicate(18_000, 10)
+      assert definition.unit_duration == List.duplicate(1_000, 10)
       assert definition.duration == List.duplicate(18_000, 10)
       assert definition.sp_cost == [60, 64, 68, 72, 76, 80, 84, 88, 92, 96]
       assert definition.cast_time == [6300, 6100, 5900, 5700, 5500, 5300, 5100, 4900, 4700, 4500]
@@ -96,6 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
   end
 
   describe "on_interval/2" do
+    @tag game_mode: :renewal
     test "hits each eligible target and delegates an independent resistance-aware Blind attempt" do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
 
@@ -118,6 +130,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       assert {:ok, %Group{}} = WzVermilion.on_interval(group(), 1_250)
     end
 
+    @tag game_mode: :renewal
+
     test "does not attempt Blind when the target is no longer valid for damage" do
       stub(Combat, :resolve_combatant, fn @caster_id -> {:ok, %{unit_id: @caster_id}} end)
       stub(Combat, :splash_targets, fn @map_name, @center, 6, @caster_id -> [{:mob, 2001}] end)
@@ -133,6 +147,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
   end
 
   describe "manager cadence" do
+    @tag game_mode: :renewal
     test "hits on the first manager cadence, continues every 1,250ms, then expires at 18s" do
       test_pid = self()
       stub(Catalog, :ground_module_for, fn :wz_vermilion -> {:ok, WzVermilion} end)
@@ -198,5 +213,43 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzVermilionTest do
       assert :ok = Manager.tick(manager, 18_000)
       assert Storage.get(1) == nil
     end
+  end
+
+  test "carries the classic data" do
+    assert WzVermilion.definition(:pre_renewal).hit_count == 10
+    assert WzVermilion.definition(:pre_renewal).unit_duration == List.duplicate(4_000, 10)
+    assert WzVermilion.definition(:pre_renewal).duration == List.duplicate(30_000, 10)
+
+    assert WzVermilion.definition(:pre_renewal).cast_time == [
+             15_000,
+             14_500,
+             14_000,
+             13_500,
+             13_000,
+             12_500,
+             12_000,
+             11_500,
+             11_000,
+             10_500
+           ]
+
+    assert WzVermilion.definition(:pre_renewal).fixed_cast_time == []
+    assert WzVermilion.definition(:pre_renewal).after_cast_delay == List.duplicate(5000, 10)
+    assert WzVermilion.definition(:pre_renewal).cooldown == []
+  end
+
+  @tag game_mode: :renewal
+  test "renewal deals 400 plus 100 per level and blinds 10 plus 5 per level percent" do
+    assert WzVermilion.skill_ratio(1) == 500
+    assert WzVermilion.skill_ratio(1, false) == 100
+    assert WzVermilion.blind_chance(10) == 60
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic deals 80 plus 20 per level and blinds 4 per level percent up to 40" do
+    assert WzVermilion.skill_ratio(1) == 100
+    assert WzVermilion.skill_ratio(10) == 280
+    assert WzVermilion.blind_chance(5) == 20
+    assert WzVermilion.blind_chance(10) == 40
   end
 end

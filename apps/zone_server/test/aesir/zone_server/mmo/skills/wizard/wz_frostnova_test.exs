@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
   setup :verify_on_exit!
 
   describe "definition/0" do
+    @tag game_mode: :renewal
     test "matches the Renewal Frost Nova table at levels 1 and 10" do
       definition = WzFrostnova.definition()
 
@@ -36,6 +37,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       assert definition.damage_kind == :magic
       assert definition.element == :water
       assert definition.splash_radius == 3
+      assert WzFrostnova.definition(:pre_renewal).splash_radius == 2
+
+      assert WzFrostnova.definition(:pre_renewal).cast_time == [
+               6000,
+               6000,
+               5500,
+               5500,
+               5000,
+               5000,
+               4500,
+               4500,
+               4000,
+               4000
+             ]
+
+      assert WzFrostnova.definition(:pre_renewal).fixed_cast_time == []
+      assert WzFrostnova.definition(:pre_renewal).after_cast_delay == List.duplicate(1000, 10)
       assert definition.hit_count == 1
       assert definition.cast_time == [640, 640, 576, 576, 512, 512, 448, 448, 384, 384]
       assert definition.fixed_cast_time == [160, 160, 144, 144, 128, 128, 112, 112, 96, 96]
@@ -57,6 +75,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
       assert definition.sp_cost == [45, 43, 41, 39, 37, 35, 33, 31, 29, 27]
     end
 
+    @tag game_mode: :renewal
+
     test "radius 3 includes the inner cells and 7x7 edge but excludes radius 4" do
       cells = Layout.square({150, 150}, WzFrostnova.definition().splash_radius)
 
@@ -69,7 +89,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
     end
   end
 
+  describe "skill_ratio/1" do
+    @tag game_mode: :renewal
+    test "renewal is 100 plus 10 per level" do
+      assert WzFrostnova.skill_ratio(1) == 110
+      assert WzFrostnova.skill_ratio(10) == 200
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic is two thirds of the renewal value" do
+      assert WzFrostnova.skill_ratio(1) == 73
+      assert WzFrostnova.skill_ratio(10) == 133
+    end
+  end
+
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "level 1 immediately attacks the caster-centered radius at 110% Water MATK" do
       caster = %{character_id: 1_000, x: 150, y: 150}
       definition = WzFrostnova.definition()
@@ -88,6 +123,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
 
       assert {:ok, ^caster} = WzFrostnova.cast(caster, :self, 1, definition)
     end
+
+    @tag game_mode: :renewal
 
     test "level 10 independently attempts a 15-second Freeze on hit mobs and players" do
       caster = %{character_id: 1_000, x: 150, y: 150}
@@ -163,6 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnovaTest do
   end
 
   describe "real splash integration" do
+    @tag game_mode: :renewal
     test "hits living enemy mobs through the 7x7 boundary while excluding caster, allies, players, dead, outside and blocked units" do
       caster = %{build_player(1_000, 150, 150) | party_id: 10, guild_id: 20}
       inner_id = 2_001

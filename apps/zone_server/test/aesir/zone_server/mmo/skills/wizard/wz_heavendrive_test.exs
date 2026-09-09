@@ -116,6 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
   end
 
   describe "definition/0" do
+    @tag game_mode: :renewal
     test "matches the Renewal Heaven's Drive table" do
       definition = WzHeavendrive.definition()
 
@@ -133,6 +134,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
       assert definition.after_cast_delay == List.duplicate(500, 5)
       assert definition.cooldown == List.duplicate(1_000, 5)
       assert definition.sp_cost == [28, 32, 36, 40, 44]
+      assert WzHeavendrive.definition(:pre_renewal).cast_time == [1000, 2000, 3000, 4000, 5000]
+      assert WzHeavendrive.definition(:pre_renewal).fixed_cast_time == []
+      assert WzHeavendrive.definition(:pre_renewal).after_cast_delay == List.duplicate(1000, 5)
+      assert WzHeavendrive.definition(:pre_renewal).cooldown == []
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic deals 100 percent MATK per hit" do
+      assert WzHeavendrive.skill_ratio() == 100
     end
 
     test "radius 2 includes the 5x5 corners and excludes the next cell" do
@@ -153,6 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "level 1 immediately hits the 5x5 footprint once at 125% Earth MATK" do
       caster = %{character_id: 1_000}
       definition = WzHeavendrive.definition()
@@ -256,6 +267,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzHeavendriveTest do
     end
 
     @tag :relation_dependency
+    @tag game_mode: :renewal
     test "production path hits inner and edge mob targets only, excluding players" do
       caster = fake_unit(1_000, :player, 150, 150, party_id: 7, guild_id: 9)
 

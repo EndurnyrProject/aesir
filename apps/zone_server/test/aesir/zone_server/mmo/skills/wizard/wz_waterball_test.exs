@@ -419,4 +419,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzWaterballTest do
           next_tick_at: nil
       })
   end
+
+  test "classic casts 1 s per level with no fixed part" do
+    assert WzWaterball.definition(:pre_renewal).cast_time == [1000, 2000, 3000, 4000, 5000]
+    assert WzWaterball.definition(:pre_renewal).fixed_cast_time == []
+  end
 end

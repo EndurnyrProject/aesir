@@ -173,6 +173,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     {state, pid}
   end
 
+  @tag game_mode: :renewal
+
   test "definition matches the Renewal level 1 and level 10 data" do
     definition = WzJupitel.definition()
 
@@ -188,6 +190,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitelTest do
     assert definition.fixed_cast_time == List.duplicate(500, 10)
     assert definition.after_cast_delay == []
     assert definition.cooldown == []
+
+    assert WzJupitel.definition(:pre_renewal).cast_time == [
+             2500,
+             3000,
+             3500,
+             4000,
+             4500,
+             5000,
+             5500,
+             6000,
+             6500,
+             7000
+           ]
+
+    assert WzJupitel.definition(:pre_renewal).fixed_cast_time == []
     assert definition.sp_cost == [20, 23, 26, 29, 32, 35, 38, 41, 44, 47]
   end
 

@@ -2,8 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
   @moduledoc """
   Frost Nova (WZ_FROSTNOVA). Caster-centered 7x7 Water magic splash with Freeze.
 
-  Renewal values come from rAthena `db/re/skill_db.yml:3509-3613`; damage and
-  Freeze rules come from `src/map/skills/mage/frostnova.cpp:15-36`.
+
+  Renewal: 100% plus 10% per level MATK over a 3-cell radius with a short cast and a 0.2 s delay. Pre-renewal: two thirds of that ratio over a 2-cell radius, a 4 to 6 s variable cast, and a 1 s delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 88,
@@ -16,13 +16,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
     damage_kind: :magic,
     element: :water,
     hit_count: 1,
-    splash_radius: 3,
-    cast_time: [640, 640, 576, 576, 512, 512, 448, 448, 384, 384],
-    fixed_cast_time: [160, 160, 144, 144, 128, 128, 112, 112, 96, 96],
-    after_cast_delay: List.duplicate(200, 10),
+    splash_radius: [renewal: 3, pre_renewal: 2],
+    cast_time: [
+      renewal: [640, 640, 576, 576, 512, 512, 448, 448, 384, 384],
+      pre_renewal: [6000, 6000, 5500, 5500, 5000, 5000, 4500, 4500, 4000, 4000]
+    ],
+    fixed_cast_time: [renewal: [160, 160, 144, 144, 128, 128, 112, 112, 96, 96], pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(200, 10), pre_renewal: List.duplicate(1000, 10)],
     duration: [1_500, 3_000, 4_500, 6_000, 7_500, 9_000, 10_500, 12_000, 13_500, 15_000],
     sp_cost: [45, 43, 41, 39, 37, 35, 33, 31, 29, 27]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster
@@ -30,6 +34,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
 
   @behaviour Active
+
+  @doc "Renewal deals 100% plus 10% per level; classic two thirds of that."
+  @spec skill_ratio(pos_integer()) :: pos_integer()
+  def skill_ratio(level) do
+    case GameMode.mode() do
+      :renewal -> 100 + 10 * level
+      :pre_renewal -> div((100 + 10 * level) * 2, 3)
+    end
+  end
 
   @impl Active
   def cast(caster, {:unit, caster_id}, level, definition) do
@@ -48,7 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzFrostnova do
     opts = [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 100 + 10 * level,
+      skill_ratio: skill_ratio(level),
       element: definition.element,
       split: false,
       line_of_sight: true

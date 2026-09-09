@@ -28,6 +28,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     :ok
   end
 
+  @tag game_mode: :renewal
+
   test "definition matches Renewal data" do
     definition = WzSightblaster.definition()
 
@@ -38,13 +40,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     assert definition.damage_type == :no_damage
     assert definition.damage_kind == :magic
     assert definition.element == :fire
-    assert definition.range == 1
     assert definition.splash_radius == 1
     assert definition.knockback == 3
     assert definition.cast_time == [1_280]
     assert definition.fixed_cast_time == [320]
     assert definition.duration == [900_000]
     assert definition.sp_cost == [80]
+    assert definition.range == 0
+    assert WzSightblaster.definition(:pre_renewal).sp_cost == [40]
+    assert WzSightblaster.definition(:pre_renewal).duration == [120_000]
+    assert WzSightblaster.definition(:pre_renewal).cast_time == [2000]
+    assert WzSightblaster.definition(:pre_renewal).fixed_cast_time == []
   end
 
   test "is available to the active skill interpreter through the catalog" do
@@ -132,6 +138,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblasterTest do
     assert :ok = StatusInterpreter.process_tick(:player, 1001, :sc_sightblaster)
     refute StatusStorage.has_status?(:player, 1001, :sc_sightblaster)
   end
+
+  @tag game_mode: :renewal
 
   test "movement contact damages, knocks back, and consumes the status" do
     caster = living_player(1001, 50, 50)

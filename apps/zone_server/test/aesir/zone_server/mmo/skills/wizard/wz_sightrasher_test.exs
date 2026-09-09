@@ -207,6 +207,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
     :ets.insert(EtsTable.table_for(:map_cache), {"prontera", map})
   end
 
+  @tag game_mode: :renewal
+
   test "definition matches the declared level 1 and level 10 data" do
     definition = WzSightrasher.definition()
 
@@ -392,5 +394,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasherTest do
       refute_received {:session_cast, ^target_ref,
                        {:movement, {:knockback, _expected_x, _expected_y, _map, _x, _y}}}
     end)
+  end
+
+  test "classic casts in 0.5 s with no fixed part" do
+    assert WzSightrasher.definition(:pre_renewal).cast_time == List.duplicate(500, 10)
+    assert WzSightrasher.definition(:pre_renewal).fixed_cast_time == []
   end
 end

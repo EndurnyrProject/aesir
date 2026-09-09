@@ -1,12 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
   @moduledoc """
-  Jupitel Thunder (WZ_JUPITEL). Targeted Wind magic with level-dependent hits
-  and knockback.
+  Jupitel Thunder (WZ_JUPITEL). Targeted wind magic striking level plus 2 times and
+  pushing the target level/2 plus 2 cells, with a 9-cell range and 20 to 47 SP.
 
-  Renewal data comes from rAthena `db/re/skill_db.yml:3202-3302`: skill 84,
-  range 9, 3-12 hits, 2-7 cells of knockback, 2,000-3,800ms variable cast,
-  500ms fixed cast, and 20-47 SP. Each hit uses the default 100% MATK ratio.
-  The delayed attack is defined by `skills/mage/jupitelthunder.cpp:9-12`.
+  Renewal and pre-renewal agree on the hits and push. Renewal casts in 2 to 3.8 s plus
+  0.5 s fixed; pre-renewal in 2.5 to 7 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 84,
@@ -19,8 +17,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzJupitel do
     damage_kind: :magic,
     element: :wind,
     range: 9,
-    cast_time: [2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800],
-    fixed_cast_time: List.duplicate(500, 10),
+    cast_time: [
+      renewal: [2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 3600, 3800],
+      pre_renewal: [2500, 3000, 3500, 4000, 4500, 5000, 5500, 6000, 6500, 7000]
+    ],
+    fixed_cast_time: [renewal: List.duplicate(500, 10), pre_renewal: []],
     sp_cost: [20, 23, 26, 29, 32, 35, 38, 41, 44, 47]
 
   alias Aesir.ZoneServer.Map.LineOfSight

@@ -1,12 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher do
   @moduledoc """
-  Sightrasher (WZ_SIGHTRASHER). Sight-gated, caster-centered Fire magic that
-  damages enemies in a 15x15 area and knocks them back five cells.
+  Sightrasher (WZ_SIGHTRASHER). Consumes Sight into a caster-centered fire burst over
+  a 15x15 area that pushes enemies five cells, for 35 to 53 SP.
 
-  Renewal data comes from rAthena `db/re/skill_db.yml:3015-3062`: skill 81,
-  radius 7, one Fire hit, five-cell knockback, 320ms variable plus 80ms fixed
-  cast, 2,000ms aftercast delay, and 35-53 SP. The attack consumes Sight before
-  dealing `100 + 20 * level` percent MATK (`skills/mage/sightrasher.cpp:12-28`).
+  Renewal and pre-renewal agree on the burst: 100% plus 20% per level fire MATK.
+  Renewal casts in 0.32 s plus 0.08 s fixed with a 2 s delay; pre-renewal in 0.5 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 81,
@@ -22,8 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightrasher do
     knockback: 5,
     hit_count: 1,
     splash_radius: 7,
-    cast_time: List.duplicate(320, 10),
-    fixed_cast_time: List.duplicate(80, 10),
+    cast_time: [renewal: List.duplicate(320, 10), pre_renewal: List.duplicate(500, 10)],
+    fixed_cast_time: [renewal: List.duplicate(80, 10), pre_renewal: []],
     after_cast_delay: List.duplicate(2_000, 10),
     duration: List.duplicate(500, 10),
     sp_cost: [35, 37, 39, 41, 43, 45, 47, 49, 51, 53]

@@ -1,11 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
   @moduledoc """
-  Sight Blaster (WZ_SIGHTBLASTER). Arms the caster with a long-lived reactive
-  status that hits the first enemy making contact.
+  Sight Blaster (WZ_SIGHTBLASTER). A self buff that answers the first enemy to step
+  next to the caster with a fire strike that pushes it 3 cells.
 
-  Renewal rAthena data: quest skill 1006, Fire magic, level 1, 1,280ms variable
-  plus 320ms fixed cast, 900-second duration, 80 SP, range 1, and knockback 3.
-  Its triggered attack uses 600% MATK.
+  Renewal: 80 SP, a 1.28 s cast plus 0.32 s fixed, a 15-minute buff, and a 600% MATK
+  strike. Pre-renewal: 40 SP, a 2 s cast, a 2-minute buff, and a 100% MATK strike.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1006,
@@ -16,13 +15,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
     damage_type: :no_damage,
     damage_kind: :magic,
     element: :fire,
-    range: 1,
+    range: 0,
     splash_radius: 1,
     knockback: 3,
-    cast_time: [1_280],
-    fixed_cast_time: [320],
-    duration: [900_000],
-    sp_cost: [80],
+    cast_time: [renewal: [1_280], pre_renewal: [2000]],
+    fixed_cast_time: [renewal: [320], pre_renewal: []],
+    duration: [renewal: [900_000], pre_renewal: [120_000]],
+    sp_cost: [renewal: [80], pre_renewal: [40]],
     quest_skill: true,
     quest_owner_job: :wizard
 
@@ -32,10 +31,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzSightblaster do
   @behaviour Active
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, :self, level, _definition) do
+  def cast(%{character_id: caster_id} = caster, :self, level, definition) do
     case StatusInterpreter.apply_status(:player, caster_id, :sc_sightblaster,
            caster_id: caster_id,
-           val1: level
+           val1: level,
+           duration: hd(definition.duration)
          ) do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
