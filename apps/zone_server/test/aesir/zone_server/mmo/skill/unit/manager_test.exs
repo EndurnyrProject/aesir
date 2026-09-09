@@ -248,6 +248,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
       :other_exclusive_unit -> {:ok, FakeUnit}
       :barrier_unit -> {:ok, FakeUnit}
       :mg_safetywall -> {:ok, FakeUnit}
+      :mg_firewall -> {:ok, FakeUnit}
       :pr_magnus -> {:ok, FakeUnit}
     end)
 
@@ -1792,6 +1793,25 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
 
       assert nil == Storage.get(wall.group_id)
     end
+
+    test "a wall with no damage pool blocks any size of hit until its quota runs out" do
+      manager = start_manager(10_000)
+
+      wall =
+        group(1,
+          skill_id: 12,
+          skill_name: :mg_safetywall,
+          state: %{hits_remaining: 2, shield_hp: nil}
+        )
+
+      assert :ok = Manager.register(manager, wall)
+
+      assert {:block, :keep} = Manager.absorb_safetywall_hit(manager, wall.group_id, 999_999)
+      assert %Group{state: %{hits_remaining: 1, shield_hp: nil}} = Storage.get(wall.group_id)
+
+      assert {:block, :remove} = Manager.absorb_safetywall_hit(manager, wall.group_id, 999_999)
+      assert nil == Storage.get(wall.group_id)
+    end
   end
 
   describe "Water Ball sequences" do
@@ -1959,6 +1979,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
                3,
                4
              ]
+    end
+
+    test "a caster's fourth Fire Wall removes their first" do
+      manager = start_manager(10_000)
+      policy = %LifecyclePolicy{max_instances_per_caster: 3}
+
+      for group_id <- 1..4 do
+        assert :ok =
+                 Manager.register(
+                   manager,
+                   group(group_id,
+                     skill_id: 18,
+                     skill_name: :mg_firewall,
+                     created_at: group_id * 1_000,
+                     center: {100 + group_id, 100},
+                     cells: [{100 + group_id, 100}],
+                     lifecycle_policy: policy
+                   )
+                 )
+      end
+
+      assert Storage.get(1) == nil
+
+      assert Storage.get_groups_by_caster(:player, 1)
+             |> Enum.map(& &1.group_id)
+             |> Enum.sort() == [2, 3, 4]
     end
 
     test "keeps the newly cast group and evicts the oldest existing one on overflow" do

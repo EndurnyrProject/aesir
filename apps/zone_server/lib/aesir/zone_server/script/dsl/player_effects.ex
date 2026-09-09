@@ -277,8 +277,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
   end
 
   # Consumable recovery: +5%/Potion Research level, +2%/VIT (HP) or +2%/INT (SP),
-  # +10%/Increase HP Recovery level on HP, plus the flat item_heal_rate and the
-  # per-item add_item_heal equipment bonuses on HP; floored integer percent.
+  # +10%/Increase HP Recovery level on HP and +10%/Increase SP Recovery level on
+  # SP, plus the flat item_heal_rate and the per-item add_item_heal equipment
+  # bonuses on HP; floored integer percent.
   defp scale_consumable_recovery(
          amount,
          %Ctx{source: {:item, item_id}, game_state: %{stats: stats}} = ctx,
@@ -298,7 +299,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.PlayerEffects do
             item_group_heal_rate(equipment, item_id)
 
         :sp ->
-          2 * PlayerStats.get_effective_stat(stats, :int)
+          2 * PlayerStats.get_effective_stat(stats, :int) +
+            10 * Internal.learned_level(ctx.game_state, :mg_srecovery)
       end
 
     div(amount * (100 + potion_research_rate + stat_rate), 100)

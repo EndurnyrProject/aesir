@@ -65,15 +65,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
       assert definition.range == 9
       assert definition.max_level == 10
 
-      assert definition.cast_time ==
-               [3200, 2880, 2560, 2240, 1920, 1600, 1280, 960, 640, 320]
-
       assert definition.fixed_cast_time == [800, 720, 640, 560, 480, 400, 320, 240, 160, 80]
 
       assert definition.unit_duration ==
                [5000, 10_000, 15_000, 20_000, 25_000, 30_000, 35_000, 40_000, 45_000, 50_000]
 
       assert definition.sp_cost == [30, 30, 30, 35, 35, 35, 40, 40, 40, 40]
+    end
+
+    test "classic casts start slower and flatten out at the high levels" do
+      assert MgSafetywall.definition(:renewal).cast_time ==
+               [3200, 2880, 2560, 2240, 1920, 1600, 1280, 960, 640, 320]
+
+      assert MgSafetywall.definition(:pre_renewal).cast_time ==
+               [4000, 3500, 3500, 2500, 2000, 1500, 1000, 1000, 1000, 1000]
     end
 
     test "consumes one Blue Gemstone (item 717)" do
@@ -87,6 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "places the single target cell with the level's duration and shared budget" do
       stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
         {:ok, %{stats: %{int: 50, base_level: 70, max_sp: 200}}}
@@ -102,6 +108,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywallTest do
       assert placement.state.shield_hp == 8_900
     end
 
+    test "classic places the same wall with no damage pool at all" do
+      stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
+        {:ok, %{stats: %{int: 50, base_level: 70, max_sp: 200}}}
+      end)
+
+      assert MgSafetywall.shield_hp(:pre_renewal, 3, %{int: 50, base_level: 70, max_sp: 200}) ==
+               nil
+
+      assert MgSafetywall.shield_hp(:renewal, 3, %{int: 50, base_level: 70, max_sp: 200}) ==
+               8_900
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic places the same cell and duration with a hit quota but no pool" do
+      stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
+        {:ok, %{stats: %{int: 50, base_level: 70, max_sp: 200}}}
+      end)
+
+      assert {:ok, placement} = MgSafetywall.on_place(group(3))
+      assert placement.cells == [@center]
+      assert placement.duration == 15_000
+      assert placement.state == %{hits_remaining: 4, shield_hp: nil}
+    end
+
+    @tag game_mode: :renewal
     test "uses the Renewal hit quota and HP pool at both level bounds" do
       stub(UnitRegistry, :get_unit_info, fn :player, @caster_id ->
         {:ok, %{stats: %{int: 50, base_level: 70, max_sp: 200}}}

@@ -9,17 +9,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   facing, rotates it 90 degrees and lays the line through the center along that axis.
 
   Unlike a per-target counter, the wall shares a single hit budget of `4 + level`
-  hits across all of its cells (rAthena `skill_unit_group->val2`). Each tick the
-  unit hits every offensive target in the footprint with 50% renewal fire magic
-  damage (`Combat.MagicDamageCalculator`, MATK/MDEF/fire) and knocks the target
+  hits across all of its cells. Each tick the unit hits every offensive target in
+  the footprint for half the caster's magic attack in fire and knocks the target
   back two cells unless its defense element is fire or it is undead, decrementing
   the shared budget by one per hit and stopping once the budget is spent. The unit
   expires the moment the budget reaches zero. If the caster is gone the wall still
   ticks but deals no damage and spends no budget that tick. SP and cooldown are
   deducted by the interpreter from the definition.
 
-  rAthena (`skill_db` id 18): renewal 3 cells, `Element: Fire`, ratio
-  `base_skillratio (100) - 50`, `Knockback: 2`, hit budget `4 + skill_lv`.
+  Renewal and pre-renewal agree on everything the wall does: same footprint, same
+  hit budget, same half-strength fire hit, same knockback rule, and the same
+  duration ladder from 5 seconds at level 1 to 14 seconds at level 10.
+
+  The only difference is the cast. Renewal splits it into a variable part that
+  falls from 1.6 seconds to 0.56 and a fixed part that only gear and buffs can
+  shorten; pre-renewal has no fixed part and a single variable cast that falls
+  from 2 seconds to 0.65.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 18,
@@ -35,7 +40,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
     knockback: 2,
     hit_interval: 20,
     unit_duration: [5000, 6000, 7000, 8000, 9000, 10_000, 11_000, 12_000, 13_000, 14_000],
-    cast_time: [1600, 1440, 1280, 1120, 960, 880, 800, 720, 640, 560],
+    cast_time: [
+      renewal: [1600, 1440, 1280, 1120, 960, 880, 800, 720, 640, 560],
+      pre_renewal: [2000, 1850, 1700, 1550, 1400, 1250, 1100, 950, 800, 650]
+    ],
     fixed_cast_time: [400, 360, 320, 280, 240, 220, 200, 180, 160, 140],
     sp_cost: List.duplicate(40, 10)
 
@@ -44,11 +52,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
-  # Renewal MG_FIREWALL ratio: base_skillratio (100) - 50.
+  # Each hit lands at half the caster's magic attack, in both modes.
   @skill_ratio 50
 
-  # Renewal wall is three cells (half-length 1 around the center).
+  # The wall never reaches past one cell from its center, in any facing, so a
+  # radius-1 square bounds the occupants worth testing against its cells.
   @wall_half 1
 
   @behaviour Ground
@@ -59,10 +70,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
 
     {:ok,
      %{
-       cells: Layout.line(center, wall_direction(group), @wall_half),
+       cells: Layout.wall(center, facing(group)),
        state: %{hits_remaining: 4 + level},
        interval: definition.hit_interval,
-       duration: Enum.at(definition.unit_duration, level - 1)
+       duration: Enum.at(definition.unit_duration, level - 1),
+       lifecycle_policy: %LifecyclePolicy{max_instances_per_caster: 3}
      }}
   end
 
@@ -75,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
         remaining =
           map_name
           |> Combat.splash_targets(center, @wall_half, group.caster_id)
+          |> Enum.filter(&on_wall?(&1, group))
           |> Enum.reduce_while(
             group.state.hits_remaining,
             &spend(&1, &2, group, definition, caster, cx, cy)
@@ -84,6 +97,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
 
       {:error, _reason} ->
         {:ok, group}
+    end
+  end
+
+  # The square the splash query covers is a superset of the wall: on a cardinal
+  # facing it includes the two rows beside the line, and on a diagonal the two
+  # corners the staircase skips. Only an occupant standing on a wall cell burns.
+  @spec on_wall?({atom(), integer()}, Group.t()) :: boolean()
+  defp on_wall?({unit_type, unit_id}, %Group{cells: cells}) do
+    case SpatialIndex.get_unit_position(unit_type, unit_id) do
+      {:ok, {x, y, _map_name}} -> {x, y} in cells
+      {:error, :not_found} -> false
     end
   end
 
@@ -122,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
     :ok
   end
 
-  # No knockback against a fire-element or undead target (rAthena skill_blown guard).
+  # No knockback against a fire-element or undead target.
   @spec knockback?(integer()) :: boolean()
   defp knockback?(target_id) do
     case Combat.resolve_combatant(target_id) do
@@ -144,21 +168,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall do
     if remaining <= 0, do: {:expire, updated}, else: {:ok, updated}
   end
 
-  # The wall lies perpendicular to the caster->center facing. We take the sign of
-  # the origin->center vector as the facing (8-dir), rotate it 90 degrees
-  # ({fx, fy} -> {-fy, fx}) and lay the line along the result. A caster standing
-  # on the center has no facing, so we default to a horizontal (east-west) wall.
-  # The origin is read from the group (stamped at placement) because on_place
-  # runs inside the caster's own session process, where a caster lookup deadlocks.
-  @spec wall_direction(Group.t()) :: {integer(), integer()}
-  defp wall_direction(%Group{center: {cx, cy}, origin: {px, py}}) do
-    case {sign(cx - px), sign(cy - py)} do
-      {0, 0} -> {1, 0}
-      {fx, fy} -> {-fy, fx}
-    end
-  end
+  # The 8-way direction the caster looked along, as the sign of the origin->center
+  # vector; the layout turns it into the perpendicular footprint. The origin is
+  # read from the group (stamped at placement) because on_place runs inside the
+  # caster's own session process, where a caster lookup deadlocks. A caster
+  # standing on the center, or a group with no origin, has no facing and gets the
+  # layout's default wall.
+  @spec facing(Group.t()) :: {integer(), integer()}
+  defp facing(%Group{center: {cx, cy}, origin: {px, py}}), do: {sign(cx - px), sign(cy - py)}
 
-  defp wall_direction(%Group{origin: nil}), do: {1, 0}
+  defp facing(%Group{origin: nil}), do: {0, 0}
 
   @spec sign(integer()) :: -1 | 0 | 1
   defp sign(n) when n > 0, do: 1

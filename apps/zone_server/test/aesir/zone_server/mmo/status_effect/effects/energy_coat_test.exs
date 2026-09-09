@@ -32,12 +32,42 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoatTest do
                EnergyCoat.absorb_damage(@target, entry(), hit, context(200, 200))
     end
 
+    @tag game_mode: :renewal
     test "at half SP (per = 2) reduces a magic hit by 18%" do
       stub(Helpers, :consume_sp, fn _target, _amount -> :ok end)
       hit = %{damage: 1_000, is_short: false, dmg_type: :magic, element: :fire}
 
       assert {:ok, 820, %StatusEntry{}} =
                EnergyCoat.absorb_damage(@target, entry(), hit, context(100, 200))
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic lets a magic hit through untouched and spends no SP" do
+      reject(&Helpers.consume_sp/2)
+      hit = %{damage: 1_000, is_short: false, dmg_type: :magic, element: :fire}
+
+      assert {:ok, 1_000, %StatusEntry{}} =
+               EnergyCoat.absorb_damage(@target, entry(), hit, context(100, 200))
+    end
+
+    # Untagged: the SP interval is mode-shared, so this runs in both suites.
+    test "at exactly 40% SP the interval below the boundary applies, not the one at it" do
+      test_pid = self()
+      stub(Helpers, :consume_sp, fn _target, amount -> send(test_pid, {:drain, amount}) end)
+      hit = %{damage: 1_000, is_short: true, dmg_type: :physical, element: :neutral}
+
+      assert {:ok, 880, %StatusEntry{}} =
+               EnergyCoat.absorb_damage(@target, entry(), hit, context(80, 200))
+
+      assert_received {:drain, 3}
+    end
+
+    test "just above 40% SP moves up to the next interval" do
+      stub(Helpers, :consume_sp, fn _target, _amount -> :ok end)
+      hit = %{damage: 1_000, is_short: true, dmg_type: :physical, element: :neutral}
+
+      assert {:ok, 820, %StatusEntry{}} =
+               EnergyCoat.absorb_damage(@target, entry(), hit, context(82, 200))
     end
 
     test "at no SP (per = 0) still reduces by the base 6%" do

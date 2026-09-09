@@ -2,11 +2,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
   @moduledoc """
   Stone Curse (MG_STONECURSE). No-damage earth petrification consuming a Red Gemstone.
 
-  rAthena renewal: range 2, single target, no damage. Rolls `(4 * level + 20)`% to
-  apply `sc_stone`, which enters its own wait -> petrify phases (timing encoded in the
-  status effect). The Red Gemstone catalyst is consumed on success; for levels 6-10 a
-  failed petrify keeps the gem (`SKILL_NOCONSUME_REQ`), modeled as `{:ok, caster,
-  :no_consume}`.
+  A near-melee single-target curse that rolls `4 * level + 20` percent to apply
+  the petrification status. The skill's declared duration is the status' whole
+  life: the target spends the first five seconds in the wait phase and the rest
+  petrified. The Red Gemstone catalyst is consumed on success; from level 6 up a
+  failed roll keeps the gem.
+
+  Renewal: the status runs 17 seconds, so five seconds of wait and twelve of
+  stone, and the cast is 0.8 seconds of variable time plus a 0.2 second fixed
+  component.
+
+  Pre-renewal: the status runs 20 seconds, so five seconds of wait and fifteen of
+  stone, and the cast is a flat 1 second of purely variable time with no fixed
+  component, so DEX shortens all of it.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 16,
@@ -19,8 +27,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
     damage_kind: :magic,
     element: :earth,
     range: 2,
-    cast_time: List.duplicate(800, 10),
+    cast_time: [renewal: List.duplicate(800, 10), pre_renewal: List.duplicate(1000, 10)],
     fixed_cast_time: List.duplicate(200, 10),
+    duration: [
+      renewal: List.duplicate(17_000, 10),
+      pre_renewal: List.duplicate(20_000, 10)
+    ],
     sp_cost: [25, 24, 23, 22, 21, 20, 19, 18, 17, 16],
     item_cost: [%{id: 716, amount: 1}]
 
@@ -32,13 +44,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurse do
   @behaviour Active
 
   @impl Active
-  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, _definition) do
+  def cast(%{character_id: caster_id} = caster, {:unit, target_id}, level, definition) do
     if :rand.uniform(100) <= success_chance(level) do
       unit_type = target_unit_type(target_id)
 
       StatusInterpreter.apply_status(unit_type, target_id, :sc_stone,
         val1: level,
-        caster_id: caster_id
+        caster_id: caster_id,
+        duration: Enum.at(definition.duration, level - 1)
       )
 
       {:ok, caster}

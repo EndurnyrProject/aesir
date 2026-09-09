@@ -1,11 +1,21 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike do
   @moduledoc """
   Soul Strike (MG_SOULSTRIKE). Single-target ghost magic that deals a level-scaled
-  number of separate hits at 100% MATK each, with a bonus against the undead.
+  number of separate hits at full magic attack each, with a bonus against the
+  undead.
 
-  rAthena renewal: ghost element, hits `[1,1,2,2,3,3,4,4,5,5]` (one extra hit every
-  two levels), range 9. The per-hit ratio is 100% plus `5 * level`% when the target
-  is undead (undead race or undead defense element).
+  The hit count gains one hit every two levels, so level 1 and 2 land one hit and
+  level 9 and 10 land five. Each hit is worth 100% of magic attack, raised by
+  `5 * level` percent when the target is undead by race or by defensive element.
+  Both modes agree on all of that.
+
+  Renewal casts it in a flat 0.4 seconds of variable time plus a 0.1 second
+  fixed component, then locks the caster for 1.4 seconds at every level.
+
+  Pre-renewal casts it in a flat 0.5 seconds of purely variable time, and the
+  aftercast lock zig-zags with level instead of being flat, climbing from 1.2
+  seconds at level 1 to 1.8 seconds at level 10 with every even level shorter
+  than the odd level below it.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 13,
@@ -18,9 +28,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike do
     damage_kind: :magic,
     element: :ghost,
     range: 9,
-    cast_time: List.duplicate(400, 10),
+    cast_time: [renewal: List.duplicate(400, 10), pre_renewal: List.duplicate(500, 10)],
     fixed_cast_time: List.duplicate(100, 10),
-    after_cast_delay: List.duplicate(1400, 10),
+    after_cast_delay: [
+      renewal: List.duplicate(1400, 10),
+      pre_renewal: [1200, 1000, 1400, 1200, 1600, 1400, 1800, 1600, 2000, 1800]
+    ],
     sp_cost: [18, 14, 24, 20, 30, 26, 36, 32, 42, 38]
 
   alias Aesir.ZoneServer.Mmo.Combat

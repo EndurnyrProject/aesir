@@ -2,9 +2,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
   @moduledoc """
   Frost Diver (MG_FROSTDIVER). Single-target water magic that can freeze the target.
 
-  rAthena renewal: water element, `(100 + 10 * level)`% MATK in a single hit, range 9.
-  On a connecting hit it rolls `min(3 * level + 35, level + 60)`% to apply `sc_freeze`
-  for `3000 * level` ms.
+  A single water hit worth `100 + 10` percent of magic attack per level. On a
+  connecting hit it rolls `min(3 * level + 35, level + 60)` percent to freeze the
+  target for three seconds per level. Both modes share the damage, the freeze
+  chance and the freeze duration.
+
+  Renewal casts it in a flat 0.64 seconds of variable time plus a 0.16 second
+  fixed component and locks the caster for half a second.
+
+  Pre-renewal casts it in a flat 0.8 seconds of purely variable time and locks
+  the caster for a full 1.5 seconds, which is what makes classic Frost Diver a
+  committed opener rather than something to chain.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 15,
@@ -17,9 +25,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFrostdiver do
     damage_kind: :magic,
     element: :water,
     range: 9,
-    cast_time: List.duplicate(640, 10),
+    cast_time: [renewal: List.duplicate(640, 10), pre_renewal: List.duplicate(800, 10)],
     fixed_cast_time: List.duplicate(160, 10),
-    after_cast_delay: List.duplicate(500, 10),
+    after_cast_delay: [
+      renewal: List.duplicate(500, 10),
+      pre_renewal: List.duplicate(1500, 10)
+    ],
     sp_cost: [25, 24, 23, 22, 21, 20, 19, 18, 17, 16]
 
   alias Aesir.ZoneServer.Mmo.Combat

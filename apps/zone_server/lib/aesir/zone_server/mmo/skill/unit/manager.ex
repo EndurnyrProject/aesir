@@ -871,15 +871,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
       %Group{skill_id: skill_id} when skill_id != @safetywall_skill_id ->
         :pass
 
+      # A wall with no damage pool (`nil`) blocks purely by hit count.
       %Group{state: %{hits_remaining: hits, shield_hp: shield_hp}} = group ->
         hits_remaining = hits - 1
-        remaining_hp = shield_hp - damage
 
-        if hits_remaining <= 0 or remaining_hp <= 0 do
+        if hits_remaining <= 0 or (shield_hp && shield_hp - damage <= 0) do
           cleanup(group, nil, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
           {:block, :remove}
         else
-          state = %{group.state | hits_remaining: hits_remaining, shield_hp: remaining_hp}
+          state = %{
+            group.state
+            | hits_remaining: hits_remaining,
+              shield_hp: shield_hp && shield_hp - damage
+          }
+
           :ok = Storage.update(%{group | state: state})
           {:block, :keep}
         end

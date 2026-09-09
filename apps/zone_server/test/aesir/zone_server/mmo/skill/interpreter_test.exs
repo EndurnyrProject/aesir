@@ -2535,12 +2535,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert updated.stats.current_state.sp == 80
     end
 
+    @tag game_mode: :renewal
     test "applies the bolt's aftercast delay" do
       gs = game_state(100, %{})
       before = System.monotonic_time(:millisecond)
 
       assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
       assert updated.act_delay_until >= before + 1400
+    end
+
+    @tag game_mode: :pre_renewal
+    test "applies the bolt's shorter classic aftercast delay" do
+      gs = game_state(100, %{})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.auto_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.act_delay_until >= before + 1000
     end
 
     test "sets no cooldown of its own" do
@@ -2637,12 +2647,22 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:error, :insufficient_sp} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
     end
 
+    @tag game_mode: :renewal
     test "applies the skill's aftercast delay" do
       gs = game_state(100, %{})
       before = System.monotonic_time(:millisecond)
 
       assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
       assert updated.act_delay_until >= before + 1400
+    end
+
+    @tag game_mode: :pre_renewal
+    test "applies the skill's shorter classic aftercast delay" do
+      gs = game_state(100, %{})
+      before = System.monotonic_time(:millisecond)
+
+      assert {:ok, updated} = Interpreter.proc_cast(gs, 19, 1, {:unit, 2001})
+      assert updated.act_delay_until >= before + 1000
     end
 
     test "needs no learned level and ignores the caster's act delay" do

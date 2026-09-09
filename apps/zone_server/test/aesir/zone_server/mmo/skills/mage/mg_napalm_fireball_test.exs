@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -74,9 +75,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
       assert definition.range == 9
       assert definition.element == :ghost
       assert definition.splash_radius == 1
-      assert definition.cast_time == List.duplicate(400, 10)
       assert definition.fixed_cast_time == List.duplicate(100, 10)
-      assert definition.after_cast_delay == List.duplicate(500, 10)
+
+      assert MgNapalmbeat.definition(:renewal).cast_time == List.duplicate(400, 10)
+      assert MgNapalmbeat.definition(:pre_renewal).cast_time == List.duplicate(1000, 10)
+
+      assert MgNapalmbeat.definition(:renewal).after_cast_delay == List.duplicate(500, 10)
+
+      assert MgNapalmbeat.definition(:pre_renewal).after_cast_delay ==
+               [1000, 1000, 1000, 900, 900, 800, 800, 700, 600, 500]
+
       assert definition.sp_cost == [9, 9, 9, 12, 12, 12, 15, 15, 15, 18]
     end
   end
@@ -112,7 +120,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
   end
 
   describe "fire ball metadata" do
-    test "matches the rAthena renewal table" do
+    test "matches the source renewal table" do
       definition = definition(:mg_fireball)
 
       assert definition.max_level == 10
@@ -122,10 +130,41 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
       assert definition.range == 9
       assert definition.element == :fire
       assert definition.splash_radius == 2
-      assert definition.cast_time == List.duplicate(800, 10)
       assert definition.fixed_cast_time == List.duplicate(200, 10)
-      assert definition.after_cast_delay == List.duplicate(700, 10)
       assert definition.sp_cost == List.duplicate(25, 10)
+    end
+
+    test "classic casts and locks the caster longer at the low levels" do
+      assert MgFireball.definition(:renewal).cast_time == List.duplicate(800, 10)
+      assert MgFireball.definition(:renewal).after_cast_delay == List.duplicate(700, 10)
+
+      assert MgFireball.definition(:pre_renewal).cast_time ==
+               [1500, 1500, 1500, 1500, 1500, 1000, 1000, 1000, 1000, 1000]
+
+      assert MgFireball.definition(:pre_renewal).after_cast_delay ==
+               [1500, 1500, 1500, 1500, 1500, 1000, 1000, 1000, 1000, 1000]
+    end
+  end
+
+  describe "fire ball skill_ratio/3" do
+    test "renewal scales harder with level at the centre" do
+      assert MgFireball.skill_ratio(:renewal, 1, 0) == 160
+      assert MgFireball.skill_ratio(:renewal, 10, 0) == 340
+    end
+
+    test "classic starts and scales lower at the centre" do
+      assert MgFireball.skill_ratio(:pre_renewal, 1, 0) == 80
+      assert MgFireball.skill_ratio(:pre_renewal, 10, 0) == 170
+    end
+
+    test "the inner ring still takes the full centre ratio" do
+      assert MgFireball.skill_ratio(:renewal, 10, 1) == 340
+      assert MgFireball.skill_ratio(:pre_renewal, 10, 1) == 170
+    end
+
+    test "the outer ring takes three quarters of it in both modes" do
+      assert MgFireball.skill_ratio(:renewal, 10, 2) == 255
+      assert MgFireball.skill_ratio(:pre_renewal, 10, 2) == 127
     end
   end
 
@@ -138,7 +177,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, target} end)
 
       expect(Combat, :execute_magic_splash, fn ^caster, {60, 70}, 2, opts ->
-        assert opts[:skill_ratio] == 140 + 20 * 3
+        ratio_fun = opts[:skill_ratio]
+        assert is_function(ratio_fun, 1)
+        assert ratio_fun.(0) == MgFireball.skill_ratio(GameMode.mode(), 3, 0)
+        assert ratio_fun.(2) == MgFireball.skill_ratio(GameMode.mode(), 3, 2)
         assert opts[:element] == :fire
         assert opts[:split] == false
         [@target_id]

@@ -3,17 +3,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
   Safety Wall (MG_SAFETYWALL). Ground-targeted, no-damage defensive skill-unit.
 
   A cast rejects a cell already occupied by Safety Wall before it can consume a
-  Blue Gemstone. The hit/shield budget is shared by the wall and computed once at
-  placement from the caster's stats (rAthena `group->val2`/`val3`):
-  `hits_remaining = level + 1` and `shield_hp = 300*level + 65*(INT + baseLv) +
-  maxSP`. Each tick the unit grants the `sc_safetywall` marker to every unit
-  standing on its cell - allies and the
-  caster included, since it is defensive - that does not already carry it. The
-  status blocks short-range physical hits and spends the wall's shared budget; once
-  exhausted it tears this unit down (rAthena `skill_delunitgroup`).
+  Blue Gemstone. Each tick the unit grants the `sc_safetywall` marker to every
+  unit standing on its cell - allies and the caster included, since it is
+  defensive - that does not already carry it. The status blocks short-range
+  physical hits and spends the wall's budget, which is shared by the wall rather
+  than held per defender; once the budget is exhausted the final hit is still
+  blocked and the wall is torn down.
 
-  rAthena (`skill_db` id 12): `Element: Ghost`, no damage, single cell, status
-  `Safetywall`; requires `Blue_Gemstone` (717).
+  Renewal: the wall has two budgets and runs out on whichever empties first. It
+  blocks `level + 1` hits, and it also holds a damage pool of
+  `300 * level + 65 * (INT + base level) + max SP` computed once from the
+  caster's stats at placement, so a strong caster's wall survives many small
+  hits but a single very large hit still collapses it.
+
+  Pre-renewal: there is no damage pool. The wall simply blocks `level + 1` hits
+  of any size and then vanishes, which makes it far stronger against heavy
+  hitters and independent of the caster's stats. Its cast is also slower at the
+  low levels (4 seconds at level 1) and flattens out at 1 second from level 7,
+  against renewal's smooth taper from 3.2 down to 0.32 seconds plus a fixed
+  component.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 12,
@@ -32,11 +40,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
     element: :ghost,
     hit_interval: 1_000,
     unit_duration: [5000, 10_000, 15_000, 20_000, 25_000, 30_000, 35_000, 40_000, 45_000, 50_000],
-    cast_time: [3200, 2880, 2560, 2240, 1920, 1600, 1280, 960, 640, 320],
+    cast_time: [
+      renewal: [3200, 2880, 2560, 2240, 1920, 1600, 1280, 960, 640, 320],
+      pre_renewal: [4000, 3500, 3500, 2500, 2000, 1500, 1000, 1000, 1000, 1000]
+    ],
     fixed_cast_time: [800, 720, 640, 560, 480, 400, 320, 240, 160, 80],
     sp_cost: [30, 30, 30, 35, 35, 35, 40, 40, 40, 40],
     item_cost: [%{id: 717, amount: 1}]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.CombatTarget
@@ -77,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
     {:ok,
      %{
        cells: [center],
-       state: %{hits_remaining: level + 1, shield_hp: shield_hp(level, stats)},
+       state: %{hits_remaining: level + 1, shield_hp: shield_hp(GameMode.mode(), level, stats)},
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1)
      }}
@@ -116,8 +128,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSafetywall do
     Enum.any?(Storage.get_groups_at_cell(map_name, x, y), &(&1.skill_id == 12))
   end
 
-  @spec shield_hp(non_neg_integer(), map()) :: non_neg_integer()
-  defp shield_hp(level, %{int: int, base_level: base_level, max_sp: max_sp}) do
+  @doc """
+  The wall's shared damage pool in `mode`, or `nil` when the mode has none.
+
+  Renewal derives the pool from the caster's stats at placement; classic blocks
+  purely by hit count, so it has no pool to drain.
+  """
+  @spec shield_hp(GameMode.t(), non_neg_integer(), map()) :: non_neg_integer() | nil
+  def shield_hp(:renewal, level, %{int: int, base_level: base_level, max_sp: max_sp}) do
     300 * level + 65 * (int + base_level) + max_sp
   end
+
+  def shield_hp(:pre_renewal, _level, _stats), do: nil
 end

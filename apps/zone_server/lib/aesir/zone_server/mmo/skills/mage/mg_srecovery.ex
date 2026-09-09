@@ -2,8 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSrecovery do
   @moduledoc """
   Increase SP Recovery (MG_SRECOVERY). Boosts the natural SP recovery tick.
 
-  rAthena (renewal, `status_calc_regen`): adds `skill_lv * 3 + skill_lv * max_sp / 500`
-  to the per-tick SP regen. Contributes no HP recovery.
+  Adds `3 * level + level * max SP / 500` to the per-tick SP regeneration and
+  contributes nothing to HP recovery. It also makes SP-restoring consumables 10
+  percent more effective per learned level, applied by the item recovery path
+  alongside INT and Potion Research.
+
+  Renewal and pre-renewal are identical here: neither the regeneration term nor
+  the consumable bonus is mode-gated.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 9,

@@ -1375,6 +1375,39 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
   end
 
   describe "execute_magic_splash/4" do
+    test "a distance-keyed skill ratio is resolved per target" do
+      caster = build_player(@caster_id, 150, %{}, %{})
+      inner = build_player(3001, 151, %{}, %{})
+      outer = build_player(3002, 152, %{}, %{})
+
+      :ok = UnitRegistry.register_player(caster, self())
+      :ok = UnitRegistry.register_player(inner, self())
+      :ok = UnitRegistry.register_player(outer, self())
+
+      stub(SpatialIndex, :get_all_units_in_range, fn @map_name, 150, 150, _radius ->
+        [{:player, 3001}, {:player, 3002}]
+      end)
+
+      stub(Targeting, :validate_enemy, fn _attacker, _target -> :ok end)
+      stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+      test_pid = self()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _attacker, target, opts ->
+        send(test_pid, {:ratio, target.unit_id, opts[:skill_ratio]})
+        {:ok, %{damage: 10, is_critical: false}}
+      end)
+
+      MagicAttack.execute_magic_splash(caster, @center, 2,
+        skill_id: 17,
+        skill_level: 1,
+        skill_ratio: fn distance -> 100 + distance end,
+        element: :neutral
+      )
+
+      assert_received {:ratio, 3001, 101}
+      assert_received {:ratio, 3002, 102}
+    end
+
     test "a reflected splash round contributes the caster ref" do
       test_pid = self()
       target_pid = spawn_link(fn -> relay_gen_casts(test_pid) end)

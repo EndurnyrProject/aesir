@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoatTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoat
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.EnergyCoat
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   setup :verify_on_exit!
@@ -18,6 +19,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoatTest do
       assert definition.max_level == 1
       assert definition.sp_cost == [30]
       assert definition.fixed_cast_time == [5_000]
+    end
+
+    test "classic spends the five seconds as an interruptible variable cast" do
+      assert MgEnergycoat.definition(:renewal).cast_time == []
+      assert MgEnergycoat.definition(:renewal).fixed_cast_time == [5_000]
+      assert MgEnergycoat.definition(:pre_renewal).cast_time == [5_000]
+    end
+  end
+
+  describe "absorbed damage kinds" do
+    test "renewal soaks both weapon and magic hits" do
+      assert EnergyCoat.absorbs?(:renewal, :physical)
+      assert EnergyCoat.absorbs?(:renewal, :magic)
+    end
+
+    test "classic soaks weapon hits only" do
+      assert EnergyCoat.absorbs?(:pre_renewal, :physical)
+      refute EnergyCoat.absorbs?(:pre_renewal, :magic)
     end
   end
 

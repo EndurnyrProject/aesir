@@ -35,6 +35,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SightTest do
       assert :sc_sight = Sight.id()
       assert %{properties: [:buff], duration: 10_000} = Sight.metadata()
     end
+
+    test "keeps pulsing for its whole life rather than only on apply" do
+      assert %{tick_interval: 500} = Sight.metadata()
+    end
   end
 
   describe "on_apply/3 - reveal pulse" do
@@ -83,6 +87,46 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SightTest do
       reject(&Helpers.remove_statuses/2)
 
       assert {:ok, %StatusEntry{}} = Sight.on_apply(@caster, entry(), %{target_id: 1000})
+    end
+  end
+
+  describe "on_tick/3 - recurring pulse" do
+    test "re-sweeps the caster's current cell so late arrivals are revealed too" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> {:ok, {160, 160, "prontera"}} end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 160, 160, 3 ->
+        [{:player, 3000}]
+      end)
+
+      expect(Helpers, :remove_statuses, fn {:player, 3000}, [:sc_hiding, :sc_cloaking] -> :ok end)
+
+      assert {:ok, %StatusEntry{}} = Sight.on_tick(@caster, entry(), %{target_id: 1000})
+    end
+
+    test "does not reveal a corpse it sweeps over" do
+      corpse = %PlayerState{
+        character_id: 3000,
+        action_state: :dead,
+        stats: %{current_state: %{hp: 0}}
+      }
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> {:ok, {150, 150, "prontera"}} end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 3 ->
+        [{:player, 3000}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 3000 -> {:ok, {PlayerState, corpse, self()}} end)
+      reject(&Helpers.remove_statuses/2)
+
+      assert {:ok, %StatusEntry{}} = Sight.on_tick(@caster, entry(), %{target_id: 1000})
+    end
+
+    test "does not crash when the caster position cannot be resolved" do
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> {:error, :not_found} end)
+      reject(&Helpers.remove_statuses/2)
+
+      assert {:ok, %StatusEntry{}} = Sight.on_tick(@caster, entry(), %{target_id: 1000})
     end
   end
 end

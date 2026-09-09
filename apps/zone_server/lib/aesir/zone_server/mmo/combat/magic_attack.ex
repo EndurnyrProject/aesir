@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
   require Logger
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
@@ -547,7 +548,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
   ## Options
     - `:skill_id` / `:skill_level` - identify the skill for the damage packet
-    - `:skill_ratio` - percent of base MATK each target takes (default `100`)
+    - `:skill_ratio` - percent of base MATK each target takes (default `100`), or a
+      one-arity function of the target's Chebyshev distance from `center`
+      returning that percent, for a blast whose ratio falls off with distance
+      (Fire Ball's outer ring)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:split` - divide total damage by the number of targets hit (default `false`)
     - `:line_of_sight` - require an unobstructed projectile path (default `false`)
@@ -583,9 +587,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
               target_ref,
               skill_id,
               skill_level,
-              element,
-              skill_ratio,
-              divisor,
+              %{
+                element: element,
+                skill_ratio: skill_ratio,
+                divisor: divisor,
+                center: center
+              },
               Map.get(acc.decisions, target_ref, :unchecked)
             )
 
@@ -616,6 +623,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
 
     hits
   end
+
+  # A blast whose per-level ratio depends on how far the victim stands from the
+  # centre (Fire Ball's outer ring) passes `:skill_ratio` as a one-arity function
+  # of that Chebyshev distance, the same shape the physical splash path takes.
+  # Every other caller passes a plain percent, which falls through untouched.
+  @spec distance_ratio(
+          number() | (non_neg_integer() -> number()),
+          {integer(), integer()},
+          struct()
+        ) ::
+          number()
+  defp distance_ratio(ratio_fun, {cx, cy}, target_state) when is_function(ratio_fun, 1),
+    do: ratio_fun.(Geometry.chebyshev_distance(cx, cy, target_state.x, target_state.y))
+
+  defp distance_ratio(skill_ratio, _center, _target_state), do: skill_ratio
 
   # A scale of 1 preserves the computed amount; other factors retain the hit floor.
   defp scale_damage(damage, 1), do: damage
@@ -874,9 +896,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          {unit_type, target_id} = target_ref,
          skill_id,
          skill_level,
-         element,
-         skill_ratio,
-         divisor,
+         %{element: element, skill_ratio: skill_ratio, divisor: divisor, center: center},
          coma_decision
        ) do
     with {:ok, target_pid, target_state, target_type} <-
@@ -888,7 +908,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
          {:ok, %{damage: damage}} <-
            MagicDamageCalculator.calculate_magic_damage(attacker, target,
              element: element,
-             skill_ratio: skill_ratio,
+             skill_ratio: distance_ratio(skill_ratio, center, target_state),
              skill_id: skill_id
            ) do
       damage = div(damage, divisor)

@@ -75,9 +75,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
       assert definition.damage_kind == :magic
       assert definition.range == 9
       assert definition.element == :ghost
-      assert definition.cast_time == List.duplicate(400, 10)
       assert definition.fixed_cast_time == List.duplicate(100, 10)
-      assert definition.after_cast_delay == List.duplicate(1400, 10)
+
+      assert MgSoulstrike.definition(:renewal).cast_time == List.duplicate(400, 10)
+      assert MgSoulstrike.definition(:pre_renewal).cast_time == List.duplicate(500, 10)
+
+      assert MgSoulstrike.definition(:renewal).after_cast_delay == List.duplicate(1400, 10)
+
+      assert MgSoulstrike.definition(:pre_renewal).after_cast_delay ==
+               [1200, 1000, 1400, 1200, 1600, 1400, 1800, 1600, 2000, 1800]
+
       assert definition.sp_cost == [18, 14, 24, 20, 30, 26, 36, 32, 42, 38]
     end
   end
@@ -174,9 +181,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
       assert definition.damage_kind == :magic
       assert definition.range == 9
       assert definition.element == :water
-      assert definition.cast_time == List.duplicate(640, 10)
       assert definition.fixed_cast_time == List.duplicate(160, 10)
-      assert definition.after_cast_delay == List.duplicate(500, 10)
+
+      assert MgFrostdiver.definition(:renewal).cast_time == List.duplicate(640, 10)
+      assert MgFrostdiver.definition(:pre_renewal).cast_time == List.duplicate(800, 10)
+
+      assert MgFrostdiver.definition(:renewal).after_cast_delay == List.duplicate(500, 10)
+      assert MgFrostdiver.definition(:pre_renewal).after_cast_delay == List.duplicate(1500, 10)
       assert definition.sp_cost == [25, 24, 23, 22, 21, 20, 19, 18, 17, 16]
     end
   end

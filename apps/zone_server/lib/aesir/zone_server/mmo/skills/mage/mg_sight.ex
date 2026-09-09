@@ -1,9 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSight do
   @moduledoc """
-  Sight (MG_SIGHT). Applies SC_SIGHT to the caster, a 10-second marker buff whose
-  `on_apply` reveals concealed enemies in radius 3.
+  Sight (MG_SIGHT). Applies the sight aura to the caster: a 10-second self buff
+  that keeps sweeping radius 3 around wherever the caster currently stands and
+  strips concealment from anyone it finds.
 
-  rAthena renewal: self-cast, no damage, fire element, max level 1, SP 10.
+  Renewal and pre-renewal are identical: single level, self cast, no damage, no
+  cast time, 10 SP, radius 3, 10 seconds. The aura's pulse rate and reveal rules
+  live with the status effect.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 10,

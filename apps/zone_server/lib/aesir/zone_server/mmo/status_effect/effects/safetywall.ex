@@ -6,13 +6,17 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Safetywall do
   fully blocks short-range physical hits via the pre-damage `absorb_damage` hook;
   magic and ranged hits pass through unchanged.
 
-  The hit/shield budget is **shared by the wall**, not the defender: it lives on
-  the owning ground unit's `state` (`hits_remaining = level + 1`,
-  `shield_hp = 300*level + 65*(INT + baseLv) + maxSP` from the caster's stats) and
-  is set when the wall is placed (see `MgSafetywall`). The skill-unit manager
-  atomically reads and spends both budgets for each blocked hit. When either runs
-  out, the final hit stays blocked while the wall and marker are removed; a hit
-  landing after the wall is already gone passes through and ends the stale marker.
+  The budget is **shared by the wall**, not the defender: it lives on the owning
+  ground unit's `state` and is set when the wall is placed (see `MgSafetywall`).
+  Every mode caps the wall at `level + 1` blocked hits. Renewal adds a second,
+  renewal-only budget on top: a damage pool of
+  `300*level + 65*(INT + baseLv) + maxSP` taken from the caster's stats, so a
+  single very large hit can collapse the wall early. Pre-renewal has no pool at
+  all and blocks `level + 1` hits of any size. The skill-unit manager atomically
+  reads and spends whichever budgets the wall carries for each blocked hit. When
+  either runs out, the final hit stays blocked while the wall and marker are
+  removed; a hit landing after the wall is already gone passes through and ends
+  the stale marker.
 
   The status only keeps the wall's `group_id` in its own state, for the
   unit<->status linkage.

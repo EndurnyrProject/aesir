@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewall
+  alias Aesir.ZoneServer.Unit.SpatialIndex
 
   setup :verify_on_exit!
 
@@ -18,6 +19,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
   # Renewal MG_FIREWALL ratio: base 100 - 50 = 50% per hit.
   @expected_ratio 50
 
+  # The cardinal wall a caster at @caster_pos lays through @center.
+  @wall_cells [{149, 150}, {150, 150}, {151, 150}]
+
   defp group(level, state \\ %{hits_remaining: nil}, origin \\ @caster_pos) do
     %Group{
       group_id: 1,
@@ -29,7 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
       map_name: @map_name,
       center: @center,
       origin: origin,
-      cells: [],
+      cells: @wall_cells,
       interval: 20,
       state: state
     }
@@ -39,6 +43,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
     stub(Combat, :resolve_combatant, fn
       @caster_id -> {:ok, %{unit_id: @caster_id, position: @caster_pos}}
       _target -> {:ok, %{element: element, race: race}}
+    end)
+
+    stub_positions(%{2001 => {149, 150}, 2002 => {151, 150}})
+  end
+
+  defp stub_positions(by_id) do
+    stub(SpatialIndex, :get_unit_position, fn _unit_type, unit_id ->
+      case Map.fetch(by_id, unit_id) do
+        {:ok, {x, y}} -> {:ok, {x, y, @map_name}}
+        :error -> {:error, :not_found}
+      end
     end)
   end
 
@@ -52,14 +67,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
       assert definition.max_level == 10
       assert definition.knockback == 2
 
-      assert definition.cast_time ==
-               [1600, 1440, 1280, 1120, 960, 880, 800, 720, 640, 560]
-
       assert definition.fixed_cast_time == [400, 360, 320, 280, 240, 220, 200, 180, 160, 140]
       assert definition.sp_cost == List.duplicate(40, 10)
 
       assert definition.unit_duration ==
                [5000, 6000, 7000, 8000, 9000, 10_000, 11_000, 12_000, 13_000, 14_000]
+    end
+
+    test "classic casts slower at every level and the wall lasts the same" do
+      assert MgFirewall.definition(:renewal).cast_time ==
+               [1600, 1440, 1280, 1120, 960, 880, 800, 720, 640, 560]
+
+      assert MgFirewall.definition(:pre_renewal).cast_time ==
+               [2000, 1850, 1700, 1550, 1400, 1250, 1100, 950, 800, 650]
+
+      assert MgFirewall.definition(:pre_renewal).unit_duration ==
+               MgFirewall.definition(:renewal).unit_duration
     end
 
     test "mg_firewall is registered as both an active and a ground skill" do
@@ -83,6 +106,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
                MgFirewall.on_place(group(1, %{hits_remaining: nil}, @center))
 
       assert length(cells) == 3
+    end
+
+    test "lays a 5-cell staircase when the caster faces the target diagonally" do
+      assert {:ok, %{cells: cells}} =
+               MgFirewall.on_place(group(3, %{hits_remaining: nil}, {148, 148}))
+
+      # Caster->center faces {+1, +1}; the wall staircases along the other diagonal.
+      assert Enum.sort(cells) ==
+               Enum.sort([{149, 151}, {149, 150}, {150, 150}, {150, 149}, {151, 149}])
+    end
+
+    test "staircases the other way for the opposite diagonal facing" do
+      assert {:ok, %{cells: cells}} =
+               MgFirewall.on_place(group(3, %{hits_remaining: nil}, {148, 152}))
+
+      # Caster->center faces {+1, -1}.
+      assert Enum.sort(cells) ==
+               Enum.sort([{151, 151}, {151, 150}, {150, 150}, {150, 149}, {149, 149}])
+    end
+
+    test "caps the caster at three live walls" do
+      assert {:ok, placement} = MgFirewall.on_place(group(3))
+      assert placement.lifecycle_policy.max_instances_per_caster == 3
     end
 
     test "defaults to a horizontal line when the group has no origin" do
@@ -123,6 +169,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFirewallTest do
 
       assert_received {:hit, :mob, 2001}
       assert_received {:hit, :mob, 2002}
+    end
+
+    test "spares an occupant standing diagonally off a straight wall" do
+      stub_caster()
+      stub_positions(%{2001 => {149, 150}, 2002 => {151, 151}})
+
+      test_pid = self()
+
+      stub(Combat, :splash_targets, fn @map_name, @center, _radius, @caster_id ->
+        [{:mob, 2001}, {:mob, 2002}]
+      end)
+
+      stub(Combat, :apply_skill_unit_damage, fn _c, unit_type, target_id, 18, 3, :fire, _r, _o ->
+        send(test_pid, {:hit, unit_type, target_id})
+        :ok
+      end)
+
+      assert {:ok, %Group{state: %{hits_remaining: 6}}} =
+               MgFirewall.on_interval(group(3, %{hits_remaining: 7}), 0)
+
+      assert_received {:hit, :mob, 2001}
+      refute_received {:hit, :mob, 2002}
     end
 
     test "does not knock back a fire-element target" do

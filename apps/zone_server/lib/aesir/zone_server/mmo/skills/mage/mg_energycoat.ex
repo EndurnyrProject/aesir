@@ -1,9 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoat do
   @moduledoc """
-  Energy Coat (MG_ENERGYCOAT). Toggles SC_ENERGYCOAT on the caster.
+  Energy Coat (MG_ENERGYCOAT). Toggles the energy coat buff on the caster.
 
   Re-casting removes the buff. The status carries its own 5-minute duration, so
-  no params are passed; SP reduction and per-hit SP drain live in the status.
+  no params are passed; the damage reduction and the per-hit SP drain live in the
+  status, including which kinds of damage the coat covers in each mode.
+
+  Renewal spends the five second cast as a fixed cast: DEX cannot shorten it, but
+  it also cannot be interrupted by the caster taking damage.
+
+  Pre-renewal has no fixed cast at all, so the same five seconds are variable -
+  DEX shortens them, and the cast is interruptible like any other.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 157,
@@ -16,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgEnergycoat do
     damage_kind: :magic,
     range: 0,
     sp_cost: [30],
+    cast_time: [renewal: [], pre_renewal: [5_000]],
     fixed_cast_time: [5_000],
     quest_skill: true,
     quest_owner_job: :mage

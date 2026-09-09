@@ -139,13 +139,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.AbsorbDamageTest do
       target_pid = setup_player_mock(target_id)
       :ok = Interpreter.apply_status(:player, target_id, :sc_energycoat)
 
-      expect(PlayerSession, :consume_sp, fn ^target_pid, 3 -> :ok end)
-      expect(PlayerSession, :apply_damage, fn ^target_pid, 105, {:player, 99} -> :ok end)
+      # 80/100 SP is the 60-79 band once the boundary point is subtracted, so the
+      # coat soaks 24% and drains 2, not the 30%/3 of the band above it.
+      expect(PlayerSession, :consume_sp, fn ^target_pid, 2 -> :ok end)
+      expect(PlayerSession, :apply_damage, fn ^target_pid, 114, {:player, 99} -> :ok end)
 
       {settled, :ok} = apply_swing(target_pid, target_id)
 
-      assert settled.primary.damage == 70
-      assert settled.secondary.damage == 35
+      assert settled.primary.damage == 76
+      assert settled.secondary.damage == 38
       assert StatusStorage.has_status?(:player, target_id, :sc_energycoat)
     end
 

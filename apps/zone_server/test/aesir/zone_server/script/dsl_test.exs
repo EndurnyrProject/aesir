@@ -145,11 +145,13 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       stub(Catalog, :by_name, fn
         :am_learningpotion -> {:ok, %{id: 227}}
         :sm_recovery -> {:ok, %{id: 4}}
+        :mg_srecovery -> {:ok, %{id: 9}}
       end)
 
       stub(Learned, :learned_level, fn
         %{}, 227 -> 4
         %{}, 4 -> 0
+        %{}, 9 -> 0
       end)
 
       ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
@@ -162,10 +164,12 @@ defmodule Aesir.ZoneServer.Script.DslTest do
       stub(Catalog, :by_name, fn
         :sm_recovery -> {:ok, %{id: 4}}
         :am_learningpotion -> {:ok, %{id: 227}}
+        :mg_srecovery -> {:ok, %{id: 9}}
       end)
 
       stub(Learned, :learned_level, fn
         %{}, 4 -> 5
+        %{}, 9 -> 0
         %{}, 227 -> 0
       end)
 
@@ -173,6 +177,25 @@ defmodule Aesir.ZoneServer.Script.DslTest do
 
       assert ctx.game_state.stats.current_state.hp == 250
       assert ctx.game_state.stats.current_state.sp == 110
+    end
+
+    test "SP consumables gain ten percent per learned Increase SP Recovery level" do
+      stub(Catalog, :by_name, fn
+        :mg_srecovery -> {:ok, %{id: 9}}
+        :sm_recovery -> {:ok, %{id: 4}}
+        :am_learningpotion -> {:ok, %{id: 227}}
+      end)
+
+      stub(Learned, :learned_level, fn
+        %{}, 9 -> 5
+        %{}, 4 -> 0
+        %{}, 227 -> 0
+      end)
+
+      ctx = Dsl.heal(build_ctx(hp: 100, sp: 10), hp: 100, sp: 100)
+
+      assert ctx.game_state.stats.current_state.hp == 200
+      assert ctx.game_state.stats.current_state.sp == 160
     end
 
     test "HP consumables include the item heal rate bonus" do

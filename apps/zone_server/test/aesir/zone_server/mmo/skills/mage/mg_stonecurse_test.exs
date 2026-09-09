@@ -45,10 +45,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
       assert definition.damage_type == :no_damage
       assert definition.element == :earth
       assert definition.range == 2
-      assert definition.cast_time == List.duplicate(800, 10)
       assert definition.fixed_cast_time == List.duplicate(200, 10)
       assert definition.sp_cost == [25, 24, 23, 22, 21, 20, 19, 18, 17, 16]
       assert definition.item_cost == [%{id: 716, amount: 1}]
+    end
+
+    test "classic casts slower and petrifies for longer" do
+      assert MgStonecurse.definition(:renewal).cast_time == List.duplicate(800, 10)
+      assert MgStonecurse.definition(:pre_renewal).cast_time == List.duplicate(1000, 10)
+
+      assert MgStonecurse.definition(:renewal).duration == List.duplicate(17_000, 10)
+      assert MgStonecurse.definition(:pre_renewal).duration == List.duplicate(20_000, 10)
     end
   end
 
@@ -67,6 +74,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgStonecurseTest do
       end)
 
       assert {:ok, ^caster} = MgStonecurse.cast(caster, {:unit, @target_id}, 4, definition)
+    end
+
+    @tag game_mode: :renewal
+    test "the status lasts 17 seconds in renewal, wait phase included" do
+      :rand.seed(:exsss, {1, 2, 3})
+      definition = definition()
+
+      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stone, params ->
+        assert params[:duration] == 17_000
+        :ok
+      end)
+
+      assert {:ok, _} = MgStonecurse.cast(caster(), {:unit, @target_id}, 4, definition)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "the status lasts 20 seconds in classic, wait phase included" do
+      :rand.seed(:exsss, {1, 2, 3})
+      definition = definition()
+
+      stub(UnitRegistry, :unit_exists?, fn :mob, @target_id -> true end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stone, params ->
+        assert params[:duration] == 20_000
+        :ok
+      end)
+
+      assert {:ok, _} = MgStonecurse.cast(caster(), {:unit, @target_id}, 4, definition)
     end
 
     test "consumes the gem on failure at level <= 5" do
