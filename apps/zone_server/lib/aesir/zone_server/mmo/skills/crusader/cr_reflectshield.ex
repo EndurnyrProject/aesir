@@ -1,16 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrReflectshield do
   @moduledoc """
-  Reflect Shield (CR_REFLECTSHIELD). Toggles SC_REFLECTSHIELD on the caster.
+  Reflect Shield (CR_REFLECTSHIELD). A shield-gated toggle for 35 to 80 SP that
+  reflects 10% plus 3% per level of every short-range physical hit back to the
+  attacker. A player caster needs a shield; a mob caster skips the check. Re-casting
+  turns it off, and Devotion mirrors it to devotees. A mob-skill row may target the
+  caster by id; either shape toggles the caster.
 
-  Requires a shield equipped to cast; a player caster without one is refused,
-  a mob caster skips the check entirely (mirroring the other shield-gated
-  skills). Re-casting removes the status. The status is permanent until
-  toggled off or the shield is unequipped - no duration is carried.
-
-  Always toggles the caster: the mob skill executor adapts every non-ground
-  target uniformly to `{:unit, id}` before `cast/4` runs, so mob self-casts
-  never arrive as the literal `:self` - `cast/4` treats both target shapes
-  the same rather than toggling whatever that id happens to be.
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 252,

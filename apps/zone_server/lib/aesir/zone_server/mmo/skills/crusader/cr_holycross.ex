@@ -1,12 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
   @moduledoc """
-  Holy Cross (CR_HOLYCROSS). Two-hit melee weapon strike in holy element with
-  a chance to blind the target.
+  Holy Cross (CR_HOLYCROSS). A two-hit holy weapon strike at 2 cells for 11 to 20
+  SP, 100% plus 35% per level per hit with no criticals, blinding 3% per level of
+  the time on a connecting hit.
 
-  Skill ratio is 35% per level, doubled to 70% per level when the caster
-  wields a two-handed spear; mob casters have no equipment to check and always
-  use the base ratio. Two hits, no crit. On a connecting hit, 3% per level
-  chance to inflict Blind for 18 seconds.
+  Renewal raises the per-level part to 70% with a two-handed spear and blinds for
+  18 s; pre-renewal keeps 35% per level with every weapon and blinds for 30 s.
+  Mob casters always use the base ratio.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 253,
@@ -17,10 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
     target_type: :target_enemy,
     damage_type: :damage,
     element: :holy,
-    range: -1,
+    range: 2,
     hit_count: 2,
-    sp_cost: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+    sp_cost: [11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+    duration: [renewal: List.duplicate(18_000, 10), pre_renewal: List.duplicate(30_000, 10)]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -29,8 +31,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
-
-  @blind_duration 18_000
 
   @impl Active
   def cast(caster, {:unit, target}, level, definition) do
@@ -41,12 +41,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
       hit_count: definition.hit_count,
       element: definition.element,
       skip_crit: true,
-      report_hit: true
+      report_hit: true,
+      skip_range: true
     ]
 
     case Combat.execute_skill_attack(caster, target, opts) do
       {:ok, %{hit?: hit?}} ->
-        if hit?, do: maybe_blind(caster, target, level)
+        if hit?, do: maybe_blind(caster, target, level, Enum.at(definition.duration, level - 1))
         {:ok, caster}
 
       {:error, _reason} = error ->
@@ -54,24 +55,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycross do
     end
   end
 
+  # Renewal raises the per-level part for a two-handed spear; classic and mob casters use the base.
   @spec skill_ratio(struct() | map(), pos_integer()) :: pos_integer()
   defp skill_ratio(%PlayerState{stats: %{equipment: equipment}}, level) do
-    if Stats.weapon_type(equipment) == :two_handed_spear do
-      70 * level
-    else
-      35 * level
-    end
+    if GameMode.mode() == :renewal and Stats.weapon_type(equipment) == :two_handed_spear,
+      do: 100 + 70 * level,
+      else: 100 + 35 * level
   end
 
-  defp skill_ratio(_caster, level), do: 35 * level
+  defp skill_ratio(_caster, level), do: 100 + 35 * level
 
-  defp maybe_blind(caster, target, level) do
+  defp maybe_blind(caster, target, level, duration) do
     if :rand.uniform(100) <= 3 * level do
       {unit_type, unit_id} = target_ref(target)
       {source_type, source_id} = source_ref(caster)
 
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_blind,
-        duration: @blind_duration,
+        duration: duration,
         caster_id: source_id,
         source_type: source_type
       )

@@ -1,13 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrAutoguard do
   @moduledoc """
-  Guard (CR_AUTOGUARD). Shield-gated toggle that turns SC_AUTOGUARD on the
-  caster on or off.
+  Guard (CR_AUTOGUARD). A shield-gated toggle for 12 to 30 SP that blocks weapon
+  hits 5% to 30% of the time by level (5, 10, 14, 18, 21, 24, 26, 28, 29, 30),
+  freezing the holder briefly on each block. A player caster needs a shield; a mob
+  caster skips the check. Re-casting turns it off, and Devotion mirrors it to
+  devotees.
 
-  A player caster must have a shield equipped (the shared shield gate); a mob
-  caster carries no equipment and skips the check, mirroring the other
-  shield-gated Crusader skills. Casting while the stance is active toggles it
-  off; casting while inactive applies it at the cast level, which drives the
-  per-level block chance in the status.
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 249,

@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   `:walk_speed_override` is an exact final value, so the most recently
   applied status wins. Status instances are sorted by application time before
   they reach this function, with the status type as a stable tie-breaker.
+  `:walk_speed_floor` is a minimum cell delay, so the slowest floor wins.
 
   When either colliding value is non-numeric the value from `new` wins.
   """
@@ -60,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator do
   def merge_modifiers(base, new) do
     Map.merge(base, new, fn
       :walk_speed_override, _v1, v2 -> v2
+      :walk_speed_floor, v1, v2 -> max(v1, v2)
       _key, v1, v2 when is_number(v1) and is_number(v2) -> v1 + v2
       _key, _v1, v2 -> v2
     end)

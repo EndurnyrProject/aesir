@@ -140,7 +140,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.StatusManager do
       |> max(@min_walk_speed)
       |> min(@max_walk_speed)
 
-    Map.get(stats.modifiers.status_effects, :walk_speed_override, calculated_walk_speed)
+    floored =
+      max(calculated_walk_speed, Map.get(stats.modifiers.status_effects, :walk_speed_floor, 0))
+
+    Map.get(stats.modifiers.status_effects, :walk_speed_override, floored)
   end
 
   defp hiding_speed_penalty(stats) do

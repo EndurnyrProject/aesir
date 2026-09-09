@@ -32,6 +32,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidenceTest do
       assert definition.duration == [180_000, 180_000, 180_000, 180_000, 180_000]
     end
 
+    test "casts in 1.5 seconds plus 1.5 fixed in renewal and a flat 3 seconds in classic" do
+      assert CrProvidence.definition(:renewal).cast_time == List.duplicate(1_500, 5)
+      assert CrProvidence.definition(:renewal).fixed_cast_time == List.duplicate(1_500, 5)
+      assert CrProvidence.definition(:pre_renewal).cast_time == List.duplicate(3_000, 5)
+      assert CrProvidence.definition(:pre_renewal).fixed_cast_time == []
+    end
+
     test "Catalog.active_module_for/1 resolves cr_providence" do
       assert {:ok, CrProvidence} = Catalog.active_module_for(:cr_providence)
     end

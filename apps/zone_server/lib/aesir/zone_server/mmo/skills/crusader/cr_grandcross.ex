@@ -1,28 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @moduledoc """
-  Grand Cross (CR_GRANDCROSS). Self-centered holy hybrid ground skill.
+  Grand Cross (CR_GRANDCROSS). Plants a 9-cell holy cross on the caster's cell that
+  ticks every 300 ms for about 900 ms, costing 20% of max HP plus 37 to 100 SP and
+  refusing a cast the HP cost would not survive. A player caster is rooted for the
+  field's life and loses the shield's DEF and MDEF while it lasts; every tick hits
+  each offensive target on the cross, the player caster included, through the
+  skill-owned hybrid recipe (renewal averages raw attack contributions before flat
+  defences; classic sums separately defended contributions). Enemy damage takes two
+  holy adjustments; self-damage one holy adjustment and one half-rate. Mob casters
+  skip the HP, root, and self-damage rules. Demon-race and undead-element mobs on
+  the field are blinded.
 
-  The caster plants a holy cross field centered on their own cell (`Layout.cross/1`,
-  9 cells) that ticks every 300 ms for roughly 900 ms (3 ticks). The cast costs
-  20% of the caster's max HP plus SP, and refuses when current HP would not
-  survive the deduction (resolved by `Skill.Cost` from `hp_cost_rate`). On a
-  player cast the caster is rooted in place (`sc_grandcross_root`) for the field's
-  lifetime so it stays centered on them.
-
-  Each tick hits every offensive target standing on a cross cell - including the
-  caster, via the `hits_caster` targeting exception - using the skill-owned
-  `CrGrandcross.Damage` recipe. Renewal averages raw attack contributions before
-  flat physical/magic defense; classic sums separately defended contributions.
-  Enemy damage receives two holy adjustments. Player self-damage receives one
-  holy adjustment and one half-rate; mob casters exclude themselves. Non-caster
-  undead-element or undead/demon-race mob targets are blinded for 18 s at 100%.
-
-  On a player cast the caster is rooted in place (`sc_grandcross_root`) for the
-  field's lifetime so it stays centered on them, and loses their own shield's
-  DEF/MDEF for the same window (so they take the field's holy damage unshielded).
-
-  Mob casters carry no HP-rate/root cost machinery: they skip the player gates,
-  and the field never damages the mob itself.
+  Renewal: a 1 s cast plus 0.5 s fixed, a 0.5 s delay, a 1 s cooldown, blind 18 s.
+  Pre-renewal: a 3 s cast, a 1.5 s delay, no cooldown, blind 30 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 254,
@@ -39,13 +29,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
     unit_duration: List.duplicate(900, 10),
     hp_cost_rate: List.duplicate(20, 10),
     sp_cost: [37, 44, 51, 58, 65, 72, 79, 86, 93, 100],
-    cast_time: List.duplicate(1_000, 10)
+    cast_time: [renewal: List.duplicate(1_000, 10), pre_renewal: List.duplicate(3_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(500, 10), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(500, 10), pre_renewal: List.duplicate(1_500, 10)],
+    cooldown: [renewal: List.duplicate(1_000, 10), pre_renewal: []],
+    duration: [renewal: List.duplicate(18_000, 10), pre_renewal: List.duplicate(30_000, 10)]
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.SizeModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Ground
@@ -64,8 +59,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @behaviour Ground
 
   @arm_length 2
-  @blind_duration 18_000
-  @blind_races [:undead, :demon]
   @root_duration 950
 
   @impl Active
@@ -220,9 +213,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   @spec maybe_blind(atom(), integer()) :: :ok
   defp maybe_blind(:mob, target_id) do
     case Combat.resolve_combatant(:mob, target_id) do
-      {:ok, %{race: race, element: element}} ->
-        if race in @blind_races or undead_element?(element) do
-          StatusInterpreter.apply_status(:mob, target_id, :sc_blind, duration: @blind_duration)
+      {:ok, %{race: race} = target} ->
+        if race == :demon or RaceModifiers.undead_target?(target) do
+          StatusInterpreter.apply_status(:mob, target_id, :sc_blind,
+            duration: hd(definition().duration)
+          )
         end
 
         :ok
@@ -233,8 +228,4 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross do
   end
 
   defp maybe_blind(_unit_type, _target_id), do: :ok
-
-  defp undead_element?({:undead, _level}), do: true
-  defp undead_element?(:undead), do: true
-  defp undead_element?(_element), do: false
 end

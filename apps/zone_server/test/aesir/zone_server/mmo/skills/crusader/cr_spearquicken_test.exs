@@ -23,6 +23,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
   @two_handed_spear_id 1410
   @dagger_id 1201
 
+  defp definition do
+    {:ok, definition} = Catalog.by_id(258)
+    definition
+  end
+
   defp caster(weapon_id \\ nil) do
     inventory =
       if weapon_id do
@@ -123,22 +128,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
                  caster(@dagger_id),
                  :self,
                  1,
-                 %{}
+                 definition()
                )
     end
 
     test "rejects a bare-handed cast" do
-      assert {:error, :requires_spear} = CrSpearquicken.validate(caster(), :self, 1, %{})
+      assert {:error, :requires_spear} = CrSpearquicken.validate(caster(), :self, 1, definition())
     end
 
+    @tag game_mode: :renewal
     test "allows a cast with a one-handed spear equipped" do
       assert :ok =
                CrSpearquicken.validate(
                  caster(@one_handed_spear_id),
                  :self,
                  1,
-                 %{}
+                 definition()
                )
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic refuses a one-handed spear and lists only the two-handed spear" do
+      {:ok, definition} = Catalog.by_id(258)
+      assert definition.require_weapon == [:two_handed_spear]
+
+      caster = caster(@one_handed_spear_id)
+      assert {:error, :requires_spear} = CrSpearquicken.validate(caster, :self, 1, definition)
     end
 
     test "allows a cast with a two-handed spear equipped" do
@@ -147,14 +162,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
                  caster(@two_handed_spear_id),
                  :self,
                  1,
-                 %{}
+                 definition()
                )
     end
   end
 
   describe "validate/4 (mob caster bypass)" do
     test "always allows a mob caster regardless of weapon" do
-      assert :ok = CrSpearquicken.validate(mob_caster(), :self, 1, %{})
+      assert :ok = CrSpearquicken.validate(mob_caster(), :self, 1, definition())
     end
   end
 

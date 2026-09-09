@@ -47,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
     assert definition().target_type == :target_enemy
     assert definition().damage_type == :damage
     assert definition().element == :holy
-    assert definition().range == -1
+    assert definition().range == 2
     assert definition().sp_cost == Enum.to_list(11..20)
   end
 
@@ -56,13 +56,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
   end
 
   describe "cast/4 damage ratio and element" do
-    test "level 1 without a two-handed spear uses ratio 35" do
+    test "level 1 without a two-handed spear uses ratio 135" do
       caster = build_caster(@sword)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
         assert opts[:skill_id] == definition().id
         assert opts[:skill_level] == 1
-        assert opts[:skill_ratio] == 35
+        assert opts[:skill_ratio] == 135
         assert opts[:element] == :holy
         assert opts[:hit_count] == 2
         assert opts[:skip_crit] == true
@@ -72,66 +72,84 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "level 5 without a two-handed spear uses ratio 175" do
+    test "level 5 without a two-handed spear uses ratio 275" do
       caster = build_caster(@sword)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 175
+        assert opts[:skill_ratio] == 275
         {:ok, %{hit?: false}}
       end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 5, definition())
     end
 
-    test "level 10 without a two-handed spear uses ratio 350" do
+    test "level 10 without a two-handed spear uses ratio 450" do
       caster = build_caster(@sword)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 350
+        assert opts[:skill_ratio] == 450
         {:ok, %{hit?: false}}
       end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 10, definition())
     end
 
-    test "level 1 with a two-handed spear doubles the ratio to 70" do
+    @tag game_mode: :renewal
+    test "level 1 with a two-handed spear raises the ratio to 170" do
       caster = build_caster(@two_handed_spear, @both_hand)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 70
+        assert opts[:skill_ratio] == 170
         {:ok, %{hit?: false}}
       end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
-    test "level 5 with a two-handed spear doubles the ratio to 350" do
+    @tag game_mode: :renewal
+    test "level 5 with a two-handed spear raises the ratio to 450" do
       caster = build_caster(@two_handed_spear, @both_hand)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 350
+        assert opts[:skill_ratio] == 450
         {:ok, %{hit?: false}}
       end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 5, definition())
     end
 
-    test "level 10 with a two-handed spear doubles the ratio to 700" do
+    @tag game_mode: :renewal
+    test "level 10 with a two-handed spear raises the ratio to 800" do
       caster = build_caster(@two_handed_spear, @both_hand)
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 700
+        assert opts[:skill_ratio] == 800
         {:ok, %{hit?: false}}
       end)
 
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 10, definition())
     end
 
+    @tag game_mode: :pre_renewal
+    test "classic keeps the base ratio with a two-handed spear and skips the melee range check" do
+      caster = build_caster(@two_handed_spear, @both_hand)
+
+      expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+        assert opts[:skill_ratio] == 450
+        assert opts[:skip_range] == true
+        {:ok, %{hit?: false}}
+      end)
+
+      assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 10, definition())
+      assert definition().range == 2
+      assert definition().duration == List.duplicate(30_000, 10)
+    end
+
     test "a bare-fixture player state with no stats falls back to the base ratio" do
       caster = %PlayerState{character_id: 1000}
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 35
+        assert opts[:skill_ratio] == 135
         {:ok, %{hit?: false}}
       end)
 
@@ -142,7 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
       caster = %{instance_id: 1}
 
       expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 35
+        assert opts[:skill_ratio] == 135
         {:ok, %{hit?: false}}
       end)
 
@@ -163,6 +181,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrHolycrossTest do
       assert {:ok, ^caster} = CrHolycross.cast(caster, {:unit, @target_id}, 5, definition())
     end
 
+    @tag game_mode: :renewal
     test "applies sc_blind for 18000ms when the roll succeeds on a connecting hit" do
       # Seed {1,1,185} yields :rand.uniform(100) == 1, at or below the 15% (3x5) chance.
       :rand.seed(:exsss, {1, 1, 185})

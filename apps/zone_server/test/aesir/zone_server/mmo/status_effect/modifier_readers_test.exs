@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :movement_speed,
                :hiding,
                :walk_speed_override,
+               :walk_speed_floor,
                :aspd_penalty_rate,
                :regen_interval_multiplier,
                :max_hp,

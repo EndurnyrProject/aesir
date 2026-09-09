@@ -17,12 +17,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SpearQuickenTest do
   defp entry(val1, val2), do: %{val1: val1, val2: val2}
 
   describe "modifiers/2" do
+    @tag game_mode: :renewal
     test "lv1: crit +3, flee +2, aspd flat 7" do
       assert %{aspd: 7, flee: 2, critical: 3} == SpearQuicken.modifiers(entry(1, 7), %{})
     end
 
+    @tag game_mode: :renewal
     test "lv10: crit +30, flee +20, aspd flat 7" do
       assert %{aspd: 7, flee: 20, critical: 30} == SpearQuicken.modifiers(entry(10, 7), %{})
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic is a 20 plus level percent attack speed rate and nothing else" do
+      assert %{aspd_rate: 21} == SpearQuicken.modifiers(entry(1, 7), %{})
+      assert %{aspd_rate: 30} == SpearQuicken.modifiers(entry(10, 7), %{})
     end
   end
 

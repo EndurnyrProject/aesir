@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerangTest do
   describe "cast/4" do
     defp caster, do: %{character_id: @caster_id}
 
+    @tag game_mode: :renewal
     test "skill_ratio scales as 80 * level% on the shield damage base at every level" do
       caster = caster()
 
@@ -65,6 +66,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldboomerangTest do
         assert {:ok, ^caster} =
                  CrShieldboomerang.cast(caster, {:unit, @target_id}, level, definition())
       end
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic throws at 100 plus 30 per level percent" do
+      assert CrShieldboomerang.skill_ratio(1) == 130
+      assert CrShieldboomerang.skill_ratio(5) == 250
     end
 
     test "cast/4 propagates an attack error" do

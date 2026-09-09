@@ -88,6 +88,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
       assert definition().sp_cost == [37, 44, 51, 58, 65, 72, 79, 86, 93, 100]
     end
 
+    test "renewal adds a fixed cast, a short delay, and a cooldown; classic a long cast and delay" do
+      renewal = CrGrandcross.definition(:renewal)
+      classic = CrGrandcross.definition(:pre_renewal)
+
+      assert renewal.cast_time == List.duplicate(1_000, 10)
+      assert renewal.fixed_cast_time == List.duplicate(500, 10)
+      assert renewal.after_cast_delay == List.duplicate(500, 10)
+      assert renewal.cooldown == List.duplicate(1_000, 10)
+      assert renewal.duration == List.duplicate(18_000, 10)
+
+      assert classic.cast_time == List.duplicate(3_000, 10)
+      assert classic.fixed_cast_time == []
+      assert classic.after_cast_delay == List.duplicate(1_500, 10)
+      assert classic.cooldown == []
+      assert classic.duration == List.duplicate(30_000, 10)
+    end
+
     test "Catalog active and ground modules resolve cr_grandcross" do
       assert {:ok, CrGrandcross} = Catalog.active_module_for(:cr_grandcross)
       assert {:ok, CrGrandcross} = Catalog.ground_module_for(:cr_grandcross)
@@ -190,6 +207,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcrossTest do
   end
 
   describe "on_interval" do
+    @tag game_mode: :renewal
     test "self damage has one half-rate, blinds an undead mob, full damage otherwise" do
       caster = combatant(:player, @caster_id)
 

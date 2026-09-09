@@ -1,14 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
   @moduledoc """
-  Shield Charge (CR_SHIELDCHARGE). A single-hit melee shield bash: ratio
-  100 + 20% per level of the shield damage base, with a chance to stun and
-  knock the target back.
+  Shield Charge (CR_SHIELDCHARGE). A single shield bash at 3 cells for 10 SP:
+  100% plus 20% per level of the shield damage base, knocking the target 4 plus
+  level cells back and stunning it 15% plus 5% per level of the time. A player
+  needs a shield; a mob caster falls back to the plain attack base.
 
-  A player caster must have a shield equipped (`Stats.validate_shield/1`); a
-  mob caster has no shield and falls back to the plain batk base through the
-  shared `damage_base: :shield` seam. On a connecting hit there is a
-  `15 + 5×level`% chance to stun the target for 4.5 seconds, and the target is
-  always knocked back `4 + level` cells away from the caster.
+  Renewal stuns for 4.5 s; pre-renewal for 5 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 250,
@@ -20,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
     damage_type: :damage,
     range: 3,
     damage_base: :shield,
-    sp_cost: [10, 10, 10, 10, 10]
+    sp_cost: [10, 10, 10, 10, 10],
+    duration: [renewal: List.duplicate(4_500, 5), pre_renewal: List.duplicate(5_000, 5)]
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -31,8 +29,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
-
-  @stun_duration 4_500
 
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
@@ -59,7 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
 
     case Combat.execute_skill_attack(caster, target, opts) do
       {:ok, %{hit?: hit?}} ->
-        if hit?, do: apply_riders(caster, target, level)
+        if hit?, do: apply_riders(caster, target, level, definition)
         {:ok, caster}
 
       {:error, _reason} = error ->
@@ -67,21 +63,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldcharge do
     end
   end
 
-  defp apply_riders(caster, target, level) do
+  defp apply_riders(caster, target, level, definition) do
     {unit_type, unit_id} = target_ref(target)
-    maybe_stun(caster, unit_type, unit_id, level)
+    maybe_stun(caster, unit_type, unit_id, level, Enum.at(definition.duration, level - 1))
     :ok
   end
 
   @spec knockback_distance(pos_integer()) :: pos_integer()
   defp knockback_distance(level), do: 4 + level
 
-  defp maybe_stun(caster, unit_type, unit_id, level) do
+  defp maybe_stun(caster, unit_type, unit_id, level, duration) do
     if :rand.uniform(100) <= 15 + 5 * level do
       {source_type, source_id} = source_ref(caster)
 
       StatusInterpreter.apply_status(unit_type, unit_id, :sc_stun,
-        duration: @stun_duration,
+        duration: duration,
         caster_id: source_id,
         source_type: source_type
       )

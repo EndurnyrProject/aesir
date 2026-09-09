@@ -31,7 +31,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       assert definition.target_type == :target_ally
       assert definition.sp_cost == [25, 25, 25, 25, 25]
       assert definition.range == [7, 8, 9, 10, 11]
-      assert definition.duration == [30_000, 60_000, 90_000, 120_000, 150_000]
+      assert definition.duration == [30_000, 45_000, 60_000, 75_000, 90_000]
+    end
+
+    test "casts in 1.5 seconds plus 1.5 fixed in renewal and a flat 3 seconds in classic" do
+      assert CrDevotion.definition(:renewal).cast_time == List.duplicate(1_500, 5)
+      assert CrDevotion.definition(:renewal).fixed_cast_time == List.duplicate(1_500, 5)
+      assert CrDevotion.definition(:pre_renewal).cast_time == List.duplicate(3_000, 5)
+      assert CrDevotion.definition(:pre_renewal).fixed_cast_time == []
     end
 
     test "by_name/1 resolves the atom" do
@@ -92,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
 
     test "refuses a target beyond the base-level gap" do
       caster = register(player(@crusader_id, job_id: @crusader_class, base_level: 90))
-      register(player(4001, base_level: 69))
+      register(player(4001, base_level: 79))
 
       assert {:error, :level_gap_too_large} =
                CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
@@ -100,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
 
     test "accepts a target exactly at the base-level gap limit" do
       caster = register(player(@crusader_id, job_id: @crusader_class, base_level: 90))
-      register(player(4001, base_level: 70))
+      register(player(4001, base_level: 80))
 
       assert :ok = CrDevotion.validate(caster, {:unit, 4001}, 1, definition())
     end
@@ -157,7 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotionTest do
       assert {:ok, ^caster} = CrDevotion.cast(caster, {:unit, 4001}, 5, definition())
 
       devotion = StatusStorage.get_status(:player, 4001, :sc_devotion)
-      assert devotion.expires_at - devotion.started_at == 150_000
+      assert devotion.expires_at - devotion.started_at == 90_000
     end
 
     test "re-casting on an existing devotee refreshes the link id without growing the set" do

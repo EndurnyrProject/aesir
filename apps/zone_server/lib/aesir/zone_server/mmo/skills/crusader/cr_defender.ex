@@ -1,11 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender do
   @moduledoc """
-  Defender (CR_DEFENDER). Toggles SC_DEFENDER on the caster.
+  Defending Aura (CR_DEFENDER). A shield-gated toggle for 30 SP with a 0.8 s
+  delay that cuts long-range weapon damage taken by 5% plus 15% per level while
+  slowing the holder: walking drops to a 200 ms cell delay at best, and attack speed
+  falls by 25 minus 5 per level. A player caster needs a shield; a mob caster skips
+  the check. Re-casting removes the stance.
 
-  Requires a shield equipped; a player caster without one is refused, a mob
-  caster skips the check entirely (mirrors the other shield-gated skills).
-  Re-casting removes the status. SC_DEFENDER has no duration (persistent
-  toggle) so only the skill level is carried as `val1`.
+  Renewal takes the attack-speed loss as flat points; pre-renewal as a percentage
+  rate. The reduction and walk penalty agree in both modes.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 257,
@@ -17,7 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefender do
     display_name: "Defending Aura",
     max_level: 5,
     target_type: :self,
-    sp_cost: [30, 30, 30, 30, 30]
+    sp_cost: [30, 30, 30, 30, 30],
+    after_cast_delay: List.duplicate(800, 5)
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition

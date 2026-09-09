@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Mmo.Combat
+  alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrink
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard
@@ -30,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
   @left_hand 0x20
 
   describe "catalog" do
+    @tag game_mode: :renewal
     test "resolves CR_SHRINK as a self-target quest toggle" do
       {:ok, definition} = Catalog.by_id(@skill_id)
 
@@ -94,7 +97,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
     end
   end
 
-  describe "maybe_stun_attacker/2 proc" do
+  describe "maybe_stun_attacker/3 proc" do
+    @tag game_mode: :renewal
     test "stuns the attacker on a successful roll while the guarder holds Shrink" do
       :ok = StatusStorage.apply_status(:player, 3000, :sc_shrink, val1: 1)
       seed_for_roll(50)
@@ -106,26 +110,53 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrinkTest do
         :ok
       end)
 
-      assert :ok = Shrink.maybe_stun_attacker({:player, 3000}, {:mob, 7000})
+      assert :ok = Shrink.maybe_stun_attacker({:player, 3000}, {:mob, 7000}, 10)
     end
 
+    @tag game_mode: :renewal
     test "does not stun when the roll exceeds the 50% chance" do
       :ok = StatusStorage.apply_status(:player, 3001, :sc_shrink, val1: 1)
       seed_for_roll(51)
       reject(&StatusInterpreter.apply_status/4)
 
-      assert :ok = Shrink.maybe_stun_attacker({:player, 3001}, {:mob, 7001})
+      assert :ok = Shrink.maybe_stun_attacker({:player, 3001}, {:mob, 7001}, 10)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic pushes the attacker two cells away 5 percent per Guard level of the time" do
+      :ok = StatusStorage.apply_status(:player, 3003, :sc_shrink, val1: 1)
+      seed_for_roll(50)
+      reject(&StatusInterpreter.apply_status/4)
+
+      stub(TargetResolver, :resolve_target_position, fn {:player, 3003} ->
+        {:ok, :player, {100, 100, "prontera"}}
+      end)
+
+      expect(Combat, :knockback, fn :mob, 7003, 100, 100, 2 -> :ok end)
+
+      assert :ok = Shrink.maybe_stun_attacker({:player, 3003}, {:mob, 7003}, 10)
+
+      seed_for_roll(51)
+      reject(&Combat.knockback/5)
+      assert :ok = Shrink.maybe_stun_attacker({:player, 3003}, {:mob, 7003}, 10)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic costs 15 SP" do
+      {:ok, definition} = Catalog.by_id(1002)
+      assert definition.sp_cost == [15]
     end
 
     test "does nothing when the guarder does not hold Shrink" do
       seed_for_roll(1)
       reject(&StatusInterpreter.apply_status/4)
 
-      assert :ok = Shrink.maybe_stun_attacker({:player, 3002}, {:mob, 7002})
+      assert :ok = Shrink.maybe_stun_attacker({:player, 3002}, {:mob, 7002}, 10)
     end
   end
 
   describe "Guard block integration" do
+    @tag game_mode: :renewal
     test "a blocked hit stuns the attacker when the guarder also holds Shrink" do
       stub(SpecialEffect, :play, fn _unit, _effect, _target -> :ok end)
       :ok = StatusStorage.apply_status(:player, 4000, :sc_shrink, val1: 1)

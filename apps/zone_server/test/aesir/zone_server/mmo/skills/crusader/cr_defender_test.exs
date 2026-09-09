@@ -167,13 +167,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDefenderTest do
 
     defp entry(overrides), do: struct(%StatusEntry{type: :sc_defender, state: %{}}, overrides)
 
-    test "lv1 reduces ranged damage taken by 20% and ASPD by 4" do
-      assert %{ranged_damage_taken_rate: -20, aspd: -4} = Defender.modifiers(entry(val1: 1), %{})
+    @tag game_mode: :renewal
+    test "lv1 reduces ranged damage taken by 20%, ASPD by 20, and floors the walk delay" do
+      assert %{ranged_damage_taken_rate: -20, aspd: -20, walk_speed_floor: 200} =
+               Defender.modifiers(entry(val1: 1), %{})
     end
 
-    test "lv5 reduces ranged damage taken by 80% and ASPD by 20" do
-      assert %{ranged_damage_taken_rate: -80, aspd: -20} =
+    @tag game_mode: :renewal
+    test "lv5 reduces ranged damage taken by 80% and costs no ASPD" do
+      assert %{ranged_damage_taken_rate: -80, aspd: 0} = Defender.modifiers(entry(val1: 5), %{})
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic takes the ASPD loss as a rate: 20% at lv1, none at lv5" do
+      assert %{ranged_damage_taken_rate: -20, aspd_rate: -20, walk_speed_floor: 200} =
+               Defender.modifiers(entry(val1: 1), %{})
+
+      assert %{ranged_damage_taken_rate: -80, aspd_rate: 0} =
                Defender.modifiers(entry(val1: 5), %{})
+
+      refute Map.has_key?(Defender.modifiers(entry(val1: 1), %{}), :aspd)
+    end
+
+    test "has a 0.8 second delay after the cast" do
+      {:ok, definition} = Catalog.by_id(257)
+      assert definition.after_cast_delay == List.duplicate(800, 5)
     end
   end
 

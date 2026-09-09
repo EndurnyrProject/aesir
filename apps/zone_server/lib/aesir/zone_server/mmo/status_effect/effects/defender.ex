@@ -1,43 +1,32 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Defender do
   @moduledoc """
-  Defender (SC_DEFENDER).
+  Defending Aura (SC_DEFENDER). A persistent toggle that trades speed for reduced
+  long-range weapon damage: `val1` is the skill level (1..5).
 
-  Persistent toggle that trades attack speed for reduced long-range weapon
-  damage taken. No duration; ends when the skill is re-cast. The shield
-  requirement is checked at cast time, and the `:remove_on_unequip_shield` flag
-  drops the stance if the shield is later removed without a replacement.
-
-  ## Instance convention
-
-    - `val1` — skill level (1..5), drives both modifiers.
-
-  ## Modifiers
-
-  Long-range weapon damage taken is reduced through the status combat-families
-  bridge (`ranged_damage_taken_rate`, read by `EquipmentBonuses` and applied
-  only to long-range weapon hits; melee and magic are untouched):
-
-      ranged_damage_taken_rate = -(5 + 15 * val1)
-
-  ASPD uses the flat fixed-bonus bucket (`Stats.calculate_aspd/1`), the same
-  convention as Riding's mount penalty:
-
-      aspd = -(4 * val1)
+  Long-range weapon damage taken drops by 5 plus 15 per level percent and the walk
+  delay is floored at 200 ms per cell in both modes. Renewal loses 25 minus 5 per
+  level flat attack speed; pre-renewal loses the same figure as a percentage rate.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_defender,
     no_dispel: true,
     properties: [:buff],
-    calc_flags: [:aspd],
+    calc_flags: [:aspd, :aspd_rate, :speed],
     flags: [:remove_on_unequip_shield],
     icon: :defender,
     permanent: true,
     no_save: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @impl true
   def modifiers(%StatusEntry{val1: level}, _context) do
-    %{ranged_damage_taken_rate: -(5 + 15 * level), aspd: -(4 * level)}
+    base = %{ranged_damage_taken_rate: -(5 + 15 * level), walk_speed_floor: 200}
+
+    case GameMode.mode() do
+      :renewal -> Map.put(base, :aspd, -(25 - 5 * level))
+      :pre_renewal -> Map.put(base, :aspd_rate, -(25 - 5 * level))
+    end
   end
 end

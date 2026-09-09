@@ -1,17 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquicken do
   @moduledoc """
-  Spear Quicken (CR_SPEARQUICKEN). Self-casts SC_SPEARQUICKEN, the flat
-  ASPD/FLEE/CRIT buff that only holds while a spear is wielded (see
-  `StatusEffect.Effects.SpearQuicken`'s `require_weapon` list).
+  Spear Quicken (CR_SPEARQUICKEN). A self buff for 24 to 60 SP lasting 30 s per
+  level that only holds while a spear is wielded; a mob caster skips the weapon
+  check. A mob-skill row may target the caster by id; either shape buffs the caster.
 
-  A player caster must have a one-handed or two-handed spear equipped; a mob
-  caster skips the check entirely, mirroring `kn_twohandquicken.ex`'s
-  weapon-gated self-buff pattern.
-
-  Always buffs the caster: a stray mob-skill row records this self-buff as
-  `target: target` rather than `target: self`, which resolves to a `{:unit,
-  id}` target instead of `:self` - `cast/4` treats both target shapes the
-  same rather than buffing whatever that id happens to be.
+  Renewal: any spear; a flat +7 attack speed, +2 FLEE and +3 CRIT per level.
+  Pre-renewal: two-handed spears only; a 20 plus 1 per level percent attack speed
+  rate and nothing else.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 258,
@@ -20,6 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquicken do
     display_name: "Spear Quicken",
     max_level: 10,
     target_type: :self,
+    require_weapon: [
+      renewal: [:one_handed_spear, :two_handed_spear],
+      pre_renewal: [:two_handed_spear]
+    ],
     sp_cost: [24, 28, 32, 36, 40, 44, 48, 52, 56, 60],
     duration: [
       30_000,
@@ -44,13 +43,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquicken do
   @behaviour Active
 
   @fixed_aspd 7
-  @spear_weapon_types [:one_handed_spear, :two_handed_spear]
 
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
           :ok | {:error, :requires_spear}
-  def validate(%PlayerState{} = caster, _target, _level, _definition) do
-    if PlayerStats.weapon_type(caster.stats.equipment) in @spear_weapon_types do
+  def validate(%PlayerState{} = caster, _target, _level, definition) do
+    if PlayerStats.weapon_type(caster.stats.equipment) in definition.require_weapon do
       :ok
     else
       {:error, :requires_spear}

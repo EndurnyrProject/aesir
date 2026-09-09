@@ -1,14 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrTrust do
   @moduledoc """
-  Faith (CR_TRUST). Always-on passive granting flat max HP and holy damage
-  resistance.
+  Faith (CR_TRUST). An always-on passive granting 200 max HP per level and 5% holy
+  damage resistance per level, physical and magic alike.
 
-  Renewal: `+200` max HP per level, plus `5%` holy-element damage resistance
-  per level. The HP bonus folds into the flat max-HP route
-  (`Passives.max_hp_bonus/1`, read by `Stats.get_hp_bonus_flat/1`); the holy
-  resist is read straight off `Combatant.faith_level` by
-  `EquipmentBonuses.damage_taken_rates/4`, applying to both physical and magic
-  holy damage.
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 248,

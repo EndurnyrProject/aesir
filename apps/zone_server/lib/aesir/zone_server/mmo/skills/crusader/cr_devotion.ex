@@ -1,25 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   @moduledoc """
-  Devotion (CR_DEVOTION).
+  Devotion (CR_DEVOTION). Links a same-party ally to the Crusader so the ally's
+  damage is redirected to the Crusader: the ally receives the devotion status and
+  the Crusader records the ally, paired by a shared link id, for 15 s plus 15 s per
+  level.
 
-  Links a same-party ally to the Crusader: the ally receives `sc_devotion` and
-  the Crusader records the ally in its single `sc_devoted_by` entry, paired by a
-  shared `link_id`. Damage rerouting through the link is a later change; this
-  cast only establishes and refreshes the pairing.
-
-  Cast gates (all before SP is charged, in `validate/4`):
-
-    * the target is a living player, and not the caster;
-    * the target shares the caster's party;
-    * the target is not itself a Crusader-class character;
-    * the caster/target base-level gap is within `@level_difference_limit`;
-    * a free devotion slot exists - the Crusader holds at most `skill_lv`
-      devotees, a repeat cast on an existing devotee refreshing rather than
-      consuming a slot.
-
-  Range (7..11 by level) is enforced by the skill interpreter from the
-  definition's per-level `range`. Devotion is player-only; a mob caster is
-  rejected and the skill declares an unmet mob requirement.
+  Cast gates, all before SP is charged: the target is a living player other than
+  the caster, shares the party, is not itself a Crusader-class character, sits
+  within 10 base levels of the caster, and a slot is free (the Crusader holds at
+  most level devotees; a repeat cast refreshes rather than consumes a slot). The
+  reach is 7 to 11 cells by level and 25 SP. Renewal casts in 1.5 s plus 1.5 s
+  fixed; pre-renewal in 3 s. Devotion is player-only.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 255,
@@ -30,8 +21,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
     max_level: 5,
     target_type: :target_ally,
     range: [7, 8, 9, 10, 11],
+    cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: List.duplicate(3_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: []],
     sp_cost: List.duplicate(25, 5),
-    duration: [30_000, 60_000, 90_000, 120_000, 150_000]
+    duration: [30_000, 45_000, 60_000, 75_000, 90_000]
 
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -47,7 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrDevotion do
   @behaviour Active
 
   # Config constant: the maximum base-level gap between Crusader and devotee.
-  @level_difference_limit 20
+  @level_difference_limit 10
 
   @crusader_classes MapSet.new([
                       :crusader,

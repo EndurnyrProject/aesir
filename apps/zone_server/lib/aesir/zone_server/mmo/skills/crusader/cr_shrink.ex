@@ -1,17 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrink do
   @moduledoc """
-  Shrink (CR_SHRINK). Shield-gated toggle that turns SC_SHRINK on the caster on
-  or off.
+  Shrink (CR_SHRINK). A shield-gated toggle that augments the Guard stance; a
+  player caster needs a shield, a mob caster skips the check, and re-casting turns
+  it off. Granted by quest, not by the skill tree.
 
-  While active it augments the Guard stance: every weapon hit the caster blocks
-  with Guard has a fixed 50% chance to Stun the blocked attacker (the proc lives
-  in the Shrink status). A player caster must have a shield equipped; a mob caster
-  carries no equipment and skips the check, mirroring the other shield-gated
-  Crusader skills. Casting while active toggles it off; casting while inactive
-  applies it.
-
-  This module ships without a skill-tree entry or grant mechanism: it is a quest
-  skill wired up separately.
+  Renewal: 100 SP; every weapon hit blocked by Guard has a 50% chance to stun the
+  attacker for 5 s. Pre-renewal: 15 SP; every blocked hit has a 5% per Guard level
+  chance to push the attacker back 2 cells instead.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1002,
@@ -20,7 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShrink do
     display_name: "Shrink",
     max_level: 1,
     target_type: :self,
-    sp_cost: [100],
+    sp_cost: [renewal: [100], pre_renewal: [15]],
+    knockback: [renewal: 0, pre_renewal: 2],
     quest_skill: true,
     quest_owner_job: :crusader
 

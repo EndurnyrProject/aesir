@@ -1,9 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
   @moduledoc """
-  Resistant Souls (CR_PROVIDENCE). Applies SC_PROVIDENCE to an ally.
+  Resistant Souls (CR_PROVIDENCE). Grants an ally 5% per level resistance to holy
+  damage and to demon-race attackers for 3 minutes and 30 SP at 9 cells. It cannot
+  target the Crusader job tree (Crusader, Paladin, their transcendent and baby
+  forms), the caster included.
 
-  Cannot be cast on a target of the Crusader job tree (Crusader, Paladin, or
-  their transcendent/baby forms), including the caster.
+  Renewal casts in 1.5 s plus 1.5 s fixed; pre-renewal in 3 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 256,
@@ -13,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrProvidence do
     max_level: 5,
     target_type: :target_ally,
     range: 9,
+    cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: List.duplicate(3_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1_500, 5), pre_renewal: []],
     sp_cost: List.duplicate(30, 5),
     duration: List.duplicate(180_000, 5)
 

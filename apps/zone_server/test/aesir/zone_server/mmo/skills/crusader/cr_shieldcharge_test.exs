@@ -190,6 +190,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       assert {:ok, ^caster} = CrShieldcharge.cast(caster, {:unit, @target_id}, 3, definition())
     end
 
+    @tag game_mode: :renewal
     test "applies sc_stun for 4500ms when the roll succeeds on a connecting hit" do
       # Seed {1,1,185} yields :rand.uniform(100) == 1, at or below the 30% (15+5x3) chance.
       :rand.seed(:exsss, {1, 1, 185})
@@ -210,6 +211,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrShieldchargeTest do
       end)
 
       assert {:ok, ^caster} = CrShieldcharge.cast(caster, {:unit, @target_id}, 3, definition())
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic stuns for 5 seconds" do
+      {:ok, definition} = Catalog.by_id(250)
+      assert definition.duration == List.duplicate(5_000, 5)
     end
 
     test "does not apply stun on a connecting hit when the roll fails" do

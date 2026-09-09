@@ -51,18 +51,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Autoguard do
   def before_weapon_hit({unit_type, unit_id}, %StatusEntry{val1: level}, attack_info, _context) do
     if blocked?(level) do
       SpecialEffect.play({unit_type, unit_id}, :guard, :area)
-      maybe_shrink_stun({unit_type, unit_id}, attack_info)
+      maybe_shrink_stun({unit_type, unit_id}, attack_info, level)
       {:intercept, :blocked}
     else
       :continue
     end
   end
 
-  @spec maybe_shrink_stun({Unit.unit_type(), integer()}, map()) :: :ok
-  defp maybe_shrink_stun(guarder, %{attacker: attacker}),
-    do: Shrink.maybe_stun_attacker(guarder, attacker)
+  @spec maybe_shrink_stun({Unit.unit_type(), integer()}, map(), integer()) :: :ok
+  defp maybe_shrink_stun(guarder, %{attacker: attacker}, level),
+    do: Shrink.maybe_stun_attacker(guarder, attacker, level)
 
-  defp maybe_shrink_stun(_guarder, _attack_info), do: :ok
+  defp maybe_shrink_stun(_guarder, _attack_info, _level), do: :ok
 
   @spec blocked?(integer()) :: boolean()
   defp blocked?(level) do
