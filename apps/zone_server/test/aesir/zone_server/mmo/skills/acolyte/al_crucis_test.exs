@@ -25,8 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucisTest do
     definition
   end
 
-  defp make_combatant(base_level) do
-    %{progression: %{base_level: base_level}}
+  # Signum Crucis only lands on undead or demon targets, so every splash fixture
+  # carries the race data the gate reads.
+  defp make_combatant(base_level, race \\ :undead, element \\ {:undead, 1}) do
+    %{progression: %{base_level: base_level}, race: race, element: element}
   end
 
   defp stub_living_targets do
@@ -120,6 +122,53 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucisTest do
 
       expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_signumcrucis, params ->
         refute Keyword.has_key?(params, :duration)
+        :ok
+      end)
+
+      assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
+    end
+  end
+
+  describe "cast/4 — target eligibility" do
+    # Same seed and levels as the hit case: the roll would land, so only the
+    # eligibility gate can keep the status off the target.
+    setup do
+      :rand.seed(:exsss, {1, 2, 3})
+      stub_living_targets()
+      stub(PlayerState, :get_stats, fn _ -> %{base_level: @caster_base_level} end)
+      stub(SpatialIndex, :get_unit_position, fn :player, 1000 -> @caster_pos end)
+      stub(Combat, :splash_targets, fn @map, @center, @radius, 1000 -> [{:mob, 2001}] end)
+      :ok
+    end
+
+    test "a target that is neither undead nor demon is left alone" do
+      stub(Combat, :resolve_combatant, fn _id ->
+        {:ok, make_combatant(10, :brute, {:fire, 1})}
+      end)
+
+      reject(&StatusInterpreter.apply_status/4)
+
+      assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
+    end
+
+    test "a demon-race target with no undead element still takes the debuff" do
+      stub(Combat, :resolve_combatant, fn _id ->
+        {:ok, make_combatant(10, :demon, {:dark, 1})}
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_signumcrucis, _params ->
+        :ok
+      end)
+
+      assert {:ok, @caster} = AlCrucis.cast(@caster, :self, 5, definition())
+    end
+
+    test "an undead defense element on any race takes the debuff" do
+      stub(Combat, :resolve_combatant, fn _id ->
+        {:ok, make_combatant(10, :demi_human, {:undead, 1})}
+      end)
+
+      expect(StatusInterpreter, :apply_status, fn :mob, 2001, :sc_signumcrucis, _params ->
         :ok
       end)
 

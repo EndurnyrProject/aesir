@@ -1454,7 +1454,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == unreduced.fixed
-      assert reduced.total - reduced.fixed == mode_value(326, 436)
+      # Renewal: (800 - 200 fixed) * (1 - sqrt(3/530)) = 555, then 45 percent off.
+      # Classic: 1000 * (150 - 1) / 150 = 993, then 45 percent off.
+      assert reduced.total - reduced.fixed == mode_value(305, 546)
       assert reduced.total < unreduced.total
     end
 
@@ -1509,8 +1511,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       reduced_variable = reduced.total - reduced.fixed
 
       # multiplicative 0.70 * 0.85 = 0.595 keeps MORE cast than the additive
-      # 30 + 15 = 45% (0.55) would, and never more than either factor alone
-      assert reduced_variable == round(unreduced_variable * 0.7 * 0.85)
+      # 30 + 15 = 45% (0.55) would, and never more than either factor alone.
+      # Renewal truncates once (555 -> 330); classic truncates per stage
+      # (993 -> 695 -> 590), so each mode carries its own hand-derived value.
+      assert reduced_variable == mode_value(330, 590)
       assert reduced_variable > round(unreduced_variable * 0.55)
     end
   end
@@ -1576,7 +1580,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
+      # Renewal halves the DEX-reduced variable (555 -> 278); classic halves the
+      # declared cast before the DEX scaling (1000 -> 500 -> 496).
+      assert reduced.total - reduced.fixed == mode_value(278, 496)
       assert reduced.total < baseline.total
     end
   end
@@ -1828,7 +1834,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert reduced.fixed == baseline.fixed
       # Renewal adds the rates; classic applies the skill and global stages separately.
-      assert reduced.total - reduced.fixed == mode_value(296, 445)
+      assert reduced.total - reduced.fixed == mode_value(278, 556)
     end
 
     test "applies to a skill the per-skill rate does not name" do
@@ -1843,7 +1849,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
 
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
-      assert reduced.total - reduced.fixed == round((baseline.total - baseline.fixed) * 0.5)
+      assert reduced.total - reduced.fixed == mode_value(278, 496)
+      assert reduced.total < baseline.total
     end
   end
 
@@ -1862,7 +1869,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      assert reduced.total - reduced.fixed == mode_value(296, 447)
+      assert reduced.total - reduced.fixed == mode_value(278, 558)
     end
 
     test "a positive equipment rate offsets a negative status rate additively" do
@@ -1879,7 +1886,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterTest do
       assert {:casting, _gs, reduced} = Interpreter.begin_cast(gs, 29, 1, :self)
 
       assert reduced.fixed == baseline.fixed
-      assert reduced.total - reduced.fixed == mode_value(474, 516)
+      assert reduced.total - reduced.fixed == mode_value(444, 645)
     end
 
     test "a varcast rate keyed on another skill leaves this skill's cast untouched" do

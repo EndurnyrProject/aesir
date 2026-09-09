@@ -1,10 +1,21 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   @moduledoc """
   Resurrection (`ALL_RESURRECTION`), reviving a player corpse or attacking a
-  living undead enemy.
+  living undead enemy. A revived player comes back with 10/30/50/80 percent HP
+  by level. A target counts as undead by race or by an undead defence element.
 
-  In both Renewal and pre-renewal, player-corpse revival is unavailable on
-  siege ground while the separate living-undead attack remains available.
+  In both modes, player-corpse revival is unavailable on siege ground while the
+  separate living-undead attack remains available.
+
+  Renewal: cast times of 4.8/3.2/1.6/0 seconds with a fixed 1.2/0.8/0.4/0 on
+  top, and an after-cast delay that grows with level. The instant-death roll
+  leans on the target's missing health; a surviving target takes the caster's
+  magic attack scaled to the skill level in percent.
+
+  Pre-renewal: a single cast time of 6/4/2/0 seconds with no fixed component,
+  the same after-cast delay ladder. The instant-death roll counts the skill level
+  double over a narrower health span, and a surviving target takes a flat amount
+  built from the caster's base level and INT that ignores magic attack entirely.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 54,
@@ -16,17 +27,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
     damage_kind: :magic,
     range: 9,
     element: :holy,
-    cast_time: [4_800, 3_200, 1_600, 0],
-    fixed_cast_time: [1_200, 800, 400, 0],
+    cast_time: [renewal: [4_800, 3_200, 1_600, 0], pre_renewal: [6_000, 4_000, 2_000, 0]],
+    fixed_cast_time: [renewal: [1_200, 800, 400, 0], pre_renewal: []],
     after_cast_delay: [0, 1_000, 2_000, 3_000],
     sp_cost: List.duplicate(60, 4),
     item_cost: [%{id: 717, amount: 1}]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection.Damage
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
@@ -136,8 +149,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
   defp attack_undead(caster, target_id, target_state, level, definition) do
     caster_stats = PlayerState.get_stats(caster)
     target_stats = target_state.__struct__.get_stats(target_state)
+    mode = GameMode.mode()
 
-    if instant_kill?(target_state, caster_stats, target_stats, level) do
+    if instant_kill?(mode, target_state, caster_stats, target_stats, level) do
       Combat.execute_magic_attack(caster, target_id,
         skill_id: definition.id,
         skill_level: level,
@@ -147,40 +161,50 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection do
         skip_range: true
       )
     else
-      Combat.execute_magic_attack(caster, target_id,
-        skill_id: definition.id,
-        skill_level: level,
-        skill_ratio: level,
-        element: definition.element,
-        skip_range: true
+      hit =
+        Damage.undead_hit(mode, %{
+          level: level,
+          base_level: caster_stats.base_level,
+          int: caster_stats.int
+        })
+
+      Combat.execute_magic_attack(
+        caster,
+        target_id,
+        Keyword.merge(
+          [
+            skill_id: definition.id,
+            skill_level: level,
+            element: definition.element,
+            skip_range: true
+          ],
+          hit
+        )
       )
     end
   end
 
-  defp instant_kill?(target_state, caster_stats, target_stats, level) do
+  defp instant_kill?(mode, target_state, caster_stats, target_stats, level) do
     combatant = target_state.__struct__.to_combatant(target_state)
 
     Map.get(combatant, :class, :normal) != :boss and
-      :rand.uniform(1_000) - 1 < instant_kill_score(caster_stats, target_stats, level)
+      :rand.uniform(1_000) - 1 < instant_kill_score(mode, caster_stats, target_stats, level)
   end
 
   @doc false
-  @spec instant_kill_score(map(), map(), pos_integer()) :: non_neg_integer()
-  def instant_kill_score(caster_stats, target_stats, level) do
-    score =
-      10 * level + caster_stats.luk + caster_stats.int + caster_stats.base_level + 300 -
-        div(300 * target_stats.hp, target_stats.max_hp)
-
-    min(score, 700)
+  @spec instant_kill_score(GameMode.t(), map(), map(), pos_integer()) :: non_neg_integer()
+  def instant_kill_score(mode, caster_stats, target_stats, level) do
+    Damage.instant_kill_score(mode, %{
+      level: level,
+      luk: caster_stats.luk,
+      int: caster_stats.int,
+      base_level: caster_stats.base_level,
+      target_hp: target_stats.hp,
+      target_max_hp: target_stats.max_hp
+    })
   end
 
   defp undead?(target_state) do
-    combatant = target_state.__struct__.to_combatant(target_state)
-
-    RaceModifiers.undead?(combatant.race) or undead_element?(Map.get(combatant, :element))
+    RaceModifiers.undead_target?(target_state.__struct__.to_combatant(target_state))
   end
-
-  defp undead_element?({:undead, _level}), do: true
-  defp undead_element?(:undead), do: true
-  defp undead_element?(_element), do: false
 end

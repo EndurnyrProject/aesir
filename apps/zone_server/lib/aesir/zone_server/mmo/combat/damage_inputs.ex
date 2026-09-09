@@ -191,7 +191,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
   defp divine_protection_bonus(nil, _defender), do: 0
 
   defp divine_protection_bonus(attacker, defender) do
-    RaceModifiers.divine_protection_def(defender, attacker.race)
+    RaceModifiers.divine_protection_def(defender, attacker)
   end
 
   defp apply_status_effect_defense_modifiers(hard_def, soft_def, modifiers) do

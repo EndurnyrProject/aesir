@@ -11,18 +11,22 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
   direction (ranged vs. melee), the 3x3 footprint (Safety Wall is single-cell),
   and the absence of a shared hit/shield budget.
 
-  ## rAthena (`db/re/skill_db.yml` id 25)
+  The footprint is a fixed 3x3 square around the target cell. It comes from the
+  skill unit's own layout, not from a splash area — the skill declares no splash
+  radius, matching a source row that has none.
 
-    - `Unit.Layout: 1` -> a filled `(2*1+1)x(2*1+1)` square = 3x3, so
-      `splash_radius: 1` drives `Layout.square/2` exactly like Storm Gust.
-    - `Duration1: 10000` -> the field (and the granted status) lasts 10s.
-    - `Unit.Interval: -1` -> rAthena applies the status on cell-entry and removes
-      it on cell-exit (`skill_unit_onout`), with no periodic tick. Aesir mirrors
-      this: `on_interval` re-grants the status on a 1s framework tick to any new
-      occupant lacking it, and `on_out` removes it the moment a unit steps off the
-      footprint (via the movement-pipeline hook). The status still carries the
-      field's 10s duration as a backstop, so it also expires if the unit is still
-      standing on the field when the field is torn down.
+  The source field applies its status on cell entry and removes it on cell exit,
+  with no periodic tick of its own. Aesir mirrors that: `on_interval` re-grants
+  the status on a one-second framework tick to any new occupant lacking it, and
+  `on_out` removes it the moment a unit steps off the footprint. The granted
+  status still carries the field's ten-second duration as a backstop, so it also
+  expires if the unit is still standing on the field when the field is torn down.
+
+  Renewal: single level, ten SP, no cast time, range nine, ten-second field.
+
+  Pre-renewal: identical in every declared value and in behaviour. Pneuma has no
+  mode-specific branch: the same 3x3 footprint, the same duration, and the same
+  blanket block on long-ranged physical damage.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 25,
@@ -34,7 +38,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     damage_type: :no_damage,
     damage_kind: :magic,
     range: 9,
-    splash_radius: 1,
     hit_interval: 1_000,
     unit_duration: [10_000],
     sp_cost: [10]
@@ -51,6 +54,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
 
   @behaviour Ground
 
+  @footprint_radius 1
+
   @impl Ground
   @spec on_place(Group.t()) :: {:ok, Ground.placement()}
   def on_place(%Group{center: center, level: level}) do
@@ -58,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
 
     {:ok,
      %{
-       cells: Layout.square(center, definition.splash_radius),
+       cells: Layout.square(center, @footprint_radius),
        state: %{},
        interval: definition.hit_interval,
        duration: Enum.at(definition.unit_duration, level - 1)
@@ -72,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneuma do
     duration = Enum.at(definition.unit_duration, level - 1)
 
     map_name
-    |> SpatialIndex.get_all_units_in_range(cx, cy, definition.splash_radius)
+    |> SpatialIndex.get_all_units_in_range(cx, cy, @footprint_radius)
     |> Enum.filter(fn target -> CombatTarget.combat_unit?(target) and living?(target) end)
     |> Enum.reject(fn {unit_type, unit_id} ->
       StatusStorage.has_status?(unit_type, unit_id, :sc_pneuma)

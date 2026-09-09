@@ -30,12 +30,32 @@ defmodule Aesir.ZoneServer.Script.DslNpcskillTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "casts Heal and broadcasts the NPC-sourced skill effect" do
     ctx = register_player()
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert Dsl.npcskill(ctx, :al_heal, 10, 99, 60) == ctx
     assert_receive {:combat, {:apply_heal, 1_145, @npc_gid}}
+
+    assert_receive {:packet,
+                    %SkillEffect{
+                      skill_id: 28,
+                      level: 10,
+                      src_id: @npc_gid,
+                      target_id: @char_id,
+                      result: 1
+                    }}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "casts Heal with the classic amount and broadcasts the same effect" do
+    ctx = register_player()
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    # (60 base level + 99 INT) / 8 * (4 + 10 * 8) = 19 * 84 = 1596, no MATK band.
+    assert Dsl.npcskill(ctx, :al_heal, 10, 99, 60) == ctx
+    assert_receive {:combat, {:apply_heal, 1_596, @npc_gid}}
 
     assert_receive {:packet,
                     %SkillEffect{
@@ -56,6 +76,7 @@ defmodule Aesir.ZoneServer.Script.DslNpcskillTest do
              StatusStorage.get_status(:player, @char_id, :sc_increaseagi)
   end
 
+  @tag game_mode: :renewal
   test "accepts string names and numeric ids" do
     ctx = register_player()
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
@@ -66,6 +87,18 @@ defmodule Aesir.ZoneServer.Script.DslNpcskillTest do
     end
   end
 
+  @tag game_mode: :pre_renewal
+  test "accepts string names and numeric ids in pre-renewal" do
+    ctx = register_player()
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    for skill <- ["AL_HEAL", 28] do
+      assert Dsl.npcskill(ctx, skill, 10, 99, 60) == ctx
+      assert_receive {:combat, {:apply_heal, 1_596, @npc_gid}}
+    end
+  end
+
+  @tag game_mode: :renewal
   test "clamps stat point and NPC level" do
     ctx = register_player()
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
@@ -75,6 +108,20 @@ defmodule Aesir.ZoneServer.Script.DslNpcskillTest do
 
     assert Dsl.npcskill(ctx, :al_heal, 10, 9_999, 9_999) == ctx
     assert_receive {:combat, {:apply_heal, 3_641, @npc_gid}}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "clamps stat point and NPC level in pre-renewal" do
+    ctx = register_player()
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
+
+    # Both stats clamp to 1: (1 + 1) / 8 = 0, and the classic formula has no floor.
+    assert Dsl.npcskill(ctx, :al_heal, 10, 0, 0) == ctx
+    assert_receive {:combat, {:apply_heal, 0, @npc_gid}}
+
+    # Both stats clamp to 255: (255 + 255) / 8 * (4 + 80) = 63 * 84 = 5292.
+    assert Dsl.npcskill(ctx, :al_heal, 10, 9_999, 9_999) == ctx
+    assert_receive {:combat, {:apply_heal, 5_292, @npc_gid}}
   end
 
   test "warns and leaves the context unchanged for unknown and unsupported skills" do

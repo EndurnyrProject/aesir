@@ -423,7 +423,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   # Demon Bane (AL_DEMONBANE): flat ATK added before the defense formula when the
   # defender is undead/demon. Additive, unlike the multiplicative race modifier.
   defp demon_bane_bonus(attacker, defender) do
-    RaceModifiers.demon_bane_atk(attacker, defender.race)
+    RaceModifiers.demon_bane_atk(attacker, defender)
   end
 
   defp beast_bane_bonus(attacker, defender) do

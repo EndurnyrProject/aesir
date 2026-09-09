@@ -73,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
       name: :sm_bash,
       display_name: "Bash",
       max_level: 10,
+      target_type: :target_enemy,
       range: 1,
       sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15]
     }
@@ -141,6 +142,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
                Enum.filter(Audit.compare(definition, row, :renewal), &(&1.field == :range))
 
       assert source == List.duplicate(9, 10)
+    end
+
+    test "a self-cast skill's range is not compared against the source row" do
+      definition = %{@definition | target_type: :self, range: 0}
+      row = put_in(@matching_row["Range"], 9)
+
+      refute Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :range))
+    end
+
+    test "a passive skill's range is not compared against the source row" do
+      definition = %{@definition | target_type: :passive, range: 0}
+      row = put_in(@matching_row["Range"], 9)
+
+      refute Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :range))
+    end
+
+    test "a ground-targeted skill's range is still compared" do
+      definition = %{@definition | target_type: :ground, range: 0}
+      row = put_in(@matching_row["Range"], 9)
+
+      assert Enum.any?(Audit.compare(definition, row, :renewal), &(&1.field == :range))
     end
 
     test "a source Vulture range flag must be declared as vulture_range" do

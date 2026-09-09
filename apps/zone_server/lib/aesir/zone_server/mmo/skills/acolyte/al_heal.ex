@@ -1,51 +1,34 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   @moduledoc """
-  Heal (AL_HEAL). Computes a renewal heal value and either restores HP on an ally
-  or deals it as holy magic damage when the target is undead or demon.
+  Heal (AL_HEAL). Restores HP on an ally, or deals the same amount as a holy
+  magic hit when the target is an enemy whose defence element is undead. A
+  demon-race target, and an undead-element target friendly to the caster, are
+  both healed normally.
 
-  rAthena RENEWAL formula (`src/map/skill.cpp`, `skill_calc_heal`, default branch):
+  An offensive cast halves the base amount before any other term. The recipient's
+  own heal-received bonus is applied downstream on the generic heal path that
+  every heal flows through.
 
-    Line 585:
-      hp = (status_get_lv(src) + status_get_int(src)) / 5 * 30 * skill_lv / 10;
+  Renewal: the base is `(base level + INT) / 5 * 30 * skill level / 10`.
+  Equipment heal power (the general bonus plus the Heal-specific one) is a
+  percentage of that base, the caster's MATK band is rolled and added flat on
+  top, and the trait heal bonus is a final percentage of the whole. The MATK
+  band is the caster's base MATK plus weapon MATK variance only: flat item and
+  status MATK never reach it. With no MATK weapon the band collapses and the
+  heal is deterministic.
 
-    Lines 696-730 (MATK part of the RE heal formula):
-      min = status_base_matk_min(...);
-      max = status_base_matk_max(...);
-      if (max > min) hp += min + rnd() % (max - min); else hp += min;
-
-  Elixir equivalent:
-    base = div(div(base_level + int, 5) * 30 * level, 10)
-    heal = base + DamageShared.roll(heal_matk_min, heal_matk_max)
-
-  Line 771-772 (HPlus heal boost, applied as the final step):
-    if (status_get_hplus(src) > 0) hp += hp * status_get_hplus(src) / 100;
-
-  Elixir equivalent:
-    heal + div(heal * hplus, 100)
-
-  Verified vs rAthena skill.cpp:705-729: the heal MATK band is
-  `status_base_matk_min/max + weapon MATK variance` ONLY - it does NOT include
-  flat item/status MATK (ematk, matk_rate). So heal rolls over the dedicated
-  `heal_matk_min`/`heal_matk_max` band (base_matk + weapon variance, no flat),
-  not the combat `matk_min`/`matk_max`. With no MATK weapon the band collapses
-  and the heal is deterministic, equal to `base + base_matk`.
-
-  The caster's general and AL_HEAL-specific equipment heal bonuses
-  (`bHealPower` and `bSkillHeal`) are summed and applied together after HPlus.
-  They remain separate from the trait-derived HPlus bonus.
-
-  Pre-renewal uses its classic base formula without the renewal MATK term. Aesir
-  currently retains the renewal calculation in both modes; that formula split
-  remains part of the mode-specific skill-mechanics work.
-
-  The cast computes the base heal amount only. The recipient's `received_heal_rate`
-  bonus (SC_INCHEALRATE) is applied downstream on the generic `HealthHandler.apply_heal`
-  path that every `Combat.apply_heal` flows through. Still deferred here: Meditatio's
-  caster-side heal-power bonus.
+  Pre-renewal: the base is `(base level + INT) / 8 * (4 + skill level * 8)`,
+  with no MATK term and no trait bonus. Equipment heal power is a percentage of
+  that base and that is the whole amount. Heal therefore scales with the caster's
+  magic gear in renewal and with nothing but level and INT in pre-renewal, and
+  the classic ladder is the higher of the two at full skill level.
 
   The caster's stats are read generically through `caster.__struct__.to_combatant/1`,
-  so a `%MobState{}` caster heals off its own INT/base level the same way a player
-  does; mobs simply have no equipment (`heal_power` reads as 0) and no HPlus trait.
+  so a `%MobState{}` caster heals off its own INT and base level the same way a
+  player does; mobs simply have no equipment (heal power reads as 0) and no trait
+  heal bonus.
+
+  Still deferred in both modes: Meditatio's caster-side heal-power bonus.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 28,
@@ -59,13 +42,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     range: 9,
     element: :holy,
     sp_cost: [13, 16, 19, 22, 25, 28, 31, 34, 37, 40],
-    after_cast_delay: List.duplicate(500, 10)
+    after_cast_delay: [
+      renewal: List.duplicate(500, 10),
+      pre_renewal: List.duplicate(1_000, 10)
+    ]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
   alias Aesir.ZoneServer.Mmo.Combat.DamageShared
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
+  alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Ref
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -97,34 +86,46 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
   @doc """
   Casts Heal on the given target.
 
-  Computes the renewal heal value from the caster's stats and skill level,
-  then branches on the target's race:
-  - `:undead` or `:demon` — the heal value is dealt as a holy magic hit via
-    `Combat.execute_magic_damage/4`.
-  - All others (including players and unresolvable targets) — HP is restored
-    via `Combat.apply_heal/4`.
+  Branches on the target: an enemy whose defence element is undead takes the
+  amount as a holy magic hit, halved as an offensive cast; every other target
+  (including players, allies and unresolvable targets) has the amount restored
+  as HP.
   """
   @spec cast(Active.caster(), :self | {:unit, integer()}, pos_integer(), struct()) ::
           {:ok, Active.caster()} | {:error, atom()}
   def cast(caster, target, level, _definition) do
     combatant = caster.__struct__.to_combatant(caster)
-    heal_value = compute_heal(combatant, level)
     target = Active.resolve_target_id(caster, target)
+    offensive? = offensive_target?(combatant, target)
+    amount = compute_heal(combatant, level, offensive?)
 
+    if offensive? do
+      attack_undead(caster, target, amount, level)
+    else
+      heal_living_target(caster, target, amount, combatant.unit_id)
+    end
+  end
+
+  defp offensive_target?(caster, target) do
     case Combat.resolve_combatant(target) do
-      {:ok, %{race: race}} when race in [:undead, :demon] ->
-        case Combat.execute_magic_damage(caster, target, heal_value,
-               skill_id: 28,
-               skill_level: level,
-               element: :holy,
-               skip_range: true
-             ) do
-          {:ok, _ref} -> {:ok, caster}
-          {:error, _} = error -> error
-        end
+      {:ok, target_combatant} ->
+        RaceModifiers.undead_target?(target_combatant) and
+          Targeting.enemy?(caster, target_combatant)
 
-      _ ->
-        heal_living_target(caster, target, heal_value, combatant.unit_id)
+      _unresolved ->
+        false
+    end
+  end
+
+  defp attack_undead(caster, target, damage, level) do
+    case Combat.execute_magic_damage(caster, target, damage,
+           skill_id: 28,
+           skill_level: level,
+           element: :holy,
+           skip_range: true
+         ) do
+      {:ok, _ref} -> {:ok, caster}
+      {:error, _} = error -> error
     end
   end
 
@@ -152,24 +153,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal do
     {:ok, caster}
   end
 
-  defp compute_heal(combatant, level) do
+  defp compute_heal(combatant, level, offensive?) do
     combat_stats = combatant.combat_stats
-
-    base =
-      div(div(combatant.progression.base_level + combatant.base_stats.int, 5) * 30 * level, 10)
-
     matk_min = Map.get(combat_stats, :heal_matk_min, combat_stats.matk)
     matk_max = Map.get(combat_stats, :heal_matk_max, combat_stats.matk)
-    heal = base + DamageShared.roll(matk_min, matk_max)
-    hplus = Map.get(combat_stats, :hplus, 0)
 
     heal_power =
       Map.get(combatant.equip_modifiers, :heal_power, 0) +
         Map.get(combatant.equip_modifiers, {:skill_heal, 28}, 0)
 
-    heal
-    |> then(&(&1 + div(&1 * hplus, 100)))
-    |> then(&(&1 + div(&1 * heal_power, 100)))
+    Formula.calculate(GameMode.mode(), %{
+      base_level: combatant.progression.base_level,
+      int: combatant.base_stats.int,
+      level: level,
+      matk_roll: DamageShared.roll(matk_min, matk_max),
+      heal_power: heal_power,
+      hplus: Map.get(combat_stats, :hplus, 0),
+      offensive?: offensive?
+    })
   end
 
   defp target_ref({unit_type, unit_id} = ref) do

@@ -1,8 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
   @moduledoc """
-  Increase AGI (AL_INCAGI). Applies SC_INCREASEAGI to the target.
+  Increase AGI (AL_INCAGI). Grants an ally the SC_INCREASEAGI buff: AGI up by
+  `2 + level`, attack speed up by the skill level, and a flat movement haste.
+  The buff lasts a minute at level 1 and grows by twenty seconds per level.
 
-  rAthena: val1 = skill level, val2 = AGI bonus (2 + level).
+  The skill costs the caster HP as well as SP: a flat fifteen HP at every level
+  in both modes.
+
+  Renewal: an eight-tenths-of-a-second variable cast plus a fixed two-tenths of
+  a second, and a four-tenths-of-a-second after-cast delay.
+
+  Pre-renewal: a flat one-second cast with no fixed component (pre-renewal has no
+  fixed-cast concept at all) and a full second of after-cast delay. Buff
+  magnitudes and durations are the same in both modes.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 29,
@@ -15,8 +25,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlIncagi do
     damage_kind: :magic,
     range: 9,
     sp_cost: [18, 21, 24, 27, 30, 33, 36, 39, 42, 45],
-    cast_time: List.duplicate(800, 10),
-    after_cast_delay: List.duplicate(400, 10),
+    hp_cost: List.duplicate(15, 10),
+    cast_time: [renewal: List.duplicate(800, 10), pre_renewal: List.duplicate(1_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(200, 10), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(400, 10), pre_renewal: List.duplicate(1_000, 10)],
     duration: [
       60_000,
       80_000,

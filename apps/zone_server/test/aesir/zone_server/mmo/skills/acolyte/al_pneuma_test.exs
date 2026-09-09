@@ -59,7 +59,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlPneumaTest do
       assert definition.sp_cost == [10]
       assert definition.unit_duration == [10_000]
       assert definition.hit_interval == 1_000
-      assert definition.splash_radius == 1
+      # The 3x3 footprint comes from the skill unit's layout, not a splash area.
+      assert definition.splash_radius == 0
     end
 
     test "resolves by name" do

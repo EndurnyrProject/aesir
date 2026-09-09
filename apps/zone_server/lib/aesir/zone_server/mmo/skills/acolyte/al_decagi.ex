@@ -1,9 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
   @moduledoc """
-  Decrease AGI (AL_DECAGI). Applies SC_DECREASEAGI to an enemy on a successful landing roll.
+  Decrease AGI (AL_DECAGI). Single-target enemy debuff that lands on a roll of
+  `50 + 3 * level + (caster base level + caster INT) / 5` percent and, on
+  success, applies SC_DECREASEAGI: AGI down by `2 + level` plus a flat movement
+  slow, for forty seconds at level 1 growing by ten seconds per level. SP is
+  consumed whether the roll lands or not (the cast interpreter deducts it after
+  `cast/4` returns).
 
-  rAthena renewal: magic, single target enemy, range 9, no damage. SP is consumed whether
-  the landing roll succeeds or not (deducted by the cast interpreter after `cast/4` returns).
+  Renewal: a three-quarter-second variable cast plus a fixed quarter second, and
+  a one-second after-cast delay.
+
+  Pre-renewal: a flat one-second cast with no fixed component, and the same
+  one-second after-cast delay. The landing roll, the debuff magnitude and the
+  durations are identical in both modes.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 30,
@@ -16,8 +25,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlDecagi do
     damage_kind: :magic,
     range: 9,
     sp_cost: [15, 17, 19, 21, 23, 25, 27, 29, 31, 33],
-    cast_time: List.duplicate(750, 10),
-    fixed_cast_time: List.duplicate(250, 10),
+    cast_time: [renewal: List.duplicate(750, 10), pre_renewal: List.duplicate(1_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(250, 10), pre_renewal: []],
     after_cast_delay: List.duplicate(1_000, 10),
     duration: [
       40_000,

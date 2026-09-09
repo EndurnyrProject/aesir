@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     }
   end
 
+  @tag game_mode: :renewal
   test "exposes the exact Renewal definition" do
     assert {:ok, definition} = Catalog.by_id(54)
 
@@ -49,6 +50,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     assert definition.range == 9
     assert definition.cast_time == [4_800, 3_200, 1_600, 0]
     assert definition.fixed_cast_time == [1_200, 800, 400, 0]
+    assert definition.after_cast_delay == [0, 1_000, 2_000, 3_000]
+    assert definition.sp_cost == List.duplicate(60, 4)
+    assert definition.item_cost == [%{id: 717, amount: 1}]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "exposes the classic cast ladder and no fixed cast in pre-renewal" do
+    assert {:ok, definition} = Catalog.by_id(54)
+
+    assert definition.cast_time == [6_000, 4_000, 2_000, 0]
+    assert definition.fixed_cast_time == []
     assert definition.after_cast_delay == [0, 1_000, 2_000, 3_000]
     assert definition.sp_cost == List.duplicate(60, 4)
     assert definition.item_cost == [%{id: 717, amount: 1}]
@@ -81,6 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
              AllResurrection.validate(%{character_id: 1_000}, {:unit, 2_000}, 1, %{})
   end
 
+  @tag game_mode: :renewal
   test "a living undead target follows Resurrection's canonical Holy magic branch" do
     assert {:ok, definition} = Catalog.by_id(54)
 
@@ -111,17 +124,73 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
   end
 
+  @tag game_mode: :pre_renewal
+  test "a living undead target takes the classic flat holy hit in pre-renewal" do
+    assert {:ok, definition} = Catalog.by_id(54)
+
+    living_undead = living_mob()
+
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
+
+    stub(MobState, :to_combatant, fn ^living_undead ->
+      %{race: :formless, element: {:undead, 1}}
+    end)
+
+    stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
+    stub(PlayerState, :get_stats, fn _caster -> %{luk: 0, int: 0, base_level: 0} end)
+    :rand.seed(:exsss, {100, 200, 300})
+
+    expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, 2_000, opts ->
+      assert opts[:skill_ratio] == 0
+      # 0 base level + 0 INT + 4 * 10, with no MATK contribution.
+      assert opts[:bonus_matk] == 40
+      assert opts[:element] == :holy
+      {:ok, {:mob, 2_000}}
+    end)
+
+    caster = %{character_id: 1_000}
+
+    assert :ok = AllResurrection.validate(caster, {:unit, 2_000}, 4, definition)
+    assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
+  end
+
   test "the undead instant-kill score uses the Renewal formula and 70 percent cap" do
     caster = %{luk: 50, int: 80, base_level: 99}
     target = %{hp: 1, max_hp: 1_000}
 
-    assert AllResurrection.instant_kill_score(caster, target, 4) == 569
+    assert AllResurrection.instant_kill_score(:renewal, caster, target, 4) == 569
 
     assert AllResurrection.instant_kill_score(
+             :renewal,
              %{luk: 400, int: 400, base_level: 300},
              target,
              4
            ) == 700
+  end
+
+  test "the undead instant-kill score uses the classic formula in pre-renewal" do
+    caster = %{luk: 50, int: 80, base_level: 99}
+    target = %{hp: 1, max_hp: 1_000}
+
+    # 20*4 + 50 + 80 + 99 + 200 - 200*1/1000 = 80 + 229 + 200 - 0 = 509
+    assert AllResurrection.instant_kill_score(:pre_renewal, caster, target, 4) == 509
+
+    assert AllResurrection.instant_kill_score(
+             :pre_renewal,
+             %{luk: 400, int: 400, base_level: 300},
+             target,
+             4
+           ) == 700
+  end
+
+  test "rejects a living undead-race target whose defense element is not undead" do
+    living = living_mob()
+
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living, :mob} end)
+    stub(MobState, :to_combatant, fn ^living -> %{race: :undead, element: {:ghost, 1}} end)
+
+    assert {:error, :invalid_target} =
+             AllResurrection.validate(%{character_id: 1_000}, {:unit, 2_000}, 1, %{})
   end
 
   test "a successful undead roll feeds the target's current HP through existing magic combat" do
@@ -131,7 +200,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), living_undead, :mob} end)
 
     stub(MobState, :to_combatant, fn ^living_undead ->
-      %{race: :undead, element: {:neutral, 1}}
+      %{race: :undead, element: {:undead, 1}}
     end)
 
     stub(MobState, :get_stats, fn ^living_undead -> %{hp: 100, max_hp: 100} end)
@@ -153,6 +222,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 1, definition)
   end
 
+  @tag game_mode: :renewal
   test "a status-immune boss undead always uses the ordinary MATK fallback" do
     assert {:ok, definition} = Catalog.by_id(54)
     boss_undead = living_mob()
@@ -170,6 +240,32 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrectionTest do
     expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, 2_000, opts ->
       assert opts[:skill_ratio] == 4
       refute opts[:bonus_matk]
+      {:ok, {:mob, 2_000}}
+    end)
+
+    caster = %{character_id: 1_000}
+    assert {:ok, ^caster} = AllResurrection.cast(caster, {:unit, 2_000}, 4, definition)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "a boss undead takes the classic flat fallback in pre-renewal" do
+    assert {:ok, definition} = Catalog.by_id(54)
+    boss_undead = living_mob()
+
+    stub(TargetResolver, :resolve, fn 2_000 -> {:ok, self(), boss_undead, :mob} end)
+
+    stub(MobState, :to_combatant, fn ^boss_undead ->
+      %{race: :undead, element: {:undead, 1}, class: :boss}
+    end)
+
+    stub(MobState, :get_stats, fn ^boss_undead -> %{hp: 100, max_hp: 100} end)
+    stub(PlayerState, :get_stats, fn _caster -> %{luk: 400, int: 400, base_level: 300} end)
+    :rand.seed(:exsss, {1, 2, 3})
+
+    expect(Combat, :execute_magic_attack, fn %{character_id: 1_000}, 2_000, opts ->
+      assert opts[:skill_ratio] == 0
+      # 300 base level + 400 INT + 4 * 10 = 740, ignoring the caster's MATK.
+      assert opts[:bonus_matk] == 740
       {:ok, {:mob, 2_000}}
     end)
 

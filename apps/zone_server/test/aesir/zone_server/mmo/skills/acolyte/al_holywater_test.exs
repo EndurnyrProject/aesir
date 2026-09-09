@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
   }
 
   describe "Catalog" do
+    @tag game_mode: :renewal
     test "by_id/1 resolves al_holywater with correct definition" do
       assert {:ok, defn} = Catalog.by_id(31)
       assert defn.name == :al_holywater
@@ -33,6 +34,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywaterTest do
       assert defn.sp_cost == [10]
       assert defn.cast_time == [800]
       assert defn.fixed_cast_time == [200]
+      assert defn.after_cast_delay == [500]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "by_id/1 resolves the classic one-second cast with no fixed component" do
+      assert {:ok, defn} = Catalog.by_id(31)
+      assert defn.sp_cost == [10]
+      assert defn.cast_time == [1_000]
+      assert defn.fixed_cast_time == []
       assert defn.after_cast_delay == [500]
     end
 

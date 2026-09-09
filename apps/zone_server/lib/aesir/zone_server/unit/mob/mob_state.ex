@@ -275,6 +275,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       int: mob_data.stats.int,
       dex: mob_data.stats.dex,
       luk: mob_data.stats.luk,
+      # A mob carries no job, equipment or allocated split: its stats are calculated.
+      total_stats: primary_stats(mob_data.stats),
+      unbuffed_stats: primary_stats(mob_data.stats),
       base_level: mob_data.level,
       job_level: 1,
       hp: mob.hp,
@@ -289,6 +292,18 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       flee: calculate_flee(mob_data),
       crit: calculate_crit(mob_data),
       aspd: calculate_aspd(mob_data)
+    }
+  end
+
+  @spec primary_stats(map()) :: %{atom() => integer()}
+  defp primary_stats(stats) do
+    %{
+      str: stats.str,
+      agi: stats.agi,
+      vit: stats.vit,
+      int: stats.int,
+      dex: stats.dex,
+      luk: stats.luk
     }
   end
 

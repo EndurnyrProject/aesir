@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessingTest do
     assert {:error, :already_applied} = AlBlessing.cast(caster, :self, 5, definition)
   end
 
-  test "cast/4 halves an undead mob's STR, INT, DEX, and HIT through val2 zero" do
+  test "cast/4 blesses an undead-race mob whose defence element is not undead" do
     {:ok, definition} = Catalog.by_id(34)
     caster = %{character_id: 4000}
     target_id = 5000
@@ -80,7 +80,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessingTest do
     stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> true end)
 
     stub(TargetResolver, :resolve_combatant, fn :mob, ^target_id ->
-      {:ok, %{race: :undead}}
+      {:ok, %{race: :undead, element: {:dark, 1}}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :mob, ^target_id, :sc_blessing, params ->
+      assert params[:val1] == 10
+      assert params[:val2] == 10
+      :ok
+    end)
+
+    assert {:ok, ^caster} = AlBlessing.cast(caster, {:unit, target_id}, 10, definition)
+  end
+
+  test "cast/4 halves a demon-race mob's STR, INT, DEX through val2 zero" do
+    {:ok, definition} = Catalog.by_id(34)
+    caster = %{character_id: 4000}
+    target_id = 5000
+
+    stub(UnitRegistry, :unit_exists?, fn :mob, ^target_id -> true end)
+
+    stub(TargetResolver, :resolve_combatant, fn :mob, ^target_id ->
+      {:ok, %{race: :demon, element: {:dark, 1}}}
     end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, ^target_id, :sc_blessing, params ->
@@ -123,7 +143,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessingTest do
     reject(&TargetResolver.resolve_combatant/1)
 
     expect(TargetResolver, :resolve_combatant, fn :mob, ^target_id ->
-      {:ok, %{race: :undead}}
+      {:ok, %{race: :demon, element: {:dark, 1}}}
     end)
 
     expect(StatusInterpreter, :apply_status, fn :mob, ^target_id, :sc_blessing, params ->

@@ -1,10 +1,17 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach do
   @moduledoc """
-  Ruwach (AL_RUWACH). Applies SC_RUWACH aura to the caster.
+  Ruwach (AL_RUWACH). Applies the SC_RUWACH aura to the caster: a ten-second
+  self-centred holy pulse that reveals hidden and cloaked units within two
+  cells and splashes a holy magic hit on enemies in the same radius. The
+  duration, tick cadence, reveal radius, and splash damage all live in the
+  `sc_ruwach` status module; the skill only starts the aura.
 
-  rAthena (`skill_db` id 24): MaxLevel 1, SP 10, no cast time, no after-cast
-  delay. The aura's duration, tick interval, reveal radius, and holy splash
-  are all driven by the `sc_ruwach` status module (10s, 500ms tick, radius 2).
+  Renewal: single level, ten SP, instant cast and no after-cast delay; the
+  splash radius is two cells and the pulse's damage is holy.
+
+  Pre-renewal: identical. The skill carries the same level cap, cost, timings,
+  radius and element in both modes, and neither the aura nor its splash has a
+  mode-specific branch.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 24,
@@ -13,6 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlRuwach do
     max_level: 1,
     target_type: :self,
     damage_kind: :magic,
+    element: :holy,
+    splash_radius: 2,
     sp_cost: [10]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

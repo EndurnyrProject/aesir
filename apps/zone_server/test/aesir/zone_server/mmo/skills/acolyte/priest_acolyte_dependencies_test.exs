@@ -211,7 +211,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.PriestAcolyteDependenciesTest do
         max_level: 1,
         target_type: :ground,
         range: 9,
-        splash_radius: 1,
+        splash_radius: 0,
         hit_interval: 1_000,
         unit_duration: [10_000],
         sp_cost: [10]
@@ -277,6 +277,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.PriestAcolyteDependenciesTest do
     assert Enum.all?(@audited_skills, &String.contains?(&1.evidence, ".cpp:"))
   end
 
+  @tag game_mode: :renewal
   test "every audited dependency locks its exact Renewal definition contract and capability" do
     Enum.each(@audited_skills, fn %{
                                     name: name,
@@ -288,6 +289,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.PriestAcolyteDependenciesTest do
       assert {:ok, definition} = Catalog.by_name(name)
       assert definition.id == id
       assert Map.take(definition, Map.keys(definition_contract)) == definition_contract
+      assert {:ok, ^module} = module_for(capability, name)
+    end)
+  end
+
+  # The audited contract fields that split by mode, with their classic values.
+  @pre_renewal_contract_overrides %{
+    al_angelus: %{splash_radius: 14, cooldown: []},
+    al_holylight: %{cast_time: [2_000], fixed_cast_time: []},
+    al_holywater: %{cast_time: [1_000], fixed_cast_time: []},
+    al_warp: %{
+      fixed_cast_time: [],
+      after_cast_delay: [],
+      unit_duration: [5_000, 10_000, 15_000, 20_000]
+    }
+  }
+
+  @tag game_mode: :pre_renewal
+  test "every audited dependency locks its contract in pre-renewal too" do
+    Enum.each(@audited_skills, fn %{
+                                    name: name,
+                                    id: id,
+                                    capability: capability,
+                                    definition_contract: definition_contract,
+                                    module: module
+                                  } ->
+      expected =
+        Map.merge(definition_contract, Map.get(@pre_renewal_contract_overrides, name, %{}))
+
+      assert {:ok, definition} = Catalog.by_name(name)
+      assert definition.id == id
+      assert Map.take(definition, Map.keys(expected)) == expected
       assert {:ok, ^module} = module_for(capability, name)
     end)
   end

@@ -5,35 +5,58 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
 
   describe "demon_bane_atk/2" do
-    test "adds level * (base_level/20 + 3) ATK vs undead and demon" do
+    test "adds level * (base_level/20 + 3) ATK vs an undead element and vs demon" do
       attacker = %{demon_bane_level: 5, progression: %{base_level: 40}}
       # 5 * (40/20 + 3) = 5 * 5 = 25
-      assert RaceModifiers.demon_bane_atk(attacker, :undead) == 25
-      assert RaceModifiers.demon_bane_atk(attacker, :demon) == 25
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :undead, element: {:undead, 1}}) == 25
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :demon, element: {:dark, 1}}) == 25
+    end
+
+    test "an undead race without an undead element does not count" do
+      attacker = %{demon_bane_level: 5, progression: %{base_level: 40}}
+
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :undead, element: {:ghost, 1}}) == 0
+    end
+
+    test "never applies to a player defender" do
+      attacker = %{demon_bane_level: 5, progression: %{base_level: 40}}
+
+      player = %{race: :demon, element: {:undead, 1}, unit_type: :player}
+
+      assert RaceModifiers.demon_bane_atk(attacker, player) == 0
+    end
+
+    test "counts a target whose defense element is undead, whatever its race" do
+      attacker = %{demon_bane_level: 5, progression: %{base_level: 40}}
+
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :demi_human, element: {:undead, 1}}) ==
+               25
     end
 
     test "is zero vs non-undead/demon races" do
       attacker = %{demon_bane_level: 5, progression: %{base_level: 40}}
-      assert RaceModifiers.demon_bane_atk(attacker, :brute) == 0
-      assert RaceModifiers.demon_bane_atk(attacker, :demi_human) == 0
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :brute}) == 0
+
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :demi_human, element: {:fire, 1}}) ==
+               0
     end
 
     test "is zero when the attacker has no Demon Bane level" do
       attacker = %{demon_bane_level: 0, progression: %{base_level: 40}}
-      assert RaceModifiers.demon_bane_atk(attacker, :undead) == 0
+      assert RaceModifiers.demon_bane_atk(attacker, %{element: {:undead, 1}}) == 0
     end
 
     test "truncates the float product (level 10, base 60 -> 60)" do
       attacker = %{demon_bane_level: 10, progression: %{base_level: 60}}
       # 10 * (60/20 + 3) = 10 * 6 = 60
-      assert RaceModifiers.demon_bane_atk(attacker, :demon) == 60
+      assert RaceModifiers.demon_bane_atk(attacker, %{race: :demon}) == 60
     end
 
     test "uses float division across the whole expression, not a floored base_level/20" do
       attacker = %{demon_bane_level: 5, progression: %{base_level: 45}}
-      # rAthena: trunc(5 * (45/20.0 + 3.0)) = trunc(5 * 5.25) = trunc(26.25) = 26
+      # trunc(5 * (45/20.0 + 3.0)) = trunc(5 * 5.25) = trunc(26.25) = 26
       # a floored base_level/20 would give 5 * (2 + 3) = 25
-      assert RaceModifiers.demon_bane_atk(attacker, :undead) == 26
+      assert RaceModifiers.demon_bane_atk(attacker, %{element: :undead}) == 26
     end
   end
 
@@ -72,32 +95,75 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiersTest do
     test "adds (base_level/25 + 3) * level + 0.5 soft-DEF vs undead and demon attackers" do
       defender = %{divine_protection_level: 5, progression: %{base_level: 50}}
       # (50/25 + 3) * 5 + 0.5 = 5 * 5 + 0.5 = 25.5 -> 25
-      assert RaceModifiers.divine_protection_def(defender, :undead) == 25
-      assert RaceModifiers.divine_protection_def(defender, :demon) == 25
+      assert RaceModifiers.divine_protection_def(defender, %{element: {:undead, 1}}) == 25
+      assert RaceModifiers.divine_protection_def(defender, %{race: :demon}) == 25
+    end
+
+    test "an undead race without an undead element does not count" do
+      defender = %{divine_protection_level: 5, progression: %{base_level: 50}}
+      attacker = %{race: :undead, element: {:ghost, 1}}
+
+      assert RaceModifiers.divine_protection_def(defender, attacker) == 0
+    end
+
+    test "never applies against a player attacker" do
+      defender = %{divine_protection_level: 5, progression: %{base_level: 50}}
+      attacker = %{race: :demon, element: {:undead, 1}, unit_type: :player}
+
+      assert RaceModifiers.divine_protection_def(defender, attacker) == 0
+    end
+
+    test "counts an attacker whose defense element is undead, whatever its race" do
+      defender = %{divine_protection_level: 5, progression: %{base_level: 50}}
+
+      assert RaceModifiers.divine_protection_def(defender, %{
+               race: :demi_human,
+               element: {:undead, 1}
+             }) == 25
     end
 
     test "is zero vs non-undead/demon attackers" do
       defender = %{divine_protection_level: 5, progression: %{base_level: 50}}
-      assert RaceModifiers.divine_protection_def(defender, :brute) == 0
-      assert RaceModifiers.divine_protection_def(defender, :demi_human) == 0
+      assert RaceModifiers.divine_protection_def(defender, %{race: :brute}) == 0
+
+      assert RaceModifiers.divine_protection_def(defender, %{
+               race: :demi_human,
+               element: {:fire, 1}
+             }) == 0
     end
 
     test "is zero when the defender has no Divine Protection level" do
       defender = %{divine_protection_level: 0, progression: %{base_level: 50}}
-      assert RaceModifiers.divine_protection_def(defender, :undead) == 0
+      assert RaceModifiers.divine_protection_def(defender, %{element: {:undead, 1}}) == 0
     end
 
     test "truncates with the +0.5 round (level 10, base 75 -> 60)" do
       defender = %{divine_protection_level: 10, progression: %{base_level: 75}}
       # (75/25 + 3) * 10 + 0.5 = 6 * 10 + 0.5 = 60.5 -> 60
-      assert RaceModifiers.divine_protection_def(defender, :demon) == 60
+      assert RaceModifiers.divine_protection_def(defender, %{race: :demon}) == 60
     end
 
     test "uses float division across the whole expression, not a floored base_level/25" do
       defender = %{divine_protection_level: 5, progression: %{base_level: 60}}
-      # rAthena: trunc((60/25.0 + 3.0) * 5 + 0.5) = trunc(5.4 * 5 + 0.5) = trunc(27.5) = 27
+      # trunc((60/25.0 + 3.0) * 5 + 0.5) = trunc(5.4 * 5 + 0.5) = trunc(27.5) = 27
       # a floored base_level/25 would give (2 + 3) * 5 + 0.5 = 25.5 -> 25
-      assert RaceModifiers.divine_protection_def(defender, :undead) == 27
+      assert RaceModifiers.divine_protection_def(defender, %{element: :undead}) == 27
+    end
+  end
+
+  describe "undead_target?/1" do
+    test "is true for an undead defense element, whatever the race" do
+      assert RaceModifiers.undead_target?(%{race: :demon, element: {:undead, 1}})
+      assert RaceModifiers.undead_target?(%{race: :demi_human, element: :undead})
+    end
+
+    test "the undead race alone does not count, matching the default detection mode" do
+      refute RaceModifiers.undead_target?(%{race: :undead, element: {:ghost, 1}})
+    end
+
+    test "is false for a unit with neither" do
+      refute RaceModifiers.undead_target?(%{race: :demon, element: {:dark, 1}})
+      refute RaceModifiers.undead_target?(%{race: :player_human})
     end
   end
 

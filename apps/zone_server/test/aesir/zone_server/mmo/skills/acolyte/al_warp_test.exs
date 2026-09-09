@@ -55,6 +55,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
   end
 
   describe "registration & metadata" do
+    @tag game_mode: :renewal
     test "is a no-damage ground skill matching the rAthena table" do
       assert {:ok, AlWarp} = Catalog.ground_module_for(:al_warp)
       d = AlWarp.definition()
@@ -69,9 +70,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       assert d.sp_cost == [35, 32, 29, 26]
       assert d.item_cost == [%{id: 717, amount: 1}]
     end
+
+    @tag game_mode: :pre_renewal
+    test "carries the classic shorter portals, a variable cast and no after-cast delay" do
+      d = AlWarp.definition()
+      assert d.unit_duration == [5_000, 10_000, 15_000, 20_000]
+      assert d.cast_time == [1_000, 1_000, 1_000, 1_000]
+      assert d.fixed_cast_time == []
+      assert d.after_cast_delay == []
+      assert d.sp_cost == [35, 32, 29, 26]
+      assert d.item_cost == [%{id: 717, amount: 1}]
+    end
   end
 
   describe "on_place/1" do
+    @tag game_mode: :renewal
     test "stamps the caster's save point, level + 6 uses, and the 2s opening delay" do
       stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
         {:ok,
@@ -88,9 +101,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
       assert placement.state.uses == 8
       assert placement.state.opens_at >= before + 2_000
       assert placement.state.opens_at <= now_ms() + 2_000
-      # 2s opening phase + Duration1 for level 2
+      # 2s opening phase + the level 2 portal lifetime
       assert placement.duration == 2_000 + 15_000
       assert placement.lifecycle_policy.max_instances_per_caster == 3
+    end
+
+    @tag game_mode: :pre_renewal
+    test "stamps the shorter classic portal lifetime" do
+      stub(UnitRegistry, :get_unit, fn :player, @caster_id ->
+        {:ok,
+         {PlayerState,
+          %PlayerState{character_id: @caster_id, save_map: "prontera", save_x: 155, save_y: 180},
+          self()}}
+      end)
+
+      assert {:ok, placement} = AlWarp.on_place(group(%{}))
+
+      assert placement.state.uses == 8
+      # 2s opening phase + the level 2 portal lifetime
+      assert placement.duration == 2_000 + 10_000
     end
   end
 

@@ -1,9 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
   @moduledoc """
-  Teleport (AL_TELEPORT). Menu-less instant self-warp.
-
-  rAthena (`skill_db` id 26): MaxLevel 2, SP [10, 9], no cast time, no
-  after-cast delay.
+  Teleport (AL_TELEPORT). Menu-less instant self-warp. Two levels, ten and nine
+  SP, no cast time and no after-cast delay.
 
   - lv1: warps the caster to a random walkable cell on the current map.
   - lv2: warps the caster to their save point.
@@ -15,6 +13,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlTeleport do
   A mob caster has no `pending_warp` staging step: it relocates immediately
   via `MobSession.teleport/1`, a cast to the mob's own session pid, regardless
   of level.
+
+  Renewal and pre-renewal behave identically: the same two levels, the same
+  costs, the same instant cast, and the same random-cell and save-point
+  destinations. Teleport carries no mode-specific branch.
+
+  Aesir always resolves level 2 straight to the save point. The source offers
+  the player a two-entry destination menu at that level (random cell or save
+  point) unless the cast is automatic; Aesir has no warp-list wire message, so
+  the menu is skipped and the save point is taken.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

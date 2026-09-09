@@ -16,30 +16,25 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   @typedoc "A combatant's primary race."
   @type race :: Race.t()
 
-  # Races against which Demon Bane / Divine Protection apply. Only mobs carry
-  # these, so both bonuses are PvE-only in practice.
-  @undead_demon [:undead, :demon]
   @brute_insect [:brute, :insect]
 
   @doc """
   Demon Bane (AL_DEMONBANE) additive physical ATK bonus.
 
-  Returns the flat ATK added before defense when the defender's race is undead
-  or demon, matching renewal rAthena `battle_addmastery`
-  (`battle.cpp`): `level * (base_level / 20.0 + 3.0)` truncated to an integer.
-  Returns `0` when the attacker has no Demon Bane level or the defender is
-  neither undead nor demon.
+  Returns the flat ATK added before defense when the defender counts as undead
+  (undead defense element) or is demon race:
+  `level * (base_level / 20.0 + 3.0)` truncated to an integer. The magnitude and
+  the level term are the same in renewal and pre-renewal. The bonus never applies
+  to a player defender. Returns `0` when the attacker has no Demon Bane level or
+  the defender does not qualify.
   """
-  @spec demon_bane_atk(map(), race()) :: non_neg_integer()
-  def demon_bane_atk(
-        %{demon_bane_level: level, progression: %{base_level: base_level}},
-        defender_race
-      )
-      when level > 0 and defender_race in @undead_demon do
-    trunc(level * (base_level / 20.0 + 3.0))
+  @spec demon_bane_atk(map(), map()) :: non_neg_integer()
+  def demon_bane_atk(%{demon_bane_level: level, progression: %{base_level: base_level}}, defender)
+      when level > 0 do
+    if undead_or_demon?(defender), do: trunc(level * (base_level / 20.0 + 3.0)), else: 0
   end
 
-  def demon_bane_atk(_attacker, _defender_race), do: 0
+  def demon_bane_atk(_attacker, _defender), do: 0
 
   @doc """
   Beast Bane (HT_BEASTBANE) additive physical ATK bonus.
@@ -57,52 +52,56 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   @doc """
   Divine Protection (AL_DP) additive soft-DEF (VIT-DEF) bonus.
 
-  Returns the flat soft defense added to the defender when the attacker's race
-  is undead or demon, matching renewal rAthena `battle_calc_defense`
-  (`battle.cpp`): `(base_level / 25.0 + 3.0) * level + 0.5` truncated to an
-  integer. Returns `0` when the defender has no Divine Protection level or the
-  attacker is neither undead nor demon.
+  Returns the flat soft defense added to the defender when the attacker counts
+  as undead (undead defense element) or is demon race:
+  `(base_level / 25.0 + 3.0) * level + 0.5` truncated to an integer. The
+  magnitude and the level term are the same in renewal and pre-renewal. The bonus
+  never applies against a player attacker. Returns `0` when the defender has no
+  Divine Protection level or the attacker does not qualify.
   """
-  @spec divine_protection_def(map(), race()) :: non_neg_integer()
+  @spec divine_protection_def(map(), map()) :: non_neg_integer()
   def divine_protection_def(
         %{divine_protection_level: level, progression: %{base_level: base_level}},
-        attacker_race
+        attacker
       )
-      when level > 0 and attacker_race in @undead_demon do
-    trunc((base_level / 25.0 + 3.0) * level + 0.5)
+      when level > 0 do
+    if undead_or_demon?(attacker), do: trunc((base_level / 25.0 + 3.0) * level + 0.5), else: 0
   end
 
-  def divine_protection_def(_defender, _attacker_race), do: 0
+  def divine_protection_def(_defender, _attacker), do: 0
+
+  # Both passives are gated on a non-player opposing unit: neither works in PvP.
+  @spec undead_or_demon?(map()) :: boolean()
+  defp undead_or_demon?(%{unit_type: :player}), do: false
+
+  defp undead_or_demon?(unit),
+    do: Map.get(unit, :race) == :demon or undead_target?(unit)
 
   @doc """
   Dragonology (SA_DRAGONOLOGY) percentage physical ATK bonus vs Dragon-race
-  targets, matching renewal rAthena `status_calc_pc_additional`
-  (`status.cpp:4682-4700`): `level * 4` added to `right_weapon.addrace[RC_DRAGON]`
-  (and `left_weapon.addrace[RC_DRAGON]` when `!battle_config.left_cardfix_to_right`
-  — Aesir does not split dual-wield hands, so both collapse into this one rate).
-  Returns `0` when the attacker has no Dragonology level or the target is not
-  Dragon race.
+  targets: four percent per learned level. The source splits the bonus per
+  wielding hand; Aesir does not split dual-wield hands, so both collapse into
+  this one rate. Returns `0` when the attacker has no Dragonology level or the
+  target is not Dragon race.
   """
   @spec dragonology_atk_rate(map(), race()) :: non_neg_integer()
   def dragonology_atk_rate(%{dragonology_level: level}, :dragon) when level > 0, do: level * 4
   def dragonology_atk_rate(_attacker, _defender_race), do: 0
 
   @doc """
-  Dragonology percentage MATK bonus vs Dragon-race targets
-  (`indexed_bonus.magic_addrace[RC_DRAGON]`, `level * 2`,
-  `status.cpp:4682-4700`). Returns `0` when the attacker has no Dragonology
-  level or the target is not Dragon race.
+  Dragonology percentage MATK bonus vs Dragon-race targets: two percent per
+  learned level. Returns `0` when the attacker has no Dragonology level or the
+  target is not Dragon race.
   """
   @spec dragonology_matk_rate(map(), race()) :: non_neg_integer()
   def dragonology_matk_rate(%{dragonology_level: level}, :dragon) when level > 0, do: level * 2
   def dragonology_matk_rate(_attacker, _defender_race), do: 0
 
   @doc """
-  Dragonology percentage damage-taken reduction from Dragon-race attackers
-  (`indexed_bonus.subrace[RC_DRAGON]`, `level * 4`, `status.cpp:4682-4700`).
-  rAthena's `subrace` cardfix (`battle_calc_damage`) is shared by the physical
-  and magic pipelines, so this rate applies uniformly to both. Returns `0`
-  when the defender has no Dragonology level or the attacker is not Dragon
+  Dragonology percentage damage-taken reduction from Dragon-race attackers: four
+  percent per learned level. The per-race damage-taken reduction is shared by the
+  physical and magic pipelines, so this rate applies uniformly to both. Returns
+  `0` when the defender has no Dragonology level or the attacker is not Dragon
   race.
   """
   @spec dragonology_resist_rate(map(), race()) :: non_neg_integer()
@@ -124,6 +123,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   @spec undead?(race()) :: boolean()
   def undead?(:undead), do: true
   def undead?(_), do: false
+
+  @doc """
+  Whether a unit counts as undead for the skills and passives that single undead
+  out.
+
+  Detection is by **defense element only**, which is the default the source ships
+  with: a unit whose defense element is undead qualifies whatever its race, and
+  the undead race on its own does not. `undead?/1` remains the plain race test
+  for callers that genuinely mean the race.
+  """
+  @spec undead_target?(map()) :: boolean()
+  def undead_target?(unit), do: undead_element?(Map.get(unit, :element))
+
+  @spec undead_element?(term()) :: boolean()
+  defp undead_element?(element), do: element == :undead or match?({:undead, _level}, element)
 
   @doc """
   Checks the `:boss` classification label for compatibility with existing callers.

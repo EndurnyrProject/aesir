@@ -1,15 +1,17 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
   @moduledoc """
-  Holy Light (AL_HOLYLIGHT). Acolyte quest skill: single-target holy magic
-  attack at 125% MATK.
+  Holy Light (AL_HOLYLIGHT). Acolyte quest skill: a single-target holy magic
+  attack at 125 percent MATK that also strips the target's Kyrie Eleison barrier
+  and its Praefatio-style variant.
 
-  rAthena (`db/re/skill_db.yml` id 156): Magic, Holy element, single hit,
-  range 9, 800ms variable / 200ms fixed cast, SP 15, MaxLevel 1. The ratio is
-  `base_skillratio += 25` in `skills/acolyte/holylight.cpp`
-  (`calculateSkillRatio`), i.e. 125% MATK.
+  The 125 percent ratio carries no base-level scaling term in either mode: Holy
+  Light is one of the damaging skills whose renewal ratio is flat.
 
-  A connected hit ends `SC_P_ALTER` and `SC_KYRIE`, matching
-  `skills/acolyte/holylight.cpp` and `battle.cpp:1291-1302`.
+  Renewal: single level, fifteen SP, range nine, an 800ms variable cast plus a
+  fixed 200ms, no after-cast delay.
+
+  Pre-renewal: a flat two-second cast with no fixed component. Element, ratio,
+  range, cost and the barrier strip are identical in both modes.
   """
   # NOTE: Aesir has no SC_SPIRIT/SL_PRIEST. When it exists, make the linked-caster
   # Holy Light SP cost five times normal and remove this note.
@@ -24,8 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylight do
     damage_kind: :magic,
     element: :holy,
     range: 9,
-    cast_time: [800],
-    fixed_cast_time: [200],
+    cast_time: [renewal: [800], pre_renewal: [2_000]],
+    fixed_cast_time: [renewal: [200], pre_renewal: []],
     sp_cost: [15],
     quest_skill: true,
     quest_owner_job: :acolyte

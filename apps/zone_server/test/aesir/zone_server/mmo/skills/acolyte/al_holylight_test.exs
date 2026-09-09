@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
   end
 
   describe "metadata" do
+    @tag game_mode: :renewal
     test "matches the rAthena renewal table" do
       definition = definition()
 
@@ -40,6 +41,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolylightTest do
       assert definition.range == 9
       assert definition.cast_time == [800]
       assert definition.fixed_cast_time == [200]
+      assert definition.sp_cost == [15]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "carries the classic two-second cast with no fixed component" do
+      definition = definition()
+
+      assert definition.element == :holy
+      assert definition.range == 9
+      assert definition.cast_time == [2_000]
+      assert definition.fixed_cast_time == []
       assert definition.sp_cost == [15]
     end
   end

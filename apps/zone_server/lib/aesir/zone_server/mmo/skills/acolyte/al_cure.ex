@@ -2,7 +2,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCure do
   @moduledoc """
   Cure (AL_CURE). Removes Silence, Blind, Confusion, and Bite Scar from an ally.
 
-  rAthena: id 35, max level 1, SP 15, AfterCastActDelay 1000ms.
+  Renewal: single level, fifteen SP, range nine, instant cast with a one-second
+  after-cast delay.
+
+  Pre-renewal: identical. Cure has no mode-specific branch: the same cured
+  ailments, cost, range and timing in both modes.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 35,

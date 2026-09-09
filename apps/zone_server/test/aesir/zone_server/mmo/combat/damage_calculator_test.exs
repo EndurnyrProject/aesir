@@ -1045,7 +1045,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       # ATK flows straight through to the final damage. base_level 40, level 5 =>
       # 5 * (40/20 + 3) = 25.
       attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
-      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, def: 0)
+      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, element: :undead, def: 0)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1087,7 +1087,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
 
     test "Demon Bane mastery is reduced by Renewal DEF and added after classic DEF" do
       attacker = %{CombatTestHelper.create_player_combatant(base_level: 40) | demon_bane_level: 5}
-      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, def: 60)
+      undead_mob = CombatTestHelper.create_mob_combatant(race: :undead, element: :undead, def: 60)
 
       :rand.seed(:exsss, {1, 2, 3})
 
@@ -1191,7 +1191,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
     test "reduces physical damage taken from an undead attacker by the exact soft-DEF bonus" do
       # base_level 50, level 5 => (50/25 + 3) * 5 + 0.5 = 25.5 -> 25 soft-DEF,
       # subtracted from the final damage by the renewal defense formula.
-      undead_attacker = CombatTestHelper.create_mob_combatant(race: :undead)
+      undead_attacker = CombatTestHelper.create_mob_combatant(race: :undead, element: :undead)
       defender = CombatTestHelper.create_player_combatant(base_level: 50, vit: 5)
       defender = %{defender | combat_stats: %{defender.combat_stats | def: 10}}
       with_dp = %{defender | divine_protection_level: 5}

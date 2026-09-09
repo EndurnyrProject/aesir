@@ -1,9 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
   @moduledoc """
-  Blessing (AL_BLESSING). Applies SC_BLESSING to an ally.
+  Blessing (AL_BLESSING). Applies SC_BLESSING to an ally: STR, INT and DEX up by
+  the skill level, for a minute at level 1 growing by twenty seconds per level.
 
-  The status module handles curse veto and stone cure. Undead/demon race or
-  undead defense element targets receive `val2 = 0` for the rAthena half-stat path.
+  The status module handles the curse veto and the stone cure: cast on a cursed
+  target the buff is spent removing the curse instead, and cast on a petrified
+  one it cures the petrification. Demon race targets and targets whose defence
+  element is undead (the default detection mode; race alone does not count)
+  receive `val2 = 0`, which the status reads as the
+  hostile case and halves those stats instead of raising them. A player target is
+  always treated as friendly, never halved.
+
+  Renewal: instant cast, no after-cast delay, range nine. The buff also grants
+  HIT equal to twice the skill level, to a hostile recipient as much as a
+  friendly one.
+
+  Pre-renewal: the same cast, cost, range, stat changes and durations, and no
+  HIT bonus at all.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 34,
@@ -29,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
       240_000
     ]
 
+  alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -102,11 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
     end
   end
 
-  defp undead_or_demon?(%{race: race} = combatant) do
-    race in [:undead, :demon] or undead_element?(Map.get(combatant, :element))
+  defp undead_or_demon?(combatant) do
+    RaceModifiers.undead_target?(combatant) or Map.get(combatant, :race) == :demon
   end
-
-  defp undead_element?({:undead, _level}), do: true
-  defp undead_element?(:undead), do: true
-  defp undead_element?(_element), do: false
 end

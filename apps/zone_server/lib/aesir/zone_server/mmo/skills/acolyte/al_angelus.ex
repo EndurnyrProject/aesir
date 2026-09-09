@@ -1,12 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelus do
   @moduledoc """
-  Angelus (AL_ANGELUS). Applies SC_ANGELUS to the caster; when the caster is
-  in a party, also splashes it (best-effort, caster's own result is what the
-  cast returns) to online party members on the same map within
-  `splash_radius` cells.
+  Angelus (AL_ANGELUS). Applies SC_ANGELUS to the caster; when the caster is in
+  a party, also splashes it (best-effort, the caster's own result is what the
+  cast returns) to online party members on the same map within the splash
+  radius. Every recipient gets the same magnitude (`5 * level`) and the same
+  duration (thirty seconds per level, half a minute to five minutes).
 
-  rAthena: val1 = skill level, val2 = 5 * level (VIT DEF% bonus),
-  duration = 30s per level (30s → 300s), identical for every recipient.
+  Renewal: a 350ms variable cast plus a fixed 150ms, a half-second after-cast
+  delay, a thirty-second cooldown, and a party splash reaching eighteen cells.
+  The buff itself raises soft defence off half the recipient's VIT and adds flat
+  maximum HP.
+
+  Pre-renewal: a flat 500ms cast with no fixed component, three and a half
+  seconds of after-cast delay and no cooldown at all. The party splash covers
+  the whole visible area rather than a tighter radius, and the buff raises soft
+  defence as a percentage of the recipient's existing soft defence with no
+  maximum-HP bonus. The declared pre-renewal radius is the server's visible-area
+  size, which is what the source's "unbounded" splash marker resolves to.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 33,
@@ -16,12 +26,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlAngelus do
     max_level: 10,
     target_type: :self,
     damage_kind: :magic,
-    splash_radius: 18,
+    splash_radius: [renewal: 18, pre_renewal: 14],
     sp_cost: [23, 26, 29, 32, 35, 38, 41, 44, 47, 50],
-    cast_time: List.duplicate(350, 10),
-    fixed_cast_time: List.duplicate(150, 10),
-    after_cast_delay: List.duplicate(500, 10),
-    cooldown: List.duplicate(30_000, 10)
+    cast_time: [renewal: List.duplicate(350, 10), pre_renewal: List.duplicate(500, 10)],
+    fixed_cast_time: [renewal: List.duplicate(150, 10), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(500, 10), pre_renewal: List.duplicate(3_500, 10)],
+    cooldown: [renewal: List.duplicate(30_000, 10), pre_renewal: []]
 
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Skill.Active

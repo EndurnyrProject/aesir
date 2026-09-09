@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterNpcCastTest do
 
   setup :setup_ets_tables
 
+  @tag game_mode: :renewal
   test "casts Heal on a registered player" do
     register_player()
     Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@target_id}")
@@ -20,6 +21,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.InterpreterNpcCastTest do
 
     assert {:ok, ^caster} = Interpreter.npc_cast(caster, :al_heal, 10, {:unit, @target_id})
     assert_receive {:combat, {:apply_heal, 1_145, 2_001}}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "casts Heal on a registered player with the classic amount" do
+    register_player()
+    Phoenix.PubSub.subscribe(Aesir.PubSub, "player:#{@target_id}")
+
+    caster = caster()
+
+    # (60 base level + 99 INT) / 8 * (4 + 10 * 8) = 19 * 84 = 1596, no MATK band.
+    assert {:ok, ^caster} = Interpreter.npc_cast(caster, :al_heal, 10, {:unit, @target_id})
+    assert_receive {:combat, {:apply_heal, 1_596, 2_001}}
   end
 
   test "applies Increase AGI at its clamped maximum level" do

@@ -1,9 +1,19 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
   @moduledoc """
-  Aqua Benedicta (AL_HOLYWATER). While standing on a water cell,
-  produces 1 Holy Water (item id 523).
+  Aqua Benedicta (AL_HOLYWATER). While standing on a water cell, consumes one
+  Empty Bottle and produces one Holy Water.
 
-  rAthena: requires State: Water; SP 10; cast 800ms / fixed 200ms / after-cast 500ms.
+  The Empty Bottle is a production requirement rather than a skill requirement:
+  it belongs to the crafting recipe the skill runs, not to the skill's own cost
+  row, which is why the definition's declared item cost has no counterpart in the
+  skill data the audit compares against.
+
+  Renewal: single level, ten SP, an 800ms variable cast plus a fixed 200ms, and
+  a 500ms after-cast delay.
+
+  Pre-renewal: a flat one-second cast with no fixed component, the same ten SP
+  and the same 500ms after-cast delay. The water-cell requirement and the
+  one-bottle-to-one-holy-water recipe are the same in both modes.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -14,8 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHolywater do
     target_type: :self,
     damage_kind: :magic,
     sp_cost: [10],
-    cast_time: [800],
-    fixed_cast_time: [200],
+    cast_time: [renewal: [800], pre_renewal: [1_000]],
+    fixed_cast_time: [renewal: [200], pre_renewal: []],
     after_cast_delay: [500],
     item_cost: [%{id: 713, amount: 1}]
 

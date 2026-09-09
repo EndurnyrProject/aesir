@@ -65,6 +65,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @riding_option_bit Option.id(:riding)
+
+  # `bonus bAllStats,n` grants n to each of the six primary stats only; the
+  # trait stats (POW/STA/WIS/SPL/CON/CRT) have their own `bAllTraitStats`.
+  @primary_stats [:str, :agi, :vit, :int, :dex, :luk]
   @novice_high_job_id 4001
   @ranged_weapons [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
 
@@ -328,6 +332,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       int: stats.base_stats.int,
       dex: stats.base_stats.dex,
       luk: stats.base_stats.luk,
+      # Fully calculated primary stats, for formulas that must see job, equipment
+      # and status contributions rather than the allocated points alone.
+      total_stats: total_stats(stats),
+      # The same, minus the status layer, for a formula that emits a delta on the
+      # very stat it reads: reading its own output back would compound it on
+      # every recalculation.
+      unbuffed_stats: unbuffed_stats(stats),
       # Trait stats
       pow: stats.base_stats.pow,
       sta: stats.base_stats.sta,
@@ -1213,6 +1224,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp equipped_weapon_type(%__MODULE__{right_hand: %WeaponHand{subtype: subtype}}), do: subtype
   defp equipped_weapon_type(%__MODULE__{equipment: equipment}), do: weapon_type(equipment)
 
+  @spec total_stats(t()) :: %{atom() => integer()}
+  defp total_stats(%__MODULE__{} = stats),
+    do: Map.new(@primary_stats, &{&1, get_effective_stat(stats, &1)})
+
+  @spec unbuffed_stats(t()) :: %{atom() => integer()}
+  defp unbuffed_stats(%__MODULE__{} = stats) do
+    Map.new(@primary_stats, fn stat_name ->
+      status_bonus = Map.get(stats.modifiers.status_effects, stat_name, 0)
+      {stat_name, get_effective_stat(stats, stat_name) - status_bonus}
+    end)
+  end
+
   @doc """
   Gets the effective value of a stat including all modifiers.
   """
@@ -1242,10 +1265,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     base_value + job_bonus + equipment_bonus + status_bonus + passive_bonus +
       all_stats_bonus(stats, stat_name)
   end
-
-  # `bonus bAllStats,n` grants n to each of the six primary stats only; the
-  # trait stats (POW/STA/WIS/SPL/CON/CRT) have their own `bAllTraitStats`.
-  @primary_stats [:str, :agi, :vit, :int, :dex, :luk]
 
   defp all_stats_bonus(%__MODULE__{} = stats, stat_name) when stat_name in @primary_stats do
     get_equipment_modifier(stats, :all_stats)
@@ -1451,7 +1470,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   end
 
   defp get_hp_bonus_flat(%__MODULE__{} = stats),
-    do: get_equipment_modifier(stats, :max_hp) + Passives.max_hp_bonus(stats)
+    do:
+      get_equipment_modifier(stats, :max_hp) + get_status_modifier(stats, :max_hp) +
+        Passives.max_hp_bonus(stats)
 
   defp get_sp_bonus_flat(%__MODULE__{} = stats), do: get_equipment_modifier(stats, :max_sp)
 

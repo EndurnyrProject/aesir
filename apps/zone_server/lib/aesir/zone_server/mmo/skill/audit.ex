@@ -108,7 +108,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
 
   Returns one `finding/0` per field whose per-level sequence differs between
   the two, over the source row's `MaxLevel`. `fixed_cast_time` is skipped
-  entirely when `mode` is `:pre_renewal` (the field does not exist pre-renewal).
+  entirely when `mode` is `:pre_renewal` (the field does not exist pre-renewal),
+  and `range` is skipped for a self-cast or passive skill, which has no reach to
+  declare: Aesir leaves those at `0` whatever the source row happens to carry.
   """
   @spec compare(Definition.t(), map(), Aesir.Commons.GameMode.t()) :: [finding()]
   def compare(%Definition{} = definition, source_row, mode) when is_map(source_row) do
@@ -215,6 +217,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
           integer()
         ) ::
           [finding()]
+  defp compare_numeric_field(
+         {_path, _subkey, :range, _sp_cost?},
+         %Definition{target_type: target_type},
+         _source_row,
+         _max_level
+       )
+       when target_type in [:self, :passive] do
+    []
+  end
+
   defp compare_numeric_field({path, subkey, field, sp_cost?}, definition, source_row, max_level) do
     source_value = fetch_path(source_row, path, 0)
 

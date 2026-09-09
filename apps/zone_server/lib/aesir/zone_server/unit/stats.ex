@@ -195,6 +195,9 @@ defmodule Aesir.ZoneServer.Unit.Stats do
       int: stats.base_stats.int,
       dex: stats.base_stats.dex,
       luk: stats.base_stats.luk,
+      # No separate modifier layer here, so the calculated stats are the base ones.
+      total_stats: primary_stats(stats),
+      unbuffed_stats: primary_stats(stats),
       # HP/SP
       max_hp: stats.derived_stats.max_hp,
       max_sp: stats.derived_stats.max_sp,
@@ -214,6 +217,11 @@ defmodule Aesir.ZoneServer.Unit.Stats do
       critical: stats.combat_stats.critical,
       aspd: stats.derived_stats.aspd
     }
+  end
+
+  @spec primary_stats(t()) :: %{atom() => integer()}
+  defp primary_stats(%__MODULE__{base_stats: base}) do
+    %{str: base.str, agi: base.agi, vit: base.vit, int: base.int, dex: base.dex, luk: base.luk}
   end
 
   @doc """

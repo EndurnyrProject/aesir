@@ -3,32 +3,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   Warp Portal (AL_WARP). Ground-targeted portal that warps players who step
   onto it to the caster's save point.
 
-  ## rAthena (`db/re/skill_db.yml` id 27)
+  ## Shared behaviour
 
-    - SP [35, 32, 29, 26], 1 `Blue_Gemstone` (717), 1000ms fixed cast, 1000ms
-      after-cast delay, range 9, single-cell footprint.
-    - The portal opens as `UNT_WARP_ACTIVE` with a 2s limit and then morphs to
-      `UNT_WARP_WAITING` (`skill.cpp` `skill_unit_timer_sub`), restarting its
-      timer at `Duration1` (10/15/20/25s) and warping anyone already standing
-      on the cell. Aesir mirrors this as an `opens_at` timestamp: touches
-      before it are ignored, and the group duration is `2s + Duration1`.
-    - `val1 = skill_lv + 6` (`skill_unitsetting`) - the portal closes after
-      `level + 6` warps.
-    - `ActiveInstance: 3` - a caster keeps at most 3 live portals; placing a
-      4th removes the earliest-expiring one first.
-    - Only players are warped (`UNT_WARP_WAITING` onplace warps `BL_PC`; mobs
-      only with `battle_config.mob_warp`, which is off by default). The caster
-      is warped like anyone else.
+    - Four levels, SP 35/32/29/26, one Blue Gemstone per portal, range nine,
+      single-cell footprint.
+    - The portal spends two seconds opening before it accepts anyone, then runs
+      out its own lifetime and warps whoever is already standing on the cell at
+      the moment it opens. Aesir models the opening as an `opens_at` timestamp:
+      touches before it are ignored, and the group's total lifetime is the two
+      seconds plus the portal's own duration.
+    - A portal closes after `level + 6` warps.
+    - A caster keeps at most three live portals; placing a fourth removes the
+      earliest-expiring one first.
+    - Only players are warped. The caster is warped like anyone else.
 
-  ## Deviations
+  ## Renewal
 
-    - Destination: always the caster's save point, captured at placement. In
-      rAthena the caster picks save point or a memo point from a client menu
-      (`skill_castend_map`); Aesir has neither memo points nor a warp-list
+  No variable cast: a flat one-second fixed cast and a one-second after-cast
+  delay. The portal lasts 10/15/20/25 seconds by level.
+
+  ## Pre-renewal
+
+  A flat one-second variable cast, no fixed component and no after-cast delay at
+  all, so the caster chains straight into the next action. The portal is shorter
+  lived: 5/10/15/20 seconds by level.
+
+  ## Deviations (both modes)
+
+    - Destination: always the caster's save point, captured at placement. The
+      source lets the caster pick the save point or one of up to three memorised
+      points from a client menu; Aesir has neither memo points nor a warp-list
       message in the wire protocol yet, so the memo destinations are deferred.
-    - rAthena only warps a player whose walk destination is the portal cell
-      (`sd->ud.to_x == unit->x`); Aesir warps on any cell entry, matching its
-      NPC warp triggers.
+    - The source only warps a player whose walk destination is the portal cell;
+      Aesir warps on any cell entry, matching its NPC warp triggers.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 27,
@@ -40,9 +47,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
     damage_kind: :magic,
     range: 9,
     hit_interval: 1_000,
-    unit_duration: [10_000, 15_000, 20_000, 25_000],
-    fixed_cast_time: [1_000, 1_000, 1_000, 1_000],
-    after_cast_delay: [1_000, 1_000, 1_000, 1_000],
+    unit_duration: [
+      renewal: [10_000, 15_000, 20_000, 25_000],
+      pre_renewal: [5_000, 10_000, 15_000, 20_000]
+    ],
+    cast_time: [renewal: [], pre_renewal: List.duplicate(1_000, 4)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 4), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(1_000, 4), pre_renewal: []],
     sp_cost: [35, 32, 29, 26],
     item_cost: [%{id: 717, amount: 1}]
 
@@ -79,8 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
      }}
   end
 
-  # Warps players already standing on the portal cell once it opens (rAthena
-  # applies the unit effect to occupants when the portal morphs to WAITING).
+  # Warps players already standing on the portal cell once the opening phase ends.
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
   def on_interval(%Group{} = group, now) do
