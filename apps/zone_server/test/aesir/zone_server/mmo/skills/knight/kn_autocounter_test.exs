@@ -21,7 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
         :ok
       end)
 
-      assert {:ok, ^caster} = KnAutocounter.cast(caster, {:unit, 9001}, 3, definition)
+      assert {:ok, ^caster} = KnAutocounter.cast(caster, :self, 3, definition)
 
       assert_received {:applied, params}
       assert Keyword.fetch!(params, :val1) == 3
@@ -46,8 +46,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
       assert {:ok, definition} = Catalog.by_id(61)
       assert definition.name == :kn_autocounter
       assert definition.max_level == 5
-      assert definition.target_type == :target_enemy
       assert Enum.all?(definition.sp_cost, &(&1 == 3))
+      assert definition.target_type == :self
+      assert definition.range == 0
     end
   end
 end

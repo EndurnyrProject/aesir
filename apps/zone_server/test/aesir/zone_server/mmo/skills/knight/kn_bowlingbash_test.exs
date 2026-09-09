@@ -45,8 +45,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert definition.max_level == 10
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage
-      assert definition.splash_radius == 2
+      assert definition.range == 2
       assert definition.sp_cost == [13, 14, 15, 16, 17, 18, 19, 20, 21, 22]
+      assert KnBowlingbash.definition(:renewal).splash_radius == 2
+      assert KnBowlingbash.definition(:renewal).hit_count == 2
+      assert KnBowlingbash.definition(:renewal).fixed_cast_time == List.duplicate(350, 10)
+      assert KnBowlingbash.definition(:renewal).after_cast_delay == List.duplicate(300, 10)
+      assert KnBowlingbash.definition(:renewal).cooldown == List.duplicate(1000, 10)
+      assert KnBowlingbash.definition(:pre_renewal).splash_radius == 1
+      assert KnBowlingbash.definition(:pre_renewal).hit_count == 1
+      assert KnBowlingbash.definition(:pre_renewal).cast_time == List.duplicate(700, 10)
+      assert KnBowlingbash.definition(:pre_renewal).fixed_cast_time == []
     end
   end
 
@@ -74,6 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   end
 
   describe "hit_count/2" do
+    @tag game_mode: :renewal
     test "is 2 with a one-handed weapon regardless of enemy count" do
       caster = build_player(fist())
 
@@ -83,12 +93,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert KnBowlingbash.hit_count(caster, 10) == 2
     end
 
+    @tag game_mode: :renewal
     test "is 2 with a two-handed sword and only the primary target in splash" do
       caster = build_player(two_handed_sword())
 
       assert KnBowlingbash.hit_count(caster, 1) == 2
     end
 
+    @tag game_mode: :renewal
     test "is 3 with a two-handed sword and 2 or 3 enemies in splash" do
       caster = build_player(two_handed_sword())
 
@@ -96,6 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert KnBowlingbash.hit_count(caster, 3) == 3
     end
 
+    @tag game_mode: :renewal
     test "is 4 with a two-handed sword and 4 or more enemies in splash" do
       caster = build_player(two_handed_sword())
 
@@ -103,6 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert KnBowlingbash.hit_count(caster, 7) == 4
     end
 
+    @tag game_mode: :renewal
     test "is 2 for a mob caster regardless of enemy count" do
       caster = build_mob(@mob_caster_id, 10, 10)
 
@@ -111,6 +125,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   end
 
   describe "cast/4" do
+    @tag game_mode: :pre_renewal
+    test "classic strikes once inside a one-cell splash" do
+      caster = build_player(fist(), x: 10, y: 20)
+
+      stub(Combat, :resolve_combatant, fn @target_id -> {:ok, %{position: {15, 25}}} end)
+      stub(Combat, :splash_targets, fn "prontera", {15, 25}, 1, _combatant -> [{:mob, 1}] end)
+
+      expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
+        assert opts[:skill_ratio] == 220
+        assert opts[:hit_count] == 1
+        assert opts[:base_distance] == 2
+        [101]
+      end)
+
+      reject(&Combat.knockback/5)
+
+      assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, 3, definition())
+    end
+
+    @tag game_mode: :renewal
     test "passes caster-centered mob-native and equipment blow with the base hit count" do
       caster = build_player(fist(), x: 10, y: 20)
       caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 62} => 3})
@@ -137,6 +171,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
 
+    @tag game_mode: :renewal
     test "raises the hit count to 3 for a two-handed sword with 2+ enemies in splash" do
       caster = build_player(two_handed_sword(), x: 10, y: 20)
       level = 1
@@ -158,6 +193,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
 
+    @tag game_mode: :renewal
     test "raises the hit count to 4 for a two-handed sword with 4+ enemies in splash" do
       caster = build_player(two_handed_sword(), x: 10, y: 20)
       level = 1
@@ -179,6 +215,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert {:ok, ^caster} = KnBowlingbash.cast(caster, {:unit, @target_id}, level, definition())
     end
 
+    @tag game_mode: :renewal
     test "passes the level-scaled distance through the canonical request" do
       caster = build_player(fist(), x: 10, y: 20)
       level = 9
@@ -209,6 +246,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
                KnBowlingbash.cast(caster, {:unit, @target_id}, 1, definition())
     end
 
+    @tag game_mode: :renewal
     test "casts from a mob caster with the base hit count" do
       caster = build_mob(@mob_caster_id, 10, 20)
       level = 2

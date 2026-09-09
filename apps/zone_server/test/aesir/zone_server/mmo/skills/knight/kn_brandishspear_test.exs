@@ -48,11 +48,30 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage
       assert definition.splash_radius == 2
-      assert definition.sp_cost == List.duplicate(24, 10)
+      assert definition.range == 2
+      assert definition.knockback == 2
+      assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
+      assert KnBrandishspear.definition(:renewal).sp_cost == List.duplicate(24, 10)
+      assert KnBrandishspear.definition(:renewal).hit_count == 3
+      assert KnBrandishspear.definition(:renewal).fixed_cast_time == List.duplicate(350, 10)
+      assert KnBrandishspear.definition(:renewal).after_cast_delay == List.duplicate(500, 10)
+      assert KnBrandishspear.definition(:renewal).cooldown == List.duplicate(1000, 10)
+      assert KnBrandishspear.definition(:pre_renewal).sp_cost == List.duplicate(12, 10)
+      assert KnBrandishspear.definition(:pre_renewal).hit_count == 1
+      assert KnBrandishspear.definition(:pre_renewal).cast_time == List.duplicate(700, 10)
+      assert KnBrandishspear.definition(:pre_renewal).fixed_cast_time == []
+      assert KnBrandishspear.definition(:pre_renewal).cooldown == []
     end
   end
 
   describe "skill_ratio/2" do
+    @tag game_mode: :pre_renewal
+    test "classic is 100 + 20 per level with no STR term" do
+      assert KnBrandishspear.skill_ratio(1, 10) == 120
+      assert KnBrandishspear.skill_ratio(10, 100) == 300
+    end
+
+    @tag game_mode: :renewal
     test "is 400 + 100 per level + 3 per point of STR" do
       assert KnBrandishspear.skill_ratio(1, 10) == 530
       assert KnBrandishspear.skill_ratio(5, 60) == 1_080
@@ -89,6 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "passes caster-centered mob-native and equipment blow through one splash execution" do
       caster = build_player(spear(), riding?: true, str: 60, x: 10, y: 20)
       caster = put_in(caster.stats.modifiers.equipment, %{{:add_skill_blow, 57} => 3})
@@ -101,6 +121,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspearTest do
         assert opts[:skill_id] == 57
         assert opts[:skill_level] == level
         assert opts[:skill_ratio] == 1_080
+        assert opts[:display_hit_count] == 3
+        refute Keyword.has_key?(opts, :hit_count)
         assert opts[:skip_crit] == true
         assert opts[:ranged] == true
         assert opts[:base_distance] == 2

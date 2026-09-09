@@ -12,6 +12,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquicken do
   `target: target` rather than `target: self`, which resolves to a `{:unit,
   id}` target instead of `:self` - `cast/4` treats both target shapes the
   same rather than buffing whatever that id happens to be.
+
+  Renewal: a fixed +7 attack speed with +2 HIT per level and +(2 + level) CRIT while a two-handed sword is equipped, for 30 s per level. Pre-renewal: a 30 percent attack speed rate for the same duration and nothing else.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 60,
@@ -21,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquicken do
     display_name: "Two-Hand Quicken",
     max_level: 10,
     target_type: :self,
+    require_weapon: [:two_handed_sword],
     sp_cost: [14, 18, 22, 26, 30, 34, 38, 42, 46, 50],
     duration: [
       30_000,

@@ -59,6 +59,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBashTest do
       assert opts[:skill_level] == 7
       assert opts[:skill_ratio] == 100 + 30 * 7
       assert opts[:skip_crit] == true
+      assert opts[:skip_range] == true
+      assert definition().range == 1
       assert opts[:report_hit] == true
       {:ok, %{hit?: true}}
     end)

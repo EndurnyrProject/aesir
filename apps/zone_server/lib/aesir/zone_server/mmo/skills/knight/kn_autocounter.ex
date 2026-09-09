@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
   only arms the buff. The counter level is carried in the buff's `val1` so the
   interception can scale its counter ratio.
 
+  Renewal and pre-renewal agree: a self-cast stance lasting 0.4 s per level that turns the next front or side melee swing into a guaranteed critical counter at 100% plus 10% per level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 61,
@@ -19,9 +20,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
     status: :sc_auto_counter,
     display_name: "Auto Counter",
     max_level: 5,
-    target_type: :target_enemy,
+    target_type: :self,
     damage_type: :no_damage,
-    range: -1,
+    range: 0,
     sp_cost: [3, 3, 3, 3, 3]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -33,7 +34,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
   @counter_ms_per_level 400
 
   @impl Active
-  def cast(caster, {:unit, _target_id}, level, _definition) do
+  def cast(caster, {:unit, _target_id}, level, definition),
+    do: cast(caster, :self, level, definition)
+
+  def cast(caster, :self, level, _definition) do
     adapter = Caster.for(caster)
     caster_id = adapter.id(caster)
 

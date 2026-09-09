@@ -36,6 +36,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
     assert definition.target_type == :target_enemy
     assert definition.damage_type == :damage
     assert definition.range == [3, 5, 7, 9, 11]
+    assert definition.after_cast_delay == List.duplicate(1000, 5)
+    assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
     assert definition.sp_cost == List.duplicate(10, 5)
   end
 

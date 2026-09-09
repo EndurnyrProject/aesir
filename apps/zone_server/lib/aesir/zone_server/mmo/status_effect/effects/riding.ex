@@ -32,15 +32,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Riding do
     id: :sc_riding,
     no_dispel: true,
     properties: [:buff],
-    calc_flags: [:speed, :aspd],
+    calc_flags: [:speed, :aspd, :aspd_rate],
     permanent: true,
     no_save: true,
     option: :riding
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @impl true
   def modifiers(%StatusEntry{val1: cavalier_mastery_level}, _context) do
-    %{movement_speed: -25, aspd: -(50 - 10 * cavalier_mastery_level)}
+    penalty = 50 - 10 * cavalier_mastery_level
+
+    case GameMode.mode() do
+      :renewal -> %{movement_speed: -25, aspd: -penalty}
+      :pre_renewal -> %{movement_speed: -25, aspd_rate: -penalty}
+    end
   end
 end

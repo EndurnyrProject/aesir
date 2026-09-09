@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
 
   This module ships without a skill-tree entry or grant mechanism: it is a
   quest skill wired up separately.
+
+  Renewal: 700% weapon damage, 2 cells of knockback, and a 0.5 s cooldown. Pre-renewal: 100% plus 100% per three cells charged (capped at 500%), the target is pushed the charged distance, and the skill has a 0.5 s variable cast instead of a cooldown.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -25,11 +27,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
     target_type: :target_enemy,
     damage_type: :damage,
     range: 14,
-    knockback: 2,
+    knockback: [renewal: 2, pre_renewal: 0],
     sp_cost: [40],
+    cast_time: [renewal: [], pre_renewal: [500]],
+    cooldown: [renewal: [500], pre_renewal: []],
     quest_skill: true,
     quest_owner_job: :knight
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.LineOfSight
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -40,6 +45,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   @behaviour Active
+
+  @renewal_ratio 700
 
   @impl Active
   @spec validate(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
@@ -56,9 +63,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
   def cast(%PlayerState{} = caster, {:unit, target_id}, level, definition) do
-    with {:ok, %{directive: directive, dest: destination}} <-
+    with {:ok, %{directive: directive, dest: destination, distance: distance}} <-
            prepare(caster, target_id, definition),
-         :ok <- strike(caster, target_id, level, definition, destination) do
+         :ok <- strike(caster, target_id, level, definition, destination, distance) do
       {:ok, PlayerState.put_pending_forced_movement(caster, directive)}
     end
   end
@@ -73,7 +80,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
           {:ok,
            %{
              directive: ForcedMovement.t(),
-             dest: {integer(), integer()}
+             dest: {integer(), integer()},
+             distance: non_neg_integer()
            }}
           | {:error, atom()}
   defp prepare(%PlayerState{map_name: map} = caster, target_id, definition) do
@@ -84,7 +92,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
          {dest_x, dest_y} = landing_cell(caster, tx, ty),
          {:ok, directive} <- ForcedMovement.validate(caster, dest_x, dest_y, definition.range),
          :ok <- ensure_walkable_line(caster, tx, ty) do
-      {:ok, %{directive: directive, dest: {dest_x, dest_y}}}
+      {:ok,
+       %{
+         directive: directive,
+         dest: {dest_x, dest_y},
+         distance: charge_distance(caster.x - tx, caster.y - ty)
+       }}
     end
   end
 
@@ -93,19 +106,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatk do
           integer(),
           pos_integer(),
           Definition.t(),
-          {integer(), integer()}
+          {integer(), integer()},
+          non_neg_integer()
         ) :: :ok | {:error, atom()}
-  defp strike(caster, target_id, level, definition, origin) do
+  defp strike(caster, target_id, level, definition, origin, distance) do
+    {ratio, push} =
+      case GameMode.mode() do
+        :renewal -> {@renewal_ratio, definition.knockback}
+        :pre_renewal -> {classic_ratio(distance), distance}
+      end
+
     Combat.execute_skill_attack(caster, target_id,
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 700,
+      skill_ratio: ratio,
       skip_crit: true,
       skip_range: true,
-      base_distance: definition.knockback,
+      base_distance: push,
       origin: origin,
       native_target_types: [:player, :mob]
     )
+  end
+
+  # The classic formulas measure the straight-line distance, truncated.
+  @doc false
+  def charge_distance(dx, dy), do: trunc(:math.sqrt(dx * dx + dy * dy))
+
+  @doc """
+  The classic weapon ratio grows with the distance charged: 100 percent plus
+  100 for every three cells beyond the first, capped at 500.
+  """
+  @spec classic_ratio(non_neg_integer()) :: pos_integer()
+  def classic_ratio(distance) do
+    steps = min(div(max(distance - 1, 0), 3), 4)
+    100 + 100 * steps
   end
 
   @spec resolve_position(:mob | :player, integer()) ::

@@ -5,6 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearmastery do
 
   Renewal: `+4` weapon ATK per level on foot, `+5` weapon ATK per level while
   riding, both gated on a one-handed or two-handed spear.
+
+  Renewal and pre-renewal agree: +4 ATK per level with a spear, +5 per level while mounted.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 55,

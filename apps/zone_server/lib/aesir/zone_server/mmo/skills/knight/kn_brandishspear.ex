@@ -13,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
   Only usable mounted with a spear (one or two-handed) equipped; a mob
   caster bypasses both gates entirely, since mobs have no equipment or mount
   state.
+
+  Renewal: 400% plus 100% per level plus 3 times STR, shown as three hits that split the damage, 24 SP, a 0.35 s fixed cast, 0.5 s delay, and 1 s cooldown. Pre-renewal: 100% plus 20% per level, one hit, 12 SP, a 0.7 s variable cast, and no delay or cooldown; the classic bonus bands that grow with the caster's distance to each target are not modelled. Both modes push 2 cells and need a spear and a mount.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 57,
@@ -22,12 +24,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,
-    range: -1,
+    range: 2,
     splash_radius: 2,
-    sp_cost: List.duplicate(24, 10)
+    knockback: 2,
+    hit_count: [renewal: 3, pre_renewal: 1],
+    require_weapon: [:one_handed_spear, :two_handed_spear],
+    sp_cost: [renewal: List.duplicate(24, 10), pre_renewal: List.duplicate(12, 10)],
+    cast_time: [renewal: [], pre_renewal: List.duplicate(700, 10)],
+    fixed_cast_time: [renewal: List.duplicate(350, 10), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(500, 10), pre_renewal: []],
+    cooldown: [renewal: List.duplicate(1000, 10), pre_renewal: []]
 
   import Bitwise
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -39,7 +49,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
 
   @spear_types [:one_handed_spear, :two_handed_spear]
   @riding_bit Option.id(:riding)
-  @knockback_distance 2
 
   @impl Active
   @spec validate(Active.caster(), Active.target(), pos_integer(), Definition.t()) ::
@@ -62,10 +71,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
       opts = [
         skill_id: definition.id,
         skill_level: level,
-        skill_ratio: skill_ratio(level, combatant.base_stats.str),
+        skill_ratio: skill_ratio(level, caster_str(caster, combatant)),
+        display_hit_count: definition.hit_count,
         skip_crit: true,
         ranged: true,
-        base_distance: @knockback_distance,
+        base_distance: definition.knockback,
         origin: {caster.x, caster.y},
         native_target_types: [:mob]
       ]
@@ -75,9 +85,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBrandishspear do
     end
   end
 
-  @doc "The weapon-ratio percentage at `level` for a caster with `str` strength."
+  # A player's STR includes job, equipment, and status bonuses; a mob's snapshot
+  # already holds its final stats.
+  defp caster_str(%PlayerState{stats: stats}, _combatant),
+    do: PlayerStats.get_effective_stat(stats, :str)
+
+  defp caster_str(_caster, combatant), do: combatant.base_stats.str
+
+  @doc """
+  The weapon-ratio percentage at `level` for a caster with `str` strength:
+  renewal `400 + 100 * level + 3 * STR`, classic `100 + 20 * level`.
+  """
   @spec skill_ratio(pos_integer(), non_neg_integer()) :: pos_integer()
-  def skill_ratio(level, str), do: 400 + 100 * level + str * 3
+  def skill_ratio(level, str) do
+    case GameMode.mode() do
+      :renewal -> 400 + 100 * level + str * 3
+      :pre_renewal -> 100 + 20 * level
+    end
+  end
 
   @spec check_weapon(PlayerState.t()) :: :ok | {:error, :requires_spear}
   defp check_weapon(%PlayerState{stats: %{equipment: equipment}}) do

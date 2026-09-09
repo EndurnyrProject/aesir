@@ -14,6 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
 
   Players must wield a one-handed or two-handed spear to cast it; mobs bypass
   the weapon check entirely since they have no equipment.
+
+  Renewal and pre-renewal agree: 100% plus 10% per level weapon damage struck once against small, twice against medium, and three times against large targets, with 5% per level extra accuracy, from two cells with a spear.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 56,
@@ -23,7 +25,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,
-    range: -1,
+    range: 2,
+    hit_count: 3,
+    require_weapon: [:one_handed_spear, :two_handed_spear],
     sp_cost: List.duplicate(7, 10)
 
   alias Aesir.ZoneServer.Mmo.Combat
@@ -55,7 +59,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierce do
         skill_ratio: 100 + 10 * level,
         hit_count: hits_for_size(size),
         hit_rate_bonus_pct: 5 * level,
-        skip_crit: true
+        skip_crit: true,
+        skip_range: true
       ]
 
       case Combat.execute_skill_attack(caster, target_id, opts) do

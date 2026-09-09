@@ -69,7 +69,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
       assert definition.max_level == 10
       assert definition.target_type == :target_enemy
       assert definition.damage_type == :damage
-      assert definition.range == -1
+      assert definition.range == 2
+      assert definition.hit_count == 3
+      assert definition.require_weapon == [:one_handed_spear, :two_handed_spear]
       assert definition.sp_cost == List.duplicate(7, 10)
     end
   end
@@ -153,6 +155,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
         assert opts[:skill_level] == 7
         assert opts[:skill_ratio] == 100 + 10 * 7
         assert opts[:hit_rate_bonus_pct] == 5 * 7
+        assert opts[:skip_range] == true
         assert opts[:skip_crit] == true
         :ok
       end)

@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
     max_level: 10,
     target_type: :target_enemy,
     damage_type: :damage,
-    range: -1,
+    range: 1,
     sp_cost: [8, 8, 8, 8, 8, 15, 15, 15, 15, 15],
     require_weapon: [
       :book,
@@ -68,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash do
       skill_ratio: 100 + 30 * level,
       hit_rate_bonus_pct: 5 * level,
       skip_crit: true,
+      skip_range: true,
       report_hit: true
     ]
 

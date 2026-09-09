@@ -532,7 +532,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             ignore_flee?: Keyword.get(opts, :ignore_flee, false),
             typed_results?: true,
             knockback_options: knockback_options(opts),
-            hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0)
+            hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
+            display_hit_count: Keyword.get(opts, :display_hit_count)
           },
           &Targeting.validate_field_target(group, &1, &2)
         )
@@ -575,6 +576,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       typed_results?: Keyword.get(opts, :typed_results, false),
       knockback_options: knockback_options(opts),
       hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
+      display_hit_count: Keyword.get(opts, :display_hit_count),
       splash_center: center
     }
 
@@ -732,7 +734,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          :ok <- authorize_target.(attacker, target),
          :ok <- Rules.validate_target(attacker, target, %{skill_id: skill_id}) do
       hit_opts = %{
-        display_hits: nil,
+        display_hits: Map.get(result_opts, :display_hit_count),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
         ignore_flee: ignore_flee?,
         ranged: ranged?,

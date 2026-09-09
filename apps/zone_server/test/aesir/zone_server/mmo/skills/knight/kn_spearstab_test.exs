@@ -75,7 +75,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
     assert d.id == 58
     assert d.display_name == "Spear Stab"
     assert d.max_level == 10
-    assert d.range == -1
+    assert d.range == 4
+    assert d.knockback == 6
+    assert d.require_weapon == [:one_handed_spear, :two_handed_spear]
     assert d.sp_cost == List.duplicate(9, 10)
   end
 
@@ -107,6 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
         assert opts[:skill_id] == definition().id
         assert opts[:skill_level] == 4
         assert opts[:skill_ratio] == 100 + 20 * 4
+        assert opts[:base_distance] == 6
         assert opts[:skip_crit] == true
         [@target_id]
       end)
@@ -184,7 +187,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
       }
     end
 
-    test "hits both the target and an in-line mob, applies no knockback, and leaves positions untouched" do
+    test "hits both the target and an in-line mob and pushes each six cells" do
       caster = build_caster()
       mob_pid = self()
 
@@ -218,7 +221,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
         :ok
       end)
 
-      reject(&Combat.knockback/5)
+      stub(Combat, :knockback, fn _type, _id, _x, _y, 6 -> {:ok, {0, 0}} end)
 
       assert {:ok, ^caster} = KnSpearstab.cast(caster, {:unit, @target_id}, 5, definition())
 

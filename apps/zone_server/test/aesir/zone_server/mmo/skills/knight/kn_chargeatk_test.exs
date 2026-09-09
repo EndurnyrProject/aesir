@@ -70,10 +70,29 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnChargeatkTest do
     assert definition.max_level == 1
     assert definition.target_type == :target_enemy
     assert definition.range == 14
-    assert definition.knockback == 2
     assert definition.sp_cost == [40]
+    assert KnChargeatk.definition(:renewal).knockback == 2
+    assert KnChargeatk.definition(:renewal).cooldown == [500]
+    assert KnChargeatk.definition(:renewal).cast_time == []
+    assert KnChargeatk.definition(:pre_renewal).knockback == 0
+    assert KnChargeatk.definition(:pre_renewal).cooldown == []
+    assert KnChargeatk.definition(:pre_renewal).cast_time == [500]
   end
 
+  test "classic damage and push grow with the distance charged" do
+    assert KnChargeatk.classic_ratio(1) == 100
+    assert KnChargeatk.classic_ratio(3) == 100
+    assert KnChargeatk.classic_ratio(4) == 200
+    assert KnChargeatk.classic_ratio(7) == 300
+    assert KnChargeatk.classic_ratio(14) == 500
+  end
+
+  test "the classic charge distance is the straight-line distance, truncated" do
+    assert KnChargeatk.charge_distance(10, 10) == 14
+    assert KnChargeatk.charge_distance(3, 0) == 3
+  end
+
+  @tag game_mode: :renewal
   test "ordinary executor :ok preserves the prepared caster movement" do
     stub_clear_terrain()
     stub_target_at(15, 10)

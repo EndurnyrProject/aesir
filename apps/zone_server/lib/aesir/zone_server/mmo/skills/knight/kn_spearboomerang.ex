@@ -21,6 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang do
   apply here: it keys off the caster's weapon type, and a spear is a melee
   weapon regardless of this skill's own extended reach, so no reclassification
   is needed in the damage pipeline.
+
+  Renewal and pre-renewal agree: 100% plus 50% per level weapon damage thrown 3 to 11 cells by level with a spear and a 1 s after-cast delay.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 59,
@@ -31,6 +33,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerang do
     target_type: :target_enemy,
     damage_type: :damage,
     range: [3, 5, 7, 9, 11],
+    after_cast_delay: List.duplicate(1000, 5),
+    require_weapon: [:one_handed_spear, :two_handed_spear],
     sp_cost: List.duplicate(10, 5)
 
   alias Aesir.ZoneServer.Mmo.Combat

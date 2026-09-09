@@ -74,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnTwohandquickenTest do
       {:ok, definition} = Catalog.by_name(:kn_twohandquicken)
 
       assert definition.sp_cost == [14, 18, 22, 26, 30, 34, 38, 42, 46, 50]
+      assert definition.require_weapon == [:two_handed_sword]
 
       assert definition.duration ==
                [

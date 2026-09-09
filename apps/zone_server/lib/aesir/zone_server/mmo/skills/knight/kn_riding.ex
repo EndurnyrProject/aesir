@@ -8,6 +8,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding do
   stat bonuses of its own; the mounted movement speed and attack-speed
   penalty are applied by the riding status effect, whose penalty is in turn
   reduced by `KnCavaliermastery`.
+
+  Renewal and pre-renewal agree: riding adds 10000 carry weight, moves 25% faster, and costs attack speed that Cavalier Mastery buys back.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 63,
@@ -19,4 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnRiding do
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 
   @behaviour Passive
+
+  @impl Passive
+  def max_weight_bonus(_level, %{riding: true}), do: 10_000
+  def max_weight_bonus(_level, _ctx), do: 0
 end
