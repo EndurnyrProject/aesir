@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
     stub(EquipBreak, :resolve_slot, fn _, _, _, _ -> [] end)
   end
 
+  @tag game_mode: :renewal
   test "definition carries cast costs and timings" do
     skill = definition()
 
@@ -73,7 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
     assert skill.hit_count == 1
   end
 
-  test "ratio is 100 + 200 per level without Learning Potion" do
+  @tag game_mode: :renewal
+  test "ratio is 200 per level without Learning Potion" do
     hit_stub(self())
 
     for level <- 1..5 do
@@ -81,10 +83,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
                AmAcidterror.cast(caster(), {:unit, @target_id}, level, definition())
 
       assert_receive {:attack, _, opts}
-      assert opts[:skill_ratio] == 100 + 200 * level
+      assert opts[:skill_ratio] == 200 * level
     end
   end
 
+  @tag game_mode: :renewal
   test "any learned Learning Potion level adds a flat 100 ratio" do
     hit_stub(self())
     {:ok, %{id: learning_potion_id}} = Catalog.by_name(:am_learningpotion)
@@ -92,7 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
     state = caster(%{learning_potion_id => 1})
     assert {:ok, ^state} = AmAcidterror.cast(state, {:unit, @target_id}, 3, definition())
     assert_receive {:attack, _, opts}
-    assert opts[:skill_ratio] == 800
+    assert opts[:skill_ratio] == 700
   end
 
   test "attack is forced neutral, never misses, cannot crit, and uses status-DEF bypass" do
@@ -106,6 +109,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
     assert opts[:report_hit] == true
   end
 
+  @tag game_mode: :renewal
   test "a connected hit wires Bleeding chance and duration" do
     test_pid = self()
     hit_stub(test_pid)
@@ -119,6 +123,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
     assert {:ok, _caster} = AmAcidterror.cast(caster(), {:unit, @target_id}, 5, definition())
   end
 
+  @tag game_mode: :renewal
   test "armor break uses the slot resolver and dispatches its decision" do
     hit_stub(self())
     victim = %Stats{}
@@ -148,6 +153,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
     assert {:ok, _caster} = AmAcidterror.cast(caster(), {:unit, @target_id}, 5, definition())
   end
 
+  @tag game_mode: :renewal
   test "restricted combat path connects against extreme Flee" do
     attacker = combatant(1000, :player, hit: 1)
     target = combatant(@target_id, :mob, flee: 10_000)
@@ -259,5 +265,104 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterrorTest do
       position: {10, 10},
       map_name: "test"
     })
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's one-second cast" do
+    skill = definition()
+    assert skill.cast_time == List.duplicate(1_000, 5)
+    assert skill.fixed_cast_time == []
+    assert skill.after_cast_delay == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic ratio is 50 plus 50 per level regardless of Learning Potion" do
+    hit_stub(self())
+    {:ok, %{id: learning_potion_id}} = Catalog.by_name(:am_learningpotion)
+
+    assert {:ok, _caster} =
+             AmAcidterror.cast(
+               caster(%{learning_potion_id => 5}),
+               {:unit, @target_id},
+               3,
+               definition()
+             )
+
+    assert_receive {:attack, _, opts}
+    assert opts[:skill_ratio] == 200
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic hit bleeds for two minutes and breaks armor at the source's flat chances" do
+    test_pid = self()
+    hit_stub(test_pid)
+    victim = %Stats{}
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), %{stats: victim}, :player} end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_bleeding, opts ->
+      assert opts[:duration] == 120_000
+      assert opts[:success_rate] == 9
+      :ok
+    end)
+
+    expect(EquipBreak, :resolve_slot, fn 1_000, {:player, @target_id, ^victim}, :armor, [] ->
+      []
+    end)
+
+    assert {:ok, _caster} = AmAcidterror.cast(caster(), {:unit, @target_id}, 3, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic restricted combat path subtracts only soft DEF and connects against extreme Flee" do
+    attacker = combatant(1000, :player, hit: 1)
+    target = combatant(@target_id, :mob, flee: 10_000)
+    caster_state = %FakeUnit{combatant: attacker, x: 10, y: 10, map_name: "test"}
+    target_state = %FakeUnit{combatant: target, hp: 100, x: 10, y: 10, map_name: "test"}
+
+    stub(UnitRegistry, :get_unit, fn :mob, @target_id ->
+      {:ok, {FakeUnit, target_state, self()}}
+    end)
+
+    stub(SpatialIndex, :get_unit_position, fn :mob, @target_id -> {:ok, {10, 10, "test"}} end)
+    stub(Broadcast, :to_in_range, fn _, _, _, _, _ -> :ok end)
+
+    expect(DamageCalculator, :calculate_damage_soft_defense_only, fn _, _, opts ->
+      assert opts[:element] == :neutral
+      assert opts[:skip_crit] == true
+      {:ok, %{damage: 20, is_critical: false}}
+    end)
+
+    expect(MobSession, :apply_damage, fn _, 20, 1000 -> :ok end)
+
+    assert {:ok, %{hit?: true}} =
+             Combat.execute_acid_terror_attack(caster_state, @target_id,
+               skill_id: 230,
+               skill_level: 5,
+               skill_ratio: 1_100,
+               element: :neutral,
+               ignore_flee: true,
+               skip_crit: true,
+               report_hit: true
+             )
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic calculator takes the ratio-scaled soft DEF and no hard DEF off the strike" do
+    attacker = combatant(1000, :player, weapon_element: :neutral, critical: 10_000)
+    low_soft_def = combatant(2000, :player, vit: 1, defense_element: {:neutral, 1})
+    high_soft_def = combatant(2001, :player, vit: 99, defense_element: {:neutral, 1})
+    opts = [skill_ratio: 300, element: :neutral, skip_crit: true]
+
+    assert {:ok, low} =
+             DamageCalculator.calculate_damage_soft_defense_only(attacker, low_soft_def, opts)
+
+    assert {:ok, high} =
+             DamageCalculator.calculate_damage_soft_defense_only(attacker, high_soft_def, opts)
+
+    assert {:ok, ignored} =
+             DamageCalculator.calculate_damage_ignoring_defense(attacker, low_soft_def, opts)
+
+    assert low.damage > high.damage
+    assert ignored.damage > low.damage
   end
 end

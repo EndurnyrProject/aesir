@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmSpheremine do
 
   The living per-owner cap is checked during skill validation so a rejected
   cast spends neither SP nor its Marine Sphere Bottle.
+
+  Renewal: a 1.6 s cast plus 0.4 s fixed. Pre-renewal: a 2 s cast. Costs, delay,
+  and lifetimes are shared.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -16,8 +19,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmSpheremine do
     range: 1,
     sp_cost: List.duplicate(10, 5),
     item_cost: [%{id: 7_138, amount: 1}],
-    cast_time: List.duplicate(1_600, 5),
-    fixed_cast_time: List.duplicate(400, 5),
+    cast_time: [renewal: List.duplicate(1_600, 5), pre_renewal: List.duplicate(2_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(400, 5), pre_renewal: []],
     after_cast_delay: List.duplicate(500, 5)
 
   alias Aesir.ZoneServer.Map.Coordinator

@@ -1,5 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmRest do
-  @moduledoc "Rest."
+  @moduledoc """
+  Rest.
+
+  Renewal adds a 20 s cooldown; pre-renewal has none. Both cost 50 SP.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 244,
@@ -8,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmRest do
     max_level: 1,
     target_type: :self,
     sp_cost: [50],
-    cooldown: [20_000]
+    cooldown: [renewal: [20_000], pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

@@ -2,6 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmLearningpotion do
   @moduledoc """
   Learning Potion (AM_LEARNINGPOTION). Increases potion effectiveness and
   pharmacy success rates through consumers that read its learned level.
+
+  Both modes raise potion recovery 5 percent per level and brewing success by
+  0.5 percent per level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 227,

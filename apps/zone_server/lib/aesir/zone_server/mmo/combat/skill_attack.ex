@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
   hits/splashes.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.AttackValidator
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
@@ -382,13 +383,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              }}
           | {:error, atom()}
   def execute_acid_terror_attack(caster_state, target_id, opts) do
-    execute_single_target_attack(
-      caster_state,
-      target_id,
-      opts,
-      &DamageCalculator.calculate_damage_ignoring_status_def/3,
-      %{}
-    )
+    execute_single_target_attack(caster_state, target_id, opts, acid_terror_calculator(), %{})
+  end
+
+  defp acid_terror_calculator do
+    case GameMode.mode() do
+      :renewal -> &DamageCalculator.calculate_damage_ignoring_status_def/3
+      :pre_renewal -> &DamageCalculator.calculate_damage_soft_defense_only/3
+    end
   end
 
   defp execute_single_target_attack(

@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPharmacy do
   @moduledoc """
   Pharmacy (AM_PHARMACY) opens a menu of available recipes and brews its selection.
+
+  Both modes brew with the same success formula for 5 SP and a Medicine Bowl.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 228,

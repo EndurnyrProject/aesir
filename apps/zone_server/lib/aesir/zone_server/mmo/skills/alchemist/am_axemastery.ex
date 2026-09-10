@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAxemastery do
   @moduledoc """
   Axe Mastery (AM_AXEMASTERY). Grants flat weapon ATK while wielding a one-handed
   axe, two-handed axe, or one-handed sword.
+
+  Both modes grant 3 axe or one-handed sword ATK per level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 226,

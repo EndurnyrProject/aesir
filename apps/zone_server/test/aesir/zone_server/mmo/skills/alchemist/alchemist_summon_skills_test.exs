@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Coordinator
@@ -132,8 +133,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
       assert definition.target_type == :ground
       assert definition.sp_cost == List.duplicate(sp, 5)
       assert definition.item_cost == [%{id: bottle, amount: 1}]
-      assert definition.cast_time == List.duplicate(1_600, 5)
-      assert definition.fixed_cast_time == List.duplicate(400, 5)
+
+      assert definition.cast_time ==
+               mode_value(List.duplicate(1_600, 5), List.duplicate(2_000, 5))
+
+      assert definition.fixed_cast_time == mode_value(List.duplicate(400, 5), [])
       assert definition.after_cast_delay == List.duplicate(500, 5)
     end
   end
@@ -159,4 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AlchemistSummonSkillsTest do
     }
     |> Aesir.ZoneServer.PlayerStateFixture.build()
   end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

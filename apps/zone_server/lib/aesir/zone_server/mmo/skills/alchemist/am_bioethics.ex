@@ -1,5 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmBioethics do
-  @moduledoc "Bioethics, the grant-only Homunculus prerequisite."
+  @moduledoc """
+  Bioethics, the grant-only Homunculus prerequisite.
+
+  Both modes unlock the homunculus lifecycle.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 238,

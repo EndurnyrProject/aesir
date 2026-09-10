@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
         {236, :am_cp_armor, :sc_cp_armor, 25},
         {237, :am_cp_helm, :sc_cp_helm, 20}
       ] do
+    @tag game_mode: :renewal
     test "#{name} applies its protection for two minutes per level and charges its cost" do
       skill_id = unquote(skill_id)
       name = unquote(name)
@@ -129,5 +130,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCpSkillsTest do
       luk: 1
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic coatings cast for two seconds and Helm costs 25 SP" do
+    for {skill_id, sp_cost} <- [{234, 30}, {235, 25}, {236, 25}, {237, 25}] do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert definition.sp_cost == List.duplicate(sp_cost, 5)
+      assert definition.cast_time == List.duplicate(2_000, 5)
+      assert definition.fixed_cast_time == []
+      assert definition.after_cast_delay == []
+    end
+  end
+
+  @tag game_mode: :renewal
+  test "renewal coatings use a fixed cast and a delay" do
+    for skill_id <- [234, 235, 236, 237] do
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert definition.cast_time == []
+      assert definition.fixed_cast_time == List.duplicate(2_000, 5)
+      assert definition.after_cast_delay == List.duplicate(500, 5)
+    end
   end
 end

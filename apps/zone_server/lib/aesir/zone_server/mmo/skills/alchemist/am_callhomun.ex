@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCallhomun do
-  @moduledoc "Call Homunculus."
+  @moduledoc """
+  Call Homunculus.
+
+  Both modes cost 10 SP; the lifecycle handler consumes the Embryo. Renewal also
+  recalls a resting homunculus with a Seed of Life and stamps a 30-minute timer.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 243,
@@ -8,7 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmCallhomun do
     max_level: 1,
     target_type: :self,
     sp_cost: [10],
-    duration: [1_800_000]
+    duration: [renewal: [1_800_000], pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
 

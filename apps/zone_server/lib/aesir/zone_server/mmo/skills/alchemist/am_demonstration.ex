@@ -2,9 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   @moduledoc """
   Demonstration (AM_DEMONSTRATION), a Fire weapon-damage field.
 
-  The field occupies a 3x3 area for 40 + 5 seconds per skill level. Every
-  500 ms, each enemy in that area receives a normal physical weapon attack,
-  which may miss. A confirmed hit attempts to break a player target's weapon.
+  The field occupies a 3x3 area for 35 plus 5 seconds per skill level. Every
+  tick, each enemy in that area receives a normal physical weapon attack, which
+  may miss. A confirmed hit attempts to break a player target's weapon.
+
+  Both modes cost 10 SP and a Fire Bottle and deal 100 plus 20 per level percent
+  fire weapon damage. Renewal: ticks every 0.5 s, a 0.8 s cast plus 0.2 s fixed,
+  a 0.5 s delay, and a 3 per level percent weapon break. Pre-renewal: ticks every
+  second, a 1 s cast, and a 1 per level percent weapon break.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 229,
@@ -17,11 +22,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
     damage_kind: :weapon,
     element: :fire,
     range: 9,
-    hit_interval: 500,
-    unit_duration: [45_000, 50_000, 55_000, 60_000, 65_000],
+    hit_interval: [renewal: 500, pre_renewal: 1_000],
+    unit_duration: [40_000, 45_000, 50_000, 55_000, 60_000],
     sp_cost: List.duplicate(10, 5),
-    item_cost: [%{id: 7135, amount: 1}]
+    item_cost: [%{id: 7135, amount: 1}],
+    cast_time: [renewal: List.duplicate(800, 5), pre_renewal: List.duplicate(1_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(200, 5), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(500, 5), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
   alias Aesir.ZoneServer.Mmo.Combat.SplashTargets
@@ -108,7 +117,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
   defp roll_weapon_break(:player, target_id, level) do
     case UnitRegistry.get_unit(:player, target_id) do
       {:ok, {PlayerState, target, target_pid}} ->
-        (300 * level)
+        level
+        |> weapon_break_rate()
         |> EquipBreak.resolve_slot({:player, target_id, target.stats}, :weapon)
         |> Enum.each(&dispatch_break(&1, target_pid))
 
@@ -125,6 +135,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstration do
 
   @spec skill_ratio(pos_integer()) :: pos_integer()
   defp skill_ratio(level), do: 100 + 20 * level
+
+  defp weapon_break_rate(level) do
+    case GameMode.mode() do
+      :renewal -> 300 * level
+      :pre_renewal -> 100 * level
+    end
+  end
 
   @spec demonstration_at?(String.t(), integer(), integer()) :: boolean()
   defp demonstration_at?(map_name, x, y) do

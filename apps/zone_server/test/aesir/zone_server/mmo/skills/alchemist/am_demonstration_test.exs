@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
   import Aesir.TestEtsSetup
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.SkillAttack
@@ -68,10 +69,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       assert definition.target_type == :ground
       assert definition.damage_kind == :weapon
       assert definition.element == :fire
-      assert definition.hit_interval == 500
+      assert definition.hit_interval == mode_value(500, 1_000)
+      assert definition.cast_time == mode_value(List.duplicate(800, 5), List.duplicate(1_000, 5))
+      assert definition.fixed_cast_time == mode_value(List.duplicate(200, 5), [])
       assert definition.sp_cost == List.duplicate(10, 5)
       assert definition.item_cost == [%{id: 7135, amount: 1}]
-      assert definition.unit_duration == [45_000, 50_000, 55_000, 60_000, 65_000]
+      assert definition.unit_duration == [40_000, 45_000, 50_000, 55_000, 60_000]
     end
 
     test "places the filled 3x3 area for the level duration" do
@@ -80,8 +83,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       assert Enum.sort(placement.cells) ==
                Enum.sort(for(x <- 149..151, y <- 149..151, do: {x, y}))
 
-      assert placement.interval == 500
-      assert placement.duration == 55_000
+      assert placement.interval == mode_value(500, 1_000)
+      assert placement.duration == 50_000
     end
 
     test "consumes one Fire Bottle after a successful placement" do
@@ -195,7 +198,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
         :player, 2_000 -> {:ok, {PlayerState, victim, self()}}
       end)
 
-      stub(EquipBreak, :resolve_slot, fn 900, {:player, 2_000, nil}, :weapon ->
+      stub(EquipBreak, :resolve_slot, fn rate, {:player, 2_000, nil}, :weapon ->
+        assert rate == mode_value(900, 300)
         send(test_pid, :break_rolled)
         []
       end)
@@ -231,4 +235,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmDemonstrationTest do
       assert {:expire, %Group{}} = AmDemonstration.on_interval(group(3), 500)
     end
   end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

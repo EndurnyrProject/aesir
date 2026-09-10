@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmPotionpitcher do
   the item and ordinary cast costs. Delivery then lets the recipient apply its
   own potion recovery terms without reading another player's state from the
   caster process.
+
+  Both modes throw the level's potion at an ally for 1 SP with a 0.5 s delay,
+  scaled by 10 percent per Pitcher level and 5 percent per Learning Potion level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 231,

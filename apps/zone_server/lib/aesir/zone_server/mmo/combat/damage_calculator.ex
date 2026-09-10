@@ -218,6 +218,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     calculate_damage_with(attacker, defender, opts, :primary, :ignore)
   end
 
+  @doc """
+  Calculates physical skill damage subtracting only the defender's soft DEF.
+
+  Used by skills the classic ruleset declares as ignoring hard DEF while still
+  losing the VIT-based soft DEF (e.g. classic Acid Terror).
+  """
+  @spec calculate_damage_soft_defense_only(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_damage_soft_defense_only(attacker, defender, opts) do
+    calculate_damage_with(attacker, defender, opts, :primary, :soft_only)
+  end
+
   defp calculate_damage_with(attacker, defender, opts, attack_path, defense_mode) do
     case Keyword.get(opts, :fixed_damage) do
       nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
@@ -259,12 +271,32 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
          total_atk = total_atk + beast_bane_bonus(attacker, defender),
          total_atk = apply_res_reduction(total_atk, defender),
          {:ok, final_damage} <-
-           scalar_defense(total_atk, defender, attacker, attack_path, defense_mode) do
+           scalar_defense(
+             total_atk,
+             defender,
+             attacker,
+             attack_path,
+             ratio_scaled_mode(defense_mode, skill_ratio)
+           ) do
       finalize_damage(final_damage, attacker, defender, opts)
     end
   end
 
+  defp ratio_scaled_mode(:soft_only, skill_ratio), do: {:soft_only, skill_ratio}
+  defp ratio_scaled_mode(mode, _skill_ratio), do: mode
+
   defp scalar_defense(damage, _defender, _attacker, _path, :ignore), do: {:ok, damage}
+
+  defp scalar_defense(damage, defender, attacker, _path, {:soft_only, ratio}),
+    do:
+      apply_defense_formula(
+        damage,
+        defender,
+        attacker,
+        :apply_status_def,
+        :apply_equipment_def_ignore,
+        {:soft_only, ratio}
+      )
 
   defp scalar_defense(damage, defender, attacker, _path, :ignore_status),
     do: apply_defense_formula_ignoring_status_def(damage, defender, attacker)
@@ -350,7 +382,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       },
       defense:
         player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
-      defense_mode: if(defense_mode in [:simple, :ignore], do: defense_mode, else: :normal),
+      defense_mode:
+        if(defense_mode in [:simple, :ignore, :soft_only], do: defense_mode, else: :normal),
       skill_id: skill_id,
       skill_ratio: Keyword.get(opts, :skill_ratio, 100),
       bonus_atk: Keyword.get(opts, :bonus_atk, 0),
@@ -663,6 +696,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         :simple ->
           effective_hard_def = if modified_hard_def == -400, do: -399, else: modified_hard_def
           defense_base_damage(:simple, total_atk, effective_hard_def, modified_soft_def)
+
+        {:soft_only, ratio} ->
+          total_atk - div(modified_soft_def * ratio, 100)
       end
 
     final_damage =

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal
   alias Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal
 
@@ -199,5 +200,16 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
       critical?: false,
       max_weapon_damage?: false
     }
+  end
+
+  test "apply_defense/3 subtracts the ratio-scaled soft DEF for the soft-only mode" do
+    context = %{
+      defense_mode: :soft_only,
+      defense: %{hard_def: 50, soft_def: 20},
+      skill_ratio: 300
+    }
+
+    assert PhysicalAttack.apply_defense(1_000, context, nil) == 940
+    assert PhysicalAttack.apply_defense(1_000, %{defense_mode: :ignore}, nil) == 1_000
   end
 end

@@ -1,7 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
   @moduledoc """
-  Acid Terror (AM_ACIDTERROR). A guaranteed-hit neutral weapon strike that
-  ignores status DEF, can inflict Bleeding, and can break player armor.
+  Acid Terror (AM_ACIDTERROR). A neutral acid strike thrown from 9 cells that
+  never misses, rolls 3 per level percent bleeding, and may break the armor.
+
+  Renewal: 200 per level percent (plus 100 with Learning Potion), only the status
+  DEF is ignored, a 0.5 s cast plus 0.5 s fixed, a 0.5 s delay, 108 s bleeding,
+  and a 10 per level minus 5 percent armor break. Pre-renewal: 50 plus 50 per
+  level percent, hard DEF ignored while the target's soft DEF is taken off the
+  attack before the ratio, a 1 s cast, 120 s bleeding, and a 3/7/10/12/13 percent
+  armor break.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 230,
@@ -17,12 +24,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
     hit_count: 1,
     sp_cost: List.duplicate(15, 5),
     item_cost: [%{id: 7136, amount: 1}],
-    cast_time: List.duplicate(500, 5),
-    fixed_cast_time: List.duplicate(500, 5),
-    after_cast_delay: List.duplicate(500, 5)
+    cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(500, 5), pre_renewal: []]
 
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.EquipBreak
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -62,7 +70,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
 
   @spec skill_ratio(pos_integer(), non_neg_integer()) :: pos_integer()
   def skill_ratio(level, learning_potion_level) do
-    100 + 200 * level + if(learning_potion_level > 0, do: 100, else: 0)
+    case GameMode.mode() do
+      :renewal -> 200 * level + if(learning_potion_level > 0, do: 100, else: 0)
+      :pre_renewal -> 50 + 50 * level
+    end
   end
 
   defp learning_potion_level(%{stats: %{progression: %{learned_skills: learned_skills}}}) do
@@ -78,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
     case TargetResolver.resolve(target_id) do
       {:ok, target_pid, target_state, target_type} ->
         StatusInterpreter.apply_status(target_type, target_id, :sc_bleeding,
-          duration: 108_000,
+          duration: bleeding_duration(),
           success_rate: 3 * level
         )
 
@@ -100,5 +111,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Alchemist.AmAcidterror do
 
   defp maybe_break_armor(_target_pid, _target_id, _target_type, _target_state, _level), do: :ok
 
-  defp armor_break_rate(level), do: (10 * level - 5) * 100
+  defp armor_break_rate(level) do
+    case GameMode.mode() do
+      :renewal -> (10 * level - 5) * 100
+      :pre_renewal -> Enum.at([300, 700, 1_000, 1_200, 1_300], level - 1)
+    end
+  end
+
+  defp bleeding_duration do
+    case GameMode.mode() do
+      :renewal -> 108_000
+      :pre_renewal -> 120_000
+    end
+  end
 end
