@@ -6,7 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike do
 
   The hit count gains one hit every two levels, so level 1 and 2 land one hit and
   level 9 and 10 land five. Each hit is worth 100% of magic attack, raised by
-  `5 * level` percent when the target is undead by race or by defensive element.
+  `5 * level` percent when the target's defensive element is undead.
   Both modes agree on all of that.
 
   Renewal casts it in a flat 0.4 seconds of variable time plus a 0.1 second
@@ -67,15 +67,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrike do
   @spec undead_target?(integer()) :: boolean()
   defp undead_target?(target_id) do
     case Combat.resolve_combatant(target_id) do
-      {:ok, %{race: race, element: element}} ->
-        RaceModifiers.undead?(race) or undead_element?(element)
-
-      {:error, _reason} ->
-        false
+      {:ok, combatant} -> RaceModifiers.undead_target?(combatant)
+      {:error, _reason} -> false
     end
   end
-
-  @spec undead_element?(tuple() | atom()) :: boolean()
-  defp undead_element?({element, _level}), do: element == :undead
-  defp undead_element?(element), do: element == :undead
 end

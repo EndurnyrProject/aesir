@@ -125,7 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
       assert {:ok, ^caster} = MgSoulstrike.cast(caster, {:unit, @target_id}, 8, definition)
     end
 
-    test "undead-race target adds 5*level ratio" do
+    test "undead-race target with a non-undead element keeps the base ratio" do
       caster = caster()
       definition = definition(:mg_soulstrike)
       target = combatant(%{race: :undead, element: {:neutral, 1}})
@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgSoulstrikeFrostdiverTest do
       stub(Combat, :resolve_combatant, fn @target_id -> {:ok, target} end)
 
       expect(Combat, :execute_magic_attack, fn ^caster, @target_id, opts ->
-        assert opts[:skill_ratio] == 100 + 5 * 8
+        assert opts[:skill_ratio] == 100
         {:ok, {:mob, @target_id}}
       end)
 

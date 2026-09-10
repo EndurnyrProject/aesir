@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   @moduledoc """
-  Race-based combat modifiers based on the rAthena implementation.
+  Race-based combat modifiers.
 
   Currently covers the racial skill bonuses that have a live source of truth:
   Demon Bane (`demon_bane_atk/2`), Beast Bane (`beast_bane_atk/2`), Divine Protection
