@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Gypsy's Kiss table" do
     assert {:ok, DcServiceForYou} = Catalog.active_module_for(:dc_serviceforyou)
     assert {:ok, definition} = Catalog.by_id(330)
@@ -116,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
     assert %{expires_at: ^expires_at} = StatusStorage.get_status(:player, 2, :sc_serviceforyou)
   end
 
+  @tag game_mode: :renewal
   test "MaxSP increases by 10 percent at level 1 and 20 percent at level 10 through stats" do
     recipient = party_player(1, party_id: 0, class: 0, base_level: 50, job_level: 30)
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, recipient, self())
@@ -138,6 +140,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "a recipient pays reduced SP for an ordinary skill through the generic cost pipeline" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -231,5 +234,71 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
       party_id: 0
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    definition = DcServiceForYou.definition()
+    assert definition.sp_cost == Enum.to_list(40..85//5)
+    assert definition.cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion snapshots INT-scaled max SP and cost percents" do
+    caster = player()
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
+    int = Stats.get_effective_stat(caster.stats, :int)
+
+    assert {:ok, _result} = DcServiceForYou.cast(caster, :self, 10, DcServiceForYou.definition())
+
+    assert %{val1: 10, val2: val2, val3: val3} =
+             StatusStorage.get_status(:player, 1, :sc_serviceforyou)
+
+    assert val2 == 25 + div(int, 10)
+    assert val3 == 50 + div(int, 10)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic MaxSP rises by the snapshotted percent through stats" do
+    recipient = party_player(1, party_id: 0, class: 0, base_level: 50, job_level: 30)
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, recipient, self())
+    baseline = Stats.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
+    assert baseline == 66
+
+    :ok =
+      StatusInterpreter.apply_status(:player, 1, :sc_serviceforyou,
+        val1: 1,
+        val2: 17,
+        val3: 24,
+        caster_id: 1,
+        duration: 180_000
+      )
+
+    boosted = Stats.calculate_stats(recipient.stats, 1, []).derived_stats.max_sp
+    assert boosted == 77
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic recipient pays the snapshotted SP cost reduction" do
+    caster = player()
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
+
+    for {val3, expected_cost} <- [{24, 34}, {51, 22}] do
+      :ok =
+        StatusInterpreter.apply_status(:player, 1, :sc_serviceforyou,
+          val1: 1,
+          val2: 17,
+          val3: val3,
+          caster_id: 1,
+          duration: 180_000
+        )
+
+      assert {:ok, cast} = Interpreter.cast(cast_state(), 29, 10, :self)
+      assert 100 - cast.stats.current_state.sp == expected_cost
+
+      :ok = StatusInterpreter.remove_status(:player, 1, :sc_serviceforyou)
+      :ok = StatusInterpreter.remove_status(:player, 1, :sc_increaseagi)
+    end
   end
 end

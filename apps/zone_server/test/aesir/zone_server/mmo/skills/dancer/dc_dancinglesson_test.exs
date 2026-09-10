@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
     assert musical_lesson.combat_stats.atk == musical_base.combat_stats.atk
   end
 
+  @tag game_mode: :renewal
   test "grants critical and SP regeneration with every weapon" do
     whip_base = calculate(%{}, equipped(@whip_id))
     whip_lesson = calculate(%{@lesson_id => 10}, equipped(@whip_id))
@@ -133,5 +134,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglessonTest do
 
   defp equipped(nameid) do
     %InventoryItem{nameid: nameid, amount: 1, equip: @right_hand, identify: 1}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic grants SP regeneration but no critical" do
+    whip_base = calculate(%{}, equipped(@whip_id))
+    whip_lesson = calculate(%{@lesson_id => 10}, equipped(@whip_id))
+
+    musical_base = calculate(%{}, equipped(@musical_id))
+    musical_lesson = calculate(%{@lesson_id => 10}, equipped(@musical_id))
+
+    assert whip_lesson.combat_stats.critical == whip_base.combat_stats.critical
+    assert musical_lesson.combat_stats.critical == musical_base.combat_stats.critical
+    assert Passives.critical_bonus(whip_lesson) == 0
+    assert Passives.critical_bonus(musical_lesson) == 0
+    assert sp_regen(whip_lesson) == sp_regen(whip_base) + 10
+    assert sp_regen(musical_lesson) == sp_regen(musical_base) + 10
   end
 end

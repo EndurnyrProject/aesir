@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Focus Ballet table" do
     assert {:ok, DcHumming} = Catalog.active_module_for(:dc_humming)
     assert {:ok, definition} = Catalog.by_id(327)
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
     assert Catalog.performance?(327)
   end
 
+  @tag game_mode: :renewal
   test "snapshots level values that grant HIT through the stat pipeline" do
     for {level, hit_bonus} <- [{1, 4}, {10, 40}] do
       caster = player(level)
@@ -155,4 +157,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
   end
 
   defp member(id), do: Member.new(id, "Dancer#{id}", 100, true, "prontera")
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    definition = DcHumming.definition()
+    assert definition.sp_cost == Enum.to_list(22..40//2)
+    assert definition.duration == List.duplicate(60_000, 10)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.after_cast_delay == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic snapshots DEX-scaled HIT for one minute" do
+    caster = player(1)
+    register(caster)
+    dex = Stats.get_effective_stat(caster.stats, :dex)
+    baseline = Stats.calculate_stats(caster.stats, caster.character_id)
+
+    assert {:ok, _result} = DcHumming.cast(caster, :self, 1, DcHumming.definition())
+
+    assert %{val1: 1, val2: val2, expires_at: expires_at, started_at: started_at} =
+             StatusStorage.get_status(:player, caster.character_id, :sc_humming)
+
+    assert val2 == 3 + div(dex, 10)
+    assert expires_at - started_at == 60_000
+
+    with_humming = Stats.calculate_stats(caster.stats, caster.character_id)
+    assert with_humming.combat_stats.hit == baseline.combat_stats.hit + val2
+  end
 end

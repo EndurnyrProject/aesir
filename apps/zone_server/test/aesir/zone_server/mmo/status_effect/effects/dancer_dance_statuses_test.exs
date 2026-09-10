@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "focus ballet grants HIT from skill level" do
     level_one = entry(:sc_humming, 1)
     level_ten = entry(:sc_humming, 10)
@@ -47,14 +48,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     assert Humming.modifiers(level_ten, %{}) == %{hit: 40}
   end
 
+  @tag game_mode: :renewal
   test "lady luck grants flat critical and critical damage rate from skill level" do
     level_one = entry(:sc_fortunekiss, 1)
     level_ten = entry(:sc_fortunekiss, 10)
 
-    assert FortuneKiss.modifiers(level_one, %{}) == %{critical: 1, critical_rate: 2}
-    assert FortuneKiss.modifiers(level_ten, %{}) == %{critical: 10, critical_rate: 20}
+    assert FortuneKiss.modifiers(level_one, %{}) == %{critical: 1, crit_atk_rate: 2}
+    assert FortuneKiss.modifiers(level_ten, %{}) == %{critical: 10, crit_atk_rate: 20}
   end
 
+  @tag game_mode: :renewal
   test "gypsy's kiss uses the level-ten MaxSP branch and reduces SP costs" do
     level_one = entry(:sc_serviceforyou, 1)
     level_nine = entry(:sc_serviceforyou, 9)
@@ -65,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     assert ServiceForYou.modifiers(level_ten, %{}) == %{max_sp_rate: 20, sp_cost_rate: -15}
   end
 
+  @tag game_mode: :renewal
   test "slow grace applies converted ASPD-rate and movement penalties" do
     level_one = entry(:sc_dontforgetme, 1)
     level_ten = entry(:sc_dontforgetme, 10)
@@ -188,5 +192,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
       dex: 10,
       luk: 10
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic dances read the values snapshotted at cast" do
+    humming = %StatusEntry{type: :sc_humming, val1: 10, val2: 33, state: %{}}
+    lady_luck = %StatusEntry{type: :sc_fortunekiss, val1: 10, val2: 30, state: %{}}
+    gypsy = %StatusEntry{type: :sc_serviceforyou, val1: 10, val2: 26, val3: 51, state: %{}}
+    slow_grace = %StatusEntry{type: :sc_dontforgetme, val1: 10, val2: 36, val3: 36, state: %{}}
+
+    assert Humming.modifiers(humming, %{}) == %{hit: 33}
+    assert FortuneKiss.modifiers(lady_luck, %{}) == %{critical: 30}
+    assert ServiceForYou.modifiers(gypsy, %{}) == %{max_sp_rate: 26, sp_cost_rate: -51}
+    assert DontForgetMe.modifiers(slow_grace, %{}) == %{aspd_rate: -36, movement_speed: 36}
   end
 end

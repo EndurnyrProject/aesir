@@ -43,6 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :hom_aspd_rate,
                :critical,
                :critical_rate,
+               :crit_atk_rate,
                :perfect_dodge,
                :movement_speed,
                :hiding,

@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Wink of Charm data and platinum grant name" do
     assert {:ok, DcWinkcharm} = Catalog.active_module_for(:dc_winkcharm)
     assert {:ok, definition} = Catalog.by_id(1011)
@@ -130,6 +131,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
              DcWinkcharm.validate(player_state(50), {:ground, 10, 10}, 1, definition())
   end
 
+  @tag game_mode: :renewal
   test "the player branch applies Confusion only when reached behind the PvP seam" do
     target = register_player_target()
     caster = player_state(50)
@@ -139,6 +141,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
     end)
 
     expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_confusion, params ->
+      assert params == [duration: 10_000, success_rate: 100, caster_id: @caster_id]
+      :ok
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_hallucination, params ->
       assert params == [duration: 10_000, success_rate: 100, caster_id: @caster_id]
       :ok
     end)
@@ -208,5 +215,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcWinkcharmTest do
     UnitRegistry.register_unit(:mob, @target_id, MobState, state, self())
     :ok = SpatialIndex.update_unit_position(:mob, @target_id, 11, 10, "prontera")
     state
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's cast and confusion duration" do
+    definition = definition()
+    assert definition.cast_time == [1_000]
+    assert definition.fixed_cast_time == []
+    assert definition.after_cast_delay == [2_000]
+    assert definition.cooldown == []
+    assert definition.duration == [30_000]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic player branch rolls a 10 percent confusion and charms only when it lands" do
+    target = register_player_target()
+    caster = player_state(50)
+
+    stub(Combat, :resolve_combatant, fn @target_id ->
+      {:ok, %{race: :player_human, progression: %{base_level: 25}}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_confusion, params ->
+      assert params == [duration: 30_000, success_rate: 10, caster_id: @caster_id]
+      :ok
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_winkcharm, params ->
+      assert params == [duration: 10_000, caster_id: @caster_id]
+      :ok
+    end)
+
+    assert {:ok, ^caster} =
+             DcWinkcharm.cast(caster, {:unit, target.character_id}, 1, definition())
+
+    expect(StatusInterpreter, :apply_status, fn :player, @target_id, :sc_confusion, _params ->
+      {:error, :resisted}
+    end)
+
+    assert {:ok, ^caster} =
+             DcWinkcharm.cast(caster, {:unit, target.character_id}, 1, definition())
   end
 end

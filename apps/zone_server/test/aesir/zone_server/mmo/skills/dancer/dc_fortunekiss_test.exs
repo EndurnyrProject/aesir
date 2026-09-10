@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Lady Luck table" do
     assert {:ok, DcFortunekiss} = Catalog.active_module_for(:dc_fortunekiss)
     assert {:ok, definition} = Catalog.by_id(329)
@@ -44,10 +45,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
   end
 
   test "snapshots level values that grant critical through the stat pipeline" do
-    {base_rate, cases} =
+    {base_rate, duration, cases} =
       %{
-        renewal: {324, [{1, 340}, {10, 508}]},
-        pre_renewal: {353, [{1, 370}, {10, 543}]}
+        renewal: {324, 180_000, [{1, 334}, {10, 424}]},
+        pre_renewal: {353, 120_000, [{1, 563}, {10, 653}]}
       }[GameMode.mode()]
 
     for {level, expected_rate} <- cases do
@@ -62,7 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
       assert %{val1: ^level, expires_at: expires_at, started_at: started_at} =
                StatusStorage.get_status(:player, caster.character_id, :sc_fortunekiss)
 
-      assert expires_at - started_at == 180_000
+      assert expires_at - started_at == duration
       result = calculate_stats(caster.character_id)
       assert result.combat_stats.critical_rate == expected_rate
       assert result.combat_stats.critical == div(expected_rate, 10)
@@ -182,4 +183,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
   end
 
   defp member(id, map \\ "prontera"), do: Member.new(id, "Dancer#{id}", 100, true, map)
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    definition = DcFortunekiss.definition()
+    assert definition.sp_cost == Enum.to_list(43..70//3)
+    assert definition.duration == List.duplicate(120_000, 10)
+    assert definition.cast_time == []
+    assert definition.cooldown == []
+  end
 end

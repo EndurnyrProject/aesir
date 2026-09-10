@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglesson do
   @moduledoc """
-  Dancing Lesson (DC_DANCINGLESSON).
+  Dancing Lesson (DC_DANCINGLESSON). A passive granting 3 whip weapon ATK per
+  level and the SP regeneration contribution this server carries in both modes.
 
-  Grants whip weapon ATK, critical, and SP regeneration.
+  Renewal adds 1 critical per level; pre-renewal grants no critical.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 323,
@@ -11,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglesson do
     max_level: 10,
     target_type: :passive
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 
   @behaviour Passive
@@ -20,7 +22,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDancinglesson do
   def atk_bonus(_level, _ctx), do: 0
 
   @impl Passive
-  def critical_bonus(level, _ctx), do: level
+  def critical_bonus(level, _ctx) do
+    case GameMode.mode() do
+      :renewal -> level
+      :pre_renewal -> 0
+    end
+  end
 
   @impl Passive
   def regen_contribution(level, _ctx), do: %{skill_sp_regen: level}

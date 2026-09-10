@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FortuneKiss do
-  @moduledoc "Finite Lady Luck critical snapshot."
+  @moduledoc """
+  Finite Lady Luck critical snapshot.
+
+  Renewal derives flat critical and critical damage from the dance level;
+  pre-renewal reads the critical the performer snapshotted at cast and adds no
+  critical damage.
+  """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_fortunekiss,
@@ -12,8 +18,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FortuneKiss do
     remove_on_map_change: false,
     icon: :fortunekiss
 
+  alias Aesir.Commons.GameMode
+
   @impl true
   def modifiers(instance, _context) do
-    %{critical: instance.val1, critical_rate: 2 * instance.val1}
+    case GameMode.mode() do
+      :renewal -> %{critical: instance.val1, crit_atk_rate: 2 * instance.val1}
+      :pre_renewal -> %{critical: instance.val2}
+    end
   end
 end

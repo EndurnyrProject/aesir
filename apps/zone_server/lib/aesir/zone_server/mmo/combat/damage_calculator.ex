@@ -355,7 +355,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       res: Map.get(defender.combat_stats, :res, 0),
       critical?: critical.is_critical,
       crate: Map.get(attacker.combat_stats, :crate, 0),
-      crit_atk_rate: Map.get(attacker.equip_modifiers, :crit_atk_rate, 0),
+      crit_atk_rate:
+        Map.get(attacker.equip_modifiers, :crit_atk_rate, 0) +
+          Map.get(attacker_modifiers, :crit_atk_rate, 0),
       physical_reduction: Map.get(defender_modifiers, :phys_damage_reduction, 0)
     }
   end

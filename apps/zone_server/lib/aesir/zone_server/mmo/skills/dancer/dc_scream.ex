@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
-  @moduledoc "Dazzler (DC_SCREAM)."
+  @moduledoc """
+  Dazzler (DC_SCREAM). A shout that may stun everyone on screen 3 s later, party
+  members included at a quarter of the chance, for 12 to 20 SP.
+
+  Renewal: a 0.3 s delay, a 5 s cooldown, and a 4.5 s stun. Pre-renewal: a 4 s
+  delay, no cooldown, and a 5 s stun.
+  """
 
   import Bitwise
 
@@ -15,9 +21,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
     sp_cost: [12, 14, 16, 18, 20],
     cast_time: List.duplicate(0, 5),
     fixed_cast_time: List.duplicate(0, 5),
-    after_cast_delay: List.duplicate(300, 5),
-    cooldown: List.duplicate(5_000, 5)
+    after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: List.duplicate(4_000, 5)],
+    cooldown: [renewal: List.duplicate(5_000, 5), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -144,7 +151,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
        )
        when party_id > 0 do
     if Unit.living?(target) do
-      {:ok, party_chance(level), 4_500}
+      {:ok, party_chance(level), stun_duration()}
     else
       {:error, :target_dead}
     end
@@ -152,8 +159,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScream do
 
   defp eligibility(caster, target, level) do
     case Targeting.validate_enemy(caster, target) do
-      :ok -> {:ok, enemy_chance(level), 4_500}
+      :ok -> {:ok, enemy_chance(level), stun_duration()}
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp stun_duration do
+    case GameMode.mode() do
+      :renewal -> 4_500
+      :pre_renewal -> 5_000
     end
   end
 

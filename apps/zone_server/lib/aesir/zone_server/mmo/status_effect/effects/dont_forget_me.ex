@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DontForgetMe do
-  @moduledoc "Finite Slow Grace ASPD and movement-speed snapshot."
+  @moduledoc """
+  Finite Slow Grace ASPD and movement-speed snapshot.
+
+  Renewal derives the penalties from the dance level; pre-renewal reads the
+  attack speed percent and movement percent the performer snapshotted at cast.
+  """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dontforgetme,
@@ -26,8 +31,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DontForgetMe do
     remove_on_map_change: false,
     icon: :dontforgetme
 
+  alias Aesir.Commons.GameMode
+
   @impl true
   def modifiers(instance, _context) do
-    %{aspd_rate: -3 * instance.val1, movement_speed: 5 + 2 * instance.val1}
+    case GameMode.mode() do
+      :renewal -> %{aspd_rate: -3 * instance.val1, movement_speed: 5 + 2 * instance.val1}
+      :pre_renewal -> %{aspd_rate: -instance.val2, movement_speed: instance.val3}
+    end
   end
 end

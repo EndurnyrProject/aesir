@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Option
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition and cast capture the pinned delayed event" do
     assert {:ok, DcScream} = Catalog.active_module_for(:dc_scream)
     assert {:ok, definition} = Catalog.by_id(326)
@@ -97,7 +99,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
     expect(StatusInterpreter, :apply_status, fn :player, 2, :sc_stun, params ->
       assert params[:success_rate] == 50
-      assert params[:duration] == 4_500
+      assert params[:duration] == stun_duration()
       assert params[:caster_id] == @caster_id
       assert params[:source_type] == :mob
       :ok
@@ -153,11 +155,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
       assert_receive {:stun, :mob, 2, enemy_params}
       assert enemy_params[:success_rate] == enemy_chance
-      assert enemy_params[:duration] == 4_500
+      assert enemy_params[:duration] == stun_duration()
 
       assert_receive {:stun, :player, 3, party_params}
       assert party_params[:success_rate] == party_chance
-      assert party_params[:duration] == 4_500
+      assert party_params[:duration] == stun_duration()
     end
   end
 
@@ -189,7 +191,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
     assert_received {:stun, :mob, 2, enemy_params}
     assert enemy_params[:success_rate] == 30
-    assert enemy_params[:duration] == 4_500
+    assert enemy_params[:duration] == stun_duration()
     assert enemy_params[:caster_id] == 1
     assert enemy_params[:source_type] == :player
     refute Keyword.has_key?(enemy_params, :bypass_resistance)
@@ -197,7 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
     assert_received {:stun, :player, 4, party_params}
     assert party_params[:success_rate] == 7.5
-    assert party_params[:duration] == 4_500
+    assert party_params[:duration] == stun_duration()
     assert party_params[:caster_id] == 1
     assert party_params[:source_type] == :player
 
@@ -360,4 +362,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcScreamTest do
 
   defp restore_env(key, nil), do: Application.delete_env(:zone_server, key)
   defp restore_env(key, value), do: Application.put_env(:zone_server, key, value)
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's delay and no cooldown" do
+    assert {:ok, definition} = Catalog.by_id(326)
+    assert definition.after_cast_delay == List.duplicate(4_000, 5)
+    assert definition.cooldown == []
+  end
+
+  defp stun_duration, do: %{renewal: 4_500, pre_renewal: 5_000}[GameMode.mode()]
 end

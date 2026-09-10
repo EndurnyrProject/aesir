@@ -42,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "defines the pinned Hip Shaker table and is cataloged as a performance" do
     assert {:ok, DcUglydance} = Catalog.active_module_for(:dc_uglydance)
     assert {:ok, definition} = Catalog.by_id(325)
@@ -65,6 +66,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
              DcUglydance.validate(player_state(), :self, 1, DcUglydance.definition())
   end
 
+  @tag game_mode: :renewal
   test "drains every enemy in radius and remembers the completed performance on versus maps" do
     :ok = MapFlags.set_runtime("prontera", :pvp, true)
     Mimic.copy(Resource)
@@ -100,5 +102,34 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
         equipment: %Equipment{right_hand: @whip_id}
       }
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast" do
+    definition = DcUglydance.definition()
+    assert definition.sp_cost == [23, 26, 29, 32, 35]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.after_cast_delay == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic drains 5 plus 5 per level SP from every enemy in radius" do
+    Mimic.copy(Resource)
+
+    for {amount, level} <- Enum.with_index([10, 15, 20, 25, 30], 1) do
+      caster = player_state()
+
+      expect(Combat, :splash_targets, fn "prontera", {10, 20}, 4, @caster_id ->
+        [{:player, 2_000}, {:mob, 3_000}]
+      end)
+
+      expect(Resource, :drain_sp, fn :player, 2_000, ^amount -> :ok end)
+      expect(Resource, :drain_sp, fn :mob, 3_000, ^amount -> :ok end)
+
+      assert {:ok, %{last_song: %{skill_id: 325, level: ^level}}} =
+               DcUglydance.cast(caster, :self, level, DcUglydance.definition())
+    end
   end
 end
