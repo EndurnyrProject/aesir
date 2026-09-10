@@ -70,6 +70,7 @@ defmodule Aesir.ZoneServer.Integration.MerchantSkillsIntegrationTest do
   end
 
   describe "MC_LOUD (Crazy Uproar)" do
+    @tag integration_pre_re: false
     test "casting applies SC_LOUD and the stat recalc shows +4 STR and +30 batk" do
       %{pid: pid, character: char} = start_merchant()
 

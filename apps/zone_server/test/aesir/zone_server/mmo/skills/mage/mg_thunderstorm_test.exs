@@ -79,6 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgThunderstormTest do
       assert {:ok, placement} = MgThunderstorm.on_place(group(10))
       assert length(placement.cells) == 25
       assert placement.initial_delay == 0
+      assert placement.interval == 1_000
       assert placement.duration <= placement.interval
     end
   end

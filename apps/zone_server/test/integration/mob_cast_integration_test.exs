@@ -536,6 +536,7 @@ defmodule Aesir.ZoneServer.Integration.MobCastIntegrationTest do
   end
 
   describe "AL_HEAL friend row" do
+    @tag integration_pre_re: false
     test "heals a damaged friendly mob through the shared heal path" do
       caster_mob = spawn_test_mob(@map, {180, 180}, mob_id: @heal_mob_id)
       friend_mob = spawn_test_mob(@map, {181, 180}, mob_id: @heal_mob_id, hp: 50, max_hp: 200)

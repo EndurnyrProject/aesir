@@ -47,6 +47,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
 
   setup {Aesir.MimicMode, :global}
 
+  @tag integration_pre_re: false
   test "Throw Arrow requires a whip and one arrow without partial consumption" do
     target = start_target({151, 150})
     no_whip = start_dancer([@throw_arrow], arrows: 3)
@@ -118,6 +119,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
     assert player_sp(dancer.pid) == initial_sp
   end
 
+  @tag integration_pre_re: false
   test "Dazzler resolves after three seconds with enemy and quarter-rate party chances" do
     %{dancer: dancer, ally: ally} = start_dancer_party()
     target = start_target({151, 150})

@@ -543,6 +543,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
         map_name: @map,
         position: {151, 150},
         race: :undead,
+        element: {:undead, 1},
         modes: [:boss],
         hp: 100_000,
         max_hp: 100_000

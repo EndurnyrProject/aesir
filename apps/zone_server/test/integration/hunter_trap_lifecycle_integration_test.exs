@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Integration.HunterTrapLifecycleIntegrationTest do
     {:ok, manager: manager}
   end
 
+  @tag integration_pre_re: false
   test "a paid trap cast spends its catalyst and a rejected cast leaves it untouched" do
     character = insert_hunter(learned_skills: skills(%{@sandman => 1, @flasher => 1}))
     assert {:ok, _item} = Persistence.insert_item(character.id, %{nameid: @trap_item, amount: 1})

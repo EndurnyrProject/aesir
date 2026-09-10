@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.LearnSkill
@@ -160,7 +161,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert %StatusEntry{val1: 0} = StatusStorage.get_status(:player, char_id, @status_id)
 
       assert %{movement_speed: -25, aspd: -50} =
-               ModifierCalculator.get_all_modifiers(:player, char_id)
+               riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert band(StatusDisplay.spawn_state(:player, char_id).effect_state, @riding_bit) != 0
 
@@ -185,7 +186,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert StatusStorage.get_status(:player, character.id, @status_id).val1 == 2
 
       assert %{movement_speed: -25, aspd: -30} =
-               ModifierCalculator.get_all_modifiers(:player, character.id)
+               riding_view(ModifierCalculator.get_all_modifiers(:player, character.id))
 
       assert restored.walk_speed < @base_walk_speed
     end
@@ -228,7 +229,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert StatusStorage.has_status?(:player, char_id, @status_id)
 
       assert %{movement_speed: -25, aspd: -40} =
-               ModifierCalculator.get_all_modifiers(:player, char_id)
+               riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert respawned.walk_speed < @base_walk_speed
     end
@@ -246,7 +247,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       char_id = character.id
       flush_packets()
 
-      assert %{aspd: -50} = ModifierCalculator.get_all_modifiers(:player, char_id)
+      assert %{aspd: -50} = riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       simulate_incoming_message(session.pid, %LearnSkill{skill_id: kn_cavaliermastery_id()})
       assert_receive {:packet_sent, %SkillList{}, _}, 1_000
@@ -258,7 +259,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert StatusStorage.get_status(:player, char_id, @status_id).val1 == 1
 
       assert %{movement_speed: -25, aspd: -40} =
-               ModifierCalculator.get_all_modifiers(:player, char_id)
+               riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert Repo.get(Character, char_id).learned_skills[
                Integer.to_string(kn_cavaliermastery_id())
@@ -301,7 +302,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert changed.stats.riding == false
       assert changed.stats.progression.job_id == @merchant_class
       refute StatusStorage.has_status?(:player, char_id, @status_id)
-      assert ModifierCalculator.get_all_modifiers(:player, char_id) == %{}
+      assert riding_view(ModifierCalculator.get_all_modifiers(:player, char_id)) == %{}
       assert Repo.get(Character, char_id).option == 0
     end
   end
@@ -344,7 +345,7 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
       assert StatusStorage.has_status?(:player, char_id, @status_id)
 
       assert %{movement_speed: -25, aspd: -30} =
-               ModifierCalculator.get_all_modifiers(:player, char_id)
+               riding_view(ModifierCalculator.get_all_modifiers(:player, char_id))
 
       assert Repo.get(Character, char_id).option == @riding_bit
     end
@@ -491,4 +492,17 @@ defmodule Aesir.ZoneServer.Integration.RidingLifecycleTest do
   defp kn_cavaliermastery_id, do: KnCavaliermastery.definition().id
 
   defp riding?(game_state), do: MountHandler.riding?(%{game_state: game_state})
+
+  defp riding_view(modifiers) do
+    case GameMode.mode() do
+      :renewal ->
+        modifiers
+
+      :pre_renewal ->
+        case Map.pop(modifiers, :aspd_rate) do
+          {nil, rest} -> rest
+          {rate, rest} -> Map.put(rest, :aspd, rate)
+        end
+    end
+  end
 end

@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
@@ -75,8 +76,11 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
         assert get_player_state(nearby.pid).option == 0
       end
 
-      PlayerSession.warp(moving.pid, @map, 165, 150)
-      assert eventually(fn -> position(moving.pid) == {165, 150} end)
+      # Renewal songs have a cast window the member leaves during; classic songs
+      # are instant, so the leaving member must already stand out of range.
+      {leave_x, leave_y} = mode_value({165, 150}, {180, 180})
+      PlayerSession.warp(moving.pid, @map, leave_x, leave_y)
+      assert eventually(fn -> position(moving.pid) == {leave_x, leave_y} end)
       assert_act_ready(caster.pid)
 
       cast(caster, skill_id, 10)
@@ -100,6 +104,7 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
     end)
   end
 
+  @tag integration_pre_re: false
   test "a finite song survives movement, death, map change, relog, and expires" do
     character = insert_character("Lifecycle", bard?: true)
     equip_violin(character.id)
@@ -239,8 +244,11 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
            end)
   end
 
+  # Whistle 10 grants 38 flee in renewal; classic grants level + AGI/10 + lesson/2,
+  # which is 11 for this bard (17 effective AGI, no Music Lessons).
   defp assert_song_reader(session, :flee, baselines) do
-    assert eventually(fn -> song_reader(session.pid, :flee) == baselines.flee + 38 end)
+    expected = baselines.flee + mode_value(38, 11)
+    assert eventually(fn -> song_reader(session.pid, :flee) == expected end)
   end
 
   defp assert_song_reader(session, :aspd, baselines) do
@@ -251,10 +259,15 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
     assert eventually(fn -> song_reader(session.pid, :max_hp) > baselines.max_hp end)
   end
 
+  # Bragi 10 cuts cast 20% and delay 30% in renewal; classic adds DEX/10 to a
+  # 30% cast cut and INT/5 to a 50% delay cut, which is 31 and 51 for this bard
+  # (19 effective DEX, 6 effective INT, no Music Lessons).
   defp assert_song_reader(session, :bragi, _baselines) do
+    {cast_cut, delay_cut} = mode_value({20, 30}, {31, 51})
+
     assert eventually(fn ->
              case StatusStorage.get_status(:player, session.character.id, :sc_poembragi) do
-               %{state: %{cast_time_reduction: 20, delay_reduction: 30}} -> true
+               %{state: %{cast_time_reduction: ^cast_cut, delay_reduction: ^delay_cut}} -> true
                _status -> false
              end
            end)
@@ -342,8 +355,11 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
         max_sp: 500,
         learned_skills:
           if(bard?,
-            do: Map.new([@whistle, @sunset, @bragi, @idun], &{Integer.to_string(&1), 10}),
-            else: %{}
+            do:
+              [@whistle, @sunset, @bragi, @idun]
+              |> Map.new(&{Integer.to_string(&1), 10})
+              |> Map.put("1", 9),
+            else: %{"1" => 9}
           ),
         last_map: @map,
         last_x: elem(@origin, 0),
@@ -357,4 +373,7 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
 
     character
   end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

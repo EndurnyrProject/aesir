@@ -146,7 +146,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrMagnus do
   @spec skill_ratio(map()) :: pos_integer() | nil
   defp skill_ratio(target) do
     cond do
-      Map.get(target, :race) == :demon or RaceModifiers.undead_target?(target) -> 130
+      RaceModifiers.undead_or_demon?(target) -> 130
       GameMode.mode() == :renewal -> 100
       true -> nil
     end

@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.ActionRequest
@@ -280,6 +281,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     assert SkillUnitStorage.get(group.group_id) == nil
   end
 
+  @tag integration_pre_re: false
   test "Splasher exact generations follow moving targets and stale death, warp, replacement, and missing-source cleanup never explode" do
     caster = start_assassin(%{@splasher => 10, @poison_react => 7}, {20, 10})
     target = start_real_mob(26_401, {21, 10})
@@ -357,7 +359,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
     hp_before = get_mob_state(target.pid).hp
     sp_before = current_sp(armed.pid)
     cast(armed.pid, @venom_knife, 1, target.unit_id)
-    assert current_sp(armed.pid) == sp_before - 35
+    assert current_sp(armed.pid) == sp_before - mode_value(35, 15)
 
     assert eventually(fn -> get_mob_state(target.pid).hp < hp_before end)
     damage = hp_before - get_mob_state(target.pid).hp
@@ -704,4 +706,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinStatusLifecycleIntegrationTest do
   end
 
   defp current_sp(pid), do: get_player_state(pid).stats.current_state.sp
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

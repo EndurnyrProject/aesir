@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Integration.HunterDetectingIntegrationTest do
   @falconry_id 127
   @trap_item 1065
 
+  @tag integration_pre_re: false
   test "Detecting removes Hiding and Cloaking and reveals the hidden traps in its area" do
     detector = start_hunter(10_001, {152, 150}, falcon?: true, traps: 4)
     hidden = start_hunter(10_002, {154, 152})

@@ -278,7 +278,14 @@ defmodule Aesir.ZoneServer.Integration.CrusaderSkillsTest do
       # vit/luk 0: the chance-based Blind resistance roll happens in a game
       # process, so zeroed resist stats (100% infliction short-circuits the
       # roll) are the only way to keep it deterministic under load.
-      undead = spawn_mob(9_651, {151, 150}, hp: 100_000, race: :undead, vit: 0, luk: 0)
+      undead =
+        spawn_mob(9_651, {151, 150},
+          hp: 100_000,
+          race: :undead,
+          element: {:undead, 1},
+          vit: 0,
+          luk: 0
+        )
 
       max_hp = max_hp(crusader.pid)
       cost = div(max_hp * 20, 100)

@@ -377,6 +377,7 @@ defmodule Aesir.ZoneServer.Integration.PartyIntegrationTest do
   end
 
   defp character_fixture(name, attrs) do
+    attrs = Map.put_new(attrs, :learned_skills, %{"1" => 9})
     account = account_fixture(name)
 
     {:ok, character} =

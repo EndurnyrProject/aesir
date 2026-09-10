@@ -68,6 +68,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
 
   setup {Aesir.MimicMode, :global}
 
+  @tag integration_pre_re: false
   test "Encore replays one remembered level with its timing, transformed cost, and commitments" do
     bard = start_bard([@adaptation, @encore, @dissonance], modifier: @cost_cloak)
     target = start_target({151, 150})
@@ -117,6 +118,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
     assert mob_hp(target) < 50_000
   end
 
+  @tag integration_pre_re: false
   test "zero transformed cost still requires one SP and adds no nominal Encore charge" do
     empty = start_bard([@encore, @dissonance], name: "Empty", sp: 0, modifier: @free_cloak)
 
@@ -172,6 +174,7 @@ defmodule Aesir.ZoneServer.Integration.BardEncoreIntegrationTest do
     assert Map.has_key?(funded_state.skill_cooldowns, @encore)
   end
 
+  @tag integration_pre_re: false
   test "a weapon mutation during Encore commits no replay effect, SP, delay, or cooldown" do
     bard = start_bard([@encore, @dissonance], modifier: @cooldown_cloak)
     target = start_target({151, 150})

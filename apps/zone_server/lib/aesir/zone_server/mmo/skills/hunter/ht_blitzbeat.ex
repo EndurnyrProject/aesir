@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Hunter.HtBlitzbeat do
   @behaviour Active
   @behaviour Passive
 
-  @steel_crow_id HtSteelcrow.definition().id
+  @steel_crow_id HtSteelcrow.definition(:renewal).id
 
   @impl Active
   def validate(%PlayerState{} = caster, _target, _level, _definition) do

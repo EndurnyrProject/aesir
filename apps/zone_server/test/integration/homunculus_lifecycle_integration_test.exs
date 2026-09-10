@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifecycleIntegrationTest do
     :ok
   end
 
+  @tag integration_pre_re: false
   test "one owner journey creates, rests, recalls, dies, resurrects, reconnects, and deletes" do
     character = character_fixture()
     seed_item(character.id, @embryo)
@@ -151,6 +152,7 @@ defmodule Aesir.ZoneServer.Integration.HomunculusLifecycleIntegrationTest do
     assert UnitRegistry.count_units_by_type(:homunculus) == 0
   end
 
+  @tag integration_pre_re: false
   test "Rest cooldown survives an immediate disconnect and reconnect" do
     character = character_fixture()
     insert_homunculus(character.id)

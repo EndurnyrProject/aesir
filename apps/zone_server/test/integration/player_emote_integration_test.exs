@@ -34,7 +34,8 @@ defmodule Aesir.ZoneServer.Integration.PlayerEmoteIntegrationTest do
           name: "Emoter",
           map_name: "prontera",
           position: {150, 150},
-          connection_pid: conn_a
+          connection_pid: conn_a,
+          learned_skills: %{"1" => 2}
         )
 
       _player_b =

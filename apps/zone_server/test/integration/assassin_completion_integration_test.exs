@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
   @moduletag integration_re: true, integration_pre_re: true
   @moduletag :capture_log
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.InventoryItem
@@ -156,10 +157,10 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     assert AsKatar.atk_bonus(10, %{weapon_type: :dagger}) == 0
     assert AsSonicaccel.__skill_capabilities__() == [:passive]
 
-    assert AsSonicblow.skill_ratio(1, false) == 300
-    assert AsSonicblow.skill_ratio(10, false) == 1_200
-    assert AsSonicblow.skill_ratio(1, true) == 450
-    assert AsSonicblow.skill_ratio(10, true) == 1_800
+    assert AsSonicblow.skill_ratio(1, false, false) == mode_value(300, 350)
+    assert AsSonicblow.skill_ratio(10, false, false) == mode_value(1_200, 800)
+    assert AsSonicblow.skill_ratio(1, true, false) == mode_value(450, 350)
+    assert AsSonicblow.skill_ratio(10, true, false) == mode_value(1_800, 800)
     assert AsGrimtooth.skill_ratio(1) == 120
     assert AsGrimtooth.skill_ratio(5) == 200
 
@@ -181,7 +182,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     expect(Combat, :execute_sonic_blow_attack, 2, fn _caster, target_id, opts ->
       assert target_id == target.unit_id
       assert opts[:skill_level] in [1, 10]
-      assert opts[:skill_ratio] in [300, 1_200]
+      assert opts[:skill_ratio] in mode_value([300, 1_200], [350, 385, 800, 880])
       assert opts[:accelerated]
       assert opts[:display_hit_count] == 8
       {:ok, %{hit?: false, damage: 0, target_survives?: true}}
@@ -230,7 +231,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     expect(SkillAttack, :execute_forced_no_card_attack, fn ^armed, {:mob, target_id}, opts ->
       assert target_id == target.unit_id
       assert opts[:skill_level] == 1
-      assert opts[:skill_ratio] == 500
+      assert opts[:skill_ratio] == mode_value(500, 100)
       assert opts[:bonus_atk] == 30
       {:ok, %{hit?: false, damage: 0, target_survives?: true}}
     end)
@@ -323,10 +324,20 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
     end
   end
 
+  @tag integration_pre_re: false
   test "invalid and interrupted resource-consuming skills leave all commitments untouched" do
     assassin = start_resource_assassin()
     assassin_id = assassin.character.id
-    target = start_mob_session(unit_id: unique_id(), map_name: @map, position: {11, 10})
+
+    target =
+      start_mob_session(
+        unit_id: unique_id(),
+        map_name: @map,
+        position: {11, 10},
+        hp: 70,
+        max_hp: 100
+      )
+
     on_exit(fn -> if Process.alive?(target.pid), do: end_mob_session(target) end)
 
     before = live_resource_snapshot(assassin.pid)
@@ -431,7 +442,9 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          damage_type: :damage,
          range: 1,
          sp_cost: Enum.to_list(16..34//2),
-         cooldown: List.duplicate(1_000, 10),
+         cooldown: mode_value(List.duplicate(1_000, 10), []),
+         after_cast_delay: mode_value([], List.duplicate(2_000, 10)),
+         duration: mode_value(List.duplicate(4_500, 10), List.duplicate(5_000, 10)),
          require_weapon: [:katar],
          requires: []
        ), :active},
@@ -446,6 +459,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          range: [3, 4, 5, 6, 7],
          splash_radius: 1,
          sp_cost: List.duplicate(3, 5),
+         require_weapon: [:katar],
          requires: []
        ), :active},
       {AsEnchantpoison,
@@ -456,6 +470,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          max_level: 10,
          target_type: :target_ally,
          range: 1,
+         element: :poison,
          status: :sc_encpoison,
          sp_cost: List.duplicate(20, 10),
          duration: Enum.map(1..10, &(30_000 + 15_000 * (&1 - 1)))
@@ -490,6 +505,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          max_level: 10,
          target_type: :ground,
          range: 2,
+         element: :poison,
+         duration: mode_value(List.duplicate(18_000, 10), List.duplicate(60_000, 10)),
          hit_interval: 1_000,
          unit_duration: Enum.to_list(5_000..50_000//5_000),
          sp_cost: List.duplicate(20, 10),
@@ -504,10 +521,13 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          max_level: 10,
          target_type: :target_enemy,
          range: 1,
-         cast_time: List.duplicate(500, 10),
-         fixed_cast_time: List.duplicate(500, 10),
+         cast_time: mode_value(List.duplicate(500, 10), List.duplicate(1_000, 10)),
+         fixed_cast_time: mode_value(List.duplicate(500, 10), []),
          sp_cost: Enum.to_list(12..30//2),
-         cooldown: Enum.to_list(11_000..2_000//-1_000),
+         cooldown:
+           mode_value(Enum.to_list(11_000..2_000//-1_000), Enum.to_list(7_500..12_000//500)),
+         duration: mode_value(List.duplicate(18_000, 10), List.duplicate(60_000, 10)),
+         item_cost: mode_value([], [%{id: 716, amount: 1}]),
          requires: []
        ), :active},
       {AsSonicaccel,
@@ -529,7 +549,8 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
          target_type: :target_enemy,
          damage_type: :damage,
          range: 9,
-         sp_cost: [35],
+         sp_cost: mode_value([35], [15]),
+         duration: mode_value([18_000], [60_000]),
          requires_ammo: true,
          quest_skill: true,
          quest_owner_job: :assassin
@@ -538,6 +559,9 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
   end
 
   defp definition(attrs), do: struct!(Definition, attrs)
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 
   defp capability_module(:active, name), do: Catalog.active_module_for(name)
   defp capability_module(:ground, name), do: Catalog.ground_module_for(name)
@@ -571,7 +595,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinCompletionIntegrationTest do
 
   defp start_resource_assassin do
     character = insert_resource_assassin()
-    seed_item(character.id, @red_gemstone, 1)
+    seed_item(character.id, @red_gemstone, 2)
     seed_item(character.id, @venom_knife_item, 1, @ammo_slot)
 
     session =

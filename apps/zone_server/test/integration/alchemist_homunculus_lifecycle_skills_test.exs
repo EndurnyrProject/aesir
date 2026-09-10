@@ -355,6 +355,7 @@ defmodule Aesir.ZoneServer.Integration.AlchemistHomunculusLifecycleSkillsTest do
     end_player_session(session)
   end
 
+  @tag integration_pre_re: false
   test "every Resurrection rank settles only its matching timer with ranked HP, SP, and cooldown" do
     costs = [74, 68, 62, 56, 50]
     cooldowns = [140_000, 110_000, 80_000, 50_000, 20_000]

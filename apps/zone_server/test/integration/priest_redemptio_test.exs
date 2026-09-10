@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Integration.PriestRedemptioTest do
   @moduletag :capture_log
 
   alias Aesir.Commons.ClusterTestHelper
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Repo
@@ -69,7 +70,7 @@ defmodule Aesir.ZoneServer.Integration.PriestRedemptioTest do
     assert {:ok, updated_caster} = Interpreter.complete_cast(caster_state, 1014, 1, :self)
 
     assert updated_caster.stats.current_state.hp == 1
-    assert updated_caster.stats.current_state.sp == 200
+    assert updated_caster.stats.current_state.sp == mode_value(200, 0)
 
     assert_eventually(fn ->
       revived = get_player_state(target.pid)
@@ -99,4 +100,7 @@ defmodule Aesir.ZoneServer.Integration.PriestRedemptioTest do
 
     character
   end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

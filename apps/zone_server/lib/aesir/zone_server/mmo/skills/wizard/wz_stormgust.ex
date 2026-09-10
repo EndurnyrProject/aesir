@@ -40,7 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
-  # the source freezes a target on its 3rd accumulated hit; the counter never resets.
   @freeze_threshold 3
 
   @behaviour Ground
@@ -107,8 +106,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
   end
 
   @doc """
-  Renewal freezes each hit with a 65 minus 5 per level percent chance and keeps
-  no counter (`nil` in classic, where the third accumulated hit freezes).
+  Renewal freezes each hit with a 65 minus 5 per level percent chance and only
+  records the hit (`nil` in classic, where the third accumulated hit freezes).
   """
   @spec freeze_chance(pos_integer()) :: pos_integer() | nil
   def freeze_chance(level) do
@@ -135,6 +134,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WzStormgust do
       StatusInterpreter.apply_status(unit_type, target_id, :sc_freeze, [])
     end
 
-    counts
+    Map.update(counts, target_id, 1, &(&1 + 1))
   end
 end

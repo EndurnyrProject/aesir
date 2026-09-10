@@ -197,6 +197,8 @@ defmodule Aesir.ZoneServer.Unit.Homunculus.HomunculusState do
     |> base_stats()
     |> Map.merge(state.combat_stats)
     |> Map.merge(%{
+      total_stats: base_stats(state),
+      unbuffed_stats: base_stats(state),
       base_level: state.level,
       job_level: 1,
       hp: state.hp,

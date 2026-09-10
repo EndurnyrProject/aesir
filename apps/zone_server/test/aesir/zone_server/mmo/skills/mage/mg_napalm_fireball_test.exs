@@ -200,4 +200,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgNapalmFireballTest do
                MgFireball.cast(caster, {:unit, @target_id}, 3, definition)
     end
   end
+
+  test "only player casters lose the outer ring" do
+    assert MgFireball.caster_ratio(%{character_id: 1}, :renewal, 5, 2) == 180
+    assert MgFireball.caster_ratio(%{instance_id: 1}, :renewal, 5, 2) == 240
+    assert MgFireball.caster_ratio(%{character_id: 1}, :pre_renewal, 5, 1) == 120
+  end
 end

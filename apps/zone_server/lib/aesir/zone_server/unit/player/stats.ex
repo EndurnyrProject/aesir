@@ -324,6 +324,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   """
   @spec to_formula_map(t()) :: map()
   def to_formula_map(%__MODULE__{} = stats) do
+    total = total_stats(stats)
+
     %{
       # Base stats
       str: stats.base_stats.str,
@@ -334,11 +336,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       luk: stats.base_stats.luk,
       # Fully calculated primary stats, for formulas that must see job, equipment
       # and status contributions rather than the allocated points alone.
-      total_stats: total_stats(stats),
+      total_stats: total,
       # The same, minus the status layer, for a formula that emits a delta on the
       # very stat it reads: reading its own output back would compound it on
       # every recalculation.
-      unbuffed_stats: unbuffed_stats(stats),
+      unbuffed_stats: unbuffed_stats(stats, total),
       # Trait stats
       pow: stats.base_stats.pow,
       sta: stats.base_stats.sta,
@@ -1239,11 +1241,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   defp total_stats(%__MODULE__{} = stats),
     do: Map.new(@primary_stats, &{&1, get_effective_stat(stats, &1)})
 
-  @spec unbuffed_stats(t()) :: %{atom() => integer()}
-  defp unbuffed_stats(%__MODULE__{} = stats) do
-    Map.new(@primary_stats, fn stat_name ->
-      status_bonus = Map.get(stats.modifiers.status_effects, stat_name, 0)
-      {stat_name, get_effective_stat(stats, stat_name) - status_bonus}
+  @spec unbuffed_stats(t(), %{atom() => integer()}) :: %{atom() => integer()}
+  defp unbuffed_stats(%__MODULE__{} = stats, total) do
+    Map.new(total, fn {stat_name, value} ->
+      {stat_name, value - Map.get(stats.modifiers.status_effects, stat_name, 0)}
     end)
   end
 

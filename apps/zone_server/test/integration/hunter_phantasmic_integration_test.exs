@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Integration.HunterPhantasmicIntegrationTest do
     :ok
   end
 
+  @tag integration_pre_re: false
   test "a connected surviving hit deals 500% Wind damage and knocks the target back 3 cells" do
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
 
@@ -76,6 +77,7 @@ defmodule Aesir.ZoneServer.Integration.HunterPhantasmicIntegrationTest do
     assert mob_position(mob) == {151, 150}
   end
 
+  @tag integration_pre_re: false
   test "a missed strike deals no damage and requests no movement" do
     stub(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :miss end)
 

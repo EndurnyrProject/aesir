@@ -315,6 +315,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
         CombatTestHelper.create_mob_combatant(
           unit_id: 94_050,
           race: :undead,
+          element: {:undead, 1},
           def: 30,
           base_level: 40
         )
@@ -371,6 +372,7 @@ defmodule Aesir.ZoneServer.Integration.AcolyteSkillsTest do
         CombatTestHelper.create_mob_combatant(
           unit_id: 94_060,
           race: :undead,
+          element: {:undead, 1},
           atk: 300,
           base_level: 50
         )

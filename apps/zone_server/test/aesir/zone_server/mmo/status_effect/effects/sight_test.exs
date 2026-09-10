@@ -31,9 +31,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.SightTest do
   defp entry, do: %StatusEntry{type: :sc_sight, state: %{}}
 
   describe "metadata" do
-    test "is a 10-second buff mapped to client status id 88" do
+    test "is a 10-second buff carrying the sight option" do
       assert :sc_sight = Sight.id()
-      assert %{properties: [:buff], duration: 10_000} = Sight.metadata()
+      assert %{properties: [:buff], duration: 10_000, option: :sight} = Sight.metadata()
     end
 
     test "keeps pulsing for its whole life rather than only on apply" do

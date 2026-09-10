@@ -89,6 +89,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlCrucis do
   end
 
   @spec eligible?(map()) :: boolean()
-  defp eligible?(combatant),
-    do: RaceModifiers.undead_target?(combatant) or Map.get(combatant, :race) == :demon
+  defp eligible?(combatant), do: RaceModifiers.undead_or_demon?(combatant)
 end

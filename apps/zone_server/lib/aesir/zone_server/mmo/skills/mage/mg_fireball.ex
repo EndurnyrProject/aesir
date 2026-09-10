@@ -52,11 +52,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFireball do
   for a victim `distance` cells from the centre.
 
   The outermost ring of the 5x5 blast keeps three quarters of the centre ratio in
-  both modes; everything closer takes it whole.
+  both modes when a player casts; everything closer, and every cell of a monster's
+  cast, takes it whole.
   """
   @spec skill_ratio(GameMode.t(), pos_integer(), non_neg_integer()) :: pos_integer()
   def skill_ratio(mode, level, 2), do: div(centre_ratio(mode, level) * 3, 4)
   def skill_ratio(mode, level, _distance), do: centre_ratio(mode, level)
+
+  @doc "The ratio a caster deals at `distance` cells: only players lose the outer ring."
+  @spec caster_ratio(map(), GameMode.t(), pos_integer(), non_neg_integer()) :: pos_integer()
+  def caster_ratio(%{character_id: _}, mode, level, distance),
+    do: skill_ratio(mode, level, distance)
+
+  def caster_ratio(_caster, mode, level, _distance), do: centre_ratio(mode, level)
 
   @spec centre_ratio(GameMode.t(), pos_integer()) :: pos_integer()
   defp centre_ratio(:renewal, level), do: 140 + 20 * level
@@ -68,7 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Mage.MgFireball do
       opts = [
         skill_id: definition.id,
         skill_level: level,
-        skill_ratio: &skill_ratio(GameMode.mode(), level, &1),
+        skill_ratio: &caster_ratio(caster, GameMode.mode(), level, &1),
         element: definition.element,
         split: false
       ]

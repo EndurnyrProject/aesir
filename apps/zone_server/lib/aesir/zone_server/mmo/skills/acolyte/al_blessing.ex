@@ -116,7 +116,5 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlBlessing do
     end
   end
 
-  defp undead_or_demon?(combatant) do
-    RaceModifiers.undead_target?(combatant) or Map.get(combatant, :race) == :demon
-  end
+  defp undead_or_demon?(combatant), do: RaceModifiers.undead_or_demon?(combatant)
 end

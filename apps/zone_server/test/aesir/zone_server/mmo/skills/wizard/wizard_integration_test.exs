@@ -341,6 +341,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Wizard.WizardIntegrationTest do
            end) == 12
   end
 
+  @tag integration_pre_re: false
   test "Sight Blaster arms, hits on contact, and consumes its status" do
     # `ensure_living_target` (and `on_contact`, which re-fetches the caster
     # from the registry) need a real living `PlayerState`, not a bare map.

@@ -16,9 +16,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
     immunity: [:status_immune],
     icon: :splasher
 
+  @splasher_skill_id 141
+
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
   alias Aesir.ZoneServer.Unit
@@ -91,7 +94,10 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Splasher do
 
   @doc "The poison left by the explosion lasts 18 s in renewal and 60 s in pre-renewal."
   @spec poison_duration() :: pos_integer()
-  def poison_duration, do: if(GameMode.mode() == :renewal, do: 18_000, else: 60_000)
+  def poison_duration do
+    {:ok, definition} = Catalog.by_id(@splasher_skill_id)
+    hd(definition.duration)
+  end
 
   defp apply_poison({unit_type, unit_id}, instance) do
     StatusInterpreter.apply_status(unit_type, unit_id, :sc_poison,

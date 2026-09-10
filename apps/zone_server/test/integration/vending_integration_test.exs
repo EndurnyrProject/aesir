@@ -242,7 +242,14 @@ defmodule Aesir.ZoneServer.Integration.VendingIntegrationTest do
     cart_stock = Keyword.fetch!(opts, :cart_stock)
     identify = Keyword.get(opts, :identify, 1)
 
-    character = insert_character("Merchy", class: @merchant_class, zeny: zeny, skill_point: 20)
+    character =
+      insert_character("Merchy",
+        class: @merchant_class,
+        zeny: zeny,
+        skill_point: 20,
+        sp: 100,
+        max_sp: 100
+      )
 
     {:ok, _} =
       InventoryPersistence.insert_item(character.id, %{

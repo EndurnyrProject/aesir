@@ -53,6 +53,7 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
 
   setup {Aesir.MimicMode, :global}
 
+  @tag integration_pre_re: false
   test "Musical Strike spends and persists one arrow for one aggregate two-hit presentation" do
     target = start_target({151, 150}, hp: 50_000)
     invalid = start_bard([@musical_strike], name: "NoArrow", instrument?: true)

@@ -52,6 +52,7 @@ defmodule Aesir.ZoneServer.Integration.DancerEncoreIntegrationTest do
 
   setup {Aesir.MimicMode, :global}
 
+  @tag integration_pre_re: false
   test "Encore replays a Dancer dance after half-base, Gypsy's Kiss, and Adaptation costs" do
     dancer = start_dancer()
 

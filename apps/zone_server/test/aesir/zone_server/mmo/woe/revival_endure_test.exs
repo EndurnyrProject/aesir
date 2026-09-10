@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RevivalEndureTest do
       start_mob_session(
         unit_id: 11_006,
         race: :undead,
+        element: {:undead, 1},
         max_hp: 10_000,
         position: {151, 150}
       )

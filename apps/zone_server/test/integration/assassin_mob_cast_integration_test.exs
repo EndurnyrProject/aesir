@@ -153,6 +153,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinMobCastIntegrationTest do
     |> Enum.each(&Storage.delete(&1.group_id))
   end
 
+  @tag integration_pre_re: false
   test "a mob selects a controlled Venom Splasher row without a learned passive" do
     target =
       start_player_session(

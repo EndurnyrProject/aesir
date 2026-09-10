@@ -229,7 +229,7 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
         max_hp: 500,
         sp: 500,
         max_sp: 500,
-        learned_skills: Map.new(skill_ids, &{Integer.to_string(&1), 10}),
+        learned_skills: skill_ids |> Map.new(&{Integer.to_string(&1), 10}) |> Map.put("1", 9),
         last_map: @map,
         last_x: x,
         last_y: y,

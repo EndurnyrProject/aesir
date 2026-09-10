@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     |> PhysicalAttack.finish(context)
   end
 
-  defp reduce_res(damage, %{defense_mode: mode}) when mode in [:simple, :ignore], do: damage
+  defp reduce_res(damage, %{defense_mode: :simple}), do: damage
 
   defp reduce_res(damage, context),
     do: DamageShared.res_reduction(damage, Map.get(context, :res, 0))

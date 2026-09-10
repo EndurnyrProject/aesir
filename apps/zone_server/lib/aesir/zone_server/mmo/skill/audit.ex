@@ -97,9 +97,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Audit do
   end
 
   def expand_levels(entries, subkey, max_level) when is_list(entries) do
-    entries
-    |> Enum.sort_by(&Map.fetch!(&1, "Level"))
-    |> Enum.map(&Map.fetch!(&1, subkey))
+    by_level = Map.new(entries, &{Map.fetch!(&1, "Level"), Map.fetch!(&1, subkey)})
+    highest = entries |> Enum.map(&Map.fetch!(&1, "Level")) |> Enum.max()
+
+    1..highest
+    |> Enum.map(&Map.get(by_level, &1, 0))
     |> extend_to(max_level)
   end
 

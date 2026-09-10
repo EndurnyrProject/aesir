@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Integration.NpcskillIntegrationTest do
     {:ok, support_gid: gid_for(SupportNpc), unsupported_gid: gid_for(UnsupportedNpc)}
   end
 
+  @tag integration_pre_re: false
   test "a dialog heal restores exactly 1,145 HP and sends an NPC-sourced skill effect", %{
     support_gid: gid
   } do

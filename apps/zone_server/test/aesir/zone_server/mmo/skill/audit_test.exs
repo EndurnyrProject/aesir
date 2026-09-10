@@ -303,4 +303,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.AuditTest do
       assert suggestion == "```elixir\nrange: [renewal: 9, pre_renewal: 5]\n```"
     end
   end
+
+  test "expand_levels/3 keeps a sparse-start row at its declared levels" do
+    entries = [%{"Level" => 2, "Time" => 1_000}, %{"Level" => 4, "Time" => 3_000}]
+    assert Audit.expand_levels(entries, "Time", 4) == [0, 1_000, 0, 3_000]
+  end
 end

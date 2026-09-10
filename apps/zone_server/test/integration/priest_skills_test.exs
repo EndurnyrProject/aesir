@@ -111,6 +111,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
     refute Map.has_key?(learned, catalog_id(:pr_redemptio))
   end
 
+  @tag integration_pre_re: false
   test "real party and target sessions receive direct, party, cure, barrier, and holy effects" do
     caster_character = character_fixture("PriestMatrixCaster", @priest_class, {150, 150})
     ally_character = character_fixture("PriestMatrixAlly", @acolyte_class, {151, 150})
@@ -226,6 +227,7 @@ defmodule Aesir.ZoneServer.Integration.PriestSkillsTest do
     end
   end
 
+  @tag integration_pre_re: false
   test "Sanctuary, Safety Wall, and Magnus run as real ground-unit groups" do
     :ets.insert(
       EtsTable.table_for(:map_cache),

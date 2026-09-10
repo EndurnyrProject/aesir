@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
 
   import Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.SpiritSphereUpdate
@@ -294,7 +295,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
     end
 
     test "Throw Spirit Sphere is admitted from Root level two and closes the pair" do
-      {monk, mob} = rooted_pair(3_004, 4_102, 2, spheres: 3, sp: 300)
+      {monk, mob} = rooted_pair(3_004, 4_102, 2, spheres: 5, sp: 300)
 
       assert StatusInterpreter.can_use_skill?(:player, monk.character_id, 267)
       hp_before = mob_hp(mob.pid)
@@ -400,8 +401,11 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
       refute StatusInterpreter.can_use_skill?(:player, monk.character.id)
 
       # Renewal floor: incoming positive damage becomes max(1, damage / 10).
-      assert StatusInterpreter.absorb_damage(:player, monk.character.id, 1_000, %{}) == 100
-      assert StatusInterpreter.absorb_damage(:player, monk.character.id, 5, %{}) == 1
+      assert StatusInterpreter.absorb_damage(:player, monk.character.id, 1_000, %{}) ==
+               mode_value(100, 1_000)
+
+      assert StatusInterpreter.absorb_damage(:player, monk.character.id, 5, %{}) ==
+               mode_value(1, 5)
     end
   end
 
@@ -673,4 +677,7 @@ defmodule Aesir.ZoneServer.Integration.MonkIntegrationTest do
   end
 
   defp future, do: System.monotonic_time(:millisecond) + 600_000
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

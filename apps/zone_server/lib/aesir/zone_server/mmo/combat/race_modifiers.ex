@@ -31,7 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
   @spec demon_bane_atk(map(), map()) :: non_neg_integer()
   def demon_bane_atk(%{demon_bane_level: level, progression: %{base_level: base_level}}, defender)
       when level > 0 do
-    if undead_or_demon?(defender), do: trunc(level * (base_level / 20.0 + 3.0)), else: 0
+    if bane_target?(defender), do: trunc(level * (base_level / 20.0 + 3.0)), else: 0
   end
 
   def demon_bane_atk(_attacker, _defender), do: 0
@@ -65,17 +65,19 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
         attacker
       )
       when level > 0 do
-    if undead_or_demon?(attacker), do: trunc((base_level / 25.0 + 3.0) * level + 0.5), else: 0
+    if bane_target?(attacker), do: trunc((base_level / 25.0 + 3.0) * level + 0.5), else: 0
   end
 
   def divine_protection_def(_defender, _attacker), do: 0
 
   # Both passives are gated on a non-player opposing unit: neither works in PvP.
-  @spec undead_or_demon?(map()) :: boolean()
-  defp undead_or_demon?(%{unit_type: :player}), do: false
+  @spec bane_target?(map()) :: boolean()
+  defp bane_target?(%{unit_type: :player}), do: false
+  defp bane_target?(unit), do: undead_or_demon?(unit)
 
-  defp undead_or_demon?(unit),
-    do: Map.get(unit, :race) == :demon or undead_target?(unit)
+  @doc "True when the unit is demon race or carries the undead defence element."
+  @spec undead_or_demon?(map()) :: boolean()
+  def undead_or_demon?(unit), do: Map.get(unit, :race) == :demon or undead_target?(unit)
 
   @doc """
   Dragonology (SA_DRAGONOLOGY) percentage physical ATK bonus vs Dragon-race

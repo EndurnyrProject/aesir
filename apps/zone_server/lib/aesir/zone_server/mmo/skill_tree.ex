@@ -402,10 +402,12 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
 
   @spec build_index([Path.t()]) :: index()
   defp build_index(sources) do
+    names = name_to_id()
+
     sources
     |> raw_jobs()
     |> flatten_inherit()
-    |> Map.new(fn {job_name, entries} -> {job_name, resolve_tree(job_name, entries)} end)
+    |> Map.new(fn {job_name, entries} -> {job_name, resolve_tree(job_name, entries, names)} end)
     |> Enum.reduce(%{}, &index_job/2)
   end
 
@@ -431,16 +433,16 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     end
   end
 
-  @spec resolve_tree(String.t(), [map()]) :: tree()
-  defp resolve_tree(job_name, entries) do
+  @spec resolve_tree(String.t(), [map()], %{String.t() => non_neg_integer()}) :: tree()
+  defp resolve_tree(job_name, entries, names) do
     entries
-    |> Enum.flat_map(&resolve_entry(job_name, &1))
+    |> Enum.flat_map(&resolve_entry(job_name, &1, names))
     |> Map.new(&{&1.skill_id, &1})
   end
 
-  @spec resolve_entry(String.t(), map()) :: [Entry.t()]
-  defp resolve_entry(job_name, entry) do
-    case resolve_skill_id(entry["name"]) do
+  @spec resolve_entry(String.t(), map(), %{String.t() => non_neg_integer()}) :: [Entry.t()]
+  defp resolve_entry(job_name, entry, names) do
+    case resolve_skill_id(names, entry["name"]) do
       {:ok, skill_id} ->
         [
           %Entry{
@@ -449,7 +451,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
             max_level: entry["max_level"],
             base_level: Map.get(entry, "base_level", 0),
             job_level: Map.get(entry, "job_level", 0),
-            requires: resolve_requires(Map.get(entry, "requires", []))
+            requires: resolve_requires(Map.get(entry, "requires", []), names)
           }
         ]
 
@@ -463,10 +465,11 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     end
   end
 
-  @spec resolve_requires([map()]) :: [{non_neg_integer(), pos_integer()}]
-  defp resolve_requires(requires) do
+  @spec resolve_requires([map()], %{String.t() => non_neg_integer()}) ::
+          [{non_neg_integer(), pos_integer()}]
+  defp resolve_requires(requires, names) do
     Enum.flat_map(requires, fn req ->
-      case resolve_skill_id(req["name"]) do
+      case resolve_skill_id(names, req["name"]) do
         {:ok, skill_id} ->
           [{skill_id, req["level"]}]
 
@@ -500,8 +503,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     end
   end
 
-  @spec resolve_skill_id(String.t()) :: {:ok, non_neg_integer()} | :error
-  defp resolve_skill_id(name), do: Map.fetch(name_to_id(), String.upcase(name))
+  @spec resolve_skill_id(%{String.t() => non_neg_integer()}, String.t()) ::
+          {:ok, non_neg_integer()} | :error
+  defp resolve_skill_id(names, name), do: Map.fetch(names, String.upcase(name))
 
   @spec name_to_id() :: %{String.t() => non_neg_integer()}
   defp name_to_id do

@@ -989,7 +989,7 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
         base_level: 1,
         name: name,
         zeny: zeny,
-        learned_skills: %{"1" => 1},
+        learned_skills: %{"1" => 2},
         last_map: "prontera",
         last_x: elem(position, 0),
         last_y: elem(position, 1)
@@ -1042,7 +1042,7 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
   defp player(name, position, opts \\ []) do
     start_player_session(
       Keyword.merge(
-        [name: name, position: position, learned_skills: %{"1" => 1}],
+        [name: name, position: position, learned_skills: %{"1" => 2}],
         opts
       )
     )
