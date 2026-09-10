@@ -29,6 +29,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.DivestTest do
   @caster_id 1_000
   @target_id 2_000
 
+  @sp_costs [
+    {215, [17, 19, 21, 23, 25]},
+    {216, [12, 14, 16, 18, 20]},
+    {217, [17, 19, 21, 23, 25]},
+    {218, [12, 14, 16, 18, 20]}
+  ]
+
   @skills [
     {RgStripweapon, 215, :rg_stripweapon, "Divest Weapon", :right_hand, :sc_stripweapon, 0},
     {RgStripshield, 216, :rg_stripshield, "Divest Shield", :left_hand, :sc_stripshield, 0},
@@ -189,5 +196,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.DivestTest do
       max_sp: 100,
       spawned_at: 0
     }
+  end
+
+  @tag game_mode: :renewal
+  test "renewal carries the source's cast table and SP" do
+    Catalog.reload()
+
+    for {id, sp_cost} <- @sp_costs do
+      assert {:ok, definition} = Catalog.by_id(id)
+      assert definition.cast_time == [560, 720, 880, 1_140, 1_200]
+      assert definition.fixed_cast_time == [140, 180, 220, 260, 300]
+      assert definition.after_cast_delay == List.duplicate(1_000, 5)
+      assert definition.sp_cost == sp_cost
+    end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's one-second cast and SP" do
+    Catalog.reload()
+
+    for {id, sp_cost} <- @sp_costs do
+      assert {:ok, definition} = Catalog.by_id(id)
+      assert definition.cast_time == List.duplicate(1_000, 5)
+      assert definition.fixed_cast_time == []
+      assert definition.after_cast_delay == List.duplicate(1_000, 5)
+      assert definition.sp_cost == sp_cost
+    end
   end
 end

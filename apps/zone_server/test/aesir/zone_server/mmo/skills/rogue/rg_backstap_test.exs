@@ -3,9 +3,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
   use Mimic
 
   alias Aesir.Commons.Models.InventoryItem
+  alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.ForcedMovement
   alias Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstap
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -17,10 +19,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
 
   setup :verify_on_exit!
 
+  setup do
+    Mimic.copy(Cell)
+    :ok
+  end
+
   @caster_id 1_000
   @target_id 2_000
   @dagger_id 1_201
   @katar_id 1_250
+  @bow_id 1_701
   @right_hand 2
 
   defp definition do
@@ -74,14 +82,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     assert skill.range == 1
   end
 
-  test "ratio is 200 plus 40 per level and daggers halve it" do
+  test "ratio is 200 plus 40 per level and bows halve it" do
     assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 1) == 240
     assert RgBackstap.backstab_ratio(player(@katar_id, 10, 11), 10) == 600
-    assert RgBackstap.backstab_ratio(player(@dagger_id, 10, 11), 1) == 120
-    assert RgBackstap.backstab_ratio(player(@dagger_id, 10, 11), 10) == 300
+    assert RgBackstap.backstab_ratio(player(@dagger_id, 10, 11), 1) == 240
+    assert RgBackstap.backstab_ratio(player(@bow_id, 10, 11), 1) == 120
+    assert RgBackstap.backstab_ratio(player(@bow_id, 10, 11), 10) == 300
   end
 
-  test "a rear attack ignores flee and applies its stun chance on hit" do
+  @tag game_mode: :renewal
+  test "a rear attack rolls its hit and applies its stun chance on hit" do
     caster = player(@katar_id, 10, 11)
     target = mob(@target_id, 10, 10, 0)
     stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
@@ -90,7 +100,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
       assert opts[:skill_id] == 212
       assert opts[:skill_level] == 3
       assert opts[:skill_ratio] == 320
-      assert opts[:ignore_flee] == true
+      refute Keyword.has_key?(opts, :ignore_flee)
       assert opts[:skip_range] == true
       assert opts[:report_hit] == true
       {:ok, %{hit?: true, damage: 0, target_survives?: true}}
@@ -106,6 +116,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 3, definition())
   end
 
+  @tag game_mode: :pre_renewal
   test "a front attack is rejected before combat" do
     caster = player(@katar_id, 10, 9)
     target = mob(@target_id, 10, 10, 0)
@@ -118,6 +129,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
              RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
   end
 
+  @tag game_mode: :renewal
   test "mob casters use the same rear attack path" do
     caster = mob(@caster_id, 10, 11, 0)
     target = mob(@target_id, 10, 10, 0)
@@ -136,5 +148,85 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgBackstapTest do
     end)
 
     assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 10, definition())
+  end
+
+  @tag game_mode: :renewal
+  test "a front attack is allowed and the caster slips behind the target" do
+    caster = %{player(@katar_id, 10, 9) | map_name: "backstab"}
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+    stub(Cell, :traversable?, fn "backstab", 10, 11 -> true end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 240
+      assert opts[:display_hit_count] == 1
+      {:ok, %{hit?: true, damage: 0, target_survives?: true}}
+    end)
+
+    stub(StatusInterpreter, :apply_status, fn :mob, @target_id, :sc_stun, _opts -> :ok end)
+
+    assert {:ok, updated} = RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
+    assert %ForcedMovement{map_name: "backstab", x: 10, y: 11} = updated.pending_forced_movement
+  end
+
+  @tag game_mode: :renewal
+  test "a dagger doubles the damage and shows two hits" do
+    caster = player(@dagger_id, 10, 11)
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:display_hit_count] == 2
+      assert opts[:skill_ratio] == 480
+      {:ok, %{hit?: false}}
+    end)
+
+    assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 1, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic rear attack ignores flee and never stuns" do
+    caster = player(@katar_id, 10, 11)
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+    reject(&StatusInterpreter.apply_status/4)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 320
+      assert opts[:ignore_flee] == true
+      assert opts[:display_hit_count] == 1
+      {:ok, %{hit?: true, damage: 0, target_survives?: true}}
+    end)
+
+    assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 3, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic mob casters use the rear attack path without a stun" do
+    caster = mob(@caster_id, 10, 11, 0)
+    target = mob(@target_id, 10, 10, 0)
+    stub(TargetResolver, :resolve, fn @target_id -> {:ok, self(), target, :mob} end)
+    reject(&StatusInterpreter.apply_status/4)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 600
+      {:ok, %{hit?: true, damage: 0, target_survives?: true}}
+    end)
+
+    assert {:ok, ^caster} = RgBackstap.cast(caster, {:unit, @target_id}, 10, definition())
+  end
+
+  @tag game_mode: :renewal
+  test "renewal carries the cooldown" do
+    assert definition().sp_cost == List.duplicate(16, 10)
+    assert definition().after_cast_delay == List.duplicate(500, 10)
+    assert definition().cooldown == List.duplicate(500, 10)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries no cooldown" do
+    assert definition().sp_cost == List.duplicate(16, 10)
+    assert definition().after_cast_delay == List.duplicate(500, 10)
+    assert definition().cooldown == []
   end
 end

@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgGraffiti do
   @moduledoc """
   Scribble (RG_GRAFFITI), a map-wide persistent ground marker.
+
+  Both modes place one 3-minute graffiti per map for 15 SP and a Red Gemstone.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 220,

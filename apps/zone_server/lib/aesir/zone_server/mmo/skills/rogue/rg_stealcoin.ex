@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgStealcoin do
-  @moduledoc "Mug (RG_STEALCOIN), a one-time zeny steal from a monster."
+  @moduledoc """
+  Mug (RG_STEALCOIN), a one-time zeny steal from a monster.
+
+  Both modes roll 10 times level plus DEX/2 plus LUK/2 plus twice the level gap
+  per mille for 8 to 10 times the target level zeny, 15 SP, and a 0.5 s delay.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 211,

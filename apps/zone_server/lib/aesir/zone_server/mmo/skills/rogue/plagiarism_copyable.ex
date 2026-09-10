@@ -1,4 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.PlagiarismCopyable do
+  @moduledoc """
+  The copyable set is identical in both modes.
+  """
+
   @copyable_skill_ids MapSet.new([
                         5,
                         7,

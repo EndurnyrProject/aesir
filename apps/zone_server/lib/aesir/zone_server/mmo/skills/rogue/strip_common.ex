@@ -1,5 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.StripCommon do
-  @moduledoc false
+  @moduledoc """
+  The success and duration formulas are shared by both modes.
+  """
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

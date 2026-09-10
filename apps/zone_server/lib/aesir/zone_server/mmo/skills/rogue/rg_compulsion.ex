@@ -1,4 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCompulsion do
+  @moduledoc """
+  Both modes grant a 5 plus 4 per level percent shop discount.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 224,
     name: :rg_compulsion,

@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
   @caster_id 1_000
   @target_id 2_000
 
-  test "is discovered and deals 30 percent per level before deferring the warp" do
+  test "is discovered and deals 100 plus 30 percent per level before deferring the warp" do
     Catalog.reload()
     assert {:ok, RgIntimidate} = Catalog.active_module_for(:rg_intimidate)
     assert {:ok, definition} = Catalog.by_id(219)
@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
       assert opts[:skill_id] == 219
       assert opts[:skill_level] == 4
-      assert opts[:skill_ratio] == 120
+      assert opts[:skill_ratio] == 220
       assert opts[:skip_range] == true
       assert opts[:report_hit] == true
       {:ok, %{hit?: true, damage: 10, target_survives?: true}}
@@ -197,5 +197,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidateTest do
       spawned_at: 0,
       deferred_epoch: 3
     }
+  end
+
+  test "carries the source's SP table" do
+    assert {:ok, definition} = Catalog.by_id(219)
+    assert definition.sp_cost == [13, 16, 19, 22, 25]
   end
 end

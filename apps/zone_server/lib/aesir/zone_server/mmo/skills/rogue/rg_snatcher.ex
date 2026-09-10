@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgSnatcher do
   @moduledoc """
   Gank (RG_SNATCHER) adds a chance to steal an item on a landed normal attack.
+
+  Both modes roll 15 times level plus 55 plus 10 times Steal per mille on a
+  non-bow melee hit.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 210,

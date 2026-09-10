@@ -1,4 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgTunneldrive do
+  @moduledoc """
+  Both modes move while hidden at 120 minus 6 per level percent of the cell delay.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 213,
     name: :rg_tunneldrive,

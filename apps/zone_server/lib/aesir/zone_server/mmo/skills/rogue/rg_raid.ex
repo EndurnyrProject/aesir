@@ -1,4 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
+  @moduledoc """
+  Both modes break Hiding, strike every enemy around the caster, and roll a 10
+  plus 3 per level percent 5 s stun and blind on each hit. Renewal: 50 plus 150 per
+  level percent within 2 cells for 15 SP, a 20 s blind, and a 10 s mark that raises
+  damage taken by 30 percent (15 on a boss). Pre-renewal: 100 plus 40 per level
+  percent within 1 cell for 20 SP, a 30 s blind, and no mark.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 214,
     name: :rg_raid,
@@ -7,8 +15,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
     max_level: 5,
     target_type: :self,
     damage_type: :damage,
-    splash_radius: 2
+    splash_radius: [renewal: 2, pre_renewal: 1],
+    sp_cost: [renewal: List.duplicate(15, 5), pre_renewal: List.duplicate(20, 5)]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -70,7 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
     [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 50 + 150 * level,
+      skill_ratio: skill_ratio(level),
       skip_range: true,
       report_hit: true
     ]
@@ -88,24 +98,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaid do
 
     StatusInterpreter.apply_status(target_type, target_id, :sc_stun,
       success_rate: success_rate,
+      duration: 5_000,
       caster_id: source_id,
       source_type: source_type
     )
 
     StatusInterpreter.apply_status(target_type, target_id, :sc_blind,
       success_rate: success_rate,
+      duration: blind_duration(),
       caster_id: source_id,
       source_type: source_type
     )
 
-    StatusInterpreter.apply_status(target_type, target_id, :sc_raid,
-      success_rate: 100,
-      caster_id: source_id,
-      source_type: source_type
-    )
+    if GameMode.mode() == :renewal do
+      StatusInterpreter.apply_status(target_type, target_id, :sc_raid,
+        success_rate: 100,
+        caster_id: source_id,
+        source_type: source_type
+      )
+    end
 
     :ok
   end
+
+  defp skill_ratio(level) do
+    case GameMode.mode() do
+      :renewal -> 50 + 150 * level
+      :pre_renewal -> 100 + 40 * level
+    end
+  end
+
+  defp blind_duration, do: if(GameMode.mode() == :renewal, do: 20_000, else: 30_000)
 
   defp caster_ref(%PlayerState{character_id: caster_id}), do: {:player, caster_id}
   defp caster_ref(%MobState{instance_id: caster_id}), do: {:mob, caster_id}

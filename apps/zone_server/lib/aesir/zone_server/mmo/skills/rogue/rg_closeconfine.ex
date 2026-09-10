@@ -1,4 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfine do
+  @moduledoc """
+  Both modes hold caster and target for 10 s. Renewal costs 40 SP; pre-renewal
+  25 SP.
+  """
+
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1005,
     name: :rg_closeconfine,
@@ -8,6 +13,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfine do
     target_type: :target_enemy,
     damage_type: :no_damage,
     range: 1,
+    sp_cost: [renewal: [40], pre_renewal: [25]],
+    duration: [10_000],
     quest_skill: true,
     quest_owner_job: :rogue
 

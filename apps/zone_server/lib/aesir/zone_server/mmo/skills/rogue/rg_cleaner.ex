@@ -1,5 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCleaner do
-  @moduledoc "Remover (RG_CLEANER), an instantaneous ground-unit sweep."
+  @moduledoc """
+  Remover (RG_CLEANER), an instantaneous ground-unit sweep.
+
+  Both modes clear Scribble and Piece units within 5 cells for 5 SP.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 222,

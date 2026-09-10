@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
-  @moduledoc "Snatch (RG_INTIMIDATE), a melee hit that relocates both combatants."
+  @moduledoc """
+  Snatch (RG_INTIMIDATE), a melee hit that relocates both combatants.
+
+  Both modes deal 100 plus 30 per level percent for 13 plus 3 per level SP and
+  teleport the caster and the struck target to one random cell.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 219,
@@ -9,7 +14,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
     max_level: 5,
     target_type: :target_enemy,
     damage_type: :damage,
-    range: 1
+    range: 1,
+    sp_cost: [13, 16, 19, 22, 25]
 
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
@@ -31,7 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgIntimidate do
       opts = [
         skill_id: definition.id,
         skill_level: level,
-        skill_ratio: 30 * level,
+        skill_ratio: 100 + 30 * level,
         skip_range: true,
         report_hit: true
       ]

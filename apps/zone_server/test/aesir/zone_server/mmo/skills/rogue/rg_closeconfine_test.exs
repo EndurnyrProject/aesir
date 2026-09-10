@@ -165,4 +165,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgCloseconfineTest do
     :ok = UnitRegistry.register_unit(:mob, id, MobState, state, self())
     state
   end
+
+  @tag game_mode: :renewal
+  test "renewal costs 40 SP" do
+    assert {:ok, definition} = Catalog.by_id(1005)
+    assert definition.sp_cost == [40]
+    assert definition.duration == [10_000]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic costs 25 SP" do
+    assert {:ok, definition} = Catalog.by_id(1005)
+    assert definition.sp_cost == [25]
+    assert definition.duration == [10_000]
+  end
 end

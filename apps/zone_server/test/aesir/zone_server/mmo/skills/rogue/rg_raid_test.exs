@@ -54,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
     assert :ok = RgRaid.validate(mob, :self, 1, RgRaid.definition())
   end
 
+  @tag game_mode: :renewal
   test "breaks Hiding and hits each nearby enemy, applying riders only on hit" do
     caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 150, y: 150}
     hit_target = mob(2_000, 151, 150)
@@ -111,5 +112,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgRaidTest do
       max_sp: 0,
       spawned_at: 0
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic strikes within one cell at 100 plus 40 per level with a 30 second blind and no mark" do
+    caster = %PlayerState{character_id: 1_000, map_name: "prontera", x: 150, y: 150}
+    hit_target = mob(2_000, 151, 150)
+
+    assert RgRaid.definition().splash_radius == 1
+    assert RgRaid.definition().sp_cost == List.duplicate(20, 5)
+
+    expect(StatusInterpreter, :remove_status, fn :player, 1_000, :sc_hiding -> :ok end)
+
+    stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 150, 150, 1 ->
+      [{:mob, hit_target.instance_id}]
+    end)
+
+    stub(TargetResolver, :resolve, fn {:mob, 2_000} -> {:ok, self(), hit_target, :mob} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, {:mob, 2_000}, opts ->
+      assert opts[:skill_ratio] == 220
+      {:ok, %{hit?: true}}
+    end)
+
+    expect(StatusInterpreter, :apply_status, 2, fn :mob, 2_000, status_id, opts ->
+      assert status_id in [:sc_stun, :sc_blind]
+      assert opts[:success_rate] == 19
+      assert opts[:duration] == if(status_id == :sc_stun, do: 5_000, else: 30_000)
+      :ok
+    end)
+
+    assert {:ok, ^caster} = RgRaid.cast(caster, :self, 3, RgRaid.definition())
   end
 end

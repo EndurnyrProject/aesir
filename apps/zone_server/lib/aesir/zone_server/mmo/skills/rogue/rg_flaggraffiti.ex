@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Rogue.RgFlaggraffiti do
   @moduledoc """
   Piece (RG_FLAGGRAFFITI), a persistent ground marker.
+
+  Both modes place a 3-minute marker for 10 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 221,
