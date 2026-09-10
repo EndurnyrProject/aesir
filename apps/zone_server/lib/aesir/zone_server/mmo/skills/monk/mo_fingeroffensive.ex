@@ -7,6 +7,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
   bonus damage when the target is the Monk's own linked Root peer, closing the
   pair after the volley lands, and briefly locks the Monk's own movement above
   level 1.
+
+  Renewal: 600 plus 200 per level percent (half again against a rooted target)
+  over five hits for one sphere, 8 plus 4 per level SP, a 0.5 s cast plus 0.5 s
+  fixed, and a 1 s cooldown. Pre-renewal: 100 plus 50 per level percent over one
+  hit per level, spending one sphere per level, 10 SP, a 1 s cast, and no cooldown.
   """
 
   @sp_costs Enum.map(
@@ -30,13 +35,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
     damage_type: :damage,
     range: 9,
     hit_count: @hit_count,
-    sp_cost: @sp_costs,
-    sphere_cost: List.duplicate(@sphere_cost, 5),
-    cast_time: List.duplicate(@timing.cast_time, 5),
-    fixed_cast_time: List.duplicate(@timing.fixed_cast_time, 5),
+    sp_cost: [renewal: @sp_costs, pre_renewal: List.duplicate(10, 5)],
+    sphere_cost: [renewal: List.duplicate(@sphere_cost, 5), pre_renewal: [1, 2, 3, 4, 5]],
+    cast_time: [
+      renewal: List.duplicate(@timing.cast_time, 5),
+      pre_renewal: List.duplicate(1_000, 5)
+    ],
+    fixed_cast_time: [renewal: List.duplicate(@timing.fixed_cast_time, 5), pre_renewal: []],
     after_cast_delay: List.duplicate(@timing.after_cast_delay, 5),
-    cooldown: List.duplicate(@timing.cooldown, 5)
+    cooldown: [renewal: List.duplicate(@timing.cooldown, 5), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -80,10 +89,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensive do
       skill_level: level,
       skill_ratio:
         Formulas.throw_spirit_sphere_ratio(level, Root.rooted?(target_type, target_id)),
-      hit_count: definition.hit_count,
+      hit_count: hit_count(level, definition),
       skip_crit: true,
       skip_range: true
     ]
+  end
+
+  defp hit_count(level, definition) do
+    case GameMode.mode() do
+      :renewal -> definition.hit_count
+      :pre_renewal -> level
+    end
   end
 
   defp now, do: System.monotonic_time(:millisecond)

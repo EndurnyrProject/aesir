@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "catalog exposes the verified quest-skill definition" do
     assert {:ok, definition} = Catalog.by_id(1_015)
     assert definition.name == :mo_kitranslation
@@ -153,5 +154,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslationTest do
     stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
     stub(CharacterPersistence, :update_character, fn 1, _attrs, _opts -> {:ok, %{}} end)
     stub(Manager, :sync_member, fn 10, 1, _member -> {:ok, %{}} end)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(1015)
+    assert definition.cast_time == [2_000]
+    assert definition.fixed_cast_time == []
   end
 end

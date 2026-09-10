@@ -6,6 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
   immediately follow it with Asura Strike - knowing that skill, holding Fury,
   and carrying at least four spirit spheres - it instead opens an `:extremity`
   combo window so Asura can be cast as the chain's finisher.
+
+  Renewal: 550 plus 50 per level plus STR percent for 2 plus level SP.
+  Pre-renewal: 240 plus 60 per level percent for 10 plus level SP.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -16,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinish do
     target_type: :target_enemy,
     damage_type: :damage,
     range: -2,
-    sp_cost: [3, 4, 5, 6, 7],
+    sp_cost: [renewal: [3, 4, 5, 6, 7], pre_renewal: [11, 12, 13, 14, 15]],
     after_cast_delay: List.duplicate(1_000, 5)
 
   alias Aesir.ZoneServer.Mmo.Combat

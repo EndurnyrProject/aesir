@@ -1,6 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExplosionspirits do
   @moduledoc """
   Fury (MO_EXPLOSIONSPIRITS), a self-buff that grants critical rate for 180 seconds.
+
+  Both modes add 75 plus 25 per level critical for 3 minutes. Renewal halves the
+  SP regeneration rate while it lasts; pre-renewal stops natural SP regeneration.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 270,

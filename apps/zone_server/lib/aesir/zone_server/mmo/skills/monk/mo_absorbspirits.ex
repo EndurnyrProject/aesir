@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
 
   Self and monster targets settle locally. Player targets use the one-shot
   exchange path and are gated by the server's current PvP policy.
+
+  Renewal: a 0.5 s fixed cast only. Pre-renewal: a 2 s cast. The 7 SP per absorbed
+  sphere and the 20% monster roll for twice its level are shared.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -14,7 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspirits do
     target_type: :target_any,
     range: 9,
     sp_cost: [5],
-    fixed_cast_time: [500]
+    cast_time: [renewal: [], pre_renewal: [2_000]],
+    fixed_cast_time: [renewal: [500], pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs

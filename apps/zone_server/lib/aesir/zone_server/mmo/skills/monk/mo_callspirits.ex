@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
 
   The player session commits the returned sphere collection and owns its timer,
   revision, and broadcasts through `SpiritSphereHandler`.
+
+  Renewal: a 0.5 s cast plus 0.5 s fixed. Pre-renewal: a 1 s cast. Spheres last 10
+  minutes and cost 8 SP in both modes.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -13,8 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspirits do
     max_level: 5,
     target_type: :self,
     sp_cost: List.duplicate(8, 5),
-    cast_time: List.duplicate(500, 5),
-    fixed_cast_time: List.duplicate(500, 5)
+    cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Learned

@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
 
   @target_id 2_000
 
+  @tag game_mode: :renewal
   test "definition preserves Renewal cost and delay" do
     assert {:ok, definition} = Catalog.by_id(273)
     assert definition.name == :mo_combofinish
@@ -28,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
     assert definition.after_cast_delay == [1_000, 1_000, 1_000, 1_000, 1_000]
   end
 
+  @tag game_mode: :renewal
   test "a Thrust hit is a single Renewal strike and closes the chain" do
     caster = caster(:thrust)
 
@@ -154,4 +156,28 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCombofinishTest do
   end
 
   defp future, do: System.monotonic_time(:millisecond) + 10_000
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(273)
+    assert definition.sp_cost == [11, 12, 13, 14, 15]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Thrust hit uses the flat ratio without STR" do
+    caster = caster(:thrust)
+
+    expect(Combat, :resolve_target_position, fn @target_id ->
+      {:ok, :mob, {60, 50, "prontera"}}
+    end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 420
+      assert opts[:hit_count] == 1
+      :ok
+    end)
+
+    assert {:ok, %{combo: %{stage: :idle}}} =
+             MoCombofinish.cast(caster, {:unit, @target_id}, 3, MoCombofinish.definition())
+  end
 end

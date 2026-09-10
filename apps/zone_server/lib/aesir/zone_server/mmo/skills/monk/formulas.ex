@@ -1,13 +1,21 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @moduledoc """
-  Pure Renewal arithmetic shared by Monk player skills and mob skill archetypes.
+  Pure arithmetic shared by Monk player skills and mob skill archetypes. Functions
+  whose value differs between renewal and pre-renewal branch on the booted mode.
 
   Asura's `:bonus_atk` component feeds the pre-defense
   `Aesir.ZoneServer.Mmo.Combat.DamageCalculator` bonus-atk channel.
   """
 
-  @spec trifecta_activation_rate(pos_integer()) :: 30
-  def trifecta_activation_rate(_level), do: 30
+  alias Aesir.Commons.GameMode
+
+  @spec trifecta_activation_rate(pos_integer()) :: pos_integer()
+  def trifecta_activation_rate(level) do
+    case GameMode.mode() do
+      :renewal -> 30
+      :pre_renewal -> 30 - level
+    end
+  end
 
   @spec trifecta_ratio(pos_integer()) :: pos_integer()
   def trifecta_ratio(level), do: 100 + 20 * level
@@ -17,30 +25,53 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
 
   @spec quadruple_ratio(pos_integer(), boolean()) :: pos_integer()
   def quadruple_ratio(level, knuckle?) do
-    ratio = 250 + 50 * level
-    if knuckle?, do: ratio * 2, else: ratio
+    case GameMode.mode() do
+      :renewal ->
+        ratio = 250 + 50 * level
+        if knuckle?, do: ratio * 2, else: ratio
+
+      :pre_renewal ->
+        150 + 50 * level
+    end
   end
 
   @spec quadruple_hit_count(boolean()) :: 4 | 6
-  def quadruple_hit_count(true), do: 6
+  def quadruple_hit_count(true), do: if(GameMode.mode() == :renewal, do: 6, else: 4)
   def quadruple_hit_count(false), do: 4
 
   @spec thrust_ratio(pos_integer(), non_neg_integer()) :: pos_integer()
-  def thrust_ratio(level, strength), do: 550 + 50 * level + strength
+  def thrust_ratio(level, strength) do
+    case GameMode.mode() do
+      :renewal -> 550 + 50 * level + strength
+      :pre_renewal -> 240 + 60 * level
+    end
+  end
 
   @spec thrust_hit_count() :: 1
   def thrust_hit_count, do: 1
 
   @spec occult_ratio(pos_integer(), boolean()) :: pos_integer()
   def occult_ratio(level, rooted?) do
-    ratio = 100 * level
-    if rooted?, do: ratio + div(ratio, 2), else: ratio
+    case GameMode.mode() do
+      :renewal ->
+        ratio = 100 * level
+        if rooted?, do: ratio + div(ratio, 2), else: ratio
+
+      :pre_renewal ->
+        100 + 75 * level
+    end
   end
 
   @spec throw_spirit_sphere_ratio(pos_integer(), boolean()) :: pos_integer()
   def throw_spirit_sphere_ratio(level, rooted?) do
-    ratio = 600 + 200 * level
-    if rooted?, do: ratio + div(ratio, 2), else: ratio
+    case GameMode.mode() do
+      :renewal ->
+        ratio = 600 + 200 * level
+        if rooted?, do: ratio + div(ratio, 2), else: ratio
+
+      :pre_renewal ->
+        100 + 50 * level
+    end
   end
 
   @spec throw_spirit_sphere_cost() :: 1
@@ -98,16 +129,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec root_wait_duration(pos_integer()) :: pos_integer()
   def root_wait_duration(level), do: 300 + 200 * level
 
-  @spec root_duration(boolean()) :: 2_000 | 10_000
-  def root_duration(true), do: 2_000
-  def root_duration(false), do: 10_000
+  @spec root_duration(boolean(), pos_integer()) :: pos_integer()
+  def root_duration(boss?, root_level) do
+    case {GameMode.mode(), boss?} do
+      {:renewal, true} -> 2_000
+      {:renewal, false} -> 10_000
+      {:pre_renewal, _boss?} -> 10_000 * (root_level + 1)
+    end
+  end
 
   @type asura_context :: :normal | :root | :combo
 
   @spec asura_sphere_cost(asura_context(), non_neg_integer()) :: pos_integer()
   def asura_sphere_cost(:normal, _held_spheres), do: 5
   def asura_sphere_cost(:root, _held_spheres), do: 4
-  def asura_sphere_cost(:combo, held_spheres), do: max(held_spheres, 1)
+
+  def asura_sphere_cost(:combo, held_spheres) do
+    case GameMode.mode() do
+      :renewal -> max(held_spheres, 1)
+      :pre_renewal -> 4
+    end
+  end
 
   @type asura_damage_components :: %{skill_ratio: pos_integer(), bonus_atk: pos_integer()}
 
@@ -116,8 +158,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
     %{skill_ratio: min(800 + current_sp * 10, 500_000), bonus_atk: 250 + 150 * level}
   end
 
-  @spec asura_recovery_duration() :: 3_000
-  def asura_recovery_duration, do: 3_000
+  @spec asura_recovery_duration() :: pos_integer()
+  def asura_recovery_duration, do: if(GameMode.mode() == :renewal, do: 3_000, else: 300_000)
 
   @spec snap_range() :: 18
   def snap_range, do: 18
@@ -129,17 +171,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   def snap_sphere_cost(true), do: 0
   def snap_sphere_cost(false), do: 1
 
-  @spec ki_explosion_ratio() :: 800
-  def ki_explosion_ratio, do: 800
+  @spec ki_explosion_ratio() :: pos_integer()
+  def ki_explosion_ratio, do: if(GameMode.mode() == :renewal, do: 800, else: 300)
 
-  @spec ki_explosion_hp_cost() :: 200
-  def ki_explosion_hp_cost, do: 200
+  @spec ki_explosion_hp_cost() :: pos_integer()
+  def ki_explosion_hp_cost, do: if(GameMode.mode() == :renewal, do: 200, else: 10)
 
   @spec ki_explosion_can_pay_hp?(non_neg_integer()) :: boolean()
   def ki_explosion_can_pay_hp?(current_hp), do: current_hp > ki_explosion_hp_cost()
 
-  @spec ki_explosion_sp_cost() :: 40
-  def ki_explosion_sp_cost, do: 40
+  @spec ki_explosion_sp_cost() :: pos_integer()
+  def ki_explosion_sp_cost, do: if(GameMode.mode() == :renewal, do: 40, else: 20)
 
   @spec ki_explosion_splash_radius() :: 1
   def ki_explosion_splash_radius, do: 1
@@ -150,8 +192,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec ki_explosion_stun_rate() :: 70
   def ki_explosion_stun_rate, do: 70
 
-  @spec ki_explosion_stun_duration() :: 4_500
-  def ki_explosion_stun_duration, do: 4_500
+  @spec ki_explosion_stun_duration() :: pos_integer()
+  def ki_explosion_stun_duration, do: if(GameMode.mode() == :renewal, do: 4_500, else: 5_000)
 
   @spec ki_explosion_after_cast_delay() :: 2_000
   def ki_explosion_after_cast_delay, do: 2_000

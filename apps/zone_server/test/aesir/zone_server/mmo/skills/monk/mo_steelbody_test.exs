@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbodyTest do
 
   setup :verify_on_exit!
 
+  @tag game_mode: :renewal
   test "declares Mental Strength's verified costs, cast time, and duration" do
     assert {:ok, definition} = Catalog.by_id(268)
     assert definition.name == :mo_steelbody
@@ -42,5 +43,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbodyTest do
     end)
 
     assert {:error, :conflict} = MoSteelbody.cast(caster, :self, 1, MoSteelbody.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(268)
+    assert definition.cast_time == List.duplicate(5_000, 5)
+    assert definition.fixed_cast_time == []
   end
 end

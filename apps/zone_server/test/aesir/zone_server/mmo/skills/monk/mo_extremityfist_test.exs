@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   import Mimic
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   @caster_id 7_000
   @target_id 8_000
 
+  @tag game_mode: :renewal
   test "declares Asura's Renewal targeting, timing, and recovery" do
     {:ok, definition} = Catalog.by_id(271)
 
@@ -76,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
                )
     end
 
+    @tag game_mode: :renewal
     test "a combo follow-up consumes every held sphere, and at least one" do
       stub(Combat, :resolve_target_position, fn @target_id ->
         {:ok, :mob, {12, 10, "prontera"}}
@@ -153,7 +156,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
         {:ok, :mob, {12, 10, "prontera"}}
       end)
 
-      assert %{cast_time: 1_000, fixed_cast_time: 1_000} =
+      expected =
+        mode_value(%{cast_time: 1_000, fixed_cast_time: 1_000}, %{
+          cast_time: 2_000,
+          fixed_cast_time: 0
+        })
+
+      assert ^expected =
                MoExtremityfist.dynamic_cast_time(
                  caster(sp: 250, spheres: 5),
                  {:unit, @target_id},
@@ -164,6 +173,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "deals pre-drain damage once, ends Fury/Root/combo, applies recovery, and stages the move" do
       stub(Cell, :traversable?, fn "prontera", 13, 10 -> true end)
 
@@ -304,4 +314,55 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoExtremityfistTest do
   end
 
   defp future, do: System.monotonic_time(:millisecond) + 600_000
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(271)
+    assert definition.cast_time == [4_000, 3_500, 3_000, 2_500, 2_000]
+    assert definition.fixed_cast_time == []
+    assert definition.after_cast_delay == [3_000, 2_500, 2_000, 1_500, 1_000]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic combo follow-up costs four spheres" do
+    stub(Combat, :resolve_target_position, fn @target_id ->
+      {:ok, :mob, {12, 10, "prontera"}}
+    end)
+
+    held = combo_caster(sp: 250, spheres: 5)
+
+    assert %Cost{sp: 250, spheres: 4} =
+             MoExtremityfist.dynamic_cost(held, {:unit, @target_id}, 5, definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic strike keeps the weapon element and halts SP regeneration for five minutes" do
+    stub(Cell, :traversable?, fn "prontera", 13, 10 -> true end)
+
+    stub(Combat, :resolve_target_position, fn @target_id ->
+      {:ok, :mob, {12, 10, "prontera"}}
+    end)
+
+    expect(Combat, :execute_skill_attack, fn _caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 3_300
+      assert opts[:bonus_atk] == 1_000
+      refute Keyword.has_key?(opts, :element)
+      refute Keyword.has_key?(opts, :simple_defense)
+      assert opts[:ignore_defense]
+      :ok
+    end)
+
+    stub(StatusInterpreter, :remove_status, fn :player, @caster_id, _status -> :ok end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, @caster_id, :sc_extremityfist, params ->
+      assert params[:duration] == 300_000
+      :ok
+    end)
+
+    caster = combo_caster(sp: 250, spheres: 5)
+    assert {:ok, _updated} = MoExtremityfist.cast(caster, {:unit, @target_id}, 5, definition())
+  end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

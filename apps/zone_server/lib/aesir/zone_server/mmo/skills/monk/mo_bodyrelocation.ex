@@ -6,6 +6,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBodyrelocation do
   commitment. The mob cast (`mob_cast/5`, an imported `MO_BODYRELOCATION` row)
   has no session to drain a directive, so it commits the relocation through the
   mob's own authoritative single-writer path instead - see `mob_cast/5`.
+
+  Both modes cost 14 SP and one sphere (none under Fury) with an 18-cell reach.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "catalog exposes the declared definition" do
     assert {:ok, definition} = Catalog.by_id(262)
     assert definition.name == :mo_absorbspirits
@@ -68,10 +69,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "self absorption settles immediately when classic ignores its fixed-only cast" do
-    assert {:noreply, settled} = SkillHandler.handle_use_skill(settlement_state(), 262, 1, 1)
+  test "classic self absorption settles after its two-second cast" do
+    state = settlement_state()
 
-    assert settled.game_state.casting == nil
+    assert {:noreply, casting} = SkillHandler.handle_use_skill(state, 262, 1, 1)
+    token = casting.game_state.casting.token
+    Process.cancel_timer(casting.game_state.casting.timer_ref)
+
+    assert {:noreply, settled} = SkillHandler.handle_cast_complete(casting, token)
     assert settled.game_state.stats.current_state.sp == 100
     assert SpiritSpheres.count(settled.game_state.spirit_spheres) == 0
   end
@@ -205,5 +210,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoAbsorbspiritsTest do
     stub(UnitRegistry, :update_unit_state, fn :player, 1, _state -> :ok end)
     stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
     stub(CharacterPersistence, :update_character, fn 1, _attrs, _opts -> {:ok, %{}} end)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(262)
+    assert definition.cast_time == [2_000]
+    assert definition.fixed_cast_time == []
   end
 end

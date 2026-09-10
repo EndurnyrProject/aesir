@@ -3,12 +3,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
 
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
 
+  @tag game_mode: :renewal
   test "Trifecta has the Renewal 30 percent activation chance at every level" do
     assert Formulas.trifecta_activation_rate(1) == 30
     assert Formulas.trifecta_activation_rate(5) == 30
     assert Formulas.trifecta_activation_rate(10) == 30
   end
 
+  @tag game_mode: :renewal
   test "shared weapon ratios retain Renewal base-ratio and level arithmetic" do
     assert Formulas.trifecta_ratio(1) == 120
     assert Formulas.trifecta_ratio(5) == 200
@@ -31,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.throw_spirit_sphere_ratio(5, false) == 1_600
   end
 
+  @tag game_mode: :renewal
   test "hit-count helpers retain the local default one-sphere multi-hit throw" do
     assert Formulas.trifecta_hit_count() == 3
     assert Formulas.quadruple_hit_count(false) == 4
@@ -77,12 +80,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.mental_strength_duration(5) == 150_000
   end
 
+  @tag game_mode: :renewal
   test "Root and Asura preserve their Renewal bonuses, costs, and cap order" do
     assert Formulas.root_wait_duration(1) == 500
     assert Formulas.root_wait_duration(3) == 900
     assert Formulas.root_wait_duration(5) == 1_300
-    assert Formulas.root_duration(false) == 10_000
-    assert Formulas.root_duration(true) == 2_000
+    assert Formulas.root_duration(false, 5) == 10_000
+    assert Formulas.root_duration(true, 5) == 2_000
 
     assert Formulas.asura_sphere_cost(:normal, 0) == 5
     assert Formulas.asura_sphere_cost(:root, 0) == 4
@@ -101,6 +105,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.asura_recovery_duration() == 3_000
   end
 
+  @tag game_mode: :renewal
   test "Snap and Ki Explosion expose their Renewal resource and area constants" do
     assert Formulas.snap_range() == 18
     assert Formulas.snap_sp_cost() == 14
@@ -198,5 +203,45 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
            }
 
     assert Formulas.fury_profile() == %{sp_cost: 15, sphere_cost: 5}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Trifecta chance falls one point per level" do
+    assert Formulas.trifecta_activation_rate(1) == 29
+    assert Formulas.trifecta_activation_rate(10) == 20
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic weapon ratios use the source's flat tables" do
+    assert Formulas.trifecta_ratio(5) == 200
+    assert Formulas.quadruple_ratio(3, false) == 300
+    assert Formulas.quadruple_ratio(3, true) == 300
+    assert Formulas.quadruple_hit_count(true) == 4
+    assert Formulas.thrust_ratio(3, 47) == 420
+    assert Formulas.occult_ratio(3, true) == 325
+    assert Formulas.occult_ratio(5, false) == 475
+    assert Formulas.throw_spirit_sphere_ratio(1, true) == 150
+    assert Formulas.throw_spirit_sphere_ratio(5, false) == 350
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Root holds by level, ignores bosses, and Asura costs four spheres after Thrust" do
+    assert Formulas.root_duration(false, 1) == 20_000
+    assert Formulas.root_duration(false, 5) == 60_000
+    assert Formulas.root_duration(true, 5) == 60_000
+    assert Formulas.asura_sphere_cost(:combo, 0) == 4
+    assert Formulas.asura_sphere_cost(:combo, 5) == 4
+    assert Formulas.asura_recovery_duration() == 300_000
+    assert Formulas.root_wait_duration(3) == 900
+    assert Formulas.asura_damage_components(3, 123) == %{skill_ratio: 2_030, bonus_atk: 700}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Ki Explosion costs and stuns per the source" do
+    assert Formulas.ki_explosion_ratio() == 300
+    assert Formulas.ki_explosion_hp_cost() == 10
+    assert Formulas.ki_explosion_sp_cost() == 20
+    assert Formulas.ki_explosion_stun_duration() == 5_000
+    assert Formulas.ki_explosion_stun_rate() == 70
   end
 end

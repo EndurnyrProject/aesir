@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbody do
   @moduledoc """
   Mental Strength (MO_STEELBODY), a self-buff that greatly reduces incoming damage.
+
+  Renewal: a 2.5 s cast plus 2.5 s fixed; the status divides incoming damage by
+  ten. Pre-renewal: a 5 s cast; the status sets hard DEF and MDEF to 90 instead.
+  Both slow the walk to 200 ms per cell, cut attack speed by 25%, and block skills.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 268,
@@ -12,8 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSteelbody do
     damage_type: :no_damage,
     sp_cost: List.duplicate(200, 5),
     sphere_cost: List.duplicate(5, 5),
-    cast_time: List.duplicate(2_500, 5),
-    fixed_cast_time: List.duplicate(2_500, 5),
+    cast_time: [renewal: List.duplicate(2_500, 5), pre_renewal: List.duplicate(5_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(2_500, 5), pre_renewal: []],
     duration: [30_000, 60_000, 90_000, 120_000, 150_000]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

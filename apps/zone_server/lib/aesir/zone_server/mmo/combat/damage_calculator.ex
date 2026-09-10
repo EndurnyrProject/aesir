@@ -206,6 +206,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     )
   end
 
+  @doc """
+  Calculates physical skill damage while skipping the defender's DEF entirely.
+
+  Used by skills the classic ruleset declares as ignoring defense (e.g. Asura
+  Strike); every other channel of the pipeline is unchanged.
+  """
+  @spec calculate_damage_ignoring_defense(combatant(), combatant(), keyword()) ::
+          {:ok, damage_result()} | {:error, atom()}
+  def calculate_damage_ignoring_defense(attacker, defender, opts) do
+    calculate_damage_with(attacker, defender, opts, :primary, :ignore)
+  end
+
   defp calculate_damage_with(attacker, defender, opts, attack_path, defense_mode) do
     case Keyword.get(opts, :fixed_damage) do
       nil -> calculate_pipeline_damage(attacker, defender, opts, attack_path, defense_mode)
@@ -251,6 +263,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       finalize_damage(final_damage, attacker, defender, opts)
     end
   end
+
+  defp scalar_defense(damage, _defender, _attacker, _path, :ignore), do: {:ok, damage}
 
   defp scalar_defense(damage, defender, attacker, _path, :ignore_status),
     do: apply_defense_formula_ignoring_status_def(damage, defender, attacker)
@@ -336,7 +350,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       },
       defense:
         player_defense_context(defender, attacker, attack_path, defense_mode, defender_modifiers),
-      defense_mode: if(defense_mode == :simple, do: :simple, else: :normal),
+      defense_mode: if(defense_mode in [:simple, :ignore], do: defense_mode, else: :normal),
       skill_id: skill_id,
       skill_ratio: Keyword.get(opts, :skill_ratio, 100),
       bonus_atk: Keyword.get(opts, :bonus_atk, 0),

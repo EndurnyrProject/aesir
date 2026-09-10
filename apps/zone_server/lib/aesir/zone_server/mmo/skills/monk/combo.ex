@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Combo do
 
   Generations make delayed timeout messages harmless after a window advances or
   is cancelled. Deadlines use monotonic milliseconds supplied by the caller.
+
+  The combo windows and chain rules are shared by both modes.
   """
 
   @type stage :: :idle | :quadruple | :thrust | :extremity

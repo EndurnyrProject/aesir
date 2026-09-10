@@ -8,6 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
 
   The strike always connects: a high-flee or perfect-dodge target cannot evade
   it.
+
+  Renewal: 100 per level percent, plus half again against a rooted target, forced
+  neutral, a 0.5 s cast plus 0.5 s fixed. Pre-renewal: 100 plus 75 per level
+  percent with no Root bonus, the weapon element, and a 1 s cast. Both ignore flee.
   """
 
   @sp_costs Enum.map(1..5, &Aesir.ZoneServer.Mmo.Skills.Monk.Formulas.occult_sp_cost/1)
@@ -27,10 +31,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
     range: 2,
     sp_cost: @sp_costs,
     sphere_cost: List.duplicate(1, 5),
-    cast_time: List.duplicate(@timing.cast_time, 5),
-    fixed_cast_time: List.duplicate(@timing.fixed_cast_time, 5),
+    cast_time: [
+      renewal: List.duplicate(@timing.cast_time, 5),
+      pre_renewal: List.duplicate(1_000, 5)
+    ],
+    fixed_cast_time: [renewal: List.duplicate(@timing.fixed_cast_time, 5), pre_renewal: []],
     after_cast_delay: List.duplicate(@timing.after_cast_delay, 5)
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -61,13 +69,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigate do
   end
 
   defp attack_opts(definition, level, target_type, target_id) do
-    [
-      skill_id: definition.id,
-      skill_level: level,
-      skill_ratio: Formulas.occult_ratio(level, Root.rooted?(target_type, target_id)),
-      skip_crit: true,
-      skip_range: true,
-      ignore_flee: true
-    ]
+    element_opts() ++
+      [
+        skill_id: definition.id,
+        skill_level: level,
+        skill_ratio: Formulas.occult_ratio(level, Root.rooted?(target_type, target_id)),
+        skip_crit: true,
+        skip_range: true,
+        ignore_flee: true
+      ]
+  end
+
+  defp element_opts do
+    case GameMode.mode() do
+      :renewal -> [element: :neutral]
+      :pre_renewal -> []
+    end
   end
 end

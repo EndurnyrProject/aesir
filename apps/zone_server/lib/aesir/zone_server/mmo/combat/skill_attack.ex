@@ -114,6 +114,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:simple_defense` - when `true`, the target's DEF is dropped as a flat
       hard+soft subtraction instead of the renewal DEF curve (e.g. Asura
       Strike) (default `false`)
+    - `:ignore_defense` - when `true`, the target's DEF is skipped entirely
+      (classic Asura Strike) (default `false`)
     - `:ranged` - forces `is_short: false` in the delivered hit_info,
       overriding the caster's melee attack-range classification, for a skill
       whose reach is short but whose damage type is renewal's ranged physical
@@ -148,12 +150,20 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              }}
           | {:error, atom()}
   def execute_skill_attack(caster_state, target_id, opts) do
-    calculator =
-      if Keyword.get(opts, :simple_defense, false),
-        do: &DamageCalculator.calculate_damage_simple_defense/3,
-        else: &DamageCalculator.calculate_damage/3
+    execute_single_target_attack(caster_state, target_id, opts, calculator(opts), %{})
+  end
 
-    execute_single_target_attack(caster_state, target_id, opts, calculator, %{})
+  defp calculator(opts) do
+    cond do
+      Keyword.get(opts, :ignore_defense, false) ->
+        &DamageCalculator.calculate_damage_ignoring_defense/3
+
+      Keyword.get(opts, :simple_defense, false) ->
+        &DamageCalculator.calculate_damage_simple_defense/3
+
+      true ->
+        &DamageCalculator.calculate_damage/3
+    end
   end
 
   @doc """
@@ -175,10 +185,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
              }}
           | {:error, atom()}
   def execute_field_skill_attack(caster_state, target_ref, %Group{} = group, opts) do
-    calculator =
-      if Keyword.get(opts, :simple_defense, false),
-        do: &DamageCalculator.calculate_damage_simple_defense/3,
-        else: &DamageCalculator.calculate_damage/3
+    calculator = calculator(opts)
 
     with :ok <- validate_field_skill_opts(group, opts) do
       execute_single_target_attack(

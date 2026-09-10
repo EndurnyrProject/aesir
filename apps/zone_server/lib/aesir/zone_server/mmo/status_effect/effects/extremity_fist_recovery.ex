@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtremityFistRecovery do
   natural spirit-point regeneration so the drained pool cannot immediately
   refill. The equivalent freeze on the caster's actions is the skill's
   after-cast delay, committed by the skill interpreter, not this status.
+
+  Renewal halts SP regeneration for 3 s after the strike; pre-renewal for 5 minutes.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_extremityfist,

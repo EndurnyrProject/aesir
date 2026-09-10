@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoSpiritsrecovery do
   @moduledoc """
   Spiritual Cadence (MO_SPIRITSRECOVERY). Adds HP and SP recovery while sitting.
+
+  Both modes grant the same sitting HP and SP recovery.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 260,

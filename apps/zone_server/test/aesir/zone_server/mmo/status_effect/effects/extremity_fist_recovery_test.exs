@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtremityFistRecoveryTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "carries the verified Renewal recovery metadata" do
     metadata = ExtremityFistRecovery.metadata()
 
@@ -70,5 +71,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ExtremityFistRecoveryTest do
 
     assert :ok = Interpreter.remove_status(:player, player_id, :sc_extremityfist)
     assert Interpreter.get_all_modifiers(:player, player_id) == %{}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic recovery lasts five minutes while the metadata default stays" do
+    assert Formulas.asura_recovery_duration() == 300_000
+    assert ExtremityFistRecovery.metadata().duration == 3_000
   end
 end

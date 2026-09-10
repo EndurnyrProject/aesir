@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
-  @moduledoc "Raging Quadruple Blow (MO_CHAINCOMBO)."
+  @moduledoc """
+  Raging Quadruple Blow (MO_CHAINCOMBO).
+
+  Renewal: 250 plus 50 per level percent, doubled and shown as six hits with a
+  knuckle, for 4 plus level SP. Pre-renewal: 150 plus 50 per level percent over
+  four hits for 10 plus level SP.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 272,
@@ -10,7 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincombo do
     damage_type: :damage,
     range: -2,
     hit_count: 4,
-    sp_cost: [5, 6, 7, 8, 9],
+    sp_cost: [renewal: [5, 6, 7, 8, 9], pre_renewal: [11, 12, 13, 14, 15]],
     after_cast_delay: List.duplicate(1_000, 5)
 
   alias Aesir.ZoneServer.Mmo.Combat

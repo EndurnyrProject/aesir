@@ -3,6 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestop do
   Root (MO_BLADESTOP), a self-cast that arms the single-use `sc_bladestop_wait`
   ready stance carrying the Monk's Root level; the next eligible melee swing
   against the Monk is caught and establishes the paired Root.
+
+  Renewal: a 0.5 s delay and a 3 s cooldown; the hold lasts 10 s (2 s on a boss).
+  Pre-renewal: no delay or cooldown; bosses cannot be caught and the hold lasts
+  10 s plus 10 s per level.
   """
   @profile Aesir.ZoneServer.Mmo.Skills.Monk.Formulas.root_profile()
 
@@ -16,8 +20,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestop do
     damage_type: :no_damage,
     sp_cost: List.duplicate(@profile.sp_cost, 5),
     sphere_cost: List.duplicate(@profile.sphere_cost, 5),
-    after_cast_delay: List.duplicate(@profile.after_cast_delay, 5),
-    cooldown: List.duplicate(@profile.cooldown, 5),
+    after_cast_delay: [renewal: List.duplicate(@profile.after_cast_delay, 5), pre_renewal: []],
+    cooldown: [renewal: List.duplicate(@profile.cooldown, 5), pre_renewal: []],
     duration: [500, 700, 900, 1_100, 1_300]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

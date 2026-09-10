@@ -13,6 +13,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Root do
   and Asura Strike from level 5. The caught side keys on its own stored level (0
   for a non-Monk, the trained level for a caught Monk), matching the source, so no
   role concept is needed.
+
+  Renewal's Root damage bonuses do not exist in pre-renewal; the level gates and
+  pair closure are shared.
   """
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter

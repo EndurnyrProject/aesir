@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoTripleattack do
 
   Its Renewal proc replaces a normal weapon attack; it is not an after-hit
   rider and therefore never stacks with the normal swing.
+
+  Renewal procs 30% of the time at every level; pre-renewal procs 30 minus level
+  percent. Both deal 100 plus 20 per level percent shown as three hits.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

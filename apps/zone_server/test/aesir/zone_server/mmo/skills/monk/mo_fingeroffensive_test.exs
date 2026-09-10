@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
   @caster_id 1_000
   @target_id 2_000
 
+  @tag game_mode: :renewal
   test "declares Throw Spirit Sphere's verified Renewal costs, range, and timing" do
     assert {:ok, definition} = Catalog.by_id(267)
     assert definition.name == :mo_fingeroffensive
@@ -34,6 +36,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     assert definition.cooldown == List.duplicate(1_000, 5)
   end
 
+  @tag game_mode: :renewal
   test "an unrooted hit against an unrooted target uses the base Renewal ratio across five hits" do
     caster = caster()
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
@@ -59,6 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     refute PlayerState.walk_delayed?(updated, System.monotonic_time(:millisecond))
   end
 
+  @tag game_mode: :renewal
   test "a hit against a target rooted to an unrelated third party still gains the Root bonus" do
     caster = caster()
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
@@ -86,6 +90,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     assert StatusStorage.has_status?(:mob, @target_id, :sc_bladestop)
   end
 
+  @tag game_mode: :renewal
   test "a rooted caster at the Throw minimum gains the bonus against the linked target and closes the pair" do
     caster = caster()
     stub_entity_info()
@@ -116,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
     link_pair(@caster_id, {:mob, 3_000}, 2)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 800
+      assert opts[:skill_ratio] == mode_value(800, 150)
       :ok
     end)
 
@@ -241,4 +246,37 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoFingeroffensiveTest do
       {:ok, %{unit_id: id, race: :human, element: :neutral, boss_flag: false, stats: %{}}}
     end)
   end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(267)
+    assert definition.sp_cost == List.duplicate(10, 5)
+    assert definition.sphere_cost == [1, 2, 3, 4, 5]
+    assert definition.cast_time == List.duplicate(1_000, 5)
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic hit uses 100 plus 50 per level percent over one hit per level" do
+    caster = caster()
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 250
+      assert opts[:hit_count] == 3
+      :ok
+    end)
+
+    assert {:ok, _updated} =
+             MoFingeroffensive.cast(
+               caster,
+               {:unit, @target_id},
+               3,
+               MoFingeroffensive.definition()
+             )
+  end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

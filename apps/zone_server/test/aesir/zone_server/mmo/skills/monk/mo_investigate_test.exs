@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -18,6 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
   @caster_id 1_000
   @target_id 2_000
 
+  @tag game_mode: :renewal
   test "declares Occult's verified Renewal costs, range, and timing" do
     assert {:ok, definition} = Catalog.by_id(266)
     assert definition.name == :mo_investigate
@@ -32,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
     assert definition.after_cast_delay == List.duplicate(500, 5)
   end
 
+  @tag game_mode: :renewal
   test "an unrooted hit against an unrooted target uses the base Renewal ratio" do
     caster = caster()
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
@@ -51,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
              MoInvestigate.cast(caster, {:unit, @target_id}, 3, MoInvestigate.definition())
   end
 
+  @tag game_mode: :renewal
   test "a hit against a target rooted to an unrelated third party still gains the Root bonus" do
     caster = caster()
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
@@ -73,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
     assert StatusStorage.has_status?(:mob, @target_id, :sc_bladestop)
   end
 
+  @tag game_mode: :renewal
   test "a rooted caster at the Occult minimum gains the bonus against the linked target and closes the pair" do
     caster = caster()
     stub_entity_info()
@@ -98,7 +103,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
     link_pair(@caster_id, {:mob, 3_000}, 3)
 
     expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
-      assert opts[:skill_ratio] == 300
+      assert opts[:skill_ratio] == mode_value(300, 325)
       :ok
     end)
 
@@ -189,5 +194,59 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoInvestigateTest do
     stub(UnitRegistry, :get_unit_info, fn _type, id ->
       {:ok, %{unit_id: id, race: :human, element: :neutral, boss_flag: false, stats: %{}}}
     end)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(266)
+    assert definition.cast_time == List.duplicate(1_000, 5)
+    assert definition.fixed_cast_time == []
+    assert definition.sp_cost == [10, 14, 17, 19, 20]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic hit uses 100 plus 75 per level percent with no Root bonus" do
+    caster = caster()
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 325
+      assert opts[:ignore_flee]
+      :ok
+    end)
+
+    assert {:ok, ^caster} =
+             MoInvestigate.cast(caster, {:unit, @target_id}, 3, MoInvestigate.definition())
+  end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
+
+  @tag game_mode: :renewal
+  test "renewal Occult is forced neutral" do
+    caster = caster()
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:element] == :neutral
+      :ok
+    end)
+
+    assert {:ok, ^caster} =
+             MoInvestigate.cast(caster, {:unit, @target_id}, 1, MoInvestigate.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Occult keeps the weapon element" do
+    caster = caster()
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      refute Keyword.has_key?(opts, :element)
+      :ok
+    end)
+
+    assert {:ok, ^caster} =
+             MoInvestigate.cast(caster, {:unit, @target_id}, 1, MoInvestigate.definition())
   end
 end

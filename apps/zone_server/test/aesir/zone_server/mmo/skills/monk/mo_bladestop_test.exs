@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestopTest do
 
   setup :verify_on_exit!
 
+  @tag game_mode: :renewal
   test "declares Root's verified costs, durations, and level data" do
     assert {:ok, definition} = Catalog.by_id(269)
     assert definition.name == :mo_bladestop
@@ -43,5 +44,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBladestopTest do
     end)
 
     assert {:error, :conflict} = MoBladestop.cast(caster, :self, 1, MoBladestop.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(269)
+    assert definition.after_cast_delay == []
+    assert definition.cooldown == []
+    assert definition.duration == [500, 700, 900, 1_100, 1_300]
   end
 end

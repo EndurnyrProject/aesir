@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoIronhand do
   @moduledoc """
   Iron Fists (MO_IRONHAND). Grants weapon ATK while wielding a fist or knuckle.
+
+  Both modes grant 3 fist or knuckle ATK per level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 259,

@@ -852,6 +852,28 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert result.base_stats.vit == 40
     end
 
+    test "status DEF and MDEF overrides replace the composed values" do
+      stats = %Stats{
+        base_stats: %{str: 0, agi: 0, vit: 40, int: 0, dex: 0, luk: 0},
+        progression: %{base_level: 60, job_level: 0, learned_skills: %{}},
+        derived_stats: %{max_hp: 1, max_sp: 1},
+        equipment: %Equipment{},
+        modifiers: %{
+          equipment: %{def: 80, def_rate: 50, mdef: 7},
+          status_effects: %{def: 11, mdef: 3, def_override: 90, mdef_override: 90},
+          job_bonuses: %{}
+        }
+      }
+
+      result = Stats.calculate_combat_stats(stats)
+
+      assert result.combat_stats.def == 90
+      assert result.combat_stats.mdef == 90
+
+      without = put_in(stats.modifiers.status_effects, %{def: 11, mdef: 3})
+      assert Stats.calculate_combat_stats(without).combat_stats.def == 131
+    end
+
     test "folds physical damage flags from status modifiers" do
       stats = %Stats{
         base_stats: %{str: 0, agi: 0, vit: 0, int: 0, dex: 0, luk: 0},

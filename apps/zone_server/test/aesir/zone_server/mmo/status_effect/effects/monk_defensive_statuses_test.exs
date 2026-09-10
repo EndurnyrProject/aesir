@@ -37,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "Fury adds the verified internal critical bonus for its level" do
     entry = %StatusEntry{type: :sc_explosionspirits, val1: 3, state: %{}}
 
@@ -46,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
            }
   end
 
+  @tag game_mode: :renewal
   test "Mental Strength reduces positive incoming damage and preserves non-positive values" do
     entry = %StatusEntry{type: :sc_steelbody, state: %{}}
 
@@ -54,6 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
     assert {:ok, 0, ^entry} = SteelBody.absorb_damage({:player, 1}, entry, %{damage: 0}, %{})
   end
 
+  @tag game_mode: :renewal
   test "Mental Strength exposes its fixed movement and attack-delay modifiers" do
     entry = %StatusEntry{type: :sc_steelbody, state: %{}}
 
@@ -61,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
     assert :prevents_skills in SteelBody.metadata().properties
   end
 
+  @tag game_mode: :renewal
   test "Mental Strength restricts casts and all effects disappear on removal" do
     player_id = 1000
 
@@ -83,6 +87,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
     assert Interpreter.get_all_modifiers(:player, player_id) == %{}
   end
 
+  @tag game_mode: :renewal
   test "Mental Strength reduces every positive combat damage type while zero passes through" do
     player_id = 1001
 
@@ -95,5 +100,50 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.MonkDefensiveStatusesTest do
     assert 1 = Interpreter.absorb_damage(:player, player_id, 9, %{dmg_type: :physical})
     assert 10 = Interpreter.absorb_damage(:player, player_id, 100, %{dmg_type: :magic})
     assert 0 = Interpreter.absorb_damage(:player, player_id, 0, %{dmg_type: :misc})
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Fury stops SP regeneration and keeps the critical bonus" do
+    entry = %StatusEntry{type: :sc_explosionspirits, val1: 3, state: %{}}
+    assert ExplosionSpirits.modifiers(entry, %{}) == %{critical: 150, sp_regen: -100}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Mental Strength forces DEF and MDEF to 90 and passes damage through" do
+    entry = %StatusEntry{type: :sc_steelbody, state: %{}}
+
+    assert SteelBody.modifiers(entry, %{}) == %{
+             walk_speed_override: 200,
+             aspd_penalty_rate: 250,
+             def_override: 90,
+             mdef_override: 90
+           }
+
+    assert {:ok, 100, ^entry} = SteelBody.absorb_damage({:player, 1}, entry, %{damage: 100}, %{})
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Mental Strength forces DEF and MDEF through the interpreter and clears on removal" do
+    player_id = 1002
+
+    assert :ok =
+             Interpreter.apply_status(:player, player_id, :sc_steelbody,
+               caster_id: player_id,
+               duration: 30_000
+             )
+
+    refute Interpreter.can_use_skill?(:player, player_id)
+
+    assert Interpreter.get_all_modifiers(:player, player_id) == %{
+             walk_speed_override: 200,
+             aspd_penalty_rate: 250,
+             def_override: 90,
+             mdef_override: 90
+           }
+
+    assert 100 = Interpreter.absorb_damage(:player, player_id, 100, %{dmg_type: :physical})
+    assert :ok = Interpreter.remove_status(:player, player_id, :sc_steelbody)
+    assert Interpreter.can_use_skill?(:player, player_id)
+    assert Interpreter.get_all_modifiers(:player, player_id) == %{}
   end
 end

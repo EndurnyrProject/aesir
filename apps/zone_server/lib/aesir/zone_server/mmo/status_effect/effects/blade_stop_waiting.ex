@@ -16,6 +16,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopWaiting do
   claim is the same atomic single-use take the Lex Aeterna hit path uses, and the
   paired records are written through the ordinary cross-process status path every
   debuff already uses. There is no coordinator, offer, or cross-session message.
+
+  Renewal catches bosses for 2 s and everyone else for 10 s. Pre-renewal never
+  catches a boss and holds the pair for 10 s plus 10 s per Root level.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_bladestop_wait,
@@ -26,6 +29,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopWaiting do
     flags: [:no_move],
     icon: :bladestopready
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skills.Monk.Formulas
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEntry
@@ -56,8 +60,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopWaiting do
   # monster attacker only within cell distance. Boss-ness does not gate
   # eligibility - it only shortens the pair.
   defp eligible?(attack_info) do
-    Map.get(attack_info, :basic_attack?, true) and eligible_attacker?(attack_info)
+    Map.get(attack_info, :basic_attack?, true) and eligible_attacker?(attack_info) and
+      not classic_boss?(attack_info)
   end
+
+  defp classic_boss?(attack_info),
+    do: GameMode.mode() == :pre_renewal and Map.get(attack_info, :attacker_boss?, false)
 
   defp eligible_attacker?(%{attacker: {:player, _}}), do: true
 
@@ -85,7 +93,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopWaiting do
 
     link_id = make_ref()
     monk = {monk_type, monk_id}
-    duration = Formulas.root_duration(boss?)
+    duration = Formulas.root_duration(boss?, monk_root_level)
 
     apply_pair(monk_type, monk_id, monk_id, duration, %{
       peer: attacker,

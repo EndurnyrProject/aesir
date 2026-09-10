@@ -1127,9 +1127,18 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       heal_matk_min: heal_matk_min,
       heal_matk_max: heal_matk_max,
       def:
-        base_def + get_status_modifier(stats, :def) +
-          scaled_equipment_def(stats.modifiers.equipment),
-      mdef: get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
+        override(
+          base_def + get_status_modifier(stats, :def) +
+            scaled_equipment_def(stats.modifiers.equipment),
+          stats,
+          :def_override
+        ),
+      mdef:
+        override(
+          get_status_modifier(stats, :mdef) + get_equipment_modifier(stats, :mdef),
+          stats,
+          :mdef_override
+        ),
       soft_def: formulas.soft_def(values),
       soft_mdef: formulas.soft_mdef(values),
       passive_atk: passive_atk,
@@ -1147,6 +1156,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
     %{stats | combat_stats: combat_stats}
   end
+
+  defp override(value, stats, key), do: Map.get(stats.modifiers.status_effects, key, value)
 
   defp hand_attack(nil), do: 0
   defp hand_attack(hand), do: hand.base_atk + hand.refine_atk

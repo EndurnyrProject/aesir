@@ -2,6 +2,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
   @moduledoc """
   Ki Translation (MO_KITRANSLATION), a quest skill that gives one spirit sphere
   to a currently eligible party member after the caster's resources commit.
+
+  Renewal: a 1 s cast plus 1 s fixed. Pre-renewal: a 2 s cast. Both cost 40 SP,
+  one sphere, and a 1 s delay.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -13,8 +16,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoKitranslation do
     range: 9,
     sp_cost: [40],
     sphere_cost: [1],
-    cast_time: [1_000],
-    fixed_cast_time: [1_000],
+    cast_time: [renewal: [1_000], pre_renewal: [2_000]],
+    fixed_cast_time: [renewal: [1_000], pre_renewal: []],
     after_cast_delay: [1_000],
     quest_skill: true,
     quest_owner_job: :monk

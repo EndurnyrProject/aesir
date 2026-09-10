@@ -665,6 +665,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert Passives.attack_replacement(player) == :normal
     end
 
+    @tag game_mode: :renewal
     test "selects a learned Trifecta replacement" do
       :rand.seed(:exsss, {1, 2, 3})
       player = build_player(%{263 => 5}, :knuckle)
@@ -672,6 +673,16 @@ defmodule Aesir.ZoneServer.Mmo.Skill.PassivesTest do
       assert {:skill_attack, opts, :quadruple} = Passives.attack_replacement(player)
       assert opts[:skill_id] == 263
       assert opts[:skill_level] == 5
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic Trifecta still replaces the attack on a winning roll" do
+      player = build_player(%{263 => 5}, :knuckle)
+
+      assert Enum.any?(1..40, fn seed ->
+               :rand.seed(:exsss, {seed, seed, seed})
+               match?({:skill_attack, _opts, :quadruple}, Passives.attack_replacement(player))
+             end)
     end
   end
 

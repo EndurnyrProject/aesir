@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoDodge do
   @moduledoc """
   Dodge (MO_DODGE). Grants FLEE while learned.
+
+  Both modes grant floor(1.5 times level) FLEE.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 265,

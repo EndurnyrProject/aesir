@@ -1,11 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
   @moduledoc """
-  Ki Explosion (MO_BALKYOUNG). A weapon splash that sacrifices HP for an
-  800-percent strike, then knocks back and may stun every damaged target.
+  Ki Explosion (MO_BALKYOUNG). A weapon splash that sacrifices HP for one
+  strike, then knocks back and may stun every damaged target.
 
-  Renewal rAthena defines one target hit with a one-cell splash, five-cell
-  knockback, 200 HP and 40 SP costs, a 4,500ms stun duration, and a 2,000ms
-  after-cast delay.
+  Renewal: 800 percent for 200 HP and 40 SP with a 4.5 s stun on the pushed
+  neighbours. Pre-renewal: 300 percent for 10 HP and 20 SP with a 5 s stun. The
+  70% stun chance, one-cell splash, five-cell push, and 2 s delay are shared.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1_016,
@@ -18,9 +18,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung do
     range: -1,
     knockback: 5,
     splash_radius: 1,
-    hp_cost: [200],
-    sp_cost: [40],
-    duration: [4_500],
+    hp_cost: [renewal: [200], pre_renewal: [10]],
+    sp_cost: [renewal: [40], pre_renewal: [20]],
+    duration: [renewal: [4_500], pre_renewal: [5_000]],
     after_cast_delay: [2_000],
     quest_skill: true,
     quest_owner_job: :monk

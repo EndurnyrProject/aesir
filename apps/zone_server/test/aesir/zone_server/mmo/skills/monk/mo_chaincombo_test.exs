@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
   @caster_id 1_000
   @target_id 2_000
 
+  @tag game_mode: :renewal
   test "definition preserves Renewal cost, range, and base delay" do
     assert {:ok, definition} = Catalog.by_id(272)
     assert definition.name == :mo_chaincombo
@@ -53,6 +54,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "knuckle hit owns one 6-division skill result and opens the Thrust window" do
     caster = caster(:quadruple, @target_id, knuckle?: true)
     old_generation = caster.combo.generation
@@ -76,6 +78,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     assert updated.combo.deadline > System.monotonic_time(:millisecond)
   end
 
+  @tag game_mode: :renewal
   test "non-knuckle hit keeps the four-division Renewal ratio" do
     caster = caster(:quadruple, @target_id)
     stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
@@ -247,5 +250,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoChaincomboTest do
     )
 
     link_id
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(272)
+    assert definition.sp_cost == [11, 12, 13, 14, 15]
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic knuckle hit uses the flat ratio over four hits and opens the Thrust window" do
+    caster = caster(:quadruple, @target_id, knuckle?: true)
+    stub(Combat, :resolve_target_position, fn @target_id -> {:ok, :mob, {10, 10, "prontera"}} end)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:skill_ratio] == 300
+      assert opts[:display_hit_count] == 4
+      :ok
+    end)
+
+    assert {:ok, %{combo: %{stage: :thrust}}} =
+             MoChaincombo.cast(caster, {:unit, @target_id}, 3, MoChaincombo.definition())
   end
 end

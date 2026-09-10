@@ -112,6 +112,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
                StatusStorage.get_status(:player, 6002, :sc_bladestop)
     end
 
+    @tag game_mode: :renewal
     test "a non-boss pair lasts ten seconds on both sides" do
       stub_entity_info()
       monk_id = 5003
@@ -124,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
       assert pair_duration(:mob, 6003) == 10_000
     end
 
+    @tag game_mode: :renewal
     test "a real boss attacker is caught (immunity bypassed) for two seconds on both sides" do
       monk_id = 5004
       boss_id = 6004
@@ -145,6 +147,41 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BladeStopTest do
       assert StatusStorage.has_status?(:mob, boss_id, :sc_bladestop)
       assert pair_duration(:player, monk_id) == 2_000
       assert pair_duration(:mob, boss_id) == 2_000
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic pair lasts ten seconds per level plus ten on both sides" do
+      stub_entity_info()
+      monk_id = 5013
+      arm_waiting(monk_id, 3)
+
+      assert {:intercept, :blade_stop} =
+               Interpreter.before_weapon_hit(:player, monk_id, attack_info({:mob, 6013}, monk_id))
+
+      assert pair_duration(:player, monk_id) == 40_000
+      assert pair_duration(:mob, 6013) == 40_000
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic never catches a boss attacker" do
+      monk_id = 5014
+      boss_id = 6014
+      register_monk(monk_id)
+      register_boss_mob(boss_id)
+      arm_waiting(monk_id, 5)
+
+      assert :continue =
+               Interpreter.before_weapon_hit(
+                 :player,
+                 monk_id,
+                 attack_info({:mob, boss_id}, monk_id,
+                   attacker_boss?: true,
+                   attacker_root_level: 5
+                 )
+               )
+
+      refute StatusStorage.has_status?(:player, monk_id, :sc_bladestop)
+      assert StatusStorage.has_status?(:player, monk_id, :sc_bladestop_wait)
     end
 
     test "a caught player's own record carries their learned Blade Stop level via AutoAttack" do

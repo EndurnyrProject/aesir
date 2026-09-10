@@ -2,8 +2,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoung
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -30,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
     }
   end
 
+  @tag game_mode: :renewal
   test "defines the fixed Renewal cost, damage, area, and delay profile" do
     definition = MoBalkyoung.definition()
 
@@ -66,7 +69,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
       assert caster.stats.modifiers.equipment[{:add_skill_blow, 1_016}] == 3
       assert opts[:skill_id] == 1_016
       assert opts[:skill_level] == 1
-      assert opts[:skill_ratio] == 800
+      assert opts[:skill_ratio] == mode_value(800, 300)
       assert opts[:skip_crit]
       assert opts[:typed_results]
       assert opts[:base_distance] == 5
@@ -80,7 +83,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
 
     expect(StatusInterpreter, :apply_status, 2, fn :mob, target_id, :sc_stun, opts ->
       assert target_id in [@primary_target_id, @splash_target_id]
-      assert opts[:duration] == 4_500
+      assert opts[:duration] == mode_value(4_500, 5_000)
       assert opts[:caster_id] == 1
       send(test_pid, {:stunned, target_id})
       :ok
@@ -245,4 +248,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoBalkyoungTest do
       duration: [4_500]
     }
   end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(1016)
+    assert definition.hp_cost == [10]
+    assert definition.sp_cost == [20]
+    assert definition.duration == [5_000]
+  end
+
+  defp mode_value(renewal, pre_renewal),
+    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

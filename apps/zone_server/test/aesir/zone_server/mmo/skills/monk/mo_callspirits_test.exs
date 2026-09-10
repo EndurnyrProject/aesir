@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspiritsTest do
     assert SpiritSpheres.next_expiry(updated.spirit_spheres) == entry.expires_at
   end
 
+  @tag game_mode: :renewal
   test "definition preserves Renewal resource and timing metadata" do
     {:ok, definition} = Catalog.by_id(261)
 
@@ -135,5 +136,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.MoCallspiritsTest do
         progression: %{learned_skills: %{261 => learned_level}}
       }
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's data" do
+    {:ok, definition} = Catalog.by_id(261)
+    assert definition.cast_time == List.duplicate(1_000, 5)
+    assert definition.fixed_cast_time == []
   end
 end

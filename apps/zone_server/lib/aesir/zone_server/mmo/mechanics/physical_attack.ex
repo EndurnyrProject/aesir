@@ -56,7 +56,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
 
   @typedoc "Captured modifier and defense values; implementations perform no lookups."
   @type context :: %{
-          optional(:defense_mode) => :normal | :simple,
+          optional(:defense_mode) => :normal | :simple | :ignore,
           optional(:weapon_bonus) => integer(),
           optional(:flat_bonus) => integer(),
           optional(:atk_rate) => integer(),
@@ -134,6 +134,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
   def apply_defense(damage, %{defense_mode: :simple, defense: defense}, _implementation) do
     damage - defense.hard_def - defense.soft_def
   end
+
+  def apply_defense(damage, %{defense_mode: :ignore}, _implementation), do: damage
 
   def apply_defense(damage, context, implementation) do
     implementation.apply_def(damage, context.defense)
