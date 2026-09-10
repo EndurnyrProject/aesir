@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfriedTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform
   alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfried
 
@@ -13,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfriedTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "declares the pinned Siegfried skill data" do
     definition = BdSiegfried.definition()
 
@@ -46,5 +49,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdSiegfriedTest do
     end)
 
     assert {:ok, ^caster} = BdSiegfried.cast(caster, :self, 3, definition)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(313)
+    assert definition.sp_cost == List.duplicate(20, 5)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
   end
 end

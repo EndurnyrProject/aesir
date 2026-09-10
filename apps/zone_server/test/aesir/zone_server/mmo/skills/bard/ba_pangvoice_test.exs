@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Pang Voice table without a weapon requirement" do
     assert {:ok, BaPangvoice} = Catalog.active_module_for(:ba_pangvoice)
     assert {:ok, definition} = Catalog.by_id(1010)
@@ -171,5 +172,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoiceTest do
     }
 
     MobState.new(instance_id, mob_data, spawn_ref, "prontera", x, y)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(1010)
+    assert definition.sp_cost == [20]
+    assert definition.cast_time == [1_000]
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
   end
 end

@@ -41,14 +41,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "a level-one cast grants 20 percent more base and job experience from a kill" do
     assert_kill_experience(1, 120)
   end
 
+  @tag game_mode: :renewal
   test "a level-five cast grants 60 percent more base and job experience from a kill" do
     assert_kill_experience(5, 160)
   end
 
+  @tag game_mode: :renewal
   test "definition and status pin the ensemble data" do
     assert {:ok, BdRichmankim} = Catalog.active_module_for(:bd_richmankim)
     assert [:active, :ensemble] = BdRichmankim.__skill_capabilities__()
@@ -89,7 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
            ]
   end
 
-  defp assert_kill_experience(level, expected_experience) do
+  defp assert_kill_experience(level, expected_experience, duration \\ 180_000) do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, @player_id, PlayerState, caster, self())
 
@@ -99,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
     assert %StatusEntry{started_at: started_at, expires_at: expires_at} =
              StatusStorage.get_status(:player, @player_id, :sc_richmankim)
 
-    assert expires_at - started_at == 180_000
+    assert expires_at - started_at == duration
 
     test_pid = self()
 
@@ -136,5 +139,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankimTest do
       luk: 10
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic level-one cast lasts one minute and grants 20 percent more experience" do
+    assert_kill_experience(1, 120, 60_000)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic level-five cast lasts one minute and grants 60 percent more experience" do
+    assert_kill_experience(5, 160, 60_000)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    assert %{
+             sp_cost: [20, 20, 20, 20, 20],
+             duration: [60_000, 60_000, 60_000, 60_000, 60_000],
+             cast_time: [],
+             fixed_cast_time: [],
+             after_cast_delay: [],
+             cooldown: []
+           } = BdRichmankim.definition()
   end
 end

@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullabyTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullaby
@@ -19,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullabyTest do
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
+  @tag game_mode: :renewal
   test "publishes A Lullaby's pinned ensemble definition" do
     definition = BdLullaby.definition()
 
@@ -96,4 +99,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullabyTest do
   end
 
   defp setup_ets_tables(context), do: Aesir.TestEtsSetup.setup_ets_tables(context)
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(306)
+    assert definition.sp_cost == [20]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
 end

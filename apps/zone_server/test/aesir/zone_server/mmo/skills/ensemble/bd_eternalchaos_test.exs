@@ -38,6 +38,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
     %{player: player, mob: mob}
   end
 
+  @tag game_mode: :renewal
   test "definition carries the pinned Eternal Chaos data" do
     assert {:ok, BdEternalchaos} = Catalog.active_module_for(:bd_eternalchaos)
 
@@ -191,5 +192,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdEternalchaosTest do
       | combat_stats: %{defender.combat_stats | def: 0},
         base_stats: Map.put(defender.base_stats, :vit, 0)
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    assert %{sp_cost: [30], duration: [60_000], cast_time: [], fixed_cast_time: [], cooldown: []} =
+             BdEternalchaos.definition()
   end
 end

@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BardSongStatusesTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "definitions read only their pinned status parameters" do
     whistle = %StatusEntry{type: :sc_whistle, val1: 10, val2: 38, val3: 50, state: %{}}
     sunset = %StatusEntry{type: :sc_assncross, val1: 10, val2: 20, state: %{}}
@@ -125,5 +126,11 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BardSongStatusesTest do
       dex: 10,
       luk: 10
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Assassin Cross reads its snapshot as an attack speed rate" do
+    sunset = %StatusEntry{type: :sc_assncross, val1: 10, val2: 20, state: %{}}
+    assert AssassinCross.modifiers(sunset, %{}) == %{aspd_rate: 20}
   end
 end

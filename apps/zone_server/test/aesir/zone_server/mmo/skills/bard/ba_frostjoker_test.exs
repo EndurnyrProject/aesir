@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjokerTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition and cast capture the pinned delayed event" do
     assert {:ok, BaFrostjoker} = Catalog.active_module_for(:ba_frostjoker)
     assert {:ok, definition} = Catalog.by_id(318)
@@ -90,6 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjokerTest do
                      }, 3_000}
   end
 
+  @tag game_mode: :renewal
   test "mob deferred resolution uses the same callback and source identity" do
     caster = mob_state()
     register(:mob, caster)
@@ -134,6 +136,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjokerTest do
     assert Config.frost_joker_area_size() == 14
   end
 
+  @tag game_mode: :renewal
   test "enemy and current-party chances and durations are exact at every level" do
     caster = player(1, x: 100, y: 200, party_id: 10)
     register(:player, caster)
@@ -161,6 +164,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjokerTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "resolution uses the captured inclusive square and current eligibility" do
     caster = player(1, x: 100, y: 200, party_id: 10)
     register(:player, caster)
@@ -354,4 +358,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjokerTest do
 
   defp restore_env(key, nil), do: Application.delete_env(:zone_server, key)
   defp restore_env(key, value), do: Application.put_env(:zone_server, key, value)
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(318)
+    assert definition.sp_cost == [12, 14, 16, 18, 20]
+    assert definition.cast_time == List.duplicate(0, 5)
+    assert definition.fixed_cast_time == List.duplicate(0, 5)
+    assert definition.after_cast_delay == List.duplicate(4_000, 5)
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic enemies freeze for 12 seconds and party members for 15" do
+    caster = player(1, x: 100, y: 200, party_id: 10)
+    register(:player, caster)
+    register(:mob, mob(2, 101, 200))
+    register(:player, player(3, x: 99, y: 200, party_id: 10))
+
+    test_pid = self()
+
+    stub(StatusInterpreter, :apply_status, fn unit_type, unit_id, :sc_freeze, params ->
+      send(test_pid, {:freeze, unit_type, unit_id, params})
+      :ok
+    end)
+
+    assert :ok = BaFrostjoker.deferred(payload(caster, 1), caster)
+
+    assert_receive {:freeze, :mob, 2, enemy_params}
+    assert enemy_params[:success_rate] == 20
+    assert enemy_params[:duration] == 12_000
+
+    assert_receive {:freeze, :player, 3, party_params}
+    assert party_params[:success_rate] == 5.0
+    assert party_params[:duration] == 15_000
+  end
 end

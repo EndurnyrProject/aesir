@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Ring of Nibelungen data, including decreasing SP" do
     assert {:ok, BdRingnibelungen} = Catalog.active_module_for(:bd_ringnibelungen)
     assert {:ok, definition} = Catalog.by_id(310)
@@ -171,5 +172,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
       luk: 10,
       party_id: party_id
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(310)
+    assert definition.sp_cost == Enum.to_list(38..50//3)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
   end
 end

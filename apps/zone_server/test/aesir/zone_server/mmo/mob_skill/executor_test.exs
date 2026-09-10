@@ -389,6 +389,7 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
       assert Executor.execute(caster, dissonance_row) == :ok
     end
 
+    @tag game_mode: :renewal
     test "dispatches imported BA_MUSICALSTRIKE rows through its real mob attack path" do
       caster = mob()
       stub_living_player_target()
@@ -399,6 +400,23 @@ defmodule Aesir.ZoneServer.Mmo.MobSkill.ExecutorTest do
         assert opts[:skill_level] == 5
         assert opts[:skill_ratio] == 310
         assert opts[:display_hit_count] == 2
+        :ok
+      end)
+
+      musical_strike_row =
+        row(%{skill: "BA_MUSICALSTRIKE", skill_id: 316, level: 5, target: :target})
+
+      assert Executor.execute(caster, musical_strike_row) == :ok
+    end
+
+    @tag game_mode: :pre_renewal
+    test "dispatches imported BA_MUSICALSTRIKE rows with the classic ratio and single hit" do
+      caster = mob()
+      stub_living_player_target()
+
+      expect(Combat, :execute_skill_attack, fn _passed_caster, 42, opts ->
+        assert opts[:skill_ratio] == 260
+        assert opts[:display_hit_count] == 1
         :ok
       end)
 

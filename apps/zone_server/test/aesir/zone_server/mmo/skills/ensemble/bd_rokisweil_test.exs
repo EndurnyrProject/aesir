@@ -39,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Roki's Weil table" do
     assert {:ok, BdRokisweil} = Catalog.active_module_for(:bd_rokisweil)
     assert {:ok, definition} = Catalog.by_id(311)
@@ -160,5 +161,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
 
   defp mob_skill_row do
     %{skill_id: 19, cast_time: 50, delay: 5_000}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(311)
+    assert definition.sp_cost == [15]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
   end
 end

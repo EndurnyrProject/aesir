@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
            ]
   end
 
+  @tag game_mode: :renewal
   test "definition delegates the party snapshot at the effective level" do
     assert {:ok, BdDrumbattlefield} = Catalog.active_module_for(:bd_drumbattlefield)
     definition = BdDrumbattlefield.definition()
@@ -107,5 +108,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
     }
     |> Stats.calculate_combat_stats()
     |> Map.fetch!(:combat_stats)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(309)
+    assert definition.sp_cost == Enum.to_list(40..60//5)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
   end
 end

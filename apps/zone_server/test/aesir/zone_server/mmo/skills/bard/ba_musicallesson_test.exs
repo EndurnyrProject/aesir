@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicallessonTest do
     assert bow_lesson.combat_stats.atk == bow_base.combat_stats.atk
   end
 
+  @tag game_mode: :renewal
   test "each level grants one percent MaxSP with every weapon" do
     instrument_base = calculate(%{}, equipped(@instrument_id, @right_hand))
     instrument_lesson = calculate(%{@lesson_id => 5}, equipped(@instrument_id, @right_hand))
@@ -70,6 +71,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicallessonTest do
     calculate(%{@lesson_id => 10}, equipped(@instrument_id, @right_hand))
   end
 
+  @tag game_mode: :renewal
   test "ASPD applies for a modifier-less status and disappears after the last status" do
     learned = %{@lesson_id => 10}
     weapon = equipped(@instrument_id, @right_hand)
@@ -108,5 +110,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicallessonTest do
 
   defp equipped(nameid, equip) do
     %InventoryItem{nameid: nameid, amount: 1, equip: equip, identify: 1}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic grants no MaxSP" do
+    instrument_base = calculate(%{}, equipped(@instrument_id, @right_hand))
+    instrument_lesson = calculate(%{@lesson_id => 5}, equipped(@instrument_id, @right_hand))
+
+    assert instrument_lesson.derived_stats.max_sp == instrument_base.derived_stats.max_sp
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic grants no ASPD under an active status" do
+    learned = %{@lesson_id => 10}
+    weapon = equipped(@instrument_id, @right_hand)
+    without_status = calculate(learned, weapon)
+
+    :ok = StatusStorage.apply_status(:player, @player_id, :sc_task12_modifierless)
+    with_status = calculate(learned, weapon)
+
+    assert with_status.modifiers.statuses_active?
+    assert with_status.derived_stats.aspd == without_status.derived_stats.aspd
   end
 end

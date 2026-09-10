@@ -1,5 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
-  @moduledoc "Encore (BD_ENCORE)."
+  @moduledoc """
+  Encore (BD_ENCORE). Replays the performer's last song or ensemble for half its
+  SP cost (1 SP for the cast itself), needing an instrument or whip.
+
+  Renewal adds a 0.3 s delay and a 10 s cooldown; pre-renewal has neither.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 305,
@@ -12,8 +17,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore do
     sp_cost: [1],
     cast_time: [0],
     fixed_cast_time: [0],
-    after_cast_delay: [300],
-    cooldown: [10_000],
+    after_cast_delay: [renewal: [300], pre_renewal: []],
+    cooldown: [renewal: [10_000], pre_renewal: []],
     require_weapon: [:musical, :whip]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active

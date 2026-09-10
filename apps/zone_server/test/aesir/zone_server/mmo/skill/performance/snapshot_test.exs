@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   setup :set_mimic_from_context
   setup :setup_ets_tables
 
+  @tag game_mode: :renewal
   test "an unpartied caster receives the finite song and remembers it" do
     caster = player(1, party_id: 0)
     assert Map.fetch!(caster, :last_song) == nil
@@ -199,4 +200,19 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.SnapshotTest do
   end
 
   defp member(id), do: Member.new(id, "Player#{id}", 100, true, "prontera")
+
+  @tag game_mode: :pre_renewal
+  test "classic unpartied caster receives the classic one-minute song" do
+    caster = player(1, party_id: 0)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, params ->
+      assert params[:duration] == 60_000
+      :ok
+    end)
+
+    assert {:ok, result} =
+             Song.snapshot(caster, BaWhistle.definition(), 1, :sc_whistle, [val2: 20], [])
+
+    assert result.last_song == %{skill_id: 319, level: 1}
+  end
 end

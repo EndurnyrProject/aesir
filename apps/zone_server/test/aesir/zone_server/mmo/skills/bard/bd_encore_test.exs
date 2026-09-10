@@ -4,7 +4,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -54,6 +53,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     :ok = UnitRegistry.register_unit(:player, @caster_id, UnitStub, %{}, self())
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Encore table" do
     assert {:ok, BdEncore} = Catalog.active_module_for(:bd_encore)
     assert {:ok, definition} = Catalog.by_id(@encore_id)
@@ -121,6 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
              Interpreter.cast(%{caster | act_delay_until: future}, @encore_id, 1, :self)
   end
 
+  @tag game_mode: :renewal
   test "an encored song costs half its base with ordinary modifiers and Adaptation last" do
     :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
 
@@ -178,11 +179,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "all five remembered skills supply their own timing and keep one outer 300 ms delay" do
     for skill_id <- @eligible_ids do
       caster = player(%{skill_id: skill_id, level: 1})
       assert {:casting, ^caster, info} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
-      assert info.fixed == mode_value(300, 0)
+      assert info.fixed == 300
       assert info.total > info.fixed
 
       assert {:ok, definition} = Catalog.by_id(skill_id)
@@ -192,6 +194,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert BdEncore.definition().after_cast_delay == [300]
   end
 
+  @tag game_mode: :renewal
   test "successful replay runs one effect and commits transformed SP and both cooldowns" do
     caster = player(%{skill_id: 317, level: 5})
 
@@ -206,6 +209,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert updated.last_song == %{skill_id: 317, level: 5}
   end
 
+  @tag game_mode: :renewal
   test "completion revalidates the original cooldown before effect or commitment" do
     caster = player(%{skill_id: 319, level: 1})
     assert {:casting, ^caster, _info} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
@@ -232,10 +236,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert caster.act_delay_until == 0
   end
 
-  defp mode_value(renewal, pre_renewal) do
-    %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
-  end
-
   defp player(memory, learned \\ nil, sp \\ 100, modifiers \\ %{}) do
     remembered = if is_map(memory), do: %{memory.skill_id => memory.level}, else: %{}
     learned = if is_nil(learned), do: Map.put(remembered, @encore_id, 1), else: learned
@@ -258,4 +258,89 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   end
 
   defp put_sp(caster, sp), do: put_in(caster.stats.current_state.sp, sp)
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(305)
+    assert definition.sp_cost == [1]
+    assert definition.cast_time == [0]
+    assert definition.fixed_cast_time == [0]
+    assert definition.after_cast_delay == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic encored song costs half its base with ordinary modifiers and no Adaptation discount" do
+    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
+
+    modifiers = %{
+      {:skill_use_sp_rate, 317} => -20,
+      {:skill_use_sp, 317} => 3,
+      sp_cost_rate: 10
+    }
+
+    caster = player(%{skill_id: 317, level: 5}, nil, 100, modifiers)
+
+    assert %Cost{sp_requirement: 10, sp: 10} =
+             BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition())
+
+    assert {:error, :insufficient_sp} =
+             Interpreter.begin_cast(put_sp(caster, 9), @encore_id, 1, :self)
+
+    stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
+
+    assert {:instant, _caster} =
+             Interpreter.begin_cast(put_sp(caster, 10), @encore_id, 1, :self)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic remembered skills replay instantly with no delay" do
+    stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
+
+    stub(Song, :snapshot, fn caster, _definition, _level, _status, _params, _opts ->
+      {:ok, caster}
+    end)
+
+    for skill_id <- @eligible_ids do
+      caster = player(%{skill_id: skill_id, level: 1})
+      assert {:instant, _caster} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+
+      assert {:ok, definition} = Catalog.by_id(skill_id)
+      assert definition.after_cast_delay == []
+    end
+
+    assert BdEncore.definition().after_cast_delay == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic replay runs one effect and commits half the classic SP with no cooldown or delay" do
+    caster = player(%{skill_id: 317, level: 5})
+
+    expect(Combat, :execute_magic_splash, 1, fn _caster, {10, 20}, 4, _opts -> [] end)
+
+    assert {:ok, updated} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert updated.stats.current_state.sp == 85
+    assert updated.skill_cooldowns == %{}
+    assert updated.act_delay_until == 0
+    assert updated.last_song == %{skill_id: 317, level: 5}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion revalidates the original cooldown before effect or commitment" do
+    caster = player(%{skill_id: 319, level: 1})
+
+    expect(Song, :snapshot, fn ^caster, _definition, 1, :sc_whistle, _params, [] ->
+      {:ok, caster}
+    end)
+
+    assert {:instant, _caster} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
+
+    reject(&Song.snapshot/6)
+    blocked = %{caster | skill_cooldowns: %{319 => System.monotonic_time(:millisecond) + 10_000}}
+
+    assert {:error, :on_cooldown} = Interpreter.complete_cast(blocked, @encore_id, 1, :self)
+    assert blocked.stats.current_state.sp == 100
+    assert blocked.skill_cooldowns |> Map.keys() == [319]
+    assert blocked.act_delay_until == 0
+  end
 end

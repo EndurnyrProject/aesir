@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   Mimic.copy(Song)
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Bragi table" do
     assert {:ok, BaPoembragi} = Catalog.active_module_for(:ba_poembragi)
     assert {:ok, definition} = Catalog.by_id(321)
@@ -43,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
     assert definition.cooldown == List.duplicate(20_000, 10)
   end
 
+  @tag game_mode: :renewal
   test "completion snapshots only the exact variable-cast and delay reductions" do
     caster = player()
 
@@ -62,6 +65,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "completion replaces an existing song with active reader state" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -76,6 +80,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
     assert result.last_song == %{skill_id: 321, level: 4}
   end
 
+  @tag game_mode: :renewal
   test "dynamic cost uses Bard cost ordering" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -127,5 +132,46 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
       party_id: 0
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(321)
+    assert definition.sp_cost == Enum.to_list(40..85//5)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic dynamic cost ignores Adaptation" do
+    caster = player()
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
+    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
+
+    assert %Cost{sp: 40, sp_requirement: 40} =
+             BaPoembragi.dynamic_cost(cost_state(), :self, 1, BaPoembragi.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion snapshots stat-scaled reductions" do
+    caster = player()
+    dex = Stats.get_effective_stat(caster.stats, :dex)
+    int = Stats.get_effective_stat(caster.stats, :int)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_poembragi, params ->
+      assert params[:val2] == 12 + div(dex, 10)
+      assert params[:val3] == 12 + div(int, 5)
+      :ok
+    end)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_poembragi, params ->
+      assert params[:val2] == 30 + div(dex, 10)
+      assert params[:val3] == 50 + div(int, 5)
+      :ok
+    end)
+
+    assert {:ok, _result} = BaPoembragi.cast(caster, :self, 4, BaPoembragi.definition())
+    assert {:ok, _result} = BaPoembragi.cast(caster, :self, 10, BaPoembragi.definition())
   end
 end

@@ -1,5 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
-  @moduledoc "Frost Joker (BA_FROSTJOKER)."
+  @moduledoc """
+  Frost Joker (BA_FROSTJOKER). A joke that may freeze everyone on screen, the
+  caster's party included, for 12 to 20 SP.
+
+  Renewal: a 0.3 s delay, a 5 s cooldown, and a 27 s freeze on enemies.
+  Pre-renewal: a 4 s delay, no cooldown, and a 12 s freeze on enemies. Party
+  members freeze for 15 s in both modes.
+  """
 
   import Bitwise
 
@@ -15,9 +22,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
     sp_cost: [12, 14, 16, 18, 20],
     cast_time: List.duplicate(0, 5),
     fixed_cast_time: List.duplicate(0, 5),
-    after_cast_delay: List.duplicate(300, 5),
-    cooldown: List.duplicate(5_000, 5)
+    after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: List.duplicate(4_000, 5)],
+    cooldown: [renewal: List.duplicate(5_000, 5), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
@@ -152,8 +160,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaFrostjoker do
 
   defp eligibility(caster, target, level) do
     case Targeting.validate_enemy(caster, target) do
-      :ok -> {:ok, enemy_chance(level), 27_000}
+      :ok -> {:ok, enemy_chance(level), enemy_freeze_duration()}
       {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp enemy_freeze_duration do
+    case GameMode.mode() do
+      :renewal -> 27_000
+      :pre_renewal -> 12_000
     end
   end
 

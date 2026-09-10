@@ -21,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.CostTest do
     :ok = UnitRegistry.register_unit(:player, 1_000, UnitStub, %{}, self())
   end
 
+  @tag game_mode: :renewal
   test "Adaptation applies to performances" do
     :ok = apply_status(:sc_adaptation)
 
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.CostTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "ordinary status, global, per-skill rate, and flat modifiers resolve before Adaptation" do
     :ok = apply_status(:sc_spcost_rate, val1: 10)
     :ok = apply_status(:sc_adaptation)
@@ -37,6 +39,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.CostTest do
              BardCost.resolve(game_state(), definition(319), 1)
   end
 
+  @tag game_mode: :renewal
   test "a replacement raw base still receives ordinary modifiers before Adaptation" do
     :ok = apply_status(:sc_spcost_rate, val1: 10)
     :ok = apply_status(:sc_adaptation)
@@ -44,6 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.CostTest do
     assert %Cost{sp: 16} = BardCost.resolve(game_state(), definition(319, 99), 1, 37)
   end
 
+  @tag game_mode: :renewal
   test "Adaptation rounds down only the discount" do
     :ok = apply_status(:sc_adaptation)
 
@@ -80,5 +84,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.CostTest do
         modifiers: %{equipment: equipment_modifiers}
       }
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Adaptation grants no performance discount" do
+    :ok = apply_status(:sc_adaptation)
+
+    for skill_id <- @eligible_ids do
+      assert %Cost{sp: 10} = BardCost.resolve(game_state(%{}), definition(skill_id, 10), 1)
+    end
+
+    assert %Cost{sp: 8} = BardCost.resolve(game_state(%{}), definition(319, 8), 1)
+    assert %Cost{sp: 5} = BardCost.resolve(game_state(%{}), definition(319, 5), 1)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic ordinary modifiers resolve with Adaptation present but inert" do
+    :ok = apply_status(:sc_spcost_rate, val1: 10)
+    :ok = apply_status(:sc_adaptation)
+
+    assert %Cost{sp_requirement: 19, sp: 19} =
+             BardCost.resolve(game_state(), definition(319), 1)
+
+    assert %Cost{sp: 19} = BardCost.resolve(game_state(), definition(319, 99), 1, 37)
   end
 end

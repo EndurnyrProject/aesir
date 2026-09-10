@@ -1,5 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
-  @moduledoc "Pang Voice (BA_PANGVOICE)."
+  @moduledoc """
+  Pang Voice (BA_PANGVOICE). A quest skill confusing a non-boss enemy at 9 cells
+  with a 2 s delay.
+
+  Renewal: 40 SP, a 0.8 s cast plus 0.2 s fixed, a 10 s cooldown, and 10 s of
+  confusion. Pre-renewal: 20 SP, a 1 s cast, no cooldown, and 30 s of confusion.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     quest_skill: true,
@@ -11,11 +17,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPangvoice do
     target_type: :target_enemy,
     damage_type: :no_damage,
     range: 9,
-    sp_cost: [40],
-    cast_time: [800],
-    fixed_cast_time: [200],
+    sp_cost: [renewal: [40], pre_renewal: [20]],
+    cast_time: [renewal: [800], pre_renewal: [1_000]],
+    fixed_cast_time: [renewal: [200], pre_renewal: []],
     after_cast_delay: [2_000],
-    cooldown: [10_000]
+    cooldown: [renewal: [10_000], pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver
   alias Aesir.ZoneServer.Mmo.Skill.Active

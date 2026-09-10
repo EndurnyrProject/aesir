@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   Mimic.copy(Song)
@@ -25,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Whistle table" do
     assert {:ok, BaWhistle} = Catalog.active_module_for(:ba_whistle)
     assert {:ok, definition} = Catalog.by_id(319)
@@ -43,6 +45,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
     assert definition.cooldown == List.duplicate(20_000, 10)
   end
 
+  @tag game_mode: :renewal
   test "completion snapshots exact level-only flee and perfect dodge parameters" do
     caster = player()
 
@@ -59,6 +62,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "completion replaces an existing song with real status parameters and memory" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -70,6 +74,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
     assert result.last_song == %{skill_id: 319, level: 3}
   end
 
+  @tag game_mode: :renewal
   test "dynamic cost uses Bard cost ordering" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -127,5 +132,59 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
       party_id: 0
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(319)
+    assert definition.sp_cost == Enum.to_list(24..60//4)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion snapshots the classic duration" do
+    caster = player()
+
+    agi = Stats.get_effective_stat(caster.stats, :agi)
+    luk = Stats.get_effective_stat(caster.stats, :luk)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, params ->
+      assert params[:duration] == 60_000
+      assert params[:val2] == 3 + div(agi, 10)
+      assert params[:val3] == 2 + div(luk, 30)
+      :ok
+    end)
+
+    assert {:ok, result} = BaWhistle.cast(caster, :self, 3, BaWhistle.definition())
+    assert result.last_song == %{skill_id: 319, level: 3}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic dynamic cost ignores Adaptation" do
+    caster = player()
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
+    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
+
+    assert %Cost{sp: 24, sp_requirement: 24} =
+             BaWhistle.dynamic_cost(cost_state(), :self, 1, BaWhistle.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Musical Lesson raises the snapshot" do
+    caster = player()
+    learned = Map.put(caster.stats.progression.learned_skills, 315, 10)
+    caster = put_in(caster.stats.progression.learned_skills, learned)
+    agi = Stats.get_effective_stat(caster.stats, :agi)
+    luk = Stats.get_effective_stat(caster.stats, :luk)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, params ->
+      assert params[:val2] == 1 + div(agi, 10) + 5
+      assert params[:val3] == 1 + div(luk, 30) + 2
+      :ok
+    end)
+
+    assert {:ok, _result} = BaWhistle.cast(caster, :self, 1, BaWhistle.definition())
   end
 end

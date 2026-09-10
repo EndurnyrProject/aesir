@@ -1,5 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
-  @moduledoc "Musical Strike (BA_MUSICALSTRIKE)."
+  @moduledoc """
+  Musical Strike (BA_MUSICALSTRIKE). A ranged instrument strike at 9 cells that
+  spends one arrow.
+
+  Renewal: 110 plus 40 per level percent, a 0.5 s cast, a 0.3 s delay, and 12
+  SP, displayed as two hits. Pre-renewal: 60 plus 40 per level percent, a 1.5 s
+  cast, no delay, and 2 per level minus 1 SP as one hit.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 316,
@@ -14,12 +21,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
     hit_count: 1,
     requires_ammo: true,
     require_weapon: [:musical],
-    sp_cost: List.duplicate(12, 5),
-    cast_time: List.duplicate(500, 5),
+    sp_cost: [renewal: List.duplicate(12, 5), pre_renewal: [1, 3, 5, 7, 9]],
+    cast_time: [renewal: List.duplicate(500, 5), pre_renewal: List.duplicate(1_500, 5)],
     fixed_cast_time: List.duplicate(0, 5),
-    after_cast_delay: List.duplicate(300, 5),
+    after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: []],
     cooldown: List.duplicate(0, 5)
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
 
@@ -30,17 +38,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrike do
     opts = [
       skill_id: definition.id,
       skill_level: level,
-      skill_ratio: 110 + 40 * level,
       hit_count: 1,
-      display_hit_count: 2,
       ranged: true,
       skip_range: true,
       skip_crit: true
     ]
 
+    opts = mode_opts(level) ++ opts
+
     case Combat.execute_skill_attack(caster, target_id, opts) do
       :ok -> {:ok, caster}
       {:error, _reason} = error -> error
+    end
+  end
+
+  defp mode_opts(level) do
+    case GameMode.mode() do
+      :renewal -> [skill_ratio: 110 + 40 * level, display_hit_count: 2]
+      :pre_renewal -> [skill_ratio: 60 + 40 * level, display_hit_count: 1]
     end
   end
 end

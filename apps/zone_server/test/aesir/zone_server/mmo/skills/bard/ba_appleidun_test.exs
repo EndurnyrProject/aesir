@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   Mimic.copy(Song)
@@ -26,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Idun table" do
     assert {:ok, BaAppleidun} = Catalog.active_module_for(:ba_appleidun)
     assert {:ok, definition} = Catalog.by_id(322)
@@ -44,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
     assert definition.cooldown == List.duplicate(20_000, 10)
   end
 
+  @tag game_mode: :renewal
   test "completion snapshots exact capped level-only MaxHP rates" do
     caster = player()
 
@@ -60,6 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "completion replaces an existing song without healing" do
     caster = player()
     hp = caster.stats.current_state.hp
@@ -81,6 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
     assert AppleIdun.metadata().tick_interval == nil
   end
 
+  @tag game_mode: :renewal
   test "dynamic cost uses Bard cost ordering" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -132,5 +137,38 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
       party_id: 0
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(322)
+    assert definition.sp_cost == Enum.to_list(40..85//5)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic dynamic cost ignores Adaptation" do
+    caster = player()
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
+    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
+
+    assert %Cost{sp: 40, sp_requirement: 40} =
+             BaAppleidun.dynamic_cost(cost_state(), :self, 1, BaAppleidun.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion snapshots a VIT-scaled MaxHP rate" do
+    caster = player()
+    vit = Stats.get_effective_stat(caster.stats, :vit)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_appleidun, params ->
+      assert params[:val2] == 25 + div(vit, 10)
+      refute Keyword.has_key?(params, :val3)
+      :ok
+    end)
+
+    assert {:ok, _result} = BaAppleidun.cast(caster, :self, 10, BaAppleidun.definition())
   end
 end

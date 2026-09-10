@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyssTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Into the Abyss data" do
     assert {:ok, BdIntoabyss} = Catalog.active_module_for(:bd_intoabyss)
     assert {:ok, definition} = Catalog.by_id(312)
@@ -57,5 +58,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdIntoabyssTest do
            ]
 
     assert IntoAbyss in Effects.all()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(312)
+    assert definition.sp_cost == [10]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
   end
 end

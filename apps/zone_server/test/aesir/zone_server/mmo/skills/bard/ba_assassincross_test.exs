@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
   setup :verify_on_exit!
@@ -24,6 +25,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Sunset table" do
     assert {:ok, BaAssassincross} = Catalog.active_module_for(:ba_assassincross)
     assert {:ok, definition} = Catalog.by_id(320)
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
     assert definition.cooldown == List.duplicate(20_000, 10)
   end
 
+  @tag game_mode: :renewal
   test "completion snapshots the exact level-only ASPD formula and remembers Sunset" do
     caster = player()
 
@@ -61,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "dynamic cost uses Bard cost ordering" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -115,5 +119,40 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
       party_id: 0
     }
     |> PlayerState.new()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(320)
+    assert definition.sp_cost == Enum.to_list(38..65//3)
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion snapshots the classic duration" do
+    caster = player()
+
+    agi = Stats.get_effective_stat(caster.stats, :agi)
+
+    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_assncross, params ->
+      assert params[:duration] == 120_000
+      assert params[:val2] == 6 + div(agi, 20)
+      :ok
+    end)
+
+    assert {:ok, result} = BaAssassincross.cast(caster, :self, 1, BaAssassincross.definition())
+    assert result.last_song == %{skill_id: 320, level: 1}
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic dynamic cost ignores Adaptation" do
+    caster = player()
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
+    :ok = StatusStorage.apply_status(:player, 1, :sc_adaptation, duration: 10_000)
+
+    assert %Cost{sp: 38, sp_requirement: 38} =
+             BaAssassincross.dynamic_cost(cost_state(), :self, 1, BaAssassincross.definition())
   end
 end

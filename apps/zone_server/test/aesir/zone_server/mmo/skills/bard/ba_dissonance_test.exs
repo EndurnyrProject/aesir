@@ -48,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Dissonance table" do
     assert {:ok, BaDissonance} = Catalog.active_module_for(:ba_dissonance)
     assert {:ok, definition} = Catalog.by_id(317)
@@ -107,6 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
              )
   end
 
+  @tag game_mode: :renewal
   test "dynamic cost uses Bard ordering and applies Adaptation last" do
     caster = player_state(50)
     :ok = UnitRegistry.register_unit(:player, @caster_id, UnitStub, %{}, self())
@@ -168,5 +170,24 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
       max_sp: 100,
       spawned_at: 0
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(317)
+    assert definition.sp_cost == [18, 21, 24, 27, 30]
+    assert definition.cast_time == []
+    assert definition.fixed_cast_time == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic dynamic cost ignores Adaptation" do
+    caster = player_state(50)
+    :ok = UnitRegistry.register_unit(:player, @caster_id, UnitStub, %{}, self())
+    :ok = StatusStorage.apply_status(:player, @caster_id, :sc_adaptation, duration: 10_000)
+
+    assert %Cost{sp: 18, sp_requirement: 18} =
+             BaDissonance.dynamic_cost(caster, :self, 1, BaDissonance.definition())
   end
 end

@@ -1,5 +1,13 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankim do
-  @moduledoc "Mr. Kim a Rich Man (BD_RICHMANKIM)."
+  @moduledoc """
+  Mental Sensing (BD_RICHMANKIM). An ensemble raising experience gained by the party.
+
+  Renewal: cast, fixed cast, delay, cooldown, SP, and duration as declared, applied
+  as a party buff within its area. Pre-renewal: an instant cast with no cooldown
+  for the classic SP and a 1-minute performance; the classic ground-unit model
+  (a field affecting whoever stands in it while both performers keep playing) is
+  deferred to a skill-unit performance subsystem.
+  """
 
   use Aesir.ZoneServer.Mmo.Skill,
     id: 307,
@@ -11,12 +19,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRichmankim do
     damage_kind: :misc,
     hit_count: 1,
     splash_radius: 15,
-    sp_cost: [62, 68, 74, 80, 86],
-    duration: List.duplicate(180_000, 5),
-    cast_time: List.duplicate(1_000, 5),
-    fixed_cast_time: List.duplicate(500, 5),
-    after_cast_delay: List.duplicate(300, 5),
-    cooldown: List.duplicate(20_000, 5),
+    sp_cost: [renewal: [62, 68, 74, 80, 86], pre_renewal: List.duplicate(20, 5)],
+    duration: [renewal: List.duplicate(180_000, 5), pre_renewal: List.duplicate(60_000, 5)],
+    cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
+    fixed_cast_time: [renewal: List.duplicate(500, 5), pre_renewal: []],
+    after_cast_delay: [renewal: List.duplicate(300, 5), pre_renewal: []],
+    cooldown: [renewal: List.duplicate(20_000, 5), pre_renewal: []],
     require_weapon: [:musical, :whip]
 
   use Aesir.ZoneServer.Mmo.Skill.Ensemble

@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned instant timing and cooldown" do
     assert {:ok, BdAdaptation} = Catalog.active_module_for(:bd_adaptation)
     assert {:ok, definition} = Catalog.by_id(304)
@@ -43,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
            } = Adaptation.metadata()
   end
 
+  @tag game_mode: :renewal
   test "ordinary active cast requires 10 SP, consumes none, applies 300 seconds, and arms cooldown" do
     expect(StatusInterpreter, :apply_status, fn :player, 1_000, :sc_adaptation, params ->
       assert params[:caster_id] == 1_000
@@ -58,6 +60,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
     assert updated.act_delay_until >= before + 300
   end
 
+  @tag game_mode: :renewal
   test "less than 10 SP fails before status application or cooldown" do
     reject(&StatusInterpreter.apply_status/4)
 
@@ -82,5 +85,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptationTest do
       }
     }
     |> Aesir.ZoneServer.PlayerStateFixture.build()
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(304)
+    assert definition.sp_cost == [1]
+    assert definition.cast_time == [0]
+    assert definition.fixed_cast_time == [0]
+    assert definition.after_cast_delay == []
+    assert definition.cooldown == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic cast requires 1 SP, consumes none, and arms no cooldown or delay" do
+    expect(StatusInterpreter, :apply_status, fn :player, 1_000, :sc_adaptation, _params -> :ok end)
+
+    assert {:ok, updated} = Interpreter.cast(game_state(1), 304, 1, :self)
+    assert updated.stats.current_state.sp == 1
+    assert updated.skill_cooldowns == %{}
+    assert updated.act_delay_until == 0
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic cast with no SP fails before status application" do
+    reject(&StatusInterpreter.apply_status/4)
+    assert {:error, :insufficient_sp} = Interpreter.cast(game_state(0), 304, 1, :self)
   end
 end

@@ -46,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definition matches the pinned Musical Strike table" do
     assert {:ok, BaMusicalstrike} = Catalog.active_module_for(:ba_musicalstrike)
     assert {:ok, definition} = Catalog.by_id(316)
@@ -67,6 +68,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     assert definition.cooldown == List.duplicate(0, 5)
   end
 
+  @tag game_mode: :renewal
   test "each level performs one aggregate ranged attack with two-hit presentation" do
     caster = %PlayerState{character_id: @caster_id}
     definition = BaMusicalstrike.definition()
@@ -90,6 +92,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "ordinary completion spends 12 SP and persists exactly one arrow after the attack succeeds" do
     caster = player_state()
     stub_target_at(18, 10)
@@ -192,5 +195,53 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaMusicalstrikeTest do
     assert state.skill_cooldowns == %{}
     assert state.act_delay_until == 0
     assert state.pending_inventory_persist == []
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic carries the source's instant cast and SP" do
+    {:ok, definition} = Catalog.by_id(316)
+    assert definition.sp_cost == [1, 3, 5, 7, 9]
+    assert definition.cast_time == List.duplicate(1_500, 5)
+    assert definition.fixed_cast_time == List.duplicate(0, 5)
+    assert definition.after_cast_delay == []
+    assert definition.cooldown == List.duplicate(0, 5)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic completion spends the level SP, shows one hit, and arms no delay" do
+    caster = player_state()
+    stub_target_at(18, 10)
+
+    expect(Combat, :execute_skill_attack, fn ^caster, @target_id, opts ->
+      assert opts[:hit_count] == 1
+      assert opts[:display_hit_count] == 1
+      :ok
+    end)
+
+    assert {:ok, updated} =
+             Interpreter.complete_cast(caster, 316, 3, {:unit, @target_id})
+
+    assert updated.stats.current_state.sp == 95
+    assert updated.inventory[1].amount == 4
+    assert updated.skill_cooldowns == %{}
+    assert updated.act_delay_until == 0
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic levels perform one aggregate ranged attack shown as a single hit" do
+    caster = %PlayerState{character_id: @caster_id}
+    definition = BaMusicalstrike.definition()
+
+    expect(Combat, :execute_skill_attack, 5, fn ^caster, 2_000, opts ->
+      assert opts[:skill_ratio] == 60 + 40 * opts[:skill_level]
+      assert opts[:hit_count] == 1
+      assert opts[:display_hit_count] == 1
+      :ok
+    end)
+
+    for level <- 1..5 do
+      assert {:ok, ^caster} =
+               BaMusicalstrike.cast(caster, {:unit, @target_id}, level, definition)
+    end
   end
 end
