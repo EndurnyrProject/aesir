@@ -31,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispellTest do
   end
 
   describe "metadata" do
+    @tag game_mode: :renewal
     test "matches the rAthena renewal table" do
       definition = definition()
 
@@ -39,6 +40,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispellTest do
       assert definition.range == 9
       assert definition.cast_time == List.duplicate(1_600, 5)
       assert definition.fixed_cast_time == List.duplicate(400, 5)
+      assert definition.item_cost == [%{id: 715, amount: 1}]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 2 seconds" do
+      definition = definition()
+      assert definition.cast_time == List.duplicate(2_000, 5)
+      assert definition.fixed_cast_time == []
       assert definition.item_cost == [%{id: 715, amount: 1}]
     end
   end

@@ -1462,11 +1462,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   # Equipment stores :aspd_rate as a full rate (100 = neutral), while status
   # effects store a summable percent delta; both feed the formula's speed channel.
-  defp aspd_percent_bonus(%__MODULE__{modifiers: modifiers}) do
+  defp aspd_percent_bonus(%__MODULE__{modifiers: modifiers} = stats) do
     equipment_percent = Map.get(modifiers.equipment, :aspd_rate, 100) - 100
     status_percent = Map.get(modifiers.status_effects, :aspd_rate, 0)
 
-    equipment_percent + status_percent
+    equipment_percent + status_percent + Passives.aspd_rate_bonus(stats)
   end
 
   defp get_hp_bonus_flat(%__MODULE__{} = stats),

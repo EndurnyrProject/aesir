@@ -67,6 +67,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
   @doc "Returns a flat ASPD bonus contributed by this passive at the given level."
   @callback aspd_bonus(level :: pos_integer(), ctx()) :: integer()
 
+  @doc "Percent attack-speed rate bonus (classic ASPD model) while the passive applies."
+  @callback aspd_rate_bonus(level :: pos_integer(), ctx()) :: integer()
+
   @doc "Returns a flat INT bonus contributed by this passive at the given level."
   @callback int_bonus(level :: pos_integer(), ctx()) :: integer()
 
@@ -165,6 +168,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passive do
                       str_bonus: 2,
                       hit_bonus: 2,
                       hit_rate_bonus_pct: 2,
+                      aspd_rate_bonus: 2,
                       range_bonus: 2,
                       max_weight_bonus: 2,
                       aspd_bonus: 2,

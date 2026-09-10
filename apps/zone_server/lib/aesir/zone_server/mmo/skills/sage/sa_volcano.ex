@@ -1,17 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcano do
   @moduledoc """
-  Volcano (SA_VOLCANO), the Sage's Fire element field.
+  Volcano (SA_VOLCANO). A tickless 7x7 fire field lasting 60 s per level that
+  supports every occupant with the fire field status, one field per caster
+  across the element-field family (a swap inherits the remaining duration). The
+  status adds 10, 14, 17, 19, or 20 points to the holder's fire attack: as
+  ratio points on the element table in renewal and as a damage multiplier in
+  pre-renewal. Volcano grants 5 plus 5 per level ATK and MATK to players and weapon ATK to mobs in renewal; in pre-renewal 10 per level weapon ATK, and only to fire-element holders.
 
-  Renewal data is from rAthena `db/re/skill_db.yml:5768-5817`: ID 285, `Layout: 3`
-  (7x7), range 2, 60-300 second duration, 48-40 SP, 4,000 ms variable plus
-  1,000 ms fixed cast, one Blue_Gemstone (717), `PathCheck: true` and
-  `Interval: -1` (tickless).
-
-  `src/map/skill.cpp:6517-6525` applies `SC_VOLCANO` to any `bl` that occupies
-  the field, so `field_support/1` filters nothing: allies, enemies and the caster
-  all get it. Per-caster exclusivity against the rest of the element-field family
-  is declared through the lifecycle policy and enforced centrally by
-  `Skill.Unit.Manager`.
+  Renewal: a 4 s cast plus 1 s fixed and a Blue Gemstone. Pre-renewal: a 5 s cast
+  and a Yellow Gemstone. Both cost 48 down to 40 SP at 2 cells.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 285,
@@ -26,9 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaVolcano do
     unit_duration: [60_000, 120_000, 180_000, 240_000, 300_000],
     duration: [60_000, 120_000, 180_000, 240_000, 300_000],
     sp_cost: [48, 46, 44, 42, 40],
-    cast_time: List.duplicate(4_000, 5),
-    fixed_cast_time: List.duplicate(1_000, 5),
-    item_cost: [%{id: 717, amount: 1}],
+    cast_time: [renewal: List.duplicate(4_000, 5), pre_renewal: List.duplicate(5_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
+    item_cost: [renewal: [%{id: 717, amount: 1}], pre_renewal: [%{id: 715, amount: 1}]],
     status: :sc_volcano
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground

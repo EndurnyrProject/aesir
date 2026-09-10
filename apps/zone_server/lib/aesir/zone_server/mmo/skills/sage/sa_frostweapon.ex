@@ -1,13 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweapon do
   @moduledoc """
-  Frost Weapon (SA_FROSTWEAPON). Endows an ally's weapon with the water
-  element, applying SC_WATERWEAPON.
+  Frost Weapon (SA_FROSTWEAPON). Endows an ally's weapon with the water element; a bare-handed
+  target fails before any cost is charged.
 
-  rAthena renewal (`skills/mage/endowblaze.cpp:15-27`): 100% success at every
-  level - the pre-renewal `60+lv*10` roll and its weapon-unequip penalty on
-  failure are not implemented. Casting on an unarmed target fails outright,
-  before any cost is charged (`dstsd->status.weapon == W_FIST`); a non-player
-  target has no `dstsd` and skips the check entirely.
+  Renewal: always succeeds, 10 minutes plus 5 per level, a 1 s cast plus 1 s fixed,
+  and one elemental point catalyst. Pre-renewal: succeeds 60% plus 10% per level of
+  the time (a failed cast still spends the SP and catalyst; the source also
+  unequips the target's weapon, which Aesir does not model), lasts 20 minutes at
+  levels 1 to 4 and 30 at level 5, casts in 3 s, and burns one raw elemental ore.
+  Both cost 40 SP at 9 cells.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 281,
@@ -20,15 +21,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweapon do
     damage_kind: :magic,
     element: :water,
     range: 9,
-    cast_time: List.duplicate(1000, 5),
-    fixed_cast_time: List.duplicate(1000, 5),
+    cast_time: [renewal: List.duplicate(1000, 5), pre_renewal: List.duplicate(3000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1000, 5), pre_renewal: []],
     sp_cost: List.duplicate(40, 5),
-    item_cost: [%{id: 6361, amount: 1}],
-    duration: [600_000, 900_000, 1_200_000, 1_500_000, 1_800_000]
+    item_cost: [renewal: [%{id: 6361, amount: 1}], pre_renewal: [%{id: 991, amount: 1}]],
+    duration: [
+      renewal: [600_000, 900_000, 1_200_000, 1_500_000, 1_800_000],
+      pre_renewal: [1_200_000, 1_200_000, 1_200_000, 1_200_000, 1_800_000]
+    ]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
-  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.Skills.Sage.Endow
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -45,22 +49,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweapon do
   @impl Active
   @spec cast(PlayerState.t(), Active.target(), pos_integer(), Definition.t()) ::
           {:ok, PlayerState.t()} | {:error, atom()}
-  def cast(%{character_id: caster_id} = caster, target, level, definition) do
-    target_id = Active.resolve_target_id(caster, target)
-    duration = Enum.at(definition.duration, level - 1)
+  def cast(caster, target, level, definition),
+    do: Endow.cast(caster, target, level, definition, :sc_waterweapon)
 
-    case StatusInterpreter.apply_status(:player, target_id, :sc_waterweapon,
-           val1: level,
-           caster_id: caster_id,
-           duration: duration
-         ) do
-      :ok -> {:ok, caster}
-      {:error, _reason} = error -> error
-    end
-  end
-
-  # rAthena only rejects a bare-handed *player* target (`BL_CAST(BL_PC,
-  # target)`); a target that does not resolve to a player has no `dstsd` and
+  # Only a bare-handed player target is rejected; a target that is not a player
   # skips the check.
   @spec check_weapon(PlayerState.t(), non_neg_integer()) :: :ok | {:error, :bare_handed}
   defp check_weapon(%{character_id: caster_id} = caster, caster_id) do

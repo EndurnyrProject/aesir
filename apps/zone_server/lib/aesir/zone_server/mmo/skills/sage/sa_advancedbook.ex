@@ -1,10 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAdvancedbook do
   @moduledoc """
-  Advanced Book (SA_ADVANCEDBOOK). Grants flat mastery ATK and flat ASPD while
-  wielding a book.
+  Advanced Book (SA_ADVANCEDBOOK). A passive for book wielders: 3 ATK per level in
+  both modes.
 
-  rAthena renewal: `+3` ATK per skill level (`battle.cpp:2390`) and
-  `+((lv-1)/2)+1` ASPD (`status.cpp:2388`), both gated on `W_BOOK`.
+  Renewal adds a flat attack speed bonus of (level minus 1)/2 plus 1; pre-renewal
+  adds an attack speed rate of half a percent per level instead, carried as whole
+  percents (level/2) because the rate channel is integer.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 274,
@@ -13,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAdvancedbook do
     max_level: 10,
     target_type: :passive
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Passive
 
   @behaviour Passive
@@ -22,6 +24,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAdvancedbook do
   def atk_bonus(_level, _ctx), do: 0
 
   @impl Passive
-  def aspd_bonus(level, %{weapon_type: :book}), do: div(level - 1, 2) + 1
+  def aspd_bonus(level, %{weapon_type: :book}) do
+    if GameMode.mode() == :renewal, do: div(level - 1, 2) + 1, else: 0
+  end
+
   def aspd_bonus(_level, _ctx), do: 0
+
+  @impl Passive
+  def aspd_rate_bonus(level, %{weapon_type: :book}) do
+    if GameMode.mode() == :pre_renewal, do: div(level, 2), else: 0
+  end
+
+  def aspd_rate_bonus(_level, _ctx), do: 0
 end

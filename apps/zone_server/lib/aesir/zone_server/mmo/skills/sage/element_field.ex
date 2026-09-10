@@ -2,18 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementField do
   @moduledoc """
   Shared placement and support shape for the Sage element fields.
 
-  Volcano, Deluge and Violent Gale are the same ground field with a different
-  element, and Land Protector shares their per-caster exclusivity. rAthena keeps
-  the four together in `skill_locate_element_field` (`src/map/skill.cpp:11059-11080`)
-  and clears the caster's previous field before placing a new one
-  (`src/map/skill.cpp:5883-5907`); `Skill.Unit.Manager` reproduces that from the
-  `exclusive_family` lifecycle policy, so the family name lives here once.
-
-  Only the trio sets `inherit_family_duration`, marking themselves as fields
-  whose *remaining* duration is inherited by whatever replaces them: a swap
-  between the trio never refreshes, and a Land Protector placed over one takes
-  over its remaining time. Land Protector itself does not opt in, so an element
-  field placed over an existing Land Protector gets a fresh duration.
+  Volcano, Deluge and Violent Gale are the same tickless 7x7 field lasting 60 s
+  per level with a different element, and Land Protector shares their one-per-
+  caster exclusivity. The trio inherits the remaining duration of the field it
+  replaces; a Land Protector placed over one takes over its remaining time, while
+  an element field placed over a Land Protector gets a fresh duration. Renewal and
+  pre-renewal agree.
   """
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Layout

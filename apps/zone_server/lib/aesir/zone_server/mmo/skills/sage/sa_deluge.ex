@@ -1,20 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDeluge do
   @moduledoc """
-  Deluge (SA_DELUGE), the Sage's Water element field.
+  Deluge (SA_DELUGE). A tickless 7x7 water field lasting 60 s per level that
+  supports every occupant with the water field status, one field per caster
+  across the element-field family (a swap inherits the remaining duration). The
+  status adds 10, 14, 17, 19, or 20 points to the holder's water attack: as
+  ratio points on the element table in renewal and as a damage multiplier in
+  pre-renewal. Deluge raises max HP by 5, 9, 12, 14, or 15% in both modes; pre-renewal grants it only to water-element holders.
 
-  Renewal data is from rAthena `db/re/skill_db.yml:5818-5867`: ID 286, `Layout: 3`
-  (7x7), range 2, 60-300 second duration, 48-40 SP, 4,000 ms variable plus
-  1,000 ms fixed cast, one Blue_Gemstone (717), `PathCheck: true` and
-  `Interval: -1` (tickless).
-
-  `src/map/skill.cpp:6517-6525` applies `SC_DELUGE` to any `bl` that occupies the
-  field, so `field_support/1` filters nothing. Per-caster exclusivity against the
-  rest of the element-field family is declared through the lifecycle policy and
-  enforced centrally by `Skill.Unit.Manager`.
-
-  Every cell is flagged `:consumable_water`, which the manager commits as a
-  `Map.Cell` water contribution: `WZ_WATERBALL` counts a Deluge cell as water
-  (`src/map/skill.cpp:6259-6263`) and claiming one consumes that single cell.
+  Renewal: a 4 s cast plus 1 s fixed and a Blue Gemstone. Pre-renewal: a 5 s cast
+  and a Yellow Gemstone. Both cost 48 down to 40 SP at 2 cells.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 286,
@@ -29,9 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDeluge do
     unit_duration: [60_000, 120_000, 180_000, 240_000, 300_000],
     duration: [60_000, 120_000, 180_000, 240_000, 300_000],
     sp_cost: [48, 46, 44, 42, 40],
-    cast_time: List.duplicate(4_000, 5),
-    fixed_cast_time: List.duplicate(1_000, 5),
-    item_cost: [%{id: 717, amount: 1}],
+    cast_time: [renewal: List.duplicate(4_000, 5), pre_renewal: List.duplicate(5_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
+    item_cost: [renewal: [%{id: 717, amount: 1}], pre_renewal: [%{id: 715, amount: 1}]],
     status: :sc_deluge
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground

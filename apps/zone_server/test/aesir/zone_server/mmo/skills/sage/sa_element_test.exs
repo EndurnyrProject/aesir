@@ -121,6 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
 
   describe "metadata" do
     for {module, id, name, element, item_id} <- @skills do
+      @tag game_mode: :renewal
       test "#{name} matches the rAthena renewal table" do
         assert {:ok, %{name: unquote(name)}} = Catalog.by_id(unquote(id))
         assert {:ok, unquote(module)} = Catalog.active_module_for(unquote(name))
@@ -139,6 +140,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaElementTest do
         assert definition.duration == [1_800_000]
         assert definition.status == :sc_elementalchange
         assert definition.item_cost == [%{id: unquote(item_id), amount: 1}]
+      end
+
+      @tag game_mode: :pre_renewal
+      test "#{name} casts in 2 seconds of variable time in classic" do
+        definition = definition(unquote(name))
+
+        assert definition.cast_time == [2_000]
+        assert definition.fixed_cast_time == []
+        assert definition.after_cast_delay == [1_000]
       end
     end
   end

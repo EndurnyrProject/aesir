@@ -84,6 +84,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
   end
 
   describe "metadata" do
+    @tag game_mode: :renewal
     test "matches the rAthena renewal table" do
       {:ok, definition} = Catalog.by_name(:sa_spellbreaker)
 
@@ -95,6 +96,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       assert definition.sp_cost == List.duplicate(10, 5)
       assert definition.cast_time == List.duplicate(560, 5)
       assert definition.fixed_cast_time == List.duplicate(140, 5)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 0.7 seconds" do
+      {:ok, definition} = Catalog.by_id(277)
+      assert definition.cast_time == List.duplicate(700, 5)
+      assert definition.fixed_cast_time == []
     end
   end
 
@@ -317,6 +325,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
       assert_received {:interrupted, ^pid}
     end
 
+    @tag game_mode: :renewal
     test "never siphons HP from a boss, even at level 5" do
       stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss], hp: 1_000, max_hp: 1_000))
 
@@ -327,6 +336,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreakerTest do
 
       refute_received {:damaged, _damage, _source}
       assert caster.stats.current_state.hp == 500
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic siphons a boss once the resistance roll has passed" do
+      stub_mob(mob_state(casting: %{row: @firebolt}, modes: [:boss], hp: 1_000, max_hp: 1_000))
+
+      assert {:ok, caster} =
+               SaSpellbreaker.cast(caster(100, 200), {:unit, @target_id}, 5, nil,
+                 rng: fn 100 -> 91 end
+               )
+
+      assert_received {:damaged, 20, _source}
+      assert caster.stats.current_state.hp == 510
     end
 
     test "a non-boss target never rolls at all" do

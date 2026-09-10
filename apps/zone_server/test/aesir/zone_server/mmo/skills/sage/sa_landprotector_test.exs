@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
   use ExUnit.Case, async: false
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+
   import Aesir.TestEtsSetup
   import Mimic
 
@@ -29,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
 
   # rAthena db/re/skill_db.yml:8069-8125.
   describe "definition/0" do
+    @tag game_mode: :renewal
     test "matches the Renewal Land Protector tables" do
       definition = SaLandprotector.definition()
 
@@ -42,6 +45,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotectorTest do
       assert definition.fixed_cast_time == List.duplicate(1_000, 5)
       assert definition.unit_duration == [165_000, 210_000, 255_000, 300_000, 345_000]
       assert definition.item_cost == [%{id: 717, amount: 1}, %{id: 715, amount: 1}]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 5 seconds" do
+      {:ok, definition} = Catalog.by_id(288)
+      assert definition.cast_time == List.duplicate(5_000, 5)
+      assert definition.fixed_cast_time == []
     end
   end
 

@@ -114,6 +114,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
   end
 
   describe "metadata" do
+    @tag game_mode: :renewal
     test "the catalog resolves id 279 with the renewal skill_db values" do
       assert {:ok, SaAutospell} = Catalog.active_module_for(:sa_autospell)
       assert {:ok, definition} = Catalog.by_id(279)
@@ -125,6 +126,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
       assert definition.status == :sc_autospell
       assert definition.sp_cost == List.duplicate(35, 10)
       assert definition.fixed_cast_time == List.duplicate(3_000, 10)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 3 seconds of variable time" do
+      assert {:ok, definition} = Catalog.by_id(279)
+      assert definition.cast_time == List.duplicate(3_000, 10)
+      assert definition.fixed_cast_time == []
     end
 
     test "publishes the menu capability so an accepted reply routes back here" do
@@ -152,6 +160,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
   end
 
   describe "on_menu_reply/3" do
+    @tag game_mode: :renewal
     test "arms the chosen bolt with the level-scaled duration and proc chance" do
       expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, params ->
         assert params[:duration] == 210_000
@@ -173,10 +182,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellTest do
       end
     end
 
+    @tag game_mode: :renewal
     test "proc chance is 2 * level, with no pre-renewal flat 5 added" do
       for level <- 1..10 do
         expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, params ->
           assert params[:state].chance == 2 * level
+          :ok
+        end)
+
+        assert {:ok, _} = reply(@all_bolts, @firebolt, level)
+      end
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic proc chance is 5 plus 2 per level" do
+      for level <- [1, 5, 10] do
+        expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_autospell, params ->
+          assert params[:state].chance == 5 + 2 * level
           :ok
         end)
 

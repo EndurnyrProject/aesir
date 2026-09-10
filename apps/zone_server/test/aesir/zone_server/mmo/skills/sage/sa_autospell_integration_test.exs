@@ -49,6 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospellIntegrationTest do
   end
 
   describe "the menu reply arms the bolt" do
+    @tag game_mode: :renewal
     test "a valid reply stores sc_autospell carrying the whole proc" do
       assert {:noreply, armed} = inject(selected_id: @firebolt)
 

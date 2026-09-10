@@ -1,28 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
   @moduledoc """
-  Dispell (SA_DISPELL). Strips every dispellable status from a single target.
+  Dispell (SA_DISPELL). Strips every dispellable status from one target at 9 cells
+  with a 50% plus 10% per level chance, for 1 SP and a Yellow Gemstone spent either
+  way. The removal itself lives in the shared dispel routine. No PvP, party, or Soul
+  Link gate is modelled yet.
 
-  Renewal data from rAthena `db/re/skill_db.yml:289`: max level 5, magic,
-  no damage, range 9, 1600ms cast + 400ms fixed cast, one Yellow_Gemstone
-  (715). `src/map/skills/mage/dispell.cpp:36-72` rolls `rnd()%100 >= 50+10*lv`
-  to fail, i.e. a `50 + 10*lv`% success chance, and consumes the catalyst
-  either way (the skill carries no `SKILL_NOCONSUME_REQ`).
-
-  The removal itself lives in `Aesir.ZoneServer.Mmo.StatusEffect.Dispel`, which
-  documents its own deviations from the reference - notably that Aesir has no
-  `status_isimmune` (GTB) equivalent for `dispell.cpp:33`'s immunity gate.
-
-  Deviations from the reference at this layer:
-
-  * **No PvP/party gate.** `dispell.cpp:22-23` restricts a player-on-player
-    Dispell outside PvP maps to party or duel members. Aesir has neither PvP
-    maps nor duels, so `target_type: :target_any` mirrors the skill's
-    unrestricted in-PvP reach; add the gate with PvP.
-  * **No Soul Linker / SC_SPIRIT (Rogue) resistance** (`dispell.cpp:25-26`):
-    Soul Linker is not implemented, an accepted limitation of this epic.
-  * **No splash flag.** `skill_get_splash(SA_DISPELL, lv)` is unset in the
-    renewal db, so the reference's `map_foreachinallrange` branch never runs
-    for this skill; only the single-target path is modelled.
+  Renewal casts in 1.6 s plus 0.4 s fixed; pre-renewal in 2 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 289,
@@ -35,8 +18,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaDispell do
     damage_kind: :magic,
     range: 9,
     sp_cost: List.duplicate(1, 5),
-    cast_time: List.duplicate(1_600, 5),
-    fixed_cast_time: List.duplicate(400, 5),
+    cast_time: [renewal: List.duplicate(1_600, 5), pre_renewal: List.duplicate(2_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(400, 5), pre_renewal: []],
     item_cost: [%{id: 715, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Combat.TargetResolver

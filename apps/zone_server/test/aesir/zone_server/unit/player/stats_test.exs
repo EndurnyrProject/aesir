@@ -3462,6 +3462,7 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       |> Stats.calculate_stats(nil, equipped_items)
     end
 
+    @tag game_mode: :renewal
     test "atk_bonus and aspd_bonus apply only with a book, tested both ways" do
       book = %ItemDefinition{
         id: 92_001,
@@ -3489,6 +3490,27 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
       assert book_with_skill.derived_stats.aspd ==
                min(book_no_skill.derived_stats.aspd + 3, mode_value(193, 190))
 
+      assert book_with_skill.derived_stats.aspd > book_no_skill.derived_stats.aspd
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic gives a book wielder a small attack speed rate and the same ATK" do
+      book = %ItemDefinition{
+        id: 92_001,
+        aegis_name: "test_book",
+        name: "Test Book",
+        type: :weapon,
+        subtype: :book,
+        weapon_level: 1
+      }
+
+      stub(ItemManagement, :get_item_by_id, fn 92_001 -> {:ok, book} end)
+
+      learned = %{274 => 10}
+      book_no_skill = advancedbook_stats(%{}, [equipped(92_001, @right_hand)])
+      book_with_skill = advancedbook_stats(learned, [equipped(92_001, @right_hand)])
+
+      assert book_with_skill.combat_stats.atk == book_no_skill.combat_stats.atk + 30
       assert book_with_skill.derived_stats.aspd > book_no_skill.derived_stats.aspd
     end
   end

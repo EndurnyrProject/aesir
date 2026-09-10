@@ -1,47 +1,16 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   @moduledoc """
-  Spell Breaker (SA_SPELLBREAKER). Interrupts an enemy's cast, drains their SP
-  and refunds part of it to the caster.
+  Spell Breaker (SA_SPELLBREAKER). Interrupts an enemy's cast at 9 cells for 10 SP:
+  the target loses the interrupted skill's SP cost and the caster regains 25% per
+  level above one of it. A target under Magic Rod absorbs the attempt instead and
+  drains 20% of the caster's max SP. A status-immune target resists nine times in
+  ten before anything happens. At level 5 the caster also siphons 2% of the target's
+  max HP, healing half of it, never when the hit would be lethal.
 
-  Renewal data from rAthena `db/re/skill_db.yml:277`: max level 5, magic, no
-  damage, range 9, 560ms cast + 140ms fixed cast, 10 SP at every level.
-
-  Flow, from `src/map/skills/mage/spellbreaker.cpp:15-60`:
-
-    1. A target under `SC_MAGICROD` absorbs the attempt: 20% of the **caster's**
-       max SP is drained and handed to the target, and nothing else happens -
-       no interruption, no roll. Magic Rod wins.
-    2. A target that is not casting fails outright (`:not_casting`), leaving no
-       trace beyond the cast's own cost.
-    3. A status-immune (boss-moded) target fails 90% of the time. The roll comes
-       *before* the interruption, so a failed roll leaves the cast running.
-    4. Otherwise the cast is interrupted, the target loses the interrupted
-       skill's SP cost, and the caster regains `sp * 25*(lv-1) / 100` of it.
-    5. At level 5 against a non-boss the caster additionally siphons
-       `max_hp / 50` HP and heals half of it. Renewal excludes bosses from this
-       (`spellbreaker.cpp:39-43`'s `#ifdef RENEWAL else`), and the hit is
-       **skipped when it would be lethal** (`hp < tstatus->hp`, line 53).
-
-  Deviations from the reference, all deliberate:
-
-    * **Mobs only.** `Targeting.validate_enemy/2` rejects player targets until
-      PvP lands, and `PlayerSession` has no cast-interruption entry point to
-      build the player path on. Target resolution is polymorphic so the player
-      branch is the only thing left to write.
-    * **Magic Rod is checked on any target type.** The reference gates that
-      branch on `dstsd` (`spellbreaker.cpp:22`), i.e. player targets only. The
-      gate is dropped here because Aesir has no player targets to gate on yet;
-      keying on the status alone keeps the branch honest for both types.
-    * **SP cost of the interrupted skill comes from the player skill catalog.**
-      A mob skill absent from it (every `NPC_*` skill) contributes 0 SP, which
-      is what `skill_get_sp` returns for them too: `skill.cpp:162-174` bails to 0
-      for an unknown skill, and none of those skills declare a `SpCost`.
-    * **No extrapolation past a skill's max level.** rAthena's `skill_get_lv`
-      extrapolates a cost for levels above `MAX_SKILL_LEVEL`; mob rows do reach
-      there (`AL_DECAGI` lv 48, `MG_FIREBALL` lv 43). Aesir's definitions are
-      only `max_level` long, so an out-of-range level yields 0 SP, matching
-      `StatusEffect.Effects.MagicRod`'s reading of the same table. Reproducing
-      the extrapolation belongs in a shared `Catalog` accessor, not here.
+  Renewal casts in 0.56 s plus 0.14 s fixed and never siphons HP from a
+  status-immune target; pre-renewal casts in 0.7 s and siphons once the resistance
+  roll has passed. Only mob targets are supported until player casts can be
+  interrupted; a mob-only skill absent from the catalog costs 0 SP.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 277,
@@ -54,9 +23,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
     damage_kind: :magic,
     range: 9,
     sp_cost: List.duplicate(10, 5),
-    cast_time: List.duplicate(560, 5),
-    fixed_cast_time: List.duplicate(140, 5)
+    cast_time: [renewal: List.duplicate(560, 5), pre_renewal: List.duplicate(700, 5)],
+    fixed_cast_time: [renewal: List.duplicate(140, 5), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
@@ -154,13 +124,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
     if rng.(100) <= @boss_failure_rate, do: {:error, :failed}, else: :ok
   end
 
-  # Level 5 only, and never against a boss: renewal drops the HP siphon for
-  # status-immune targets (`spellbreaker.cpp:39-43`).
+  # Level 5 only. Renewal never siphons a status-immune target; classic does once
+  # its one-in-ten interruption roll has passed.
   @spec siphon_hp(PlayerState.t(), pid(), pos_integer(), boolean()) :: PlayerState.t()
   defp siphon_hp(caster, _pid, level, _boss?) when level < 5, do: caster
-  defp siphon_hp(caster, _pid, _level, true), do: caster
 
-  defp siphon_hp(caster, pid, _level, false) do
+  defp siphon_hp(caster, pid, _level, boss?) do
+    if boss? and GameMode.mode() == :renewal, do: caster, else: siphon(caster, pid)
+  end
+
+  defp siphon(caster, pid) do
     # Re-read after the interrupt: it is the mob's liveness revalidation and the
     # source of the current HP the lethal check needs.
     state = MobSession.get_state(pid)
@@ -175,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaSpellbreaker do
   end
 
   # 20% of the caster's *max* SP (`status_percent_damage`'s negative rate reads
-  # max, `status.cpp:1929-1934`), never more than they have and never zero.
+  # max), never more than they have and never zero.
   @spec feed_magic_rod(PlayerState.t(), :mob | :player, non_neg_integer()) :: PlayerState.t()
   defp feed_magic_rod(%{stats: stats} = caster, unit_type, target_id) do
     amount = min(max(div(stats.derived_stats.max_sp * 20, 100), 1), stats.current_state.sp)

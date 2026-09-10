@@ -1,11 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaViolentgaleTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.Skill.Catalog
+
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaViolentgale
 
   # rAthena db/re/skill_db.yml:5868-5917.
   describe "definition/0" do
+    @tag game_mode: :renewal
     test "matches the Renewal Violent Gale level tables" do
       definition = SaViolentgale.definition()
 
@@ -20,6 +23,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaViolentgaleTest do
       assert definition.fixed_cast_time == List.duplicate(1_000, 5)
       assert definition.item_cost == [%{id: 717, amount: 1}]
       assert definition.unit_duration == [60_000, 120_000, 180_000, 240_000, 300_000]
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 5 seconds with a Yellow Gemstone" do
+      {:ok, definition} = Catalog.by_id(287)
+      assert definition.cast_time == List.duplicate(5_000, 5)
+      assert definition.fixed_cast_time == []
+      assert definition.item_cost == [%{id: 715, amount: 1}]
     end
   end
 

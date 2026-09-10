@@ -477,6 +477,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert updated.hp == state.hp
     end
 
+    @tag game_mode: :renewal
     test "SC_DELUGE raises the ceiling by its tabulated percent without healing" do
       state = build_mob_state()
       UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
@@ -499,6 +500,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert updated.hp == 1000
     end
 
+    @tag game_mode: :renewal
     test "scales from base_max_hp so a re-apply never compounds" do
       # A stale effective ceiling must not be used as the recalc base.
       state = %MobState{build_mob_state() | max_hp: 1150}

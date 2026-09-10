@@ -1,7 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
   @moduledoc """
-  Auto Spell (SA_AUTOSPELL). Offers the caster a menu of bolts it has learned and
-  arms the chosen one to proc on its weapon hits (`:sc_autospell`).
+  Hindsight (SA_AUTOSPELL). Offers the caster a menu of the bolts it has learned
+  (tiers opening at levels 1, 4, 7, and 10) and arms the chosen one to fire on
+  weapon hits for 90 s plus 30 s per level, at up to half the Hindsight level
+  (capped by the learned bolt level), for 35 SP.
+
+  Renewal: a 3 s fixed cast and a 2% per level proc chance. Pre-renewal: a 3 s
+  variable cast and a 5% plus 2% per level proc chance.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 279,
@@ -14,8 +19,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
     damage_kind: :magic,
     range: 0,
     sp_cost: List.duplicate(35, 10),
-    fixed_cast_time: List.duplicate(3_000, 10)
+    cast_time: [renewal: [], pre_renewal: List.duplicate(3_000, 10)],
+    fixed_cast_time: [renewal: List.duplicate(3_000, 10), pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Learned
@@ -101,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
     state = %{
       skill: skill,
       max_level: max_level(Learned.learned_level(learned, selected_id), level),
-      chance: 2 * level
+      chance: proc_chance(level)
     }
 
     case StatusInterpreter.apply_status(:player, character_id, :sc_autospell,
@@ -117,4 +124,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAutospell do
 
   # Duration starts at 120 seconds and rises by 30 seconds per level.
   defp duration(level), do: (90 + 30 * level) * 1_000
+
+  @doc "The per-hit proc chance in percent: 2 per level in renewal, 5 plus 2 per level in classic."
+  @spec proc_chance(pos_integer()) :: pos_integer()
+  def proc_chance(level) do
+    case GameMode.mode() do
+      :renewal -> 2 * level
+      :pre_renewal -> 5 + 2 * level
+    end
+  end
 end

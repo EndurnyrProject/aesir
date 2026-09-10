@@ -1,20 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange do
   @moduledoc """
-  The cast body shared by the four `SA_ELEMENT*` converter skills.
+  Shared behaviour of the four Elemental Change quest skills: the target monster's
+  defence element becomes the skill's element for the status duration.
 
-  `elementalchangewater.cpp:14-25` is one function reused verbatim by the earth,
-  fire and wind variants, the element being the only difference; each skill
-  module carries its own metadata and delegates the body here.
-
-  The gate is `if (sd && (!dstmd || status_has_mode(tstatus, MD_STATUSIMMUNE)))
-  return;` - a player-cast lands only on a monster that is not status immune.
-  Aesir's mob importer maps rAthena's `Class: Boss` to the `:boss` mode but does
-  not union in the `MD_STATUSIMMUNE` bit that `mob.cpp:5543` adds for that
-  class, and no mob in `priv/db/re/mobs/mobs.yml` carries `:status_immune`, so
-  `MobState.is_boss?/1` is the faithful stand-in for the reference's check.
-
-  A blocked cast still returns `{:ok, caster}`: the reference's early return does
-  not set `SKILL_NOCONSUME_REQ`, so the converter is consumed either way.
+  Renewal and pre-renewal agree on the effect; only the cast type differs per
+  skill.
   """
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Skill.Active
@@ -27,7 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange do
   @doc """
   Overrides the target monster's defense element with the skill's own element.
 
-  `val1` is the element level and `val2` the rAthena element id, mirroring
+  `val1` is the element level and `val2` the source element id, mirroring
   `sc_start2(src, target, type, 100, skill_lv, skill_get_ele(...))`. The
   reference's `src` is not carried because `sc_elementalchange` reads no
   caster context.

@@ -1,18 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCastcancel do
   @moduledoc """
-  Cast Cancel (SA_CASTCANCEL). Aborts the caster's own in-flight cast.
+  Cast Cancel (SA_CASTCANCEL). Aborts the caster's own in-flight cast for 2 SP,
+  paying 90% minus 20% per level above one of the cancelled skill's SP cost instead
+  of its full cost. The abort runs in the caster's session; this module only
+  contributes the definition and the not-casting guard.
 
-  The abort and its SP penalty are driven session-side by
-  `Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler`, which intercepts this
-  skill before its idle gate: the cast descriptor it needs lives on the session,
-  and cancelling requires killing the cast timer. This module therefore only
-  contributes the definition and the `:not_casting` guard, so the interpreter
-  charges nothing when there is nothing to cancel.
-
-  rAthena (`skills/mage/castcancel.cpp`) zaps
-  `skill_get_sp(cancelled_skill, cancelled_level) * (90 - 20*(lv-1)) / 100`.
-  Because Aesir charges SP at castend (like rAthena), this is a penalty paid
-  *instead of* the cancelled skill's full cost, not a refund.
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 275,

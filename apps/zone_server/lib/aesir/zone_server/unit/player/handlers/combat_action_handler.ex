@@ -606,7 +606,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   defp apply_freecast_amotion(delay, game_state) do
     case SaFreecast.level(game_state) do
       0 -> delay
-      level -> div(delay * SaFreecast.amotion_rate(level), 100)
+      level -> SaFreecast.attack_delay(level, delay)
     end
   end
 

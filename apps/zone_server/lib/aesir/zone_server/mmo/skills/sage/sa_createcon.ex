@@ -1,10 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaCreatecon do
   @moduledoc """
-  Create Elemental Converter (SA_CREATECON). Offers the caster a menu of the
-  elemental converters it holds the materials for and brews the chosen one.
+  Create Elemental Converter (SA_CREATECON). A quest skill for 30 SP that offers
+  the converters the caster holds a blank scroll and the matching ore for, and
+  brews one of the chosen kind; the materials are re-checked on reply.
 
-  This level-one quest skill is self-targeted, instant, deals no damage, and
-  costs 30 SP.
+  Renewal and pre-renewal agree.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 1007,

@@ -199,6 +199,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Monk.Root,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementChange,
       Aesir.ZoneServer.Mmo.Skills.Sage.ElementField,
+      Aesir.ZoneServer.Mmo.Skills.Sage.Endow,
       Aesir.ZoneServer.Mmo.Skills.Wizard.EstimationView,
       Aesir.ZoneServer.Mmo.Skills.Guild.GuildArea,
       Aesir.ZoneServer.Mmo.Skills.Guild.Recall,

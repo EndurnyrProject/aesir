@@ -79,6 +79,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
   end
 
   describe "metadata" do
+    @tag game_mode: :renewal
     test "matches the rAthena renewal table (skill_db.yml:7777-7810)" do
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
 
@@ -96,9 +97,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
       # lv2 == 1_200_000, but skill_db.yml:7796-7797 says 900_000).
       assert definition.duration == [600_000, 900_000, 1_200_000, 1_500_000, 1_800_000]
     end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 3 seconds, burns a raw ore, and lasts 20 minutes below level 5" do
+      {:ok, definition} = Catalog.by_id(280)
+
+      assert definition.cast_time == List.duplicate(3000, 5)
+      assert definition.fixed_cast_time == []
+      assert definition.item_cost == [%{id: 990, amount: 1}]
+      assert definition.duration == [1_200_000, 1_200_000, 1_200_000, 1_200_000, 1_800_000]
+    end
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "applies sc_fireweapon with val1=level and the tabulated duration" do
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
       caster = caster()
@@ -113,6 +125,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
       assert {:ok, ^caster} = SaFlamelauncher.cast(caster, :self, 3, definition)
     end
 
+    @tag game_mode: :renewal
     test "targets an ally by unit id" do
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
       caster = caster()
@@ -124,6 +137,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
       assert {:ok, ^caster} = SaFlamelauncher.cast(caster, {:unit, 2000}, 1, definition)
     end
 
+    @tag game_mode: :renewal
     test "propagates the interpreter's error" do
       {:ok, definition} = Catalog.by_name(:sa_flamelauncher)
       caster = caster()
@@ -192,6 +206,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
       assert {:error, :bare_handed} = SkillInterpreter.cast(gs, 280, 1, :self)
     end
 
+    @tag game_mode: :renewal
     test "an armed target succeeds, charging SP and consuming the catalyst" do
       stub_sword()
       stub_entity_info()
@@ -210,6 +225,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFlamelauncherTest do
 
   describe "endow exclusivity" do
     for other <- [:sc_waterweapon, :sc_windweapon, :sc_earthweapon, :sc_aspersio] do
+      @tag game_mode: :renewal
       test "casting displaces #{other}" do
         stub_entity_info()
         StatusStorage.apply_status(:player, @caster_id, unquote(other), duration: 30_000, val1: 3)

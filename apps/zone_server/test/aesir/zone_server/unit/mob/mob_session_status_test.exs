@@ -87,6 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSessionStatusTest do
       :ok
     end
 
+    @tag game_mode: :renewal
     test "an SC_DELUGE apply raises the HP ceiling without healing" do
       state = build_mob_state()
       UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())

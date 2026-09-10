@@ -1,13 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VolcanoTest do
   use ExUnit.Case, async: true
+  use Mimic
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Volcano
   alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  setup :set_mimic_from_context
 
   defp instance(level), do: %StatusEntry{type: :sc_volcano, val1: level, state: %{}}
 
   # rAthena src/map/status.cpp:10994-11007 (val2 = 5 + val1 * 5, enchant_eff),
   # 7300-7301 (batk), 7352-7353 (watk, BL_MOB only), 7447-7448 (matk).
+  @tag game_mode: :renewal
   test "grants players exact ATK and MATK at levels 1 through 5" do
     for {level, atk} <- [{1, 10}, {2, 15}, {3, 20}, {4, 25}, {5, 30}] do
       modifiers = Volcano.modifiers(instance(level), %{unit_type: :player})
@@ -18,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VolcanoTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "grants mobs exact weapon ATK, and never player ATK/MATK, at levels 1 through 5" do
     for {level, watk} <- [{1, 10}, {2, 15}, {3, 20}, {4, 25}, {5, 30}] do
       modifiers = Volcano.modifiers(instance(level), %{unit_type: :mob})
@@ -44,5 +50,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.VolcanoTest do
     assert Volcano.id() == :sc_volcano
     assert metadata.no_dispel == false
     assert metadata.no_save == true
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic grants the stat bonus only to holders of the fire defence element" do
+    stub(UnitRegistry, :get_unit_info, fn
+      :mob, 1 -> {:ok, %{element: :fire}}
+      :mob, 2 -> {:ok, %{element: :neutral}}
+    end)
+
+    matching = Volcano.modifiers(instance(5), %{unit_type: :mob, target_id: 1})
+    other = Volcano.modifiers(instance(5), %{unit_type: :mob, target_id: 2})
+
+    assert Map.get(matching, :watk) == 50
+    assert Map.get(matching, {:element_ratio, :fire}) == 20
+    refute Map.has_key?(other, :watk)
+    assert Map.get(other, {:element_ratio, :fire}) == 20
   end
 end

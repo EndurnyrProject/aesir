@@ -152,6 +152,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Passives do
     end)
   end
 
+  @doc "Sums the percent attack-speed rate bonus contributed by every learned passive."
+  @spec aspd_rate_bonus(PlayerStats.t()) :: integer()
+  def aspd_rate_bonus(%PlayerStats{} = stats) do
+    ctx = build_ctx(stats)
+
+    stats
+    |> learned_passives()
+    |> Enum.reduce(0, fn {module, level}, acc ->
+      if function_exported?(module, :aspd_rate_bonus, 2),
+        do: acc + module.aspd_rate_bonus(level, ctx),
+        else: acc
+    end)
+  end
+
   @doc """
   Sums the multiplicative hit-rate bonus percentage contributed by every learned passive.
   """

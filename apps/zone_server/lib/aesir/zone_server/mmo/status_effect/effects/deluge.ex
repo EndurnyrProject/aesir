@@ -1,22 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge do
   @moduledoc """
-  Deluge (SC_DELUGE), the water field buff left by Sage's SA_DELUGE.
+  Deluge (SC_DELUGE), the water field buff left by the Sage's Deluge.
 
-  Applies to every unit standing on the field. In renewal the bonus is
-  unconditional: unlike pre-renewal, the holder's defense element no longer
-  gates it (`status.cpp:11019-11033`).
-
-  Raises max HP by a tabulated percent (`status.cpp:3204-3205`) and the
-  holder's water-element attack ratio by a tabulated number of percentage
-  points (`battle.cpp:545-551`).
-
-  The `:max_hp_rate` bonus reaches both unit types. A player picks it up through
-  the stat recalc (`unit/player/stats.ex`); a mob recomputes its stored HP
-  ceiling via `MobState.recalculate_max_hp/1` whenever the status applies or
-  ends, mirroring rAthena's non-PC `status_calc_maxhp` (`status.cpp:6213`,
-  `status.cpp:8712`) — the buff raises the ceiling without healing, and its
-  removal caps overflow HP back down. The element ratio applies to every unit
-  type.
+  Every occupant's water attack gains the tabulated element points. Max HP rises
+  by 5, 9, 12, 14, or 15% by level: for everyone in renewal, for water-element
+  holders only in pre-renewal. A mob recomputes its stored HP ceiling when the
+  status applies or ends.
   """
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_deluge,
@@ -31,12 +20,12 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Deluge do
   @hp_rate {5, 9, 12, 14, 15}
 
   @impl true
-  def modifiers(instance, _context) do
+  def modifiers(instance, context) do
     level = instance.val1
+    ratio = %{{:element_ratio, :water} => FieldElement.enchant_bonus(level)}
 
-    %{
-      :max_hp_rate => elem(@hp_rate, max(rem(level - 1, 5), 0)),
-      {:element_ratio, :water} => FieldElement.enchant_bonus(level)
-    }
+    if FieldElement.stat_bonus?(context, :water),
+      do: Map.put(ratio, :max_hp_rate, elem(@hp_rate, max(rem(level - 1, 5), 0))),
+      else: ratio
   end
 end

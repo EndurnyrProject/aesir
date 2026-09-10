@@ -61,6 +61,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
   end
 
   describe "metadata" do
+    @tag game_mode: :renewal
     test "matches the rAthena renewal table (skill_db.yml:7811-7844)" do
       {:ok, definition} = Catalog.by_name(:sa_frostweapon)
 
@@ -75,9 +76,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
       assert definition.item_cost == [%{id: @catalyst_id, amount: 1}]
       assert definition.duration == [600_000, 900_000, 1_200_000, 1_500_000, 1_800_000]
     end
+
+    @tag game_mode: :pre_renewal
+    test "classic casts in 3 seconds, burns a raw ore, and lasts 20 minutes below level 5" do
+      {:ok, definition} = Catalog.by_id(281)
+
+      assert definition.cast_time == List.duplicate(3000, 5)
+      assert definition.fixed_cast_time == []
+      assert definition.item_cost == [%{id: 991, amount: 1}]
+      assert definition.duration == [1_200_000, 1_200_000, 1_200_000, 1_200_000, 1_800_000]
+    end
   end
 
   describe "cast/4" do
+    @tag game_mode: :renewal
     test "applies sc_waterweapon with val1=level and the tabulated duration" do
       {:ok, definition} = Catalog.by_name(:sa_frostweapon)
       caster = caster()
@@ -117,12 +129,25 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaFrostweaponTest do
   end
 
   describe "endow exclusivity" do
+    @tag game_mode: :renewal
     test "casting displaces sc_aspersio" do
       stub(UnitRegistry, :get_unit_info, fn _, _ -> {:ok, %{stats: %{}}} end)
       StatusStorage.apply_status(:player, @caster_id, :sc_aspersio, duration: 30_000, val1: 3)
 
       {:ok, definition} = Catalog.by_name(:sa_frostweapon)
       assert {:ok, _} = SaFrostweapon.cast(caster(), :self, 1, definition)
+
+      refute StatusStorage.has_status?(:player, @caster_id, :sc_aspersio)
+      assert StatusStorage.has_status?(:player, @caster_id, :sc_waterweapon)
+    end
+
+    @tag game_mode: :pre_renewal
+    test "a classic level 5 cast always lands and displaces sc_aspersio" do
+      stub(UnitRegistry, :get_unit_info, fn _, _ -> {:ok, %{stats: %{}}} end)
+      StatusStorage.apply_status(:player, @caster_id, :sc_aspersio, duration: 30_000, val1: 3)
+
+      {:ok, definition} = Catalog.by_name(:sa_frostweapon)
+      assert {:ok, _} = SaFrostweapon.cast(caster(), :self, 5, definition)
 
       refute StatusStorage.has_status?(:player, @caster_id, :sc_aspersio)
       assert StatusStorage.has_status?(:player, @caster_id, :sc_waterweapon)

@@ -17,11 +17,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaAdvancedbookTest do
     assert SaAdvancedbook.atk_bonus(10, %{weapon_type: :fist}) == 0
   end
 
+  @tag game_mode: :renewal
   test "aspd_bonus is (level - 1) / 2 + 1 with a book" do
     assert SaAdvancedbook.aspd_bonus(1, %{weapon_type: :book}) == 1
     assert SaAdvancedbook.aspd_bonus(2, %{weapon_type: :book}) == 1
     assert SaAdvancedbook.aspd_bonus(5, %{weapon_type: :book}) == 3
     assert SaAdvancedbook.aspd_bonus(10, %{weapon_type: :book}) == 5
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic trades the flat ASPD for a half percent per level rate with a book" do
+    assert SaAdvancedbook.aspd_bonus(10, %{weapon_type: :book}) == 0
+    assert SaAdvancedbook.aspd_rate_bonus(2, %{weapon_type: :book}) == 1
+    assert SaAdvancedbook.aspd_rate_bonus(10, %{weapon_type: :book}) == 5
+    assert SaAdvancedbook.aspd_rate_bonus(10, %{weapon_type: :staff}) == 0
   end
 
   test "aspd_bonus is 0 with any other weapon" do

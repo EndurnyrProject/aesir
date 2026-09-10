@@ -1,14 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotector do
   @moduledoc """
-  Land Protector (SA_LANDPROTECTOR), a magic-suppression ground field.
+  Land Protector (SA_LANDPROTECTOR). A tickless magic-suppression field of 7x7 to
+  11x11 cells by level lasting 165 s at level 1 plus 45 s per further level, for 66 down to 50 SP, one
+  Blue Gemstone, and one Yellow Gemstone. Placing it destroys overlapping ground
+  skill cells and later placements drop cells that fall on it; it shares the
+  element-field family's one-per-caster rule.
 
-  Renewal data is from rAthena `db/re/skill_db.yml:8069-8125`: ID 288, layout
-  size 3/3/4/4/5 (7x7 to 11x11), 165-345 second duration, 66-50 SP, one
-  Blue_Gemstone (717) plus one Yellow_Gemstone (715), and `Interval: -1`
-  (tickless). The suppression semantics live in `Skill.Unit.Manager`'s central
-  placement path (`src/map/skill.cpp` `skill_cell_overlap` /
-  `skill_unitsetting`): placing Land Protector destroys overlapping ground
-  cells per cell, and later placements drop candidate cells that fall on it.
+  Renewal casts in 4 s plus 1 s fixed; pre-renewal in 5 s.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 288,
@@ -23,8 +21,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaLandprotector do
     unit_duration: [165_000, 210_000, 255_000, 300_000, 345_000],
     duration: [165_000, 210_000, 255_000, 300_000, 345_000],
     sp_cost: [66, 62, 58, 54, 50],
-    cast_time: List.duplicate(4_000, 5),
-    fixed_cast_time: List.duplicate(1_000, 5),
+    cast_time: [renewal: List.duplicate(4_000, 5), pre_renewal: List.duplicate(5_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     item_cost: [%{id: 717, amount: 1}, %{id: 715, amount: 1}]
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground

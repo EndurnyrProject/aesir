@@ -1,16 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaViolentgale do
   @moduledoc """
-  Violent Gale (SA_VIOLENTGALE), the Sage's Wind element field.
+  Violent Gale (SA_VIOLENTGALE). A tickless 7x7 wind field lasting 60 s per level that
+  supports every occupant with the wind field status, one field per caster
+  across the element-field family (a swap inherits the remaining duration). The
+  status adds 10, 14, 17, 19, or 20 points to the holder's wind attack: as
+  ratio points on the element table in renewal and as a damage multiplier in
+  pre-renewal. Violent Gale raises FLEE by 3 per level in both modes; pre-renewal grants it only to wind-element holders.
 
-  Renewal data is from rAthena `db/re/skill_db.yml:5868-5917`: ID 287, `Layout: 3`
-  (7x7), range 2, 60-300 second duration, 48-40 SP, 4,000 ms variable plus
-  1,000 ms fixed cast, one Blue_Gemstone (717), `PathCheck: true` and
-  `Interval: -1` (tickless).
-
-  `src/map/skill.cpp:6517-6525` applies `SC_VIOLENTGALE` to any `bl` that occupies
-  the field, so `field_support/1` filters nothing. Per-caster exclusivity against
-  the rest of the element-field family is declared through the lifecycle policy
-  and enforced centrally by `Skill.Unit.Manager`.
+  Renewal: a 4 s cast plus 1 s fixed and a Blue Gemstone. Pre-renewal: a 5 s cast
+  and a Yellow Gemstone. Both cost 48 down to 40 SP at 2 cells.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 287,
@@ -25,9 +23,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaViolentgale do
     unit_duration: [60_000, 120_000, 180_000, 240_000, 300_000],
     duration: [60_000, 120_000, 180_000, 240_000, 300_000],
     sp_cost: [48, 46, 44, 42, 40],
-    cast_time: List.duplicate(4_000, 5),
-    fixed_cast_time: List.duplicate(1_000, 5),
-    item_cost: [%{id: 717, amount: 1}],
+    cast_time: [renewal: List.duplicate(4_000, 5), pre_renewal: List.duplicate(5_000, 5)],
+    fixed_cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
+    item_cost: [renewal: [%{id: 717, amount: 1}], pre_renewal: [%{id: 715, amount: 1}]],
     status: :sc_violentgale
 
   alias Aesir.ZoneServer.Mmo.Skill.Ground

@@ -1,14 +1,11 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaMagicrod do
   @moduledoc """
-  Magic Rod (SA_MAGICROD). Instant self-buff applying SC_MAGICROD.
+  Magic Rod (SA_MAGICROD). An instant self buff for 2 SP lasting 400 ms plus 200 ms per
+  level above one, during which a single-target spell aimed at the caster is absorbed and
+  20% per level of its SP cost is gained instead (the absorption lives in the
+  status).
 
-  The buff lasts `400 + 200 * level` ms — a sub-second reaction window at low
-  levels — during which a single-target magic spell aimed at the caster is
-  absorbed and converted to SP. The absorption itself lives in the status
-  (`StatusEffect.Effects.MagicRod`).
-
-  rAthena (`status.cpp:10911`): val2 = 20 * level, the percent of the absorbed
-  spell's SP cost the caster gains.
+  Renewal adds a 1 s delay after the cast; pre-renewal has none.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 276,
@@ -22,7 +19,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaMagicrod do
     range: 0,
     sp_cost: [2, 2, 2, 2, 2],
     duration: [400, 600, 800, 1_000, 1_200],
-    after_cast_delay: [1_000, 1_000, 1_000, 1_000, 1_000]
+    after_cast_delay: [renewal: List.duplicate(1_000, 5), pre_renewal: []]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter

@@ -40,8 +40,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Sage.SaMagicrodTest do
       end
     end
 
+    @tag game_mode: :renewal
     test "casts instantly with a 1s after-cast delay" do
       assert %{cast_time: [], fixed_cast_time: [], after_cast_delay: [1_000 | _]} = definition()
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic has no delay after the cast" do
+      assert %{cast_time: [], fixed_cast_time: [], after_cast_delay: []} = definition()
     end
   end
 
