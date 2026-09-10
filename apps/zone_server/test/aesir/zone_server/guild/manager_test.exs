@@ -715,35 +715,6 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
     end
   end
 
-  describe "presence" do
-    test "push_base_level updates the member and broadcasts" do
-      {master, created} = guild_fixture("Levelers")
-
-      Phoenix.PubSub.subscribe(Aesir.PubSub, "guild:#{created.guild_id}")
-
-      assert {:ok, state} = Manager.push_base_level(created.guild_id, master.id, 99)
-      assert Map.fetch!(state.members, master.id).base_level == 99
-      assert_receive {:social, {:guild_updated, ^state}}
-    end
-
-    test "push_map_change updates the member map" do
-      {master, created} = guild_fixture("Movers")
-      assert {:ok, state} = Manager.push_map_change(created.guild_id, master.id, "payon")
-      assert Map.fetch!(state.members, master.id).map_name == "payon"
-    end
-
-    test "set_online updates the online flag" do
-      {master, created} = guild_fixture("Toggles")
-      assert {:ok, state} = Manager.set_online(created.guild_id, master.id, false)
-      assert Map.fetch!(state.members, master.id).online == false
-    end
-
-    test "presence pushes for a non-member return {:error, :not_member}" do
-      {_master, created} = guild_fixture("NoMember")
-      assert {:error, :not_member} = Manager.push_base_level(created.guild_id, 999_999, 10)
-    end
-  end
-
   describe "sync_member/3" do
     test "broadcasts {:guild_member_updated, guild_id, member} on a change" do
       {master, created} = guild_fixture("SyncChange")

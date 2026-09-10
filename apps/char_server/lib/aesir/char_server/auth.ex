@@ -41,23 +41,6 @@ defmodule Aesir.CharServer.Auth do
     end
   end
 
-  @doc """
-  Verify that a character belongs to an account.
-  """
-  def verify_character_ownership(account_id, character_account_id) do
-    case validate_ownership(account_id, character_account_id) do
-      :ok ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning(
-          "Character ownership verification failed: character belongs to #{character_account_id}, not #{account_id}"
-        )
-
-        {:error, reason}
-    end
-  end
-
   defp get_account(account_id) do
     case Repo.get(Account, account_id) do
       nil -> {:error, :account_not_found}
@@ -98,14 +81,6 @@ defmodule Aesir.CharServer.Auth do
       {:error, :character_slots_full}
     else
       :ok
-    end
-  end
-
-  defp validate_ownership(account_id, character_account_id) do
-    if account_id == character_account_id do
-      :ok
-    else
-      {:error, :not_owner}
     end
   end
 end

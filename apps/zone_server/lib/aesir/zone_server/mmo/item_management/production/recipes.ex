@@ -34,10 +34,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.Recipes do
   @spec all() :: [Recipe.t()]
   def all, do: index().all
 
-  @doc "Returns the recipe with `id`, or `:error` when it does not exist."
-  @spec by_id(integer()) :: {:ok, Recipe.t()} | :error
-  def by_id(id), do: Map.fetch(index().by_id, id)
-
   @doc "Returns recipes a cast at `skill_level` may offer for `skill_id`."
   @spec offerable(integer(), integer()) :: [Recipe.t()]
   def offerable(skill_id, skill_level) do

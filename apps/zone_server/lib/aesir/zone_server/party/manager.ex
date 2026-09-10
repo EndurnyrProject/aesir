@@ -7,8 +7,7 @@ defmodule Aesir.ZoneServer.Party.Manager do
   truth; the entry is the runtime working copy, lazily rebuilt from the DB via
   `ensure_started/1`. Covers lifecycle (create/rebuild/lookup/disband),
   membership mutations (join/leave/kick/leader transfer/options), and
-  presence/level-spread tracking (`push_base_level/3`, `push_map_change/3`,
-  `set_online/3`).
+  presence/level-spread tracking (`push_map_change/3`, `set_online/3`).
   """
 
   import Ecto.Query
@@ -379,27 +378,6 @@ defmodule Aesir.ZoneServer.Party.Manager do
             {{:error, reason}, state}
         end
     end
-  end
-
-  @doc """
-  Pushes `char_id`'s new `base_level` into the entry. Recomputes the online
-  level spread; if `exp_share` was on and the new spread exceeds
-  `Config.party_share_level/0`, flips it off, persists, and broadcasts
-  (design "Level/presence tracking"). No-op returning `{:error, :not_found}`
-  if the entry isn't running; `{:error, :not_member}` if `char_id` isn't a
-  current member (e.g. a stale push racing a leave).
-  """
-  @spec push_base_level(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
-  def push_base_level(party_id, char_id, base_level) do
-    mutate(party_id, fn state ->
-      update_member(
-        state,
-        char_id,
-        fn %Member{} = member -> %Member{member | base_level: base_level} end,
-        check_spread?: true
-      )
-    end)
   end
 
   @doc """

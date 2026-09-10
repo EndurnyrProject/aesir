@@ -80,33 +80,6 @@ defmodule Aesir.ZoneServer.Mmo.WeaponTypes do
   end
 
   @doc """
-  Check if weapon is two-handed.
-  """
-  @spec is_two_handed?(integer() | atom()) :: boolean()
-  def is_two_handed?(weapon) when is_integer(weapon) do
-    weapon in [3, 5, 7, 9, 11, 13, 14, 16, 18, 19, 20, 21, 22, 23]
-  end
-
-  def is_two_handed?(weapon) when is_atom(weapon) do
-    weapon in [
-      :two_handed_sword,
-      :two_handed_spear,
-      :two_handed_axe,
-      :two_handed_mace,
-      :bow,
-      :musical,
-      :whip,
-      :katar,
-      :rifle,
-      :gatling,
-      :shotgun,
-      :grenade,
-      :huuma,
-      :two_handed_staff
-    ]
-  end
-
-  @doc """
   Get the attack range for a weapon type.
 
   - Melee weapons: 1 cell

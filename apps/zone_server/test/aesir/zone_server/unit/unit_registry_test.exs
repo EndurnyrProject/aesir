@@ -274,18 +274,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistryTest do
     end
   end
 
-  describe "count_all_units/0" do
-    test "returns total count of all units" do
-      assert UnitRegistry.count_all_units() == 0
-
-      UnitRegistry.register_unit(:player, 1, MockEntity, %{})
-      UnitRegistry.register_unit(:player, 2, MockEntity, %{})
-      UnitRegistry.register_unit(:mob, 3, MockEntity, %{})
-
-      assert UnitRegistry.count_all_units() == 3
-    end
-  end
-
   describe "get_unit_info/2 equipment publish" do
     test "player entity info carries the equipment modifier slice" do
       state = player_state_with_equipment(%{{:res_eff, :sc_freeze} => 500})

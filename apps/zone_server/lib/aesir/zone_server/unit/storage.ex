@@ -16,7 +16,6 @@ defmodule Aesir.ZoneServer.Unit.Storage do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.Models.StorageItem
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Unit.Bound
   alias Aesir.ZoneServer.Unit.ItemContainer
   alias Aesir.ZoneServer.Unit.Rental
@@ -42,16 +41,6 @@ defmodule Aesir.ZoneServer.Unit.Storage do
   """
   @spec load_storage(integer()) :: [StorageItem.t()]
   defdelegate load_storage(account_id), to: Persistence
-
-  @doc """
-  Adds `amount` of `item_def` to `storage`, reusing the shared container core.
-
-  Stacks, splits, and the 600-slot cap behave exactly as `Inventory.add/4`.
-  """
-  @spec add(t(), ItemDefinition.t(), pos_integer(), map()) :: ItemContainer.op_result()
-  def add(storage, %ItemDefinition{} = item_def, amount, opts \\ %{}) do
-    ItemContainer.add(storage, item_def, amount, @max_storage, opts)
-  end
 
   @doc """
   Removes `amount` from the storage item at `index`, reusing the shared container core.

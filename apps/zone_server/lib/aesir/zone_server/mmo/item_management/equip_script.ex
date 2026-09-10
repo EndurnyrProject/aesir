@@ -230,7 +230,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScript do
   @plain_arith_ops [:+, :-, :*]
 
   # The stat atoms a `{:stat, atom}` expression may read: the six base stats and
-  # six trait stats, matching `Resolver.stat_params/0`'s value set.
+  # six trait stats, matching the resolver's stat-parameter value set.
   @stat_params [:str, :agi, :vit, :int, :dex, :luk, :pow, :sta, :wis, :spl, :con, :crt]
 
   @doc """

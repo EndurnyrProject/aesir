@@ -64,28 +64,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCraftingTest do
 
       assert :ok = ArrowCrafting.reload()
 
-      recipes = {ArrowCrafting.all(), ArrowCrafting.for_source(1), ArrowCrafting.for_source(3)}
+      recipes = ArrowCrafting.all()
 
-      assert {
-               [
-                 %Recipe{source_id: 1, makes: [%{item_id: 201, amount: 3}]},
-                 %Recipe{source_id: 2, makes: [%{item_id: 102, amount: 2}]},
-                 %Recipe{source_id: 3, makes: [%{item_id: 203, amount: 4}]}
-               ],
-               {:ok, %Recipe{source_id: 1, makes: [%{item_id: 201, amount: 3}]}},
-               {:ok, %Recipe{source_id: 3, makes: [%{item_id: 203, amount: 4}]}}
-             } = recipes
-    end
-  end
-
-  describe "for_source/1" do
-    test "resolves a known recipe (Branch of Dead Tree -> 40 Mute Arrows)" do
-      assert {:ok, %Recipe{source_id: 604, makes: [%{item_id: 1769, amount: 40}]}} =
-               ArrowCrafting.for_source(604)
-    end
-
-    test "returns :error for an item that crafts nothing" do
-      assert :error = ArrowCrafting.for_source(501)
+      assert [
+               %Recipe{source_id: 1, makes: [%{item_id: 201, amount: 3}]},
+               %Recipe{source_id: 2, makes: [%{item_id: 102, amount: 2}]},
+               %Recipe{source_id: 3, makes: [%{item_id: 203, amount: 4}]}
+             ] = recipes
     end
   end
 end

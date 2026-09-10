@@ -11,9 +11,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
 
   Removal is delegated as one batch to `Interpreter.remove_statuses/4` so that
   `on_expire`, icon deltas and calc-flag recomputation fire exactly as they do
-  on natural expiry. `StatusStorage.clear_status_types/3` is deliberately not
-  used: it deletes ETS rows behind the interpreter's back and classifies by
-  `buff?/1`.
+  on natural expiry, rather than deleting ETS rows directly and bypassing
+  those side effects.
 
   Deviations from the reference, all deliberate:
 

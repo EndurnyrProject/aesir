@@ -21,9 +21,6 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
 
       # Sync stats update (waits for completion)
       CharacterPersistence.update_character(char_id, %{hp: 100, sp: 50})
-
-      # Update experience
-      CharacterPersistence.update_exp(char_id, 1000, 500, async: true)
   """
 
   require Logger
@@ -122,34 +119,6 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
     update_character(character_id, stats, opts)
   end
 
-  @doc """
-  Updates character experience (base_exp and/or job_exp).
-
-  ## Parameters
-  - character_id: The ID of the character
-  - base_exp: New base experience value (optional)
-  - job_exp: New job experience value (optional)
-  - opts: Options for the update (see `update_character/3`)
-
-  ## Examples
-
-      # Update both exp types
-      CharacterPersistence.update_exp(1, 1000, 500)
-
-      # Update only base exp
-      CharacterPersistence.update_exp(1, 1000, nil)
-  """
-  @spec update_exp(integer(), integer() | nil, integer() | nil, update_options()) ::
-          {:ok, Character.t()} | {:error, term()} | :ok
-  def update_exp(character_id, base_exp, job_exp, opts \\ []) do
-    fields =
-      %{}
-      |> maybe_put(:base_exp, base_exp)
-      |> maybe_put(:job_exp, job_exp)
-
-    update_character(character_id, fields, opts)
-  end
-
   defp run_async(fun) do
     if Application.get_env(:zone_server, :inline_persistence, false) do
       fun.()
@@ -185,7 +154,4 @@ defmodule Aesir.ZoneServer.CharacterPersistence do
         |> Repo.update()
     end
   end
-
-  defp maybe_put(map, _key, nil), do: map
-  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end

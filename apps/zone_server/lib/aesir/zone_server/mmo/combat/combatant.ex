@@ -39,8 +39,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
   - Timing: attack_range, attack_delay_ms
   - Positioning: position, map_name
 
-  `combat_stats.soft_def` is required for `:mob` combatants and enforced by
-  `validate_for_combat/1`; it is optional for other unit types.
+  `combat_stats.soft_def` is required for `:mob` combatants; it is optional for
+  other unit types.
   """
   @enforce_keys [
     :unit_id,
@@ -226,36 +226,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Combatant do
     case new(attrs) do
       {:ok, combatant} -> combatant
       {:error, reason} -> raise ArgumentError, reason
-    end
-  end
-
-  @doc """
-  Validates that a combatant struct has all required fields for combat.
-  """
-  @spec validate_for_combat(t()) :: :ok | {:error, String.t()}
-  def validate_for_combat(%__MODULE__{} = combatant) do
-    cond do
-      combatant.unit_id <= 0 ->
-        {:error, "Invalid unit_id: must be positive integer"}
-
-      combatant.unit_type not in [:player, :mob, :npc, :homunculus, :skill_unit] ->
-        {:error, "Invalid unit_type"}
-
-      not is_map(combatant.base_stats) ->
-        {:error, "Invalid base_stats: must be map"}
-
-      not is_map(combatant.combat_stats) ->
-        {:error, "Invalid combat_stats: must be map"}
-
-      combatant.unit_type == :mob and
-          not is_integer(Map.get(combatant.combat_stats, :soft_def)) ->
-        {:error, "Invalid mob soft_def: must be an integer"}
-
-      combatant.progression.base_level <= 0 ->
-        {:error, "Invalid base_level: must be positive integer"}
-
-      true ->
-        :ok
     end
   end
 

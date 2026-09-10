@@ -63,22 +63,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
   end
 
   @doc """
-  Stops a player session.
-  """
-  def stop_player(char_id) do
-    case UnitRegistry.get_player_pid(char_id) do
-      {:ok, pid} ->
-        DynamicSupervisor.terminate_child(__MODULE__, pid)
-        # UnitRegistry cleanup is handled by PlayerSession's terminate callback
-        Logger.info("Stopped player session for char_id #{char_id}")
-        :ok
-
-      {:error, :not_found} ->
-        {:error, :not_found}
-    end
-  end
-
-  @doc """
   Gets a player session PID by character ID.
   """
   def get_player_pid(char_id) do
@@ -109,9 +93,4 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSupervisor do
     |> DynamicSupervisor.which_children()
     |> Enum.map(fn {_, pid, _, _} -> pid end)
   end
-
-  @doc """
-  Gets count of active players.
-  """
-  def player_count, do: DynamicSupervisor.count_children(__MODULE__).active
 end

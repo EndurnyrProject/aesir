@@ -1063,44 +1063,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandlerTest do
 
       assert_received :attacked
     end
-
-    test "still re-paths when the target moves more than 3 cells" do
-      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
-      stub(SpatialIndex, :get_all_units_in_range, fn _map, _x, _y, _r -> [] end)
-      stub_open_terrain()
-      capture_moves(:repath)
-
-      stub(MovementHandler, :handle_force_stop_movement, fn s ->
-        send(self(), :force_stopped)
-        {:noreply, s}
-      end)
-
-      state =
-        approach_state(%{
-          action_state: :combat_moving,
-          combat_target_id: 2000,
-          last_target_position: {20, 20}
-        })
-
-      {:noreply, _returned} = CombatActionHandler.handle_target_movement(state, {30, 30})
-
-      assert_received :force_stopped
-      assert_received {:repath, _dest}
-    end
-
-    test "does not re-path when the target moves 3 cells or fewer" do
-      stub(Stats, :weapon_type, fn _equipment -> :dagger end)
-      reject(&MovementHandler.handle_force_stop_movement/1)
-
-      state =
-        approach_state(%{
-          action_state: :combat_moving,
-          combat_target_id: 2000,
-          last_target_position: {20, 20}
-        })
-
-      assert {:noreply, ^state} = CombatActionHandler.handle_target_movement(state, {22, 21})
-    end
   end
 
   describe "swing position anchoring" do

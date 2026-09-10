@@ -8,7 +8,6 @@ defmodule Aesir.Commons.InterServer.PubSub do
   # Topic definitions for account <-> char communication
   @players_topic "players:auth"
   @characters_topic "characters:events"
-  @servers_topic "servers:status"
   @announce_topic "servers:announce"
 
   # Player Authentication Events (Account -> Char)
@@ -99,24 +98,6 @@ defmodule Aesir.Commons.InterServer.PubSub do
     Phoenix.PubSub.broadcast(@pubsub_name, @characters_topic, {:character_event, event})
   end
 
-  # Server Status Events
-
-  @doc """
-  Broadcast server status update.
-  """
-  def broadcast_server_status(server_type, status, player_count \\ 0) do
-    event = %{
-      event: "server_status",
-      server_type: server_type,
-      status: status,
-      player_count: player_count,
-      node: Node.self(),
-      timestamp: DateTime.utc_now()
-    }
-
-    Phoenix.PubSub.broadcast(@pubsub_name, @servers_topic, {:server_event, event})
-  end
-
   # Server-Wide Announcements
 
   @doc """
@@ -161,20 +142,6 @@ defmodule Aesir.Commons.InterServer.PubSub do
   """
   def subscribe_to_player_events do
     Phoenix.PubSub.subscribe(@pubsub_name, @players_topic)
-  end
-
-  @doc """
-  Subscribe to character events.
-  """
-  def subscribe_to_character_events do
-    Phoenix.PubSub.subscribe(@pubsub_name, @characters_topic)
-  end
-
-  @doc """
-  Subscribe to server status events.
-  """
-  def subscribe_to_server_events do
-    Phoenix.PubSub.subscribe(@pubsub_name, @servers_topic)
   end
 
   @doc """

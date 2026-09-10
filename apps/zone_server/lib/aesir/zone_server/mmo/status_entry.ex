@@ -178,22 +178,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntry do
   end
 
   @doc """
-  Updates the next_tick_at field based on the current time.
-  """
-  @spec schedule_next_tick(t(), integer()) :: t()
-  def schedule_next_tick(%__MODULE__{} = entry, now_ms) do
-    %{entry | next_tick_at: if(entry.tick > 0, do: now_ms + entry.tick, else: nil)}
-  end
-
-  @doc """
-  Increments the tick count for the status entry.
-  """
-  @spec increment_tick_count(t()) :: t()
-  def increment_tick_count(%__MODULE__{} = entry) do
-    %{entry | tick_count: entry.tick_count + 1}
-  end
-
-  @doc """
   Checks if a status has expired.
   """
   @spec expired?(t(), integer()) :: boolean()

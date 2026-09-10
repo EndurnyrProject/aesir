@@ -352,24 +352,6 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndex do
   end
 
   @doc """
-  Gets all players in a specific grid cell.
-  This is a wrapper for backward compatibility.
-  """
-  def get_players_in_cell(map_name, cell_x, cell_y) do
-    cell = {map_name, cell_x, cell_y}
-
-    case :ets.lookup(spatial_index_table(), cell) do
-      [{^cell, units_map}] ->
-        units_map
-        |> Map.get(:player, MapSet.new())
-        |> MapSet.to_list()
-
-      [] ->
-        []
-    end
-  end
-
-  @doc """
   Gets a player's current position.
   This is a wrapper for backward compatibility.
   """

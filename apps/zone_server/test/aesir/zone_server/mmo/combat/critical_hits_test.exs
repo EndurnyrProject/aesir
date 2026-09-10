@@ -71,24 +71,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHitsTest do
     end
   end
 
-  describe "calculate_critical_rate_from_luk/1" do
-    test "calculates rate directly from LUK value" do
-      assert CriticalHits.calculate_critical_rate_from_luk(30) == mode_value(100, 110)
-      assert CriticalHits.calculate_critical_rate_from_luk(99) == mode_value(307, 340)
-      assert CriticalHits.calculate_critical_rate_from_luk(1) == 13
-    end
-
-    test "caps at 1000 for high LUK values" do
-      assert CriticalHits.calculate_critical_rate_from_luk(400) == 1000
-      assert CriticalHits.calculate_critical_rate_from_luk(999) == 1000
-    end
-
-    test "handles edge cases" do
-      assert CriticalHits.calculate_critical_rate_from_luk(0) == 10
-      assert CriticalHits.calculate_critical_rate_from_luk(-5) == 10
-    end
-  end
-
   describe "is_critical_hit?/1" do
     test "returns false for 0% critical rate" do
       # With 0 critical rate, should never be critical

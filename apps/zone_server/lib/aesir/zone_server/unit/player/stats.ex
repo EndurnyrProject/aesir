@@ -1335,22 +1335,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
     get_equipment_modifier(stats, :item_heal_rate) + get_status_modifier(stats, :item_heal_rate)
   end
 
-  @doc """
-  Checks if the player has a specific status flag set by status effects.
-  This is used for boolean properties like 'endure' or 'hiding'.
-
-  ## Parameters
-  - stats: The Stats struct
-  - flag: The flag to check for (e.g., :endure, :hiding)
-
-  ## Returns
-  Boolean indicating whether the flag is set
-  """
-  @spec has_status_flag?(t(), atom()) :: boolean()
-  def has_status_flag?(%__MODULE__{} = stats, flag) do
-    Map.get(stats.modifiers.status_effects, flag, false)
-  end
-
   @doc "Calculates ASPD under the active ruleset."
   @spec calculate_aspd(t()) :: integer()
   def calculate_aspd(%__MODULE__{} = stats) do

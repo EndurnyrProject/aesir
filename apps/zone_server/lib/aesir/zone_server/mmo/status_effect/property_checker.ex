@@ -198,27 +198,4 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
   end
 
   defp immune_to?(_entity_info, _immunity_type), do: false
-
-  @doc """
-  Check if a condition is met in the given context.
-
-  ## Parameters
-    - condition: The condition to check (function, map, or nil)
-    - context: The execution context
-
-  ## Returns
-    - true if the condition is met, false otherwise
-  """
-  @spec check_condition(function() | map() | nil, map()) :: boolean()
-  def check_condition(nil, _context), do: true
-
-  def check_condition(%{element: element}, context) do
-    context[:damage_info][:element] == element
-  end
-
-  def check_condition(condition_fn, context) when is_function(condition_fn) do
-    condition_fn.(context) != 0
-  end
-
-  def check_condition(_, _), do: true
 end

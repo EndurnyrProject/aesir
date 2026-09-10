@@ -38,19 +38,6 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
   end
 
   @doc """
-  The highest reachable guild level, derived from the exp table.
-  """
-  @spec max_guild_level() :: pos_integer()
-  def max_guild_level, do: index().max_level
-
-  @doc """
-  Resolves a cumulative exp total to `{level, progress_toward_next}`,
-  clamped to `{max_guild_level(), 0}` at the cap.
-  """
-  @spec level_for_exp(non_neg_integer()) :: {pos_integer(), non_neg_integer()}
-  def level_for_exp(total), do: consume(total, 1)
-
-  @doc """
   The tree entry for a guild skill id, or `:error` for skills outside the
   learnable tree.
   """
@@ -64,14 +51,6 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
   def reload do
     :persistent_term.put(@pt_key, build())
     :ok
-  end
-
-  defp consume(exp, level) do
-    case exp_for_next(level) do
-      {:ok, needed} when exp >= needed -> consume(exp - needed, level + 1)
-      {:ok, _needed} -> {level, exp}
-      :max_level -> {level, 0}
-    end
   end
 
   defp index do

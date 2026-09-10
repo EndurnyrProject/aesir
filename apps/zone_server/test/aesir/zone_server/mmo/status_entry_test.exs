@@ -98,36 +98,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusEntryTest do
     end
   end
 
-  describe "schedule_next_tick/2" do
-    test "updates next_tick_at based on current time and tick value" do
-      entry = StatusEntry.new(:poison, 10, 20, 30, 40, 2000, 1)
-      now = System.monotonic_time(:millisecond)
-
-      updated = StatusEntry.schedule_next_tick(entry, now)
-
-      assert updated.next_tick_at == now + 2000
-    end
-
-    test "keeps a tickless status out of the tick loop" do
-      entry = StatusEntry.new(:poison, 10, 20, 30, 40, 0, 1)
-      now = System.monotonic_time(:millisecond)
-
-      updated = StatusEntry.schedule_next_tick(entry, now)
-
-      assert updated.next_tick_at == nil
-    end
-  end
-
-  describe "increment_tick_count/1" do
-    test "increments the tick counter" do
-      entry = %StatusEntry{tick_count: 5}
-
-      updated = StatusEntry.increment_tick_count(entry)
-
-      assert updated.tick_count == 6
-    end
-  end
-
   describe "expired?/2" do
     test "returns true when status has expired" do
       now = System.monotonic_time(:millisecond)

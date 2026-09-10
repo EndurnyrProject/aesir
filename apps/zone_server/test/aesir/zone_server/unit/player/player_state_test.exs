@@ -344,18 +344,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerStateTest do
       assert Process.read_timer(ref) == false
       assert cleared_state.continuous_attack_timer == nil
     end
-
-    test "combat_moving? returns true for combat_moving state", %{state: state} do
-      {:ok, combat_moving_state} = PlayerState.transition_to(state, :combat_moving)
-      assert PlayerState.combat_moving?(combat_moving_state) == true
-    end
-
-    test "combat_moving? returns false for other states", %{state: state} do
-      assert PlayerState.combat_moving?(state) == false
-
-      {:ok, moving_state} = PlayerState.transition_to(state, :moving)
-      assert PlayerState.combat_moving?(moving_state) == false
-    end
   end
 
   describe "state transition validation" do

@@ -295,35 +295,4 @@ defmodule Aesir.ZoneServer.Mmo.Combat.PacketFactory do
 
   defp secondary_damage(nil), do: 0
   defp secondary_damage(secondary), do: secondary.damage
-
-  @doc """
-  Creates packets for any combat result type.
-
-  This is a convenience function that dispatches to the appropriate
-  packet creation function based on the combat result.
-
-  ## Parameters
-    - attacker: Combatant struct for the attacker
-    - defender: Combatant struct for the defender
-    - combat_result: Result from combat calculations
-
-  ## Returns
-    - Appropriate ZcNotifyAct packet for the combat result
-  """
-  @spec build_combat_packet(Combatant.t(), Combatant.t(), term()) :: struct()
-  def build_combat_packet(attacker, defender, combat_result) do
-    case combat_result do
-      {:hit, damage_result} ->
-        build_attack_packet(attacker, defender, damage_result)
-
-      {:miss} ->
-        build_miss_packet(attacker, defender)
-
-      {:perfect_dodge} ->
-        build_perfect_dodge_packet(attacker, defender)
-
-      _ ->
-        raise ArgumentError, "Unknown combat result type: #{inspect(combat_result)}"
-    end
-  end
 end

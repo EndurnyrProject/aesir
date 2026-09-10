@@ -58,9 +58,6 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Catalog do
   @spec by_name(atom()) :: {:ok, Definition.t()} | :error
   def by_name(name), do: Map.fetch(index().by_name, name)
 
-  @spec requirements_for(integer()) :: {:ok, [Requirement.t()]} | :error
-  def requirements_for(id), do: Map.fetch(index().requirements, id)
-
   @doc "The skill module for `name`, regardless of its capabilities (active, passive, ...)."
   @spec module_for(atom()) :: {:ok, module()} | :error
   def module_for(name), do: Map.fetch(index().modules, name)

@@ -575,14 +575,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Clears the transient rude-attack flag, leaving the cumulative count intact.
-  """
-  @spec clear_rude_attacked(t()) :: t()
-  def clear_rude_attacked(%__MODULE__{} = state) do
-    %{state | rude_attacked?: false}
-  end
-
-  @doc """
   Records the per-skill cooldown gate: stores `expires_at` for `skill_id`.
   `expires_at` is a millisecond timestamp in the same domain the caller uses
   for `skill_ready?/3`, following `Aesir.ZoneServer.Mmo.Skill.Cooldown`'s
@@ -793,12 +785,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec get_position(t()) :: {integer(), integer()}
   def get_position(%__MODULE__{x: x, y: y}), do: {x, y}
-
-  @doc """
-  Gets the mob's current map.
-  """
-  @spec get_map(t()) :: String.t()
-  def get_map(%__MODULE__{map_name: map_name}), do: map_name
 
   @doc """
   Applies damage to the mob.

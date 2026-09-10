@@ -184,17 +184,6 @@ defmodule Aesir.ZoneServer.Unit.SpatialIndexTest do
   end
 
   describe "spatial index grid cells" do
-    test "players in same cell are efficiently retrieved" do
-      # Add multiple players in same 8x8 cell
-      for i <- 0..7 do
-        SpatialIndex.add_player(1000 + i, i, i, "prontera")
-      end
-
-      # All should be in cell (0, 0)
-      players_in_cell = SpatialIndex.get_players_in_cell("prontera", 0, 0)
-      assert length(players_in_cell) == 8
-    end
-
     test "players in adjacent cells are included in range queries" do
       # Add player at cell boundary
       # End of cell (0,0)

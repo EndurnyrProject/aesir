@@ -96,15 +96,4 @@ defmodule Aesir.Commons.Models.Account do
     |> unique_constraint(:userid)
     |> unique_constraint(:email)
   end
-
-  @doc """
-  Changeset for login validation without email requirement
-  """
-  def login_changeset(account, attrs) do
-    account
-    |> cast(attrs, [:userid, :user_pass])
-    |> validate_required([:userid, :user_pass])
-    |> validate_length(:userid, min: 4, max: 23)
-    |> validate_length(:user_pass, min: 4, max: 255)
-  end
 end

@@ -559,60 +559,10 @@ defmodule Aesir.ZoneServer.Party.ManagerTest do
     end
   end
 
-  describe "push_base_level/3" do
-    defp force_exp_share(party_id, exp_share) do
-      [{pid, _value}] = Horde.Registry.lookup(Cluster.registry(), {:party, party_id})
+  defp force_exp_share(party_id, exp_share) do
+    [{pid, _value}] = Horde.Registry.lookup(Cluster.registry(), {:party, party_id})
 
-      Entry.update(pid, fn %State{} = state -> %State{state | exp_share: exp_share} end)
-    end
-
-    test "updates the member's base_level and broadcasts {:party_updated, state}" do
-      {_leader, created} = party_fixture("Milo")
-      target = leader_fixture("Nadia")
-      {:ok, joined} = Manager.add_member(created.party_id, target)
-
-      Phoenix.PubSub.subscribe(Aesir.PubSub, "party:#{joined.party_id}")
-
-      assert {:ok, state} = Manager.push_base_level(joined.party_id, target.id, 42)
-      assert Map.fetch!(state.members, target.id).base_level == 42
-      assert_receive {:social, {:party_updated, ^state}}
-    end
-
-    test "auto-disables exp_share when the new spread exceeds party_share_level" do
-      {leader, created} = party_fixture("Otto")
-      target = leader_fixture("Petra")
-      {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
-      assert shared.exp_share == true
-
-      over_limit = leader.base_level + Config.party_share_level() + 1
-
-      assert {:ok, state} = Manager.push_base_level(shared.party_id, target.id, over_limit)
-      assert state.exp_share == false
-      assert Repo.get(Party, shared.party_id).exp_share == false
-    end
-
-    test "leaves exp_share enabled exactly at the boundary spread" do
-      {leader, created} = party_fixture("Quill")
-      target = leader_fixture("Rosa")
-      {:ok, joined} = Manager.add_member(created.party_id, target)
-      {:ok, shared} = Manager.set_options(joined.party_id, leader.id, true, false)
-
-      at_limit = leader.base_level + Config.party_share_level()
-
-      assert {:ok, state} = Manager.push_base_level(shared.party_id, target.id, at_limit)
-      assert state.exp_share == true
-    end
-
-    test "returns {:error, :not_member} for a char_id that is not a member" do
-      {_leader, created} = party_fixture("Silas")
-
-      assert {:error, :not_member} = Manager.push_base_level(created.party_id, 999_999, 50)
-    end
-
-    test "returns {:error, :not_found} when no party entry is running" do
-      assert {:error, :not_found} = Manager.push_base_level(999_999, 1, 50)
-    end
+    Entry.update(pid, fn %State{} = state -> %State{state | exp_share: exp_share} end)
   end
 
   describe "push_map_change/3" do

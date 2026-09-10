@@ -559,13 +559,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.RathenaScript.Resolver do
   end
 
   @doc """
-  Returns the full `readparam`-constant-to-stat-atom map, backing the
-  `EquipScript` validation vocabulary and the codegen tests.
-  """
-  @spec stat_params() :: %{String.t() => atom()}
-  def stat_params, do: @stat_params
-
-  @doc """
   Returns the full rAthena-symbol-to-status-atom map for `Eff_*` constants.
   Used by the resolver-completeness test to assert every resolved `Eff_*`
   entry has a registered `StatusEffect.Registry` definition (the same-commit

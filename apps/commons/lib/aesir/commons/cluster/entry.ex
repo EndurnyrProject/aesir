@@ -20,7 +20,7 @@ defmodule Aesir.Commons.Cluster.Entry do
     * `:key`    - required registry key (any term)
     * `:value`  - required initial value
     * `:anchor` - optional pid to monitor; entry stops when the anchor goes down
-    * `:ttl`    - optional inactivity timeout (ms); reset on update/replace/touch
+    * `:ttl`    - optional inactivity timeout (ms); reset on update/replace
   """
   use GenServer, restart: :temporary
 
@@ -60,9 +60,6 @@ defmodule Aesir.Commons.Cluster.Entry do
 
   @spec replace(pid(), term()) :: {:ok, term()}
   def replace(pid, value), do: GenServer.call(pid, {:replace, value})
-
-  @spec touch(pid()) :: :ok
-  def touch(pid), do: GenServer.cast(pid, :touch)
 
   @impl true
   def init(opts) do
@@ -123,9 +120,6 @@ defmodule Aesir.Commons.Cluster.Entry do
     put_value(key, new)
     {:reply, reply, reset_ttl(%{state | value: new})}
   end
-
-  @impl true
-  def handle_cast(:touch, state), do: {:noreply, reset_ttl(state)}
 
   @impl true
   def handle_info({:DOWN, ref, :process, _pid, _reason}, %{anchor_ref: ref} = state) do

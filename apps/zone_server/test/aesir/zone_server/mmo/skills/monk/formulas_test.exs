@@ -66,7 +66,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.fury_critical_bonus(1) == 100
     assert Formulas.fury_critical_bonus(3) == 150
     assert Formulas.fury_critical_bonus(5) == 200
-    assert Formulas.fury_duration() == 180_000
     assert Formulas.fury_regeneration_tick_multiplier() == 2
 
     assert Formulas.mental_strength_damage(0) == 0
@@ -75,16 +74,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.mental_strength_damage(99) == 9
     assert Formulas.mental_strength_walk_speed() == 200
     assert Formulas.mental_strength_aspd_penalty_rate() == 250
-    assert Formulas.mental_strength_duration(1) == 30_000
-    assert Formulas.mental_strength_duration(3) == 90_000
-    assert Formulas.mental_strength_duration(5) == 150_000
   end
 
   @tag game_mode: :renewal
   test "Root and Asura preserve their Renewal bonuses, costs, and cap order" do
-    assert Formulas.root_wait_duration(1) == 500
-    assert Formulas.root_wait_duration(3) == 900
-    assert Formulas.root_wait_duration(5) == 1_300
     assert Formulas.root_duration(false, 5) == 10_000
     assert Formulas.root_duration(true, 5) == 2_000
 
@@ -114,32 +107,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
 
     assert Formulas.ki_explosion_ratio() == 800
     assert Formulas.ki_explosion_hp_cost() == 200
-    refute Formulas.ki_explosion_can_pay_hp?(200)
-    assert Formulas.ki_explosion_can_pay_hp?(201)
     assert Formulas.ki_explosion_sp_cost() == 40
-    assert Formulas.ki_explosion_splash_radius() == 1
-    assert Formulas.ki_explosion_knockback() == 5
     assert Formulas.ki_explosion_stun_rate() == 70
     assert Formulas.ki_explosion_stun_duration() == 4_500
-    assert Formulas.ki_explosion_after_cast_delay() == 2_000
-  end
-
-  test "Summon and Ki Translation preserve their sphere cost and timing profiles" do
-    assert Formulas.summon_spirit_sphere_profile() == %{
-             sp_cost: 8,
-             cast_time: 500,
-             fixed_cast_time: 500,
-             sphere_duration: 600_000
-           }
-
-    assert Formulas.ki_translation_profile() == %{
-             sp_cost: 40,
-             sphere_cost: 1,
-             cast_time: 1_000,
-             fixed_cast_time: 1_000,
-             after_cast_delay: 1_000,
-             transferred_sphere_duration: 600_000
-           }
   end
 
   test "Occult and Throw Spirit Sphere retain their level cost and delay tables" do
@@ -156,25 +126,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
   end
 
   test "combo and Asura level tables retain their source arithmetic" do
-    assert Formulas.quadruple_sp_cost(1) == 5
-    assert Formulas.quadruple_sp_cost(3) == 7
-    assert Formulas.quadruple_sp_cost(5) == 9
-    assert Formulas.thrust_sp_cost(1) == 3
-    assert Formulas.thrust_sp_cost(3) == 5
-    assert Formulas.thrust_sp_cost(5) == 7
-
-    assert Formulas.asura_timing(1) == %{cast_time: 2_000, after_cast_delay: 3_000}
-    assert Formulas.asura_timing(3) == %{cast_time: 1_500, after_cast_delay: 2_000}
-    assert Formulas.asura_timing(5) == %{cast_time: 1_000, after_cast_delay: 1_000}
-    assert Formulas.asura_fixed_cast_time(1) == 2_000
-    assert Formulas.asura_fixed_cast_time(3) == 1_500
-    assert Formulas.asura_fixed_cast_time(5) == 1_000
     assert Formulas.asura_sp_cost() == 1
   end
 
   test "fixed profiles cover the remaining scoped Monk skill costs and timings" do
-    assert Formulas.absorb_spirit_sphere_profile() == %{sp_cost: 5, fixed_cast_time: 500}
-
     assert Formulas.occult_timing() == %{
              cast_time: 500,
              fixed_cast_time: 500,
@@ -188,21 +143,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
              cooldown: 1_000
            }
 
-    assert Formulas.mental_strength_profile() == %{
-             sp_cost: 200,
-             sphere_cost: 5,
-             cast_time: 2_500,
-             fixed_cast_time: 2_500
-           }
-
     assert Formulas.root_profile() == %{
              sp_cost: 10,
              sphere_cost: 1,
              after_cast_delay: 500,
              cooldown: 3_000
            }
-
-    assert Formulas.fury_profile() == %{sp_cost: 15, sphere_cost: 5}
   end
 
   @tag game_mode: :pre_renewal
@@ -232,7 +178,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.FormulasTest do
     assert Formulas.asura_sphere_cost(:combo, 0) == 4
     assert Formulas.asura_sphere_cost(:combo, 5) == 4
     assert Formulas.asura_recovery_duration() == 300_000
-    assert Formulas.root_wait_duration(3) == 900
     assert Formulas.asura_damage_components(3, 123) == %{skill_ratio: 2_030, bonus_atk: 700}
   end
 

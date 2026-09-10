@@ -122,13 +122,6 @@ defmodule Aesir.Commons.Models.InventoryItem do
   def identified?(_), do: false
 
   @doc """
-  Checks if the item is bound to the character.
-  """
-  @spec bound?(t()) :: boolean()
-  def bound?(%__MODULE__{bound: bound}) when bound > 0, do: true
-  def bound?(_), do: false
-
-  @doc """
   Checks if the item has expired.
   """
   @spec expired?(t()) :: boolean()
@@ -136,22 +129,5 @@ defmodule Aesir.Commons.Models.InventoryItem do
 
   def expired?(%__MODULE__{expire_time: expire_time}) do
     NaiveDateTime.compare(expire_time, NaiveDateTime.utc_now()) == :lt
-  end
-
-  @doc """
-  Gets the random option value for a specific option ID.
-  """
-  @spec get_random_option(t(), integer()) :: %{val: integer(), parm: integer()} | nil
-  def get_random_option(%__MODULE__{random_options: options}, option_id) do
-    Map.get(options, to_string(option_id))
-  end
-
-  @doc """
-  Adds or updates a random option on the item.
-  """
-  @spec put_random_option(t(), integer(), integer(), integer()) :: t()
-  def put_random_option(%__MODULE__{random_options: options} = item, option_id, val, parm) do
-    new_options = Map.put(options, to_string(option_id), %{val: val, parm: parm})
-    %{item | random_options: new_options}
   end
 end

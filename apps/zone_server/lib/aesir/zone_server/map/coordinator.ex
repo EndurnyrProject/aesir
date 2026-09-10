@@ -139,20 +139,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     GenServer.call(server(map_name), {:claim_item, ground_id, char_id, party_ctx})
   end
 
-  @doc """
-  Changes map weather.
-  """
-  def set_weather(map_name, weather_type) do
-    GenServer.cast(server(map_name), {:set_weather, weather_type})
-  end
-
-  @doc """
-  Gets map information.
-  """
-  def get_map_info(map_name) do
-    GenServer.call(server(map_name), :get_info)
-  end
-
   @impl true
   def init(opts) do
     map_name = Keyword.fetch!(opts, :map_name)
@@ -279,13 +265,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end
   end
 
-  @doc """
-  Gets information about all mobs on the map.
-  """
-  def get_mob_info(map_name) do
-    GenServer.call(server(map_name), :get_mob_info)
-  end
-
   @impl true
   def handle_cast({:drop_items, items, _x, _y, opts}, state) do
     stamp = ownership_stamp(opts)
@@ -314,17 +293,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
     end)
 
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_cast({:set_weather, weather_type}, state) do
-    PubSub.broadcast(
-      Aesir.PubSub,
-      "map:#{state.map_name}",
-      {:weather_changed, weather_type}
-    )
-
-    {:noreply, %{state | weather: weather_type}}
   end
 
   @impl true
@@ -392,21 +360,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
   end
 
   @impl true
-  def handle_call(:get_info, _from, state) do
-    info = %{
-      map_name: state.map_name,
-      weather: state.weather,
-      pvp_enabled: state.pvp_enabled,
-      pk_enabled: state.pk_enabled,
-      npc_count: map_size(state.npcs),
-      player_count: SpatialIndex.count_players_on_map(state.map_name),
-      mob_count: UnitRegistry.count_units_by_type(:mob)
-    }
-
-    {:reply, info, state}
-  end
-
-  @impl true
   def handle_call({:claim_item, ground_id, char_id, party_ctx}, _from, state) do
     with {:ok, item} <- GroundItemStore.get(state.map_name, ground_id),
          :ok <-
@@ -465,39 +418,6 @@ defmodule Aesir.ZoneServer.Map.Coordinator do
       {:error, reason} ->
         {:reply, {:error, reason}, state}
     end
-  end
-
-  @impl true
-  def handle_call(:get_mob_info, _from, state) do
-    mob_processes = MobSupervisor.get_mob_processes(state.map_name)
-
-    mob_info =
-      mob_processes
-      |> Enum.map(fn pid ->
-        try do
-          case GenServer.call(pid, :get_state, 1000) do
-            %MobState{} = mob ->
-              %{
-                instance_id: mob.instance_id,
-                mob_id: mob.mob_id,
-                name: mob.mob_data.name,
-                position: {mob.x, mob.y},
-                hp: mob.hp,
-                max_hp: mob.max_hp,
-                ai_state: mob.ai_state,
-                is_dead: mob.is_dead
-              }
-
-            _ ->
-              nil
-          end
-        catch
-          :exit, _ -> nil
-        end
-      end)
-      |> Enum.reject(&is_nil/1)
-
-    {:reply, mob_info, state}
   end
 
   @impl true

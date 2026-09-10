@@ -142,11 +142,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.cast(pid, {:summon_spirit_sphere, duration, cap})
   end
 
-  @spec consume_spirit_spheres(pid(), pos_integer()) :: :ok
-  def consume_spirit_spheres(pid, count) do
-    GenServer.cast(pid, {:consume_spirit_spheres, count})
-  end
-
   @doc """
   Attempts to deduct SP synchronously without allowing an insufficient balance
   to underflow.
@@ -321,13 +316,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   """
   def remove_status(pid, status_id) do
     GenServer.call(pid, {:status, {:remove_status, status_id}})
-  end
-
-  @doc """
-  Gets all active status effects for the player.
-  """
-  def get_active_statuses(pid) do
-    GenServer.call(pid, {:status, :get_active_statuses})
   end
 
   @doc """
@@ -563,10 +551,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def start_navigation(pid, target, opts \\ []) do
     GenServer.cast(pid, {:navigation, {:start, target, opts}})
   end
-
-  @doc "Cancels this player's active navigation, if any."
-  @spec cancel_navigation(pid()) :: :ok
-  def cancel_navigation(pid), do: GenServer.cast(pid, {:navigation, :cancel})
 
   @doc "Forwards a decoded client `message` to this player's session for routing."
   @spec deliver_message(pid(), struct()) :: :ok
@@ -1050,11 +1034,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     NavigationHandler.start(state, target, opts)
   end
 
-  @impl true
-  def handle_cast({:navigation, :cancel}, state) do
-    NavigationHandler.cancel(state, :cancelled)
-  end
-
   # Visibility: another player's session directly casting to this one as it
   # enters or leaves view range (point-to-point, not PubSub - MovementHandler
   # resolves the target session and casts to it directly).
@@ -1245,14 +1224,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     SpiritSphereHandler.summon(state, duration, cap)
   end
 
-  @impl true
-  def handle_cast({:consume_spirit_spheres, count}, state) do
-    case SpiritSphereHandler.consume(state, count) do
-      {:ok, state} -> {:noreply, state}
-      {:error, :insufficient} -> {:noreply, state}
-    end
-  end
-
   # Skill: the spirit-exchange write path (Monk). Receive/absorb spirit spheres
   # and the deferred absorb result route to their handlers.
   @impl true
@@ -1418,11 +1389,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:status, {:remove_status, status_id}}, _from, state) do
     StatusManager.handle_remove_status(status_id, state)
-  end
-
-  @impl true
-  def handle_call({:status, :get_active_statuses}, _from, state) do
-    StatusManager.handle_get_active_statuses(state)
   end
 
   @impl true

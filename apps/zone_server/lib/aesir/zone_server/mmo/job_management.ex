@@ -32,15 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
   end
 
   @doc """
-  Get all available jobs.
-  Returns a list of Job structs.
-  """
-  @spec get_all_jobs() :: [Job.t()]
-  def get_all_jobs do
-    Jobs.all()
-  end
-
-  @doc """
   Get base HP for a job at a specific level.
   Returns {:ok, hp_value} or {:error, reason}
   """
@@ -170,40 +161,6 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement do
     case get_job_by_name(job_name) do
       {:ok, job} -> level > 0 and level <= job.max_job_level
       _ -> false
-    end
-  end
-
-  @doc """
-  Calculate total exp needed to reach a specific base level.
-  """
-  @spec total_base_exp_to_level(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
-  def total_base_exp_to_level(job_name, target_level)
-      when is_atom(job_name) and is_integer(target_level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         true <- target_level > 0 || {:error, :invalid_level} do
-      total =
-        job.base_exp
-        |> Enum.filter(fn {level, _exp} -> level < target_level end)
-        |> Enum.reduce(0, fn {_level, exp}, acc -> acc + exp end)
-
-      {:ok, total}
-    end
-  end
-
-  @doc """
-  Calculate total exp needed to reach a specific job level.
-  """
-  @spec total_job_exp_to_level(atom(), integer()) :: {:ok, non_neg_integer()} | {:error, atom()}
-  def total_job_exp_to_level(job_name, target_level)
-      when is_atom(job_name) and is_integer(target_level) do
-    with {:ok, job} <- get_job_by_name(job_name),
-         true <- target_level > 0 || {:error, :invalid_level} do
-      total =
-        job.job_exp
-        |> Enum.filter(fn {level, _exp} -> level < target_level end)
-        |> Enum.reduce(0, fn {_level, exp}, acc -> acc + exp end)
-
-      {:ok, total}
     end
   end
 

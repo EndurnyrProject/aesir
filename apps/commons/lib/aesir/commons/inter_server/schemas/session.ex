@@ -82,9 +82,6 @@ defmodule Aesir.Commons.InterServer.Schemas.Session do
           current_char_id: char_id
       })
 
-  @spec disconnect(t()) :: t()
-  def disconnect(session), do: update_activity(%{session | state: :disconnected})
-
   @doc """
   Stores a single-use zone-entry token bound to `char_id`, issued when the
   player selects a character on the char server.

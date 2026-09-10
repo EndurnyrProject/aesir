@@ -203,14 +203,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
   end
 
   @doc """
-  Gets the total count of all units in the registry.
-  """
-  @spec count_all_units() :: non_neg_integer()
-  def count_all_units do
-    :ets.info(table_for(:unit_registry), :size)
-  end
-
-  @doc """
   Cleans up units associated with a dead process.
   This should be called when a process monitoring units dies.
   """
@@ -309,25 +301,6 @@ defmodule Aesir.ZoneServer.Unit.UnitRegistry do
     case get_unit(:player, char_id) do
       {:ok, {_module, %PlayerState{character_name: char_name}, _pid}} ->
         {:ok, char_name}
-
-      {:ok, _} ->
-        {:error, :not_found}
-
-      {:error, :not_found} ->
-        {:error, :not_found}
-    end
-  end
-
-  @doc """
-  Gets a player's account_id from the registry.
-
-  Returns {:ok, account_id} or {:error, :not_found}
-  """
-  @spec get_player_account_id(unit_id()) :: {:ok, integer()} | {:error, :not_found}
-  def get_player_account_id(char_id) do
-    case get_unit(:player, char_id) do
-      {:ok, {_module, %{account_id: account_id}, _pid}} ->
-        {:ok, account_id}
 
       {:ok, _} ->
         {:error, :not_found}

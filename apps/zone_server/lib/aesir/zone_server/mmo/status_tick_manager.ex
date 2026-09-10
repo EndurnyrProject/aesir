@@ -53,11 +53,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
     GenServer.cast(server(), :force_tick)
   end
 
-  @spec get_stats() :: map()
-  def get_stats do
-    GenServer.call(server(), :get_stats)
-  end
-
   @doc "Schedules a generation-tagged status tick for an absolute monotonic deadline."
   @spec schedule_exact_tick(atom(), integer(), atom(), pos_integer(), integer()) :: :ok
   def schedule_exact_tick(unit_type, unit_id, status_id, generation, due_at) do
@@ -154,27 +149,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusTickManager do
   def handle_cast(:force_tick, state) do
     send(self(), :tick)
     {:noreply, state}
-  end
-
-  @impl true
-  def handle_call(:get_stats, _from, state) do
-    total_statuses = StatusStorage.count_all_statuses()
-
-    stats = %{
-      tick_count: state.tick_count,
-      last_tick_ms: state.last_tick,
-      total_statuses: total_statuses,
-      due_statuses: state.last_due_statuses,
-      processing_ratio: state.processing_ratio,
-      tick_interval_ms: @tick_interval_ms,
-      efficiency: %{
-        percentage_processed: Float.round(state.processing_ratio, 2),
-        total_statuses: total_statuses,
-        processed_last_tick: state.last_due_statuses
-      }
-    }
-
-    {:reply, stats, state}
   end
 
   defp schedule_exact_message(unit_type, unit_id, status_id, generation, due_at) do

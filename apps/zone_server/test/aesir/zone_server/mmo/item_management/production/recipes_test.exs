@@ -24,11 +24,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.RecipesTest do
     assert Enum.all?(recipes, &match?(%Recipe{}, &1))
   end
 
-  test "by_id returns the matching recipe or :error" do
-    assert {:ok, %Recipe{id: 0, product_id: 1101}} = Recipes.by_id(0)
-    assert :error = Recipes.by_id(-1)
-  end
-
   test "offerable filters by skill id and required skill level" do
     recipes = Recipes.offerable(99, 2)
 
@@ -45,11 +40,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Production.RecipesTest do
     assert recipes != []
     assert Enum.all?(recipes, &(&1.item_level == 1))
     refute Enum.any?(recipes, &(&1.item_level in [2, 3]))
-  end
-
-  test "preserves possession-only materials" do
-    assert {:ok, %Recipe{materials: materials}} = Recipes.by_id(52)
-    assert %{item_id: 7472, amount: 0} in materials
   end
 
   test "reload rebuilds the catalog" do

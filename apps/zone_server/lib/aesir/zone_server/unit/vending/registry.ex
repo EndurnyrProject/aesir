@@ -15,8 +15,6 @@ defmodule Aesir.ZoneServer.Unit.Vending.Registry do
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
 
-  alias Aesir.ZoneServer.Unit.SpatialIndex
-
   @type unit_id :: integer()
   @type shop :: map()
 
@@ -46,30 +44,6 @@ defmodule Aesir.ZoneServer.Unit.Vending.Registry do
     case :ets.lookup(table_for(:vending_registry), unit_id) do
       [{^unit_id, {_owner_pid, shop}}] -> {:ok, shop}
       [] -> :error
-    end
-  end
-
-  @doc """
-  Lists open shops whose vendor is within `range` (Manhattan distance) of the
-  point `{x, y}` on `map_name`.
-
-  Vendor positions are resolved through `SpatialIndex.get_unit_position/2`; a
-  shop whose vendor has no position or sits on another map is excluded. Returns
-  `{unit_id, shop}` tuples.
-  """
-  @spec list_near(String.t(), non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          [{unit_id(), shop()}]
-  def list_near(map_name, x, y, range) do
-    table_for(:vending_registry)
-    |> :ets.tab2list()
-    |> Enum.filter(fn {unit_id, _entry} -> in_range?(unit_id, map_name, x, y, range) end)
-    |> Enum.map(fn {unit_id, {_owner_pid, shop}} -> {unit_id, shop} end)
-  end
-
-  defp in_range?(unit_id, map_name, x, y, range) do
-    case SpatialIndex.get_unit_position(:player, unit_id) do
-      {:ok, {ux, uy, ^map_name}} -> abs(ux - x) + abs(uy - y) <= range
-      _ -> false
     end
   end
 end

@@ -225,42 +225,6 @@ defmodule Aesir.ZoneServer.Unit.Stats do
   end
 
   @doc """
-  Updates base stats.
-  """
-  @spec update_base_stats(t(), BaseStats.t() | map()) :: t()
-  def update_base_stats(%__MODULE__{} = stats, %BaseStats{} = new_base_stats) do
-    %{stats | base_stats: new_base_stats}
-  end
-
-  def update_base_stats(%__MODULE__{} = stats, updates) when is_map(updates) do
-    %{stats | base_stats: struct(stats.base_stats, updates)}
-  end
-
-  @doc """
-  Updates derived stats.
-  """
-  @spec update_derived_stats(t(), DerivedStats.t() | map()) :: t()
-  def update_derived_stats(%__MODULE__{} = stats, %DerivedStats{} = new_derived_stats) do
-    %{stats | derived_stats: new_derived_stats}
-  end
-
-  def update_derived_stats(%__MODULE__{} = stats, updates) when is_map(updates) do
-    %{stats | derived_stats: struct(stats.derived_stats, updates)}
-  end
-
-  @doc """
-  Updates combat stats.
-  """
-  @spec update_combat_stats(t(), CombatStats.t() | map()) :: t()
-  def update_combat_stats(%__MODULE__{} = stats, %CombatStats{} = new_combat_stats) do
-    %{stats | combat_stats: new_combat_stats}
-  end
-
-  def update_combat_stats(%__MODULE__{} = stats, updates) when is_map(updates) do
-    %{stats | combat_stats: struct(stats.combat_stats, updates)}
-  end
-
-  @doc """
   Updates current HP/SP state.
   """
   @spec update_current_state(t(), CurrentState.t() | map()) :: t()
@@ -273,73 +237,9 @@ defmodule Aesir.ZoneServer.Unit.Stats do
   end
 
   @doc """
-  Applies damage to HP.
-  """
-  @spec apply_damage(t(), integer()) :: t()
-  def apply_damage(%__MODULE__{} = stats, damage) when is_integer(damage) do
-    new_hp = max(0, stats.current_state.hp - damage)
-    update_current_state(stats, %{hp: new_hp})
-  end
-
-  @doc """
-  Applies healing to HP.
-  """
-  @spec apply_healing(t(), integer()) :: t()
-  def apply_healing(%__MODULE__{} = stats, amount) when is_integer(amount) do
-    new_hp = min(stats.derived_stats.max_hp, stats.current_state.hp + amount)
-    update_current_state(stats, %{hp: new_hp})
-  end
-
-  @doc """
-  Consumes SP.
-  """
-  @spec consume_sp(t(), integer()) :: {:ok, t()} | {:error, :insufficient_sp}
-  def consume_sp(%__MODULE__{} = stats, amount) when is_integer(amount) do
-    if stats.current_state.sp >= amount do
-      new_sp = stats.current_state.sp - amount
-      {:ok, update_current_state(stats, %{sp: new_sp})}
-    else
-      {:error, :insufficient_sp}
-    end
-  end
-
-  @doc """
-  Restores SP.
-  """
-  @spec restore_sp(t(), integer()) :: t()
-  def restore_sp(%__MODULE__{} = stats, amount) when is_integer(amount) do
-    new_sp = min(stats.derived_stats.max_sp, stats.current_state.sp + amount)
-    update_current_state(stats, %{sp: new_sp})
-  end
-
-  @doc """
   Checks if the unit is dead (HP is 0).
   """
   @spec dead?(t()) :: boolean()
   def dead?(%__MODULE__{current_state: %CurrentState{hp: 0}}), do: true
   def dead?(%__MODULE__{}), do: false
-
-  @doc """
-  Gets the HP percentage.
-  """
-  @spec hp_percentage(t()) :: float()
-  def hp_percentage(%__MODULE__{} = stats) do
-    if stats.derived_stats.max_hp > 0 do
-      stats.current_state.hp / stats.derived_stats.max_hp * 100.0
-    else
-      0.0
-    end
-  end
-
-  @doc """
-  Gets the SP percentage.
-  """
-  @spec sp_percentage(t()) :: float()
-  def sp_percentage(%__MODULE__{} = stats) do
-    if stats.derived_stats.max_sp > 0 do
-      stats.current_state.sp / stats.derived_stats.max_sp * 100.0
-    else
-      0.0
-    end
-  end
 end

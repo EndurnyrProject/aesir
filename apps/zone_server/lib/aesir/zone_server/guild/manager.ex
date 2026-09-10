@@ -9,8 +9,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
 
   It covers lifecycle (create/rebuild/lookup/disband), membership mutations
   (join/leave/expel), the position/permission layer (edit positions, assign
-  members, notice, emblem) and presence tracking (`sync_member/3`,
-  `set_online/3`, `push_base_level/3`, `push_map_change/3`).
+  members, notice, emblem) and presence tracking (`sync_member/3`).
 
   Permission gating replaces party's inline leader check: every gated action
   routes through `Aesir.ZoneServer.Guild.Permissions.can?/3`, and the master
@@ -843,49 +842,6 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   end
 
   @doc """
-  Pushes `char_id`'s new `base_level` into the entry, broadcasting
-  `{:social, {:guild_updated, state}}`. `{:error, :not_member}` if `char_id` isn't a
-  current member; `{:error, :not_found}` if the entry isn't running.
-  """
-  @spec push_base_level(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
-  def push_base_level(guild_id, char_id, base_level) do
-    mutate(guild_id, fn state ->
-      update_member(state, char_id, fn %Member{} = member ->
-        %Member{member | base_level: base_level}
-      end)
-    end)
-  end
-
-  @doc """
-  Pushes `char_id`'s new `map_name` into the entry, broadcasting
-  `{:social, {:guild_updated, state}}`.
-  """
-  @spec push_map_change(non_neg_integer(), non_neg_integer(), String.t()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
-  def push_map_change(guild_id, char_id, map_name) do
-    mutate(guild_id, fn state ->
-      update_member(state, char_id, fn %Member{} = member ->
-        %Member{member | map_name: map_name}
-      end)
-    end)
-  end
-
-  @doc """
-  Pushes `char_id`'s `online` flag into the entry -- both login and logout
-  cross this path -- broadcasting `{:social, {:guild_updated, state}}`.
-  """
-  @spec set_online(non_neg_integer(), non_neg_integer(), boolean()) ::
-          {:ok, State.t()} | {:error, :not_member | :not_found | term()}
-  def set_online(guild_id, char_id, online?) do
-    mutate(guild_id, fn state ->
-      update_member(state, char_id, fn %Member{} = member ->
-        %Member{member | online: online?}
-      end)
-    end)
-  end
-
-  @doc """
   Replaces one member's presence snapshot in the live guild entry. The stored
   `position_index` is always preserved (position is authoritative in the guild
   entry, never in the session presence projection), so only the presence fields
@@ -943,17 +899,6 @@ defmodule Aesir.ZoneServer.Guild.Manager do
           new_state = %State{state | members: Map.put(state.members, char_id, merged)}
           {{:ok, :updated, merged, new_state}, new_state}
         end
-    end
-  end
-
-  defp update_member(%State{} = state, char_id, member_fun) do
-    case Map.fetch(state.members, char_id) do
-      :error ->
-        {{:error, :not_member}, state}
-
-      {:ok, member} ->
-        new_state = %State{state | members: Map.put(state.members, char_id, member_fun.(member))}
-        {{:ok, new_state}, new_state}
     end
   end
 

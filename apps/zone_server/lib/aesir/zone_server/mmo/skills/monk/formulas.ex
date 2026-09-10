@@ -107,9 +107,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec fury_critical_bonus(pos_integer()) :: pos_integer()
   def fury_critical_bonus(level), do: 75 + 25 * level
 
-  @spec fury_duration() :: 180_000
-  def fury_duration, do: 180_000
-
   @spec fury_regeneration_tick_multiplier() :: 2
   def fury_regeneration_tick_multiplier, do: 2
 
@@ -122,12 +119,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
 
   @spec mental_strength_aspd_penalty_rate() :: 250
   def mental_strength_aspd_penalty_rate, do: 250
-
-  @spec mental_strength_duration(pos_integer()) :: pos_integer()
-  def mental_strength_duration(level), do: 30_000 * level
-
-  @spec root_wait_duration(pos_integer()) :: pos_integer()
-  def root_wait_duration(level), do: 300 + 200 * level
 
   @spec root_duration(boolean(), pos_integer()) :: pos_integer()
   def root_duration(boss?, root_level) do
@@ -177,55 +168,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec ki_explosion_hp_cost() :: pos_integer()
   def ki_explosion_hp_cost, do: if(GameMode.mode() == :renewal, do: 200, else: 10)
 
-  @spec ki_explosion_can_pay_hp?(non_neg_integer()) :: boolean()
-  def ki_explosion_can_pay_hp?(current_hp), do: current_hp > ki_explosion_hp_cost()
-
   @spec ki_explosion_sp_cost() :: pos_integer()
   def ki_explosion_sp_cost, do: if(GameMode.mode() == :renewal, do: 40, else: 20)
-
-  @spec ki_explosion_splash_radius() :: 1
-  def ki_explosion_splash_radius, do: 1
-
-  @spec ki_explosion_knockback() :: 5
-  def ki_explosion_knockback, do: 5
 
   @spec ki_explosion_stun_rate() :: 70
   def ki_explosion_stun_rate, do: 70
 
   @spec ki_explosion_stun_duration() :: pos_integer()
   def ki_explosion_stun_duration, do: if(GameMode.mode() == :renewal, do: 4_500, else: 5_000)
-
-  @spec ki_explosion_after_cast_delay() :: 2_000
-  def ki_explosion_after_cast_delay, do: 2_000
-
-  @spec summon_spirit_sphere_profile() :: %{
-          sp_cost: 8,
-          cast_time: 500,
-          fixed_cast_time: 500,
-          sphere_duration: 600_000
-        }
-  def summon_spirit_sphere_profile do
-    %{sp_cost: 8, cast_time: 500, fixed_cast_time: 500, sphere_duration: spirit_sphere_duration()}
-  end
-
-  @spec ki_translation_profile() :: %{
-          sp_cost: 40,
-          sphere_cost: 1,
-          cast_time: 1_000,
-          fixed_cast_time: 1_000,
-          after_cast_delay: 1_000,
-          transferred_sphere_duration: 600_000
-        }
-  def ki_translation_profile do
-    %{
-      sp_cost: 40,
-      sphere_cost: 1,
-      cast_time: 1_000,
-      fixed_cast_time: 1_000,
-      after_cast_delay: 1_000,
-      transferred_sphere_duration: spirit_sphere_duration()
-    }
-  end
 
   @spec occult_sp_cost(pos_integer()) :: pos_integer()
   def occult_sp_cost(level), do: elem({10, 14, 17, 19, 20}, level - 1)
@@ -236,28 +186,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
   @spec throw_spirit_sphere_walk_delay(pos_integer()) :: non_neg_integer()
   def throw_spirit_sphere_walk_delay(level), do: 200 * (level - 1)
 
-  @spec quadruple_sp_cost(pos_integer()) :: pos_integer()
-  def quadruple_sp_cost(level), do: 4 + level
-
-  @spec thrust_sp_cost(pos_integer()) :: pos_integer()
-  def thrust_sp_cost(level), do: 2 + level
-
-  @spec asura_timing(pos_integer()) :: %{
-          cast_time: pos_integer(),
-          after_cast_delay: pos_integer()
-        }
-  def asura_timing(level) do
-    %{cast_time: 2_250 - 250 * level, after_cast_delay: 3_500 - 500 * level}
-  end
-
-  @spec asura_fixed_cast_time(pos_integer()) :: pos_integer()
-  def asura_fixed_cast_time(level), do: 2_250 - 250 * level
-
   @spec asura_sp_cost() :: 1
   def asura_sp_cost, do: 1
-
-  @spec absorb_spirit_sphere_profile() :: %{sp_cost: 5, fixed_cast_time: 500}
-  def absorb_spirit_sphere_profile, do: %{sp_cost: 5, fixed_cast_time: 500}
 
   @spec occult_timing() :: %{cast_time: 500, fixed_cast_time: 500, after_cast_delay: 500}
   def occult_timing, do: %{cast_time: 500, fixed_cast_time: 500, after_cast_delay: 500}
@@ -272,19 +202,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Monk.Formulas do
     %{cast_time: 500, fixed_cast_time: 500, after_cast_delay: 500, cooldown: 1_000}
   end
 
-  @spec mental_strength_profile() :: %{
-          sp_cost: 200,
-          sphere_cost: 5,
-          cast_time: 2_500,
-          fixed_cast_time: 2_500
-        }
-  def mental_strength_profile do
-    %{sp_cost: 200, sphere_cost: 5, cast_time: 2_500, fixed_cast_time: 2_500}
-  end
-
   @spec root_profile() :: %{sp_cost: 10, sphere_cost: 1, after_cast_delay: 500, cooldown: 3_000}
   def root_profile, do: %{sp_cost: 10, sphere_cost: 1, after_cast_delay: 500, cooldown: 3_000}
-
-  @spec fury_profile() :: %{sp_cost: 15, sphere_cost: 5}
-  def fury_profile, do: %{sp_cost: 15, sphere_cost: 5}
 end

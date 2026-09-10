@@ -137,29 +137,6 @@ defmodule Aesir.CharServer.Characters do
   end
 
   @doc """
-  Deletes a character with proper authorization and cleanup.
-
-  Performs ownership verification and handles the deletion workflow atomically.
-  """
-  def delete_character(account_id, char_id) do
-    Ecto.Multi.new()
-    |> Ecto.Multi.run(:character_lookup, fn _repo, _changes ->
-      get_character(char_id)
-    end)
-    |> Ecto.Multi.run(:ownership_check, fn _repo, %{character_lookup: character} ->
-      Auth.verify_character_ownership(account_id, character.account_id)
-    end)
-    |> Ecto.Multi.run(:deletion_validation, fn _repo, %{character_lookup: character} ->
-      validate_deletion_eligibility(character)
-    end)
-    |> Ecto.Multi.run(:character_deletion, fn _repo, %{character_lookup: character} ->
-      delete_character_record(character)
-    end)
-    |> Repo.transaction()
-    |> handle_deletion_result()
-  end
-
-  @doc """
   Retrieves characters for an account with session validation.
   """
   def list_characters(account_id, session_data) do
@@ -307,41 +284,6 @@ defmodule Aesir.CharServer.Characters do
     |> repo.insert()
   end
 
-  defp validate_deletion_eligibility(character) do
-    # TODO: Add additional validation checks:
-    # - Guild membership
-    # - Party membership
-    # - Marriage status
-    # - Pending mail/auctions
-    # - Email verification if required
-
-    cond do
-      Character.banned?(character) ->
-        {:error, :character_banned}
-
-      character.guild_id && character.guild_id > 0 ->
-        {:error, :character_in_guild}
-
-      character.party_id && character.party_id > 0 ->
-        {:error, :character_in_party}
-
-      true ->
-        {:ok, :eligible}
-    end
-  end
-
-  defp delete_character_record(character) do
-    case Repo.delete(character) do
-      {:ok, deleted_character} ->
-        Logger.info("Deleted character #{deleted_character.name} (ID: #{deleted_character.id})")
-        {:ok, deleted_character}
-
-      {:error, changeset} ->
-        Logger.error("Failed to delete character: #{inspect(changeset.errors)}")
-        {:error, :deletion_failed}
-    end
-  end
-
   defp validate_session_for_account(account_id, session_data) do
     case session_data do
       %{account_id: ^account_id, authenticated: true} ->
@@ -416,34 +358,6 @@ defmodule Aesir.CharServer.Characters do
       {:error, failed_operation, reason, _changes} ->
         Logger.error("Character creation failed at #{failed_operation}: #{inspect(reason)}")
         {:error, :creation_failed}
-    end
-  end
-
-  defp handle_deletion_result(transaction_result) do
-    case transaction_result do
-      {:ok, %{character_deletion: character}} ->
-        Logger.info("Successfully deleted character #{character.name} (ID: #{character.id})")
-        :ok
-
-      {:error, :character_lookup, reason, _changes} ->
-        Logger.warning("Character deletion failed: character lookup - #{inspect(reason)}")
-        {:error, reason}
-
-      {:error, :ownership_check, reason, _changes} ->
-        Logger.warning("Character deletion failed: ownership check - #{inspect(reason)}")
-        {:error, reason}
-
-      {:error, :deletion_validation, reason, _changes} ->
-        Logger.info("Character deletion failed: validation - #{inspect(reason)}")
-        {:error, reason}
-
-      {:error, :character_deletion, reason, _changes} ->
-        Logger.error("Character deletion failed: database error - #{inspect(reason)}")
-        {:error, :deletion_failed}
-
-      {:error, failed_operation, reason, _changes} ->
-        Logger.error("Character deletion failed at #{failed_operation}: #{inspect(reason)}")
-        {:error, :deletion_failed}
     end
   end
 end

@@ -135,15 +135,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
       assert again.rude_attack_count == 2
       assert again.rude_attacked? == true
     end
-
-    test "clear_rude_attacked/1 clears the flag but preserves the count" do
-      state = build_mob_state() |> MobState.note_rude_attack()
-
-      cleared = MobState.clear_rude_attacked(state)
-
-      assert cleared.rude_attacked? == false
-      assert cleared.rude_attack_count == 1
-    end
   end
 
   describe "skill cooldowns" do

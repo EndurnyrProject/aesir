@@ -26,37 +26,6 @@ defmodule Aesir.Commons.Utils.ServerTickTest do
     end
   end
 
-  describe "from_timestamp/1" do
-    test "converts full timestamp to 32-bit tick" do
-      full_timestamp = 0x123456789ABCDEF0
-      tick = ServerTick.from_timestamp(full_timestamp)
-
-      expected = full_timestamp |> rem(0x10_0000000)
-      assert tick == expected
-      assert ServerTick.valid?(tick)
-    end
-
-    test "handles small timestamps" do
-      small_timestamp = 12_345
-      tick = ServerTick.from_timestamp(small_timestamp)
-
-      assert tick == small_timestamp
-      assert ServerTick.valid?(tick)
-    end
-
-    test "handles boundary values" do
-      # Test 32-bit boundary
-      boundary = 0x10_0000000
-      tick = ServerTick.from_timestamp(boundary)
-      assert tick == 0
-
-      # Test just under boundary
-      under_boundary = 0xFFFFFFFF
-      tick2 = ServerTick.from_timestamp(under_boundary)
-      assert tick2 == under_boundary
-    end
-  end
-
   describe "diff/2" do
     test "calculates simple differences" do
       tick1 = 1000
@@ -148,38 +117,6 @@ defmodule Aesir.Commons.Utils.ServerTickTest do
 
       assert ServerTick.valid?(result1)
       assert ServerTick.valid?(result2)
-    end
-  end
-
-  describe "elapsed?/2 and elapsed?/3" do
-    test "detects elapsed time with default current tick" do
-      start_tick = ServerTick.now()
-
-      # Should be immediately elapsed for 0ms duration
-      assert ServerTick.elapsed?(start_tick, 0)
-
-      # Should not be elapsed for long duration
-      refute ServerTick.elapsed?(start_tick, 10_000)
-    end
-
-    test "detects elapsed time with explicit current tick" do
-      start_tick = 1000
-      current_tick = 1500
-
-      # 500ms have elapsed
-      assert ServerTick.elapsed?(start_tick, 400, current_tick)
-      assert ServerTick.elapsed?(start_tick, 500, current_tick)
-      refute ServerTick.elapsed?(start_tick, 600, current_tick)
-    end
-
-    test "handles wraparound in elapsed calculation" do
-      # Start near end of range
-      start_tick = 0xFFFFFF00
-      # Current wrapped around
-      current_tick = 0x00000200
-
-      # Should correctly detect small elapsed time
-      assert ServerTick.elapsed?(start_tick, 100, current_tick)
     end
   end
 

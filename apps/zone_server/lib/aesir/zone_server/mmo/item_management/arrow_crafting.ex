@@ -32,10 +32,6 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ArrowCrafting do
   @spec all() :: [Recipe.t()]
   def all, do: index().all
 
-  @doc "The recipe consuming `source_id`, or `:error` when it crafts nothing."
-  @spec for_source(integer()) :: {:ok, Recipe.t()} | :error
-  def for_source(source_id), do: Map.fetch(index().by_source, source_id)
-
   @doc "Rebuilds the cached index after the data file changes."
   @spec reload() :: :ok
   def reload do

@@ -45,31 +45,6 @@ defmodule Aesir.Commons.Utils.ServerTick do
   end
 
   @doc """
-  Converts a full system timestamp to a 32-bit server tick.
-
-  Takes a full system timestamp (typically from System.system_time/1) and
-  truncates it to a 32-bit value suitable for network packets.
-
-  ## Parameters
-  - timestamp: Full system timestamp in milliseconds
-
-  ## Returns
-  32-bit timestamp value
-
-  ## Examples
-
-      iex> full_time = System.system_time(:millisecond)
-      iex> tick = ServerTick.from_timestamp(full_time)
-      iex> tick >= 0 and tick <= 0xFFFFFFFF
-      true
-
-  """
-  @spec from_timestamp(integer()) :: t()
-  def from_timestamp(timestamp) when is_integer(timestamp) do
-    timestamp |> rem(0x100000000)
-  end
-
-  @doc """
   Calculates the difference between two server ticks, handling 32-bit wraparound.
 
   Since server ticks are 32-bit values that can wrap around, this function
@@ -158,31 +133,5 @@ defmodule Aesir.Commons.Utils.ServerTick do
   @spec add(t(), integer()) :: t()
   def add(tick, milliseconds) when is_integer(tick) and is_integer(milliseconds) do
     (tick + milliseconds) |> rem(0x100000000) |> abs()
-  end
-
-  @doc """
-  Checks if enough time has elapsed since a given tick.
-
-  Useful for cooldown and timing checks in game logic.
-
-  ## Parameters
-  - start_tick: Starting server tick
-  - duration_ms: Duration to check in milliseconds
-  - current_tick: Current server tick (defaults to now())
-
-  ## Returns
-  Boolean indicating if the duration has elapsed
-
-  ## Examples
-
-      iex> start = ServerTick.now()
-      iex> ServerTick.elapsed?(start, 0)
-      true
-
-  """
-  @spec elapsed?(t(), non_neg_integer(), t()) :: boolean()
-  def elapsed?(start_tick, duration_ms, current_tick \\ now())
-      when is_integer(start_tick) and is_integer(duration_ms) and is_integer(current_tick) do
-    diff(start_tick, current_tick) >= duration_ms
   end
 end

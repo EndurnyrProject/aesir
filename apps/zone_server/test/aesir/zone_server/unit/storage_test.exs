@@ -11,7 +11,6 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
   use ExUnit.Case, async: true
 
   alias Aesir.Commons.Models.InventoryItem
-  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Storage
 
@@ -40,40 +39,9 @@ defmodule Aesir.ZoneServer.Unit.StorageTest do
 
   defp storage(items), do: PlayerState.from_list(items)
 
-  defp def!(id) do
-    {:ok, d} = ItemManagement.get_item_by_id(id)
-    d
-  end
-
   describe "capacity/0" do
     test "returns 600" do
       assert Storage.capacity() == 600
-    end
-  end
-
-  describe "add/4" do
-    test "adds a new item to an empty storage at the lowest free index" do
-      def_ = def!(@sword)
-
-      assert {:ok, s, {:added, 0, %InventoryItem{nameid: @sword, amount: 1}}} =
-               Storage.add(%{}, def_, 1)
-
-      assert %{0 => %InventoryItem{nameid: @sword}} = s
-    end
-
-    test "stacks into an existing stackable item of the same nameid" do
-      def_ = def!(@red_potion)
-      s = storage([item(nameid: @red_potion, amount: 5)])
-
-      assert {:ok, new_s, {:stacked, 0, 8}} = Storage.add(s, def_, 3)
-      assert %{0 => %InventoryItem{amount: 8}} = new_s
-    end
-
-    test "rejects with :inventory_full when the 600-slot cap is reached" do
-      def_ = def!(@sword)
-      full = storage(for n <- 1..600, do: item(nameid: 600_000 + n, amount: 1))
-
-      assert {:error, :inventory_full} = Storage.add(full, def_, 1)
     end
   end
 

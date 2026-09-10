@@ -46,14 +46,6 @@ defmodule Aesir.ZoneServer.Map.MapManager do
     GenServer.call(__MODULE__, :coordinator_status)
   end
 
-  @doc """
-  Restarts a failed map coordinator.
-  """
-  @spec restart_coordinator(String.t()) :: :ok | {:error, term()}
-  def restart_coordinator(map_name) when is_binary(map_name) do
-    GenServer.call(__MODULE__, {:restart_coordinator, map_name})
-  end
-
   # GenServer Callbacks
 
   @impl true
@@ -128,26 +120,6 @@ defmodule Aesir.ZoneServer.Map.MapManager do
     }
 
     {:reply, status, state}
-  end
-
-  @impl true
-  def handle_call({:restart_coordinator, map_name}, _from, state) do
-    result =
-      case start_coordinator_for_map(map_name) do
-        {:ok, pid} ->
-          new_coordinators = Map.put(state.coordinators, map_name, pid)
-          new_failed = List.delete(state.failed_maps, map_name)
-
-          Logger.info("Successfully restarted coordinator for #{map_name}")
-
-          {:reply, :ok, %{state | coordinators: new_coordinators, failed_maps: new_failed}}
-
-        {:error, reason} = error ->
-          Logger.error("Failed to restart coordinator for #{map_name}: #{inspect(reason)}")
-          {:reply, error, state}
-      end
-
-    result
   end
 
   # Private Functions

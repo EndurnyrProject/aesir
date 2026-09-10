@@ -5,35 +5,8 @@ defmodule Aesir.ZoneServer.Map.Loader do
 
   require Logger
 
-  alias Aesir.ZoneServer.Map.CacheLoader
   alias Aesir.ZoneServer.Map.GatLoader
   alias Aesir.ZoneServer.Map.MapData
-
-  @doc """
-  Loads a map by name, trying cache first, then GAT file.
-  """
-  @spec load_map(String.t(), keyword()) :: {:ok, MapData.t()} | {:error, String.t()}
-  def load_map(map_name, opts \\ []) do
-    cache_path = Keyword.get(opts, :cache_path, default_cache_path())
-    gat_path = Keyword.get(opts, :gat_path, default_gat_path())
-    prefer_cache = Keyword.get(opts, :prefer_cache, true)
-
-    if prefer_cache do
-      load_with_fallback(map_name, cache_path, gat_path)
-    else
-      load_gat_with_fallback(map_name, gat_path, cache_path)
-    end
-  end
-
-  @doc """
-  Loads all maps from cache file.
-  """
-  @spec load_all_from_cache(String.t() | nil) :: {:ok, map()} | {:error, String.t()}
-  def load_all_from_cache(cache_path \\ nil) do
-    cache_path = cache_path || default_cache_path()
-    Logger.info("Loading all maps from cache: #{cache_path}")
-    CacheLoader.load_cache(cache_path)
-  end
 
   @doc """
   Creates a map cache file from GAT files in a directory.
@@ -71,35 +44,6 @@ defmodule Aesir.ZoneServer.Map.Loader do
       {:error, reason} ->
         {:error, "Failed to list GAT directory: #{inspect(reason)}"}
     end
-  end
-
-  defp load_with_fallback(map_name, cache_path, gat_path) do
-    case CacheLoader.load_map_from_cache(cache_path, map_name) do
-      {:ok, map_data} ->
-        Logger.debug("Loaded map #{map_name} from cache")
-        {:ok, map_data}
-
-      {:error, cache_error} ->
-        Logger.debug("Cache load failed for #{map_name}: #{cache_error}, trying GAT file")
-        load_gat_file(map_name, gat_path)
-    end
-  end
-
-  defp load_gat_with_fallback(map_name, gat_path, cache_path) do
-    case load_gat_file(map_name, gat_path) do
-      {:ok, map_data} ->
-        Logger.debug("Loaded map #{map_name} from GAT file")
-        {:ok, map_data}
-
-      {:error, gat_error} ->
-        Logger.debug("GAT load failed for #{map_name}: #{gat_error}, trying cache")
-        CacheLoader.load_map_from_cache(cache_path, map_name)
-    end
-  end
-
-  defp load_gat_file(map_name, gat_path) do
-    file_path = Path.join(gat_path, "#{map_name}.gat")
-    GatLoader.load_file(file_path)
   end
 
   # Writes the map cache to a path the server itself derives from priv.
@@ -141,13 +85,5 @@ defmodule Aesir.ZoneServer.Map.Loader do
 
     <<name_binary::binary-12, width::little-signed-16, height::little-signed-16,
       byte_size(compressed)::little-signed-32, compressed::binary>>
-  end
-
-  defp default_cache_path do
-    Path.join(:code.priv_dir(:zone_server), "maps.mcache")
-  end
-
-  defp default_gat_path do
-    Path.join(:code.priv_dir(:zone_server), "maps")
   end
 end

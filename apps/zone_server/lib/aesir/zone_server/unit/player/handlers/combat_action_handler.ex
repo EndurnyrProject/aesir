@@ -281,25 +281,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
   end
 
   @doc """
-  Handles target movement during combat approach.
-  Recalculates path if target moved significantly.
-  """
-  @spec handle_target_movement(map(), {integer(), integer()}) :: {:noreply, map()}
-  def handle_target_movement(%{game_state: game_state} = state, new_target_pos) do
-    if game_state.action_state == :combat_moving and game_state.combat_target_id do
-      # Check if target moved significantly (more than 3 cells)
-      if should_recalculate_path?(game_state.last_target_position, new_target_pos) do
-        # Recalculate path to new target position
-        recalculate_combat_path(state, new_target_pos)
-      else
-        {:noreply, state}
-      end
-    else
-      {:noreply, state}
-    end
-  end
-
-  @doc """
   Cancels any active combat intent and transitions to idle.
   """
   @spec cancel_combat_intent(map()) :: map()
@@ -838,43 +819,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler do
         Logger.warning("Cannot transition to combat_moving for adjustment")
         {:noreply, state}
     end
-  end
-
-  defp should_recalculate_path?(nil, _), do: true
-
-  defp should_recalculate_path?({old_x, old_y}, {new_x, new_y}) do
-    # Recalculate if target moved more than 3 cells
-    Geometry.chebyshev_distance(old_x, old_y, new_x, new_y) > 3
-  end
-
-  defp recalculate_combat_path(state, {new_target_x, new_target_y}) do
-    attack_range = Stats.attack_range(state.game_state.stats)
-
-    # Calculate new optimal position (occupancy-aware, shared with the approach path)
-    optimal_pos =
-      pick_attack_cell(
-        state,
-        state.game_state.combat_target_id,
-        {new_target_x, new_target_y},
-        attack_range
-      )
-
-    # Update target position and recalculate path
-    game_state = %{state.game_state | last_target_position: {new_target_x, new_target_y}}
-    updated_state = %{state | game_state: game_state}
-
-    # Stop current movement and start new path
-    MovementHandler.handle_force_stop_movement(updated_state)
-    # Extract state from {:noreply, state}
-    |> elem(1)
-    |> then(fn stopped_state ->
-      MovementHandler.handle_request_move(
-        stopped_state,
-        elem(optimal_pos, 0),
-        elem(optimal_pos, 1),
-        combat_initiated: true
-      )
-    end)
   end
 
   defp cancel_combo_for_target_change(

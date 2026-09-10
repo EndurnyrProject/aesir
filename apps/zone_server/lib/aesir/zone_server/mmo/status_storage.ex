@@ -268,39 +268,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   end
 
   @doc """
-  Clears specific types of statuses for a unit (buffs/debuffs).
-  This function now requires the Interpreter to be loaded to check properties.
-  """
-  @spec clear_status_types(unit_type(), integer(), :buffs | :debuffs | :all) :: :ok
-  def clear_status_types(unit_type, unit_id, type) do
-    alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
-
-    statuses = get_unit_statuses(unit_type, unit_id)
-
-    to_remove =
-      case type do
-        :all ->
-          statuses
-
-        :buffs ->
-          Enum.filter(statuses, fn status ->
-            Interpreter.buff?(status.type)
-          end)
-
-        :debuffs ->
-          Enum.filter(statuses, fn status ->
-            Interpreter.debuff?(status.type)
-          end)
-      end
-
-    Enum.each(to_remove, fn entry ->
-      :ets.delete(table_for(:player_statuses), {unit_type, unit_id, entry.type})
-    end)
-
-    :ok
-  end
-
-  @doc """
   Gets all expired statuses (for tick manager).
   Returns list of {{unit_type, unit_id, status_type}, entry} tuples.
 
@@ -323,20 +290,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
     ]
 
     :ets.select(table_for(:player_statuses), match_spec)
-  end
-
-  @doc """
-  Gets all statuses that need tick processing.
-  This will be filtered by status type in the tick manager.
-
-  DEPRECATED: Use get_due_statuses/1 instead for better performance.
-
-  ## Returns
-  List of {{unit_type, unit_id, status_type}, StatusEntry} tuples for all statuses
-  """
-  @spec get_all_statuses() :: list({{unit_type(), integer(), atom()}, StatusEntry.t()})
-  def get_all_statuses do
-    :ets.tab2list(table_for(:player_statuses))
   end
 
   @doc """
@@ -407,26 +360,6 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   end
 
   @doc """
-  Gets statuses for multiple units (useful for area effects).
-
-  ## Parameters
-  - unit_list: List of {unit_type, unit_id} tuples
-
-  ## Returns
-  Map of {unit_type, unit_id} => list of StatusEntry structs
-  """
-  @spec get_area_statuses(list({unit_type(), integer()})) :: %{
-          {unit_type(), integer()} => list(StatusEntry.t())
-        }
-  def get_area_statuses(unit_list) do
-    unit_list
-    |> Enum.map(fn {unit_type, unit_id} ->
-      {{unit_type, unit_id}, get_unit_statuses(unit_type, unit_id)}
-    end)
-    |> Enum.into(%{})
-  end
-
-  @doc """
   Count total active statuses in the system.
   """
   @spec count_all_statuses() :: non_neg_integer()
@@ -441,20 +374,5 @@ defmodule Aesir.ZoneServer.Mmo.StatusStorage do
   def count_unit_statuses(unit_type, unit_id) do
     :ets.match(table_for(:player_statuses), {{unit_type, unit_id, :_}, :_})
     |> length()
-  end
-
-  @doc """
-  Debug function to inspect all statuses.
-  """
-  @spec dump_all() :: list()
-  def dump_all do
-    :ets.tab2list(table_for(:player_statuses))
-    |> Enum.map(fn {{player_id, status_type}, entry} ->
-      %{
-        player_id: player_id,
-        status: status_type,
-        entry: entry
-      }
-    end)
   end
 end

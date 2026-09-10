@@ -188,31 +188,6 @@ defmodule Aesir.ZoneServer.Mmo.Combat.CriticalHits do
     end
   end
 
-  @doc """
-  Calculates the active natural critical basis from raw LUK without a level term.
-
-  Use `calculate_critical_rate/1` when a base level or computed snapshot is available.
-  Result is capped at 1000 (100% critical chance).
-
-  ## Parameters
-  - luk: LUK stat value
-
-  ## Returns
-  Critical rate as integer (0-1000)
-
-  ## Examples
-      iex> CriticalHits.calculate_critical_rate_from_luk(1)
-      13
-      iex> CriticalHits.calculate_critical_rate_from_luk(400)
-      1000
-      iex> CriticalHits.calculate_critical_rate_from_luk(999)
-      1000
-  """
-  @spec calculate_critical_rate_from_luk(integer()) :: integer()
-  def calculate_critical_rate_from_luk(luk) when is_integer(luk) do
-    natural_critical_rate(luk, 0)
-  end
-
   defp natural_critical_rate(luk, base_level) do
     %{base_rate: rate} = Mechanics.player_formulas().critical(%{luk: luk, base_level: base_level})
     calculate_critical_rate(%{critical: rate})

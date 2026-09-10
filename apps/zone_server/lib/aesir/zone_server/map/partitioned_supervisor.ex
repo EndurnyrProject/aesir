@@ -45,25 +45,6 @@ defmodule Aesir.ZoneServer.Map.PartitionedSupervisor do
   end
 
   @doc """
-  Stops a map coordinator for the given map name.
-  """
-  @spec stop_map_coordinator(String.t()) :: :ok | {:error, :not_found}
-  def stop_map_coordinator(map_name) when is_binary(map_name) do
-    case Registry.lookup(Aesir.ZoneServer.MapRegistry, map_name) do
-      [{pid, _}] ->
-        partition = :erlang.phash2(map_name, System.schedulers_online())
-
-        DynamicSupervisor.terminate_child(
-          {:via, PartitionSupervisor, {__MODULE__, partition}},
-          pid
-        )
-
-      [] ->
-        {:error, :not_found}
-    end
-  end
-
-  @doc """
   Returns the number of coordinators in each partition.
   Useful for monitoring load distribution.
   """
@@ -79,15 +60,5 @@ defmodule Aesir.ZoneServer.Map.PartitionedSupervisor do
       {partition, length(children)}
     end)
     |> Map.new()
-  end
-
-  @doc """
-  Returns the total number of map coordinators across all partitions.
-  """
-  @spec coordinator_count() :: non_neg_integer()
-  def coordinator_count do
-    partition_distribution()
-    |> Map.values()
-    |> Enum.sum()
   end
 end

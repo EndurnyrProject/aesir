@@ -64,16 +64,6 @@ defmodule Aesir.ZoneServer.Map.MapCache do
   end
 
   @doc """
-  Gets the size of a map.
-  """
-  def get_map_size(map_name) do
-    case get(map_name) do
-      {:ok, %MapData{xs: width, ys: height}} -> {:ok, {width, height}}
-      error -> error
-    end
-  end
-
-  @doc """
   Checks if a position is walkable on a map.
   """
   def walkable?(map_name, x, y) do

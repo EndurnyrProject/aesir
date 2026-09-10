@@ -24,34 +24,6 @@ defmodule Aesir.ZoneServer.Guild.Progression.DataTest do
     end
   end
 
-  describe "max_guild_level/0" do
-    test "is derived from the exp table" do
-      assert Data.max_guild_level() == 50
-    end
-  end
-
-  describe "level_for_exp/1" do
-    test "zero exp is level 1 with no progress" do
-      assert Data.level_for_exp(0) == {1, 0}
-    end
-
-    @tag game_mode: :renewal
-    test "consuming Renewal thresholds carries the remainder" do
-      assert Data.level_for_exp(100_000) == {2, 0}
-      assert Data.level_for_exp(100_000 + 400_000 + 5) == {3, 5}
-    end
-
-    @tag game_mode: :pre_renewal
-    test "consuming pre-renewal thresholds carries the remainder" do
-      assert Data.level_for_exp(2_000_000) == {2, 0}
-      assert Data.level_for_exp(2_000_000 + 4_000_000 + 5) == {3, 5}
-    end
-
-    test "clamps at the level cap" do
-      assert Data.level_for_exp(999_999_999_999) == {50, 0}
-    end
-  end
-
   describe "import overlay" do
     setup context do
       on_exit(&Data.reload/0)

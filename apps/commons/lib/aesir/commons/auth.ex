@@ -52,29 +52,6 @@ defmodule Aesir.Commons.Auth do
   end
 
   @doc """
-  Updates an account.
-  """
-  def update_account(%Account{} = account, attrs) do
-    attrs =
-      if attrs[:user_pass] || attrs["user_pass"] do
-        Map.put(attrs, :user_pass, hash_password(attrs[:user_pass] || attrs["user_pass"]))
-      else
-        attrs
-      end
-
-    account
-    |> Account.changeset(attrs)
-    |> Repo.update()
-  end
-
-  @doc """
-  Deletes an account.
-  """
-  def delete_account(%Account{} = account) do
-    Repo.delete(account)
-  end
-
-  @doc """
   Hashes a password using bcrypt.
   """
   def hash_password(password) when is_binary(password) do

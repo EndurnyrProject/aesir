@@ -81,14 +81,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   end
 
   @doc """
-  Gets count of active mobs on a map.
-  """
-  @spec count_mobs(String.t()) :: integer()
-  def count_mobs(map_name) do
-    DynamicSupervisor.count_children(server(map_name)).active
-  end
-
-  @doc """
   Suspends the AI loop of every mob on a map (see `MobSession.sleep/1`).
   """
   @spec sleep_all_mobs(String.t()) :: :ok
@@ -226,21 +218,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
       nil -> :ok
       pid -> DynamicSupervisor.stop(pid)
     end
-  end
-
-  @doc """
-  Gets supervisor info for debugging.
-  """
-  @spec get_supervisor_info(String.t()) :: map()
-  def get_supervisor_info(map_name) do
-    children = DynamicSupervisor.count_children(server(map_name))
-
-    %{
-      map_name: map_name,
-      active_mobs: children.active,
-      supervisor_pid: GenServer.whereis(server(map_name)),
-      processes: get_mob_processes(map_name)
-    }
   end
 
   # GenServer Callbacks

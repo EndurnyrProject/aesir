@@ -786,13 +786,6 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
   end
 
   @doc """
-  Checks if player is moving for combat purposes.
-  """
-  @spec combat_moving?(t()) :: boolean()
-  def combat_moving?(%__MODULE__{action_state: :combat_moving}), do: true
-  def combat_moving?(_), do: false
-
-  @doc """
   Checks whether the after-cast act delay has elapsed.
 
   Mirrors `AttackSpeed.can_attack?/2`: an `act_delay_until` of `0` means no

@@ -140,12 +140,4 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RaceModifiers do
 
   @spec undead_element?(term()) :: boolean()
   defp undead_element?(element), do: element == :undead or match?({:undead, _level}, element)
-
-  @doc """
-  Checks the `:boss` classification label for compatibility with existing callers.
-  Boss classification is independent of a unit's race.
-  """
-  @spec boss?(atom()) :: boolean()
-  def boss?(:boss), do: true
-  def boss?(_), do: false
 end
