@@ -1,8 +1,9 @@
 defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   @moduledoc """
-  Castle economy buildins for the script DSL: castle identity and ownership
-  lookups, economy/defense figures and investment cost, guild leadership
-  checks, and recording an investment.
+  Castle economy and guardian buildins for the script DSL: castle identity
+  and ownership lookups, economy/defense figures and investment cost, guild
+  leadership checks, recording an investment, and listing/pre-checking/hiring
+  guardian slots.
 
   Imported into scripts via the `Aesir.ZoneServer.Script.Dsl` facade. This is
   the only seam through which a hand-written NPC (the WoE steward) reaches
@@ -16,6 +17,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Economy
+  alias Aesir.ZoneServer.Mmo.Woe.Guardians
   alias Aesir.ZoneServer.Script.Ctx
 
   @doc """
@@ -82,6 +84,55 @@ defmodule Aesir.ZoneServer.Script.Dsl.Castle do
   def castle_invest(%Ctx{game_state: gs} = ctx, castle_id, kind) do
     case Economy.invest(castle_id, kind, gs.guild_id) do
       {:ok, _cost} -> ctx
+      {:error, reason} -> Ctx.halt(ctx, reason)
+    end
+  end
+
+  @doc """
+  The castle's eight guardian slots in slot order, each with its type and
+  whether it is currently hired.
+  """
+  @spec castle_guardians(Ctx.t(), non_neg_integer()) :: [
+          %{slot: 0..7, type: :soldier | :archer | :knight, hired?: boolean()}
+        ]
+  def castle_guardians(%Ctx{}, castle_id) do
+    {:ok, castle} = CastleDb.by_id(castle_id)
+    hired = CastleStore.guardians(castle_id)
+
+    castle.guardians
+    |> Enum.with_index()
+    |> Enum.map(fn {slot_def, slot} ->
+      %{slot: slot, type: slot_def.type, hired?: slot in hired}
+    end)
+  end
+
+  @doc """
+  Validates hiring `slot` at `castle_id` for the attached player's guild,
+  without hiring it. Raises on a detached ctx.
+  """
+  @spec castle_guardian_hire_check(Ctx.t(), non_neg_integer(), 0..7) ::
+          :ok | {:error, :not_owner | :research_required | :invalid_slot | :already_hired}
+  def castle_guardian_hire_check(%Ctx{game_state: nil}, _castle_id, _slot),
+    do: no_player!("castle_guardian_hire_check/3")
+
+  def castle_guardian_hire_check(%Ctx{game_state: gs}, castle_id, slot) do
+    Guardians.hire_check(castle_id, slot, gs.guild_id)
+  end
+
+  @doc """
+  Hires `slot` at `castle_id` for the attached player's guild. Halts with the
+  rejection reason (`:not_owner`, `:research_required`, `:invalid_slot`,
+  `:already_hired`) on failure; returns `ctx` unchanged on success.
+  """
+  @spec castle_hire_guardian(Ctx.t(), non_neg_integer(), 0..7) :: Ctx.t()
+  def castle_hire_guardian(%Ctx{status: {:error, _}} = ctx, _castle_id, _slot), do: ctx
+
+  def castle_hire_guardian(%Ctx{game_state: nil} = ctx, _castle_id, _slot),
+    do: Ctx.halt(ctx, :no_player)
+
+  def castle_hire_guardian(%Ctx{game_state: gs} = ctx, castle_id, slot) do
+    case Guardians.hire(castle_id, slot, gs.guild_id) do
+      :ok -> ctx
       {:error, reason} -> Ctx.halt(ctx, reason)
     end
   end

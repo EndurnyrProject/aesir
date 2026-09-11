@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   - `Dsl.Reads` — pure reads: identity, vitals, equip/item inspection, party,
     NPC info, time, string helpers
   - `Dsl.Castle` — castle identity/ownership/economy reads, guild leadership,
-    recording an investment
+    recording an investment, guardian slot listing/pre-check/hire
 
   Shared non-public plumbing lives in `Dsl.Internal`. Adding a buildin means
   implementing it in a domain module, delegating it here, and updating the
@@ -299,6 +299,9 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate castle_invest_cost(ctx, castle_id, kind), to: Castle
   defdelegate is_guild_leader(ctx, guild_id), to: Castle
   defdelegate castle_invest(ctx, castle_id, kind), to: Castle
+  defdelegate castle_guardians(ctx, castle_id), to: Castle
+  defdelegate castle_guardian_hire_check(ctx, castle_id, slot), to: Castle
+  defdelegate castle_hire_guardian(ctx, castle_id, slot), to: Castle
 
   # -- NpcControl (Dsl.NpcControl) ---------------------------------------------
 
