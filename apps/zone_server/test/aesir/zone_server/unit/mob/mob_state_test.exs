@@ -510,6 +510,152 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "configure_summon/2 guild_id" do
+    test "absent guild_id option leaves guild_id at 0" do
+      state = build_mob_state()
+      configured = MobState.configure_summon(state, [])
+
+      assert configured.guild_id == 0
+    end
+
+    test "guild_id option sets the guild_id" do
+      state = build_mob_state()
+      configured = MobState.configure_summon(state, guild_id: 7)
+
+      assert configured.guild_id == 7
+    end
+
+    test "guild_id is exposed on the combatant" do
+      state = build_mob_state()
+      combatant = state |> MobState.configure_summon(guild_id: 7) |> MobState.to_combatant()
+
+      assert combatant.guild_id == 7
+    end
+
+    test "absent guild_id option leaves combatant guild_id at 0" do
+      state = build_mob_state()
+      combatant = state |> MobState.configure_summon([]) |> MobState.to_combatant()
+
+      assert combatant.guild_id == 0
+    end
+  end
+
+  describe "same_guild?/2" do
+    test "returns false when guild_id is 0 vs 0" do
+      state = build_mob_state()
+
+      refute MobState.same_guild?(state, 0)
+    end
+
+    test "returns false when guild_id is 0 vs nil" do
+      state = build_mob_state()
+
+      refute MobState.same_guild?(state, nil)
+    end
+
+    test "returns true when guild_id matches" do
+      state = %{build_mob_state() | guild_id: 7}
+
+      assert MobState.same_guild?(state, 7)
+    end
+
+    test "returns false when guild_id does not match" do
+      state = %{build_mob_state() | guild_id: 7}
+
+      refute MobState.same_guild?(state, 8)
+    end
+  end
+
+  describe "to_combatant/1 with atk stat bonus" do
+    test "stat_bonus atk raises combat_stats.atk by exact amount" do
+      state = build_mob_state()
+
+      combatant =
+        state
+        |> MobState.configure_summon(stat_bonus: %{atk: 10})
+        |> MobState.to_combatant()
+
+      assert combatant.combat_stats.atk == 50 + 10
+    end
+
+    test "absent atk bonus leaves atk unchanged" do
+      state = build_mob_state()
+      combatant = state |> MobState.configure_summon([]) |> MobState.to_combatant()
+
+      assert combatant.combat_stats.atk == 50
+    end
+
+    test "atk bonus and status modifiers stack" do
+      state = build_mob_state()
+      Registry.register_module(TestAtkBuff)
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+
+      baseline =
+        state
+        |> MobState.configure_summon([])
+        |> MobState.to_combatant()
+        |> Map.get(:combat_stats)
+        |> Map.get(:atk)
+
+      with_bonus =
+        state
+        |> MobState.configure_summon(stat_bonus: %{atk: 10})
+        |> MobState.to_combatant()
+        |> Map.get(:combat_stats)
+        |> Map.get(:atk)
+
+      StatusStorage.apply_status(:mob, state.instance_id, :sc_test_mob_atk_buff, val1: 30)
+
+      with_bonus_and_status =
+        state
+        |> MobState.configure_summon(stat_bonus: %{atk: 10})
+        |> MobState.to_combatant()
+        |> Map.get(:combat_stats)
+        |> Map.get(:atk)
+
+      assert with_bonus == baseline + 10
+      assert with_bonus_and_status == baseline + 10 + 30
+    end
+  end
+
+  describe "to_combatant/1 attack delay with aspd_rate" do
+    test "get_attack_delay returns the mob's base attack_delay with no bonus" do
+      state = build_mob_state()
+
+      delay = MobState.get_attack_delay(state)
+
+      assert delay == 1200
+    end
+
+    test "aspd_rate bonus reduces attack_delay" do
+      state = %{build_mob_state() | stat_bonus: %{aspd_rate: 5}}
+
+      delay = MobState.get_attack_delay(state)
+
+      expected = div(1200 * (100 - 5), 100)
+      assert delay == expected
+      assert delay == 1140
+    end
+
+    test "aspd_rate is applied to attack_delay_ms on combatant" do
+      state = build_mob_state()
+
+      combatant =
+        state
+        |> MobState.configure_summon(stat_bonus: %{aspd_rate: 5})
+        |> MobState.to_combatant()
+
+      assert combatant.attack_delay_ms == 1140
+    end
+
+    test "absent aspd_rate leaves attack_delay_ms at base value" do
+      state = build_mob_state()
+      combatant = state |> MobState.configure_summon([]) |> MobState.to_combatant()
+
+      assert combatant.attack_delay_ms == 1200
+    end
+  end
+
   describe "recalculate_max_hp/1" do
     test "a freshly built mob records its base_max_hp" do
       state = build_mob_state()

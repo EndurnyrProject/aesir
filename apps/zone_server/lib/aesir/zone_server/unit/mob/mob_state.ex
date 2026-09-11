@@ -19,7 +19,12 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   @type ai_state :: :idle | :alert | :combat | :chase | :return
   @type movement_state :: :standing | :moving | :returning
-  @type stat_bonus :: %{optional(:def) => integer(), optional(:mdef) => integer()}
+  @type stat_bonus :: %{
+          optional(:def) => integer(),
+          optional(:mdef) => integer(),
+          optional(:atk) => integer(),
+          optional(:aspd_rate) => 0..100
+        }
 
   @enforce_keys [
     :instance_id,
@@ -83,6 +88,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     casting: nil,
     master_id: nil,
     owner_player_id: nil,
+    guild_id: 0,
     stat_bonus: %{},
     no_exp: false,
     no_drops: false,
@@ -168,6 +174,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           casting: map() | nil,
           master_id: integer() | nil,
           owner_player_id: integer() | nil,
+          guild_id: non_neg_integer(),
           stat_bonus: stat_bonus(),
           no_exp: boolean(),
           no_drops: boolean(),
@@ -373,6 +380,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       unit_type: :mob,
       social_root: {:mob, mob_state.instance_id},
       reward_root: nil,
+      guild_id: mob_state.guild_id,
       base_stats: %{
         str: mob_data.stats.str + modifier(modifiers, :str),
         agi: mob_data.stats.agi + modifier(modifiers, :agi),
@@ -389,7 +397,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           formulas.calculate_defense(mob_data) + modifier(modifiers, :def) +
             Map.get(stat_bonus, :def, 0),
         soft_def: formulas.calculate_soft_defense(mob_data),
-        atk: formulas.calculate_base_attack(mob_data) + modifier(modifiers, :atk),
+        atk:
+          formulas.calculate_base_attack(mob_data) + modifier(modifiers, :atk) +
+            Map.get(stat_bonus, :atk, 0),
         matk: mob_matk + modifier(modifiers, :matk),
         matk_min: mob_matk + modifier(modifiers, :matk),
         matk_max: mob_matk + modifier(modifiers, :matk),
@@ -416,7 +426,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         size: mob_data.size
       },
       attack_range: mob_data.attack_range,
-      attack_delay_ms: mob_data.attack_delay,
+      attack_delay_ms: get_attack_delay(mob_state),
       position: {mob_state.x, mob_state.y},
       map_name: mob_state.map_name,
       class: if(is_boss?(mob_state), do: :boss, else: :normal),
@@ -645,6 +655,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       %{
         state
         | owner_player_id: Keyword.get(opts, :owner_player_id),
+          guild_id: Keyword.get(opts, :guild_id, 0),
           no_exp: Keyword.get(opts, :no_exp, false),
           no_drops: Keyword.get(opts, :no_drops, false),
           stat_bonus: Keyword.get(opts, :stat_bonus, %{})
@@ -838,11 +849,21 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   end
 
   @doc """
-  Gets the mob's attack delay in milliseconds.
+  Gets the mob's attack delay in milliseconds, applying any aspd_rate bonus.
   """
   @spec get_attack_delay(t()) :: integer()
-  def get_attack_delay(%__MODULE__{mob_data: mob_data}) do
-    mob_data.attack_delay
+  def get_attack_delay(%__MODULE__{mob_data: mob_data, stat_bonus: stat_bonus}) do
+    rate = Map.get(stat_bonus, :aspd_rate, 0)
+    div(mob_data.attack_delay * (100 - rate), 100)
+  end
+
+  @doc """
+  Checks if the mob belongs to the same guild as the given guild_id.
+  Returns true only when mob guild_id > 0 and equals the argument.
+  """
+  @spec same_guild?(t(), non_neg_integer() | nil) :: boolean()
+  def same_guild?(%__MODULE__{guild_id: guild_id}, other_guild_id) do
+    guild_id > 0 && guild_id == other_guild_id
   end
 
   # Private Helper Functions
