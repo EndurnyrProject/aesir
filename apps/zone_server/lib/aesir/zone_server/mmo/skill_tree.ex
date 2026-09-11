@@ -456,7 +456,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
         ]
 
       :error ->
-        Logger.warning(
+        Logger.debug(
           "[SkillTree] #{job_name} tree references unimplemented skill " <>
             "#{inspect(entry["name"])}, dropping it"
         )
