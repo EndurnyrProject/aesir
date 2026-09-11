@@ -3,8 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.SchedulerTest do
   use Mimic
 
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Mmo.Woe.Economy
   alias Aesir.ZoneServer.Mmo.Woe.Scheduler
   alias Aesir.ZoneServer.Mmo.Woe.Server
+  alias Aesir.ZoneServer.Mmo.Woe.Treasure
 
   # Fixed dates: 2026-07-05 is a Sunday, so 07-07 is a Tuesday and 07-11 a Saturday.
   @tue_window [{2, {21, 0}, {23, 0}}]
@@ -13,6 +15,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.SchedulerTest do
   @tue_2259 ~N[2026-07-07 22:59:00]
   @tue_2300 ~N[2026-07-07 23:00:00]
   @wed_2100 ~N[2026-07-08 21:00:00]
+
+  @day_0000 ~N[2026-07-07 00:00:00]
+  @day_0001 ~N[2026-07-07 00:01:00]
+  @day_0930 ~N[2026-07-07 09:30:00]
+  @yesterday ~D[2026-07-06]
+  @today ~D[2026-07-07]
 
   describe "Config.woe_schedule/0" do
     test "defaults to Tue/Thu 21:00-23:00 and Sat 16:00-18:00" do
@@ -47,6 +55,60 @@ defmodule Aesir.ZoneServer.Mmo.Woe.SchedulerTest do
 
     test "an empty schedule is always :inactive" do
       assert Scheduler.desired_state([], @tue_2100) == :inactive
+    end
+  end
+
+  describe "daily_actions/2" do
+    test "no maturation and no spawn at 00:00 with nothing matured yet" do
+      state = %Scheduler{now_fun: fn -> @day_0000 end, last_matured_on: nil}
+      assert Scheduler.daily_actions(state, @day_0000) == {false, false}
+    end
+
+    test "matures and spawns at 00:01 with nothing matured yet" do
+      state = %Scheduler{now_fun: fn -> @day_0001 end, last_matured_on: nil}
+      assert Scheduler.daily_actions(state, @day_0001) == {true, true}
+    end
+
+    test "matures without spawning at 09:30 when not yet matured today" do
+      for last_matured_on <- [nil, @yesterday] do
+        state = %Scheduler{now_fun: fn -> @day_0930 end, last_matured_on: last_matured_on}
+        assert Scheduler.daily_actions(state, @day_0930) == {true, false}
+      end
+    end
+
+    test "neither matures nor spawns at 09:30 when already matured today" do
+      state = %Scheduler{now_fun: fn -> @day_0930 end, last_matured_on: @today}
+      assert Scheduler.daily_actions(state, @day_0930) == {false, false}
+    end
+
+    test "catches up at 00:01 when the stored date is yesterday" do
+      state = %Scheduler{now_fun: fn -> @day_0001 end, last_matured_on: @yesterday}
+      assert Scheduler.daily_actions(state, @day_0001) == {true, true}
+    end
+  end
+
+  describe "daily tick" do
+    test "matures and spawns treasure once at 00:01, then neither at 00:02" do
+      Mimic.copy(Server)
+      stub(Server, :active?, fn -> false end)
+
+      expect(Economy, :mature_all, fn -> :ok end)
+      expect(Treasure, :spawn_all, fn -> :ok end)
+
+      {:ok, clock} = Agent.start_link(fn -> @day_0001 end)
+      now_fun = fn -> Agent.get(clock, & &1) end
+
+      pid = start_supervised!({Scheduler, now_fun: now_fun})
+      Mimic.allow(Server, self(), pid)
+      Mimic.allow(Economy, self(), pid)
+      Mimic.allow(Treasure, self(), pid)
+
+      send(pid, :tick)
+      :sys.get_state(pid)
+
+      Agent.update(clock, fn _ -> ~N[2026-07-07 00:02:00] end)
+      send(pid, :tick)
+      :sys.get_state(pid)
     end
   end
 
