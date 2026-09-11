@@ -115,7 +115,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     end)
 
     castle = hd(CastleDb.all())
-    :ok = CastleStore.hydrate(%{castle.id => 9})
+
+    :ok =
+      CastleStore.hydrate(%{
+        castle.id => %{
+          guild_id: 9,
+          economy: 0,
+          defense: 0,
+          invested_economy: 0,
+          invested_defense: 0
+        }
+      })
 
     assert :ok = Server.start()
     drain_summons(length(CastleDb.all()))

@@ -27,7 +27,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.BreakClaimTest do
   end
 
   test "retains an existing owner when the break has no guild credit", %{castle_id: castle_id} do
-    :ok = CastleStore.hydrate(%{castle_id => 9})
+    :ok =
+      CastleStore.hydrate(%{
+        castle_id => %{
+          guild_id: 9,
+          economy: 0,
+          defense: 0,
+          invested_economy: 0,
+          invested_defense: 0
+        }
+      })
 
     assert CastleStore.claim_break(castle_id, 1_234, nil) ==
              {:ok,

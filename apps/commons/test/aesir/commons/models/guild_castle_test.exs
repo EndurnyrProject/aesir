@@ -43,6 +43,18 @@ defmodule Aesir.Commons.Models.GuildCastleTest do
                errors_on(GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{defense: nil})))
     end
 
+    test "rejects negative invested_economy and invested_defense" do
+      assert %{invested_economy: _} =
+               errors_on(
+                 GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{invested_economy: -1}))
+               )
+
+      assert %{invested_defense: _} =
+               errors_on(
+                 GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{invested_defense: -1}))
+               )
+    end
+
     test "rejects a duplicate castle_id as a changeset error, not a raised error" do
       assert {:ok, _castle} =
                %GuildCastle{}
@@ -65,6 +77,16 @@ defmodule Aesir.Commons.Models.GuildCastleTest do
 
       assert castle.economy == 0
       assert castle.defense == 0
+    end
+
+    test "defaults invested_economy and invested_defense to 0 on insert" do
+      assert {:ok, castle} =
+               %GuildCastle{}
+               |> GuildCastle.changeset(valid_attrs())
+               |> Repo.insert()
+
+      assert castle.invested_economy == 0
+      assert castle.invested_defense == 0
     end
   end
 

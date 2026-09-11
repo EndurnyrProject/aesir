@@ -129,7 +129,7 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
     assert CastleStore.get(@castle_id).epoch == 1
     assert_receive {:announcement, %Announcement{text: conquest}}, 1000
     assert conquest == "#{castle.name} conquered by Siege#{attacker.character.id}"
-    assert Persistence.load_all()[@castle_id] == guild_id
+    assert Persistence.load_all()[@castle_id].guild_id == guild_id
     assert_eventually(fn -> get_player_state(outsider.pid).map_name == "prontera" end)
     assert_eventually(fn -> get_player_state(loading.pid).map_name == "prontera" end)
     assert {get_player_state(loading.pid).x, get_player_state(loading.pid).y} == {150, 150}
@@ -339,7 +339,7 @@ defmodule Aesir.ZoneServer.Integration.WoeCorrectnessIntegrationTest do
     replacement = await_replacement(old_id)
     assert CastleStore.owner(@castle_id) == guild_id
     assert CastleStore.get(@castle_id).epoch == 1
-    assert Persistence.load_all()[@castle_id] == guild_id
+    assert Persistence.load_all()[@castle_id].guild_id == guild_id
     assert get_player_state(outsider.pid).map_name == castle.map
     refute_receive {:announcement, %Announcement{}}, 100
     :ok = Lifecycle.publish(event)

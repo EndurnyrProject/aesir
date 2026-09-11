@@ -28,15 +28,15 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
 
     test "round-trips ownership through load_all/0" do
       :ok = Persistence.persist(5, 100)
-      assert Persistence.load_all() == %{5 => 100}
+      assert Persistence.load_all()[5].guild_id == 100
     end
 
     test "releases a castle when guild_id is nil" do
       :ok = Persistence.persist(5, 100)
-      assert Persistence.load_all() == %{5 => 100}
+      assert Persistence.load_all()[5].guild_id == 100
 
       :ok = Persistence.persist(5, nil)
-      assert Persistence.load_all() == %{}
+      assert Persistence.load_all()[5].guild_id == nil
     end
 
     test "does not overwrite economy or defense fields" do
@@ -66,24 +66,46 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
   end
 
   describe "load_all/0" do
-    test "returns only occupied castles" do
-      assert Persistence.load_all() == %{}
+    test "returns the full row for every castle, including unowned ones" do
+      rows = Persistence.load_all()
+
+      assert map_size(rows) == 20
+
+      assert rows[0] == %{
+               guild_id: nil,
+               economy: 0,
+               defense: 0,
+               invested_economy: 0,
+               invested_defense: 0
+             }
 
       :ok = Persistence.persist(0, 10)
       :ok = Persistence.persist(1, 20)
-      :ok = Persistence.persist(2, 30)
 
-      assert Persistence.load_all() == %{0 => 10, 1 => 20, 2 => 30}
+      rows = Persistence.load_all()
+      assert rows[0].guild_id == 10
+      assert rows[1].guild_id == 20
+      assert rows[2].guild_id == nil
 
       :ok = Persistence.persist(1, nil)
 
-      assert Persistence.load_all() == %{0 => 10, 2 => 30}
+      assert Persistence.load_all()[1].guild_id == nil
+    end
+  end
+
+  describe "persist_economy/2" do
+    test "writes economy, defense, and investment counters, round-tripped by load_all/0" do
+      economy_state = %{economy: 40, defense: 25, invested_economy: 2, invested_defense: 1}
+
+      :ok = Persistence.persist_economy(3, economy_state)
+
+      assert Persistence.load_all()[3] == Map.put(economy_state, :guild_id, nil)
     end
   end
 
   defp wait_for_ownership(castle_id, expected_guild_id, retries, delay_ms) do
     cond do
-      Persistence.load_all()[castle_id] == expected_guild_id ->
+      Persistence.load_all()[castle_id].guild_id == expected_guild_id ->
         :ok
 
       retries > 0 ->

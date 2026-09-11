@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
 
     assert :ok = Rules.validate_target(attacker, target, %{skill_id: nil})
 
-    :ok = CastleStore.hydrate(%{castle.id => 7})
+    :ok = CastleStore.hydrate(%{castle.id => castle_owner_row(7)})
     assert {:error, :owner_guild} = Rules.validate_target(attacker, target, %{skill_id: nil})
 
     :ok = MapFlags.set_runtime(castle.map, :gvg, false)
@@ -290,7 +290,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
              AutoAttack.execute_homunculus_attack(homunculus, {:mob, @emperium_unit_id})
 
     Process.put(:task4_hom_guild, guild_state(7, %{10_000 => 1}))
-    :ok = CastleStore.hydrate(%{castle.id => 7})
+    :ok = CastleStore.hydrate(%{castle.id => castle_owner_row(7)})
 
     assert {:error, :owner_guild} =
              AutoAttack.execute_homunculus_attack(homunculus, {:mob, @emperium_unit_id})
@@ -456,7 +456,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
              AutoAttack.execute_attack(%{}, caster_state, @emperium_unit_id, &Function.identity/1)
 
     Process.put(:task4_guild, guild_state(7, %{10_000 => 1}))
-    :ok = CastleStore.hydrate(%{castle.id => 7})
+    :ok = CastleStore.hydrate(%{castle.id => castle_owner_row(7)})
 
     assert {{:error, :owner_guild}, ^caster_state} =
              AutoAttack.execute_attack(%{}, caster_state, @emperium_unit_id, &Function.identity/1)
@@ -467,7 +467,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
              AutoAttack.execute_attack(%{}, caster_state, @emperium_unit_id, &Function.identity/1)
 
     :ok = MapFlags.set_runtime(castle.map, :gvg, true)
-    :ok = CastleStore.hydrate(%{castle.id => 8})
+    :ok = CastleStore.hydrate(%{castle.id => castle_owner_row(8)})
 
     assert {{:error, :stale_emperium}, ^caster_state} =
              AutoAttack.execute_attack(
@@ -509,6 +509,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.EmperiumEligibilityTest do
 
     assert {{:error, :guild_required}, ^caster_state} =
              AutoAttack.execute_attack(%{}, caster_state, @emperium_unit_id, &Function.identity/1)
+  end
+
+  defp castle_owner_row(guild_id) do
+    %{guild_id: guild_id, economy: 0, defense: 0, invested_economy: 0, invested_defense: 0}
   end
 
   defp player_combatant(guild_id, castle) do
