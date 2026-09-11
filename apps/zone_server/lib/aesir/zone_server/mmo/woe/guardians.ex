@@ -147,29 +147,37 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Guardians do
   Spawns one guardian `slot` of `castle`, scaled from the owner's defense
   level and `Strengthen Guardians` skill level, and records the live unit id.
 
+  Re-checks the castle's live siege flag first and summons nothing when the
+  siege is no longer active, closing the race where the siege ends between a
+  caller reading the flag and this call reaching the map.
+
   A summon failure logs a warning and leaves the slot empty for a later
   attempt.
   """
   @spec spawn_slot(Castle.t(), 0..7) :: :ok
   def spawn_slot(%Castle{id: castle_id, map: map, guardians: slots}, slot) do
-    owner = CastleStore.owner(castle_id)
-    defense = CastleStore.economy(castle_id).defense
-    slot_def = Enum.at(slots, slot)
-    mob_id = Map.fetch!(@mob_ids, slot_def.type)
-    {x, y} = slot_def.cell
-    opts = summon_opts(slot_def, defense, guardup_level(owner), owner, GameMode.mode())
+    if CastleStore.get(castle_id).siege_active? do
+      owner = CastleStore.owner(castle_id)
+      defense = CastleStore.economy(castle_id).defense
+      slot_def = Enum.at(slots, slot)
+      mob_id = Map.fetch!(@mob_ids, slot_def.type)
+      {x, y} = slot_def.cell
+      opts = summon_opts(slot_def, defense, guardup_level(owner), owner, GameMode.mode())
 
-    case Coordinator.summon_mob(map, mob_id, x, y, opts) do
-      {:ok, unit_id} ->
-        :ets.insert(table_for(:castle_guardians), {{castle_id, slot}, unit_id})
-        :ok
+      case Coordinator.summon_mob(map, mob_id, x, y, opts) do
+        {:ok, unit_id} ->
+          :ets.insert(table_for(:castle_guardians), {{castle_id, slot}, unit_id})
+          :ok
 
-      {:error, reason} ->
-        Logger.warning(
-          "Failed to summon guardian for castle #{castle_id} slot #{slot} on #{map}: #{inspect(reason)}"
-        )
+        {:error, reason} ->
+          Logger.warning(
+            "Failed to summon guardian for castle #{castle_id} slot #{slot} on #{map}: #{inspect(reason)}"
+          )
 
-        :ok
+          :ok
+      end
+    else
+      :ok
     end
   end
 

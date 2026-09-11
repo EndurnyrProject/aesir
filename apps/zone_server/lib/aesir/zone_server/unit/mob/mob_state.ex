@@ -863,7 +863,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
   """
   @spec same_guild?(t(), non_neg_integer() | nil) :: boolean()
   def same_guild?(%__MODULE__{guild_id: guild_id}, other_guild_id) do
-    guild_id > 0 && guild_id == other_guild_id
+    guild_id > 0 and guild_id == other_guild_id
   end
 
   # Private Helper Functions

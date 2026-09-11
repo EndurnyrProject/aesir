@@ -185,6 +185,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
     test "summons enabled slots not already live, skipping one already live" do
       [castle | _] = CastleDb.all()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      :ok = CastleStore.set_siege(castle.id, true)
       :ok = CastleStore.put_guardians(castle.id, [0, 1])
       :ets.insert(EtsTable.table_for(:castle_guardians), {{castle.id, 1}, 999})
       stub(GuildManager, :get, fn 1 -> {:error, :not_found} end)
@@ -212,11 +213,23 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
     test "a summon error logs and leaves no row" do
       [castle | _] = CastleDb.all()
       :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      :ok = CastleStore.set_siege(castle.id, true)
       :ok = CastleStore.put_guardians(castle.id, [0])
       stub(GuildManager, :get, fn 1 -> {:error, :not_found} end)
       stub(Coordinator, :summon_mob, fn _, _, _, _, _ -> {:error, :map_not_found} end)
 
       assert Guardians.spawn_all(castle) == :ok
+      assert Guardians.live_slots(castle.id) == []
+    end
+  end
+
+  describe "spawn_slot/2" do
+    test "does not summon when the siege is not active and inserts no live row" do
+      [castle | _] = CastleDb.all()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      reject(&Coordinator.summon_mob/5)
+
+      assert Guardians.spawn_slot(castle, 0) == :ok
       assert Guardians.live_slots(castle.id) == []
     end
   end
@@ -277,6 +290,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.GuardiansTest do
     test "a researched guild despawns and respawns the same slots" do
       [castle | _] = CastleDb.all()
       :ok = CastleStore.hydrate(%{castle.id => row(2)})
+      :ok = CastleStore.set_siege(castle.id, true)
       :ok = CastleStore.put_guardians(castle.id, [0, 2])
       stub(GuildManager, :get, fn 2 -> {:ok, researched_guild(2)} end)
 

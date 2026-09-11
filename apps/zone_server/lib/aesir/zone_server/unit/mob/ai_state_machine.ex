@@ -388,9 +388,23 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     end
   end
 
-  defp can_target?(%MobState{} = state, {:homunculus, _id} = target_ref) do
-    living_enemy?(state, target_ref) and
-      not MobState.same_guild?(state, owner_guild_id(target_ref))
+  defp can_target?(%MobState{guild_id: 0} = state, {:homunculus, _id} = target_ref) do
+    living_enemy?(state, target_ref)
+  end
+
+  defp can_target?(%MobState{guild_id: guild_id} = state, {:homunculus, id})
+       when guild_id > 0 do
+    case UnitRegistry.get_unit(:homunculus, id) do
+      {:ok, {module, target, _pid}} ->
+        combatant = module.to_combatant(target)
+
+        Unit.living?(target) and
+          Relationship.enemy?(MobState.to_combatant(state), combatant) and
+          not MobState.same_guild?(state, owner_guild_id(combatant))
+
+      {:error, :not_found} ->
+        false
+    end
   end
 
   defp can_target?(_state, _target_ref), do: false
@@ -406,9 +420,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     end
   end
 
-  defp owner_guild_id({:homunculus, id}) do
-    with {:ok, {module, target, _pid}} <- UnitRegistry.get_unit(:homunculus, id),
-         {:player, owner_id} <- Relationship.social_root(module.to_combatant(target)),
+  defp owner_guild_id(combatant) do
+    with {:player, owner_id} <- Relationship.social_root(combatant),
          {:ok, {_module, owner, _pid}} <- UnitRegistry.get_unit(:player, owner_id) do
       owner.guild_id
     else

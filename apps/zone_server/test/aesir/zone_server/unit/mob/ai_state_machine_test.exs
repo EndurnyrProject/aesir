@@ -320,6 +320,31 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.target_ref == {:homunculus, 501}
       assert result.ai_state == :alert
     end
+
+    test "an ordinary mob acquiring a homunculus never resolves the owner's guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+        [{:homunculus, 501}]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :homunculus, 501 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 501 ->
+          {:ok, {HomunculusState, homunculus_state(42), nil}}
+
+        :player, _id ->
+          flunk("an ordinary mob must not resolve the homunculus owner's guild")
+      end)
+
+      result = AIStateMachine.check_aggro(aggressive_idle_mob_state())
+
+      assert result.target_ref == {:homunculus, 501}
+      assert result.ai_state == :alert
+    end
   end
 
   describe "find_nearby_targets/1 concealment filter" do
