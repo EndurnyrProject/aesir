@@ -31,6 +31,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
     waiting rooms, hide/cloak
   - `Dsl.Reads` — pure reads: identity, vitals, equip/item inspection, party,
     NPC info, time, string helpers
+  - `Dsl.Castle` — castle identity/ownership/economy reads, guild leadership,
+    recording an investment
 
   Shared non-public plumbing lives in `Dsl.Internal`. Adding a buildin means
   implementing it in a domain module, delegating it here, and updating the
@@ -39,6 +41,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
 
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl.Announce
+  alias Aesir.ZoneServer.Script.Dsl.Castle
   alias Aesir.ZoneServer.Script.Dsl.Dialog
   alias Aesir.ZoneServer.Script.Dsl.Items
   alias Aesir.ZoneServer.Script.Dsl.Movement
@@ -286,6 +289,16 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate party_leader?(ctx), to: Reads
   defdelegate party_leader?(ctx, party_id), to: Reads
   defdelegate strnpcinfo(ctx, type), to: Reads
+
+  # -- Castle (Dsl.Castle) -----------------------------------------------------
+
+  defdelegate castle_at(ctx), to: Castle
+  defdelegate castle_name(ctx, castle_id), to: Castle
+  defdelegate castle_owner(ctx, castle_id), to: Castle
+  defdelegate castle_economy(ctx, castle_id), to: Castle
+  defdelegate castle_invest_cost(ctx, castle_id, kind), to: Castle
+  defdelegate is_guild_leader(ctx, guild_id), to: Castle
+  defdelegate castle_invest(ctx, castle_id, kind), to: Castle
 
   # -- NpcControl (Dsl.NpcControl) ---------------------------------------------
 
