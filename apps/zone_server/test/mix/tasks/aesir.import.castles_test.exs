@@ -96,6 +96,27 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
       assert by_map["payg_cas05"].emperium == [30, 30]
     end
 
+    test "merges the treasure-room seed per map" do
+      by_map = Castles.build(@fixture) |> Map.new(&{&1.map, &1})
+
+      assert %{box_id: 1354, cells: cells} = by_map["prtg_cas01"].treasure
+      assert length(cells) == 24
+      assert hd(cells) == [10, 209]
+    end
+
+    test "every row's treasure has a box id and exactly 24 cells" do
+      Enum.each(Castles.build(@fixture), fn row ->
+        assert %{box_id: box_id, cells: cells} = row.treasure
+        assert is_integer(box_id) and box_id > 0
+        assert length(cells) == 24
+
+        assert Enum.all?(cells, fn
+                 [x, y] -> is_integer(x) and x > 0 and is_integer(y) and y > 0
+                 _other -> false
+               end)
+      end)
+    end
+
     test "is deterministic and sorted by id regardless of input order" do
       shuffled = @fixture |> Enum.reverse() |> Enum.shuffle()
 

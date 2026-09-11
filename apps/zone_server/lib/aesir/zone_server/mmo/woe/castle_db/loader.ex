@@ -57,5 +57,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleDb.Loader do
   @spec convert(atom(), term()) :: term()
   defp convert(:emperium, [x, y]), do: {x, y}
   defp convert(:respawn, [x, y]), do: {x, y}
+
+  defp convert(:treasure, %{"box_id" => box_id, "cells" => cells}) do
+    cells = Enum.map(cells, fn [x, y] -> {x, y} end)
+
+    unless length(cells) == 24 do
+      raise "castle treasure must have exactly 24 cells, got #{length(cells)}"
+    end
+
+    %{box_id: box_id, cells: cells}
+  end
+
   defp convert(_field, value), do: value
 end

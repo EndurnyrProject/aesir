@@ -12,7 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifier do
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
 
-  @type cell_kind :: :emperium | :respawn
+  @type cell_kind :: :emperium | :respawn | :treasure
 
   @doc """
   Verifies every FE castle's Emperium and respawn cells against `MapCache`
@@ -37,8 +37,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifier do
         ]
   defp bad_cells do
     for castle <- CastleDb.all(),
-        {kind, {x, y}} <- [emperium: castle.emperium, respawn: castle.respawn],
+        {kind, {x, y}} <- cells(castle),
         not MapCache.walkable?(castle.map, x, y),
         do: {castle.map, castle.name, kind, x, y}
+  end
+
+  @spec cells(CastleDb.Castle.t()) :: [{cell_kind(), {non_neg_integer(), non_neg_integer()}}]
+  defp cells(castle) do
+    [emperium: castle.emperium, respawn: castle.respawn] ++
+      Enum.map(castle.treasure.cells, &{:treasure, &1})
   end
 end

@@ -38,6 +38,21 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
         CastleVerifier.verify!()
       end
     end
+
+    test "raises naming a non-walkable treasure cell as :treasure" do
+      stub(CastleDb, :all, fn ->
+        [castle(emperium: {5, 5}, respawn: {10, 10}, treasure_cells: [{20, 20}, {21, 21}])]
+      end)
+
+      stub(MapCache, :walkable?, fn
+        "aldeg_cas01", 21, 21 -> false
+        _, _, _ -> true
+      end)
+
+      assert_raise RuntimeError, ~r/aldeg_cas01.*treasure.*\(21, 21\)/, fn ->
+        CastleVerifier.verify!()
+      end
+    end
   end
 
   defp castle(opts) do
@@ -47,7 +62,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
       name: "Neuschwanstein",
       client_id: 0,
       emperium: Keyword.fetch!(opts, :emperium),
-      respawn: Keyword.fetch!(opts, :respawn)
+      respawn: Keyword.fetch!(opts, :respawn),
+      treasure: %{box_id: 1324, cells: Keyword.get(opts, :treasure_cells, [{1, 1}])}
     }
   end
 end
