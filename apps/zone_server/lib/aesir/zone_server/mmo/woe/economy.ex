@@ -228,7 +228,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Economy do
     end
   end
 
+  @doc """
+  HP bonus for `defense` under the given game mode: `50 * div(defense, 5)`
+  in renewal, `1_000 * defense` in pre-renewal.
+  """
   @spec hp_bonus(0..100, Aesir.Commons.GameMode.t()) :: non_neg_integer()
-  defp hp_bonus(defense, :renewal), do: 50 * div(defense, 5)
-  defp hp_bonus(defense, :pre_renewal), do: 1_000 * defense
+  def hp_bonus(defense, :renewal), do: 50 * div(defense, 5)
+  def hp_bonus(defense, :pre_renewal), do: 1_000 * defense
 end
