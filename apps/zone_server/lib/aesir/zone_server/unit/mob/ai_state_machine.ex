@@ -374,24 +374,26 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   end
 
   defp can_target?(%MobState{} = state, {:player, target_id}) do
-    living_unit?(:player, target_id) and
-      not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
-      Interpreter.targetable?(:player, target_id) and
-      not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
-      (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
-  end
+    case UnitRegistry.get_unit(:player, target_id) do
+      {:ok, {_module, target, _pid}} ->
+        Unit.living?(target) and
+          not MobState.same_guild?(state, target.guild_id) and
+          not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
+          Interpreter.targetable?(:player, target_id) and
+          not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
+          (MobState.is_boss?(state) or not Interpreter.concealed?(:player, target_id))
 
-  defp can_target?(%MobState{} = state, {:homunculus, _id} = target_ref),
-    do: living_enemy?(state, target_ref)
-
-  defp can_target?(_state, _target_ref), do: false
-
-  defp living_unit?(type, id) do
-    case UnitRegistry.get_unit(type, id) do
-      {:ok, {_module, target, _pid}} -> Unit.living?(target)
-      {:error, :not_found} -> false
+      {:error, :not_found} ->
+        false
     end
   end
+
+  defp can_target?(%MobState{} = state, {:homunculus, _id} = target_ref) do
+    living_enemy?(state, target_ref) and
+      not MobState.same_guild?(state, owner_guild_id(target_ref))
+  end
+
+  defp can_target?(_state, _target_ref), do: false
 
   defp living_enemy?(state, {type, id}) do
     case UnitRegistry.get_unit(type, id) do
@@ -401,6 +403,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
       {:error, :not_found} ->
         false
+    end
+  end
+
+  defp owner_guild_id({:homunculus, id}) do
+    with {:ok, {module, target, _pid}} <- UnitRegistry.get_unit(:homunculus, id),
+         {:player, owner_id} <- Relationship.social_root(module.to_combatant(target)),
+         {:ok, {_module, owner, _pid}} <- UnitRegistry.get_unit(:player, owner_id) do
+      owner.guild_id
+    else
+      _ -> 0
     end
   end
 

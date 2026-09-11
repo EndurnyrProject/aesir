@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   @moduledoc """
   Finite siege-ground rules shared by WoE consumers.
+
+  A guild-owned mob (a hired guardian) is hostile to every guild but its own:
+  it is only targetable during an active siege, and neither side may hit the
+  other when they share a guild.
   """
 
   alias Aesir.Commons.GameMode
@@ -39,13 +43,25 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
          {:ok, castle} <- fetch_castle(target.map_name),
          castle_state <- CastleStore.get(castle.id),
          :ok <- ensure_live_emperium(castle_state, target.unit_id),
-         guild_id <- attacker_guild_id(attacker),
+         guild_id <- guild_id_of(attacker),
          :ok <- ensure_guild(guild_id),
          {:ok, guild} <- fetch_guild(guild_id),
          :ok <- ensure_approval(guild),
          :ok <- ensure_non_owner(castle_state.owner_guild_id, guild_id) do
       ensure_attack_allowed(hit_info)
     end
+  end
+
+  def validate_target(attacker, %{unit_type: :mob, guild_id: guild_id} = target, hit_info)
+      when is_map(attacker) and is_map(hit_info) and is_integer(guild_id) and guild_id > 0 do
+    with :ok <- ensure_active(target.map_name) do
+      ensure_non_owner(guild_id, guild_id_of(attacker))
+    end
+  end
+
+  def validate_target(%{unit_type: :mob, guild_id: guild_id}, target, hit_info)
+      when is_map(target) and is_map(hit_info) and is_integer(guild_id) and guild_id > 0 do
+    ensure_non_owner(guild_id, guild_id_of(target))
   end
 
   def validate_target(attacker, target, hit_info)
@@ -92,7 +108,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   defp ensure_live_emperium(%{emperium_unit_id: unit_id}, unit_id), do: :ok
   defp ensure_live_emperium(_castle_state, _unit_id), do: {:error, :stale_emperium}
 
-  defp attacker_guild_id(%Combatant{
+  defp guild_id_of(%Combatant{
          unit_type: :homunculus,
          social_root: {:player, owner_id}
        }) do
@@ -102,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
     end
   end
 
-  defp attacker_guild_id(attacker), do: Map.get(attacker, :guild_id)
+  defp guild_id_of(combatant), do: Map.get(combatant, :guild_id)
 
   defp ensure_guild(guild_id) when is_integer(guild_id) and guild_id > 0, do: :ok
   defp ensure_guild(_guild_id), do: {:error, :guild_required}

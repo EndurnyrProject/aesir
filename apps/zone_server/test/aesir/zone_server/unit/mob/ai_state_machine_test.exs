@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   alias Aesir.ZoneServer.Mmo.MobManagement.MobSpawn.SpawnArea
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -209,6 +210,115 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.target_ref == {:player, 2}
       assert result.ai_state == :alert
       assert result.initiated_by_self? == true
+    end
+  end
+
+  describe "owner-aware hostility in the aggro scan" do
+    test "a mob does not acquire a living player from its own guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 7}, nil}}
+      end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a mob acquires a living player from a different guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 8}, nil}}
+      end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == {:player, 2}
+      assert result.ai_state == :alert
+    end
+
+    test "a guildless mob still acquires a player belonging to a guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 7}, nil}}
+      end)
+
+      result = AIStateMachine.check_aggro(aggressive_idle_mob_state())
+
+      assert result.target_ref == {:player, 2}
+      assert result.ai_state == :alert
+    end
+
+    test "a mob does not acquire a homunculus whose owner shares its guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+        [{:homunculus, 501}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 501 ->
+          {:ok, {HomunculusState, homunculus_state(42), nil}}
+
+        :player, 42 ->
+          {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 7}, nil}}
+      end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a mob acquires a homunculus whose owner belongs to a different guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+        [{:homunculus, 501}]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :homunculus, 501 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 501 ->
+          {:ok, {HomunculusState, homunculus_state(42), nil}}
+
+        :player, 42 ->
+          {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 8}, nil}}
+      end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == {:homunculus, 501}
+      assert result.ai_state == :alert
     end
   end
 
@@ -704,6 +814,62 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
   defp living_player_state do
     %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+  end
+
+  defp homunculus_state(owner_character_id) do
+    %HomunculusState{
+      id: 501,
+      owner_character_id: owner_character_id,
+      owner_session_pid: self(),
+      class_id: 6_001,
+      name: "Test Homunculus",
+      lifecycle: :active,
+      level: 50,
+      exp: 0,
+      skill_points: 0,
+      hp: 100,
+      max_hp: 100,
+      sp: 50,
+      max_sp: 50,
+      str: 30,
+      agi: 25,
+      vit: 20,
+      int: 15,
+      dex: 35,
+      luk: 10,
+      hunger: 80,
+      intimacy_hundredths: 9_500,
+      active_remaining_ms: 1_000_000,
+      learned_skills: %{},
+      cooldowns: %{},
+      ai_config: %{},
+      world_gid: 501,
+      map_name: "prontera",
+      x: 100,
+      y: 100,
+      dir: 4,
+      action_state: :idle,
+      movement_state: :standing,
+      target: nil,
+      casting: nil,
+      race: :demi_human,
+      element: {:neutral, 1},
+      size: :medium,
+      attack_range: 1,
+      attack_delay_ms: 500,
+      combat_stats: %{
+        atk: 50,
+        def: 20,
+        hit: 100,
+        flee: 80,
+        perfect_dodge: 0,
+        matk: 30,
+        matk_min: 25,
+        matk_max: 35,
+        mdef: 10,
+        soft_mdef: 0
+      }
+    }
   end
 
   defp base_mob_state(opts \\ []) do
