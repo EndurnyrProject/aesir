@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.16.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.15.0...aesir-v0.16.0) (2026-09-11)
+
+
+### Features
+
+* **npc:** exclude castle script directories from the transpiler ([35aae89](https://github.com/EndurnyrProject/aesir/commit/35aae89b3043d413c015644cef9ab55e4c05c051))
+* **script:** castle economy DSL ops ([4ba1ef7](https://github.com/EndurnyrProject/aesir/commit/4ba1ef757548077d9b4b397560bc72eef55edffb))
+* **skill:** accept mode-keyed definition options and expose definition/1 ([8ad385a](https://github.com/EndurnyrProject/aesir/commit/8ad385afa9a34ee5aa359e1da9c98317aee1185d))
+* **skill:** index the catalog from the booted mode's definitions ([ae1a82b](https://github.com/EndurnyrProject/aesir/commit/ae1a82bfa198473bb39169cd3b09ce62e223485c))
+* **tooling:** add mix aesir.audit.skills static skill data audit ([44a70b5](https://github.com/EndurnyrProject/aesir/commit/44a70b5e450384e6114f37ccc41a3f475c5450c6))
+* **woe:** add treasure room cells to the castle db ([41e65c1](https://github.com/EndurnyrProject/aesir/commit/41e65c156142e679df1b74869cbed6b6442ef557))
+* **woe:** castle economy rules, investment, maturation and emperium scaling ([29e9588](https://github.com/EndurnyrProject/aesir/commit/29e9588ae327b35b07c080cd0687dd12879eb38a))
+* **woe:** castle steward npc with economy and defense investment ([6a717fa](https://github.com/EndurnyrProject/aesir/commit/6a717fac3e9b2420c3c4074f6600cf5041615e9f))
+* **woe:** daily castle maturation and treasure spawn tick ([548345f](https://github.com/EndurnyrProject/aesir/commit/548345f26a08f06f628bf38831d837b6a4121af4))
+* **woe:** defense-scaled emperium, conquest penalty and treasure slot release ([e40c6fa](https://github.com/EndurnyrProject/aesir/commit/e40c6fa280b8d4f0d6d0d3bfcce6ad665e6e5fa6))
+* **woe:** persist and store castle economy state ([b7ae65a](https://github.com/EndurnyrProject/aesir/commit/b7ae65a98661c3507dccdb78e2dc0f923b9198c5))
+* **woe:** treasure box planner and live-slot table ([28a1800](https://github.com/EndurnyrProject/aesir/commit/28a180029893aecea830d638946a0ccc26be7cd9))
+
+
+### Bug Fixes
+
+* **mob:** floor zero-hp rows to 1 and support summon stat bonuses ([4d3878f](https://github.com/EndurnyrProject/aesir/commit/4d3878fb9f0beccabbb615b48433316e74bb4177))
+
 ## [0.15.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.14.0...aesir-v0.15.0) (2026-09-08)
 
 
