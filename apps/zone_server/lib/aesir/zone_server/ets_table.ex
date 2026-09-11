@@ -266,6 +266,12 @@ defmodule Aesir.ZoneServer.EtsTable do
       table_for(:castle_states, seed),
       [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
     )
+
+    # Live treasure box slots per castle: {{castle_id, slot}, unit_id}.
+    :ets.new(
+      table_for(:castle_treasure, seed),
+      [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
+    )
   end
 
   if Mix.env() == :test do
