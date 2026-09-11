@@ -2,10 +2,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   @moduledoc """
   Per-node GenServer owning the WoE agit lifecycle.
 
-  `start/0` arms every FE castle (`gvg` mapflag, Emperium summon, siege flag),
-  and `stop/0` disarms them (clear `gvg`, despawn the Emperiums, roll-call the
-  owners). Attributed mob-death lifecycle events claim a matching live
-  Emperium before eligible conquest is persisted and announced.
+  `start/0` arms every FE castle (`gvg` mapflag, Emperium summon, siege flag,
+  hired guardians spawned), and `stop/0` disarms them (clear `gvg`, despawn
+  the Emperiums and guardians, roll-call the owners). Attributed mob-death
+  lifecycle events claim a matching live Emperium before eligible conquest is
+  persisted and announced, and a captured castle's guardians are kept or
+  wiped per the new owner's Guardian Research skill.
 
   The respawn timers live here so they outlive the dead Emperium. Re-arming a
   castle's timer cancels the previous one, and a stale timer fire never touches
@@ -28,6 +30,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Economy
+  alias Aesir.ZoneServer.Mmo.Woe.Guardians
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
   alias Aesir.ZoneServer.Mmo.Woe.Treasure
   alias Aesir.ZoneServer.Unit.Lifecycle
@@ -128,13 +131,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
         state
       )
       when is_binary(map_name) do
-    case CastleDb.by_map(map_name) do
-      {:ok, castle} ->
-        Treasure.release(unit_id)
-        handle_emperium_break(castle, unit_id, event.kill_credit, state)
+    case Guardians.release(unit_id) do
+      {:ok, {castle_id, slot}} ->
+        Guardians.clear_slot(castle_id, slot)
+        {:noreply, state}
 
       :error ->
-        {:noreply, state}
+        case CastleDb.by_map(map_name) do
+          {:ok, castle} ->
+            Treasure.release(unit_id)
+            handle_emperium_break(castle, unit_id, event.kill_credit, state)
+
+          :error ->
+            {:noreply, state}
+        end
     end
   end
 
@@ -173,7 +183,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     Enum.each(CastleDb.all(), &arm_castle/1)
   end
 
-  defp arm_castle(%Castle{id: id, map: map, emperium: {x, y}}) do
+  defp arm_castle(%Castle{id: id, map: map, emperium: {x, y}} = castle) do
     opts = Economy.emperium_summon_opts(CastleStore.economy(id).defense, GameMode.mode())
 
     case Coordinator.summon_mob(map, @emperium_mob_id, x, y, opts) do
@@ -181,6 +191,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
         MapFlags.set_runtime(map, :gvg, true)
         CastleStore.set_emperium(id, unit_id)
         CastleStore.set_siege(id, true)
+        Guardians.spawn_all(castle)
 
       {:error, reason} ->
         Logger.warning(
@@ -193,8 +204,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     Enum.each(CastleDb.all(), &disarm_castle/1)
   end
 
-  defp disarm_castle(%Castle{id: id, map: map}) do
+  defp disarm_castle(%Castle{id: id, map: map} = castle) do
     MapFlags.clear_runtime(map, :gvg)
+    Guardians.despawn_all(castle)
     despawn_emperium(map, CastleStore.get(id).emperium_unit_id)
     CastleStore.set_emperium(id, nil)
     CastleStore.set_siege(id, false)
@@ -273,6 +285,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
   defp record_conquest(castle_id, guild_id) do
     Economy.apply_conquest_penalty(castle_id)
+
+    case CastleDb.by_id(castle_id) do
+      {:ok, castle} -> Guardians.on_conquest(castle, guild_id)
+      :error -> Logger.error("Conquest guardian transfer for unknown castle #{castle_id}")
+    end
+
     Persistence.persist(castle_id, guild_id)
     announce_conquest(castle_id, guild_id)
   end

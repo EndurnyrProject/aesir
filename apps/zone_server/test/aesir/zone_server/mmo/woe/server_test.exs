@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Economy
+  alias Aesir.ZoneServer.Mmo.Woe.Guardians
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
   alias Aesir.ZoneServer.Mmo.Woe.Server
   alias Aesir.ZoneServer.Mmo.Woe.Treasure
@@ -39,8 +40,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
     Mimic.allow(MobSupervisor, self(), server)
     Mimic.allow(Manager, self(), server)
     Mimic.allow(Persistence, self(), server)
+    Mimic.allow(Guardians, self(), server)
 
-    :ok
+    {:ok, server: server}
   end
 
   defp castle_count, do: length(CastleDb.all())
@@ -57,6 +59,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
       expect(Coordinator, :summon_mob, castle_count(), fn map, mob_id, x, y, opts ->
         send(test_pid, {:summon, map, mob_id, x, y, opts})
         {:ok, System.unique_integer([:positive])}
+      end)
+
+      expect(Guardians, :spawn_all, castle_count(), fn castle ->
+        send(test_pid, {:guardians_spawn, castle.id})
+        :ok
       end)
 
       expect(Announcement, :to_all, 1, fn opts ->
@@ -78,6 +85,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
         assert map == castle.map
         assert {x, y} == castle.emperium
         refute is_nil(CastleStore.get(castle.id).emperium_unit_id)
+
+        assert_receive {:guardians_spawn, castle_id}, 200
+        assert castle_id == castle.id
       end
 
       assert_receive {:announcement, opts}, 200
@@ -107,6 +117,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
         end
       end)
 
+      expect(Guardians, :spawn_all, castle_count() - 1, fn _castle -> :ok end)
       expect(Announcement, :to_all, 1, fn _opts -> :ok end)
 
       assert :ok = Server.start()
@@ -135,6 +146,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
 
       stub(Announcement, :to_all, fn opts -> send(test_pid, {:announcement, opts.text}) end)
 
+      stub(Guardians, :spawn_all, fn _castle -> :ok end)
+
       assert :ok = Server.start()
       for _ <- 1..castle_count(), do: assert_receive({:summon, _, _, _, _, _}, 200)
       assert_receive {:announcement, "WoE has begun"}, 200
@@ -142,6 +155,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
       expect(MobSupervisor, :terminate_mob, castle_count(), fn map, pid ->
         assert pid == self()
         send(test_pid, {:despawn, map})
+        :ok
+      end)
+
+      expect(Guardians, :despawn_all, castle_count(), fn castle ->
+        send(test_pid, {:guardians_despawn, castle.id})
         :ok
       end)
 
@@ -154,6 +172,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
         assert is_nil(CastleStore.get(castle.id).emperium_unit_id)
         assert_receive {:despawn, map}, 200
         assert map == castle.map
+        assert_receive {:guardians_despawn, castle_id}, 200
+        assert castle_id == castle.id
       end
 
       assert_receive {:announcement, "WoE has ended"}, 200
@@ -252,6 +272,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
       assert :ok = Server.start()
       live_unit_id = CastleStore.get(castle.id).emperium_unit_id
 
+      expect(Guardians, :on_conquest, 1, fn conquered_castle, guild_id ->
+        assert conquered_castle.id == castle.id
+        assert guild_id == 7
+
+        assert CastleStore.economy(castle.id) == %{
+                 economy: 15,
+                 defense: 15,
+                 invested_economy: 0,
+                 invested_defense: 0
+               }
+
+        :ok
+      end)
+
       assert :ok =
                Lifecycle.publish_death(:mob, live_unit_id, castle.map, %{
                  attacker: {:player, 501},
@@ -267,6 +301,66 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
                invested_economy: 0,
                invested_defense: 0
              }
+    end
+  end
+
+  describe "retained ownership skips guardian transfer" do
+    test "an Emperium break without eligible guild credit never calls Guardians.on_conquest/2" do
+      stub(Coordinator, :summon_mob, fn _map, _mob_id, _x, _y, _opts ->
+        {:ok, System.unique_integer([:positive])}
+      end)
+
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+      stub(Guardians, :spawn_all, fn _castle -> :ok end)
+      reject(&Guardians.on_conquest/2)
+
+      castle = hd(CastleDb.all())
+      assert :ok = Server.start()
+      live_unit_id = CastleStore.get(castle.id).emperium_unit_id
+
+      assert :ok =
+               Lifecycle.publish_death(:mob, live_unit_id, castle.map, %{
+                 attacker: {:player, 501},
+                 character_id: 501
+               })
+
+      assert_eventually(fn -> is_nil(CastleStore.get(castle.id).emperium_unit_id) end)
+      assert is_nil(CastleStore.owner(castle.id))
+    end
+  end
+
+  describe "guardian death releases its slot" do
+    test "clears the guardian slot and never attempts an Emperium claim", %{server: server} do
+      test_pid = self()
+
+      Mimic.allow(CastleStore, self(), server)
+      reject(&CastleStore.claim_break/3)
+
+      castle = hd(CastleDb.all())
+      guardian_unit_id = System.unique_integer([:positive])
+
+      expect(Guardians, :release, fn unit_id ->
+        assert unit_id == guardian_unit_id
+        {:ok, {castle.id, 3}}
+      end)
+
+      expect(Guardians, :clear_slot, fn castle_id, slot ->
+        send(test_pid, {:clear_slot, castle_id, slot})
+        :ok
+      end)
+
+      assert :ok =
+               Lifecycle.publish_death(:mob, guardian_unit_id, castle.map, %{
+                 attacker: {:player, 501},
+                 character_id: 501,
+                 guild_id: 7
+               })
+
+      assert_receive {:clear_slot, castle_id, slot}, 200
+      assert castle_id == castle.id
+      assert slot == 3
+
+      assert is_nil(CastleStore.owner(castle.id))
     end
   end
 
@@ -299,6 +393,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
 
       stub(Persistence, :persist, fn _castle_id, _guild_id -> :ok end)
       stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
+      stub(Guardians, :on_conquest, fn _castle, _guild_id -> :ok end)
 
       castle = hd(CastleDb.all())
       assert :ok = Server.start()
