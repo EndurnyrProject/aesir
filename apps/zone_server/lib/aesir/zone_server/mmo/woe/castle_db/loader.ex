@@ -68,5 +68,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleDb.Loader do
     %{box_id: box_id, cells: cells}
   end
 
+  defp convert(:guardians, list) do
+    unless length(list) == 8 do
+      raise "castle guardians must have exactly 8 slots, got #{length(list)}"
+    end
+
+    Enum.map(list, fn %{"type" => type, "cell" => [x, y]} ->
+      %{type: guardian_type(type), cell: {x, y}}
+    end)
+  end
+
   defp convert(_field, value), do: value
+
+  @spec guardian_type(String.t()) :: :soldier | :archer | :knight
+  defp guardian_type("soldier"), do: :soldier
+  defp guardian_type("archer"), do: :archer
+  defp guardian_type("knight"), do: :knight
 end

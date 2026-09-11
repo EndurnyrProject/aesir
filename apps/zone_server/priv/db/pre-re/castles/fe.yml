@@ -6,6 +6,39 @@
   emperium:
     - 216
     - 23
+  guardians:
+    - type: soldier
+      cell:
+        - 17
+        - 218
+    - type: archer
+      cell:
+        - 39
+        - 208
+    - type: archer
+      cell:
+        - 38
+        - 196
+    - type: archer
+      cell:
+        - 45
+        - 228
+    - type: archer
+      cell:
+        - 21
+        - 194
+    - type: knight
+      cell:
+        - 218
+        - 24
+    - type: knight
+      cell:
+        - 213
+        - 24
+    - type: knight
+      cell:
+        - 73
+        - 70
   respawn:
     - 212
     - 175
@@ -67,6 +100,39 @@
   emperium:
     - 213
     - 23
+  guardians:
+    - type: knight
+      cell:
+        - 27
+        - 184
+    - type: knight
+      cell:
+        - 88
+        - 43
+    - type: knight
+      cell:
+        - 117
+        - 46
+    - type: soldier
+      cell:
+        - 60
+        - 202
+    - type: soldier
+      cell:
+        - 51
+        - 183
+    - type: archer
+      cell:
+        - 21
+        - 177
+    - type: archer
+      cell:
+        - 36
+        - 183
+    - type: archer
+      cell:
+        - 210
+        - 7
   respawn:
     - 82
     - 71
@@ -128,6 +194,39 @@
   emperium:
     - 205
     - 31
+  guardians:
+    - type: knight
+      cell:
+        - 90
+        - 112
+    - type: knight
+      cell:
+        - 116
+        - 112
+    - type: soldier
+      cell:
+        - 86
+        - 120
+    - type: soldier
+      cell:
+        - 116
+        - 76
+    - type: soldier
+      cell:
+        - 64
+        - 103
+    - type: archer
+      cell:
+        - 212
+        - 160
+    - type: archer
+      cell:
+        - 195
+        - 151
+    - type: archer
+      cell:
+        - 110
+        - 217
   respawn:
     - 109
     - 112
@@ -189,6 +288,39 @@
   emperium:
     - 36
     - 217
+  guardians:
+    - type: archer
+      cell:
+        - 187
+        - 100
+    - type: archer
+      cell:
+        - 192
+        - 42
+    - type: archer
+      cell:
+        - 148
+        - 88
+    - type: soldier
+      cell:
+        - 145
+        - 209
+    - type: soldier
+      cell:
+        - 169
+        - 53
+    - type: soldier
+      cell:
+        - 198
+        - 77
+    - type: knight
+      cell:
+        - 48
+        - 72
+    - type: knight
+      cell:
+        - 55
+        - 88
   respawn:
     - 60
     - 116
@@ -250,6 +382,39 @@
   emperium:
     - 27
     - 101
+  guardians:
+    - type: archer
+      cell:
+        - 51
+        - 202
+    - type: archer
+      cell:
+        - 188
+        - 79
+    - type: soldier
+      cell:
+        - 157
+        - 192
+    - type: soldier
+      cell:
+        - 157
+        - 74
+    - type: knight
+      cell:
+        - 27
+        - 221
+    - type: knight
+      cell:
+        - 145
+        - 78
+    - type: knight
+      cell:
+        - 156
+        - 73
+    - type: knight
+      cell:
+        - 41
+        - 112
   respawn:
     - 61
     - 185
@@ -311,6 +476,39 @@
   emperium:
     - 197
     - 181
+  guardians:
+    - type: soldier
+      cell:
+        - 67
+        - 179
+    - type: soldier
+      cell:
+        - 184
+        - 20
+    - type: soldier
+      cell:
+        - 62
+        - 41
+    - type: archer
+      cell:
+        - 36
+        - 186
+    - type: archer
+      cell:
+        - 50
+        - 186
+    - type: knight
+      cell:
+        - 50
+        - 67
+    - type: knight
+      cell:
+        - 189
+        - 41
+    - type: knight
+      cell:
+        - 200
+        - 167
   respawn:
     - 40
     - 43
@@ -372,6 +570,39 @@
   emperium:
     - 176
     - 178
+  guardians:
+    - type: soldier
+      cell:
+        - 64
+        - 168
+    - type: soldier
+      cell:
+        - 56
+        - 41
+    - type: soldier
+      cell:
+        - 166
+        - 25
+    - type: archer
+      cell:
+        - 35
+        - 148
+    - type: archer
+      cell:
+        - 20
+        - 150
+    - type: knight
+      cell:
+        - 19
+        - 41
+    - type: knight
+      cell:
+        - 166
+        - 42
+    - type: knight
+      cell:
+        - 159
+        - 188
   respawn:
     - 22
     - 66
@@ -433,6 +664,39 @@
   emperium:
     - 244
     - 166
+  guardians:
+    - type: archer
+      cell:
+        - 48
+        - 176
+    - type: archer
+      cell:
+        - 113
+        - 214
+    - type: soldier
+      cell:
+        - 48
+        - 207
+    - type: soldier
+      cell:
+        - 157
+        - 62
+    - type: soldier
+      cell:
+        - 243
+        - 41
+    - type: knight
+      cell:
+        - 157
+        - 45
+    - type: knight
+      cell:
+        - 234
+        - 25
+    - type: knight
+      cell:
+        - 238
+        - 160
   respawn:
     - 112
     - 23
@@ -494,6 +758,39 @@
   emperium:
     - 174
     - 177
+  guardians:
+    - type: archer
+      cell:
+        - 53
+        - 191
+    - type: archer
+      cell:
+        - 31
+        - 178
+    - type: soldier
+      cell:
+        - 49
+        - 220
+    - type: soldier
+      cell:
+        - 29
+        - 46
+    - type: soldier
+      cell:
+        - 147
+        - 65
+    - type: knight
+      cell:
+        - 57
+        - 46
+    - type: knight
+      cell:
+        - 160
+        - 50
+    - type: knight
+      cell:
+        - 148
+        - 189
   respawn:
     - 58
     - 46
@@ -555,6 +852,39 @@
   emperium:
     - 194
     - 184
+  guardians:
+    - type: archer
+      cell:
+        - 45
+        - 149
+    - type: archer
+      cell:
+        - 71
+        - 163
+    - type: soldier
+      cell:
+        - 72
+        - 142
+    - type: soldier
+      cell:
+        - 66
+        - 47
+    - type: soldier
+      cell:
+        - 177
+        - 50
+    - type: knight
+      cell:
+        - 66
+        - 17
+    - type: knight
+      cell:
+        - 177
+        - 35
+    - type: knight
+      cell:
+        - 193
+        - 166
   respawn:
     - 66
     - 48
@@ -616,6 +946,39 @@
   emperium:
     - 139
     - 139
+  guardians:
+    - type: archer
+      cell:
+        - 229
+        - 92
+    - type: archer
+      cell:
+        - 225
+        - 80
+    - type: archer
+      cell:
+        - 222
+        - 111
+    - type: archer
+      cell:
+        - 99
+        - 45
+    - type: archer
+      cell:
+        - 65
+        - 31
+    - type: archer
+      cell:
+        - 36
+        - 127
+    - type: archer
+      cell:
+        - 51
+        - 144
+    - type: knight
+      cell:
+        - 138
+        - 133
   respawn:
     - 115
     - 57
@@ -677,6 +1040,39 @@
   emperium:
     - 38
     - 25
+  guardians:
+    - type: archer
+      cell:
+        - 237
+        - 54
+    - type: archer
+      cell:
+        - 228
+        - 72
+    - type: archer
+      cell:
+        - 210
+        - 41
+    - type: archer
+      cell:
+        - 57
+        - 241
+    - type: archer
+      cell:
+        - 42
+        - 241
+    - type: archer
+      cell:
+        - 287
+        - 257
+    - type: archer
+      cell:
+        - 264
+        - 272
+    - type: knight
+      cell:
+        - 27
+        - 20
   respawn:
     - 26
     - 265
@@ -738,6 +1134,39 @@
   emperium:
     - 269
     - 265
+  guardians:
+    - type: archer
+      cell:
+        - 245
+        - 37
+    - type: archer
+      cell:
+        - 269
+        - 51
+    - type: archer
+      cell:
+        - 36
+        - 39
+    - type: archer
+      cell:
+        - 41
+        - 39
+    - type: archer
+      cell:
+        - 39
+        - 65
+    - type: archer
+      cell:
+        - 19
+        - 276
+    - type: archer
+      cell:
+        - 37
+        - 277
+    - type: knight
+      cell:
+        - 268
+        - 244
   respawn:
     - 43
     - 264
@@ -799,6 +1228,39 @@
   emperium:
     - 270
     - 28
+  guardians:
+    - type: archer
+      cell:
+        - 251
+        - 212
+    - type: archer
+      cell:
+        - 232
+        - 212
+    - type: archer
+      cell:
+        - 231
+        - 175
+    - type: archer
+      cell:
+        - 32
+        - 287
+    - type: archer
+      cell:
+        - 32
+        - 232
+    - type: archer
+      cell:
+        - 35
+        - 45
+    - type: archer
+      cell:
+        - 36
+        - 17
+    - type: knight
+      cell:
+        - 270
+        - 41
   respawn:
     - 36
     - 272
@@ -860,6 +1322,39 @@
   emperium:
     - 30
     - 30
+  guardians:
+    - type: archer
+      cell:
+        - 19
+        - 279
+    - type: archer
+      cell:
+        - 33
+        - 260
+    - type: archer
+      cell:
+        - 266
+        - 234
+    - type: archer
+      cell:
+        - 266
+        - 279
+    - type: archer
+      cell:
+        - 263
+        - 37
+    - type: archer
+      cell:
+        - 263
+        - 21
+    - type: archer
+      cell:
+        - 250
+        - 22
+    - type: knight
+      cell:
+        - 36
+        - 36
   respawn:
     - 274
     - 246
@@ -921,6 +1416,39 @@
   emperium:
     - 197
     - 197
+  guardians:
+    - type: soldier
+      cell:
+        - 182
+        - 62
+    - type: soldier
+      cell:
+        - 182
+        - 116
+    - type: soldier
+      cell:
+        - 153
+        - 86
+    - type: archer
+      cell:
+        - 59
+        - 28
+    - type: archer
+      cell:
+        - 50
+        - 36
+    - type: knight
+      cell:
+        - 184
+        - 183
+    - type: knight
+      cell:
+        - 196
+        - 189
+    - type: knight
+      cell:
+        - 107
+        - 179
   respawn:
     - 107
     - 180
@@ -982,6 +1510,39 @@
   emperium:
     - 157
     - 174
+  guardians:
+    - type: knight
+      cell:
+        - 161
+        - 161
+    - type: knight
+      cell:
+        - 153
+        - 161
+    - type: knight
+      cell:
+        - 178
+        - 44
+    - type: soldier
+      cell:
+        - 71
+        - 75
+    - type: soldier
+      cell:
+        - 49
+        - 28
+    - type: archer
+      cell:
+        - 64
+        - 186
+    - type: archer
+      cell:
+        - 7
+        - 196
+    - type: archer
+      cell:
+        - 75
+        - 175
   respawn:
     - 94
     - 56
@@ -1043,6 +1604,39 @@
   emperium:
     - 16
     - 220
+  guardians:
+    - type: knight
+      cell:
+        - 191
+        - 190
+    - type: knight
+      cell:
+        - 137
+        - 190
+    - type: knight
+      cell:
+        - 45
+        - 99
+    - type: soldier
+      cell:
+        - 50
+        - 87
+    - type: soldier
+      cell:
+        - 41
+        - 87
+    - type: archer
+      cell:
+        - 191
+        - 42
+    - type: archer
+      cell:
+        - 179
+        - 43
+    - type: archer
+      cell:
+        - 191
+        - 72
   respawn:
     - 46
     - 97
@@ -1104,6 +1698,39 @@
   emperium:
     - 291
     - 14
+  guardians:
+    - type: knight
+      cell:
+        - 276
+        - 14
+    - type: knight
+      cell:
+        - 274
+        - 35
+    - type: knight
+      cell:
+        - 246
+        - 246
+    - type: soldier
+      cell:
+        - 38
+        - 240
+    - type: soldier
+      cell:
+        - 29
+        - 240
+    - type: soldier
+      cell:
+        - 33
+        - 258
+    - type: archer
+      cell:
+        - 78
+        - 48
+    - type: archer
+      cell:
+        - 36
+        - 61
   respawn:
     - 260
     - 262
@@ -1165,6 +1792,39 @@
   emperium:
     - 266
     - 266
+  guardians:
+    - type: knight
+      cell:
+        - 266
+        - 262
+    - type: knight
+      cell:
+        - 287
+        - 280
+    - type: knight
+      cell:
+        - 245
+        - 250
+    - type: soldier
+      cell:
+        - 236
+        - 63
+    - type: soldier
+      cell:
+        - 251
+        - 63
+    - type: soldier
+      cell:
+        - 278
+        - 253
+    - type: archer
+      cell:
+        - 32
+        - 253
+    - type: archer
+      cell:
+        - 44
+        - 248
   respawn:
     - 26
     - 38

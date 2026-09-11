@@ -57,16 +57,20 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
                }
              ]
 
-  describe "build/1" do
+  @guardian_slots Map.new(@fe, fn {_id, map, _name, _client_id, _x, _y} ->
+                    {map, Enum.map(1..8, &%{type: "soldier", cell: [&1, &1]})}
+                  end)
+
+  describe "build/2" do
     test "keeps exactly the 20 First-Edition castles" do
-      rows = Castles.build(@fixture)
+      rows = Castles.build(@fixture, @guardian_slots)
 
       assert length(rows) == 20
       assert Enum.map(rows, & &1.map) == Enum.map(@fe, fn {_, map, _, _, _, _} -> map end)
     end
 
     test "every row carries id/map/name/client_id/respawn/emperium with positive integer coordinates" do
-      Enum.each(Castles.build(@fixture), fn row ->
+      Enum.each(Castles.build(@fixture, @guardian_slots), fn row ->
         assert %{
                  id: id,
                  map: map,
@@ -88,7 +92,7 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
     end
 
     test "merges the emperium-room seed per map" do
-      by_map = Castles.build(@fixture) |> Map.new(&{&1.map, &1})
+      by_map = Castles.build(@fixture, @guardian_slots) |> Map.new(&{&1.map, &1})
 
       assert by_map["prtg_cas01"].emperium == [197, 197]
       assert by_map["prtg_cas01"].respawn == [107, 180]
@@ -97,7 +101,7 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
     end
 
     test "merges the treasure-room seed per map" do
-      by_map = Castles.build(@fixture) |> Map.new(&{&1.map, &1})
+      by_map = Castles.build(@fixture, @guardian_slots) |> Map.new(&{&1.map, &1})
 
       assert %{box_id: 1354, cells: cells} = by_map["prtg_cas01"].treasure
       assert length(cells) == 24
@@ -105,7 +109,7 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
     end
 
     test "every row's treasure has a box id and exactly 24 cells" do
-      Enum.each(Castles.build(@fixture), fn row ->
+      Enum.each(Castles.build(@fixture, @guardian_slots), fn row ->
         assert %{box_id: box_id, cells: cells} = row.treasure
         assert is_integer(box_id) and box_id > 0
         assert length(cells) == 24
@@ -120,10 +124,13 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
     test "is deterministic and sorted by id regardless of input order" do
       shuffled = @fixture |> Enum.reverse() |> Enum.shuffle()
 
-      assert Castles.build(shuffled) == Castles.build(@fixture)
-      assert Castles.build(@fixture) |> Enum.map(& &1.id) == Enum.to_list(0..19)
+      assert Castles.build(shuffled, @guardian_slots) == Castles.build(@fixture, @guardian_slots)
 
-      assert Ymlr.document!(Castles.build(shuffled)) == Ymlr.document!(Castles.build(@fixture))
+      assert Castles.build(@fixture, @guardian_slots) |> Enum.map(& &1.id) ==
+               Enum.to_list(0..19)
+
+      assert Ymlr.document!(Castles.build(shuffled, @guardian_slots)) ==
+               Ymlr.document!(Castles.build(@fixture, @guardian_slots))
     end
 
     test "normalizes pre-renewal respawns from reversed Renewal rows by numeric id only" do
@@ -139,7 +146,10 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
             row
         end)
 
-      rows = pre |> Castles.normalize_respawns!(Enum.reverse(@fixture)) |> Castles.build()
+      rows =
+        pre
+        |> Castles.normalize_respawns!(Enum.reverse(@fixture))
+        |> Castles.build(@guardian_slots)
 
       assert Enum.map(rows, & &1.respawn) ==
                Enum.map(@fe, fn {_id, _map, _name, _client_id, x, y} -> [x, y] end)
@@ -215,7 +225,7 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
       incomplete = Enum.reject(@fixture, &(&1["Map"] == "prtg_cas01"))
 
       assert_raise Mix.Error, ~r/expected exactly 20 First-Edition castles/, fn ->
-        Castles.build(incomplete)
+        Castles.build(incomplete, @guardian_slots)
       end
     end
 
@@ -234,7 +244,105 @@ defmodule Mix.Tasks.Aesir.Import.CastlesTest do
             }
           ]
 
-      assert_raise Mix.Error, ~r/got 21/, fn -> Castles.build(duplicated) end
+      assert_raise Mix.Error, ~r/got 21/, fn -> Castles.build(duplicated, @guardian_slots) end
+    end
+
+    test "raises when a seed map has no slots" do
+      missing_slots = Map.delete(@guardian_slots, "prtg_cas01")
+
+      assert_raise Mix.Error, ~r/prtg_cas01/, fn ->
+        Castles.build(@fixture, missing_slots)
+      end
+    end
+  end
+
+  describe "parse_guardian_slots!/1" do
+    @manager_script """
+    -\tscript\tDecoy#not_cm::decoy\t-1,{
+    \tif (strnpcinfo(2) == "aldeg_cas01") {
+    \t\tsetarray .@guardiantype[0],9,9,9,9,9,9,9,9;
+    \t\tsetarray .@guardianposx[0],1,1,1,1,1,1,1,1;
+    \t\tsetarray .@guardianposy[0],1,1,1,1,1,1,1,1;
+    \t}
+    }
+
+    -\tscript\tCastle Manager#cm::cm\t-1,{
+
+    \tset .@GID,GetCastleData(strnpcinfo(2),CD_GUILD_ID);
+
+    \tif (strnpcinfo(2) == "aldeg_cas01") {
+    \t\tsetarray .@guardiantype[0],1,2,2,2,2,3,3,3;
+    \t\tsetarray .@guardianposx[0],17,39,38,45,21,218,213,73;
+    \t\tsetarray .@guardianposy[0],218,208,196,228,194,24,24,70;
+    \t\tsetarray .@masterroom[0],113,223;
+    \t}
+    \telse if (strnpcinfo(2) == "aldeg_cas02") {
+    \t\tsetarray .@guardiantype[0],3,3,3,1,1,2,2,2;
+    \t\tsetarray .@guardianposx[0],27,88,117,60,51,21,36,210;
+    \t\tsetarray .@guardianposy[0],184,43,46,202,183,177,183,7;
+    \t\tsetarray .@masterroom[0],134,225;
+    \t}
+    \telse {
+    \t\tend;
+    \t}
+    }
+
+    -\tscript\tLever#gd::gdlever\t-1,{
+    \tif (strnpcinfo(2) == "aldeg_cas01") {
+    \t\tsetarray .@guardiantype[0],9,9,9,9,9,9,9,9;
+    \t\tsetarray .@guardianposx[0],1,1,1,1,1,1,1,1;
+    \t\tsetarray .@guardianposy[0],1,1,1,1,1,1,1,1;
+    \t}
+    }
+    """
+
+    test "returns every castle block's slots in slot order" do
+      slots = Castles.parse_guardian_slots!(@manager_script)
+
+      assert slots["aldeg_cas01"] == [
+               %{type: "soldier", cell: [17, 218]},
+               %{type: "archer", cell: [39, 208]},
+               %{type: "archer", cell: [38, 196]},
+               %{type: "archer", cell: [45, 228]},
+               %{type: "archer", cell: [21, 194]},
+               %{type: "knight", cell: [218, 24]},
+               %{type: "knight", cell: [213, 24]},
+               %{type: "knight", cell: [73, 70]}
+             ]
+
+      assert slots["aldeg_cas02"] == [
+               %{type: "knight", cell: [27, 184]},
+               %{type: "knight", cell: [88, 43]},
+               %{type: "knight", cell: [117, 46]},
+               %{type: "soldier", cell: [60, 202]},
+               %{type: "soldier", cell: [51, 183]},
+               %{type: "archer", cell: [21, 177]},
+               %{type: "archer", cell: [36, 183]},
+               %{type: "archer", cell: [210, 7]}
+             ]
+    end
+
+    test "ignores an identically shaped block outside the castle manager script" do
+      slots = Castles.parse_guardian_slots!(@manager_script)
+
+      assert hd(slots["aldeg_cas01"]) == %{type: "soldier", cell: [17, 218]}
+    end
+
+    test "raises naming the map and array when an array has fewer than eight integers" do
+      malformed =
+        String.replace(@manager_script, "17,39,38,45,21,218,213,73", "17,39,38,45,21,218,213")
+
+      assert_raise Mix.Error, ~r/aldeg_cas01.*guardianposx/, fn ->
+        Castles.parse_guardian_slots!(malformed)
+      end
+    end
+
+    test "raises naming the map when a guardian type is out of range" do
+      malformed = String.replace(@manager_script, "1,2,2,2,2,3,3,3", "4,2,2,2,2,3,3,3")
+
+      assert_raise Mix.Error, ~r/aldeg_cas01.*guardiantype/, fn ->
+        Castles.parse_guardian_slots!(malformed)
+      end
     end
   end
 

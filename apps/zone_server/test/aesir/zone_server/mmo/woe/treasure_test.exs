@@ -27,7 +27,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.TreasureTest do
       client_id: 1,
       emperium: {50, 50},
       respawn: {50, 55},
-      treasure: %{box_id: box_id, cells: for(i <- 0..23, do: {100 + i, 200 + i})}
+      treasure: %{box_id: box_id, cells: for(i <- 0..23, do: {100 + i, 200 + i})},
+      guardians: [%{type: :soldier, cell: {60, 60}}]
     }
   end
 

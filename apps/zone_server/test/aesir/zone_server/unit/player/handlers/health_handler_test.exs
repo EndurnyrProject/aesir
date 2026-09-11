@@ -1103,7 +1103,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
            client_id: 6,
            emperium: {216, 23},
            respawn: {32, 30},
-           treasure: %{box_id: 1324, cells: [{1, 1}]}
+           treasure: %{box_id: 1324, cells: [{1, 1}]},
+           guardians: [%{type: :soldier, cell: {1, 1}}]
          }}
       end)
 
@@ -1149,7 +1150,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
            client_id: 6,
            emperium: {216, 23},
            respawn: {32, 30},
-           treasure: %{box_id: 1324, cells: [{1, 1}]}
+           treasure: %{box_id: 1324, cells: [{1, 1}]},
+           guardians: [%{type: :soldier, cell: {1, 1}}]
          }}
       end)
 

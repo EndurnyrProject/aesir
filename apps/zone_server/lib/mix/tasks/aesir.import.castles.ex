@@ -15,6 +15,11 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
   selected pre-renewal source. Missing or ambiguous matches are errors, and no
   partial output is written. Re-running against the same checkout is
   deterministic and idempotent.
+
+  The eight typed guardian slots per castle (type and spawn cell) are parsed
+  from the reference castle manager script at
+  `<rathena_root>/npc/guild/agit_main.txt`, one `if (strnpcinfo(2) == "<map>")`
+  block per castle holding the three `setarray` guardian-type/x/y lines.
   """
   use Mix.Task
 
@@ -628,6 +633,10 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
 
   @seed_maps MapSet.new(Map.keys(@emperium_rooms))
 
+  @guardian_slot_count 8
+  @guardian_types %{1 => "soldier", 2 => "archer", 3 => "knight"}
+  @manager_marker "Castle Manager#cm::cm"
+
   @impl Mix.Task
   def run(args) do
     {rathena, mode} = Import.parse!(args)
@@ -641,7 +650,13 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
         :pre_renewal -> normalize_respawns!(entries, Import.read_mode_filtered!(src, :renewal))
       end
 
-    castles = build(entries)
+    slots =
+      [rathena, "npc", "guild", "agit_main.txt"]
+      |> Path.join()
+      |> File.read!()
+      |> parse_guardian_slots!()
+
+    castles = build(entries, slots)
 
     File.mkdir_p!(out_dir)
     write!(Path.join(out_dir, "fe.yml"), castles)
@@ -650,8 +665,8 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
   end
 
   @doc false
-  @spec build([map()]) :: [map()]
-  def build(entries) do
+  @spec build([map()], %{String.t() => [map()]}) :: [map()]
+  def build(entries, slots) do
     fe = entries |> Enum.filter(&fe_castle?/1) |> Enum.sort_by(& &1["Id"])
 
     maps = MapSet.new(fe, & &1["Map"])
@@ -663,7 +678,77 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
       )
     end
 
-    Enum.map(fe, &convert/1)
+    Enum.map(fe, &convert(&1, slots))
+  end
+
+  @doc """
+  Parses the eight typed guardian slots per castle from the reference castle
+  manager script.
+
+  For every map covered by the seed tables, locates its
+  `if (strnpcinfo(2) == "<map>") { ... }` block inside the castle manager
+  script and reads the three `setarray` guardian-type/x/y lines, in slot
+  order. Raises naming the map and array when an array does not have exactly
+  eight integers, or when a type is not 1 (soldier), 2 (archer), or 3
+  (knight). A map with no matching block is simply absent from the result;
+  `build/2` is what requires every seed map to have slots.
+  """
+  @spec parse_guardian_slots!(String.t()) :: %{
+          String.t() => [%{type: String.t(), cell: [pos_integer()]}]
+        }
+  def parse_guardian_slots!(script) do
+    manager_section = castle_manager_section!(script)
+
+    @seed_maps
+    |> Enum.reduce(%{}, fn map, acc ->
+      case Regex.run(castle_block_pattern(map), manager_section) do
+        [_, types, xs, ys] -> Map.put(acc, map, guardian_slots!(map, types, xs, ys))
+        nil -> acc
+      end
+    end)
+  end
+
+  defp castle_manager_section!(script) do
+    case String.split(script, @manager_marker, parts: 2) do
+      [_before, rest] -> rest |> String.split(~r/\n-\t*script/, parts: 2) |> hd()
+      [_] -> Mix.raise("could not locate the reference castle manager script")
+    end
+  end
+
+  defp castle_block_pattern(map) do
+    escaped = Regex.escape(map)
+
+    ~r/if\s*\(strnpcinfo\(2\)\s*==\s*"#{escaped}"\)\s*\{\s*
+        setarray\s+\.@guardiantype\[0\],([^;]+);\s*
+        setarray\s+\.@guardianposx\[0\],([^;]+);\s*
+        setarray\s+\.@guardianposy\[0\],([^;]+);/x
+  end
+
+  defp guardian_slots!(map, types_raw, xs_raw, ys_raw) do
+    types = integers!(map, "guardiantype", types_raw)
+    xs = integers!(map, "guardianposx", xs_raw)
+    ys = integers!(map, "guardianposy", ys_raw)
+
+    [types, xs, ys]
+    |> Enum.zip()
+    |> Enum.map(fn {type, x, y} -> %{type: guardian_type!(map, type), cell: [x, y]} end)
+  end
+
+  defp integers!(map, array, raw) do
+    values = raw |> String.split(",") |> Enum.map(&(&1 |> String.trim() |> String.to_integer()))
+
+    unless length(values) == @guardian_slot_count do
+      Mix.raise(
+        "#{map} #{array}: expected #{@guardian_slot_count} guardian slots, got #{length(values)}"
+      )
+    end
+
+    values
+  end
+
+  defp guardian_type!(map, type) do
+    Map.get(@guardian_types, type) ||
+      Mix.raise("#{map} guardiantype: invalid guardian type #{type}, expected 1, 2, or 3")
   end
 
   @doc false
@@ -730,7 +815,7 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
     end
   end
 
-  defp convert(%{"Id" => id, "Map" => map, "Name" => name} = entry) do
+  defp convert(%{"Id" => id, "Map" => map, "Name" => name} = entry, slots) do
     %{
       id: id,
       map: map,
@@ -738,8 +823,16 @@ defmodule Mix.Tasks.Aesir.Import.Castles do
       client_id: Map.fetch!(entry, "ClientId"),
       respawn: [Map.fetch!(entry, "WarpX"), Map.fetch!(entry, "WarpY")],
       emperium: Map.fetch!(@emperium_rooms, map),
-      treasure: Map.fetch!(@treasure_rooms, map)
+      treasure: Map.fetch!(@treasure_rooms, map),
+      guardians: guardians_for!(slots, map)
     }
+  end
+
+  defp guardians_for!(slots, map) do
+    case Map.fetch(slots, map) do
+      {:ok, guardians} -> guardians
+      :error -> Mix.raise("no guardian slots parsed for #{map}")
+    end
   end
 
   defp write!(path, entries), do: File.write!(path, Ymlr.document!(entries))

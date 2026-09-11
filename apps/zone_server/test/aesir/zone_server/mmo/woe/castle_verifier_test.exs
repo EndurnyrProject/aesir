@@ -13,12 +13,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
     test "passes when every emperium and respawn cell is walkable" do
       stub(CastleDb, :all, fn -> [castle(emperium: {5, 5}, respawn: {10, 10})] end)
       stub(MapCache, :walkable?, fn _, _, _ -> true end)
+      stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
 
       assert :ok = CastleVerifier.verify!()
     end
 
     test "raises naming the map, kind, and coordinate of a non-walkable cell" do
       stub(CastleDb, :all, fn -> [castle(emperium: {5, 5}, respawn: {10, 10})] end)
+      stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
 
       stub(MapCache, :walkable?, fn
         "aldeg_cas01", 5, 5 -> false
@@ -33,6 +35,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
     test "raises when a castle map is not in the cache" do
       stub(CastleDb, :all, fn -> [castle(emperium: {5, 5}, respawn: {10, 10})] end)
       stub(MapCache, :walkable?, fn _, _, _ -> false end)
+      stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
 
       assert_raise RuntimeError, ~r/Neuschwanstein/, fn ->
         CastleVerifier.verify!()
@@ -44,6 +47,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
         [castle(emperium: {5, 5}, respawn: {10, 10}, treasure_cells: [{20, 20}, {21, 21}])]
       end)
 
+      stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
+
       stub(MapCache, :walkable?, fn
         "aldeg_cas01", 21, 21 -> false
         _, _, _ -> true
@@ -52,6 +57,51 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
       assert_raise RuntimeError, ~r/aldeg_cas01.*treasure.*\(21, 21\)/, fn ->
         CastleVerifier.verify!()
       end
+    end
+
+    test "raises naming an out-of-bounds guardian cell as :guardian" do
+      stub(CastleDb, :all, fn ->
+        [
+          castle(
+            emperium: {5, 5},
+            respawn: {10, 10},
+            guardians: [
+              %{type: :soldier, cell: {30, 30}},
+              %{type: :archer, cell: {401, 31}}
+            ]
+          )
+        ]
+      end)
+
+      stub(MapCache, :walkable?, fn _, _, _ -> true end)
+      stub(MapCache, :get!, fn "aldeg_cas01" -> %{xs: 400, ys: 400} end)
+
+      assert_raise RuntimeError, ~r/aldeg_cas01.*guardian.*\(401, 31\)/, fn ->
+        CastleVerifier.verify!()
+      end
+    end
+
+    test "passes with an in-bounds guardian cell that is not walkable" do
+      stub(CastleDb, :all, fn ->
+        [
+          castle(
+            emperium: {5, 5},
+            respawn: {10, 10},
+            guardians: [%{type: :soldier, cell: {399, 399}}]
+          )
+        ]
+      end)
+
+      stub(MapCache, :walkable?, fn
+        "aldeg_cas01", 5, 5 -> true
+        "aldeg_cas01", 10, 10 -> true
+        "aldeg_cas01", 1, 1 -> true
+        _, _, _ -> false
+      end)
+
+      stub(MapCache, :get!, fn "aldeg_cas01" -> %{xs: 400, ys: 400} end)
+
+      assert :ok = CastleVerifier.verify!()
     end
   end
 
@@ -63,7 +113,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
       client_id: 0,
       emperium: Keyword.fetch!(opts, :emperium),
       respawn: Keyword.fetch!(opts, :respawn),
-      treasure: %{box_id: 1324, cells: Keyword.get(opts, :treasure_cells, [{1, 1}])}
+      treasure: %{box_id: 1324, cells: Keyword.get(opts, :treasure_cells, [{1, 1}])},
+      guardians: Keyword.get(opts, :guardians, [%{type: :soldier, cell: {1, 1}}])
     }
   end
 end
