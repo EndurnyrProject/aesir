@@ -88,6 +88,34 @@ defmodule Aesir.Commons.Models.GuildCastleTest do
       assert castle.invested_economy == 0
       assert castle.invested_defense == 0
     end
+
+    test "defaults guardians to [] on insert" do
+      assert {:ok, castle} =
+               %GuildCastle{}
+               |> GuildCastle.changeset(valid_attrs())
+               |> Repo.insert()
+
+      assert castle.guardians == []
+    end
+
+    test "accepts an empty guardians list and a list of valid slots" do
+      assert GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{guardians: []})).valid?
+
+      assert GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{guardians: [0, 7]})).valid?
+    end
+
+    test "rejects a guardian slot outside 0..7" do
+      assert %{guardians: _} =
+               errors_on(GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{guardians: [8]})))
+
+      assert %{guardians: _} =
+               errors_on(GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{guardians: [-1]})))
+    end
+
+    test "rejects a duplicate guardian slot" do
+      assert %{guardians: _} =
+               errors_on(GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{guardians: [1, 1]})))
+    end
   end
 
   describe "new/1" do

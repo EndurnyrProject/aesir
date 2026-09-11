@@ -76,7 +76,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
                economy: 0,
                defense: 0,
                invested_economy: 0,
-               invested_defense: 0
+               invested_defense: 0,
+               guardians: []
              }
 
       :ok = Persistence.persist(0, 10)
@@ -99,7 +100,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
 
       :ok = Persistence.persist_economy(3, economy_state)
 
-      assert Persistence.load_all()[3] == Map.put(economy_state, :guild_id, nil)
+      assert Persistence.load_all()[3] ==
+               economy_state |> Map.put(:guild_id, nil) |> Map.put(:guardians, [])
+    end
+  end
+
+  describe "persist_guardians/2" do
+    test "writes the guardian list, round-tripped by load_all/0, leaving other castles empty" do
+      :ok = Persistence.persist_guardians(7, [2, 5])
+
+      rows = Persistence.load_all()
+
+      assert rows[7].guardians == [2, 5]
+      assert rows[8].guardians == []
     end
   end
 

@@ -43,6 +43,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
              }
     end
 
+    test "seeds an empty guardian list per castle" do
+      assert CastleStore.guardians(first_castle_id()) == []
+    end
+
+    test "the castle_guardians ETS table exists" do
+      refute :ets.info(EtsTable.table_for(:castle_guardians)) == :undefined
+    end
+
     test "re-running does not clobber hydrated owners" do
       [castle_a, castle_b | _] = CastleDb.all()
 
@@ -82,6 +90,57 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
                invested_economy: 0,
                invested_defense: 0
              }
+    end
+
+    test "sets guardians from a row with a guardians key, and leaves [] without one" do
+      [castle_a, castle_b | _] = CastleDb.all()
+
+      :ok =
+        CastleStore.hydrate(%{
+          castle_a.id => row(10, %{guardians: [2, 5]}),
+          castle_b.id => row(20)
+        })
+
+      assert CastleStore.guardians(castle_a.id) == [2, 5]
+      assert CastleStore.guardians(castle_b.id) == []
+    end
+  end
+
+  describe "guardians/1 and put_guardians/2" do
+    test "put_guardians/2 replaces the list, sorted and deduplicated" do
+      castle_id = first_castle_id()
+
+      :ok = CastleStore.put_guardians(castle_id, [3, 1, 1, 2])
+
+      assert CastleStore.guardians(castle_id) == [1, 2, 3]
+    end
+
+    test "put_guardians/2 leaves owner, siege, epoch, emperium, and economy untouched" do
+      castle_id = first_castle_id()
+
+      :ok = CastleStore.hydrate(%{castle_id => row(10, %{economy: 40, defense: 25})})
+      :ok = CastleStore.set_siege(castle_id, true)
+      :ok = CastleStore.set_emperium(castle_id, 999)
+
+      :ok = CastleStore.put_guardians(castle_id, [4])
+
+      assert CastleStore.get(castle_id) == %{
+               owner_guild_id: 10,
+               siege_active?: true,
+               epoch: 0,
+               emperium_unit_id: 999
+             }
+
+      assert CastleStore.economy(castle_id) == %{
+               economy: 40,
+               defense: 25,
+               invested_economy: 0,
+               invested_defense: 0
+             }
+    end
+
+    test "returns [] for an unknown castle" do
+      assert CastleStore.guardians(9_999) == []
     end
   end
 

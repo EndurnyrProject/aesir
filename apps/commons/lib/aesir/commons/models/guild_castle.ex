@@ -6,6 +6,8 @@ defmodule Aesir.Commons.Models.GuildCastle do
   `guild_id` is nullable: nil means the castle is unoccupied. `economy` and
   `defense` track the castle's investment level; `invested_economy` and
   `invested_defense` count today's investment actions in each track.
+  `guardians` holds the sorted, deduplicated list of hired guardian slots
+  (each in `0..7`).
   """
 
   use Ecto.Schema
@@ -19,6 +21,7 @@ defmodule Aesir.Commons.Models.GuildCastle do
           defense: non_neg_integer(),
           invested_economy: non_neg_integer(),
           invested_defense: non_neg_integer(),
+          guardians: [0..7],
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
         }
@@ -30,6 +33,7 @@ defmodule Aesir.Commons.Models.GuildCastle do
     field :defense, :integer, default: 0
     field :invested_economy, :integer, default: 0
     field :invested_defense, :integer, default: 0
+    field :guardians, {:array, :integer}, default: []
 
     timestamps()
   end
@@ -46,14 +50,30 @@ defmodule Aesir.Commons.Models.GuildCastle do
       :economy,
       :defense,
       :invested_economy,
-      :invested_defense
+      :invested_defense,
+      :guardians
     ])
     |> validate_required([:castle_id, :economy, :defense, :invested_economy, :invested_defense])
     |> validate_number(:economy, greater_than_or_equal_to: 0)
     |> validate_number(:defense, greater_than_or_equal_to: 0)
     |> validate_number(:invested_economy, greater_than_or_equal_to: 0)
     |> validate_number(:invested_defense, greater_than_or_equal_to: 0)
+    |> validate_change(:guardians, &validate_guardians/2)
     |> unique_constraint(:castle_id)
+  end
+
+  @spec validate_guardians(:guardians, [integer()]) :: keyword()
+  defp validate_guardians(:guardians, guardians) do
+    cond do
+      Enum.any?(guardians, &(&1 not in 0..7)) ->
+        [guardians: "must all be in 0..7"]
+
+      Enum.uniq(guardians) != guardians ->
+        [guardians: "must not contain duplicates"]
+
+      true ->
+        []
+    end
   end
 
   @doc """
