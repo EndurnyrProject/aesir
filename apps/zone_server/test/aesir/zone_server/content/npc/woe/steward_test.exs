@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Content.Npc.Woe.StewardTest do
   @moduledoc """
-  Covers the Task 10 castle steward: the 20 FE castle placements, and the
-  three refusal/greeting dialog paths driven through `Script.Interaction`
-  (unowned castle, non-master member, and the master reaching the briefing).
+  Covers the Task 10 castle steward: the 20 FE castle placements, the
+  refusal/greeting dialog paths driven through `Script.Interaction` (unowned
+  castle, non-master member, the master reaching the briefing), and the
+  Summon Guardian menu (slot listing, already-summoned, research-required,
+  insufficient-funds, and successful hire).
   """
 
   use ExUnit.Case, async: false
@@ -15,8 +17,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.StewardTest do
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
+  alias Aesir.ZoneServer.Mmo.Woe.Persistence
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Interaction
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @gid 0x5200_0001
@@ -77,7 +81,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.StewardTest do
     assert_clean_exit(ref, pid)
   end
 
-  test "the master reaches the three-entry select and briefing shows the seeded values" do
+  test "the master reaches the four-entry select and briefing shows the seeded values" do
     castle = first_castle()
 
     :ok =
@@ -101,7 +105,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.StewardTest do
     assert options == [
              "Castle briefing",
              "Invest in commercial growth",
-             "Invest in Castle Defenses"
+             "Invest in Castle Defenses",
+             "Summon Guardian"
            ]
 
     send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, 1}}})
@@ -111,11 +116,173 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.StewardTest do
     assert text =~ "34"
   end
 
+  describe "Summon Guardian" do
+    test "shows a nine-entry select with the slot types in order and the summoned marker" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(5, %{guardians: [0]})})
+
+      stub(GuildManager, :get, fn 5 ->
+        {:ok, %GuildState{guild_id: 5, name: "Baldur Guard", master_char_id: 1}}
+      end)
+
+      ctx = build_ctx(map_name: castle.map, guild_id: 5, char_id: 1)
+      {:ok, pid} = start_interaction(ctx)
+      ref = Process.monitor(pid)
+
+      options = reach_guardian_menu(pid)
+
+      expected =
+        castle.guardians
+        |> Enum.with_index()
+        |> Enum.map(fn {slot_def, slot} ->
+          type_label(slot_def.type) <> if slot == 0, do: " (Summoned)", else: ""
+        end)
+
+      assert options == expected ++ ["Cancel"]
+
+      send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, 9}}})
+
+      assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
+      assert text =~ "I'll do as you bid"
+      assert_clean_exit(ref, pid)
+    end
+
+    test "picking a summoned slot and confirming ends with the already-summoned line" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(5, %{guardians: [0]})})
+      stub(GuildManager, :get, fn 5 -> {:ok, researched_guild(5)} end)
+
+      ctx = build_ctx(map_name: castle.map, guild_id: 5, char_id: 1)
+      {:ok, pid} = start_interaction(ctx)
+      ref = Process.monitor(pid)
+
+      reach_guardian_menu(pid)
+      choose_guardian(pid, 1)
+      confirm_summon(pid)
+
+      assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
+      assert text =~ "you already have summoned that Guardian"
+      assert_clean_exit(ref, pid)
+    end
+
+    test "picking an empty slot with no research ends with the research line after confirming" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(5)})
+
+      stub(GuildManager, :get, fn 5 ->
+        {:ok, %GuildState{guild_id: 5, name: "Baldur Guard", master_char_id: 1}}
+      end)
+
+      ctx = build_ctx(map_name: castle.map, guild_id: 5, char_id: 1)
+      {:ok, pid} = start_interaction(ctx)
+      ref = Process.monitor(pid)
+
+      reach_guardian_menu(pid)
+      choose_guardian(pid, 1)
+      confirm_summon(pid)
+
+      assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
+      assert text =~ "we have not the resources to Summon the Guardian"
+      assert_clean_exit(ref, pid)
+    end
+
+    test "confirming an empty slot with research but insufficient zeny ends with the funds line" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(5)})
+      stub(GuildManager, :get, fn 5 -> {:ok, researched_guild(5)} end)
+
+      ctx = build_ctx(map_name: castle.map, guild_id: 5, char_id: 1, zeny: 5_000)
+      {:ok, pid} = start_interaction(ctx)
+      ref = Process.monitor(pid)
+
+      reach_guardian_menu(pid)
+      choose_guardian(pid, 1)
+      confirm_summon(pid)
+
+      assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
+      assert text =~ "we don't have funds to summon the Guardian"
+      assert_clean_exit(ref, pid)
+    end
+
+    test "confirming an empty slot with research and enough zeny completes the hire" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(5)})
+      stub(GuildManager, :get, fn 5 -> {:ok, researched_guild(5)} end)
+      stub(Persistence, :persist_guardians, fn _castle_id, _guardians -> :ok end)
+
+      test_pid = self()
+
+      stub(PlayerSession, :script_apply, fn _pid, {:pay_zeny, 10_000} = op ->
+        send(test_pid, {:script_apply, op})
+        {:ok, %{build_game_state(map_name: castle.map, guild_id: 5, char_id: 1) | zeny: 10_000}}
+      end)
+
+      ctx = build_ctx(map_name: castle.map, guild_id: 5, char_id: 1, zeny: 20_000)
+      {:ok, pid} = start_interaction(ctx)
+      ref = Process.monitor(pid)
+
+      reach_guardian_menu(pid)
+      choose_guardian(pid, 1)
+      confirm_summon(pid)
+
+      assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: text}}}
+      assert text =~ "We completed the summoning of the Guardian"
+      assert_clean_exit(ref, pid)
+
+      assert_received {:script_apply, {:pay_zeny, 10_000}}
+      assert 0 in CastleStore.guardians(castle.id)
+    end
+  end
+
+  defp reach_guardian_menu(pid) do
+    assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :NEXT}}}
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:continue, true}}})
+
+    assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU}}}
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, 4}}})
+
+    assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :NEXT}}}
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:continue, true}}})
+
+    assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :MENU, options: options}}}
+    options
+  end
+
+  defp choose_guardian(pid, choice) do
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, choice}}})
+
+    assert_receive {:send, _ch,
+                    {:npc_dialog, %NpcDialog{expect: :MENU, options: ["Summon", "Cancel"]}}}
+  end
+
+  defp confirm_summon(pid) do
+    send(pid, {:npc_interact, %NpcInteract{npc_id: @gid, response: {:choice, 1}}})
+  end
+
+  defp type_label(:soldier), do: "Guardian Soldier"
+  defp type_label(:archer), do: "Guardian Archer"
+  defp type_label(:knight), do: "Guardian Knight"
+
+  defp researched_guild(id),
+    do: %GuildState{
+      guild_id: id,
+      name: "Baldur Guard",
+      master_char_id: 1,
+      learned_skills: %{10_002 => 1}
+    }
+
   defp first_castle, do: CastleDb.all() |> hd()
 
   defp row(guild_id, overrides \\ %{}) do
     Map.merge(
-      %{guild_id: guild_id, economy: 0, defense: 0, invested_economy: 0, invested_defense: 0},
+      %{
+        guild_id: guild_id,
+        economy: 0,
+        defense: 0,
+        invested_economy: 0,
+        invested_defense: 0,
+        guardians: []
+      },
       overrides
     )
   end
@@ -144,7 +311,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.StewardTest do
       character_name: "TestMaster",
       account_id: 100,
       map_name: Keyword.fetch!(opts, :map_name),
-      guild_id: Keyword.get(opts, :guild_id, 0)
+      guild_id: Keyword.get(opts, :guild_id, 0),
+      zeny: Keyword.get(opts, :zeny, 0)
     }
   end
 end

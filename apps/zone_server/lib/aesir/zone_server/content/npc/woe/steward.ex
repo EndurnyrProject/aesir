@@ -1,8 +1,8 @@
 defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
   @moduledoc """
   Castle steward: reports one FE castle's economy briefing to its owning
-  guild's master and lets them invest in commercial growth or castle
-  defenses.
+  guild's master, lets them invest in commercial growth or castle defenses,
+  and hires guardians into the castle's empty slots.
 
   One placement per FE castle map, sharing one `on_talk/1` that resolves the
   castle at the player's current map and reads castle state and ownership
@@ -242,7 +242,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
         "Your humble servant, #{strnpcinfo(ctx, 1)}, is here to serve you."
       ])
       |> next()
-      |> select(["Castle briefing", "Invest in commercial growth", "Invest in Castle Defenses"])
+      |> select([
+        "Castle briefing",
+        "Invest in commercial growth",
+        "Invest in Castle Defenses",
+        "Summon Guardian"
+      ])
 
     handle_menu(ctx, castle_id, choice)
   end
@@ -250,6 +255,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
   defp handle_menu(ctx, castle_id, 1), do: briefing(ctx, castle_id)
   defp handle_menu(ctx, castle_id, 2), do: invest_economy(ctx, castle_id)
   defp handle_menu(ctx, castle_id, 3), do: invest_defense(ctx, castle_id)
+  defp handle_menu(ctx, castle_id, 4), do: summon_guardian(ctx, castle_id)
   defp handle_menu(ctx, _castle_id, _choice), do: close(ctx)
 
   defp briefing(ctx, castle_id) do
@@ -371,14 +377,103 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
     end
   end
 
-  defp confirm_investment({ctx, _cancel}, _castle_id, _kind, _cost, _success_message) do
+  defp confirm_investment({ctx, _cancel}, _castle_id, _kind, _cost, _success_message),
+    do: dismiss(ctx)
+
+  defp invested_field(:economy), do: :invested_economy
+  defp invested_field(:defense), do: :invested_defense
+
+  defp summon_guardian(ctx, castle_id) do
+    slots = castle_guardians(ctx, castle_id)
+
+    {ctx, choice} =
+      ctx
+      |> say([
+        "Will you summon a Guardian? It'll be a protector to defend us loyally.",
+        "Please select a guardian to defend us."
+      ])
+      |> next()
+      |> select(Enum.map(slots, &guardian_label/1) ++ ["Cancel"])
+
+    handle_guardian_select(ctx, castle_id, choice)
+  end
+
+  defp guardian_label(%{type: type, hired?: hired?}) do
+    guardian_type_label(type) <> if hired?, do: " (Summoned)", else: ""
+  end
+
+  defp guardian_type_label(:soldier), do: "Guardian Soldier"
+  defp guardian_type_label(:archer), do: "Guardian Archer"
+  defp guardian_type_label(:knight), do: "Guardian Knight"
+
+  defp handle_guardian_select(ctx, castle_id, choice) when choice in 1..8,
+    do: confirm_guardian(ctx, castle_id, choice - 1)
+
+  defp handle_guardian_select(ctx, _castle_id, _cancel), do: dismiss(ctx)
+
+  defp confirm_guardian(ctx, castle_id, slot) do
+    {ctx, choice} =
+      ctx
+      |> say([
+        "Will you summon the chosen guardian? 10,000 zeny are required to summon a Guardian."
+      ])
+      |> select(["Summon", "Cancel"])
+
+    case choice do
+      1 -> resolve_guardian_hire(ctx, castle_id, slot)
+      _ -> dismiss(ctx)
+    end
+  end
+
+  defp resolve_guardian_hire(ctx, castle_id, slot) do
+    case castle_guardian_hire_check(ctx, castle_id, slot) do
+      {:error, :research_required} ->
+        ctx
+        |> say([
+          "Master, we have not the resources to Summon the Guardian. If you want to " <>
+            "accumulate them, you have to learn the Guild skill. We failed to summon the " <>
+            "Guardian."
+        ])
+        |> close()
+
+      {:error, :already_hired} ->
+        ctx
+        |> say(["Master, you already have summoned that Guardian. We cannot summon another."])
+        |> close()
+
+      {:error, _reason} ->
+        close(ctx)
+
+      :ok ->
+        hire_guardian(ctx, castle_id, slot)
+    end
+  end
+
+  defp hire_guardian(ctx, castle_id, slot) do
+    if zeny(ctx) < 10_000 do
+      ctx
+      |> say([
+        "Well... I'm sorry but we don't have funds to summon the Guardian. We failed to " <>
+          "summon the Guardian."
+      ])
+      |> close()
+    else
+      ctx
+      |> pay_zeny(10_000)
+      |> castle_hire_guardian(castle_id, slot)
+      |> say([
+        "We completed the summoning of the Guardian. Our defenses are now increased with " <>
+          "it in place."
+      ])
+      |> close()
+    end
+  end
+
+  defp dismiss(ctx) do
     ctx
     |> say(["I'll do as you bid, my master... There is no hurry. We will do our best."])
     |> close()
   end
-
-  defp invested_field(:economy), do: :invested_economy
-  defp invested_field(:defense), do: :invested_defense
 
   defp say(ctx, lines), do: Enum.reduce(["[#{strnpcinfo(ctx, 1)}]" | lines], ctx, &mes(&2, &1))
 end
