@@ -69,6 +69,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
       :ok
     end)
 
+    stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
+
     castle = hd(CastleDb.all())
     castle_id = castle.id
     castle_map = castle.map
@@ -96,7 +98,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     assert_receive {:announcement, conquest}, 200
     assert conquest == "#{castle.name} conquered by TestGuild"
 
-    assert_receive {:summon, ^castle_map, @emperium_mob_id, _, _, [], new_unit_id}, 500
+    assert_receive {:summon, ^castle_map, @emperium_mob_id, _, _, _, new_unit_id}, 500
     refute new_unit_id == old_unit_id
     assert_eventually(fn -> CastleStore.get(castle_id).emperium_unit_id == new_unit_id end)
   end
@@ -157,6 +159,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     stub_summons(test_pid)
     stub(Announcement, :to_all, fn _opts -> :ok end)
     stub(Persistence, :persist, fn _castle_id, _guild_id -> :ok end)
+    stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
 
     stub(Manager, :get, fn guild_id ->
       {:ok,
@@ -229,7 +232,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     publish_break(castle, live_unit_id, credit)
 
     replacement_id = assert_rearmed(castle.id, live_unit_id, 1)
-    assert_receive {:summon, _, @emperium_mob_id, _, _, [], ^replacement_id}, 200
+    assert_receive {:summon, _, @emperium_mob_id, _, _, _, ^replacement_id}, 200
     refute_receive {:summon, _, _, _, _, _, _}, 100
   end
 
@@ -298,7 +301,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
   end
 
   defp drain_summons(count) do
-    for _ <- 1..count, do: assert_receive({:summon, _, _, _, _, [], _}, 200)
+    for _ <- 1..count, do: assert_receive({:summon, _, _, _, _, _, _}, 200)
   end
 
   defp publish_break(castle, unit_id, kill_credit) do

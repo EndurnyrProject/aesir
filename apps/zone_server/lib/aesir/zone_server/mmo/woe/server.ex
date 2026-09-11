@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Config
@@ -26,7 +27,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
+  alias Aesir.ZoneServer.Mmo.Woe.Economy
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
+  alias Aesir.ZoneServer.Mmo.Woe.Treasure
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
@@ -126,9 +129,24 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
       )
       when is_binary(map_name) do
     case CastleDb.by_map(map_name) do
-      {:ok, castle} -> handle_emperium_break(castle, unit_id, event.kill_credit, state)
-      :error -> {:noreply, state}
+      {:ok, castle} ->
+        Treasure.release(unit_id)
+        handle_emperium_break(castle, unit_id, event.kill_credit, state)
+
+      :error ->
+        {:noreply, state}
     end
+  end
+
+  def handle_info(
+        {:unit_lifecycle,
+         %Event{unit_type: :mob, unit_id: unit_id, reason: :termination, old_map: map_name}},
+        state
+      )
+      when is_binary(map_name) do
+    if match?({:ok, _}, CastleDb.by_map(map_name)), do: Treasure.release(unit_id)
+
+    {:noreply, state}
   end
 
   def handle_info({:unit_lifecycle, %Event{}}, state), do: {:noreply, state}
@@ -156,7 +174,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   defp arm_castle(%Castle{id: id, map: map, emperium: {x, y}}) do
-    case Coordinator.summon_mob(map, @emperium_mob_id, x, y, []) do
+    opts = Economy.emperium_summon_opts(CastleStore.economy(id).defense, GameMode.mode())
+
+    case Coordinator.summon_mob(map, @emperium_mob_id, x, y, opts) do
       {:ok, unit_id} ->
         MapFlags.set_runtime(map, :gvg, true)
         CastleStore.set_emperium(id, unit_id)
@@ -196,7 +216,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   defp respawn_emperium(castle_id) do
     case CastleDb.by_id(castle_id) do
       {:ok, %Castle{map: map, emperium: {x, y}}} ->
-        case Coordinator.summon_mob(map, @emperium_mob_id, x, y, []) do
+        opts =
+          Economy.emperium_summon_opts(CastleStore.economy(castle_id).defense, GameMode.mode())
+
+        case Coordinator.summon_mob(map, @emperium_mob_id, x, y, opts) do
           {:ok, unit_id} ->
             CastleStore.set_emperium(castle_id, unit_id)
 
@@ -249,6 +272,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   defp record_conquest(castle_id, guild_id) do
+    Economy.apply_conquest_penalty(castle_id)
     Persistence.persist(castle_id, guild_id)
     announce_conquest(castle_id, guild_id)
   end
