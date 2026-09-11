@@ -273,6 +273,44 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.SourceDiscoveryTest do
            ]
   end
 
+  @tag :tmp_dir
+  test "excludes castle script directories even when explicitly listed", %{tmp_dir: root} do
+    write!(root, "npc/re/scripts_main.conf", "import: npc/scripts_guild.conf\n")
+
+    write!(
+      root,
+      "npc/scripts_guild.conf",
+      """
+      npc: npc/guild/agit_main.txt
+      npc: npc/guild2/agit_main_se.txt
+      npc: npc/re/guild3/agit_main_te.txt
+      npc: npc/shared/ordinary.txt
+      """
+    )
+
+    write!(root, "npc/guild/agit_main.txt")
+    write!(root, "npc/guild2/agit_main_se.txt")
+    write!(root, "npc/re/guild3/agit_main_te.txt")
+    write!(root, "npc/shared/ordinary.txt")
+    write!(root, "npc/pre-re/scripts_main.conf")
+
+    assert SourceDiscovery.discover!(root) == [source(root, "shared/ordinary.txt", :shared)]
+  end
+
+  @tag :tmp_dir
+  test "only globs never select castle script directories", %{tmp_dir: root} do
+    write!(root, "npc/guild/agit_main.txt")
+    write!(root, "npc/re/guild3/agit_main_te.txt")
+    write!(root, "npc/shared/ordinary.txt")
+
+    assert SourceDiscovery.discover!(root, only: "guild/*") == []
+    assert SourceDiscovery.discover!(root, only: "re/guild3/*") == []
+
+    assert SourceDiscovery.discover!(root, only: "shared/*") == [
+             source(root, "shared/ordinary.txt", :shared)
+           ]
+  end
+
   defp write!(root, relative, content \\ "") do
     path = Path.join(root, relative)
     File.mkdir_p!(Path.dirname(path))

@@ -5,11 +5,18 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.SourceDiscovery do
   With no `:only` option, discovery traverses the renewal and pre-renewal
   `scripts_main.conf` roots. An `:only` glob instead selects files relative to
   `npc/`, including files disabled in those configuration graphs.
+
+  Castle script directories are always excluded, even when explicitly listed
+  or matched by an `:only` glob: castle content is hand-written because the
+  engine owns the siege lifecycle, and must never be transpiled.
   """
+
+  require Logger
 
   alias Aesir.ZoneServer.Npc.ContentScope
 
   @roots ["npc/re/scripts_main.conf", "npc/pre-re/scripts_main.conf"]
+  @excluded_prefixes ["guild/", "guild2/", "re/guild3/"]
   @max_symlinks 40
 
   @type source() :: %{
@@ -59,6 +66,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.SourceDiscovery do
     end)
     |> elem(0)
     |> Enum.reverse()
+    |> reject_castle_sources()
   end
 
   defp discover_enabled(root, canonical_root) do
@@ -68,6 +76,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.SourceDiscovery do
     |> Enum.reduce(initial, &visit_conf(root, canonical_root, &1, [], nil, &2))
     |> elem(0)
     |> Enum.reverse()
+    |> reject_castle_sources()
   end
 
   defp visit_conf(
@@ -189,6 +198,29 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.SourceDiscovery do
     relative = Path.relative_to(path, npc_root)
     %{path: path, relative: relative, scope: scope(relative)}
   end
+
+  defp reject_castle_sources(sources) do
+    {kept, excluded_count} =
+      Enum.reduce(sources, {[], 0}, fn source, {kept, excluded_count} ->
+        if castle_source?(source.relative) do
+          {kept, excluded_count + 1}
+        else
+          {[source | kept], excluded_count}
+        end
+      end)
+
+    if excluded_count > 0 do
+      Logger.info(
+        "skipped #{excluded_count} castle NPC source(s): castle content is hand-written " <>
+          "because the engine owns the siege lifecycle"
+      )
+    end
+
+    Enum.reverse(kept)
+  end
+
+  defp castle_source?(relative),
+    do: Enum.any?(@excluded_prefixes, &String.starts_with?(relative, &1))
 
   defp expand!(root, canonical_root, directive_path, kind, referred_by, stack) do
     path = Path.expand(directive_path, root)
