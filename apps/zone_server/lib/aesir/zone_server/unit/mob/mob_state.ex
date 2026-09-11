@@ -19,6 +19,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
 
   @type ai_state :: :idle | :alert | :combat | :chase | :return
   @type movement_state :: :standing | :moving | :returning
+  @type stat_bonus :: %{optional(:def) => integer(), optional(:mdef) => integer()}
 
   @enforce_keys [
     :instance_id,
@@ -82,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     casting: nil,
     master_id: nil,
     owner_player_id: nil,
+    stat_bonus: %{},
     no_exp: false,
     no_drops: false,
     # True until the first AI tick after spawn has run skill selection; that
@@ -166,6 +168,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
           casting: map() | nil,
           master_id: integer() | nil,
           owner_player_id: integer() | nil,
+          stat_bonus: stat_bonus(),
           no_exp: boolean(),
           no_drops: boolean(),
           spawn_tick_pending?: boolean(),
@@ -221,9 +224,9 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       x: x,
       y: y,
       spawn_point: {x, y},
-      hp: mob_data.hp,
-      max_hp: mob_data.hp,
-      base_max_hp: mob_data.hp,
+      hp: max(mob_data.hp, 1),
+      max_hp: max(mob_data.hp, 1),
+      base_max_hp: max(mob_data.hp, 1),
       sp: mob_data.sp,
       max_sp: mob_data.sp,
       spawned_at: current_time,
@@ -363,6 +366,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     formulas = Mechanics.mob_formulas()
     mob_matk = formulas.calculate_magic_attack(mob_data)
     modifiers = Interpreter.get_all_modifiers(:mob, mob_state.instance_id)
+    stat_bonus = mob_state.stat_bonus
 
     Combatant.new!(%{
       unit_id: mob_state.instance_id,
@@ -381,13 +385,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         hit: formulas.calculate_hit(mob_data) + modifier(modifiers, :hit),
         flee: formulas.calculate_flee(mob_data) + modifier(modifiers, :flee),
         perfect_dodge: formulas.calculate_perfect_dodge(mob_data),
-        def: formulas.calculate_defense(mob_data) + modifier(modifiers, :def),
+        def:
+          formulas.calculate_defense(mob_data) + modifier(modifiers, :def) +
+            Map.get(stat_bonus, :def, 0),
         soft_def: formulas.calculate_soft_defense(mob_data),
         atk: formulas.calculate_base_attack(mob_data) + modifier(modifiers, :atk),
         matk: mob_matk + modifier(modifiers, :matk),
         matk_min: mob_matk + modifier(modifiers, :matk),
         matk_max: mob_matk + modifier(modifiers, :matk),
-        mdef: formulas.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef),
+        mdef:
+          formulas.calculate_magic_defense(mob_data) + modifier(modifiers, :mdef) +
+            Map.get(stat_bonus, :mdef, 0),
         soft_mdef: formulas.calculate_soft_mdef(mob_data),
         ignore_size_penalty: false,
         max_weapon_damage: false
@@ -627,7 +635,10 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     %{state | master_id: master_id}
   end
 
-  @doc "Configures player summon ownership, reward policy, and optional HP override."
+  @doc """
+  Configures player summon ownership, reward policy, optional HP override, and
+  an optional flat DEF/MDEF stat bonus.
+  """
   @spec configure_summon(t(), keyword()) :: t()
   def configure_summon(%__MODULE__{} = state, opts) do
     state =
@@ -635,7 +646,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
         state
         | owner_player_id: Keyword.get(opts, :owner_player_id),
           no_exp: Keyword.get(opts, :no_exp, false),
-          no_drops: Keyword.get(opts, :no_drops, false)
+          no_drops: Keyword.get(opts, :no_drops, false),
+          stat_bonus: Keyword.get(opts, :stat_bonus, %{})
       }
 
     case Keyword.get(opts, :hp_override) do

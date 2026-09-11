@@ -450,6 +450,66 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
+  describe "hp floor" do
+    test "new/6 floors a zero-HP definition to 1 across hp, max_hp and base_max_hp" do
+      mob_data = %{build_mob_state().mob_data | hp: 0}
+
+      spawn_ref = %MobSpawn{
+        mob: 1001,
+        amount: 1,
+        respawn_time: 5000,
+        spawn_area: %SpawnArea{x: 100, y: 100}
+      }
+
+      state = MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
+
+      assert state.hp == 1
+      assert state.max_hp == 1
+      assert state.base_max_hp == 1
+      assert MobState.living?(state)
+    end
+  end
+
+  describe "configure_summon/2 stat_bonus" do
+    test "absent stat_bonus leaves def/mdef unchanged" do
+      state = build_mob_state()
+      combatant = state |> MobState.configure_summon([]) |> MobState.to_combatant()
+
+      assert combatant.combat_stats.def == 25
+      assert combatant.combat_stats.mdef == 10
+    end
+
+    test "stat_bonus raises def and mdef by the given flat amount" do
+      state = build_mob_state()
+
+      combatant =
+        state
+        |> MobState.configure_summon(stat_bonus: %{def: 34, mdef: 34})
+        |> MobState.to_combatant()
+
+      assert combatant.combat_stats.def == 25 + 34
+      assert combatant.combat_stats.mdef == 10 + 34
+    end
+
+    test "hp_override still wins over the zero-HP floor" do
+      mob_data = %{build_mob_state().mob_data | hp: 0}
+
+      spawn_ref = %MobSpawn{
+        mob: 1001,
+        amount: 1,
+        respawn_time: 5000,
+        spawn_area: %SpawnArea{x: 100, y: 100}
+      }
+
+      state = MobState.new(1, mob_data, spawn_ref, "prontera", 100, 100)
+      configured = MobState.configure_summon(state, hp_override: 500)
+
+      assert configured.hp == 500
+      assert configured.max_hp == 500
+      assert configured.base_max_hp == 500
+    end
+  end
+
   describe "recalculate_max_hp/1" do
     test "a freshly built mob records its base_max_hp" do
       state = build_mob_state()
