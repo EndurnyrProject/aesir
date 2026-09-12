@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   alias Aesir.Commons.Models.GuildStorageLog
   alias Aesir.Net.StorageResult
   alias Aesir.Repo
+  alias Aesir.ZoneServer.Guild.Lifecycle
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.State
@@ -314,6 +315,16 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert_receive {:social, {:guild_disbanded, _id, "gm_action"}}
     end
 
+    test "publishes {:disbanded, guild_id} on the guild lifecycle topic" do
+      {_master, created} = guild_fixture("LifecycleDoomed")
+      guild_id = created.guild_id
+
+      assert :ok = Lifecycle.subscribe()
+      assert :ok = Manager.disband(guild_id, "gm_action")
+
+      assert_receive {:guild_lifecycle, {:disbanded, ^guild_id}}
+    end
+
     test "a failed disband leaves the storage claim and window usable" do
       {master, created} = guild_fixture("FailedDisband")
       guild_id = created.guild_id
@@ -452,8 +463,10 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert Lock.held_by?(guild_id, self())
     end
 
-    test "returns {:error, :not_found} when no entry is running" do
+    test "returns {:error, :not_found} when no entry is running and publishes nothing" do
+      assert :ok = Lifecycle.subscribe()
       assert {:error, :not_found} = Manager.disband(999_999, "gm_action")
+      refute_receive {:guild_lifecycle, _event}
     end
   end
 

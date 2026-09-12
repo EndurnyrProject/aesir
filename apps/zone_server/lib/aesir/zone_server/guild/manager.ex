@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   alias Aesir.Commons.Models.GuildPosition
   alias Aesir.Repo
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Guild.Lifecycle
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Permissions
   alias Aesir.ZoneServer.Guild.Position
@@ -166,7 +167,9 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   storage claim is stopped. A failed transaction leaves the claim untouched. A
   failed post-commit claim stop is logged but does not suppress the disband
   broadcast or runtime-entry shutdown. It broadcasts
-  `{:social, {:guild_disbanded, guild_id, reason}}` on `"guild:\#{guild_id}"`.
+  `{:social, {:guild_disbanded, guild_id, reason}}` on `"guild:\#{guild_id}"`,
+  then publishes `{:disbanded, guild_id}` on the global
+  `Aesir.ZoneServer.Guild.Lifecycle` topic.
   """
   @spec disband(non_neg_integer(), String.t()) :: :ok | {:error, term()}
   def disband(guild_id, reason) do
@@ -183,6 +186,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
           {:ok, _state} ->
             stop_storage_claim(guild_id)
             broadcast(guild_id, {:guild_disbanded, guild_id, reason})
+            Lifecycle.publish_disbanded(guild_id)
             stop_entry({:guild, guild_id})
             :ok
 
