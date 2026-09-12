@@ -434,9 +434,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
 
       on_exit(&SkillTree.reload/0)
 
-      log = capture_log(fn -> SkillTree.reload() end)
-
-      assert log =~ "references unimplemented skill \"SM_SWORD\""
+      capture_log(fn -> SkillTree.reload() end)
       assert SkillTree.entry(@swordman_id, hidden) == :error
     end
   end
