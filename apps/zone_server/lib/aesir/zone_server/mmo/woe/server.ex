@@ -2,12 +2,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   @moduledoc """
   Per-node GenServer owning the WoE agit lifecycle.
 
-  `start/0` arms every FE castle (`gvg` mapflag, Emperium summon, siege flag,
-  hired guardians spawned), and `stop/0` disarms them (clear `gvg`, despawn
-  the Emperiums and guardians, roll-call the owners). Attributed mob-death
-  lifecycle events claim a matching live Emperium before eligible conquest is
-  persisted and announced, and a captured castle's guardians are kept or
-  wiped per the new owner's Guardian Research skill.
+  `start/0` wipes each castle's unowned mob pack, then arms every FE castle
+  (`gvg` mapflag, Emperium summon, siege flag, hired guardians spawned), and
+  `stop/0` disarms them (clear `gvg`, despawn the Emperiums and guardians,
+  roll-call the owners) and reseeds the unowned mob pack of every castle
+  still without an owner. Attributed mob-death lifecycle events claim a
+  matching live Emperium before eligible conquest is persisted and
+  announced, and a captured castle's guardians are kept or wiped per the new
+  owner's Guardian Research skill.
+
+  A disbanded guild's owned castles are released (store, guardians, services,
+  persistence, announcement, and, outside an active agit, an unowned mob
+  reseed) as each guild-lifecycle event arrives. Outside an active agit, the
+  boot-time map-coordinator sweep also seeds every still-unowned castle once
+  maps finish initializing.
 
   The respawn timers live here so they outlive the dead Emperium. Re-arming a
   castle's timer cancels the previous one, and a stale timer fire never touches
@@ -22,12 +30,15 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Announcement.Flags
   alias Aesir.ZoneServer.Config
+  alias Aesir.ZoneServer.Guild.Lifecycle, as: GuildLifecycle
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Map.Coordinator
+  alias Aesir.ZoneServer.Map.Lifecycle, as: MapLifecycle
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb.Castle
+  alias Aesir.ZoneServer.Mmo.Woe.CastleMobs
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Economy
   alias Aesir.ZoneServer.Mmo.Woe.Guardians
@@ -87,6 +98,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   @impl true
   def init(:ok) do
     :ok = Lifecycle.subscribe()
+    :ok = GuildLifecycle.subscribe()
+
+    if Config.woe_castle_mobs_on_boot?() do
+      :ok = MapLifecycle.subscribe()
+    end
+
     {:ok, %__MODULE__{}}
   end
 
@@ -162,6 +179,24 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
   def handle_info({:unit_lifecycle, %Event{}}, state), do: {:noreply, state}
 
+  def handle_info({:map_lifecycle, :initialized}, state) do
+    unless state.active? do
+      CastleDb.all()
+      |> Enum.filter(&is_nil(CastleStore.owner(&1.id)))
+      |> Enum.each(&CastleMobs.seed/1)
+    end
+
+    {:noreply, state}
+  end
+
+  def handle_info({:guild_lifecycle, {:disbanded, guild_id}}, state) do
+    CastleDb.all()
+    |> Enum.filter(&(CastleStore.owner(&1.id) == guild_id))
+    |> Enum.each(&release_castle(&1, guild_id, state.active?))
+
+    {:noreply, state}
+  end
+
   def handle_info({:respawn_emperium, castle_id, expected_epoch, token}, state) do
     case Map.fetch(state.respawn_timers, castle_id) do
       {:ok, {_ref, ^token}} ->
@@ -185,6 +220,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   end
 
   defp arm_castle(%Castle{id: id, map: map, emperium: {x, y}} = castle) do
+    CastleMobs.wipe(castle)
+
     opts = Economy.emperium_summon_opts(CastleStore.economy(id).defense, GameMode.mode())
 
     case Coordinator.summon_mob(map, @emperium_mob_id, x, y, opts) do
@@ -211,6 +248,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     despawn_emperium(map, CastleStore.get(id).emperium_unit_id)
     CastleStore.set_emperium(id, nil)
     CastleStore.set_siege(id, false)
+    if is_nil(CastleStore.owner(id)), do: CastleMobs.seed(castle)
   end
 
   defp despawn_emperium(_map, nil), do: :ok
@@ -298,6 +336,20 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
 
     Persistence.persist(castle_id, guild_id)
     announce_conquest(castle_id, guild_id)
+  end
+
+  defp release_castle(%Castle{id: castle_id} = castle, guild_id, active?) do
+    case CastleStore.release(castle_id, guild_id) do
+      :ok ->
+        Guardians.despawn_all(castle)
+        Services.on_release(castle)
+        Persistence.persist_release(castle_id)
+        announce_woe("Guild Base [#{castle.name}] has been abandoned")
+        unless active?, do: CastleMobs.seed(castle)
+
+      {:error, :not_owner} ->
+        :ok
+    end
   end
 
   defp queue_castle_ejections(_castle, nil, _capture_epoch), do: :ok

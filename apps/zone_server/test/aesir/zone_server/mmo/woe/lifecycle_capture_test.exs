@@ -13,6 +13,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleMobs
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
   alias Aesir.ZoneServer.Mmo.Woe.Server
@@ -36,6 +37,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.LifecycleCaptureTest do
     Mimic.allow(MobSupervisor, self(), server)
     Mimic.allow(Persistence, self(), server)
     Mimic.allow(Manager, self(), server)
+    Mimic.allow(CastleMobs, self(), server)
+
+    stub(CastleMobs, :wipe, fn _castle -> :ok end)
+    stub(CastleMobs, :seed, fn _castle -> :ok end)
 
     :ok
   end

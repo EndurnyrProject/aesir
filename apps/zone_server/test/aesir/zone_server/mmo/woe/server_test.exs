@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleMobs
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Economy
   alias Aesir.ZoneServer.Mmo.Woe.Guardians
@@ -43,6 +44,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
     Mimic.allow(Persistence, self(), server)
     Mimic.allow(Guardians, self(), server)
     Mimic.allow(Services, self(), server)
+    Mimic.allow(CastleMobs, self(), server)
+
+    stub(CastleMobs, :wipe, fn _castle -> :ok end)
+    stub(CastleMobs, :seed, fn _castle -> :ok end)
 
     {:ok, server: server}
   end
@@ -133,6 +138,32 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
       assert CastleStore.get(ok_castle.id).siege_active?
       refute is_nil(CastleStore.get(ok_castle.id).emperium_unit_id)
     end
+
+    test "wipes every castle before summoning its Emperium" do
+      test_pid = self()
+
+      expect(CastleMobs, :wipe, castle_count(), fn castle ->
+        send(test_pid, {:wipe, castle.id})
+        :ok
+      end)
+
+      expect(Coordinator, :summon_mob, castle_count(), fn map, _, _, _, _opts ->
+        castle = Enum.find(CastleDb.all(), &(&1.map == map))
+        send(test_pid, {:summon, castle.id})
+        {:ok, System.unique_integer([:positive])}
+      end)
+
+      expect(Guardians, :spawn_all, castle_count(), fn _castle -> :ok end)
+      expect(Announcement, :to_all, 1, fn _opts -> :ok end)
+
+      assert :ok = Server.start()
+
+      for castle <- CastleDb.all() do
+        assert_receive {:wipe, castle_id}, 200
+        assert castle_id == castle.id
+        assert_receive {:summon, ^castle_id}, 200
+      end
+    end
   end
 
   describe "stop/0" do
@@ -197,6 +228,191 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
       assert :ok = Server.stop()
       assert :ok = Server.stop()
       refute Server.active?()
+    end
+
+    test "seeds only castles with no owner" do
+      owned_castle = hd(CastleDb.all())
+
+      :ok =
+        CastleStore.hydrate(%{
+          owned_castle.id => %{
+            guild_id: 9,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          }
+        })
+
+      stub(Coordinator, :summon_mob, fn _, _, _, _, _opts -> {:ok, 1} end)
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+
+      assert :ok = Server.start()
+
+      test_pid = self()
+
+      expect(CastleMobs, :seed, castle_count() - 1, fn castle ->
+        send(test_pid, {:seed, castle.id})
+        :ok
+      end)
+
+      assert :ok = Server.stop()
+
+      seeded_ids =
+        for _ <- 1..(castle_count() - 1) do
+          assert_receive {:seed, castle_id}, 200
+          castle_id
+        end
+
+      refute owned_castle.id in seeded_ids
+    end
+  end
+
+  describe "guild disband lifecycle event" do
+    test "releases exactly the castles the disbanded guild owned, in order, and seeds them", %{
+      server: server
+    } do
+      [castle_a1, castle_a2, castle_b | _] = CastleDb.all()
+
+      :ok =
+        CastleStore.hydrate(%{
+          castle_a1.id => %{
+            guild_id: 5,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          },
+          castle_a2.id => %{
+            guild_id: 5,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          },
+          castle_b.id => %{
+            guild_id: 7,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          }
+        })
+
+      test_pid = self()
+
+      expect(Guardians, :despawn_all, 2, fn castle ->
+        send(test_pid, {:guardians_despawn, castle.id})
+        :ok
+      end)
+
+      expect(Services, :on_release, 2, fn castle ->
+        send(test_pid, {:services_release, castle.id})
+        :ok
+      end)
+
+      expect(Persistence, :persist_release, 2, fn castle_id ->
+        send(test_pid, {:persist_release, castle_id})
+        :ok
+      end)
+
+      expect(Announcement, :to_all, 2, fn opts ->
+        send(test_pid, {:announcement, opts.text})
+        :ok
+      end)
+
+      expect(CastleMobs, :seed, 2, fn castle ->
+        send(test_pid, {:seed, castle.id})
+        :ok
+      end)
+
+      send(server, {:guild_lifecycle, {:disbanded, 5}})
+
+      for castle <- [castle_a1, castle_a2] do
+        assert_receive {:guardians_despawn, castle_id}, 200
+        assert castle_id == castle.id
+        assert_receive {:services_release, ^castle_id}, 200
+        assert_receive {:persist_release, ^castle_id}, 200
+        assert_receive {:announcement, text}, 200
+        assert text == "Guild Base [#{castle.name}] has been abandoned"
+        assert_receive {:seed, ^castle_id}, 200
+      end
+
+      refute Server.active?()
+      assert is_nil(CastleStore.owner(castle_a1.id))
+      assert is_nil(CastleStore.owner(castle_a2.id))
+      assert CastleStore.owner(castle_b.id) == 7
+    end
+
+    test "does not seed released castles while the agit is active", %{server: server} do
+      castle = hd(CastleDb.all())
+
+      :ok =
+        CastleStore.hydrate(%{
+          castle.id => %{
+            guild_id: 5,
+            economy: 0,
+            defense: 0,
+            invested_economy: 0,
+            invested_defense: 0
+          }
+        })
+
+      stub(Coordinator, :summon_mob, fn _, _, _, _, _opts -> {:ok, 1} end)
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+      stub(Guardians, :despawn_all, fn _castle -> :ok end)
+      stub(Services, :on_release, fn _castle -> :ok end)
+      stub(Persistence, :persist_release, fn _castle_id -> :ok end)
+
+      assert :ok = Server.start()
+      reject(&CastleMobs.seed/1)
+
+      send(server, {:guild_lifecycle, {:disbanded, 5}})
+      assert Server.active?()
+    end
+
+    test "a guild owning no castle triggers nothing", %{server: server} do
+      reject(&Guardians.despawn_all/1)
+      reject(&Services.on_release/1)
+      reject(&Persistence.persist_release/1)
+      reject(&Announcement.to_all/1)
+      reject(&CastleMobs.seed/1)
+
+      send(server, {:guild_lifecycle, {:disbanded, 999}})
+      refute Server.active?()
+    end
+  end
+
+  describe "maps-initialized lifecycle event" do
+    test "seeds unowned castles when the agit is inactive", %{server: server} do
+      test_pid = self()
+
+      expect(CastleMobs, :seed, castle_count(), fn castle ->
+        send(test_pid, {:seed, castle.id})
+        :ok
+      end)
+
+      refute Server.active?()
+      send(server, {:map_lifecycle, :initialized})
+
+      seeded_ids =
+        for _ <- 1..castle_count() do
+          assert_receive {:seed, castle_id}, 200
+          castle_id
+        end
+
+      assert Enum.sort(seeded_ids) == Enum.sort(Enum.map(CastleDb.all(), & &1.id))
+    end
+
+    test "does nothing when the agit is active", %{server: server} do
+      stub(Coordinator, :summon_mob, fn _, _, _, _, _opts -> {:ok, 1} end)
+      stub(Announcement, :to_all, fn _opts -> :ok end)
+
+      assert :ok = Server.start()
+      reject(&CastleMobs.seed/1)
+
+      send(server, {:map_lifecycle, :initialized})
+      assert Server.active?()
     end
   end
 
