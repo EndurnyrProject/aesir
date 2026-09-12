@@ -15,6 +15,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifier do
 
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleMobs
 
   @type cell_kind :: :emperium | :respawn | :treasure | :guardian
 
@@ -27,13 +28,25 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifier do
   def verify! do
     case bad_cells() do
       [] ->
-        :ok
+        verify_mob_sets!()
 
       bad ->
         raise "Non-walkable WoE castle cell(s): " <>
                 Enum.map_join(bad, "; ", fn {map, name, kind, x, y} ->
                   "#{name} (#{map}) #{kind} cell (#{x}, #{y})"
                 end)
+    end
+  end
+
+  @spec verify_mob_sets!() :: :ok
+  defp verify_mob_sets! do
+    case Enum.filter(CastleDb.all(), &(CastleMobs.set_for(&1.map) == :error)) do
+      [] ->
+        :ok
+
+      bad ->
+        raise "WoE castle map(s) with no mob region set: " <>
+                Enum.map_join(bad, ", ", & &1.map)
     end
   end
 

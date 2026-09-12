@@ -81,6 +81,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
       end
     end
 
+    test "raises naming a castle map with no mob region set" do
+      stub(CastleDb, :all, fn ->
+        [castle(map: "custom_cas01", emperium: {5, 5}, respawn: {10, 10})]
+      end)
+
+      stub(MapCache, :walkable?, fn _, _, _ -> true end)
+      stub(MapCache, :get!, fn _ -> %{xs: 400, ys: 400} end)
+
+      assert_raise RuntimeError, ~r/custom_cas01/, fn ->
+        CastleVerifier.verify!()
+      end
+    end
+
     test "passes with an in-bounds guardian cell that is not walkable" do
       stub(CastleDb, :all, fn ->
         [
@@ -108,7 +121,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleVerifierTest do
   defp castle(opts) do
     %Castle{
       id: 1,
-      map: "aldeg_cas01",
+      map: Keyword.get(opts, :map, "aldeg_cas01"),
       name: "Neuschwanstein",
       client_id: 0,
       emperium: Keyword.fetch!(opts, :emperium),
