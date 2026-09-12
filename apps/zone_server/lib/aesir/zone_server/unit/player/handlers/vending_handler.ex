@@ -171,17 +171,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler do
     end
   end
 
+  @open_codes %{
+    no_cart: :VEND_NO_CART,
+    insufficient_sp: :VEND_INSUFFICIENT_SP,
+    skill_not_learned: :VEND_SKILL_NOT_LEARNED,
+    too_many_slots: :VEND_TOO_MANY_SLOTS,
+    invalid_amount: :VEND_INVALID_AMOUNT,
+    invalid_price: :VEND_INVALID_PRICE,
+    item_not_in_cart: :VEND_ITEM_NOT_IN_CART,
+    insufficient_stock: :VEND_INSUFFICIENT_STOCK,
+    item_bound: :VEND_INVALID_STATE
+  }
+
   @spec open_code(atom()) :: atom()
-  defp open_code(:no_cart), do: :VEND_NO_CART
-  defp open_code(:insufficient_sp), do: :VEND_INSUFFICIENT_SP
-  defp open_code(:skill_not_learned), do: :VEND_SKILL_NOT_LEARNED
-  defp open_code(:too_many_slots), do: :VEND_TOO_MANY_SLOTS
-  defp open_code(:invalid_amount), do: :VEND_INVALID_AMOUNT
-  defp open_code(:invalid_price), do: :VEND_INVALID_PRICE
-  defp open_code(:item_not_in_cart), do: :VEND_ITEM_NOT_IN_CART
-  defp open_code(:insufficient_stock), do: :VEND_INSUFFICIENT_STOCK
-  defp open_code(:item_bound), do: :VEND_INVALID_STATE
-  defp open_code(_reason), do: :VEND_INVALID_STATE
+  defp open_code(reason), do: Map.get(@open_codes, reason, :VEND_INVALID_STATE)
 
   @doc """
   Session-facing wrapper for `close_shop/2` with the `:user_closed` reason.
