@@ -213,8 +213,7 @@ defmodule Aesir.ZoneServer.Config do
       )
 
   @doc """
-  Whether castle guardian regions seed their unowned mob spawns during the boot
-  map sweep.
+  Whether unowned castles seed their PvE mob spawns during the boot map sweep.
 
   Disabled under test: WoE integration tests boot their own per-test castle
   servers, and seeding the boot-global maps from `MapManager`'s sweep would

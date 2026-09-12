@@ -24,6 +24,80 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleMobsTest do
       assert totals(CastleMobs.set_for("prtg_cas01")) == {35, 9}
     end
 
+    test "returns the exact mob id and amount lists for each region" do
+      assert {:ok, %{roaming: aldeg_roaming, room: aldeg_room}} =
+               CastleMobs.set_for("aldeg_cas01")
+
+      assert aldeg_roaming == [
+               {1117, 10},
+               {1132, 4},
+               {1219, 2},
+               {1205, 1},
+               {1216, 10},
+               {1193, 18},
+               {1269, 9},
+               {1276, 7},
+               {1208, 3},
+               {1275, 1},
+               {1268, 1},
+               {1272, 1}
+             ]
+
+      assert aldeg_room == [{1272, 1}, {1270, 4}, {1268, 1}, {1219, 1}, {1276, 5}]
+
+      assert {:ok, %{roaming: gefg_roaming, room: gefg_room}} = CastleMobs.set_for("gefg_cas01")
+
+      assert gefg_roaming == [
+               {1117, 10},
+               {1263, 11},
+               {1102, 10},
+               {1130, 10},
+               {1140, 20},
+               {1163, 9},
+               {1275, 1},
+               {1219, 1},
+               {1150, 1},
+               {1159, 1}
+             ]
+
+      assert gefg_room == [{1203, 1}, {1087, 1}, {1213, 10}, {1189, 10}]
+
+      assert {:ok, %{roaming: payg_roaming, room: payg_room}} = CastleMobs.set_for("payg_cas01")
+
+      assert payg_roaming == [
+               {1277, 9},
+               {1208, 10},
+               {1262, 5},
+               {1102, 5},
+               {1150, 1},
+               {1115, 1},
+               {1129, 11},
+               {1276, 5},
+               {1282, 4},
+               {1253, 5}
+             ]
+
+      assert payg_room == [{1150, 1}, {1115, 1}, {1208, 6}, {1276, 5}]
+
+      assert {:ok, %{roaming: prtg_roaming, room: prtg_room}} = CastleMobs.set_for("prtg_cas01")
+
+      assert prtg_roaming == [
+               {1163, 1},
+               {1132, 10},
+               {1219, 5},
+               {1268, 5},
+               {1251, 1},
+               {1252, 1},
+               {1276, 5},
+               {1259, 2},
+               {1283, 3},
+               {1275, 1},
+               {1200, 1}
+             ]
+
+      assert prtg_room == [{1268, 1}, {1251, 1}, {1252, 1}, {1219, 1}, {1276, 5}]
+    end
+
     test "errors for a map with no matching region" do
       assert CastleMobs.set_for("prontera") == :error
     end

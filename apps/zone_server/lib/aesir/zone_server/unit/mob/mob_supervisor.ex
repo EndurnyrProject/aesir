@@ -71,13 +71,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   end
 
   @doc """
-  Gets all running mob processes for a map.
+  Gets all running mob processes for a map. Returns `[]` when the map has no
+  running mob supervisor.
   """
   @spec get_mob_processes(String.t()) :: [pid()]
   def get_mob_processes(map_name) do
-    DynamicSupervisor.which_children(server(map_name))
-    |> Enum.map(fn {_, pid, _, _} -> pid end)
-    |> Enum.filter(&is_pid/1)
+    case GenServer.whereis(server(map_name)) do
+      nil ->
+        []
+
+      _pid ->
+        DynamicSupervisor.which_children(server(map_name))
+        |> Enum.map(fn {_, pid, _, _} -> pid end)
+        |> Enum.filter(&is_pid/1)
+    end
   end
 
   @doc """
@@ -162,26 +169,20 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec kill_all(String.t()) :: :ok
   def kill_all(map_name) do
-    case GenServer.whereis(server(map_name)) do
-      nil ->
-        :ok
+    map_name
+    |> get_mob_processes()
+    |> Enum.each(fn pid ->
+      try do
+        mob = MobSession.get_state(pid)
 
-      _pid ->
-        map_name
-        |> get_mob_processes()
-        |> Enum.each(fn pid ->
-          try do
-            mob = MobSession.get_state(pid)
+        UnitRegistry.unregister_unit(:mob, mob.instance_id)
+        terminate_mob(map_name, pid)
+      catch
+        :exit, _ -> :ok
+      end
+    end)
 
-            UnitRegistry.unregister_unit(:mob, mob.instance_id)
-            terminate_mob(map_name, pid)
-          catch
-            :exit, _ -> :ok
-          end
-        end)
-
-        :ok
-    end
+    :ok
   end
 
   @doc """
@@ -194,22 +195,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobSupervisor do
   """
   @spec count_by_event(String.t(), :all | String.t()) :: non_neg_integer()
   def count_by_event(map_name, filter) do
-    case GenServer.whereis(server(map_name)) do
-      nil ->
-        0
-
-      _pid ->
-        map_name
-        |> get_mob_processes()
-        |> Enum.count(fn pid ->
-          try do
-            mob = MobSession.get_state(pid)
-            not mob.is_dead and count_match?(mob, filter)
-          catch
-            :exit, _ -> false
-          end
-        end)
-    end
+    map_name
+    |> get_mob_processes()
+    |> Enum.count(fn pid ->
+      try do
+        mob = MobSession.get_state(pid)
+        not mob.is_dead and count_match?(mob, filter)
+      catch
+        :exit, _ -> false
+      end
+    end)
   end
 
   defp count_match?(%MobState{}, :all), do: true

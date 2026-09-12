@@ -3,7 +3,7 @@ defmodule Aesir.ZoneServer.Map.LifecycleTest do
 
   alias Aesir.ZoneServer.Map.Lifecycle
 
-  test "subscribers receive one initialized event" do
+  test "subscribers on this node receive one initialized event" do
     assert :ok = Lifecycle.subscribe()
 
     assert :ok = Lifecycle.publish_initialized()

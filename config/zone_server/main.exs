@@ -43,7 +43,7 @@ config :zone_server, enforce_zone_auth_token: true
 # BossRespawn.reconcile/0 explicitly inside their own sandboxed connection.
 config :zone_server, boss_respawn_reconcile_on_boot: config_env() != :test
 
-# Seed castle guardian regions' unowned mob spawns during the boot map sweep.
+# Seed unowned castles' PvE mob spawns during the boot map sweep.
 # Disabled under test: WoE integration tests boot their own per-test castle
 # servers, and seeding the boot-global maps here would spawn duplicate,
 # unowned mobs those tests do not expect.

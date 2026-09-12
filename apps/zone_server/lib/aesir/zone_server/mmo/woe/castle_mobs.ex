@@ -133,23 +133,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleMobs do
   @spec wipe(Castle.t()) :: :ok
   def wipe(%Castle{map: map}), do: MobSupervisor.kill_all(map)
 
-  @spec summon_all(Castle.t(), {pos_integer(), pos_integer()}, integer(), integer()) :: :ok
   defp summon_all(castle, {mob_id, amount}, x, y) do
-    Enum.each(1..amount, fn _ -> summon(castle, mob_id, x, y) end)
-  end
+    Enum.each(1..amount, fn _ ->
+      case Coordinator.summon_mob(castle.map, mob_id, x, y, []) do
+        {:ok, _unit_id} ->
+          :ok
 
-  @spec summon(Castle.t(), pos_integer(), integer(), integer()) :: :ok
-  defp summon(castle, mob_id, x, y) do
-    case Coordinator.summon_mob(castle.map, mob_id, x, y, []) do
-      {:ok, _unit_id} ->
-        :ok
+        {:error, reason} ->
+          Logger.warning(
+            "Failed to summon mob #{mob_id} for castle #{castle.name} (#{castle.map}): #{inspect(reason)}"
+          )
 
-      {:error, reason} ->
-        Logger.warning(
-          "Failed to summon mob #{mob_id} for castle #{castle.name} (#{castle.map}): #{inspect(reason)}"
-        )
-
-        :ok
-    end
+          :ok
+      end
+    end)
   end
 end
