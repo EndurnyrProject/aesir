@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
 
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
+  alias Aesir.ZoneServer.Guild.Relation
   alias Aesir.ZoneServer.Guild.State
 
   @max_members 16
@@ -18,7 +19,8 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
       master_char_id: Keyword.get(opts, :master_char_id, 1),
       positions: Keyword.get(opts, :positions, %{}),
       members: Map.new(members, &{&1.char_id, &1}),
-      learned_skills: Keyword.get(opts, :learned_skills, %{})
+      learned_skills: Keyword.get(opts, :learned_skills, %{}),
+      relations: Keyword.get(opts, :relations, %{})
     }
   end
 
@@ -77,6 +79,52 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
 
     test "is nil for a non-member" do
       assert State.position_of(state([member(1, 0)]), 999) == nil
+    end
+  end
+
+  describe "allies/1 and antagonists/1" do
+    test "empty map yields no relations" do
+      assert State.allies(state([])) == []
+      assert State.antagonists(state([])) == []
+    end
+
+    test "separates allies from antagonists" do
+      ally = %Relation{guild_id: 2, name: "Asgard", kind: :ally}
+      antagonist = %Relation{guild_id: 3, name: "Muspelheim", kind: :antagonist}
+      guild = state([], relations: %{2 => ally, 3 => antagonist})
+
+      assert State.allies(guild) == [ally]
+      assert State.antagonists(guild) == [antagonist]
+    end
+  end
+
+  describe "ally?/2" do
+    test "is false for nil, 0, and an antagonist id" do
+      antagonist = %Relation{guild_id: 3, name: "Muspelheim", kind: :antagonist}
+      guild = state([], relations: %{3 => antagonist})
+
+      refute State.ally?(guild, nil)
+      refute State.ally?(guild, 0)
+      refute State.ally?(guild, 3)
+    end
+
+    test "is true for an ally id" do
+      ally = %Relation{guild_id: 2, name: "Asgard", kind: :ally}
+      guild = state([], relations: %{2 => ally})
+
+      assert State.ally?(guild, 2)
+    end
+  end
+
+  describe "relation_count/2" do
+    test "counts relations per kind" do
+      ally = %Relation{guild_id: 2, name: "Asgard", kind: :ally}
+      antagonist = %Relation{guild_id: 3, name: "Muspelheim", kind: :antagonist}
+      guild = state([], relations: %{2 => ally, 3 => antagonist})
+
+      assert State.relation_count(guild, :ally) == 1
+      assert State.relation_count(guild, :antagonist) == 1
+      assert State.relation_count(state([]), :ally) == 0
     end
   end
 end
