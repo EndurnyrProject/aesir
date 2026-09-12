@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Map.MapManager do
 
   require Logger
 
+  alias Aesir.ZoneServer.Map.Lifecycle
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Map.PartitionedSupervisor
 
@@ -92,6 +93,8 @@ defmodule Aesir.ZoneServer.Map.MapManager do
       "Map initialization complete: #{successful}/#{total} coordinators started" <>
         if(failed_count > 0, do: " (#{failed_count} failed)", else: "")
     )
+
+    Lifecycle.publish_initialized()
 
     {:noreply, %{state | initialized: true, coordinators: coordinators, failed_maps: failed_maps}}
   end

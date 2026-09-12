@@ -39,6 +39,26 @@ defmodule Aesir.ZoneServer.ConfigTest do
     end
   end
 
+  describe "woe_castle_mobs_on_boot?/0" do
+    test "is disabled under the test config" do
+      refute Config.woe_castle_mobs_on_boot?()
+    end
+
+    test "defaults to true with no app env set" do
+      previous = Application.get_env(:zone_server, :woe_castle_mobs_on_boot)
+      Application.delete_env(:zone_server, :woe_castle_mobs_on_boot)
+
+      on_exit(fn ->
+        case previous do
+          nil -> Application.delete_env(:zone_server, :woe_castle_mobs_on_boot)
+          value -> Application.put_env(:zone_server, :woe_castle_mobs_on_boot, value)
+        end
+      end)
+
+      assert Config.woe_castle_mobs_on_boot?()
+    end
+  end
+
   describe "natural_break_rate/0" do
     test "returns the configured default when unset" do
       assert Config.natural_break_rate() == 0

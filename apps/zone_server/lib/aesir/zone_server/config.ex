@@ -25,6 +25,7 @@ defmodule Aesir.ZoneServer.Config do
   @default_natural_break_rate 0
   @default_boss_respawn_delay_percentage 100
   @default_boss_respawn_reconcile_on_boot true
+  @default_woe_castle_mobs_on_boot true
   @default_exp_rate 100
   @default_item_rate 100
   @default_drop_min 1
@@ -209,6 +210,23 @@ defmodule Aesir.ZoneServer.Config do
         :zone_server,
         :boss_respawn_reconcile_on_boot,
         @default_boss_respawn_reconcile_on_boot
+      )
+
+  @doc """
+  Whether castle guardian regions seed their unowned mob spawns during the boot
+  map sweep.
+
+  Disabled under test: WoE integration tests boot their own per-test castle
+  servers, and seeding the boot-global maps from `MapManager`'s sweep would
+  spawn duplicate, unowned mobs those tests do not expect.
+  """
+  @spec woe_castle_mobs_on_boot?() :: boolean()
+  def woe_castle_mobs_on_boot?,
+    do:
+      Application.get_env(
+        :zone_server,
+        :woe_castle_mobs_on_boot,
+        @default_woe_castle_mobs_on_boot
       )
 
   @doc "Server base-EXP rate multiplier as a percentage (100 = 1x). Scales mob-kill base EXP."
