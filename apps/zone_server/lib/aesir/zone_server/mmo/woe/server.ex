@@ -32,6 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
   alias Aesir.ZoneServer.Mmo.Woe.Economy
   alias Aesir.ZoneServer.Mmo.Woe.Guardians
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
+  alias Aesir.ZoneServer.Mmo.Woe.Services
   alias Aesir.ZoneServer.Mmo.Woe.Treasure
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Lifecycle.Event
@@ -287,8 +288,12 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Server do
     Economy.apply_conquest_penalty(castle_id)
 
     case CastleDb.by_id(castle_id) do
-      {:ok, castle} -> Guardians.on_conquest(castle, guild_id)
-      :error -> Logger.error("Conquest guardian transfer for unknown castle #{castle_id}")
+      {:ok, castle} ->
+        Guardians.on_conquest(castle, guild_id)
+        Services.on_conquest(castle)
+
+      :error ->
+        Logger.error("Conquest guardian transfer for unknown castle #{castle_id}")
     end
 
     Persistence.persist(castle_id, guild_id)

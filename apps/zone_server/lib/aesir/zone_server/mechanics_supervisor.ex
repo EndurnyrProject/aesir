@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
   alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.CastleVerifier
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
+  alias Aesir.ZoneServer.Mmo.Woe.Services
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
   alias Aesir.ZoneServer.Npc.QuestInfo, as: NpcQuestInfo
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.MechanicsSupervisor do
     :ok = MapFlags.reload()
     :ok = CastleStore.init()
     :ok = CastleStore.hydrate(Persistence.load_all())
+    :ok = Services.sync_all()
     :ok = CastleVerifier.verify!()
 
     # Runs before any coordinator starts, as a single grouped query. It records

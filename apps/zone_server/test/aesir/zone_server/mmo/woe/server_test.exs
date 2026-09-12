@@ -20,6 +20,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
   alias Aesir.ZoneServer.Mmo.Woe.Guardians
   alias Aesir.ZoneServer.Mmo.Woe.Persistence
   alias Aesir.ZoneServer.Mmo.Woe.Server
+  alias Aesir.ZoneServer.Mmo.Woe.Services
   alias Aesir.ZoneServer.Mmo.Woe.Treasure
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.MobSupervisor
@@ -41,6 +42,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
     Mimic.allow(Manager, self(), server)
     Mimic.allow(Persistence, self(), server)
     Mimic.allow(Guardians, self(), server)
+    Mimic.allow(Services, self(), server)
 
     {:ok, server: server}
   end
@@ -286,6 +288,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
         :ok
       end)
 
+      expect(Services, :on_conquest, 1, fn conquered_castle ->
+        assert conquered_castle.id == castle.id
+        :ok
+      end)
+
       assert :ok =
                Lifecycle.publish_death(:mob, live_unit_id, castle.map, %{
                  attacker: {:player, 501},
@@ -394,6 +401,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServerTest do
       stub(Persistence, :persist, fn _castle_id, _guild_id -> :ok end)
       stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
       stub(Guardians, :on_conquest, fn _castle, _guild_id -> :ok end)
+      stub(Services, :on_conquest, fn _castle -> :ok end)
 
       castle = hd(CastleDb.all())
       assert :ok = Server.start()
