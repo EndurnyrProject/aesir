@@ -7,10 +7,12 @@ defmodule Aesir.ZoneServer.Guild.View do
   alias Aesir.Net.GuildMember
   alias Aesir.Net.GuildMemberUpdate
   alias Aesir.Net.GuildPosition
+  alias Aesir.Net.GuildRelation
   alias Aesir.Net.GuildSkillEntry
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.Progression.Data
+  alias Aesir.ZoneServer.Guild.Relation
   alias Aesir.ZoneServer.Guild.State
 
   @doc "Converts one complete guild member snapshot to its Protobuf message."
@@ -66,7 +68,8 @@ defmodule Aesir.ZoneServer.Guild.View do
       exp: guild.exp,
       next_exp: next_exp(guild.level),
       skill_points: guild.skill_points,
-      skills: skills(guild.learned_skills)
+      skills: skills(guild.learned_skills),
+      relations: relations(guild.relations)
     }
   end
 
@@ -90,6 +93,24 @@ defmodule Aesir.ZoneServer.Guild.View do
       %GuildSkillEntry{skill_id: skill_id, level: level, max_level: max_level}
     end)
   end
+
+  defp relations(relations) do
+    relations
+    |> Map.values()
+    |> Enum.sort_by(& &1.guild_id)
+    |> Enum.map(&relation/1)
+  end
+
+  defp relation(%Relation{} = relation) do
+    %GuildRelation{
+      guild_id: relation.guild_id,
+      name: relation.name,
+      kind: relation_kind(relation.kind)
+    }
+  end
+
+  defp relation_kind(:ally), do: :GUILD_RELATION_ALLY
+  defp relation_kind(:antagonist), do: :GUILD_RELATION_ANTAGONIST
 
   @doc "Builds a complete single-member update for a guild."
   @spec member_update(non_neg_integer(), Member.t()) :: GuildMemberUpdate.t()

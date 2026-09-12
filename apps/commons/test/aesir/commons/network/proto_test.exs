@@ -36,6 +36,7 @@ defmodule Aesir.Commons.Network.ProtoTest do
   alias Aesir.Net.GroundSkill
   alias Aesir.Net.GroundSkillCast
   alias Aesir.Net.GuildActionResult
+  alias Aesir.Net.GuildAllianceRequestNotify
   alias Aesir.Net.GuildCreateRequest
   alias Aesir.Net.GuildDisbanded
   alias Aesir.Net.GuildEmblemChanged
@@ -2530,6 +2531,27 @@ defmodule Aesir.Commons.Network.ProtoTest do
               body:
                 {:guild_invite_notify,
                  %GuildInviteNotify{guild_id: 5, guild_name: "Aesir", inviter_name: "Sigrid"}}
+            }} = Envelope.decode(IO.iodata_to_binary(iodata))
+  end
+
+  test "guild_alliance_request_notify round-trips through envelope oneof" do
+    env = %Envelope{
+      body:
+        {:guild_alliance_request_notify,
+         %GuildAllianceRequestNotify{guild_id: 5, guild_name: "Aesir", requester_name: "Sigrid"}}
+    }
+
+    {:ok, iodata, _size} = Envelope.encode(env)
+
+    assert {:ok,
+            %Envelope{
+              body:
+                {:guild_alliance_request_notify,
+                 %GuildAllianceRequestNotify{
+                   guild_id: 5,
+                   guild_name: "Aesir",
+                   requester_name: "Sigrid"
+                 }}
             }} = Envelope.decode(IO.iodata_to_binary(iodata))
   end
 

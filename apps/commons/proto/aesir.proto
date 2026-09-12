@@ -260,6 +260,13 @@ message Envelope {
     CardTargetList card_target_list = 203;  // s2c zone gameplay
     CardComposeRequest card_compose_request = 204;  // c2s zone
     CardComposeResult card_compose_result = 205;  // s2c zone gameplay
+    // 206-211: guild alliance and antagonist relations
+    GuildAllianceRequest guild_alliance_request = 206;  // c2s zone
+    GuildAllianceResponse guild_alliance_response = 207;  // c2s zone
+    GuildAllianceBreakRequest guild_alliance_break_request = 208;  // c2s zone
+    GuildAntagonistRequest guild_antagonist_request = 209;  // c2s zone
+    GuildAntagonistRemoveRequest guild_antagonist_remove_request = 210;  // c2s zone
+    GuildAllianceRequestNotify guild_alliance_request_notify = 211;  // s2c zone gameplay
   }
 }
 
@@ -1751,6 +1758,15 @@ enum GuildError {
   GUILD_ERR_NO_SKILL_POINTS = 11;
   GUILD_ERR_SKILL_REQUIREMENT = 12;
   GUILD_ERR_SKILL_MAXED = 13;
+  GUILD_ERR_ALLY_LIMIT = 14;
+  GUILD_ERR_ANTAGONIST_LIMIT = 15;
+  GUILD_ERR_ALREADY_ALLIED = 16;
+  GUILD_ERR_ALREADY_ANTAGONIST = 17;
+  GUILD_ERR_NOT_RELATED = 18;
+  GUILD_ERR_SAME_GUILD = 19;
+  GUILD_ERR_SIEGE_ACTIVE = 20;
+  GUILD_ERR_REQUEST_PENDING = 21;
+  GUILD_ERR_ALLIANCE_DECLINED = 22;
 }
 
 // Server -> client, acknowledgement of a guild request. `action` names the
@@ -1818,6 +1834,8 @@ message GuildInfo {
   uint32 skill_points = 12;
   // Learned guild skills with their current and maximum levels.
   repeated GuildSkillEntry skills = 13;
+  // This guild's ally and antagonist relations, sorted by guild id.
+  repeated GuildRelation relations = 14;
 }
 
 // One learned (or learnable) guild skill in a GuildInfo snapshot.
@@ -1825,6 +1843,19 @@ message GuildSkillEntry {
   uint32 skill_id = 1;
   uint32 level = 2;
   uint32 max_level = 3;
+}
+
+// Directed relation kind carried in a GuildInfo snapshot's relation list.
+enum GuildRelationKind {
+  GUILD_RELATION_ALLY = 0;
+  GUILD_RELATION_ANTAGONIST = 1;
+}
+
+// One ally or antagonist entry within a GuildInfo snapshot.
+message GuildRelation {
+  uint32 guild_id = 1;
+  string name = 2;
+  GuildRelationKind kind = 3;
 }
 
 // Client -> server, guild master spends one guild skill point on skill_id.
@@ -1866,6 +1897,46 @@ message GuildEmblemData {
 message GuildDisbanded {
   uint32 guild_id = 1;
   string reason = 2;
+}
+
+// Client -> server, guild master requests an alliance with a character's guild,
+// identified by id or by name (target_char_id wins when both are set; name is
+// resolved via a UnitRegistry reverse lookup).
+message GuildAllianceRequest {
+  uint32 target_char_id = 1;
+  string target_name = 2;
+}
+
+// Client -> server, the target guild master's accept/decline response to a
+// GuildAllianceRequestNotify.
+message GuildAllianceResponse {
+  uint32 guild_id = 1;
+  bool accept = 2;
+}
+
+// Client -> server, guild master breaks an existing alliance with guild_id.
+message GuildAllianceBreakRequest {
+  uint32 guild_id = 1;
+}
+
+// Client -> server, guild master declares antagonist status against a
+// character's guild, identified by id or by name (target_char_id wins when
+// both are set; name is resolved via a UnitRegistry reverse lookup).
+message GuildAntagonistRequest {
+  uint32 target_char_id = 1;
+  string target_name = 2;
+}
+
+// Client -> server, guild master removes an existing antagonist relation with guild_id.
+message GuildAntagonistRemoveRequest {
+  uint32 guild_id = 1;
+}
+
+// Server -> client, alliance request notification shown to the target guild's master.
+message GuildAllianceRequestNotify {
+  uint32 guild_id = 1;
+  string guild_name = 2;
+  string requester_name = 3;
 }
 
 // Distinguishes personal and guild storage windows.

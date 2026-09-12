@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
 
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.Position
+  alias Aesir.ZoneServer.Guild.Relation
   alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Guild.View
 
@@ -144,6 +145,38 @@ defmodule Aesir.ZoneServer.Guild.ViewTest do
     assert master_position.name == "GuildMaster"
     assert master_position.can_invite == true
     assert master_position.can_expel == true
+  end
+
+  test "guild_info/1 maps relations sorted by guild id" do
+    guild = %State{
+      guild_id: 10,
+      name: "Aesir",
+      master_char_id: 42,
+      relations: %{
+        20 => %Relation{guild_id: 20, name: "Bragi", kind: :ally},
+        15 => %Relation{guild_id: 15, name: "Fenrir", kind: :antagonist}
+      }
+    }
+
+    result = View.guild_info(guild)
+
+    assert Enum.map(result.relations, & &1.guild_id) == [15, 20]
+
+    antagonist = Enum.find(result.relations, &(&1.guild_id == 15))
+    assert antagonist.name == "Fenrir"
+    assert antagonist.kind == :GUILD_RELATION_ANTAGONIST
+
+    ally = Enum.find(result.relations, &(&1.guild_id == 20))
+    assert ally.name == "Bragi"
+    assert ally.kind == :GUILD_RELATION_ALLY
+  end
+
+  test "guild_info/1 yields an empty relation list when the guild has none" do
+    guild = %State{guild_id: 10, name: "Aesir", master_char_id: 42}
+
+    result = View.guild_info(guild)
+
+    assert result.relations == []
   end
 
   test "member_update/2 includes the guild id and complete member" do
