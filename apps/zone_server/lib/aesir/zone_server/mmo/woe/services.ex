@@ -10,7 +10,9 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Services do
   `Aesir.ZoneServer.Mmo.Woe.Guardians`'s Guardian Research gate. Conquest
   always revokes the Kafra (the new owner must hire it again) and
   rebroadcasts the conquered castle's outside and inside flags so nearby
-  clients see the new owner's emblem.
+  clients see the new owner's emblem. Release does the same NPC-visibility
+  and flag work without writing to the store or DB, since the caller already
+  cleared that state.
   """
 
   require Logger
@@ -117,6 +119,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Services do
   def on_conquest(%Castle{id: castle_id} = castle) do
     CastleStore.put_kafra(castle_id, false)
     Persistence.persist_kafra(castle_id, false)
+    set_kafra_enabled(castle_id, false)
+    refresh_flags(castle)
+  end
+
+  @doc """
+  Applies release to `castle`'s services: hides the Kafra placement and
+  refreshes the castle's guild flags for nearby clients.
+
+  Writes nothing: `CastleStore.release/2` and `Persistence.persist_release/1`
+  already cleared the owner, guardians, and Kafra flag before this runs.
+  """
+  @spec on_release(Castle.t()) :: :ok
+  def on_release(%Castle{id: castle_id} = castle) do
     set_kafra_enabled(castle_id, false)
     refresh_flags(castle)
   end

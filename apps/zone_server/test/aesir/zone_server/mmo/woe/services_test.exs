@@ -209,6 +209,43 @@ defmodule Aesir.ZoneServer.Mmo.Woe.ServicesTest do
     end
   end
 
+  describe "on_release/1" do
+    test "disables the placement, broadcasts exactly one packet per flag, and touches neither the store nor persistence" do
+      {:ok, castle} = CastleDb.by_map("gefg_cas01")
+      :ok = CastleStore.hydrate(%{castle.id => row(1, %{kafra: true})})
+
+      NpcRegistry.reload([Kafra, OutsideFlag, InsideFlag])
+      on_exit(fn -> NpcRegistry.reload() end)
+
+      gid = kafra_gid(castle)
+      on_exit(fn -> NpcSession.set_enabled(gid, true) end)
+
+      reject(&CastleStore.put_kafra/2)
+      reject(&Persistence.persist_kafra/2)
+      expect(Broadcast, :to_in_range, 11, fn _map, _x, _y, _range, _packet -> :ok end)
+
+      assert Services.on_release(castle) == :ok
+
+      assert CastleStore.kafra?(castle.id) == true
+      assert NpcSession.enabled?(gid) == false
+    end
+
+    test "broadcasts nothing for a castle with no registered flags" do
+      {:ok, castle} = CastleDb.by_map("gefg_cas01")
+      :ok = CastleStore.hydrate(%{castle.id => row(1, %{kafra: true})})
+
+      NpcRegistry.reload([Kafra])
+      on_exit(fn -> NpcRegistry.reload() end)
+
+      gid = kafra_gid(castle)
+      on_exit(fn -> NpcSession.set_enabled(gid, true) end)
+
+      reject(&Broadcast.to_in_range/5)
+
+      assert Services.on_release(castle) == :ok
+    end
+  end
+
   describe "sync_all/0" do
     test "after hydrate, enables the hired castle's Kafra and disables the rest" do
       [hired, other | _] = CastleDb.all()
