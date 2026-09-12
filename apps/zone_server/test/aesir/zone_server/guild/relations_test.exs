@@ -356,6 +356,33 @@ defmodule Aesir.ZoneServer.Guild.RelationsTest do
     end
   end
 
+  describe "siege check resilience" do
+    test "a Woe.Server call timeout blocks the write instead of being read as no siege" do
+      a = guild_fixture("SiegeTimeoutA")
+      b = guild_fixture("SiegeTimeoutB")
+      before = total_relation_count()
+
+      stub(WoeServer, :active?, fn ->
+        exit({:timeout, {GenServer, :call, [WoeServer, :active?, 5_000]}})
+      end)
+
+      catch_exit(Relations.ally(a, b))
+
+      assert total_relation_count() == before
+    end
+
+    test "an absent Woe.Server still counts as no siege" do
+      a = guild_fixture("SiegeAbsentA")
+      b = guild_fixture("SiegeAbsentB")
+
+      stub(WoeServer, :active?, fn ->
+        exit({:noproc, {GenServer, :call, [WoeServer, :active?, 5_000]}})
+      end)
+
+      assert :ok = Relations.ally(a, b)
+    end
+  end
+
   describe "remove_antagonist/2" do
     test "deletes the a -> b antagonist row" do
       a = guild_fixture("RemoveAntagA")

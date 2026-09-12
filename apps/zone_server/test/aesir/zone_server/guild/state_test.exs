@@ -82,22 +82,6 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
     end
   end
 
-  describe "allies/1 and antagonists/1" do
-    test "empty map yields no relations" do
-      assert State.allies(state([])) == []
-      assert State.antagonists(state([])) == []
-    end
-
-    test "separates allies from antagonists" do
-      ally = %Relation{guild_id: 2, name: "Asgard", kind: :ally}
-      antagonist = %Relation{guild_id: 3, name: "Muspelheim", kind: :antagonist}
-      guild = state([], relations: %{2 => ally, 3 => antagonist})
-
-      assert State.allies(guild) == [ally]
-      assert State.antagonists(guild) == [antagonist]
-    end
-  end
-
   describe "ally?/2" do
     test "is false for nil, 0, and an antagonist id" do
       antagonist = %Relation{guild_id: 3, name: "Muspelheim", kind: :antagonist}
@@ -113,18 +97,6 @@ defmodule Aesir.ZoneServer.Guild.StateTest do
       guild = state([], relations: %{2 => ally})
 
       assert State.ally?(guild, 2)
-    end
-  end
-
-  describe "relation_count/2" do
-    test "counts relations per kind" do
-      ally = %Relation{guild_id: 2, name: "Asgard", kind: :ally}
-      antagonist = %Relation{guild_id: 3, name: "Muspelheim", kind: :antagonist}
-      guild = state([], relations: %{2 => ally, 3 => antagonist})
-
-      assert State.relation_count(guild, :ally) == 1
-      assert State.relation_count(guild, :antagonist) == 1
-      assert State.relation_count(state([]), :ally) == 0
     end
   end
 end

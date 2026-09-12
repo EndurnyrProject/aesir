@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Party.View, as: PartyView
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.GuildSync
+  alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -412,7 +413,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   def alliance_request_expired(%{pending_alliance_request: nil} = state), do: {:noreply, state}
 
   def alliance_request_expired(%{pending_alliance_request: request} = state) do
-    if System.monotonic_time(:millisecond) >= request.expires_at do
+    if GuildHandler.alliance_request_expired?(request) do
       Broadcast.to_player(request.requester_char_id, %GuildActionResult{
         action: "alliance_request",
         success: false,

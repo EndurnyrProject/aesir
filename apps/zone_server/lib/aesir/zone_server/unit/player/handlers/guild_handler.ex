@@ -393,8 +393,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
           {:noreply, SessionState.t()}
   def handle_alliance_response(%GuildAllianceResponse{guild_id: guild_id, accept: accept}, state) do
     case take_pending_alliance_request(state, guild_id) do
-      {:ok, request, cleared_state} -> resolve_alliance_response(accept, request, cleared_state)
-      :error -> ack_result(state, "alliance_response", {:error, :not_member})
+      {:ok, request, cleared_state} ->
+        resolve_alliance_response(accept, request, cleared_state)
+
+      {:expired, cleared_state} ->
+        ack_result(cleared_state, "alliance_response", {:error, :not_member})
+
+      :error ->
+        ack_result(state, "alliance_response", {:error, :not_member})
     end
   end
 
@@ -611,16 +617,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
          %{pending_alliance_request: %{from_guild_id: guild_id} = request} = state,
          guild_id
        ) do
+    cleared_state = %{state | pending_alliance_request: nil}
+
     if alliance_request_expired?(request) do
-      :error
+      {:expired, cleared_state}
     else
-      {:ok, request, %{state | pending_alliance_request: nil}}
+      {:ok, request, cleared_state}
     end
   end
 
   defp take_pending_alliance_request(_state, _guild_id), do: :error
 
-  defp alliance_request_expired?(%{expires_at: expires_at}) do
+  @doc """
+  Whether a pending alliance request's expiry timestamp has passed. Shared
+  with `SocialHandler.alliance_request_expired/1`, which clears the same
+  pending request when its timer fires.
+  """
+  @spec alliance_request_expired?(%{expires_at: integer()}) :: boolean()
+  def alliance_request_expired?(%{expires_at: expires_at}) do
     System.monotonic_time(:millisecond) >= expires_at
   end
 
@@ -628,8 +642,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
 
   defp pending_alliance_active?(%{pending_alliance_request: request}),
     do: not alliance_request_expired?(request)
-
-  defp pending_alliance_active?(_state), do: false
 
   defp resolve_alliance_response(false, request, state) do
     Broadcast.to_player(request.requester_char_id, %GuildActionResult{

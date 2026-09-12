@@ -8,9 +8,7 @@ defmodule Aesir.ZoneServer.Guild.Relation do
   """
 
   @enforce_keys [:guild_id, :name, :kind]
-  defstruct guild_id: nil,
-            name: nil,
-            kind: nil
+  defstruct [:guild_id, :name, :kind]
 
   @type kind :: :ally | :antagonist
 

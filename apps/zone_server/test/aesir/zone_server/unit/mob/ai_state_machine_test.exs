@@ -364,6 +364,60 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       assert result.ai_state == :alert
     end
 
+    test "a guild-owned mob does not acquire a homunculus whose owner's guild is allied" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+        [{:homunculus, 501}]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 501 ->
+          {:ok, {HomunculusState, homunculus_state(42), nil}}
+
+        :player, 42 ->
+          {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 8}, nil}}
+      end)
+
+      stub(Relations, :friendly?, fn 7, 8 -> true end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a guild-owned mob acquires a homunculus whose owner's guild is unrelated" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prontera", 100, 100, _range ->
+        [{:homunculus, 501}]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :homunculus, 501 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn
+        :homunculus, 501 ->
+          {:ok, {HomunculusState, homunculus_state(42), nil}}
+
+        :player, 42 ->
+          {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 8}, nil}}
+      end)
+
+      stub(Relations, :friendly?, fn 7, 8 -> false end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == {:homunculus, 501}
+      assert result.ai_state == :alert
+    end
+
     test "an ordinary mob acquiring a homunculus never resolves the owner's guild" do
       stub(SpatialIndex, :get_units_in_range, fn :player, _map, _x, _y, _range -> [] end)
 

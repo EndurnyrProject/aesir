@@ -688,6 +688,37 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                           error: :GUILD_ERR_NONE
                         }}}
     end
+
+    test "an already-expired pending request acks NOT_MEMBER and clears the pending request" do
+      {responder, _guild} = guild_fixture("Renata")
+
+      pending = %{
+        pending_alliance_request: %{
+          from_guild_id: 99,
+          from_guild_name: "Requesters",
+          requester_char_id: 5,
+          expires_at: System.monotonic_time(:millisecond) - 1
+        }
+      }
+
+      state = Map.merge(state_for(responder), pending)
+
+      assert {:noreply, new_state} =
+               GuildHandler.handle_alliance_response(
+                 %GuildAllianceResponse{guild_id: 99, accept: true},
+                 state
+               )
+
+      assert new_state.pending_alliance_request == nil
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_response",
+                          success: false,
+                          error: :GUILD_ERR_NOT_MEMBER
+                        }}}
+    end
   end
 
   describe "handle_alliance_break_request/2" do

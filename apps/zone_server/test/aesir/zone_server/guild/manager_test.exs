@@ -361,6 +361,22 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
              ) == 0
     end
 
+    test "disbanding a guild refreshes a peer that declared it an antagonist" do
+      {_master, disbanded} = guild_fixture("AntagonizedGuild")
+      {_peer_master, peer} = guild_fixture("AntagonizingPeer")
+      disbanded_id = disbanded.guild_id
+      peer_id = peer.guild_id
+
+      assert :ok = Relations.declare_antagonist(peer_id, disbanded_id)
+      assert {:ok, %State{relations: relations}} = Manager.get(peer_id)
+      assert Map.has_key?(relations, disbanded_id)
+
+      assert :ok = Manager.disband(disbanded_id, "gm_action")
+
+      assert {:ok, %State{relations: relations}} = Manager.get(peer_id)
+      refute Map.has_key?(relations, disbanded_id)
+    end
+
     test "a failed disband leaves the storage claim and window usable" do
       {master, created} = guild_fixture("FailedDisband")
       guild_id = created.guild_id

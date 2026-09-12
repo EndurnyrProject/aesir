@@ -58,10 +58,10 @@ defmodule Aesir.ZoneServer.Guild.Relations do
           :ok | {:error, :same_guild | :siege_active | :already_allied | :ally_limit | :not_found}
   def ally(a, b) do
     write([a, b], fn guilds ->
-      with :ok <- check_same_guild(a, b),
-           :ok <- check_siege(),
-           :ok <- check_not_already_allied(a, b),
-           :ok <- check_ally_limit(a, b) do
+      with :ok <- refuse(a == b, :same_guild),
+           :ok <- refuse(siege_active?(), :siege_active),
+           :ok <- refuse(already_allied?(a, b), :already_allied),
+           :ok <- refuse(ally_limit_reached?(a, b), :ally_limit) do
         delete_pair(a, b, "antagonist")
         insert_relation(a, b, "ally", guilds[b].name)
         insert_relation(b, a, "ally", guilds[a].name)
@@ -77,8 +77,8 @@ defmodule Aesir.ZoneServer.Guild.Relations do
           :ok | {:error, :siege_active | :not_related | :not_found}
   def break(a, b) do
     write([a, b], fn _guilds ->
-      with :ok <- check_siege(),
-           :ok <- check_ally_exists(a, b) do
+      with :ok <- refuse(siege_active?(), :siege_active),
+           :ok <- refuse(relation_kind(a, b) != "ally", :not_related) do
         delete_pair(a, b, "ally")
         :ok
       end
@@ -97,10 +97,10 @@ defmodule Aesir.ZoneServer.Guild.Relations do
              :same_guild | :already_antagonist | :antagonist_limit | :siege_active | :not_found}
   def declare_antagonist(a, b) do
     write([a, b], fn guilds ->
-      with :ok <- check_same_guild(a, b),
-           :ok <- check_not_already_antagonist(a, b),
+      with :ok <- refuse(a == b, :same_guild),
+           :ok <- refuse(relation_kind(a, b) == "antagonist", :already_antagonist),
            :ok <- clear_ally_if_present(a, b),
-           :ok <- check_antagonist_limit(a) do
+           :ok <- refuse(count_kind(a, "antagonist") >= @antagonist_limit, :antagonist_limit) do
         insert_relation(a, b, "antagonist", guilds[b].name)
         :ok
       end
@@ -114,11 +114,9 @@ defmodule Aesir.ZoneServer.Guild.Relations do
           :ok | {:error, :not_related | :not_found}
   def remove_antagonist(a, b) do
     write([a, b], fn _guilds ->
-      if relation_kind(a, b) == "antagonist" do
+      with :ok <- refuse(relation_kind(a, b) != "antagonist", :not_related) do
         delete_relation(a, b, "antagonist")
         :ok
-      else
-        {:error, :not_related}
       end
     end)
   end
@@ -163,12 +161,17 @@ defmodule Aesir.ZoneServer.Guild.Relations do
     end)
   end
 
-  @doc "Whether a WoE siege is currently active on this node."
-  @spec siege_active?() :: boolean()
-  def siege_active? do
+  # Whether a WoE siege is currently active on this node. `:noproc` is the
+  # exact exit `GenServer.call` raises against a `:via`-registered name with
+  # no running process (verified against Registry's via dispatch): no WoE
+  # server on this node means no siege. Any other exit -- a call timeout
+  # included -- propagates so the enclosing transaction rolls back instead
+  # of silently treating a busy server as "no siege" and letting the write
+  # through.
+  defp siege_active? do
     WoeServer.active?()
   catch
-    :exit, _ -> false
+    :exit, {:noproc, _} -> false
   end
 
   defp ally_via_entry?(guild_id, other_guild_id) do
@@ -178,34 +181,8 @@ defmodule Aesir.ZoneServer.Guild.Relations do
     end
   end
 
-  defp check_same_guild(a, b) when a == b, do: {:error, :same_guild}
-  defp check_same_guild(_a, _b), do: :ok
-
-  defp check_siege do
-    if siege_active?(), do: {:error, :siege_active}, else: :ok
-  end
-
-  defp check_not_already_allied(a, b) do
-    if already_allied?(a, b), do: {:error, :already_allied}, else: :ok
-  end
-
-  defp check_ally_limit(a, b) do
-    if ally_limit_reached?(a, b), do: {:error, :ally_limit}, else: :ok
-  end
-
-  defp check_ally_exists(a, b) do
-    if relation_kind(a, b) == "ally", do: :ok, else: {:error, :not_related}
-  end
-
-  defp check_not_already_antagonist(a, b) do
-    if relation_kind(a, b) == "antagonist", do: {:error, :already_antagonist}, else: :ok
-  end
-
-  defp check_antagonist_limit(a) do
-    if count_kind(a, "antagonist") >= @antagonist_limit,
-      do: {:error, :antagonist_limit},
-      else: :ok
-  end
+  defp refuse(true, reason), do: {:error, reason}
+  defp refuse(false, _reason), do: :ok
 
   defp clear_ally_if_present(a, b) do
     if relation_kind(a, b) == "ally" do
@@ -317,10 +294,9 @@ defmodule Aesir.ZoneServer.Guild.Relations do
     end
   end
 
+  # A missing live entry (`{:error, :not_found}`) is discarded here: the
+  # rebuild loads relations from rows on next `ensure_started/1`.
   defp refresh_entry(guild_id) do
-    case Manager.put_relations(guild_id, load(guild_id)) do
-      :ok -> :ok
-      {:error, :not_found} -> :ok
-    end
+    Manager.put_relations(guild_id, load(guild_id))
   end
 end

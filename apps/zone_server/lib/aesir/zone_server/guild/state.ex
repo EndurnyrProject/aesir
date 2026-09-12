@@ -75,31 +75,11 @@ defmodule Aesir.ZoneServer.Guild.State do
     end
   end
 
-  @doc "This guild's allies."
-  @spec allies(t()) :: [Relation.t()]
-  def allies(%__MODULE__{} = state), do: relations_of_kind(state, :ally)
-
-  @doc "This guild's antagonists."
-  @spec antagonists(t()) :: [Relation.t()]
-  def antagonists(%__MODULE__{} = state), do: relations_of_kind(state, :antagonist)
-
   @doc "Whether `other_guild_id` is one of this guild's allies."
   @spec ally?(t(), non_neg_integer() | nil) :: boolean()
   def ally?(_state, nil), do: false
 
   def ally?(%__MODULE__{relations: relations}, other_guild_id) do
     match?(%Relation{kind: :ally}, Map.get(relations, other_guild_id))
-  end
-
-  @doc "Number of relations of the given kind."
-  @spec relation_count(t(), Relation.kind()) :: non_neg_integer()
-  def relation_count(%__MODULE__{} = state, kind) do
-    state |> relations_of_kind(kind) |> length()
-  end
-
-  defp relations_of_kind(%__MODULE__{relations: relations}, kind) do
-    relations
-    |> Map.values()
-    |> Enum.filter(&(&1.kind == kind))
   end
 end

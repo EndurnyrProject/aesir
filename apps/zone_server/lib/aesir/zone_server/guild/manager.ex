@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.GuildPosition
+  alias Aesir.Commons.Models.GuildRelation
   alias Aesir.Repo
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Guild.Lifecycle
@@ -177,6 +178,12 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   def disband(guild_id, reason) do
     case lookup_pid({:guild, guild_id}) do
       {:ok, pid} ->
+        # Antagonist rows are one-directional: a peer that declared this
+        # guild an antagonist has no row of its own for us to find in
+        # `state.relations`, so the incoming side is read from the table
+        # before the cascade (triggered inside `disband_reply`) deletes it.
+        incoming_peer_ids = antagonized_by(guild_id)
+
         result =
           try do
             Entry.get_and_update(pid, &disband_reply(guild_id, &1))
@@ -190,7 +197,7 @@ defmodule Aesir.ZoneServer.Guild.Manager do
             broadcast(guild_id, {:guild_disbanded, guild_id, reason})
             Lifecycle.publish_disbanded(guild_id)
             stop_entry({:guild, guild_id})
-            refresh_relation_peers(state.relations)
+            refresh_relation_peers(Map.keys(state.relations) ++ incoming_peer_ids)
             :ok
 
           {:error, _reason} = error ->
@@ -202,15 +209,20 @@ defmodule Aesir.ZoneServer.Guild.Manager do
     end
   end
 
-  defp refresh_relation_peers(relations) do
-    relations
-    |> Map.keys()
-    |> Enum.each(fn peer_id ->
-      case put_relations(peer_id, Relations.load(peer_id)) do
-        :ok -> :ok
-        {:error, :not_found} -> :ok
-      end
-    end)
+  defp antagonized_by(guild_id) do
+    GuildRelation
+    |> where([r], r.other_guild_id == ^guild_id)
+    |> select([r], r.guild_id)
+    |> distinct(true)
+    |> Repo.all()
+  end
+
+  # A missing peer entry (`{:error, :not_found}`) is discarded here: the
+  # rebuild loads relations from rows on next `ensure_started/1`.
+  defp refresh_relation_peers(peer_ids) do
+    peer_ids
+    |> Enum.uniq()
+    |> Enum.each(&put_relations(&1, Relations.load(&1)))
   end
 
   defp stop_storage_claim(guild_id) do
