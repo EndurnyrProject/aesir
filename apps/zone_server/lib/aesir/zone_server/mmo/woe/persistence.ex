@@ -7,7 +7,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
   untouched); `persist_economy/2` asynchronously writes the economy, defense,
   and the two daily investment counters; `persist_guardians/2` asynchronously
   writes the sorted list of hired guardian slots; `persist_kafra/2`
-  asynchronously writes whether the castle's Kafra is hired. All are
+  asynchronously writes whether the castle's Kafra is hired; `persist_release/1`
+  asynchronously clears ownership, guardians, and Kafra together. All are
   fire-and-forget, via the supervised `TaskSupervisor`. `load_all/0` reads
   every castle's full row for boot-time `CastleStore.hydrate/1`.
 
@@ -104,6 +105,23 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
   @spec do_persist_kafra(non_neg_integer(), boolean()) :: :ok
   defp do_persist_kafra(castle_id, hired?) do
     write_row(castle_id, %{kafra: hired?}, "kafra")
+  end
+
+  @doc """
+  Asynchronously clears `castle_id`'s ownership, guardians, and Kafra service
+  in one row update.
+
+  Fire-and-forget, on the same async/inline path as `persist/2`.
+  """
+  @spec persist_release(non_neg_integer()) :: :ok
+  def persist_release(castle_id) do
+    run_async(fn -> do_persist_release(castle_id) end)
+    :ok
+  end
+
+  @spec do_persist_release(non_neg_integer()) :: :ok
+  defp do_persist_release(castle_id) do
+    write_row(castle_id, %{guild_id: nil, guardians: [], kafra: false}, "release")
   end
 
   @doc """

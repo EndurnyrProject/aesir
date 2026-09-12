@@ -1,6 +1,6 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   @moduledoc """
-  Authoritative runtime WoE castle state in ETS with atomic claims.
+  Authoritative runtime WoE castle state in ETS with atomic claims and release.
 
   Each castle is one flat tuple in `:castle_states`:
   `{castle_id, owner_guild_id, siege_active?, epoch, emperium_unit_id,
@@ -283,6 +283,31 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
 
       _ ->
         classify_break_failure(castle_id)
+    end
+  end
+
+  @doc """
+  Atomically releases a castle from `guild_id`, clearing owner, guardians, and
+  Kafra when `guild_id` currently owns it.
+
+  Uses `:ets.select_replace` so the release is a single atomic row swap.
+  Economy, defense, siege, epoch, and emperium fields are carried through
+  unchanged; the epoch is not advanced.
+  """
+  @spec release(non_neg_integer(), pos_integer()) :: :ok | {:error, :not_owner}
+  def release(castle_id, guild_id) do
+    table = table_for(:castle_states)
+
+    match_spec = [
+      {{castle_id, guild_id, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7", :_, :_}, [],
+       [
+         {{castle_id, nil, :"$1", :"$2", :"$3", :"$4", :"$5", :"$6", :"$7", [], false}}
+       ]}
+    ]
+
+    case :ets.select_replace(table, match_spec) do
+      1 -> :ok
+      0 -> {:error, :not_owner}
     end
   end
 

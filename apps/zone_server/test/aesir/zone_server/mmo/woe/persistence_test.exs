@@ -131,6 +131,29 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
     end
   end
 
+  describe "persist_release/1" do
+    test "sets guild_id, guardians, and kafra to their released defaults, round-tripped by load_all/0" do
+      :ok = Persistence.persist(4, 100)
+      :ok = Persistence.persist_guardians(4, [2, 5])
+      :ok = Persistence.persist_kafra(4, true)
+
+      assert Persistence.load_all()[4].guild_id == 100
+      assert Persistence.load_all()[4].guardians == [2, 5]
+      assert Persistence.load_all()[4].kafra == true
+
+      assert :ok = Persistence.persist_release(4)
+
+      row = Persistence.load_all()[4]
+      assert row.guild_id == nil
+      assert row.guardians == []
+      assert row.kafra == false
+    end
+
+    test "on a missing row, logs and returns :ok" do
+      assert :ok = Persistence.persist_release(9_999)
+    end
+  end
+
   defp wait_for_ownership(castle_id, expected_guild_id, retries, delay_ms) do
     cond do
       Persistence.load_all()[castle_id].guild_id == expected_guild_id ->

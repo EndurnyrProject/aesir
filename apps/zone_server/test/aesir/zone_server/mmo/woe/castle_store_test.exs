@@ -253,6 +253,62 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
     end
   end
 
+  describe "release/2" do
+    test "by the owner clears owner, guardians, and kafra, keeping other fields" do
+      castle_id = first_castle_id()
+
+      :ok = CastleStore.hydrate(%{castle_id => row(10, %{economy: 40, defense: 25})})
+      :ok = CastleStore.set_siege(castle_id, true)
+      :ok = CastleStore.set_emperium(castle_id, 999)
+      :ok = CastleStore.put_guardians(castle_id, [2, 5])
+      :ok = CastleStore.put_kafra(castle_id, true)
+
+      assert :ok = CastleStore.release(castle_id, 10)
+
+      assert CastleStore.owner(castle_id) == nil
+      assert CastleStore.guardians(castle_id) == []
+      refute CastleStore.kafra?(castle_id)
+
+      assert CastleStore.get(castle_id) == %{
+               owner_guild_id: nil,
+               siege_active?: true,
+               epoch: 0,
+               emperium_unit_id: 999
+             }
+
+      assert CastleStore.economy(castle_id) == %{
+               economy: 40,
+               defense: 25,
+               invested_economy: 0,
+               invested_defense: 0
+             }
+    end
+
+    test "by a non-owner returns {:error, :not_owner} and changes nothing" do
+      castle_id = first_castle_id()
+
+      :ok = CastleStore.hydrate(%{castle_id => row(10)})
+      :ok = CastleStore.put_guardians(castle_id, [2, 5])
+      :ok = CastleStore.put_kafra(castle_id, true)
+
+      before = :ets.lookup(EtsTable.table_for(:castle_states), castle_id)
+
+      assert {:error, :not_owner} = CastleStore.release(castle_id, 20)
+
+      assert :ets.lookup(EtsTable.table_for(:castle_states), castle_id) == before
+    end
+
+    test "on an unowned castle returns {:error, :not_owner} and changes nothing" do
+      castle_id = first_castle_id()
+
+      before = :ets.lookup(EtsTable.table_for(:castle_states), castle_id)
+
+      assert {:error, :not_owner} = CastleStore.release(castle_id, 20)
+
+      assert :ets.lookup(EtsTable.table_for(:castle_states), castle_id) == before
+    end
+  end
+
   describe "set_siege/2 and set_emperium/2" do
     test "toggle the siege flag" do
       castle_id = first_castle_id()
