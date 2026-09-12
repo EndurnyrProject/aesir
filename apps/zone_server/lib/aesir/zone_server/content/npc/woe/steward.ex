@@ -193,6 +193,29 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
       }
     ]
 
+  @master_rooms %{
+    "aldeg_cas01" => {113, 223},
+    "aldeg_cas02" => {134, 225},
+    "aldeg_cas03" => {229, 267},
+    "aldeg_cas04" => {83, 17},
+    "aldeg_cas05" => {64, 8},
+    "gefg_cas01" => {152, 117},
+    "gefg_cas02" => {145, 115},
+    "gefg_cas03" => {275, 289},
+    "gefg_cas04" => {116, 123},
+    "gefg_cas05" => {149, 106},
+    "payg_cas01" => {295, 8},
+    "payg_cas02" => {141, 149},
+    "payg_cas03" => {163, 167},
+    "payg_cas04" => {151, 47},
+    "payg_cas05" => {153, 137},
+    "prtg_cas01" => {15, 209},
+    "prtg_cas02" => {207, 229},
+    "prtg_cas03" => {190, 130},
+    "prtg_cas04" => {275, 160},
+    "prtg_cas05" => {281, 176}
+  }
+
   @impl true
   def on_talk(ctx) do
     case castle_at(ctx) do
@@ -246,7 +269,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
         "Castle briefing",
         "Invest in commercial growth",
         "Invest in Castle Defenses",
-        "Summon Guardian"
+        "Summon Guardian",
+        "Hire / Fire a Kafra Employee",
+        "Go into Master's room"
       ])
 
     handle_menu(ctx, castle_id, choice)
@@ -256,6 +281,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
   defp handle_menu(ctx, castle_id, 2), do: invest_economy(ctx, castle_id)
   defp handle_menu(ctx, castle_id, 3), do: invest_defense(ctx, castle_id)
   defp handle_menu(ctx, castle_id, 4), do: summon_guardian(ctx, castle_id)
+  defp handle_menu(ctx, castle_id, 5), do: kafra_service(ctx, castle_id)
+  defp handle_menu(ctx, castle_id, 6), do: master_room(ctx, castle_id)
   defp handle_menu(ctx, _castle_id, _choice), do: close(ctx)
 
   defp briefing(ctx, castle_id) do
@@ -475,5 +502,181 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.Steward do
     |> close()
   end
 
+  defp kafra_service(ctx, castle_id) do
+    if castle_kafra_hired?(ctx, castle_id) do
+      offer_fire_kafra(ctx, castle_id)
+    else
+      offer_hire_kafra(ctx, castle_id)
+    end
+  end
+
+  defp offer_fire_kafra(ctx, castle_id) do
+    {ctx, choice} =
+      ctx
+      |> say([
+        "We are currently hiring a Kafra Employee... Do you want to fire the Kafra Employee?"
+      ])
+      |> next()
+      |> select(["Fire", "Cancel"])
+
+    case choice do
+      1 -> confirm_fire_kafra(ctx, castle_id)
+      _ -> keep_kafra(ctx)
+    end
+  end
+
+  defp confirm_fire_kafra(ctx, castle_id) do
+    {ctx, choice} =
+      ctx
+      |> cutin("kafra_01", 2)
+      |> kafra_say([
+        "I worked so hard... How can you do that, Master?... Please... Please reconsider... " <>
+          "Check it again, Master... Please..."
+      ])
+      |> next()
+      |> select(["Fire", "Cancel"])
+
+    case choice do
+      1 -> fire_kafra(ctx, castle_id)
+      _ -> keep_kafra_after_plea(ctx)
+    end
+  end
+
+  defp fire_kafra(ctx, castle_id) do
+    ctx
+    |> kafra_say(["Oh, my goodness! This is nonsense!"])
+    |> next()
+    |> cutin("", 255)
+    |> castle_fire_kafra(castle_id)
+    |> say([
+      "....",
+      "I have discharged the Kafra Employee... But... are you unsatisfied with something?"
+    ])
+    |> close()
+  end
+
+  defp keep_kafra(ctx) do
+    ctx
+    |> say(["She worked hard in my opinion. It was a good decision to keep her."])
+    |> close()
+  end
+
+  defp keep_kafra_after_plea(ctx) do
+    ctx
+    |> kafra_say(["I'll work hard for you... Thank you!"])
+    |> close()
+    |> cutin("", 255)
+  end
+
+  defp offer_hire_kafra(ctx, castle_id) do
+    {ctx, choice} =
+      ctx
+      |> say([
+        "Will you contact the kafra Main Office and Hire a Employee for our Castle?",
+        "^ff0000 10,000 zeny is required for their services. "
+      ])
+      |> next()
+      |> select(["Hire.", "Cancel"])
+
+    case choice do
+      1 -> resolve_kafra_hire(ctx, castle_id)
+      _ -> decline_kafra_hire(ctx)
+    end
+  end
+
+  defp resolve_kafra_hire(ctx, castle_id) do
+    case castle_kafra_hire_check(ctx, castle_id) do
+      {:error, :contract_required} ->
+        ctx
+        |> say([
+          "Master, we can't hire a Kafra Employee because we don't have a contract with the " <>
+            "Kafra Main Office. If you want to obtain a contract with the Kafra Main Office, " <>
+            "you will need to learn the Guild skill first."
+        ])
+        |> close()
+
+      {:error, _reason} ->
+        close(ctx)
+
+      :ok ->
+        hire_kafra(ctx, castle_id)
+    end
+  end
+
+  defp hire_kafra(ctx, castle_id) do
+    if zeny(ctx) < 10_000 do
+      ctx
+      |> say(["Well... I'm sorry but we don't have enough funds to hire a Kafra Employee."])
+      |> close()
+    else
+      ctx
+      |> pay_zeny(10_000)
+      |> castle_hire_kafra(castle_id)
+      |> say(["We obtained a contract with the kafra Main Office, and hired a Kafra Employee."])
+      |> next()
+      |> cutin("kafra_01", 2)
+      |> kafra_say([
+        "How do you do? I was dispatched from the Main Office.",
+        "I'll do my best to not tarnish the reputation of the Guild."
+      ])
+      |> next()
+      |> cutin("", 255)
+      |> say([
+        "The Contract terms of the hired Kafra Employee are for 1 month and after this term, " <>
+          "you will need to pay an additional fee.",
+        "It will be useful for our members."
+      ])
+      |> close()
+    end
+  end
+
+  defp decline_kafra_hire(ctx) do
+    ctx
+    |> say([
+      "I did as you ordered, but some of our members will be unhappy. It will be better to " <>
+        "hire a Kafra Employee quickly."
+    ])
+    |> close()
+  end
+
+  defp master_room(ctx, _castle_id) do
+    {ctx, choice} =
+      ctx
+      |> say([
+        "Do you want to visit the room where our valuables are stored?",
+        "That room is restricted to you... you are the only one with access to it."
+      ])
+      |> next()
+      |> select(["Go into Master's room.", "Cancel"])
+
+    handle_master_room(ctx, choice)
+  end
+
+  defp handle_master_room(ctx, 1) do
+    map = strnpcinfo(ctx, 4)
+    {x, y} = Map.fetch!(@master_rooms, map)
+
+    ctx
+    |> say([
+      "I'll show you the secret path. Follow me...please.",
+      "When you want to return here, please press the secret switch."
+    ])
+    |> close()
+    |> warp(map, x, y)
+  end
+
+  defp handle_master_room(ctx, _cancel) do
+    ctx
+    |> say([
+      "Goods are produced once a day... if you don't remove them in time, they will not be " <>
+        "produced anymore.",
+      "Therefore, it will be better if you check up on them from time to time."
+    ])
+    |> close()
+  end
+
   defp say(ctx, lines), do: Enum.reduce(["[#{strnpcinfo(ctx, 1)}]" | lines], ctx, &mes(&2, &1))
+
+  defp kafra_say(ctx, lines),
+    do: Enum.reduce(["[ Hired Kafra Employee ]" | lines], ctx, &mes(&2, &1))
 end

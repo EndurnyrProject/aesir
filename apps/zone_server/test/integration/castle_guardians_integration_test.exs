@@ -292,7 +292,7 @@ defmodule Aesir.ZoneServer.Integration.CastleGuardiansIntegrationTest do
     assert_receive {:packet_sent, %NpcDialog{expect: :NEXT}, _}, 500
     send(ipid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:continue, true}}})
 
-    assert_receive {:packet_sent, %NpcDialog{expect: :MENU, options: [_, _, _, _]}, _}, 500
+    assert_receive {:packet_sent, %NpcDialog{expect: :MENU, options: [_, _, _, _, _, _]}, _}, 500
     send(ipid, {:npc_interact, %NpcInteract{npc_id: gid, response: {:choice, 4}}})
 
     ipid
