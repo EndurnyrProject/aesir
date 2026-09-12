@@ -98,6 +98,15 @@ defmodule Aesir.Commons.Models.GuildCastleTest do
       assert castle.guardians == []
     end
 
+    test "defaults kafra to false on insert" do
+      assert {:ok, castle} =
+               %GuildCastle{}
+               |> GuildCastle.changeset(valid_attrs())
+               |> Repo.insert()
+
+      assert castle.kafra == false
+    end
+
     test "accepts an empty guardians list and a list of valid slots" do
       assert GuildCastle.changeset(%GuildCastle{}, valid_attrs(%{guardians: []})).valid?
 

@@ -7,7 +7,7 @@ defmodule Aesir.Commons.Models.GuildCastle do
   `defense` track the castle's investment level; `invested_economy` and
   `invested_defense` count today's investment actions in each track.
   `guardians` holds the sorted, deduplicated list of hired guardian slots
-  (each in `0..7`).
+  (each in `0..7`). `kafra` tracks whether the castle's Kafra service is hired.
   """
 
   use Ecto.Schema
@@ -22,6 +22,7 @@ defmodule Aesir.Commons.Models.GuildCastle do
           invested_economy: non_neg_integer(),
           invested_defense: non_neg_integer(),
           guardians: [0..7],
+          kafra: boolean(),
           inserted_at: NaiveDateTime.t() | nil,
           updated_at: NaiveDateTime.t() | nil
         }
@@ -34,6 +35,7 @@ defmodule Aesir.Commons.Models.GuildCastle do
     field :invested_economy, :integer, default: 0
     field :invested_defense, :integer, default: 0
     field :guardians, {:array, :integer}, default: []
+    field :kafra, :boolean, default: false
 
     timestamps()
   end
@@ -51,7 +53,8 @@ defmodule Aesir.Commons.Models.GuildCastle do
       :defense,
       :invested_economy,
       :invested_defense,
-      :guardians
+      :guardians,
+      :kafra
     ])
     |> validate_required([:castle_id, :economy, :defense, :invested_economy, :invested_defense])
     |> validate_number(:economy, greater_than_or_equal_to: 0)

@@ -77,7 +77,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
                defense: 0,
                invested_economy: 0,
                invested_defense: 0,
-               guardians: []
+               guardians: [],
+               kafra: false
              }
 
       :ok = Persistence.persist(0, 10)
@@ -101,7 +102,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
       :ok = Persistence.persist_economy(3, economy_state)
 
       assert Persistence.load_all()[3] ==
-               economy_state |> Map.put(:guild_id, nil) |> Map.put(:guardians, [])
+               economy_state
+               |> Map.put(:guild_id, nil)
+               |> Map.put(:guardians, [])
+               |> Map.put(:kafra, false)
     end
   end
 
@@ -113,6 +117,17 @@ defmodule Aesir.ZoneServer.Mmo.Woe.PersistenceTest do
 
       assert rows[7].guardians == [2, 5]
       assert rows[8].guardians == []
+    end
+  end
+
+  describe "persist_kafra/2" do
+    test "writes the kafra flag, round-tripped by load_all/0, leaving other castles false" do
+      :ok = Persistence.persist_kafra(9, true)
+
+      rows = Persistence.load_all()
+
+      assert rows[9].kafra == true
+      assert rows[11].kafra == false
     end
   end
 

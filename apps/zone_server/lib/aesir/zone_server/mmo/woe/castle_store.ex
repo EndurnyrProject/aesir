@@ -4,7 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
 
   Each castle is one flat tuple in `:castle_states`:
   `{castle_id, owner_guild_id, siege_active?, epoch, emperium_unit_id,
-  economy, defense, invested_economy, invested_defense, guardians}`.
+  economy, defense, invested_economy, invested_defense, guardians, kafra}`.
 
   `claim_break/3` compares `{siege_active?, emperium_unit_id}` and uses
   `:ets.select_replace` so the winning call replaces the whole row in one
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
     Enum.each(CastleDb.all(), fn castle ->
       :ets.insert_new(
         table_for(:castle_states),
-        {castle.id, nil, false, 0, nil, 0, 0, 0, 0, []}
+        {castle.id, nil, false, 0, nil, 0, 0, 0, 0, [], false}
       )
     end)
 
@@ -57,11 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   end
 
   @doc """
-  Sets castle owners, economy state, and guardians from a full-row map
+  Sets castle owners, economy state, guardians, and Kafra from a full-row map
   (restored from the DB).
 
-  `row.guardians` is optional; when absent, the castle's guardians are left
-  as seeded (`[]`).
+  `row.guardians` and `row.kafra` are optional; when absent, they are left as
+  seeded (`[]` and `false`, respectively).
   """
   @spec hydrate(%{non_neg_integer() => Persistence.row()}) :: :ok
   def hydrate(rows) do
@@ -74,7 +74,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
         {7, row.defense},
         {8, row.invested_economy},
         {9, row.invested_defense},
-        {10, Map.get(row, :guardians, [])}
+        {10, Map.get(row, :guardians, [])},
+        {11, Map.get(row, :kafra, false)}
       ])
     end)
 
@@ -87,7 +88,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   @spec get(non_neg_integer()) :: castle_state()
   def get(castle_id) do
     case :ets.lookup(table_for(:castle_states), castle_id) do
-      [{^castle_id, owner_guild_id, siege_active?, epoch, emperium_unit_id, _, _, _, _, _}] ->
+      [{^castle_id, owner_guild_id, siege_active?, epoch, emperium_unit_id, _, _, _, _, _, _}] ->
         %{
           owner_guild_id: owner_guild_id,
           siege_active?: siege_active?,
@@ -106,7 +107,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   @spec owner(non_neg_integer()) :: non_neg_integer() | nil
   def owner(castle_id) do
     case :ets.lookup(table_for(:castle_states), castle_id) do
-      [{^castle_id, owner_guild_id, _, _, _, _, _, _, _, _}] -> owner_guild_id
+      [{^castle_id, owner_guild_id, _, _, _, _, _, _, _, _, _}] -> owner_guild_id
       [] -> nil
     end
   end
@@ -117,7 +118,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   @spec economy(non_neg_integer()) :: economy_state()
   def economy(castle_id) do
     case :ets.lookup(table_for(:castle_states), castle_id) do
-      [{^castle_id, _, _, _, _, economy, defense, invested_economy, invested_defense, _}] ->
+      [{^castle_id, _, _, _, _, economy, defense, invested_economy, invested_defense, _, _}] ->
         %{
           economy: economy,
           defense: defense,
@@ -156,7 +157,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
   @spec guardians(non_neg_integer()) :: [0..7]
   def guardians(castle_id) do
     case :ets.lookup(table_for(:castle_states), castle_id) do
-      [{^castle_id, _, _, _, _, _, _, _, _, guardians}] -> guardians
+      [{^castle_id, _, _, _, _, _, _, _, _, guardians, _}] -> guardians
       [] -> []
     end
   end
@@ -173,6 +174,27 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
       {10, Enum.sort(Enum.uniq(guardians))}
     )
 
+    :ok
+  end
+
+  @doc """
+  Returns whether the castle's Kafra service is hired, or `false` when unknown.
+  """
+  @spec kafra?(non_neg_integer()) :: boolean()
+  def kafra?(castle_id) do
+    case :ets.lookup(table_for(:castle_states), castle_id) do
+      [{^castle_id, _, _, _, _, _, _, _, _, _, kafra}] -> kafra
+      [] -> false
+    end
+  end
+
+  @doc """
+  Sets whether the castle's Kafra service is hired, leaving every other field
+  untouched.
+  """
+  @spec put_kafra(non_neg_integer(), boolean()) :: :ok
+  def put_kafra(castle_id, hired?) do
+    :ets.update_element(table_for(:castle_states), castle_id, {11, hired?})
     :ok
   end
 
@@ -234,7 +256,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
     case :ets.lookup(table, castle_id) do
       [
         {^castle_id, owner_guild_id, true, epoch, ^emperium_unit_id, economy, defense,
-         invested_economy, invested_defense, guardians}
+         invested_economy, invested_defense, guardians, kafra}
       ] ->
         new_owner_guild_id = guild_id || owner_guild_id
 
@@ -247,10 +269,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
 
         match_spec = [
           {{castle_id, owner_guild_id, true, epoch, emperium_unit_id, economy, defense,
-            invested_economy, invested_defense, guardians}, [],
+            invested_economy, invested_defense, guardians, kafra}, [],
            [
              {{castle_id, new_owner_guild_id, true, epoch + 1, nil, economy, defense,
-               invested_economy, invested_defense, guardians}}
+               invested_economy, invested_defense, guardians, kafra}}
            ]}
         ]
 
@@ -268,7 +290,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStore do
           {:error, :stale_emperium | :not_active}
   defp classify_break_failure(castle_id) do
     case :ets.lookup(table_for(:castle_states), castle_id) do
-      [{^castle_id, _, true, _, _, _, _, _, _, _}] -> {:error, :stale_emperium}
+      [{^castle_id, _, true, _, _, _, _, _, _, _, _}] -> {:error, :stale_emperium}
       _ -> {:error, :not_active}
     end
   end

@@ -260,7 +260,7 @@ defmodule Aesir.ZoneServer.EtsTable do
 
   defp castle_tables(seed) do
     # WoE castle runtime state: {castle_id, owner_guild_id, siege_active?, epoch,
-    # emperium_unit_id, economy, defense, invested_economy, invested_defense, guardians}.
+    # emperium_unit_id, economy, defense, invested_economy, invested_defense, guardians, kafra}.
     # Flat tuple so `CastleStore.claim_break/3` can CAS the whole row with select_replace.
     :ets.new(
       table_for(:castle_states, seed),

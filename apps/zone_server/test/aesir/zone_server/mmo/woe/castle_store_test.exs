@@ -47,6 +47,10 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
       assert CastleStore.guardians(first_castle_id()) == []
     end
 
+    test "seeds kafra as not hired" do
+      refute CastleStore.kafra?(first_castle_id())
+    end
+
     test "the castle_guardians ETS table exists" do
       refute :ets.info(EtsTable.table_for(:castle_guardians)) == :undefined
     end
@@ -104,6 +108,19 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
       assert CastleStore.guardians(castle_a.id) == [2, 5]
       assert CastleStore.guardians(castle_b.id) == []
     end
+
+    test "sets kafra from a row with a kafra key, and leaves it false without one" do
+      [castle_a, castle_b | _] = CastleDb.all()
+
+      :ok =
+        CastleStore.hydrate(%{
+          castle_a.id => row(10, %{kafra: true}),
+          castle_b.id => row(20)
+        })
+
+      assert CastleStore.kafra?(castle_a.id)
+      refute CastleStore.kafra?(castle_b.id)
+    end
   end
 
   describe "guardians/1 and put_guardians/2" do
@@ -141,6 +158,53 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastleStoreTest do
 
     test "returns [] for an unknown castle" do
       assert CastleStore.guardians(9_999) == []
+    end
+  end
+
+  describe "kafra?/1 and put_kafra/2" do
+    test "false after init, true after put_kafra/2" do
+      castle_id = first_castle_id()
+
+      refute CastleStore.kafra?(castle_id)
+
+      :ok = CastleStore.put_kafra(castle_id, true)
+
+      assert CastleStore.kafra?(castle_id)
+
+      :ok = CastleStore.put_kafra(castle_id, false)
+
+      refute CastleStore.kafra?(castle_id)
+    end
+
+    test "leaves owner, siege, epoch, emperium, economy, and guardians untouched" do
+      castle_id = first_castle_id()
+
+      :ok = CastleStore.hydrate(%{castle_id => row(10, %{economy: 40, defense: 25})})
+      :ok = CastleStore.set_siege(castle_id, true)
+      :ok = CastleStore.set_emperium(castle_id, 999)
+      :ok = CastleStore.put_guardians(castle_id, [4])
+
+      :ok = CastleStore.put_kafra(castle_id, true)
+
+      assert CastleStore.get(castle_id) == %{
+               owner_guild_id: 10,
+               siege_active?: true,
+               epoch: 0,
+               emperium_unit_id: 999
+             }
+
+      assert CastleStore.economy(castle_id) == %{
+               economy: 40,
+               defense: 25,
+               invested_economy: 0,
+               invested_defense: 0
+             }
+
+      assert CastleStore.guardians(castle_id) == [4]
+    end
+
+    test "returns false for an unknown castle" do
+      refute CastleStore.kafra?(9_999)
     end
   end
 

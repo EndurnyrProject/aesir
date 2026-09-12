@@ -3,15 +3,16 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
   Durable projection of WoE castle ownership, economy, and guardian state.
 
   `persist/2` asynchronously updates a `guild_castles` row's `guild_id`
-  (ownership only, leaving economy/defense/investment/guardian fields
+  (ownership only, leaving economy/defense/investment/guardian/kafra fields
   untouched); `persist_economy/2` asynchronously writes the economy, defense,
   and the two daily investment counters; `persist_guardians/2` asynchronously
-  writes the sorted list of hired guardian slots. All are fire-and-forget, via
-  the supervised `TaskSupervisor`. `load_all/0` reads every castle's full row
-  for boot-time `CastleStore.hydrate/1`.
+  writes the sorted list of hired guardian slots; `persist_kafra/2`
+  asynchronously writes whether the castle's Kafra is hired. All are
+  fire-and-forget, via the supervised `TaskSupervisor`. `load_all/0` reads
+  every castle's full row for boot-time `CastleStore.hydrate/1`.
 
-  Ownership, economy, and guardian state are authoritative in `CastleStore`
-  during a live node; the row is the restart-durable copy.
+  Ownership, economy, guardian, and Kafra state are authoritative in
+  `CastleStore` during a live node; the row is the restart-durable copy.
   """
 
   require Logger
@@ -31,7 +32,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
           defense: 0..100,
           invested_economy: 0..2,
           invested_defense: 0..2,
-          guardians: [0..7]
+          guardians: [0..7],
+          kafra: boolean()
         }
 
   @doc """
@@ -89,6 +91,22 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
   end
 
   @doc """
+  Asynchronously writes whether `castle_id`'s Kafra service is hired.
+
+  Fire-and-forget, on the same async/inline path as `persist/2`.
+  """
+  @spec persist_kafra(non_neg_integer(), boolean()) :: :ok
+  def persist_kafra(castle_id, hired?) do
+    run_async(fn -> do_persist_kafra(castle_id, hired?) end)
+    :ok
+  end
+
+  @spec do_persist_kafra(non_neg_integer(), boolean()) :: :ok
+  defp do_persist_kafra(castle_id, hired?) do
+    write_row(castle_id, %{kafra: hired?}, "kafra")
+  end
+
+  @doc """
   Returns `%{castle_id => row}` for every FE castle, owned or not.
 
   Used at boot to hydrate `CastleStore` with ownership, economy, and
@@ -105,7 +123,8 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Persistence do
            defense: g.defense,
            invested_economy: g.invested_economy,
            invested_defense: g.invested_defense,
-           guardians: g.guardians
+           guardians: g.guardians,
+           kafra: g.kafra
          }}
     )
     |> Repo.all()
