@@ -505,14 +505,14 @@ defmodule Aesir.ZoneServer.Npc.Session do
 
   @spec broadcast_spawn(non_neg_integer()) :: :ok
   defp broadcast_spawn(gid) do
-    with_placement(gid, fn placement ->
-      broadcast_to_range(placement, NpcPackets.spawn_packet(placement))
+    with_entry(gid, fn {_module, placement} = entry ->
+      broadcast_to_range(placement, NpcPackets.spawn_packet(entry))
     end)
   end
 
   @spec broadcast_vanish(non_neg_integer()) :: :ok
   defp broadcast_vanish(gid) do
-    with_placement(gid, fn placement ->
+    with_entry(gid, fn {_module, placement} ->
       broadcast_to_range(placement, NpcPackets.vanish_packet(gid))
     end)
   end
@@ -522,10 +522,10 @@ defmodule Aesir.ZoneServer.Npc.Session do
     Broadcast.to_in_range(placement.map, placement.x, placement.y, Config.view_range(), packet)
   end
 
-  @spec with_placement(non_neg_integer(), (Placement.t() -> :ok)) :: :ok
-  defp with_placement(gid, fun) do
+  @spec with_entry(non_neg_integer(), (NpcRegistry.entry() -> :ok)) :: :ok
+  defp with_entry(gid, fun) do
     case NpcRegistry.module_for_unit(gid) do
-      {:ok, {_module, placement}} -> fun.(placement)
+      {:ok, entry} -> fun.(entry)
       :error -> :ok
     end
   end

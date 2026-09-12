@@ -9,8 +9,7 @@ defmodule Aesir.ZoneServer.Unit.Player.SpawnView do
 
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Constants.ObjectType
-  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
-  alias Aesir.ZoneServer.Guild.State, as: GuildState
+  alias Aesir.ZoneServer.Guild.Identity, as: GuildIdentity
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
   alias Aesir.ZoneServer.Unit.Player.Appearance
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -71,19 +70,8 @@ defmodule Aesir.ZoneServer.Unit.Player.SpawnView do
     }
   end
 
-  # Resolves a player's guild identity for a spawn packet as
-  # `{guild_id, guild_name, emblem_id}`. A guild-less player (guild_id 0) or a
-  # stale/non-live guild entry defaults to an empty name and emblem 0; the real
-  # guild_id is still carried for a member whose entry is not live.
   @spec guild_identity(map()) :: {non_neg_integer(), String.t(), non_neg_integer()}
-  defp guild_identity(%{guild_id: 0}), do: {0, "", 0}
-
-  defp guild_identity(%{guild_id: guild_id}) do
-    case GuildManager.get(guild_id) do
-      {:ok, %GuildState{name: name, emblem_id: emblem_id}} -> {guild_id, name, emblem_id}
-      {:error, :not_found} -> {guild_id, "", 0}
-    end
-  end
+  defp guild_identity(%{guild_id: guild_id}), do: GuildIdentity.resolve(guild_id)
 
   defp sex_to_int("F"), do: 0
   defp sex_to_int("M"), do: 1

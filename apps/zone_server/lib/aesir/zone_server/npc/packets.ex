@@ -15,13 +15,14 @@ defmodule Aesir.ZoneServer.Npc.Packets do
   alias Aesir.Net.UnitSpawn
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Constants.ObjectType
+  alias Aesir.ZoneServer.Guild.Identity, as: GuildIdentity
   alias Aesir.ZoneServer.Npc.Placement
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Npc.Session, as: NpcSession
 
-  @doc "Builds the spawn packet for a placement, keyed by its entity id."
-  @spec spawn_packet(Placement.t()) :: UnitSpawn.t()
-  def spawn_packet(%Placement{} = placement) do
+  @doc "Builds the spawn packet for an NPC entry, keyed by its placement's entity id."
+  @spec spawn_packet({module(), Placement.t()}) :: UnitSpawn.t()
+  def spawn_packet({module, %Placement{} = placement}) do
     entity_id = NpcRegistry.entity_id(placement)
 
     {sprite, name, size} =
@@ -29,6 +30,8 @@ defmodule Aesir.ZoneServer.Npc.Packets do
         {s, n, sz} -> {s || placement.sprite, n || placement.name, sz}
         nil -> {placement.sprite, placement.name, 0}
       end
+
+    {guild_id, guild_name, emblem_id} = GuildIdentity.resolve(npc_guild_id(module, placement))
 
     %UnitSpawn{
       object_type: ObjectType.npc(),
@@ -49,7 +52,9 @@ defmodule Aesir.ZoneServer.Npc.Packets do
       body_palette: 0,
       head_dir: 0,
       robe: 0,
-      guild_id: 0,
+      guild_id: guild_id,
+      guild_name: guild_name,
+      emblem_id: emblem_id,
       sex: 0,
       x: placement.x,
       y: placement.y,
@@ -62,6 +67,16 @@ defmodule Aesir.ZoneServer.Npc.Packets do
       size: display_size(size),
       moving: false
     }
+  end
+
+  # A module without `guild_id/1` displays no guild emblem.
+  @spec npc_guild_id(module(), Placement.t()) :: non_neg_integer()
+  defp npc_guild_id(module, placement) do
+    if function_exported?(module, :guild_id, 1) do
+      module.guild_id(placement)
+    else
+      0
+    end
   end
 
   # The runtime keeps the display size as rAthena's integer (0/1/2); it is

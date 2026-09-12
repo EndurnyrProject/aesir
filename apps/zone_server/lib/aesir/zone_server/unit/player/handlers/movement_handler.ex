@@ -775,8 +775,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
       end)
 
     npcs_by_id =
-      Map.new(npcs_in_range, fn {_module, placement} ->
-        {NpcRegistry.entity_id(placement), placement}
+      Map.new(npcs_in_range, fn {_module, placement} = entry ->
+        {NpcRegistry.entity_id(placement), entry}
       end)
 
     new_visible_npcs =
@@ -1055,10 +1055,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp send_npc_spawn_packet_to(to_char_id, %Placement{} = placement) do
+  defp send_npc_spawn_packet_to(to_char_id, {_module, %Placement{}} = entry) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
-        GenServer.cast(to_pid, {:send_packet, NpcPackets.spawn_packet(placement)})
+        GenServer.cast(to_pid, {:send_packet, NpcPackets.spawn_packet(entry)})
 
       {:error, :not_found} ->
         :ok

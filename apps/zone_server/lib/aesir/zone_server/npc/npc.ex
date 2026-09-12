@@ -64,6 +64,9 @@ defmodule Aesir.ZoneServer.Npc do
   @doc "Runs once at NPC initialization. Optional."
   @callback on_init(args :: any()) :: any()
 
+  @doc "The guild whose emblem the NPC displays; 0 for none. Optional."
+  @callback guild_id(Placement.t()) :: non_neg_integer()
+
   @doc """
   Runs when an rAthena-style event label fires (`OnTouch`, `OnTimerNNNN`,
   `OnInit`, ...). Optional.
@@ -76,7 +79,7 @@ defmodule Aesir.ZoneServer.Npc do
   """
   @callback events() :: [String.t()]
 
-  @optional_callbacks on_init: 1, on_event: 2
+  @optional_callbacks on_init: 1, on_event: 2, guild_id: 1
 
   defmacro __using__(opts) do
     scope = opts |> Keyword.get(:scope, :shared) |> validate_content_scope!(:body)
