@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
   require Logger
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
@@ -377,7 +378,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
     case UnitRegistry.get_unit(:player, target_id) do
       {:ok, {_module, target, _pid}} ->
         Unit.living?(target) and
-          not MobState.same_guild?(state, target.guild_id) and
+          not Relations.friendly?(state.guild_id, target.guild_id) and
           not StatusStorage.has_status?(:player, target_id, :sc_gangsterparadise) and
           Interpreter.targetable?(:player, target_id) and
           not Interpreter.charmed_against?(:mob, state.instance_id, target_id) and
@@ -400,7 +401,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachine do
 
         Unit.living?(target) and
           Relationship.enemy?(MobState.to_combatant(state), combatant) and
-          not MobState.same_guild?(state, owner_guild_id(combatant))
+          not Relations.friendly?(state.guild_id, owner_guild_id(combatant))
 
       {:error, :not_found} ->
         false

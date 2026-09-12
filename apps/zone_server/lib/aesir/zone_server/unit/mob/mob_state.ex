@@ -857,15 +857,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
     div(mob_data.attack_delay * (100 - rate), 100)
   end
 
-  @doc """
-  Checks if the mob belongs to the same guild as the given guild_id.
-  Returns true only when mob guild_id > 0 and equals the argument.
-  """
-  @spec same_guild?(t(), non_neg_integer() | nil) :: boolean()
-  def same_guild?(%__MODULE__{guild_id: guild_id}, other_guild_id) do
-    guild_id > 0 and guild_id == other_guild_id
-  end
-
   # Private Helper Functions
 
   defp calculate_hit(mob_data) do

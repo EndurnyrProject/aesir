@@ -1,10 +1,18 @@
 defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
   use ExUnit.Case, async: false
+  use Mimic
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.CombatTestHelper
+  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.Relations
+  alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapFlags
+  alias Aesir.ZoneServer.Mmo.Woe.CastleDb
+  alias Aesir.ZoneServer.Mmo.Woe.CastleStore
   alias Aesir.ZoneServer.Mmo.Woe.Rules
+
+  setup :set_mimic_private
 
   setup do
     Aesir.TestEtsSetup.setup_ets_tables(%{})
@@ -120,6 +128,51 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
     end
   end
 
+  describe "allied guilds are friendly on the hostility seam" do
+    setup do
+      :ok = CastleDb.reload()
+      :ok = CastleStore.init()
+      {:ok, castle} = CastleDb.by_map("aldeg_cas01")
+
+      :ok = MapFlags.set_runtime(castle.map, :gvg, true)
+      :ok = CastleStore.set_siege(castle.id, true)
+      :ok = CastleStore.set_emperium(castle.id, 20_001)
+      :ok = CastleStore.hydrate(%{castle.id => castle_owner_row(7)})
+
+      %{castle: castle}
+    end
+
+    test "an attacker allied to the castle owner is refused against the live Emperium", %{
+      castle: castle
+    } do
+      stub(Relations, :friendly?, fn 7, 9 -> true end)
+      stub(GuildManager, :get, fn 9 -> {:ok, guild_state(9)} end)
+
+      attacker = player_combatant(guild_id: 9)
+      target = emperium_combatant(castle)
+
+      assert Rules.validate_target(attacker, target, %{skill_id: nil}) == {:error, :owner_guild}
+    end
+
+    test "an attacker allied to the castle owner is refused against a guardian" do
+      stub(Relations, :friendly?, fn 7, 9 -> true end)
+
+      attacker = player_combatant(guild_id: 9)
+      target = guardian_combatant(guild_id: 7)
+
+      assert Rules.validate_target(attacker, target, %{skill_id: nil}) == {:error, :owner_guild}
+    end
+
+    test "a guardian is refused against a player allied to its guild" do
+      stub(Relations, :friendly?, fn 7, 9 -> true end)
+
+      attacker = guardian_combatant(guild_id: 7)
+      target = player_combatant(guild_id: 9)
+
+      assert Rules.validate_target(attacker, target, %{skill_id: nil}) == {:error, :owner_guild}
+    end
+  end
+
   defp player_combatant(guild_id: guild_id) do
     CombatTestHelper.create_player_combatant(unit_id: 10_001, map_name: "aldeg_cas01")
     |> Map.merge(%{
@@ -136,5 +189,27 @@ defmodule Aesir.ZoneServer.Mmo.Woe.RulesTest do
       map_name: "aldeg_cas01"
     )
     |> Map.merge(%{guild_id: guild_id, social_root: {:mob, 20_101}, reward_root: nil})
+  end
+
+  defp emperium_combatant(castle) do
+    CombatTestHelper.create_mob_combatant(
+      unit_id: 20_001,
+      monster_id: 1288,
+      map_name: castle.map
+    )
+    |> Map.merge(%{social_root: {:mob, 20_001}, reward_root: nil})
+  end
+
+  defp castle_owner_row(guild_id) do
+    %{guild_id: guild_id, economy: 0, defense: 0, invested_economy: 0, invested_defense: 0}
+  end
+
+  defp guild_state(guild_id) do
+    %GuildState{
+      guild_id: guild_id,
+      name: "Guild #{guild_id}",
+      master_char_id: guild_id,
+      learned_skills: %{10_000 => 1}
+    }
   end
 end

@@ -8,6 +8,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   use Mimic
 
   alias Aesir.ZoneServer.Geometry
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Map.MapCache
   alias Aesir.ZoneServer.Mmo.Combat
@@ -243,6 +244,48 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
       stub(UnitRegistry, :get_unit, fn :player, 2 ->
         {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 8}, nil}}
       end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == {:player, 2}
+      assert result.ai_state == :alert
+    end
+
+    test "a mob does not acquire a living player from an allied guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 9}, nil}}
+      end)
+
+      stub(Relations, :friendly?, fn 7, 9 -> true end)
+
+      state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
+
+      result = AIStateMachine.check_aggro(state)
+
+      assert result.target_ref == nil
+      assert result.ai_state == :idle
+    end
+
+    test "a mob still acquires a living player from an unrelated guild" do
+      stub(SpatialIndex, :get_units_in_range, fn :player, "prontera", 100, 100, _range ->
+        [2]
+      end)
+
+      stub(SpatialIndex, :get_unit_position, fn :player, 2 ->
+        {:ok, {101, 101, "prontera"}}
+      end)
+
+      stub(UnitRegistry, :get_unit, fn :player, 2 ->
+        {:ok, {PlayerState, %PlayerState{living_player_state() | guild_id: 8}, nil}}
+      end)
+
+      stub(Relations, :friendly?, fn 7, 8 -> false end)
 
       state = %MobState{aggressive_idle_mob_state() | guild_id: 7}
 

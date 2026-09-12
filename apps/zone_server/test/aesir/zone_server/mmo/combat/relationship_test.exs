@@ -1,10 +1,14 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
   use ExUnit.Case, async: true
+  use Mimic
 
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Mmo.Combat.Relationship
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Unit.Ref
+
+  setup :set_mimic_private
 
   test "validates canonical typed unit references" do
     assert {:ok, {:homunculus, 42}} = Ref.new(:homunculus, 42)
@@ -175,6 +179,21 @@ defmodule Aesir.ZoneServer.Mmo.Combat.RelationshipTest do
     assert Relationship.enemy?(attacker, target, {:pvp, false, true})
     assert Relationship.enemy?(attacker, target, {:pvp, true, true})
     refute Relationship.enemy?(attacker, target, :off)
+  end
+
+  test "versus matrix: allied guilds are friendly per Relations.friendly?/2" do
+    attacker = player(10, guild_id: 1)
+    target = player(20, guild_id: 2)
+
+    stub(Relations, :friendly?, fn 1, 2 -> true end)
+    refute Relationship.enemy?(attacker, target, :gvg)
+    refute Relationship.enemy?(attacker, target, {:pvp, false, false})
+    assert Relationship.enemy?(attacker, target, {:pvp, false, true})
+
+    stub(Relations, :friendly?, fn 1, 2 -> false end)
+    assert Relationship.enemy?(attacker, target, :gvg)
+    assert Relationship.enemy?(attacker, target, {:pvp, false, false})
+    assert Relationship.enemy?(attacker, target, {:pvp, false, true})
   end
 
   test "versus matrix: gvg protection is unconditional while pvp overrides apply per flag" do

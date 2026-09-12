@@ -540,32 +540,6 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     end
   end
 
-  describe "same_guild?/2" do
-    test "returns false when guild_id is 0 vs 0" do
-      state = build_mob_state()
-
-      refute MobState.same_guild?(state, 0)
-    end
-
-    test "returns false when guild_id is 0 vs nil" do
-      state = build_mob_state()
-
-      refute MobState.same_guild?(state, nil)
-    end
-
-    test "returns true when guild_id matches" do
-      state = %{build_mob_state() | guild_id: 7}
-
-      assert MobState.same_guild?(state, 7)
-    end
-
-    test "returns false when guild_id does not match" do
-      state = %{build_mob_state() | guild_id: 7}
-
-      refute MobState.same_guild?(state, 8)
-    end
-  end
-
   describe "to_combatant/1 with atk stat bonus" do
     test "stat_bonus atk raises combat_stats.atk by exact amount" do
       state = build_mob_state()

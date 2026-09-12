@@ -2,13 +2,14 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   @moduledoc """
   Finite siege-ground rules shared by WoE consumers.
 
-  A guild-owned mob (a hired guardian) is hostile to every guild but its own:
-  it is only targetable during an active siege, and neither side may hit the
-  other when they share a guild.
+  A guild-owned mob (a hired guardian) is hostile to every guild but its own
+  and its allies: it is only targetable during an active siege, and neither
+  side may hit the other when they are friendly (same or allied guild).
   """
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
@@ -47,7 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
          :ok <- ensure_guild(guild_id),
          {:ok, guild} <- fetch_guild(guild_id),
          :ok <- ensure_approval(guild),
-         :ok <- ensure_non_owner(castle_state.owner_guild_id, guild_id) do
+         :ok <- ensure_not_friendly(castle_state.owner_guild_id, guild_id) do
       ensure_attack_allowed(hit_info)
     end
   end
@@ -55,13 +56,13 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
   def validate_target(attacker, %{unit_type: :mob, guild_id: guild_id} = target, hit_info)
       when is_map(attacker) and is_map(hit_info) and is_integer(guild_id) and guild_id > 0 do
     with :ok <- ensure_active(target.map_name) do
-      ensure_non_owner(guild_id, guild_id_of(attacker))
+      ensure_not_friendly(guild_id, guild_id_of(attacker))
     end
   end
 
   def validate_target(%{unit_type: :mob, guild_id: guild_id}, target, hit_info)
       when is_map(target) and is_map(hit_info) and is_integer(guild_id) and guild_id > 0 do
-    ensure_non_owner(guild_id, guild_id_of(target))
+    ensure_not_friendly(guild_id, guild_id_of(target))
   end
 
   def validate_target(attacker, target, hit_info)
@@ -136,8 +137,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.Rules do
       else: {:error, :approval_required}
   end
 
-  defp ensure_non_owner(guild_id, guild_id), do: {:error, :owner_guild}
-  defp ensure_non_owner(_owner_guild_id, _attacker_guild_id), do: :ok
+  defp ensure_not_friendly(owner_guild_id, other_guild_id) do
+    if Relations.friendly?(owner_guild_id, other_guild_id),
+      do: {:error, :owner_guild},
+      else: :ok
+  end
 
   defp ensure_attack_allowed(hit_info) do
     case Map.get(hit_info, :skill_id) do

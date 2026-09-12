@@ -1,9 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   @moduledoc """
   Pure relationship decisions over typed combatants and unit references, with
-  an explicit versus context for player-versus-player hostility.
+  an explicit versus context for player-versus-player hostility. Guild
+  friendliness (equal guild or an alliance) is read from the node-local
+  guild registry via `Aesir.ZoneServer.Guild.Relations.friendly?/2`.
   """
 
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Mmo.Combat.Combatant
   alias Aesir.ZoneServer.Unit.Ref
 
@@ -102,17 +105,17 @@ defmodule Aesir.ZoneServer.Mmo.Combat.Relationship do
   defp versus_enemy?(_attacker, _target, :off), do: false
 
   defp versus_enemy?(attacker, target, :gvg),
-    do: not (same_party?(attacker, target) or same_guild?(attacker, target))
+    do: not (same_party?(attacker, target) or friendly_guild?(attacker, target))
 
   defp versus_enemy?(attacker, target, {:pvp, noparty, noguild}) do
     party_protected? = same_party?(attacker, target) and not noparty
-    guild_protected? = same_guild?(attacker, target) and not noguild
+    guild_protected? = friendly_guild?(attacker, target) and not noguild
     not (party_protected? or guild_protected?)
   end
 
   defp same_party?(%{party_id: party_id}, %{party_id: party_id}) when party_id > 0, do: true
   defp same_party?(_attacker, _target), do: false
 
-  defp same_guild?(%{guild_id: guild_id}, %{guild_id: guild_id}) when guild_id > 0, do: true
-  defp same_guild?(_attacker, _target), do: false
+  defp friendly_guild?(attacker, target),
+    do: Relations.friendly?(attacker.guild_id, target.guild_id)
 end
