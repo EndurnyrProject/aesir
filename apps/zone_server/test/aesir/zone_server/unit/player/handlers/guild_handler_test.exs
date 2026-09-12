@@ -13,6 +13,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Net.GuildActionResult
+  alias Aesir.Net.GuildAllianceBreakRequest
+  alias Aesir.Net.GuildAllianceRequest
+  alias Aesir.Net.GuildAllianceRequestNotify
+  alias Aesir.Net.GuildAllianceResponse
+  alias Aesir.Net.GuildAntagonistRemoveRequest
+  alias Aesir.Net.GuildAntagonistRequest
   alias Aesir.Net.GuildCreateRequest
   alias Aesir.Net.GuildEmblemData
   alias Aesir.Net.GuildEmblemRequest
@@ -28,9 +34,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
   alias Aesir.Net.GuildPositionEditRequest
   alias Aesir.Net.GuildSkillUpRequest
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.Relations
+  alias Aesir.ZoneServer.Mmo.Woe.Server, as: WoeServer
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -410,6 +420,466 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
       assert_received {:send, :gameplay,
                        {:guild_action_result,
                         %GuildActionResult{action: "invite_response", success: false}}}
+    end
+  end
+
+  describe "handle_alliance_request/2" do
+    test "a non-master requester acks NO_PERMISSION and delivers nothing" do
+      {_master, guild} = guild_fixture("Aria")
+      newbie = add_member(guild.guild_id, "Milo")
+      target = character_fixture("Nash", %{})
+
+      reject(&PlayerSession.deliver_alliance_request/2)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: target.id, target_name: ""},
+                 state_for(newbie)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_request",
+                          success: false,
+                          error: :GUILD_ERR_NO_PERMISSION
+                        }}}
+    end
+
+    test "a target who is not their guild's master acks NO_PERMISSION" do
+      {master, _guild} = guild_fixture("Bram")
+      {_target_master, target_guild} = guild_fixture("Cleo")
+      target_newbie = add_member(target_guild.guild_id, "Dorn")
+      register_online(target_newbie)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: target_newbie.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_request",
+                          success: false,
+                          error: :GUILD_ERR_NO_PERMISSION
+                        }}}
+    end
+
+    test "a target in the requester's own guild acks SAME_GUILD" do
+      {master, guild} = guild_fixture("Egon")
+      member = add_member(guild.guild_id, "Fira")
+      register_online(member)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: member.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_request",
+                          success: false,
+                          error: :GUILD_ERR_SAME_GUILD
+                        }}}
+    end
+
+    test "a guildless target acks NOT_MEMBER" do
+      {master, _guild} = guild_fixture("Gwen")
+      target = character_fixture("Hollis", %{})
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: target.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_request",
+                          success: false,
+                          error: :GUILD_ERR_NOT_MEMBER
+                        }}}
+    end
+
+    test "a valid request against an online target master delivers and acks success" do
+      {master, guild} = guild_fixture("Lena")
+      {target_master, _target_guild} = guild_fixture("Milo")
+      register_online(target_master)
+
+      expect(PlayerSession, :deliver_alliance_request, fn _pid, request ->
+        assert request.from_guild_id == guild.guild_id
+        assert request.from_guild_name == guild.name
+        assert request.requester_char_id == master.id
+        assert request.requester_name == master.name
+        :ok
+      end)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: target_master.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_request",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+    end
+
+    test "a target with a request already pending acks REQUEST_PENDING" do
+      {master, guild} = guild_fixture("Jora")
+      {target_master, _target_guild} = guild_fixture("Kellan")
+      register_online(target_master)
+
+      expect(PlayerSession, :deliver_alliance_request, fn _pid, request ->
+        assert request.from_guild_id == guild.guild_id
+        {:error, :request_pending}
+      end)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_request(
+                 %GuildAllianceRequest{target_char_id: target_master.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_request",
+                          success: false,
+                          error: :GUILD_ERR_REQUEST_PENDING
+                        }}}
+    end
+  end
+
+  describe "handle_alliance_delivery/2" do
+    test "stores the pending request, sends GuildAllianceRequestNotify, and rejects a duplicate" do
+      target_master = character_fixture("Ivor", %{})
+
+      request = %{
+        from_guild_id: 42,
+        from_guild_name: "Vanguard",
+        requester_char_id: 1,
+        requester_name: "Alice"
+      }
+
+      assert {:reply, :ok, state} =
+               GuildHandler.handle_alliance_delivery(request, state_for(target_master))
+
+      assert_received {:send, :gameplay,
+                       {:guild_alliance_request_notify,
+                        %GuildAllianceRequestNotify{
+                          guild_id: 42,
+                          guild_name: "Vanguard",
+                          requester_name: "Alice"
+                        }}}
+
+      assert %{from_guild_id: 42} = state.pending_alliance_request
+
+      assert {:reply, {:error, :request_pending}, ^state} =
+               GuildHandler.handle_alliance_delivery(request, state)
+    end
+  end
+
+  describe "handle_alliance_response/2" do
+    test "no pending request for guild_id acks NOT_MEMBER" do
+      {master, _guild} = guild_fixture("Nadia")
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_response(
+                 %GuildAllianceResponse{guild_id: 999, accept: true},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_response",
+                          success: false,
+                          error: :GUILD_ERR_NOT_MEMBER
+                        }}}
+    end
+
+    test "accept calls Relations.ally/2 with (responder_guild_id, from_guild_id) and clears the pending request" do
+      {responder, responder_guild} = guild_fixture("Otis")
+
+      pending = %{
+        pending_alliance_request: %{
+          from_guild_id: 77,
+          from_guild_name: "Requesters",
+          requester_char_id: 5,
+          expires_at: System.monotonic_time(:millisecond) + 30_000
+        }
+      }
+
+      state = Map.merge(state_for(responder), pending)
+
+      expect(Relations, :ally, fn responder_guild_id, from_guild_id ->
+        assert responder_guild_id == responder_guild.guild_id
+        assert from_guild_id == 77
+        :ok
+      end)
+
+      assert {:noreply, new_state} =
+               GuildHandler.handle_alliance_response(
+                 %GuildAllianceResponse{guild_id: 77, accept: true},
+                 state
+               )
+
+      assert new_state.pending_alliance_request == nil
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_response",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+    end
+
+    test "decline notifies the requester with ALLIANCE_DECLINED and clears the pending request" do
+      {responder, _guild} = guild_fixture("Petra")
+      requester = character_fixture("Quill", %{})
+
+      pending = %{
+        pending_alliance_request: %{
+          from_guild_id: 88,
+          from_guild_name: "Requesters",
+          requester_char_id: requester.id,
+          expires_at: System.monotonic_time(:millisecond) + 30_000
+        }
+      }
+
+      state = Map.merge(state_for(responder), pending)
+
+      expect(Broadcast, :to_player, fn char_id, packet ->
+        assert char_id == requester.id
+
+        assert %GuildActionResult{
+                 action: "alliance_request",
+                 success: false,
+                 error: :GUILD_ERR_ALLIANCE_DECLINED
+               } = packet
+
+        :ok
+      end)
+
+      assert {:noreply, new_state} =
+               GuildHandler.handle_alliance_response(
+                 %GuildAllianceResponse{guild_id: 88, accept: false},
+                 state
+               )
+
+      assert new_state.pending_alliance_request == nil
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_response",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+    end
+  end
+
+  describe "handle_alliance_break_request/2" do
+    test "the master breaks an existing alliance" do
+      {master_a, guild_a} = guild_fixture("Rurik")
+      {master_b, guild_b} = guild_fixture("Silas")
+      register_online(master_b)
+      assert :ok = Relations.ally(guild_a.guild_id, guild_b.guild_id)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_break_request(
+                 %GuildAllianceBreakRequest{guild_id: guild_b.guild_id},
+                 state_for(master_a)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_break",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+    end
+
+    test "an active siege refuses the break with SIEGE_ACTIVE" do
+      {master_a, _guild_a} = guild_fixture("Tamsin")
+      {_master_b, guild_b} = guild_fixture("Ulric")
+
+      stub(WoeServer, :active?, fn -> true end)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_alliance_break_request(
+                 %GuildAllianceBreakRequest{guild_id: guild_b.guild_id},
+                 state_for(master_a)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "alliance_break",
+                          success: false,
+                          error: :GUILD_ERR_SIEGE_ACTIVE
+                        }}}
+    end
+  end
+
+  describe "handle_antagonist_request/2" do
+    test "the master declares an antagonist against an online target's guild" do
+      {master, _guild} = guild_fixture("Vesna")
+      {target_master, _target_guild} = guild_fixture("Wren")
+      register_online(target_master)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_antagonist_request(
+                 %GuildAntagonistRequest{target_char_id: target_master.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "antagonist",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+    end
+
+    test "the antagonist limit refuses a fourth declaration" do
+      {master, guild} = guild_fixture("Xerxes")
+
+      Enum.each(1..3, fn n ->
+        {other_master, _other_guild} = guild_fixture("Yara#{n}")
+        register_online(other_master)
+        assert :ok = Relations.declare_antagonist(guild.guild_id, other_master.guild_id)
+      end)
+
+      {fourth_master, _fourth_guild} = guild_fixture("Zelah")
+      register_online(fourth_master)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_antagonist_request(
+                 %GuildAntagonistRequest{target_char_id: fourth_master.id, target_name: ""},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "antagonist",
+                          success: false,
+                          error: :GUILD_ERR_ANTAGONIST_LIMIT
+                        }}}
+    end
+  end
+
+  describe "handle_antagonist_remove_request/2" do
+    test "the master removes an existing antagonist declaration" do
+      {master, guild} = guild_fixture("Aldric")
+      {other_master, other_guild} = guild_fixture("Bellamy")
+      register_online(other_master)
+      assert :ok = Relations.declare_antagonist(guild.guild_id, other_guild.guild_id)
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_antagonist_remove_request(
+                 %GuildAntagonistRemoveRequest{guild_id: other_guild.guild_id},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "antagonist_remove",
+                          success: true,
+                          error: :GUILD_ERR_NONE
+                        }}}
+    end
+
+    test "a missing antagonist relation refuses with NOT_RELATED" do
+      {master, _guild} = guild_fixture("Cadmus")
+      {_other_master, other_guild} = guild_fixture("Delia")
+
+      assert {:noreply, _state} =
+               GuildHandler.handle_antagonist_remove_request(
+                 %GuildAntagonistRemoveRequest{guild_id: other_guild.guild_id},
+                 state_for(master)
+               )
+
+      assert_received {:send, :gameplay,
+                       {:guild_action_result,
+                        %GuildActionResult{
+                          action: "antagonist_remove",
+                          success: false,
+                          error: :GUILD_ERR_NOT_RELATED
+                        }}}
+    end
+  end
+
+  describe "alliance_request_expired/1" do
+    test "an expired pending request notifies the requester and clears itself" do
+      requester = character_fixture("Finn", %{})
+
+      pending = %{
+        pending_alliance_request: %{
+          from_guild_id: 5,
+          from_guild_name: "Vanguard",
+          requester_char_id: requester.id,
+          expires_at: System.monotonic_time(:millisecond) - 1
+        }
+      }
+
+      responder = character_fixture("Greer", %{})
+      state = Map.merge(state_for(responder), pending)
+
+      expect(Broadcast, :to_player, fn char_id, packet ->
+        assert char_id == requester.id
+
+        assert %GuildActionResult{
+                 action: "alliance_request",
+                 success: false,
+                 error: :GUILD_ERR_ALLIANCE_DECLINED
+               } = packet
+
+        :ok
+      end)
+
+      assert {:noreply, new_state} = SocialHandler.alliance_request_expired(state)
+
+      assert new_state.pending_alliance_request == nil
+    end
+
+    test "a not-yet-expired pending request is left untouched" do
+      pending = %{
+        pending_alliance_request: %{
+          from_guild_id: 5,
+          from_guild_name: "Vanguard",
+          requester_char_id: 1,
+          expires_at: System.monotonic_time(:millisecond) + 30_000
+        }
+      }
+
+      responder = character_fixture("Halden", %{})
+      state = Map.merge(state_for(responder), pending)
+
+      assert {:noreply, ^state} = SocialHandler.alliance_request_expired(state)
+      refute_received {:send, :gameplay, {:guild_action_result, _}}
+    end
+
+    test "no pending request is a no-op" do
+      responder = character_fixture("Ilsa", %{})
+      state = state_for(responder)
+
+      assert {:noreply, ^state} = SocialHandler.alliance_request_expired(state)
     end
   end
 
@@ -1011,6 +1481,70 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandlerTest do
                  %GuildEmblemRequest{guild_id: 1, emblem_id: 0},
                  base
                )
+    end
+
+    test "GuildAllianceRequest dispatches to GuildHandler.handle_alliance_request/2", %{
+      base: base
+    } do
+      expect(GuildHandler, :handle_alliance_request, fn %GuildAllianceRequest{}, ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(
+                 %GuildAllianceRequest{target_char_id: 2, target_name: ""},
+                 base
+               )
+    end
+
+    test "GuildAllianceResponse dispatches to GuildHandler.handle_alliance_response/2", %{
+      base: base
+    } do
+      expect(GuildHandler, :handle_alliance_response, fn %GuildAllianceResponse{}, ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(
+                 %GuildAllianceResponse{guild_id: 1, accept: true},
+                 base
+               )
+    end
+
+    test "GuildAllianceBreakRequest dispatches to GuildHandler.handle_alliance_break_request/2",
+         %{base: base} do
+      expect(GuildHandler, :handle_alliance_break_request, fn %GuildAllianceBreakRequest{},
+                                                              ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(%GuildAllianceBreakRequest{guild_id: 1}, base)
+    end
+
+    test "GuildAntagonistRequest dispatches to GuildHandler.handle_antagonist_request/2", %{
+      base: base
+    } do
+      expect(GuildHandler, :handle_antagonist_request, fn %GuildAntagonistRequest{}, ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(
+                 %GuildAntagonistRequest{target_char_id: 2, target_name: ""},
+                 base
+               )
+    end
+
+    test "GuildAntagonistRemoveRequest dispatches to GuildHandler.handle_antagonist_remove_request/2",
+         %{base: base} do
+      expect(GuildHandler, :handle_antagonist_remove_request, fn %GuildAntagonistRemoveRequest{},
+                                                                 ^base ->
+        {:noreply, base}
+      end)
+
+      assert {:noreply, ^base} =
+               PacketHandler.handle_message(%GuildAntagonistRemoveRequest{guild_id: 1}, base)
     end
   end
 end

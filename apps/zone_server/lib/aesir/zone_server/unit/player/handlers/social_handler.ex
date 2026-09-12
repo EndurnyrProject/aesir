@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
 
   require Logger
 
+  alias Aesir.Net.GuildActionResult
   alias Aesir.Net.GuildDisbanded
   alias Aesir.Net.GuildEmblemChanged
   alias Aesir.Net.GuildLevelUp
@@ -32,6 +33,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   alias Aesir.ZoneServer.Party.Member, as: PartyMember
   alias Aesir.ZoneServer.Party.State, as: PartyState
   alias Aesir.ZoneServer.Party.View, as: PartyView
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.GuildSync
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildStorageHandler
   alias Aesir.ZoneServer.Unit.Player.PartySync
@@ -68,6 +70,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
     do: guild_emblem_changed(guild_id, emblem_id, state)
 
   def info(:guild_invite_expired, state), do: guild_invite_expired(state)
+
+  def info(:alliance_request_expired, state), do: alliance_request_expired(state)
 
   def info({:guild_level_up, guild_state}, state), do: guild_leveled_up(guild_state, state)
 
@@ -396,6 +400,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler do
   @spec guild_invite_expired(SessionState.t()) :: {:noreply, SessionState.t()}
   def guild_invite_expired(state) do
     {:noreply, %{state | pending_guild_invite: nil}}
+  end
+
+  @doc """
+  Clears the pending alliance request when its expiry timer fires and
+  notifies the requester of a decline; a no-op when nothing is pending or
+  the pending request is not yet expired (a stale timer from a request
+  already resolved and replaced by a newer one).
+  """
+  @spec alliance_request_expired(SessionState.t()) :: {:noreply, SessionState.t()}
+  def alliance_request_expired(%{pending_alliance_request: nil} = state), do: {:noreply, state}
+
+  def alliance_request_expired(%{pending_alliance_request: request} = state) do
+    if System.monotonic_time(:millisecond) >= request.expires_at do
+      Broadcast.to_player(request.requester_char_id, %GuildActionResult{
+        action: "alliance_request",
+        success: false,
+        error: :GUILD_ERR_ALLIANCE_DECLINED
+      })
+
+      {:noreply, %{state | pending_alliance_request: nil}}
+    else
+      {:noreply, state}
+    end
   end
 
   defp sync_and_send_party(%{game_state: game_state} = state, party_id) do

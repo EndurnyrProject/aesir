@@ -18,6 +18,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.EmoteRequest
   alias Aesir.Net.EquipItem
   alias Aesir.Net.GroundSkillCast
+  alias Aesir.Net.GuildAllianceBreakRequest
+  alias Aesir.Net.GuildAllianceRequest
+  alias Aesir.Net.GuildAllianceResponse
+  alias Aesir.Net.GuildAntagonistRemoveRequest
+  alias Aesir.Net.GuildAntagonistRequest
   alias Aesir.Net.GuildCreateRequest
   alias Aesir.Net.GuildEmblemRequest
   alias Aesir.Net.GuildEmblemUploadRequest
@@ -542,6 +547,34 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # GuildEmblemRequest - Client fetches a guild's current emblem blob.
   def handle_message(%GuildEmblemRequest{} = msg, state) do
     GuildHandler.handle_emblem_request(msg, state)
+  end
+
+  # GuildAllianceRequest - Guild master requests an alliance with another guild.
+  def handle_message(%GuildAllianceRequest{} = msg, state) do
+    GuildHandler.handle_alliance_request(msg, state)
+  end
+
+  # GuildAllianceResponse - Target guild master's accept/decline of a pending
+  # alliance request.
+  def handle_message(%GuildAllianceResponse{} = msg, state) do
+    GuildHandler.handle_alliance_response(msg, state)
+  end
+
+  # GuildAllianceBreakRequest - Guild master breaks an existing alliance.
+  def handle_message(%GuildAllianceBreakRequest{} = msg, state) do
+    GuildHandler.handle_alliance_break_request(msg, state)
+  end
+
+  # GuildAntagonistRequest - Guild master declares antagonist status against
+  # another guild.
+  def handle_message(%GuildAntagonistRequest{} = msg, state) do
+    GuildHandler.handle_antagonist_request(msg, state)
+  end
+
+  # GuildAntagonistRemoveRequest - Guild master removes an existing antagonist
+  # relation.
+  def handle_message(%GuildAntagonistRemoveRequest{} = msg, state) do
+    GuildHandler.handle_antagonist_remove_request(msg, state)
   end
 
   # NpcTalk - Player clicked an NPC unit (protobuf analogue of CZ_CONTACTNPC 0x0090).

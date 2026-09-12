@@ -41,6 +41,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Net.GuildActionResult
+  alias Aesir.Net.GuildAllianceBreakRequest
+  alias Aesir.Net.GuildAllianceRequest
+  alias Aesir.Net.GuildAllianceRequestNotify
+  alias Aesir.Net.GuildAllianceResponse
+  alias Aesir.Net.GuildAntagonistRemoveRequest
+  alias Aesir.Net.GuildAntagonistRequest
   alias Aesir.Net.GuildCreateRequest
   alias Aesir.Net.GuildEmblemData
   alias Aesir.Net.GuildEmblemRequest
@@ -58,8 +64,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   alias Aesir.ZoneServer.Guild.EmblemValidator
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Permissions
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Network.MessageRouter
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
@@ -310,6 +318,139 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     end
   end
 
+  @doc """
+  Master-only alliance request against another guild, identified by the
+  target character (or name when the id is 0), who must be that other
+  guild's own master. Delivery and pending-request bookkeeping happen in
+  the target's session via `deliver_alliance_request/2`, mirroring the
+  guild invite flow (design "Alliance Request").
+  """
+  @spec handle_alliance_request(GuildAllianceRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_alliance_request(
+        %GuildAllianceRequest{target_char_id: target_char_id, target_name: target_name},
+        state
+      ) do
+    char_id = requester_char_id(state)
+
+    result =
+      with {:ok, requester, guild_state} <- require_master(char_id),
+           {:ok, resolved_target_id} <- resolve_target(target_char_id, target_name),
+           {:ok, target} <- fetch_character(resolved_target_id),
+           :ok <- require_in_guild(target),
+           :ok <- require_different_guild(requester.guild_id, target.guild_id),
+           {:ok, target_guild_state} <- GuildManager.ensure_started(target.guild_id),
+           :ok <- require_is_master(target_guild_state, target.id),
+           :ok <- Relations.request_check(requester.guild_id, target.guild_id),
+           {:ok, target_pid} <- fetch_target_pid(target.id) do
+        deliver_alliance_request(target_pid, guild_state, requester)
+      end
+
+    ack_result(state, "alliance_request", result)
+  end
+
+  @doc """
+  Runs on the target master's session, invoked from `PlayerSession`'s
+  `handle_call({:social, {:deliver_alliance_request, request}}, _from, state)`:
+  stores the pending request, sends the `GuildAllianceRequestNotify`, and arms
+  the expiry timer. Rejects a second request while one is already pending and
+  unexpired. Mirrors `handle_invite_delivery/2`.
+  """
+  @spec handle_alliance_delivery(map(), SessionState.t()) ::
+          {:reply, :ok | {:error, :request_pending}, SessionState.t()}
+  def handle_alliance_delivery(request, state) do
+    if pending_alliance_active?(state) do
+      {:reply, {:error, :request_pending}, state}
+    else
+      Process.send_after(self(), {:social, :alliance_request_expired}, @invite_ttl_ms)
+
+      MessageRouter.send_to(state.connection_pid, %GuildAllianceRequestNotify{
+        guild_id: request.from_guild_id,
+        guild_name: request.from_guild_name,
+        requester_name: request.requester_name
+      })
+
+      pending = %{
+        from_guild_id: request.from_guild_id,
+        from_guild_name: request.from_guild_name,
+        requester_char_id: request.requester_char_id,
+        expires_at: System.monotonic_time(:millisecond) + @invite_ttl_ms
+      }
+
+      {:reply, :ok, %{state | pending_alliance_request: pending}}
+    end
+  end
+
+  @doc """
+  The target master's accept/decline of a pending alliance request. Accept
+  re-validates the responder's own master gating, then forms the alliance
+  through `Guild.Relations.ally/2`; decline notifies the requester with a
+  failed `GuildActionResult`. The pending request is cleared in either
+  branch, and a missing or expired one acks `:not_member` without touching
+  `Relations`.
+  """
+  @spec handle_alliance_response(GuildAllianceResponse.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_alliance_response(%GuildAllianceResponse{guild_id: guild_id, accept: accept}, state) do
+    case take_pending_alliance_request(state, guild_id) do
+      {:ok, request, cleared_state} -> resolve_alliance_response(accept, request, cleared_state)
+      :error -> ack_result(state, "alliance_response", {:error, :not_member})
+    end
+  end
+
+  @doc "Master-only break of an existing alliance with `guild_id`."
+  @spec handle_alliance_break_request(GuildAllianceBreakRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_alliance_break_request(%GuildAllianceBreakRequest{guild_id: guild_id}, state) do
+    char_id = requester_char_id(state)
+
+    result =
+      with {:ok, _requester, guild_state} <- require_master(char_id) do
+        Relations.break(guild_state.guild_id, guild_id)
+      end
+
+    ack_result(state, "alliance_break", result)
+  end
+
+  @doc """
+  Master-only antagonist declaration against another guild, identified by
+  the target character (or name when the id is 0). Unlike an alliance
+  request, this is unilateral and does not require the target to be online
+  or their guild's master.
+  """
+  @spec handle_antagonist_request(GuildAntagonistRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_antagonist_request(
+        %GuildAntagonistRequest{target_char_id: target_char_id, target_name: target_name},
+        state
+      ) do
+    char_id = requester_char_id(state)
+
+    result =
+      with {:ok, _requester, guild_state} <- require_master(char_id),
+           {:ok, resolved_target_id} <- resolve_target(target_char_id, target_name),
+           {:ok, target} <- fetch_character(resolved_target_id),
+           :ok <- require_in_guild(target) do
+        Relations.declare_antagonist(guild_state.guild_id, target.guild_id)
+      end
+
+    ack_result(state, "antagonist", result)
+  end
+
+  @doc "Master-only removal of an existing antagonist declaration against `guild_id`."
+  @spec handle_antagonist_remove_request(GuildAntagonistRemoveRequest.t(), SessionState.t()) ::
+          {:noreply, SessionState.t()}
+  def handle_antagonist_remove_request(%GuildAntagonistRemoveRequest{guild_id: guild_id}, state) do
+    char_id = requester_char_id(state)
+
+    result =
+      with {:ok, _requester, guild_state} <- require_master(char_id) do
+        Relations.remove_antagonist(guild_state.guild_id, guild_id)
+      end
+
+    ack_result(state, "antagonist_remove", result)
+  end
+
   defp requester_char_id(%{game_state: game_state}), do: game_state.character_id
 
   defp fetch_character(char_id) do
@@ -367,6 +508,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   defp require_not_full(%GuildState{} = guild_state) do
     if GuildState.full?(guild_state), do: {:error, :guild_full}, else: :ok
   end
+
+  # Requester gating shared by every alliance/antagonist request: the
+  # requester must be a guild member and their own guild's master. Returns
+  # the requester `Character` and their live `GuildState` on success.
+  defp require_master(char_id) do
+    with {:ok, requester} <- fetch_character(char_id),
+         :ok <- require_in_guild(requester),
+         {:ok, guild_state} <- GuildManager.ensure_started(requester.guild_id),
+         :ok <- require_is_master(guild_state, char_id) do
+      {:ok, requester, guild_state}
+    end
+  end
+
+  defp require_in_guild(%Character{guild_id: 0}), do: {:error, :not_member}
+  defp require_in_guild(%Character{}), do: :ok
+
+  defp require_is_master(%GuildState{master_char_id: master_char_id}, char_id)
+       when master_char_id == char_id,
+       do: :ok
+
+  defp require_is_master(%GuildState{}, _char_id), do: {:error, :no_permission}
+
+  defp require_different_guild(guild_id, guild_id), do: {:error, :same_guild}
+  defp require_different_guild(_requester_guild_id, _target_guild_id), do: :ok
 
   defp resolve_target(target_char_id, _target_name) when target_char_id != 0 do
     {:ok, target_char_id}
@@ -431,6 +596,62 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
     ack_and_attach(state, "invite_response", result)
   end
 
+  defp deliver_alliance_request(target_pid, %GuildState{} = guild_state, %Character{} = requester) do
+    request = %{
+      from_guild_id: guild_state.guild_id,
+      from_guild_name: guild_state.name,
+      requester_char_id: requester.id,
+      requester_name: requester.name
+    }
+
+    PlayerSession.deliver_alliance_request(target_pid, request)
+  end
+
+  defp take_pending_alliance_request(
+         %{pending_alliance_request: %{from_guild_id: guild_id} = request} = state,
+         guild_id
+       ) do
+    if alliance_request_expired?(request) do
+      :error
+    else
+      {:ok, request, %{state | pending_alliance_request: nil}}
+    end
+  end
+
+  defp take_pending_alliance_request(_state, _guild_id), do: :error
+
+  defp alliance_request_expired?(%{expires_at: expires_at}) do
+    System.monotonic_time(:millisecond) >= expires_at
+  end
+
+  defp pending_alliance_active?(%{pending_alliance_request: nil}), do: false
+
+  defp pending_alliance_active?(%{pending_alliance_request: request}),
+    do: not alliance_request_expired?(request)
+
+  defp pending_alliance_active?(_state), do: false
+
+  defp resolve_alliance_response(false, request, state) do
+    Broadcast.to_player(request.requester_char_id, %GuildActionResult{
+      action: "alliance_request",
+      success: false,
+      error: :GUILD_ERR_ALLIANCE_DECLINED
+    })
+
+    ack_result(state, "alliance_response", :ok)
+  end
+
+  defp resolve_alliance_response(true, request, state) do
+    char_id = requester_char_id(state)
+
+    result =
+      with {:ok, _requester, guild_state} <- require_master(char_id) do
+        Relations.ally(guild_state.guild_id, request.from_guild_id)
+      end
+
+    ack_result(state, "alliance_response", result)
+  end
+
   defp ack_and_attach(state, action, {:ok, %GuildState{} = guild_state} = result) do
     state
     |> SocialHandler.attach_to_guild(guild_state)
@@ -493,6 +714,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   defp map_error(:prerequisite_not_met), do: :GUILD_ERR_SKILL_REQUIREMENT
   defp map_error(:unknown_skill), do: :GUILD_ERR_SKILL_REQUIREMENT
   defp map_error(:max_level_reached), do: :GUILD_ERR_SKILL_MAXED
+  defp map_error(:ally_limit), do: :GUILD_ERR_ALLY_LIMIT
+  defp map_error(:antagonist_limit), do: :GUILD_ERR_ANTAGONIST_LIMIT
+  defp map_error(:already_allied), do: :GUILD_ERR_ALREADY_ALLIED
+  defp map_error(:already_antagonist), do: :GUILD_ERR_ALREADY_ANTAGONIST
+  defp map_error(:not_related), do: :GUILD_ERR_NOT_RELATED
+  defp map_error(:same_guild), do: :GUILD_ERR_SAME_GUILD
+  defp map_error(:siege_active), do: :GUILD_ERR_SIEGE_ACTIVE
+  defp map_error(:request_pending), do: :GUILD_ERR_REQUEST_PENDING
+  defp map_error(:alliance_declined), do: :GUILD_ERR_ALLIANCE_DECLINED
   defp map_error(:not_found), do: :GUILD_ERR_NOT_MEMBER
 
   defp map_error(other) do

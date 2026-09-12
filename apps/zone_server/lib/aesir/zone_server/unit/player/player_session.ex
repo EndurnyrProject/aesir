@@ -357,6 +357,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     GenServer.call(pid, {:social, {:deliver_guild_invite, invite}})
   end
 
+  @doc """
+  Delivers a pending alliance request to this player's session: stores it,
+  sends the `GuildAllianceRequestNotify`, and arms its 30s expiry timer.
+  Rejects a second request while one is already pending and unexpired.
+  Mirrors `deliver_guild_invite/2`.
+  """
+  @spec deliver_alliance_request(pid(), map()) :: :ok | {:error, :request_pending}
+  def deliver_alliance_request(pid, request) do
+    GenServer.call(pid, {:social, {:deliver_alliance_request, request}})
+  end
+
   @doc "Notifies this player that `about_char_id` entered their view range."
   @spec notify_entered_view(pid(), non_neg_integer()) :: :ok
   def notify_entered_view(pid, about_char_id) do
@@ -1429,6 +1440,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:social, {:deliver_guild_invite, invite}}, _from, state) do
     GuildHandler.handle_invite_delivery(invite, state)
+  end
+
+  @impl true
+  def handle_call({:social, {:deliver_alliance_request, request}}, _from, state) do
+    GuildHandler.handle_alliance_delivery(request, state)
   end
 
   @impl true
