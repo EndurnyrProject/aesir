@@ -34,6 +34,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
   alias Aesir.ZoneServer.Guild.Permissions
   alias Aesir.ZoneServer.Guild.Position
   alias Aesir.ZoneServer.Guild.Progression.Data
+  alias Aesir.ZoneServer.Guild.Relation
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Guild.Storage.Lock
 
@@ -183,11 +185,12 @@ defmodule Aesir.ZoneServer.Guild.Manager do
           end
 
         case result do
-          {:ok, _state} ->
+          {:ok, state} ->
             stop_storage_claim(guild_id)
             broadcast(guild_id, {:guild_disbanded, guild_id, reason})
             Lifecycle.publish_disbanded(guild_id)
             stop_entry({:guild, guild_id})
+            refresh_relation_peers(state.relations)
             :ok
 
           {:error, _reason} = error ->
@@ -197,6 +200,17 @@ defmodule Aesir.ZoneServer.Guild.Manager do
       :error ->
         {:error, :not_found}
     end
+  end
+
+  defp refresh_relation_peers(relations) do
+    relations
+    |> Map.keys()
+    |> Enum.each(fn peer_id ->
+      case put_relations(peer_id, Relations.load(peer_id)) do
+        :ok -> :ok
+        {:error, :not_found} -> :ok
+      end
+    end)
   end
 
   defp stop_storage_claim(guild_id) do
@@ -906,6 +920,32 @@ defmodule Aesir.ZoneServer.Guild.Manager do
     end
   end
 
+  @doc """
+  Replaces the live entry's relation map, e.g. after
+  `Aesir.ZoneServer.Guild.Relations` commits a write touching `guild_id`.
+  Broadcasts `{:social, {:guild_updated, state}}` on
+  `"guild:\#{guild_id}"`.
+  """
+  @spec put_relations(non_neg_integer(), %{pos_integer() => Relation.t()}) ::
+          :ok | {:error, :not_found}
+  def put_relations(guild_id, relations) do
+    case lookup_pid({:guild, guild_id}) do
+      {:ok, pid} ->
+        try do
+          {:ok, state} = Entry.update(pid, &replace_relations(&1, relations))
+          broadcast(guild_id, {:guild_updated, state})
+          :ok
+        catch
+          :exit, _ -> {:error, :not_found}
+        end
+
+      :error ->
+        {:error, :not_found}
+    end
+  end
+
+  defp replace_relations(%State{} = state, relations), do: %State{state | relations: relations}
+
   defp persist_guild(guild_id, changes) do
     case Repo.get(GuildModel, guild_id) do
       nil ->
@@ -978,7 +1018,8 @@ defmodule Aesir.ZoneServer.Guild.Manager do
       level: guild.level,
       exp: guild.exp,
       skill_points: guild.skill_points,
-      learned_skills: decode_learned_skills(guild.learned_skills)
+      learned_skills: decode_learned_skills(guild.learned_skills),
+      relations: Relations.load(guild.id)
     }
   end
 

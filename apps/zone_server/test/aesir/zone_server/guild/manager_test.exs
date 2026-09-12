@@ -12,12 +12,15 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
   alias Aesir.Commons.Models.Guild, as: GuildModel
   alias Aesir.Commons.Models.GuildExpulsion
   alias Aesir.Commons.Models.GuildPosition
+  alias Aesir.Commons.Models.GuildRelation
   alias Aesir.Commons.Models.GuildStorageLog
   alias Aesir.Net.StorageResult
   alias Aesir.Repo
   alias Aesir.ZoneServer.Guild.Lifecycle
   alias Aesir.ZoneServer.Guild.Manager
   alias Aesir.ZoneServer.Guild.Member
+  alias Aesir.ZoneServer.Guild.Relation
+  alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Guild.State
   alias Aesir.ZoneServer.Guild.Storage.Lock
   alias Aesir.ZoneServer.Guild.Storage.Persistence, as: GuildStoragePersistence
@@ -165,6 +168,19 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
 
       joiner_member = Map.fetch!(rebuilt.members, joiner.id)
       assert joiner_member.position_index == @newbie_position
+    end
+
+    test "rebuilds a guild's relations from persisted rows" do
+      {_master, created} = guild_fixture("RebuildRelations")
+      {_ally_master, ally} = guild_fixture("RebuildRelationsAlly")
+      ally_id = ally.guild_id
+      assert :ok = Relations.ally(created.guild_id, ally_id)
+
+      ClusterTestHelper.clear_all()
+
+      assert {:ok, rebuilt} = Manager.ensure_started(created.guild_id)
+
+      assert %{^ally_id => %Relation{kind: :ally}} = rebuilt.relations
     end
 
     test "returns {:error, :not_found} when no guild row exists" do
@@ -323,6 +339,26 @@ defmodule Aesir.ZoneServer.Guild.ManagerTest do
       assert :ok = Manager.disband(guild_id, "gm_action")
 
       assert_receive {:guild_lifecycle, {:disbanded, ^guild_id}}
+    end
+
+    test "disbanding an allied guild refreshes the peer's live entry and leaves no rows" do
+      {_master, disbanded} = guild_fixture("DisbandedAlly")
+      {_peer_master, peer} = guild_fixture("SurvivingAlly")
+      disbanded_id = disbanded.guild_id
+      peer_id = peer.guild_id
+      assert :ok = Relations.ally(disbanded_id, peer_id)
+
+      assert :ok = Manager.disband(disbanded_id, "gm_action")
+
+      assert {:ok, %State{relations: relations}} = Manager.get(peer_id)
+      refute Map.has_key?(relations, disbanded_id)
+
+      assert Repo.aggregate(
+               from(r in GuildRelation,
+                 where: r.guild_id == ^disbanded_id or r.other_guild_id == ^disbanded_id
+               ),
+               :count
+             ) == 0
     end
 
     test "a failed disband leaves the storage claim and window usable" do
