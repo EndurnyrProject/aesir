@@ -286,6 +286,7 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate playerattached(ctx), to: Reads
   defdelegate getcharid(ctx, type), to: Reads
   defdelegate getguildname(ctx, guild_id), to: Reads
+  defdelegate getguildmaster(ctx, guild_id), to: Reads
   defdelegate party_leader?(ctx), to: Reads
   defdelegate party_leader?(ctx, party_id), to: Reads
   defdelegate strnpcinfo(ctx, type), to: Reads
@@ -302,6 +303,10 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate castle_guardians(ctx, castle_id), to: Castle
   defdelegate castle_guardian_hire_check(ctx, castle_id, slot), to: Castle
   defdelegate castle_hire_guardian(ctx, castle_id, slot), to: Castle
+  defdelegate castle_kafra_hired?(ctx, castle_id), to: Castle
+  defdelegate castle_kafra_hire_check(ctx, castle_id), to: Castle
+  defdelegate castle_hire_kafra(ctx, castle_id), to: Castle
+  defdelegate castle_fire_kafra(ctx, castle_id), to: Castle
 
   # -- NpcControl (Dsl.NpcControl) ---------------------------------------------
 

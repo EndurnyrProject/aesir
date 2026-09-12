@@ -663,7 +663,6 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlag do
     ]
 
   alias Aesir.ZoneServer.Content.Npc.Woe.FlagOwner
-  alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Mmo.Woe.CastleDb
 
   @entries %{
@@ -758,7 +757,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlag do
 
   defp owned_edict(ctx, owner) do
     guild_name = getguildname(ctx, owner)
-    master = master_name(owner)
+    master = getguildmaster(ctx, owner)
 
     ctx
     |> mes("[Edict of the Divine Rune-Midgarts Kingdom]")
@@ -772,18 +771,5 @@ defmodule Aesir.ZoneServer.Content.Npc.Woe.OutsideFlag do
     |> mes("If there is anyone who objects to this,")
     |> mes("prove your strength and honor with a steel blade in your hand.")
     |> close()
-  end
-
-  defp master_name(guild_id) do
-    case GuildManager.get(guild_id) do
-      {:ok, state} ->
-        case Map.fetch(state.members, state.master_char_id) do
-          {:ok, member} -> member.name
-          :error -> ""
-        end
-
-      {:error, :not_found} ->
-        ""
-    end
   end
 end

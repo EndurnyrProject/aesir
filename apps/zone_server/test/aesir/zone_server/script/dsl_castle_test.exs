@@ -4,13 +4,18 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
   reads (`castle_at/1`, `castle_name/2`, `castle_owner/2`, `castle_economy/2`,
   `castle_invest_cost/3`), guild leadership (`is_guild_leader/2`), the
   investment effect (`castle_invest/3`) which routes through
-  `Economy.invest/3` and halts the ctx on rejection, and the guardian slot
+  `Economy.invest/3` and halts the ctx on rejection, the guardian slot
   ops (`castle_guardians/2`, `castle_guardian_hire_check/3`,
-  `castle_hire_guardian/3`) which route through `Guardians`.
+  `castle_hire_guardian/3`) which route through `Guardians`, and the Kafra
+  ops (`castle_kafra_hired?/2`, `castle_kafra_hire_check/2`,
+  `castle_hire_kafra/2`, `castle_fire_kafra/2`) which route through
+  `Services`.
   """
 
   use ExUnit.Case, async: false
   use Mimic
+
+  @moduletag :capture_log
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -29,6 +34,7 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
     :ok = CastleStore.init()
     stub(Persistence, :persist_economy, fn _castle_id, _state -> :ok end)
     stub(Persistence, :persist_guardians, fn _castle_id, _guardians -> :ok end)
+    stub(Persistence, :persist_kafra, fn _castle_id, _hired? -> :ok end)
     :ok
   end
 
@@ -43,6 +49,9 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
 
   defp researched_guild(id),
     do: %GuildState{guild_id: id, name: "G", master_char_id: 1, learned_skills: %{10_002 => 1}}
+
+  defp contracted_guild(id),
+    do: %GuildState{guild_id: id, name: "G", master_char_id: 1, learned_skills: %{10_001 => 1}}
 
   describe "castle_at/1" do
     test "returns the castle id on a castle map" do
@@ -225,6 +234,147 @@ defmodule Aesir.ZoneServer.Script.DslCastleTest do
       ctx = %{build_ctx() | status: {:error, :some_reason}}
 
       assert Dsl.castle_hire_guardian(ctx, castle.id, 0) == ctx
+    end
+  end
+
+  describe "castle_kafra_hired?/2" do
+    test "reflects the castle store flag" do
+      castle = first_castle()
+
+      refute Dsl.castle_kafra_hired?(build_ctx(), castle.id)
+
+      :ok = CastleStore.put_kafra(castle.id, true)
+
+      assert Dsl.castle_kafra_hired?(build_ctx(), castle.id)
+    end
+  end
+
+  describe "castle_kafra_hire_check/2" do
+    test "raises on a detached ctx" do
+      castle = first_castle()
+
+      assert_raise ArgumentError, fn ->
+        Dsl.castle_kafra_hire_check(detached_ctx(), castle.id)
+      end
+    end
+
+    test "returns :not_owner for a non-owner" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      ctx = build_ctx(guild_id: 2)
+
+      assert Dsl.castle_kafra_hire_check(ctx, castle.id) == {:error, :not_owner}
+    end
+  end
+
+  describe "castle_hire_kafra/2" do
+    test "halts with :not_owner for a non-owner" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      ctx = build_ctx(guild_id: 2)
+
+      result = Dsl.castle_hire_kafra(ctx, castle.id)
+
+      assert result.status == {:error, :not_owner}
+    end
+
+    test "halts with :contract_required without the Kafra Contract skill" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      stub(GuildManager, :get, fn 1 -> {:ok, researched_guild(1)} end)
+      ctx = build_ctx(guild_id: 1)
+
+      result = Dsl.castle_hire_kafra(ctx, castle.id)
+
+      assert result.status == {:error, :contract_required}
+    end
+
+    test "halts with :already_hired when already hired" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      stub(GuildManager, :get, fn 1 -> {:ok, contracted_guild(1)} end)
+      :ok = CastleStore.put_kafra(castle.id, true)
+      ctx = build_ctx(guild_id: 1)
+
+      result = Dsl.castle_hire_kafra(ctx, castle.id)
+
+      assert result.status == {:error, :already_hired}
+    end
+
+    test "leaves the ctx status ok and hires the Kafra for the owner" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      stub(GuildManager, :get, fn 1 -> {:ok, contracted_guild(1)} end)
+      ctx = build_ctx(guild_id: 1)
+
+      result = Dsl.castle_hire_kafra(ctx, castle.id)
+
+      assert result.status == :ok
+      assert CastleStore.kafra?(castle.id)
+    end
+
+    test "halts :no_player on a detached ctx" do
+      castle = first_castle()
+
+      result = Dsl.castle_hire_kafra(detached_ctx(), castle.id)
+
+      assert result.status == {:error, :no_player}
+    end
+
+    test "passes a halted ctx through untouched" do
+      castle = first_castle()
+      ctx = %{build_ctx() | status: {:error, :some_reason}}
+
+      assert Dsl.castle_hire_kafra(ctx, castle.id) == ctx
+    end
+  end
+
+  describe "castle_fire_kafra/2" do
+    test "halts with :not_owner for a non-owner" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      ctx = build_ctx(guild_id: 2)
+
+      result = Dsl.castle_fire_kafra(ctx, castle.id)
+
+      assert result.status == {:error, :not_owner}
+    end
+
+    test "halts with :not_hired when not hired" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      ctx = build_ctx(guild_id: 1)
+
+      result = Dsl.castle_fire_kafra(ctx, castle.id)
+
+      assert result.status == {:error, :not_hired}
+    end
+
+    test "leaves the ctx status ok and fires the Kafra for the owner" do
+      castle = first_castle()
+      :ok = CastleStore.hydrate(%{castle.id => row(1)})
+      :ok = CastleStore.put_kafra(castle.id, true)
+      ctx = build_ctx(guild_id: 1)
+
+      result = Dsl.castle_fire_kafra(ctx, castle.id)
+
+      assert result.status == :ok
+      refute CastleStore.kafra?(castle.id)
+    end
+
+    test "halts :no_player on a detached ctx" do
+      castle = first_castle()
+
+      result = Dsl.castle_fire_kafra(detached_ctx(), castle.id)
+
+      assert result.status == {:error, :no_player}
+    end
+
+    test "passes a halted ctx through untouched" do
+      castle = first_castle()
+      ctx = %{build_ctx() | status: {:error, :some_reason}}
+
+      assert Dsl.castle_fire_kafra(ctx, castle.id) == ctx
     end
   end
 

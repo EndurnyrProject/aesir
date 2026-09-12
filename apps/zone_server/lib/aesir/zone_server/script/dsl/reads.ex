@@ -762,6 +762,24 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   end
 
   @doc """
+  Returns the name of `guild_id`'s guild master, or `""` when the guild is
+  not live or the master is not in its member map.
+  """
+  @spec getguildmaster(Ctx.t(), non_neg_integer()) :: String.t()
+  def getguildmaster(%Ctx{}, guild_id) do
+    case GuildManager.get(guild_id) do
+      {:ok, %GuildState{members: members, master_char_id: master_char_id}} ->
+        case Map.fetch(members, master_char_id) do
+          {:ok, member} -> member.name
+          :error -> ""
+        end
+
+      {:error, :not_found} ->
+        ""
+    end
+  end
+
+  @doc """
   Whether the attached player is the leader of their party (rAthena
   `is_party_leader`); with a `party_id`, whether they lead that party. Returns
   `1` (leader) or `0` (not leader / no party / unknown party). Pure read that

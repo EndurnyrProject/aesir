@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
   use Mimic
 
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
+  alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
@@ -90,6 +91,36 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       expect(GuildManager, :get, fn 999 -> {:error, :not_found} end)
 
       assert Dsl.getguildname(ctx(), 999) == "null"
+    end
+  end
+
+  describe "getguildmaster/2" do
+    test "returns the master's name when the guild is live and the master is a member" do
+      expect(GuildManager, :get, fn 55 ->
+        {:ok,
+         %GuildState{
+           guild_id: 55,
+           name: "Knights",
+           master_char_id: 1,
+           members: %{1 => %Member{char_id: 1, name: "Arthur", base_level: 99, online: true}}
+         }}
+      end)
+
+      assert Dsl.getguildmaster(%{ctx() | game_state: nil}, 55) == "Arthur"
+    end
+
+    test "returns an empty string when the guild does not exist" do
+      expect(GuildManager, :get, fn 999 -> {:error, :not_found} end)
+
+      assert Dsl.getguildmaster(ctx(), 999) == ""
+    end
+
+    test "returns an empty string when the master is not in the member map" do
+      expect(GuildManager, :get, fn 55 ->
+        {:ok, %GuildState{guild_id: 55, name: "Knights", master_char_id: 1, members: %{}}}
+      end)
+
+      assert Dsl.getguildmaster(ctx(), 55) == ""
     end
   end
 
