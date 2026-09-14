@@ -99,6 +99,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps do
   end
 
   @doc """
+  Unequips and persists every requested inventory index atomically.
+
+  An empty index list returns the original inventory without opening a transaction.
+  """
+  @spec unequip_many(integer(), inventory(), [non_neg_integer()]) ::
+          {:ok, inventory()} | {:error, term()}
+  def unequip_many(_char_id, inventory, []), do: {:ok, inventory}
+
+  def unequip_many(char_id, inventory, indices) when is_list(indices) do
+    Persistence.transaction(fn ->
+      Enum.reduce_while(indices, {:ok, inventory}, &persist_unequip(char_id, &1, &2))
+    end)
+  end
+
+  defp persist_unequip(char_id, index, {:ok, current}) do
+    with {:ok, next, change} <- Inventory.unequip(current, index),
+         {:ok, persisted} <- persist_change(char_id, current, next, change) do
+      {:cont, {:ok, persisted}}
+    else
+      {:error, reason} -> {:halt, {:error, reason}}
+    end
+  end
+
+  @doc """
   Whether `amount` of `item_def` can be added without a write.
 
   Runs the same checks `add/6` enforces before its DB write — max weight first,
