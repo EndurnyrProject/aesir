@@ -633,7 +633,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler do
   with `SocialHandler.alliance_request_expired/1`, which clears the same
   pending request when its timer fires.
   """
-  @spec alliance_request_expired?(%{expires_at: integer()}) :: boolean()
+  @spec alliance_request_expired?(%{required(:expires_at) => integer(), optional(any()) => any()}) ::
+          boolean()
   def alliance_request_expired?(%{expires_at: expires_at}) do
     System.monotonic_time(:millisecond) >= expires_at
   end
