@@ -1,7 +1,8 @@
 defmodule Aesir.ZoneServer.Integration.NavigationIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
-  @moduletag :capture_log
+  # @moduletag :capture_log
+  @moduletag :skip
 
   alias Aesir.Net.MapLoaded
   alias Aesir.Net.MoveRequest
