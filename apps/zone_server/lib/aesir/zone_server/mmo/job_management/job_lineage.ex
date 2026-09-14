@@ -370,5 +370,7 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
     end
   end
 
-  defp normalize(job), do: Map.get(@aliases, job, job)
+  @doc "Returns the canonical identity for mounted job aliases."
+  @spec normalize(atom()) :: atom()
+  def normalize(job), do: Map.get(@aliases, job, job)
 end
