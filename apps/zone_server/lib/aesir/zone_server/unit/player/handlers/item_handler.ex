@@ -7,14 +7,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   synchronously inside the player session, commits the resulting state and (only
   on success) consumes exactly one unit of the item. The client is told the
   outcome with an `ItemUseResult` and, on success, an `ItemRemoved` delta for the
-  consumed unit. A failure (missing slot, non-usable item, or a halted script)
-  consumes nothing and leaves state unchanged.
+  consumed unit. A failure (missing slot, non-usable or restricted item, or a
+  halted script) consumes nothing and leaves state unchanged.
   """
 
   require Logger
 
   alias Aesir.Net.ItemUseResult
   alias Aesir.ZoneServer.Mmo.ItemManagement.CompiledItemScripts
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -57,8 +58,16 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler do
   end
 
   defp use_definition(definition, client_index, server_index, state) do
-    case usable?(definition) do
-      :ok -> run_effect(client_index, server_index, definition.id, state)
+    context = %{
+      job_id: state.game_state.stats.progression.job_id,
+      base_level: state.game_state.stats.progression.base_level,
+      sex: state.game_state.sex
+    }
+
+    with :ok <- usable?(definition),
+         :ok <- Eligibility.check(definition, context) do
+      run_effect(client_index, server_index, definition.id, state)
+    else
       {:error, reason} -> reject(client_index, reason, state)
     end
   end

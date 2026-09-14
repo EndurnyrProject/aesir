@@ -143,6 +143,91 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
     end
   end
 
+  describe "handle_use_item/2 with restrictions" do
+    test "rejects a job-restricted consumable before its script runs" do
+      source = "heal(ctx, hp: 50)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      definition = %{usable_definition(@red_potion_id, source) | jobs: [:mage]}
+      state = state_with_potion()
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      assert {:noreply, ^state} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert state.game_state.stats.current_state.hp == 100
+      assert state.game_state.inventory[@red_potion_slot].amount == 5
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result,
+                        %ItemUseResult{
+                          index: @red_potion_client_index,
+                          ok: false,
+                          reason: 3
+                        }}}
+
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+
+    test "rejects class, gender, and level restrictions before scripts run" do
+      source = "heal(ctx, hp: 50)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+      state = state_with_potion()
+      reject(&InventoryOps.remove/4)
+
+      restrictions = [
+        %{classes: [:upper]},
+        %{gender: :female},
+        %{equip_level_min: 11}
+      ]
+
+      Enum.each(restrictions, fn restriction ->
+        definition = struct!(usable_definition(@red_potion_id, source), restriction)
+        stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+
+        assert {:noreply, ^state} =
+                 ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+        assert_received {:send, :gameplay,
+                         {:item_use_result,
+                          %ItemUseResult{
+                            index: @red_potion_client_index,
+                            ok: false,
+                            reason: 3
+                          }}}
+      end)
+
+      assert state.game_state.stats.current_state.hp == 100
+      assert state.game_state.inventory[@red_potion_slot].amount == 5
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+
+    test "rejects a restricted Homunculus consumable before dispatching its effect" do
+      source = "homevolution(ctx)"
+      ScriptCompiler.compile_all!([item_def(@red_potion_id, source)])
+
+      definition = %{usable_definition(@red_potion_id, source) | jobs: [:mage]}
+      state = state_with_potion()
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+      reject(&ItemEffectHandler.handle/4)
+
+      assert {:noreply, ^state} =
+               ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result,
+                        %ItemUseResult{
+                          index: @red_potion_client_index,
+                          ok: false,
+                          reason: 3
+                        }}}
+
+      refute_received {:send, :bulk, {:homunculus_private_state, _}}
+    end
+  end
+
   describe "handle_use_item/2 with staged Homunculus effects" do
     test "delegates exactly one effect using the original session" do
       ScriptCompiler.compile_all!([item_def(@red_potion_id, "homevolution(ctx)")])

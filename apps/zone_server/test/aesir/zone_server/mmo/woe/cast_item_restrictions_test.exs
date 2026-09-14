@@ -177,7 +177,11 @@ defmodule Aesir.ZoneServer.Mmo.Woe.CastItemRestrictionsTest do
         base_stats: %BaseStats{vit: 0, int: 0},
         current_state: %CurrentState{hp: 100, sp: 100},
         derived_stats: %DerivedStats{max_hp: 500, max_sp: 200, aspd: 150},
-        progression: %PlayerProgression{learned_skills: %{@greed => 1}},
+        progression: %PlayerProgression{
+          base_level: 10,
+          job_id: 0,
+          learned_skills: %{@greed => 1}
+        },
         equipment: %Equipment{},
         modifiers: %{equipment: %{}, status_effects: %{}, job_bonuses: %{}, passive: %{}}
       },
