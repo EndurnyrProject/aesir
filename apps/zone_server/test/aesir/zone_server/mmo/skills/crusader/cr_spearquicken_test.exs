@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Crusader.CrSpearquickenTest do
         item = %InventoryItem{nameid: weapon_id, amount: 1, equip: 0, identify: 1}
 
         assert {:ok, inventory, {:equipped, 0, _mask, []}} =
-                 Inventory.equip(%{0 => item}, 0, 2, %{job_id: 14, base_level: 70})
+                 Inventory.equip(%{0 => item}, 0, 2, %{job_id: 14, base_level: 70, sex: "M"})
 
         inventory
       else

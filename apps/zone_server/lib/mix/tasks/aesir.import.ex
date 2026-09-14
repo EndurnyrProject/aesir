@@ -153,6 +153,8 @@ defmodule Mix.Tasks.Aesir.Import do
   end
 
   defp retain_map_order!(ordered, normal, path) when is_map(normal) and is_list(ordered) do
+    ordered = ordered |> Enum.reverse() |> Enum.uniq_by(&elem(&1, 0))
+
     valid_mapping? =
       length(ordered) == map_size(normal) and
         Enum.all?(ordered, fn
@@ -164,9 +166,7 @@ defmodule Mix.Tasks.Aesir.Import do
       Mix.raise("ordered YAML rows do not correspond to the normal parse in #{path}")
     end
 
-    ordered
-    |> Enum.reverse()
-    |> Enum.map(fn {key, value} ->
+    Enum.map(ordered, fn {key, value} ->
       {key, retain_map_order!(value, Map.fetch!(normal, key), path)}
     end)
   end

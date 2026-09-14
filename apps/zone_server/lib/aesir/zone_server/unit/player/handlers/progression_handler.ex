@@ -614,6 +614,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     end
   end
 
+  @equipment_restriction_errors [
+    :job_restricted,
+    :class_restricted,
+    :gender_restricted,
+    :level_restricted
+  ]
+
   # Force-unequips every worn item the new job or base level can no longer wear,
   # routing each through the equipment handler's persistence and client-sync path.
   defp recheck_equipment(%{game_state: game_state} = state, job_id) do
@@ -630,8 +637,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   defp maybe_unequip(%{game_state: gs} = state, index, job_id, base_level) do
     with %InventoryItem{nameid: nameid} <- Map.get(gs.inventory, index),
          {:ok, item_def} <- ItemManagement.get_item_by_id(nameid),
-         {:error, :requirement_unmet} <-
-           Inventory.validate_requirements(item_def, %{job_id: job_id, base_level: base_level}) do
+         {:error, reason} when reason in @equipment_restriction_errors <-
+           Inventory.validate_requirements(item_def, %{
+             job_id: job_id,
+             base_level: base_level,
+             sex: gs.sex
+           }) do
       {:noreply, new_state} = EquipmentHandler.handle_unequip(index, state)
       new_state
     else

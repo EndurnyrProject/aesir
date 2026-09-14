@@ -16065,6 +16065,8 @@
   weight: 20
 - aegis_name: Apple_Bomb
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13260
   jobs:
@@ -16077,6 +16079,8 @@
   weight: 1
 - aegis_name: Coconut_Bomb
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13261
   jobs:
@@ -16089,6 +16093,8 @@
   weight: 1
 - aegis_name: Melon_Bomb
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13262
   jobs:
@@ -16101,6 +16107,8 @@
   weight: 1
 - aegis_name: Pineapple_Bomb
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13263
   jobs:
@@ -16113,6 +16121,8 @@
   weight: 1
 - aegis_name: Banana_Bomb
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13264
   jobs:
@@ -16125,6 +16135,8 @@
   weight: 1
 - aegis_name: Black_Lump
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13265
   jobs:
@@ -16137,6 +16149,8 @@
   weight: 50
 - aegis_name: Black_Hard_Lump
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13266
   jobs:
@@ -16149,6 +16163,8 @@
   weight: 50
 - aegis_name: Very_Hard_Lump
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13267
   jobs:
@@ -16161,6 +16177,8 @@
   weight: 50
 - aegis_name: Mysterious_Powder
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13268
   jobs:
@@ -16173,6 +16191,8 @@
   weight: 10
 - aegis_name: Boost500_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13269
   jobs:
@@ -16186,6 +16206,8 @@
   weight: 10
 - aegis_name: Full_SwingK_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13270
   jobs:
@@ -16199,6 +16221,8 @@
   weight: 50
 - aegis_name: Mana_Plus_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13271
   jobs:
@@ -16212,6 +16236,8 @@
   weight: 50
 - aegis_name: Cure_Free_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13272
   jobs:
@@ -16224,6 +16250,8 @@
   weight: 50
 - aegis_name: Stamina_Up_M_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13273
   jobs:
@@ -16237,6 +16265,8 @@
   weight: 10
 - aegis_name: Digestive_F_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13274
   jobs:
@@ -16250,6 +16280,8 @@
   weight: 10
 - aegis_name: HP_Inc_PotS_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13275
   jobs:
@@ -16262,6 +16294,8 @@
   weight: 20
 - aegis_name: HP_Inc_PotM_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13276
   jobs:
@@ -16274,6 +16308,8 @@
   weight: 40
 - aegis_name: HP_Inc_PotL_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13277
   jobs:
@@ -16286,6 +16322,8 @@
   weight: 80
 - aegis_name: SP_Inc_PotS_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13278
   jobs:
@@ -16298,6 +16336,8 @@
   weight: 20
 - aegis_name: SP_Inc_PotM_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13279
   jobs:
@@ -16310,6 +16350,8 @@
   weight: 40
 - aegis_name: SP_Inc_PotL_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13280
   jobs:
@@ -16322,6 +16364,8 @@
   weight: 80
 - aegis_name: En_White_PotZ_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13281
   jobs:
@@ -16334,6 +16378,8 @@
   weight: 70
 - aegis_name: Vitata500_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13282
   jobs:
@@ -16346,6 +16392,8 @@
   weight: 50
 - aegis_name: En_Cel_Juice_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13283
   jobs:
@@ -16359,6 +16407,8 @@
   weight: 50
 - aegis_name: Savage_BBQ_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13284
   jobs:
@@ -16372,6 +16422,8 @@
   weight: 50
 - aegis_name: Wug_Cocktail_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13285
   jobs:
@@ -16385,6 +16437,8 @@
   weight: 50
 - aegis_name: M_Brisket_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13286
   jobs:
@@ -16398,6 +16452,8 @@
   weight: 50
 - aegis_name: Siroma_Icetea_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13287
   jobs:
@@ -16411,6 +16467,8 @@
   weight: 50
 - aegis_name: Drocera_Stew_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13288
   jobs:
@@ -16424,6 +16482,8 @@
   weight: 50
 - aegis_name: Petti_Noodle_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13289
   jobs:
@@ -16437,6 +16497,8 @@
   weight: 50
 - aegis_name: Black_Thing_To_Throw
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 13290
   jobs:
@@ -16451,6 +16513,13 @@
   attack: 50
   attack_element: neutral
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   equip_level_min: 100
   id: 13294
   jobs:
@@ -16465,6 +16534,8 @@
 - aegis_name: Cannon_Ball
   attack: 100
   buy: 100
+  classes:
+    - third
   equip_level_min: 99
   id: 18000
   jobs:
@@ -16480,6 +16551,8 @@
   attack: 120
   attack_element: holy
   buy: 200
+  classes:
+    - third
   equip_level_min: 99
   id: 18001
   jobs:
@@ -16496,6 +16569,8 @@
   attack: 120
   attack_element: shadow
   buy: 200
+  classes:
+    - third
   equip_level_min: 99
   id: 18002
   jobs:
@@ -16512,6 +16587,8 @@
   attack: 120
   attack_element: ghost
   buy: 200
+  classes:
+    - third
   equip_level_min: 99
   id: 18003
   jobs:
@@ -16527,6 +16604,8 @@
 - aegis_name: Iron_Cannon_Ball
   attack: 250
   buy: 500
+  classes:
+    - third
   equip_level_min: 99
   id: 18004
   jobs:

@@ -14,11 +14,12 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
 
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemCraft
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemGroups.Group
-  alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
   alias Aesir.ZoneServer.Unit.Inventory.Persistence
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.ItemContainer
@@ -43,8 +44,8 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
   @typedoc "Inventory keyed by stable session index."
   @type t :: %{non_neg_integer() => InventoryItem.t()}
 
-  @typedoc "Validation context required to equip an item: job and base level."
-  @type equip_ctx :: %{job_id: integer(), base_level: integer()}
+  @typedoc "Validation context required to equip an item."
+  @type equip_ctx :: Eligibility.context()
 
   @typedoc "Descriptor of the change produced by a successful operation."
   @type change ::
@@ -337,36 +338,58 @@ defmodule Aesir.ZoneServer.Unit.Inventory do
     if type in @equippable_types, do: :ok, else: {:error, :cannot_equip}
   end
 
-  @doc "Whether `item_def` may be equipped by the given job and base level."
+  @doc "Whether `item_def` may be equipped by the given character identity."
   @spec validate_requirements(ItemDefinition.t(), equip_ctx()) ::
-          :ok | {:error, :requirement_unmet}
-  def validate_requirements(%ItemDefinition{} = item_def, %{} = ctx) do
-    with :ok <- validate_job(item_def, ctx.job_id) do
-      validate_level(item_def, ctx.base_level)
-    end
-  end
+          :ok | {:error, Eligibility.reason()}
+  def validate_requirements(%ItemDefinition{} = item_def, ctx),
+    do: Eligibility.check(item_def, ctx)
 
   @doc """
-  Whether `job_id` may wear `item_def` (the job requirement only, no level or
-  broken checks). An item with no job restriction (`jobs: []`) is wearable by
-  every job.
-  """
-  @spec validate_job(ItemDefinition.t(), integer()) :: :ok | {:error, :requirement_unmet}
-  def validate_job(%ItemDefinition{jobs: []}, _job_id), do: :ok
+  Returns the sorted indices of equipped items that the identity may no longer wear.
 
-  def validate_job(%ItemDefinition{jobs: jobs}, job_id) do
-    with {:ok, job_name} <- AvailableJobs.job_id_to_name(job_id),
-         true <- job_name in jobs do
-      :ok
-    else
-      _ -> {:error, :requirement_unmet}
+  Invalid identity and missing static definitions abort the scan instead of
+  converting data errors into permission failures.
+  """
+  @spec ineligible_equipment(t(), Eligibility.context(), ItemEligibility.mode()) ::
+          {:ok, [non_neg_integer()]}
+          | {:error, :invalid_identity | {:missing_definition, integer()}}
+  def ineligible_equipment(inventory, context, mode) when is_map(inventory) do
+    case Eligibility.validate_context(context, mode) do
+      :ok -> scan_equipment(inventory, context, mode)
+      {:error, :invalid_identity} -> {:error, :invalid_identity}
     end
   end
 
-  defp validate_level(%ItemDefinition{equip_level_min: min, equip_level_max: max}, base_level) do
-    below_min? = min > 0 and base_level < min
-    above_max? = max > 0 and base_level > max
-    if below_min? or above_max?, do: {:error, :requirement_unmet}, else: :ok
+  defp scan_equipment(inventory, context, mode) do
+    inventory
+    |> equipped_items()
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.reduce_while({:ok, []}, &scan_item(&1, &2, context, mode))
+    |> then(fn
+      {:ok, indices} -> {:ok, Enum.reverse(indices)}
+      {:error, reason} -> {:error, reason}
+    end)
+  end
+
+  defp scan_item({index, item}, {:ok, indices}, context, mode) do
+    case ItemManagement.get_item_by_id(item.nameid) do
+      {:ok, item_def} -> scan_definition(item_def, context, mode, index, indices)
+      {:error, _reason} -> {:halt, {:error, {:missing_definition, item.nameid}}}
+    end
+  end
+
+  defp scan_definition(item_def, context, mode, index, indices) do
+    case Eligibility.check(item_def, context, mode) do
+      :ok ->
+        {:cont, {:ok, indices}}
+
+      {:error, reason}
+      when reason in [:job_restricted, :class_restricted, :gender_restricted, :level_restricted] ->
+        {:cont, {:ok, [index | indices]}}
+
+      {:error, :invalid_identity} ->
+        {:halt, {:error, :invalid_identity}}
+    end
   end
 
   defp validate_not_broken(%InventoryItem{attribute: 1}), do: {:error, :item_broken}

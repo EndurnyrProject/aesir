@@ -4683,6 +4683,8 @@
   weight: 10
 - aegis_name: RepairA
   buy: 220
+  classes:
+    - third
   id: 12392
   jobs:
     - blacksmith
@@ -4691,6 +4693,8 @@
   weight: 100
 - aegis_name: RepairB
   buy: 500
+  classes:
+    - third
   id: 12393
   jobs:
     - blacksmith
@@ -4699,6 +4703,8 @@
   weight: 140
 - aegis_name: RepairC
   buy: 1100
+  classes:
+    - third
   id: 12394
   jobs:
     - blacksmith
@@ -4880,36 +4886,78 @@
   weight: 10
 - aegis_name: HP_Increase_PotionS
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12422
   name: HP Increase Potion (Small)
   type: usable
   weight: 20
 - aegis_name: HP_Increase_PotionM
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12423
   name: HP Increase Potion (Medium)
   type: usable
   weight: 40
 - aegis_name: HP_Increase_PotionL
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12424
   name: HP Increase Potion (Large)
   type: usable
   weight: 80
 - aegis_name: SP_Increase_PotionS
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12425
   name: SP Increase Potion (Small)
   type: usable
   weight: 20
 - aegis_name: SP_Increase_PotionM
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12426
   name: SP Increase Potion (Medium)
   type: usable
   weight: 40
 - aegis_name: SP_Increase_PotionL
   buy: 100
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12427
   name: SP Increase Potion (Large)
   type: usable
@@ -5809,6 +5857,13 @@
   weight: 10
 - aegis_name: Old_Ore_Box
   buy: 20
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12609
   name: Old Ore Box
   type: usable
@@ -5970,6 +6025,8 @@
   weight: 100
 - aegis_name: Runstone_Nosiege
   buy: 100
+  classes:
+    - third
   id: 12725
   name: Nauthiz Rune
   no_guild_storage: true
@@ -5978,6 +6035,8 @@
   weight: 100
 - aegis_name: Runstone_Rhydo
   buy: 100
+  classes:
+    - third
   id: 12726
   name: Raido Rune
   no_guild_storage: true
@@ -5986,6 +6045,8 @@
   weight: 100
 - aegis_name: Runstone_Verkana
   buy: 100
+  classes:
+    - third
   id: 12727
   name: Berkana Rune
   no_guild_storage: true
@@ -5994,6 +6055,8 @@
   weight: 100
 - aegis_name: Runstone_Isia
   buy: 100
+  classes:
+    - third
   id: 12728
   name: Isa Rune
   no_guild_storage: true
@@ -6002,6 +6065,8 @@
   weight: 100
 - aegis_name: Runstone_Asir
   buy: 100
+  classes:
+    - third
   id: 12729
   name: Othila Rune
   no_guild_storage: true
@@ -6010,6 +6075,8 @@
   weight: 100
 - aegis_name: Runstone_Urj
   buy: 100
+  classes:
+    - third
   id: 12730
   name: Uruz Rune
   no_guild_storage: true
@@ -6018,6 +6085,8 @@
   weight: 100
 - aegis_name: Runstone_Turisus
   buy: 100
+  classes:
+    - third
   id: 12731
   name: Thurisaz Rune
   no_guild_storage: true
@@ -6026,6 +6095,8 @@
   weight: 100
 - aegis_name: Runstone_Pertz
   buy: 100
+  classes:
+    - third
   id: 12732
   name: Wyrd Rune
   no_guild_storage: true
@@ -6034,6 +6105,8 @@
   weight: 100
 - aegis_name: Runstone_Hagalas
   buy: 100
+  classes:
+    - third
   id: 12733
   name: Hagalaz Rune
   no_guild_storage: true
@@ -6042,6 +6115,8 @@
   weight: 100
 - aegis_name: Runstone_Quality
   buy: 2
+  classes:
+    - third
   id: 12734
   jobs:
     - knight
@@ -6050,6 +6125,8 @@
   weight: 100
 - aegis_name: Runstone_Ancient
   buy: 2
+  classes:
+    - third
   id: 12735
   jobs:
     - knight
@@ -6058,6 +6135,8 @@
   weight: 100
 - aegis_name: Runstone_Mystic
   buy: 2
+  classes:
+    - third
   id: 12736
   jobs:
     - knight
@@ -6066,6 +6145,8 @@
   weight: 100
 - aegis_name: Runstone_Ordinary
   buy: 2
+  classes:
+    - third
   id: 12737
   jobs:
     - knight
@@ -6074,6 +6155,8 @@
   weight: 100
 - aegis_name: Runstone_Rare
   buy: 2
+  classes:
+    - third
   id: 12738
   jobs:
     - knight
@@ -6289,6 +6372,13 @@
   no_trade: true
   type: usable
 - aegis_name: Potion_Box
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   id: 12831
   name: Potion Box
   type: usable
@@ -13606,6 +13696,13 @@
   weight: 10
 - aegis_name: Gift_Buff_Set
   buy: 10
+  classes:
+    - baby
+    - normal
+    - third
+    - third_baby
+    - third_upper
+    - upper
   equip_level_min: 1
   id: 22777
   name: Gift Buff Set

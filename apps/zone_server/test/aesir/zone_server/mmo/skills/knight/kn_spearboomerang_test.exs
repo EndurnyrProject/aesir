@@ -109,7 +109,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearboomerangTest do
     assert {:ok, inventory, {:equipped, 0, 2, []}} =
              Inventory.equip(%{0 => item}, 0, 2, %{
                job_id: caster.stats.progression.job_id,
-               base_level: caster.stats.progression.base_level
+               base_level: caster.stats.progression.base_level,
+               sex: "M"
              })
 
     stats = %{caster.stats | equipment: Stats.equipment_from_inventory(Map.values(inventory))}

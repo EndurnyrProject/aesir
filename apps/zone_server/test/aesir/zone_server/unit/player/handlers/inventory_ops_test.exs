@@ -406,7 +406,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       shield_index = index_of(inv, @guard)
 
       {:ok, new_inv, {:equipped, ^katana_index, 34, unequipped} = change} =
-        Inventory.equip(inv, katana_index, 34, %{job_id: 1, base_level: 99})
+        Inventory.equip(inv, katana_index, 34, %{job_id: 1, base_level: 99, sex: "M"})
 
       assert shield_index in unequipped
 
@@ -429,7 +429,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       shield_index = index_of(inv, @guard)
 
       {:ok, new_inv, {:equipped, ^dagger_index, @left_hand, [^shield_index]} = change} =
-        Inventory.equip(inv, dagger_index, @left_hand, %{job_id: 12, base_level: 99})
+        Inventory.equip(inv, dagger_index, @left_hand, %{job_id: 12, base_level: 99, sex: "M"})
 
       assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
 
@@ -460,7 +460,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       jur_index = index_of(inv, @jur)
 
       {:ok, new_inv, {:equipped, ^jur_index, 34, unequipped} = change} =
-        Inventory.equip(inv, jur_index, @left_hand, %{job_id: 12, base_level: 99})
+        Inventory.equip(inv, jur_index, @left_hand, %{job_id: 12, base_level: 99, sex: "M"})
 
       assert Enum.sort(unequipped) == Enum.sort([right_dagger_index, left_dagger_index])
       assert {:ok, persisted} = InventoryOps.apply_change(char.id, inv, new_inv, change)
@@ -517,7 +517,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryOpsTest do
       shield_index = index_of(inv, @guard)
 
       {:ok, new_inv, {:equipped, ^katana_index, 34, unequipped} = change} =
-        Inventory.equip(inv, katana_index, 34, %{job_id: 1, base_level: 99})
+        Inventory.equip(inv, katana_index, 34, %{job_id: 1, base_level: 99, sex: "M"})
 
       assert shield_index in unequipped
 

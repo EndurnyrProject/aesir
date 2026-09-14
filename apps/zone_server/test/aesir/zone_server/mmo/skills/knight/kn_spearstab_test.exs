@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnSpearstabTest do
     item = %InventoryItem{nameid: nameid, amount: 1, equip: 0, identify: 1}
 
     assert {:ok, inventory, {:equipped, 0, _mask, []}} =
-             Inventory.equip(%{0 => item}, 0, @right_hand, %{job_id: 7, base_level: 50})
+             Inventory.equip(%{0 => item}, 0, @right_hand, %{job_id: 7, base_level: 50, sex: "M"})
 
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 1, int: 1, dex: 1, luk: 1},

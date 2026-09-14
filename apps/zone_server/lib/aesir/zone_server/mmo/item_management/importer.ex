@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
+  alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
 
   @typedoc "Transpile hook a failure belongs to."
   @type hook :: :on_use | :on_equip | :on_unequip | :card_on_equip | :card_on_unequip
@@ -113,15 +114,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   @always [:id, :aegis_name, :name, :type]
   @defaults Map.from_struct(struct(ItemDefinition, %{}))
 
-  @spec to_yaml_map(ItemDefinition.t()) :: map()
-  def to_yaml_map(%ItemDefinition{} = definition) do
+  @class_groups %{
+    "Normal" => [:normal],
+    "Upper" => [:upper],
+    "Baby" => [:baby],
+    "Third" => [:third],
+    "Third_Upper" => [:third_upper],
+    "Third_Baby" => [:third_baby],
+    "Fourth" => [:fourth],
+    "All_Upper" => [:upper, :third_upper, :fourth],
+    "All_Baby" => [:baby, :third_baby],
+    "All_Third" => [:third, :third_upper, :third_baby]
+  }
+
+  @spec to_yaml_map(ItemDefinition.t(), ItemEligibility.mode()) :: map()
+  def to_yaml_map(%ItemDefinition{} = definition, mode) do
     definition
     |> Map.from_struct()
     |> Enum.filter(fn {field, value} ->
-      field in @always or value != Map.fetch!(@defaults, field)
+      field in @always or value != default_value(field, mode)
     end)
     |> Map.new(fn {field, value} -> {Atom.to_string(field), encode_value(field, value)} end)
   end
+
+  defp default_value(:classes, mode), do: ItemDefinition.default_classes(mode)
+  defp default_value(field, _mode), do: Map.fetch!(@defaults, field)
 
   @doc """
   Renders the transpile coverage report: a per-hook summary table, histograms
@@ -253,50 +270,61 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
   end
 
   @spec encode_value(atom(), term()) :: term()
-  defp encode_value(field, value) when field in [:type, :subtype, :attack_element],
-    do: Atom.to_string(value)
+  defp encode_value(field, value)
+       when field in [:type, :subtype, :attack_element, :gender],
+       do: Atom.to_string(value)
 
-  defp encode_value(field, value) when field in [:jobs, :locations] do
-    Enum.map(value, &Atom.to_string/1)
-  end
+  defp encode_value(:jobs, :all), do: "all"
+
+  defp encode_value(field, value) when field in [:jobs, :classes, :locations],
+    do: Enum.map(value, &Atom.to_string/1)
 
   defp encode_value(field, value) when field in [:on_equip, :on_unequip],
     do: EquipScript.to_source(value)
 
   defp encode_value(_field, value), do: value
 
-  @spec to_definition(map()) :: {:ok, ItemDefinition.t()} | {:error, term()}
-  def to_definition(entry) do
+  @spec to_definition(map(), ItemEligibility.mode()) ::
+          {:ok, ItemDefinition.t()} | {:error, term()}
+  def to_definition(entry, mode) do
+    item_id = Map.fetch!(entry, "Id")
+
     with {:ok, type} <- parse_type(Map.get(entry, "Type")),
-         {:ok, subtype} <- parse_subtype(Map.get(entry, "SubType")) do
-      {:ok,
-       %ItemDefinition{
-         id: Map.fetch!(entry, "Id"),
-         aegis_name: Map.fetch!(entry, "AegisName"),
-         name: Map.fetch!(entry, "Name"),
-         type: type,
-         subtype: subtype,
-         weight: Map.get(entry, "Weight", 0),
-         buy: Map.get(entry, "Buy", 0),
-         sell: Map.get(entry, "Sell", 0),
-         attack: Map.get(entry, "Attack", 0),
-         magic_attack: Map.get(entry, "MagicAttack", 0),
-         defense: Map.get(entry, "Defense", 0),
-         range: Map.get(entry, "Range", 0),
-         slots: Map.get(entry, "Slots", 0),
-         view: Map.get(entry, "View", 0),
-         jobs: parse_flags(Map.get(entry, "Jobs")),
-         locations: parse_flags(Map.get(entry, "Locations")),
-         weapon_level: Map.get(entry, "WeaponLevel"),
-         armor_level: Map.get(entry, "ArmorLevel"),
-         equip_level_min: Map.get(entry, "EquipLevelMin", 0),
-         equip_level_max: Map.get(entry, "EquipLevelMax", 0),
-         refineable: Map.get(entry, "Refineable", false),
-         bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
-         no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
-         no_guild_storage: get_in(entry, ["Trade", "NoGuildStorage"]) || false,
-         attack_element: parse_attack_element(Map.get(entry, "Script"))
-       }}
+         {:ok, subtype} <- parse_subtype(Map.get(entry, "SubType")),
+         {:ok, jobs} <- parse_jobs(Map.fetch(entry, "Jobs"), item_id),
+         {:ok, classes} <- parse_classes(Map.fetch(entry, "Classes"), item_id, mode),
+         {:ok, gender} <- parse_gender(Map.fetch(entry, "Gender"), item_id) do
+      definition = %ItemDefinition{
+        id: item_id,
+        aegis_name: Map.fetch!(entry, "AegisName"),
+        name: Map.fetch!(entry, "Name"),
+        type: type,
+        subtype: subtype,
+        weight: Map.get(entry, "Weight", 0),
+        buy: Map.get(entry, "Buy", 0),
+        sell: Map.get(entry, "Sell", 0),
+        attack: Map.get(entry, "Attack", 0),
+        magic_attack: Map.get(entry, "MagicAttack", 0),
+        defense: Map.get(entry, "Defense", 0),
+        range: Map.get(entry, "Range", 0),
+        slots: Map.get(entry, "Slots", 0),
+        view: Map.get(entry, "View", 0),
+        jobs: jobs,
+        classes: classes,
+        gender: gender,
+        locations: parse_location_flags(Map.get(entry, "Locations")),
+        weapon_level: Map.get(entry, "WeaponLevel"),
+        armor_level: Map.get(entry, "ArmorLevel"),
+        equip_level_min: Map.get(entry, "EquipLevelMin", 0),
+        equip_level_max: Map.get(entry, "EquipLevelMax", 0),
+        refineable: Map.get(entry, "Refineable", false),
+        bind_on_equip: get_in(entry, ["Flags", "BindOnEquip"]) || false,
+        no_trade: get_in(entry, ["Trade", "NoTrade"]) || false,
+        no_guild_storage: get_in(entry, ["Trade", "NoGuildStorage"]) || false,
+        attack_element: parse_attack_element(Map.get(entry, "Script"))
+      }
+
+      {:ok, ItemDefinition.normalize_gender(definition)}
     end
   end
 
@@ -316,10 +344,121 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.Importer do
          do: {:error, {:unknown_subtype, str}}
   end
 
-  @spec parse_flags(map() | nil) :: [atom()]
-  defp parse_flags(nil), do: []
+  defp parse_jobs(:error, _item_id), do: {:ok, :all}
+  defp parse_jobs({:ok, nil}, _item_id), do: {:ok, []}
 
-  defp parse_flags(map) when is_map(map) do
+  defp parse_jobs({:ok, flags}, item_id) when is_list(flags) do
+    case parse_ordered_flags(flags, [], ItemEligibility.families(), &job_group/1) do
+      {:ok, jobs} ->
+        jobs = Enum.sort(jobs)
+        {:ok, if(jobs == ItemEligibility.families(), do: :all, else: jobs)}
+
+      {:error, reason} ->
+        restriction_error(item_id, :jobs, reason)
+    end
+  end
+
+  defp parse_jobs({:ok, value}, item_id),
+    do: restriction_error(item_id, :jobs, {:invalid_flags, value})
+
+  defp parse_classes(:error, _item_id, mode),
+    do: {:ok, ItemDefinition.default_classes(mode)}
+
+  defp parse_classes({:ok, nil}, _item_id, _mode), do: {:ok, []}
+
+  defp parse_classes({:ok, flags}, item_id, mode) when is_list(flags) do
+    defaults = ItemDefinition.default_classes(mode)
+
+    case parse_ordered_flags(flags, [], defaults, &class_group/1) do
+      {:ok, classes} -> {:ok, Enum.sort(classes)}
+      {:error, reason} -> restriction_error(item_id, :classes, reason)
+    end
+  end
+
+  defp parse_classes({:ok, value}, item_id, _mode),
+    do: restriction_error(item_id, :classes, {:invalid_flags, value})
+
+  defp parse_ordered_flags(flags, initial, all_values, group_fun) do
+    case all_setting(flags) do
+      {:ok, all} ->
+        starting = if all, do: all_values, else: initial
+
+        flags
+        |> Enum.reduce_while(
+          {:ok, MapSet.new(starting)},
+          &apply_ordered_flag(&1, &2, group_fun)
+        )
+        |> ordered_flags_result()
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp apply_ordered_flag({"All", _enabled}, acc, _group_fun), do: {:cont, acc}
+
+  defp apply_ordered_flag({key, enabled}, {:ok, allowed}, group_fun)
+       when is_binary(key) and is_boolean(enabled) do
+    case group_fun.(key) do
+      {:ok, values} ->
+        values = MapSet.new(values)
+
+        next =
+          if enabled, do: MapSet.union(allowed, values), else: MapSet.difference(allowed, values)
+
+        {:cont, {:ok, next}}
+
+      {:error, reason} ->
+        {:halt, {:error, reason}}
+    end
+  end
+
+  defp apply_ordered_flag({key, value}, _acc, _group_fun),
+    do: {:halt, {:error, {:invalid_flag, key, value}}}
+
+  defp apply_ordered_flag(value, _acc, _group_fun),
+    do: {:halt, {:error, {:invalid_flag, value}}}
+
+  defp ordered_flags_result({:ok, allowed}), do: {:ok, MapSet.to_list(allowed)}
+  defp ordered_flags_result({:error, reason}), do: {:error, reason}
+
+  defp all_setting(flags) do
+    case List.keyfind(flags, "All", 0) do
+      nil -> {:ok, false}
+      {"All", enabled} when is_boolean(enabled) -> {:ok, enabled}
+      {"All", value} -> {:error, {:invalid_flag, "All", value}}
+    end
+  end
+
+  defp job_group(source_job) do
+    case ItemEligibility.source_family("EAJ_" <> String.upcase(source_job)) do
+      {:ok, family} -> {:ok, [family]}
+      {:error, :unknown_source_job} -> {:error, {:unknown_flag, source_job}}
+    end
+  end
+
+  defp class_group(source_class) do
+    case Map.fetch(@class_groups, source_class) do
+      {:ok, classes} -> {:ok, classes}
+      :error -> {:error, {:unknown_flag, source_class}}
+    end
+  end
+
+  defp parse_gender(:error, _item_id), do: {:ok, :both}
+  defp parse_gender({:ok, "Both"}, _item_id), do: {:ok, :both}
+  defp parse_gender({:ok, "Male"}, _item_id), do: {:ok, :male}
+  defp parse_gender({:ok, "Female"}, _item_id), do: {:ok, :female}
+
+  defp parse_gender({:ok, value}, item_id),
+    do: restriction_error(item_id, :gender, {:unknown_value, value})
+
+  defp restriction_error(item_id, field, reason),
+    do: {:error, {:invalid_restriction, item_id, field, reason}}
+
+  @spec parse_location_flags(map() | nil) :: [atom()]
+  defp parse_location_flags(nil), do: []
+
+  defp parse_location_flags(map) when is_map(map) do
     for({k, true} <- map, k != "All", do: atomize(k)) |> Enum.sort()
   end
 

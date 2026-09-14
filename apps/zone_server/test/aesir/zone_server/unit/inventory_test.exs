@@ -159,7 +159,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
 
   describe "equip/4" do
     setup do
-      %{ctx: %{job_id: @swordman, base_level: 99}}
+      %{ctx: %{job_id: @swordman, base_level: 99, sex: "M"}}
     end
 
     test "equips a one-handed weapon to its right-hand location", %{ctx: ctx} do
@@ -174,7 +174,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
 
     test "admits a right-hand-only dagger into the requested left hand for a normal Assassin" do
       inv = inventory([item(nameid: @dagger, amount: 1)])
-      ctx = %{job_id: @assassin, base_level: 99}
+      ctx = %{job_id: @assassin, base_level: 99, sex: "M"}
 
       assert {:ok, %{0 => %InventoryItem{equip: @left_hand}}, {:equipped, 0, @left_hand, []}} =
                Inventory.equip(inv, 0, @left_hand, ctx)
@@ -183,8 +183,8 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
     test "keeps ordinary masks for non-Assassins, non-daggers, and other positions" do
       dagger = inventory([item(nameid: @dagger, amount: 1)])
       jur = inventory([item(nameid: @jur, amount: 1)])
-      assassin_ctx = %{job_id: @assassin, base_level: 99}
-      swordman_ctx = %{job_id: @swordman, base_level: 99}
+      assassin_ctx = %{job_id: @assassin, base_level: 99, sex: "M"}
+      swordman_ctx = %{job_id: @swordman, base_level: 99, sex: "M"}
 
       assert {:ok, %{0 => %InventoryItem{equip: @right_hand}}, {:equipped, 0, @right_hand, []}} =
                Inventory.equip(dagger, 0, @left_hand, swordman_ctx)
@@ -197,7 +197,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
     end
 
     test "validates a left-hand dagger before admitting it" do
-      ctx = %{job_id: @assassin, base_level: 99}
+      ctx = %{job_id: @assassin, base_level: 99, sex: "M"}
 
       assert {:error, :item_unidentified} =
                Inventory.equip(
@@ -215,12 +215,12 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
                  ctx
                )
 
-      assert {:error, :requirement_unmet} =
+      assert {:error, :invalid_identity} =
                Inventory.equip(
                  inventory([item(nameid: @dagger)]),
                  0,
                  @left_hand,
-                 %{job_id: -1, base_level: 99}
+                 %{job_id: -1, base_level: 99, sex: "M"}
                )
     end
 
@@ -233,7 +233,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
         ])
 
       assert {:ok, new_inv, {:equipped, 2, @left_hand, [1]}} =
-               Inventory.equip(inv, 2, @left_hand, %{job_id: @assassin, base_level: 99})
+               Inventory.equip(inv, 2, @left_hand, %{job_id: @assassin, base_level: 99, sex: "M"})
 
       assert %{0 => %InventoryItem{equip: @right_hand}} = new_inv
       assert %{1 => %InventoryItem{equip: 0}} = new_inv
@@ -249,7 +249,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
         ])
 
       assert {:ok, new_inv, {:equipped, 2, @both_hand, unequipped}} =
-               Inventory.equip(inv, 2, @left_hand, %{job_id: @assassin, base_level: 99})
+               Inventory.equip(inv, 2, @left_hand, %{job_id: @assassin, base_level: 99, sex: "M"})
 
       assert Enum.sort(unequipped) == [0, 1]
       assert %{0 => %InventoryItem{equip: 0}, 1 => %InventoryItem{equip: 0}} = new_inv
@@ -377,18 +377,18 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       assert {:error, :cannot_equip} = Inventory.equip(inv, 0, @right_hand, ctx)
     end
 
-    test "returns :requirement_unmet when the job cannot wear the item" do
+    test "returns :job_restricted when the job cannot wear the item" do
       inv = inventory([item(nameid: @katana, amount: 1)])
-      ctx = %{job_id: @novice, base_level: 99}
+      ctx = %{job_id: @novice, base_level: 99, sex: "M"}
 
-      assert {:error, :requirement_unmet} = Inventory.equip(inv, 0, @both_hand, ctx)
+      assert {:error, :job_restricted} = Inventory.equip(inv, 0, @both_hand, ctx)
     end
 
-    test "returns :requirement_unmet when below equip_level_min" do
+    test "returns :level_restricted when below equip_level_min" do
       inv = inventory([item(nameid: @sword, amount: 1)])
-      ctx = %{job_id: @swordman, base_level: 1}
+      ctx = %{job_id: @swordman, base_level: 1, sex: "M"}
 
-      assert {:error, :requirement_unmet} = Inventory.equip(inv, 0, @right_hand, ctx)
+      assert {:error, :level_restricted} = Inventory.equip(inv, 0, @right_hand, ctx)
     end
 
     test "returns :item_unidentified without mutating the inventory", %{ctx: ctx} do
@@ -413,7 +413,7 @@ defmodule Aesir.ZoneServer.Unit.InventoryTest do
       assert %{0 => %InventoryItem{attribute: 1, equip: 0}} = inv
     end
 
-    test "equips an item with empty jobs list (all jobs allowed)", %{ctx: ctx} do
+    test "equips an item with jobs set to all", %{ctx: ctx} do
       inv = inventory([item(nameid: @shield, amount: 1)])
 
       assert {:ok, _inv, {:equipped, 0, 32, []}} = Inventory.equip(inv, 0, @left_hand, ctx)

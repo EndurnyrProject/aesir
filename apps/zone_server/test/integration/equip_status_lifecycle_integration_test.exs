@@ -244,7 +244,7 @@ defmodule Aesir.ZoneServer.Integration.EquipStatusLifecycleIntegrationTest do
       name: "Status Item #{id}",
       type: Keyword.get(opts, :type, :armor),
       subtype: Keyword.get(opts, :subtype),
-      jobs: Keyword.get(opts, :jobs, []),
+      jobs: Keyword.get(opts, :jobs, :all),
       locations: locations,
       on_equip: [{:status_start, @status, elem(@status_params, 0), elem(@status_params, 1)}],
       on_unequip: [{:status_end, @status}]

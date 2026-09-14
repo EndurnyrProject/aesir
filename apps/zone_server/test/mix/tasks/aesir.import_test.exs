@@ -13,4 +13,30 @@ defmodule Mix.Tasks.Aesir.ImportTest do
       Import.parse!(["--mode", "invalid"])
     end
   end
+
+  @tag :tmp_dir
+  test "ordered reads retain the normal parser's first duplicate key", %{tmp_dir: dir} do
+    path = Path.join(dir, "db/item_db.yml")
+    File.mkdir_p!(Path.dirname(path))
+
+    File.write!(path, """
+    Header:
+      Type: ITEM_DB
+      Version: 3
+    Body:
+      - Id: 1
+        Trade:
+          NoTrade: true
+        Trade:
+          NoDrop: true
+        Jobs:
+          Swordman: false
+          All: true
+    """)
+
+    assert [[{"Id", 1}, {"Trade", [{"NoTrade", true}]}, {"Jobs", jobs}]] =
+             Import.read_mode_filtered_ordered!(path, :renewal)
+
+    assert jobs == [{"Swordman", false}, {"All", true}]
+  end
 end

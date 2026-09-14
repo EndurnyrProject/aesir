@@ -46,14 +46,19 @@ defmodule Mix.Tasks.Aesir.Import.Items do
   def run(args) do
     {rathena, mode} = Import.parse!(args)
     out_dir = Import.path("items", mode)
-    item_rows = read_source!(rathena, "item_db.yml", mode)
-    item_group_rows = read_source!(rathena, "item_group_db.yml", mode)
+    item_source = Path.join([rathena, "db", "item_db.yml"])
+    item_rows = read_source!(item_source, mode)
+    ordered_item_rows = Import.read_mode_filtered_ordered!(item_source, mode)
+    restriction_rows = pair_rows!(item_rows, ordered_item_rows, item_source)
+
+    item_group_source = Path.join([rathena, "db", "item_group_db.yml"])
+    item_group_rows = read_source!(item_group_source, mode)
     source_catalogs = Resolver.source_catalogs(item_rows, item_group_rows)
     File.mkdir_p!(out_dir)
 
     entries =
       Resolver.with_source_catalogs(source_catalogs, fn ->
-        Enum.flat_map(@sources, &import_source(&1, item_rows, out_dir))
+        Enum.flat_map(@sources, &import_source(&1, restriction_rows, out_dir, mode))
       end)
 
     summary = summarize(entries)
@@ -64,17 +69,19 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     Mix.shell().info(summary_line(summary, report_path))
   end
 
-  defp import_source(kind, rows, out_dir) do
-    entries = rows |> Enum.filter(&(source_kind!(&1) == kind)) |> Enum.map(&transpile_entry/1)
+  defp import_source(kind, rows, out_dir, mode) do
+    entries =
+      rows |> Enum.filter(&(source_kind!(&1) == kind)) |> Enum.map(&transpile_entry(&1, mode))
+
     definitions = Enum.map(entries, &elem(&1, 0))
-    yaml = definitions |> Enum.map(&Importer.to_yaml_map/1) |> Ymlr.document!()
+    yaml = definitions |> Enum.map(&Importer.to_yaml_map(&1, mode)) |> Ymlr.document!()
     out = Path.join(out_dir, "#{kind}.yml")
     File.write!(out, yaml)
     Mix.shell().info("#{kind}: #{length(definitions)} items -> #{out}")
     entries
   end
 
-  defp transpile_entry(entry) do
+  defp transpile_entry(entry, mode) do
     script = Map.get(entry, "Script")
     equip_script = Map.get(entry, "EquipScript")
     unequip_script = Map.get(entry, "UnEquipScript")
@@ -82,7 +89,7 @@ defmodule Mix.Tasks.Aesir.Import.Items do
 
     {definition, failure, coverage} =
       entry
-      |> to_definition!()
+      |> to_definition!(mode)
       |> transpile_definition(script, equip_script, unequip_script)
 
     scripts =
@@ -453,11 +460,44 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     |> Kernel.<>(" -> #{report_path}")
   end
 
-  defp read_source!(rathena, file, mode) do
-    [rathena, "db", file]
-    |> Path.join()
-    |> Import.read_mode_filtered!(mode)
+  defp read_source!(path, mode), do: Import.read_mode_filtered!(path, mode)
+
+  defp pair_rows!(rows, ordered_rows, path) do
+    unless length(rows) == length(ordered_rows) do
+      Mix.raise("normal and ordered item row counts differ for #{path}")
+    end
+
+    Enum.map(Enum.zip(rows, ordered_rows), fn
+      {%{"Id" => item_id} = row, ordered_row} ->
+        unless mapping_value!(ordered_row, "Id", path) == item_id do
+          Mix.raise("normal and ordered item IDs differ in #{path}")
+        end
+
+        row
+        |> put_ordered_restriction(ordered_row, "Jobs")
+        |> put_ordered_restriction(ordered_row, "Classes")
+
+      {row, _ordered_row} ->
+        Mix.raise("expected every item row in #{path} to contain an Id, got: #{inspect(row)}")
+    end)
   end
+
+  defp put_ordered_restriction(row, ordered_row, field) do
+    case List.keyfind(ordered_row, field, 0) do
+      {^field, value} -> Map.put(row, field, value)
+      nil -> Map.delete(row, field)
+    end
+  end
+
+  defp mapping_value!(mapping, key, path) when is_list(mapping) do
+    case List.keyfind(mapping, key, 0) do
+      {^key, value} -> value
+      nil -> Mix.raise("ordered item row is missing #{key} in #{path}")
+    end
+  end
+
+  defp mapping_value!(value, _key, path),
+    do: Mix.raise("expected ordered item row to be a mapping in #{path}, got: #{inspect(value)}")
 
   defp source_kind!(entry) do
     type = entry |> Map.get("Type", "Etc") |> String.downcase()
@@ -468,8 +508,8 @@ defmodule Mix.Tasks.Aesir.Import.Items do
     end
   end
 
-  defp to_definition!(entry) do
-    case Importer.to_definition(entry) do
+  defp to_definition!(entry, mode) do
+    case Importer.to_definition(entry, mode) do
       {:ok, definition} ->
         definition
 

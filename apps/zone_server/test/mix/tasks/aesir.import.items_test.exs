@@ -639,6 +639,11 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
                "status_start(ctx, :sc_summer, :infinite, 0)"
 
       assert equipment[2776]["on_unequip"] == "status_end(ctx, :sc_summer)"
+      assert equipment[2776]["jobs"] == []
+
+      assert equipment[2776]["classes"] ==
+               ~w(baby fourth normal third third_baby third_upper upper)
+
       assert equipment[2777]["on_equip"] == "status_start(ctx, :sc_summer, 5000, 1)"
       refute Map.has_key?(equipment[2777], "on_unequip")
       assert equipment[2778]["on_equip"] == "bonus(ctx, :vit, 1)"
@@ -703,7 +708,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
       script = "bonus bAtkEle,Ele_Fire; bonus bClassChange,2;"
 
       assert {:ok, %ItemDefinition{attack_element: :fire} = def} =
-               Importer.to_definition(fireblend(script))
+               Importer.to_definition(fireblend(script), :renewal)
 
       assert {%ItemDefinition{attack_element: :fire, on_equip: nil},
               {:on_equip, 1140, "Fireblend", {:unsupported, {:unknown_bonus_key, "bClassChange"}}}} =
@@ -714,7 +719,7 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
       script = "bonus bAtkEle,Ele_Fire;"
 
       assert {:ok, %ItemDefinition{attack_element: :fire} = def} =
-               Importer.to_definition(fireblend(script))
+               Importer.to_definition(fireblend(script), :renewal)
 
       assert {%ItemDefinition{attack_element: :fire, on_equip: [{:set, :atk_ele, :fire}]}, nil} =
                Items.apply_transpile(def, script)
@@ -738,6 +743,13 @@ defmodule Mix.Tasks.Aesir.Import.ItemsTest do
         "AegisName" => "Cool_Towel",
         "Name" => "Adventurer's Trusty Towel",
         "Type" => "Armor",
+        "Jobs" => %{"SuperNovice" => true, "Super_Novice" => false},
+        "Classes" => %{
+          "All_Baby" => true,
+          "All_Third" => true,
+          "All_Upper" => true,
+          "Normal" => true
+        },
         "EquipScript" => "sc_start SC_SUMMER,INFINITE_TICK,0;",
         "UnEquipScript" => "sc_end SC_SUMMER;"
       },

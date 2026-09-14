@@ -10,6 +10,10 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
   """
 
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipScript
+  alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
+
+  @renewal_classes [:baby, :fourth, :normal, :third, :third_baby, :third_upper, :upper]
+  @pre_renewal_classes [:baby, :normal, :upper]
 
   @typedoc "Broad item category (rAthena `Type`)."
   @type item_type ::
@@ -41,7 +45,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
             range: 0,
             slots: 0,
             view: 0,
-            jobs: [],
+            jobs: :all,
+            classes: @renewal_classes,
+            gender: :both,
             locations: [],
             weapon_level: nil,
             armor_level: nil,
@@ -71,7 +77,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           range: integer(),
           slots: integer(),
           view: integer(),
-          jobs: [atom()],
+          jobs: :all | [ItemEligibility.family()],
+          classes: [ItemEligibility.category()],
+          gender: :both | :male | :female,
           locations: [atom()],
           weapon_level: integer(),
           armor_level: integer(),
@@ -86,6 +94,24 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition do
           on_unequip: EquipScript.program() | nil,
           attack_element: atom()
         }
+
+  @doc "Returns the unrestricted item class categories for a game mode."
+  @spec default_classes(ItemEligibility.mode()) :: [ItemEligibility.category()]
+  def default_classes(:renewal), do: @renewal_classes
+  def default_classes(:pre_renewal), do: @pre_renewal_classes
+
+  @doc "Applies item-specific effective-gender restrictions."
+  @spec normalize_gender(t()) :: t()
+  def normalize_gender(%__MODULE__{id: 2634} = definition), do: %{definition | gender: :male}
+  def normalize_gender(%__MODULE__{id: 2635} = definition), do: %{definition | gender: :female}
+
+  def normalize_gender(%__MODULE__{subtype: :musical} = definition),
+    do: %{definition | gender: :male}
+
+  def normalize_gender(%__MODULE__{subtype: :whip} = definition),
+    do: %{definition | gender: :female}
+
+  def normalize_gender(%__MODULE__{} = definition), do: definition
 
   @doc """
   The item's sell price, applying the rAthena default: when `sell` is unset

@@ -1382,6 +1382,7 @@
   weight: 10
 - aegis_name: Trade_Coupon
   buy: 100
+  classes: []
   id: 7037
   name: Coupon
   no_guild_storage: true
@@ -5918,6 +5919,11 @@
   weight: 10
 - aegis_name: RepairA
   buy: 200
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12392
   jobs:
     - blacksmith
@@ -5926,6 +5932,11 @@
   weight: 1
 - aegis_name: RepairB
   buy: 500
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12393
   jobs:
     - blacksmith
@@ -5934,6 +5945,11 @@
   weight: 1
 - aegis_name: RepairC
   buy: 1375
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12394
   jobs:
     - blacksmith
@@ -8348,6 +8364,11 @@
   weight: 10
 - aegis_name: Runstone_Quality
   buy: 2
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12734
   jobs:
     - knight
@@ -8356,6 +8377,11 @@
   weight: 100
 - aegis_name: Runstone_Ancient
   buy: 2
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12735
   jobs:
     - knight
@@ -8364,6 +8390,11 @@
   weight: 100
 - aegis_name: Runstone_Mystic
   buy: 2
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12736
   jobs:
     - knight
@@ -8372,6 +8403,11 @@
   weight: 100
 - aegis_name: Runstone_Ordinary
   buy: 2
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12737
   jobs:
     - knight
@@ -8380,6 +8416,11 @@
   weight: 100
 - aegis_name: Runstone_Rare
   buy: 2
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 12738
   jobs:
     - knight
@@ -27330,6 +27371,7 @@
   weight: 10
 - aegis_name: E_New_Style_Box
   buy: 10
+  classes: []
   id: 17285
   name: Events Beauty Gift Box
   no_guild_storage: true
@@ -29585,6 +29627,11 @@
   type: usable
 - aegis_name: Runstone_Lux
   buy: 2
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   id: 22540
   name: Lux Anima Runestone
   no_guild_storage: true
@@ -30562,6 +30609,7 @@
   weight: 200
 - aegis_name: NoviceBox
   buy: 10
+  classes: []
   id: 22808
   name: Special Gift Box
   no_guild_storage: true
@@ -32822,6 +32870,11 @@
   type: usable
 - aegis_name: Mado_Box
   buy: 10000
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   equip_level_min: 100
   id: 23277
   jobs:
@@ -35638,6 +35691,11 @@
   weight: 10
 - aegis_name: Mado_Box02
   buy: 10000
+  classes:
+    - fourth
+    - third
+    - third_baby
+    - third_upper
   equip_level_min: 100
   id: 100158
   jobs:

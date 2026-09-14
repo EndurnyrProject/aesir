@@ -521,7 +521,17 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.EquipScriptTest do
         assert program |> EquipScript.to_source() |> EquipScript.parse!() == program
 
         for refine <- 0..20, levels <- [[], [base_level: 200, job_level: 70]] do
-          assert is_map(EquipScript.eval(program, on(refine, levels)))
+          inputs =
+            on(
+              refine,
+              levels ++
+                [
+                  local_time: ~N[2026-01-01 00:00:00],
+                  character_info: %{map_name: "prontera"}
+                ]
+            )
+
+          assert is_map(EquipScript.eval(program, inputs))
         end
       end
     end

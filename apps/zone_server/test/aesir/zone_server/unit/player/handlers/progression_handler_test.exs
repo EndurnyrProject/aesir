@@ -489,7 +489,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
            }}
 
         1201 ->
-          {:ok, %ItemDefinition{id: 1201, aegis_name: "Wearable", name: "Wearable", jobs: []}}
+          {:ok, %ItemDefinition{id: 1201, aegis_name: "Wearable", name: "Wearable", jobs: :all}}
 
         _ ->
           {:error, :not_found}

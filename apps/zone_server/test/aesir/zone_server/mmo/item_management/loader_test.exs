@@ -52,6 +52,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
                  501 => %ItemDefinition{
                    aegis_name: "Red_Potion",
                    type: :healing,
+                   jobs: :all,
+                   classes: classes,
+                   gender: :both,
                    no_trade: false
                  }
                },
@@ -68,7 +71,74 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
                }
              } = Loader.load()
 
+      assert classes == ItemDefinition.default_classes(GameMode.mode())
       assert length(all) == 2
+    end
+
+    @tag :tmp_dir
+    test "preserves explicit deny-all restrictions and decodes the all sentinel", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 1
+        aegis_name: Denied
+        name: Denied
+        jobs: []
+        classes: []
+      - id: 2
+        aegis_name: Allowed
+        name: Allowed
+        jobs: all
+      """)
+
+      assert %{
+               by_id: %{
+                 1 => %ItemDefinition{jobs: [], classes: []},
+                 2 => %ItemDefinition{jobs: :all}
+               }
+             } = Loader.load()
+    end
+
+    @tag :tmp_dir
+    test "applies effective gender to shipped-schema and local definitions", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 2634
+        aegis_name: Male_Ring
+        name: Male Ring
+        gender: female
+      - id: 2635
+        aegis_name: Female_Ring
+        name: Female Ring
+        gender: male
+      - id: 10
+        aegis_name: Instrument
+        name: Instrument
+        subtype: musical
+        gender: female
+      - id: 11
+        aegis_name: Whip
+        name: Whip
+        subtype: whip
+        gender: male
+      - id: 12
+        aegis_name: Ordinary
+        name: Ordinary
+        gender: female
+      """)
+
+      write_import_yaml(dir, """
+      - id: 13
+        aegis_name: Local_Instrument
+        name: Local Instrument
+        subtype: musical
+        gender: female
+      """)
+
+      assert %{by_id: by_id} = Loader.load()
+      assert by_id[2634].gender == :male
+      assert by_id[2635].gender == :female
+      assert by_id[10].gender == :male
+      assert by_id[11].gender == :female
+      assert by_id[12].gender == :female
+      assert by_id[13].gender == :male
     end
 
     @tag :tmp_dir
@@ -111,7 +181,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       write_yaml(dir, @items_yaml)
       Loader.load()
 
-      assert File.exists?(Path.join([dir, ".cache", "items_v6.etf"]))
+      assert File.exists?(Path.join([dir, ".cache", "items_v7.etf"]))
+    end
+
+    @tag :tmp_dir
+    test "rejects unknown restriction tokens with source context", %{tmp_dir: dir} do
+      source =
+        write_yaml(dir, """
+        - id: 1
+          aegis_name: Unknown
+          name: Unknown
+          jobs:
+            - not_a_job
+        """)
+
+      assert_raise ArgumentError,
+                   ~r/unknown jobs token "not_a_job".*#{Regex.escape(source)}/s,
+                   fn -> Loader.load() end
     end
 
     @tag :tmp_dir
@@ -119,7 +205,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load()
 
-      cache = Path.join([dir, ".cache", "items_v6.etf"])
+      cache = Path.join([dir, ".cache", "items_v7.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(yaml, 1_000_000)
       File.touch!(cache, 2_000_000)
@@ -132,7 +218,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       yaml = write_yaml(dir, @items_yaml)
       Loader.load()
 
-      cache = Path.join([dir, ".cache", "items_v6.etf"])
+      cache = Path.join([dir, ".cache", "items_v7.etf"])
       File.write!(yaml, String.replace(@items_yaml, "weight: 70", "weight: 99"))
       File.touch!(cache, 1_000_000)
       File.touch!(yaml, 2_000_000)
@@ -173,6 +259,23 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
       """)
 
       assert %{by_id: %{501 => %ItemDefinition{on_use: nil}}} = Loader.load()
+    end
+
+    @tag :tmp_dir
+    test "preserves explicit null optional subtype and attack_element values", %{tmp_dir: dir} do
+      write_yaml(dir, """
+      - id: 1750
+        aegis_name: Null_Optional_Fields
+        name: Null Optional Fields
+        subtype: null
+        attack_element: null
+      """)
+
+      assert %{
+               by_id: %{
+                 1750 => %ItemDefinition{subtype: nil, attack_element: nil}
+               }
+             } = Loader.load()
     end
 
     @tag :tmp_dir
@@ -261,13 +364,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.LoaderTest do
     end
 
     @tag :tmp_dir
-    test "touching script_overrides.yml invalidates the items_v6.etf cache", %{tmp_dir: dir} do
+    test "touching script_overrides.yml invalidates the items_v7.etf cache", %{tmp_dir: dir} do
       items = write_yaml(dir, @items_yaml)
       overrides = Path.join(dir, "script_overrides.yml")
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 1)\"\n")
       Loader.load()
 
-      cache = Path.join([dir, ".cache", "items_v6.etf"])
+      cache = Path.join([dir, ".cache", "items_v7.etf"])
       File.write!(overrides, "- id: 501\n  on_use: \"heal(ctx, hp: 2)\"\n")
       File.touch!(items, 1_000_000)
       File.touch!(cache, 2_000_000)

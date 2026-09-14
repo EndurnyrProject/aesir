@@ -4,12 +4,13 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement.Importer
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Loader
+  alias Aesir.ZoneServer.Mmo.JobManagement.ItemEligibility
 
   setup context do
     Aesir.ZoneServer.DbTestSetup.configure_root(context, "items")
   end
 
-  describe "to_definition/1" do
+  describe "to_definition/2" do
     test "maps a weapon, converting Type/SubType/Jobs/Locations to atoms" do
       entry = %{
         "Id" => 1201,
@@ -22,7 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "Attack" => 17,
         "Range" => 1,
         "Slots" => 3,
-        "Jobs" => %{"Swordman" => true, "BardDancer" => true},
+        "Jobs" => [{"Swordman", true}, {"BardDancer", true}],
         "Locations" => %{"Right_Hand" => true},
         "WeaponLevel" => 1,
         "EquipLevelMin" => 1,
@@ -46,7 +47,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
                 weapon_level: 1,
                 equip_level_min: 1,
                 refineable: true
-              }} = Importer.to_definition(entry)
+              }} = Importer.to_definition(entry, :renewal)
     end
 
     test "maps a healing item and applies defaults for absent fields" do
@@ -70,12 +71,89 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
                 weight: 70,
                 attack: 0,
                 slots: 0,
-                jobs: [],
+                jobs: :all,
+                classes: [:baby, :fourth, :normal, :third, :third_baby, :third_upper, :upper],
+                gender: :both,
                 locations: [],
                 weapon_level: nil,
                 refineable: false,
                 bind_on_equip: false
-              }} = Importer.to_definition(entry)
+              }} = Importer.to_definition(entry, :renewal)
+    end
+
+    test "preserves explicit empty restrictions as deny-all" do
+      entry = %{
+        "Id" => 1,
+        "AegisName" => "Excluded",
+        "Name" => "Excluded",
+        "Jobs" => [],
+        "Classes" => []
+      }
+
+      assert {:ok, %ItemDefinition{jobs: [], classes: []} = definition} =
+               Importer.to_definition(entry, :renewal)
+
+      assert %{"jobs" => [], "classes" => []} = Importer.to_yaml_map(definition, :renewal)
+    end
+
+    test "applies overlapping job aliases in source order" do
+      first = base_entry(1, [{"SuperNovice", true}, {"Super_Novice", false}])
+      reversed = base_entry(2, [{"Super_Novice", false}, {"SuperNovice", true}])
+
+      assert {:ok, %ItemDefinition{jobs: []}} = Importer.to_definition(first, :renewal)
+
+      assert {:ok, %ItemDefinition{jobs: [:super_novice]}} =
+               Importer.to_definition(reversed, :renewal)
+    end
+
+    test "processes All first and applies overlapping class groups in source order" do
+      all_last = class_entry(1, [{"Upper", false}, {"All", true}])
+      broad_then_narrow = class_entry(2, [{"All_Upper", true}, {"Fourth", false}])
+      narrow_then_broad = class_entry(3, [{"Fourth", false}, {"All_Upper", true}])
+
+      assert {:ok, %ItemDefinition{classes: classes}} =
+               Importer.to_definition(all_last, :renewal)
+
+      refute :upper in classes
+
+      assert {:ok, %ItemDefinition{classes: broad_classes}} =
+               Importer.to_definition(broad_then_narrow, :renewal)
+
+      refute :fourth in broad_classes
+
+      assert {:ok, %ItemDefinition{classes: narrow_classes}} =
+               Importer.to_definition(narrow_then_broad, :renewal)
+
+      assert :fourth in narrow_classes
+    end
+
+    test "returns item and field context for invalid restrictions" do
+      assert {:error, {:invalid_restriction, 1, :jobs, {:unknown_flag, "Unknown"}}} =
+               Importer.to_definition(base_entry(1, [{"Unknown", true}]), :renewal)
+
+      assert {:error, {:invalid_restriction, 2, :classes, {:invalid_flag, "Upper", 1}}} =
+               Importer.to_definition(class_entry(2, [{"Upper", 1}]), :renewal)
+
+      entry = %{"Id" => 3, "AegisName" => "X", "Name" => "X", "Gender" => "Any"}
+
+      assert {:error, {:invalid_restriction, 3, :gender, {:unknown_value, "Any"}}} =
+               Importer.to_definition(entry, :renewal)
+    end
+
+    test "normalizes effective gender after validating the declared value" do
+      musical = %{
+        "Id" => 100,
+        "AegisName" => "Instrument",
+        "Name" => "Instrument",
+        "Type" => "Weapon",
+        "SubType" => "Musical",
+        "Gender" => "Female"
+      }
+
+      ring = %{"Id" => 2635, "AegisName" => "Ring", "Name" => "Ring", "Gender" => "Male"}
+
+      assert {:ok, %ItemDefinition{gender: :male}} = Importer.to_definition(musical, :renewal)
+      assert {:ok, %ItemDefinition{gender: :female}} = Importer.to_definition(ring, :renewal)
     end
 
     test "maps the account-binding flag" do
@@ -86,8 +164,14 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "Flags" => %{"BindOnEquip" => true}
       }
 
-      assert {:ok, %ItemDefinition{bind_on_equip: true}} = Importer.to_definition(entry)
+      assert {:ok, %ItemDefinition{bind_on_equip: true}} = Importer.to_definition(entry, :renewal)
     end
+
+    defp base_entry(id, jobs),
+      do: %{"Id" => id, "AegisName" => "X#{id}", "Name" => "X#{id}", "Jobs" => jobs}
+
+    defp class_entry(id, classes),
+      do: %{"Id" => id, "AegisName" => "X#{id}", "Name" => "X#{id}", "Classes" => classes}
 
     test "maps the no-trade restriction" do
       entry = %{
@@ -97,15 +181,19 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "Trade" => %{"NoTrade" => true}
       }
 
-      assert {:ok, definition = %ItemDefinition{no_trade: true}} = Importer.to_definition(entry)
-      assert %{"no_trade" => true} = Importer.to_yaml_map(definition)
+      assert {:ok, definition = %ItemDefinition{no_trade: true}} =
+               Importer.to_definition(entry, :renewal)
+
+      assert %{"no_trade" => true} = Importer.to_yaml_map(definition, :renewal)
     end
 
     test "defaults missing Trade restriction to false and omits it from YAML" do
       entry = %{"Id" => 1201, "AegisName" => "Knife", "Name" => "Knife"}
 
-      assert {:ok, definition = %ItemDefinition{no_trade: false}} = Importer.to_definition(entry)
-      refute Map.has_key?(Importer.to_yaml_map(definition), "no_trade")
+      assert {:ok, definition = %ItemDefinition{no_trade: false}} =
+               Importer.to_definition(entry, :renewal)
+
+      refute Map.has_key?(Importer.to_yaml_map(definition, :renewal), "no_trade")
     end
 
     test "maps the no-guild-storage restriction and defaults it to false" do
@@ -118,26 +206,31 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
       plain = %{"Id" => 1202, "AegisName" => "Sword", "Name" => "Sword"}
 
-      assert {:ok, %ItemDefinition{no_guild_storage: true}} = Importer.to_definition(restricted)
-      assert {:ok, %ItemDefinition{no_guild_storage: false}} = Importer.to_definition(plain)
+      assert {:ok, %ItemDefinition{no_guild_storage: true}} =
+               Importer.to_definition(restricted, :renewal)
+
+      assert {:ok, %ItemDefinition{no_guild_storage: false}} =
+               Importer.to_definition(plain, :renewal)
     end
 
     test "defaults missing Type to :etc (rAthena default)" do
       entry = %{"Id" => 909, "AegisName" => "Jellopy", "Name" => "Jellopy", "Weight" => 1}
 
-      assert {:ok, %ItemDefinition{type: :etc}} = Importer.to_definition(entry)
+      assert {:ok, %ItemDefinition{type: :etc}} = Importer.to_definition(entry, :renewal)
     end
 
     test "returns an error for an unknown Type" do
       entry = %{"Id" => 1, "AegisName" => "X", "Name" => "X", "Type" => "Bogus"}
 
-      assert {:error, {:unknown_type, "Bogus"}} = Importer.to_definition(entry)
+      assert {:error, {:unknown_type, "Bogus"}} = Importer.to_definition(entry, :renewal)
     end
 
     test "normalizes inconsistent Type casing in the source data" do
       for casing <- ["DelayConsume", "Delayconsume"] do
         entry = %{"Id" => 1, "AegisName" => "X", "Name" => "X", "Type" => casing}
-        assert {:ok, %ItemDefinition{type: :delay_consume}} = Importer.to_definition(entry)
+
+        assert {:ok, %ItemDefinition{type: :delay_consume}} =
+                 Importer.to_definition(entry, :renewal)
       end
     end
 
@@ -150,7 +243,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "SubType" => "1hSword"
       }
 
-      assert {:ok, %ItemDefinition{subtype: :one_handed_sword}} = Importer.to_definition(entry)
+      assert {:ok, %ItemDefinition{subtype: :one_handed_sword}} =
+               Importer.to_definition(entry, :renewal)
     end
 
     test "returns an error for an unknown SubType" do
@@ -162,7 +256,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "SubType" => "Bogus"
       }
 
-      assert {:error, {:unknown_subtype, "Bogus"}} = Importer.to_definition(entry)
+      assert {:error, {:unknown_subtype, "Bogus"}} = Importer.to_definition(entry, :renewal)
     end
 
     test "parses bonus bAtkEle into attack_element for each supported element" do
@@ -185,14 +279,15 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
           "Script" => "bonus bAtkEle,#{ele_str};"
         }
 
-        assert {:ok, %ItemDefinition{attack_element: ^expected}} = Importer.to_definition(entry)
+        assert {:ok, %ItemDefinition{attack_element: ^expected}} =
+                 Importer.to_definition(entry, :renewal)
       end
     end
 
     test "attack_element is nil when no Script field" do
       entry = %{"Id" => 1750, "AegisName" => "Arrow", "Name" => "Arrow"}
 
-      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry)
+      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry, :renewal)
     end
 
     test "attack_element is nil when Script has no bAtkEle bonus" do
@@ -203,7 +298,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         "Script" => "bonus2 bAddEff,Eff_Stun,2000;"
       }
 
-      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry)
+      assert {:ok, %ItemDefinition{attack_element: nil}} = Importer.to_definition(entry, :renewal)
     end
   end
 
@@ -322,7 +417,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
     end
   end
 
-  describe "to_yaml_map/1" do
+  describe "to_yaml_map/2" do
     test "encodes attack_element as a string and omits nil" do
       elemental = %ItemDefinition{
         id: 1752,
@@ -333,8 +428,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
       plain = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
 
-      assert %{"attack_element" => "fire"} = Importer.to_yaml_map(elemental)
-      refute Map.has_key?(Importer.to_yaml_map(plain), "attack_element")
+      assert %{"attack_element" => "fire"} = Importer.to_yaml_map(elemental, :renewal)
+      refute Map.has_key?(Importer.to_yaml_map(plain, :renewal), "attack_element")
     end
 
     test "stringifies keys/atoms and omits default-valued fields" do
@@ -351,7 +446,7 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         refineable: true
       }
 
-      map = Importer.to_yaml_map(definition)
+      map = Importer.to_yaml_map(definition, :renewal)
 
       assert %{
                "id" => 1201,
@@ -375,8 +470,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       binding = %ItemDefinition{id: 1201, aegis_name: "Knife", name: "Knife", bind_on_equip: true}
       plain = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
 
-      assert %{"bind_on_equip" => true} = Importer.to_yaml_map(binding)
-      refute Map.has_key?(Importer.to_yaml_map(plain), "bind_on_equip")
+      assert %{"bind_on_equip" => true} = Importer.to_yaml_map(binding, :renewal)
+      refute Map.has_key?(Importer.to_yaml_map(plain, :renewal), "bind_on_equip")
     end
 
     test "encodes on_equip as DSL source via EquipScript.to_source/1 and omits it when nil" do
@@ -385,9 +480,9 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       with_program = %ItemDefinition{id: 490_160, aegis_name: "X", name: "X", on_equip: program}
       without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
 
-      assert %{"on_equip" => source} = Importer.to_yaml_map(with_program)
+      assert %{"on_equip" => source} = Importer.to_yaml_map(with_program, :renewal)
       assert source == "bonus(ctx, :smatk, 3)"
-      refute Map.has_key?(Importer.to_yaml_map(without_program), "on_equip")
+      refute Map.has_key?(Importer.to_yaml_map(without_program, :renewal), "on_equip")
     end
 
     test "encodes on_unequip as DSL source via EquipScript.to_source/1 and omits it when nil" do
@@ -396,23 +491,26 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
       with_program = %ItemDefinition{id: 2776, aegis_name: "X", name: "X", on_unequip: program}
       without_program = %ItemDefinition{id: 1750, aegis_name: "Arrow", name: "Arrow"}
 
-      assert %{"on_unequip" => source} = Importer.to_yaml_map(with_program)
+      assert %{"on_unequip" => source} = Importer.to_yaml_map(with_program, :renewal)
       assert source == "status_end(ctx, :sc_summer)"
-      refute Map.has_key?(Importer.to_yaml_map(without_program), "on_unequip")
+      refute Map.has_key?(Importer.to_yaml_map(without_program, :renewal), "on_unequip")
     end
 
     @tag :tmp_dir
     test "round-trips paired equipment programs back through the Loader", %{tmp_dir: dir} do
+      mode = ItemEligibility.mode()
+
       definition = %ItemDefinition{
         id: 2776,
         aegis_name: "Cool_Towel",
         name: "Adventurer's Trusty Towel",
         type: :armor,
+        classes: ItemDefinition.default_classes(mode),
         on_equip: [{:status_start, :sc_summer, :infinite, 0}],
         on_unequip: [{:status_end, :sc_summer}]
       }
 
-      yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
+      yaml = Ymlr.document!([Importer.to_yaml_map(definition, mode)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
       assert %{by_id: %{2776 => ^definition}} = Loader.load()
@@ -420,6 +518,8 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
 
     @tag :tmp_dir
     test "round-trips a definition back through the Loader", %{tmp_dir: dir} do
+      mode = ItemEligibility.mode()
+
       definition = %ItemDefinition{
         id: 1201,
         aegis_name: "Angel's_Knife",
@@ -429,18 +529,37 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         weight: 400,
         attack: 17,
         jobs: [:bard_dancer, :swordman],
+        classes: ItemDefinition.default_classes(mode),
         locations: [:right_hand],
         refineable: true
       }
 
-      yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
+      yaml = Ymlr.document!([Importer.to_yaml_map(definition, mode)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
       assert %{by_id: %{1201 => ^definition}} = Loader.load()
     end
 
+    test "uses mode-specific class defaults while rendering" do
+      pre_default = %ItemDefinition{
+        id: 1,
+        aegis_name: "Pre_Default",
+        name: "Pre Default",
+        classes: ItemDefinition.default_classes(:pre_renewal)
+      }
+
+      seven_classes = %{pre_default | id: 2, classes: ItemDefinition.default_classes(:renewal)}
+
+      refute Map.has_key?(Importer.to_yaml_map(pre_default, :pre_renewal), "classes")
+
+      assert %{"classes" => classes} = Importer.to_yaml_map(seven_classes, :pre_renewal)
+      assert length(classes) == 7
+    end
+
     @tag :tmp_dir
     test "round-trips attack_element through the Loader", %{tmp_dir: dir} do
+      mode = ItemEligibility.mode()
+
       definition = %ItemDefinition{
         id: 1752,
         aegis_name: "Fire_Arrow",
@@ -448,11 +567,12 @@ defmodule Aesir.ZoneServer.Mmo.ItemManagement.ImporterTest do
         type: :ammo,
         subtype: :arrow,
         attack: 30,
+        classes: ItemDefinition.default_classes(mode),
         locations: [:ammo],
         attack_element: :fire
       }
 
-      yaml = Ymlr.document!([Importer.to_yaml_map(definition)])
+      yaml = Ymlr.document!([Importer.to_yaml_map(definition, mode)])
       File.write!(Path.join(dir, "items.yml"), yaml)
 
       assert %{by_id: %{1752 => ^definition}} = Loader.load()

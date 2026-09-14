@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnPierceTest do
     item = %InventoryItem{nameid: weapon_nameid, amount: 1, equip: 0, identify: 1}
 
     assert {:ok, inventory, {:equipped, 0, ^equip_slot, []}} =
-             Inventory.equip(%{0 => item}, 0, equip_slot, %{job_id: 7, base_level: 50})
+             Inventory.equip(%{0 => item}, 0, equip_slot, %{job_id: 7, base_level: 50, sex: "M"})
 
     stats = %Stats{
       base_stats: %BaseStats{str: 1, agi: 1, vit: 10, int: 10, dex: 1, luk: 1},

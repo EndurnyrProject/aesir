@@ -62,7 +62,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   def handle_equip(server_index, position, %{game_state: game_state} = state) do
     ctx = %{
       job_id: game_state.stats.progression.job_id,
-      base_level: game_state.stats.progression.base_level
+      base_level: game_state.stats.progression.base_level,
+      sex: game_state.sex
     }
 
     case Inventory.equip(game_state.inventory, server_index, position, ctx) do
@@ -353,7 +354,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
     end)
   end
 
-  defp equip_failure(:requirement_unmet), do: :level
+  defp equip_failure(:level_restricted), do: :level
   defp equip_failure(_reason), do: :fail
 
   # Equip result: a pure ack. The server index carries the +2 client offset,
