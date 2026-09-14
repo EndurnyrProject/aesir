@@ -24,11 +24,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   the separate `resetstate` stat reset.
   """
 
-  alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
@@ -43,7 +41,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
-  alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.LookType
   alias Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler
@@ -157,10 +154,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
   @doc """
   Authoritative core for a job change (rAthena `pc_jobchange`): validates
-  `job_id`, force-closes vending, drops learned skills outside the new job's tree
+  `job_id`, persists required equipment cleanup against the proposed job,
+  force-closes vending, drops learned skills outside the new job's tree
   (no skill-point refund, unspent points kept), resets job level/exp to `1`/`0`,
-  recomputes job-dependent stats, full-heals, unequips items the new job cannot
-  wear, ends statuses granted by dropped skills, notifies the client (class
+  recomputes job-dependent stats, full-heals, ends statuses granted by dropped
+  skills, notifies the client (class
   sprite, refreshed skill list, stat/param sync), persists
   `class`/`learned_skills`/job level, and updates the `UnitRegistry`.
 
@@ -173,9 +171,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   without mutating `state` when `job_id` requires a character sex the player
   does not have (`@required_sex`, e.g. bard is male-only).
   """
-  @spec apply_job_change(non_neg_integer(), map()) ::
-          {:ok, map()}
-          | {:error, :unknown_job | :gender_locked | :requirements_not_met | :cart_active}
+  @spec apply_job_change(non_neg_integer(), map()) :: {:ok, map()} | {:error, term()}
   def apply_job_change(job_id, %{game_state: game_state} = state) do
     case AvailableJobs.job_id_to_name(job_id) do
       {:ok, _job_name} -> do_apply_job_change(job_id, state, game_state)
@@ -294,12 +290,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   base experience. Invalid types return `{:error, :invalid_reset_type}`.
   """
   @spec reset_level(integer(), map()) ::
-          {:ok, map()} | {:error, :cart_active | :invalid_reset_type}
+          {:ok, map()} | {:error, term()}
   def reset_level(type, %{game_state: game_state} = state) when type in 1..4 do
     if type != 3 and cart_blocks_reset?(game_state) do
       {:error, :cart_active}
     else
-      do_reset_level(type, state, game_state)
+      target = reset_level_progression(game_state.stats.progression, type)
+
+      context = %{
+        job_id: target.job_id,
+        base_level: target.base_level,
+        sex: game_state.sex
+      }
+
+      with {:ok, preflight_state} <- EquipmentHandler.recheck_requirements(context, state) do
+        do_reset_level(type, preflight_state, preflight_state.game_state)
+      end
     end
   end
 
@@ -327,7 +333,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     %{state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
-    |> recheck_equipment(progression.job_id, progression.base_level)
     |> enforce_weapon_requirements()
     |> finish_reset_level(previous_game_state, type)
   end
@@ -480,15 +485,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
         {:error, :cart_active}
 
       true ->
-        change_to_job(job_id, state)
+        context = %{
+          job_id: job_id,
+          base_level: progression.base_level,
+          sex: game_state.sex
+        }
+
+        with {:ok, preflight_state} <- EquipmentHandler.recheck_requirements(context, state) do
+          change_to_job(job_id, preflight_state)
+        end
     end
   end
 
-  # rAthena `pc_jobchange` order: force-close vending, drop skills outside the new
-  # tree (no refund, unspent points kept), force-dismount a Peco-Peco the new
-  # tree can no longer ride, reset job level, recompute stats (so passives from
-  # dropped skills, and the riding ASPD buyback, stop applying) BEFORE the
-  # cart/equipment/status cleanup, then notify and persist.
+  # After equipment preflight, preserve the established job-change order:
+  # force-close vending, drop skills outside the new tree, dismount or dismiss
+  # companions tied to dropped skills, reset job progression, clean statuses,
+  # then notify and persist.
   defp change_to_job(job_id, state) do
     previous_game_state = state.game_state
     {:ok, closed_state} = VendingHandler.close_shop(state, :job_change)
@@ -521,7 +533,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     %{dismissed_state | game_state: %{game_state | stats: stats}}
     |> cleanup_dropped_skills(dropped_ids)
-    |> recheck_equipment(job_id)
     |> enforce_weapon_requirements()
     |> finish_job_change(job_id, previous_game_state)
   end
@@ -611,42 +622,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     for skill_id <- dropped_ids,
         {:ok, %{status: status}} when not is_nil(status) <- [Catalog.by_id(skill_id)] do
       StatusInterpreter.remove_status(:player, char_id, status)
-    end
-  end
-
-  @equipment_restriction_errors [
-    :job_restricted,
-    :class_restricted,
-    :gender_restricted,
-    :level_restricted
-  ]
-
-  # Force-unequips every worn item the new job or base level can no longer wear,
-  # routing each through the equipment handler's persistence and client-sync path.
-  defp recheck_equipment(%{game_state: game_state} = state, job_id) do
-    recheck_equipment(state, job_id, game_state.stats.progression.base_level)
-  end
-
-  defp recheck_equipment(%{game_state: game_state} = state, job_id, base_level) do
-    game_state.inventory
-    |> Inventory.equipped_items()
-    |> Map.keys()
-    |> Enum.reduce(state, fn index, acc -> maybe_unequip(acc, index, job_id, base_level) end)
-  end
-
-  defp maybe_unequip(%{game_state: gs} = state, index, job_id, base_level) do
-    with %InventoryItem{nameid: nameid} <- Map.get(gs.inventory, index),
-         {:ok, item_def} <- ItemManagement.get_item_by_id(nameid),
-         {:error, reason} when reason in @equipment_restriction_errors <-
-           Inventory.validate_requirements(item_def, %{
-             job_id: job_id,
-             base_level: base_level,
-             sex: gs.sex
-           }) do
-      {:noreply, new_state} = EquipmentHandler.handle_unequip(index, state)
-      new_state
-    else
-      _ -> state
     end
   end
 

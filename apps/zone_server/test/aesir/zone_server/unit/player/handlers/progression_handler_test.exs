@@ -9,8 +9,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.Net.SkillList
   alias Aesir.Net.SpriteChange
   alias Aesir.ZoneServer.CharacterPersistence
-  alias Aesir.ZoneServer.Mmo.ItemManagement
-  alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -25,6 +23,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.FalconHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.MountHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.VendingHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -52,6 +51,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   @novice_high_id novice_high_id
   {:ok, swordman_id} = AvailableJobs.job_name_to_id(:swordman)
   @swordman_id swordman_id
+  {:ok, swordman_high_id} = AvailableJobs.job_name_to_id(:swordman_high)
+  @swordman_high_id swordman_high_id
+  {:ok, baby_swordman_id} = AvailableJobs.job_name_to_id(:baby_swordman)
+  @baby_swordman_id baby_swordman_id
   {:ok, merchant_id} = AvailableJobs.job_name_to_id(:merchant)
   @merchant_id merchant_id
   {:ok, dragon_knight_id} = AvailableJobs.job_name_to_id(:dragon_knight)
@@ -304,6 +307,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   describe "apply_job_change/2 with an unknown job id" do
     test "returns {:error, :unknown_job} without mutating state" do
       original = state()
+      reject(&EquipmentHandler.recheck_requirements/2)
 
       assert {:error, :unknown_job} =
                ProgressionHandler.apply_job_change(@unknown_job_id, original)
@@ -322,6 +326,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   describe "apply_job_change/2 gender gate" do
     test "rejects a female character requesting bard with gender_locked, mutating nothing" do
       state = state_with_gs([job_id: @novice_id], sex: "F")
+      reject(&EquipmentHandler.recheck_requirements/2)
 
       assert {:error, :gender_locked} = ProgressionHandler.apply_job_change(@bard_id, state)
     end
@@ -426,6 +431,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
           learned_skills: %{catalog_id(:nv_basic) => 9}
         )
 
+      reject(&EquipmentHandler.recheck_requirements/2)
       assert {:ok, ^state} = ProgressionHandler.apply_job_change(@novice_id, state)
       refute_received {:send, :bulk, {:skill_list, _}}
     end
@@ -443,6 +449,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
           cart: %{}
         )
 
+      reject(&EquipmentHandler.recheck_requirements/2)
       assert {:error, :cart_active} = ProgressionHandler.apply_job_change(@swordman_id, state)
       refute_received {:send, :bulk, {:skill_list, _}}
     end
@@ -474,43 +481,56 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     end
   end
 
-  describe "apply_job_change/2 equipment re-check" do
-    test "force-unequips items the new job cannot wear, keeps wearable ones" do
-      test_pid = self()
+  describe "apply_job_change/2 equipment preflight" do
+    test "checks the target job against the current level and continues with the returned state" do
+      state = state_with(job_id: @novice_id, base_level: 50)
 
-      stub(ItemManagement, :get_item_by_id, fn
-        1101 ->
-          {:ok,
-           %ItemDefinition{
-             id: 1101,
-             aegis_name: "Restricted",
-             name: "Restricted",
-             jobs: [:acolyte]
-           }}
-
-        1201 ->
-          {:ok, %ItemDefinition{id: 1201, aegis_name: "Wearable", name: "Wearable", jobs: :all}}
-
-        _ ->
-          {:error, :not_found}
+      expect(EquipmentHandler, :recheck_requirements, fn context, checked_state ->
+        assert context == %{job_id: @swordman_id, base_level: 50, sex: "M"}
+        assert checked_state.game_state.stats.progression.job_id == @novice_id
+        {:ok, Map.put(checked_state, :preflight_marker, true)}
       end)
 
-      stub(EquipmentHandler, :handle_unequip, fn index, st ->
-        send(test_pid, {:unequipped, index})
-        {:noreply, st}
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      assert new_state.preflight_marker
+      assert new_state.game_state.stats.progression.job_id == @swordman_id
+    end
+
+    for {category, target_job_id} <- [
+          normal: @swordman_id,
+          upper: @swordman_high_id,
+          baby: @baby_swordman_id,
+          third_upper: @rune_knight_id
+        ] do
+      test "passes the #{category} target identity rather than the old job", %{} do
+        target_job_id = unquote(target_job_id)
+        state = state_with(job_id: @novice_id, base_level: 99)
+
+        expect(EquipmentHandler, :recheck_requirements, fn context, checked_state ->
+          assert context.job_id == target_job_id
+          assert context.job_id != checked_state.game_state.stats.progression.job_id
+          {:error, :cleanup_failed}
+        end)
+
+        assert {:error, :cleanup_failed} =
+                 ProgressionHandler.apply_job_change(target_job_id, state)
+      end
+    end
+
+    test "propagates cleanup errors before vending or progression side effects" do
+      state = state_with_gs([job_id: @novice_id], action_state: :vending)
+      reject(&VendingHandler.close_shop/2)
+      reject(&CharacterPersistence.update_character/3)
+      reject(&Broadcast.to_player/2)
+
+      expect(EquipmentHandler, :recheck_requirements, fn _context, ^state ->
+        {:error, :cleanup_failed}
       end)
 
-      inventory = %{
-        0 => %InventoryItem{id: 1, nameid: 1101, amount: 1, equip: 16},
-        1 => %InventoryItem{id: 2, nameid: 1201, amount: 1, equip: 32}
-      }
+      assert {:error, :cleanup_failed} =
+               ProgressionHandler.apply_job_change(@swordman_id, state)
 
-      state = state_with_gs([job_id: @novice_id], inventory: inventory)
-
-      ProgressionHandler.apply_job_change(@swordman_id, state)
-
-      assert_received {:unequipped, 0}
-      refute_received {:unequipped, 1}
+      refute_received {:send, _channel, _packet}
     end
   end
 
@@ -744,6 +764,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     test "rejects a wrong-parent char with requirements_not_met, mutating nothing" do
       reject(&CharacterPersistence.update_character/3)
       reject(&Broadcast.to_player/2)
+      reject(&EquipmentHandler.recheck_requirements/2)
 
       state = state_with(job_id: @swordman_id, base_level: 200, job_level: 70)
 
@@ -767,8 +788,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
                ProgressionHandler.apply_job_change(@dragon_knight_id, state)
     end
 
-    test "allows an eligible rune_knight (base 200, job 70) to become dragon_knight" do
+    test "checks an eligible fourth-job target before applying it" do
       state = state_with(job_id: @rune_knight_id, base_level: 200, job_level: 70)
+
+      expect(EquipmentHandler, :recheck_requirements, fn context, checked_state ->
+        assert context == %{job_id: @dragon_knight_id, base_level: 200, sex: "M"}
+        assert checked_state.game_state.stats.progression.job_id == @rune_knight_id
+        {:ok, checked_state}
+      end)
 
       assert {:ok, new_state} = ProgressionHandler.apply_job_change(@dragon_knight_id, state)
       assert new_state.game_state.stats.progression.job_id == @dragon_knight_id
@@ -1066,8 +1093,27 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert progression.learned_skills == %{}
     end
 
+    for {type, target_level} <- [{1, 1}, {2, 1}, {3, 1}, {4, 80}] do
+      test "type #{type} checks target base level #{target_level} before reset side effects" do
+        type = unquote(type)
+        target_level = unquote(target_level)
+        state = state_with(job_id: @swordman_id, base_level: 80)
+
+        expect(EquipmentHandler, :recheck_requirements, fn context, checked_state ->
+          assert context == %{job_id: @swordman_id, base_level: target_level, sex: "M"}
+          assert checked_state.game_state.stats.progression.base_level == 80
+          {:error, :cleanup_failed}
+        end)
+
+        reject(&CharacterPersistence.update_character/3)
+        assert {:error, :cleanup_failed} = ProgressionHandler.reset_level(type, state)
+        refute_received {:send, _channel, _packet}
+      end
+    end
+
     test "rejects invalid types and skill-reset types while a cart is active" do
       state = state_with_gs([job_id: @merchant_id], cart_type: 1)
+      reject(&EquipmentHandler.recheck_requirements/2)
 
       assert {:error, :cart_active} = ProgressionHandler.reset_level(1, state)
       assert {:error, :invalid_reset_type} = ProgressionHandler.reset_level(0, state)
