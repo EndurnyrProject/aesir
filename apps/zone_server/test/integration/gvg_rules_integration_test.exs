@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
   test "fixed skill damage separates equipment return from shielded status return" do
     :ok = MapFlags.set_runtime(@map, :gvg, true)
     attacker = fighter(@map, connection_pid: tagged_connection(self(), :attacker))
-    defender = fighter(@map, items: [%{nameid: 2322, equip: 16, card0: 4135}])
+    defender = fighter(@map, class: 1, items: [%{nameid: 2322, equip: 16, card0: 4135}])
     assert get_player_stats(defender.pid).modifiers.equipment.short_weapon_damage_return == 30
 
     :ok =
@@ -205,7 +205,7 @@ defmodule Aesir.ZoneServer.Integration.GvgRulesIntegrationTest do
   test "the reflected original spell settles once at its actual recipient and consumes Lex there" do
     :ok = MapFlags.set_runtime(@map, :gvg, true)
     attacker = fighter(@map)
-    reflector = fighter(@map, items: [%{nameid: 2106, equip: 32, card0: 4146}])
+    reflector = fighter(@map, class: 1, items: [%{nameid: 2106, equip: 32, card0: 4146}])
     assert get_player_stats(reflector.pid).modifiers.equipment.magic_damage_return == 50
     stub(Resistance, :roll_success, fn chance -> chance > 0 end)
     :ok = StatusInterpreter.apply_status(:player, attacker.character.id, :sc_aeterna)

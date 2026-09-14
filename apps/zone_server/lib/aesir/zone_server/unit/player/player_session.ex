@@ -573,11 +573,17 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def init(args) do
     character = args[:character]
-    connection_pid = args[:connection_pid]
-    client_capabilities = get_client_capabilities(args)
     game_state = PlayerState.new(character)
 
-    {:ok, updated_game_state} = InventoryManager.load_character_inventory(character, game_state)
+    case InventoryManager.load_character_inventory(character, game_state) do
+      {:ok, updated_game_state} -> continue_init(args, character, updated_game_state)
+      {:error, reason} -> {:stop, reason}
+    end
+  end
+
+  defp continue_init(args, character, updated_game_state) do
+    connection_pid = args[:connection_pid]
+    client_capabilities = get_client_capabilities(args)
     final_game_state = PlayerState.set_process_pid(updated_game_state, self())
 
     # Monitor the connection process to detect crashes

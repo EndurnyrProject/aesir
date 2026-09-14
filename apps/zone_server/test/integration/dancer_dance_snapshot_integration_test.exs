@@ -223,6 +223,7 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
         char_num: 0,
         name: "#{name}#{unique}",
         class: %{novice: 0, bard: 19, dancer: 20}[job],
+        sex: sex,
         base_level: 99,
         job_level: 50,
         hp: 500,

@@ -675,14 +675,20 @@ defmodule Aesir.ZoneServer.Integration.TradeIntegrationTest do
     expires_at = NaiveDateTime.add(NaiveDateTime.utc_now(), 3_600, :second)
 
     {a, [bound, rented, no_trade, equipped, short, legal]} =
-      persisted_player("TradeGatesA", {150, 150}, 100, [
-        %{nameid: 501, amount: 1, identify: 1, bound: 1},
-        %{nameid: 1101, amount: 1, identify: 1, expire_time: expires_at},
-        %{nameid: 766, amount: 1, identify: 1},
-        %{nameid: 1101, amount: 1, identify: 1, equip: 2},
-        %{nameid: 502, amount: 2, identify: 1},
-        %{nameid: 503, amount: 1, identify: 1}
-      ])
+      persisted_player(
+        "TradeGatesA",
+        {150, 150},
+        100,
+        [
+          %{nameid: 501, amount: 1, identify: 1, bound: 1},
+          %{nameid: 1101, amount: 1, identify: 1, expire_time: expires_at},
+          %{nameid: 766, amount: 1, identify: 1},
+          %{nameid: 1101, amount: 1, identify: 1, equip: 2},
+          %{nameid: 502, amount: 2, identify: 1},
+          %{nameid: 503, amount: 1, identify: 1}
+        ],
+        base_level: 2
+      )
 
     {b, []} = persisted_player("TradeGatesB", {151, 150}, 100, [])
     open_trade(a, b)

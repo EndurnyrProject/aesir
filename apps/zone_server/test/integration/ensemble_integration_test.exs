@@ -233,6 +233,7 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
         char_num: 0,
         name: "#{name}#{unique}",
         class: %{novice: 0, bard: @bard_class, dancer: @dancer_class}[job],
+        sex: if(job == :dancer, do: "F", else: "M"),
         base_level: 99,
         job_level: 50,
         str: 20,

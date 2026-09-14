@@ -237,9 +237,17 @@ defmodule Aesir.ZoneServer.Integration.ItemEligibilityRevalidationTest do
 
   test "invalid identity and missing definitions fail before persistence" do
     character = insert_character(:swordman, 99, "M")
-    item = seed_item(character.id, 999_999, 1, @right_hand)
     session = start_session(character)
-    before = settled_state(session)
+    settled_state(session)
+    item = seed_item(character.id, 999_999, 1, @right_hand)
+
+    before =
+      :sys.replace_state(session.pid, fn state ->
+        game_state = %{state.game_state | inventory: %{0 => item}}
+        %{state | game_state: game_state}
+      end)
+
+    :ok = UnitRegistry.update_unit_state(:player, character.id, before.game_state)
     test_pid = self()
 
     stub(Persistence, :transaction, fn _fun ->

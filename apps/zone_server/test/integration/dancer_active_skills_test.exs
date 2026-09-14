@@ -276,6 +276,7 @@ defmodule Aesir.ZoneServer.Integration.DancerActiveSkillsTest do
         char_num: 0,
         name: "#{name}#{unique}",
         class: Keyword.fetch!(opts, :class),
+        sex: "F",
         base_level: 99,
         job_level: 50,
         str: 20,

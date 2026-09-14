@@ -121,6 +121,7 @@ defmodule Aesir.ZoneServer.Integration.DancerEncoreIntegrationTest do
         char_num: 0,
         name: "Encore#{unique}",
         class: 20,
+        sex: "F",
         base_level: 99,
         job_level: 50,
         hp: 500,

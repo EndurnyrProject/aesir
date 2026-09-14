@@ -42,7 +42,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
   @knife 1201
   @knife_slotted 1202
   @jur 1250
-  @vanargandr_helm 18_652
+  @rideword_hat 5208
   @right_hand 2
   @left_hand 32
   @both_hands 34
@@ -310,7 +310,7 @@ defmodule Aesir.ZoneServer.Integration.AssassinWeaponCombatIntegrationTest do
 
     drainer =
       start_assassin(
-        equipped: [right: @knife, left: @knife_slotted, head: {@vanargandr_helm, 9}],
+        equipped: [right: @knife, left: @knife_slotted, head: {@rideword_hat, 9}],
         skills: mastery_skills(),
         hp: 1
       )

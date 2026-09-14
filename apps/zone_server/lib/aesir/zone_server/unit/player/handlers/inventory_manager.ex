@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
 
   require Logger
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Announcement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
@@ -34,8 +35,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     - game_state: The initial game state
 
   ## Returns
-    - {:ok, updated_game_state} - Success with inventory loaded
+    - `{:ok, updated_game_state}` - inventory loaded and valid equipment persisted
+    - `{:error, reason}` - identity validation or equipment cleanup failed
   """
+  @spec load_character_inventory(
+          Aesir.Commons.Models.Character.t(),
+          PlayerState.t()
+        ) :: {:ok, PlayerState.t()} | {:error, term()}
   def load_character_inventory(character, game_state) do
     inventory_items = Inventory.load_inventory(character.id)
     now = NaiveDateTime.utc_now()
@@ -46,10 +52,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.InventoryManager do
     end)
 
     inventory = PlayerState.from_list(active)
-    equipped = Map.values(Inventory.equipped_items(inventory))
-    stats = Stats.calculate_stats(game_state.stats, character.id, equipped)
+    context = %{job_id: character.class, base_level: character.base_level, sex: character.sex}
 
-    {:ok, %{game_state | inventory: inventory, stats: stats}}
+    with {:ok, indices} <- Inventory.ineligible_equipment(inventory, context, GameMode.mode()),
+         {:ok, persisted} <- InventoryOps.unequip_many(character.id, inventory, indices) do
+      equipped = Map.values(Inventory.equipped_items(persisted))
+      stats = Stats.calculate_stats(game_state.stats, character.id, equipped)
+
+      {:ok, %{game_state | inventory: persisted, stats: stats}}
+    end
   end
 
   @doc """

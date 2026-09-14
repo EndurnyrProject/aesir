@@ -184,6 +184,19 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   end
 
   describe "init/1" do
+    test "rejects invalid persisted identity before registration and status restoration", %{
+      character: character
+    } do
+      invalid_character = %{character | sex: "X"}
+      reject(&StatusPersistence.restore_on_spawn/1)
+
+      assert {:stop, :invalid_identity} =
+               PlayerSession.init(%{character: invalid_character, connection_pid: self()})
+
+      assert {:error, :not_found} = UnitRegistry.get_unit(:player, character.id)
+      refute_receive :spawn_player
+    end
+
     test "initializes player session with correct state", %{character: character} do
       connection_pid = self()
 
