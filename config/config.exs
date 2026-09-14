@@ -2,6 +2,7 @@ import Config
 
 config :commons,
   env: config_env(),
+  game_mode: :pre_renewal,
   ecto_repos: [Aesir.Repo]
 
 import_config "database.exs"

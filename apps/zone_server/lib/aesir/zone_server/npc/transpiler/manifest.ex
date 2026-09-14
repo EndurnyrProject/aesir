@@ -11,6 +11,12 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Manifest do
   but cannot recover previously merged cross-scope placements, so the generated
   corpus still requires clean regeneration before pre-renewal deployment.
 
+  Hand-written ownership is detected by file contents, not a comment or module
+  attribute. When taking over a generated NPC, keep its original `output_hash`
+  in this manifest: recording the edited hash would make it eligible for overwrite.
+  A forced import bypasses only the source-unchanged check, never the output-hash
+  check. Existing files without a manifest record are also protected.
+
   `decide/3` implements the regen policy:
 
   | Situation                                             | Decision    |

@@ -1,6 +1,6 @@
 ---
 name: aesir-npc
-description: How to create NPCs in Aesir - the declarative Npc module + Script DSL, dialog/effect/read ops, On-events (touch/timer/mob-death), script variables, and the rAthena NPC transpiler workflow (mix aesir.import.npcs, CommandMap, manifest). Use when writing or porting NPCs, warps, or NPC script buildins.
+description: How to create and refactor NPCs in Aesir - the declarative Npc module + Script DSL, module documentation and credits, behavior-preserving refactors, dialog/effect/read ops, On-events, script variables, and importer ownership protection. Use when writing, porting, documenting, or refactoring NPCs, warps, or NPC script buildins.
 ---
 
 # Creating NPCs in Aesir
@@ -43,14 +43,87 @@ A placement cannot activate an inactive body. `scope:` accepts only `:shared`, `
 - Warp portals are data, not modules: `apps/zone_server/priv/db/<mode>/warps/*.yml`
   (mode dir `re/` or `pre-re/` per `AESIR_DB_MODE`; see `aesir-game-modes`).
 
+## NPC module documentation
+
+Start with one sentence describing the NPC's purpose. Add a short `Behavior` section for
+meaningful interactions, progression, rewards, or transfers; omit it for simple signs and greetings.
+Describe actual behavior, not implementation helpers. Keep maps and coordinates in `spawn`, rather
+than duplicating them in documentation.
+
+For imported NPCs, verify authors against the original script's author header and changelog.
+do not infer authorship from the latest Git
+committer. Preserve verified credits and accurately state the Elixir adaptation's provenance:
+
+```elixir
+@moduledoc """
+ONE SENTENCE
+
+## Behavior
+
+- Behaviour 1
+- Behaviour 2
+- ...
+
+## Credits
+
+- Original from rAthena, authors and Contributors 
+  - Author 1
+  - Author 2
+  - ...
+
+## Adaptation
+
+- Transpiled by mix aesir.import.npcs from rAthena script
+- LLM-assisted Elixir refactor reviewed by <your name>
+"""
+```
+
+The credits above are specific to the novice training script. Use each NPC's verified authors,
+and include the LLM note only when it describes the actual adaptation. Do not label original
+Aesir content as imported.
+
+## Refactoring imported NPCs
+
+1. **Read the complete flow first.** Use the manifest to locate the original source and compare
+   the generated module with it. Identify dialogue pages, menu loops and exits, variable gates,
+   rewards, random choices, and the order of side effects. Keep bug fixes separate from a
+   behavior-preserving refactor; flag existing quirks instead of silently changing them.
+2. **Use ordinary Elixir.** Replace generated `ctx = ...; ctx` wrappers, deeply nested `if`s,
+   numbered variables, and `loop_1`-style helpers with pipelines, descriptive variables,
+   function clauses, `case`/`cond`, and small purpose-named private functions. Share genuinely
+   repeated dialogue locally. Prefer interpolation for known strings; retain compatibility
+   conversions when their coercion matters. Do not introduce a new interpreter or generic
+   framework to refactor a handful of NPCs. Alias `Script.Ctx` and add callback specs.
+3. **Preserve exits and effect order.** `close/1` returns the context; it does not throw.
+   Generated `throw({:script_end, ctx})` calls implement early exits. Replace them with terminal
+   branches or helper returns, not simple deletion that allows fallthrough. Keep post-close
+   effects such as `savepoint` and `warp` reachable, preserve page/menu boundaries, and retain
+   existing fallback branches and random-choice behavior.
+4. **Keep placements intact.** Preserve module names, scopes, event labels, maps, coordinates,
+   sprites, directions, and unique names. Identical coordinates on different maps are distinct
+   placements, not duplicates to remove. Map renaming is a separate explicit change: check the
+   actual map cache and agree on the mapping first. 
+5. **Keep importer protection intact.** Hand edits are detected by comparing file contents with
+   the manifest's original `output_hash`, not by a comment or a handmade flag. Leave the manifest
+   and its generated hashes unchanged during a hand refactor. Updating a hash to match the edited
+   file would make it overwritable again. `--force` bypasses only the source-unchanged check;
+   edited files still divert to `_conflicts/`. Do not regenerate the corpus as a refactoring step.
+6. **Verify proportionally.** Review dialogue/exit paths, reward and variable changes, and all
+   placement records against the pre-refactor version. Use the existing test coverage and follow
+   the validation gates in the `aesir-workflow` skill; respect requests not to add NPC tests.
+   If edits are delegated, only the coordinating agent runs Mix commands, serially, never
+   concurrent builds or test suites. For documentation-only edits, check formatting and confirm
+   runtime code is unchanged rather than rerunning gameplay suites.
+
 ## The Script DSL (`script/dsl.ex`)
 
 All ops thread a `Script.Ctx` (fields: `char_id`, `account_id`, `game_state`, `source`,
 `npc_gid`, `session_pid`, `vars`, ...). Three families:
 
-- **Blocking dialog primitives** — `mes/2`, `next/1`, `select/2`, `input/3`, `close/1`.
-  These suspend the `Script.Interaction` Task (a supervised coroutine) on a `receive` until
-  the client responds. `close/1` terminates by `throw({:script_end, ctx})`.
+- **Dialog primitives** — `mes/2` buffers text without blocking. `next/1`, `select/2`, and
+  `input/2` flush a page and suspend the `Script.Interaction` Task until the client responds.
+  `close/1` flushes a `CLOSE` frame and returns the context without blocking or throwing;
+  subsequent pipeline effects still run.
 - **Effect ops** `(ctx, args) -> ctx` — `heal`, `sc_start`, `sc_end`, `warp`, `give_item`,
   `delitem`, `pay_zeny`, `set_char_var`, `jobchange`, `savepoint`, `summon_mob`, `npctalk`,
   `emotion`, `specialeffect`, `cutin`, timer ops, `enablenpc`/`disablenpc`, ... Player-state
@@ -113,11 +186,11 @@ Rules that repeatedly bite:
   manifest path blocks the import.
 - `--force` regenerates matching entries even when their source is unchanged (use after
   transpiler/codegen changes); hand-edited outputs still divert to `_conflicts/`.
-- Generated and hand-written files share `content/npc`; this stack did not migrate the checked
-  corpus or manifest. Before any pre-renewal boot or deployment, remove only `output_path` files
-  listed in the current manifest, preserving every other file; remove the manifest; then run one
-  clean no-`--only` all-scope regeneration. Do not delete the directory. The user owns that
-  regeneration after this stack.
+- Generated and hand-written files share `content/npc`. A manifest record alone does not make a
+  file safe to delete: it may have been hand-refactored since generation. For any explicitly
+  approved cleanup, remove only files whose current hash still matches the recorded generated
+  `output_hash`; preserve edited files and their records. Do not delete the directory or discard
+  the manifest to work around conflicts. Corpus regeneration is separate from NPC refactoring.
 - Unsupported buildins become runtime-raising `todo(ctx, :name, args)` stubs. Implementing
   one = add a DSL op + a `CommandMap` entry (or `@call_reads`/`@functions` for reads and
   global callfuncs), then force-regen. Codegen-native reads must also be added to Analyzer
