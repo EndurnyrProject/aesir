@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.16.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.15.0...aesir-v0.16.0) (2026-09-14)
+
+
+### Features
+
+* **guild:** alliance and antagonist request handlers ([87ccc67](https://github.com/EndurnyrProject/aesir/commit/87ccc67df4ec75cc492685cb6a8ec6a5cd30acc6))
+* **guild:** persist guild relations and carry them on guild state ([7be7828](https://github.com/EndurnyrProject/aesir/commit/7be782879024a6d95a0587f3406bc8540bf046c6))
+* **guild:** publish disband on the guild lifecycle topic ([500e611](https://github.com/EndurnyrProject/aesir/commit/500e61156cd223eefada7ef12bbdc49f7c142f44))
+* **guild:** relations service with row-locked alliance writes ([50dbeae](https://github.com/EndurnyrProject/aesir/commit/50dbeaec8abc173f4451cbe2f3ee681ad936dc91))
+* **map:** publish maps-initialized and add the castle mobs boot flag ([b2cf8d7](https://github.com/EndurnyrProject/aesir/commit/b2cf8d729116aefe50a958911ffe575953423805))
+* **mob:** guild ownership and atk/aspd summon bonuses ([27cc8fe](https://github.com/EndurnyrProject/aesir/commit/27cc8fe1c0c03bee0121342cd086b5b49aa07746))
+* **npc-refactor:** Refactoring Pre-Re novice NPCs ([d9f19dc](https://github.com/EndurnyrProject/aesir/commit/d9f19dcc2fd89733f34b5f62bc107fbf33a97f1b))
+* **npc:** exclude castle script directories from the transpiler ([35aae89](https://github.com/EndurnyrProject/aesir/commit/35aae89b3043d413c015644cef9ab55e4c05c051))
+* **npc:** guild identity on npc spawn packets ([767f32f](https://github.com/EndurnyrProject/aesir/commit/767f32ff216c7892a4ca8ac8aebeb4b0bcc130e1))
+* **protocol:** guild alliance messages and relation list in GuildInfo ([07fd08d](https://github.com/EndurnyrProject/aesir/commit/07fd08d7f1e90f8934d6418e65403e19682205ea))
+* **script:** castle economy DSL ops ([4ba1ef7](https://github.com/EndurnyrProject/aesir/commit/4ba1ef757548077d9b4b397560bc72eef55edffb))
+* **script:** castle guardian DSL ops ([d73e87d](https://github.com/EndurnyrProject/aesir/commit/d73e87d53268f9d79c96abc9526bc5bd0a848bbe))
+* **script:** castle kafra dsl ops and getguildmaster ([d6d7478](https://github.com/EndurnyrProject/aesir/commit/d6d74787ce548bbab5dd39cf751865623da56fb5))
+* **skill:** accept mode-keyed definition options and expose definition/1 ([8ad385a](https://github.com/EndurnyrProject/aesir/commit/8ad385afa9a34ee5aa359e1da9c98317aee1185d))
+* **skill:** index the catalog from the booted mode's definitions ([ae1a82b](https://github.com/EndurnyrProject/aesir/commit/ae1a82bfa198473bb39169cd3b09ce62e223485c))
+* **tooling:** add mix aesir.audit.skills static skill data audit ([44a70b5](https://github.com/EndurnyrProject/aesir/commit/44a70b5e450384e6114f37ccc41a3f475c5450c6))
+* **woe:** add guardian slots to the castle db ([be6d6dd](https://github.com/EndurnyrProject/aesir/commit/be6d6ddaf54d3a6aa6016a92baf645ec0112c02d))
+* **woe:** add treasure room cells to the castle db ([41e65c1](https://github.com/EndurnyrProject/aesir/commit/41e65c156142e679df1b74869cbed6b6442ef557))
+* **woe:** allied guilds are friendly in combat, guardian aggro, and siege rules ([bffd8e0](https://github.com/EndurnyrProject/aesir/commit/bffd8e0ff01d1d0349b16eef2a7072eff2658bcb))
+* **woe:** atomic castle release in store and persistence ([8b7f31a](https://github.com/EndurnyrProject/aesir/commit/8b7f31a3a0bbc4a7c54ab159459893b010724782))
+* **woe:** castle economy rules, investment, maturation and emperium scaling ([29e9588](https://github.com/EndurnyrProject/aesir/commit/29e9588ae327b35b07c080cd0687dd12879eb38a))
+* **woe:** castle flag npcs with owner emblems ([47b93e0](https://github.com/EndurnyrProject/aesir/commit/47b93e062278adf91347a80e1f74535bd96dd092))
+* **woe:** castle kafra npc ([42afccf](https://github.com/EndurnyrProject/aesir/commit/42afccff347910fdb56299ff20c113b85e0adc3a))
+* **woe:** castle services lifecycle ([19947d4](https://github.com/EndurnyrProject/aesir/commit/19947d421a9221350a000a5ac6debd000ed5069b))
+* **woe:** castle steward npc with economy and defense investment ([6a717fa](https://github.com/EndurnyrProject/aesir/commit/6a717fac3e9b2420c3c4074f6600cf5041615e9f))
+* **woe:** castle treasure and dungeon lever npcs ([4ca31e9](https://github.com/EndurnyrProject/aesir/commit/4ca31e9b9dc9a0d2be08b3af4e67e818ab35095a))
+* **woe:** daily castle maturation and treasure spawn tick ([548345f](https://github.com/EndurnyrProject/aesir/commit/548345f26a08f06f628bf38831d837b6a4121af4))
+* **woe:** defense-scaled emperium, conquest penalty and treasure slot release ([e40c6fa](https://github.com/EndurnyrProject/aesir/commit/e40c6fa280b8d4f0d6d0d3bfcce6ad665e6e5fa6))
+* **woe:** guardian hiring, scaling, spawn and conquest rules ([1ebc790](https://github.com/EndurnyrProject/aesir/commit/1ebc7909d54d0e365ba01440bf04a13958f48eec))
+* **woe:** owner-aware hostility for guild-owned mobs ([fe4474d](https://github.com/EndurnyrProject/aesir/commit/fe4474dccaa4bd3c736479e0ef1678c7152f6b27))
+* **woe:** persist and store castle economy state ([b7ae65a](https://github.com/EndurnyrProject/aesir/commit/b7ae65a98661c3507dccdb78e2dc0f923b9198c5))
+* **woe:** persist and store castle guardian slots ([d7cbdca](https://github.com/EndurnyrProject/aesir/commit/d7cbdcac66b9ef03fc9f72cc6772e09e3fa195f1))
+* **woe:** persist castle kafra hire flag ([720b17c](https://github.com/EndurnyrProject/aesir/commit/720b17cc31c67eaa2902ef3b6681e17b8c35b267))
+* **woe:** release castles on disband and seed unowned castles ([d706779](https://github.com/EndurnyrProject/aesir/commit/d7067794cf38d660f5beb186f3271a0a3d1526a9))
+* **woe:** services release hook ([b6b7ee7](https://github.com/EndurnyrProject/aesir/commit/b6b7ee766ede8c75fe68ebbb29d812d152873abc))
+* **woe:** spawn, release and transfer guardians in the siege lifecycle ([33b9e75](https://github.com/EndurnyrProject/aesir/commit/33b9e75a68567dce4c5d1d3a4e2da03e457981c8))
+* **woe:** steward kafra hire and master's room ([8c85109](https://github.com/EndurnyrProject/aesir/commit/8c851099da06e62e74f5568fa00e67672205febf))
+* **woe:** steward summon guardian menu ([af351fc](https://github.com/EndurnyrProject/aesir/commit/af351fc8b070ba748de1b6b78c66e42d761fa864))
+* **woe:** treasure box planner and live-slot table ([28a1800](https://github.com/EndurnyrProject/aesir/commit/28a180029893aecea830d638946a0ccc26be7cd9))
+* **woe:** unowned-castle mob sets with seed and wipe ([9bc91fd](https://github.com/EndurnyrProject/aesir/commit/9bc91fdb7b5c7c1c54137fc213530c9fbad27da2))
+
+
+### Bug Fixes
+
+* **guild:** alliance follow-ups from final review ([469b5b2](https://github.com/EndurnyrProject/aesir/commit/469b5b21f1738ad4eeb5026113c1bf8c48ae3460))
+* **mob:** floor zero-hp rows to 1 and support summon stat bonuses ([4d3878f](https://github.com/EndurnyrProject/aesir/commit/4d3878fb9f0beccabbb615b48433316e74bb4177))
+* **mob:** kill_all returns ok for a map without a supervisor ([61763c8](https://github.com/EndurnyrProject/aesir/commit/61763c830ababf843977c6bf8910a834a6b68887))
+* **spec:** Fixed dialyzer spec ([03400ef](https://github.com/EndurnyrProject/aesir/commit/03400ef4f7ca8374ec29c0b5fc1fe12a41912f6f))
+* **woe:** castle release follow-ups from final review ([553e236](https://github.com/EndurnyrProject/aesir/commit/553e236790cc62c32585e734a77fe3e639720e6f))
+* **woe:** guardian follow-ups from final review ([8bac735](https://github.com/EndurnyrProject/aesir/commit/8bac735b186462b6e0bf6b6a7b55df5d044c0e3a))
+
 ## [0.15.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.14.0...aesir-v0.15.0) (2026-09-08)
 
 
