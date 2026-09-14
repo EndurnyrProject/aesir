@@ -16,11 +16,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
   import Bitwise
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.UnequipResult
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.ItemManagement.Eligibility
   alias Aesir.ZoneServer.Mmo.ItemManagement.EquipLocation
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -36,6 +38,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   alias Aesir.ZoneServer.Unit.Player.InventoryView
   alias Aesir.ZoneServer.Unit.Player.PlayerEvents
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.SkillListView
   alias Aesir.ZoneServer.Unit.Player.StateCommit
   alias Aesir.ZoneServer.Unit.Player.Stats
@@ -97,6 +100,36 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   end
 
   @doc """
+  Unequips every worn item disallowed by a proposed character identity.
+
+  The proposed context is used only for eligibility checks. The session's
+  current job, level, and sex remain authoritative until the caller commits its
+  separate progression change.
+  """
+  @spec recheck_requirements(Eligibility.context(), SessionState.t()) ::
+          {:ok, SessionState.t()} | {:error, term()}
+  def recheck_requirements(context, %{game_state: game_state} = state) do
+    case Inventory.ineligible_equipment(game_state.inventory, context, GameMode.mode()) do
+      {:ok, []} ->
+        {:ok, state}
+
+      {:ok, indices} ->
+        with {:ok, persisted} <-
+               InventoryOps.unequip_many(
+                 game_state.character_id,
+                 game_state.inventory,
+                 indices
+               ) do
+          acknowledge = unequip_acknowledger(indices, game_state.inventory, state)
+          {:ok, sync_committed_inventory(game_state, persisted, indices, state, acknowledge)}
+        end
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
   Force-unequips the item in `slot`, then applies the matching Divest status.
   """
   @spec handle_strip(atom(), keyword(), map()) :: {:noreply, map()}
@@ -133,7 +166,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
          state
        ) do
     %{game_state: game_state} = state
-    old_equipment = game_state.stats.equipment
 
     case InventoryOps.apply_change(
            game_state.character_id,
@@ -144,26 +176,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
       {:ok, persisted} ->
         persisted = maybe_bind_on_equip(persisted, index, game_state.character_id, state)
 
-        if weapon_unequipped?(game_state.inventory, unequipped) do
-          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
+        acknowledge = fn ->
+          send_packet(state, equip_success_result(server_index, mask))
+          Enum.each(unequipped, &send_packet(state, unequip_success_result(&1, 0)))
         end
 
-        updated_game_state = advance(game_state, persisted)
+        state =
+          sync_committed_inventory(game_state, persisted, unequipped, state, acknowledge)
 
-        if shield_removed?(game_state.inventory, unequipped, updated_game_state.stats.equipment) do
-          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
-        end
-
-        send_packet(state, equip_success_result(server_index, mask))
-        Enum.each(unequipped, &send_packet(state, unequip_success_result(&1, 0)))
-
-        sync_after_change(updated_game_state, state)
-        maybe_refresh_skill_list(state, game_state.stats, updated_game_state)
-        notify_appearance(state, old_equipment, updated_game_state)
-        enforce_weapon_requirements(updated_game_state)
-
-        state = StateCommit.commit(state, updated_game_state)
-        PlayerEvents.inventory_changed(updated_game_state.character_id)
         {:noreply, state}
 
       {:error, reason} ->
@@ -176,7 +196,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   defp commit_unequip(server_index, new_inventory, change, state) do
     %{game_state: game_state} = state
     mask = unequipped_mask(game_state.inventory, server_index)
-    old_equipment = game_state.stats.equipment
 
     case InventoryOps.apply_change(
            game_state.character_id,
@@ -185,24 +204,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
            change
          ) do
       {:ok, persisted} ->
-        if right_hand?(mask) do
-          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
-        end
+        acknowledge = fn -> send_packet(state, unequip_success_result(server_index, mask)) end
 
-        updated_game_state = advance(game_state, persisted)
+        state =
+          sync_committed_inventory(game_state, persisted, [server_index], state, acknowledge)
 
-        if left_hand?(mask) and not Stats.shield?(updated_game_state.stats.equipment) do
-          remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
-        end
-
-        send_packet(state, unequip_success_result(server_index, mask))
-        sync_after_change(updated_game_state, state)
-        maybe_refresh_skill_list(state, game_state.stats, updated_game_state)
-        notify_appearance(state, old_equipment, updated_game_state)
-        enforce_weapon_requirements(updated_game_state)
-
-        state = StateCommit.commit(state, updated_game_state)
-        PlayerEvents.inventory_changed(updated_game_state.character_id)
         {:noreply, state}
 
       {:error, reason} ->
@@ -213,6 +219,39 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
         send_packet(state, unequip_failure_result(server_index))
         {:noreply, state}
     end
+  end
+
+  defp unequip_acknowledger(indices, inventory, state) do
+    fn ->
+      Enum.each(indices, fn index ->
+        mask = unequipped_mask(inventory, index)
+        send_packet(state, unequip_success_result(index, mask))
+      end)
+    end
+  end
+
+  defp sync_committed_inventory(game_state, persisted, removed, state, acknowledge) do
+    old_equipment = game_state.stats.equipment
+
+    if weapon_unequipped?(game_state.inventory, removed) do
+      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_weapon)
+    end
+
+    updated_game_state = advance(game_state, persisted)
+
+    if shield_removed?(game_state.inventory, removed, updated_game_state.stats.equipment) do
+      remove_statuses_with_flag(game_state.character_id, :remove_on_unequip_shield)
+    end
+
+    acknowledge.()
+    sync_after_change(updated_game_state, state)
+    maybe_refresh_skill_list(state, game_state.stats, updated_game_state)
+    notify_appearance(state, old_equipment, updated_game_state)
+    enforce_weapon_requirements(updated_game_state)
+
+    state = StateCommit.commit(state, updated_game_state)
+    PlayerEvents.inventory_changed(updated_game_state.character_id)
+    state
   end
 
   @spec maybe_bind_on_equip(InventoryOps.inventory(), non_neg_integer(), integer(), map()) ::
