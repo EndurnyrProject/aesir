@@ -201,9 +201,6 @@ Rules that repeatedly bite:
 
 ## Testing
 
-Mirror the existing end-to-end tests (`test/integration/npc_events_integration_test.exs`,
-quest/warp integration tests). Sharp edge: `IntegrationCase.setup_ets_tables/1` shares the
-boot-time UnitRegistry/SpatialIndex with the live prontera Coordinator — movement/warp
-scenarios must isolate via `Aesir.TestEtsSetup.setup_ets_tables/1`. Var tests need
-`DataCase` + `setup_ets_tables` (`dsl_vars_test.exs` is the model). Known timing flakes in
-`npc_events_integration_test.exs` are ignorable when they pass in isolation.
+- Do **NOT** create unit or integration tests for NPCs, its not needed and it slows down
+our suite a LOT.
+
