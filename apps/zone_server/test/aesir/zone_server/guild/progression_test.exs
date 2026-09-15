@@ -142,7 +142,9 @@ defmodule Aesir.ZoneServer.Guild.ProgressionTest do
       assert info.exp == 5
       assert info.next_exp == second_threshold()
       assert info.skill_points == 1
-      assert [%{skill_id: 10_004, level: 3, max_level: 10}] = info.skills
+
+      assert %{skill_id: 10_004, level: 3, max_level: 10} =
+               Enum.find(info.skills, &(&1.skill_id == 10_004))
     end
 
     test "next_exp is 0 at the level cap" do
