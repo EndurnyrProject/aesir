@@ -51,6 +51,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.RentalExpiry
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SocialHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SpiritExchangeHandler
@@ -721,8 +722,15 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   end
 
   @impl true
+  def handle_info(:progression_changed, state) do
+    SkillLearningHandler.refresh_skill_list(state)
+    QuestInfoView.request_refresh()
+    {:noreply, state}
+  end
+
+  @impl true
   def handle_info(event, state)
-      when event in [:progression_changed, :quest_changed, :vars_changed] do
+      when event in [:quest_changed, :vars_changed] do
     QuestInfoView.request_refresh()
     {:noreply, state}
   end

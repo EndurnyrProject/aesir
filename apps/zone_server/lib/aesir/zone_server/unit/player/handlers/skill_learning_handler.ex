@@ -47,6 +47,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
     end
   end
 
+  @doc "Refreshes skill eligibility after progression changes, preserving granted and copied skills."
+  @spec refresh_skill_list(map()) :: :ok
+  def refresh_skill_list(%{connection_pid: connection_pid, game_state: game_state}) do
+    MessageRouter.send_to(connection_pid, SkillListView.build(game_state))
+  end
+
   defp commit(skill_id, progression, state, game_state) do
     char_id = game_state.character_id
 
