@@ -11,6 +11,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
   alias Aesir.ZoneServer.Map.MapFlags
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.BattleFlags
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -29,6 +30,7 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
   @duration 60_000
 
   setup do
+    Mimic.copy(HitCalculations)
     Mimic.copy(ItemManagement)
     Mimic.copy(StatusInterpreter)
     items = item_definitions()
@@ -46,6 +48,8 @@ defmodule Aesir.ZoneServer.Integration.EquipAutobonusIntegrationTest do
   setup {Aesir.MimicMode, :global}
 
   test "normal attack activates attacker and defender registrations in their owning sessions" do
+    expect(HitCalculations, :calculate_hit_result, fn _attacker, _target -> :hit end)
+
     attacker_character = insert_character("ProcAtk", %{dex: 99, luk: 0})
     defender_character = insert_character("ProcDef", %{agi: 0, luk: 0})
     attacker_row = seed_item(attacker_character.id, @attacker_item)
