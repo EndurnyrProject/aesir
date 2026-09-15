@@ -44,6 +44,10 @@ defmodule Aesir.ZoneServer.Guild.Progression.Data do
   @spec skill_entry(non_neg_integer()) :: {:ok, skill_entry()} | :error
   def skill_entry(skill_id), do: Map.fetch(index().skills_by_id, skill_id)
 
+  @doc "Returns every guild skill entry in the active mode's learnable tree."
+  @spec skill_entries() :: %{non_neg_integer() => skill_entry()}
+  def skill_entries, do: index().skills_by_id
+
   @doc """
   Rebuilds the cached index after editing the data files in a running session.
   """

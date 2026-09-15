@@ -81,12 +81,19 @@ defmodule Aesir.ZoneServer.Guild.View do
   end
 
   defp skills(learned_skills) do
-    learned_skills
+    skill_entries = Data.skill_entries()
+
+    skill_entries
+    |> Map.keys()
+    |> Kernel.++(Map.keys(learned_skills))
+    |> Enum.uniq()
     |> Enum.sort()
-    |> Enum.map(fn {skill_id, level} ->
+    |> Enum.map(fn skill_id ->
+      level = Map.get(learned_skills, skill_id, 0)
+
       max_level =
-        case Data.skill_entry(skill_id) do
-          {:ok, %{max_level: max_level}} -> max_level
+        case Map.fetch(skill_entries, skill_id) do
+          {:ok, entry} -> Map.fetch!(entry, :max_level)
           :error -> level
         end
 
