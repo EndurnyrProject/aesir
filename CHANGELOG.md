@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.17.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.16.0...aesir-v0.17.0) (2026-09-15)
+
+
+### Features
+
+* **equipment:** revalidate worn items with atomic cleanup ([ab086a6](https://github.com/EndurnyrProject/aesir/commit/ab086a69f477065eaf068a9ac75b55e4df882055))
+* **inventory:** persist unequip batches atomically ([1ca4ed8](https://github.com/EndurnyrProject/aesir/commit/1ca4ed8d7c6aa64a1bb3443bf91657cdaa5557f5))
+* **items:** define canonical item job identities ([a614640](https://github.com/EndurnyrProject/aesir/commit/a614640a79a56a4688248511ece948cd528f4bc9))
+* **items:** import and enforce canonical equip restrictions ([93c5ab5](https://github.com/EndurnyrProject/aesir/commit/93c5ab5e7c13d34752a6dcc633596eb4834d4a4b))
+* **items:** revalidate equipment before player login ([4bd1b6f](https://github.com/EndurnyrProject/aesir/commit/4bd1b6f3a69394199916d19fcb2792b419d1b6f0))
+* **items:** validate restrictions before consumable effects ([c886f5b](https://github.com/EndurnyrProject/aesir/commit/c886f5be59519969e7e491326f065d9212b16239))
+
+
+### Bug Fixes
+
+* **guild:** expose unlearned guild skills ([7e12259](https://github.com/EndurnyrProject/aesir/commit/7e122595662876c62aa86217a1bd4591867af92f))
+* **progression:** require equipment cleanup before job changes ([f45c559](https://github.com/EndurnyrProject/aesir/commit/f45c559f697486a073174b7cd99aea5e2d109dcb))
+
 ## [0.16.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.15.0...aesir-v0.16.0) (2026-09-14)
 
 
