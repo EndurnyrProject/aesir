@@ -161,7 +161,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
       args: [:string, :int, :int, :int, :int, :string, :int, :int, :int, :int]
     },
     "savepoint" => %{shape: :savepoint},
-    "jobchange" => %{dsl: "jobchange", args: [:int]},
+    "jobchange" => %{dsl: "jobchange", args: [:job]},
     "itemskill" => %{dsl: "itemskill", args: [:skill_opts]},
     "donpcevent" => %{shape: :ref1, dsl: "donpcevent"},
     "doevent" => %{shape: :ref1, dsl: "doevent"},
@@ -212,10 +212,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
   }
 
   # Global rAthena functions (`callfunc "Name"`) mapped onto DSL primitives.
-  # `:command` emits `dsl(ctx, args…)` in statement position; `:read` emits
-  # `dsl(ctx)` in expression position.
+  # `:command` emits `dsl(ctx, args…)` in statement position through the same
+  # typed-argument path as `@commands`, so it must declare `args:`; `:read`
+  # emits `dsl(ctx)` in expression position.
   @functions %{
-    "Job_Change" => %{kind: :command, dsl: "jobchange"},
+    "Job_Change" => %{kind: :command, dsl: "jobchange", args: [:job]},
     "F_CanChangeJob" => %{kind: :read, dsl: "can_change_job?"},
     "F_GetNumSuffix" => %{kind: :read, dsl: "num_suffix"},
     "F_InsertComma" => %{kind: :read, dsl: "insert_comma"},
@@ -232,6 +233,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMap do
     "BaseJob" => "base_job",
     "BaseLevel" => "base_level",
     "JobLevel" => "job_level",
+    "Upper" => "upper",
+    "SkillPoint" => "skill_point",
     "Class" => "class",
     "Sex" => "sex",
     "Hp" => "hp",

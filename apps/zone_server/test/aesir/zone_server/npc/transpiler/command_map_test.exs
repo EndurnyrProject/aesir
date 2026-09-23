@@ -19,6 +19,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CommandMapTest do
 
   test "reads and call reads" do
     assert {:ok, "base_level"} = CommandMap.read("BaseLevel")
+    assert {:ok, "upper"} = CommandMap.read("Upper")
+    assert {:ok, "skill_point"} = CommandMap.read("SkillPoint")
     assert {:ok, %{dsl: "count_item"}} = CommandMap.call_read("countitem")
 
     assert {:ok, %{dsl: "getguildname", args: [:int]}} =

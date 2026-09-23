@@ -1023,14 +1023,14 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   # generated helper. Static helper targets stay direct; only a shared caller
   # targeting overlays emits a runtime mode branch.
   defp emit_stmt({:cmd, "callfunc", [{:str, fname} | args]}, env) do
-    {pre, args} = hoist_all(args, env)
-    rendered = Enum.map_join(args, ", ", &render(&1, env))
-
     case CommandMap.function(fname) do
-      {:ok, %{kind: :command, dsl: dsl}} ->
-        {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
+      {:ok, %{kind: :command} = rule} ->
+        emit_mapped(fname, rule, args, env)
 
       _command_map ->
+        {pre, args} = hoist_all(args, env)
+        rendered = Enum.map_join(args, ", ", &render(&1, env))
+
         case helper_target(env, fname, rendered) do
           {:ok, call} ->
             {pre ++ ["{ctx, _} = #{call}"], :cont}
@@ -1054,10 +1054,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         emit_mapped(name, rule, args, env)
 
       match?({:ok, %{kind: :command}}, CommandMap.function(name)) ->
-        {:ok, %{dsl: dsl}} = CommandMap.function(name)
-        {pre, args} = hoist_all(args, env)
-        rendered = Enum.map_join(args, ", ", &render(&1, env))
-        {pre ++ ["ctx = #{dsl}(ctx, #{rendered})"], :cont}
+        {:ok, rule} = CommandMap.function(name)
+        emit_mapped(name, rule, args, env)
 
       true ->
         {pre, args} = hoist_all(args, env)
@@ -1741,6 +1739,15 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
     case Resolver.cell_type(s) do
       {:ok, atom} -> ":" <> Atom.to_string(atom)
       :error -> const_todo(s)
+    end
+  end
+
+  # A `Job_*` constant handed to a job-taking op stays the job atom; every
+  # other job expression (a variable, an arithmetic result) renders as usual.
+  defp typed_arg({:name, "Job_" <> _ = symbol}, :job, _env) do
+    case Resolver.constant(symbol) do
+      {:ok, atom} -> atom
+      :error -> const_todo(symbol)
     end
   end
 
@@ -2448,6 +2455,11 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render({:var, _, _, _} = var, _env), do: read_var(var, var_default(var), nil)
 
+  # Char vars store job ids as integers, so a job constant in value position
+  # (assignment, argument, arithmetic) is numeric; only `:job` typed arguments
+  # keep the atom.
+  defp render({:name, "Job_" <> _} = expr, env), do: render_job_id(expr, env)
+
   defp render({:name, name}, env) do
     with :error <- read_name(name),
          :error <- Resolver.constant(name) do
@@ -2692,6 +2704,17 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
 
   defp render_numeric({:name, "Job_" <> _} = expr, env), do: render_job_id(expr, env)
   defp render_numeric(expr, env), do: render(expr, env)
+
+  defp render_job_id({:name, "Job_" <> _ = symbol}, _env) do
+    case Resolver.constant(symbol) do
+      {:ok, atom} ->
+        flag(:rathena)
+        "Rathena.job_id(#{atom})"
+
+      :error ->
+        const_todo(symbol)
+    end
+  end
 
   defp render_job_id(expr, env) do
     flag(:rathena)

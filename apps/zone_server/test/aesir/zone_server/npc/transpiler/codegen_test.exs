@@ -1164,6 +1164,26 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
     refute src =~ ~S|Todo.call!(:callfunc, ["Job_Change"|
   end
 
+  test "Upper and SkillPoint are native reads, not char vars" do
+    src = gen!("if (Upper == 1 || SkillPoint) close;")
+
+    assert src =~ "upper(ctx) == 1"
+    assert src =~ "Rathena.truthy?(skill_point(ctx))"
+    refute src =~ "get_char_var(ctx, :Upper"
+    refute src =~ "get_char_var(ctx, :SkillPoint"
+  end
+
+  test "job constants assigned to a variable use numeric ids" do
+    src = gen!("set ADVJOB, Job_Lord_Knight;")
+
+    assert src =~ "set_char_var(ctx, :ADVJOB, Rathena.job_id(:lord_knight))"
+  end
+
+  test "jobchange keeps the job atom for a constant and the read for a variable" do
+    assert gen!("jobchange Job_Swordman_High;") =~ "jobchange(ctx, :swordman_high)"
+    assert gen!("jobchange .@job;") =~ "jobchange(ctx, get_local(ctx, :job, 0))"
+  end
+
   test "job values use numeric ids in arithmetic expressions" do
     src = gen!("set ADVJOB, Class + Job_Novice_High;")
 
