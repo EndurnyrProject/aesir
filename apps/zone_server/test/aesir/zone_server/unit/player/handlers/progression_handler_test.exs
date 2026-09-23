@@ -53,6 +53,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
   @swordman_id swordman_id
   {:ok, swordman_high_id} = AvailableJobs.job_name_to_id(:swordman_high)
   @swordman_high_id swordman_high_id
+  {:ok, lord_knight_id} = AvailableJobs.job_name_to_id(:lord_knight)
+  @lord_knight_id lord_knight_id
   {:ok, baby_swordman_id} = AvailableJobs.job_name_to_id(:baby_swordman)
   @baby_swordman_id baby_swordman_id
   {:ok, merchant_id} = AvailableJobs.job_name_to_id(:merchant)
@@ -301,6 +303,55 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       end)
 
       assert {:ok, _new_state} = ProgressionHandler.apply_job_change(@knight_id, state)
+    end
+  end
+
+  describe "apply_job_change/2 transcendent status points" do
+    test "entering a transcendent class from a normal one adds 52" do
+      state = state_with(job_id: @knight_id, status_point: 10)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@novice_high_id, state)
+      assert new_state.game_state.stats.progression.status_point == 62
+
+      state = state_with(job_id: @knight_id, status_point: 10)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@lord_knight_id, state)
+      assert new_state.game_state.stats.progression.status_point == 62
+    end
+
+    test "leaving a transcendent class removes up to 52, floored at zero" do
+      state = state_with(job_id: @swordman_high_id, status_point: 60)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      assert new_state.game_state.stats.progression.status_point == 8
+
+      state = state_with(job_id: @swordman_high_id, status_point: 10)
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_id, state)
+      assert new_state.game_state.stats.progression.status_point == 0
+    end
+
+    test "moving between transcendent classes keeps the pool, skill points, and quest skills" do
+      trick_dead = catalog_id(:nv_trickdead)
+
+      state =
+        state_with(
+          job_id: @novice_high_id,
+          job_level: 10,
+          job_exp: 500,
+          status_point: 37,
+          skill_point: 4,
+          learned_skills: %{trick_dead => 1}
+        )
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@swordman_high_id, state)
+      progression = new_state.game_state.stats.progression
+
+      assert progression.status_point == 37
+      assert progression.skill_point == 4
+      assert progression.learned_skills[trick_dead] == 1
+      assert progression.job_level == 1
+      assert progression.job_exp == 0
     end
   end
 
@@ -880,7 +931,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
   describe "reset_stats/1" do
     @tag game_mode: :renewal
-    test "on a level-210 dragon_knight resets classic to 1, trait to 0, restores pools with +7" do
+    test "on a level-210 dragon_knight resets classic to 1, trait to 0, restores pools with +52 and +7" do
       state = state_with(job_id: @dragon_knight_id, base_level: 210)
 
       assert {:ok, new_state} = ProgressionHandler.reset_stats(state)
@@ -900,7 +951,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert stats.base_stats.con == 0
       assert stats.base_stats.crt == 0
 
-      assert stats.progression.status_point == StatPoint.points_at(210)
+      assert stats.progression.status_point == StatPoint.points_at(210) + 52
       assert stats.progression.trait_point == StatPoint.trait_points_at(210) + 7
     end
 
@@ -953,6 +1004,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       str = StatusParams.str()
       assert_received {:send, _channel, {:param_change, %ParamChange{var_id: ^str, value: 1}}}
+    end
+  end
+
+  describe "reset_stats/1 transcendent bonus" do
+    test "a transcendent job gets the table points plus 52" do
+      state = state_with(job_id: @novice_high_id, base_level: 60)
+
+      assert {:ok, new_state} = ProgressionHandler.reset_stats(state)
+      assert new_state.game_state.stats.progression.status_point == StatPoint.points_at(60) + 52
+    end
+
+    test "a normal job gets the table points only" do
+      state = state_with(job_id: @novice_id, base_level: 60)
+
+      assert {:ok, new_state} = ProgressionHandler.reset_stats(state)
+      assert new_state.game_state.stats.progression.status_point == StatPoint.points_at(60)
     end
   end
 

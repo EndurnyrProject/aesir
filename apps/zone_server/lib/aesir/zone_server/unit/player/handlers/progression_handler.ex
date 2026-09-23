@@ -29,6 +29,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -56,6 +57,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
   # Job ids that require a specific character sex to change into.
   @required_sex %{19 => "M", 20 => "F"}
+
+  # Extra status points every transcendent character holds on top of the
+  # level table (100 at level 1 is the table's 48 plus this bonus).
+  @transcendent_status_points 52
 
   @doc """
   Adds `amount` base levels, clamped to the job's `max_base_level`. Grants the
@@ -238,7 +243,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   @doc """
   Resets the player's stat allocation (rAthena `resetstate` / `@resetstat`):
   classic stats (STR..LUK) drop to `1` and `status_point` is restored to
-  `StatPoint.points_at(base_level)`; trait stats (POW..CRT) drop to `0` and
+  `StatPoint.points_at(base_level)` plus the flat `+52` transcendent bonus when
+  the character holds a transcendent job; trait stats (POW..CRT) drop to `0` and
   `trait_point` is restored to `StatPoint.trait_points_at(base_level)` plus the
   flat `+7` trait-job grant when the character currently holds a trait job.
   Recomputes stats, clamps vitals (a lower VIT/INT can drop max HP/SP below the
@@ -253,7 +259,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     new_progression = %{
       progression
-      | status_point: StatPoint.points_at(base_level),
+      | status_point: StatPoint.points_at(base_level) + transcendent_reset_bonus(job_id),
         trait_point: StatPoint.trait_points_at(base_level) + trait_reset_bonus(job_id)
     }
 
@@ -313,6 +319,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
   defp trait_reset_bonus(job_id) do
     if TraitJobs.trait_job?(job_id), do: 7, else: 0
+  end
+
+  defp transcendent_reset_bonus(job_id) do
+    if JobLineage.transcendent?(job_id), do: @transcendent_status_points, else: 0
   end
 
   defp do_reset_level(type, state, game_state) do
@@ -520,6 +530,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
         learned_skills: kept_skills,
         job_level: 1,
         job_exp: 0,
+        status_point: adjust_transcendent_point(progression.status_point, old_job_id, job_id),
         trait_point: adjust_trait_point(progression.trait_point, old_job_id, job_id)
     }
 
@@ -545,6 +556,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
 
     {kept, dropped} = Map.split(learned_skills, kept_ids)
     {kept, Map.keys(dropped)}
+  end
+
+  # Grant +52 on entering a transcendent class from a normal one; take up to 52
+  # back when leaving one (floored at zero rather than forcing a full stat
+  # reset, the same simplification `adjust_trait_point/3` makes).
+  @spec adjust_transcendent_point(non_neg_integer(), non_neg_integer(), non_neg_integer()) ::
+          non_neg_integer()
+  defp adjust_transcendent_point(status_point, old_job_id, new_job_id) do
+    cond do
+      JobLineage.transcendent?(new_job_id) and not JobLineage.transcendent?(old_job_id) ->
+        status_point + @transcendent_status_points
+
+      JobLineage.transcendent?(old_job_id) and not JobLineage.transcendent?(new_job_id) ->
+        max(status_point - @transcendent_status_points, 0)
+
+      true ->
+        status_point
+    end
   end
 
   # Grant +7 on entering a trait job from a non-trait job (row 24); zero the pool
