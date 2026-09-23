@@ -206,9 +206,11 @@ defmodule Aesir.ZoneServer.Script.Dsl.Skills do
 
   The session keeps `max(existing, requested)` as the learned level and never
   spends or refunds a skill point, so a repeat or lower-level grant is a
-  no-op. Halts `:unknown_skill`, `:invalid_level`, or `:not_grantable` (a
-  definition without quest-grant metadata) without mutation; halts
-  `:no_player` on a detached ctx.
+  no-op. A `level` of `0` removes the skill instead, which job-change scripts
+  use to strip a platinum skill; removing an unlearned skill is a no-op.
+  Halts `:unknown_skill`, `:invalid_level`, or `:not_grantable` (a definition
+  without quest-grant metadata) without mutation; halts `:no_player` on a
+  detached ctx.
   """
   @spec skill(Ctx.t(), integer() | atom(), integer(), integer() | atom()) :: Ctx.t()
   def skill(%Ctx{status: {:error, _}} = ctx, _skill, _level, _flag), do: ctx

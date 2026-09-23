@@ -38,10 +38,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GrantTest do
       assert Grant.grant(%{}, :bogus_skill, 1) == {:error, :unknown_skill}
     end
 
-    test "returns :invalid_level below 1" do
+    test "returns :invalid_level for a negative level" do
       stub(Catalog, :by_id, fn 9001 -> {:ok, quest_definition()} end)
 
-      assert Grant.grant(%{}, 9001, 0) == {:error, :invalid_level}
+      assert Grant.grant(%{}, 9001, -1) == {:error, :invalid_level}
+    end
+
+    test "level 0 removes a learned quest skill" do
+      stub(Catalog, :by_id, fn 9001 -> {:ok, quest_definition()} end)
+
+      assert Grant.grant(%{9001 => 1, 42 => 3}, 9001, 0) == {:ok, %{42 => 3}}
+    end
+
+    test "level 0 on an unlearned skill is a no-op" do
+      stub(Catalog, :by_id, fn 9001 -> {:ok, quest_definition()} end)
+
+      assert Grant.grant(%{42 => 3}, 9001, 0) == {:ok, %{42 => 3}}
+    end
+
+    test "level 0 still rejects unknown and non-quest skills" do
+      stub(Catalog, :by_id, fn
+        9001 -> {:ok, quest_definition(quest_skill: false, quest_owner_job: nil)}
+        _other -> :error
+      end)
+
+      assert Grant.grant(%{9001 => 1}, 9001, 0) == {:error, :not_grantable}
+      assert Grant.grant(%{}, 999_999, 0) == {:error, :unknown_skill}
     end
 
     test "returns :invalid_level above max_level" do
@@ -106,7 +128,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.GrantTest do
       stub(Catalog, :by_id, fn 9001 -> {:ok, quest_definition()} end)
 
       learned = %{1 => 10, 9001 => 2}
-      assert Grant.grant(learned, 9001, 0) == {:error, :invalid_level}
+      assert Grant.grant(learned, 9001, -1) == {:error, :invalid_level}
     end
   end
 

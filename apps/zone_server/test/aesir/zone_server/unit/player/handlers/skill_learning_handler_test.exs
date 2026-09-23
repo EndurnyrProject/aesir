@@ -415,7 +415,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandlerTest do
 
       state = swordman_state(3, %{})
 
-      assert SkillLearningHandler.grant_skill(9001, 0, state) == {:error, :invalid_level}
+      assert SkillLearningHandler.grant_skill(9001, -1, state) == {:error, :invalid_level}
     end
 
     test "returns a not_grantable error for a non-quest definition and mutates nothing" do

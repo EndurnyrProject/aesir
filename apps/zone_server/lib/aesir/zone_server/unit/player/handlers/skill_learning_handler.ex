@@ -86,9 +86,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler do
 
   Resolves and validates the grant through `Mmo.Skill.Grant`, keeping the
   greater of the existing and requested learned level (idempotent - a repeat
-  or lower-level grant leaves the level unchanged), persists the updated
-  `learned_skills`, and pushes a refreshed `SkillList` to the client. Spends
-  and refunds no skill points, so no `ParamChange` is sent, and every other
+  or lower-level grant leaves the level unchanged; level `0` removes the
+  skill), persists the updated `learned_skills`, and pushes a refreshed
+  `SkillList` to the client. Spends and refunds no skill points, so no
+  `ParamChange` is sent, and every other
   learned skill is left untouched.
 
   Returns `{:error, reason}` without mutating `state` when the skill is
