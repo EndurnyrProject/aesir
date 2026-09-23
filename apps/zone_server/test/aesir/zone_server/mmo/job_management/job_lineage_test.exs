@@ -52,4 +52,18 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineageTest do
       )
     end
   end
+
+  describe "transcendent?/1" do
+    test "is true for Novice High and every job descending from it" do
+      for job_id <- [4001, 4002, 4008, 4014, 4015, 4060] do
+        assert JobLineage.transcendent?(job_id), "expected #{job_id} to be transcendent"
+      end
+    end
+
+    test "is false for normal, baby, non-transcendent third, and unknown jobs" do
+      for job_id <- [0, 7, 4023, 4054, 999_999] do
+        refute JobLineage.transcendent?(job_id), "expected #{job_id} not to be transcendent"
+      end
+    end
+  end
 end

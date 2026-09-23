@@ -69,7 +69,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
   # `bonus bAllStats,n` grants n to each of the six primary stats only; the
   # trait stats (POW/STA/WIS/SPL/CON/CRT) have their own `bAllTraitStats`.
   @primary_stats [:str, :agi, :vit, :int, :dex, :luk]
-  @novice_high_job_id 4001
   @ranged_weapons [:bow, :musical, :whip, :revolver, :rifle, :gatling, :shotgun, :grenade]
 
   defmodule PlayerProgression do
@@ -960,7 +959,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
         job_stats = get_job_stats_for_level(job_name, base_level)
 
         # Calculate HP/SP with modifiers
-        transcendent? = transcendent_job?(stats.progression.job_id)
+        transcendent? = JobLineage.transcendent?(stats.progression.job_id)
 
         max_hp =
           calculate_max_hp(
@@ -1429,9 +1428,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
       transcendent?: transcendent?
     })
   end
-
-  defp transcendent_job?(job_id),
-    do: JobLineage.descendant_or_self?(job_id, @novice_high_job_id)
 
   # Percentage bonuses that accumulate as a delta off 100 (`bAtkRate`,
   # `bMatkRate`). Zero is the common case and must be exact, not a float round-trip.

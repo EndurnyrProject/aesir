@@ -15,6 +15,8 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.Jobs
 
+  @novice_high_job_id 4001
+
   @parents %{
     swordman: [:novice],
     mage: [:novice],
@@ -305,6 +307,14 @@ defmodule Aesir.ZoneServer.Mmo.JobManagement.JobLineage do
       job -> job
     end
   end
+
+  @doc """
+  Whether `job_id` is Novice High or descends from it: the transcendent first
+  jobs, transcendent second jobs, and their third and fourth job lines. Baby
+  jobs and unknown ids are not transcendent.
+  """
+  @spec transcendent?(integer()) :: boolean()
+  def transcendent?(job_id), do: descendant_or_self?(job_id, @novice_high_job_id)
 
   @doc "Returns true when `job_id` is the owner job or one of its descendants."
   @spec descendant_or_self?(integer(), integer()) :: boolean()
