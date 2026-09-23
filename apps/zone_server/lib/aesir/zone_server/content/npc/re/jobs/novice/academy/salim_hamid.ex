@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid do
       end
 
     ctx =
-      if base_level(ctx) > 15 or class(ctx) != :novice do
+      if base_level(ctx) > 15 or Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) do
         ctx =
           ctx
           |> cutin("aca_salim01", 2)

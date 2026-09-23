@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue96205 do
   """
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
-
+  alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue96205 do
 
   def ev_ontouch(ctx) do
     ctx =
-      if base_job(ctx) == :thief do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
         ctx
         |> donpcevent("mob_rogue#7::OnDisable")
         |> donpcevent("mob_rogue#8::OnDisable")

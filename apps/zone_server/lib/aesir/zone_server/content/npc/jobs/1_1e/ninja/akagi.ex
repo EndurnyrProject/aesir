@@ -11,9 +11,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.Akagi do
     scope: :shared,
     spawn: [%{map: "alberta", x: 30, y: 65, dir: 3, sprite: 730, name: "Akagi", scope: :shared}]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
-    if class(ctx) == :novice do
+    if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
       if job_level(ctx) == 10 do
         {ctx, v1} =
           ctx

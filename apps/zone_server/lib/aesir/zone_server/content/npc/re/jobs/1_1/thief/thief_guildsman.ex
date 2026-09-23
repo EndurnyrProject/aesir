@@ -71,9 +71,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuildsman do
       end
 
     ctx =
-      if base_job(ctx) != :novice do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
         ctx =
-          if base_job(ctx) == :thief do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
             ctx
             |> mes("[Brad]")
             |> mes("I don't have any special events now. So go on your way and come back later.")

@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21a.Highpriest.HighPriest do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :ADVJOB, 0) == 0 or get_char_var(ctx, :Upper, 0) != 1 do
+      if get_char_var(ctx, :ADVJOB, 0) == 0 or upper(ctx) != 1 do
         ctx = set_local(ctx, :karma_d, Enum.random(1..10))
 
         ctx =
@@ -57,8 +57,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21a.Highpriest.HighPriest do
         throw({:script_end, ctx})
       else
         ctx =
-          if get_char_var(ctx, :ADVJOB, 0) == :high_priest and class(ctx) == :acolyte_high and
-               job_level(ctx) > 39 do
+          if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:high_priest) and
+               Rathena.job_id(class(ctx)) == Rathena.job_id(:acolyte_high) and job_level(ctx) > 39 do
             {ctx, v1} =
               ctx
               |> mes("[High Priest]")
@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21a.Highpriest.HighPriest do
               end
 
             ctx =
-              if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+              if Rathena.truthy?(skill_point(ctx)) do
                 ctx =
                   ctx
                   |> mes("[High Priest]")

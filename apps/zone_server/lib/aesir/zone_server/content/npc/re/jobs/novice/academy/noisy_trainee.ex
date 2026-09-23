@@ -62,9 +62,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
-    if class(ctx) == :novice do
+    if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
       {ctx, v1} =
         ctx
         |> mes("[Noisy Trainee]")
@@ -103,7 +105,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee do
 
       throw({:script_end, ctx})
     else
-      if class(ctx) == :gunslinger do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:gunslinger) do
         ctx = ctx |> mes("[Noisy Trainee]") |> mes("Oh Mr. gunslinger!! Nice.") |> close()
         throw({:script_end, ctx})
       else

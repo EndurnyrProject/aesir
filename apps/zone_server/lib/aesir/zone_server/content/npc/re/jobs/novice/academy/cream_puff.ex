@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff do
     ctx = cutin(ctx, "choucream_n.bmp", 2)
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx
         |> emotion(:question)
         |> mes("[Cream Puff]")

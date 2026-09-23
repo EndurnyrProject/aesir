@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OddNovice do
       |> mes("Playing hooky is cool and awesome.")
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           ctx
           |> mes("while XXXXXX, but what are you?")

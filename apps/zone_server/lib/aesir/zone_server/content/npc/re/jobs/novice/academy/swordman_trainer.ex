@@ -97,7 +97,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
       end
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if not Rathena.truthy?(get_char_var(ctx, :nov_3_swordman, 0)) do
             {ctx, v1} =
@@ -492,7 +492,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer do
 
         ctx
       else
-        if class(ctx) == :swordman do
+        if Rathena.job_id(class(ctx)) == Rathena.job_id(:swordman) do
           ctx =
             ctx
             |> mes("[Trainer Adric]")

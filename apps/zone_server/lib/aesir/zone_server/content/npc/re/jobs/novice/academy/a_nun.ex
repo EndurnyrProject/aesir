@@ -66,7 +66,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun do
 
   @impl true
   def on_talk(ctx) do
-    if job_level(ctx) > 10 or class(ctx) != :novice do
+    if job_level(ctx) > 10 or Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) do
       ctx =
         ctx
         |> mes("[A nun]")

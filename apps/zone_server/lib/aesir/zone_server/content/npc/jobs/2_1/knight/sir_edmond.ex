@@ -22,13 +22,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirEdmond do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx = mes(ctx, "[Sir Edmond]")
 
     ctx =
-      if base_job(ctx) != :swordman do
-        if base_job(ctx) == :knight do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
+        if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:knight) do
           ctx =
             ctx
             |> mes("Think of your")
@@ -49,7 +51,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirEdmond do
 
           throw({:script_end, ctx})
         else
-          if base_class(ctx) == :novice do
+          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
             ctx =
               ctx
               |> mes(

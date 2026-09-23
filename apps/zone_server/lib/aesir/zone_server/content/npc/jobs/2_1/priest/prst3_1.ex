@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst31 do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnTouch", ctx) do
     ev_ontouch(ctx)
@@ -38,12 +39,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst31 do
 
   def ev_ontouch(ctx) do
     ctx =
-      if base_job(ctx) == :priest do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
         ctx = warp(ctx, "prt_church", 15, 36)
         throw({:script_end, ctx})
       else
         ctx =
-          if base_class(ctx) == :acolyte do
+          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:acolyte) do
             ctx = set_char_var(ctx, :PRIEST_Q, 7)
 
             ctx =

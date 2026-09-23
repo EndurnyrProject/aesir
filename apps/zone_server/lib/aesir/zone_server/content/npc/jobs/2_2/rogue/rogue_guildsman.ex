@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("[Markie]")
@@ -54,9 +54,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
       end
 
     ctx =
-      if base_job(ctx) == :thief do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
         ctx =
-          if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+          if Rathena.truthy?(skill_point(ctx)) do
             ctx =
               ctx
               |> mes("[Rogue Guildsman]")
@@ -891,7 +891,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
 
         ctx
       else
-        if base_job(ctx) == :assassin do
+        if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:assassin) do
           ctx =
             ctx
             |> mes("[Rogue Guildsman]")
@@ -913,7 +913,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman do
 
           throw({:script_end, ctx})
         else
-          if base_job(ctx) == :rogue do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:rogue) do
             ctx =
               ctx
               |> mes("[Markie]")

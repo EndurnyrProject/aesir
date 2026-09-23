@@ -29,8 +29,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ExperimentExpert do
     ctx = mes(ctx, "[Van Helmont]")
 
     ctx =
-      if base_job(ctx) != :merchant do
-        if base_job(ctx) == :alchemist do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:merchant) do
+        if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:alchemist) do
           ctx =
             ctx
             |> mes("What do you want?")

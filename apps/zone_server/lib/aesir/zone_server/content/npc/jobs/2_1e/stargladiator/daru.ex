@@ -22,10 +22,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Daru do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) == :taekwon do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
         ctx =
           if get_char_var(ctx, :STGL_Q, 0) == 3 do
             {ctx, v1} =

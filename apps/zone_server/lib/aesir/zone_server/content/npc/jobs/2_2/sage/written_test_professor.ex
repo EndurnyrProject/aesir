@@ -29,9 +29,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
     ctx = mes(ctx, "[Claytos Verdo]")
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("Eh? What? Why are you back here?")
             |> mes("Do you want to enter the school again?")
@@ -49,7 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
             |> mes("You must share your knowledge with others by taking excellent notes.")
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("What are you doing here, kid?")
                 |> mes("This is a Magic Academy, not a day care center.")
@@ -59,7 +59,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor do
                 |> mes("Go out, chop chop!!")
               else
                 ctx =
-                  if class(ctx) == :wizard do
+                  if Rathena.job_id(class(ctx)) == Rathena.job_id(:wizard) do
                     ctx
                     |> mes("Well...look who came crawling back. Magic addict.")
                     |> mes("Yeah yeah, so it's not so bad to be devoted to magic.")

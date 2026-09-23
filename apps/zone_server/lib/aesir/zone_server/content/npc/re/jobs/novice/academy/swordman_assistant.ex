@@ -81,7 +81,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
       end
 
     ctx =
-      if class(ctx) == :novice and job_level(ctx) >= 10 do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and job_level(ctx) >= 10 do
         {ctx, v1} =
           ctx
           |> mes("[Assitant Trainer Neals]")
@@ -126,7 +126,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
         throw({:script_end, ctx})
       else
         ctx =
-          if class(ctx) == :swordman do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:swordman) do
             ctx =
               ctx
               |> mes("[Assitant Trainer Neals]")
@@ -137,7 +137,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant 
             throw({:script_end, ctx})
           else
             ctx =
-              if class(ctx) != :novice do
+              if Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("[Assitant Trainer Neals]")

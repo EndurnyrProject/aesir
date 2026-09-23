@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:assassin_cross) or
              get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:stalker) do
           if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice_high) do

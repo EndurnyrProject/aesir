@@ -22,10 +22,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Boohae do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :MONK_Q, 0) == 14 and base_job(ctx) == :acolyte do
+      if get_char_var(ctx, :MONK_Q, 0) == 14 and
+           Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
         {ctx, _} =
           ctx
           |> mes("[Boohae]")

@@ -99,7 +99,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
     ctx = viewpoint(ctx, 2, 122, 207, 1, 16_777_215)
 
     ctx =
-      if class(ctx) == :novice and base_level(ctx) < 15 do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) < 15 do
         ctx =
           if isbegin_quest(ctx, 7472) == 1 do
             ctx =
@@ -585,7 +585,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademySta
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 1, fn ctx ->
-      class(ctx) == :novice and base_level(ctx) <= 14 and
+      Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) <= 14 and
         not Rathena.truthy?(isbegin_quest(ctx, 7473))
     end)
   end

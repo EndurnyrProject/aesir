@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("[Ferocious-looking guy]")
@@ -46,7 +46,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
       end
 
     ctx =
-      if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+      if Rathena.truthy?(skill_point(ctx)) do
         ctx =
           ctx
           |> mes("[Ferocious-looking guy]")
@@ -130,7 +130,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
       end
 
     ctx =
-      if base_job(ctx) == :thief and count_item(ctx, 1008) == 0 and
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) and count_item(ctx, 1008) == 0 and
            get_char_var(ctx, :ASSIN_Q, 0) > 7 do
         ctx =
           ctx
@@ -156,7 +156,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
       end
 
     ctx =
-      if base_job(ctx) == :thief and count_item(ctx, 1008) > 0 and
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) and count_item(ctx, 1008) > 0 and
            get_char_var(ctx, :ASSIN_Q, 0) > 7 do
         {ctx, _} =
           ctx
@@ -198,7 +198,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
         throw({:script_end, ctx})
       else
         ctx =
-          if count_item(ctx, 1008) > 0 and base_job(ctx) == :thief and
+          if count_item(ctx, 1008) > 0 and Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) and
                get_char_var(ctx, :ASSIN_Q, 0) < 7 do
             ctx =
               ctx
@@ -239,7 +239,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
               |> next()
 
             ctx =
-              if base_class(ctx) == :novice do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("[Ferocious-looking guy]")
@@ -251,7 +251,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                 throw({:script_end, ctx})
               else
                 ctx =
-                  if base_class(ctx) == :swordman do
+                  if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:swordman) do
                     ctx =
                       ctx
                       |> mes("[Ferocious-looking guy]")
@@ -263,7 +263,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                     throw({:script_end, ctx})
                   else
                     ctx =
-                      if base_class(ctx) == :mage do
+                      if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:mage) do
                         ctx =
                           ctx
                           |> mes("[Ferocious-looking guy]")
@@ -278,7 +278,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                         throw({:script_end, ctx})
                       else
                         ctx =
-                          if base_class(ctx) == :archer do
+                          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:archer) do
                             ctx =
                               ctx
                               |> mes("[Ferocious-looking guy]")
@@ -294,7 +294,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                             throw({:script_end, ctx})
                           else
                             ctx =
-                              if base_class(ctx) == :acolyte do
+                              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:acolyte) do
                                 ctx =
                                   ctx
                                   |> mes("[Ferocious-looking guy]")
@@ -306,7 +306,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                                 throw({:script_end, ctx})
                               else
                                 ctx =
-                                  if base_class(ctx) == :merchant do
+                                  if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:merchant) do
                                     ctx =
                                       ctx
                                       |> mes("[Ferocious-looking guy]")
@@ -318,7 +318,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                                     throw({:script_end, ctx})
                                   else
                                     ctx =
-                                      if base_job(ctx) == :rogue do
+                                      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:rogue) do
                                         ctx =
                                           ctx
                                           |> mes("[Ferocious-looking guy]")
@@ -341,7 +341,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                                         throw({:script_end, ctx})
                                       else
                                         ctx =
-                                          if base_job(ctx) == :assassin do
+                                          if Rathena.job_id(base_job(ctx)) ==
+                                               Rathena.job_id(:assassin) do
                                             ctx =
                                               ctx
                                               |> mes("[Assassin Expert 'Huey']")
@@ -376,11 +377,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman do
                                             throw({:script_end, ctx})
                                           else
                                             ctx =
-                                              if base_job(ctx) == :thief and job_level(ctx) > 39 do
+                                              if Rathena.job_id(base_job(ctx)) ==
+                                                   Rathena.job_id(:thief) and job_level(ctx) > 39 do
                                                 ctx =
-                                                  if Rathena.truthy?(
-                                                       get_char_var(ctx, :SkillPoint, 0)
-                                                     ) do
+                                                  if Rathena.truthy?(skill_point(ctx)) do
                                                     ctx =
                                                       ctx
                                                       |> mes("[Ferocious-looking guy]")

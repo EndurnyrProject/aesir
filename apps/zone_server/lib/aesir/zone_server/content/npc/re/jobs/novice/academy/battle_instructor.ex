@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
         ctx
       end
 
-    if class(ctx) == :novice do
+    if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
       ctx =
         if isbegin_quest(ctx, 4269) == 2 do
           ctx =
@@ -1054,7 +1054,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor d
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 0, fn ctx ->
-      class(ctx) == :novice and isbegin_quest(ctx, 4269) == 2 and
+      Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and isbegin_quest(ctx, 4269) == 2 and
         (not Rathena.truthy?(isbegin_quest(ctx, 11339)) or
            not Rathena.truthy?(isbegin_quest(ctx, 11340)) or
            not Rathena.truthy?(isbegin_quest(ctx, 11341)) or

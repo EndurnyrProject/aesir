@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
@@ -413,7 +415,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher do
 
             throw({:script_end, ctx})
           else
-            if get_char_var(ctx, :ALCH_Q, 0) == 40 and base_job(ctx) == :merchant do
+            if get_char_var(ctx, :ALCH_Q, 0) == 40 and
+                 Rathena.job_id(base_job(ctx)) == Rathena.job_id(:merchant) do
               ctx =
                 ctx
                 |> mes("[Nicholas Flamel]")

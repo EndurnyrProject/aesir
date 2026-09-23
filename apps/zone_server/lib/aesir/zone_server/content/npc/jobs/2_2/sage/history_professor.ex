@@ -29,9 +29,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.HistoryProfessor do
     ctx = mes(ctx, "[Saphien Layless]")
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("Do I know you? Were you one of my students?")
             |> mes(
@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.HistoryProfessor do
             )
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("A Novice? Why is a novice here?")
                 |> next()

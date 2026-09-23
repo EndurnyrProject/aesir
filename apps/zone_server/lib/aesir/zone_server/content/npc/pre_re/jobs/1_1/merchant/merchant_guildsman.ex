@@ -27,14 +27,15 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Merchant.MerchantGuildsman
   @impl true
   def on_talk(ctx) do
     ctx =
-      if base_job(ctx) == :merchant do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:merchant) do
         ctx =
           ctx |> mes("[Union Staff Kay]") |> mes("Heya pal.") |> mes("How ya doin'?") |> close()
 
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :merchant and base_job(ctx) != :novice do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:merchant) and
+               Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
             ctx =
               ctx
               |> mes("[Union Staff Kay]")

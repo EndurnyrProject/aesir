@@ -8,17 +8,18 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
   """
 
   import Aesir.ZoneServer.Script.Dsl, warn: false
+  alias Aesir.ZoneServer.Script.Rathena
 
   @doc "Callable rAthena global function; returns `{ctx, return_value}`."
   def call(ctx, _args) do
     ctx = skill(ctx, 142, 1, :permanent)
-    v1 = base_class(ctx)
+    v1 = Rathena.job_id(base_class(ctx))
 
     ctx =
       case v1 do
-        v when v == :novice ->
+        v when v == 0 ->
           ctx =
-            if class(ctx) != :super_novice do
+            if Rathena.job_id(class(ctx)) != Rathena.job_id(:super_novice) do
               skill(ctx, 143, 1, :permanent)
             else
               ctx
@@ -26,22 +27,22 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
 
           ctx
 
-        v when v == :swordman ->
+        v when v == 1 ->
           ctx
           |> skill(144, 1, :permanent)
           |> skill(145, 1, :permanent)
           |> skill(146, 1, :permanent)
 
-        v when v == :mage ->
+        v when v == 2 ->
           skill(ctx, 157, 1, :permanent)
 
-        v when v == :archer ->
+        v when v == 3 ->
           ctx |> skill(147, 1, :permanent) |> skill(148, 1, :permanent)
 
-        v when v == :acolyte ->
+        v when v == 4 ->
           skill(ctx, 156, 1, :permanent)
 
-        v when v == :merchant ->
+        v when v == 5 ->
           ctx =
             ctx
             |> skill(153, 1, :permanent)
@@ -57,7 +58,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
 
           ctx
 
-        v when v == :thief ->
+        v when v == 6 ->
           ctx
           |> skill(149, 1, :permanent)
           |> skill(150, 1, :permanent)
@@ -68,35 +69,35 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
           ctx
       end
 
-    v2 = base_job(ctx)
+    v2 = Rathena.job_id(base_job(ctx))
 
     ctx =
       case v2 do
-        v when v == :knight ->
+        v when v == 7 ->
           skill(ctx, 1001, 1, :permanent)
 
-        v when v == :priest ->
+        v when v == 8 ->
           skill(ctx, 1014, 1, :permanent)
 
-        v when v == :wizard ->
+        v when v == 9 ->
           skill(ctx, 1006, 1, :permanent)
 
-        v when v == :blacksmith ->
+        v when v == 10 ->
           ctx |> skill(1012, 1, :permanent) |> skill(1013, 1, :permanent)
 
-        v when v == :hunter ->
+        v when v == 11 ->
           skill(ctx, 1009, 1, :permanent)
 
-        v when v == :assassin ->
+        v when v == 12 ->
           ctx |> skill(1003, 1, :permanent) |> skill(1004, 1, :permanent)
 
-        v when v == :crusader ->
+        v when v == 14 ->
           skill(ctx, 1002, 1, :permanent)
 
-        v when v == :monk ->
+        v when v == 15 ->
           ctx |> skill(1015, 1, :permanent) |> skill(1016, 1, :permanent)
 
-        v when v == :sage ->
+        v when v == 16 ->
           ctx
           |> skill(1007, 1, :permanent)
           |> skill(1008, 1, :permanent)
@@ -104,16 +105,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills do
           |> skill(1018, 1, :permanent)
           |> skill(1019, 1, :permanent)
 
-        v when v == :rogue ->
+        v when v == 17 ->
           skill(ctx, 1005, 1, :permanent)
 
-        v when v == :alchemist ->
+        v when v == 18 ->
           skill(ctx, 238, 1, :permanent)
 
-        v when v == :bard ->
+        v when v == 19 ->
           skill(ctx, 1010, 1, :permanent)
 
-        v when v == :dancer ->
+        v when v == 20 ->
           skill(ctx, 1011, 1, :permanent)
 
         _ ->

@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Hyunmoo225180 do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :MONK_Q, 0) < 25 do
@@ -46,7 +48,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Hyunmoo225180 do
 
       throw({:script_end, ctx})
     else
-      if get_char_var(ctx, :MONK_Q, 0) > 24 and base_job(ctx) == :acolyte do
+      if get_char_var(ctx, :MONK_Q, 0) > 24 and
+           Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
         ctx =
           ctx
           |> mes("[Hyunmoo]")

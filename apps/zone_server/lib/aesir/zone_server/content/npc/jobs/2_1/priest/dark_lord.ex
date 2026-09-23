@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.DarkLord do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnTouch", ctx) do
     ev_ontouch(ctx)
@@ -39,7 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.DarkLord do
 
   def ev_ontouch(ctx) do
     ctx =
-      if base_job(ctx) == :priest do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
         ctx =
           ctx
           |> mes("[Dark Lord]")
@@ -55,7 +56,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.DarkLord do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_class(ctx) == :acolyte do
+          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:acolyte) do
             {ctx, v1} =
               ctx
               |> mes("[Dark Lord]")

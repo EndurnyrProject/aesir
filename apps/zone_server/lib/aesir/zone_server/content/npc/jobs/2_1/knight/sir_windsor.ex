@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirWindsor do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
@@ -36,13 +38,13 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirWindsor do
       |> mes("[Sir Windsor]")
 
     ctx =
-      if base_job(ctx) != :swordman do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
         ctx =
-          if base_job(ctx) == :knight do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:knight) do
             mes(ctx, "Protect.")
           else
             ctx =
-              if base_class(ctx) == :novice do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                 ctx |> mes("...Go play") |> mes("outside.")
               else
                 mes(ctx, "...Hmpf.")

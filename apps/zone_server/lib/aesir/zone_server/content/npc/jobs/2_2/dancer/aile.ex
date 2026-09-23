@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Aile do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("[Aile]")
@@ -56,9 +56,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Aile do
       end
 
     ctx =
-      if base_job(ctx) != :archer do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:archer) do
         ctx =
-          if base_job(ctx) == :bard do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:bard) do
             ctx =
               ctx
               |> cutin("job_dancer_eir01", 2)
@@ -74,7 +74,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Aile do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_job(ctx) == :dancer do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:dancer) do
                 ctx =
                   ctx
                   |> cutin("", 2)
@@ -115,7 +115,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Aile do
       end
 
     if get_char_var(ctx, :DANC_Q, 0) == 0 and sex(ctx) == get_char_var(ctx, :SEX_FEMALE, 0) and
-         base_job(ctx) == :archer do
+         Rathena.job_id(base_job(ctx)) == Rathena.job_id(:archer) do
       {ctx, v1} =
         ctx
         |> cutin("job_dancer_eir01", 2)

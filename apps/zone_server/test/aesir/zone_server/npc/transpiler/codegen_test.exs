@@ -1209,7 +1209,8 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.CodegenTest do
 
     assert src =~ "= Rathena.job_id(class(ctx))"
     assert src =~ "1 ->"
-    assert src =~ "v when v == Rathena.job_id(:thief) ->"
+    assert src =~ "v when v == 6 ->"
+    assert [{_module, _}] = Code.compile_string(src)
   end
 
   test "emotion maps to the self-form DSL op; a target arg is dropped" do

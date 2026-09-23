@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("[Tohobu]")
@@ -62,7 +62,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
       end
 
     ctx =
-      if base_job(ctx) == :acolyte and get_char_var(ctx, :MONK_Q, 0) == 0 do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+           get_char_var(ctx, :MONK_Q, 0) == 0 do
         {ctx, v1} =
           ctx
           |> mes("[Tohobu]")
@@ -134,7 +135,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
               throw({:script_end, ctx})
 
             2 ->
-              if base_job(ctx) == :acolyte and job_level(ctx) > 39 do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and job_level(ctx) > 39 do
                 ctx =
                   ctx
                   |> mes("[Tohobu]")
@@ -147,7 +148,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
 
                 throw({:script_end, ctx})
               else
-                if base_job(ctx) == :acolyte and job_level(ctx) < 40 do
+                if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                     job_level(ctx) < 40 do
                   ctx =
                     ctx
                     |> mes("[Tohobu]")
@@ -200,7 +202,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
         ctx
       else
         ctx =
-          if get_char_var(ctx, :MONK_Q, 0) == 1 and base_job(ctx) == :acolyte do
+          if get_char_var(ctx, :MONK_Q, 0) == 1 and
+               Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
             {ctx, v3} =
               ctx
               |> mes("[Tohobu]")
@@ -224,7 +227,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
                   throw({:script_end, ctx})
 
                 2 ->
-                  if base_job(ctx) == :acolyte and job_level(ctx) > 39 do
+                  if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                       job_level(ctx) > 39 do
                     ctx =
                       ctx
                       |> mes("[Tohobu]")
@@ -237,7 +241,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
 
                     throw({:script_end, ctx})
                   else
-                    if base_job(ctx) == :acolyte and job_level(ctx) < 40 do
+                    if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                         job_level(ctx) < 40 do
                       ctx =
                         ctx
                         |> mes("[Tohobu]")
@@ -371,7 +376,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
                   throw({:script_end, ctx})
 
                 2 ->
-                  if base_job(ctx) == :acolyte and job_level(ctx) > 39 do
+                  if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                       job_level(ctx) > 39 do
                     ctx =
                       ctx
                       |> mes("[Tohobu]")
@@ -384,7 +390,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
 
                     throw({:script_end, ctx})
                   else
-                    if base_job(ctx) == :acolyte and job_level(ctx) < 40 do
+                    if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                         job_level(ctx) < 40 do
                       ctx =
                         ctx
                         |> mes("[Tohobu]")
@@ -448,7 +455,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
 
               throw({:script_end, ctx})
             else
-              if base_job(ctx) == :acolyte and get_char_var(ctx, :MONK_Q, 0) == 2 do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                   get_char_var(ctx, :MONK_Q, 0) == 2 do
                 ctx =
                   ctx
                   |> mes("[Tohobu]")
@@ -458,7 +466,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
 
                 throw({:script_end, ctx})
               else
-                if base_job(ctx) == :acolyte and get_char_var(ctx, :MONK_Q, 0) > 2 do
+                if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+                     get_char_var(ctx, :MONK_Q, 0) > 2 do
                   ctx =
                     ctx
                     |> mes("[Tohobu]")
@@ -525,7 +534,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
       end
 
     ctx =
-      if base_job(ctx) == :acolyte and get_char_var(ctx, :MONK_Q, 0) == 2 do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+           get_char_var(ctx, :MONK_Q, 0) == 2 do
         ctx =
           ctx
           |> mes("[Tohobu]")
@@ -539,7 +549,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk do
       end
 
     ctx =
-      if base_job(ctx) == :acolyte and get_char_var(ctx, :MONK_Q, 0) > 2 do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+           get_char_var(ctx, :MONK_Q, 0) > 2 do
         ctx =
           ctx
           |> mes("[Tohobu]")

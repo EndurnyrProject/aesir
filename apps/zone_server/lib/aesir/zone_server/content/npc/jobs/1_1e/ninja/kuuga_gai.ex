@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.KuugaGai do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 2 do
+      if upper(ctx) == 2 do
         ctx =
           ctx
           |> mes("[Kuuga Gai]")
@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.KuugaGai do
         ctx
       end
 
-    if class(ctx) == :novice do
+    if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
       ctx =
         if job_level(ctx) < 10 do
           ctx =
@@ -287,7 +287,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.KuugaGai do
                   end
 
                 ctx =
-                  if get_char_var(ctx, :SkillPoint, 0) != 0 do
+                  if skill_point(ctx) != 0 do
                     ctx =
                       ctx
                       |> mes("[Kuuga Gai]")
@@ -386,7 +386,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.KuugaGai do
         end
       end
     else
-      if base_class(ctx) == :ninja do
+      if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:ninja) do
         ctx =
           ctx
           |> mes("[Kuuga Gai]")

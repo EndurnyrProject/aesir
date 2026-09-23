@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) == :taekwon do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
         ctx =
           if get_char_var(ctx, :STGL_Q, 0) == 0 do
             ctx = mes(ctx, "[Moohyun]")
@@ -404,7 +404,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) == :star_gladiator do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:star_gladiator) do
             ctx =
               ctx
               |> mes("[Moohyun]")
@@ -419,7 +419,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
             throw({:script_end, ctx})
           else
             ctx =
-              if class(ctx) == :novice do
+              if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("[Moohyun]")
@@ -495,7 +495,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
 
   def ev_ontouch(ctx) do
     ctx =
-      if class(ctx) == :taekwon do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
         ctx =
           if get_char_var(ctx, :STGL_Q, 0) == 0 do
             ctx =
@@ -516,7 +516,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun do
         ctx
       else
         ctx =
-          if base_job(ctx) == :star_gladiator do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:star_gladiator) do
             ctx =
               ctx
               |> mes("[Moohyun]")

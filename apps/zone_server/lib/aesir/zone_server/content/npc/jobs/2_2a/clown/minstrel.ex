@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22a.Clown.Minstrel do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :ADVJOB, 0) == 0 or get_char_var(ctx, :Upper, 0) != 1 do
+      if get_char_var(ctx, :ADVJOB, 0) == 0 or upper(ctx) != 1 do
         ctx = set_local(ctx, :karma_d, Enum.random(1..10))
 
         ctx =
@@ -55,8 +55,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22a.Clown.Minstrel do
         throw({:script_end, ctx})
       else
         ctx =
-          if get_char_var(ctx, :ADVJOB, 0) == :clown and class(ctx) == :archer_high and
-               job_level(ctx) > 39 do
+          if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:clown) and
+               Rathena.job_id(class(ctx)) == Rathena.job_id(:archer_high) and job_level(ctx) > 39 do
             {ctx, v1} =
               ctx
               |> mes("[Minstrel]")
@@ -90,7 +90,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22a.Clown.Minstrel do
               end
 
             ctx =
-              if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+              if Rathena.truthy?(skill_point(ctx)) do
                 ctx =
                   ctx
                   |> mes("[Minstrel]")

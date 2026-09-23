@@ -106,7 +106,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman56
   def ev_oninit(ctx) do
     ctx
     |> questinfo(0, 1, fn ctx ->
-      not Rathena.truthy?(isbegin_quest(ctx, 21001)) and class(ctx) == :novice
+      not Rathena.truthy?(isbegin_quest(ctx, 21001)) and
+        Rathena.job_id(class(ctx)) == Rathena.job_id(:novice)
     end)
     |> cloakonnpc()
   end

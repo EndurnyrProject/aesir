@@ -215,7 +215,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc do
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 1, fn ctx ->
-      not Rathena.truthy?(isbegin_quest(ctx, 21008)) and class(ctx) == :novice
+      not Rathena.truthy?(isbegin_quest(ctx, 21008)) and
+        Rathena.job_id(class(ctx)) == Rathena.job_id(:novice)
     end)
   end
 end

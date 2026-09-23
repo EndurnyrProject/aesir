@@ -13179,7 +13179,7 @@
   },
   "jobs/1-1e/gunslinger.txt|script|Master Miller|que_ng:152:167": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.MasterMiller",
-    "output_hash": "75e2d658367056b5794c7224392a7b7a632c33aeb914ee638c6a5b0a79268790",
+    "output_hash": "38051168127fd3a11320fab3740c5acc30b2afcaed4275bdca879d66ed47e9cf",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/1_1e/gunslinger/master_miller.ex",
     "source_hash": "a1c4348047e8f4270207c96ae066254917c2188eefa1cc29268b9873efd08ea2",
     "spawns": [
@@ -13213,7 +13213,7 @@
   },
   "jobs/1-1e/ninja.txt|script|Akagi|alberta:30:65": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.Akagi",
-    "output_hash": "80a31005a37b3349c7eca83d1afa1d989ee6ae6c0c2a300cca225214d9eb7adf",
+    "output_hash": "0086c40b40ca984b340ebb432fc08ebc2decf8ff7d039fd0acf59caadc6fc822",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/1_1e/ninja/akagi.ex",
     "source_hash": "0afe6377c59ba0773ae3bb55e6f876d8b39feed2a2bc4f86dff00013ce43d62b",
     "spawns": [
@@ -13230,7 +13230,7 @@
   },
   "jobs/1-1e/ninja.txt|script|Kuuga Gai#nq|que_ng:30:65": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.KuugaGai",
-    "output_hash": "d2face98fb2a26956ce9ca01181658909d5c405847ce5f676d134456c333cf9e",
+    "output_hash": "cc1a4a00488afc56e56f9b67a8365b498c8e4ea7db9f87bc8d7fc41cf4018f61",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/1_1e/ninja/kuuga_gai.ex",
     "source_hash": "bd9d207c46c8b9ce6d372aed4d7c17d90a8c6d403f37fea242af26a24a542140",
     "spawns": [
@@ -13248,7 +13248,7 @@
   },
   "jobs/1-1e/ninja.txt|script|Suspicious Man#nq|einbroch:184:194": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.SuspiciousMan",
-    "output_hash": "20f21ad9365ca246fefd9fce247b0c9c2238dc352e87a214b18e64a971abdd25",
+    "output_hash": "5b32f9ad589bb24055f4dbe46cba1afbf80bec0f2e1e722ee06a95f116f46e71",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/1_1e/ninja/suspicious_man.ex",
     "source_hash": "28f60e37e0bc9daa9b5ce06b9589ae9daf35c96d3cb97b43e99390f5eff63de1",
     "spawns": [
@@ -13266,9 +13266,9 @@
   },
   "jobs/1-1e/taekwon.txt|floating|Phoenix::PhoenixTKJobChange|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange",
-    "output_hash": "e9c8beca07d8f43fd71bb80edb12266c2be453c4296a1e1272ec5be123a5877b",
+    "output_hash": "002b7bb19ed7d0527942f8e295ba5563df6b67934b4589ef2673d9be49bff46f",
     "output_path": "lib/aesir/zone_server/content/npc/floating/phoenix_phoenixtkjobchange.ex",
-    "source_hash": "56cc1944873decebf0e788cb70f8a8665807d7f782ef42d1b849dc95d6d33d09",
+    "source_hash": "40c54d40f6c007fc7d54ab2cfb79b5276fd76dec238745aa74b437ff8b34b5c0",
     "spawns": [
       {
         "name": "Phoenix",
@@ -13276,6 +13276,16 @@
         "x": 157,
         "y": 141,
         "map": "payon",
+        "dir": 5,
+        "sprite": 753,
+        "unique_name": "Phoenix#TKJobChange"
+      },
+      {
+        "name": "Phoenix",
+        "scope": "renewal",
+        "x": 62,
+        "y": 10,
+        "map": "payon_in01",
         "dir": 5,
         "sprite": 753,
         "unique_name": "Phoenix#TKJobChange"
@@ -13398,7 +13408,7 @@
   },
   "jobs/2-1/assassin.txt|script|Guildmaster#ASN2|in_moc_16:149:80": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980",
-    "output_hash": "18a23902248f6b4d5926666e7dcefd221d5a75f5d92b3500f8b087105246d826",
+    "output_hash": "294c52da75d34ecc684ad95d26a2274cc17a3fcf0e76aa827aad5073a7a3c91e",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/assassin/guildmaster_149_80.ex",
     "source_hash": "9f023d936b479382b972223ccc9f01432b9f6e63e60fdd08783db78bb68ab3a1",
     "spawns": [
@@ -13442,7 +13452,7 @@
   },
   "jobs/2-1/assassin.txt|script|Guildsman#asn|in_moc_16:19:33": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildsman",
-    "output_hash": "9fcb0c0418e6ecfc5f6c26a5af24dc93c45e04e0d517d8f97c86fda3668726cc",
+    "output_hash": "db7feaa542ee0265715dbb1b15dea56e33429d503548a95c581e527326e46510",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/assassin/guildsman.ex",
     "source_hash": "7b73ff598e895d24753b3ed077fe47019ba46a7e5e232b064248420292523ffc",
     "spawns": [
@@ -13728,7 +13738,7 @@
   },
   "jobs/2-1/blacksmith.txt|script|Guildsman#BLS|ein_in01:18:28": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman",
-    "output_hash": "b593c77d2a7be06bf19551b37c7cfb79149c3f143990aee9f2312433cd80d6f2",
+    "output_hash": "e76b35bbb220b09defdba3f3522f036de91a4a0e69f6d544bf495b1b70033a83",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/blacksmith/guildsman.ex",
     "source_hash": "0f42e66be4e30305e54ab1f7f014d97c951320ece18cc2d32692c67a825652df",
     "spawns": [
@@ -13746,7 +13756,7 @@
   },
   "jobs/2-1/blacksmith.txt|script|Guildsman#alberta|ein_in01:201:27": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman20127",
-    "output_hash": "b33a26c5e801eb451e0780d18182a135fb3cfb812b06d0d936fc083f67692a0d",
+    "output_hash": "e5ff7029f12fb68c079c565026ed7e81962cdfc73afea6b8243a51d5b49a1a0a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/blacksmith/guildsman_201_27.ex",
     "source_hash": "a888c8718ac579e867d3659eda5196cfe0c725a6c4df41e800932afcd85c66dc",
     "spawns": [
@@ -13872,7 +13882,7 @@
   },
   "jobs/2-1/hunter.txt|script|Hunter Guildsman#hnt|hu_in01:386:373": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman",
-    "output_hash": "563b6aaa80e5bd256d71983e7e0e5495c45dc2d556199d8277bcae012ba879cd",
+    "output_hash": "3f0f72d3aa40d9ea2deb949d32497c0019c9485133913f8c0f88931241a7364c",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/hunter/hunter_guildsman.ex",
     "source_hash": "7ea5172340492c56f56f9158fe350c3e92c915697f65dc1ab616f5db12f03040",
     "spawns": [
@@ -14055,7 +14065,7 @@
   },
   "jobs/2-1/knight.txt|script|Chivalry Captain#knt|prt_in:88:101": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain",
-    "output_hash": "4a9e63c0b8d4c95d866c69a63fc931ba56c1206895fa2e35d0526d6b941b17db",
+    "output_hash": "8cbd4615e645947885f058545340289735c5cca7301ad3782003b97264381828",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/chivalry_captain.ex",
     "source_hash": "5b2f08e14e9199953a836b7edda47970e9c7d1fb5d1b735add7f80a4c756da54",
     "spawns": [
@@ -14091,7 +14101,7 @@
   },
   "jobs/2-1/knight.txt|script|Lady Amy#knt|prt_in:69:107": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.LadyAmy",
-    "output_hash": "e2242ba2e5493ec29fdc1e9270e75cff6367f73c37f516df881ed2acfcf53185",
+    "output_hash": "7ef313e8d356178446ea59b12bcaaf8b74110b65f18fdf79dab1b94de8085e29",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/lady_amy.ex",
     "source_hash": "27f9c72211fe63b0489c6576924e826f914b5e5f063f3f4c8a6003941bf8a8d7",
     "spawns": [
@@ -14109,7 +14119,7 @@
   },
   "jobs/2-1/knight.txt|script|Sir Andrew#knt|prt_in:75:107": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirAndrew",
-    "output_hash": "d8f3b5a795c1f36a8931a4a094be25ccc966c48e51562fb99b2c506bbfb1a8e5",
+    "output_hash": "e00ccb0b0170170e8e20ab0fc6d6f1214ad2b2242e503b33228c25029ef1777d",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/sir_andrew.ex",
     "source_hash": "7b6301f558f1a1fd76aa3e803cb531518229d928c649649159d0e72ac38e4c5f",
     "spawns": [
@@ -14127,7 +14137,7 @@
   },
   "jobs/2-1/knight.txt|script|Sir Edmond#knt|prt_in:70:99": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirEdmond",
-    "output_hash": "cde9dd397eaff39fe3f2778bb0d32d79b3fe10ef3d691d94b711daf84c74848e",
+    "output_hash": "5d5866b9ff5415f914cf789b601f4ef01b76e0a6b44a5d9d8187531250a5415a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/sir_edmond.ex",
     "source_hash": "6f5fbacad872e4e9d79e77db4dac665fddd21efd2a91d654dc7a54e6671d2f12",
     "spawns": [
@@ -14145,7 +14155,7 @@
   },
   "jobs/2-1/knight.txt|script|Sir Gray#knt|prt_in:87:92": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray",
-    "output_hash": "716f01821c2673c152bd8c5d97c6d38007753a3470d863714a94e53fa3270f4d",
+    "output_hash": "e917005a0e9a42f63a089e96d801d71a0116219a84052b4ea53742ac165c36ba",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/sir_gray.ex",
     "source_hash": "7b14cdfb0647abe71285eb0e1fa5cf64f3d709e15714c2587ea1695ed243157f",
     "spawns": [
@@ -14163,7 +14173,7 @@
   },
   "jobs/2-1/knight.txt|script|Sir Siracuse#knt|prt_in:71:91": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirSiracuse",
-    "output_hash": "715c38d06c72e1d688b846f8aec287f8b73d8036f0ab92bca8d09cc8afeb6053",
+    "output_hash": "dba5695f3e45587dba2cbbcebf06ce025b7e5b0928db7316e9ae0ad39962ccd7",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/sir_siracuse.ex",
     "source_hash": "9b78c00a27677d10aef0890d615c0951bad370439e4170b88166ed415a134951",
     "spawns": [
@@ -14181,7 +14191,7 @@
   },
   "jobs/2-1/knight.txt|script|Sir Windsor#knt|prt_in:79:94": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirWindsor",
-    "output_hash": "780e6359086a0cf8e7456146636830d50457c2fef0a854af572b0edcdacc9efe",
+    "output_hash": "d563e5c25d78ecb8a0934a25a5183d53cc3fb4c7d3079491f122d991380588af",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/knight/sir_windsor.ex",
     "source_hash": "eb2e6e5ed8ebabaa87787423f08ef562f7bb71acca0bf3de0fdef08490c8671b",
     "spawns": [
@@ -14292,7 +14302,7 @@
   },
   "jobs/2-1/priest.txt|script|Baphomet#prst|job_prist:168:150": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Baphomet",
-    "output_hash": "2747d4bcfcec681cf4d68c992247d4d77daf426ee5ab24b92aeb9bc953a0b5fb",
+    "output_hash": "bcfe0fee48452438efa6fce23db5e2602b75068554a73a40c3063f06b54e4ab2",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/baphomet.ex",
     "source_hash": "fa6711acc80ff9bc9ca98597bba31484e81a62ef81b00b200c49b1d575865f85",
     "spawns": [
@@ -14314,7 +14324,7 @@
   },
   "jobs/2-1/priest.txt|script|Dark Lord#prst|job_prist:168:115": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.DarkLord",
-    "output_hash": "10d6fbb34712d2e2dd2590454b3004123f4f8eb1700953871bf6a73f04616521",
+    "output_hash": "0ff2a1839168dec350ed42fb60f17735121e81765faca82f2ac9da1cd62ed285",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/dark_lord.ex",
     "source_hash": "3d9f266934a24684ea02c99e112e224539327d6e5fcc7113d490a17bcfa5f5ef",
     "spawns": [
@@ -14336,7 +14346,7 @@
   },
   "jobs/2-1/priest.txt|script|Deviruchi#prst|job_prist:168:45": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Deviruchi",
-    "output_hash": "56e684cccfb26662fd819a6af756a0016190e9cff0cb1e2fda23e79930ecdf6b",
+    "output_hash": "a0772ce2d3c327d0281eb20ea09f595bf59dc0dfcd790ff96c7bd7d97ae91589",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/deviruchi.ex",
     "source_hash": "874451101b6d9c9acc6600e3f50d3fcd7638a58369b0c5cf54ea1d03bdcda1c5",
     "spawns": [
@@ -14358,7 +14368,7 @@
   },
   "jobs/2-1/priest.txt|script|Doppelganger#prst|job_prist:168:80": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Doppelganger",
-    "output_hash": "4d14c4f1e8611a419916039adbc04e46aff70b19b99510829bead7b07c8c3b20",
+    "output_hash": "72f49a217a06e7facac3c9bd26f2b71c10b8892aef7e3d17868c2a737b7bbcee",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/doppelganger.ex",
     "source_hash": "574e29d039dace0df94d74453821e5f421591457e1c2459f6b030b93251f917a",
     "spawns": [
@@ -14380,7 +14390,7 @@
   },
   "jobs/2-1/priest.txt|script|High Bishop#prst|prt_church:16:41": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop",
-    "output_hash": "1102dadb8affe83ab872aafba51d511d0dd13628b822f59bf6a62ca92c7293c3",
+    "output_hash": "9431f5a95d33da4078efa20c75525f23f465273c2137330fe1d07b88f4e0d9c5",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/high_bishop.ex",
     "source_hash": "fa6d8dc760963064906289d709d76e7a62575b9047569f883f27daffb82ab9e3",
     "spawns": [
@@ -14398,21 +14408,21 @@
   },
   "jobs/2-1/priest.txt|script|Mummy1_1|job_prist:90:55": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Mummy11",
-    "output_hash": "a20bf2552ed852e266d3aafd618a6802002b4ead0020235874ee80459141138c",
+    "output_hash": "0967b82493e9f5c928168ff08845102e6f2e51e3297bd5a922e3fa1c898ca8af",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/mummy1_1.ex",
     "source_hash": "36c699b4bb90d3e7896a5ccf1856faa444995c0ebbcd80a370a7c8618fa7942b",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Mummy2_1|job_prist:90:70": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Mummy21",
-    "output_hash": "cb8dacf14e7fac93690cd86198e53fc8a381ceb49cda83ed5804e9dfce49bfae",
+    "output_hash": "663035880bfbf7d3b38e5cca1ea46a9c06fad7bcdb7ba21e5da142312439aafc",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/mummy2_1.ex",
     "source_hash": "6781398da815f10860902aa40fe061d724591edeb07f85f1a82b6e39ab25f77f",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Mummy3_1|job_prist:90:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Mummy31",
-    "output_hash": "b23faf022434acdf3263a8a7e233161e720a909c4f999435b0d2fdcd97936ee7",
+    "output_hash": "0d36ed88dee2cdb7c3003492104ef2d591d81a537cc0d66164a6dcb31ef99128",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/mummy3_1.ex",
     "source_hash": "39960614a979a47ff0600330cb03d83f249bf7c7b6a1b1feab7aae28ba1efc69",
     "spawns": []
@@ -14440,7 +14450,7 @@
   },
   "jobs/2-1/priest.txt|script|Peter S. Alberto#2|job_prist:23:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.PeterSAlberto23187",
-    "output_hash": "80a8db031ddba227de5a9bbaae6f803e9ca050b2668e2494a80e6c08a6d3a1e4",
+    "output_hash": "b69e2e346f268d2b36ee6dee09caac9dc31a480244aa52bc75237819383627db",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/peter_s_alberto_23_187.ex",
     "source_hash": "b5bdd5a1583dde9f34b44291d0ffabdc0b0061ba2e63598c4a6885d803e389d0",
     "spawns": [
@@ -14458,7 +14468,7 @@
   },
   "jobs/2-1/priest.txt|script|Peter S. Alberto|job_prist:24:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.PeterSAlberto",
-    "output_hash": "846818c697c7841816947ab60a71a3a66d319cd3400acb0fdb02a1157f8ebe8d",
+    "output_hash": "d7903a23ab8008d888c3b0240089cfd9cbf0cc540a6fee3fb8c1ab59159fe097",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/peter_s_alberto.ex",
     "source_hash": "8b0f430753b80be5b0364791d68c3d8b18dc63ba1f51e0290999b38f6d7f3359",
     "spawns": [
@@ -14475,7 +14485,7 @@
   },
   "jobs/2-1/priest.txt|script|Sister Cecilia|prt_church:27:24": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.SisterCecilia",
-    "output_hash": "dc34db6e6b3f8325862da4b2a15308988836a76b22f44acb7fbb7dd7fdb8e555",
+    "output_hash": "be1dea950d4ac5154c504075e79d0f4b1bf19ad677d3a18ac13e496d96eeeaa8",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/sister_cecilia.ex",
     "source_hash": "1b43c3f0437e7c58f5ed5b14587960bedd3c0df4a7acaa83eb9d23ca9b7f71fb",
     "spawns": [
@@ -14492,49 +14502,49 @@
   },
   "jobs/2-1/priest.txt|script|Zombie Info|job_prist:24:44": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.ZombieInfo",
-    "output_hash": "1fe4fb756610487b542d8a6b2bfa88686446a6953fbc33bd6f230692f0f33660",
+    "output_hash": "5d83bcdf1d95be6212677b3ed28a67d0d1690b7c5d5733888437d061e39e0c3c",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/zombie_info.ex",
     "source_hash": "3b739e8fdf4b491a2c6de3cac61a5f18cee1798581a682e6fc0c823bcf10c365",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Zombie1_1|job_prist:24:52": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie11",
-    "output_hash": "aca06418cc6067e7fb5924c4bbb38eeab6e6794e98c7559d535b89930313dc6c",
+    "output_hash": "15858e3fa0f05b7c18914e192565addc48326bdcdc474b25125ccb953f6fdd19",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/zombie1_1.ex",
     "source_hash": "629fec26a7a1050705b1e0e76d45239465924238665b4114acd2ede5044f2009",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Zombie2_1|job_prist:21:62": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie21",
-    "output_hash": "7d1d8a8f1e2ad9769ae42fbd3b3a8cb3455d79f689af02e872796c8544e3b5ff",
+    "output_hash": "5221b59accdd007b0f68bb72c170e2250028c94abd5fff8ed5ba5f540ffeadc9",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/zombie2_1.ex",
     "source_hash": "1c0708e5943a062ec6f6879e2d6d001a1353ddcb431b9b1938eef92772c50d6b",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Zombie3_1|job_prist:24:72": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie31",
-    "output_hash": "b82161a78b3275ab1c7d2a9250fab10994d654af5b1afbf3f3786da003ac423b",
+    "output_hash": "e62f2e681f9ba04ad522b1375570199250a4904bf0cfa5155c1822216dc24622",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/zombie3_1.ex",
     "source_hash": "aa94d66d95104e6f592f2e43f9905978834e522fa4c86a5978de057d55810e93",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Zombie4_1|job_prist:21:82": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie41",
-    "output_hash": "91c426c52106ffa9b5a7f272ce87a07b1094e13e965c45fb25b0379ac35df8e0",
+    "output_hash": "5301e003cc427f705deb893f60f7290f31df93c774af721553630a9dac4a3002",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/zombie4_1.ex",
     "source_hash": "677ef1a004f21a3f038cca7279f723c56adba90da5903b436e6c5fa4ff995638",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|Zombie5_1|job_prist:24:92": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie51",
-    "output_hash": "4f6273ecb1c5de7888dd7f03549fd7e2a096bca9c026271161013f215b9e3c08",
+    "output_hash": "d6ab50179adb31f1cdf190803d9c014d601f5f8812854ce89398ee19834bbaee",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/zombie5_1.ex",
     "source_hash": "118abb9ed31f9161ee34ff88e61ed7fff480804bfa1470cf91ef327490a3c0ba",
     "spawns": []
   },
   "jobs/2-1/priest.txt|script|prst1_1|job_prist:24:109": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst11",
-    "output_hash": "015da63cb22f03613a17360c393d957ffa922a0597993a0a1cd02c9ec63a7526",
+    "output_hash": "729cc6dcadf1ddd79cdac463bbe9f1029df8880323e90dfc9ce70b4cbf42e423",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/prst1_1.ex",
     "source_hash": "4edac4ba1c0dceafa8ff3e855f3376a22c932b4e33fb4297c128216da0602c0b",
     "spawns": [
@@ -14555,7 +14565,7 @@
   },
   "jobs/2-1/priest.txt|script|prst2_1|job_prist:168:180": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst21",
-    "output_hash": "6c70d108b9da604b1f3500b620b014c6d56c210e74be9d2c9dad2dff07dea4ed",
+    "output_hash": "c1506ad0d2eb3215ff4e5c863ced6855f16ea3a1d77ea761539153d9e03d0752",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/prst2_1.ex",
     "source_hash": "3b34f86586fac550c185d525291fce902ad64b70ca4d250e4ed26e6a493d0c6a",
     "spawns": [
@@ -14576,7 +14586,7 @@
   },
   "jobs/2-1/priest.txt|script|prst3_1|job_prist:98:105": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst31",
-    "output_hash": "bd4df7a79bad845b65199483bdc160fa3cb24e25ff417bdbc748744d8a6ccc65",
+    "output_hash": "ee98c0df9c29557d63500f2352afa2fcfc8220464226809cdfea6d828b3a6389",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/priest/prst3_1.ex",
     "source_hash": "44e7e536301533d608e8490b841f5e990da05d7f0c75a25d079a3afbb4038740",
     "spawns": [
@@ -14614,7 +14624,7 @@
   },
   "jobs/2-1/wizard.txt|script|Gloomy Wizard|gef_tower:102:24": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard",
-    "output_hash": "39ae97f142c9aa336fe2f62bbe58fd9d51b3e17cd182bf9fbe0a02c02b5d9fe4",
+    "output_hash": "894987c90c1c7634514de671142d6885207184be1b80232ccd805f401c6f99c6",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/wizard/gloomy_wizard.ex",
     "source_hash": "56dbd25fbfd18a1df29eeae9b04bf2e660179406f1e219cd640a8e18a3ab1bcc",
     "spawns": [
@@ -14775,7 +14785,7 @@
   },
   "jobs/2-1/wizard.txt|script|White Dog#wiz|gef_tower:107:36": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WhiteDog",
-    "output_hash": "1c25f08e2eeec35980160a78d65452e96ebed074b083870c6410a71c65a4c2f6",
+    "output_hash": "cc5ec3b3df1c35bf61e4f392cdd8f6c61101b0eb6709c579babd115cd3fe1373",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/wizard/white_dog.ex",
     "source_hash": "790f105fbd1a65e34c08b09eabfdf6b8d12493bd2bb0da4fb7314b173853594e",
     "spawns": [
@@ -14793,7 +14803,7 @@
   },
   "jobs/2-1/wizard.txt|script|Wizard Guildsman|gef_tower:111:37": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.WizardGuildsman",
-    "output_hash": "44dac33c4017a87e726b9bd3506718fd715ac7d1ecce354e0221f6f51a1c41d0",
+    "output_hash": "0efedbf94080134905bcc9f0d9531c71ae41cb90cf995a9ab00637ab84256833",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1/wizard/wizard_guildsman.ex",
     "source_hash": "7ea4acdd29899d928f310d800a1007bb94b2bca2bbb84e8c355a86c846b9ee7c",
     "spawns": [
@@ -14810,7 +14820,7 @@
   },
   "jobs/2-1a/AssassinCross.txt|script|Assassin Cross#Valkyrie|valkyrie:44:58": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21a.Assassincross.AssassinCross",
-    "output_hash": "91540cc0f4360ca39aa6eb41ed376f38066483743cdc3c3f799a73b3840ab12a",
+    "output_hash": "56e9020a052d407a95f96d53ee99b340de3df934e6cb2af3bb919ad2afed2c8b",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1a/assassincross/assassin_cross.ex",
     "source_hash": "47d707f42c924e7be5eaafba5d1ceec3e2f76ac64fed7a9ab5678631633232ae",
     "spawns": [
@@ -14828,7 +14838,7 @@
   },
   "jobs/2-1a/HighPriest.txt|script|High Priest#Valkyrie|valkyrie:44:42": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21a.Highpriest.HighPriest",
-    "output_hash": "cd200409b6e6b631b2d129f2acfcfa7d393f7cf726733491dbc79214250081c5",
+    "output_hash": "99246e4f9234acf16807e9b928373aaa60b3ad750153763a0846f0049126d4e9",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1a/highpriest/high_priest.ex",
     "source_hash": "6cc61f243085fd043ae2ef5db71a5d5ef12bdafb334c03fc7c57f8745dee1545",
     "spawns": [
@@ -14846,7 +14856,7 @@
   },
   "jobs/2-1a/HighWizard.txt|script|High Wizard#Valkyrie|valkyrie:44:47": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21a.Highwizard.HighWizard",
-    "output_hash": "6c1f3688c8e552af1420a7a5f18e7d2b0bb7c1a3732ad928fb162dcfc7c6f518",
+    "output_hash": "9d2efe4a0e94326b9190d793bf6dd683f62c75ec11111e268d3c0c9da7fcb04d",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1a/highwizard/high_wizard.ex",
     "source_hash": "2bc1d3a9b6778774b4462982821c53c711d1e3d621d07b359ac78d5cb08a5bbd",
     "spawns": [
@@ -14864,7 +14874,7 @@
   },
   "jobs/2-1a/LordKnight.txt|script|Lord Knight#Valkyrie|valkyrie:44:39": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21a.Lordknight.LordKnight",
-    "output_hash": "95fa3ad69ba04d42d8d406397ede105ccab242526f223209211f8b980b1b124d",
+    "output_hash": "fd411235f3aaf775a19d4fcde3c0f4e62200baba820f4c24c273127d0bf777cb",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1a/lordknight/lord_knight.ex",
     "source_hash": "02087d9fcebce5061deffc1815b5d3b0e1d71e7ed0d1edfd113f7cb0c052c234",
     "spawns": [
@@ -14882,7 +14892,7 @@
   },
   "jobs/2-1a/Sniper.txt|script|Sniper#Valkyrie|valkyrie:44:55": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21a.Sniper.Sniper",
-    "output_hash": "c8844fabcef04c0f25b18040793509fcec6a6a1a019e4634e3fa5a0dbe7837b9",
+    "output_hash": "499c8f7fc04870f17891daa3fcbecfc63d4a0bc7951011f35a4678dc9cb579a1",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1a/sniper/sniper.ex",
     "source_hash": "1012d363ca0a872b5c7d6ccccc09afd2ac5f6849a256b1ab551446c7a1606ae4",
     "spawns": [
@@ -14900,7 +14910,7 @@
   },
   "jobs/2-1a/WhiteSmith.txt|script|MasterSmith#Valkyrie|valkyrie:44:50": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21a.Whitesmith.Mastersmith",
-    "output_hash": "66bec0ab97414b2f3e75ba28520c6b7fff322d23ceeca325c9b2c99a310828ce",
+    "output_hash": "d35ca8d580ba67f350d0ff900c157e0016c27308525bd6457cbeb87105b4b303",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1a/whitesmith/mastersmith.ex",
     "source_hash": "6eed109e20d7e41dda953571f65b9ffcdc336eb016927acb5287286237d3171f",
     "spawns": [
@@ -14918,7 +14928,7 @@
   },
   "jobs/2-1e/StarGladiator.txt|script|Beeryu#job_star|job_star:95:33": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Beeryu",
-    "output_hash": "882cd75b3a67dc36774f82816d9bc8010622959c0819e2c33abe42afff64a12a",
+    "output_hash": "2ba81e069baadffc8f27255cc8f2619a868996bd993eb64ab0c95aec118a7c7e",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1e/stargladiator/beeryu.ex",
     "source_hash": "3510b8c1b1a82b5ddf51fa5c0c5f84b9537013a2d4c7bf51df11ebe1561f7783",
     "spawns": [
@@ -14936,7 +14946,7 @@
   },
   "jobs/2-1e/StarGladiator.txt|script|Cheehee#job_star|job_star:161:33": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Cheehee",
-    "output_hash": "09acee38069e68037110a368dee456fa4ddcb341a1bad6c38ca7645a44e14571",
+    "output_hash": "8a5e11d9d2b6e5c903726487180560c98bd0630544562015f25787a05ed56bc6",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1e/stargladiator/cheehee.ex",
     "source_hash": "9e1e7ae14764f629ad12440c58bd1724aab897db572517d1e275d9c66906c2d6",
     "spawns": [
@@ -14954,7 +14964,7 @@
   },
   "jobs/2-1e/StarGladiator.txt|script|Daru#job_star|job_star:29:33": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Daru",
-    "output_hash": "539197ed29d3beb6ded7940b2c1b2f653cb6a650ff2fd0b49997712c5b14f2d2",
+    "output_hash": "4437934224b08987bb145bc5af2785ba898016205006d570a0c0123017d16046",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1e/stargladiator/daru.ex",
     "source_hash": "2f464c41f3727c2f158b51251ae963fb6e14405774fe57f6b0eafdfd0f696563",
     "spawns": [
@@ -14972,7 +14982,7 @@
   },
   "jobs/2-1e/StarGladiator.txt|script|Moohyun#job_star|payon:215:102": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.Moohyun",
-    "output_hash": "61aba2579c51d882191682f2f69490df188bac79cbdff4ffb4b4eba148dd3523",
+    "output_hash": "52d89c0a89b47d21163e17d745fcf301a35f9fe21be408f8fd769f6fbdf0c098",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1e/stargladiator/moohyun.ex",
     "source_hash": "51632b196f18a0db445b6ede0272a60d221ca354fa88f3b9e70f2f29ff4663f5",
     "spawns": [
@@ -14994,7 +15004,7 @@
   },
   "jobs/2-1e/StarGladiator.txt|script|Wandering Master#job_sta|comodo:172:230": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.WanderingMaster",
-    "output_hash": "ca32fedd695dd276302018d2a6df5667accbfa93e1248100eb1c94dbe4d8f6ea",
+    "output_hash": "3185ff439232120d1a28ca390f04e47e3cef62fb48ed0cdfe5268ffc2b24eebe",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_1e/stargladiator/wandering_master.ex",
     "source_hash": "882c3fb2ccaf73e16ba4ba33b5fd120e1e40c4c7eac63fbf42680ba3cf18484f",
     "spawns": [
@@ -15012,7 +15022,7 @@
   },
   "jobs/2-2/alchemist.txt|script|Alchemist Guildsman#am|alde_alche:27:185": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman",
-    "output_hash": "8fb9476b38329a884098cda82f02a35b49604f6b7ed65306f038f904d2635d1c",
+    "output_hash": "640a2af655ecb3ad3ee6fe14cdb9829db0b55da0d015d1365b829f31e0621efe",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/alchemist/alchemist_guildsman.ex",
     "source_hash": "68f3a4dbae82fec4df05726ef22385a87bdd207ec33f22565c5fa4db8db65ad1",
     "spawns": [
@@ -15030,7 +15040,7 @@
   },
   "jobs/2-2/alchemist.txt|script|Chief Researcher#am|alde_alche:145:19": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ChiefResearcher",
-    "output_hash": "dfe0069c4e66013c595b214b127833b6af43b4fd26e937ba8cddb700f61d57ee",
+    "output_hash": "cd8073f2b943cf61d5f50fad7e2f40486727648e54a1013eb4684eca792cd2a7",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/alchemist/chief_researcher.ex",
     "source_hash": "7831ee7076a582d260b5985e72f083e9fca5f267f555aa2c712864455cd98cd5",
     "spawns": [
@@ -15048,7 +15058,7 @@
   },
   "jobs/2-2/alchemist.txt|script|Experiment Expert#am|alde_alche:79:19": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.ExperimentExpert",
-    "output_hash": "76dde1eebcdc3d922390c74f9dccad5bbe5d760c1893435bcaae253bff3ee505",
+    "output_hash": "8894b5dda5fbe19df273d9984387b3093b1d0a2555478060f6c34766d3d4e45e",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/alchemist/experiment_expert.ex",
     "source_hash": "404597c734c8d808aaca330f294c2ca41403783e96e9b82d927c77a742e5c3cc",
     "spawns": [
@@ -15066,7 +15076,7 @@
   },
   "jobs/2-2/alchemist.txt|script|Fastidious Alchemist#am|alde_alche:175:107": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.FastidiousAlchemist",
-    "output_hash": "75c288a00fc332b9bb5b970a4ba1d415268c7f398b9c6d64fd90cf4ee428d8fc",
+    "output_hash": "9ee5c9d3e7c5fcf6bf8bc2b38d7dbf25741b36e1d79d6b96708698a281c1e31d",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/alchemist/fastidious_alchemist.ex",
     "source_hash": "f13439f9b1685515223201c4dba291f2f6f3a9eb1c810b5fa1bdb7ee81b89b73",
     "spawns": [
@@ -15084,7 +15094,7 @@
   },
   "jobs/2-2/alchemist.txt|script|Master Alchemist#am|alde_alche:101:184": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.MasterAlchemist",
-    "output_hash": "d8390367d35f3cf2d45ab2704b3f118c4f3c2a1029395a39837a767735089d6e",
+    "output_hash": "4cc290b3f9c4d540203b6afd8a1a734ebd522b2ae5118d930bcafaf1c93efadb",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/alchemist/master_alchemist.ex",
     "source_hash": "486ebe2161cbb826681dc94fbb834e5e181a117ccbb146821b534a10a8db7ec8",
     "spawns": [
@@ -15102,7 +15112,7 @@
   },
   "jobs/2-2/alchemist.txt|script|Studying Man#am|alde_alche:13:15": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.StudyingMan",
-    "output_hash": "9311000fd03d0067b21916b54ed317ba02ae597e98df3d63ecca20cbac84830f",
+    "output_hash": "2cd9b6af68dfe51f53a9eb1323eb807d8d342639af2659805e1f47807593dfef",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/alchemist/studying_man.ex",
     "source_hash": "f9d5df67e87b9418c7c7c3bbec5599d09ebce769e84968772a059e309753c5e7",
     "spawns": [
@@ -15120,7 +15130,7 @@
   },
   "jobs/2-2/bard.txt|script|Wandering Bard|comodo:226:123": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard",
-    "output_hash": "16a52ccaaafeb82a0a684aee9991bd42645c9de9aeea959beb30affcc99c46de",
+    "output_hash": "595e8145234967b2854419c38b1f9c8da544c6dedc5700e4fa00aca1c420b302",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/bard/wandering_bard.ex",
     "source_hash": "f2be5b0b1ebdd603a9156b58403155cd2ca480ac885e3ea4ef9ebd3158fe19ff",
     "spawns": [
@@ -15137,7 +15147,7 @@
   },
   "jobs/2-2/crusader.txt|floating|Man in Anguish_|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish",
-    "output_hash": "398614550ab0d9e932103d409375e0a8544680cedf1c2cde58cb0dc7c0eaaf6f",
+    "output_hash": "558d0afca649147a77d9556bed42a8c216818dc75bc67c6e74c07285f055c47f",
     "output_path": "lib/aesir/zone_server/content/npc/floating/man_in_anguish.ex",
     "source_hash": "d5b8c387e47c21316b270411bf404163c684c9711dd0697ac1d41591063d06ef",
     "spawns": [
@@ -15163,7 +15173,7 @@
   },
   "jobs/2-2/crusader.txt|floating|Patron Knight_|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.PatronKnight",
-    "output_hash": "9f1b746eef8e4780be728852f0fc34e718df6e5dd0c8f88352e3055b40f0df82",
+    "output_hash": "e08484d8f2c1db36e6d9df231b3ce9ad1be2a9e8a2f748d70d1f0265b51d07a6",
     "output_path": "lib/aesir/zone_server/content/npc/floating/patron_knight.ex",
     "source_hash": "1ce0e5fbe71618f9fb9a2fa6f0d2068ed6c5a192a394059864e8ee59b03d779d",
     "spawns": [
@@ -15189,7 +15199,7 @@
   },
   "jobs/2-2/crusader.txt|floating|Senior Crusader_|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader",
-    "output_hash": "93b6c25f55b124f318e201b80bf669451df8347b0470249093fd47435c55ada1",
+    "output_hash": "6fdf21362303b3d0d651ee56cf273dee0432f9d44b5b898a0a5ddec7c9943e12",
     "output_path": "lib/aesir/zone_server/content/npc/floating/senior_crusader.ex",
     "source_hash": "b66393f52e5edff03ce1aba5c0ce4deda3cfe2432211dae8592f31fd8b3fbe73",
     "spawns": [
@@ -15215,7 +15225,7 @@
   },
   "jobs/2-2/crusader.txt|script|Crusader|prt_church:95:127": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Crusader",
-    "output_hash": "ce65349eefcccc6837578b2a9c0c72aa39de6423049fd4e70e6ce2366fb6c933",
+    "output_hash": "12dbb9b40192570a0f16c69dad3434509f9ef6ed1940479effdc5c428c653f98",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/crusader/crusader.ex",
     "source_hash": "ee6c62f69ec2a25a351f49cae51eb724d8f5633f8a03060d5a3b38cfcb610234",
     "spawns": [
@@ -15359,7 +15369,7 @@
   },
   "jobs/2-2/dancer.txt|script|Aile#da|job_duncer:43:93": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Aile",
-    "output_hash": "cb91cdd61f73b9f58afe9c154336bba882c86110c93b5de0bc04b2b0793266f9",
+    "output_hash": "3ee98d7995ea3bf1d845025b90f9a573b5527228343d639630f89bef664c8e9a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/dancer/aile.ex",
     "source_hash": "4b94cf111849e8a556274b52f8801e065afbffa4bc222c6474145027ac21df42",
     "spawns": [
@@ -15456,7 +15466,7 @@
   },
   "jobs/2-2/dancer.txt|script|Bijou#da|job_duncer:95:93": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou",
-    "output_hash": "f44189c4856d898caae6cd97c31dc8cd47bac9ea93f11ef8d63b36810aaa7ed4",
+    "output_hash": "5b46b812947b298df93542d450c5c5a130c7eada26809c4bbe1d43eab75607b1",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/dancer/bijou.ex",
     "source_hash": "aaf875141f5efaab667d882fee3614b5efc2a6a17c975d299473c50f211bfc2b",
     "spawns": [
@@ -15610,7 +15620,7 @@
   },
   "jobs/2-2/monk.txt|script|Boohae#mk|prt_monk:57:179": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Boohae",
-    "output_hash": "05f2a3d4b1b7f4ce5cb1caeedea3cbb1413ec8cb667b2d5a21442b1cd2aab544",
+    "output_hash": "a280fccb339a6012ab5e7a54f9d245c63fec4ad0b40dca408d1ef4e70eddf9a5",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/boohae.ex",
     "source_hash": "36644520bff52c2f5c82950ba1a6d1dcc5692cd09133f46f0035484138e20e85",
     "spawns": [
@@ -15646,7 +15656,7 @@
   },
   "jobs/2-2/monk.txt|script|Guarding Monk#mk|prt_monk:59:247": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.GuardingMonk",
-    "output_hash": "684d2bcf7b9914b6fcd3f8f3bbefed7635b449763e9f375303d9ffcf90543e92",
+    "output_hash": "4c717642cf66fc650cb9fa5190789eb0e399c4af046978a262679835ab98055d",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/guarding_monk.ex",
     "source_hash": "782327e0d68a860eb8d342ff10c7b4e0e068010c16449a1d03ed08e49332f3f0",
     "spawns": [
@@ -15668,7 +15678,7 @@
   },
   "jobs/2-2/monk.txt|script|Hyunmoo#mk2|prt_monk:225:180": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Hyunmoo225180",
-    "output_hash": "3c88cbbcafef9e642675a1291998ccfc22f575793fdd8d7b58e3ad5179f1a38d",
+    "output_hash": "dbcab3fdddc8bddf5f0a6085fb93a8c251b8a059a8a79fff1fac00e620fae8ef",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/hyunmoo_225_180.ex",
     "source_hash": "1a0eac0230e0786a0521b5920f6eb9f72b74447ba71932867e48dd3eca9919f0",
     "spawns": [
@@ -15758,7 +15768,7 @@
   },
   "jobs/2-2/monk.txt|script|Sensei Moohae#mk|monk_in:99:58": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae",
-    "output_hash": "1dbf19656c05092678b2710883162d8b4e06944da34376b7ac84cbe03e45eed3",
+    "output_hash": "d3b589c46a9b0b820bcf4a6c7abd2c26541e5a48731b6a380bd0fe82ed4461af",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/sensei_moohae.ex",
     "source_hash": "d23eaa790913d034b5347dddbbb907edb873de9bda345ece4a4943e9e9a7cbaf",
     "spawns": [
@@ -15816,7 +15826,7 @@
   },
   "jobs/2-2/monk.txt|script|Touha#mk|prt_monk:251:255": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Touha",
-    "output_hash": "fd0cd856c18879f637c3086ecb55daed56d1582c06f9aba27deb6e0d4115b767",
+    "output_hash": "b0d3a62c7589b03222f3f6061459f761d3c60fd0e8e3ee434782879de55d9e47",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/monk/touha.ex",
     "source_hash": "d0819334aad058d1d9cc07fda1c6dec3c2c88e5edfc50996969e6b49b135a315",
     "spawns": [
@@ -16037,7 +16047,7 @@
   },
   "jobs/2-2/rogue.txt|script|Antonio junior#rg|in_rogue:177:109": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AntonioJunior",
-    "output_hash": "1e8a1c56cc1ecc69391ee597cd1e392f282f78e94bbe52299a780fb313980821",
+    "output_hash": "eacb035f941f0f387e5d832b68a2e6781bc78bc02066071ecd3ca75e921ce475",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/antonio_junior.ex",
     "source_hash": "25351e2dfc8eb2897ca46b1d88c3fe2cb4b878b64e9ef5103de4d1858d2e1e66",
     "spawns": [
@@ -16055,7 +16065,7 @@
   },
   "jobs/2-2/rogue.txt|script|Aragham Junior#rg|in_rogue:244:39": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AraghamJunior",
-    "output_hash": "506f57c905b8c9114cd34320bb7128dd2f0c5b1327ff3928d47b53fd1c10e1c8",
+    "output_hash": "4501e31fa8433a85747a039fba40ecf62b479e1003a7ac319714e6fdc6c39edc",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/aragham_junior.ex",
     "source_hash": "5106b0297865453de767b62b290777940aab1062fe6e0340e3c279d92785101f",
     "spawns": [
@@ -16091,7 +16101,7 @@
   },
   "jobs/2-2/rogue.txt|script|Hollgrehenn junior#rg|in_rogue:160:34": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.HollgrehennJunior",
-    "output_hash": "20a4665a6eb526c69de1bd97da83226a904ee48943ce42937dce7df6cca2b797",
+    "output_hash": "87ffc748a4ddeb108e289db87a443ff5280c4cc521a0084dbc7fea8a03d07349",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/hollgrehenn_junior.ex",
     "source_hash": "192b60208fdb99ae1f61b4db05af7fd3fdcb6576110aad49f211f2ec9bba3302",
     "spawns": [
@@ -16127,7 +16137,7 @@
   },
   "jobs/2-2/rogue.txt|script|Rogue Guildsman#rg|in_rogue:363:122": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.RogueGuildsman",
-    "output_hash": "27e822353ab90279ed4d1b4188af71eaeb9e743a4e5b86fc3a4eeb7edeeeea3c",
+    "output_hash": "d44f0da4ab2f93018dba0cfd7841e6bf652fc692b1858edb63d9d39b2d743c70",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/rogue_guildsman.ex",
     "source_hash": "8e733be55749621ea77e2e5ef7faaab2003999cf923bd8bbcbbed93aef5f1353",
     "spawns": [
@@ -16229,28 +16239,28 @@
   },
   "jobs/2-2/rogue.txt|script|gen_ro#1|in_rogue:200:389": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.GenRo",
-    "output_hash": "72c358fcb2a412a0b4042062192f98b6982e680d65b57f53eb1c5eb74cc95ce5",
+    "output_hash": "0231fd9b3bb2140e7efed638bd42bd7eeef24803ee288e45f3240297b388aab6",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/gen_ro.ex",
     "source_hash": "7019e18aa6e1ebe0e01f29b414e293dbd3815ce57cce771a5489c1a7f1e0fc47",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|gen_ro#2|in_rogue:100:389": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.GenRo100389",
-    "output_hash": "c86c4cdceeca0e3ab6149d2ab14134117775204555d2fb81f436da3cd70c9de4",
+    "output_hash": "3620636f7224b249b51def29f7872c9a3158237b6e18af5f8c880adba04af048",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/gen_ro_100_389.ex",
     "source_hash": "e091bfb8bfd6a40ae9cc95b1b11840bf509238c6421afc8d95fcab438a218e8a",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|gen_ro#3|in_rogue:150:389": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.GenRo150389",
-    "output_hash": "7e3548973044ef6910b44571724ae7ec839750988fc341a71d6f1b0e3581d90d",
+    "output_hash": "9fcbcf7ff25d437b859513d19ccf9ecbeed2c6dffc274232003a5167b138708f",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/gen_ro_150_389.ex",
     "source_hash": "1c6e8ec11a3e27bae4b522802110226c4612439684bdddb51da5219a86b89751",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|gen_ro#4|in_rogue:250:389": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.GenRo250389",
-    "output_hash": "0cf967f9d75a15b3387b3346034a633af9d6762774b9be31f71e2ddc3022368b",
+    "output_hash": "5e0b689ffc56d75ff72a47c8ece4bedbe4329751bf85fe95f62a1f91476a243f",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/gen_ro_250_389.ex",
     "source_hash": "20444b61d1ea4c283500112883da6baf14bff121414f7e1fc50a9ad530754cbd",
     "spawns": []
@@ -16279,112 +16289,112 @@
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#10|in_rogue:197:249": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue197249",
-    "output_hash": "033e7dc4ccdf3e3f15a83b624d278782d032c0a723b2c8a16288d5424b3bbbac",
+    "output_hash": "a6677088d3733534f00f1454c87570684fbea9aa2acb539b36eb74960a097e7e",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_197_249.ex",
     "source_hash": "4354a1a0d90463866d26a5da363f8a33aff2957c7728654f643668b5a599fcd6",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#11|in_rogue:96:205": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue96205",
-    "output_hash": "ec8365b0ca7f3aba04553c28476c594891b86eede69029ddb05614ae6d50d8f5",
+    "output_hash": "ab244408a537b016faaa7115d7625088f55980a40efcf3379406bd8e9d062a0d",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_96_205.ex",
     "source_hash": "3af46b38d24baeb744b5fb2627b1501741e826f32b571fa8c66911a93173e921",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#12|in_rogue:86:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue86187",
-    "output_hash": "2379b74df02394f859a1def33e756070e08e89d226fc01d66fea8467f45b20c4",
+    "output_hash": "e6af4db7af019d214469f4e88955ed989a75f2c33106d654e056d668276a24c9",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_86_187.ex",
     "source_hash": "02010921f91d06f3e7985ccc4c4d6a37066c1a4d0429350c90629898fd78d171",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#13|in_rogue:223:187": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue223187",
-    "output_hash": "504565fec30aff0b62fe153121b2f892422353279d7e201be24cd56de94c9bef",
+    "output_hash": "2358812238c65097bcc8caec5744d00339ad01d1d866864eb4c26f9a3bb24f5c",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_223_187.ex",
     "source_hash": "b9bbca1eb27ee1172fc868c2a879ff46b8c49f139011fa79dba714d87faaae2b",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#14|in_rogue:233:207": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue233207",
-    "output_hash": "c9835d83de53a65de00c47a48bccf50e0fa31d3102818a5f0815d36cf0dbdcf3",
+    "output_hash": "7f1a472e98e25c4d21c531f980a1eb9731237515c9569cc2bc19da657d72dcce",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_233_207.ex",
     "source_hash": "a34e5f5759a7ed749fe984f375423d339e9632500ebe159c53972d9460efef92",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#15|in_rogue:244:319": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue244319",
-    "output_hash": "4719c0597a03128f52c6cc9c31a645adda99bb8b08f0ca4d035269f1d63dd4a4",
+    "output_hash": "4ff112c9b5bde917bbedece6e293c9053be2e12f8b5e7b15aa2cfcb7448ca0ff",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_244_319.ex",
     "source_hash": "30b3e4ebc1b19d13fa456c846f3ca0bcb6b38dbf494adcd55c3f7abf74179c86",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#16|in_rogue:334:319": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue334319",
-    "output_hash": "7e31e175d74ce9219e49d39d4707fd6806dccad13c0fddf15b2da5c880d70b0d",
+    "output_hash": "46acdc3677f358f72da1f3c688e7c43956093fc2d0448180846801c09668901b",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_334_319.ex",
     "source_hash": "eb59f8f341ee6bbe56b53a492f93ec6a40fffb68eebd65f515f0e67e48d60eee",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#1|in_rogue:15:184": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue",
-    "output_hash": "9bd1fea9f5453ca2c1085eb4e9d1d674133b8439021384c6cdccd8c2ef3cf402",
+    "output_hash": "da40d5becdd5d72f55ac20e8489d522a55aaa1f149950699ec5298b204ae9183",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue.ex",
     "source_hash": "25ea39b64c239a06a3c2e4f21cf671d9f5d636d7a97d8ecdbfa5a9cdddc12bfb",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#2|in_rogue:15:273": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue15273",
-    "output_hash": "22f6d92f3f88c81e8a5ee4b686e211f8eac72f6ee2752a10d2cfbeb1275f9987",
+    "output_hash": "b83dff0517b3108fdc2c8f5f17d42d1dd169ffc98a88d94f9bd24a14e8fbd8f8",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_15_273.ex",
     "source_hash": "c84ba76a54b15feee3402d673c7cb0e9c711b842ad16e0cac07389aea2b5d155",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#3|in_rogue:15:333": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue15333",
-    "output_hash": "aa8aaf43acb5b878376077661165f32e1bd204a2e99135cfc1ab758235a9211e",
+    "output_hash": "3cfe35287f655d023ca9f6d7704fbf4859fa9cd4177d0a4445e28016ab46b562",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_15_333.ex",
     "source_hash": "25bfa7c74b317bb0a27e9c0609566537c11471758085cbddbb0cefded442b782",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#4|in_rogue:39:341": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue39341",
-    "output_hash": "26f078ee6120a0cb4a0e76033d5e15532278522bfffcaa178af17d811d457c22",
+    "output_hash": "a63454adf21b1444f2a8910589d90ca8736b2c65efcc16424008ada657268d76",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_39_341.ex",
     "source_hash": "bf18190ed7d669c69a6ddc244ac0774c4d66139174d9759d2d772b01316b58bf",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#5|in_rogue:102:334": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue102334",
-    "output_hash": "31a4770c47ed5f3c85d60478841af9bc966a50e38d6089cb5fbd840da52eb155",
+    "output_hash": "4266777548b0c9d44484bb46ebff813c3ddd08547b286485caeac8503dbae76a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_102_334.ex",
     "source_hash": "46df06ef9a7a1813ee9e5a231d91a1cebdc0a4976eae9252e94adf680d026175",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#6|in_rogue:58:309": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue58309",
-    "output_hash": "5676176fcc7202ccab538bc55a54643501afc6fc1b31da14fa78b03e7d38d320",
+    "output_hash": "86cd19e1edd27756b06801a2409008b79d258e25cbdd4949637728fcf1be2ee1",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_58_309.ex",
     "source_hash": "57c6455eca43f2c0260b211ec6e99c08a73d2ad25ce4df02be9d70a735af3633",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#7|in_rogue:101:264": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue101264",
-    "output_hash": "fdf7b1a44b8e7284850a6940ddd15e6d4f5bc2f8cb6628ff2f22cf03c6d18a10",
+    "output_hash": "462c1298d31c293dbfe08e7ebe14ef5c18cfb181bd81a415f6b334e2ff7656b1",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_101_264.ex",
     "source_hash": "8cf5dd5e774f5137fa5972c0ae496ea016fae5e358ed4d5513861b8d356eb49c",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#8|in_rogue:140:312": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue140312",
-    "output_hash": "5b2dd7ec6cca4d0deab27c7c34aaf399edebe9bee7cb4359cbc76dadd7761ec7",
+    "output_hash": "e0e713713bca00c751d03653d6854b0399238e71e77158e9dc28ff9d133ba5ff",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_140_312.ex",
     "source_hash": "811c72cdef6300482760df45da8f2a55d315e3e30d3914d795df0d4cbce0b043",
     "spawns": []
   },
   "jobs/2-2/rogue.txt|script|mob_rogue#9|in_rogue:139:246": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.MobRogue139246",
-    "output_hash": "bb4d68bb73f26ee3f26fca8d957a747f748450e30836c9018a896f5743f4137e",
+    "output_hash": "cc16f9918cdc3adfe090a1eed4e34e959dff92a47e2269ed4b45613fab3d4c80",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/rogue/mob_rogue_139_246.ex",
     "source_hash": "fa9ee605bea2b573c8aa1a37fef78bea1a6d394da1d441a0323276245ed60f94",
     "spawns": []
@@ -16493,7 +16503,7 @@
   },
   "jobs/2-2/sage.txt|script|Biology Professor#sa|yuno_in03:32:102": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.BiologyProfessor",
-    "output_hash": "da76b2eadd154e7bebb30c8ab6d6b638734ea8138709f3ca09b030a7e5d1beb5",
+    "output_hash": "c2c0b62fb6557fd70751f05184047040ecd654181ebc7da15f6afe4abe89523b",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/biology_professor.ex",
     "source_hash": "b45492419cd91599df0ad6394ad7b652288df73149442f3c89fbeb77c1a9b7f7",
     "spawns": [
@@ -16511,7 +16521,7 @@
   },
   "jobs/2-2/sage.txt|script|Dean of the Academy#sa|yuno_in02:38:61": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy",
-    "output_hash": "e69c2090b132ffd92045197c111a05b674a8f629ee85df127257babd19868b06",
+    "output_hash": "8fbe6c4909302d6361ba0a768a18bc52d12245044754f6f882d806026fbca343",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/dean_of_the_academy.ex",
     "source_hash": "913203a1b11ec82d85d6eae2d8928f2d34a7c2187552a39ca86608d7ac5c2b9d",
     "spawns": [
@@ -16529,7 +16539,7 @@
   },
   "jobs/2-2/sage.txt|script|History Professor#sa|yuno_in03:62:176": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.HistoryProfessor",
-    "output_hash": "bade2ada48d87798b7ea290f6c919d130c8a2d244c545ceee29c8190600b0caa",
+    "output_hash": "020b368f919ea0da0b0bfbafad82805c9e1c1100fe8cffe8ac3be0dbd27af6b3",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/history_professor.ex",
     "source_hash": "88459e0ed5511dc5ee2f5fcf19b07d6f8e791886f63045b4a5a655219bb8375a",
     "spawns": [
@@ -16547,7 +16557,7 @@
   },
   "jobs/2-2/sage.txt|script|Physics Professor#sa|yuno_in03:244:31": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PhysicsProfessor",
-    "output_hash": "a8958601d5a6e58228b0faaa47e42eaa2dd1b437817d480370a820de6a05368d",
+    "output_hash": "4b219a76a2d4cc689f30a97b3d831f810604a88e8afa88bc7be437c4d2d5c0d7",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/physics_professor.ex",
     "source_hash": "ee62169b2058e5694c3ee4eb6eba2929f5a7575e4bce0aae015ef293239b2dd4",
     "spawns": [
@@ -16565,7 +16575,7 @@
   },
   "jobs/2-2/sage.txt|script|Practical Examination P|yuno_in03:169:180": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PracticalExaminationP",
-    "output_hash": "8c64c5aeb5ec3fe111becb09540f9c9f192dd407655585d21f78c8b60d6a3c82",
+    "output_hash": "998fc3ecd1ce6755a385e98291f429dde6a4b2bac076bec1dce1637e1af29b5b",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/practical_examination_p.ex",
     "source_hash": "076ba48e9fb76bd10d9f99d2b1b1272b84e6260c7d5e1ad6f234a82d108c9dd8",
     "spawns": [
@@ -16582,7 +16592,7 @@
   },
   "jobs/2-2/sage.txt|script|Staff of the Academy#a|yuno_in03:154:35": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy",
-    "output_hash": "7273cea3f13fcffb49de924835485b34dd250ec069c0bc60db90caa32dd4e6f3",
+    "output_hash": "8ec9ed7c48ecbf3c71e2006eb5ebfe393ed27ee7f4f53e4ee6ca900ceb54aa35",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/staff_of_the_academy.ex",
     "source_hash": "716c9455924f7eaa7a8cb5c476d86bc10bad8037c2e3f02accf2c8525b6f4cbf",
     "spawns": [
@@ -16636,7 +16646,7 @@
   },
   "jobs/2-2/sage.txt|script|Written Test Professor#s|yuno_in03:105:177": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.WrittenTestProfessor",
-    "output_hash": "1746a6585078f8d8e663b2c9bc087f7c00d5ef925b9e5a6d3cba06fb00bc6a2f",
+    "output_hash": "4d6f34d2346fcf464248812796f8a12e94f7913798bdaa823333ede0e8a449ca",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2/sage/written_test_professor.ex",
     "source_hash": "e71784faa196df80017acb77684f7528507ca741ed36dd157e739bd512a6cf83",
     "spawns": [
@@ -16654,7 +16664,7 @@
   },
   "jobs/2-2a/Champion.txt|script|Champion#Valkyrie|valkyrie:53:42": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Champion.Champion",
-    "output_hash": "b1ee63a04bbdb89d96dd32d0b36f04a53d3e1dd9a5714cb38004f5178317e1af",
+    "output_hash": "c4d101940c706fc2e8fc70b732a19486b9bbeac1f65c80017ea713fba920c89f",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/champion/champion.ex",
     "source_hash": "6d051f00d1851c62d3d049fd7401c85d2754464d69923754f6ee04d98153c3f9",
     "spawns": [
@@ -16672,7 +16682,7 @@
   },
   "jobs/2-2a/Clown.txt|script|Minstrel#Valkyrie|valkyrie:53:54": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Clown.Minstrel",
-    "output_hash": "0b517ac1126669bd31dce59318030279c3072d0d032d7236106cdba4283f0805",
+    "output_hash": "00b8f035815410521b17c9119065de8aec8bbeb26175ad3df8cb8458a0d91193",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/clown/minstrel.ex",
     "source_hash": "50bdc02ea2401bca585cdba872f2332831e7eb22b7a156d4e67c5af5450e12c9",
     "spawns": [
@@ -16690,7 +16700,7 @@
   },
   "jobs/2-2a/Creator.txt|script|Biochemist#Valkyrie|valkyrie:53:50": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Creator.Biochemist",
-    "output_hash": "bada1110738b9abb8981dba7580919393d37e97ed49049544b52777fffe02093",
+    "output_hash": "b70af2ac62b0d809d75d4eb6a6c1065d2ad2faed4baf926fa87e0fb01b1ab1c1",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/creator/biochemist.ex",
     "source_hash": "e25727424aa62102b8c2f1903d62b9643a9b8726ffa3b1f5bf3183e694ec24bd",
     "spawns": [
@@ -16708,7 +16718,7 @@
   },
   "jobs/2-2a/Gypsy.txt|script|Gypsy#Valkyrie|valkyrie:53:56": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Gypsy.Gypsy",
-    "output_hash": "d795413f0a2dc17ecabf981ed8aecce72c099eebda74b13dbf8ec73c62a2d4ea",
+    "output_hash": "15bee2df00c64f377fae6138f7acc25f5b1c64185df6ff6e698bcaadfd3b7ea4",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/gypsy/gypsy.ex",
     "source_hash": "d76679a1295a1c3c45da4d0e7338631f87c01bdd0161836ed51c922848024e1a",
     "spawns": [
@@ -16726,7 +16736,7 @@
   },
   "jobs/2-2a/Paladin.txt|script|Paladin#Valkyrie|valkyrie:53:39": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Paladin.Paladin",
-    "output_hash": "6d3352f2fc161b6436c229653d5578019fa1f1dcb67aa40de45d2236b833d9b6",
+    "output_hash": "4e2395fbc07f03bdb97911d9fe8eb7be2a685501e0c5dd5ee89c9c19beace1f8",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/paladin/paladin.ex",
     "source_hash": "1655b4daae8d83f46d7b3649fe3e8871887f2f06604e662d45027da185bc711d",
     "spawns": [
@@ -16744,7 +16754,7 @@
   },
   "jobs/2-2a/Professor.txt|script|Scholar#Valkyrie|valkyrie:53:47": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Professor.Scholar",
-    "output_hash": "a7f855a76200f3920c89b88a5034a0dfe41b67c59e898b489ca3f42ffb292bd8",
+    "output_hash": "cf48714c5a82aee0b7afc72f08daf5706563ded2265e6e5a581f0ef5abded00d",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/professor/scholar.ex",
     "source_hash": "3cc4e278f96916164ed3270bde0066105b6bade83d251f676dfe9211dcc075cb",
     "spawns": [
@@ -16762,7 +16772,7 @@
   },
   "jobs/2-2a/Stalker.txt|script|Stalker#Valkyrie|valkyrie:53:58": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22a.Stalker.Stalker",
-    "output_hash": "1c6a1a2ded0147779e64d25f75f6f104925f8aa2d4870754490bb0b32dd41441",
+    "output_hash": "69a823e88c121d9c55f28653a091ba56bd3dc5ec3c393930cd6a550e51b55c2e",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2a/stalker/stalker.ex",
     "source_hash": "c659ff0710d923759e6ca73b5c83b8fcc2c4ba918fc7ef48fd96fcea0a1502be",
     "spawns": [
@@ -16798,7 +16808,7 @@
   },
   "jobs/2-2e/SoulLinker.txt|script|Kid#link1|morocc_in:174:30": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid",
-    "output_hash": "11b592b60bcd84ca817bfcf2d5137f4a57b212c65c0b04f7e1b2845438f678b2",
+    "output_hash": "ef0c2094f261607b9b979fd5ceb8cf07396dba68ed773bfb9bdb522889be800a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2e/soullinker/kid.ex",
     "source_hash": "7b09ce484be5cf09aceec68ed76741628f1d4e14dab0fa6d3c4df0cd75bbc9e8",
     "spawns": [
@@ -16816,7 +16826,7 @@
   },
   "jobs/2-2e/SoulLinker.txt|script|Maia#link2::SLTester|job_soul:30:31": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia",
-    "output_hash": "da2565709e30bab08009e9787d5a82c7a773c9ef13a296591e29e6cbdd5ee130",
+    "output_hash": "de95ec10e13a78c500cd476597c59bb92928718ddc174ab9f97e9bf8cf2b42a6",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/2_2e/soullinker/maia.ex",
     "source_hash": "d24933aa2113b10085caecf88b4e0a7776c35325bc377c7392a52e69c30e166d",
     "spawns": [
@@ -16905,9 +16915,9 @@
   },
   "jobs/novice/supernovice.txt|script|Esseray#sn|aldeba_in:216:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray",
-    "output_hash": "d0c0a901bc9710ff90b56632dff94ae748e73b76b24f034fb99ae66e2015e437",
+    "output_hash": "922c42d8aaf6e393a46c157c06bd53760fc503d6049936b477183a145fb8d5e3",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/novice/supernovice/esseray.ex",
-    "source_hash": "c7a1d2ebbdb0e4ad8ccd7d06afc9dbf38534407d328e0907c8a5cde9c085b770",
+    "source_hash": "0451b3ce7eed42afdf80c036246b5479c8996d0080576584b47ae22be65dbd54",
     "spawns": [
       {
         "name": "Esseray",
@@ -16923,7 +16933,7 @@
   },
   "jobs/novice/supernovice.txt|script|Kafra Employee#sn|aldebaran:54:238": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.KafraEmployee",
-    "output_hash": "c99e56eb9c23022fffd18f0c4d382737f12471767fee044b7214335e8550c0df",
+    "output_hash": "440a8c8f5e848426e66a98d404af1012cab3eb37a5065ca7c3f6926f2cf29e04",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/novice/supernovice/kafra_employee.ex",
     "source_hash": "cda0abd48cfe6c4fc41299071a11deb00caae0341db189ae803b66711c87f2f2",
     "spawns": [
@@ -16941,7 +16951,7 @@
   },
   "jobs/novice/supernovice.txt|script|Tzerero#sn|aldeba_in:223:167": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero",
-    "output_hash": "e5714e9f51c2cd0c47dd3e2f09ad6b217ba3f79f3ddc2f39eb8eb9f85f2f505b",
+    "output_hash": "eee65b790b024e083d64aee6e5aac38d53cabebd832ef0325f5b737cd45af791",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/novice/supernovice/tzerero.ex",
     "source_hash": "99631c010aecf5c6899ff9230e5fdfff8f03807e412d629110fc74743ab2f202",
     "spawns": [
@@ -16959,7 +16969,7 @@
   },
   "jobs/valkyrie.txt|script|Book of Ymir|yuno_in02:93:207": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.BookOfYmir",
-    "output_hash": "58e0f71d05792cac1429ba68d09f562ce91a8ff8048384ebb894f818f12fba81",
+    "output_hash": "e2136531f6efd8e83834c5f5c3d5868fad88cacf8b2343085c1c2764419da11f",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/valkyrie/book_of_ymir.ex",
     "source_hash": "e368f13d3cea6b660b3469d0a6eae10a18cb85442c393291d3e22df8496b6f9b",
     "spawns": [
@@ -16976,7 +16986,7 @@
   },
   "jobs/valkyrie.txt|script|Heart of Ymir|yuno_in05:49:43": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.HeartOfYmir",
-    "output_hash": "a11e04e688aab5890220d3aec8108e18acc1bbd436441bbb7cb0bbdfd366cb8f",
+    "output_hash": "739cc01a9f3811370447a3de85d965a7718f8f513e49a486c17fca40c2444809",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/valkyrie/heart_of_ymir.ex",
     "source_hash": "b674c7465f13dc8e7b572c063be044c763c301aa1d292a1e5c5d21e188c37455",
     "spawns": [
@@ -16993,7 +17003,7 @@
   },
   "jobs/valkyrie.txt|script|Metheus Sylphe#Library|yuno_in02:88:164": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.MetheusSylphe",
-    "output_hash": "4b9c457a9b8cb1f6c7621eb0b0dd6ad9078c7a88165fe6d3899d3d83cc65e4eb",
+    "output_hash": "0365900192dfb07e4a788c8f3ae10d6afcd89a192e2bc51007cca772f28a7bcb",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/valkyrie/metheus_sylphe.ex",
     "source_hash": "f19dff333fa794118b9b61a21fd055d67ffe51ca4650d0c28bbdf9eebe7dce86",
     "spawns": [
@@ -17011,7 +17021,7 @@
   },
   "jobs/valkyrie.txt|script|Teleporter|valkyrie:44:33": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Teleporter",
-    "output_hash": "536cad6bc08d0255229d37cb36b4aed74d02a253b0156c5dfe8ccb6438ddd9cb",
+    "output_hash": "5c1ff69679f2c9cdb95a98d1dee47af4f01557e698ba3d85288f274371ab294a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/valkyrie/teleporter.ex",
     "source_hash": "56dbe07228eaefe21972befdbc544139aef4319218dfce52bfd47b7d8d5aad1c",
     "spawns": [
@@ -17028,7 +17038,7 @@
   },
   "jobs/valkyrie.txt|script|Valkyrie#|valkyrie:48:86": {
     "module": "Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Valkyrie",
-    "output_hash": "5bd20b4c78ae76b0f026d1bd138e1f72c32397342e48bf24507b237a96b6b4d3",
+    "output_hash": "1e4acb3bda1207791ec4733e4312d75aa3d2693b568bbb6bdf4d5fcde3bc127a",
     "output_path": "lib/aesir/zone_server/content/npc/jobs/valkyrie/valkyrie.ex",
     "source_hash": "46b6974b463ce6403a27a357b86f893852ce43cc06c5ecf8fccd3054d84eba6d",
     "spawns": [
@@ -18294,7 +18304,7 @@
   },
   "other/Global_Functions.txt|function|F_GetPlatinumSkills|-": {
     "module": "Aesir.ZoneServer.Content.Npc.Functions.FGetplatinumskills",
-    "output_hash": "6ad7e39f6b5a1652a40d496f24443804ba7b8a496dc7c594dadd3c8ba6538117",
+    "output_hash": "eef79d3380a1ddf8f88ed8a616d23940cf05dee2418de198ef47d4d171f73830",
     "output_path": "lib/aesir/zone_server/content/npc/functions/f_getplatinumskills.ex",
     "source_hash": "c86dd8fab87f49d7ed6e0b7dbeaa1e5037c54bcd7518edc1378c3e304f559136",
     "spawns": []
@@ -19111,7 +19121,7 @@
   },
   "pre-re/jobs/1-1/acolyte.txt|script|Ascetic#2aco|moc_fild07:41:355": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Acolyte.Ascetic41355",
-    "output_hash": "79bb571073cc39949b0014ae6d3eededb53c1740b8bd76dba453c08eefe00985",
+    "output_hash": "6f0d6be2e491658a8c8752cecbb570d305e8801740e3db4799333779b40d80a3",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/acolyte/ascetic_41_355.ex",
     "source_hash": "63e59ccc3319933e10bb66b7c9c527734b2377f7f9536fff0cbdd0d313b3e40a",
     "spawns": [
@@ -19129,7 +19139,7 @@
   },
   "pre-re/jobs/1-1/acolyte.txt|script|Ascetic#3aco|prt_fild00:208:218": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Acolyte.Ascetic208218",
-    "output_hash": "d36c08f7aef5e91c16f78e44c50ba98363843e5ca90c21b97830f0c1398ae043",
+    "output_hash": "0622c94125a060b5de109763b44e3d360e31afff8e76c76104996d78ebf98935",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/acolyte/ascetic_208_218.ex",
     "source_hash": "711c76e365689ad6df825b58c67f9ebf0aa3653066c93d99e92696ad34ca1b65",
     "spawns": [
@@ -19147,7 +19157,7 @@
   },
   "pre-re/jobs/1-1/acolyte.txt|script|Ascetic#aco|prt_fild03:365:255": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Acolyte.Ascetic",
-    "output_hash": "871d95ad2fc7d6585978af0171251d4f3a09f8650f59249f3b71689e92c6f7da",
+    "output_hash": "b93e8104e240981c05106ae1a51526d46b7cd3d969ed4a600dc19ab2325d2970",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/acolyte/ascetic.ex",
     "source_hash": "f126356c52666fb3bb9d81d40627a417a47f2866f671da2ca433717d0e98e429",
     "spawns": [
@@ -19165,7 +19175,7 @@
   },
   "pre-re/jobs/1-1/acolyte.txt|script|Cleric#aco|prt_church:184:41": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Acolyte.Cleric",
-    "output_hash": "78d22435bff2b650f43b04bc247abbef2737f1db3e242f5c73a2a135da796fed",
+    "output_hash": "3f9153a1e32d9a4d4333de9b20a2759428b98758d0ac925f12588848ce24110a",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/acolyte/cleric.ex",
     "source_hash": "95c0a47b29d8b91b16b63c1f9a91767ed7be057b9230de60127eed1f38412480",
     "spawns": [
@@ -19183,7 +19193,7 @@
   },
   "pre-re/jobs/1-1/archer.txt|script|Archer Guildsman#archer|payon_in02:64:71": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Archer.ArcherGuildsman",
-    "output_hash": "12da954956e7e3e0669a0e0fe176b0dc53edc46e7dd835fa6b49aaeb9220555a",
+    "output_hash": "82335669e10a34f66986200b56f593b5099fe684b8e61c1346486d91ea21dceb",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/archer/archer_guildsman.ex",
     "source_hash": "f51797310f7bd96526eabec97d22469d394cf9df8bb0e6b5f4438aeeaf4b8b8d",
     "spawns": [
@@ -19218,7 +19228,7 @@
   },
   "pre-re/jobs/1-1/mage.txt|script|Mage Guildsman|geffen_in:164:124": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Mage.MageGuildsman",
-    "output_hash": "062dfac9c4e0639ed26dcdbec2ef83ff001200524de0e8b4475f87e761f4e47b",
+    "output_hash": "44ba6c66001de3ea974c86f15be777dfc2bdabb122c25dd74212cb67761b48ce",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/mage/mage_guildsman.ex",
     "source_hash": "112fc8307ce766e096df2357ddc0f6ff93cc2bae6063771e7062deb0f350992e",
     "spawns": [
@@ -19295,7 +19305,7 @@
   },
   "pre-re/jobs/1-1/merchant.txt|script|Merchant Guildsman#mer|alberta_in:28:29": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Merchant.MerchantGuildsman",
-    "output_hash": "66dc6b46d12fb24af63c38dc77cd19b7caf588be55da4a131e6653dca4496e03",
+    "output_hash": "962a9964d7e50ddd5fb409816afb961efa308b5b7b519807d7ac8fd9ed53fc77",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/merchant/merchant_guildsman.ex",
     "source_hash": "48ef4930c43250b2b8c1bbe72dcd69febbd5b745ee0341291a5a80fdc01d5a7d",
     "spawns": [
@@ -19313,7 +19323,7 @@
   },
   "pre-re/jobs/1-1/merchant.txt|script|Merchant#mer|alberta_in:53:43": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Merchant.Merchant",
-    "output_hash": "38806bd2f8190d87e9dff37b52a5df23168f5529fb0fb4b1bbb35e0dd5949e9d",
+    "output_hash": "9068b31e16581048eea86546e3c385415bc12dce924387b87a9873de906c9a45",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/merchant/merchant.ex",
     "source_hash": "b296dac32a3e3fcd098ec1282ba22cd0277d8c929520e8f306e5a148db37efd5",
     "spawns": [
@@ -19452,7 +19462,7 @@
   },
   "pre-re/jobs/1-1/swordman.txt|script|Swordman#swd_1|izlude_in:74:172": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman",
-    "output_hash": "d50851784355cf2221d9e9d1c4b7d4f15eb4166834d0c3edfae4a9416ee497aa",
+    "output_hash": "900f686d5bc9dcf8652ba2d71bc3653ef0b1a69f12c30e7fb9d1b574fd0e619a",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/swordman.ex",
     "source_hash": "19410cef74964876ac5a0ab0fc695b4c5b4f8cb18b72c28a6d8b7a0d7aa82a98",
     "spawns": [
@@ -19470,7 +19480,7 @@
   },
   "pre-re/jobs/1-1/swordman.txt|script|Swordman#swd_2|izlude_in:62:170": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman62170",
-    "output_hash": "8fe28ec2594761c094c3838d70e3354c96f652175ee124b6dac953f7bf64f57f",
+    "output_hash": "f0c03f7d5230e7e347f2ecb22a72c41ef2a1aceb690d9913a1765bdb4d8b6513",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/swordman_62_170.ex",
     "source_hash": "3ef10481e42d4a88d8cd4527461fb62f90fa45025a9b526da62ab4c8cea0e08f",
     "spawns": [
@@ -19524,7 +19534,7 @@
   },
   "pre-re/jobs/1-1/swordman.txt|script|Test Hall Staff#swd_1|izlude_in:30:163": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff",
-    "output_hash": "b7f192faad5cc0514a6e52885e5ced69548257ffde20e8b8442db32b1c75e76a",
+    "output_hash": "53874f50e8c5f5e2b152d46353f96afe98aabaa28f99e749bedc93d7afb2a2da",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/swordman/test_hall_staff.ex",
     "source_hash": "6232934262894a19458e221de5c4129d60525435b5706d52b8c2cef83eb14157",
     "spawns": [
@@ -19726,7 +19736,7 @@
   },
   "pre-re/jobs/1-1/thief.txt|script|Thief Guide|moc_prydb1:39:129": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Thief.ThiefGuide",
-    "output_hash": "0b19b7225015055078dfde1e4d1cf429246837e103cdf1ad0cf67919eab4a46e",
+    "output_hash": "fb9d39d162d84af5d6f404d3c79124f4cf2b3cba8c1fecc671d4f4b7d24d32c4",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/jobs/1_1/thief/thief_guide.ex",
     "source_hash": "00f0b76b3b1e4e25ff8499d7608a5b6591f233ad066ee04e7be07672f085757e",
     "spawns": [
@@ -20414,7 +20424,7 @@
   },
   "pre-re/other/resetskill.txt|script|Hypnotist#2|prontera:146:232": {
     "module": "Aesir.ZoneServer.Content.Npc.PreRe.Other.Resetskill.Hypnotist",
-    "output_hash": "6813a72ae2bcc79a80b04893326ca723cc8e253f0bc17bd813ec79a465a4a9f7",
+    "output_hash": "d37a22ed001f864e0b6f59e4583613db77c03fef788cfb878bedec5612364f53",
     "output_path": "lib/aesir/zone_server/content/npc/pre_re/other/resetskill/hypnotist.ex",
     "source_hash": "b5a065f4862104104157e9ffca2b9cb3e04b3365bb7023ad1774bcb272d698d9",
     "spawns": [
@@ -25302,7 +25312,7 @@
   },
   "re/jobs/1-1/acolyte.txt|script|Ascetic#2aco|moc_fild07:41:355": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic41355",
-    "output_hash": "af04e9f834df36565f7d889d16f8dfeda70f754650d7d93aa75b966d41ce1b82",
+    "output_hash": "411f83db1e328d03872574a44b5d1dd97a9086c084a72f2479c92345a5cb0c93",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/ascetic_41_355.ex",
     "source_hash": "c379ad3eb238f9451af11c03c9b28a1910fa24c9a723761f3f445a041421daa2",
     "spawns": [
@@ -25320,7 +25330,7 @@
   },
   "re/jobs/1-1/acolyte.txt|script|Ascetic#3aco|prt_fild00:208:218": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic208218",
-    "output_hash": "2ef375039b3d74df2839f0705ef1cdaa9eb9805954191cbdf05cdb7a16941c50",
+    "output_hash": "68513b8974765f9213612851d7a42daa50b34b991ec41288ff28c795cf8117fc",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/ascetic_208_218.ex",
     "source_hash": "1c68300563f930da75cc9bf8014979ece9181ae6fb48031bed4919164c891fd3",
     "spawns": [
@@ -25338,7 +25348,7 @@
   },
   "re/jobs/1-1/acolyte.txt|script|Ascetic#aco|prt_fild03:365:255": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic",
-    "output_hash": "be57306907cf71286705649237f5d37110948840a493ea1aa6593c9503ed07ba",
+    "output_hash": "cbffe830ca9ed8b1b7d580ac10b3741e8668b3fb2cba5649f4714840fb493840",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/ascetic.ex",
     "source_hash": "e88885cda37dfb454b0d4134c60d28779e4ca1473aef09240c8a233bc5597d3a",
     "spawns": [
@@ -25356,7 +25366,7 @@
   },
   "re/jobs/1-1/acolyte.txt|script|Cleric#aco|prt_church:184:41": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Cleric",
-    "output_hash": "5b161a893b563d6a48b4e559b31dbbacbd671356150178478f34330cd1ce7bdc",
+    "output_hash": "c501dce16c4ae19df7eddf0b08d349fe597f639ea8a11c920cd2e7ef1ef4ebf9",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/acolyte/cleric.ex",
     "source_hash": "56a44a15ed5de36184b2361121a9f66582b1553e01f889a5adb89149263d19cf",
     "spawns": [
@@ -25374,7 +25384,7 @@
   },
   "re/jobs/1-1/archer.txt|script|Archer Guildsman#archer|payon_in02:64:71": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Archer.ArcherGuildsman",
-    "output_hash": "369d976095667e8ad3ddf7b7f10965b8ce196b3229c6b3d6bddd9f1c1fe69b57",
+    "output_hash": "74a7e3d4a415122065ebacd15c30e67b7e41b0b101fdc091c4066faaeeb1341e",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/archer/archer_guildsman.ex",
     "source_hash": "7666772eb6556d9673da08a8b5565bb0b7750465f4b388147a11870883f706d8",
     "spawns": [
@@ -25392,7 +25402,7 @@
   },
   "re/jobs/1-1/mage.txt|script|Mage Guildsman#mage|geffen_in:164:124": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman",
-    "output_hash": "56f89fff949e54f97fc4d0abefa6cacd16a6998e5cc820da5d8db5cf97ba63a6",
+    "output_hash": "85c790f8f2f27f55a7d48f8864c99149c2c8d796a585e17a48f1d066f8b2c31c",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/mage/mage_guildsman.ex",
     "source_hash": "185fb8f7863de75e174e048bc0174332dc491540be7af2b06a7a31b9e0806431",
     "spawns": [
@@ -25410,7 +25420,7 @@
   },
   "re/jobs/1-1/merchant.txt|script|Merchant#mer|alberta_in:53:43": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Merchant.Merchant",
-    "output_hash": "1177561fc75302cf2050f9e78a437e6d7dca4003ff97698d130383f685646b8b",
+    "output_hash": "74d775397b22b83f8d70709f17a96898d36816e896f770b51caed61909a3aa25",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/merchant/merchant.ex",
     "source_hash": "4ae0dbdc7da3ed8dd0ea3a0456709ef68afbf6898d7c3ae7b4364498fb4cf006",
     "spawns": [
@@ -25428,7 +25438,7 @@
   },
   "re/jobs/1-1/swordman.txt|script|Swordman#swd|izlude_in:74:172": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Swordman.Swordman",
-    "output_hash": "3b196bf3c1d46de2f17335ced99f3c8b99e8f72f8c849ae1bfb670094f958d80",
+    "output_hash": "54b2f3d526595010ba1338085b83c5a5d7910dbfdd75c9c4d50fc0c16a765644",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/swordman/swordman.ex",
     "source_hash": "053023849dd37320eacee2f640aa06922baca63a0432ac2c331b93c3491baff9",
     "spawns": [
@@ -25446,7 +25456,7 @@
   },
   "re/jobs/1-1/thief.txt|script|Thief Guide#thief|moc_prydb1:39:129": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuide",
-    "output_hash": "d92de20121e92739311c59d7a39f919aad073b561d3e1bb2f626ac82d6620dd8",
+    "output_hash": "6babb60de3775a7293ceaf74590f0c53a5a4dc44a81489b06677f81e80990984",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/thief/thief_guide.ex",
     "source_hash": "468b40fa4c5fc9c4cc9db4fb37266a67158201881aaae68622bd5f12393cd7e4",
     "spawns": [
@@ -25464,7 +25474,7 @@
   },
   "re/jobs/1-1/thief.txt|script|Thief Guildsman#thief|moc_prydb1:42:133": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Thief.ThiefGuildsman",
-    "output_hash": "57de47164b10cdb15ee5281a79582cc11f1e2d0ae62315ee6e1f71caaa7f8f3e",
+    "output_hash": "8601b97d7c42b2ef07ff0718c76bb33d17f038178be9aff2dacead0a2db12a64",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/1_1/thief/thief_guildsman.ex",
     "source_hash": "e85cc36eedfd5d97dbbb9cf6a8965273204b6e81cda8aa811011bd5fa2e89ebc",
     "spawns": [
@@ -26666,7 +26676,7 @@
   },
   "re/jobs/novice/academy.txt|script|A Nun#2|iz_ac02:152:165": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ANun",
-    "output_hash": "4df4cc8aba84d181a7373dab7e330387882c4ad9be78054e9ad10269276c5437",
+    "output_hash": "78f0079e84ace08f08f1a1de963af9431dc7d04be153ad6529725898ac92b3cb",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/a_nun.ex",
     "source_hash": "231929e4974f7d643bc4e1b8cb328906988a7c2a56cbfd400b5f7d12ef9b4457",
     "spawns": [
@@ -26724,7 +26734,7 @@
   },
   "re/jobs/novice/academy.txt|script|Academy Receptionist#1|iz_ac01:100:39": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionist",
-    "output_hash": "6c80e6b6b2e1ad261abadb968fa7f7b8b54ce499a0aba3743ae3bb05216016e1",
+    "output_hash": "153887acbead9047194cd368999f185fce46991cf6a7dbbaf4b4e2cd66b1ce6f",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_receptionist.ex",
     "source_hash": "1912b062ff94f3ba8eda07ec01356f265b80c20011569f4906b99f662ac28757",
     "spawns": [
@@ -26782,7 +26792,7 @@
   },
   "re/jobs/novice/academy.txt|script|Academy Student#0|izlude:140:249": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent",
-    "output_hash": "710ac5057e81ad44995929e9f37f51f7407addb7d905dc25db0fc9dc673ae6c2",
+    "output_hash": "3bd0d0b2d52aefb8c637550fd99ae668500662cb7532b7efac38c44546fffcd1",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/academy_student.ex",
     "source_hash": "b34d2195e55dd5caaa64a869ea461028d7e63507c79cfd8f0dd01cb529f05299",
     "spawns": [
@@ -26840,7 +26850,7 @@
   },
   "re/jobs/novice/academy.txt|script|Acolyte Leader Alice#2|iz_ac02:156:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice",
-    "output_hash": "3e93b6d5768a025adcc6aab4f64d39a45ee58bd578e51f2347607139b9761d9d",
+    "output_hash": "7b10cbf46d40d01ca9f91796274ad9f45fedc2bb560c13f692ccca99ceef8eea",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/acolyte_leader_alice.ex",
     "source_hash": "864f700265e8493ebf51594117d9c680bafad5227a67c450551b1c85b4621dc9",
     "spawns": [
@@ -27110,7 +27120,7 @@
   },
   "re/jobs/novice/academy.txt|script|Arang#ac|iz_ac02:70:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang",
-    "output_hash": "afcede14eff06dc623ae5971f26ca48ddc1227566acbb7d6307b1306d8577783",
+    "output_hash": "a37edda3b788a29023d91f5823a49bbe4ae77bb2b52ecf84572cd1ec595af9e3",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/arang.ex",
     "source_hash": "f01ebd63c81f84314935456539f85dc6c042840cc5781b6ccb96e15e447c4553",
     "spawns": [
@@ -27168,7 +27178,7 @@
   },
   "re/jobs/novice/academy.txt|script|Archer Teacher#ac|iz_ac02:65:109": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher",
-    "output_hash": "b007cbf18cad29549db794f882ec46db062cf337c20bc4f4475fccbfadcba588",
+    "output_hash": "0e5a8838a2c240866c8521f5bcf6aefc83074892962a503aaa3019cc17f8166f",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/archer_teacher.ex",
     "source_hash": "20422dc2d20042bcd879c0959cf3b605ba81709138cafaad5621f87e1cd6e3b7",
     "spawns": [
@@ -27304,7 +27314,7 @@
   },
   "re/jobs/novice/academy.txt|script|Attribute Expert#ac|iz_ac01:53:74": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert",
-    "output_hash": "4e02642c9b811f22e769e294229fb3666060e00ed6f7bdf85beae91e9ed7078c",
+    "output_hash": "49013968550fc3ee35de433113f5eeb456b5e235ffa6ab2277ea5fb29a0519ab",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/attribute_expert.ex",
     "source_hash": "003af25b12a96f52d644d5644de5bf6acad30fde6ddbb759e98967ddbe5d4e9a",
     "spawns": [
@@ -27362,7 +27372,7 @@
   },
   "re/jobs/novice/academy.txt|script|Battle Instructor#08|iz_ac01:59:83": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.BattleInstructor",
-    "output_hash": "5dab091744d412a80d7c3163a779e96155a3d027a466f0519ea7037a613b4121",
+    "output_hash": "e598e1e316d3b604d316a8c651c5159c716ec1497e4fa63ed5f9f6c47a8591cf",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/battle_instructor.ex",
     "source_hash": "fe5e17d32e473c9a0172ac2077baf62a3b7ca0150bc19bd5f138fa08005f375f",
     "spawns": [
@@ -27556,7 +27566,7 @@
   },
   "re/jobs/novice/academy.txt|script|Captain Carocc#intro_npc03|int_land:78:103": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc",
-    "output_hash": "cbeb5373423a9c2b13554f5eb1cccb265af5b5128aaf5219fde821815226bea2",
+    "output_hash": "c88227fb1d5da09a7a1b9f1e294eeb8d79c647f1317c49e05a0187a96d6ca8ad",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc.ex",
     "source_hash": "ca57497e2d70b2ecfa4d65dd638fb079ca82fbb3c8390a33e98da5ec5d228413",
     "spawns": [
@@ -27614,7 +27624,7 @@
   },
   "re/jobs/novice/academy.txt|script|Captain Carocc#iz|izlude:198:213": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc198213",
-    "output_hash": "4d23acf0d9373a11684cb5612567eecb202f60bdd5b50018911c78228312c67e",
+    "output_hash": "577ac8c84a30f5f841b2f84260c9900230e309ef7493c5691a635746dbaf80fb",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/captain_carocc_198_213.ex",
     "source_hash": "1b48119e1ffb12f46dff1689aa7dc10735cf9d52a3bf05572cc218cdfafb8ad9",
     "spawns": [
@@ -27768,7 +27778,7 @@
   },
   "re/jobs/novice/academy.txt|script|Cream Puff#ac|iz_ac02:143:55": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CreamPuff",
-    "output_hash": "256a57d1e380935a06ff54addd57b01d44df13e9f473f2f7f54263c1596bc65b",
+    "output_hash": "10955fe9e30d61025c70dc2d398f4306e5fee4c2c6287e4cf5db206fc85277d3",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/cream_puff.ex",
     "source_hash": "880c108ffb6ef1fd09c61ae49358e99aecb5ff7d4e3344d40dd16e7d86257a6b",
     "spawns": [
@@ -27826,7 +27836,7 @@
   },
   "re/jobs/novice/academy.txt|script|Criatura Academy Staff#0|izlude:122:207": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CriaturaAcademyStaff",
-    "output_hash": "599e2980a8b306050a9a0fe8d3b32f2e76dd2c4328c4333f531fbfeed8c143d4",
+    "output_hash": "b8c9592589bdf836fd4ef59465b8ee1a12b1357452294416ad0b3c1600b90a39",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/criatura_academy_staff.ex",
     "source_hash": "5e4cc260aa78882066a129d7da5b1f4cbe2fe0e9033375ecac809f3c7b860ac0",
     "spawns": [
@@ -27982,7 +27992,7 @@
   },
   "re/jobs/novice/academy.txt|script|Dacquoise#ac|iz_ac01:147:50": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Dacquoise",
-    "output_hash": "c09d49a3df7da049f2dc586d449cb36fe7704b9262c09907eab1dda16453aa90",
+    "output_hash": "624ddd5da1f09a54fc9116c2b54909f38ce7855fbefaf2b58c3467d70dcef52f",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/dacquoise.ex",
     "source_hash": "fc75d47ea38741cc86bcd00a0634a2cee926c0469890695e959e6494df58a733",
     "spawns": [
@@ -28214,7 +28224,7 @@
   },
   "re/jobs/novice/academy.txt|script|Enchanter Mounds#iz|izlude:96:125": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds",
-    "output_hash": "fa74497b81eb0fa0a6930d91ca6704759050d9fddcf490b6f275c011047f732b",
+    "output_hash": "96027145dae659b8db0f96b73ad5b054b4212ecda827ad0c9d512d54f991ec1b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/enchanter_mounds.ex",
     "source_hash": "69a18370b5b01975f5d97d6cc45d1b563a2de9e210c7ada23a4bcc54e14db4cf",
     "spawns": [
@@ -28348,7 +28358,7 @@
   },
   "re/jobs/novice/academy.txt|script|Friendly Poring#ac|new_1-3:99:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FriendlyPoring",
-    "output_hash": "3fe413ed9bd48324b9f461a3f399f6af8cd4c0f37ce494a2f188e9b3350a12aa",
+    "output_hash": "a5e16eff5fdc44d0d26cb553935c2308f4ae4b7c819f58dc1bc3f96a289f016a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/friendly_poring.ex",
     "source_hash": "6bc318434d207c06c32c79af94c1ec1cfc6976a879581edddf361be066c9cb57",
     "spawns": [
@@ -28500,7 +28510,7 @@
   },
   "re/jobs/novice/academy.txt|script|Guest Lecturer Mayssel#0|iz_ac02:52:136": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayssel",
-    "output_hash": "5443ed41638f93e1ee7baaa0aed776457c38eb21ea5b601d42f5eff59760c1a3",
+    "output_hash": "8256c8a69cc411f1e0de9035156dab274a172a8d86b6eaa1a6b16accc8d7bb82",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/guest_lecturer_mayssel.ex",
     "source_hash": "f85d6d2244e0cbf5c46d61a450449261c9e888f1b482328df27fbaee57083cc5",
     "spawns": [
@@ -28732,7 +28742,7 @@
   },
   "re/jobs/novice/academy.txt|script|Instructor Argos#iz|izlude:140:260": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos",
-    "output_hash": "fd4a2e8119bb46a39a173c8171026fc6b5c23a3ec2a3e2104fcd7c59c29ca870",
+    "output_hash": "172f60142c79f0999d055dc5e13094212153bd4d048d38d3790e267f7076ddbe",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/instructor_argos.ex",
     "source_hash": "832fd7be257d3de26615e571f0ac116766fc23bb35164d6369c16cdd007678bc",
     "spawns": [
@@ -29082,7 +29092,7 @@
   },
   "re/jobs/novice/academy.txt|script|Lumin#ac|iz_ac02:62:139": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin62139",
-    "output_hash": "4e6e98b533e9a05a261464bbb336fc4f1c5adb0274cd23624cd11ec519144fed",
+    "output_hash": "8356cf499345696322e0e8517f4b9233a128769c02eb1a9fba2a81fdf57f3ad2",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lumin_62_139.ex",
     "source_hash": "cf541855fc10768e02101fb9b92ea2f8290bf96d41b464b88492abaca3ccc49a",
     "spawns": [
@@ -29140,7 +29150,7 @@
   },
   "re/jobs/novice/academy.txt|script|Lumin#new_ship|int_land:73:100": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin",
-    "output_hash": "43f854c2af3d4f732cf7448c8d7d927414e3881a34c30cbe63c6f376a026c2e1",
+    "output_hash": "651e8875667e76369885517011d62e6a4cbbba3adbce78889cf250496bd06c55",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lumin.ex",
     "source_hash": "8d316e86ac7a4ff2231421922405115650dcb71d4c508f2eea44f567e45c4ce4",
     "spawns": [
@@ -29198,7 +29208,7 @@
   },
   "re/jobs/novice/academy.txt|script|Lusa#ac|iz_ac02:142:85": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa",
-    "output_hash": "f038dbc5a4c692e230c32926f157bd953ff4b92499f40f1eab86112ea4c24933",
+    "output_hash": "20d20b45ca10dcb8e24222453315df73a4ea91368739cf04a27e96d3dcf7ffde",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/lusa.ex",
     "source_hash": "9a91ceddb138a95fd892d74f292549f859b133f1f6b8a488afb7ca25816c148e",
     "spawns": [
@@ -29314,7 +29324,7 @@
   },
   "re/jobs/novice/academy.txt|script|Mage Chuck#ac|iz_ac02:148:110": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck",
-    "output_hash": "62cf735a80c2755b64b26d9148bc05ee7e86bd0d8cabf0d1fc2d894755525b8a",
+    "output_hash": "baba3dce629a66f20f56046656180670d0633a7622318f1c9d25537fa6309b4e",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/mage_chuck.ex",
     "source_hash": "b27a31be0210ff05f308eb20100dd6f688a5d1ccdb8f678baa421241affa8c84",
     "spawns": [
@@ -29572,7 +29582,7 @@
   },
   "re/jobs/novice/academy.txt|script|Ninja Guide#ac|iz_ac02:140:139": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide",
-    "output_hash": "d8b83a6ec89568301c3eef497761bb084a4d9415610a5c686b536b4dac1f2469",
+    "output_hash": "0bc2d146d0736745546093cbfd82ee7cc1bf9c1a9aa5f6a958e5e928a39bec9c",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/ninja_guide.ex",
     "source_hash": "c55ecd9997d6df306a243e3482cf19eeb946c19bdc32fb56b001bc5d0f5e628b",
     "spawns": [
@@ -29630,7 +29640,7 @@
   },
   "re/jobs/novice/academy.txt|script|Noisy Trainee#ac|iz_ac02:152:79": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NoisyTrainee",
-    "output_hash": "3f02e62bc5c077f12fcd63901a391aa7e645e28cceb8afc93751bfade38c338e",
+    "output_hash": "9211d7b974b9500a872cbe62460b96353e018a26522fbffaf63158453060323a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/noisy_trainee.ex",
     "source_hash": "c2a67085363b2023f7cf4bc3e1e11bcd769a1ee13669ed03938ec3162f07181d",
     "spawns": [
@@ -29688,7 +29698,7 @@
   },
   "re/jobs/novice/academy.txt|script|Odd Novice#ac|iz_ac01:36:52": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.OddNovice",
-    "output_hash": "2c4060e87a7c4c12c19c2cfa52f657387abfe6a4c3596b0514cc1f522ff0085a",
+    "output_hash": "6908ab23f01b6d006948215d43a2fa181f7a1f0d7fb0005b939391904ca27205",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/odd_novice.ex",
     "source_hash": "00f89f5e800a637967f0cd6bf6a752a41ebfa26b8631bf96fb606bf98724ff3c",
     "spawns": [
@@ -29804,7 +29814,7 @@
   },
   "re/jobs/novice/academy.txt|script|Quite Trainee#ac|iz_ac02:143:77": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.QuiteTrainee",
-    "output_hash": "4712eb14131f695af31fb07ea64ef941c9525035bb179355d5a3cc96162b19e6",
+    "output_hash": "acf5a7a21287f02d2fed077a31bc72ef501fb87e07daa74338ba9bbf4cf7d000",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/quite_trainee.ex",
     "source_hash": "10964f3fa672b8546eb7a4e468219e6f984a618fe45b4190738c35211e0ed137",
     "spawns": [
@@ -29920,7 +29930,7 @@
   },
   "re/jobs/novice/academy.txt|script|Refinery Owner Han#iz|izlude:153:126": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.RefineryOwnerHan",
-    "output_hash": "dc16585be5f96bd646618a2165b0ccb10f436bbcd0d9cfa3c3fc47c580e70d20",
+    "output_hash": "5f9b43c9ef87bc94ba2ea3ef36c1ddb7bd601646a32c7398c4ccaf7fa19753db",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/refinery_owner_han.ex",
     "source_hash": "7fb356103dfd851c809f49709937bf36865455c53488e9674d1135e4cc3e8790",
     "spawns": [
@@ -30288,7 +30298,7 @@
   },
   "re/jobs/novice/academy.txt|script|Sailor#intro_npc04|int_land:58:69": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Sailor",
-    "output_hash": "9a507809beed6afe18b3f35027c1f092f619b4123677cc91889555a8b313a83a",
+    "output_hash": "815a996c4915cc85d3ca1b83477b1d87b1f06f7e459f023afe7c662fd4ca903a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/sailor.ex",
     "source_hash": "2d6af290fe76e540ea8e3c433a5f7f6ab145f7051cda3a4559d5054f09db55ae",
     "spawns": [
@@ -30346,7 +30356,7 @@
   },
   "re/jobs/novice/academy.txt|script|Salim Hamid#ac|iz_ac02:50:169": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SalimHamid",
-    "output_hash": "aedcfb30e83a96c6cdc31a7126476439af15620ddc6d35e62ce021f14ec06595",
+    "output_hash": "000ade304d2da82d222ad27d9b8704f345fc56b986c337fa74542f71c24cd471",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/salim_hamid.ex",
     "source_hash": "3f101bc008d09b074a0e64a0c163917d76e9fc1e2480a7a6cbd0d338c3a7fb4f",
     "spawns": [
@@ -30462,7 +30472,7 @@
   },
   "re/jobs/novice/academy.txt|script|Shop Helper#iz|izlude:115:181": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper",
-    "output_hash": "291af72ae2eaea4b447d34eaa59f3aa7f96ae543e0a957ce3f2ffe25b384018e",
+    "output_hash": "ff72691507e4a8a33ac7eaa7bd3ed2f1fc2fb84006d44b6ba87adefda26f268b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/shop_helper.ex",
     "source_hash": "0539679a401171a5c93d3c668e02cd6bd9fc8cc3554e15931da4881b9d584eb1",
     "spawns": [
@@ -30578,7 +30588,7 @@
   },
   "re/jobs/novice/academy.txt|script|Swordman Assistant#ac|iz_ac02:53:48": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanAssistant",
-    "output_hash": "c671b126aa19046c95a9dad8e8470e35f3b8384551c8bcd5cd5ad0381ea712b5",
+    "output_hash": "4ae9c41cc18f9b2155067e8e31346a3d8336bec053ba3be503d7b5e8c3dfcb3b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/swordman_assistant.ex",
     "source_hash": "6befff0834380e767804f337fd5b282256775126bd0f3ba2b257f2f7c306aa64",
     "spawns": [
@@ -30636,7 +30646,7 @@
   },
   "re/jobs/novice/academy.txt|script|Swordman Trainer#ac|iz_ac02:60:51": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.SwordmanTrainer",
-    "output_hash": "f957b2f6eacce0cb072fdeadef9155e0b5d723ff73ba390af945403fd5edcd74",
+    "output_hash": "ed4423b46774d6e31296fedd419d12ed854df383700d749d2d64392a5f50be22",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/swordman_trainer.ex",
     "source_hash": "da2621a18631b9d78b8734ecdc7c447098f6faecad4edc487b508c9666669da9",
     "spawns": [
@@ -31254,7 +31264,7 @@
   },
   "re/jobs/novice/academy.txt|script|Verkhasel#ac|iz_ac02:55:134": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Verkhasel",
-    "output_hash": "678644316ea98b1f904023bb4358cb43836c87d2adb076bc84ed9e145e6000eb",
+    "output_hash": "802294826ad26bfa4919909451121f0e0ec8481fef87a97f32d6014e113ca83b",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/verkhasel.ex",
     "source_hash": "58ae552dad1845a5725222301d348d6c40fec7ab438c6967c4711fab80c3d449",
     "spawns": [
@@ -31312,7 +31322,7 @@
   },
   "re/jobs/novice/academy.txt|script|Vicente#ac|iz_ac02:49:134": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Vicente",
-    "output_hash": "44e9f6a692b9e344a2eac2eb1544c9546fa1eab1d08c025d9eec7c7bffc17f43",
+    "output_hash": "790262135d50c7265060a904c53c7de5486d7e43d5aada0802fc6b2936d74695",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/vicente.ex",
     "source_hash": "daa461226fe374e1a70ebc5cb14dede7593f97440b78c1553f7692d15907b6ac",
     "spawns": [
@@ -31370,7 +31380,7 @@
   },
   "re/jobs/novice/academy.txt|script|Wedding Secretary#iz|izlude:102:150": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary",
-    "output_hash": "d5ea9a26d051243822a7efd4faea71f20d51fb94652a4e4945bbe43125d668c0",
+    "output_hash": "1e0af883a7a232106aa37c8ffb10d5ecc3bd754cdb12ed53d175b5cf3249d26a",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wedding_secretary.ex",
     "source_hash": "1a5c6029259b580afa31bc6b23af28df59dd33dd9d0ec743f46852c2c946f49b",
     "spawns": [
@@ -31428,7 +31438,7 @@
   },
   "re/jobs/novice/academy.txt|script|Wounded Swordsman#intro_npc01_iz_int|iz_int:56:32": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman",
-    "output_hash": "2be5d2ec617d3959c6973238892de57abc99bdd7ba8bbcfc2dcd2bb0998375e4",
+    "output_hash": "fdc666e71b3c79f6d4d82793a008d229ef7766b163dc0ea345816fc3fc6ec2a3",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wounded_swordsman.ex",
     "source_hash": "ed4b63ceac37dcbd17288f2bd79b4f1e815eb11f109725ed672562c382ef91ad",
     "spawns": [
@@ -31506,7 +31516,7 @@
   },
   "re/jobs/novice/academy.txt|script|Wounded Swordsman#intro_npc02_iz_int|iz_int:56:32": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WoundedSwordsman5632",
-    "output_hash": "ec57251ded4040d1e5959ea0afab17503ccdfbd7d26b69b3eccbad4f0f31b28c",
+    "output_hash": "d2b2b12ae3d019890006ea4878ea2b1fe027367701f1b475cef6197212d8fa84",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/academy/wounded_swordsman_56_32.ex",
     "source_hash": "55e709d9173b7055ec2c906ba982c54926719edcc2331a0df483156975022816",
     "spawns": [
@@ -33068,7 +33078,7 @@
   },
   "re/jobs/novice/supernovice_ex.txt|script|Fishing Novice#sp2|beach_dun2:119:92": {
     "module": "Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovice",
-    "output_hash": "30d39fca81e6e233db7624aae13c420545e7487065459451ab38753ed8296e58",
+    "output_hash": "952dbaefd655feb603d91ef598d82e9ce5eea65492c2f21746c6c511a29bb6cf",
     "output_path": "lib/aesir/zone_server/content/npc/re/jobs/novice/supernovice_ex/fishing_novice.ex",
     "source_hash": "9f9a84277bd92f7c263fbbd078901d69f45a0954104a9b27f1b7fea1bdc83ff6",
     "spawns": [

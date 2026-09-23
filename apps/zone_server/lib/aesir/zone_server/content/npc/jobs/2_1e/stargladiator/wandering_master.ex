@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.WanderingMaster d
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) == :taekwon do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
         ctx =
           if get_char_var(ctx, :STGL_Q, 0) == 1 do
             ctx = mes(ctx, "[Moogang]")
@@ -53,7 +53,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.WanderingMaster d
             ctx =
               if v1 == 1 do
                 ctx =
-                  if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                  if Rathena.truthy?(skill_point(ctx)) do
                     ctx =
                       ctx
                       |> mes("[Moogang]")
@@ -593,7 +593,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21e.Stargladiator.WanderingMaster d
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) == :star_gladiator do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:star_gladiator) do
             {ctx, v5} =
               ctx
               |> mes("[Moogang]")

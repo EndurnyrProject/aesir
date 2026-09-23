@@ -28,9 +28,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.SisterCecilia do
     ctx = mes(ctx, "[Sister Cecilia]")
 
     ctx =
-      if base_job(ctx) != :acolyte do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:acolyte) do
         ctx =
-          if base_job(ctx) == :priest do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
             mes(
               ctx,
               Rathena.concat(
@@ -43,7 +43,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.SisterCecilia do
             )
           else
             ctx =
-              if class(ctx) == :novice do
+              if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes(
                   Rathena.concat(

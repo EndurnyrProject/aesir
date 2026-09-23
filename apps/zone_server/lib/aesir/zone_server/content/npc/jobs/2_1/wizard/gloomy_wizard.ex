@@ -26,9 +26,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :wizard do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:wizard) do
             ctx =
               ctx
               |> mes("[Raulel]")
@@ -68,7 +68,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_job(ctx) == :priest do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
                 ctx =
                   ctx
                   |> mes("[Raulel]")
@@ -85,7 +85,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Wizard.GloomyWizard do
                 throw({:script_end, ctx})
               else
                 ctx =
-                  if base_class(ctx) == :novice do
+                  if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                     ctx =
                       ctx
                       |> mes("[Raulel]")

@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Valkyrie do
 
   @impl true
   def on_talk(ctx) do
-    if get_char_var(ctx, :ADVJOB, 0) != 0 or get_char_var(ctx, :Upper, 0) == 1 do
+    if get_char_var(ctx, :ADVJOB, 0) != 0 or upper(ctx) == 1 do
       ctx =
         ctx
         |> mes("[Valkyrie]")
@@ -43,8 +43,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Valkyrie do
 
       throw({:script_end, ctx})
     else
-      if base_level(ctx) > 98 and job_level(ctx) > 49 and class(ctx) >= :knight and
-           class(ctx) <= :crusader2 do
+      if base_level(ctx) > 98 and job_level(ctx) > 49 and
+           Rathena.job_id(class(ctx)) >= Rathena.job_id(:knight) and
+           Rathena.job_id(class(ctx)) <= Rathena.job_id(:crusader2) do
         ctx =
           ctx
           |> mes("[Valkyrie]")
@@ -102,7 +103,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Valkyrie do
             |> next()
 
           ctx =
-            if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+            if Rathena.truthy?(skill_point(ctx)) do
               ctx =
                 ctx
                 |> mes("[Valkyrie]")
@@ -168,15 +169,15 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Valkyrie do
             set_char_var(ctx, :ADVJOB, Rathena.job_id(class(ctx)) + Rathena.job_id(:novice_high))
 
           ctx =
-            if get_char_var(ctx, :ADVJOB, 0) == :lord_knight2 do
-              set_char_var(ctx, :ADVJOB, :lord_knight)
+            if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:lord_knight2) do
+              set_char_var(ctx, :ADVJOB, Rathena.job_id(:lord_knight))
             else
               ctx
             end
 
           ctx =
-            if get_char_var(ctx, :ADVJOB, 0) == :paladin2 do
-              set_char_var(ctx, :ADVJOB, :paladin)
+            if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:paladin2) do
+              set_char_var(ctx, :ADVJOB, Rathena.job_id(:paladin))
             else
               ctx
             end

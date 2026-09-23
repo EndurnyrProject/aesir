@@ -29,9 +29,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
     ctx = mes(ctx, "[Sir Gray]")
 
     ctx =
-      if base_job(ctx) != :swordman do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
         ctx =
-          if base_job(ctx) == :knight do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:knight) do
             {ctx, v1} =
               ctx
               |> mes("The glint of light")
@@ -91,7 +91,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
                   else
                     ctx =
                       if zeny(ctx) > 73999 and count_item(ctx, 999) > 0 and
-                           base_job(ctx) == :knight do
+                           Rathena.job_id(base_job(ctx)) == Rathena.job_id(:knight) do
                         ctx =
                           ctx
                           |> mes("[Sir Gray]")
@@ -162,7 +162,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.SirGray do
             ctx
           else
             ctx =
-              if base_class(ctx) == :novice do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("Believe it")

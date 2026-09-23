@@ -633,7 +633,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.SupernoviceEx.FishingNovic
                             ctx = next(ctx)
 
                             ctx =
-                              if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                              if Rathena.truthy?(skill_point(ctx)) do
                                 ctx =
                                   ctx
                                   |> mes("[Nodor]")

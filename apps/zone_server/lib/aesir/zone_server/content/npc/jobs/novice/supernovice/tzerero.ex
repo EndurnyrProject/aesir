@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if base_job(ctx) == :super_novice do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:super_novice) do
         ctx =
           ctx
           |> mes("[Tzerero]")
@@ -82,14 +82,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
         ctx = give_item(ctx, 2339, 1)
 
         ctx =
-          if get_char_var(ctx, :Upper, 0) == 0 do
+          if upper(ctx) == 0 do
             jobchange(ctx, :super_novice)
           else
             ctx
           end
 
         ctx =
-          if get_char_var(ctx, :Upper, 0) == 2 do
+          if upper(ctx) == 2 do
             jobchange(ctx, :super_baby)
           else
             ctx
@@ -157,7 +157,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
       end
 
     ctx =
-      if base_job(ctx) == :novice and get_char_var(ctx, :Upper, 0) != 1 do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) and upper(ctx) != 1 do
         {ctx, v1} =
           ctx
           |> mes("[Tzerero]")
@@ -367,7 +367,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Tzerero do
         ctx
       else
         ctx =
-          if base_job(ctx) == :super_novice do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:super_novice) do
             ctx =
               ctx
               |> mes("[Tzerero]")

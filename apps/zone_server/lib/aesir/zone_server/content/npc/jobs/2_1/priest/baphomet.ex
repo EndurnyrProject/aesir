@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Baphomet do
 
   def ev_ontouch(ctx) do
     ctx =
-      if base_job(ctx) == :priest do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
         ctx =
           ctx
           |> mes("[Baphomet]")
@@ -54,7 +54,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Baphomet do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_class(ctx) == :acolyte do
+          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:acolyte) do
             ctx = ctx |> mes("[Baphomet]") |> mes("Greetings.") |> next() |> mes("[Baphomet]")
 
             {ctx, v1} =

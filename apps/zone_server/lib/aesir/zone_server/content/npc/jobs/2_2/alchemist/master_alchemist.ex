@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.MasterAlchemist do
     ctx = ctx |> cutin("job_alche_vincent", 2) |> mes("[Vincent Carsciallo]")
 
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("You have transcended...")
@@ -47,9 +47,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.MasterAlchemist do
       end
 
     ctx =
-      if base_job(ctx) != :merchant do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:merchant) do
         ctx =
-          if base_job(ctx) == :alchemist do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:alchemist) do
             ctx
             |> mes("Welcome!")
             |> mes("So how is your")
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.MasterAlchemist do
             )
           else
             ctx =
-              if base_class(ctx) == :novice do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("Hm...")
                 |> mes("A Novice?")
@@ -147,7 +147,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.MasterAlchemist do
           end
 
         ctx =
-          if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+          if Rathena.truthy?(skill_point(ctx)) do
             ctx =
               ctx
               |> mes("Ah, you're almost")

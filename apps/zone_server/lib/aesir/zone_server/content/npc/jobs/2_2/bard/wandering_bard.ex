@@ -26,7 +26,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("[Lalo]")
@@ -46,9 +46,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :archer do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:archer) do
             ctx =
-              if base_job(ctx) == :bard do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:bard) do
                 ctx
                 |> mes("[Lalo]")
                 |> mes("Ooh hey! How's your singing these days?")
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
                 |> mes("Our songs are supposed to deliver happiness and joy to everyone.")
               else
                 ctx =
-                  if class(ctx) == :novice do
+                  if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                     ctx
                     |> cutin("job_bard_aiolo01", 2)
                     |> mes("[Lalo]")
@@ -1592,7 +1592,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Bard.WanderingBard do
                             ctx =
                               if get_local(ctx, :selection, 0) == 1 or
                                    get_char_var(ctx, :BARD_Q, 0) == 5 do
-                                if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                                if Rathena.truthy?(skill_point(ctx)) do
                                   ctx =
                                     ctx
                                     |> cutin("job_bard_aiolo01", 2)

@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.KafraEmployee do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if base_job(ctx) == :super_novice do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:super_novice) do
         ctx = mes(ctx, "[Kafra Employee]")
 
         ctx =

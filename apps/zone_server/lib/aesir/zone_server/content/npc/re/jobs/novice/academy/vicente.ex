@@ -72,7 +72,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Vicente do
 
   @impl true
   def on_talk(ctx) do
-    if isbegin_quest(ctx, 4269) > 0 and class(ctx) == :novice do
+    if isbegin_quest(ctx, 4269) > 0 and Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
       if not Rathena.truthy?(isbegin_quest(ctx, 7480)) do
         ctx =
           ctx
@@ -711,7 +711,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Vicente do
 
         throw({:script_end, ctx})
       else
-        if class(ctx) == :thief do
+        if Rathena.job_id(class(ctx)) == Rathena.job_id(:thief) do
           ctx =
             ctx
             |> cutin("sc_vicente03.bmp", 2)

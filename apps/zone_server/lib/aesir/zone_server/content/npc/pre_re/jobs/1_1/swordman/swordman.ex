@@ -27,10 +27,10 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
-        if class(ctx) == :novice_high and
-             (get_char_var(ctx, :ADVJOB, 0) == :lord_knight or
-                get_char_var(ctx, :ADVJOB, 0) == :paladin) do
+      if upper(ctx) == 1 do
+        if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice_high) and
+             (get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:lord_knight) or
+                get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:paladin)) do
           ctx =
             ctx
             |> mes("[Swordman]")
@@ -121,7 +121,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
       case v2 do
         1 ->
           ctx =
-            if base_job(ctx) == :swordman do
+            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
               ctx =
                 ctx
                 |> mes("[Swordman]")
@@ -133,7 +133,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
               throw({:script_end, ctx})
             else
               ctx =
-                if base_job(ctx) != :novice do
+                if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
                   ctx =
                     ctx
                     |> mes("[Swordman]")
@@ -329,9 +329,9 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman do
           ctx = ctx |> mes("[Swordman]") |> mes("Hmmm...")
 
           ctx =
-            if base_job(ctx) != :novice do
+            if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
               ctx =
-                if base_job(ctx) == :swordman do
+                if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
                   mes(
                     ctx,
                     "But there's no need to tell you the requirements. You've met them and already became a Swordman! Well, anyway..."

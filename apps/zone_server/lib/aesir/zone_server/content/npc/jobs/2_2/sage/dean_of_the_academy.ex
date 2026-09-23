@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
     ctx = ctx |> cutin("job_sage_kayron", 2) |> mes("[Kayron Grik]")
 
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("Haha, I have seen many people")
@@ -47,9 +47,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
       end
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("What brings you here? Is there anything bothering you recently?")
             |> mes("Although you're already a Sage, that doesn't mean you can stop studying.")
@@ -63,7 +63,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
             )
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes(
                   "Hahah, so my little Novice, what brings you this way? ...I guess you're on a sightseeing trip?"
@@ -210,7 +210,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.DeanOfTheAcademy do
                   end
 
                 ctx =
-                  if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                  if Rathena.truthy?(skill_point(ctx)) do
                     ctx =
                       ctx
                       |> mes("You possess remaining skill points...")

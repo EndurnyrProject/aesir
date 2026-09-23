@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
       end
 
     ctx =
-      if isbegin_quest(ctx, 4269) > 0 and class(ctx) == :novice do
+      if isbegin_quest(ctx, 4269) > 0 and Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if not Rathena.truthy?(isbegin_quest(ctx, 7480)) do
             {ctx, _} =
@@ -802,7 +802,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
             ctx
           else
             ctx =
-              if class(ctx) == :thief do
+              if Rathena.job_id(class(ctx)) == Rathena.job_id(:thief) do
                 ctx =
                   ctx
                   |> mes("[Mayssel]")
@@ -918,8 +918,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.GuestLecturerMayss
   def ev_oninit(ctx) do
     ctx =
       questinfo(ctx, 0, 0, fn ctx ->
-        class(ctx) == :novice and not Rathena.truthy?(isbegin_quest(ctx, 7480)) and
-          isbegin_quest(ctx, 4269) == 2
+        Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+          not Rathena.truthy?(isbegin_quest(ctx, 7480)) and isbegin_quest(ctx, 4269) == 2
       end)
 
     questinfo(ctx, 0, 0, fn ctx ->

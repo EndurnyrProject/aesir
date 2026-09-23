@@ -21,10 +21,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.BookOfYmir do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :ADVJOB, 0) != 0 or get_char_var(ctx, :Upper, 0) == 1 do
+      if get_char_var(ctx, :ADVJOB, 0) != 0 or upper(ctx) == 1 do
         {ctx, v1} =
           ctx
           |> mes("[The Book of Ymir]")
@@ -59,8 +61,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.BookOfYmir do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_level(ctx) > 98 and job_level(ctx) > 49 and class(ctx) >= :knight and
-               class(ctx) <= :crusader2 do
+          if base_level(ctx) > 98 and job_level(ctx) > 49 and
+               Rathena.job_id(class(ctx)) >= Rathena.job_id(:knight) and
+               Rathena.job_id(class(ctx)) <= Rathena.job_id(:crusader2) do
             ctx =
               if get_char_var(ctx, :valkyrie_Q, 0) != 0 do
                 ctx =

@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.MasterMiller do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 2 do
+      if upper(ctx) == 2 do
         ctx =
           ctx
           |> mes("[Master Miller]")
@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.MasterMiller do
       end
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         v1 = can_change_job?(ctx)
 
         ctx =
@@ -187,7 +187,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.MasterMiller do
                             ctx =
                               if get_char_var(ctx, :GUNS_Q, 0) == 5 do
                                 ctx =
-                                  if get_char_var(ctx, :SkillPoint, 0) != 0 do
+                                  if skill_point(ctx) != 0 do
                                     ctx =
                                       ctx
                                       |> mes("[Master Miller]")
@@ -295,7 +295,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Gunslinger.MasterMiller do
 
         ctx
       else
-        if class(ctx) == :gunslinger do
+        if Rathena.job_id(class(ctx)) == Rathena.job_id(:gunslinger) do
           ctx =
             ctx
             |> mes("[Master Miller]")

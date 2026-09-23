@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
   alias Aesir.ZoneServer.Npc.Transpiler.ModuleName
   alias Aesir.ZoneServer.Npc.Transpiler.Parser
   alias Aesir.ZoneServer.Npc.Transpiler.Resolver
+  alias Aesir.ZoneServer.Script.Rathena
 
   @comparisons %{==: "==", !=: "!=", <: "<", <=: "<=", >: ">", >=: ">="}
   @arith %{+: "+", -: "-", *: "*"}
@@ -1938,10 +1939,21 @@ defmodule Aesir.ZoneServer.Npc.Transpiler.Codegen do
         ["v when v in [#{Enum.map_join(ints, ", ", &render(&1, env))}] ->"]
 
       true ->
-        guards = Enum.map_join(values, " or ", fn v -> "v == #{render_numeric(v, env)}" end)
+        guards = Enum.map_join(values, " or ", fn v -> "v == #{guard_value(v, env)}" end)
         ["v when #{guards} ->"]
     end
   end
+
+  # Guards only admit literals, so a `Job_*` case label resolves to its integer
+  # id at transpile time instead of the `Rathena.job_id/1` call used elsewhere.
+  defp guard_value({:name, "Job_" <> _ = symbol}, env) do
+    case Resolver.constant(symbol) do
+      {:ok, ":" <> job} -> job |> String.to_atom() |> Rathena.job_id() |> Integer.to_string()
+      :error -> render_numeric({:name, symbol}, env)
+    end
+  end
+
+  defp guard_value(value, env), do: render_numeric(value, env)
 
   # -- loops -------------------------------------------------------------------
 

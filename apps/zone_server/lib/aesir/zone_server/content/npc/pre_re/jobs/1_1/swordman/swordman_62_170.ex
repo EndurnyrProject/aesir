@@ -28,13 +28,13 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.Swordman62170 do
   def on_talk(ctx) do
     ctx = mes(ctx, "[Swordman]")
 
-    if base_job(ctx) == :swordman do
+    if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
       ctx =
         ctx |> mes("Sorry guy, but I can only allow Novices to enter the Test Hall.") |> close()
 
       throw({:script_end, ctx})
     else
-      if base_job(ctx) != :novice do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
         ctx =
           ctx
           |> mes(

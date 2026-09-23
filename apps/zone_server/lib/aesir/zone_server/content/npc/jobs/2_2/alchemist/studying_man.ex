@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.StudyingMan do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
@@ -43,8 +45,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.StudyingMan do
     ctx = mes(ctx, "[Darwin]")
 
     ctx =
-      if base_job(ctx) != :merchant do
-        if base_job(ctx) == :alchemist do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:merchant) do
+        if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:alchemist) do
           ctx =
             ctx
             |> mes("Ah...")

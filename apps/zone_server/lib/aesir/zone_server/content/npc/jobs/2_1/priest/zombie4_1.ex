@@ -8,7 +8,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie41 do
   """
 
   use Aesir.ZoneServer.Npc, scope: :shared, spawn: []
-
+  alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnInit", ctx), do: ev_oninit(ctx)
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
@@ -25,7 +25,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Zombie41 do
 
   def ev_ontouch(ctx) do
     ctx =
-      if base_job(ctx) == :acolyte do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
         ctx |> donpcevent("Zombie_Generator#prst::Onm4") |> donpcevent("Zombie4_1::OnDisable")
       else
         ctx

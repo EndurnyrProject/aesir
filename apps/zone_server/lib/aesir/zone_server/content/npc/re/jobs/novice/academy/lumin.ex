@@ -177,8 +177,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin do
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 1, fn ctx ->
-      class(ctx) == :novice and not Rathena.truthy?(isbegin_quest(ctx, 7471)) and
-        isbegin_quest(ctx, 21008) == 1
+      Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+        not Rathena.truthy?(isbegin_quest(ctx, 7471)) and isbegin_quest(ctx, 21008) == 1
     end)
   end
 end

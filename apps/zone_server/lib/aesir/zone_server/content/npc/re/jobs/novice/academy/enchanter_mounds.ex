@@ -436,7 +436,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.EnchanterMounds do
                               |> completequest(5157)
 
                             ctx =
-                              if class(ctx) == :novice do
+                              if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                                 ctx
                                 |> getexp(1200, 500)
                                 |> mes(

@@ -21,14 +21,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PracticalExaminationP do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx = mes(ctx, "[Hermes Tris]")
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("Welcome. How have you been?")
             |> mes(
@@ -46,7 +48,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PracticalExaminationP do
             |> mes("You'd better look for trustworthy comrades.")
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("Heh heh, now ain't that a cute little Novice?")
                 |> next()

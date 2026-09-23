@@ -181,7 +181,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyStudent do
         ctx |> enablenpc(Rathena.concat("Cultivated Red Plant#", strnpcinfo(ctx, 2))) |> close()
       else
         ctx =
-          if class(ctx) == :novice do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
             ctx =
               if isbegin_quest(ctx, 7478) == 1 do
                 ctx

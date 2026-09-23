@@ -284,7 +284,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M11e.Ninja.SuspiciousMan do
 
             throw({:script_end, ctx})
           else
-            if get_char_var(ctx, :NINJ_Q, 0) == 5 and base_class(ctx) == :ninja do
+            if get_char_var(ctx, :NINJ_Q, 0) == 5 and
+                 Rathena.job_id(base_class(ctx)) == Rathena.job_id(:ninja) do
               ctx =
                 ctx
                 |> mes("[Red Leopard Joe]")

@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
     ctx = mes(ctx, "[Captain Herman]")
 
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes(
@@ -48,9 +48,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
       end
 
     ctx =
-      if base_job(ctx) != :swordman do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
         ctx =
-          if base_job(ctx) == :knight do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:knight) do
             ctx =
               ctx
               |> mes("Ah, a member of our Chivalry.")
@@ -62,7 +62,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_class(ctx) == :novice do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                 {ctx, v1} =
                   ctx
                   |> mes("Welcome,")
@@ -234,7 +234,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
                   end
 
                 ctx =
-                  if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                  if Rathena.truthy?(skill_point(ctx)) do
                     ctx =
                       ctx
                       |> mes("Ah...!")
@@ -542,11 +542,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Knight.ChivalryCaptain do
                                                                    14 do
                                                                 ctx =
                                                                   if Rathena.truthy?(
-                                                                       get_char_var(
-                                                                         ctx,
-                                                                         :SkillPoint,
-                                                                         0
-                                                                       )
+                                                                       skill_point(ctx)
                                                                      ) do
                                                                     ctx =
                                                                       ctx

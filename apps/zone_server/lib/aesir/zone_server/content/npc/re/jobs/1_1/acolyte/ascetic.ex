@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic do
     ctx = mes(ctx, "[Father Rubalkabara]")
 
     ctx =
-      if base_job(ctx) == :novice do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if get_char_var(ctx, :job_acolyte_q, 0) == 6 do
             ctx =
@@ -129,11 +129,11 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Acolyte.Ascetic do
         end
       else
         ctx =
-          if base_job(ctx) == :acolyte do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
             {ctx, _} = Aesir.ZoneServer.Content.Npc.Functions.FFatherrub.call(ctx, [])
             ctx
           else
-            if base_job(ctx) == :priest do
+            if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
               ctx =
                 ctx
                 |> mes("Greetings.")

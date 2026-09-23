@@ -22,6 +22,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst11 do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
   @impl true
   def on_event("OnTouch", ctx), do: ev_ontouch(ctx)
   @impl true
@@ -33,11 +34,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.Prst11 do
     ctx = set_local(ctx, :mobs, get_npc_var_of(ctx, "MyMobs", "Zombie_Generator#prst", 0))
 
     ctx =
-      if base_job(ctx) == :priest do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
         warp(ctx, "job_prist", 168, 17)
       else
         ctx =
-          if base_class(ctx) == :acolyte and get_local(ctx, :mobs, 0) < 1 do
+          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:acolyte) and
+               get_local(ctx, :mobs, 0) < 1 do
             ctx
             |> warp("job_prist", 168, 17)
             |> donpcevent("Zombie_Generator#prst::OnDisable")

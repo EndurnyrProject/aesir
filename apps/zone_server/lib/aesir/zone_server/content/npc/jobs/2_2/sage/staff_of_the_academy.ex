@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
     ctx = mes(ctx, "[Metheus Sylphe]")
 
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("Welcome to the")
@@ -51,9 +51,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
       end
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("Oh nice to meet you again, long time no see.")
             |> mes("So how's it going with the studying?")
@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
             |> mes("Also, please give my regards to your colleagues as well.")
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("Welcome to the Schweicherbil Magic Academy.")
                 |> next()
@@ -220,7 +220,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.StaffOfTheAcademy do
                       end
 
                     ctx =
-                      if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                      if Rathena.truthy?(skill_point(ctx)) do
                         ctx =
                           ctx
                           |> mes("[Metheus Sylphe]")

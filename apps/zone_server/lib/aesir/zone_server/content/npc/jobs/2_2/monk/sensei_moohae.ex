@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
       |> next()
 
     ctx =
-      if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+      if Rathena.truthy?(skill_point(ctx)) do
         ctx =
           ctx
           |> mes("[Sensei Moohae]")
@@ -47,7 +47,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
         ctx
       end
 
-    if base_job(ctx) == :acolyte and get_char_var(ctx, :MONK_Q, 0) == 2 and job_level(ctx) > 39 do
+    if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) and
+         get_char_var(ctx, :MONK_Q, 0) == 2 and job_level(ctx) > 39 do
       {ctx, v1} =
         ctx
         |> mes("[Sensei Moohae]")
@@ -548,7 +549,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
 
                           throw({:script_end, ctx})
                         else
-                          if get_char_var(ctx, :MONK_Q, 0) == 27 and base_job(ctx) == :acolyte do
+                          if get_char_var(ctx, :MONK_Q, 0) == 27 and
+                               Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
                             ctx =
                               ctx
                               |> mes("[Sensei Moohae]")
@@ -560,7 +562,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
 
                             throw({:script_end, ctx})
                           else
-                            if get_char_var(ctx, :MONK_Q, 0) == 28 and base_job(ctx) == :acolyte do
+                            if get_char_var(ctx, :MONK_Q, 0) == 28 and
+                                 Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
                               ctx =
                                 if count_item(ctx, 506) > 0 do
                                   ctx
@@ -1050,7 +1053,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
                               ctx = close(ctx)
                               throw({:script_end, ctx})
                             else
-                              if base_job(ctx) == :acolyte do
+                              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
                                 ctx =
                                   ctx
                                   |> mes("[Sensei Moohae]")
@@ -1063,7 +1066,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.SenseiMoohae do
 
                                 throw({:script_end, ctx})
                               else
-                                if base_job(ctx) == :monk do
+                                if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:monk) do
                                   ctx =
                                     ctx
                                     |> mes("[Sensei Moohae]")

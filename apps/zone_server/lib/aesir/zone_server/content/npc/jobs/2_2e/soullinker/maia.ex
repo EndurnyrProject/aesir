@@ -39,7 +39,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
 
   def ev_ontouch(ctx) do
     ctx =
-      if class(ctx) == :taekwon do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
         ctx =
           if job_level(ctx) < 40 do
             ctx =
@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
                       |> next()
 
                     ctx =
-                      if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                      if Rathena.truthy?(skill_point(ctx)) do
                         ctx =
                           ctx
                           |> mes(
@@ -250,7 +250,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Maia do
     ctx = set_npc_var_of(ctx, "SoulLinkerTest", "Kid#link1", 0)
 
     ctx =
-      if class(ctx) == :soul_linker do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:soul_linker) do
         ctx
         |> mes("[Maia]")
         |> mes("The time has come for")

@@ -1972,7 +1972,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Monk.Touha do
 
         throw({:script_end, ctx})
       else
-        if get_char_var(ctx, :MONK_Q, 0) > 14 and base_job(ctx) == :acolyte do
+        if get_char_var(ctx, :MONK_Q, 0) > 14 and
+             Rathena.job_id(base_job(ctx)) == Rathena.job_id(:acolyte) do
           ctx = ctx |> mes("[Touha]") |> mes("...do your best for the final test.") |> close()
           throw({:script_end, ctx})
         else

@@ -29,7 +29,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman do
     ctx = mes(ctx, "[Parmy Gianino]")
 
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("Welcome to the")
@@ -52,9 +52,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman do
       end
 
     ctx =
-      if base_job(ctx) != :merchant do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:merchant) do
         ctx =
-          if base_job(ctx) == :alchemist do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:alchemist) do
             ctx =
               ctx
               |> mes(Rathena.concat(Rathena.concat("Welcome, ", char_name(ctx, 0)), "."))
@@ -76,7 +76,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Alchemist.AlchemistGuildsman do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_class(ctx) == :novice do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("Welcome to the")

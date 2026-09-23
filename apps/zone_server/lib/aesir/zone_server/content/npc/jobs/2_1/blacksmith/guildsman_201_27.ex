@@ -35,7 +35,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Blacksmith.Guildsman20127 do
       |> mes("Nice to meet you!")
       |> next()
 
-    if base_job(ctx) == :merchant do
+    if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:merchant) do
       ctx =
         ctx
         |> mes("[Geschupenschte]")

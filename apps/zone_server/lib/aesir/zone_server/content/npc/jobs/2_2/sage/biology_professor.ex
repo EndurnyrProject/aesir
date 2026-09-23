@@ -29,9 +29,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.BiologyProfessor do
     ctx = mes(ctx, "[Lucius Celsus]")
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("What is your business with me?")
             |> mes("You must make a reservation a week in advance if you have any questions.")
@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.BiologyProfessor do
             |> mes("I think it will be more helpful than wasting your time on me.")
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("What brings you to me, kid?")
                 |> next()

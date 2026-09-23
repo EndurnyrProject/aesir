@@ -69,8 +69,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide do
     ctx = cutin(ctx, "aca_ninja_k.bmp", 2)
 
     ctx =
-      if class(ctx) != :novice do
-        if get_char_var(ctx, :Upper, 0) != 0 do
+      if Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) do
+        if upper(ctx) != 0 do
           ctx =
             ctx
             |> mes("[Ninja Guide]")
@@ -80,7 +80,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide do
 
           throw({:script_end, ctx})
         else
-          if class(ctx) == :ninja do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:ninja) do
             if not Rathena.truthy?(isbegin_quest(ctx, 4268)) do
               ctx =
                 ctx
@@ -134,7 +134,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.NinjaGuide do
         end
       else
         ctx =
-          if get_char_var(ctx, :Upper, 0) == 2 do
+          if upper(ctx) == 2 do
             ctx =
               ctx
               |> mes("[Ninja Guide]")

@@ -22,12 +22,14 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
       }
     ]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Script.Rathena
 
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) == :super_novice_e or class(ctx) == :super_baby_e do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:super_novice_e) or
+           Rathena.job_id(class(ctx)) == Rathena.job_id(:super_baby_e) do
         ctx =
           ctx
           |> mes("[Esseray]")
@@ -41,10 +43,19 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
       end
 
     ctx =
-      if base_job(ctx) == :super_novice do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:super_novice) do
         ctx =
           if Rathena.truthy?(checkre(ctx, 0)) do
-            todo(ctx, :callfunc, ["Esseray_Ex"])
+            {ctx, _} =
+              case GameMode.mode() do
+                :renewal ->
+                  Aesir.ZoneServer.Content.Npc.Re.Functions.EsserayEx.call(ctx, [])
+
+                :pre_renewal ->
+                  raise "NPC helper Esseray_Ex called from jobs/novice/supernovice.txt:331 (Esseray#sn) has no pre_renewal target"
+              end
+
+            ctx
           else
             ctx
           end
@@ -77,7 +88,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Novice.Supernovice.Esseray do
         ctx
       end
 
-    if base_job(ctx) == :novice and get_char_var(ctx, :Upper, 0) != 1 do
+    if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) and upper(ctx) != 1 do
       ctx =
         ctx
         |> mes("[Esseray]")

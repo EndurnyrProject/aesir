@@ -22,12 +22,14 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx = mes(ctx, "[Test Hall Staff]")
 
     ctx =
-      if base_job(ctx) == :swordman do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:swordman) do
         ctx =
           ctx
           |> mes(
@@ -39,7 +41,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Swordman.TestHallStaff do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :novice do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
             ctx =
               ctx
               |> mes(

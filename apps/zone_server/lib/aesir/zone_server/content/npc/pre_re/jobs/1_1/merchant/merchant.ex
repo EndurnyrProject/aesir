@@ -27,10 +27,10 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Merchant.Merchant do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
-        if class(ctx) == :novice_high and
-             (get_char_var(ctx, :ADVJOB, 0) == :whitesmith or
-                get_char_var(ctx, :ADVJOB, 0) == :creator) do
+      if upper(ctx) == 1 do
+        if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice_high) and
+             (get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:whitesmith) or
+                get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:creator)) do
           ctx =
             ctx
             |> mes("[Chief Mahnsoo]")
@@ -100,7 +100,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Merchant.Merchant do
       end
 
     ctx =
-      if base_job(ctx) == :merchant do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:merchant) do
         ctx =
           ctx
           |> mes("[Chief Mahnsoo]")
@@ -118,7 +118,8 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Jobs.M11.Merchant.Merchant do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :merchant and base_job(ctx) != :novice do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:merchant) and
+               Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
             ctx =
               ctx
               |> mes("[Chief Mahnsoo]")

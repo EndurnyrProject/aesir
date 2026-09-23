@@ -62,6 +62,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
@@ -113,7 +115,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcolyteLeaderAlice
           end
 
         ctx =
-          if class(ctx) == :novice do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
             ctx
             |> mes("[Alice Yisha]")
             |> mes("If you did not select Acolyte as a job, why don't you study more about it?")

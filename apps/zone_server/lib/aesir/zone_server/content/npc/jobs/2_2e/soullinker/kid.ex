@@ -33,7 +33,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) == :soul_linker do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:soul_linker) do
         ctx =
           ctx
           |> mes("[Maia]")
@@ -51,7 +51,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
       end
 
     ctx =
-      if class(ctx) == :star_gladiator do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:star_gladiator) do
         ctx = mes(ctx, "[Kid]")
 
         ctx =
@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
       end
 
     ctx =
-      if class(ctx) != :taekwon do
+      if Rathena.job_id(class(ctx)) != Rathena.job_id(:taekwon) do
         ctx =
           ctx
           |> mes("[Kid]")
@@ -266,7 +266,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
                 ctx =
                   if get_char_var(ctx, :SOUL_Q, 0) == 1 do
                     ctx =
-                      if class(ctx) == :taekwon do
+                      if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
                         {ctx, v4} =
                           ctx
                           |> mes("[Kid]")
@@ -379,7 +379,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22e.Soullinker.Kid do
                     ctx =
                       if get_char_var(ctx, :SOUL_Q, 0) == 2 do
                         ctx =
-                          if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                          if Rathena.truthy?(skill_point(ctx)) do
                             ctx =
                               ctx
                               |> mes("[Maia]")

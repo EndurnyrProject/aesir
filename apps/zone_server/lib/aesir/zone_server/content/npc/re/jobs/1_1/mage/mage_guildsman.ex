@@ -27,10 +27,10 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
-        if get_char_var(ctx, :ADVJOB, 0) == :high_wizard or
-             get_char_var(ctx, :ADVJOB, 0) == :professor do
-          if class(ctx) == :novice_high do
+      if upper(ctx) == 1 do
+        if get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:high_wizard) or
+             get_char_var(ctx, :ADVJOB, 0) == Rathena.job_id(:professor) do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice_high) do
             ctx =
               ctx
               |> mes("[Mage Guildsman]")
@@ -113,9 +113,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.M11.Mage.MageGuildsman do
     ctx = mes(ctx, "[Mage Guildsman]")
 
     ctx =
-      if base_job(ctx) != :novice do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:novice) do
         ctx =
-          if base_job(ctx) == :mage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:mage) do
             ctx
             |> mes("Hey, haven't you realized? You're already a Mage, silly!")
             |> mes(

@@ -20,9 +20,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Crusader do
     ctx = mes(ctx, "[Gabriel Valentine]")
 
     ctx =
-      if base_job(ctx) != :swordman do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
         ctx =
-          if base_job(ctx) == :crusader do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:crusader) do
             ctx =
               ctx
               |> mes("Welcome, fellow Crusader.")
@@ -38,7 +38,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Crusader.Crusader do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("Welcome, I am a Crusader.")

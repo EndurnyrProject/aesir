@@ -46,7 +46,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Assassin.Guildmaster14980 do
         savepoint(ctx, "moc_ruins", 79, 99)
       end
 
-    if get_char_var(ctx, :ASSIN_Q, 0) == 7 and base_job(ctx) == :thief do
+    if get_char_var(ctx, :ASSIN_Q, 0) == 7 and
+         Rathena.job_id(base_job(ctx)) == Rathena.job_id(:thief) do
       {ctx, v1} =
         ctx
         |> set_char_var(:ASSIN_Q, 8)

@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes("[Hunter Sherin]")
@@ -44,7 +44,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
       end
 
     ctx =
-      if base_job(ctx) == :archer and job_level(ctx) < 40 do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:archer) and job_level(ctx) < 40 do
         ctx =
           ctx
           |> mes("[Hunter Guildsman]")
@@ -67,7 +67,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
       end
 
     ctx =
-      if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+      if Rathena.truthy?(skill_point(ctx)) do
         ctx =
           ctx
           |> mes("[Hunter Sherin]")
@@ -82,7 +82,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
       end
 
     ctx =
-      if base_class(ctx) == :novice do
+      if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           ctx
           |> mes("[Hunter Guildsman]")
@@ -95,7 +95,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_class(ctx) == :swordman do
+          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:swordman) do
             ctx =
               ctx
               |> mes("[Hunter Guildsman]")
@@ -107,7 +107,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_class(ctx) == :mage do
+              if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:mage) do
                 ctx =
                   ctx
                   |> mes("[Hunter Guildsman]")
@@ -119,7 +119,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
                 throw({:script_end, ctx})
               else
                 ctx =
-                  if base_class(ctx) == :acolyte do
+                  if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:acolyte) do
                     ctx =
                       ctx
                       |> mes("[Hunter Guildsman]")
@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
                     throw({:script_end, ctx})
                   else
                     ctx =
-                      if base_class(ctx) == :merchant do
+                      if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:merchant) do
                         ctx =
                           ctx
                           |> mes("[Hunter Guildsman]")
@@ -142,7 +142,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
                         throw({:script_end, ctx})
                       else
                         ctx =
-                          if base_class(ctx) == :thief do
+                          if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:thief) do
                             ctx =
                               ctx
                               |> mes("[Hunter Guildsman]")
@@ -155,7 +155,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
                             throw({:script_end, ctx})
                           else
                             ctx =
-                              if base_job(ctx) == :dancer or base_job(ctx) == :bard do
+                              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:dancer) or
+                                   Rathena.job_id(base_job(ctx)) == Rathena.job_id(:bard) do
                                 ctx =
                                   ctx
                                   |> mes("[Hunter Guildsman]")
@@ -170,7 +171,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
                                 throw({:script_end, ctx})
                               else
                                 ctx =
-                                  if base_job(ctx) == :hunter do
+                                  if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:hunter) do
                                     ctx = mes(ctx, "[Hunter Sherin]")
 
                                     ctx =
@@ -194,7 +195,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Hunter.HunterGuildsman do
                                     throw({:script_end, ctx})
                                   else
                                     ctx =
-                                      if base_job(ctx) == :archer do
+                                      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:archer) do
                                         ctx =
                                           if get_char_var(ctx, :HNTR_Q, 0) == 17 and
                                                count_item(ctx, 1007) == 0 do

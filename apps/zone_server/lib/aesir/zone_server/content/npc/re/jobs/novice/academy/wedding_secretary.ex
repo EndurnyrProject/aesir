@@ -62,10 +62,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.WeddingSecretary d
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx
         |> mes("[Wedding Secretary]")
         |> mes("You are the just a beginner.")

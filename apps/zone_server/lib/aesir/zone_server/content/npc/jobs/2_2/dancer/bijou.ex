@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+      if Rathena.truthy?(skill_point(ctx)) do
         ctx =
           ctx
           |> mes("[Bijou]")
@@ -43,9 +43,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou do
       end
 
     ctx =
-      if base_job(ctx) != :archer do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:archer) do
         ctx =
-          if base_job(ctx) == :bard do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:bard) do
             ctx =
               ctx
               |> mes("[Bijou]")
@@ -58,7 +58,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_job(ctx) == :dancer do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:dancer) do
                 ctx =
                   ctx
                   |> mes("[Bijou]")
@@ -951,7 +951,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Dancer.Bijou do
                         ctx =
                           if get_char_var(ctx, :DANC_Q, 0) == 9 do
                             ctx =
-                              if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                              if Rathena.truthy?(skill_point(ctx)) do
                                 ctx =
                                   ctx
                                   |> mes("[Bijou]")

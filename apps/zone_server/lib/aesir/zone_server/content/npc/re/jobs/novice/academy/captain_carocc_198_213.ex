@@ -86,7 +86,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
     ctx = cutin(ctx, "fly_trock.bmp", 2)
 
     ctx =
-      if class(ctx) == :novice and base_level(ctx) < 15 do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) < 15 do
         ctx =
           if isbegin_quest(ctx, 4269) == 2 do
             ctx =
@@ -705,7 +705,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 1, fn ctx ->
-      class(ctx) == :novice and base_level(ctx) <= 14 and
+      Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) <= 14 and
         not Rathena.truthy?(isbegin_quest(ctx, 7472)) and
         not Rathena.truthy?(isbegin_quest(ctx, 7473))
     end)
@@ -713,7 +713,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.CaptainCarocc19821
 
   def ev_ontouch(ctx) do
     ctx =
-      if class(ctx) == :novice and base_level(ctx) < 15 and
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and base_level(ctx) < 15 and
            not Rathena.truthy?(isbegin_quest(ctx, 4269)) do
         emotion(ctx, :surprise)
       else

@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.Valkyrie.Teleporter do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) != 1 do
+      if upper(ctx) != 1 do
         ctx = set_local(ctx, :karma_d, Enum.random(1..10))
 
         ctx =

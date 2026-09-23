@@ -75,7 +75,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
       |> next()
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if isbegin_quest(ctx, 4269) == 2 do
             ctx =
@@ -177,7 +177,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
         ctx =
           if get_char_var(ctx, :nov_3_taekwon, 0) > 0 do
             ctx =
-              if class(ctx) == :taekwon do
+              if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
                 ctx
                 |> mes("[Arang]")
                 |> mes(
@@ -186,7 +186,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
                 |> close()
               else
                 ctx =
-                  if class(ctx) == :star_gladiator do
+                  if Rathena.job_id(class(ctx)) == Rathena.job_id(:star_gladiator) do
                     ctx
                     |> mes("[Arang]")
                     |> mes(
@@ -195,7 +195,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Arang do
                     |> close()
                   else
                     ctx =
-                      if class(ctx) == :soul_linker do
+                      if Rathena.job_id(class(ctx)) == Rathena.job_id(:soul_linker) do
                         ctx
                         |> mes("[Arang]")
                         |> mes(

@@ -37,9 +37,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish do
     ctx = mes(ctx, "[Murnak Mijoul]")
 
     ctx =
-      if base_job(ctx) != :swordman do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
         ctx =
-          if base_job(ctx) == :crusader do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:crusader) do
             ctx =
               ctx
               |> mes(
@@ -50,7 +50,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.ManInAnguish do
             throw({:script_end, ctx})
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx =
                   ctx
                   |> mes("A Novice...?")

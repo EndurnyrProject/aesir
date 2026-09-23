@@ -40,7 +40,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.PeterSAlberto do
     ctx = mes(ctx, "[Father Peter]")
 
     ctx =
-      if base_job(ctx) == :priest do
+      if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
         ctx = mes(ctx, "Welcome!")
 
         ctx =

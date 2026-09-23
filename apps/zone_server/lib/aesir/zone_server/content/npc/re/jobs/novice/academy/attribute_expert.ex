@@ -366,7 +366,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AttributeExpert do
                             |> completequest(2299)
 
                           ctx =
-                            if class(ctx) == :novice do
+                            if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                               getexp(ctx, 100, 20)
                             else
                               ctx

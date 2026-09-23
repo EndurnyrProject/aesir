@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if class(ctx) != :novice or getskilllv(ctx, 143) != 0 do
+      if Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) or getskilllv(ctx, 143) != 0 do
         ctx = ctx |> mes("[Instructor Argos]") |> mes("snoring... snoring...") |> close()
         throw({:script_end, ctx})
       else
@@ -289,7 +289,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.InstructorArgos do
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 0, fn ctx ->
-      class(ctx) == :novice and not Rathena.truthy?(isbegin_quest(ctx, 15001))
+      Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+        not Rathena.truthy?(isbegin_quest(ctx, 15001))
     end)
   end
 end

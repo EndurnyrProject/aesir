@@ -79,7 +79,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
       end
 
     ctx =
-      if class(ctx) == :archer do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:archer) do
         if get_char_var(ctx, :nov_3_archer, 0) == 0 do
           ctx =
             ctx
@@ -131,7 +131,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ArcherTeacher do
         end
       else
         ctx =
-          if class(ctx) == :novice do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
             ctx =
               if isbegin_quest(ctx, 4269) == 2 do
                 ctx =

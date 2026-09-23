@@ -22,6 +22,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AraghamJunior do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     if get_char_var(ctx, :ROGUE_Q, 0) == 9 do
@@ -124,7 +126,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Rogue.AraghamJunior do
 
         throw({:script_end, ctx})
       else
-        if base_job(ctx) != :rogue do
+        if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:rogue) do
           ctx =
             ctx
             |> mes("[Aragham Jr.]")

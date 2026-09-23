@@ -165,7 +165,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
 
   def ev_oninit(ctx) do
     questinfo(ctx, 0, 0, fn ctx ->
-      class(ctx) == :novice and not Rathena.truthy?(isbegin_quest(ctx, 4269))
+      Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+        not Rathena.truthy?(isbegin_quest(ctx, 4269))
     end)
   end
 
@@ -210,7 +211,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
               if v4 == 1 do
                 throw({:cont_4, ctx})
               else
-                if class(ctx) == :novice do
+                if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                   ctx =
                     ctx
                     |> mes("[Receptionist]")
@@ -255,7 +256,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
               if v5 == 1 do
                 throw({:cont_4, ctx})
               else
-                if class(ctx) == :novice do
+                if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                   ctx =
                     ctx
                     |> mes("[Receptionist]")
@@ -325,7 +326,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.AcademyReceptionis
     ctx =
       case v1 do
         1 ->
-          if class(ctx) == :novice do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
             ctx =
               if not Rathena.truthy?(checkweight(ctx, [{1301, 10}])) do
                 ctx =

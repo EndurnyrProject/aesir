@@ -232,7 +232,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lumin62139 do
             throw({:script_end, ctx})
           end
         else
-          if class(ctx) == :novice do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
             ctx =
               ctx
               |> mes("[Lumin]")

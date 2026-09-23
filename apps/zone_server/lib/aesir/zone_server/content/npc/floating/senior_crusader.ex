@@ -37,7 +37,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
     ctx = mes(ctx, "[Michael Halig]")
 
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 do
+      if upper(ctx) == 1 do
         ctx =
           ctx
           |> mes(
@@ -52,9 +52,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
         throw({:script_end, ctx})
       else
         ctx =
-          if base_job(ctx) != :swordman do
+          if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:swordman) do
             ctx =
-              if base_job(ctx) == :crusader do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:crusader) do
                 ctx =
                   ctx
                   |> mes(
@@ -70,7 +70,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
                 throw({:script_end, ctx})
               else
                 ctx =
-                  if base_job(ctx) == :novice do
+                  if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                     ctx =
                       ctx
                       |> mes("We are Crusaders,")
@@ -205,7 +205,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
                               end
 
                             ctx =
-                              if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                              if Rathena.truthy?(skill_point(ctx)) do
                                 ctx =
                                   ctx
                                   |> mes("[Michael Halig]")
@@ -595,7 +595,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.SeniorCrusader do
                         ctx =
                           if get_char_var(ctx, :CRUS_Q, 0) == 10 do
                             ctx =
-                              if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                              if Rathena.truthy?(skill_point(ctx)) do
                                 ctx =
                                   ctx
                                   |> mes(

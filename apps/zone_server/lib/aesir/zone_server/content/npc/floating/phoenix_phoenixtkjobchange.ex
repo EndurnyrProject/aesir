@@ -19,6 +19,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
         name: "Phoenix",
         scope: :pre_renewal,
         unique_name: "Phoenix#TKJobChange"
+      },
+      %{
+        map: "payon_in01",
+        x: 62,
+        y: 10,
+        dir: 5,
+        sprite: 753,
+        name: "Phoenix",
+        scope: :renewal,
+        unique_name: "Phoenix#TKJobChange"
       }
     ]
 
@@ -27,12 +37,12 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 2 do
+      if upper(ctx) == 2 do
         ctx = ctx |> mes("[Phoenix]") |> mes("Hello, child.") |> close()
         throw({:script_end, ctx})
       else
         ctx =
-          if class(ctx) == :taekwon do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do
             ctx =
               ctx
               |> mes("[Phoenix]")
@@ -47,8 +57,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
             throw({:script_end, ctx})
           else
             ctx =
-              if class(ctx) > :novice or
-                   (class(ctx) == :novice and get_char_var(ctx, :TK_Q, 0) == 0) do
+              if Rathena.job_id(class(ctx)) > Rathena.job_id(:novice) or
+                   (Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+                      get_char_var(ctx, :TK_Q, 0) == 0) do
                 ctx =
                   ctx
                   |> mes("[Phoenix]")
@@ -84,7 +95,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Floating.PhoenixPhoenixtkjobchange do
                   |> next()
 
                 ctx =
-                  if class(ctx) != :novice do
+                  if Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) do
                     ctx =
                       ctx
                       |> mes("[Phoenix]")

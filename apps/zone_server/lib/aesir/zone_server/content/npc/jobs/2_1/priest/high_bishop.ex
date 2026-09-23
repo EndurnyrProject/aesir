@@ -27,7 +27,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
   @impl true
   def on_talk(ctx) do
     ctx =
-      if get_char_var(ctx, :Upper, 0) == 1 and get_local(ctx, :AllowHPAssist, 0) != 1 do
+      if upper(ctx) == 1 and get_local(ctx, :AllowHPAssist, 0) != 1 do
         ctx =
           ctx
           |> mes("[Bishop Paul]")
@@ -48,9 +48,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
       end
 
     ctx =
-      if base_job(ctx) != :acolyte do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:acolyte) do
         ctx =
-          if base_job(ctx) == :priest do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:priest) do
             ctx = ctx |> mes("[Bishop Paul]") |> mes("Ah...")
 
             ctx =
@@ -208,7 +208,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
 
             ctx
           else
-            if base_class(ctx) == :novice do
+            if Rathena.job_id(base_class(ctx)) == Rathena.job_id(:novice) do
               ctx = ctx |> mes("[Bishop Paul]") |> mes("May God be")
 
               ctx =
@@ -431,7 +431,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
                     end
 
                   ctx =
-                    if Rathena.truthy?(get_char_var(ctx, :SkillPoint, 0)) do
+                    if Rathena.truthy?(skill_point(ctx)) do
                       ctx =
                         ctx
                         |> mes("[Bishop Paul]")
@@ -930,9 +930,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M21.Priest.HighBishop do
                                         ctx =
                                           if get_char_var(ctx, :PRIEST_Q, 0) == 9 do
                                             ctx =
-                                              if Rathena.truthy?(
-                                                   get_char_var(ctx, :SkillPoint, 0)
-                                                 ) do
+                                              if Rathena.truthy?(skill_point(ctx)) do
                                                 ctx =
                                                   ctx
                                                   |> mes("[Bishop Paul]")

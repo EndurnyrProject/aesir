@@ -325,7 +325,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.FriendlyPoring do
                           |> completequest(2298)
 
                         ctx =
-                          if class(ctx) == :novice do
+                          if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
                             getexp(ctx, 500, 50)
                           else
                             ctx

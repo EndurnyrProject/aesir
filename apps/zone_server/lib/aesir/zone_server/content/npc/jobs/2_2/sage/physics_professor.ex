@@ -22,14 +22,16 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PhysicsProfessor do
       }
     ]
 
+  alias Aesir.ZoneServer.Script.Rathena
+
   @impl true
   def on_talk(ctx) do
     ctx = mes(ctx, "[Aebecee George]")
 
     ctx =
-      if base_job(ctx) != :mage do
+      if Rathena.job_id(base_job(ctx)) != Rathena.job_id(:mage) do
         ctx =
-          if base_job(ctx) == :sage do
+          if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:sage) do
             ctx
             |> mes("Tee hee, hello there! What brings you here again, sweetie?")
             |> mes("Oh, I see... you're just excited because you finally became a Sage? Tee hee~")
@@ -47,7 +49,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Jobs.M22.Sage.PhysicsProfessor do
             |> mes("Oh dearie, don't be nervous...where's your sense of adventure?")
           else
             ctx =
-              if base_job(ctx) == :novice do
+              if Rathena.job_id(base_job(ctx)) == Rathena.job_id(:novice) do
                 ctx
                 |> mes("Well, aren't you the cutest little Novice~")
                 |> next()

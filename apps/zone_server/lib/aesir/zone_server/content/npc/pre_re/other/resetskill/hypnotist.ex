@@ -111,7 +111,7 @@ defmodule Aesir.ZoneServer.Content.Npc.PreRe.Other.Resetskill.Hypnotist do
 
               ctx =
                 if (Rathena.job_id(class(ctx)) > 0 and Rathena.job_id(class(ctx)) < 7 and
-                      get_char_var(ctx, :Upper, 0) == 0) or
+                      upper(ctx) == 0) or
                      Rathena.job_id(class(ctx)) == Rathena.job_id(:gunslinger) or
                      Rathena.job_id(class(ctx)) == Rathena.job_id(:ninja) or
                      Rathena.job_id(class(ctx)) == Rathena.job_id(:taekwon) do

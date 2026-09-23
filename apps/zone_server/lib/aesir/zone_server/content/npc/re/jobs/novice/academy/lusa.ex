@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
     ctx = cutin(ctx, "aca_gung_01.bmp", 2)
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if isbegin_quest(ctx, 4269) != 2 do
             ctx =
@@ -241,7 +241,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
 
             3 ->
               ctx =
-                if get_char_var(ctx, :Upper, 0) == 2 do
+                if upper(ctx) == 2 do
                   ctx =
                     ctx
                     |> emotion(:sexy)
@@ -343,7 +343,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.Lusa do
         ctx
       else
         ctx =
-          if class(ctx) == :gunslinger do
+          if Rathena.job_id(class(ctx)) == Rathena.job_id(:gunslinger) do
             ctx =
               if not Rathena.truthy?(get_char_var(ctx, :nov_3_guns, 0)) and base_level(ctx) < 21 do
                 {ctx, v6} =

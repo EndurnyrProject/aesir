@@ -83,7 +83,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
       end
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if not Rathena.truthy?(isbegin_quest(ctx, 1237)) do
             {ctx, v1} =
@@ -303,7 +303,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
       end
 
     ctx =
-      if class(ctx) != :novice or isbegin_quest(ctx, 1240) == 2 do
+      if Rathena.job_id(class(ctx)) != Rathena.job_id(:novice) or isbegin_quest(ctx, 1240) == 2 do
         {ctx, v5} =
           ctx
           |> mes("[Shop Helper Leonie]")
@@ -348,7 +348,9 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
         :"menu$",
         Rathena.concat(
           "Shop types:Currency types:Cash Shop:",
-          if(class(ctx) == :novice and not Rathena.truthy?(isbegin_quest(ctx, 1238)),
+          if(
+            Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+              not Rathena.truthy?(isbegin_quest(ctx, 1238)),
             do: "Experience training.",
             else: "No, I know enough."
           )
@@ -435,7 +437,8 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.ShopHelper do
 
         4 ->
           ctx =
-            if class(ctx) == :novice and not Rathena.truthy?(isbegin_quest(ctx, 1238)) do
+            if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) and
+                 not Rathena.truthy?(isbegin_quest(ctx, 1238)) do
               {ctx, v7} =
                 ctx
                 |> mes("[Shop Helper Leonie]")

@@ -69,7 +69,7 @@ defmodule Aesir.ZoneServer.Content.Npc.Re.Jobs.Novice.Academy.MageChuck do
     ctx = cutin(ctx, "nov_magicsoul01.bmp", 2)
 
     ctx =
-      if class(ctx) == :novice do
+      if Rathena.job_id(class(ctx)) == Rathena.job_id(:novice) do
         ctx =
           if isbegin_quest(ctx, 4269) == 2 do
             {ctx, v1} =
