@@ -99,6 +99,38 @@ defmodule Aesir.ZoneServer.Npc.ClockSchedulerTest do
       assert_receive {:fired, FixtureNpc, _gid}
     end
 
+    test "a second tick within the same wall-clock minute does not fire again" do
+      Aesir.TestProbe.register!(:clock_scheduler_test_probe)
+      Registry.reload([FixtureNpc])
+
+      {:ok, clock} = Agent.start_link(fn -> @sunday_2359 end)
+      pid = start_supervised!({ClockScheduler, now_fun: fn -> Agent.get(clock, & &1) end})
+
+      send(pid, :tick)
+      assert_receive {:fired, FixtureNpc, _gid}
+
+      Agent.update(clock, fn _ -> %{@sunday_2359 | second: 59, microsecond: {990_000, 6}} end)
+      send(pid, :tick)
+
+      refute_receive {:fired, FixtureNpc, _gid}
+    end
+
+    test "the same minute of a later hour fires again" do
+      Aesir.TestProbe.register!(:clock_scheduler_test_probe)
+      Registry.reload([FixtureNpc])
+
+      {:ok, clock} = Agent.start_link(fn -> @sunday_2359 end)
+      pid = start_supervised!({ClockScheduler, now_fun: fn -> Agent.get(clock, & &1) end})
+
+      send(pid, :tick)
+      assert_receive {:fired, FixtureNpc, _gid}
+
+      Agent.update(clock, fn _ -> ~N[2026-07-06 00:59:00] end)
+      send(pid, :tick)
+
+      assert_receive {:fired, FixtureNpc, _gid}
+    end
+
     test "with no clock labels registered, a tick is a no-op and re-arms" do
       Aesir.TestProbe.register!(:clock_scheduler_test_probe)
       Registry.reload([])

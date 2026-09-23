@@ -14,7 +14,11 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
 
   The wake-up is armed to the next minute boundary (`ms_until_next_minute/1`)
   rather than a fixed interval, so ticks land on `:00` of every minute
-  without drift. Each tick re-reads `Npc.Registry.labels/0` rather than
+  without drift. Erlang timers run on monotonic time, so a wall-clock
+  adjustment (NTP) can land a tick just before the boundary, still inside the
+  minute that already fired; the scheduler remembers the last minute it fired
+  and skips a repeat, so each wall-clock minute fires at most once. Each tick
+  re-reads `Npc.Registry.labels/0` rather than
   caching the label set at init: a registry reload (`@reloadscript`) can add
   or remove clock labels, and with the corpus's label count the per-minute
   cost of re-scanning is nil.
@@ -37,10 +41,11 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
   @weekday_pattern ~r/^On(Sun|Mon|Tue|Wed|Thu|Fri|Sat)(\d{2})(\d{2})$/
 
   @enforce_keys [:now_fun]
-  defstruct [:now_fun]
+  defstruct now_fun: nil, last_fired_minute: nil
 
   @type t() :: %__MODULE__{
-          now_fun: (-> NaiveDateTime.t())
+          now_fun: (-> NaiveDateTime.t()),
+          last_fired_minute: NaiveDateTime.t() | nil
         }
 
   @spec start_link(keyword()) :: GenServer.on_start()
@@ -82,11 +87,15 @@ defmodule Aesir.ZoneServer.Npc.ClockScheduler do
   @impl true
   def handle_info(:tick, state) do
     now = state.now_fun.()
+    minute = %{now | second: 0, microsecond: {0, 0}}
 
-    NpcRegistry.labels()
-    |> matching_labels(now)
-    |> Enum.each(&Events.trigger_all/1)
+    if minute != state.last_fired_minute do
+      NpcRegistry.labels()
+      |> matching_labels(now)
+      |> Enum.each(&Events.trigger_all/1)
+    end
 
+    state = %{state | last_fired_minute: minute}
     arm_next_tick(state)
     {:noreply, state}
   end
