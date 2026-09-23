@@ -200,6 +200,7 @@ setlook/3
 setquest/2
 sex/1
 skill/4
+skill_point/1
 skilleffect/3
 sleep2/2
 soundeffect/3
@@ -215,6 +216,7 @@ summon_mob/2
 summon_mob_area/2
 summon_random_mob/2
 todo/3
+upper/1
 viewpoint/6
 vip_status/2
 waitingroom/3

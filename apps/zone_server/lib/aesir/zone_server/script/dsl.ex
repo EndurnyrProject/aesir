@@ -240,6 +240,8 @@ defmodule Aesir.ZoneServer.Script.Dsl do
   defdelegate checkcart(ctx), to: Reads
   defdelegate base_level(ctx), to: Reads
   defdelegate job_level(ctx), to: Reads
+  defdelegate upper(ctx), to: Reads
+  defdelegate skill_point(ctx), to: Reads
   defdelegate class(ctx), to: Reads
   defdelegate base_class(ctx), to: Reads
   defdelegate base_job(ctx), to: Reads

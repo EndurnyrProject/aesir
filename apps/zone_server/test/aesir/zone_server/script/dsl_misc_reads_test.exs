@@ -1,19 +1,23 @@
 defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
   @moduledoc """
-  Covers the renewal/VIP/marriage/time reads (`checkre/2`, `vip_status/2`,
-  `getpartnerid/1`, `gettimetick/2`) and the client-packet effect ops
+  Covers the mode/VIP/marriage/time reads (`checkre/2`, `vip_status/2`,
+  `getpartnerid/1`, `gettimetick/2`), the progression reads `upper/1` and
+  `skill_point/1`, and the client-packet effect ops
   (`cutin/3`, `soundeffect/3`) short-circuiting on a detached or errored ctx.
   """
 
   use ExUnit.Case, async: true
   use Mimic
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.Member
   alias Aesir.ZoneServer.Guild.State, as: GuildState
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Unit.Player.PlayerState
+  alias Aesir.ZoneServer.Unit.Player.Stats
+  alias Aesir.ZoneServer.Unit.Player.Stats.PlayerProgression
 
   setup :set_mimic_private
   setup :verify_on_exit!
@@ -25,7 +29,13 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
       partner_id: Keyword.get(opts, :partner_id, 0),
       cart_type: Keyword.get(opts, :cart_type, 0),
       party_id: Keyword.get(opts, :party_id, 0),
-      guild_id: Keyword.get(opts, :guild_id, 0)
+      guild_id: Keyword.get(opts, :guild_id, 0),
+      stats: %Stats{
+        progression: %PlayerProgression{
+          job_id: Keyword.get(opts, :job_id, 0),
+          skill_point: Keyword.get(opts, :skill_point, 0)
+        }
+      }
     }
   end
 
@@ -124,18 +134,50 @@ defmodule Aesir.ZoneServer.Script.DslMiscReadsTest do
     end
   end
 
-  describe "checkre/2 (Aesir is renewal-only)" do
-    test "every renewal feature flag (0..5) is on" do
+  describe "checkre/2" do
+    test "every renewal feature flag (0..5) is on in renewal and off in pre-renewal" do
+      stub(GameMode, :mode, fn -> :renewal end)
       for type <- 0..5, do: assert(Dsl.checkre(ctx(), type) == 1)
+
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      for type <- 0..5, do: assert(Dsl.checkre(ctx(), type) == 0)
     end
 
-    test "an unknown type returns 0, matching rAthena" do
+    test "an unknown type returns 0 in both modes" do
+      stub(GameMode, :mode, fn -> :renewal end)
       assert Dsl.checkre(ctx(), 6) == 0
       assert Dsl.checkre(ctx(), -1) == 0
+
+      stub(GameMode, :mode, fn -> :pre_renewal end)
+      assert Dsl.checkre(ctx(), 6) == 0
     end
 
     test "ignores the ctx (works detached)" do
+      stub(GameMode, :mode, fn -> :renewal end)
       assert Dsl.checkre(%{ctx() | game_state: nil}, 0) == 1
+    end
+  end
+
+  describe "upper/1" do
+    test "is 1 for transcendent lineages, 2 for baby lineages, 0 otherwise" do
+      for job_id <- [4001, 4002, 4008, 4060], do: assert(Dsl.upper(ctx(job_id: job_id)) == 1)
+      for job_id <- [4023, 4024], do: assert(Dsl.upper(ctx(job_id: job_id)) == 2)
+      for job_id <- [0, 7, 4054], do: assert(Dsl.upper(ctx(job_id: job_id)) == 0)
+    end
+
+    test "is 0 on a detached ctx" do
+      assert Dsl.upper(%{ctx() | game_state: nil}) == 0
+    end
+  end
+
+  describe "skill_point/1" do
+    test "reads the unspent skill points" do
+      assert Dsl.skill_point(ctx(skill_point: 9)) == 9
+      assert Dsl.skill_point(ctx()) == 0
+    end
+
+    test "is 0 on a detached ctx" do
+      assert Dsl.skill_point(%{ctx() | game_state: nil}) == 0
     end
   end
 

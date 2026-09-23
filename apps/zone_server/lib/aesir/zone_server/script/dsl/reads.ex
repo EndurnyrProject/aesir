@@ -16,6 +16,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   import Aesir.ZoneServer.Script.Dsl.Internal,
     only: [no_player!: 1]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.InventoryItem
   alias Aesir.ZoneServer.Guild.Manager, as: GuildManager
   alias Aesir.ZoneServer.Guild.State, as: GuildState
@@ -41,6 +42,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   alias Aesir.ZoneServer.Unit.Inventory
   alias Aesir.ZoneServer.Unit.Inventory.Weight
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @baby_job_id 4023
 
   @doc """
   Whether the attached player has a Falcon: `1` when the Falcon option bit is
@@ -78,6 +81,32 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   @spec base_level(Ctx.t()) :: non_neg_integer()
   def base_level(%Ctx{game_state: nil}), do: no_player!("base_level/1")
   def base_level(%Ctx{game_state: gs}), do: gs.stats.progression.base_level
+
+  @doc """
+  The player's transcendence tier (script parameter `Upper`): `1` for a
+  transcendent lineage, `2` for a baby lineage, `0` otherwise. Detached
+  contexts report `0`.
+  """
+  @spec upper(Ctx.t()) :: 0 | 1 | 2
+  def upper(%Ctx{game_state: nil}), do: 0
+
+  def upper(%Ctx{game_state: gs}) do
+    job_id = gs.stats.progression.job_id
+
+    cond do
+      JobLineage.transcendent?(job_id) -> 1
+      JobLineage.descendant_or_self?(job_id, @baby_job_id) -> 2
+      true -> 0
+    end
+  end
+
+  @doc """
+  The player's unspent skill points (script parameter `SkillPoint`). Detached
+  contexts report `0`.
+  """
+  @spec skill_point(Ctx.t()) :: non_neg_integer()
+  def skill_point(%Ctx{game_state: nil}), do: 0
+  def skill_point(%Ctx{game_state: gs}), do: gs.stats.progression.skill_point
 
   @doc "The player's job level."
   @spec job_level(Ctx.t()) :: non_neg_integer()
@@ -657,14 +686,16 @@ defmodule Aesir.ZoneServer.Script.Dsl.Reads do
   def getpartnerid(%Ctx{game_state: gs}), do: gs.partner_id
 
   @doc """
-  A renewal build-flag check (rAthena `checkre`): `1` when the feature is
-  compiled in, else `0`. Aesir is renewal-only, so every renewal feature
-  (`0` RENEWAL / `1` cast / `2` drop / `3` exp / `4` level-damage / `5` ASPD)
-  is on and returns `1`; any unknown type returns `0`, matching rAthena. Pure
-  read; the ctx is ignored.
+  A renewal feature check (script `checkre`): `1` when the feature is active,
+  else `0`. Aesir has a single mode flag, so every renewal feature (`0`
+  renewal / `1` cast / `2` drop / `3` exp / `4` level-damage / `5` ASPD)
+  follows `GameMode.mode/0`: all on in renewal, all off in pre-renewal. Any
+  unknown type returns `0`. Pure read; the ctx is ignored.
   """
   @spec checkre(Ctx.t(), integer()) :: 0 | 1
-  def checkre(%Ctx{}, type) when type in 0..5, do: 1
+  def checkre(%Ctx{}, type) when type in 0..5,
+    do: if(GameMode.mode() == :renewal, do: 1, else: 0)
+
   def checkre(%Ctx{}, _type), do: 0
 
   @doc """
