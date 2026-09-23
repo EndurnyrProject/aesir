@@ -425,6 +425,17 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulasTest do
             PreRenewal.max_sp(sp_inputs(transcendent?: true))} === {1_250, 1_250}
   end
 
+  test "transcendent jobs get 25% more HP and SP in both modes, before flat bonuses" do
+    for formulas <- [Renewal, PreRenewal] do
+      assert {formulas.max_hp(hp_inputs(transcendent?: true)),
+              formulas.max_sp(sp_inputs(transcendent?: true))} === {1_250, 1_250}
+
+      assert {formulas.max_hp(hp_inputs(transcendent?: true, flat_bonus: 100)),
+              formulas.max_sp(sp_inputs(transcendent?: true, flat_bonus: 100))} ===
+               {1_350, 1_350}
+    end
+  end
+
   test "renewal production boundary matches parent HP and SP ordering" do
     stub(Mechanics, :player_formulas, fn -> Renewal end)
 

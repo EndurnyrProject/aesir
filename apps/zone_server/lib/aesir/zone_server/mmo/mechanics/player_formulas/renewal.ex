@@ -1,6 +1,10 @@
 defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   @moduledoc """
   Renewal formulas use trait attributes, AGI/DEX-scaled ASPD, and the current HP/SP model.
+
+  Transcendent jobs share their base HP/SP tables with the normal lineage and
+  get 25% more max HP and SP on top of the VIT/INT-scaled base, before flat and
+  percentage bonuses.
   """
 
   alias Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas
@@ -91,6 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
       end
 
     hp_with_factor
+    |> apply_transcendent_bonus(inputs.transcendent?)
     |> Kernel.+(inputs.hp_increase + inputs.flat_bonus)
     |> apply_max_rate(inputs.equipment_rate + inputs.modifier_rate)
     |> max(1)
@@ -101,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
     inputs.base_sp
     |> Kernel.*(1.0 + inputs.int * 0.01)
     |> trunc()
+    |> apply_transcendent_bonus(inputs.transcendent?)
     |> Kernel.+(inputs.sp_increase + inputs.flat_bonus)
     |> apply_max_rate(inputs.equipment_rate + inputs.modifier_rate)
     |> max(1)
@@ -123,6 +129,9 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PlayerFormulas.Renewal do
   end
 
   defp apply_max_rate(value, rate), do: trunc(value * (100 + rate) / 100)
+
+  defp apply_transcendent_bonus(value, true), do: trunc(value * 1.25)
+  defp apply_transcendent_bonus(value, false), do: value
 
   defp combat_modifier(bonus, trait_term), do: (bonus + trait_term) |> max(0) |> min(32_767)
 end
