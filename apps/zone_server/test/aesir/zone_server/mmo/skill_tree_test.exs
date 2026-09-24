@@ -711,5 +711,39 @@ defmodule Aesir.ZoneServer.Mmo.SkillTreeTest do
       assert reset.skill_point == 1 + 9
       assert reset.learned_skills == %{}
     end
+
+    # Basic Skill is refunded for the whole novice family (the source compares the
+    # second-class mask, which ignores the transcendent and baby bits).
+    for job <- [:novice_high, :baby] do
+      test "refunds NV_BASIC for a #{job} player" do
+        {:ok, job_id} = AvailableJobs.job_name_to_id(unquote(job))
+        nv_basic = catalog_id(:nv_basic)
+
+        progression =
+          swordman_progression(job_id: job_id, skill_point: 0, learned_skills: %{nv_basic => 9})
+
+        reset = SkillTree.reset_skills(progression)
+
+        assert reset.skill_point == 9
+        assert reset.learned_skills == %{}
+      end
+    end
+
+    test "keeps NV_BASIC for a Super Novice player" do
+      {:ok, super_novice_id} = AvailableJobs.job_name_to_id(:super_novice)
+      nv_basic = catalog_id(:nv_basic)
+
+      progression =
+        swordman_progression(
+          job_id: super_novice_id,
+          skill_point: 0,
+          learned_skills: %{nv_basic => 9}
+        )
+
+      reset = SkillTree.reset_skills(progression)
+
+      assert reset.skill_point == 0
+      assert reset.learned_skills == %{nv_basic => 9}
+    end
   end
 end

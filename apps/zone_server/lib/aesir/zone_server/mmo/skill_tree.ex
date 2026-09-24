@@ -249,8 +249,9 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
 
   Sums the levels of every non-exempt learned skill back into `skill_point` and
   reduces `learned_skills` to the exempt set. `NV_BASIC` is exempt (kept, not
-  refunded) unless the player is a Novice, in which case it is refunded like any
-  other skill. The job id is unchanged.
+  refunded) unless the player is Novice-classed (Novice, Novice High, or Baby
+  Novice), in which case it is refunded like any other skill. Super Novice keeps
+  it. The job id is unchanged.
   """
   @spec reset_skills(PlayerProgression.t()) :: PlayerProgression.t()
   def reset_skills(%PlayerProgression{} = progression) do
@@ -274,7 +275,7 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
   @spec exempt_skills(PlayerProgression.t()) :: [non_neg_integer()]
   defp exempt_skills(%PlayerProgression{job_id: job_id, learned_skills: learned_skills}) do
     basic =
-      if novice?(job_id) do
+      if novice_family?(job_id) do
         []
       else
         case Catalog.by_name(:nv_basic) do
@@ -286,8 +287,13 @@ defmodule Aesir.ZoneServer.Mmo.SkillTree do
     basic ++ permanent_skill_ids(learned_skills)
   end
 
-  @spec novice?(non_neg_integer()) :: boolean()
-  defp novice?(job_id), do: match?({:ok, :novice}, AvailableJobs.job_id_to_name(job_id))
+  @spec novice_family?(non_neg_integer()) :: boolean()
+  defp novice_family?(job_id) do
+    case AvailableJobs.job_id_to_name(job_id) do
+      {:ok, job} -> JobLineage.base_job(job) == :novice
+      {:error, _unknown} -> false
+    end
+  end
 
   @spec requirements_met?(Learned.t(), [{non_neg_integer(), pos_integer()}]) :: boolean()
   defp requirements_met?(learned, requires) do
