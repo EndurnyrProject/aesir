@@ -114,6 +114,15 @@ Aesir content as imported.
    If edits are delegated, only the coordinating agent runs Mix commands, serially, never
    concurrent builds or test suites. For documentation-only edits, check formatting and confirm
    runtime code is unchanged rather than rerunning gameplay suites.
+7. **Diff behavior with the harness.** `scripts/npc_diff_harness.exs` (plain `elixir`, no Mix)
+   runs the pre-refactor and refactored module against a recording fake DSL over thousands of
+   seeded worlds and compares the ordered effect logs of `on_talk` and every event label:
+   `git show HEAD:<file> > /tmp/old.ex`, then
+   `elixir .agents/skills/aesir-npc/scripts/npc_diff_harness.exs /tmp/old.ex <file> 4000`.
+   Require `mismatches=0`. Treat shared `error_outcomes` and very low `distinct_paths` on quest
+   NPCs as harness gaps hiding paths (rerun with `NPC_HARNESS_DEBUG=1` and model the missing
+   read), except calls that really raise, such as `Todo` stubs. It is a refactoring aid, not a test;
+   never add it to the suite.
 
 ## The Script DSL (`script/dsl.ex`)
 
