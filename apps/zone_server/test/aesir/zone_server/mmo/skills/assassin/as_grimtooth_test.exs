@@ -17,6 +17,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtooth
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Resistance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -245,6 +246,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
     :ok = SpatialIndex.add_player(caster.character_id, 50, 50, caster.map_name)
     register_mob(target, 55, 50)
     :ok = StatusInterpreter.apply_status(:mob, target.instance_id, :sc_pneuma, duration: 5_000)
+    # The 1 VIT target resists Quagmire 1% of the time; pin the roll.
+    stub(Resistance, :roll_success, fn _rate -> true end)
 
     Mimic.copy(StatusInterpreter)
 
@@ -275,6 +278,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Assassin.AsGrimtoothTest do
 
     register_mob(target, 55, 50)
     register_mob(immune_target, 55, 51)
+    # The 1 VIT target resists Quagmire 1% of the time; pin the roll.
+    stub(Resistance, :roll_success, fn _rate -> true end)
     :ok = UnitRegistry.register_player(player_target, self())
     :ok = SpatialIndex.add_player(player_target.character_id, 54, 50, player_target.map_name)
 

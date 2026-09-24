@@ -7,6 +7,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
   use ExUnit.Case, async: true
   use Mimic
 
+  import Aesir.TestEtsSetup
+
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Guild.Relations
   alias Aesir.ZoneServer.Map.Cell
@@ -27,6 +29,11 @@ defmodule Aesir.ZoneServer.Unit.Mob.AIStateMachineTest do
 
   setup :set_mimic_from_context
   setup :verify_on_exit!
+
+  # Mob combatants read their live statuses (`MobState.to_combatant/1`); a private
+  # seeded status table keeps another async test's status on the same mob
+  # instance id from leaking into this file.
+  setup :setup_ets_tables
 
   setup do
     Mimic.copy(Interpreter)
