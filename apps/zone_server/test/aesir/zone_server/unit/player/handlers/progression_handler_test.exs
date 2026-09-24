@@ -374,22 +374,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
     end
   end
 
-  describe "apply_job_change/2 gender gate" do
-    test "rejects a female character requesting bard with gender_locked, mutating nothing" do
+  describe "apply_job_change/2 sex-paired jobs" do
+    test "a female character requesting bard becomes a dancer" do
       state = state_with_gs([job_id: @novice_id], sex: "F")
-      reject(&EquipmentHandler.recheck_requirements/2)
 
-      assert {:error, :gender_locked} = ProgressionHandler.apply_job_change(@bard_id, state)
-    end
-
-    test "does not broadcast, persist, or send a skill list on gender_locked" do
-      state = state_with_gs([job_id: @novice_id], sex: "F")
-      reject(&Broadcast.to_player/2)
-      reject(&CharacterPersistence.update_character/3)
-
-      ProgressionHandler.apply_job_change(@bard_id, state)
-
-      refute_received {:send, :bulk, {:skill_list, _}}
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@bard_id, state)
+      assert new_state.game_state.stats.progression.job_id == @dancer_id
     end
 
     test "allows a male character requesting bard" do
@@ -398,23 +388,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
       assert {:ok, new_state} = ProgressionHandler.apply_job_change(@bard_id, state)
       assert new_state.game_state.stats.progression.job_id == @bard_id
     end
-  end
 
-  describe "apply_job_change/2 Dancer gender gate" do
-    test "rejects a male character requesting dancer with gender_locked, mutating nothing" do
+    test "a male character requesting dancer becomes a bard" do
       state = state_with_gs([job_id: @novice_id], sex: "M")
 
-      assert {:error, :gender_locked} = ProgressionHandler.apply_job_change(@dancer_id, state)
-    end
-
-    test "does not broadcast, persist, or send a skill list on dancer gender_locked" do
-      state = state_with_gs([job_id: @novice_id], sex: "M")
-      reject(&Broadcast.to_player/2)
-      reject(&CharacterPersistence.update_character/3)
-
-      ProgressionHandler.apply_job_change(@dancer_id, state)
-
-      refute_received {:send, :bulk, {:skill_list, _}}
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(@dancer_id, state)
+      assert new_state.game_state.stats.progression.job_id == @bard_id
     end
 
     test "allows a female character requesting dancer" do
@@ -422,6 +401,53 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandlerTest do
 
       assert {:ok, new_state} = ProgressionHandler.apply_job_change(@dancer_id, state)
       assert new_state.game_state.stats.progression.job_id == @dancer_id
+    end
+
+    test "a female Archer High sent to clown becomes a gypsy" do
+      {:ok, archer_high_id} = AvailableJobs.job_name_to_id(:archer_high)
+      {:ok, clown_id} = AvailableJobs.job_name_to_id(:clown)
+      {:ok, gypsy_id} = AvailableJobs.job_name_to_id(:gypsy)
+      state = state_with_gs([job_id: archer_high_id], sex: "F")
+
+      assert {:ok, new_state} = ProgressionHandler.apply_job_change(clown_id, state)
+      assert new_state.game_state.stats.progression.job_id == gypsy_id
+    end
+
+    test "sex_adjusted_job/2 swaps every sex-paired family and leaves other jobs alone" do
+      pairs = [
+        bard: :dancer,
+        clown: :gypsy,
+        baby_bard: :baby_dancer,
+        minstrel: :wanderer,
+        minstrel_t: :wanderer_t,
+        baby_minstrel: :baby_wanderer,
+        kagerou: :oboro,
+        baby_kagerou: :baby_oboro,
+        shinkiro: :shiranui,
+        troubadour: :trouvere
+      ]
+
+      for {male, female} <- pairs do
+        {:ok, male_id} = AvailableJobs.job_name_to_id(male)
+        {:ok, female_id} = AvailableJobs.job_name_to_id(female)
+
+        assert ProgressionHandler.sex_adjusted_job(female_id, "M") == male_id
+        assert ProgressionHandler.sex_adjusted_job(male_id, "F") == female_id
+        assert ProgressionHandler.sex_adjusted_job(male_id, "M") == male_id
+      end
+
+      for job <- [:knight, :knight2, :lord_knight, :archer_high] do
+        {:ok, job_id} = AvailableJobs.job_name_to_id(job)
+
+        assert ProgressionHandler.sex_adjusted_job(job_id, "F") == job_id
+      end
+    end
+
+    test "requesting the twin of the current job is a no-op" do
+      state = state_with_gs([job_id: @dancer_id], sex: "F")
+      reject(&CharacterPersistence.update_character/3)
+
+      assert {:ok, ^state} = ProgressionHandler.apply_job_change(@bard_id, state)
     end
   end
 

@@ -1,8 +1,10 @@
 defmodule Aesir.ZoneServer.Gm.Commands.Job do
   @moduledoc """
   `@job <job_id | job_name>` - changes the calling GM's job/class. Accepts either
-  a numeric job id or a job name (e.g. `knight`). Delivery is
-  `JobChange.request/2`, which broadcasts to the caller's own session.
+  a numeric job id or a job name (e.g. `knight`). A sex-paired job resolves to
+  the half matching the caller's sex (`bard` gives a female GM Dancer), and the
+  reply names the job actually given. Delivery is `JobChange.request/2`, which
+  broadcasts to the caller's own session.
   """
   @behaviour Aesir.ZoneServer.Gm.Command
 
@@ -14,7 +16,6 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
   @usage "Usage: @job <job_id | job_name>"
   @cart_active "Remove your cart before changing job"
   @requirements_not_met "You do not meet the requirements for that job"
-  @gender_locked "That job is not available for your character's sex"
 
   @impl true
   def name, do: "job"
@@ -24,25 +25,21 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
 
   @impl true
   def execute([arg], ctx) do
-    with {:ok, job_id, job_name} <- resolve(arg),
-         :ok <- gender_check(job_id, ctx.game_state.sex),
+    with {:ok, requested_id} <- resolve(arg),
+         job_id = ProgressionHandler.sex_adjusted_job(requested_id, ctx.game_state.sex),
+         {:ok, job_name} <- AvailableJobs.job_id_to_name(job_id),
          :ok <- TraitJobs.change_allowed?(ctx.game_state.stats.progression, job_id),
          false <- ProgressionHandler.cart_blocks_job_change?(ctx.game_state, job_id) do
       JobChange.request(ctx.game_state.character_id, job_id)
       {:ok, "Changed job to #{job_name} (#{job_id})"}
     else
       true -> {:error, @cart_active}
-      :gender_locked -> {:error, @gender_locked}
       {:error, :requirements_not_met} -> {:error, @requirements_not_met}
       {:error, reason} -> {:error, reason}
     end
   end
 
   def execute(_args, _ctx), do: {:error, @usage}
-
-  defp gender_check(job_id, sex) do
-    if ProgressionHandler.gender_locked?(job_id, sex), do: :gender_locked, else: :ok
-  end
 
   defp resolve(arg) do
     case Integer.parse(arg) do
@@ -53,7 +50,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
 
   defp by_id(job_id) do
     case AvailableJobs.job_id_to_name(job_id) do
-      {:ok, name} -> {:ok, job_id, name}
+      {:ok, _name} -> {:ok, job_id}
       {:error, _} -> {:error, "Unknown job"}
     end
   end
@@ -62,7 +59,7 @@ defmodule Aesir.ZoneServer.Gm.Commands.Job do
     name = arg |> String.downcase() |> String.to_existing_atom()
 
     case AvailableJobs.job_name_to_id(name) do
-      {:ok, job_id} -> {:ok, job_id, name}
+      {:ok, job_id} -> {:ok, job_id}
       {:error, _} -> {:error, "Unknown job"}
     end
   rescue

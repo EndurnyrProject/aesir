@@ -104,16 +104,17 @@ defmodule Aesir.ZoneServer.Gm.Commands.JobTest do
     refute_receive {:progression, {:change_job, _}}
   end
 
-  test "is rejected with a message when the job is gender-locked for the caller's sex, broadcasting nothing" do
+  test "resolves a sex-paired job to the caller's sex and reports the job actually given" do
+    {:ok, dancer_id} = AvailableJobs.job_name_to_id(:dancer)
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
-    assert {:error, "That job is not available for your character's sex"} =
+    assert {:ok, "Changed job to dancer (#{dancer_id})"} ==
              Job.execute([to_string(@bard_id)], ctx(sex: "F"))
 
-    refute_receive {:progression, {:change_job, _}}
+    assert_receive {:progression, {:change_job, ^dancer_id}}
   end
 
-  test "allows the gender-locked job change for the matching sex, broadcasting {:change_job, id}" do
+  test "allows the sex-paired job change for the matching sex, broadcasting {:change_job, id}" do
     PubSub.subscribe(Aesir.PubSub, "player:#{@char_id}")
 
     assert {:ok, _} = Job.execute([to_string(@bard_id)], ctx(sex: "M"))

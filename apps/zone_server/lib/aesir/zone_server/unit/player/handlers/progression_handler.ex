@@ -12,9 +12,9 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   nearby observers. A change (or `reset_skills/1` refund) that would drop
   `MC_PUSHCART` while a cart is mounted is rejected with `{:error, :cart_active}`
   before any mutation, so the player unloads and removes the cart first. A job
-  change into a gender-locked job (`@required_sex`, e.g. bard is male-only) for
-  a character of the wrong sex is rejected with `{:error, :gender_locked}`
-  before any mutation. Unlike the cart, a mounted Peco-Peco never blocks a
+  change into one half of a sex-paired job (Bard/Dancer, Clown/Gypsy, and so on)
+  resolves to the half matching the character's sex (`sex_adjusted_job/2`), so a
+  female character sent to Bard becomes a Dancer. Unlike the cart, a mounted Peco-Peco never blocks a
   change or reset that drops
   `KN_RIDING`: `MountHandler.force_dismount/1` runs up front instead, before the
   stats recompute, so the new job's derived stats never carry the riding ASPD
@@ -30,6 +30,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Mmo.JobManagement
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobMapid
   alias Aesir.ZoneServer.Mmo.JobManagement.TraitJobs
   alias Aesir.ZoneServer.Mmo.Leveling
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
@@ -54,9 +55,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.StatusSync
   alias Aesir.ZoneServer.Unit.Stats, as: UnitStats
-
-  # Job ids that require a specific character sex to change into.
-  @required_sex %{19 => "M", 20 => "F"}
 
   # Extra status points every transcendent character holds on top of the
   # level table (100 at level 1 is the table's 48 plus this bonus).
@@ -172,15 +170,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   mutating `state` when `job_id` does not resolve to a known job. Returns
   `{:error, :cart_active}` without mutating `state` when the change would drop
   `MC_PUSHCART` (the new job's tree lacks it) while a cart is mounted — the
-  player must unload and remove the cart first. Returns `{:error, :gender_locked}`
-  without mutating `state` when `job_id` requires a character sex the player
-  does not have (`@required_sex`, e.g. bard is male-only).
+  player must unload and remove the cart first. A sex-paired `job_id` is first
+  resolved to the half matching the character's sex (`sex_adjusted_job/2`).
   """
   @spec apply_job_change(non_neg_integer(), map()) :: {:ok, map()} | {:error, term()}
   def apply_job_change(job_id, %{game_state: game_state} = state) do
     case AvailableJobs.job_id_to_name(job_id) do
-      {:ok, _job_name} -> do_apply_job_change(job_id, state, game_state)
-      {:error, :unknown_job_id} -> {:error, :unknown_job}
+      {:ok, _job_name} ->
+        job_id |> sex_adjusted_job(game_state.sex) |> do_apply_job_change(state, game_state)
+
+      {:error, :unknown_job_id} ->
+        {:error, :unknown_job}
     end
   end
 
@@ -203,16 +203,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
   def cart_blocks_reset?(%{cart_type: cart_type}), do: cart_type > 0
 
   @doc """
-  Whether a change to `job_id` requires a character sex other than `sex`
-  (`@required_sex`, e.g. bard is male-only). Jobs absent from the map are
-  unlocked for either sex. Used by the core and by `@job` to reject before any
-  mutation.
+  The job a character of `sex` (`"M"` or `"F"`) actually gets when changing to
+  `job_id`. Sex-paired jobs (Bard/Dancer, Clown/Gypsy, Kagerou/Oboro,
+  Minstrel/Wanderer, and their baby, transcendent, and later forms) resolve to
+  the half matching `sex`; every other job is returned unchanged. Used by the
+  core and by `@job`.
   """
-  @spec gender_locked?(non_neg_integer(), String.t()) :: boolean()
-  def gender_locked?(job_id, sex) do
-    case Map.fetch(@required_sex, job_id) do
-      {:ok, required_sex} -> required_sex != sex
-      :error -> false
+  @spec sex_adjusted_job(non_neg_integer(), String.t()) :: non_neg_integer()
+  def sex_adjusted_job(job_id, sex) do
+    mapid = JobMapid.from_job(job_id)
+
+    case {JobMapid.to_job(mapid, 1), JobMapid.to_job(mapid, 0)} do
+      {male, female} when male != female and male > 0 and female > 0 ->
+        if sex == "M", do: male, else: female
+
+      _not_paired ->
+        job_id
     end
   end
 
@@ -484,9 +490,6 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler do
     cond do
       job_id == progression.job_id ->
         {:ok, state}
-
-      gender_locked?(job_id, game_state.sex) ->
-        {:error, :gender_locked}
 
       TraitJobs.change_allowed?(progression, job_id) != :ok ->
         {:error, :requirements_not_met}
