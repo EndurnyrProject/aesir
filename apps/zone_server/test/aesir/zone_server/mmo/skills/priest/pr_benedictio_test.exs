@@ -186,6 +186,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictioTest do
              PrBenedictio.validate(caster, {:ground, 160, 160}, 1, PrBenedictio.definition())
   end
 
+  test "any Acolyte-line class is an eligible companion, not only first-job Acolytes" do
+    caster = register_player(player(@caster_id, 150, 150, dir: 4, sp: 100))
+    register_player(player(1_001, 149, 150, job_id: 8))
+    register_player(player(1_002, 151, 150, job_id: 4_016))
+
+    assert :ok = PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+
+    UnitRegistry.unregister_unit(:player, 1_002)
+    register_player(player(1_002, 151, 150, job_id: 5))
+
+    assert {:error, :insufficient_companions} =
+             PrBenedictio.validate(caster, {:ground, 150, 150}, 1, PrBenedictio.definition())
+  end
+
   test "candidate eligibility checks caster SP rather than companion SP and does not require a party" do
     {caster, _west, _east} = register_formation(sp: 10)
 

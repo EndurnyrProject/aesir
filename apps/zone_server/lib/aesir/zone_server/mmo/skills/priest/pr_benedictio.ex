@@ -1,7 +1,9 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   @moduledoc """
   B.S. Sacramenti (PR_BENEDICTIO). An immediate 3x3 blessing cast by three Acolyte-
-  family players standing in a row: the two side companions each pay 10 SP.
+  family players standing in a row: the two side companions each pay 10 SP. Any
+  Acolyte-line class qualifies as a companion (Acolyte, Priest, Monk, and their
+  transcendent, baby, and later classes).
 
   Living players in the area that are neither undead nor demon receive the holy
   armor blessing for 40 s per level; living demon enemies and enemies of undead
@@ -29,6 +31,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.RaceModifiers
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
+  alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal
@@ -41,7 +44,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
 
   @behaviour Active
 
-  @acolyte_jobs [:acolyte, :acolyte_high, :baby_acolyte]
   @participant_sp_cost 10
 
   @impl Active
@@ -100,7 +102,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Priest.PrBenedictio do
 
   defp acolyte?(job_id) do
     case AvailableJobs.job_id_to_name(job_id) do
-      {:ok, job_name} -> job_name in @acolyte_jobs
+      {:ok, job_name} -> JobLineage.base_class(job_name) == :acolyte
       {:error, _reason} -> false
     end
   end
