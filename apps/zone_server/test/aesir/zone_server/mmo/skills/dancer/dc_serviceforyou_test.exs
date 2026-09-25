@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYou
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -47,6 +48,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
     assert definition.cooldown == List.duplicate(20_000, 10)
   end
 
+  @tag game_mode: :renewal
   test "completion snapshots the level as the Gypsy's Kiss status value" do
     caster = player()
     :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
@@ -61,6 +63,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "completion snapshots only living online nearby party members for the full duration" do
     caster = party_player(1, party_id: 10)
     nearby = party_player(2, x: 115, y: 115)
@@ -245,18 +248,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYouTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic completion snapshots INT-scaled max SP and cost percents" do
+  test "classic completion passes INT-scaled max SP and cost percents to a field" do
     caster = player()
-    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, caster, self())
     int = Stats.get_effective_stat(caster.stats, :int)
 
-    assert {:ok, _result} = DcServiceForYou.cast(caster, :self, 10, DcServiceForYou.definition())
+    expect(Performance, :perform, fn ^caster, definition, 10, :sc_serviceforyou, params, opts ->
+      assert definition.duration == List.duplicate(180_000, 10)
+      assert params[:val1] == 10
+      assert params[:val2] == 25 + div(int, 10)
+      assert params[:val3] == 50 + div(int, 10)
+      assert opts[:kind] == :dance
+      assert opts[:reach] == :everyone
+      assert opts[:upkeep] == 5
+      assert opts[:linger_ms] == 20_000
+      {:ok, caster}
+    end)
 
-    assert %{val1: 10, val2: val2, val3: val3} =
-             StatusStorage.get_status(:player, 1, :sc_serviceforyou)
-
-    assert val2 == 25 + div(int, 10)
-    assert val3 == 50 + div(int, 10)
+    assert {:ok, ^caster} = DcServiceForYou.cast(caster, :self, 10, DcServiceForYou.definition())
   end
 
   @tag game_mode: :pre_renewal

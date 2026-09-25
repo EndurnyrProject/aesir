@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDontforgetmeTest do
   use Mimic
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcDontforgetme
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -72,20 +73,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDontforgetmeTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic snapshots stat-scaled Slow Grace percents to enemies" do
+  test "classic passes stat-scaled Slow Grace to an enemy field" do
     caster = %PlayerState{character_id: 1}
 
     for level <- [1, 10] do
-      expect(Snapshot, :snapshot, fn ^caster,
-                                     _definition,
-                                     ^level,
-                                     :sc_dontforgetme,
-                                     params,
-                                     opts ->
+      expect(Performance, :perform, fn ^caster,
+                                       _definition,
+                                       ^level,
+                                       :sc_dontforgetme,
+                                       params,
+                                       opts ->
         assert params[:val1] == level
         assert params[:val2] == 5 + 3 * level
         assert params[:val3] == 5 + 3 * level
-        assert opts == [scope: :enemy]
+        assert opts[:kind] == :dance
+        assert opts[:reach] == :enemy
+        assert opts[:upkeep] == 10
+        assert opts[:linger_ms] == 20_000
         {:ok, caster}
       end)
 
@@ -104,9 +108,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcDontforgetmeTest do
       }
     }
 
-    expect(Snapshot, :snapshot, fn ^caster, _definition, 2, :sc_dontforgetme, params, _opts ->
+    expect(Performance, :perform, fn ^caster, _definition, 2, :sc_dontforgetme, params, opts ->
       assert params[:val2] == 5 + 6 + 3 + 4
       assert params[:val3] == 5 + 6 + 5 + 4
+      assert opts[:lesson_level] == 4
       {:ok, caster}
     end)
 

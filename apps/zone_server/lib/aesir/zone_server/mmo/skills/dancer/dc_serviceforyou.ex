@@ -8,8 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYou do
   3 minutes within 15 cells. Pre-renewal: max SP 15 plus level plus INT/10 plus
   Dancing Lesson/2 percent and SP costs 20 plus 3 per level plus INT/10 plus
   Dancing Lesson/2 percent lower, read from the performer at cast, an instant
-  cast, no cooldown, and 3 minutes; the classic ground-dance model is deferred to
-  a skill-unit performance subsystem.
+  cast, no cooldown and a 3-minute 7x7 field. Everyone inside except the
+  performer receives the buff, which lingers 20 seconds after leaving; the
+  performer pays 1 SP every 5 seconds.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -34,12 +35,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcServiceForYou do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(caster, definition, level, :sc_serviceforyou, params(caster, level), [])
+    Performance.perform(caster, definition, level, :sc_serviceforyou, params(caster, level),
+      kind: :dance,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 5,
+      lesson_level: Caster.lesson_level(caster, @lesson_id)
+    )
   end
 
   defp params(caster, level) do

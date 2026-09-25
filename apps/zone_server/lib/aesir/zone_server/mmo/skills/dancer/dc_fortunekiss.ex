@@ -8,8 +8,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekiss do
   cast plus 0.3 s fixed, a 0.3 s delay, a 20 s cooldown, and 3 minutes within 15
   cells. Pre-renewal: critical 10 plus level plus LUK/10 plus Dancing Lesson/2
   read from the performer at cast with no critical damage bonus, an instant cast,
-  no cooldown, and 2 minutes; the classic ground-dance model is deferred to a
-  skill-unit performance subsystem.
+  no cooldown and a 2-minute 7x7 field. Everyone inside except the performer
+  receives the buff, which lingers 20 seconds after leaving; the performer
+  pays 1 SP every 4 seconds.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -34,18 +35,17 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekiss do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Skill.Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(
-      caster,
-      definition,
-      level,
-      :sc_fortunekiss,
-      params(caster, level),
-      []
+    Performance.perform(caster, definition, level, :sc_fortunekiss, params(caster, level),
+      kind: :dance,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 4,
+      lesson_level: Caster.lesson_level(caster, @lesson_id)
     )
   end
 

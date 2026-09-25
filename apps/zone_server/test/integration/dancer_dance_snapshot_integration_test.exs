@@ -4,6 +4,8 @@ defmodule Aesir.ZoneServer.Integration.DancerDanceSnapshotIntegrationTest do
   import Ecto.Query
 
   @moduletag :capture_log
+  @moduletag integration_pre_re: false
+  @moduletag game_mode: :renewal
 
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account

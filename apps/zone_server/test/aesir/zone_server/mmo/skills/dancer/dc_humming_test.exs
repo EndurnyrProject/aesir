@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
 
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcHumming
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
@@ -63,6 +64,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "snapshots only living online party members in range and leaves the status after movement" do
     caster = player(1, party_id: 10)
     nearby = player(2, x: 115, y: 115)
@@ -120,6 +122,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
              StatusStorage.get_status(:player, 2, :sc_humming)
   end
 
+  @tag game_mode: :renewal
   test "an unpartied caster affects only themself" do
     caster = player(1, party_id: 0)
     register(caster)
@@ -170,21 +173,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHummingTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic snapshots DEX-scaled HIT for one minute" do
+  test "classic passes DEX-scaled HIT to a one-minute field" do
     caster = player(1)
-    register(caster)
     dex = Stats.get_effective_stat(caster.stats, :dex)
-    baseline = Stats.calculate_stats(caster.stats, caster.character_id)
 
-    assert {:ok, _result} = DcHumming.cast(caster, :self, 1, DcHumming.definition())
+    expect(Performance, :perform, fn ^caster, definition, 1, :sc_humming, params, opts ->
+      assert definition.duration == List.duplicate(60_000, 10)
+      assert params[:val1] == 1
+      assert params[:val2] == 3 + div(dex, 10)
+      assert opts[:kind] == :dance
+      assert opts[:reach] == :everyone
+      assert opts[:upkeep] == 5
+      assert opts[:linger_ms] == 20_000
+      {:ok, caster}
+    end)
 
-    assert %{val1: 1, val2: val2, expires_at: expires_at, started_at: started_at} =
-             StatusStorage.get_status(:player, caster.character_id, :sc_humming)
-
-    assert val2 == 3 + div(dex, 10)
-    assert expires_at - started_at == 60_000
-
-    with_humming = Stats.calculate_stats(caster.stats, caster.character_id)
-    assert with_humming.combat_stats.hit == baseline.combat_stats.hit + val2
+    assert {:ok, ^caster} = DcHumming.cast(caster, :self, 1, DcHumming.definition())
   end
 end

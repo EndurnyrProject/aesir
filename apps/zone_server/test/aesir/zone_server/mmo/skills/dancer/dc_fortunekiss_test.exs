@@ -4,10 +4,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
 
   import Aesir.TestEtsSetup
 
-  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekiss
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager, as: PartyManager
   alias Aesir.ZoneServer.Party.Member
@@ -44,32 +45,67 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
     assert definition.cooldown == List.duplicate(20_000, 10)
   end
 
+  @tag game_mode: :renewal
   test "snapshots level values that grant critical through the stat pipeline" do
-    {base_rate, duration, cases} =
-      %{
-        renewal: {324, 180_000, [{1, 334}, {10, 424}]},
-        pre_renewal: {353, 120_000, [{1, 563}, {10, 653}]}
-      }[GameMode.mode()]
-
-    for {level, expected_rate} <- cases do
+    for {level, expected_rate} <- [{1, 334}, {10, 424}] do
       caster = player(32_900 + level)
       register(caster)
 
       baseline = calculate_stats(caster.character_id)
       assert Stats.get_effective_stat(baseline, :luk) == 103
-      assert baseline.combat_stats.critical_rate == base_rate
+      assert baseline.combat_stats.critical_rate == 324
       assert {:ok, _result} = DcFortunekiss.cast(caster, :self, level, DcFortunekiss.definition())
 
       assert %{val1: ^level, expires_at: expires_at, started_at: started_at} =
                StatusStorage.get_status(:player, caster.character_id, :sc_fortunekiss)
 
-      assert expires_at - started_at == duration
+      assert expires_at - started_at == 180_000
       result = calculate_stats(caster.character_id)
       assert result.combat_stats.critical_rate == expected_rate
       assert result.combat_stats.critical == div(expected_rate, 10)
     end
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic passes LUK-scaled critical to a two-minute field" do
+    caster = player(32901)
+    luk = Stats.get_effective_stat(caster.stats, :luk)
+
+    expect(Performance, :perform, fn ^caster, definition, 1, :sc_fortunekiss, params, opts ->
+      assert definition.duration == List.duplicate(120_000, 10)
+      assert params[:val1] == 1
+      assert params[:val2] == 11 + div(luk, 10)
+      assert opts[:kind] == :dance
+      assert opts[:reach] == :everyone
+      assert opts[:upkeep] == 4
+      assert opts[:linger_ms] == 20_000
+      {:ok, caster}
+    end)
+
+    assert {:ok, ^caster} = DcFortunekiss.cast(caster, :self, 1, DcFortunekiss.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic critical status still increases the recipient's rate" do
+    for {level, expected_rate} <- [{1, 563}, {10, 653}] do
+      caster = player(32_900 + level)
+      register(caster)
+      baseline = calculate_stats(caster.character_id)
+      assert baseline.combat_stats.critical_rate == 353
+
+      :ok =
+        StatusInterpreter.apply_status(:player, caster.character_id, :sc_fortunekiss,
+          val1: level,
+          val2: 10 + level + div(Stats.get_effective_stat(baseline, :luk), 10),
+          caster_id: caster.character_id,
+          duration: 120_000
+        )
+
+      assert calculate_stats(caster.character_id).combat_stats.critical_rate == expected_rate
+    end
+  end
+
+  @tag game_mode: :renewal
   test "snapshots only living online party members in range and leaves the status after movement" do
     caster = player(101, party_id: 10)
     nearby = player(102, x: 115, y: 115)
@@ -127,6 +163,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcFortunekissTest do
              StatusStorage.get_status(:player, 102, :sc_fortunekiss)
   end
 
+  @tag game_mode: :renewal
   test "an unpartied caster affects only themself" do
     caster = player(201, party_id: 0)
     bystander = player(202, x: 105)

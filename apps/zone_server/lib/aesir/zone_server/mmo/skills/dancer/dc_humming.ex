@@ -6,9 +6,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHumming do
   Renewal: HIT 4 per level, a 1 s cast plus 0.3 s fixed, a 0.3 s delay, a 20 s
   cooldown, and 3 minutes within 15 cells. Pre-renewal: HIT 1 plus 2 per level plus
   DEX/10 plus Dancing Lesson read from the performer at cast, an instant cast, no
-  cooldown, and 1 minute; the classic ground-dance model (a 7x7 field affecting
-  whoever stands in it while the performer keeps dancing) is deferred to a
-  skill-unit performance subsystem, so the party-buff model runs in both modes.
+  cooldown and a 1-minute 7x7 field. Everyone inside except the performer
+  receives the buff, which lingers 20 seconds after leaving; the performer
+  pays 1 SP every 5 seconds.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -33,12 +33,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcHumming do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(caster, definition, level, :sc_humming, params(caster, level), [])
+    Performance.perform(caster, definition, level, :sc_humming, params(caster, level),
+      kind: :dance,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 5,
+      lesson_level: Caster.lesson_level(caster, @lesson_id)
+    )
   end
 
   defp params(caster, level) do
