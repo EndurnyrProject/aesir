@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
   alias Aesir.ZoneServer.CombatTestHelper
   alias Aesir.ZoneServer.Mmo.Combat.CriticalHits
   alias Aesir.ZoneServer.Mmo.Combat.DamageCalculator
+  alias Aesir.ZoneServer.Mmo.Combat.DamageInputs
   alias Aesir.ZoneServer.Mmo.Combat.ElementModifiers
   alias Aesir.ZoneServer.Mmo.Combat.EquipmentBonuses
   alias Aesir.ZoneServer.Mmo.Combat.MagicDamageCalculator
@@ -99,7 +100,81 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
              DamageCalculator.calculate_base_attack(put_in(attacker.combat_stats.atk, 9_999))
   end
 
+  test "weight ATK adds to weapon equipment ATK but not shield-based hits" do
+    attacker = CombatTestHelper.create_player_combatant(flat_atk: 20)
+
+    normal = DamageInputs.player_attack_parts(attacker, [], :primary, false)
+    weighted = DamageInputs.player_attack_parts(attacker, [weight_atk: 15], :primary, false)
+
+    shield =
+      DamageInputs.player_attack_parts(
+        attacker,
+        [shield_base: 40, weight_atk: 15],
+        :primary,
+        false
+      )
+
+    assert weighted.flat_atk == normal.flat_atk + 15
+    assert shield.flat_atk == 0
+  end
+
   describe "calculate_damage/2" do
+    test "ignore_size bypasses a spear's small-target penalty for this hit" do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ -> %{} end)
+      stub(SizeModifiers, :get_modifier, fn :one_handed_spear, :small, _ -> 75 end)
+
+      attacker = player_with_weapon(200)
+
+      attacker = %{
+        attacker
+        | weapon: %{attacker.weapon | type: :one_handed_spear},
+          right_hand: %{attacker.right_hand | subtype: :one_handed_spear}
+      }
+
+      defender =
+        CombatTestHelper.create_mob_combatant(
+          size: :small,
+          def: 0,
+          soft_def: 0,
+          element: :neutral
+        )
+
+      :rand.seed(:exsss, {11, 12, 13})
+      {:ok, reduced} = DamageCalculator.calculate_damage(attacker, defender, skip_crit: true)
+      :rand.seed(:exsss, {11, 12, 13})
+
+      {:ok, full} =
+        DamageCalculator.calculate_damage(attacker, defender, skip_crit: true, ignore_size: true)
+
+      assert full.damage > reduced.damage
+    end
+
+    test "post-defense ATK excludes listed skills without blocking other skills" do
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn
+        :player, 1001 -> %{post_defense_atk: 50, post_defense_atk_excludes: [397]}
+        _, _ -> %{}
+      end)
+
+      attacker = CombatTestHelper.create_player_combatant(str: 70, luk: 1)
+      defender = CombatTestHelper.create_mob_combatant(def: 0, soft_def: 0, element: :neutral)
+
+      :rand.seed(:exsss, {11, 12, 13})
+
+      {:ok, boosted} =
+        DamageCalculator.calculate_damage(attacker, defender, skill_id: 56, skip_crit: true)
+
+      :rand.seed(:exsss, {11, 12, 13})
+
+      {:ok, excluded} =
+        DamageCalculator.calculate_damage(attacker, defender, skill_id: 397, skip_crit: true)
+
+      assert boosted.damage == excluded.damage + 50
+    end
+
     test "calculates basic player vs mob damage" do
       stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)

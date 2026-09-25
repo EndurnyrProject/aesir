@@ -32,7 +32,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
       PhysicalAttack.rate(status + weapon + equipment + percent_atk, Map.get(context, :patk, 0))
 
     attack =
-      (core + mastery)
+      (div(core * Map.get(context, :base_atk_rate, 100), 100) + mastery)
       |> critical_equipment_bonus(context)
       |> PhysicalAttack.range_damage(context)
 
@@ -44,6 +44,7 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.Renewal do
     |> reduce_res(context)
     |> PhysicalAttack.apply_defense(context, Defense)
     |> trunc()
+    |> Kernel.+(Map.get(context, :post_defense_atk, 0))
     |> PhysicalAttack.rate(Map.get(context, :skill_atk_rate, 0))
     |> PhysicalAttack.rate(-Map.get(context, :skill_taken_rate, 0))
     |> max(1)

@@ -44,6 +44,27 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttackTest do
     assert PreRenewal.calculate(parts(), context) == 308
   end
 
+  test "post-defense ATK adds exactly 100 before later scaling in both modes" do
+    context = neutral_context()
+
+    for implementation <- [Renewal, PreRenewal] do
+      base = implementation.calculate(parts(), context)
+
+      assert implementation.calculate(parts(), Map.put(context, :post_defense_atk, 100)) ==
+               base + 100
+    end
+  end
+
+  test "Renewal base ATK rate scales only the non-mastery core" do
+    context = neutral_context()
+    with_mastery = parts()
+    without_mastery = %{with_mastery | mastery_atk: 0}
+
+    assert Renewal.calculate(with_mastery, Map.put(context, :base_atk_rate, 70)) ==
+             div(Renewal.calculate(without_mastery, context) * 70, 100) +
+               with_mastery.mastery_atk
+  end
+
   test "skill bonuses and classic refine/mastery retain their positions around DEF" do
     context =
       neutral_context()

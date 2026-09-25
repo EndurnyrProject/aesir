@@ -814,13 +814,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Stats do
 
   def shield_stats(%Equipment{left_hand: nameid} = equipment, inventory) do
     if shield?(equipment) do
-      {shield_weight(nameid), left_hand_refine(inventory)}
+      {item_weight(nameid), left_hand_refine(inventory)}
     else
       nil
     end
   end
 
-  defp shield_weight(nameid) do
+  @doc "Returns raw item weight and equipped refine for the right-hand weapon, or nil if unarmed."
+  @spec right_hand_weapon_stats(Equipment.t(), [InventoryItem.t()]) ::
+          {non_neg_integer(), non_neg_integer()} | nil
+  def right_hand_weapon_stats(%Equipment{right_hand: nil}, _inventory), do: nil
+
+  def right_hand_weapon_stats(%Equipment{right_hand: nameid}, inventory) do
+    refine =
+      Enum.find_value(inventory, 0, fn %InventoryItem{
+                                         nameid: item_id,
+                                         equip: equip,
+                                         refine: value
+                                       } ->
+        if item_id == nameid and :right_hand in EquipLocation.bitmask_to_location_atoms(equip),
+          do: value
+      end)
+
+    {item_weight(nameid), refine}
+  end
+
+  defp item_weight(nameid) do
     case ItemManagement.get_item_by_id(nameid) do
       {:ok, %ItemDefinition{weight: weight}} -> weight
       _ -> 0

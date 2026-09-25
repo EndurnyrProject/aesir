@@ -34,7 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
 
     parts = %{
       status_atk: snapshot.status_atk,
-      flat_atk: snapshot.flat_atk,
+      flat_atk: snapshot.flat_atk + Keyword.get(opts, :weight_atk, 0),
       mastery_atk: snapshot.mastery_atk,
       hand: if(hand, do: hand.slot, else: :right_hand),
       source: :weapon,

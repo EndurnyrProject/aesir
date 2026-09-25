@@ -60,6 +60,8 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack do
           optional(:weapon_bonus) => integer(),
           optional(:flat_bonus) => integer(),
           optional(:atk_rate) => integer(),
+          optional(:post_defense_atk) => integer(),
+          optional(:base_atk_rate) => integer(),
           optional(:damage_multiplier) => number(),
           optional(:global_race_rate) => integer(),
           optional(:long_atk_rate) => integer(),

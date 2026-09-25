@@ -1435,6 +1435,19 @@ defmodule Aesir.ZoneServer.Unit.Player.StatsTest do
     end
   end
 
+  describe "right_hand_weapon_stats/2" do
+    test "returns equipped spear weight and instance refine" do
+      row = refined(@javelin, @right_hand, 7)
+      equipment = Stats.equipment_from_inventory([row])
+
+      assert Stats.right_hand_weapon_stats(equipment, [row]) == {700, 7}
+    end
+
+    test "returns nil when bare-handed" do
+      assert Stats.right_hand_weapon_stats(%Equipment{}, []) == nil
+    end
+  end
+
   describe "shield_defense_contribution/1" do
     test "returns the DEF the equipped shield adds to the folded equipment" do
       character = base_character()

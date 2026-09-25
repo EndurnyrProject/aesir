@@ -30,7 +30,10 @@ defmodule Aesir.ZoneServer.Mmo.Mechanics.PhysicalAttack.PreRenewal do
       |> PhysicalAttack.status_damage(context)
 
     defended = if parts.source == :shield, do: skilled, else: defend(skilled, context)
-    mastered = max(defended + parts.refine_atk, 1) + parts.mastery_atk
+
+    mastered =
+      max(defended + parts.refine_atk, 1) + parts.mastery_atk +
+        Map.get(context, :post_defense_atk, 0)
 
     rates =
       Map.update!(

@@ -88,6 +88,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:force_crit` - guarantee a critical, applying the crit multiplier without
       rolling (Auto Counter's counter strike); wins over `:skip_crit`
     - `:bonus_atk` - flat ATK added after the skill ratio, before defense
+    - `:base_atk_rate` - percent of the Renewal non-mastery attack core (default `100`)
+    - `:weight_atk` - flat weapon equipment ATK from item weight (default `0`)
+    - `:ignore_size` - bypass weapon-size penalty for this hit (default `false`)
     - `:base_damage` - non-negative integer replacing only the unit-specific
       base attack roll; the normal ratio/modifier/defense pipeline still applies
     - `:fixed_damage` - deal exactly this value, bypassing weapon/defense/flee
@@ -674,6 +677,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       :skip_crit,
       :force_crit,
       :bonus_atk,
+      :base_atk_rate,
+      :weight_atk,
+      :ignore_size,
       :base_damage,
       :fixed_damage,
       :element,

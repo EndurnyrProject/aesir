@@ -366,7 +366,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       size_rate:
         if(parts.source == :shield,
           do: 100,
-          else: trunc(apply_size_modifier(100, attacker, defender))
+          else: trunc(apply_size_modifier(100, attacker, defender, opts))
         ),
       weapon_element: DamageShared.apply_element(1, element, defender, attacker_modifiers),
       neutral_element: DamageShared.apply_element(1, :neutral, defender, attacker_modifiers),
@@ -386,7 +386,13 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
         if(defense_mode in [:simple, :ignore, :soft_only], do: defense_mode, else: :normal),
       skill_id: skill_id,
       skill_ratio: Keyword.get(opts, :skill_ratio, 100),
+      base_atk_rate: Keyword.get(opts, :base_atk_rate, 100),
       bonus_atk: Keyword.get(opts, :bonus_atk, 0),
+      post_defense_atk:
+        if(skill_id in Map.get(attacker_modifiers, :post_defense_atk_excludes, []),
+          do: 0,
+          else: Map.get(attacker_modifiers, :post_defense_atk, 0)
+        ),
       skill_atk_rate: attack_rates.skill,
       skill_taken_rate: taken_rates.skill,
       global_race_rate: RaceModifiers.dragonology_atk_rate(attacker, defender.race),
@@ -579,7 +585,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     skill_id = Keyword.get(opts, :skill_id)
     attack_element = forced_element || resolve_attack_element(attacker, attacker_modifiers)
 
-    sized_damage = apply_size_modifier(base_damage, attacker, defender)
+    sized_damage = apply_size_modifier(base_damage, attacker, defender, opts)
 
     total_atk =
       sized_damage
@@ -971,13 +977,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end)
   end
 
-  defp apply_size_modifier(damage, %{combat_stats: %{ignore_size_penalty: true}}, _defender),
-    do: damage
-
-  defp apply_size_modifier(damage, attacker, defender) do
+  defp apply_size_modifier(damage, attacker, defender, opts) do
     # `bNoSizeFix` on the attacker's equipment ignores the size modifier entirely,
     # like the status-driven `ignore_size_penalty` above.
-    if Map.get(Map.get(attacker, :equip_modifiers, %{}), :no_size_fix, 0) > 0 do
+    if Keyword.get(opts, :ignore_size, false) or
+         Map.get(attacker.combat_stats, :ignore_size_penalty, false) or
+         Map.get(Map.get(attacker, :equip_modifiers, %{}), :no_size_fix, 0) > 0 do
       damage
     else
       modifier = SizeModifiers.get_modifier(attacker.weapon.type, defender.size, attacker.riding)
