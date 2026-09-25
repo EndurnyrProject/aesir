@@ -82,9 +82,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.VendingListRequest
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingPurchaseRequest
+  alias Aesir.Net.WaitingRoomChangeOwnerRequest
+  alias Aesir.Net.WaitingRoomChangeStatusRequest
   alias Aesir.Net.WaitingRoomChatRequest
   alias Aesir.Net.WaitingRoomCreateRequest
   alias Aesir.Net.WaitingRoomJoinRequest
+  alias Aesir.Net.WaitingRoomKickRequest
   alias Aesir.Net.WaitingRoomLeaveRequest
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
   alias Aesir.ZoneServer.Network.MessageRouter
@@ -651,6 +654,29 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
         state
       ) do
     WaitingRoomHandler.create(state, title, password, limit, public?)
+  end
+
+  # WaitingRoomKickRequest - Room owner kicks a member by name.
+  def handle_message(%WaitingRoomKickRequest{name: name}, state) do
+    WaitingRoomHandler.kick(state, name)
+  end
+
+  # WaitingRoomChangeOwnerRequest - Room owner hands the room to a member by name.
+  def handle_message(%WaitingRoomChangeOwnerRequest{name: name}, state) do
+    WaitingRoomHandler.change_owner(state, name)
+  end
+
+  # WaitingRoomChangeStatusRequest - Room owner edits title, password, limit, and public flag.
+  def handle_message(
+        %WaitingRoomChangeStatusRequest{
+          title: title,
+          password: password,
+          limit: limit,
+          public: public?
+        },
+        state
+      ) do
+    WaitingRoomHandler.change_status(state, title, password, limit, public?)
   end
 
   # WaitingRoomLeaveRequest - Player leaves the waiting room they are currently in.

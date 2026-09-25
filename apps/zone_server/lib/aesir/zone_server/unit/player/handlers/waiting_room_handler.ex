@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
   alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler
+  alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
   alias Aesir.ZoneServer.Unit.Player.StateCommit
@@ -245,6 +246,106 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
 
     %{game_state | waiting_room: nil}
   end
+
+  @doc """
+  Kicks the member named `name` from the caller's player room, barring them from
+  rejoining. Ignored unless the caller owns the room; the owner cannot kick
+  themselves, and GMs at or above `Config.chat_room_gm_level/0` are immune. The
+  store is updated here, then the victim's session is told to clear its binding.
+  """
+  @spec kick(session_state(), String.t()) :: {:noreply, session_state()}
+  def kick(%{game_state: %PlayerState{waiting_room: room_id} = game_state} = state, name)
+      when not is_nil(room_id) and name != game_state.character_name do
+    with {:ok, room} <- WaitingRoom.get(room_id),
+         true <- WaitingRoom.owner?(room, game_state.character_id),
+         %WaitingRoom.Member{} = target <- Enum.find(room.members, &(&1.name == name)),
+         false <- gm_privileged?(target.account_id),
+         {:ok, kicked} <- WaitingRoom.kick(room_id, name) do
+      with {:ok, pid} <- UnitRegistry.get_player_pid(kicked.char_id),
+           do: PlayerSession.kick_from_waiting_room(pid, room_id)
+
+      broadcast_member_update(room_id, kicked, joined: false, kicked: true)
+      broadcast_room_info(room_id)
+    end
+
+    {:noreply, state}
+  end
+
+  def kick(state, _name), do: {:noreply, state}
+
+  @doc """
+  Hands the caller's player room to the member named `name`. Ignored unless the
+  caller owns the room and `name` is another member. Members are told both role
+  changes, and the bubble moves from the caller to the new owner.
+  """
+  @spec change_owner(session_state(), String.t()) :: {:noreply, session_state()}
+  def change_owner(%{game_state: %PlayerState{waiting_room: room_id} = game_state} = state, name)
+      when not is_nil(room_id) do
+    with {:ok, room} <- WaitingRoom.change_owner(room_id, game_state.character_id, name) do
+      ids = Enum.map(room.members, & &1.char_id)
+      {:player, new_owner} = room.owner
+
+      Broadcast.to_players(ids, %WaitingRoomRoleChanged{
+        room_id: room_id,
+        char_id: new_owner,
+        owner: true
+      })
+
+      Broadcast.to_players(ids, %WaitingRoomRoleChanged{
+        room_id: room_id,
+        char_id: game_state.character_id,
+        owner: false
+      })
+
+      broadcast_room_removed_at(game_state.map_name, game_state.x, game_state.y, room_id)
+      broadcast_room_info(room_id)
+    end
+
+    {:noreply, state}
+  end
+
+  def change_owner(state, _name), do: {:noreply, state}
+
+  @doc """
+  Edits the caller's player room (title, password, limit, public flag), with the
+  same truncation and clamping as creation. Ignored unless the caller owns the
+  room. Members and nearby players receive the updated room info.
+  """
+  @spec change_status(session_state(), String.t(), String.t(), non_neg_integer(), boolean()) ::
+          {:noreply, session_state()}
+  def change_status(
+        %{game_state: %PlayerState{waiting_room: room_id} = game_state} = state,
+        title,
+        pass,
+        limit,
+        public?
+      )
+      when not is_nil(room_id) do
+    with {:ok, room} <-
+           WaitingRoom.change_status(
+             room_id,
+             game_state.character_id,
+             title,
+             pass,
+             limit,
+             public?
+           ) do
+      packet = info_packet(room)
+      Broadcast.to_players(Enum.map(room.members, & &1.char_id), packet)
+
+      Broadcast.to_in_range(
+        game_state.map_name,
+        game_state.x,
+        game_state.y,
+        Config.view_range(),
+        packet
+      )
+    end
+
+    {:noreply, state}
+  end
+
+  def change_status(state, _title, _pass, _limit, _public?), do: {:noreply, state}
 
   @doc """
   Clears the player's room binding when they are kicked or the room is deleted,

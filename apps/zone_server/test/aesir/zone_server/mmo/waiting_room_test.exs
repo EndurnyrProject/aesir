@@ -236,6 +236,10 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoomTest do
     test "an unknown name is not found", %{room_id: room_id} do
       assert {:error, :not_found} = WaitingRoom.change_owner(room_id, 1, "nobody")
     end
+
+    test "the owner's own name is not found", %{room_id: room_id} do
+      assert {:error, :not_found} = WaitingRoom.change_owner(room_id, 1, "char1")
+    end
   end
 
   describe "change_status/6" do

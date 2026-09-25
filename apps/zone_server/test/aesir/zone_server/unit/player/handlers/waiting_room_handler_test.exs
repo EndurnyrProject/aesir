@@ -470,4 +470,119 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
       assert :error = WaitingRoom.get(room_id)
     end
   end
+
+  describe "owner commands" do
+    setup do
+      capture_broadcasts()
+      owner = %WaitingRoom.Member{char_id: 1, account_id: 10, name: "TestChar"}
+      {:ok, room} = WaitingRoom.create_player_room(owner, "P", "", 5, true)
+      {:ok, _} = WaitingRoom.join(room.room_id, member(2), 50, 0, "", [])
+      {:ok, _} = WaitingRoom.join(room.room_id, member(3), 50, 0, "", [])
+      register_player(1, "test_map", 100, 100)
+      register_player(2, "test_map", 110, 110)
+
+      %{
+        room_id: room.room_id,
+        owner: player(waiting_room: room.room_id),
+        member: player(char_id: 3, name: "char3", account_id: 30, waiting_room: room.room_id)
+      }
+    end
+
+    test "kick removes the member, bars them, and tells their session", ctx do
+      {:ok, victim_pid} = MockSession.start_link(self())
+
+      UnitRegistry.register_unit(
+        :player,
+        2,
+        PlayerState,
+        %PlayerState{character_id: 2},
+        victim_pid
+      )
+
+      stub(Auth, :get_account!, fn 20 -> %{gm_level: 0} end)
+
+      assert {:noreply, _} = WaitingRoomHandler.kick(ctx.owner, "char2")
+
+      assert {:ok, room} = WaitingRoom.get(ctx.room_id)
+      assert Enum.map(room.members, & &1.char_id) == [1, 3]
+      assert MapSet.member?(room.kick_list, 2)
+
+      room_id = ctx.room_id
+      assert_receive {:mock_cast_received, {:waiting_room, {:kick, ^room_id}}}
+
+      assert_receive {:to_players, [1, 3],
+                      %WaitingRoomMemberUpdate{joined: false, kicked: true, char_id: 2}}
+
+      assert_receive {:in_range, _, %WaitingRoomInfo{member_count: 2}}
+    end
+
+    test "kick changes nothing for a non-owner, an unknown name, the owner, or a GM", ctx do
+      stub(Auth, :get_account!, fn 20 -> %{gm_level: 60} end)
+
+      for {state, name} <- [
+            {ctx.member, "char2"},
+            {ctx.owner, "nobody"},
+            {ctx.owner, "TestChar"},
+            {ctx.owner, "char2"}
+          ] do
+        assert {:noreply, ^state} = WaitingRoomHandler.kick(state, name)
+      end
+
+      assert [1, 2, 3] = ctx.room_id |> WaitingRoom.members() |> Enum.map(& &1.char_id)
+      refute_received {:to_players, _, _}
+      refute_received {:in_range, _, _}
+    end
+
+    test "change_owner hands the room over and moves the bubble", ctx do
+      room_id = ctx.room_id
+
+      assert {:noreply, _} = WaitingRoomHandler.change_owner(ctx.owner, "char2")
+
+      assert {:ok, %{owner: {:player, 2}}} = WaitingRoom.get(room_id)
+
+      assert_receive {:to_players, _,
+                      %WaitingRoomRoleChanged{room_id: ^room_id, char_id: 2, owner: true}}
+
+      assert_receive {:to_players, _,
+                      %WaitingRoomRoleChanged{room_id: ^room_id, char_id: 1, owner: false}}
+
+      assert_receive {:in_range, {"test_map", 100, 100}, %WaitingRoomRemoved{room_id: ^room_id}}
+
+      assert_receive {:in_range, {"test_map", 110, 110},
+                      %WaitingRoomInfo{room_id: ^room_id, owner_gid: 2}}
+    end
+
+    test "change_owner does nothing for a non-owner or an unknown name", ctx do
+      assert {:noreply, _} = WaitingRoomHandler.change_owner(ctx.member, "char2")
+      assert {:noreply, _} = WaitingRoomHandler.change_owner(ctx.owner, "nobody")
+
+      assert {:ok, %{owner: {:player, 1}}} = WaitingRoom.get(ctx.room_id)
+      refute_received {:to_players, _, _}
+      refute_received {:in_range, _, _}
+    end
+
+    test "change_status edits the room and tells members and nearby players", ctx do
+      room_id = ctx.room_id
+
+      assert {:noreply, _} =
+               WaitingRoomHandler.change_status(ctx.owner, "New", "pw", 30, false)
+
+      assert {:ok, %{title: "New", pass: "pw", limit: 20, public?: false}} =
+               WaitingRoom.get(room_id)
+
+      assert_receive {:to_players, [1, 2, 3],
+                      %WaitingRoomInfo{room_id: ^room_id, title: "New", limit: 20, public: false}}
+
+      assert_receive {:in_range, {"test_map", 100, 100},
+                      %WaitingRoomInfo{room_id: ^room_id, title: "New", limit: 20, public: false}}
+    end
+
+    test "change_status does nothing for a non-owner", ctx do
+      assert {:noreply, _} = WaitingRoomHandler.change_status(ctx.member, "New", "", 5, true)
+
+      assert {:ok, %{title: "P"}} = WaitingRoom.get(ctx.room_id)
+      refute_received {:to_players, _, _}
+      refute_received {:in_range, _, _}
+    end
+  end
 end

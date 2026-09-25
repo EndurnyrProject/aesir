@@ -16,8 +16,11 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.TradeRequest
   alias Aesir.Net.UseItem
+  alias Aesir.Net.WaitingRoomChangeOwnerRequest
+  alias Aesir.Net.WaitingRoomChangeStatusRequest
   alias Aesir.Net.WaitingRoomCreateRequest
   alias Aesir.Net.WaitingRoomJoinRequest
+  alias Aesir.Net.WaitingRoomKickRequest
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
@@ -84,6 +87,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
 
     join = %WaitingRoomJoinRequest{room_id: 42, password: "pw"}
     assert {:noreply, %{some: :state}} = PacketHandler.handle_message(join, %{some: :state})
+  end
+
+  test "routes chat-room owner commands" do
+    expect(WaitingRoomHandler, :kick, fn s, "bob" -> {:noreply, s} end)
+    expect(WaitingRoomHandler, :change_owner, fn s, "amy" -> {:noreply, s} end)
+    expect(WaitingRoomHandler, :change_status, fn s, "T", "pw", 7, true -> {:noreply, s} end)
+
+    for message <- [
+          %WaitingRoomKickRequest{name: "bob"},
+          %WaitingRoomChangeOwnerRequest{name: "amy"},
+          %WaitingRoomChangeStatusRequest{title: "T", password: "pw", limit: 7, public: true}
+        ] do
+      assert {:noreply, %{some: :state}} = PacketHandler.handle_message(message, %{some: :state})
+    end
   end
 
   describe "room gate" do

@@ -257,14 +257,14 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
 
   @doc """
   Hands a player room to the member named `next_name`, swapping them into slot 0.
-  Only the current owner may do this.
+  Only the current owner may do this; the owner's own name is not found.
   """
   @spec change_owner(room_id(), integer(), String.t()) ::
           {:ok, t()} | {:error, :not_owner | :not_found}
   def change_owner(room_id, owner_char_id, next_name) do
     owner_update(room_id, owner_char_id, fn room ->
       case Enum.find_index(room.members, &(&1.name == next_name)) do
-        nil ->
+        index when index in [nil, 0] ->
           {:error, :not_found}
 
         index ->
