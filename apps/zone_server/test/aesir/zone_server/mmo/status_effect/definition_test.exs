@@ -1,12 +1,29 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   defmodule MinimalStatus do
     use Aesir.ZoneServer.Mmo.StatusEffect.Definition, id: :sc_test_minimal, no_dispel: false
+  end
+
+  defmodule ModeStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mode,
+      no_dispel: false,
+      end_on_start: [renewal: [:sc_whistle], pre_renewal: []],
+      no_save: [renewal: false, pre_renewal: true]
+  end
+
+  defmodule PlainStatus do
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_plain,
+      no_dispel: false,
+      end_on_start: [:sc_whistle],
+      no_save: true
   end
 
   defmodule FullStatus do
@@ -53,6 +70,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   end
 
   describe "use macro" do
+    test "plain end_on_start and no_save retain their values" do
+      assert PlainStatus.metadata().end_on_start == [:sc_whistle]
+      assert PlainStatus.metadata().no_save == true
+    end
+
+    test "mode-keyed metadata resolves at runtime in either mode" do
+      Mimic.set_mimic_private()
+      Mimic.stub(GameMode, :mode, fn -> :pre_renewal end)
+      assert ModeStatus.metadata().end_on_start == []
+      assert ModeStatus.metadata().no_save == true
+
+      Mimic.stub(GameMode, :mode, fn -> :renewal end)
+      assert ModeStatus.metadata().end_on_start == [:sc_whistle]
+      assert ModeStatus.metadata().no_save == false
+    end
+
     test "action restriction properties compile and are queryable" do
       defmodule ActionRestricted do
         use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -194,6 +227,28 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   end
 
   describe "compile-time metadata validation" do
+    test "rejects incomplete mode-keyed metadata and names the status" do
+      assert_raise ArgumentError, ~r/IncompleteModeStatus.*end_on_start/s, fn ->
+        defmodule IncompleteModeStatus do
+          use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+            id: :sc_incomplete_mode,
+            no_dispel: false,
+            end_on_start: [renewal: [:sc_whistle]]
+        end
+      end
+    end
+
+    test "rejects extra mode-keyed metadata and names the status" do
+      assert_raise ArgumentError, ~r/ExtraModeStatus.*no_save/s, fn ->
+        defmodule ExtraModeStatus do
+          use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+            id: :sc_extra_mode,
+            no_dispel: false,
+            no_save: [renewal: false, pre_renewal: true, extra: true]
+        end
+      end
+    end
+
     test "raises when id is missing" do
       assert_raise ArgumentError, ~r/id/, fn ->
         defmodule MissingId do

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FortuneKiss do
   @moduledoc """
-  Finite Lady Luck critical snapshot.
+  Renewal Lady Luck is a finite snapshot; pre-renewal holds a field buff
+  that lingers on exit.
 
   Renewal derives flat critical and critical damage from the dance level;
   pre-renewal reads the critical the performer snapshotted at cast and adds no
@@ -10,9 +11,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.FortuneKiss do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_fortunekiss,
     no_dispel: true,
+    no_save: [renewal: false, pre_renewal: true],
     properties: [:buff],
     calc_flags: [:critical],
-    end_on_start: [:sc_humming, :sc_dontforgetme, :sc_fortunekiss, :sc_serviceforyou],
+    end_on_start: [
+      renewal: [:sc_humming, :sc_dontforgetme, :sc_fortunekiss, :sc_serviceforyou],
+      pre_renewal: []
+    ],
     duration: 180_000,
     remove_on_death: false,
     remove_on_map_change: false,

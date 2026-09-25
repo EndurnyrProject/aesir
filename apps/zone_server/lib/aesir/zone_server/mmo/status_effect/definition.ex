@@ -37,7 +37,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...)
     - `:prevented_by` - statuses that prevent this one from being applied
     - `:conflicts_with` - statuses that cannot coexist with this one
-    - `:end_on_start` - statuses removed when this one is applied
+    - `:end_on_start` - statuses removed when this one is applied; accepts a plain
+      list or `[renewal: list, pre_renewal: list]`
     - `:allow_skills` - skill ids exempt from this status' `:prevents_skills`, e.g.
       the skill that toggles the status off (Play Dead recasts NV_TRICKDEAD)
     - `:blocked_skills` - skill ids denied even when the status does not broadly
@@ -51,9 +52,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     - `:tick_interval` - default tick interval in milliseconds
     - `:duration` - base duration in milliseconds
     - `:permanent` - when true, the status never auto-expires (ignores duration)
-    - `:no_save` - when true, the status is not persisted across logout (mirrors
-      rAthena's `NoSave` status flag); use it for session-bound statuses that are
-      rebuilt from other state or tied to live world objects
+    - `:no_save` - when true, the status is not persisted across logout; accepts
+      a boolean or `[renewal: boolean, pre_renewal: boolean]` for mode-specific
+      session-bound statuses
     - `:remove_on_map_change` - when true, a cross-map warp ends the status through
       the ordinary removal path (mirrors rAthena's `SCF_REMOVEONCHGMAP`); use it for
       statuses tied to a specific location or a live pairing that cannot survive the
@@ -376,19 +377,27 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
   defmacro __using__(opts) do
     quote bind_quoted: [opts: opts] do
+      alias Aesir.Commons.GameMode
+
       @behaviour Aesir.ZoneServer.Mmo.StatusEffect.Definition
       @before_compile Aesir.ZoneServer.Mmo.StatusEffect.Definition
 
-      @status_effect_metadata Aesir.ZoneServer.Mmo.StatusEffect.Definition.validate_metadata!(
-                                opts,
-                                __MODULE__
-                              )
+      @status_effect_metadata_by_mode %{
+        renewal:
+          opts
+          |> Aesir.ZoneServer.Mmo.StatusEffect.Definition.resolve_mode(:renewal)
+          |> Aesir.ZoneServer.Mmo.StatusEffect.Definition.validate_metadata!(__MODULE__),
+        pre_renewal:
+          opts
+          |> Aesir.ZoneServer.Mmo.StatusEffect.Definition.resolve_mode(:pre_renewal)
+          |> Aesir.ZoneServer.Mmo.StatusEffect.Definition.validate_metadata!(__MODULE__)
+      }
 
       @impl true
-      def id, do: @status_effect_metadata.id
+      def id, do: @status_effect_metadata_by_mode.renewal.id
 
       @impl true
-      def metadata, do: @status_effect_metadata
+      def metadata, do: Map.fetch!(@status_effect_metadata_by_mode, GameMode.mode())
 
       @impl true
       def modifiers(_instance, _context), do: %{}
@@ -514,6 +523,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       @impl true
       def on_committed_action(_target, instance, _action, _context), do: {:ok, instance}
     end
+  end
+
+  @doc "Resolves the two mode-keyable metadata options for the selected mode."
+  @spec resolve_mode(keyword(), :renewal | :pre_renewal) :: keyword()
+  def resolve_mode(opts, mode) do
+    Enum.map(opts, fn
+      {field, value} when field in [:end_on_start, :no_save] and is_list(value) ->
+        if Keyword.keyword?(value) and Enum.sort(Keyword.keys(value)) == [:pre_renewal, :renewal] do
+          {field, Keyword.fetch!(value, mode)}
+        else
+          {field, value}
+        end
+
+      pair ->
+        pair
+    end)
   end
 
   @doc """

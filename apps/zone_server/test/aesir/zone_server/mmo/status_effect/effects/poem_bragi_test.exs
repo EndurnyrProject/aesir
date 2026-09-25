@@ -3,11 +3,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragiTest do
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.PoemBragi
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   @target {:player, 1000}
 
   describe "metadata" do
+    @tag game_mode: :renewal
+    test "renewal Bragi excludes other songs and persists" do
+      definition = Registry.get_definition(:sc_poembragi)
+      assert definition.end_on_start == [:sc_whistle, :sc_assncross, :sc_poembragi, :sc_appleidun]
+      refute definition.no_save
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal Bragi coexists with other songs and is not saved" do
+      definition = Registry.get_definition(:sc_poembragi)
+      assert definition.end_on_start == []
+      assert definition.no_save
+    end
+
     test "resolves :sc_poembragi as a buff with the Bragi icon" do
       assert :sc_poembragi = PoemBragi.id()
 

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DontForgetMe do
   @moduledoc """
-  Finite Slow Grace ASPD and movement-speed snapshot.
+  Renewal Slow Grace is a finite snapshot; pre-renewal holds a field debuff
+  that lingers on players after they leave.
 
   Renewal derives the penalties from the dance level; pre-renewal reads the
   attack speed percent and movement percent the performer snapshotted at cast.
@@ -9,21 +10,25 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DontForgetMe do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_dontforgetme,
     no_dispel: true,
+    no_save: [renewal: false, pre_renewal: true],
     properties: [:debuff],
     calc_flags: [:aspd, :speed],
     end_on_start: [
-      :sc_humming,
-      :sc_dontforgetme,
-      :sc_fortunekiss,
-      :sc_serviceforyou,
-      :sc_increaseagi,
-      :sc_adrenaline,
-      :sc_adrenaline2,
-      :sc_spearquicken,
-      :sc_twohandquicken,
-      :sc_onehand,
-      :sc_acceleration,
-      :sc_merc_quicken
+      renewal: [
+        :sc_humming,
+        :sc_dontforgetme,
+        :sc_fortunekiss,
+        :sc_serviceforyou,
+        :sc_increaseagi,
+        :sc_adrenaline,
+        :sc_adrenaline2,
+        :sc_spearquicken,
+        :sc_twohandquicken,
+        :sc_onehand,
+        :sc_acceleration,
+        :sc_merc_quicken
+      ],
+      pre_renewal: []
     ],
     conflicts_with: [:sc_speedup1],
     duration: 60_000,

@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ServiceForYou do
   @moduledoc """
-  Finite Gypsy's Kiss maximum-SP and SP-cost snapshot.
+  Renewal Gypsy's Kiss is a finite snapshot; pre-renewal holds a field buff
+  that lingers on exit.
 
   Renewal derives both rates from the dance level; pre-renewal reads the max SP
   percent and SP cost percent the performer snapshotted at cast.
@@ -9,9 +10,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.ServiceForYou do
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
     id: :sc_serviceforyou,
     no_dispel: true,
+    no_save: [renewal: false, pre_renewal: true],
     properties: [:buff],
     calc_flags: [:max_sp_rate],
-    end_on_start: [:sc_humming, :sc_dontforgetme, :sc_fortunekiss, :sc_serviceforyou],
+    end_on_start: [
+      renewal: [:sc_humming, :sc_dontforgetme, :sc_fortunekiss, :sc_serviceforyou],
+      pre_renewal: []
+    ],
     duration: 180_000,
     remove_on_death: false,
     remove_on_map_change: false,
