@@ -59,6 +59,25 @@ defmodule Aesir.ZoneServer.ConfigTest do
     end
   end
 
+  describe "chat_room_gm_level/0" do
+    test "defaults to 60 and reads the configured value" do
+      previous = Application.get_env(:zone_server, :chat_room_gm_level)
+      Application.delete_env(:zone_server, :chat_room_gm_level)
+
+      on_exit(fn ->
+        case previous do
+          nil -> Application.delete_env(:zone_server, :chat_room_gm_level)
+          value -> Application.put_env(:zone_server, :chat_room_gm_level, value)
+        end
+      end)
+
+      assert Config.chat_room_gm_level() == 60
+
+      Application.put_env(:zone_server, :chat_room_gm_level, 10)
+      assert Config.chat_room_gm_level() == 10
+    end
+  end
+
   describe "natural_break_rate/0" do
     test "returns the configured default when unset" do
       assert Config.natural_break_rate() == 0

@@ -345,6 +345,13 @@ defmodule Aesir.ZoneServer.Config do
   def woe_schedule,
     do: Application.get_env(:zone_server, :woe_schedule, @default_woe_schedule)
 
+  @doc """
+  Minimum GM level for chat-room privileges: joining a private room without its
+  password, and immunity from being kicked by a room owner.
+  """
+  @spec chat_room_gm_level() :: non_neg_integer()
+  def chat_room_gm_level, do: Application.get_env(:zone_server, :chat_room_gm_level, 60)
+
   defp rate(key), do: Application.get_env(:zone_server, key, @default_item_rate)
 
   defp bounds(min_key, max_key) do

@@ -27,7 +27,10 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
 
   @pt_key __MODULE__
 
-  @typedoc "A map flag. The WoE set drives castle behavior; the PvP set drives player-versus-player hostility."
+  @typedoc """
+  A map flag. The WoE set drives castle behavior; the PvP set drives
+  player-versus-player hostility. `:nochat` forbids creating chat rooms on the map.
+  """
   @type flag ::
           :gvg
           | :gvg_castle
@@ -38,6 +41,7 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
           | :pvp
           | :pvp_noparty
           | :pvp_noguild
+          | :nochat
   @type map_name :: String.t()
 
   @flags [
@@ -49,7 +53,8 @@ defmodule Aesir.ZoneServer.Map.MapFlags do
     :noreturn,
     :pvp,
     :pvp_noparty,
-    :pvp_noguild
+    :pvp_noguild,
+    :nochat
   ]
   @static_woe_flags [:gvg_castle, :nosave, :noteleport, :nowarp, :noreturn]
 

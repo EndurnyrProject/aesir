@@ -103,6 +103,27 @@ defmodule Aesir.ZoneServer.Map.MapFlagsTest do
     end
   end
 
+  describe "nochat" do
+    test "is off by default and settable at runtime" do
+      refute MapFlags.get("prontera", :nochat)
+
+      :ok = MapFlags.set_runtime("prontera", :nochat, true)
+      assert MapFlags.get("prontera", :nochat) == true
+    end
+
+    @tag :tmp_dir
+    test "loads from a map-flags file", %{tmp_dir: dir} do
+      path = Path.join(dir, "map_flags.yml")
+
+      File.write!(path, """
+      - map: prontera
+        flags: [nochat]
+      """)
+
+      assert StaticFlags.load(path) == %{"prontera" => %{nochat: true}}
+    end
+  end
+
   describe "flags/1" do
     test "returns merged view of static flags and true runtime overlays" do
       flags = MapFlags.flags("aldeg_cas01")
