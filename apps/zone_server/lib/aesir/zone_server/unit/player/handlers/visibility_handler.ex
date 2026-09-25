@@ -4,8 +4,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   session's view.
 
   On entry the entering unit's `UnitSpawn` (built by `SpawnView`), its active
-  status icons and, when it is running an open vending shop, its board are
-  pushed to this session's connection. On exit a `UnitDespawn` vanish packet
+  status icons, its board when it is running an open vending shop, and its chat
+  room bubble when it owns one are pushed to this session's connection. On exit a `UnitDespawn` vanish packet
   is sent.
   """
 
@@ -13,11 +13,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
   alias Aesir.Net.VendingBoardShown
   alias Aesir.ZoneServer.Constants.DespawnReason
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Concealment
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Homunculus.SpawnView, as: HomunculusSpawnView
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SpawnView
   alias Aesir.ZoneServer.Unit.SpatialIndex
@@ -42,6 +44,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
         MessageRouter.send_to(state.connection_pid, spawn_packet)
         send_active_icons(:player, other_char_id, state.game_state.character_id)
         maybe_send_vending_board(state.connection_pid, other_char_id)
+        maybe_send_room_info(state.connection_pid, other_game_state)
 
       _ ->
         :ok
@@ -144,6 +147,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.VisibilityHandler do
       :error ->
         :ok
     end
+  end
+
+  defp maybe_send_room_info(_connection_pid, %PlayerState{waiting_room: nil}), do: :ok
+
+  defp maybe_send_room_info(connection_pid, %PlayerState{waiting_room: room_id} = other) do
+    with {:ok, room} <- WaitingRoom.get(room_id),
+         true <- WaitingRoom.owner?(room, other.character_id) do
+      MessageRouter.send_to(connection_pid, WaitingRoomHandler.info_packet(room))
+    end
+
+    :ok
   end
 
   defp send_active_icons(unit_type, subject_id, observer_id) do

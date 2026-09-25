@@ -28,6 +28,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Mmo.Skills.Sage.SaFreecast
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
+  alias Aesir.ZoneServer.Mmo.WaitingRoom
   alias Aesir.ZoneServer.Mmo.Woe.Rules
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Npc.Events, as: NpcEvents
@@ -52,6 +53,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
   alias Aesir.ZoneServer.Unit.Player.Handlers.NpcInteractionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.StatusManager
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
@@ -1055,10 +1057,13 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.MovementHandler do
     end
   end
 
-  defp send_npc_spawn_packet_to(to_char_id, {_module, %Placement{}} = entry) do
+  defp send_npc_spawn_packet_to(to_char_id, {_module, %Placement{} = placement} = entry) do
     case UnitRegistry.get_player_pid(to_char_id) do
       {:ok, to_pid} ->
         GenServer.cast(to_pid, {:send_packet, NpcPackets.spawn_packet(entry)})
+
+        with {:ok, room} <- WaitingRoom.get(NpcRegistry.entity_id(placement)),
+             do: GenServer.cast(to_pid, {:send_packet, WaitingRoomHandler.info_packet(room)})
 
       {:error, :not_found} ->
         :ok
