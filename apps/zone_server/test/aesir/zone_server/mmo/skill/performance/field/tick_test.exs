@@ -138,6 +138,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.TickTest do
     refute_received {:hit, _, _}
   end
 
+  test "zero deadlines fire on the first tick even with a negative monotonic clock" do
+    stub(Combat, :resolve_combatant, fn :player, 1 -> {:ok, %{}} end)
+    :ok = UnitRegistry.register_unit(:player, 1, PlayerState, %PlayerState{}, self())
+    group = group(3, :dissonance, 0)
+    group = put_in(group.state.performance.dissonant_cells, MapSet.new([{2, 2}]))
+    now = System.monotonic_time(:millisecond)
+
+    assert {:ok, updated} = Tick.run(group, now)
+    assert updated.state.performance.next_effect_at == now + 3_000
+    assert updated.state.performance.next_overlap_at == now + 3_000
+  end
+
   test "a 1 s manager call before the effect interval does not run the effect" do
     stub(Combat, :resolve_combatant, fn :player, 1 -> {:ok, %{}} end)
 

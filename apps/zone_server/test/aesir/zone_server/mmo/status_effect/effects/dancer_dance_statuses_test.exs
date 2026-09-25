@@ -77,6 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     assert DontForgetMe.modifiers(level_ten, %{}) == %{aspd_rate: -30, movement_speed: 25}
   end
 
+  @tag game_mode: :renewal
   test "dance definitions survive cleanup and form a dancer-only exclusion group" do
     for module <- @modules do
       metadata = module.metadata()
@@ -107,6 +108,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     end
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic dances are not saved and do not exclude one another" do
+    for module <- @modules do
+      assert module.metadata().no_save
+      assert module.metadata().end_on_start == []
+    end
+
+    assert :ok = apply_status(:sc_humming)
+    assert :ok = apply_status(:sc_fortunekiss)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_humming)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_fortunekiss)
+  end
+
+  @tag game_mode: :renewal
   test "dancer dances replace each other in both directions" do
     for first <- @dances, second <- @dances, first != second do
       assert :ok = apply_status(first)
@@ -129,6 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "slow grace strips registered speed buffs and skips unimplemented entries" do
     unimplemented = [
       :sc_onehand,
@@ -155,6 +171,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancerDanceStatusesTest do
     for status <- @slow_grace_strips do
       refute StatusStorage.has_status?(:player, @player_id, status)
     end
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Slow Grace leaves unrelated speed buffs active" do
+    assert :ok = apply_status(:sc_increaseagi)
+    assert :ok = apply_status(:sc_dontforgetme)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_increaseagi)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_dontforgetme)
   end
 
   test "slow grace fails against speed up" do

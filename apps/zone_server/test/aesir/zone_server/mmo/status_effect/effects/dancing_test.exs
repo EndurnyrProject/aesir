@@ -95,6 +95,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     for skill <- [316, 324, 304], do: assert(Interpreter.can_use_skill?(:player, 17, skill))
     refute Interpreter.can_use_skill?(:player, 17, 305)
     assert Registry.get_definition(:sc_dancing).icon == :bdplaying
+    assert Registry.get_definition(:sc_dancing).bypass_resistance
   end
 
   defp player(id) do

@@ -26,6 +26,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BardSongStatusesTest do
     :ok
   end
 
+  @tag game_mode: :renewal
   test "definitions are finite, persistent through lifecycle boundaries, and mutually replacing" do
     for module <- @modules do
       metadata = module.metadata()
@@ -54,6 +55,20 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.BardSongStatusesTest do
              PoemBragi.on_apply({:player, @player_id}, bragi, %{})
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic songs are not saved and do not exclude one another" do
+    for module <- @modules do
+      assert module.metadata().no_save
+      assert module.metadata().end_on_start == []
+    end
+
+    assert :ok = apply_song(:sc_whistle, val2: 10)
+    assert :ok = apply_song(:sc_assncross, val2: 20)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_whistle)
+    assert StatusStorage.has_status?(:player, @player_id, :sc_assncross)
+  end
+
+  @tag game_mode: :renewal
   test "different songs replace in both orders" do
     for {first, second} <- [
           {:sc_whistle, :sc_assncross},

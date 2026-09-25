@@ -99,6 +99,7 @@ defmodule Aesir.ZoneServer.Integration.BardActiveSkillsIntegrationTest do
     assert eventually(fn -> persisted_arrow_amount(bard.character.id) == 2 end)
   end
 
+  @tag game_mode: :renewal, integration_pre_re: false
   test "Dissonance deals one immediate splash and leaves no skill-unit state" do
     bard = start_bard([@dissonance], instrument?: true)
     target = start_target({151, 150}, hp: 50_000)

@@ -21,11 +21,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
   @doc "Runs due effects, returning the group with updated tick deadlines."
   @spec run(Group.t(), integer()) :: {:ok, Group.t()}
   def run(%Group{state: %{performance: perf}} = group, now) do
-    own_due? = perf.tick != nil and now >= perf.next_effect_at
+    own_due? = perf.tick != nil and due?(perf.next_effect_at, now)
 
     overlap_due? =
       MapSet.size(perf.dissonant_cells) > 0 and
-        now >= Map.get(perf, :next_overlap_at, 0)
+        due?(Map.get(perf, :next_overlap_at, 0), now)
 
     if own_due? or overlap_due?,
       do: run_due(group, now, own_due?, overlap_due?),
@@ -137,6 +137,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
         end
     end)
   end
+
+  defp due?(0, _now), do: true
+  defp due?(deadline, now), do: now >= deadline
 
   defp maybe_advance(perf, _key, false, _next), do: perf
   defp maybe_advance(perf, key, true, next), do: Map.put(perf, key, next)
