@@ -373,6 +373,43 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupportRealInterpreterTest do
     assert Interpreter.can_move?(:player, 77)
   end
 
+  test "a released player status lingers and re-entry restores field ownership" do
+    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
+    params = [level: 3, val1: 3, val2: 15, state: %{source: :song}]
+
+    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, params)
+    assert :ok = FieldSupport.release(:player, 77, :sc_quagmire, 70, linger_ms: 20_000)
+
+    lingering = StatusStorage.get_status(:player, 77, :sc_quagmire)
+    refute FieldSupport.field_owned?(:player, 77, :sc_quagmire)
+    assert lingering.state == %{source: :song}
+    assert lingering.val2 == 15
+    assert_in_delta lingering.expires_at - System.monotonic_time(:millisecond), 20_000, 500
+
+    assert :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, params)
+    assert FieldSupport.field_owned?(:player, 77, :sc_quagmire)
+    assert StatusStorage.get_status(:player, 77, :sc_quagmire).expires_at == nil
+    assert :ok = FieldSupport.release(:player, 77, :sc_quagmire, 70)
+    refute StatusStorage.has_status?(:player, 77, :sc_quagmire)
+  end
+
+  test "group release lingers for each player but not for a mob" do
+    :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
+    :ok = UnitRegistry.register_unit(:player, 78, Entity, living_player())
+    :ok = FieldSupport.acquire(:player, 77, :sc_quagmire, 70, val2: 5)
+    :ok = FieldSupport.acquire(:player, 78, :sc_quagmire, 70, val2: 10)
+    assert :ok = FieldSupport.release_group(70, linger_ms: 20_000)
+
+    for id <- [77, 78] do
+      refute FieldSupport.field_owned?(:player, id, :sc_quagmire)
+
+      assert_in_delta StatusStorage.get_status(:player, id, :sc_quagmire).expires_at -
+                        System.monotonic_time(:millisecond),
+                      20_000,
+                      500
+    end
+  end
+
   test "manager reconciliation releases Quagmire support after leaving for an empty cell" do
     :ok = UnitRegistry.register_unit(:player, 77, Entity, living_player())
     :ok = SpatialIndex.add_unit(:player, 77, 20, 20, "prontera")

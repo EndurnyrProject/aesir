@@ -169,6 +169,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @spec destroy(server(), non_neg_integer()) :: :ok
   def destroy(server, group_id), do: GenServer.call(server, {:destroy, group_id})
 
+  @doc "Requests group teardown without waiting for the manager (safe inside callbacks)."
+  @spec destroy_async(non_neg_integer()) :: :ok
+  def destroy_async(group_id), do: destroy_async(default_server(), group_id)
+
+  @doc false
+  @spec destroy_async(server(), non_neg_integer()) :: :ok
+  def destroy_async(server, group_id), do: GenServer.cast(server, {:destroy, group_id})
+
   @doc "Returns a live targetable cell, revalidating it inside the owning manager."
   @spec targetable_cell(server(), non_neg_integer()) :: {:ok, Cell.t()} | {:error, atom()}
   def targetable_cell(server, cell_id), do: GenServer.call(server, {:targetable_cell, cell_id})
@@ -330,7 +338,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   def handle_call({:destroy, group_id}, _from, state) do
-    if group = Storage.get(group_id), do: cleanup(group, nil, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+    if group = Storage.get(group_id),
+      do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+
     {:reply, :ok, state}
   end
 
@@ -398,6 +408,13 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   @impl true
+  def handle_cast({:destroy, group_id}, state) do
+    if group = Storage.get(group_id),
+      do: cleanup_with_reason(group, :SKILL_UNIT_DESPAWN_REASON_CANCELED)
+
+    {:noreply, state}
+  end
+
   def handle_cast({:release_trap_link, group_id, link_id}, state) do
     release_trap_link_now(group_id, link_id)
     {:noreply, state}
@@ -717,7 +734,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
         )
         |> log_field_support_failure(group, :acquire)
       else
-        FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id)
+        FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
+          linger_ms: Map.get(spec, :linger_ms, 0)
+        )
         |> log_field_support_failure(group, :release)
       end
     end
@@ -727,7 +746,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   defp apply_field_support_action(%Group{} = group, {unit_type, unit_id}, :on_out) do
     with {:ok, spec} <- field_support_spec(group) do
-      FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id)
+      FieldSupport.release(unit_type, unit_id, spec.status_type, group.group_id,
+        linger_ms: Map.get(spec, :linger_ms, 0)
+      )
       |> log_field_support_failure(group, :release)
     end
 
@@ -782,7 +803,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   end
 
   defp cleanup(%Group{group_id: group_id} = group, module, despawn_reason) do
-    FieldSupport.release_group(group_id)
+    FieldSupport.release_group(group_id, linger_ms: field_linger_ms(group))
     cells = Storage.get_cells_by_group(group_id)
     Enum.each(cells, &remove_cell_indexes/1)
 
@@ -2181,7 +2202,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> Enum.each(fn {unit_type, unit_id, status_type, _params} ->
       if not MapSet.member?(occupied, {unit_type, unit_id}) or
            not supports_target?(spec, {unit_type, unit_id}) do
-        FieldSupport.release(unit_type, unit_id, status_type, group.group_id)
+        FieldSupport.release(unit_type, unit_id, status_type, group.group_id,
+          linger_ms: Map.get(spec, :linger_ms, 0)
+        )
       end
     end)
   end
@@ -2214,15 +2237,29 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     FieldSupport.sources_for_unit(unit_type, unit_id)
     |> Enum.each(fn {_, _, status_type, group_id, _params} ->
       if not MapSet.member?(current_ids, group_id) do
-        FieldSupport.release(unit_type, unit_id, status_type, group_id)
+        FieldSupport.release(unit_type, unit_id, status_type, group_id,
+          linger_ms: field_linger_ms(Storage.get(group_id))
+        )
       end
     end)
+  end
+
+  defp field_linger_ms(nil), do: 0
+
+  defp field_linger_ms(%Group{} = group) do
+    case field_support_spec(group) do
+      {:ok, spec} -> Map.get(spec, :linger_ms, 0)
+      :error -> 0
+    end
   end
 
   defp field_support_spec(%Group{} = group) do
     with {:ok, module} <- handler_for(group),
          true <- function_exported?(module, :field_support, 1) do
-      {:ok, %{status_type: _, params: _, target?: _} = module.field_support(group)}
+      case module.field_support(group) do
+        %{status_type: nil} -> :error
+        spec -> {:ok, %{status_type: _, params: _, target?: _} = spec}
+      end
     else
       _ -> :error
     end

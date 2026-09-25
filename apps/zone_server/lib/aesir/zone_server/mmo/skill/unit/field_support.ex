@@ -42,23 +42,32 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
   @doc "Releases one source contribution and recalculates the effective status."
   @spec release(atom(), integer(), atom(), integer(), keyword()) :: :ok | {:error, atom()}
   def release(unit_type, unit_id, status_type, source_group_id, opts \\ []) do
-    delete_row({unit_type, unit_id, status_type, source_group_id})
+    key = {unit_type, unit_id, status_type, source_group_id}
+    released = lookup_rows([key])
+    delete_row(key)
+
+    opts =
+      case released do
+        [{_, %{params: params}}] -> Keyword.put(opts, :released_params, params)
+        [] -> opts
+      end
+
     reconcile(unit_type, unit_id, status_type, opts)
   end
 
   @doc "Releases all contributions owned by a field group."
   @spec release_group(integer(), keyword()) :: :ok
   def release_group(source_group_id, opts \\ []) do
-    keys = group_keys(source_group_id)
+    rows = source_group_id |> group_keys() |> lookup_rows()
+    Enum.each(rows, fn {key, _row} -> delete_row(key) end)
 
-    Enum.each(keys, &delete_row/1)
-
-    keys
-    |> Enum.map(fn {unit_type, unit_id, status_type, _} ->
+    rows
+    |> Enum.uniq_by(fn {{unit_type, unit_id, status_type, _}, _row} ->
       {unit_type, unit_id, status_type}
     end)
-    |> Enum.uniq()
-    |> Enum.each(&reconcile(elem(&1, 0), elem(&1, 1), elem(&1, 2), opts))
+    |> Enum.each(fn {{unit_type, unit_id, status_type, _}, %{params: params}} ->
+      reconcile(unit_type, unit_id, status_type, Keyword.put(opts, :released_params, params))
+    end)
 
     :ok
   end
@@ -71,10 +80,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.FieldSupport do
 
     case rows do
       [] ->
-        if field_owned?(unit_type, unit_id, status_type) do
-          Interpreter.remove_status(unit_type, unit_id, status_type)
-        else
-          :ok
+        cond do
+          not field_owned?(unit_type, unit_id, status_type) ->
+            :ok
+
+          unit_type == :player and Keyword.get(opts, :linger_ms, 0) > 0 and
+              Keyword.has_key?(opts, :released_params) ->
+            params =
+              opts
+              |> Keyword.fetch!(:released_params)
+              |> normalize_params()
+              |> Keyword.update(:state, %{}, &Map.delete(&1 || %{}, :field_support))
+              |> Keyword.put(:duration, Keyword.fetch!(opts, :linger_ms))
+
+            Interpreter.apply_status(unit_type, unit_id, status_type, params)
+
+          true ->
+            Interpreter.remove_status(unit_type, unit_id, status_type)
         end
 
       _ ->

@@ -126,6 +126,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit do
   @spec destroy(non_neg_integer()) :: :ok
   def destroy(group_id), do: Manager.destroy(group_id)
 
+  @doc "Requests group teardown asynchronously from a status or manager callback."
+  @spec destroy_async(non_neg_integer()) :: :ok
+  def destroy_async(group_id), do: Manager.destroy_async(group_id)
+
   @doc "Destroys named ground skill-unit groups whose footprints intersect a square range."
   @spec destroy_in_range(String.t(), {integer(), integer()}, non_neg_integer(), [atom()]) :: :ok
   def destroy_in_range(map_name, {x, y}, radius, names) do

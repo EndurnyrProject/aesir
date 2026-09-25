@@ -103,7 +103,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground do
 
   @doc "Describes the source-owned status granted while a mover occupies the field."
   @callback field_support(Group.t()) :: %{
-              status_type: atom(),
+              optional(:linger_ms) => non_neg_integer(),
+              status_type: atom() | nil,
               params: keyword() | map() | (atom(), integer() -> keyword() | map()),
               target?: ({atom(), integer()} -> boolean())
             }

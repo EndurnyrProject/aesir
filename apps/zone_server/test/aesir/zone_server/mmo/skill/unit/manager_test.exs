@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   import Aesir.TestEtsSetup
   import ExUnit.CaptureLog
   import Mimic
+  import Aesir.TestWait, only: [assert_eventually: 1]
 
   alias Aesir.ZoneServer.EtsTable
   alias Aesir.ZoneServer.Map.Cell, as: MapCell
@@ -19,8 +20,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.Skill.Unit.TrapState
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Lifecycle
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -74,6 +77,23 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     def field_support(_group) do
       %{status_type: :sc_quagmire, params: [], target?: fn _target -> true end}
     end
+  end
+
+  defmodule LingerField do
+    def on_interval(group, _now), do: {:ok, group}
+
+    def field_support(_group),
+      do: %{
+        status_type: :sc_quagmire,
+        params: [val2: 10],
+        target?: fn _ -> true end,
+        linger_ms: 20_000
+      }
+  end
+
+  defmodule EmptyField do
+    def on_interval(group, _now), do: {:ok, group}
+    def field_support(_group), do: %{status_type: nil, params: [], target?: fn _ -> true end}
   end
 
   defmodule SerializedUnit do
@@ -2841,6 +2861,92 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     assert :ok = Manager.register(manager, replacement)
 
     assert [%Cell{x: 102, y: 100}] = Storage.get_cells_by_group(1)
+  end
+
+  test "async destruction cleans up once and ignores an unknown group" do
+    manager = start_manager(10_000)
+    assert :ok = Manager.register(manager, group(1, state: %{test_pid: self()}))
+
+    assert :ok = Manager.destroy_async(manager, 1)
+    assert_eventually(fn -> Storage.get(1) == nil end)
+    assert_received {:expired, 1}
+
+    assert :ok = Manager.destroy_async(manager, 1)
+    assert :ok = Manager.destroy_async(manager, 999)
+    assert :ok = Manager.tick(manager, 10_000)
+    refute_received {:expired, 1}
+  end
+
+  test "natural field expiry lingers for a player but removes a mob's status" do
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+
+    mob = %MobState{
+      instance_id: 22,
+      mob_id: 1,
+      mob_data: %{},
+      spawn_ref: nil,
+      x: 100,
+      y: 100,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 10,
+      max_sp: 10,
+      spawned_at: 0
+    }
+
+    :ok = UnitRegistry.register_unit(:player, 21, PlayerState, player)
+    :ok = UnitRegistry.register_unit(:mob, 22, MobState, mob)
+    :ok = SpatialIndex.add_unit(:player, 21, 100, 100, "prontera")
+    :ok = SpatialIndex.add_unit(:mob, 22, 100, 100, "prontera")
+
+    stub(Interpreter, :apply_status, fn type, id, status, params ->
+      StatusStorage.apply_status(type, id, status, params)
+    end)
+
+    stub(Interpreter, :remove_status, fn type, id, status ->
+      StatusStorage.remove_status(type, id, status)
+    end)
+
+    manager = start_manager(10_000)
+    allow(Interpreter, self(), manager)
+    assert :ok = Manager.register(manager, group(1, handler: LingerField, expires_at: 11_000))
+    assert FieldSupport.field_owned?(:player, 21, :sc_quagmire)
+    assert FieldSupport.field_owned?(:mob, 22, :sc_quagmire)
+
+    assert :ok = Manager.tick(manager, 11_000)
+    assert Storage.get(1) == nil
+    assert StatusStorage.get_status(:player, 21, :sc_quagmire).expires_at != nil
+    refute FieldSupport.field_owned?(:player, 21, :sc_quagmire)
+    refute StatusStorage.has_status?(:mob, 22, :sc_quagmire)
+  end
+
+  test "moving out of a field retains the player status for its linger" do
+    player = %PlayerState{action_state: :idle, stats: %{current_state: %{hp: 100}}}
+    :ok = UnitRegistry.register_unit(:player, 21, PlayerState, player)
+    :ok = SpatialIndex.add_unit(:player, 21, 100, 100, "prontera")
+
+    stub(Interpreter, :apply_status, fn type, id, status, params ->
+      StatusStorage.apply_status(type, id, status, params)
+    end)
+
+    manager = start_manager(10_000)
+    allow(Interpreter, self(), manager)
+    assert :ok = Manager.register(manager, group(1, handler: LingerField))
+    assert FieldSupport.field_owned?(:player, 21, :sc_quagmire)
+
+    :ok = SpatialIndex.remove_unit(:player, 21)
+    :ok = SpatialIndex.add_unit(:player, 21, 105, 105, "prontera")
+    assert :ok = Manager.reconcile_unit(manager, {:player, 21})
+    refute FieldSupport.field_owned?(:player, 21, :sc_quagmire)
+    assert StatusStorage.get_status(:player, 21, :sc_quagmire).expires_at != nil
+  end
+
+  test "a field without an occupant status does not grant one on touch" do
+    manager = start_manager(10_000)
+    assert :ok = Manager.register(manager, group(2, handler: EmptyField))
+    assert :ok = Manager.trigger(manager, 2, {:player, 21}, :on_touch)
+    assert FieldSupport.sources_for_group(2) == []
   end
 
   test "re-registering releases field support owned by the replaced group" do
