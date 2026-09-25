@@ -254,6 +254,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
     end
   end
 
+  test "unequipping a two-handed sword removes Parrying" do
+    game_state = PlayerState.new(character())
+    sword = %InventoryItem{nameid: 1116, amount: 1, equip: 34, identify: 1}
+    game_state = %{game_state | inventory: %{0 => sword}}
+    :ok = StatusStorage.apply_status(:player, 1000, :sc_parrying, val1: 5, duration: 30_000)
+
+    stub(UnitRegistry, :update_unit_state, fn :player, 1000, _ -> :ok end)
+    stub(UnitRegistry, :get_unit_info, fn :player, 1000 -> {:ok, %{stats: game_state.stats}} end)
+    stub(StatusSync, :send_stat_updates, fn _connection, _stats -> :ok end)
+    stub(StatusSync, :send_params, fn _connection, _params -> :ok end)
+
+    expect(InventoryOps, :apply_change, fn 1000, _old, _new, {:unequipped, 0} ->
+      {:ok, %{}}
+    end)
+
+    expect(Stats, :calculate_stats, fn stats, 1000, [] -> stats end)
+
+    state = %{connection_pid: self(), game_state: game_state}
+    assert {:noreply, _state} = EquipmentHandler.handle_unequip(0, state)
+    refute StatusStorage.has_status?(:player, 1000, :sc_parrying)
+  end
+
   test "removes weapon-unequip statuses only after a successful weapon unequip" do
     game_state = PlayerState.new(character())
     weapon = %InventoryItem{nameid: 501, amount: 1, equip: 2}
