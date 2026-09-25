@@ -26,9 +26,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   seconds after the cast, and the skill additionally demands (without spending)
   a health reserve that shrinks with skill level, from 20 HP at level 1 down to
   16 HP at level 10. A caster at or below that reserve cannot start the cast;
-  a caster above it pays nothing but SP. That "required but never spent" health
-  gate is enforced in `validate/4` rather than declared as an HP cost, because
-  a declared cost would be deducted on every cast.
+  a caster above it pays nothing but SP. The declared HP requirement is checked
+  at cast start, but must not be consumed when the cast succeeds.
 
   In both modes the blast falls off with distance: victims within one cell of
   the caster take 100% + 20% per level, everyone further out 100% + 10% per
@@ -47,6 +46,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
     knockback: 2,
     splash_radius: 2,
     sp_cost: List.duplicate(30, 10),
+    hp_cost: [renewal: [], pre_renewal: [20, 20, 19, 19, 18, 18, 17, 17, 16, 16]],
     after_cast_delay: [
       renewal: List.duplicate(500, 10),
       pre_renewal: List.duplicate(2_000, 10)
@@ -57,6 +57,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Definition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
 
   # Fire, in the element ordering the weapon-property buff carries as val1.
@@ -65,16 +67,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   # Percentage of the caster's own attack the aura additionally deals as fire.
   @fire_aura_percent 20
 
-  @classic_hp_requirement [20, 20, 19, 19, 18, 18, 17, 17, 16, 16]
-
   @behaviour Active
 
   @impl Active
-  def validate(caster, _target, level, _definition) do
+  def validate(caster, _target, level, definition) do
     case GameMode.mode() do
       :renewal -> :ok
-      :pre_renewal -> check_health_reserve(caster, level)
+      :pre_renewal -> check_health_reserve(caster, level, definition)
     end
+  end
+
+  @doc "Resolves the normal SP cost without consuming the classic HP reserve."
+  @impl Active
+  @spec dynamic_cost(map(), Active.target(), pos_integer(), Definition.t()) :: Cost.t()
+  def dynamic_cost(caster, _target, level, definition) do
+    cost =
+      Cost.from_definition(caster, definition, level,
+        sp: Cost.resolve_sp(caster, definition, level)
+      )
+
+    %{cost | hp: 0}
   end
 
   @impl Active
@@ -120,12 +132,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum do
   defp ring_ratio(distance, level) when distance <= 1, do: 100 + 20 * level
   defp ring_ratio(_distance, level), do: 100 + 10 * level
 
-  defp check_health_reserve(%{stats: %{current_state: %{hp: hp}}}, level) do
-    if hp > Enum.at(@classic_hp_requirement, level - 1),
+  defp check_health_reserve(%{stats: %{current_state: %{hp: hp}}}, level, definition) do
+    if hp > Enum.at(definition.hp_cost, level - 1),
       do: :ok,
       else: {:error, :insufficient_hp}
   end
 
   # Script- and NPC-driven casters carry no health pool to reserve against.
-  defp check_health_reserve(_caster, _level), do: :ok
+  defp check_health_reserve(_caster, _level, _definition), do: :ok
 end

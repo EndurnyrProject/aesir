@@ -50,5 +50,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounterTest do
       assert definition.target_type == :self
       assert definition.range == 0
     end
+
+    test "both modes allow unarmed and sword counters but not bows" do
+      renewal = KnAutocounter.definition(:renewal)
+      classic = KnAutocounter.definition(:pre_renewal)
+
+      assert :fist in renewal.require_weapon
+      assert :one_handed_sword in renewal.require_weapon
+      refute :bow in renewal.require_weapon
+      assert classic.require_weapon == renewal.require_weapon
+    end
   end
 end

@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnum
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry, as: StatusRegistry
@@ -68,6 +69,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
     assert renewal.cooldown == List.duplicate(2_000, 10)
   end
 
+  test "classic declares its source HP requirement at every level" do
+    assert SmMagnum.definition(:renewal).hp_cost == []
+    assert SmMagnum.definition(:pre_renewal).hp_cost == [20, 20, 19, 19, 18, 18, 17, 17, 16, 16]
+  end
+
   test "classic locks the caster with a long aftercast delay and no cooldown" do
     classic = SmMagnum.definition(:pre_renewal)
 
@@ -79,6 +85,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Swordsman.SmMagnumTest do
   test "renewal casts regardless of how little health the caster has left" do
     assert SmMagnum.validate(caster_with_hp(1), :self, 1, definition()) == :ok
     assert SmMagnum.validate(caster_with_hp(1), :self, 10, definition()) == :ok
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic pays SP but does not consume the required HP" do
+    caster = caster_with_hp(21)
+    cost = SmMagnum.dynamic_cost(caster, :self, 1, definition())
+
+    assert cost.hp == 0
+    assert cost.sp == 30
+    assert {:ok, commitment} = Cost.prepare(caster, cost)
+
+    committed = Cost.apply_commitment(caster, commitment)
+    assert committed.stats.current_state.hp == 21
+    assert committed.stats.current_state.sp == 70
   end
 
   @tag game_mode: :pre_renewal

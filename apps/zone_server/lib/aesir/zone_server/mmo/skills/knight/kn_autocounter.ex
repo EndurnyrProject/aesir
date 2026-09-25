@@ -11,7 +11,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
   only arms the buff. The counter level is carried in the buff's `val1` so the
   interception can scale its counter ratio.
 
-  Renewal and pre-renewal agree: a self-cast stance lasting 0.4 s per level that turns the next front or side melee swing into a guaranteed critical counter at 100% plus 10% per level.
+  Renewal and pre-renewal agree: the stance accepts unarmed combat and the
+  enumerated melee/ranged weapon types (not bows), lasts 0.4 s per level, and
+  turns the next front or side melee swing into a guaranteed critical counter
+  at 100% plus 10% per level.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 61,
@@ -23,7 +26,31 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnAutocounter do
     target_type: :self,
     damage_type: :no_damage,
     range: 0,
-    sp_cost: [3, 3, 3, 3, 3]
+    sp_cost: [3, 3, 3, 3, 3],
+    require_weapon: [
+      :book,
+      :dagger,
+      :fist,
+      :gatling,
+      :grenade,
+      :huuma,
+      :katar,
+      :knuckle,
+      :mace,
+      :musical,
+      :one_handed_axe,
+      :one_handed_spear,
+      :one_handed_sword,
+      :revolver,
+      :rifle,
+      :shotgun,
+      :staff,
+      :two_handed_axe,
+      :two_handed_mace,
+      :two_handed_spear,
+      :two_handed_sword,
+      :whip
+    ]
 
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Caster

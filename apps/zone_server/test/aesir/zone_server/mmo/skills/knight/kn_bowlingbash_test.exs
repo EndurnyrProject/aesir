@@ -59,6 +59,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
     end
   end
 
+  test "knockback definition follows each mode's source table" do
+    assert KnBowlingbash.definition(:renewal).knockback == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
+    assert KnBowlingbash.definition(:pre_renewal).knockback == 1
+  end
+
   describe "skill_ratio/1" do
     test "is 100 + 40 percent per level" do
       assert KnBowlingbash.skill_ratio(1) == 140
@@ -68,6 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
   end
 
   describe "knockback_distance/1" do
+    @tag game_mode: :renewal
     test "scales 1 cell per 2 levels, from 1 at level 1 to 5 at level 10" do
       assert KnBowlingbash.knockback_distance(1) == 1
       assert KnBowlingbash.knockback_distance(2) == 1
@@ -79,6 +85,13 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       assert KnBowlingbash.knockback_distance(8) == 4
       assert KnBowlingbash.knockback_distance(9) == 5
       assert KnBowlingbash.knockback_distance(10) == 5
+    end
+
+    @tag game_mode: :pre_renewal
+    test "classic pushes each target one cell at every level" do
+      for level <- 1..10 do
+        assert KnBowlingbash.knockback_distance(level) == 1
+      end
     end
   end
 
@@ -135,7 +148,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbashTest do
       expect(Combat, :execute_splash_attack, fn ^caster, {15, 25}, 1, opts ->
         assert opts[:skill_ratio] == 220
         assert opts[:hit_count] == 1
-        assert opts[:base_distance] == 2
+        assert opts[:base_distance] == 1
         [101]
       end)
 

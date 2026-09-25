@@ -1,16 +1,20 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
   @moduledoc """
   Bowling Bash (KN_BOWLINGBASH). A weapon splash strike that hits the target
-  and every enemy within 2 cells of it, knocking each hit target back away
-  from the caster.
+  and nearby enemies, knocking each hit target back away from the caster.
 
-  Ratio scales `100 + 40` percent per level. The strike always lands 2 hits;
+  Ratio scales `100 + 40` percent per level. Renewal lands 2 hits;
   wielding a two-handed sword raises that to 3 hits when 2 or more enemies
   (including the primary target) are caught in the splash, and to 4 hits at
-  4 or more. Knockback distance scales with level: 1 cell at levels 1-2, up
-  to 5 cells at levels 9-10.
+  4 or more. Renewal knockback scales from 1 cell at levels 1-2 to 5 cells
+  at levels 9-10; classic pushes each hit target one cell.
 
-  Renewal: 100% plus 40% per level weapon damage in two hits over a 2-cell splash (three hits with a two-handed sword against two or more enemies, four against four or more), pushing 1 cell per two levels, with a 0.35 s fixed cast, 0.3 s delay, and 1 s cooldown. Pre-renewal: one hit in a 1-cell splash with a 0.7 s variable cast and the same push; the classic bowling chain that carries the push through other enemies along the path is not modelled.
+  Renewal: 100% plus 40% per level weapon damage in two hits over a 2-cell
+  splash (three hits with a two-handed sword against two or more enemies, four
+  against four or more), pushing 1 cell per two levels, with a 0.35 s fixed
+  cast, 0.3 s delay, and 1 s cooldown. Pre-renewal: one hit in a 1-cell splash
+  with a 0.7 s variable cast and a one-cell push; the classic bowling chain
+  that carries the push through other enemies along the path is not modelled.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 62,
@@ -23,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
     range: 2,
     splash_radius: [renewal: 2, pre_renewal: 1],
     hit_count: [renewal: 2, pre_renewal: 1],
+    knockback: [renewal: [1, 1, 2, 2, 3, 3, 4, 4, 5, 5], pre_renewal: 1],
     cast_time: [renewal: [], pre_renewal: List.duplicate(700, 10)],
     fixed_cast_time: [renewal: List.duplicate(350, 10), pre_renewal: []],
     after_cast_delay: [renewal: List.duplicate(300, 10), pre_renewal: []],
@@ -68,11 +73,16 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Knight.KnBowlingbash do
   def skill_ratio(level), do: 100 + 40 * level
 
   @doc """
-  The knockback distance at `level`: 1 cell at levels 1-2, rising by 1 cell
-  every 2 levels, to 5 cells at levels 9-10.
+  Renewal pushes 1 cell at levels 1-2, rising every 2 levels to 5 cells at
+  levels 9-10. Pre-renewal pushes 1 cell regardless of level.
   """
   @spec knockback_distance(pos_integer()) :: pos_integer()
-  def knockback_distance(level), do: div(level + 1, 2)
+  def knockback_distance(level) do
+    case definition().knockback do
+      distance when is_integer(distance) -> distance
+      distances -> Enum.at(distances, level - 1)
+    end
+  end
 
   @doc """
   The hit count for a cast: one hit in classic; in renewal 2 hits by default, raised to 3 with a
