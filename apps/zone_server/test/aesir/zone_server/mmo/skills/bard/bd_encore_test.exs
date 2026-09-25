@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.TestSupport.EnsembleSkill
   alias Aesir.ZoneServer.Unit.Player.PlayerState
@@ -267,6 +268,39 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   end
 
   defp put_sp(caster, sp), do: put_in(caster.stats.current_state.sp, sp)
+
+  @tag game_mode: :pre_renewal
+  test "the performing lock refuses Encore but permits strike and Adaptation" do
+    :ok =
+      StatusStorage.apply_status(:player, @caster_id, :sc_dancing,
+        val1: 319,
+        val2: 77,
+        state: %{upkeep: 5, ticks: 0}
+      )
+
+    refute StatusInterpreter.can_use_skill?(:player, @caster_id, @encore_id)
+    assert StatusInterpreter.can_use_skill?(:player, @caster_id, 316)
+    assert StatusInterpreter.can_use_skill?(:player, @caster_id, 304)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "Encore replays Whistle as a field for half its classic SP cost" do
+    caster = player(%{skill_id: 319, level: 5})
+    assert BdEncore.dynamic_cost(caster, :self, 1, BdEncore.definition()).sp == 20
+
+    expect(Performance, :perform, fn ^caster, definition, 5, :sc_whistle, params, opts ->
+      assert definition.id == 319
+      assert params[:val2] > 0
+      assert opts[:kind] == :song
+      assert opts[:upkeep] == 5
+      {:ok, Song.remember(caster, 319, 5)}
+    end)
+
+    assert {:ok, updated} = Interpreter.cast(caster, @encore_id, 1, :self)
+    assert updated.stats.current_state.sp == 80
+    assert updated.last_song == %{skill_id: 319, level: 5}
+    assert updated.skill_cooldowns == %{}
+  end
 
   @tag game_mode: :pre_renewal
   test "classic carries the source's instant cast and SP" do

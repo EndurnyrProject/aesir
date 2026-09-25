@@ -5,9 +5,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptation do
 
   Renewal: requires 10 SP (spends none), a 0.3 s delay, a 5-minute cooldown, and a
   5-minute status that discounts song SP by 20%. Pre-renewal: requires 1 SP with no
-  delay or cooldown; the classic effect (leaving a song after it has played for
-  5 s) belongs to the deferred ground-song subsystem, so the status is applied
-  without any cost effect.
+  delay or cooldown and spends no SP. It is available only while performing
+  and ends the field immediately; recipients retain their 20-second linger.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 304,
@@ -25,9 +24,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptation do
     after_cast_delay: [renewal: [300], pre_renewal: []],
     cooldown: [renewal: [300_000], pre_renewal: []]
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @behaviour Active
 
@@ -39,14 +40,36 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdAdaptation do
   end
 
   @impl Active
+  def validate(%{character_id: id}, :self, _level, _definition) do
+    case GameMode.mode() do
+      :renewal ->
+        :ok
+
+      :pre_renewal ->
+        if StatusStorage.has_status?(:player, id, :sc_dancing),
+          do: :ok,
+          else: {:error, :not_performing}
+    end
+  end
+
+  @impl Active
   def cast(%{character_id: caster_id} = caster, :self, level, definition) do
-    with :ok <-
-           StatusInterpreter.apply_status(:player, caster_id, :sc_adaptation,
-             caster_id: caster_id,
-             duration: Enum.at(definition.duration, level - 1),
-             owner_refresh: :defer
-           ) do
-      {:ok, caster}
+    case GameMode.mode() do
+      :renewal ->
+        with :ok <-
+               StatusInterpreter.apply_status(:player, caster_id, :sc_adaptation,
+                 caster_id: caster_id,
+                 duration: Enum.at(definition.duration, level - 1),
+                 owner_refresh: :defer
+               ) do
+          {:ok, caster}
+        end
+
+      :pre_renewal ->
+        :ok =
+          StatusInterpreter.remove_status(:player, caster_id, :sc_dancing, owner_refresh: :defer)
+
+        {:ok, caster}
     end
   end
 end
