@@ -9,7 +9,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance
+  alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats
   alias Aesir.ZoneServer.Unit.Player.Stats.Equipment
@@ -115,21 +117,53 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydanceTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic drains 5 plus 5 per level SP from every enemy in radius" do
+  test "classic places a 30-second enemy field with three-second SP drain" do
+    caster = player_state()
+    :ok = MapFlags.set_runtime("prontera", :pvp, true)
+    assert :ok = DcUglydance.validate(caster, :self, 3, DcUglydance.definition())
+    reject(&Combat.splash_targets/4)
+
+    expect(Performance, :perform, fn ^caster, definition, 3, nil, [], opts ->
+      assert definition.duration == List.duplicate(30_000, 5)
+      assert opts[:kind] == :dance
+      assert opts[:reach] == :enemy
+      assert opts[:linger_ms] == 0
+      assert opts[:upkeep] == 3
+      assert opts[:tick] == :ugly_dance
+      assert opts[:tick_interval] == 3_000
+      {:ok, caster}
+    end)
+
+    assert {:ok, ^caster} = DcUglydance.cast(caster, :self, 3, DcUglydance.definition())
+  end
+
+  @tag game_mode: :pre_renewal
+  test "mob casting keeps the immediate splash" do
     Mimic.copy(Resource)
 
-    for {amount, level} <- Enum.with_index([10, 15, 20, 25, 30], 1) do
-      caster = player_state()
+    mob = %MobState{
+      instance_id: @caster_id,
+      mob_id: 1002,
+      mob_data: nil,
+      spawn_ref: nil,
+      x: 10,
+      y: 20,
+      map_name: "prontera",
+      hp: 100,
+      max_hp: 100,
+      sp: 100,
+      max_sp: 100,
+      spawned_at: 0
+    }
 
-      expect(Combat, :splash_targets, fn "prontera", {10, 20}, 4, @caster_id ->
-        [{:player, 2_000}, {:mob, 3_000}]
-      end)
+    expect(Combat, :splash_targets, fn "prontera", {10, 20}, 4, @caster_id ->
+      [{:player, 2_000}]
+    end)
 
-      expect(Resource, :drain_sp, fn :player, 2_000, ^amount -> :ok end)
-      expect(Resource, :drain_sp, fn :mob, 3_000, ^amount -> :ok end)
+    expect(Resource, :drain_sp, fn :player, 2_000, 20 -> :ok end)
+    reject(&Performance.perform/6)
 
-      assert {:ok, %{last_song: %{skill_id: 325, level: ^level}}} =
-               DcUglydance.cast(caster, :self, level, DcUglydance.definition())
-    end
+    assert {:ok, ^mob} =
+             DcUglydance.cast(mob, {:unit, @caster_id}, 3, DcUglydance.definition())
   end
 end

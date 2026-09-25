@@ -318,10 +318,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic replay runs one effect and commits half the classic SP with no cooldown or delay" do
+  test "classic replay starts one Dissonance field and commits half SP without delay" do
     caster = player(%{skill_id: 317, level: 5})
+    reject(&Combat.execute_magic_splash/4)
 
-    expect(Combat, :execute_magic_splash, 1, fn _caster, {10, 20}, 4, _opts -> [] end)
+    expect(Performance, :perform, fn ^caster, _definition, 5, nil, [], opts ->
+      assert opts[:tick] == :dissonance
+      assert opts[:kind] == :song
+      {:ok, Song.remember(caster, 317, 5)}
+    end)
 
     assert {:ok, updated} = Interpreter.cast(caster, @encore_id, 1, :self)
     assert updated.stats.current_state.sp == 85

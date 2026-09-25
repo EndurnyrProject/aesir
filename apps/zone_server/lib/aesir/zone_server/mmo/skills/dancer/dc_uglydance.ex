@@ -4,10 +4,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   of the performer on versus maps, needing a whip.
 
   Renewal: drains 10 plus 2 per level SP, a 1 s cast plus 0.3 s fixed, a 0.3 s
-  delay, and a 5 s cooldown. Pre-renewal: drains 5 plus 5 per level plus level
-  times Dancing Lesson SP with an instant cast and no cooldown. The source ticks
-  the drain every 3 s for 30 s from a ground unit; this module applies one drain at
-  the cast in both modes until the ground-song subsystem lands.
+  delay and a 5 s cooldown. Pre-renewal places a 30-second 7x7 enemy field
+  draining 5 plus 5 per level plus level times Dancing Lesson SP every 3 s,
+  with an instant cast and no cooldown. Its performer pays 1 SP every 3 s.
+  Mob casts remain an immediate splash in both modes.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -18,6 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
     target_type: :self,
     damage_type: :no_damage,
     splash_radius: 4,
+    duration: [renewal: [], pre_renewal: List.duplicate(30_000, 5)],
     sp_cost: [23, 26, 29, 32, 35],
     cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
@@ -32,6 +33,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
@@ -48,8 +50,23 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Dancer.DcUglydance do
   end
 
   @impl Active
-  def cast(%PlayerState{} = caster, :self, level, definition),
-    do: cast_self(caster, caster.character_id, level, definition)
+  def cast(%PlayerState{} = caster, :self, level, definition) do
+    case GameMode.mode() do
+      :renewal ->
+        cast_self(caster, caster.character_id, level, definition)
+
+      :pre_renewal ->
+        Performance.perform(caster, definition, level, nil, [],
+          kind: :dance,
+          reach: :enemy,
+          linger_ms: 0,
+          upkeep: 3,
+          tick: :ugly_dance,
+          tick_interval: 3_000,
+          lesson_level: Caster.lesson_level(caster, @lesson_id)
+        )
+    end
+  end
 
   def cast(%MobState{} = caster, {:unit, id}, level, definition) when id == caster.instance_id,
     do: cast_self(caster, caster.instance_id, level, definition)

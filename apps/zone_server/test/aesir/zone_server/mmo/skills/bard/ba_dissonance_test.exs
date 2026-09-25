@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobState
@@ -71,6 +72,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
     assert definition.cooldown == List.duplicate(5_000, 5)
   end
 
+  @tag game_mode: :renewal
   test "each level executes one enemy neutral magic radius-four splash with exact job scaling" do
     for {level, job_level} <- [{1, 1}, {2, 7}, {3, 23}, {4, 49}, {5, 50}] do
       caster = player_state(job_level)
@@ -170,6 +172,26 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonanceTest do
       max_sp: 100,
       spawned_at: 0
     }
+  end
+
+  @tag game_mode: :pre_renewal
+  test "classic Dissonance places a ticking enemy field instead of splashing" do
+    caster = player_state(50)
+    reject(&Combat.execute_magic_splash/4)
+
+    expect(Performance, :perform, fn ^caster, definition, 3, nil, [], opts ->
+      assert definition.id == 317
+      assert definition.duration == List.duplicate(30_000, 5)
+      assert opts[:kind] == :song
+      assert opts[:reach] == :enemy
+      assert opts[:linger_ms] == 0
+      assert opts[:upkeep] == 3
+      assert opts[:tick] == :dissonance
+      assert opts[:tick_interval] == 3_000
+      {:ok, caster}
+    end)
+
+    assert {:ok, ^caster} = BaDissonance.cast(caster, :self, 3, BaDissonance.definition())
   end
 
   @tag game_mode: :pre_renewal

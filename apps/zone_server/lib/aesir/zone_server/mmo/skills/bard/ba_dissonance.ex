@@ -1,11 +1,12 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
   @moduledoc """
-  Dissonance (BA_DISSONANCE). A song dealing periodic neutral magic damage to
-  enemies within 4 cells of the performer, needing an instrument.
+  Dissonance (BA_DISSONANCE). A song needing an instrument.
 
-  Renewal: a 1 s cast plus 0.3 s fixed, a 0.3 s delay, a 5 s cooldown, and 35 to 47
-  SP. Pre-renewal: an instant cast with no cooldown for 18 to 30 SP; the classic
-  ground-field model is deferred to a skill-unit performance subsystem.
+  Renewal immediately splashes neutral magic damage within 4 cells, with a
+  1 s cast plus 0.3 s fixed, a 0.3 s delay, a 5 s cooldown and 35 to 47 SP.
+  Pre-renewal places a 30-second 7x7 enemy field, dealing neutral misc damage
+  every 3 seconds and costing 1 SP every 3 seconds. Mob casts remain immediate
+  splashes in either mode.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -20,6 +21,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
     range: 0,
     hit_count: 1,
     splash_radius: 4,
+    duration: [renewal: [], pre_renewal: List.duplicate(30_000, 5)],
     sp_cost: [renewal: [35, 38, 41, 44, 47], pre_renewal: [18, 21, 24, 27, 30]],
     cast_time: [renewal: List.duplicate(1_000, 5), pre_renewal: []],
     fixed_cast_time: [renewal: List.duplicate(300, 5), pre_renewal: []],
@@ -29,15 +31,33 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaDissonance do
 
   use Aesir.ZoneServer.Mmo.Skill.Performance
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Unit.Mob.MobState
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
   @impl Active
-  def cast(%PlayerState{} = caster, :self, level, definition),
-    do: cast_self(caster, level, definition)
+  def cast(%PlayerState{} = caster, :self, level, definition) do
+    case GameMode.mode() do
+      :renewal ->
+        cast_self(caster, level, definition)
+
+      :pre_renewal ->
+        Performance.perform(caster, definition, level, nil, [],
+          kind: :song,
+          reach: :enemy,
+          linger_ms: 0,
+          upkeep: 3,
+          tick: :dissonance,
+          tick_interval: 3_000,
+          lesson_level: Caster.lesson_level(caster, 315)
+        )
+    end
+  end
 
   def cast(%MobState{instance_id: id} = caster, {:unit, id}, level, definition),
     do: cast_self(caster, level, definition)
