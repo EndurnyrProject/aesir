@@ -34,6 +34,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
      `allow_while_moving`. Sitting does **not** speed it up; the separate
      `ssregen` channel handles MO_SPIRITSRECOVERY/TK recovery below.
      `skill_sp_regen` (MG_SRECOVERY) feeds the analogous skill SP channel.
+     `skill_hp_regen_rate` and `skill_sp_regen_rate` adjust these channels'
+     effective interval independently (percent deltas; -100 disables each).
   4. **Sitting skill HP/SP regen** — flat amounts from Spiritual Cadence,
      interval 10000ms. This separate channel advances only while sitting and
      preserves paused progress otherwise; it does not use status recovery modifiers.
@@ -76,6 +78,8 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
   @type regen_modifiers :: %{
           optional(:hp_regen) => integer(),
           optional(:sp_regen) => integer(),
+          optional(:skill_hp_regen_rate) => integer(),
+          optional(:skill_sp_regen_rate) => integer(),
           optional(:regen_interval_multiplier) => pos_integer()
         }
 
@@ -172,7 +176,7 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
       channel(
         skill_hp_allowed?,
         passive_regen.skill_hp_regen,
-        100,
+        rate(regen_modifiers, :skill_hp_regen_rate),
         @skill_interval,
         false,
         Map.get(accumulators, :skill_hp_acc, 0),
@@ -196,7 +200,7 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHeal do
       channel(
         skill_sp_allowed?,
         passive_regen.skill_sp_regen,
-        100,
+        rate(regen_modifiers, :skill_sp_regen_rate),
         @skill_interval,
         false,
         Map.get(accumulators, :skill_sp_acc, 0),

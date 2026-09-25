@@ -391,7 +391,15 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobState do
       },
       combat_stats: %{
         hit: formulas.calculate_hit(mob_data) + modifier(modifiers, :hit),
-        flee: formulas.calculate_flee(mob_data) + modifier(modifiers, :flee),
+        flee:
+          max(
+            div(
+              (formulas.calculate_flee(mob_data) + modifier(modifiers, :flee)) *
+                (100 + modifier(modifiers, :flee_rate)),
+              100
+            ),
+            1
+          ),
         perfect_dodge: formulas.calculate_perfect_dodge(mob_data),
         def:
           formulas.calculate_defense(mob_data) + modifier(modifiers, :def) +

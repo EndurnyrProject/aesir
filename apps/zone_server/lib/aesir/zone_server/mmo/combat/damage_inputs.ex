@@ -292,7 +292,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageInputs do
       _missing ->
         mdef_rate = Map.get(modifiers, :mdef_rate, 0)
         hard = trunc(defender.combat_stats.mdef * (100 + mdef_rate) / 100)
-        {hard, defender.combat_stats.soft_mdef}
+        soft_rate = Map.get(modifiers, :mdef2_rate, 0)
+        soft = trunc(defender.combat_stats.soft_mdef * (100 + soft_rate) / 100)
+        {hard, soft}
     end
   end
 

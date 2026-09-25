@@ -26,6 +26,17 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
     def modifiers(instance, _context), do: %{atk: instance.val1}
   end
 
+  defmodule TestFleeRate do
+    @moduledoc false
+    use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+      id: :sc_test_mob_flee_rate,
+      no_dispel: false,
+      properties: [:debuff]
+
+    @impl true
+    def modifiers(_instance, _context), do: %{flee_rate: -50}
+  end
+
   defp build_mob_state do
     mob_data = %MobDefinition{
       id: 1001,
@@ -337,6 +348,16 @@ defmodule Aesir.ZoneServer.Unit.Mob.MobStateTest do
   end
 
   describe "to_combatant/1 status modifiers" do
+    test "flee_rate halves final mob FLEE" do
+      state = build_mob_state()
+      Registry.register_module(TestFleeRate)
+      UnitRegistry.register_unit(:mob, state.instance_id, MobState, state, self())
+      baseline = MobState.to_combatant(state).combat_stats.flee
+
+      :ok = StatusStorage.apply_status(:mob, state.instance_id, TestFleeRate.id())
+      assert MobState.to_combatant(state).combat_stats.flee == div(baseline, 2)
+    end
+
     test "an ATK-raising status on the mob raises combat_stats.atk" do
       state = build_mob_state()
       Registry.register_module(TestAtkBuff)

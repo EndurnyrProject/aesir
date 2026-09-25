@@ -147,6 +147,24 @@ defmodule Aesir.ZoneServer.Unit.Player.NaturalHealTest do
   describe "compute/6 skill HP regen (SM_RECOVERY)" do
     @skill_passive %{skill_hp_regen: 30, skill_sp_regen: 0, allow_while_moving: false}
 
+    test "skill-channel rates triple or zero the corresponding passive regen without altering base regen" do
+      s = stats(vit: 1, int: 1, max_hp: 4_000, max_sp: 500, hp: 100, sp: 1)
+      passive = %{skill_hp_regen: 30, skill_sp_regen: 20, allow_while_moving: false}
+
+      for {rates, expected_hp, expected_sp} <- [
+            {%{}, 30, 20},
+            {%{skill_hp_regen_rate: 200, skill_sp_regen_rate: 200}, 90, 60},
+            {%{skill_hp_regen_rate: -100, skill_sp_regen_rate: -100}, 0, 0}
+          ] do
+        {hp, sp, _acc} = NaturalHeal.compute(s, :idle, :standing, rates, passive, acc(10_000))
+
+        {base_hp, base_sp, _acc} =
+          NaturalHeal.compute(s, :idle, :standing, rates, @no_passive, acc(10_000))
+
+        assert {hp - base_hp, sp - base_sp} == {expected_hp, expected_sp}
+      end
+    end
+
     test "a single 10s tick yields the skill amount on top of base regen while standing-idle" do
       s = stats(vit: 1, max_hp: 4000, hp: 100)
 

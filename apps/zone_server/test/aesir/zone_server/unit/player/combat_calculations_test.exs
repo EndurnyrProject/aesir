@@ -66,6 +66,17 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculationsTest do
       assert CombatCalculations.calculate_hit(stats) == base_hit + 20
     end
 
+    test "flee_rate scales final FLEE after flat bonuses and keeps the floor" do
+      stats = create_test_stats()
+      base_flee = CombatCalculations.calculate_flee(stats)
+
+      stats = %{stats | modifiers: %{stats.modifiers | status_effects: %{flee_rate: -50}}}
+      assert CombatCalculations.calculate_flee(stats) == div(base_flee * 50, 100)
+
+      stats = %{stats | modifiers: %{stats.modifiers | status_effects: %{flee_rate: -200}}}
+      assert CombatCalculations.calculate_flee(stats) == 1
+    end
+
     test "FLEE includes status, equipment and passive bonuses" do
       stats = create_test_stats()
       base_flee = CombatCalculations.calculate_flee(stats)

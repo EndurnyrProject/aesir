@@ -62,7 +62,9 @@ defmodule Aesir.ZoneServer.Unit.Player.CombatCalculations do
         do: base_flee - div(base_flee * 20, 100),
         else: base_flee
 
-    max(adjusted_flee + Stats.get_status_modifier(stats, :flee), 1)
+    flee = adjusted_flee + Stats.get_status_modifier(stats, :flee)
+    rate = stats.modifiers |> Map.get(:status_effects, %{}) |> Map.get(:flee_rate, 0)
+    max(div(flee * (100 + rate), 100), 1)
   end
 
   @doc "Calculates player perfect dodge under the active ruleset."
