@@ -34,6 +34,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                # Stats.get_status_modifier/2 call sites + MobState.to_combatant
                :hit,
                :flee,
+               :flee_rate,
                :atk,
                :def,
                :matk,
@@ -72,6 +73,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                :matk_rate,
                :max_weapon_damage,
                :mdef_rate,
+               :mdef2_rate,
+               :post_defense_atk,
+               :post_defense_atk_excludes,
                :phys_damage_reduction,
                :vit_bonus,
                :watk,
@@ -86,6 +90,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.ModifierReadersTest do
                # NaturalHeal / handlers / Skill.Interpreter / Script.Dsl
                :hp_regen,
                :sp_regen,
+               :skill_hp_regen_rate,
+               :skill_sp_regen_rate,
                :exp_rate,
                :job_exp_rate,
                :drop_rate,
