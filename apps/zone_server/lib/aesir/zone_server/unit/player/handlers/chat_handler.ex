@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler do
 
   alias Aesir.Net.ChatMessage
   alias Aesir.ZoneServer.Gm.Dispatcher
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Broadcast
 
@@ -32,6 +33,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ChatHandler do
 
       command = gm_command(raw_message, name_prefix) ->
         Dispatcher.dispatch(command, %{game_state: game_state, connection_pid: connection_pid})
+
+      String.starts_with?(raw_message, name_prefix) and
+          not Interpreter.can_chat?(:player, game_state.character_id) ->
+        Logger.debug("Area chat blocked by status for player #{game_state.character_id}")
 
       String.starts_with?(raw_message, name_prefix) ->
         packet = %ChatMessage{gid: game_state.character_id, message: raw_message}

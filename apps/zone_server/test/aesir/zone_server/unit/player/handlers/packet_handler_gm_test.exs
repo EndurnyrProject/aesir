@@ -6,7 +6,10 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerGmTest do
   alias Aesir.Commons.Models.Account
   alias Aesir.Net.ChatMessage
   alias Aesir.Net.ChatRequest
+  alias Aesir.StatusActionFixture
   alias Aesir.ZoneServer.Mmo.ItemManagement
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
 
@@ -49,6 +52,21 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerGmTest do
     after
       timeout -> flunk("Expected a ChatMessage within #{timeout}ms")
     end
+  end
+
+  test "action-restricted area chat is dropped while GM commands still dispatch" do
+    Registry.register_module(StatusActionFixture)
+
+    :ok =
+      StatusStorage.apply_status(:player, @char_id, StatusActionFixture.id(), duration: 30_000)
+
+    state = state_for(seed_account(0))
+
+    assert {:noreply, ^state} = PacketHandler.handle_message(chat("hello"), state)
+    refute_received {:send, _, {:chat_message, _}}
+
+    assert {:noreply, ^state} = PacketHandler.handle_message(chat("@item 501 1"), state)
+    assert %ChatMessage{message: "Insufficient permission"} = receive_chat_message()
   end
 
   test "a GM giving an item to self gets a feedback ChatMessage and no broadcast" do

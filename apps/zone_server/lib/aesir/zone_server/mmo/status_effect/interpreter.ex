@@ -717,6 +717,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   def can_use_skill?(unit_type, unit_id),
     do: not restricted?(unit_type, unit_id, &prevents_skills?/1)
 
+  @doc "Returns whether a unit may use items while status effects are active."
+  @spec can_use_item?(unit_type(), integer()) :: boolean()
+  def can_use_item?(unit_type, unit_id),
+    do: not restricted?(unit_type, unit_id, &PropertyChecker.prevents_items?/1)
+
+  @doc "Returns whether a unit may send area chat while status effects are active."
+  @spec can_chat?(unit_type(), integer()) :: boolean()
+  def can_chat?(unit_type, unit_id),
+    do: not restricted?(unit_type, unit_id, &PropertyChecker.prevents_chat?/1)
+
+  @doc "Returns whether active statuses block equipment changes."
+  @spec equip_change_blocked?(unit_type(), integer()) :: boolean()
+  def equip_change_blocked?(unit_type, unit_id),
+    do: restricted?(unit_type, unit_id, &PropertyChecker.prevents_equip_change?/1)
+
   @doc """
   Returns whether a unit may cast a specific skill.
 

@@ -71,7 +71,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
 
     case Inventory.equip(game_state.inventory, server_index, position, ctx) do
       {:ok, new_inventory, {:equipped, _index, mask, _unequipped} = change} ->
-        if any_slot_blocked?(game_state.character_id, mask) do
+        if StatusInterpreter.equip_change_blocked?(:player, game_state.character_id) or
+             any_slot_blocked?(game_state.character_id, mask) do
           send_packet(state, equip_failure_result(server_index, :fail))
           {:noreply, state}
         else
@@ -91,7 +92,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandler do
   def handle_unequip(server_index, %{game_state: game_state} = state) do
     case Inventory.unequip(game_state.inventory, server_index) do
       {:ok, new_inventory, {:unequipped, _index} = change} ->
-        commit_unequip(server_index, new_inventory, change, state)
+        if StatusInterpreter.equip_change_blocked?(:player, game_state.character_id) do
+          send_packet(state, unequip_failure_result(server_index))
+          {:noreply, state}
+        else
+          commit_unequip(server_index, new_inventory, change, state)
+        end
 
       {:error, _reason} ->
         send_packet(state, unequip_failure_result(server_index))

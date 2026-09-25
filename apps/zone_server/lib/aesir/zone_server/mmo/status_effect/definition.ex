@@ -30,7 +30,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
 
     - `:id` - the status identifier atom (required, e.g. `:sc_poison`)
     - `:metadata` - status-specific metadata exposed to consumers
-    - `:properties` - list of known properties (`:buff`, `:debuff`, etc.)
+    - `:properties` - list of known properties (`:buff`, `:debuff`, etc.);
+      `:prevents_items`, `:prevents_chat`, and `:prevents_equip_change` block
+      the corresponding player actions while the status is active
     - `:calc_flags` - stat recalculation flags
     - `:flags` - behavior flags (`:no_move`, `:no_attack`, ...)
     - `:prevented_by` - statuses that prevent this one from being applied
@@ -277,6 +279,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     :damage_over_time,
     :prevents_movement,
     :prevents_skills,
+    :prevents_items,
+    :prevents_chat,
+    :prevents_equip_change,
     :prevents_attack,
     :untargetable,
     :conceals,

@@ -9,9 +9,12 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
   alias Aesir.Commons.StatusParams
   alias Aesir.Net.EquipResult
   alias Aesir.Net.ItemBound
+  alias Aesir.Net.UnequipResult
+  alias Aesir.StatusActionFixture
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
   alias Aesir.ZoneServer.Party.Member
@@ -127,6 +130,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.EquipmentHandlerTest do
              EquipmentHandler.handle_equip(0, 2, state)
 
     assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 0}}}
+  end
+
+  test "active status refuses equip and unequip without changing inventory" do
+    Registry.register_module(StatusActionFixture)
+    :ok = StatusStorage.apply_status(:player, 1000, StatusActionFixture.id(), duration: 30_000)
+
+    game_state = PlayerState.new(%{character() | class: 1, base_level: 99})
+    sword = %InventoryItem{nameid: 1101, amount: 1, identify: 1}
+    worn = %InventoryItem{nameid: 1101, amount: 1, identify: 1, equip: 2}
+
+    state = %{
+      connection_pid: self(),
+      game_state: %{game_state | inventory: %{0 => sword, 1 => worn}}
+    }
+
+    reject(&InventoryOps.apply_change/4)
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_equip(0, 2, state)
+    assert_receive {:send, :gameplay, {:equip_result, %EquipResult{index: 2, result: 2}}}
+
+    assert {:noreply, ^state} = EquipmentHandler.handle_unequip(1, state)
+    assert_receive {:send, :gameplay, {:unequip_result, %UnequipResult{index: 3, result: 1}}}
   end
 
   test "binds an unbound bind-on-equip item and notifies the client" do

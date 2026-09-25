@@ -82,6 +82,18 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker do
     has_property?(status_id, :prevents_skills)
   end
 
+  @doc "Returns whether a status prevents item use."
+  @spec prevents_items?(atom()) :: boolean()
+  def prevents_items?(status_id), do: has_property?(status_id, :prevents_items)
+
+  @doc "Returns whether a status prevents area chat."
+  @spec prevents_chat?(atom()) :: boolean()
+  def prevents_chat?(status_id), do: has_property?(status_id, :prevents_chat)
+
+  @doc "Returns whether a status prevents equipment changes."
+  @spec prevents_equip_change?(atom()) :: boolean()
+  def prevents_equip_change?(status_id), do: has_property?(status_id, :prevents_equip_change)
+
   @doc """
   Check if a status prevents attacking.
 

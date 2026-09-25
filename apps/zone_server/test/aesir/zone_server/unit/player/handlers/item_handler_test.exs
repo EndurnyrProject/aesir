@@ -8,11 +8,14 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
   alias Aesir.Net.ItemRemoved
   alias Aesir.Net.ItemUseResult
   alias Aesir.Net.UseItem
+  alias Aesir.StatusActionFixture
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Map.Cell
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.ItemManagement.Items
   alias Aesir.ZoneServer.Mmo.ItemManagement.ScriptCompiler
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.ItemEffectHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.InventoryOps
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
@@ -348,6 +351,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.ItemHandlerTest do
       state = state_with_potion()
 
       assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+
+      assert_received {:send, :gameplay,
+                       {:item_use_result,
+                        %ItemUseResult{index: @red_potion_client_index, ok: false}}}
+
+      refute_received {:send, :gameplay, {:item_removed, _}}
+    end
+  end
+
+  describe "handle_use_item/2 with item use blocked by a status" do
+    test "rejects a consumable without consuming it" do
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+      Registry.register_module(StatusActionFixture)
+      :ok = StatusStorage.apply_status(:player, 1000, StatusActionFixture.id(), duration: 30_000)
+
+      state = state_with_potion()
+      definition = usable_definition(@red_potion_id, "heal(ctx, hp: 50)")
+      stub(Items, :by_id, fn @red_potion_id -> {:ok, definition} end)
+      reject(&InventoryOps.remove/4)
+
+      assert {:noreply, ^state} = ItemHandler.handle_use_item(@red_potion_client_index, state)
+      assert state.game_state.inventory[@red_potion_slot].amount == 5
 
       assert_received {:send, :gameplay,
                        {:item_use_result,

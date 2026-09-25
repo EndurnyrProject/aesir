@@ -1,6 +1,8 @@
 defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.ZoneServer.Mmo.StatusEffect.PropertyChecker
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEntry
 
   defmodule MinimalStatus do
@@ -51,6 +53,29 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DefinitionTest do
   end
 
   describe "use macro" do
+    test "action restriction properties compile and are queryable" do
+      defmodule ActionRestricted do
+        use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
+          id: :sc_test_action_restricted,
+          no_dispel: false,
+          properties: [:prevents_items, :prevents_chat, :prevents_equip_change]
+      end
+
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+      Registry.register_module(ActionRestricted)
+      Registry.register_module(MinimalStatus)
+
+      for {property, predicate} <- [
+            {:prevents_items, &PropertyChecker.prevents_items?/1},
+            {:prevents_chat, &PropertyChecker.prevents_chat?/1},
+            {:prevents_equip_change, &PropertyChecker.prevents_equip_change?/1}
+          ] do
+        assert property in ActionRestricted.metadata().properties
+        assert predicate.(:sc_test_action_restricted)
+        refute predicate.(:sc_test_minimal)
+      end
+    end
+
     test "generates id/0 from metadata" do
       assert MinimalStatus.id() == :sc_test_minimal
       assert FullStatus.id() == :sc_test_full
