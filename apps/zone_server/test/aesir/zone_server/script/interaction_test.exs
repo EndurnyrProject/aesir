@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
 
   @moduletag :capture_log
 
+  alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Script.Ctx
@@ -132,6 +133,7 @@ defmodule Aesir.ZoneServer.Script.InteractionTest do
 
     assert_receive {:send, _ch, {:npc_dialog, %NpcDialog{expect: :NEXT}}}
     assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 1_000
+    assert_received {:send, _ch, {:cutin, %Cutin{image: "", type: 255}}}
   end
 
   test "a todo stub raise ends the interaction without killing the session" do

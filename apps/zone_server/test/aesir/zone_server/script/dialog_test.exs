@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Script.DialogTest do
   use ExUnit.Case, async: true
 
+  alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.ZoneServer.Script.Ctx
@@ -92,6 +93,15 @@ defmodule Aesir.ZoneServer.Script.DialogTest do
 
       assert_received {:send, _ch, {:npc_dialog, %NpcDialog{expect: :CLOSE, text: "bye"}}}
       assert result.page == []
+    end
+  end
+
+  describe "cancel" do
+    test "clears any displayed cutin before the dialog ends" do
+      ctx = build_ctx()
+      assert_cancel_exits(fn -> Dsl.select(ctx, ["A"]) end)
+
+      assert_received {:send, _ch, {:cutin, %Cutin{image: "", type: 255}}}
     end
   end
 

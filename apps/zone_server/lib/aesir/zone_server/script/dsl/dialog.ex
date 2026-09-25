@@ -10,6 +10,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
 
   require Logger
 
+  alias Aesir.Net.Cutin
   alias Aesir.Net.NpcDialog
   alias Aesir.Net.NpcInteract
   alias Aesir.Net.ProgressBar
@@ -134,6 +135,8 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
   # interaction holds in `ctx.session_ref` — and the idle deadline for an
   # abandoned window. (Sphinx Mask's "No deal" is an explicit menu option, a
   # `:choice`, not an ESC, so uniform exit-on-cancel does not lose any flow.)
+  # Cancel and idle timeout clear any displayed cutin first (rAthena
+  # `pc_close_npc`), since the script's own `cutin "", 255` never runs.
   @spec await(Ctx.t(), atom()) :: term()
   defp await(%Ctx{npc_gid: gid, session_ref: session_ref} = ctx, expected) do
     receive do
@@ -141,7 +144,7 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
         value
 
       {:npc_interact, %NpcInteract{npc_id: ^gid, response: {:cancel, _}}} ->
-        exit(:normal)
+        abandon(ctx)
 
       {:npc_interact, %NpcInteract{}} ->
         await(ctx, expected)
@@ -152,8 +155,14 @@ defmodule Aesir.ZoneServer.Script.Dsl.Dialog do
       # Exit :normal (not a custom reason) so the abandoned-window cleanup
       # doesn't spam the supervisor's task-terminated error log. The session
       # clears the lock on the monitor :DOWN regardless of reason.
-      dialog_idle_timeout() -> exit(:normal)
+      dialog_idle_timeout() -> abandon(ctx)
     end
+  end
+
+  @spec abandon(Ctx.t()) :: no_return()
+  defp abandon(%Ctx{connection_pid: connection_pid}) do
+    MessageRouter.send_to(connection_pid, %Cutin{image: "", type: 255})
+    exit(:normal)
   end
 
   @doc """
