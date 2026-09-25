@@ -33,6 +33,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurabladeTest do
     assert %{val1: 3} = StatusStorage.get_status(:player, sword.character_id, :sc_aurablade)
   end
 
+  test "both modes accept a listed bow but reject bare fists" do
+    bow = put_in(player().stats.equipment, %Equipment{right_hand: 1701})
+
+    for mode <- [:renewal, :pre_renewal] do
+      definition = LkAurablade.definition(mode)
+      assert :bow in definition.require_weapon
+      assert :knuckle in definition.require_weapon
+      refute :fist in definition.require_weapon
+      assert :ok = LkAurablade.validate(bow, :self, 1, definition)
+    end
+  end
+
   test "mob caster bypasses the player weapon gate" do
     mob_data = %MobDefinition{
       id: 1003,

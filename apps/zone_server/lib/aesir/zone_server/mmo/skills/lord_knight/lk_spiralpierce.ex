@@ -18,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierce do
     target_type: :target_enemy,
     damage_type: :damage,
     range: 4,
-    hit_count: 1,
+    hit_count: 5,
     sp_cost: [18, 21, 24, 27, 30],
     require_weapon: [
       renewal: [:one_handed_sword, :two_handed_sword, :one_handed_spear, :two_handed_spear],

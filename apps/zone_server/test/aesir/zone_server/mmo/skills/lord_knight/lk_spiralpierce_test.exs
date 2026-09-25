@@ -29,6 +29,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkSpiralpierceTest do
     :ok
   end
 
+  test "both modes declare five displayed hits" do
+    for mode <- [:renewal, :pre_renewal] do
+      assert LkSpiralpierce.definition(mode).hit_count == 5
+    end
+  end
+
   @tag game_mode: :renewal
   test "Renewal level five uses spear weight, medium size, and base level" do
     {:ok, definition} = Catalog.by_name(:lk_spiralpierce)

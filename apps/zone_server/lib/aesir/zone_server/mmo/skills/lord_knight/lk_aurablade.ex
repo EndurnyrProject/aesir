@@ -1,6 +1,7 @@
 defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurablade do
   @moduledoc """
-  Aura Blade (LK_AURABLADE) grants a self-buff while a melee weapon is equipped.
+  Aura Blade (LK_AURABLADE) grants a self-buff with a listed weapon equipped,
+  including bows and knuckles but not bare fists.
 
   Renewal adds level-scaled post-defense ATK; pre-renewal grants a flat bonus
   except for Spiral Pierce. Both modes last 40–120 seconds by skill level.
@@ -23,9 +24,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.LordKnight.LkAurablade do
       :mace,
       :two_handed_mace,
       :staff,
+      :bow,
+      :knuckle,
+      :musical,
       :whip,
       :book,
-      :katar
+      :katar,
+      :revolver,
+      :rifle,
+      :gatling,
+      :shotgun,
+      :grenade,
+      :huuma
     ],
     sp_cost: [18, 26, 34, 42, 50],
     duration: [40_000, 60_000, 80_000, 100_000, 120_000]
