@@ -83,6 +83,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.VendingOpenRequest
   alias Aesir.Net.VendingPurchaseRequest
   alias Aesir.Net.WaitingRoomChatRequest
+  alias Aesir.Net.WaitingRoomCreateRequest
   alias Aesir.Net.WaitingRoomJoinRequest
   alias Aesir.Net.WaitingRoomLeaveRequest
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
@@ -224,7 +225,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   # SU_BASIC_SKILL >= 1 which is not yet implemented):
   #   - sit/stand    >= 3  (clif.cpp:11739) -- implemented below
   #   - emotion      >= 2  (clif.cpp:11636) -- NOTE: no emotion handler yet
-  #   - chat room    >= 4  (clif.cpp:12378) -- NOTE: no chat-room creation yet
+  #   - chat room    >= 4  (clif.cpp:12378) -- enforced in WaitingRoomHandler.create/5
   #   - party create >= 7  (clif.cpp:13806) -- NOTE: no party handler yet
   def handle_message(%ActionRequest{target_id: target_id, action: action}, state)
       when action in [0, 7] do
@@ -634,9 +635,22 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
     NpcShopHandler.sell(state, msg)
   end
 
-  # WaitingRoomJoinRequest - Player joins an NPC waiting room (clicks its bubble).
-  def handle_message(%WaitingRoomJoinRequest{room_id: room_id}, state) do
-    WaitingRoomHandler.join(state, room_id)
+  # WaitingRoomJoinRequest - Player joins a chat room (clicks its bubble).
+  def handle_message(%WaitingRoomJoinRequest{room_id: room_id, password: password}, state) do
+    WaitingRoomHandler.join(state, room_id, password)
+  end
+
+  # WaitingRoomCreateRequest - Player opens their own chat room (NV_BASIC >= 4).
+  def handle_message(
+        %WaitingRoomCreateRequest{
+          title: title,
+          password: password,
+          limit: limit,
+          public: public?
+        },
+        state
+      ) do
+    WaitingRoomHandler.create(state, title, password, limit, public?)
   end
 
   # WaitingRoomLeaveRequest - Player leaves the waiting room they are currently in.

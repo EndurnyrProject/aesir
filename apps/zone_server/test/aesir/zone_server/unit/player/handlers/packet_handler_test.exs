@@ -16,6 +16,8 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
   alias Aesir.Net.SkillCast
   alias Aesir.Net.TradeRequest
   alias Aesir.Net.UseItem
+  alias Aesir.Net.WaitingRoomCreateRequest
+  alias Aesir.Net.WaitingRoomJoinRequest
   alias Aesir.ZoneServer.Unit.Player.Handlers.CombatActionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.GuildHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.ItemHandler
@@ -25,6 +27,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
   alias Aesir.ZoneServer.Unit.Player.Handlers.SitHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.TradeHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.SessionState
 
@@ -70,6 +73,17 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandlerTest do
 
     assert {:noreply, ^state} = PacketHandler.handle_message(request, state)
     refute_received {:send, _, _}
+  end
+
+  test "routes chat-room create and password join requests" do
+    expect(WaitingRoomHandler, :create, fn s, "T", "pw", 5, false -> {:noreply, s} end)
+    expect(WaitingRoomHandler, :join, fn s, 42, "pw" -> {:noreply, s} end)
+
+    create = %WaitingRoomCreateRequest{title: "T", password: "pw", limit: 5, public: false}
+    assert {:noreply, %{some: :state}} = PacketHandler.handle_message(create, %{some: :state})
+
+    join = %WaitingRoomJoinRequest{room_id: 42, password: "pw"}
+    assert {:noreply, %{some: :state}} = PacketHandler.handle_message(join, %{some: :state})
   end
 
   describe "room gate" do
