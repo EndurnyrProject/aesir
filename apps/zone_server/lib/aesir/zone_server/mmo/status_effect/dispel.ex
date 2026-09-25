@@ -22,10 +22,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
     in renewal anyway - `db/re/status.yml` flags every song in that list
     `NoDispell: true`, so the preceding flag check already skips them, and
     Aesir's `sc_poembragi` mirrors that. Assumptio is not implemented.
-  * **No Berserk HP-penalty guard.** `dispell.cpp:68-69` zeroes
-    `SC_BERSERK`/`SC_SATURDAYNIGHTFEVER`'s `val2` before ending them so the
-    end handler skips its HP penalty. Neither status is implemented in Aesir;
-    a future Berserk must zero its penalty here.
+  * **No Saturday Night Fever HP-penalty guard.** That status is not implemented;
+    Berserk's expiry penalty is disarmed before removal.
   * **No `bonus_script` clearing** (`BSF_REM_ON_DISPELL`): Aesir has no
     bonus-script system.
 
@@ -34,11 +32,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
   """
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
+
+  @penalty_on_expire [:sc_berserk]
 
   @doc """
   Removes every status on the target whose definition lacks `no_dispel`.
@@ -59,10 +60,24 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
         |> Enum.reject(&no_dispel?/1)
         |> Enum.map(& &1.type)
 
+      disarm_penalties(unit_type, unit_id, status_ids)
       Interpreter.remove_statuses(unit_type, unit_id, status_ids, owner_refresh: :notify)
 
       unlock_target(target)
     end
+  end
+
+  defp disarm_penalties(unit_type, unit_id, status_ids) do
+    Enum.each(status_ids, fn id ->
+      if id in @penalty_on_expire do
+        StatusStorage.update_status(
+          unit_type,
+          unit_id,
+          id,
+          &Helpers.put_state(&1, :penalty_armed, false)
+        )
+      end
+    end)
   end
 
   @spec no_dispel?(Aesir.ZoneServer.Mmo.StatusEntry.t()) :: boolean()

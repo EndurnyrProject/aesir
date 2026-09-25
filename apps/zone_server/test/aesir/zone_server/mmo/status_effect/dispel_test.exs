@@ -5,6 +5,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
   import Aesir.TestEtsSetup
 
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Helpers
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter
   alias Aesir.ZoneServer.Mmo.StatusEffect.Registry
   alias Aesir.ZoneServer.Mmo.StatusEffect.StatusDisplay
@@ -99,6 +100,26 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
       refute StatusStorage.has_status?(:player, unit_id, :sc_blind)
       assert_receive :recalculate_stats
       refute_receive :recalculate_stats
+    end
+
+    test "disarms Berserk's HP penalty before removing the status", %{unit_id: unit_id} do
+      {:ok, {_module, player, _pid}} = UnitRegistry.get_unit(:player, unit_id)
+      stats = %{player.stats | current_state: %{player.stats.current_state | hp: 500}}
+      :ok = UnitRegistry.update_unit_state(:player, unit_id, %{player | stats: stats})
+      Mimic.copy(Helpers)
+      reject(&Helpers.set_vitals/2)
+
+      :ok =
+        StatusStorage.apply_status(:player, unit_id, :sc_berserk,
+          state: %{penalty_armed: true},
+          duration: 300_000
+        )
+
+      :ok = StatusStorage.apply_status(:player, unit_id, :sc_endure, val4: 1, duration: 300_000)
+
+      assert :ok = Dispel.dispel({:player, unit_id})
+      refute StatusStorage.has_status?(:player, unit_id, :sc_berserk)
+      refute StatusStorage.has_status?(:player, unit_id, :sc_endure)
     end
 
     test "leaves no_dispel statuses alone", %{unit_id: unit_id} do
