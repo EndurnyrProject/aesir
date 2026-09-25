@@ -131,7 +131,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
   def on_touch(%Group{} = group, _mover), do: {:ok, group}
 
   # Delivers the warp through the player's session (the single writer for
-  # player state) and spends one use; a vanished session spends nothing.
+  # player state) and spends one use; a vanished session, a corpse, or a
+  # chat-room member spends nothing.
   @spec consume_warp(Group.t(), integer()) :: Group.t()
   defp consume_warp(
          %Group{state: %{uses: uses, dest: {map, x, y}} = group_state} = group,
@@ -139,7 +140,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarp do
        )
        when uses > 0 do
     with {:ok, {_module, target_state, pid}} <- UnitRegistry.get_unit(:player, player_id),
-         true <- Unit.living?(target_state) do
+         true <- Unit.living?(target_state),
+         nil <- target_state.waiting_room do
       PlayerSession.warp(pid, map, x, y)
       %{group | state: %{group_state | uses: uses - 1}}
     else

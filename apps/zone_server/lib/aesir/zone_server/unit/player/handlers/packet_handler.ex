@@ -40,6 +40,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.MountRequest
   alias Aesir.Net.MoveFromCartRequest
   alias Aesir.Net.MoveRequest
+  alias Aesir.Net.MoveStop
   alias Aesir.Net.MoveToCartRequest
   alias Aesir.Net.NameRequest
   alias Aesir.Net.NavigationCancel
@@ -85,6 +86,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
   alias Aesir.Net.WaitingRoomJoinRequest
   alias Aesir.Net.WaitingRoomLeaveRequest
   alias Aesir.ZoneServer.Mmo.Skills.Novice.NvBasic
+  alias Aesir.ZoneServer.Network.MessageRouter
   alias Aesir.ZoneServer.Unit.Homunculus.Handlers.CommandHandler, as: HomunculusCommandHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CardHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.CartHandler
@@ -121,6 +123,15 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   defguardp trading?(state) when state.trade != nil
 
+  defguardp in_room?(state)
+            when is_struct(state.game_state, PlayerState) and
+                   state.game_state.waiting_room != nil
+
+  # Chat-room members cannot walk, use or pick up items, cast, or attack (the
+  # move and attack clauses are separate below); sitting, trading, and room
+  # operations still work.
+  @room_frozen [SkillCast, GroundSkillCast, UseItem, PickupItemRequest]
+
   @trade_frozen [
     MoveRequest,
     ActionRequest,
@@ -149,6 +160,24 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.PacketHandler do
 
   def handle_message(message, state)
       when is_struct(message) and message.__struct__ in @trade_frozen and trading?(state) do
+    {:noreply, state}
+  end
+
+  def handle_message(%MoveRequest{}, state) when in_room?(state) do
+    %PlayerState{character_id: id, x: x, y: y} = state.game_state
+    MessageRouter.send_to(state.connection_pid, %MoveStop{gid: id, x: x, y: y})
+    {:noreply, state}
+  end
+
+  def handle_message(%ActionRequest{action: action}, state)
+      when action in [0, 7] and in_room?(state) do
+    Logger.debug("Dropping attack request from a chat-room member")
+    {:noreply, state}
+  end
+
+  def handle_message(message, state)
+      when is_struct(message) and message.__struct__ in @room_frozen and in_room?(state) do
+    Logger.debug("Dropping #{inspect(message.__struct__)} from a chat-room member")
     {:noreply, state}
   end
 

@@ -40,14 +40,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
     Map.merge(%{dest: @dest, uses: 8, opens_at: now_ms() - 1}, attrs)
   end
 
-  defp stub_target_session(player_id) do
+  defp stub_target_session(player_id, waiting_room \\ nil) do
     test_pid = self()
 
     stub(UnitRegistry, :get_unit, fn :player, ^player_id ->
       state = %PlayerState{
         character_id: player_id,
         action_state: :idle,
-        stats: %{current_state: %{hp: 1}}
+        stats: %{current_state: %{hp: 1}},
+        waiting_room: waiting_room
       }
 
       {:ok, {PlayerState, state, test_pid}}
@@ -162,6 +163,15 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
                AlWarp.on_touch(group(open_state()), {:player, 3000})
     end
 
+    test "skips a chat-room member and keeps the use" do
+      stub_target_session(3000, 1)
+
+      assert {:ok, %Group{state: %{uses: 8}}} =
+               AlWarp.on_touch(group(open_state()), {:player, 3000})
+
+      refute_received {:"$gen_cast", _}
+    end
+
     test "does not warp a corpse or spend a use" do
       corpse = %PlayerState{
         character_id: 3000,
@@ -179,6 +189,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Acolyte.AlWarpTest do
   end
 
   describe "on_interval/2" do
+    test "skips a chat-room member standing on the portal" do
+      stub_target_session(3000, 1)
+
+      stub(SpatialIndex, :get_all_units_in_range, fn "prt_fild08", 100, 100, 0 ->
+        [{:player, 3000}]
+      end)
+
+      assert {:ok, %Group{state: %{uses: 8}}} =
+               AlWarp.on_interval(group(open_state()), now_ms())
+
+      refute_received {:"$gen_cast", _}
+    end
+
     test "warps players standing on the portal cell once it opens" do
       stub_target_session(3000)
 
