@@ -524,6 +524,47 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "set_vitals/2" do
+    test "sets absolute HP and SP, bypassing recovery blockers and pushing updates" do
+      :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)
+      state = build_state(70, :idle)
+
+      assert {:noreply, %{game_state: %{stats: %{current_state: current}}}} =
+               HealthHandler.set_vitals([hp: :max, sp: 0], state)
+
+      assert current.hp == 100
+      assert current.sp == 0
+      assert_received {:send, _, {_, %ParamChange{var_id: @sp_hp, value: 100}}}
+      assert_received {:send, _, {_, %ParamChange{var_id: sp_id, value: 0}}}
+      assert sp_id == StatusParams.sp()
+    end
+
+    test "absolute HP 100 overrides a 5000 HP player, HP zero floors at one, and missing keys leave SP unchanged" do
+      state = build_state(4_000, :idle)
+      stats = state.game_state.stats
+
+      state =
+        put_in(state.game_state.stats, %{
+          stats
+          | derived_stats: %{stats.derived_stats | max_hp: 5_000}
+        })
+
+      {:noreply, state} = HealthHandler.set_vitals([hp: 100], state)
+      assert state.game_state.stats.current_state.hp == 100
+      assert state.game_state.stats.current_state.sp == 10
+
+      {:noreply, state} = HealthHandler.set_vitals([hp: 0], state)
+      assert state.game_state.stats.current_state.hp == 1
+      assert state.game_state.stats.current_state.sp == 10
+    end
+
+    test "dead player vitals are unchanged" do
+      state = build_state(0, :dead)
+      assert {:noreply, ^state} = HealthHandler.set_vitals([hp: :max, sp: :max], state)
+      refute_received {:send, _, _}
+    end
+  end
+
   describe "apply_forced_heal/3" do
     test "restores raw HP and SP through recovery-blocking statuses" do
       :ok = StatusStorage.apply_status(:player, 1, :sc_norecover_state)

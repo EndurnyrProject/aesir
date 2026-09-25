@@ -50,6 +50,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   alias Aesir.ZoneServer.Unit.Player.Handlers.ProgressionHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.RentalExpiry
   alias Aesir.ZoneServer.Unit.Player.Handlers.ScriptEffectHandler
+  alias Aesir.ZoneServer.Unit.Player.Handlers.SitHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillLearningHandler
   alias Aesir.ZoneServer.Unit.Player.Handlers.SkillTextInputHandler
@@ -183,6 +184,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def restore_sp(pid, amount) do
     GenServer.cast(pid, {:unit, {:restore_sp, amount}})
   end
+
+  @doc "Sets this player's HP/SP to absolute values in the owning session."
+  @spec set_vitals(pid(), keyword()) :: :ok
+  def set_vitals(pid, opts), do: GenServer.cast(pid, {:unit, {:set_vitals, opts}})
+
+  @doc "Makes this player sit if their current action state permits it."
+  @spec sit(pid()) :: :ok
+  def sit(pid), do: GenServer.cast(pid, {:action, :sit})
 
   @doc """
   Runs an attached NPC event for this player session on `module`'s `gid`
@@ -1219,6 +1228,16 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_cast({:unit, {:restore_sp, amount}}, state) do
     HealthHandler.restore_sp(amount, state)
+  end
+
+  @impl true
+  def handle_cast({:unit, {:set_vitals, opts}}, state) do
+    HealthHandler.set_vitals(opts, state)
+  end
+
+  @impl true
+  def handle_cast({:action, :sit}, state) do
+    SitHandler.handle_sit(state)
   end
 
   # Progression: GM base/job level grants (`@baselevelup`/`@joblevelup`).

@@ -1549,6 +1549,35 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSessionTest do
   end
 
   describe "cross-session health commands" do
+    test "sit casts through the owning session only when idle", %{character: character} do
+      {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
+
+      :sys.replace_state(pid, fn state ->
+        %{state | game_state: %{state.game_state | action_state: :idle}}
+      end)
+
+      assert :ok = PlayerSession.sit(pid)
+      assert %{game_state: %{action_state: :sitting}} = PlayerSession.get_state(pid)
+
+      :sys.replace_state(pid, fn state ->
+        %{state | game_state: %{state.game_state | action_state: :moving}}
+      end)
+
+      assert :ok = PlayerSession.sit(pid)
+      assert %{game_state: %{action_state: :moving}} = PlayerSession.get_state(pid)
+    end
+
+    test "set_vitals casts through the owning session", %{character: character} do
+      Mimic.copy(CharacterPersistence)
+      stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)
+
+      {:ok, pid} = PlayerSession.start_link(%{character: character, connection_pid: self()})
+      assert :ok = PlayerSession.set_vitals(pid, hp: 100, sp: 0)
+
+      assert %{game_state: %{stats: %{current_state: %{hp: 100, sp: 0}}}} =
+               PlayerSession.get_state(pid)
+    end
+
     test "resurrect revalidates and commits through the target session", %{character: character} do
       Mimic.copy(CharacterPersistence)
       stub(CharacterPersistence, :update_stats, fn _, _, _ -> {:ok, %Character{}} end)

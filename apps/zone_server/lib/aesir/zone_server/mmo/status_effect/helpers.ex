@@ -83,6 +83,21 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Helpers do
   def restore_sp(_target, _amount), do: :ok
 
   @doc """
+  Sets a player's HP/SP in their owning session, fire-and-forget.
+
+  Non-player and missing player targets are ignored.
+  """
+  @spec set_vitals(Definition.target(), keyword()) :: :ok
+  def set_vitals({:player, unit_id}, opts) do
+    case UnitRegistry.get_unit(:player, unit_id) do
+      {:ok, {_module, _state, pid}} -> PlayerSession.set_vitals(pid, opts)
+      {:error, :not_found} -> :ok
+    end
+  end
+
+  def set_vitals(_target, _opts), do: :ok
+
+  @doc """
   Returns true when the target is a player.
   """
   @spec player?(Definition.target()) :: boolean()

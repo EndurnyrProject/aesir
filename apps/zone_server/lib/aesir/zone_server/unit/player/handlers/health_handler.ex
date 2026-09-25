@@ -195,6 +195,43 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   defp maybe_record_plagiarism(game_state, _skill_id, _skill_level), do: {game_state, false}
 
   @doc """
+  Sets living player's HP/SP to absolute values, bypassing recovery blockers.
+
+  `:max` fills the resource; omitted values remain unchanged. HP is floored at
+  one and SP at zero, with both capped by their current maxima.
+  """
+  @spec set_vitals(keyword(), SessionState.t()) :: {:noreply, SessionState.t()}
+  def set_vitals(_opts, %{game_state: %{action_state: :dead}} = state), do: {:noreply, state}
+
+  def set_vitals(opts, state) do
+    stats = state.game_state.stats
+    max_hp = stats.derived_stats.max_hp
+    max_sp = stats.derived_stats.max_sp
+
+    hp =
+      case Keyword.get(opts, :hp, stats.current_state.hp) do
+        :max -> max_hp
+        value -> min(max(value, 1), max_hp)
+      end
+
+    sp =
+      case Keyword.get(opts, :sp, stats.current_state.sp) do
+        :max -> max_sp
+        value -> min(max(value, 0), max_sp)
+      end
+
+    current_state = %{stats.current_state | hp: hp, sp: sp}
+    game_state = %{state.game_state | stats: %{stats | current_state: current_state}}
+    state = StatsManager.update_game_state(state, game_state)
+
+    StatusSync.send_param(state.connection_pid, StatusParams.hp(), hp)
+    StatusSync.send_param(state.connection_pid, StatusParams.sp(), sp)
+    CharacterPersistence.update_stats(game_state.character_id, %{hp: hp, sp: sp}, async: true)
+
+    {:noreply, state}
+  end
+
+  @doc """
   Applies rAthena's forced `heal` command semantics to signed HP and SP amounts.
 
   Positive amounts restore without recovery modifiers or recovery-blocking statuses.
