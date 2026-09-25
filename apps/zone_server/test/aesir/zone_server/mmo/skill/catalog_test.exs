@@ -3,6 +3,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
 
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Definition
+  alias Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmBash
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmFatalblow
   alias Aesir.ZoneServer.Mmo.Skills.Swordsman.SmSword
@@ -228,6 +229,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogTest do
   end
 
   describe "capability indexes" do
+    test "a self-targeted performance exposes ground callbacks without replacing its cast" do
+      assert BaWhistle.__skill_capabilities__() == [:active, :ground, :performance]
+      assert {:ok, BaWhistle} = Catalog.ground_module_for(:ba_whistle)
+      assert BaWhistle.definition().target_type == :self
+      assert function_exported?(BaWhistle, :cast, 4)
+      assert function_exported?(BaWhistle, :on_place, 1)
+    end
+
     test "active_module_for/1 resolves an active skill" do
       assert {:ok, SmBash} = Catalog.active_module_for(:sm_bash)
     end
