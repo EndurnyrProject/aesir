@@ -6,6 +6,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
   alias Aesir.Net.ParamChange
   alias Aesir.ZoneServer.CharacterPersistence
   alias Aesir.ZoneServer.Mmo.Skill.Passives
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.Tensionrelax
   alias Aesir.ZoneServer.Mmo.StatusEffect.ModifierCalculator
   alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Party.Manager
@@ -128,6 +129,30 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.NaturalHealHandlerTest do
 
       assert final.game_state.stats.current_state.hp == 100
       assert final.game_state.stats.current_state.sp > 50
+    end
+
+    test "Tension Relax triples natural and skill HP healing while sitting" do
+      Aesir.TestEtsSetup.setup_ets_tables(%{})
+
+      stub(Passives, :regen, fn _ ->
+        %{skill_hp_regen: 5, skill_sp_regen: 0, allow_while_moving: false}
+      end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn :player, 1 ->
+        if StatusStorage.has_status?(:player, 1, :sc_tensionrelax),
+          do: Tensionrelax.modifiers(StatusStorage.get_status(:player, 1, :sc_tensionrelax), %{}),
+          else: %{}
+      end)
+
+      state = build_state(hp: 1, sp: 50, action: :sitting, movement: :standing)
+      {:noreply, baseline} = NaturalHealHandler.handle_tick(state, 30_000)
+      :ok = StatusStorage.apply_status(:player, 1, :sc_tensionrelax, duration: 180_000)
+      {:noreply, boosted} = NaturalHealHandler.handle_tick(state, 30_000)
+
+      baseline_gain = baseline.game_state.stats.current_state.hp - 1
+      boosted_gain = boosted.game_state.stats.current_state.hp - 1
+      assert baseline_gain == 135
+      assert boosted_gain == 3 * baseline_gain
     end
 
     test "an equipment hp_regen bonus shortens the HP interval" do
