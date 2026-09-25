@@ -242,9 +242,10 @@ defmodule Aesir.ZoneServer.EtsTable do
   end
 
   defp waiting_room_tables(seed) do
-    # NPC waiting rooms keyed by owner NPC gid: {npc_gid, WaitingRoom.t()}
+    # Chat rooms keyed by room id: {room_id, WaitingRoom.t()}. NPC rooms use the
+    # NPC gid, player rooms an allocated id; plus a {:next_id, n} counter row.
     :ets.new(
-      table_for(:npc_waiting_rooms, seed),
+      table_for(:waiting_rooms, seed),
       [:set, :public, :named_table, read_concurrency: true, write_concurrency: true]
     )
   end

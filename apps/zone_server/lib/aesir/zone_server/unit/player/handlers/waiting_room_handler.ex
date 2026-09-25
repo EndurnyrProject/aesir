@@ -45,7 +45,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandler do
     member = member(game_state)
     base_level = game_state.stats.progression.base_level
 
-    case WaitingRoom.join(room_id, member, base_level, game_state.zeny) do
+    case WaitingRoom.join(room_id, member, base_level, game_state.zeny, "", []) do
       {:ok, room} ->
         MessageRouter.send_to(pid, join_ok(room_id, room))
 

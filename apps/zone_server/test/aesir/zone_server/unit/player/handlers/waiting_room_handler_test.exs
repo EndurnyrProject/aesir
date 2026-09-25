@@ -87,7 +87,7 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.WaitingRoomHandlerTest do
 
     test "rejects with the full code when the room is at capacity" do
       assert :ok = WaitingRoom.create(@room_gid, "W", 2, 2, "", 0, 1, 99)
-      assert {:ok, _} = WaitingRoom.join(@room_gid, member(2), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@room_gid, member(2), 50, 0, "", [])
       state = session()
 
       {:noreply, ^state} = WaitingRoomHandler.join(state, @room_gid)

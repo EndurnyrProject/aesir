@@ -322,7 +322,8 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerState do
     # handler on guild attach and on guild broadcasts.
     guild_tax: 0,
 
-    # NPC waiting room the player is currently in (the owner NPC gid), or nil.
+    # Chat room the player is currently in (its room id: the NPC gid for NPC
+    # rooms, an allocated id for player rooms), or nil.
     # Single-writer field: only WaitingRoomHandler mutates it.
     waiting_room: nil,
 

@@ -1,13 +1,22 @@
 defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
   @moduledoc """
-  Shared in-memory store for NPC waiting rooms — the rooms an NPC opens above
-  its head so players can gather, chat, and be warped out together.
+  Shared in-memory store for chat rooms, the bubbles drawn above an owner's head
+  so players can gather and talk. A room is owned by either an NPC or a player.
 
-  One room per owner NPC, keyed `{npc_gid, %WaitingRoom{}}` in the
-  `:npc_waiting_rooms` table. Membership is an ordered list (join order, so the
-  earliest joiner is first). Mutations are atomic compare-and-swap loops over the
-  whole struct, mirroring `Aesir.ZoneServer.Mmo.StatusStorage`; reads are
-  lock-free.
+  - **NPC rooms** are opened by scripts. They are keyed by the NPC gid
+    (`room_id == npc_gid`), always public and passwordless, count the NPC itself
+    against the limit, carry the script trigger/event fields, and persist when
+    empty.
+  - **Player rooms** get an allocated id above `0x5800_0000`. The owner is member
+    slot 0 and counts against the limit. When the owner leaves, the next-earliest
+    member takes over; when the last member leaves, the room is destroyed. They
+    support a password, a public flag, and a kick list that bars kicked players
+    from rejoining.
+
+  Rows live in the `:waiting_rooms` table as `{room_id, %WaitingRoom{}}`, plus a
+  `{:next_id, n}` counter row for player room ids. Membership is an ordered list
+  (join order). Mutations are atomic compare-and-swap loops over the whole
+  struct, mirroring `Aesir.ZoneServer.Mmo.StatusStorage`; reads are lock-free.
 
   The store performs no broadcasts and fires no events. Callers consult
   `fire_event?/1` and dispatch the event themselves, so this module stays a
@@ -15,6 +24,8 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
   """
 
   import Aesir.ZoneServer.EtsTable, only: [table_for: 1]
+
+  alias Aesir.ZoneServer.Config
 
   defmodule Member do
     @moduledoc "A player currently in a waiting room."
@@ -29,8 +40,30 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
           }
   end
 
-  @enforce_keys [:npc_gid, :title, :limit, :trigger, :event_ref, :zeny, :min_lvl, :max_lvl]
-  defstruct npc_gid: nil,
+  @player_room_id_base 0x5800_0000
+  @max_users 20
+  @title_bytes 60
+  @pass_bytes 8
+
+  @typedoc "Who owns a room: an NPC by gid or a player by char id."
+  @type owner :: {:npc, non_neg_integer()} | {:player, integer()}
+
+  @typedoc "A room id: the NPC gid for NPC rooms, an allocated id for player rooms."
+  @type room_id :: non_neg_integer()
+
+  @typedoc "Why a join was refused."
+  @type join_error ::
+          :not_found
+          | :full
+          | :wrong_password
+          | :too_low_level
+          | :too_high_level
+          | :no_zeny
+          | :kicked
+
+  @enforce_keys [:room_id, :owner, :title, :limit]
+  defstruct room_id: nil,
+            owner: nil,
             title: "",
             limit: 0,
             trigger: 0,
@@ -38,12 +71,16 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
             zeny: 0,
             min_lvl: 1,
             max_lvl: 99,
+            pass: "",
+            public?: true,
             enabled?: true,
-            members: []
+            members: [],
+            kick_list: MapSet.new()
 
-  @typedoc "A waiting room owned by an NPC."
+  @typedoc "A chat room owned by an NPC or a player."
   @type t() :: %__MODULE__{
-          npc_gid: non_neg_integer(),
+          room_id: room_id(),
+          owner: owner(),
           title: String.t(),
           limit: pos_integer(),
           trigger: non_neg_integer(),
@@ -51,8 +88,11 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
           zeny: non_neg_integer(),
           min_lvl: non_neg_integer(),
           max_lvl: non_neg_integer(),
+          pass: String.t(),
+          public?: boolean(),
           enabled?: boolean(),
-          members: [Member.t()]
+          members: [Member.t()],
+          kick_list: MapSet.t(integer())
         }
 
   @doc """
@@ -72,7 +112,8 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
         ) :: :ok | {:error, :already_exists}
   def create(npc_gid, title, limit, trigger, event_ref, zeny, min_lvl, max_lvl) do
     room = %__MODULE__{
-      npc_gid: npc_gid,
+      room_id: npc_gid,
+      owner: {:npc, npc_gid},
       title: title,
       limit: limit,
       trigger: trigger,
@@ -90,44 +131,194 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
   end
 
   @doc """
-  Appends `member` to `npc_gid`'s room, validating the room's capacity, level
-  band, and zeny gate in precedence order (full, too low, too high, no zeny).
+  Creates a player room with `member` as owner and sole member.
+
+  The title is truncated to 60 bytes and the password to 8 bytes (never splitting
+  a character), and the limit is clamped to 1..20. The limit counts the owner.
   """
-  @spec join(non_neg_integer(), Member.t(), non_neg_integer(), non_neg_integer()) ::
-          {:ok, t()} | {:error, :not_found | :full | :too_low_level | :too_high_level | :no_zeny}
-  def join(npc_gid, member, base_level, zeny), do: join_loop(npc_gid, member, base_level, zeny)
+  @spec create_player_room(Member.t(), String.t(), String.t(), non_neg_integer(), boolean()) ::
+          {:ok, t()}
+  def create_player_room(%Member{} = member, title, pass, limit, public?) do
+    room_id = next_player_room_id()
 
-  @doc "Removes `char_id` from the room, no-oping when absent."
-  @spec leave(non_neg_integer(), integer()) :: :ok
-  def leave(npc_gid, char_id) do
-    _ =
-      update(npc_gid, fn room ->
-        %{room | members: Enum.reject(room.members, &(&1.char_id == char_id))}
-      end)
+    room = %__MODULE__{
+      room_id: room_id,
+      owner: {:player, member.char_id},
+      title: truncate(title, @title_bytes),
+      pass: truncate(pass, @pass_bytes),
+      limit: clamp_limit(limit),
+      public?: public?,
+      max_lvl: Config.max_base_level(),
+      members: [member]
+    }
 
-    :ok
+    true = :ets.insert_new(table(), {room_id, room})
+    {:ok, room}
   end
 
-  @doc "Removes the member named `char_name`, returning an error when absent."
-  @spec kick(non_neg_integer(), String.t()) :: :ok | {:error, :not_found}
-  def kick(npc_gid, char_name) do
-    case Enum.find(members(npc_gid), &(&1.name == char_name)) do
-      nil -> {:error, :not_found}
-      member -> leave(npc_gid, member.char_id)
+  @doc """
+  Appends `member` to the room, validating in precedence order: full, wrong
+  password, too low level, too high level, not enough zeny, kicked.
+
+  The password only matters for private rooms. Pass `bypass_password: true` in
+  `opts` to skip the password check (GM override).
+  """
+  @spec join(room_id(), Member.t(), non_neg_integer(), non_neg_integer(), String.t(), keyword()) ::
+          {:ok, t()} | {:error, join_error()}
+  def join(room_id, %Member{} = member, base_level, zeny, pass, opts) do
+    with [{^room_id, room}] <- :ets.lookup(table(), room_id),
+         :ok <- validate(room, member, base_level, zeny, pass, opts) do
+      updated = %{room | members: room.members ++ [member]}
+
+      if cas(room_id, room, updated) do
+        {:ok, updated}
+      else
+        join(room_id, member, base_level, zeny, pass, opts)
+      end
+    else
+      [] -> {:error, :not_found}
+      {:error, _reason} = error -> error
     end
   end
 
+  @doc """
+  Removes `char_id` from the room and reports what happened, decided by a single
+  compare-and-swap:
+
+  - `{:ok, :left}`: the member was removed (or was not a member).
+  - `{:ok, {:owner_changed, next}}`: the player owner left and `next` owns the room.
+  - `{:ok, :destroyed}`: the last member of a player room left; the room is gone.
+  - `:error`: no such room.
+
+  NPC rooms are never destroyed by leaving.
+  """
+  @spec leave(room_id(), integer()) ::
+          {:ok, :left | {:owner_changed, Member.t()} | :destroyed} | :error
+  def leave(room_id, char_id) do
+    case :ets.lookup(table(), room_id) do
+      [] ->
+        :error
+
+      [{^room_id, room}] ->
+        remaining = Enum.reject(room.members, &(&1.char_id == char_id))
+        leave_outcome(room_id, room, remaining, char_id)
+    end
+  end
+
+  defp leave_outcome(room_id, %{owner: {:player, _}} = room, [], char_id) do
+    if :ets.select_delete(table(), cas_delete_spec(room_id, room)) == 1,
+      do: {:ok, :destroyed},
+      else: leave(room_id, char_id)
+  end
+
+  defp leave_outcome(
+         room_id,
+         %{owner: {:player, char_id}} = room,
+         [next | _] = remaining,
+         char_id
+       ) do
+    updated = %{room | members: remaining, owner: {:player, next.char_id}}
+
+    if cas(room_id, room, updated),
+      do: {:ok, {:owner_changed, next}},
+      else: leave(room_id, char_id)
+  end
+
+  defp leave_outcome(room_id, room, remaining, char_id) do
+    if cas(room_id, room, %{room | members: remaining}),
+      do: {:ok, :left},
+      else: leave(room_id, char_id)
+  end
+
+  @doc """
+  Removes the member named `char_name` and returns them. Player rooms also add
+  them to the kick list so they cannot rejoin.
+  """
+  @spec kick(room_id(), String.t()) :: {:ok, Member.t()} | {:error, :not_found}
+  def kick(room_id, char_name) do
+    with [{^room_id, room}] <- :ets.lookup(table(), room_id),
+         %Member{} = member <- Enum.find(room.members, &(&1.name == char_name)) do
+      updated = %{
+        room
+        | members: List.delete(room.members, member),
+          kick_list: add_to_kick_list(room, member.char_id)
+      }
+
+      if cas(room_id, room, updated), do: {:ok, member}, else: kick(room_id, char_name)
+    else
+      _ -> {:error, :not_found}
+    end
+  end
+
+  defp add_to_kick_list(%{owner: {:player, _}, kick_list: kick_list}, char_id),
+    do: MapSet.put(kick_list, char_id)
+
+  defp add_to_kick_list(%{kick_list: kick_list}, _char_id), do: kick_list
+
+  @doc """
+  Hands a player room to the member named `next_name`, swapping them into slot 0.
+  Only the current owner may do this.
+  """
+  @spec change_owner(room_id(), integer(), String.t()) ::
+          {:ok, t()} | {:error, :not_owner | :not_found}
+  def change_owner(room_id, owner_char_id, next_name) do
+    owner_update(room_id, owner_char_id, fn room ->
+      case Enum.find_index(room.members, &(&1.name == next_name)) do
+        nil ->
+          {:error, :not_found}
+
+        index ->
+          next = Enum.at(room.members, index)
+          owner = hd(room.members)
+
+          members =
+            room.members |> List.replace_at(0, next) |> List.replace_at(index, owner)
+
+          {:ok, %{room | members: members, owner: {:player, next.char_id}}}
+      end
+    end)
+  end
+
+  @doc """
+  Edits a player room's title, password, limit, and public flag, applying the
+  same truncation and clamping as `create_player_room/5`. Only the owner may do
+  this.
+  """
+  @spec change_status(room_id(), integer(), String.t(), String.t(), non_neg_integer(), boolean()) ::
+          {:ok, t()} | {:error, :not_owner | :not_found}
+  def change_status(room_id, owner_char_id, title, pass, limit, public?) do
+    owner_update(room_id, owner_char_id, fn room ->
+      {:ok,
+       %{
+         room
+         | title: truncate(title, @title_bytes),
+           pass: truncate(pass, @pass_bytes),
+           limit: clamp_limit(limit),
+           public?: public?
+       }}
+    end)
+  end
+
+  @doc "Whether `char_id` is the player owning `room`. Always false for NPC rooms."
+  @spec owner?(t(), integer()) :: boolean()
+  def owner?(%__MODULE__{owner: owner}, char_id), do: owner == {:player, char_id}
+
+  @doc "Slots taken in the room: members, plus one for the NPC in NPC rooms."
+  @spec occupancy(t()) :: non_neg_integer()
+  def occupancy(%__MODULE__{owner: {:npc, _}, members: members}), do: length(members) + 1
+  def occupancy(%__MODULE__{members: members}), do: length(members)
+
   @doc "Empties the room's membership, keeping the room itself."
-  @spec kick_all(non_neg_integer()) :: :ok
-  def kick_all(npc_gid) do
-    _ = update(npc_gid, &%{&1 | members: []})
+  @spec kick_all(room_id()) :: :ok
+  def kick_all(room_id) do
+    _ = update(room_id, &%{&1 | members: []})
     :ok
   end
 
   @doc "Destroys the room entirely."
-  @spec delete(non_neg_integer()) :: :ok
-  def delete(npc_gid) do
-    :ets.delete(table(), npc_gid)
+  @spec delete(room_id()) :: :ok
+  def delete(room_id) do
+    :ets.delete(table(), room_id)
     :ok
   end
 
@@ -135,31 +326,31 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
   Re-enables the room's event trigger, returning the room so the caller can
   immediately re-check `fire_event?/1`.
   """
-  @spec enable_event(non_neg_integer()) :: {:ok, t()} | :error
-  def enable_event(npc_gid), do: update(npc_gid, &%{&1 | enabled?: true})
+  @spec enable_event(room_id()) :: {:ok, t()} | :error
+  def enable_event(room_id), do: update(room_id, &%{&1 | enabled?: true})
 
   @doc "Disables the room's event trigger; membership is untouched."
-  @spec disable_event(non_neg_integer()) :: :ok
-  def disable_event(npc_gid) do
-    _ = update(npc_gid, &%{&1 | enabled?: false})
+  @spec disable_event(room_id()) :: :ok
+  def disable_event(room_id) do
+    _ = update(room_id, &%{&1 | enabled?: false})
     :ok
   end
 
-  @doc "Returns the room for `npc_gid`, or `:error` when absent."
-  @spec get(non_neg_integer()) :: {:ok, t()} | :error
-  def get(npc_gid) do
-    case :ets.lookup(table(), npc_gid) do
-      [{^npc_gid, room}] -> {:ok, room}
-      [] -> :error
+  @doc "Returns the room for `room_id`, or `:error` when absent."
+  @spec get(room_id()) :: {:ok, t()} | :error
+  def get(room_id) do
+    case :ets.lookup(table(), room_id) do
+      [{^room_id, %__MODULE__{} = room}] -> {:ok, room}
+      _ -> :error
     end
   end
 
   @doc "Returns the room's members in join order, or `[]` when the room is absent."
-  @spec members(non_neg_integer()) :: [Member.t()]
-  def members(npc_gid) do
-    case :ets.lookup(table(), npc_gid) do
-      [{^npc_gid, room}] -> room.members
-      [] -> []
+  @spec members(room_id()) :: [Member.t()]
+  def members(room_id) do
+    case get(room_id) do
+      {:ok, room} -> room.members
+      :error -> []
     end
   end
 
@@ -168,9 +359,9 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
   no room. Types: 0 users, 1 limit, 2 trigger, 3 disabled (0/1), 4 title,
   5 password (always empty), 16 event label, 32 full, 33 over-trigger.
   """
-  @spec state(non_neg_integer(), integer()) :: term()
-  def state(npc_gid, type) do
-    case get(npc_gid) do
+  @spec state(room_id(), integer()) :: term()
+  def state(room_id, type) do
+    case get(room_id) do
       {:ok, room} -> state_of(room, type)
       :error -> -1
     end
@@ -182,59 +373,90 @@ defmodule Aesir.ZoneServer.Mmo.WaitingRoom do
     room.enabled? and room.event_ref != "" and length(room.members) >= room.trigger
   end
 
-  defp table, do: table_for(:npc_waiting_rooms)
+  defp table, do: table_for(:waiting_rooms)
 
-  defp join_loop(npc_gid, member, base_level, zeny) do
-    with [{^npc_gid, room}] <- :ets.lookup(table(), npc_gid),
-         :ok <- validate(room, base_level, zeny) do
-      updated = %{room | members: room.members ++ [member]}
-
-      if :ets.select_replace(table(), cas_spec(npc_gid, room, updated)) == 1 do
-        {:ok, updated}
-      else
-        join_loop(npc_gid, member, base_level, zeny)
-      end
-    else
-      [] -> {:error, :not_found}
-      {:error, _reason} = error -> error
-    end
+  defp next_player_room_id do
+    @player_room_id_base + :ets.update_counter(table(), :next_id, 1, {:next_id, 0})
   end
 
-  defp validate(room, base_level, zeny) do
+  defp validate(room, member, base_level, zeny, pass, opts) do
     cond do
-      length(room.members) + 1 >= room.limit -> {:error, :full}
+      occupancy(room) >= room.limit -> {:error, :full}
+      wrong_password?(room, pass, opts) -> {:error, :wrong_password}
       base_level < room.min_lvl -> {:error, :too_low_level}
       base_level > room.max_lvl -> {:error, :too_high_level}
       zeny < room.zeny -> {:error, :no_zeny}
+      MapSet.member?(room.kick_list, member.char_id) -> {:error, :kicked}
       true -> :ok
     end
   end
 
+  defp wrong_password?(%{public?: true}, _pass, _opts), do: false
+
+  defp wrong_password?(room, pass, opts),
+    do: pass != room.pass and not Keyword.get(opts, :bypass_password, false)
+
+  defp clamp_limit(limit), do: limit |> max(1) |> min(@max_users)
+
+  defp truncate(string, max_bytes) when byte_size(string) <= max_bytes, do: string
+
+  defp truncate(string, max_bytes) do
+    string
+    |> String.codepoints()
+    |> Enum.reduce_while("", fn codepoint, acc ->
+      if byte_size(acc) + byte_size(codepoint) > max_bytes,
+        do: {:halt, acc},
+        else: {:cont, acc <> codepoint}
+    end)
+  end
+
+  # Owner-only compare-and-swap: `fun` returns `{:ok, updated}` or an error that
+  # aborts without writing.
+  defp owner_update(room_id, owner_char_id, fun) do
+    with {:ok, room} <- fetch(room_id),
+         :ok <- ensure_owner(room, owner_char_id),
+         {:ok, updated} <- fun.(room) do
+      if cas(room_id, room, updated),
+        do: {:ok, updated},
+        else: owner_update(room_id, owner_char_id, fun)
+    end
+  end
+
+  defp fetch(room_id) do
+    case get(room_id) do
+      {:ok, room} -> {:ok, room}
+      :error -> {:error, :not_found}
+    end
+  end
+
+  defp ensure_owner(room, char_id),
+    do: if(owner?(room, char_id), do: :ok, else: {:error, :not_owner})
+
   # Generic compare-and-swap read-modify-write. `fun` returns the replacement
   # struct; the write only lands if the room is still byte-for-byte the struct
   # that was read, retrying on a lost race.
-  defp update(npc_gid, fun), do: update_loop(npc_gid, fun)
-
-  defp update_loop(npc_gid, fun) do
-    case :ets.lookup(table(), npc_gid) do
-      [{^npc_gid, room}] ->
+  defp update(room_id, fun) do
+    case get(room_id) do
+      {:ok, room} ->
         updated = fun.(room)
+        if cas(room_id, room, updated), do: {:ok, updated}, else: update(room_id, fun)
 
-        if :ets.select_replace(table(), cas_spec(npc_gid, room, updated)) == 1 do
-          {:ok, updated}
-        else
-          update_loop(npc_gid, fun)
-        end
-
-      [] ->
+      :error ->
         :error
     end
   end
 
-  defp cas_spec(npc_gid, current, replacement) do
+  defp cas(room_id, current, replacement),
+    do: :ets.select_replace(table(), cas_spec(room_id, current, replacement)) == 1
+
+  defp cas_spec(room_id, current, replacement) do
     [
-      {{npc_gid, :"$1"}, [{:"=:=", :"$1", {:const, current}}], [{:const, {npc_gid, replacement}}]}
+      {{room_id, :"$1"}, [{:"=:=", :"$1", {:const, current}}], [{:const, {room_id, replacement}}]}
     ]
+  end
+
+  defp cas_delete_spec(room_id, current) do
+    [{{room_id, :"$1"}, [{:"=:=", :"$1", {:const, current}}], [true]}]
   end
 
   defp state_of(room, 0), do: length(room.members)

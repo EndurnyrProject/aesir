@@ -67,9 +67,9 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
     test "warps the longest-waiting members and writes the $@ vars" do
       assert %Ctx{} = Dsl.waitingroom(ctx(), "W", 8, "", 2)
 
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(3), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0, "", [])
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0, "", [])
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(3), 50, 0, "", [])
 
       for char_id <- [1, 2] do
         expect(UnitRegistry, :get_player_pid, 1, fn ^char_id -> {:ok, self()} end)
@@ -94,8 +94,8 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
   describe "kickwaitingroomall/1" do
     test "empties the calling NPC's room" do
       assert %Ctx{} = Dsl.waitingroom(ctx(), "W", 8)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0, "", [])
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0, "", [])
 
       assert %Ctx{} = Dsl.kickwaitingroomall(ctx())
       assert [] = WaitingRoom.members(@npc_gid)
@@ -105,8 +105,8 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
   describe "getwaitingroomusers/1" do
     test "populates the local account-id vars" do
       assert %Ctx{} = Dsl.waitingroom(ctx(), "W", 8)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0, "", [])
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0, "", [])
 
       result = Dsl.getwaitingroomusers(ctx())
 
@@ -120,8 +120,8 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
       assert -1 = Dsl.getwaitingroomstate(ctx(), 0)
 
       assert %Ctx{} = Dsl.waitingroom(ctx(), "My Room", 8, "", 7)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0, "", [])
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0, "", [])
 
       assert 2 = Dsl.getwaitingroomstate(ctx(), 0)
       assert "My Room" = Dsl.getwaitingroomstate(ctx(), 4)
@@ -132,7 +132,7 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
   describe "binding cleanup on NPC-initiated removal" do
     test "delwaitingroom casts to clear an online member's binding" do
       assert %Ctx{} = Dsl.waitingroom(ctx(), "W", 8)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0, "", [])
 
       expect(UnitRegistry, :get_player_pid, 1, fn 1 -> {:ok, self()} end)
 
@@ -147,8 +147,8 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
 
     test "kickwaitingroomall casts to clear every online member's binding" do
       assert %Ctx{} = Dsl.waitingroom(ctx(), "W", 8)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0)
-      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0)
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(1), 50, 0, "", [])
+      assert {:ok, _} = WaitingRoom.join(@npc_gid, member(2), 50, 0, "", [])
 
       expect(UnitRegistry, :get_player_pid, 2, fn _char_id -> {:ok, self()} end)
 
