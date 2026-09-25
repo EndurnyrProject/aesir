@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.17.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.16.0...aesir-v0.17.0) (2026-09-25)
+
+
+### Features
+
+* **combat:** add post-defense ATK, base ATK rate, weight ATK, and per-call size skip ([351f6ee](https://github.com/EndurnyrProject/aesir/commit/351f6eeb7fee98672710641755591416dd34f6b9))
+* **equipment:** revalidate worn items with atomic cleanup ([ab086a6](https://github.com/EndurnyrProject/aesir/commit/ab086a69f477065eaf068a9ac75b55e4df882055))
+* **inventory:** persist unequip batches atomically ([1ca4ed8](https://github.com/EndurnyrProject/aesir/commit/1ca4ed8d7c6aa64a1bb3443bf91657cdaa5557f5))
+* **items:** define canonical item job identities ([a614640](https://github.com/EndurnyrProject/aesir/commit/a614640a79a56a4688248511ece948cd528f4bc9))
+* **items:** import and enforce canonical equip restrictions ([93c5ab5](https://github.com/EndurnyrProject/aesir/commit/93c5ab5e7c13d34752a6dcc633596eb4834d4a4b))
+* **items:** revalidate equipment before player login ([4bd1b6f](https://github.com/EndurnyrProject/aesir/commit/4bd1b6f3a69394199916d19fcb2792b419d1b6f0))
+* **items:** validate restrictions before consumable effects ([c886f5b](https://github.com/EndurnyrProject/aesir/commit/c886f5be59519969e7e491326f065d9212b16239))
+* **lord-knight:** add Aura Blade and Concentration ([fd03620](https://github.com/EndurnyrProject/aesir/commit/fd03620d7fc45d0ba74eebba21cf154d03215613))
+* **lord-knight:** add Berserk with dispel-safe HP penalty ([6055084](https://github.com/EndurnyrProject/aesir/commit/6055084915b80776ec3eb1484c4776b952c6e4a5))
+* **lord-knight:** add Head Crush ([712c391](https://github.com/EndurnyrProject/aesir/commit/712c3917922dbe5b1072d2a0ffde738c04855978))
+* **lord-knight:** add Joint Beat with six break types ([8f51bb2](https://github.com/EndurnyrProject/aesir/commit/8f51bb256d237b1f051eedccfa6c75850e994dd2))
+* **lord-knight:** add Parrying ([859e6d4](https://github.com/EndurnyrProject/aesir/commit/859e6d433d8e5411e7bcf070cc044fb0f549e9f7))
+* **lord-knight:** add Spiral Pierce with per-mode formulas and mob path ([6112361](https://github.com/EndurnyrProject/aesir/commit/6112361e46c28ee08793953a13335649eddd1ffb))
+* **lord-knight:** add Tension Relax ([93cc7af](https://github.com/EndurnyrProject/aesir/commit/93cc7af3f97af50c035e38aa3e605c210f0d5884))
+* **player:** add set_vitals and sit session ops ([3708e11](https://github.com/EndurnyrProject/aesir/commit/3708e119225882eab1952b71f244754a726cbd52))
+* **progression:** transcendent status points on reset and job change ([de589c4](https://github.com/EndurnyrProject/aesir/commit/de589c4778ec459388bce9e7556f2878aa89c9f7))
+* **script:** add Upper, SkillPoint, and mode-aware checkre reads ([a6ef48b](https://github.com/EndurnyrProject/aesir/commit/a6ef48bd7943171d8e2da5e22f6b1178684bfc4b))
+* **skills:** level-0 quest skill grant removes the skill ([5f5f42e](https://github.com/EndurnyrProject/aesir/commit/5f5f42ef51744b1951f244571eb11561a3850a89))
+* **stats:** add flee_rate, mdef2_rate, and skill-channel regen rate modifiers ([2eb0530](https://github.com/EndurnyrProject/aesir/commit/2eb05302c2da11e87d30d9df0a922b89ce011460))
+* **status:** add item, chat, and equip-change gating properties ([65ea075](https://github.com/EndurnyrProject/aesir/commit/65ea07570605fb20e2f9d01a82f6dae5268fd998))
+
+
+### Bug Fixes
+
+* Fire each clock NPC label at most once per wall-clock minute ([7b1fcef](https://github.com/EndurnyrProject/aesir/commit/7b1fcef4d112bda6028aa3c8f912a3a685f1480c))
+* **guild:** expose unlearned guild skills ([7e12259](https://github.com/EndurnyrProject/aesir/commit/7e122595662876c62aa86217a1bd4591867af92f))
+* **guild:** Fixed guild skill progression test ([b7cd9a5](https://github.com/EndurnyrProject/aesir/commit/b7cd9a55fc8734d3fb90b4962c904d761cc92d3b))
+* **jobs:** resolve sex-paired job changes to the character's sex ([86fc596](https://github.com/EndurnyrProject/aesir/commit/86fc596bc31c3ba6ba42711ae2b6225abc89a637))
+* **lord-knight:** align Aura Blade and Spiral Pierce audit definitions ([d0c36df](https://github.com/EndurnyrProject/aesir/commit/d0c36dfff5b7e666e8877d9a4803c3d47f284f44))
+* **npc:** Fixed npc state when abandoning the execution ([5ef0106](https://github.com/EndurnyrProject/aesir/commit/5ef01066708114e32e561b7b7af4158545df716e))
+* **priest:** accept any Acolyte-line companion for B.S. Sacramenti ([ad90450](https://github.com/EndurnyrProject/aesir/commit/ad904501c1d25a4ad0d32c77fa6fc00fcd14f4f5))
+* **progression:** require equipment cleanup before job changes ([f45c559](https://github.com/EndurnyrProject/aesir/commit/f45c559f697486a073174b7cd99aea5e2d109dcb))
+* Refresh skill list on job level up ([1da03e2](https://github.com/EndurnyrProject/aesir/commit/1da03e2ca86bbee337625c7d7836f49670d70da8))
+* **skills:** align Swordman and Knight audit fields ([1e54b1e](https://github.com/EndurnyrProject/aesir/commit/1e54b1ef409854d8b8ff18c320feb251cc261e75))
+* **skills:** refund Basic Skill on reset for the whole novice family ([adf9ad7](https://github.com/EndurnyrProject/aesir/commit/adf9ad79e61ffae0e4b1e5302fedd324b5aa75f5))
+* **stats:** apply the transcendent HP/SP bonus in renewal ([61e5f6d](https://github.com/EndurnyrProject/aesir/commit/61e5f6d7a46700e9cf80ffe02d17ca585e0f78de))
+* **transpiler:** Upper/SkillPoint reads and numeric job constants ([9370818](https://github.com/EndurnyrProject/aesir/commit/9370818f3fe5e0d1325a20c457f70fc089dc7b63))
+
 ## [0.16.0](https://github.com/EndurnyrProject/aesir/compare/aesir-v0.15.0...aesir-v0.16.0) (2026-09-14)
 
 
