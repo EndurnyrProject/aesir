@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun
   alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.AppleIdun
@@ -95,6 +96,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
              BaAppleidun.dynamic_cost(cost_state(), :self, 1, BaAppleidun.definition())
   end
 
+  @tag game_mode: :renewal
   test "a failed snapshot commits neither memory nor replacement state" do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_poembragi, duration: 10_000, val2: 20)
@@ -159,14 +161,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidunTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic completion snapshots a VIT-scaled MaxHP rate" do
+  test "classic completion builds a VIT-scaled healing field" do
     caster = player()
     vit = Stats.get_effective_stat(caster.stats, :vit)
 
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_appleidun, params ->
+    expect(Performance, :perform, fn ^caster, _definition, 10, :sc_appleidun, params, opts ->
       assert params[:val2] == 25 + div(vit, 10)
       refute Keyword.has_key?(params, :val3)
-      :ok
+      assert opts[:kind] == :song
+      assert opts[:reach] == :everyone
+      assert opts[:upkeep] == 6
+      assert opts[:linger_ms] == 20_000
+      assert opts[:tick] == :idun_heal
+      assert opts[:tick_interval] == 6_000
+      assert opts[:caster_vit] == vit
+      {:ok, Song.remember(caster, 322, 10)}
     end)
 
     assert {:ok, _result} = BaAppleidun.cast(caster, :self, 10, BaAppleidun.definition())

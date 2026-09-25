@@ -7,10 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle do
   cast plus 0.3 s fixed, a 0.3 s delay, a 20 s cooldown, and a 3-minute party buff
   within 15 cells. Pre-renewal: FLEE level plus AGI/10 plus Musical Lesson/2 and
   perfect dodge (level plus 1)/2 plus LUK/30 plus Musical Lesson/5, read from the
-  performer at cast, an instant cast, no cooldown, and 1 minute; the classic
-  ground-song model (a 7x7 field affecting whoever stands in it while the
-  performer keeps playing) is deferred to a skill-unit performance subsystem, so
-  the party-buff model runs in both modes.
+  performer at cast, an instant cast and no cooldown. Its 7x7 field lasts
+  one minute, buffs everyone inside except the performer, costs 1 SP every
+  5 seconds, and lingers on recipients for 20 seconds after they leave.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -35,12 +34,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(caster, definition, level, :sc_whistle, params(caster, level), [])
+    Performance.perform(caster, definition, level, :sc_whistle, params(caster, level),
+      kind: :song,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 5,
+      lesson_level: Caster.lesson_level(caster, @lesson_id)
+    )
   end
 
   defp params(caster, level) do

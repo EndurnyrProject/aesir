@@ -7,9 +7,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun do
   a 1 s cast plus 0.3 s fixed, a 0.3 s delay, a 20 s cooldown, and 3 minutes
   within 15 cells. Pre-renewal: max HP 5 plus 2 per level plus VIT/10 plus
   Musical Lesson/2 percent read from the performer at cast, an instant cast, no
-  cooldown, and 3 minutes; the classic tick heal (30 plus 5 per level plus VIT/2
-  plus 5 per Musical Lesson level every 3 s to whoever stands in the field) belongs
-  to the deferred skill-unit performance subsystem.
+  cooldown and a 3-minute 7x7 field. Everyone inside except the performer
+  receives the buff, which lingers for 20 seconds after leaving; the performer
+  pays 1 SP every 6 seconds. The field heals occupants every 6 seconds for
+  30 plus 5 per level plus VIT/2 plus 5 per Musical Lesson level.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -34,18 +35,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAppleidun do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(
-      caster,
-      definition,
-      level,
-      :sc_appleidun,
-      [val2: hp_rate(caster, level)],
-      []
+    Performance.perform(caster, definition, level, :sc_appleidun, [val2: hp_rate(caster, level)],
+      kind: :song,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 6,
+      lesson_level: Caster.lesson_level(caster, @lesson_id),
+      tick: :idun_heal,
+      tick_interval: 6_000,
+      caster_vit: Caster.stat(caster, :vit)
     )
   end
 

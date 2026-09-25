@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragi
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -90,6 +91,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
              BaPoembragi.dynamic_cost(cost_state(), :self, 1, BaPoembragi.definition())
   end
 
+  @tag game_mode: :renewal
   test "a failed snapshot commits neither memory nor replacement state" do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_appleidun, duration: 10_000, val2: 20)
@@ -154,22 +156,27 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragiTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic completion snapshots stat-scaled reductions" do
+  test "classic completion passes stat-scaled reductions to the field" do
     caster = player()
     dex = Stats.get_effective_stat(caster.stats, :dex)
     int = Stats.get_effective_stat(caster.stats, :int)
 
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_poembragi, params ->
-      assert params[:val2] == 12 + div(dex, 10)
-      assert params[:val3] == 12 + div(int, 5)
-      :ok
-    end)
-
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_poembragi, params ->
-      assert params[:val2] == 30 + div(dex, 10)
-      assert params[:val3] == 50 + div(int, 5)
-      :ok
-    end)
+    for {level, cast_rate, delay_rate} <- [{4, 12, 12}, {10, 30, 50}] do
+      expect(Performance, :perform, fn ^caster,
+                                       _definition,
+                                       ^level,
+                                       :sc_poembragi,
+                                       params,
+                                       opts ->
+        assert params[:val2] == cast_rate + div(dex, 10)
+        assert params[:val3] == delay_rate + div(int, 5)
+        assert opts[:kind] == :song
+        assert opts[:upkeep] == 5
+        assert opts[:reach] == :everyone
+        assert opts[:linger_ms] == 20_000
+        {:ok, Song.remember(caster, 321, level)}
+      end)
+    end
 
     assert {:ok, _result} = BaPoembragi.cast(caster, :self, 4, BaPoembragi.definition())
     assert {:ok, _result} = BaPoembragi.cast(caster, :self, 10, BaPoembragi.definition())

@@ -4,12 +4,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
 
   import Aesir.TestEtsSetup
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.ItemManagement
   alias Aesir.ZoneServer.Mmo.ItemManagement.ItemDefinition
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
   alias Aesir.ZoneServer.Mmo.Skill.Interpreter
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BdEncore
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -36,6 +38,12 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   setup :setup_ets_tables
 
   setup do
+    if GameMode.mode() == :pre_renewal do
+      stub(Performance, :perform, fn caster, definition, level, _status, _params, _opts ->
+        {:ok, Song.remember(caster, definition.id, level)}
+      end)
+    end
+
     Catalog.reload()
 
     stub(ItemManagement, :get_item_by_id, fn @instrument_id ->
@@ -223,6 +231,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
     assert blocked.act_delay_until == 0
   end
 
+  @tag game_mode: :renewal
   test "a failed remembered effect commits no SP, cooldown, or act delay" do
     caster = player(%{skill_id: 319, level: 1})
 
@@ -297,10 +306,6 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   test "classic remembered skills replay instantly with no delay" do
     stub(Combat, :execute_magic_splash, fn _caster, _center, _radius, _opts -> [] end)
 
-    stub(Song, :snapshot, fn caster, _definition, _level, _status, _params, _opts ->
-      {:ok, caster}
-    end)
-
     for skill_id <- @eligible_ids do
       caster = player(%{skill_id: skill_id, level: 1})
       assert {:instant, _caster} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
@@ -329,13 +334,14 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BdEncoreTest do
   test "classic completion revalidates the original cooldown before effect or commitment" do
     caster = player(%{skill_id: 319, level: 1})
 
-    expect(Song, :snapshot, fn ^caster, _definition, 1, :sc_whistle, _params, [] ->
+    expect(Performance, :perform, fn ^caster, _definition, 1, :sc_whistle, _params, opts ->
+      assert opts[:kind] == :song
       {:ok, caster}
     end)
 
     assert {:instant, _caster} = Interpreter.begin_cast(caster, @encore_id, 1, :self)
 
-    reject(&Song.snapshot/6)
+    reject(&Performance.perform/6)
     blocked = %{caster | skill_cooldowns: %{319 => System.monotonic_time(:millisecond) + 10_000}}
 
     assert {:error, :on_cooldown} = Interpreter.complete_cast(blocked, @encore_id, 1, :self)

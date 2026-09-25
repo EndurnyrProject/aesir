@@ -7,6 +7,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
   alias Aesir.Commons.Models.Character
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot, as: Song
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistle
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
@@ -84,6 +85,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
              BaWhistle.dynamic_cost(cost_state(), :self, 1, BaWhistle.definition())
   end
 
+  @tag game_mode: :renewal
   test "a failed snapshot is returned without a replacement state" do
     caster = player()
 
@@ -95,6 +97,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
     assert Map.fetch!(caster, :last_song) == nil
   end
 
+  @tag game_mode: :renewal
   test "Quagmire does not exclude a Whistle recipient" do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_quagmire, duration: 10_000, val2: 5)
@@ -144,17 +147,20 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic completion snapshots the classic duration" do
+  test "classic completion starts a Whistle field with frozen stats" do
     caster = player()
-
     agi = Stats.get_effective_stat(caster.stats, :agi)
     luk = Stats.get_effective_stat(caster.stats, :luk)
 
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, params ->
-      assert params[:duration] == 60_000
+    expect(Performance, :perform, fn ^caster, definition, 3, :sc_whistle, params, opts ->
+      assert definition.id == 319
       assert params[:val2] == 3 + div(agi, 10)
       assert params[:val3] == 2 + div(luk, 30)
-      :ok
+      assert opts[:kind] == :song
+      assert opts[:reach] == :everyone
+      assert opts[:upkeep] == 5
+      assert opts[:linger_ms] == 20_000
+      {:ok, Song.remember(caster, 319, 3)}
     end)
 
     assert {:ok, result} = BaWhistle.cast(caster, :self, 3, BaWhistle.definition())
@@ -172,17 +178,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaWhistleTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic Musical Lesson raises the snapshot" do
+  test "classic Musical Lesson raises the field parameters" do
     caster = player()
     learned = Map.put(caster.stats.progression.learned_skills, 315, 10)
     caster = put_in(caster.stats.progression.learned_skills, learned)
     agi = Stats.get_effective_stat(caster.stats, :agi)
     luk = Stats.get_effective_stat(caster.stats, :luk)
 
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_whistle, params ->
+    expect(Performance, :perform, fn ^caster, _definition, 1, :sc_whistle, params, opts ->
       assert params[:val2] == 1 + div(agi, 10) + 5
       assert params[:val3] == 1 + div(luk, 30) + 2
-      :ok
+      assert opts[:lesson_level] == 10
+      assert opts[:upkeep] == 5
+      {:ok, Song.remember(caster, 319, 1)}
     end)
 
     assert {:ok, _result} = BaWhistle.cast(caster, :self, 1, BaWhistle.definition())

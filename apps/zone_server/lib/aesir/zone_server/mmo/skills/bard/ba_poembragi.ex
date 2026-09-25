@@ -7,9 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragi do
   delay, a 20 s cooldown, and 3 minutes within 15 cells. Pre-renewal: cast
   3 per level plus DEX/10 plus Musical Lesson percent and delay 3 per level (50 at
   level 10) plus INT/5 plus twice Musical Lesson percent, read from the performer
-  at cast, an instant cast, no cooldown, and 3 minutes; the classic ground-song
-  model is deferred to a skill-unit performance subsystem, so the party-buff model
-  runs in both modes.
+  at cast, an instant cast and no cooldown. Its 7x7 field lasts 3 minutes,
+  buffs everyone inside except the performer, lingers for 20 seconds after
+  leaving, and costs 1 SP every 5 seconds to maintain.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,
@@ -34,12 +34,18 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaPoembragi do
 
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(caster, definition, level, :sc_poembragi, params(caster, level), [])
+    Performance.perform(caster, definition, level, :sc_poembragi, params(caster, level),
+      kind: :song,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 5,
+      lesson_level: Caster.lesson_level(caster, @lesson_id)
+    )
   end
 
   defp params(caster, level) do

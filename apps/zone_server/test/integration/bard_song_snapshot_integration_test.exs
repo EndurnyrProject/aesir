@@ -4,9 +4,10 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
   import Ecto.Query
 
   @moduletag :capture_log
+  @moduletag integration_pre_re: false
+  @moduletag game_mode: :renewal
 
   alias Aesir.Commons.ClusterTestHelper
-  alias Aesir.Commons.GameMode
   alias Aesir.Commons.Models.Account
   alias Aesir.Commons.Models.Character
   alias Aesir.Commons.Models.CharacterStatus
@@ -76,9 +77,8 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
         assert get_player_state(nearby.pid).option == 0
       end
 
-      # Renewal songs have a cast window the member leaves during; classic songs
-      # are instant, so the leaving member must already stand out of range.
-      {leave_x, leave_y} = mode_value({165, 150}, {180, 180})
+      # The member leaves during renewal's cast window.
+      {leave_x, leave_y} = {165, 150}
       PlayerSession.warp(moving.pid, @map, leave_x, leave_y)
       assert eventually(fn -> position(moving.pid) == {leave_x, leave_y} end)
       assert_act_ready(caster.pid)
@@ -247,7 +247,7 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
   # Whistle 10 grants 38 flee in renewal; classic grants level + AGI/10 + lesson/2,
   # which is 11 for this bard (17 effective AGI, no Music Lessons).
   defp assert_song_reader(session, :flee, baselines) do
-    expected = baselines.flee + mode_value(38, 11)
+    expected = baselines.flee + 38
     assert eventually(fn -> song_reader(session.pid, :flee) == expected end)
   end
 
@@ -263,7 +263,7 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
   # 30% cast cut and INT/5 to a 50% delay cut, which is 31 and 51 for this bard
   # (19 effective DEX, 6 effective INT, no Music Lessons).
   defp assert_song_reader(session, :bragi, _baselines) do
-    {cast_cut, delay_cut} = mode_value({20, 30}, {31, 51})
+    {cast_cut, delay_cut} = {20, 30}
 
     assert eventually(fn ->
              case StatusStorage.get_status(:player, session.character.id, :sc_poembragi) do
@@ -373,7 +373,4 @@ defmodule Aesir.ZoneServer.Integration.BardSongSnapshotIntegrationTest do
 
     character
   end
-
-  defp mode_value(renewal, pre_renewal),
-    do: %{renewal: renewal, pre_renewal: pre_renewal}[GameMode.mode()]
 end

@@ -7,8 +7,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross do
   cast plus 0.3 s fixed, a 0.3 s delay, a 20 s cooldown, and 3 minutes within 15
   cells. Pre-renewal: an attack speed rate of 5 plus level plus AGI/20 plus
   Musical Lesson/2 percent read from the performer at cast, an instant cast, no
-  cooldown, and 2 minutes; the classic ground-song model is deferred to a
-  skill-unit performance subsystem, so the party-buff model runs in both modes.
+  cooldown and a 2-minute 7x7 field. Everyone inside except the performer
+  receives its buff, which lingers 20 seconds after leaving; the performer
+  pays 1 SP every 3 seconds.
   """
 
   import Bitwise
@@ -36,16 +37,21 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross do
   alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Active
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
-  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.StatusStorage
 
   @mado_option Option.id(:madogear)
 
   @impl Active
   def cast(caster, :self, level, definition) do
-    Snapshot.snapshot(caster, definition, level, :sc_assncross, [val2: aspd(caster, level)],
-      eligible?: &eligible?/1
+    Performance.perform(caster, definition, level, :sc_assncross, [val2: aspd(caster, level)],
+      eligible?: &eligible?/1,
+      kind: :song,
+      reach: :everyone,
+      linger_ms: 20_000,
+      upkeep: 3,
+      lesson_level: Caster.lesson_level(caster, @lesson_id)
     )
   end
 

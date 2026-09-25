@@ -9,6 +9,8 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
   alias Aesir.ZoneServer.Mmo.Option
   alias Aesir.ZoneServer.Mmo.Skill.Catalog
   alias Aesir.ZoneServer.Mmo.Skill.Cost
+  alias Aesir.ZoneServer.Mmo.Skill.Performance
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
   alias Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincross
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -74,6 +76,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
              BaAssassincross.dynamic_cost(cost_state(), :self, 1, BaAssassincross.definition())
   end
 
+  @tag game_mode: :renewal
   test "completion excludes the caster under a real Quagmire status" do
     caster = player()
     :ok = StatusStorage.apply_status(:player, 1, :sc_quagmire, duration: 10_000, val2: 5)
@@ -83,6 +86,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
     assert result.last_song == %{skill_id: 320, level: 1}
   end
 
+  @tag game_mode: :renewal
   test "completion excludes the caster in the real Mado option shape" do
     caster = %{player() | option: player().option ||| Option.id(:madogear)}
     reject(&StatusInterpreter.apply_status/4)
@@ -131,15 +135,19 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Bard.BaAssassincrossTest do
   end
 
   @tag game_mode: :pre_renewal
-  test "classic completion snapshots the classic duration" do
+  test "classic completion starts a two-minute Sunset field" do
     caster = player()
 
     agi = Stats.get_effective_stat(caster.stats, :agi)
 
-    expect(StatusInterpreter, :apply_status, fn :player, 1, :sc_assncross, params ->
-      assert params[:duration] == 120_000
+    expect(Performance, :perform, fn ^caster, definition, 1, :sc_assncross, params, opts ->
+      assert definition.duration == List.duplicate(120_000, 10)
       assert params[:val2] == 6 + div(agi, 20)
-      :ok
+      assert opts[:kind] == :song
+      assert opts[:reach] == :everyone
+      assert opts[:upkeep] == 3
+      assert opts[:linger_ms] == 20_000
+      {:ok, Snapshot.remember(caster, 320, 1)}
     end)
 
     assert {:ok, result} = BaAssassincross.cast(caster, :self, 1, BaAssassincross.definition())
