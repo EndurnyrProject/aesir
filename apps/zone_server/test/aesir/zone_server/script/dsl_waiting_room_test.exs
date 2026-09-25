@@ -2,10 +2,13 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
   use ExUnit.Case, async: true
   import Mimic
 
+  alias Aesir.Net.WaitingRoomInfo
   alias Aesir.ZoneServer.Mmo.WaitingRoom
+  alias Aesir.ZoneServer.Npc.Registry, as: NpcRegistry
   alias Aesir.ZoneServer.Script.Ctx
   alias Aesir.ZoneServer.Script.Dsl
   alias Aesir.ZoneServer.Script.Vars
+  alias Aesir.ZoneServer.Unit.Broadcast
   alias Aesir.ZoneServer.Unit.Player.PlayerSession
   alias Aesir.ZoneServer.Unit.UnitRegistry
 
@@ -38,6 +41,24 @@ defmodule Aesir.ZoneServer.Script.WaitingRoomDslTest do
 
       assert {:ok, %WaitingRoom{title: "Waiting", limit: 8, trigger: 7, event_ref: "B::OnStart"}} =
                WaitingRoom.get(@npc_gid)
+    end
+
+    test "broadcasts room info naming the NPC as owner" do
+      test_pid = self()
+
+      stub(NpcRegistry, :module_for_unit, fn @npc_gid ->
+        {:ok, {TestNpc, %{map: "prontera", x: 100, y: 100}}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn "prontera", 100, 100, _range, packet ->
+        send(test_pid, {:in_range, packet})
+        :ok
+      end)
+
+      assert %Ctx{} = Dsl.waitingroom(ctx(), "Waiting", 8)
+
+      assert_receive {:in_range,
+                      %WaitingRoomInfo{room_id: @npc_gid, owner_gid: @npc_gid, owner_is_npc: true}}
     end
   end
 

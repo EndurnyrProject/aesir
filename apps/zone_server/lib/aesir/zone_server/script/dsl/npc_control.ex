@@ -984,7 +984,9 @@ defmodule Aesir.ZoneServer.Script.Dsl.NpcControl do
         title: room.title,
         member_count: length(room.members),
         limit: room.limit,
-        public: true
+        public: true,
+        owner_gid: gid,
+        owner_is_npc: true
       }
 
       Broadcast.to_in_range(placement.map, placement.x, placement.y, Config.view_range(), packet)

@@ -35,6 +35,7 @@ defmodule Aesir.ZoneServer.Network.MessageRouter do
   def delivery_scope(%Aesir.Net.HomunculusResult{}), do: :owner_only
   def delivery_scope(%Aesir.Net.HomunculusPrivateState{}), do: :owner_only
   def delivery_scope(%Aesir.Net.WaitingRoomJoinResult{}), do: :owner_only
+  def delivery_scope(%Aesir.Net.WaitingRoomCreateResult{}), do: :owner_only
   def delivery_scope(_message), do: :area
 
   @doc """

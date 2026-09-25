@@ -267,6 +267,14 @@ message Envelope {
     GuildAntagonistRequest guild_antagonist_request = 209;  // c2s zone
     GuildAntagonistRemoveRequest guild_antagonist_remove_request = 210;  // c2s zone
     GuildAllianceRequestNotify guild_alliance_request_notify = 211;  // s2c zone gameplay
+    // 212-215: player chat room client intents (create and owner commands)
+    WaitingRoomCreateRequest waiting_room_create_request = 212;  // c2s zone
+    WaitingRoomKickRequest waiting_room_kick_request = 213;  // c2s zone
+    WaitingRoomChangeOwnerRequest waiting_room_change_owner_request = 214;  // c2s zone
+    WaitingRoomChangeStatusRequest waiting_room_change_status_request = 215;  // c2s zone
+    // 216-217: player chat room authoritative state (creator / members)
+    WaitingRoomCreateResult waiting_room_create_result = 216;  // s2c zone world
+    WaitingRoomRoleChanged waiting_room_role_changed = 217;  // s2c zone world
   }
 }
 
@@ -2489,11 +2497,51 @@ message HomunculusResult {
   HomunculusPrivateState state = 4;
 }
 
-// Client -> server, join an NPC waiting room (the owner NPC gid is the room id).
-// The password is always empty for NPC-owned rooms but is carried for fidelity.
+// Client -> server, join a chat room (NPC- or player-owned).
 message WaitingRoomJoinRequest {
-  uint32 room_id = 1;   // the owner NPC gid
-  string password = 2;  // always empty for NPC rooms
+  uint32 room_id = 1;   // the room id from WaitingRoomInfo
+  string password = 2;  // checked only for private rooms; NPC rooms are always public
+}
+
+// Client -> server, open a player chat room owned by the sender. The title is
+// truncated to 60 bytes, the password to 8 bytes, and the limit clamped to 1..20.
+message WaitingRoomCreateRequest {
+  string title = 1;
+  string password = 2;  // required to join when `public` is false
+  uint32 limit = 3;     // max members, the owner included
+  bool public = 4;      // false makes the room password-protected
+}
+
+// Client -> server, the room owner kicks a member by character name. The kicked
+// player cannot rejoin that room until it is destroyed.
+message WaitingRoomKickRequest {
+  string name = 1;  // the member's character name
+}
+
+// Client -> server, the room owner hands ownership to a member by character name.
+message WaitingRoomChangeOwnerRequest {
+  string name = 1;  // the new owner's character name
+}
+
+// Client -> server, the room owner edits the room. Same limits as creation.
+message WaitingRoomChangeStatusRequest {
+  string title = 1;
+  string password = 2;
+  uint32 limit = 3;  // max members, the owner included
+  bool public = 4;
+}
+
+// Server -> client, the outcome of a create request. Sent only to the creator.
+message WaitingRoomCreateResult {
+  uint32 result = 1;  // 0 ok, 1 refused
+}
+
+// Server -> client, a member's owner role changed (succession or handoff).
+// Sent to the room's members.
+message WaitingRoomRoleChanged {
+  uint32 room_id = 1;
+  uint32 char_id = 2;  // the member whose role changed
+  bool owner = 3;      // true: now the owner; false: no longer the owner
 }
 
 // Client -> server, leave the waiting room the player is currently in.
@@ -2510,14 +2558,17 @@ message WaitingRoomMember {
   string name = 2;
 }
 
-// Server -> client, a waiting room appeared or its member count changed.
-// Broadcast to nearby players.
+// Server -> client, a chat room appeared or changed (member count, owner, or
+// settings). Broadcast to players near the owner; draw the bubble over the unit
+// `owner_gid`.
 message WaitingRoomInfo {
-  uint32 room_id = 1;       // the owner NPC gid
+  uint32 room_id = 1;       // NPC rooms: the owner NPC gid; player rooms: an allocated id
   string title = 2;
-  uint32 member_count = 3;  // players in the room (the owner NPC is not counted)
-  uint32 limit = 4;         // the room limit (the owner NPC occupies one slot)
-  bool public = 5;          // always true for NPC rooms
+  uint32 member_count = 3;  // players in the room (an owner NPC is not counted)
+  uint32 limit = 4;         // room limit (an owner NPC occupies one slot, a player owner is a member)
+  bool public = 5;          // false: joining requires the password (NPC rooms are always public)
+  uint32 owner_gid = 6;     // the owner unit: the NPC gid or the owning player's char id
+  bool owner_is_npc = 7;    // true for NPC rooms, false for player rooms
 }
 
 // Server -> client, a waiting room disappeared. Broadcast to nearby players.
@@ -2532,6 +2583,7 @@ message WaitingRoomJoinResult {
   // 0 ok, 1 full, 2 wrong password, 3 too low level, 4 too high level, 5 no zeny, 6 kicked
   uint32 result = 2;
   repeated WaitingRoomMember members = 3;
+  uint32 owner_gid = 4;  // on success: the owner NPC gid or the owning player's char id
 }
 
 // Server -> client, a member joined or left the room. Sent to the room's

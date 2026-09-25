@@ -59,6 +59,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
     {%Aesir.Net.WaitingRoomJoinResult{}, {:world, :waiting_room_join_result}},
     {%Aesir.Net.WaitingRoomMemberUpdate{}, {:world, :waiting_room_member_update}},
     {%Aesir.Net.WaitingRoomChat{}, {:world, :waiting_room_chat}},
+    {%Aesir.Net.WaitingRoomCreateResult{}, {:world, :waiting_room_create_result}},
+    {%Aesir.Net.WaitingRoomRoleChanged{}, {:world, :waiting_room_role_changed}},
     {%Aesir.Net.ProgressBar{}, {:world, :progress_bar}},
     {%Aesir.Net.NavigateTo{}, {:world, :navigate_to}},
     {%Aesir.Net.NavigationFailed{}, {:world, :navigation_failed}},
@@ -87,6 +89,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
       assert MessageRouter.delivery_scope(%Aesir.Net.HomunculusResult{}) == :owner_only
       assert MessageRouter.delivery_scope(%Aesir.Net.HomunculusPrivateState{}) == :owner_only
       assert MessageRouter.delivery_scope(%Aesir.Net.WaitingRoomJoinResult{}) == :owner_only
+      assert MessageRouter.delivery_scope(%Aesir.Net.WaitingRoomCreateResult{}) == :owner_only
+      assert MessageRouter.delivery_scope(%Aesir.Net.WaitingRoomRoleChanged{}) == :area
     end
 
     test "keeps existing public messages area-scoped" do
@@ -94,7 +98,8 @@ defmodule Aesir.ZoneServer.Network.MessageRouterTest do
           struct.__struct__ not in [
             Aesir.Net.HomunculusResult,
             Aesir.Net.HomunculusPrivateState,
-            Aesir.Net.WaitingRoomJoinResult
+            Aesir.Net.WaitingRoomJoinResult,
+            Aesir.Net.WaitingRoomCreateResult
           ] do
         assert MessageRouter.delivery_scope(struct) == :area
       end

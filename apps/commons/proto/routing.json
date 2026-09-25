@@ -198,6 +198,12 @@
     {"field": 208, "tag": "guild_alliance_break_request", "message": "GuildAllianceBreakRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 209, "tag": "guild_antagonist_request", "message": "GuildAntagonistRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 210, "tag": "guild_antagonist_remove_request", "message": "GuildAntagonistRemoveRequest", "direction": "c2s", "servers": ["zone"]},
-    {"field": 211, "tag": "guild_alliance_request_notify", "message": "GuildAllianceRequestNotify", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"}
+    {"field": 211, "tag": "guild_alliance_request_notify", "message": "GuildAllianceRequestNotify", "direction": "s2c", "servers": ["zone"], "channel": "gameplay"},
+    {"field": 212, "tag": "waiting_room_create_request", "message": "WaitingRoomCreateRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 213, "tag": "waiting_room_kick_request", "message": "WaitingRoomKickRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 214, "tag": "waiting_room_change_owner_request", "message": "WaitingRoomChangeOwnerRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 215, "tag": "waiting_room_change_status_request", "message": "WaitingRoomChangeStatusRequest", "direction": "c2s", "servers": ["zone"]},
+    {"field": 216, "tag": "waiting_room_create_result", "message": "WaitingRoomCreateResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 217, "tag": "waiting_room_role_changed", "message": "WaitingRoomRoleChanged", "direction": "s2c", "servers": ["zone"], "channel": "world"}
   ]
 }
