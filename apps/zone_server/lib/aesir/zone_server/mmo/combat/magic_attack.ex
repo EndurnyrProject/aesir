@@ -470,6 +470,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
     - `:bonus_matk` - flat MATK added after the skill-ratio step (default `0`)
     - `:element` - the skill's magic element (default `:neutral`)
     - `:hit_count` - number of magic hits to deliver (default `1`)
+    - `:display_hit_count` - packet-only divisions for the summed damage when
+      the hits are delivered as one total (Gloria Domini shows one roll as
+      three hits); defaults to the number of hits
     - `:skip_range` - skip only the distance check, which gates on the caster's
       *weapon* attack range. Direct nukes must pass it: their skill range is
       validated by the interpreter at cast start and castend, and the weapon-range
@@ -1177,7 +1180,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.MagicAttack do
             skill_id,
             skill_level,
             total,
-            div: length(prepared_hits)
+            div: Keyword.get(opts, :display_hit_count) || length(prepared_hits)
           )
 
         apply_and_broadcast_magic_damage(

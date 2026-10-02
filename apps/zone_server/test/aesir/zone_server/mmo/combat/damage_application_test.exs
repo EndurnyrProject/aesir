@@ -390,6 +390,65 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplicationTest do
              )
   end
 
+  describe "Devotion bypass for Gloria Domini" do
+    setup do
+      devotee_id = 29
+      crusader_id = 30
+      crusader_pid = spawn(fn -> Process.sleep(:infinity) end)
+
+      crusader = %PlayerState{
+        character_id: crusader_id,
+        action_state: :idle,
+        stats: %{current_state: %{hp: 100}}
+      }
+
+      UnitRegistry.register_unit(:player, crusader_id, PlayerState, crusader, crusader_pid)
+      SpatialIndex.add_player(devotee_id, 50, 50, "prontera")
+      SpatialIndex.add_player(crusader_id, 51, 50, "prontera")
+
+      :ok =
+        StatusStorage.apply_status(:player, devotee_id, :sc_devotion,
+          state: %{peer: {:player, crusader_id}, link_id: make_ref(), range: 7}
+        )
+
+      %{devotee_id: devotee_id, crusader_pid: crusader_pid}
+    end
+
+    @tag game_mode: :pre_renewal
+    test "pre-renewal Pressure lands on the devotee", %{devotee_id: devotee_id} do
+      stub_unit_info(devotee_id)
+      reject(&PlayerSession.apply_damage/3)
+
+      assert {40, prepared} =
+               DamageApplication.prepare_unit_damage(
+                 :player,
+                 devotee_id,
+                 40,
+                 %{skill_id: 367, dmg_type: :misc},
+                 20
+               )
+
+      refute Map.get(prepared, :redirected, false)
+    end
+
+    @tag game_mode: :renewal
+    test "renewal Pressure is rerouted like any other hit", %{
+      devotee_id: devotee_id,
+      crusader_pid: crusader_pid
+    } do
+      expect(PlayerSession, :apply_damage, fn ^crusader_pid, 40, {:player, 20} -> :ok end)
+
+      assert {0, _prepared} =
+               DamageApplication.prepare_unit_damage(
+                 :player,
+                 devotee_id,
+                 40,
+                 %{skill_id: 367, dmg_type: :magic},
+                 20
+               )
+    end
+  end
+
   test "fully absorbed zero damage does not dispatch post-damage" do
     target_id = 19
     target_pid = spawn(fn -> Process.sleep(:infinity) end)

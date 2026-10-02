@@ -14,6 +14,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
   alias Aesir.ZoneServer.Mmo.Combat.EquipAutocast
   alias Aesir.ZoneServer.Mmo.Combat.EquipComa
   alias Aesir.ZoneServer.Mmo.Combat.EquipVanish
+  alias Aesir.ZoneServer.Mmo.Combat.HitCalculations
   alias Aesir.ZoneServer.Mmo.Combat.Knockback
   alias Aesir.ZoneServer.Mmo.Combat.MiscDamageCalculator
   alias Aesir.ZoneServer.Mmo.Combat.OnHitEffects
@@ -68,6 +69,33 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttackTest do
       source_order: source_order,
       source_identity: {:host, source_order + 1}
     }
+  end
+
+  test "hit_rate_bonus_flat reaches the single-target hit roll" do
+    Mimic.copy(HitCalculations)
+    attacker = CombatTestHelper.create_player_combatant(unit_id: 1001, position: {100, 100})
+    target = CombatTestHelper.create_player_combatant(unit_id: 2001, position: {101, 100})
+    caster_state = %TestUnit{combatant: attacker, hp: 100}
+    target_state = %TestUnit{combatant: target, hp: 100}
+
+    stub(TargetResolver, :resolve, fn {:player, 2001} -> {:ok, self(), target_state, :player} end)
+    stub(TargetResolver, :ensure_targetable, fn ^target_state, :player -> :ok end)
+    stub(AttackValidator, :validate, fn ^attacker, ^target, _opts -> :ok end)
+    stub(Targeting, :validate_enemy, fn ^attacker, ^target -> :ok end)
+    stub(StatusInterpreter, :before_weapon_hit, fn :player, 2001, _info -> :continue end)
+    stub(Broadcast, :to_in_range, fn _map, _x, _y, _range, _packet -> :ok end)
+
+    expect(HitCalculations, :calculate_hit_result, fn attacker_stats, _defender_stats ->
+      assert attacker_stats.hit_rate_bonus_flat == 20
+      :miss
+    end)
+
+    assert :ok =
+             SkillAttack.execute_skill_attack(caster_state, {:player, 2001},
+               skill_id: 480,
+               skill_level: 1,
+               hit_rate_bonus_flat: 20
+             )
   end
 
   test "physical skill hit dispatches matching procs once despite display divisions" do

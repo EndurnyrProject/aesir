@@ -1059,6 +1059,39 @@ defmodule Aesir.ZoneServer.Mmo.CombatMagicAttackTest do
       assert_received {:damage, 90}
     end
 
+    test "display_hit_count splits one hit's packet without changing the damage" do
+      caster = caster_with_band(10, 1000)
+      test_pid = self()
+      stub_single_target_mob()
+
+      stub(MagicDamageCalculator, :calculate_magic_damage, fn _a, _t, _opts ->
+        {:ok, %{damage: 90, is_critical: false}}
+      end)
+
+      stub(Broadcast, :to_in_range, fn @map_name, 150, 150, _range, %SkillDamage{} = packet ->
+        send(test_pid, {:packet, packet})
+        :ok
+      end)
+
+      stub(MobSession, :apply_damage, fn _pid, damage, @caster_id ->
+        send(test_pid, {:damage, damage})
+        :ok
+      end)
+
+      assert {:ok, {:mob, @target_id}} =
+               Combat.execute_magic_attack(caster, @target_id,
+                 skill_id: 367,
+                 skill_level: 1,
+                 skill_ratio: 100,
+                 element: :holy,
+                 hit_count: 1,
+                 display_hit_count: 3
+               )
+
+      assert_received {:packet, %SkillDamage{damage: 90, div: 3}}
+      assert_received {:damage, 90}
+    end
+
     test "passes flat bonus MATK into the magic damage pipeline" do
       caster = build_caster()
       test_pid = self()

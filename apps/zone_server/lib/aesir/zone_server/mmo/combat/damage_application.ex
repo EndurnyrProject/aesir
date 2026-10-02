@@ -9,6 +9,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   session-module knowledge.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Mmo.Combat.Hallucination
   alias Aesir.ZoneServer.Mmo.Combat.HandedAttack
@@ -42,9 +43,11 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
   A valid Devotion link delivers to the Crusader with `redirected: true`,
   bypassing recipient absorption, map rates and return damage, and returns `0`
   for the devotee. A stale link is torn down and the hit lands normally.
-  Reflected spells retain their metadata and settle at their actual recipient;
-  unlike prepared weapon returns, they still receive equipment and status
-  modifiers there. Reflected hits and self-damage are never rerouted.
+  Pre-renewal Gloria Domini (skill 367) is never rerouted: it strikes the
+  devotee directly. Reflected spells retain their metadata and settle at their
+  actual recipient; unlike prepared weapon returns, they still receive
+  equipment and status modifiers there. Reflected hits and self-damage are
+  never rerouted.
   """
   @spec prepare_unit_damage(
           :player | :mob | :homunculus | :skill_unit,
@@ -411,7 +414,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageApplication do
 
   defp reroutable?(hit_info) do
     not Map.get(hit_info, :reflected, false) and
-      not Map.get(hit_info, :redirected, false)
+      not Map.get(hit_info, :redirected, false) and
+      Map.get(hit_info, :skill_id) not in devotion_bypass_skill_ids()
+  end
+
+  defp devotion_bypass_skill_ids do
+    case GameMode.mode() do
+      :pre_renewal -> [367]
+      :renewal -> []
+    end
   end
 
   # Applies the full computed damage to the Crusader through the async apply

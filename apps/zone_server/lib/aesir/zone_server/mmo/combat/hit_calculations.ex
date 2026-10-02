@@ -110,7 +110,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
 
   ## Parameters
     - attacker_stats: Map containing attacker's hit stat and the optional
-      skill_hit_rate_bonus_pct and hit_rate_bonus_pct
+      skill_hit_rate_bonus_pct, hit_rate_bonus_pct, and hit_rate_bonus_flat (a
+      flat addition applied after the clamp and the relative bonuses, e.g.
+      Rapid Smiting's +20)
     - target_stats: Map containing target's flee stat
 
   ## Returns
@@ -138,7 +140,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculations do
       |> scale_by(Map.get(attacker_stats, :skill_hit_rate_bonus_pct, 0))
       |> scale_by(Map.get(attacker_stats, :hit_rate_bonus_pct, 0))
 
-    max(0, min(100, scaled_hit_rate))
+    flat_bonus = Map.get(attacker_stats, :hit_rate_bonus_flat, 0)
+
+    max(0, min(100, scaled_hit_rate + flat_bonus))
   end
 
   defp scale_by(hit_rate, 0), do: hit_rate

@@ -138,6 +138,16 @@ defmodule Aesir.ZoneServer.Mmo.Combat.HitCalculationsTest do
       assert HitCalculations.calculate_hit_rate(attacker, target) == 0
     end
 
+    test "hit_rate_bonus_flat adds after the clamp and re-clamps" do
+      # A rate clamped to 0 still gains the flat bonus (Rapid Smiting's +20)...
+      assert HitCalculations.calculate_hit_rate(%{hit: 0, hit_rate_bonus_flat: 20}, %{flee: 1000}) ==
+               20
+
+      # ...and a rate already at 100 stays at 100.
+      assert HitCalculations.calculate_hit_rate(%{hit: 200, hit_rate_bonus_flat: 20}, %{flee: 50}) ==
+               100
+    end
+
     test "hit_rate_bonus_pct cannot rescue a rate already clamped to 0" do
       attacker = %{hit: 0, hit_rate_bonus_pct: 2000}
       target = %{flee: 1000}

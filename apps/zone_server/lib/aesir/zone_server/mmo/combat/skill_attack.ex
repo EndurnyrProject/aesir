@@ -101,6 +101,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       already-clamped hit rate for this attack's hit/flee roll only (e.g. a
       skill's own `+5%` per level accuracy bonus), not a flat addition to the
       `hit` stat (default `0`, see `HitCalculations.calculate_hit_rate/2`)
+    - `:hit_rate_bonus_flat` - flat percentage points added to the hit rate
+      after the clamp and the relative bonuses (Rapid Smiting's +20)
+      (default `0`)
     - `:element` - forces the attack element for this hit, overriding the
       weapon element (e.g. Envenom's poison, Sand Attack's earth)
     - `:skip_range` - skip only the distance check (which gates on the caster's
@@ -320,6 +323,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           %{
             display_hits: display_hits,
             hit_rate_bonus_pct: hit_rate_bonus_pct,
+            hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
             ignore_flee: Keyword.get(opts, :ignore_flee, false),
             ranged: Keyword.get(opts, :ranged, false),
             knockback_options: knockback_options(opts)
@@ -445,6 +449,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       hit_opts = %{
         display_hits: display_hits,
         hit_rate_bonus_pct: hit_rate_bonus_pct,
+        hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
         ignore_flee: Keyword.get(opts, :ignore_flee, false),
         ranged: ranged?,
         weapon_hit_metadata: weapon_hit_metadata
@@ -550,6 +555,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
             typed_results?: true,
             knockback_options: knockback_options(opts),
             hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
+            hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
             display_hit_count: Keyword.get(opts, :display_hit_count)
           },
           &Targeting.validate_field_target(group, &1, &2)
@@ -593,6 +599,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       typed_results?: Keyword.get(opts, :typed_results, false),
       knockback_options: knockback_options(opts),
       hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
+      hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0),
       display_hit_count: Keyword.get(opts, :display_hit_count),
       splash_center: center
     }
@@ -646,7 +653,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
           ignore_flee?: false,
           typed_results?: false,
           knockback_options: knockback_options(opts),
-          hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0)
+          hit_rate_bonus_pct: Keyword.get(opts, :hit_rate_bonus_pct, 0),
+          hit_rate_bonus_flat: Keyword.get(opts, :hit_rate_bonus_flat, 0)
         })
 
       {:error, _reason} ->
@@ -757,6 +765,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
       hit_opts = %{
         display_hits: Map.get(result_opts, :display_hit_count),
         hit_rate_bonus_pct: hit_rate_bonus_pct,
+        hit_rate_bonus_flat: Map.get(result_opts, :hit_rate_bonus_flat, 0),
         ignore_flee: ignore_flee?,
         ranged: ranged?,
         weapon_hit_metadata: %{}
@@ -1117,6 +1126,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     %{
       display_hits: display_hits,
       hit_rate_bonus_pct: hit_rate_bonus_pct,
+      hit_rate_bonus_flat: hit_rate_bonus_flat,
       ignore_flee: ignore_flee?,
       ranged: ranged?,
       knockback_options: knockback_options
@@ -1127,7 +1137,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
         :hit
       else
         HitCalculations.calculate_hit_result(
-          hit_stats(attacker, hit_rate_bonus_pct),
+          hit_stats(attacker, hit_rate_bonus_pct, hit_rate_bonus_flat),
           flee_stats(target)
         )
       end
@@ -1291,14 +1301,18 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
          hit_opts,
          coma_decision
        ) do
-    %{hit_rate_bonus_pct: hit_rate_bonus_pct, ignore_flee: ignore_flee?} = hit_opts
+    %{
+      hit_rate_bonus_pct: hit_rate_bonus_pct,
+      hit_rate_bonus_flat: hit_rate_bonus_flat,
+      ignore_flee: ignore_flee?
+    } = hit_opts
 
     hit_result =
       if ignore_flee? do
         :hit
       else
         HitCalculations.calculate_hit_result(
-          hit_stats(attacker, hit_rate_bonus_pct),
+          hit_stats(attacker, hit_rate_bonus_pct, hit_rate_bonus_flat),
           flee_stats(target)
         )
       end
@@ -1572,13 +1586,14 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
 
   # The cast skill's own accuracy bonus and the attacker's standing bonus stay
   # separate: they compound on the clamped hit rate rather than summing.
-  defp hit_stats(attacker, hit_rate_bonus_pct) do
+  defp hit_stats(attacker, hit_rate_bonus_pct, hit_rate_bonus_flat) do
     %{
       hit: attacker.combat_stats.hit,
       char_id: attacker.unit_id,
       perfect_hit: EquipmentBonuses.perfect_hit_rate(attacker),
       skill_hit_rate_bonus_pct: hit_rate_bonus_pct,
-      hit_rate_bonus_pct: Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0)
+      hit_rate_bonus_pct: Map.get(attacker.combat_stats, :hit_rate_bonus_pct, 0),
+      hit_rate_bonus_flat: hit_rate_bonus_flat
     }
   end
 
