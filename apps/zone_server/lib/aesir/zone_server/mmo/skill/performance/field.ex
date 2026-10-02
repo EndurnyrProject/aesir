@@ -4,6 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
 
   The group owns the footprint and occupant statuses. Its finite lock pays SP
   and asks for asynchronous group teardown whenever performing ends.
+
+  A song or dance field follows its walking performer; an ensemble field stays
+  where it was cast because both performers are rooted.
   """
 
   require Logger
@@ -54,7 +57,11 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
 
       with {:ok, group} <-
              Unit.place(caster, definition.name, level, {caster.x, caster.y},
-               state: %{performance: perf, ignore_land_protector: true}
+               state: %{
+                 performance: perf,
+                 ignore_land_protector: true,
+                 follows_caster: perf.kind != :ensemble
+               }
              ) do
         finish_start(caster, definition, level, perf, group, partners)
       end
@@ -62,12 +69,9 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   end
 
   defp finish_start(caster, definition, level, perf, group, partners) do
-    case lock(caster.character_id, definition.id, group, perf.upkeep, nil) do
+    case lock(caster.character_id, definition.id, group, perf, List.first(partners)) do
       :ok ->
-        Enum.each(
-          partners,
-          &lock_partner(&1, caster.character_id, definition.id, group, perf.upkeep)
-        )
+        Enum.each(partners, &lock_partner(&1, caster.character_id, definition.id, group, perf))
 
         {:ok, Snapshot.remember(caster, definition.id, level)}
 
@@ -77,8 +81,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     end
   end
 
-  defp lock_partner(partner, caster_id, skill_id, group, upkeep) do
-    case lock(partner, skill_id, group, upkeep, caster_id) do
+  defp lock_partner(partner, caster_id, skill_id, group, perf) do
+    case lock(partner, skill_id, group, perf, caster_id) do
       :ok -> :ok
       {:error, reason} -> Logger.warning("Performance partner lock failed: #{inspect(reason)}")
     end
@@ -131,14 +135,15 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     end)
   end
 
-  defp lock(id, skill_id, group, upkeep, partner_id) do
+  defp lock(id, skill_id, group, perf, partner_id) do
     StatusInterpreter.apply_status(:player, id, :sc_dancing,
       caster_id: id,
       val1: skill_id,
       val2: group.group_id,
+      val3: perf.lesson_level,
       val4: partner_id,
       duration: group.expires_at - group.created_at + 1_000,
-      state: %{upkeep: upkeep, ticks: 0},
+      state: %{upkeep: perf.upkeep, ticks: 0},
       owner_refresh: :notify
     )
   end

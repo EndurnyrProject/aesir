@@ -275,6 +275,8 @@ message Envelope {
     // 216-217: player chat room authoritative state (creator / members)
     WaitingRoomCreateResult waiting_room_create_result = 216;  // s2c zone world
     WaitingRoomRoleChanged waiting_room_role_changed = 217;  // s2c zone world
+    // 218: a live skill-unit group moved with its caster
+    SkillUnitMove skill_unit_move = 218;  // s2c zone world
   }
 }
 
@@ -2196,6 +2198,19 @@ enum SkillUnitDespawnReason {
   SKILL_UNIT_DESPAWN_REASON_MAP_SHUTDOWN = 5;
   SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW = 6;
   SKILL_UNIT_DESPAWN_REASON_CANCELED = 7;
+}
+
+// Server -> client, a known group's footprint moved with its caster (a
+// pre-renewal song or dance field following its performer). Cell IDs are
+// stable: every listed cell is the same cell at its new coordinates, and the
+// list is the group's complete cell set. Group identity, timing and phase are
+// unchanged. Observers who do not know the group receive SkillUnitSpawn instead.
+message SkillUnitMove {
+  uint64 group_id = 1;
+  int32 center_x = 2;
+  int32 center_y = 3;
+  repeated SkillUnitCellState cells = 4;
+  uint64 server_tick = 5;
 }
 
 // Server -> client, removes the listed cells from a persistent group.

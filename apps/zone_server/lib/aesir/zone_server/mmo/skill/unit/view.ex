@@ -4,6 +4,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
   alias Aesir.Commons.Utils.ServerTick
   alias Aesir.Net.SkillUnitCellState
   alias Aesir.Net.SkillUnitGroupState
+  alias Aesir.Net.SkillUnitMove
   alias Aesir.Net.SkillUnitSnapshot
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Cell
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
@@ -45,6 +46,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.View do
         groups
         |> Enum.sort_by(fn {group, _cells} -> group.group_id end)
         |> Enum.map(fn {group, cells} -> group(group, cells, clock) end)
+    }
+  end
+
+  @doc "Builds the move of a known group whose cells kept their IDs."
+  @spec move(Group.t(), [Cell.t()], non_neg_integer()) :: SkillUnitMove.t()
+  def move(%Group{center: {x, y}} = group, cells, server_tick) do
+    %SkillUnitMove{
+      group_id: group.group_id,
+      center_x: x,
+      center_y: y,
+      cells: cells |> Enum.sort_by(& &1.cell_id) |> Enum.map(&cell/1),
+      server_tick: server_tick
     }
   end
 

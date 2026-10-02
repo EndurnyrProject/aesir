@@ -1319,7 +1319,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
 
   @impl true
   def handle_cast(
-        {:send_packet, %SkillUnitDespawn{group_id: group_id} = packet},
+        {:send_packet, %SkillUnitDespawn{group_id: group_id, reason: reason} = packet},
         %{game_state: game_state, connection_pid: connection_pid} = state
       ) do
     if connection_pid do
@@ -1327,7 +1327,7 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
     end
 
     game_state =
-      if SkillUnitStorage.get(group_id) do
+      if reason != :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW and SkillUnitStorage.get(group_id) do
         game_state
       else
         %{

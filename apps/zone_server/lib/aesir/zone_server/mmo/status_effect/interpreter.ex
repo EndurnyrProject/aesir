@@ -717,13 +717,16 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
 
   @doc """
   Returns whether a unit may move, i.e. carries no `prevents_movement` status.
+
+  Players have two entry-dependent rules: Hiding allows movement with Tunnel
+  Drive, and a performance lock roots only an ensemble performer (one with a
+  partner in `val4`).
   """
   @spec can_move?(unit_type(), integer()) :: boolean()
   def can_move?(:player, unit_id) do
-    not restricted?(:player, unit_id, fn
-      :sc_hiding -> not tunnel_drive?(unit_id)
-      status_id -> prevents_movement?(status_id)
-    end)
+    :player
+    |> StatusStorage.get_unit_statuses(unit_id)
+    |> Enum.all?(&(not blocks_player_movement?(&1, unit_id)))
   end
 
   def can_move?(unit_type, unit_id),
@@ -816,6 +819,14 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   @spec concealed?(unit_type(), integer()) :: boolean()
   def concealed?(unit_type, unit_id),
     do: restricted?(unit_type, unit_id, &PropertyChecker.has_property?(&1, :conceals))
+
+  defp blocks_player_movement?(%StatusEntry{type: :sc_hiding}, unit_id),
+    do: not tunnel_drive?(unit_id)
+
+  defp blocks_player_movement?(%StatusEntry{type: :sc_dancing, val4: partner_id}, _unit_id),
+    do: is_integer(partner_id) and partner_id > 0
+
+  defp blocks_player_movement?(%StatusEntry{type: type}, _unit_id), do: prevents_movement?(type)
 
   defp tunnel_drive?(unit_id) do
     case UnitRegistry.get_unit(:player, unit_id) do

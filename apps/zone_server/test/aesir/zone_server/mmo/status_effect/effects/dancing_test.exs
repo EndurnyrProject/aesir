@@ -77,7 +77,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
     assert_received {:destroyed, 42}
   end
 
-  test "lock blocks movement and attacks but allows strike, arrow and adaptation" do
+  test "solo lock allows walking but blocks attacks and all but strike, arrow and adaptation" do
     player = player(17)
     :ok = UnitRegistry.register_player(player, self())
 
@@ -86,16 +86,39 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.DancingTest do
                caster_id: 17,
                val1: 315,
                val2: 42,
+               val4: nil,
                duration: 60_000,
                state: %{upkeep: 5, ticks: 0}
              )
 
-    refute Interpreter.can_move?(:player, 17)
+    assert Interpreter.can_move?(:player, 17)
     refute Interpreter.can_attack?(:player, 17)
     for skill <- [316, 324, 304], do: assert(Interpreter.can_use_skill?(:player, 17, skill))
     refute Interpreter.can_use_skill?(:player, 17, 305)
     assert Registry.get_definition(:sc_dancing).icon == :bdplaying
     assert Registry.get_definition(:sc_dancing).bypass_resistance
+  end
+
+  test "an ensemble lock roots its performer" do
+    player = player(17)
+    :ok = UnitRegistry.register_player(player, self())
+
+    assert :ok =
+             Interpreter.apply_status(:player, 17, :sc_dancing,
+               caster_id: 17,
+               val1: 306,
+               val2: 42,
+               val4: 18,
+               duration: 60_000,
+               state: %{upkeep: 5, ticks: 0}
+             )
+
+    refute Interpreter.can_move?(:player, 17)
+  end
+
+  test "walking slows by 500% less 40 per Lesson level" do
+    assert %{movement_speed: 500} = Dancing.modifiers(%StatusEntry{val3: 0}, %{})
+    assert %{movement_speed: 100} = Dancing.modifiers(%StatusEntry{val3: 10}, %{})
   end
 
   defp player(id) do

@@ -12,6 +12,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
   alias Aesir.ZoneServer.Mmo.Skill.Performance
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Field
   alias Aesir.ZoneServer.Mmo.Skill.Performance.Snapshot
+  alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Manager
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Storage
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -53,14 +54,35 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.FieldTest do
     assert group.state.performance.next_overlap_at == 0
     skill_id = definition.id
 
-    assert %{val1: ^skill_id, val2: group_id} =
+    assert %{val1: ^skill_id, val2: group_id, val3: 10, val4: nil} =
              StatusStorage.get_status(:player, 17, :sc_dancing)
 
     assert group_id == group.group_id
+    assert Group.follows_caster?(group)
     refute StatusStorage.has_status?(:player, 17, :sc_whistle)
 
     assert {:error, :already_performing} =
              Field.start(caster, definition, 5, :sc_whistle, [], kind: :song, upkeep: 5)
+  end
+
+  @tag game_mode: :pre_renewal
+  test "an ensemble field stays put and pairs both performers' locks" do
+    caster = player(17)
+    :ok = UnitRegistry.register_player(caster, self())
+    :ok = UnitRegistry.register_player(player(18), self())
+    {:ok, definition} = Catalog.by_name(:ba_whistle)
+
+    {:ok, _} =
+      Field.start(caster, definition, 5, :sc_whistle, [],
+        kind: :ensemble,
+        upkeep: 5,
+        partners: [18]
+      )
+
+    [group] = Storage.get_groups_by_caster(:player, 17)
+    refute Group.follows_caster?(group)
+    assert %{val4: 18} = StatusStorage.get_status(:player, 17, :sc_dancing)
+    assert %{val4: 17} = StatusStorage.get_status(:player, 18, :sc_dancing)
   end
 
   @tag game_mode: :pre_renewal

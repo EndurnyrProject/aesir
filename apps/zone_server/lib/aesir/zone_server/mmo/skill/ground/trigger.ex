@@ -55,6 +55,20 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ground.Trigger do
     |> Enum.each(&maybe_out(&1, mover))
   end
 
+  @doc """
+  Recenters every group anchored to the mover (a pre-renewal song or dance
+  field) on the mover's cell `(x, y)` on `map_name`.
+
+  Units without an anchored group cost one caster-index lookup. Returns `:ok`.
+  """
+  @spec on_caster_moved(mover(), String.t(), integer(), integer()) :: :ok
+  def on_caster_moved({unit_type, unit_id}, map_name, x, y) do
+    unit_type
+    |> Storage.get_groups_by_caster(unit_id)
+    |> Enum.filter(&Group.follows_caster?/1)
+    |> Enum.each(&Manager.follow_caster(&1.group_id, map_name, {x, y}))
+  end
+
   @spec still_inside?(Group.t(), String.t(), integer(), integer()) :: boolean()
   defp still_inside?(%Group{map_name: map_name, cells: cells}, new_map, new_x, new_y) do
     new_map == map_name and {new_x, new_y} in cells

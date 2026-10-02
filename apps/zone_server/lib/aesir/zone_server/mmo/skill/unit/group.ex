@@ -127,6 +127,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Group do
   def ignores_land_protector?(%__MODULE__{}), do: false
 
   @doc """
+  Whether this group's footprint moves with its caster (a pre-renewal song or
+  dance field), keeping its center on the caster's cell.
+  """
+  @spec follows_caster?(t()) :: boolean()
+  def follows_caster?(%__MODULE__{state: %{follows_caster: true}}), do: true
+  def follows_caster?(%__MODULE__{}), do: false
+
+  @doc """
   Whether this group's ground unit may damage its own caster (Grand Cross),
   overriding the default targeting exclusion of the caster from its own unit.
   """

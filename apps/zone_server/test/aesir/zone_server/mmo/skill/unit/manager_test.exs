@@ -3200,6 +3200,105 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  describe "follow_caster/4" do
+    test "shifts the footprint, moves field support and publishes the move by observer" do
+      test_pid = self()
+      stub(Interpreter, :apply_status, fn _unit_type, _unit_id, _status_type, _params -> :ok end)
+      stub(Interpreter, :remove_status, fn _unit_type, _unit_id, _status_type -> :ok end)
+      stub(SpatialIndex, :get_players_in_range, fn _map_name, _x, _y, _range -> [43, 99] end)
+      stub(Broadcast, :to_in_range, fn _map_name, _x, _y, _range, _packet -> :ok end)
+      stub(Broadcast, :to_player, fn player_id, packet -> send(test_pid, {player_id, packet}) end)
+
+      manager = start_manager(10_000)
+      allow(Interpreter, test_pid, manager)
+      allow(SpatialIndex, test_pid, manager)
+
+      for {id, x} <- [{42, 100}, {43, 102}] do
+        :ok = SpatialIndex.add_unit(:player, id, x, 100, "prontera")
+
+        living = %PlayerState{
+          character_id: id,
+          action_state: :idle,
+          stats: %{current_state: %{hp: 100}}
+        }
+
+        :ok = UnitRegistry.register_unit(:player, id, PlayerState, living, test_pid)
+      end
+
+      :ok =
+        Manager.register(
+          manager,
+          group(1,
+            skill_name: :field_unit,
+            visibility: :public,
+            cells: [{100, 100}, {101, 100}],
+            state: %{follows_caster: true}
+          )
+        )
+
+      :ok = Storage.add_observer_group(98, 1)
+      :ok = Storage.add_observer_group(99, 1)
+      ids_by_x = Map.new(Storage.get_cells_by_group(1), &{&1.x, &1.cell_id})
+      ids = ids_by_x |> Map.values() |> Enum.sort()
+      assert [{:player, 42, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+
+      :ok = Manager.follow_caster(manager, 1, "prontera", {101, 100})
+      _ = :sys.get_state(manager)
+
+      assert %Group{center: {101, 100}, origin: {101, 100}, cells: [{101, 100}, {102, 100}]} =
+               Storage.get(1)
+
+      assert %{ids_by_x[100] => {101, 100}, ids_by_x[101] => {102, 100}} ==
+               Map.new(Storage.get_cells_by_group(1), &{&1.cell_id, {&1.x, &1.y}})
+
+      assert [] == Storage.get_groups_at_cell("prontera", 100, 100)
+      assert [%Group{group_id: 1}] = Storage.get_groups_at_cell("prontera", 102, 100)
+      assert [{:player, 43, :sc_quagmire, []}] = FieldSupport.sources_for_group(1)
+
+      assert_receive {43, %Aesir.Net.SkillUnitSpawn{group: %{group_id: 1, center_x: 101}}}
+
+      assert_receive {99,
+                      %Aesir.Net.SkillUnitMove{
+                        group_id: 1,
+                        center_x: 101,
+                        center_y: 100,
+                        cells: moved_cells
+                      }}
+
+      assert ids == Enum.map(moved_cells, & &1.cell_id)
+      assert [101, 102] == Enum.map(moved_cells, & &1.x)
+
+      assert_receive {98,
+                      %Aesir.Net.SkillUnitDespawn{
+                        group_id: 1,
+                        cell_ids: ^ids,
+                        reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW
+                      }}
+
+      refute_received {99, %Aesir.Net.SkillUnitSpawn{}}
+      refute_received {43, %Aesir.Net.SkillUnitMove{}}
+
+      for observer <- [43, 99],
+          do: assert(MapSet.new([1]) == Storage.get_observer_groups(observer))
+
+      assert MapSet.new() == Storage.get_observer_groups(98)
+    end
+
+    test "ignores stale requests" do
+      manager = start_manager(10_000)
+      :ok = Manager.register(manager, group(1, visibility: :public, cells: [{100, 100}]))
+      cells = Storage.get_cells_by_group(1)
+
+      :ok = Manager.follow_caster(manager, 1, "prontera", {100, 100})
+      :ok = Manager.follow_caster(manager, 1, "geffen", {101, 100})
+      :ok = Manager.follow_caster(manager, 404, "prontera", {101, 100})
+      _ = :sys.get_state(manager)
+
+      assert %Group{center: {100, 100}, cells: [{100, 100}]} = Storage.get(1)
+      assert cells == Storage.get_cells_by_group(1)
+    end
+  end
+
   describe "land protector" do
     test "placement destroys overlapping foreign cells per cell, not per group" do
       manager = start_manager(10_000)

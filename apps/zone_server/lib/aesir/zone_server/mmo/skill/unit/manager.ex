@@ -178,6 +178,21 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @spec destroy_async(server(), non_neg_integer()) :: :ok
   def destroy_async(server, group_id), do: GenServer.cast(server, {:destroy, group_id})
 
+  @doc """
+  Asks a caster-anchored group to recenter on its caster's new cell.
+
+  Asynchronous, so the moving unit's session never waits on the manager. A
+  stale request (group gone, other map, already centered) is a no-op.
+  """
+  @spec follow_caster(non_neg_integer(), String.t(), Group.cell()) :: :ok
+  def follow_caster(group_id, map_name, cell),
+    do: follow_caster(default_server(), group_id, map_name, cell)
+
+  @doc false
+  @spec follow_caster(server(), non_neg_integer(), String.t(), Group.cell()) :: :ok
+  def follow_caster(server, group_id, map_name, cell),
+    do: GenServer.cast(server, {:follow_caster, group_id, map_name, cell})
+
   @doc "Returns a live targetable cell, revalidating it inside the owning manager."
   @spec targetable_cell(server(), non_neg_integer()) :: {:ok, Cell.t()} | {:error, atom()}
   def targetable_cell(server, cell_id), do: GenServer.call(server, {:targetable_cell, cell_id})
@@ -418,6 +433,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
 
   def handle_cast({:release_trap_link, group_id, link_id}, state) do
     release_trap_link_now(group_id, link_id)
+    {:noreply, state}
+  end
+
+  def handle_cast({:follow_caster, group_id, map_name, cell}, state) do
+    case Storage.get(group_id) do
+      %Group{map_name: ^map_name, center: center} = group when center != cell ->
+        move_group(group, cell)
+
+      _ ->
+        :ok
+    end
+
     {:noreply, state}
   end
 
@@ -1009,6 +1036,62 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
     |> reconcile_group()
 
     publish_cells_despawn(group, Enum.map(cells, & &1.cell_id))
+  end
+
+  # Shifts every cell by the caster's displacement, keeping cell IDs. Each
+  # cell's terrain and target indexes follow it, occupants are reconciled
+  # against the new footprint, and dissonance marks catch up on the next
+  # interval.
+  defp move_group(%Group{center: {cx, cy}} = group, {x, y} = center) do
+    shift = fn {cell_x, cell_y} -> {cell_x + x - cx, cell_y + y - cy} end
+    moved = %{group | center: center, origin: center, cells: Enum.map(group.cells, shift)}
+    :ok = Storage.update(moved)
+    group.group_id |> Storage.get_cells_by_group() |> Enum.each(&move_cell(&1, shift))
+
+    moved
+    |> reconcile_group()
+    |> publish_move()
+  end
+
+  defp move_cell(%Cell{} = cell, shift) do
+    :ok = remove_cell_indexes(cell)
+    {x, y} = shift.({cell.x, cell.y})
+    moved = %{cell | x: x, y: y}
+    :ok = Storage.update_cell(moved)
+    :ok = commit_terrain(moved)
+    :ok = register_target(moved)
+  end
+
+  # Observers who already know the group get the move; players newly in view
+  # of the new center get a spawn; earlier observers now out of view lose it,
+  # exactly as if they had walked away from it.
+  defp publish_move(%Group{visibility: :none}), do: :ok
+
+  defp publish_move(%Group{group_id: group_id} = group) do
+    cells = Storage.get_cells_by_group(group_id)
+    previous = group_id |> Storage.take_group_observers() |> MapSet.new()
+
+    recipients =
+      group |> players_in_range() |> then(&eligible_recipients(group, &1)) |> MapSet.new()
+
+    move = View.move(group, cells, ServerTick.now())
+    spawn = %SkillUnitSpawn{group: View.group(group, cells)}
+
+    Enum.each(recipients, fn player_id ->
+      Broadcast.to_player(player_id, if(player_id in previous, do: move, else: spawn))
+      Storage.add_observer_group(player_id, group_id)
+    end)
+
+    left_view = %SkillUnitDespawn{
+      group_id: group_id,
+      cell_ids: cells |> Enum.map(& &1.cell_id) |> Enum.sort(),
+      reason: :SKILL_UNIT_DESPAWN_REASON_LEFT_VIEW,
+      server_tick: ServerTick.now()
+    }
+
+    previous
+    |> MapSet.difference(recipients)
+    |> Enum.each(&Broadcast.to_player(&1, left_view))
   end
 
   defp damage_cell_now(_cell_id, amount, _source, _reason)

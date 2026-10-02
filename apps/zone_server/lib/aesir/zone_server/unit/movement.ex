@@ -57,6 +57,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     mover = {unit_type, unit_id}
     fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
     Trigger.on_enter_cell(mover, map_name, updated_state.x, updated_state.y)
+    Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
     fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
   end
 
@@ -176,6 +177,7 @@ defmodule Aesir.ZoneServer.Unit.Movement do
     mover = {unit_type, unit_id}
     fire_on_leave(mover, previous, map_name, updated_state.x, updated_state.y)
     Trigger.on_enter_cell(mover, map_name, updated_state.x, updated_state.y)
+    Trigger.on_caster_moved(mover, map_name, updated_state.x, updated_state.y)
     fire_movement_contact(mover, previous, map_name, updated_state.x, updated_state.y)
   end
 

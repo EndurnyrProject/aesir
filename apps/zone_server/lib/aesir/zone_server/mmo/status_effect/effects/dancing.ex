@@ -2,8 +2,13 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
   @moduledoc """
   Pre-renewal performing lock. Renewal songs never apply this status.
 
-  The performer cannot move or attack, may use only the listed skills, and
-  pays one SP at the song's upkeep cadence. Ending the lock ends its field.
+  The performer cannot attack, may use only the listed skills, and pays one SP
+  at the song's upkeep cadence. Ending the lock ends its field.
+
+  A solo performer may walk, and the field follows them. Walking is slowed by
+  `500 - 40 * Lesson` percent, where `val3` is the Musical or Dancing Lesson
+  level frozen at cast. An ensemble performer (`val4` holds the partner's
+  character id) is rooted; `Interpreter.can_move?/2` reads that.
   """
 
   use Aesir.ZoneServer.Mmo.StatusEffect.Definition,
@@ -13,7 +18,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
     bypass_resistance: true,
     remove_on_map_change: true,
     target_types: [:player],
-    properties: [:prevents_movement, :prevents_attack, :prevents_skills],
+    properties: [:prevents_attack, :prevents_skills],
     allow_skills: [316, 324, 304],
     tick_interval: 1_000,
     icon: :bdplaying
@@ -26,8 +31,8 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Effects.Dancing do
 
   @impl true
   @spec modifiers(StatusEntry.t(), Definition.context()) :: map()
-  def modifiers(_instance, _context),
-    do: %{sp_regen: -100, skill_sp_regen_rate: -100}
+  def modifiers(%StatusEntry{val3: lesson}, _context),
+    do: %{sp_regen: -100, skill_sp_regen_rate: -100, movement_speed: 500 - 40 * (lesson || 0)}
 
   @impl true
   @spec on_tick(Definition.target(), StatusEntry.t(), Definition.context()) ::

@@ -93,7 +93,38 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     end)
   end
 
-  test "the performer cannot move, attack or Encore, but may cast Musical Strike", %{bard: bard} do
+  test "a walking performer is slowed and the field follows, moving its occupancy", %{
+    bard: bard,
+    listener: listener
+  } do
+    bard_id = bard.character.id
+    listener_id = listener.character.id
+    cast(bard, @whistle, 5)
+    assert_eventually(fn -> StatusStorage.has_status?(:player, bard_id, :sc_dancing) end)
+    assert_eventually(fn -> get_player_state(bard.pid).walk_speed == 900 end)
+    refute StatusStorage.has_status?(:player, listener_id, :sc_whistle)
+
+    move(bard, {152, 150})
+    assert_eventually(fn -> position(bard) == {152, 150} end, 6_000)
+
+    assert_eventually(fn ->
+      match?([%{center: {152, 150}}], Storage.get_groups_by_caster(:player, bard_id))
+    end)
+
+    [group] = Storage.get_groups_by_caster(:player, bard_id)
+    assert length(group.cells) == 49
+    assert [] == Storage.get_groups_at_cell("prontera", 147, 150)
+    assert [_] = Storage.get_groups_at_cell("prontera", 155, 150)
+
+    assert_eventually(fn ->
+      match?(
+        %{state: %{field_support: true}},
+        StatusStorage.get_status(:player, listener_id, :sc_whistle)
+      )
+    end)
+  end
+
+  test "the performer cannot attack or Encore, but may cast Musical Strike", %{bard: bard} do
     mob =
       start_mob_session(
         unit_id: System.unique_integer([:positive]),
@@ -108,8 +139,6 @@ defmodule Aesir.ZoneServer.Integration.PreRePerformanceLifecycleIntegrationTest 
     bard_id = bard.character.id
     assert_eventually(fn -> StatusStorage.has_status?(:player, bard_id, :sc_dancing) end)
 
-    move(bard, {151, 150})
-    refute_eventually(fn -> position(bard) != @origin end, 350)
     initial_hp = get_mob_state(mob.pid).hp
     simulate_incoming_message(bard.pid, %ActionRequest{target_id: mob.unit_id, action: 0})
     refute_eventually(fn -> get_mob_state(mob.pid).hp < initial_hp end, 350)

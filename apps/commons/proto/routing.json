@@ -204,6 +204,7 @@
     {"field": 214, "tag": "waiting_room_change_owner_request", "message": "WaitingRoomChangeOwnerRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 215, "tag": "waiting_room_change_status_request", "message": "WaitingRoomChangeStatusRequest", "direction": "c2s", "servers": ["zone"]},
     {"field": 216, "tag": "waiting_room_create_result", "message": "WaitingRoomCreateResult", "direction": "s2c", "servers": ["zone"], "channel": "world"},
-    {"field": 217, "tag": "waiting_room_role_changed", "message": "WaitingRoomRoleChanged", "direction": "s2c", "servers": ["zone"], "channel": "world"}
+    {"field": 217, "tag": "waiting_room_role_changed", "message": "WaitingRoomRoleChanged", "direction": "s2c", "servers": ["zone"], "channel": "world"},
+    {"field": 218, "tag": "skill_unit_move", "message": "SkillUnitMove", "direction": "s2c", "servers": ["zone"], "channel": "world"}
   ]
 }
