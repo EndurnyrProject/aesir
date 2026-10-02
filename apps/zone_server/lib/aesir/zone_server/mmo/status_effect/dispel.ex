@@ -29,6 +29,9 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Dispel do
 
   Mob targets additionally drop their aggro target and fall back to idle,
   rAthena's `mob_unlocktarget`.
+
+  `dispel_debuffs/1` is the debuff-only variant used by Gospel's cleansing
+  blessing: buffs and `no_dispel` debuffs stay.
   """
   alias Aesir.ZoneServer.Mmo.Combat.MagicDefense
   alias Aesir.ZoneServer.Mmo.StatusEffect.Definition

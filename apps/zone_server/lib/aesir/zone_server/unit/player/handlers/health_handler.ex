@@ -386,12 +386,20 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
     hp = current_hp(state)
     sp = current_sp(state)
 
-    if hp > hp_cost and sp >= sp_cost do
-      {:reply, :ok, state |> put_hp(hp - hp_cost) |> put_sp(sp - sp_cost)}
+    if valid_cost?(hp_cost) and valid_cost?(sp_cost) and hp > hp_cost and sp >= sp_cost do
+      {:reply, :ok, state |> deduct_hp(hp, hp_cost) |> deduct_sp(sp, sp_cost)}
     else
       {:reply, {:error, :insufficient}, state}
     end
   end
+
+  defp valid_cost?(cost), do: is_integer(cost) and cost >= 0
+
+  defp deduct_hp(state, _hp, 0), do: state
+  defp deduct_hp(state, hp, cost), do: put_hp(state, hp - cost)
+
+  defp deduct_sp(state, _sp, 0), do: state
+  defp deduct_sp(state, sp, cost), do: put_sp(state, sp - cost)
 
   @doc """
   Validates the resurrection source, then revives the corpse on success.
