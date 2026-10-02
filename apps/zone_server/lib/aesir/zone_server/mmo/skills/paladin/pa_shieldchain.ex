@@ -23,6 +23,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaShieldchain do
     target_type: :target_enemy,
     damage_type: :damage,
     damage_base: :shield,
+    hit_count: 5,
     range: [renewal: [7, 7, 9, 9, 11], pre_renewal: List.duplicate(4, 5)],
     sp_cost: [28, 31, 34, 37, 40],
     cast_time: [renewal: List.duplicate(800, 5), pre_renewal: List.duplicate(1_000, 5)],

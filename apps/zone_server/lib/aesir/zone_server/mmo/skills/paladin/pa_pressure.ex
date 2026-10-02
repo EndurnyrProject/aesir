@@ -27,6 +27,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaPressure do
     target_type: :target_enemy,
     damage_type: :damage,
     damage_kind: [renewal: :magic, pre_renewal: :misc],
+    hit_count: [renewal: 3, pre_renewal: 1],
     element: [renewal: :holy, pre_renewal: :neutral],
     range: List.duplicate(9, 5),
     sp_cost: [30, 35, 40, 45, 50],
