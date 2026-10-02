@@ -59,10 +59,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRokisweilTest do
     assert definition.require_weapon == [:musical, :whip]
     assert definition.unit_duration == []
     assert definition.item_cost == []
-    assert BdRokisweil.__skill_capabilities__() == [:active, :ensemble]
+    assert BdRokisweil.__skill_capabilities__() == [:active, :ground, :ensemble]
     refute function_exported?(BdRokisweil, :dynamic_cost, 4)
   end
 
+  @tag game_mode: :renewal
   test "snapshots to enemies without affecting the caster" do
     caster = caster()
     mob = mob()

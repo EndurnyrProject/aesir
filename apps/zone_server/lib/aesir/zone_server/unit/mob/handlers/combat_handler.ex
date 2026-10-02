@@ -5,10 +5,14 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   MobSession to improve modularity and maintainability.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Config
   alias Aesir.ZoneServer.Geometry
   alias Aesir.ZoneServer.Map.Coordinator
   alias Aesir.ZoneServer.Mmo.ItemDrop.LootOwnership
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Effects.RichmanKim
+  alias Aesir.ZoneServer.Mmo.StatusEntry
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit.Homunculus.HomunculusState
   alias Aesir.ZoneServer.Unit.Lifecycle
   alias Aesir.ZoneServer.Unit.Mob.AIStateMachine
@@ -199,6 +203,8 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
   end
 
   defp handle_death(state, attacker_ref, reward_owner_id, kill_bf, kill_credit) do
+    exp_bonus = kill_exp_bonus(state.instance_id)
+
     # Mark as dead
     updated_state = state |> MobState.advance_deferred_epoch() |> MobState.set_dead()
 
@@ -206,7 +212,7 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     SpawnView.notify_despawn(updated_state)
     Lifecycle.publish_death(:mob, state.instance_id, state.map_name, kill_credit)
 
-    announce_kill(state, attacker_ref, reward_owner_id, kill_bf)
+    announce_kill(state, attacker_ref, reward_owner_id, kill_bf, exp_bonus)
 
     # Notify coordinator of death for respawn scheduling and OnMyMobDead dispatch
     Coordinator.mob_died(state.map_name, state.instance_id, reward_owner_id)
@@ -217,26 +223,41 @@ defmodule Aesir.ZoneServer.Unit.Mob.Handlers.CombatHandler do
     {:noreply, updated_state}
   end
 
+  # Pre-renewal Mr. Kim a Rich Man rides on the killed mob, so its bonus is
+  # read here, before the death broadcast lets field cleanup drop the status.
+  defp kill_exp_bonus(instance_id) do
+    with :pre_renewal <- GameMode.mode(),
+         %StatusEntry{val1: level} <-
+           StatusStorage.get_status(:mob, instance_id, :sc_richmankim) do
+      RichmanKim.kill_exp_bonus(level)
+    else
+      :renewal -> 0
+      nil -> 0
+    end
+  end
+
   # Distributes typed EXP to every eligible contributor
   # (`KillExp.distribute_typed/7`), grants the MVP reward for an MVP-tier boss,
   # then sends quest credit and drop rolling to the killing blow's reward-owner
   # session when one exists. A rootless final source still completes shared
-  # rewards but has no session to receive kill-local rewards.
-  defp announce_kill(_state, nil, _reward_owner_id, _kill_bf), do: :ok
+  # rewards but has no session to receive kill-local rewards. `exp_bonus` is a
+  # percent applied to both rate-scaled amounts before they are shared.
+  defp announce_kill(_state, nil, _reward_owner_id, _kill_bf, _exp_bonus), do: :ok
 
   defp announce_kill(
          %MobState{mob_data: mob_data, aggro_list: aggro_list} = state,
          attacker_ref,
          reward_owner_id,
-         kill_bf
+         kill_bf,
+         exp_bonus
        ) do
     ownership = LootOwnership.determine_typed(state)
 
     unless state.no_exp do
       KillExp.distribute_typed(
         MobState.typed_damage_log(state),
-        apply_rate(mob_data.base_exp, Config.base_exp_rate()),
-        apply_rate(mob_data.job_exp, Config.job_exp_rate()),
+        mob_data.base_exp |> apply_rate(Config.base_exp_rate()) |> apply_rate(100 + exp_bonus),
+        mob_data.job_exp |> apply_rate(Config.job_exp_rate()) |> apply_rate(100 + exp_bonus),
         mob_data.level,
         state.map_name,
         mob_data.race,

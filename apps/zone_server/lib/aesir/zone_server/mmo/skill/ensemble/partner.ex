@@ -3,10 +3,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
   Finds an eligible ensemble partner from shared in-memory snapshots.
   """
 
+  alias Aesir.Commons.GameMode
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.JobManagement.JobLineage
   alias Aesir.ZoneServer.Mmo.Skill.Learned
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
+  alias Aesir.ZoneServer.Mmo.StatusStorage
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.Player.Stats, as: PlayerStats
@@ -19,15 +21,18 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
   @doc """
   Returns the first eligible nearby partner and the performers' averaged level.
 
-  A missing eligible partner returns `:none` so the ensemble may proceed solo.
+  Renewal permits solo casts and searches three cells. Pre-renewal requires
+  an adjacent partner who is not already performing; callers reject `:none`.
   """
   @spec find(PlayerState.t(), integer(), pos_integer()) ::
           {:ok, PlayerState.t(), pos_integer()} | :none
   def find(%PlayerState{} = caster, skill_id, level) do
+    range = if GameMode.mode() == :pre_renewal, do: 1, else: @range
+
     case performer_job(caster) do
       {:ok, caster_job} ->
         caster.map_name
-        |> SpatialIndex.get_players_in_range(caster.x, caster.y, @range)
+        |> SpatialIndex.get_players_in_range(caster.x, caster.y, range)
         |> Enum.find_value(:none, &resolve_partner(&1, caster, caster_job, skill_id, level))
 
       :error ->
@@ -59,8 +64,14 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.Partner do
       Learned.learned_level(candidate.stats.progression.learned_skills, skill_id) > 0 and
       PlayerStats.weapon_type(candidate.stats.equipment) in @performer_weapons and
       candidate.action_state != :sitting and
+      available?(candidate) and
       StatusInterpreter.can_move?(:player, candidate.character_id) and
       Unit.living?(candidate)
+  end
+
+  defp available?(candidate) do
+    GameMode.mode() != :pre_renewal or
+      not StatusStorage.has_status?(:player, candidate.character_id, :sc_dancing)
   end
 
   defp same_party?(%PlayerState{party_id: party_id}, %PlayerState{party_id: party_id}),

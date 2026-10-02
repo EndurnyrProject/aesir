@@ -42,10 +42,11 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullabyTest do
     assert definition.require_weapon == [:musical, :whip]
     assert definition.range == 0
     assert definition.item_cost == []
-    assert BdLullaby.__skill_capabilities__() == [:active, :ensemble]
+    assert BdLullaby.__skill_capabilities__() == [:active, :ground, :ensemble]
     refute function_exported?(BdLullaby, :dynamic_cost, 4)
   end
 
+  @tag game_mode: :renewal
   test "sleeps only hostile splash targets at the ordinary 100 percent base rate" do
     caster = caster()
 

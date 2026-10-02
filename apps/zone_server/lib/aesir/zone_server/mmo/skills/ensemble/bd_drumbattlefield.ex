@@ -4,9 +4,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefield do
 
   Renewal: cast, fixed cast, delay, cooldown, SP, and duration as declared, applied
   as a party buff within its area. Pre-renewal: an instant cast with no cooldown
-  for the classic SP and a 1-minute performance; the classic ground-unit model
-  (a field affecting whoever stands in it while both performers keep playing) is
-  deferred to a skill-unit performance subsystem.
+  for the classic SP. An adjacent partner is required for a stationary 9x9,
+  1-minute field. Party occupants other than the performers receive the effect
+  only while inside; each performer pays 1 SP every 3 seconds.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

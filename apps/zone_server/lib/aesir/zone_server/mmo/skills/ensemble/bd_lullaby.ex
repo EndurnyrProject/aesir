@@ -3,10 +3,10 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdLullaby do
   Lullaby (BD_LULLABY). An ensemble putting enemies within 4 cells to sleep.
 
   Renewal: cast, fixed cast, delay, cooldown, SP, and duration as declared, applied
-  as a party buff within its area. Pre-renewal: an instant cast with no cooldown
-  for the classic SP and a 1-minute performance; the classic ground-unit model
-  (a field affecting whoever stands in it while both performers keep playing) is
-  deferred to a skill-unit performance subsystem.
+  to enemies within its area. Pre-renewal: an adjacent partner maintains a
+  stationary 9x9 field for one minute, with 1 SP upkeep every 4 seconds each.
+  Every 6 seconds it attempts a 30-second sleep on enemies, using both
+  performers' INT. Inflicted sleep survives the performance ending.
   """
 
   use Aesir.ZoneServer.Mmo.Skill,

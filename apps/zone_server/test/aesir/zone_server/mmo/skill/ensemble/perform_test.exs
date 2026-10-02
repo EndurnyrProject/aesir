@@ -2,6 +2,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PerformTest do
   use ExUnit.Case, async: false
   use Mimic
 
+  @moduletag game_mode: :renewal
+
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.JobManagement.AvailableJobs
   alias Aesir.ZoneServer.Mmo.Skill.Ensemble.Perform

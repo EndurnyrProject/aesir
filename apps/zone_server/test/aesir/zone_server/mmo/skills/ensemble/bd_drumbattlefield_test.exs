@@ -73,7 +73,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdDrumbattlefieldTest do
     assert definition.after_cast_delay == List.duplicate(300, 5)
     assert definition.cooldown == List.duplicate(20_000, 5)
     assert definition.require_weapon == [:musical, :whip]
-    assert BdDrumbattlefield.__skill_capabilities__() == [:active, :ensemble]
+    assert BdDrumbattlefield.__skill_capabilities__() == [:active, :ground, :ensemble]
     refute function_exported?(BdDrumbattlefield, :dynamic_cost, 4)
 
     caster = %{character_id: 1}

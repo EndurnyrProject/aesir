@@ -17,12 +17,12 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance do
 
   @typedoc "Options for a maintained pre-renewal performance field."
   @type field_opt ::
-          {:reach, :everyone | :party | :enemy | :mobs}
+          {:reach, :everyone | :all | :party | :enemy | :mobs}
           | {:upkeep, pos_integer()}
           | {:layout_radius, 3 | 4}
           | {:linger_ms, non_neg_integer()}
           | {:kind, :song | :dance | :ensemble}
-          | {:tick, :dissonance | :ugly_dance | :idun_heal | nil}
+          | {:tick, :dissonance | :ugly_dance | :idun_heal | :lullaby | nil}
           | {:tick_interval, pos_integer()}
           | {:partners, [integer()]}
           | {:lesson_level, non_neg_integer()}

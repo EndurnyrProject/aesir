@@ -109,6 +109,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Ensemble.PartnerTest do
     assert {partner, effective_level} in [{first, 5}, {second, 4}]
   end
 
+  @tag game_mode: :pre_renewal
+  test "classic requires adjacency and rejects a partner already performing a solo song" do
+    caster = player(1, :bard, 1, @violin)
+    partner = %{player(2, :dancer, 1, @whip) | x: 52}
+    register(partner)
+    assert :none = Partner.find(caster, @skill_id, 1)
+
+    register(%{partner | x: 51})
+    assert {:ok, _, 1} = Partner.find(caster, @skill_id, 1)
+    :ok = StatusStorage.apply_status(:player, 2, :sc_dancing)
+    assert :none = Partner.find(caster, @skill_id, 1)
+  end
+
+  @tag game_mode: :renewal
+  test "renewal still finds a partner three cells away" do
+    caster = player(1, :bard, 1, @violin)
+    partner = %{player(2, :dancer, 1, @whip) | x: 53}
+    register(partner)
+    assert {:ok, ^partner, 1} = Partner.find(caster, @skill_id, 1)
+  end
+
   defp player(id, job, skill_level, weapon) do
     {:ok, job_id} = AvailableJobs.job_name_to_id(job)
 

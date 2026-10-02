@@ -24,6 +24,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   alias Aesir.ZoneServer.Mmo.Skill.Unit.LifecyclePolicy
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
+  alias Aesir.ZoneServer.Unit, as: GameUnit
   alias Aesir.ZoneServer.Unit.Player.PlayerState
   alias Aesir.ZoneServer.Unit.SpatialIndex
   alias Aesir.ZoneServer.Unit.UnitRegistry
@@ -109,8 +110,27 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
   end
 
   @doc "Recomputes dissonance and applies due interval effects."
-  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()}
+  @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
+  def on_interval(%Group{state: %{performance: %{kind: :ensemble} = perf}} = group, now) do
+    if Enum.all?(perf.performers, &performing?(&1, group)) do
+      Tick.run(group, now)
+    else
+      {:expire, group}
+    end
+  end
+
   def on_interval(group, now), do: group |> Overlap.mark() |> Tick.run(now)
+
+  defp performing?(id, group) do
+    with %{val2: group_id} when group_id == group.group_id <-
+           StatusStorage.get_status(:player, id, :sc_dancing),
+         {:ok, {_module, player, _pid}} <- UnitRegistry.get_unit(:player, id) do
+      GameUnit.living?(player) and player.map_name == group.map_name and
+        {player.x, player.y} in group.cells
+    else
+      _ -> false
+    end
+  end
 
   @doc "Describes the field-owned status and who may receive it."
   @spec field_support(Group.t()) :: map()
@@ -155,6 +175,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field do
     end
   end
 
+  defp eligible_unit?(:all, _group, type, _target) when type in [:player, :mob], do: true
   defp eligible_unit?(:everyone, _group, :player, _target), do: true
   defp eligible_unit?(:mobs, _group, :mob, _target), do: true
 

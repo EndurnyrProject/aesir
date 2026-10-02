@@ -2,6 +2,7 @@ defmodule Aesir.ZoneServer.Integration.EnsembleIntegrationTest do
   use Aesir.ZoneServer.IntegrationCase
 
   @moduletag :capture_log
+  @moduletag game_mode: :renewal, integration_pre_re: false
 
   alias Aesir.Commons.ClusterTestHelper
   alias Aesir.Commons.Models.Account

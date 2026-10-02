@@ -8,8 +8,10 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
 
   alias Aesir.ZoneServer.Mmo.Combat
   alias Aesir.ZoneServer.Mmo.Combat.DamageApplication
+  alias Aesir.ZoneServer.Mmo.Skill.Performance.Caster
   alias Aesir.ZoneServer.Mmo.Skill.Targeting
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Unit
   alias Aesir.ZoneServer.Unit.Mob.MobSession
   alias Aesir.ZoneServer.Unit.Resource
@@ -97,6 +99,28 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
     end)
   end
 
+  @doc "Attempts a thirty-second sleep using both performers' INT every six seconds."
+  @spec lullaby(Group.t(), struct(), [{atom(), integer()}]) :: :ok
+  def lullaby(group, caster, targets) do
+    intelligence =
+      Enum.reduce(group.state.performance.performers, 0, fn id, total ->
+        case UnitRegistry.get_unit(:player, id) do
+          {:ok, {_module, performer, _pid}} -> total + Caster.stat(performer, :int)
+          _ -> total
+        end
+      end)
+
+    Enum.each(targets, fn {type, id} ->
+      StatusInterpreter.apply_status(type, id, :sc_sleep,
+        val1: group.level,
+        caster_id: caster.character_id,
+        success_rate: (intelligence + 99 + :rand.uniform(201)) / 10,
+        duration: 30_000,
+        owner_refresh: :notify
+      )
+    end)
+  end
+
   defp apply_cell(group, {x, y} = cell, caster, caster_state, own_due?, overlap_due?) do
     case effect_for_cell(group.state.performance, cell, own_due?, overlap_due?) do
       nil ->
@@ -120,6 +144,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
   defp apply_effect(:dissonance, group, caster, targets), do: dissonance(group, caster, targets)
   defp apply_effect(:ugly_dance, group, caster, targets), do: ugly_dance(group, caster, targets)
   defp apply_effect(:idun_heal, group, caster, targets), do: idun_heal(group, caster, targets)
+  defp apply_effect(:lullaby, group, caster, targets), do: lullaby(group, caster, targets)
 
   defp targets(group, x, y, caster, reach) do
     group.map_name
@@ -127,6 +152,7 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Performance.Field.Tick do
     |> Enum.uniq()
     |> Enum.filter(fn {type, id} ->
       {type, id} != {group.caster_type, group.caster_id} and
+        not (type == :player and id in Map.get(group.state.performance, :performers, [])) and
         case UnitRegistry.get_unit(type, id) do
           {:ok, {_module, state, _pid}} ->
             type in [:player, :mob] and Unit.living?(state) and

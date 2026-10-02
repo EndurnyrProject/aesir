@@ -106,6 +106,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Ensemble.BdRingnibelungenTest do
     end
   end
 
+  @tag game_mode: :renewal
   test "one cast rolls independently for each party recipient" do
     caster = PlayerState.new(character(81_311, 10))
     recipient = PlayerState.new(character(81_312, 10))
