@@ -303,6 +303,44 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Interpreter do
   end
 
   @doc """
+  Asks the attacker's statuses to replace its pending ordinary swing.
+
+  Returns the first `{:skill_attack, opts}` produced by a status implementing
+  `c:Definition.attack_replacement/3`, or `:normal`. Only indexed implementers
+  are dispatched, so an attacker holding none costs one registry read.
+  """
+  @spec attack_replacement(unit_type(), integer()) :: Definition.attack_replacement_result()
+  def attack_replacement(unit_type, unit_id) do
+    implementing = Registry.statuses_implementing(:attack_replacement)
+
+    if MapSet.size(implementing) == 0 do
+      :normal
+    else
+      unit_type
+      |> StatusStorage.get_unit_statuses(unit_id)
+      |> Enum.filter(&MapSet.member?(implementing, &1.type))
+      |> Enum.find_value(:normal, &dispatch_attack_replacement(unit_type, unit_id, &1))
+    end
+  end
+
+  defp dispatch_attack_replacement(unit_type, unit_id, instance) do
+    with %{module: module} <- Registry.get_definition(instance.type) do
+      context = ContextBuilder.build_context(unit_type, unit_id, instance.source_id, instance)
+
+      case module.attack_replacement({unit_type, unit_id}, instance, context) do
+        :normal ->
+          nil
+
+        {:skill_attack, opts} = replacement when is_list(opts) ->
+          replacement
+
+        result ->
+          raise "invalid attack_replacement result for #{instance.type}: #{inspect(result)}"
+      end
+    end
+  end
+
+  @doc """
   Notifies the attacker's implementing statuses that one of its weapon hits landed.
 
   Only statuses implementing `c:Definition.on_dealt_damage/4` are dispatched -

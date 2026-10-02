@@ -549,6 +549,26 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculatorTest do
       assert result > 100
     end
 
+    test "skip_status_atk ignores status ATK bonuses and rates but keeps the damage multiplier" do
+      stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
+      stub(RaceModifiers, :player_race, fn -> :human end)
+      stub(ElementModifiers, :get_modifier, fn _, _, _, _ -> 1.0 end)
+
+      stub(ModifierCalculator, :get_all_modifiers, fn _, _ ->
+        %{damage_bonus: 10, atk_bonus: 20, watk: 30, atk_rate: 100, damage_multiplier: 0.5}
+      end)
+
+      attacker = CombatTestHelper.create_mob_combatant()
+      defender = CombatTestHelper.create_mob_combatant()
+
+      assert {:ok, 480.0} = DamageCalculator.apply_modifier_pipeline(100, attacker, defender)
+
+      assert {:ok, 150.0} =
+               DamageCalculator.apply_modifier_pipeline(100, attacker, defender,
+                 skip_status_atk: true
+               )
+    end
+
     test "handles no modifiers gracefully" do
       stub(SizeModifiers, :get_modifier, fn _, _, _ -> 100 end)
       stub(RaceModifiers, :player_race, fn -> :human end)

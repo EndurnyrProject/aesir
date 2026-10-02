@@ -567,6 +567,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   `attack_element` status modifier. `:skill_id` scopes the `{:skill_atk, id}`
   equipment family to the current skill. The mounted-spear size-modifier
   override is read from the attacker combatant's `:riding` flag.
+  `:skip_status_atk` leaves the attacker's status ATK bonuses and rate
+  unapplied while keeping the generic damage multiplier (Sacrifice, whose
+  damage is a share of max HP rather than ATK).
 
   After the size/race/element/status steps, the attacker's equipment damage
   families (race+class, element, size, skill) each apply as their own
@@ -591,7 +594,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
       sized_damage
       |> apply_element_modifier(attack_element, defender, attacker_modifiers)
       |> add_pseudo_element_damage(sized_damage, defender, attacker_modifiers)
-      |> apply_status_effect_damage_modifiers(attacker_modifiers)
+      |> apply_status_effect_damage_modifiers(
+        attacker_modifiers,
+        Keyword.get(opts, :skip_status_atk, false)
+      )
       |> apply_equipment_attack_families(
         attacker,
         defender,
@@ -990,7 +996,10 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
     end
   end
 
-  defp apply_status_effect_damage_modifiers(damage, modifiers) do
+  defp apply_status_effect_damage_modifiers(damage, modifiers, true),
+    do: DamageShared.apply_damage_multiplier(damage, modifiers)
+
+  defp apply_status_effect_damage_modifiers(damage, modifiers, false) do
     damage_bonus = Map.get(modifiers, :damage_bonus, 0)
     atk_bonus = Map.get(modifiers, :atk_bonus, 0)
     # :watk is flat weapon ATK granted by statuses (SC_LOUD / Crazy Uproar, Impositio

@@ -218,6 +218,23 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @callback before_normal_attack(target(), StatusEntry.t(), map(), context()) ::
               before_normal_attack_result()
 
+  @typedoc "Result of an attacker-side basic-attack replacement callback."
+  @type attack_replacement_result :: :normal | {:skill_attack, keyword()}
+
+  @doc """
+  Replaces the holder's pending ordinary swing with a skill attack.
+
+  Runs inside the attacker's own session, before hit calculation, so side
+  effects must be `StatusStorage` writes or fire-and-forget casts, never a
+  synchronous call into that session. Returning `{:skill_attack, opts}` makes
+  the swing run through `Combat.execute_skill_attack/3` with `opts` and settle
+  as a plain swing (no combo stage); `:normal` leaves the attack untouched. A
+  status replacement wins over a learned passive replacement. The registry
+  indexes the implementers, so an attacker holding none costs one registry read.
+  """
+  @callback attack_replacement(target(), StatusEntry.t(), context()) ::
+              attack_replacement_result()
+
   @doc """
   Post-damage hook fired on the victim after a delivered hit reduced its HP.
 
@@ -370,6 +387,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
   @type capability ::
           :before_weapon_hit
           | :before_normal_attack
+          | :attack_replacement
           | :on_dealt_damage
           | :after_damage_taken
           | :on_movement_intent
@@ -440,6 +458,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     dealt_damage? = Module.defines?(env.module, {:on_dealt_damage, 4})
     before_weapon_hit? = Module.defines?(env.module, {:before_weapon_hit, 4})
     before_normal_attack? = Module.defines?(env.module, {:before_normal_attack, 4})
+    attack_replacement? = Module.defines?(env.module, {:attack_replacement, 3})
     after_damage_taken? = Module.defines?(env.module, {:after_damage_taken, 4})
     movement_intent? = Module.defines?(env.module, {:on_movement_intent, 4})
     committed_action? = Module.defines?(env.module, {:on_committed_action, 4})
@@ -461,6 +480,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       end
 
     before_normal_attack_default = before_normal_attack_default(before_normal_attack?)
+    attack_replacement_default = attack_replacement_default(attack_replacement?)
 
     after_damage_taken_default =
       unless after_damage_taken? do
@@ -477,6 +497,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       []
       |> maybe_add_capability(before_weapon_hit?, :before_weapon_hit)
       |> maybe_add_capability(before_normal_attack?, :before_normal_attack)
+      |> maybe_add_capability(attack_replacement?, :attack_replacement)
       |> maybe_add_capability(dealt_damage?, :on_dealt_damage)
       |> maybe_add_capability(after_damage_taken?, :after_damage_taken)
       |> maybe_add_capability(movement_intent?, :on_movement_intent)
@@ -486,6 +507,7 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
       unquote(dealt_damage_default)
       unquote(before_weapon_hit_default)
       unquote(before_normal_attack_default)
+      unquote(attack_replacement_default)
       unquote(after_damage_taken_default)
       unquote(movement_intent_default)
       unquote(committed_action_default)
@@ -504,6 +526,15 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.Definition do
     quote do
       @impl true
       def before_normal_attack(_target, _instance, _attack_info, _context), do: :continue
+    end
+  end
+
+  defp attack_replacement_default(true), do: nil
+
+  defp attack_replacement_default(false) do
+    quote do
+      @impl true
+      def attack_replacement(_target, _instance, _context), do: :normal
     end
   end
 

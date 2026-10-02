@@ -189,7 +189,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
          target_type,
          target_id
        ) do
-    case Passives.attack_replacement(player_state) do
+    case attack_replacement(player_state, attacker) do
       :normal ->
         modifier = normal_attack_modifier(:player, attacker, target_type, target_id)
 
@@ -204,6 +204,9 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
           modifier
         )
 
+      {:skill_attack, opts} ->
+        resolve_attack_replacement(player_state, attacker, target, target_id, opts)
+
       {:skill_attack, opts, next_stage} ->
         with :ok <-
                resolve_attack_replacement(
@@ -215,6 +218,15 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
                ) do
           {:ok, {:combo, next_stage, {target_type, target_id}, max(attacker.attack_delay_ms, 1)}}
         end
+    end
+  end
+
+  # A status replacement (Sacrifice) wins over a learned passive one (Triple
+  # Attack) and settles as a plain swing; the passive form carries a combo stage.
+  defp attack_replacement(player_state, attacker) do
+    case StatusInterpreter.attack_replacement(:player, attacker.unit_id) do
+      :normal -> Passives.attack_replacement(player_state)
+      replacement -> replacement
     end
   end
 
@@ -288,7 +300,7 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
   defp resolve_attack_replacement(player_state, attacker, target, target_id, opts) do
     with :ok <-
            Rules.validate_target(attacker, target, %{skill_id: Keyword.fetch!(opts, :skill_id)}) do
-      case weapon_skill_hit_result(attacker, target) do
+      case replacement_hit_result(attacker, target, opts) do
         :hit ->
           SkillAttack.execute_skill_attack(player_state, target_id, opts)
 
@@ -310,6 +322,12 @@ defmodule Aesir.ZoneServer.Mmo.Combat.AutoAttack do
 
       :ok
     end
+  end
+
+  defp replacement_hit_result(attacker, target, opts) do
+    if Keyword.get(opts, :ignore_flee, false),
+      do: :hit,
+      else: weapon_skill_hit_result(attacker, target)
   end
 
   defp weapon_skill_hit_result(attacker, target) do
