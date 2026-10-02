@@ -29,7 +29,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Targeting do
     121 => :ht_freezingtrap,
     122 => :ht_blastmine,
     123 => :ht_claymoretrap,
-    229 => :am_demonstration
+    229 => :am_demonstration,
+    369 => :pa_gospel
   }
 
   @doc "Validates that `target` is a living enemy of `attacker`."

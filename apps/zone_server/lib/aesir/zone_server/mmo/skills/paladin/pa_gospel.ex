@@ -16,6 +16,9 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   Identical in both game modes except the enemy slow's attack-speed magnitude
   (`StatusEffect.Effects.GospelSlow`). Player-only: the blessings key off party
   membership, which mobs do not have.
+
+  Accepted deviation: a magic-immune caster keeps their statuses (the wipe is
+  skipped) but still chants; the reference wipes regardless.
   """
   use Aesir.ZoneServer.Mmo.Skill,
     id: 369,
@@ -34,6 +37,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
   alias Aesir.ZoneServer.Mmo.Skill.Ground
   alias Aesir.ZoneServer.Mmo.Skill.Unit
   alias Aesir.ZoneServer.Mmo.Skill.Unit.Group
+  alias Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Tick
   alias Aesir.ZoneServer.Mmo.StatusEffect.Dispel
   alias Aesir.ZoneServer.Mmo.StatusEffect.Interpreter, as: StatusInterpreter
   alias Aesir.ZoneServer.Mmo.StatusStorage
@@ -85,7 +89,7 @@ defmodule Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel do
 
   @impl Ground
   @spec on_interval(Group.t(), integer()) :: {:ok, Group.t()} | {:expire, Group.t()}
-  def on_interval(%Group{} = group, _now), do: {:ok, group}
+  def on_interval(%Group{} = group, now), do: Tick.run(group, now)
 
   @impl Ground
   @spec on_expire(Group.t()) :: :ok

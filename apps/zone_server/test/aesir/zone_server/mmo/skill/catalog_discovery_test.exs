@@ -206,6 +206,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.CatalogDiscoveryTest do
       Aesir.ZoneServer.Mmo.Skills.Acolyte.AlHeal.Formula,
       Aesir.ZoneServer.Mmo.Skills.Acolyte.AllResurrection.Damage,
       Aesir.ZoneServer.Mmo.Skills.Crusader.CrGrandcross.Damage,
+      Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Effects,
+      Aesir.ZoneServer.Mmo.Skills.Paladin.PaGospel.Tick,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Formulas,
       Aesir.ZoneServer.Mmo.Skills.Hunter.Trap,
       Aesir.ZoneServer.Mmo.Skills.Npc.SlaveSummon,
