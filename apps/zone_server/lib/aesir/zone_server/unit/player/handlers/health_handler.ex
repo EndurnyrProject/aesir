@@ -372,6 +372,28 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandler do
   def try_consume_sp(_amount, state), do: {:reply, {:error, :insufficient_sp}, state}
 
   @doc """
+  Attempts to deduct an HP and SP upkeep together, all or nothing.
+
+  Succeeds only when HP stays above the HP cost (the charge never kills) and SP
+  covers the SP cost; otherwise the state is left untouched. Gospel's chant
+  upkeep is the first consumer.
+  """
+  @spec try_consume_vitals(keyword(), SessionState.t()) ::
+          {:reply, :ok | {:error, :insufficient}, SessionState.t()}
+  def try_consume_vitals(opts, state) do
+    hp_cost = Keyword.get(opts, :hp, 0)
+    sp_cost = Keyword.get(opts, :sp, 0)
+    hp = current_hp(state)
+    sp = current_sp(state)
+
+    if hp > hp_cost and sp >= sp_cost do
+      {:reply, :ok, state |> put_hp(hp - hp_cost) |> put_sp(sp - sp_cost)}
+    else
+      {:reply, {:error, :insufficient}, state}
+    end
+  end
+
+  @doc """
   Validates the resurrection source, then revives the corpse on success.
 
   The single entry point for a `{:unit, {:resurrect, source_id, hp_percent}}` call:

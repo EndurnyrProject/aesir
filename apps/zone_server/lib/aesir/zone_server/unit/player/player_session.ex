@@ -153,6 +153,14 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   def try_consume_sp(pid, amount), do: call_session(pid, {:unit, {:try_consume_sp, amount}})
 
   @doc """
+  Attempts to deduct an HP and SP upkeep together, all or nothing; the HP
+  charge never kills.
+  """
+  @spec try_consume_vitals(pid(), hp: non_neg_integer(), sp: non_neg_integer()) ::
+          :ok | {:error, :insufficient | :target_unavailable}
+  def try_consume_vitals(pid, opts), do: call_session(pid, {:unit, {:try_consume_vitals, opts}})
+
+  @doc """
   Revives this target session in place at a percentage of its maximum HP.
   """
   @spec resurrect(pid(), integer(), pos_integer()) ::
@@ -1400,6 +1408,11 @@ defmodule Aesir.ZoneServer.Unit.Player.PlayerSession do
   @impl true
   def handle_call({:unit, {:try_consume_sp, amount}}, _from, state) do
     HealthHandler.try_consume_sp(amount, state)
+  end
+
+  @impl true
+  def handle_call({:unit, {:try_consume_vitals, opts}}, _from, state) do
+    HealthHandler.try_consume_vitals(opts, state)
   end
 
   @impl true

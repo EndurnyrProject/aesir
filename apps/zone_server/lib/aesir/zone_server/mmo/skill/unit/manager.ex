@@ -43,7 +43,8 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.Manager do
   @safetywall_skill_id 12
   @venom_dust_skill_id 140
   @poison_mist_skill_id 8020
-  @no_overlap_skill_ids [@safetywall_skill_id, 70, 79, 229]
+  @gospel_skill_id 369
+  @no_overlap_skill_ids [@safetywall_skill_id, 70, 79, 229, @gospel_skill_id]
 
   @type server :: GenServer.server()
   @type mover :: {atom(), integer()}

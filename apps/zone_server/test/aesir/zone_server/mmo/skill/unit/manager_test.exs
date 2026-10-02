@@ -1647,6 +1647,26 @@ defmodule Aesir.ZoneServer.Mmo.Skill.Unit.ManagerTest do
     end
   end
 
+  describe "Gospel admission" do
+    test "rejects a Gospel touching another caster's Gospel and admits a separate one" do
+      manager = start_manager(10_000)
+
+      assert :ok = Manager.register(manager, group(1, skill_id: 369, cells: [{100, 100}]))
+
+      assert {:error, :skill_unit_overlap} =
+               Manager.register(
+                 manager,
+                 group(2, skill_id: 369, caster_id: 2, cells: [{101, 100}, {100, 100}])
+               )
+
+      assert :ok =
+               Manager.register(
+                 manager,
+                 group(3, skill_id: 369, caster_id: 2, cells: [{110, 100}])
+               )
+    end
+  end
+
   describe "Venom Dust admission" do
     test "rejects the whole group when any cell overlaps another Venom Dust" do
       manager = start_manager(10_000)

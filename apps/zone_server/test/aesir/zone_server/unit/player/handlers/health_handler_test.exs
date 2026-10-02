@@ -805,6 +805,32 @@ defmodule Aesir.ZoneServer.Unit.Player.Handlers.HealthHandlerTest do
     end
   end
 
+  describe "try_consume_vitals/2" do
+    test "deducts HP and SP together when both are available" do
+      assert {:reply, :ok, %{game_state: game_state}} =
+               HealthHandler.try_consume_vitals([hp: 30, sp: 4], build_state(100, :idle))
+
+      assert game_state.stats.current_state.hp == 70
+      assert game_state.stats.current_state.sp == 6
+    end
+
+    test "refuses when HP would not stay above the cost" do
+      state = build_state(30, :idle)
+      reject(&CharacterPersistence.update_stats/3)
+
+      assert {:reply, {:error, :insufficient}, ^state} =
+               HealthHandler.try_consume_vitals([hp: 30, sp: 4], state)
+    end
+
+    test "refuses when SP is short and leaves HP untouched" do
+      state = build_state(100, :idle)
+      reject(&CharacterPersistence.update_stats/3)
+
+      assert {:reply, {:error, :insufficient}, ^state} =
+               HealthHandler.try_consume_vitals([hp: 30, sp: 11], state)
+    end
+  end
+
   describe "resurrect/3" do
     test "revives a corpse at 10 percent HP" do
       assert {:reply, :ok, %{game_state: game_state}} =

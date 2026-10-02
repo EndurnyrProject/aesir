@@ -157,6 +157,22 @@ defmodule Aesir.ZoneServer.Mmo.StatusEffect.DispelTest do
     end
   end
 
+  describe "dispel_debuffs/1" do
+    test "removes debuffs, keeps buffs and no_dispel debuffs", %{unit_id: unit_id} do
+      StatusStorage.apply_status(:player, unit_id, :sc_blind, val1: 1, duration: 60_000)
+      StatusStorage.apply_status(:player, unit_id, :sc_curse, val1: 1, duration: 60_000)
+      StatusStorage.apply_status(:player, unit_id, :sc_blessing, val1: 10, duration: 60_000)
+      StatusStorage.apply_status(:player, unit_id, :sc_eternalchaos, val1: 1, duration: 60_000)
+
+      assert :ok = Dispel.dispel_debuffs({:player, unit_id})
+
+      refute StatusStorage.has_status?(:player, unit_id, :sc_blind)
+      refute StatusStorage.has_status?(:player, unit_id, :sc_curse)
+      assert StatusStorage.has_status?(:player, unit_id, :sc_blessing)
+      assert StatusStorage.has_status?(:player, unit_id, :sc_eternalchaos)
+    end
+  end
+
   describe "dispel/1 on a mob" do
     # rAthena's mob_unlocktarget: a dispelled mob forgets its aggro and idles.
     test "drops the mob's aggro target", %{unit_id: unit_id} do
