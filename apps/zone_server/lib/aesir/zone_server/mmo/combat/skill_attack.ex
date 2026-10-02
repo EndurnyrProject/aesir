@@ -124,7 +124,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.SkillAttack do
     - `:ignore_defense` - when `true`, the target's DEF is skipped entirely
       (classic Asura Strike) (default `false`)
     - `:skip_status_atk` - when `true`, the attacker's status ATK bonuses and
-      rate are not applied to this hit; the generic damage multiplier still is
+      rate are not applied to this hit; the generic damage multiplier still is.
+      Only honoured by the ordinary pipeline, i.e. together with `:base_damage`
       (Sacrifice, whose base is a share of max HP) (default `false`)
     - `:ranged` - forces `is_short: false` in the delivered hit_info,
       overriding the caster's melee attack-range classification, for a skill

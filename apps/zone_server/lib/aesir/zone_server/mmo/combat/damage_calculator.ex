@@ -569,7 +569,8 @@ defmodule Aesir.ZoneServer.Mmo.Combat.DamageCalculator do
   override is read from the attacker combatant's `:riding` flag.
   `:skip_status_atk` leaves the attacker's status ATK bonuses and rate
   unapplied while keeping the generic damage multiplier (Sacrifice, whose
-  damage is a share of max HP rather than ATK).
+  damage is a share of max HP rather than ATK). Player hits without
+  `:base_damage` take the component pipeline instead and ignore the opt.
 
   After the size/race/element/status steps, the attacker's equipment damage
   families (race+class, element, size, skill) each apply as their own
